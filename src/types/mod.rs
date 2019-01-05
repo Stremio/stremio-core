@@ -1,7 +1,7 @@
 use serde_derive::*;
 
 mod meta_item;
-pub use meta_item::*;
+pub use self::meta_item::*;
 
 #[derive(Deserialize, Debug)]
 pub struct MetaResponse {
