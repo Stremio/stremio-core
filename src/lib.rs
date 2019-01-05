@@ -4,7 +4,7 @@ use reqwest::*;
 pub mod types;
 use self::types::*;
 
-fn get_cinemeta() -> Result<MetaResponse> {
+fn get_cinemeta() -> Result<CatalogResponse> {
     Ok(reqwest::get("https://v3-cinemeta.strem.io/catalog/movie/top.json")?.json()?)
 }
 

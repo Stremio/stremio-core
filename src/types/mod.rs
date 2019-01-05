@@ -7,7 +7,7 @@ pub use self::meta_item::*;
 pub use self::stream_item::*;
 
 #[derive(Deserialize, Debug)]
-pub struct MetaResponse {
+pub struct CatalogResponse {
     pub metas: Vec<MetaItem>,
 }
 
