@@ -1,7 +1,13 @@
 use crate::types::*;
 
 #[derive(Debug)]
-pub enum Action { Init }
+// @TODO some generic way to do actions; perhaps enums should be avoided
+// or alternatively we'd use a lot of From and Into in order to have separate events for the
+// middlwares
+pub enum Action {
+    Init,
+    Open,
+}
 
 #[derive(Debug)]
 pub enum Loadable<T> {
