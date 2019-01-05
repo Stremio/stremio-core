@@ -48,6 +48,7 @@ where
     let v = Vec::deserialize(deserializer)?;
     Ok(v.into_iter().map(|Wrapper(a)| a).collect())
 }
+// @TODO: move string_or_struct to a crate
 fn string_or_struct<'de, T, D>(deserializer: D) -> Result<T, D::Error>
 where
     T: Deserialize<'de> + FromStr<Err = ()>,
