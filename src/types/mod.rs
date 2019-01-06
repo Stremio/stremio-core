@@ -11,6 +11,8 @@ pub struct CatalogResponse {
     pub metas: Vec<MetaItem>,
 }
 
+// @TODO MetaResponse
+
 #[derive(Deserialize, Serialize, Debug)]
 pub struct StreamResponse {
     pub streams: Vec<StreamItem>,
