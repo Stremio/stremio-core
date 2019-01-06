@@ -28,18 +28,19 @@ mod tests {
             // Doesn't mutate
             None
         });
+        // @TODO figure out how to do middlewares/reducers pipeline
         container.dispatch(match get_cinemeta() {
             Ok(resp) => { Action::CatalogsReceived(Ok(resp)) },
             Err(err) => { Action::CatalogsReceived(Err("request error")) },
         });
         assert_eq!(
-            match &container.state.catalog {
+            match &container.get_state().catalog {
                 Loadable::Ready(ItemsView::Grouped(x)) => x.len(),
                 _ => 0,
             },
             100,
         );
-        //println!("{:?}", &container.state);
+        //println!("{:?}", container.get_state());
         //println!("{}", serde_json::to_string(&state).expect("rip"));
         //assert_eq!(2 + 2, 4);
     }

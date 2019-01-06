@@ -31,6 +31,7 @@ pub enum ItemsView<T> {
     Grouped(Vec<T>),
 }
 
+// @TODO can we make it so that each property of the State is a separate reducer
 #[derive(Debug, Serialize)]
 pub struct State {
     pub catalog: Loadable<ItemsView<MetaItem>, String>,
@@ -44,7 +45,7 @@ pub struct State {
 // borrowing is cleaner however, as it guarantees we cannot modify it
 type ReducerFn = &'static Fn(&State, Action) -> Option<Box<State>>;
 pub struct StateContainer {
-    pub state: Box<State>,
+    state: Box<State>,
     reducer: ReducerFn,
 }
 
@@ -62,5 +63,8 @@ impl StateContainer {
             Some(new_state) => { self.state = new_state },
             None => {},
         }
+    }
+    pub fn get_state(&self) -> &State {
+        &self.state
     }
 }
