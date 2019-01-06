@@ -8,7 +8,7 @@ edition = "2018"
 serde = "1.0.42"
 serde_derive = "1.0.42"
 serde_json = "1.0.16"
-vtt = { git = "https://github.com/Ivshti/vtt.git" }
+#vtt = { git = "https://github.com/Ivshti/vtt.git" }
 
 [dev-dependencies]
 reqwest = "0.9.x"
