@@ -40,12 +40,15 @@ mod tests {
             },
             100,
         );
+        println!("{:?}", get_addons());
         //println!("{:?}", container.get_state());
         //println!("{}", serde_json::to_string(&state).expect("rip"));
         //assert_eq!(2 + 2, 4);
     }
 
-
+    fn get_addons() -> reqwest::Result<Vec<AddonDescriptor>> {
+        Ok(reqwest::get("https://api.strem.io/addonscollection.json")?.json()?)
+    }
     fn get_cinemeta() -> reqwest::Result<CatalogResponse> {
         Ok(reqwest::get("https://v3-cinemeta.strem.io/catalog/movie/top.json")?.json()?)
     }
