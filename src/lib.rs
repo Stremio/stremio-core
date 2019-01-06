@@ -21,14 +21,25 @@ mod tests {
     use super::*;
     #[test]
     fn it_works() {
-        //let resp = MetaResponse{ metas: vec![] };
-        let state = State{
-            catalog: Loadable::Ready(ItemsView::Filtered(
-                get_cinemeta().expect("rip").metas
-            ))
-        };
-        //println!("{:?}", state);
-        println!("{}", serde_json::to_string(&state).expect("rip"));
-        assert_eq!(2 + 2, 4);
+        let mut container = StateContainer::with_reducer(&|state, action| {
+            match action {
+                Action::CatalogsReceived(resp) => {
+                    return Some(Box::new(State{
+                        catalog: Loadable::Ready(ItemsView::Grouped(resp.metas))
+                    }));
+                },
+                // @TODO
+                //Action::CatalogsReceived(Err(err)) => {
+                //    return State{ catalog: Loadable::Message(err) };
+                //},
+                _ => {},
+            };
+            // Doesn't mutate
+            None
+        });
+        container.dispatch(Action::CatalogsReceived(get_cinemeta().unwrap()));
+        println!("{:?}", &container.state);
+        //println!("{}", serde_json::to_string(&state).expect("rip"));
+        //assert_eq!(2 + 2, 4);
     }
 }

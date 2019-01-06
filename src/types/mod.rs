@@ -6,12 +6,12 @@ mod stream_item;
 pub use self::meta_item::*;
 pub use self::stream_item::*;
 
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize, Serialize, Debug)]
 pub struct CatalogResponse {
     pub metas: Vec<MetaItem>,
 }
 
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize, Serialize, Debug)]
 pub struct StreamResponse {
     pub streams: Vec<StreamItem>,
 }
