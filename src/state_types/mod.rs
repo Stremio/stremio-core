@@ -13,30 +13,25 @@ pub enum Action {
 // Middleware actions: AddonRequest, AddonResponse
 
 #[derive(Debug, Serialize)]
-pub enum Loadable<T> {
+pub enum Loadable<T, M> {
     NotLoaded,
     Loading,
-    // @TODO Message, Content
-    Ready(T)
+    Ready(T),
+    Message(M),
 }
 
-// @TODO: can we do this with less generics and less nested enums
-
 #[derive(Debug, Serialize)]
-pub struct CatalogContent<T> {
+pub enum ItemsView<T> {
     // @TODO filters
-    //filters: Vec<>
-    pub items: Vec<T>
-}
-// @TODO: more thinking on this; message should be more complicated
-// should this be (Grouped, Filtered)
-#[derive(Debug, Serialize)]
-pub enum CatalogView<T> {
-    Message(String),
-    Content(CatalogContent<T>),
+    Filtered(Vec<T>),
+    // @TODO groups
+    Grouped(Vec<T>),
 }
 
 #[derive(Debug, Serialize)]
 pub struct State {
-    pub catalog: Loadable<CatalogView<MetaItem>>,
+    pub catalog: Loadable<ItemsView<MetaItem>, String>,
 }
+
+
+// @TODO: split into another file

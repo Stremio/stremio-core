@@ -23,9 +23,9 @@ mod tests {
     fn it_works() {
         //let resp = MetaResponse{ metas: vec![] };
         let state = State{
-            catalog: Loadable::Ready(CatalogView::Content(CatalogContent{
-                items: get_cinemeta().expect("rip").metas
-            }))
+            catalog: Loadable::Ready(ItemsView::Filtered(
+                get_cinemeta().expect("rip").metas
+            ))
         };
         //println!("{:?}", state);
         println!("{}", serde_json::to_string(&state).expect("rip"));
