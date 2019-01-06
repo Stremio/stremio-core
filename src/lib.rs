@@ -1,5 +1,6 @@
 extern crate reqwest;
 use reqwest::*;
+use serde_json::to_string;
 
 pub mod types;
 use self::types::*;
@@ -21,13 +22,13 @@ mod tests {
     #[test]
     fn it_works() {
         //let resp = MetaResponse{ metas: vec![] };
-        println!("{:?} {:?}", get_cinemeta(), get_watchhub());
         let state = State{
             catalog: Loadable::Ready(CatalogView::Content(CatalogContent{
                 items: get_cinemeta().expect("rip").metas
             }))
         };
-        println!("{:?}", state);
+        //println!("{:?}", state);
+        println!("{}", serde_json::to_string(&state).expect("rip"));
         assert_eq!(2 + 2, 4);
     }
 }
