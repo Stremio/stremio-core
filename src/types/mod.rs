@@ -1,10 +1,13 @@
 use serde_derive::*;
 
+mod manifest;
+pub use self::manifest::*;
+
 mod meta_item;
-// @TODO: consider renaming to just 'stream'
-mod stream_item;
 pub use self::meta_item::*;
-pub use self::stream_item::*;
+
+mod stream;
+pub use self::stream::*;
 
 #[derive(Deserialize, Serialize, Debug)]
 pub struct CatalogResponse {
