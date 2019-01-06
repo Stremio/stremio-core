@@ -35,7 +35,7 @@ mod tests {
         assert_eq!(
             match &container.state.catalog {
                 Loadable::Ready(ItemsView::Grouped(x)) => x.len(),
-                _ => 100,
+                _ => 0,
             },
             100,
         );
