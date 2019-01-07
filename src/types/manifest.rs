@@ -27,7 +27,7 @@ impl FromStr for ManifestResource {
 #[derive(Debug, PartialEq, Clone, Deserialize, Serialize)]
 pub struct ManifestCatalog {
     #[serde(rename = "type")]
-    pub catalog_type: String,
+    pub type_name: String,
     pub id: String,
     pub name: Option<String>,
     // @TODO: extraSupported, extraRequired, filters
@@ -50,6 +50,19 @@ pub struct AddonManifest {
     //pub behavior_hints: Vec<String>,
     #[serde(default)]
     pub catalogs: Vec<ManifestCatalog>,
+}
+
+impl AddonManifest {
+    // @TODO: test
+    fn is_supported(&self, resource_name: String, type_name: String, id: String) -> bool {
+        // catalogs are a special case
+        if resource_name == "catalog" {
+            return self.catalogs.iter()
+                .find(|&c| c.type_name == type_name && c.id == id)
+                .is_some()
+        }
+        false
+    }
 }
 
 // @TODO: this also needs to be a crate, kind of: https://github.com/serde-rs/serde/issues/723
