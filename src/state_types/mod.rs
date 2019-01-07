@@ -23,7 +23,7 @@ pub enum Loadable<T, M> {
 }
 
 // @TODO: split into another file
-// @TODO borrow actions instead of owning
+// @TODO replace this with a Trait that all reducers are gonna use
 type ReducerFn<S> = &'static Fn(&S, &Action) -> Option<Box<S>>;
 pub struct StateContainer<S: 'static> {
     state: Box<S>,

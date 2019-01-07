@@ -10,6 +10,9 @@ mod tests {
     use super::*;
     #[test]
     fn it_works() {
+        // @TODO: build a pipe of 
+        // -> UserMiddleware -> CatalogMiddleware -> DetailMiddleware -> AddonsMiddleware ->
+        // PlayerMiddleware -> LibNotifMiddleware -> join(discoverContainer, boardContainer, ...)
         let mut container = StateContainer::with_reducer(
             CatalogGrouped{ items: vec![] },
             &|state, action| {
