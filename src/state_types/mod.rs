@@ -10,7 +10,6 @@ pub enum Action {
     Init,
     Open,
     // @TODO this is temp, fix it
-    // @TODO result
     CatalogsReceived(Result<CatalogResponse, &'static str>),
 }
 // Middleware actions: AddonRequest, AddonResponse
@@ -24,6 +23,7 @@ pub enum Loadable<T, M> {
 }
 
 /*
+// @TODO: move this to FilteredCatalogs reducer
 struct Filter {
     pub filter_type: String,
     pub selected: Option<String>,
@@ -42,7 +42,7 @@ pub enum ItemsView<T> {
     Grouped(Vec<T>),
 }
 
-// @TODO can we make it so that each property of the State is a separate reducer
+// @TODO: get rid of this; this will be defined by the reducer itself
 #[derive(Debug, Serialize)]
 pub struct State {
     pub catalog: Loadable<ItemsView<MetaItem>, String>,
@@ -50,10 +50,8 @@ pub struct State {
 
 
 // @TODO: split into another file
-// @TODO decide whether we want to borrow actions or own them
-// @TODO decide whether we should own the state or borrow it
-// owning would allow us to keep some of the stuff within the old state rather than copying them
-// borrowing is cleaner however, as it guarantees we cannot modify it
+// @TODO borrow actions instead of owning
+// @TODO generic state here
 type ReducerFn = &'static Fn(&State, Action) -> Option<Box<State>>;
 pub struct StateContainer {
     state: Box<State>,
