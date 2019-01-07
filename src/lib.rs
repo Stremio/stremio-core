@@ -13,26 +13,36 @@ mod tests {
         let mut container = StateContainer::with_reducer(&|state, action| {
             match action {
                 Action::CatalogsReceived(Ok(resp)) => {
+                    // @TODO remove this; this is temporary
+                    if resp.metas.len() != 100 {
+                        return None
+                    }
                     return Some(Box::new(State{
                         catalog: Loadable::Ready(ItemsView::Grouped(resp.metas))
                     }));
                 },
                 // @TODO
                 Action::CatalogsReceived(Err(err)) => {
-                    return Some(Box::new(State{
-                        catalog: Loadable::Message(err.to_string())
-                    }));
+                    return None
+                    //return Some(Box::new(State{
+                    //    catalog: Loadable::Message(err.to_string())
+                    //}));
                 },
                 _ => {},
             };
             // Doesn't mutate
             None
         });
+        let addons_resp = get_addons("https://api.strem.io/addonsofficialcollection.json").unwrap();
+        for addon in addons_resp.iter() {
+            for cat in addon.manifest.catalogs.iter() {
+                container.dispatch(match get_catalogs(&addon, &cat.catalog_type, &cat.id) {
+                    Ok(resp) => { Action::CatalogsReceived(Ok(resp)) },
+                    Err(_) => { Action::CatalogsReceived(Err("request error")) },
+                });
+            }
+        }
         // @TODO figure out how to do middlewares/reducers pipeline
-        container.dispatch(match get_cinemeta() {
-            Ok(resp) => { Action::CatalogsReceived(Ok(resp)) },
-            Err(err) => { Action::CatalogsReceived(Err("request error")) },
-        });
         assert_eq!(
             match &container.get_state().catalog {
                 Loadable::Ready(ItemsView::Grouped(x)) => x.len(),
@@ -40,22 +50,14 @@ mod tests {
             },
             100,
         );
-        let addons_resp = get_addons("https://api.strem.io/addonsofficialcollection.json").unwrap();
-        let catalogs: Vec<&ManifestCatalog> = addons_resp.iter()
-            .map(|a| &a.manifest.catalogs)
-            .flatten()
-            .collect();
-        println!("{:?}", catalogs);
-        //println!("{:?}", container.get_state());
-        //println!("{}", serde_json::to_string(&state).expect("rip"));
-        //assert_eq!(2 + 2, 4);
     }
 
     fn get_addons(url: &'static str) -> reqwest::Result<Vec<AddonDescriptor>> {
         Ok(reqwest::get(url)?.json()?)
     }
-    fn get_cinemeta() -> reqwest::Result<CatalogResponse> {
-        Ok(reqwest::get("https://v3-cinemeta.strem.io/catalog/movie/top.json")?.json()?)
+    fn get_catalogs(addon: &AddonDescriptor, catalog_type: &String, id: &String) -> reqwest::Result<CatalogResponse> {
+        let url = addon.transport_url.replace("/manifest.json", &format!("/catalog/{}/{}.json", catalog_type, id));
+        Ok(reqwest::get(&url)?.json()?)
     }
 
     fn get_watchhub() -> reqwest::Result<StreamResponse> {
