@@ -38,7 +38,7 @@ pub struct AddonManifest {
     pub id: String,
     pub version: String,
     pub name: String,
-    pub description: String,
+    pub description: Option<String>,
     pub logo: Option<String>,
     pub background: Option<String>,
     // @TODO catalogs
