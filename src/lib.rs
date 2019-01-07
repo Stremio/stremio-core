@@ -10,15 +10,17 @@ mod tests {
     use super::*;
     #[test]
     fn it_works() {
-        let mut container = StateContainer::with_reducer(&|state, action| {
+        let mut container = StateContainer::with_reducer(
+            CatalogGrouped{ items: vec![] },
+            &|state, action| {
             match action {
                 Action::CatalogsReceived(Ok(resp)) => {
                     // @TODO remove this; this is temporary
                     if resp.metas.len() != 100 {
                         return None
                     }
-                    return Some(Box::new(State{
-                        catalog: Loadable::Ready(ItemsView::Grouped(resp.metas))
+                    return Some(Box::new(CatalogGrouped{
+                        items: resp.metas.to_owned()
                     }));
                 },
                 // @TODO
@@ -36,7 +38,7 @@ mod tests {
         let addons_resp = get_addons("https://api.strem.io/addonsofficialcollection.json").unwrap();
         for addon in addons_resp.iter() {
             for cat in addon.manifest.catalogs.iter() {
-                container.dispatch(match get_catalogs(&addon, &cat.catalog_type, &cat.id) {
+                container.dispatch(&match get_catalogs(&addon, &cat.catalog_type, &cat.id) {
                     Ok(resp) => { Action::CatalogsReceived(Ok(resp)) },
                     Err(_) => { Action::CatalogsReceived(Err("request error")) },
                 });
@@ -44,8 +46,9 @@ mod tests {
         }
         // @TODO figure out how to do middlewares/reducers pipeline
         assert_eq!(
-            match &container.get_state().catalog {
-                Loadable::Ready(ItemsView::Grouped(x)) => x.len(),
+            match &container.get_state().items {
+                // @TODO mathc on enums once we have them
+                x => x.len(),
                 _ => 0,
             },
             100,

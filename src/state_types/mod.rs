@@ -22,58 +22,28 @@ pub enum Loadable<T, M> {
     Message(M),
 }
 
-/*
-// @TODO: move this to FilteredCatalogs reducer
-struct Filter {
-    pub filter_type: String,
-    pub selected: Option<String>,
-}
-struct FilteredContent<T> {
-    filters: Vec<Filter>, // types + catalogs + catalog filters
-    pages: Vec<Loadable<Vec<T>, String>>
-}
-*/
-
-#[derive(Debug, Serialize)]
-pub enum ItemsView<T> {
-    // @TODO filters
-    Filtered(Vec<T>),
-    // @TODO groups
-    Grouped(Vec<T>),
-}
-
-// @TODO: get rid of this; this will be defined by the reducer itself
-#[derive(Debug, Serialize)]
-pub struct State {
-    pub catalog: Loadable<ItemsView<MetaItem>, String>,
-}
-
-
 // @TODO: split into another file
 // @TODO borrow actions instead of owning
-// @TODO generic state here
-type ReducerFn = &'static Fn(&State, Action) -> Option<Box<State>>;
-pub struct StateContainer {
-    state: Box<State>,
-    reducer: ReducerFn,
+type ReducerFn<S> = &'static Fn(&S, &Action) -> Option<Box<S>>;
+pub struct StateContainer<S: 'static> {
+    state: Box<S>,
+    reducer: ReducerFn<S>,
 }
 
-impl StateContainer {
-    pub fn with_reducer(reducer: ReducerFn) -> StateContainer {
+impl<S> StateContainer<S> {
+    pub fn with_reducer(state: S, reducer: ReducerFn<S>) -> StateContainer<S> {
         StateContainer{
-            state: Box::new(State{
-                catalog: Loadable::NotLoaded
-            }),
+            state: Box::new(state),
             reducer: reducer,
         }
     }
-    pub fn dispatch(&mut self, action: Action) {
+    pub fn dispatch(&mut self, action: &Action) {
         match (self.reducer)(&self.state, action) {
             Some(new_state) => { self.state = new_state },
             None => {},
         }
     }
-    pub fn get_state(&self) -> &State {
+    pub fn get_state(&self) -> &S {
         &self.state
     }
 }
@@ -86,3 +56,9 @@ impl StateContainer {
 //  emit: fn
 //  reactor: fn
 //  }
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct CatalogGrouped<T> {
+    // @TOOD: loadable
+    pub items: Vec<T>
+}
