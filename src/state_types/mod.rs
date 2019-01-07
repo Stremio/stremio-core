@@ -23,6 +23,17 @@ pub enum Loadable<T, M> {
     Message(M),
 }
 
+/*
+struct Filter {
+    pub filter_type: String,
+    pub selected: Option<String>,
+}
+struct FilteredContent<T> {
+    filters: Vec<Filter>, // types + catalogs + catalog filters
+    pages: Vec<Loadable<Vec<T>, String>>
+}
+*/
+
 #[derive(Debug, Serialize)]
 pub enum ItemsView<T> {
     // @TODO filters
@@ -68,3 +79,12 @@ impl StateContainer {
         &self.state
     }
 }
+
+// trait Middleware {
+//  pub dispatch
+//  @TODO better name? or the passthrough / opaque semantics should be in the construct phrase
+//  pub connect_passthrough
+//  pub connect_opaque
+//  emit: fn
+//  reactor: fn
+//  }
