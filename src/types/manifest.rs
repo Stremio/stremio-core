@@ -58,10 +58,21 @@ impl AddonManifest {
         // catalogs are a special case
         if resource_name == "catalog" {
             return self.catalogs.iter()
-                .find(|&c| c.type_name == type_name && c.id == id)
-                .is_some()
+                .any(|c| c.type_name == type_name && c.id == id)
         }
-        false
+        let resource = match self.resources.iter().find(|&res| res.name == resource_name) {
+            None => return false,
+            Some(resource) => resource
+        };
+        // types MUST contain type_name
+        // and if there is id_prefixes, our id should start with at least one of them
+        let is_types_match = resource.types
+            .as_ref().or(self.types.as_ref())
+            .map_or(false, |types| types.contains(&type_name));
+        let is_id_match = resource.id_prefixes
+            .as_ref().or(self.id_prefixes.as_ref())
+            .map_or(true, |prefixes| prefixes.iter().any(|pref| id.starts_with(pref)));
+        is_types_match && is_id_match
     }
 }
 
