@@ -25,6 +25,7 @@ impl FromStr for ManifestResource {
 }
 
 #[derive(Debug, PartialEq, Clone, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct ManifestCatalog {
     #[serde(rename = "type")]
     pub type_name: String,
@@ -34,6 +35,7 @@ pub struct ManifestCatalog {
 }
 
 #[derive(Debug, PartialEq, Clone, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct AddonManifest {
     pub id: String,
     pub version: String,
@@ -54,7 +56,7 @@ pub struct AddonManifest {
 
 impl AddonManifest {
     // @TODO: test
-    fn is_supported(&self, resource_name: String, type_name: String, id: String) -> bool {
+    pub fn is_supported(&self, resource_name: String, type_name: String, id: String) -> bool {
         // catalogs are a special case
         if resource_name == "catalog" {
             return self.catalogs.iter()

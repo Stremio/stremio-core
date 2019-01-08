@@ -56,6 +56,10 @@ mod tests {
             },
             100,
         );
+        let cinemeta = &addons_resp[0];
+        assert_eq!(cinemeta.manifest.is_supported("meta".to_string(), "movie".to_string(), "tt0234".to_string()), true);
+        assert_eq!(cinemeta.manifest.is_supported("meta".to_string(), "movie".to_string(), "somethingElse".to_string()), false);
+        assert_eq!(cinemeta.manifest.is_supported("stream".to_string(), "movie".to_string(), "tt0234".to_string()), false);
     }
 
     fn get_addons(url: &'static str) -> reqwest::Result<Vec<AddonDescriptor>> {
