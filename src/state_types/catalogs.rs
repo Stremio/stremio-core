@@ -14,9 +14,10 @@ impl<T> CatalogGrouped<T> {
     }
 }
 
-// @TODO: generic; this used to be a lambda before
-pub fn catalogs_reducer(state: &CatalogGrouped<MetaItem>, action: &Action) -> Option<Box<CatalogGrouped<MetaItem>>>
-{
+// @TODO if we want to make this generic, we have to make MetaItem/LibItem/NotifItem implement the
+// same trait
+// the event CatalogsReceived must be generic too
+pub fn catalogs_reducer(state: &CatalogGrouped<MetaItem>, action: &Action) -> Option<Box<CatalogGrouped<MetaItem>>> {
     match action {
         Action::CatalogsReceived(Ok(resp)) => {
             // @TODO ordering
