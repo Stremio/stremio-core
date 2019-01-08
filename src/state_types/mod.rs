@@ -59,6 +59,12 @@ impl<S> StateContainer<S> {
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct CatalogGrouped<T> {
-    // @TOOD: loadable
-    pub items: Vec<T>
+    pub groups: Vec<Vec<T>>
+}
+impl<T> CatalogGrouped<T> {
+    pub fn empty() -> CatalogGrouped<T> {
+        CatalogGrouped{
+            groups: vec![],
+        }
+    }
 }

@@ -13,18 +13,13 @@ mod tests {
         // @TODO: build a pipe of 
         // -> UserMiddleware -> CatalogMiddleware -> DetailMiddleware -> AddonsMiddleware ->
         // PlayerMiddleware -> LibNotifMiddleware -> join(discoverContainer, boardContainer, ...)
-        let mut container = StateContainer::with_reducer(
-            CatalogGrouped{ items: vec![] },
-            &|state, action| {
+        let mut container = StateContainer::with_reducer(CatalogGrouped::empty(), &|state, action| {
             match action {
                 Action::CatalogsReceived(Ok(resp)) => {
-                    // @TODO remove this; this is temporary
-                    if resp.metas.len() != 100 {
-                        return None
-                    }
-                    return Some(Box::new(CatalogGrouped{
-                        items: resp.metas.to_owned()
-                    }));
+                    // @TODO ordering
+                    let mut newGroups = state.groups.to_owned();
+                    newGroups.push(resp.metas.to_owned());
+                    return Some(Box::new(CatalogGrouped{ groups: newGroups }));
                 },
                 // @TODO
                 Action::CatalogsReceived(Err(err)) => {
@@ -48,18 +43,12 @@ mod tests {
             }
         }
         // @TODO figure out how to do middlewares/reducers pipeline
-        assert_eq!(
-            match &container.get_state().items {
-                // @TODO mathc on enums once we have them
-                x => x.len(),
-                _ => 0,
-            },
-            100,
-        );
-        let cinemeta = &addons_resp[0];
-        assert_eq!(cinemeta.manifest.is_supported("meta".to_string(), "movie".to_string(), "tt0234".to_string()), true);
-        assert_eq!(cinemeta.manifest.is_supported("meta".to_string(), "movie".to_string(), "somethingElse".to_string()), false);
-        assert_eq!(cinemeta.manifest.is_supported("stream".to_string(), "movie".to_string(), "tt0234".to_string()), false);
+        assert_eq!(container.get_state().groups.len(), 8);
+        // @TODO move this out; testing is_supported
+        let cinemeta_m = &addons_resp[0].manifest;
+        assert_eq!(cinemeta_m.is_supported("meta".to_string(), "movie".to_string(), "tt0234".to_string()), true);
+        assert_eq!(cinemeta_m.is_supported("meta".to_string(), "movie".to_string(), "somethingElse".to_string()), false);
+        assert_eq!(cinemeta_m.is_supported("stream".to_string(), "movie".to_string(), "tt0234".to_string()), false);
     }
 
     fn get_addons(url: &'static str) -> reqwest::Result<Vec<AddonDescriptor>> {
