@@ -3,6 +3,7 @@ use self::types::*;
 
 pub mod state_types;
 use self::state_types::*;
+
 #[cfg(test)]
 mod tests {
     use serde_json::to_string;
@@ -13,26 +14,8 @@ mod tests {
         // @TODO: build a pipe of 
         // -> UserMiddleware -> CatalogMiddleware -> DetailMiddleware -> AddonsMiddleware ->
         // PlayerMiddleware -> LibNotifMiddleware -> join(discoverContainer, boardContainer, ...)
-        let mut container = StateContainer::with_reducer(CatalogGrouped::empty(), &|state, action| {
-            match action {
-                Action::CatalogsReceived(Ok(resp)) => {
-                    // @TODO ordering
-                    let mut newGroups = state.groups.to_owned();
-                    newGroups.push(resp.metas.to_owned());
-                    return Some(Box::new(CatalogGrouped{ groups: newGroups }));
-                },
-                // @TODO
-                Action::CatalogsReceived(Err(err)) => {
-                    return None
-                    //return Some(Box::new(State{
-                    //    catalog: Loadable::Message(err.to_string())
-                    //}));
-                },
-                _ => {},
-            };
-            // Doesn't mutate
-            None
-        });
+        // @TODO CatalogsContainer that implements trait StateContainer
+        let mut container: StateContainer<CatalogGrouped<MetaItem>> = StateContainer::with_reducer(CatalogGrouped::empty(), &catalogs_reducer);
         let addons_resp = get_addons("https://api.strem.io/addonsofficialcollection.json").unwrap();
         for addon in addons_resp.iter() {
             for cat in addon.manifest.catalogs.iter() {
