@@ -32,17 +32,15 @@ mod tests {
                 }
                 // @TODO figure out how to do middlewares/reducers pipeline
                 assert_eq!(container.get_state().groups.len(), 8);
-                println!("{}", container.get_state().groups.len());
+
+                // @TODO move this out; testing is_supported
+                let cinemeta_m = &addons_resp[0].manifest;
+                assert_eq!(cinemeta_m.is_supported("meta".to_string(), "movie".to_string(), "tt0234".to_string()), true);
+                assert_eq!(cinemeta_m.is_supported("meta".to_string(), "movie".to_string(), "somethingElse".to_string()), false);
+                assert_eq!(cinemeta_m.is_supported("stream".to_string(), "movie".to_string(), "tt0234".to_string()), false);
                 future::ok(())
             });
         fut.wait().expect("get_addons_async ran fine");
-        // @TODO move this out; testing is_supported
-        /*
-        let cinemeta_m = &addons_resp[0].manifest;
-        assert_eq!(cinemeta_m.is_supported("meta".to_string(), "movie".to_string(), "tt0234".to_string()), true);
-        assert_eq!(cinemeta_m.is_supported("meta".to_string(), "movie".to_string(), "somethingElse".to_string()), false);
-        assert_eq!(cinemeta_m.is_supported("stream".to_string(), "movie".to_string(), "tt0234".to_string()), false);
-        */
     }
 
     fn get_addons_async(url: &'static str) -> impl Future<Item=Vec<AddonDescriptor>, Error=()> {
