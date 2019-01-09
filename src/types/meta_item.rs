@@ -15,4 +15,6 @@ pub struct MetaItem {
     description: Option<String>,
     release_info: Option<String>,
     // @TODO: other
+    // @TODO videos
+    // @TODO crew
 }
