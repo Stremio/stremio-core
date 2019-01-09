@@ -18,17 +18,18 @@ pub use self::meta_item::*;
 mod stream;
 pub use self::stream::*;
 
-#[derive(Deserialize, Serialize, Debug)]
+#[derive(Deserialize, Serialize, Clone, Debug)]
 pub struct CatalogResponse {
     pub metas: Vec<MetaItem>,
 }
 
+#[derive(Deserialize, Serialize, Clone, Debug)]
 pub struct MetaResponse {
     // @TODO: detailed meta item
     pub meta: MetaItem,
 }
 
-#[derive(Deserialize, Serialize, Debug)]
+#[derive(Deserialize, Serialize,Clone, Debug)]
 pub struct StreamResponse {
     pub streams: Vec<Stream>,
 }

@@ -3,11 +3,12 @@ use super::actions::*;
 use crate::types::*;
 
 #[derive(Debug, Serialize, Deserialize)]
-pub struct CatalogGrouped<T> {
-    pub groups: Vec<Vec<T>>
+pub struct CatalogGrouped {
+    // @TODO Loadable
+    pub groups: Vec<CatalogResponse>
 }
-impl<T> CatalogGrouped<T> {
-    pub fn empty() -> CatalogGrouped<T> {
+impl CatalogGrouped {
+    pub fn empty() -> CatalogGrouped {
         CatalogGrouped{
             groups: vec![],
         }
@@ -17,12 +18,12 @@ impl<T> CatalogGrouped<T> {
 // @TODO if we want to make this generic, we have to make MetaItem/LibItem/NotifItem implement the
 // same trait
 // the event CatalogsReceived must be generic too
-pub fn catalogs_reducer(state: &CatalogGrouped<MetaItem>, action: &Action) -> Option<Box<CatalogGrouped<MetaItem>>> {
+pub fn catalogs_reducer(state: &CatalogGrouped, action: &Action) -> Option<Box<CatalogGrouped>> {
     match action {
         Action::CatalogsReceived(Ok(resp)) => {
             // @TODO ordering
             let mut new_groups = state.groups.to_owned();
-            new_groups.push(resp.metas.to_owned());
+            new_groups.push(resp.to_owned());
             return Some(Box::new(CatalogGrouped{ groups: new_groups }));
         },
         // @TODO
