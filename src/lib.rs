@@ -25,8 +25,8 @@ mod tests {
                  for addon in addons_resp.iter() {
                     for cat in addon.manifest.catalogs.iter() {
                         container.dispatch(&match get_catalogs(&addon, &cat.type_name, &cat.id) {
-                            Ok(resp) => { Action::CatalogsReceived(Ok(resp)) },
-                            Err(_) => { Action::CatalogsReceived(Err("request error")) },
+                            Ok(resp) => { Action::CatalogReceived(Ok(resp)) },
+                            Err(_) => { Action::CatalogReceived(Err("request error")) },
                         });
                     }
                 }

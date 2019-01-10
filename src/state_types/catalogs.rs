@@ -20,14 +20,14 @@ impl CatalogGrouped {
 // the event CatalogsReceived must be generic too
 pub fn catalogs_reducer(state: &CatalogGrouped, action: &Action) -> Option<Box<CatalogGrouped>> {
     match action {
-        Action::CatalogsReceived(Ok(resp)) => {
+        Action::CatalogReceived(Ok(resp)) => {
             // @TODO ordering
             let mut new_groups = state.groups.to_owned();
             new_groups.push(resp.to_owned());
             return Some(Box::new(CatalogGrouped{ groups: new_groups }));
         },
         // @TODO
-        Action::CatalogsReceived(Err(err)) => {
+        Action::CatalogReceived(Err(err)) => {
             return None
             //return Some(Box::new(State{
             //    catalog: Loadable::Message(err.to_string())

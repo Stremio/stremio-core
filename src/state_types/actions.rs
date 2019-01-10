@@ -11,7 +11,7 @@ pub enum Action {
     Open,
     // @TODO those are temporary events, remove them
     LoadCatalogs,
-    CatalogsReceived(Result<CatalogResponse, &'static str>),
+    CatalogReceived(Result<CatalogResponse, &'static str>),
 }
 // Middleware actions: AddonRequest, AddonResponse
 
