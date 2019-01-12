@@ -2,6 +2,15 @@ use serde_derive::*;
 use super::actions::*;
 use crate::types::*;
 
+// @TODO this might be needed outside of here
+#[derive(Debug, Serialize)]
+pub enum Loadable<T, M> {
+    NotLoaded,
+    Loading,
+    Ready(T),
+    Message(M),
+}
+
 #[derive(Debug, Serialize, Deserialize)]
 pub struct CatalogGrouped {
     // @TODO Loadable

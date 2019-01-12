@@ -59,6 +59,9 @@ mod tests {
 
     #[test]
     fn middlewares() {
+        // @TODO take Handler trait
+        // use Environment (immutable ref) in the Handlers 
+        // construct reducers and final emit
         let chain = Chain::new(vec![
             &|action, emit| {
                 //dispatch(&Action::Open);
