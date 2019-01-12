@@ -17,18 +17,16 @@ pub enum Loadable<T, M> {
     Message(M),
 }
 
-use std::cell::RefCell;
-use std::rc::Rc;
-// flow is: dispatch -> <reactor> -> emitter
-// where the emitter feeds back into dispatch
+// flow is: dispatch -> <all reactors> -> recv
+// each reactor can further emit to all the following reactors
 type Dispatcher = Box<Fn(&Action)>;
 type Reactor = &'static Fn(&Action, &Dispatcher);
 pub struct Chain {
     dispatcher: Dispatcher,
 }
 impl Chain {
-    // @TODO: think of getting rid of the unwraps; perhaps use a Cell?
     pub fn new(reactors: Vec<Reactor>, recv: &'static Fn(&Action)) -> Chain {
+        // perhaps this might be helpful to remove the unwraps: https://www.reddit.com/r/rust/comments/64f9c8/idea_replace_with_is_it_safe/
         let mut dispatcher: Option<Dispatcher> = Some(Box::new(move |action| recv(&action)));
         for reactor in reactors.iter().rev() {
             let d_taken = dispatcher.take().unwrap();
