@@ -1,5 +1,6 @@
 use crate::types::*;
 use serde_derive::*;
+use crate::state_types::catalogs::*;
 
 #[derive(Debug, Deserialize, Serialize)]
 // @TODO some generic way to do actions; perhaps enums should be avoided
@@ -12,6 +13,7 @@ pub enum Action {
     // @TODO those are temporary events, remove them
     LoadCatalogs,
     CatalogReceived(Result<CatalogResponse, ()>),
+    CatalogGroupedNew(Box<CatalogGrouped>),
 }
 // Middleware actions: AddonRequest, AddonResponse
 

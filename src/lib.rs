@@ -67,7 +67,9 @@ mod tests {
                 emit(&Action::Open);
             }
         }
-        // @TODO take Handler trait
+
+        // @TODO test what happens with no handlers
+
         // use Environment (immutable ref) in the Handlers 
         // construct reducers and final emit
         let chain = Chain::new(vec![
