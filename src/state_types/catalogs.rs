@@ -11,7 +11,7 @@ pub enum Loadable<T, M> {
     Message(M),
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct CatalogGrouped {
     // @TODO Loadable
     pub groups: Vec<CatalogResponse>
