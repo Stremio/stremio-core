@@ -24,31 +24,28 @@ use std::rc::Rc;
 type Dispatcher = Box<Fn(&Action)>;
 type Reactor = &'static Fn(&Action, &Dispatcher);
 pub struct Chain {
-    reactors: Vec<Reactor>,
-    output: Dispatcher,
+    dispatcher: Dispatcher,
 }
 impl Chain {
-    pub fn new(reactors: Vec<Reactor>, output: Dispatcher) -> Rc<RefCell<Chain>> {
-        Rc::new(RefCell::new(Chain {
-            reactors: reactors,
-            output: output,
-        }))
+    // @TODO: think of getting rid of the unwraps; perhaps use a Cell?
+    pub fn new(reactors: Vec<Reactor>, recv: &'static Fn(&Action)) -> Chain {
+        let mut dispatcher: Option<Dispatcher> = Some(Box::new(move |action| recv(&action)));
+        // we want to iterate by value in reverse (so that we take `reactor`)
+        // .iter().rev() only does so by reference
+        let mut reactors_rev = reactors.clone();
+        reactors_rev.reverse();
+        for reactor in reactors_rev {
+            let d_taken = dispatcher.take().unwrap();
+            dispatcher = Some(Box::new(move |action| {
+                reactor(&action, &d_taken);
+                d_taken(&action);
+            }));
+        }
+        Chain {
+            dispatcher: dispatcher.unwrap(),
+        }
+    }
+    pub fn dispatch(&self, action: &Action) {
+        (self.dispatcher)(action);
     }
 }
-pub fn get_dispatcher(chain: Rc<RefCell<Chain>>, idx: usize) -> Dispatcher {
-    // @TODO var naming
-    if idx >= chain.borrow().reactors.len() {
-        let chain_ref = chain.clone();
-        return Box::new(move |action| {
-            (chain_ref.borrow().output)(&action)
-        })
-    }
-    let chain_ref = chain.clone();
-    Box::new(move |action| {
-        let chain = chain_ref.borrow();
-        let dispatcher = get_dispatcher(chain_ref.clone(), idx+1);
-        (chain.reactors[idx])(&action, &dispatcher);
-        dispatcher(action);
-    })
-}
-

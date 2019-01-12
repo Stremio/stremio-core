@@ -71,13 +71,12 @@ mod tests {
             &|action, emit| {
                 println!("middleware #3 received: {:?}", &action);
             },
-        ], Box::new(|action| {
+        ], &|action| {
             println!("final output {:?}", &action);
-        }));
+        });
 
         // this is the dispatch operation
         let action = &Action::Init;
-        let dispatcher = get_dispatcher(chain.clone(), 0);
-        dispatcher(action);
+        chain.dispatch(action);
     }
 }
