@@ -30,14 +30,11 @@ impl Chain {
     // @TODO: think of getting rid of the unwraps; perhaps use a Cell?
     pub fn new(reactors: Vec<Reactor>, recv: &'static Fn(&Action)) -> Chain {
         let mut dispatcher: Option<Dispatcher> = Some(Box::new(move |action| recv(&action)));
-        // we want to iterate by value in reverse (so that we take `reactor`)
-        // .iter().rev() only does so by reference
-        let mut reactors_rev = reactors.clone();
-        reactors_rev.reverse();
-        for reactor in reactors_rev {
+        for reactor in reactors.iter().rev() {
             let d_taken = dispatcher.take().unwrap();
+            let r_taken = *reactor;
             dispatcher = Some(Box::new(move |action| {
-                reactor(&action, &d_taken);
+                r_taken(&action, &d_taken);
                 d_taken(&action);
             }));
         }
