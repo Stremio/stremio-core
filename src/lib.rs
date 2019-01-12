@@ -58,12 +58,17 @@ mod tests {
 
     #[test]
     fn middlewares() {
+        // to make sure we can't use 'static
+        t_middlewares();
+    }
+    fn t_middlewares() {
         struct UserMiddleware{
+            id: usize,
             user: Option<String>,
         }
         impl Handler for UserMiddleware {
             fn handle(&self, action: &Action, emit: &DispatcherFn) {
-                println!("middleware #1 received: {:?}", &action);
+                println!("middleware {:?} received: {:?}", self.id, &action);
                 emit(&Action::Open);
             }
         }
@@ -73,10 +78,11 @@ mod tests {
         // use Environment (immutable ref) in the Handlers 
         // construct reducers and final emit
         let chain = Chain::new(vec![
-            &UserMiddleware{ user: None }
-        ], &|action| {
+            Box::new(UserMiddleware{ id: 1, user: None }),
+            Box::new(UserMiddleware{ id: 2, user: None }),
+        ], Box::new(|action| {
             println!("final output {:?}", &action);
-        });
+        }));
 
         // this is the dispatch operation
         let action = &Action::Init;
