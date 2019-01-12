@@ -60,6 +60,9 @@ mod tests {
             fn handle(&self, action: &Action, emit: &DispatcherFn) {
                 println!("middleware {:?} received: {:?}", self.id, &action);
                 emit(&Action::Open);
+                //fetcher("https://api.strem.io/addonscollection.json".to_owned())
+                //    .and_then(|addons| {
+                //    });
             }
         }
 
@@ -77,5 +80,18 @@ mod tests {
         // this is the dispatch operation
         let action = &Action::Init;
         chain.dispatch(action);
+    }
+
+    fn fetcher(url: String) -> impl Future<Item=Vec<u8>, Error=Box<impl Error>> {
+        match reqwest::get(&url) {
+            Err(e) => future::err(Box::new(e)),
+            Ok(resp) => {
+                let mut buf: Vec<u8> = vec![];
+                match resp.copy_to(&mut buf) {
+                    Err(e) => future::err(Box::new(e)),
+                    Ok(_) => future::ok(buf),
+                }
+            }
+        }
     }
 }
