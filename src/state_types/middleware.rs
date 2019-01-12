@@ -12,7 +12,7 @@ pub struct Chain {
 impl Chain {
     pub fn new(handlers: Vec<Box<Handler>>, recv: DispatcherFn) -> Chain {
         // perhaps this might be helpful to remove the unwraps: https://www.reddit.com/r/rust/comments/64f9c8/idea_replace_with_is_it_safe/
-        let mut dispatcher: Option<DispatcherFn> = Some(Box::new(move |action| recv(&action)));
+        let mut dispatcher = Some(recv);
         let mut handlers_rev = handlers;
         handlers_rev.reverse();
         for h_taken in handlers_rev {
