@@ -18,7 +18,6 @@ mod tests {
         // @TODO: build a pipe of 
         // -> UserMiddleware -> CatalogMiddleware -> DetailMiddleware -> AddonsMiddleware ->
         // PlayerMiddleware -> LibNotifMiddleware -> join(discoverContainer, boardContainer, ...)
-        // @TODO CatalogsContainer that implements trait StateContainer
         let mut container = Container::with_reducer(CatalogGrouped::empty(), &catalogs_reducer);
         let fut = get_addons_async("https://api.strem.io/addonsofficialcollection.json")
             .and_then(|addons_resp| {
@@ -59,21 +58,20 @@ mod tests {
 
     #[test]
     fn middlewares() {
+        struct UserMiddleware{
+            user: Option<String>,
+        }
+        impl Handler for UserMiddleware {
+            fn handle(&self, action: &Action, emit: &DispatcherFn) {
+                println!("middleware #1 received: {:?}", &action);
+                emit(&Action::Open);
+            }
+        }
         // @TODO take Handler trait
         // use Environment (immutable ref) in the Handlers 
         // construct reducers and final emit
         let chain = Chain::new(vec![
-            &|action, emit| {
-                //dispatch(&Action::Open);
-                println!("middleware #1 received: {:?}", &action);
-                emit(&Action::Open);
-            },
-            &|action, emit| {
-                println!("middleware #2 received: {:?}", &action);
-            },
-            &|action, emit| {
-                println!("middleware #3 received: {:?}", &action);
-            },
+            &UserMiddleware{ user: None }
         ], &|action| {
             println!("final output {:?}", &action);
         });
