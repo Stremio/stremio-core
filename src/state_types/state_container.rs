@@ -1,14 +1,14 @@
 use super::actions::Action;
 
 pub type ReducerFn<S> = &'static Fn(&S, &Action) -> Option<Box<S>>;
-pub struct StateContainer<S: 'static> {
+pub struct Container<S: 'static> {
     state: Box<S>,
     reducer: ReducerFn<S>,
 }
 
-impl<S> StateContainer<S> {
-    pub fn with_reducer(state: S, reducer: ReducerFn<S>) -> StateContainer<S> {
-        StateContainer{
+impl<S> Container<S> {
+    pub fn with_reducer(state: S, reducer: ReducerFn<S>) -> Container<S> {
+        Container{
             state: Box::new(state),
             reducer: reducer,
         }

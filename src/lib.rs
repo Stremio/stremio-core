@@ -19,7 +19,7 @@ mod tests {
         // -> UserMiddleware -> CatalogMiddleware -> DetailMiddleware -> AddonsMiddleware ->
         // PlayerMiddleware -> LibNotifMiddleware -> join(discoverContainer, boardContainer, ...)
         // @TODO CatalogsContainer that implements trait StateContainer
-        let mut container = StateContainer::with_reducer(CatalogGrouped::empty(), &catalogs_reducer);
+        let mut container = Container::with_reducer(CatalogGrouped::empty(), &catalogs_reducer);
         let fut = get_addons_async("https://api.strem.io/addonsofficialcollection.json")
             .and_then(|addons_resp| {
                  for addon in addons_resp.iter() {
