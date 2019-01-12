@@ -56,4 +56,28 @@ mod tests {
         let url = addon.transport_url.replace("/manifest.json", &format!("/catalog/{}/{}.json", catalog_type, id));
         Ok(reqwest::get(&url)?.json()?)
     }
+
+    #[test]
+    fn middlewares() {
+        let chain = Chain::new(vec![
+            &|action, emit| {
+                //dispatch(&Action::Open);
+                println!("middleware #1 received: {:?}", &action);
+                emit(&Action::Open);
+            },
+            &|action, emit| {
+                println!("middleware #2 received: {:?}", &action);
+            },
+            &|action, emit| {
+                println!("middleware #3 received: {:?}", &action);
+            },
+        ], Box::new(|action| {
+            println!("final output {:?}", &action);
+        }));
+
+        // this is the dispatch operation
+        let action = &Action::Init;
+        let dispatcher = get_dispatcher(chain.clone(), 0);
+        dispatcher(action);
+    }
 }
