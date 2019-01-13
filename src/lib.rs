@@ -60,12 +60,11 @@ mod tests {
         impl Handler for UserMiddleware {
             fn handle(&self, action: &Action, emit: Rc<DispatcherFn>) {
                 emit(&Action::Open);
-                let emit_async = emit.clone();
-                let fut = fetcher("https://api.strem.io/addonscollection.json".to_owned())
+                let fut = fetch("https://api.strem.io/addonscollection.json".to_owned())
                     .and_then(move |resp| {
                         // @TODO: err handling
                         let addons: Vec<AddonDescriptor> = serde_json::from_slice(&resp).unwrap();
-                        emit_async(&Action::AddonsLoaded(Box::new(addons)));
+                        emit(&Action::AddonsLoaded(Box::new(addons)));
                         future::ok(())
                     });
                 fut.wait().expect("got addons");
@@ -88,14 +87,14 @@ mod tests {
         chain.dispatch(action);
     }
 
-    fn fetcher(url: String) -> impl Future<Item=Vec<u8>, Error=Box<impl Error>> {
+    fn fetch(url: String) -> impl Future<Item=Box<Vec<u8>>, Error=Box<impl Error>> {
         match reqwest::get(&url) {
             Err(e) => future::err(Box::new(e)),
             Ok(mut resp) => {
                 let mut buf: Vec<u8> = vec![];
                 match resp.copy_to(&mut buf) {
                     Err(e) => future::err(Box::new(e)),
-                    Ok(_) => future::ok(buf),
+                    Ok(_) => future::ok(Box::new(buf)),
                 }
             }
         }
