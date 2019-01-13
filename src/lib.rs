@@ -54,6 +54,7 @@ mod tests {
         t_middlewares();
     }
     fn t_middlewares() {
+        // @TODO: test if this works
         // @TODO move this
         struct UserMiddleware<T: Environment>{
             id: usize,
@@ -62,7 +63,11 @@ mod tests {
         }
         impl<T> Handler for UserMiddleware<T> where T: Environment {
             fn handle(&self, action: &Action, emit: Rc<DispatcherFn>) {
-                emit(&Action::Open);
+                // only handle the Init
+                match action {
+                    Action::Init => {},
+                    _ => { return }
+                }
                 let fut = T::fetch_serde::<Vec<AddonDescriptor>>("https://api.strem.io/addonscollection.json".to_owned())
                     .and_then(move |addons| {
                         emit(&Action::AddonsLoaded(addons));
