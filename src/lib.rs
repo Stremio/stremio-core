@@ -13,6 +13,7 @@ mod tests {
     use std::error::Error;
     use std::rc::Rc;
     use std::marker::PhantomData;
+    use serde::de::DeserializeOwned;
 
 #[test]
     fn it_works() {
@@ -62,13 +63,12 @@ mod tests {
         impl<T> Handler for UserMiddleware<T> where T: Environment {
             fn handle(&self, action: &Action, emit: Rc<DispatcherFn>) {
                 emit(&Action::Open);
-                let fut = T::fetch("https://api.strem.io/addonscollection.json".to_owned())
-                    .and_then(move |resp| {
-                        // @TODO: err handling
-                        let addons: Vec<AddonDescriptor> = serde_json::from_slice(&resp).unwrap();
-                        emit(&Action::AddonsLoaded(Box::new(addons)));
+                let fut = T::fetch_serde::<Vec<AddonDescriptor>>("https://api.strem.io/addonscollection.json".to_owned())
+                    .and_then(move |addons| {
+                        emit(&Action::AddonsLoaded(addons));
                         future::ok(())
                     });
+                // @TODO error handling on the future, do not call .wait here
                 fut.wait().expect("got addons");
             }
         }
@@ -91,14 +91,13 @@ mod tests {
 
     struct Env();
     impl Environment for Env {
-        fn fetch(url: String) -> Box<Future<Item=Box<Vec<u8>>, Error=Box<Error>>> {
+        fn fetch_serde<T: 'static>(url: String) -> Box<Future<Item=Box<T>, Error=Box<Error>>> where T: DeserializeOwned {
             Box::new(match reqwest::get(&url) {
                 Err(e) => future::err(e.into()),
                 Ok(mut resp) => {
-                    let mut buf: Vec<u8> = vec![];
-                    match resp.copy_to(&mut buf) {
+                    match resp.json() {
                         Err(e) => future::err(e.into()),
-                        Ok(_) => future::ok(Box::new(buf)),
+                        Ok(resp) => future::ok(Box::new(resp)),
                     }
                 }
             })
