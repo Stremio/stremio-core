@@ -6,11 +6,12 @@ use self::state_types::*;
 
 #[cfg(test)]
 mod tests {
-    use serde_json::to_string;
+    use serde_json::{to_string,from_value};
     use reqwest::{Result,get};
     use super::*;
     use futures::{Future,future};
     use std::error::Error;
+    use std::rc::Rc;
 
 #[test]
     fn it_works() {
@@ -57,12 +58,17 @@ mod tests {
             user: Option<String>,
         }
         impl Handler for UserMiddleware {
-            fn handle(&self, action: &Action, emit: &DispatcherFn) {
-                println!("middleware {:?} received: {:?}", self.id, &action);
+            fn handle(&self, action: &Action, emit: Rc<DispatcherFn>) {
                 emit(&Action::Open);
-                //fetcher("https://api.strem.io/addonscollection.json".to_owned())
-                //    .and_then(|addons| {
-                //    });
+                let emit_async = emit.clone();
+                let fut = fetcher("https://api.strem.io/addonscollection.json".to_owned())
+                    .and_then(move |resp| {
+                        // @TODO: err handling
+                        let addons: Vec<AddonDescriptor> = serde_json::from_slice(&resp).unwrap();
+                        emit_async(&Action::AddonsLoaded(Box::new(addons)));
+                        future::ok(())
+                    });
+                fut.wait().expect("got addons");
             }
         }
 
@@ -85,7 +91,7 @@ mod tests {
     fn fetcher(url: String) -> impl Future<Item=Vec<u8>, Error=Box<impl Error>> {
         match reqwest::get(&url) {
             Err(e) => future::err(Box::new(e)),
-            Ok(resp) => {
+            Ok(mut resp) => {
                 let mut buf: Vec<u8> = vec![];
                 match resp.copy_to(&mut buf) {
                     Err(e) => future::err(Box::new(e)),

@@ -5,6 +5,7 @@ use super::actions::Action;
 // Each handler can further emit to all of it's following handlers
 // This is achieved by building a recursive chain of closures, each one invoking a handler, while using the previous closure (h_taken)
 // to pass the action along the chain and give the handler an ability to emit new actions from that point of the chain onward
+use std::rc::Rc;
 pub type DispatcherFn = Box<Fn(&Action)>;
 pub struct Chain {
     dispatcher: DispatcherFn,
@@ -16,9 +17,9 @@ impl Chain {
         let mut handlers_rev = handlers;
         handlers_rev.reverse();
         for h_taken in handlers_rev {
-            let d_taken = dispatcher.take().unwrap();
+            let d_taken = Rc::new(dispatcher.take().unwrap());
             dispatcher = Some(Box::new(move |action| {
-                h_taken.handle(&action, &d_taken);
+                h_taken.handle(&action, d_taken.clone());
                 d_taken(&action);
             }));
         }
@@ -32,5 +33,5 @@ impl Chain {
 }
 
 pub trait Handler {
-    fn handle(&self, action: &Action, emit: &DispatcherFn);
+    fn handle(&self, action: &Action, emit: Rc<DispatcherFn>);
 }

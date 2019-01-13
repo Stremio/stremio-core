@@ -14,6 +14,7 @@ pub enum Action {
     LoadCatalogs,
     CatalogReceived(Result<CatalogResponse, ()>),
     CatalogGroupedNew(Box<CatalogGrouped>),
+    AddonsLoaded(Box<Vec<AddonDescriptor>>),
 }
 // Middleware actions: AddonRequest, AddonResponse
 
