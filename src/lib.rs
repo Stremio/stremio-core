@@ -87,8 +87,8 @@ mod tests {
         chain.dispatch(action);
     }
 
-    fn fetch(url: String) -> impl Future<Item=Box<Vec<u8>>, Error=Box<impl Error>> {
-        match reqwest::get(&url) {
+    fn fetch(url: String) -> Box<Future<Item=Box<Vec<u8>>, Error=Box<impl Error>>> {
+        Box::new(match reqwest::get(&url) {
             Err(e) => future::err(Box::new(e)),
             Ok(mut resp) => {
                 let mut buf: Vec<u8> = vec![];
@@ -97,6 +97,6 @@ mod tests {
                     Ok(_) => future::ok(Box::new(buf)),
                 }
             }
-        }
+        })
     }
 }
