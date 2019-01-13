@@ -72,9 +72,9 @@ mod tests {
                     .and_then(move |addons| {
                         emit(&Action::AddonsLoaded(addons));
                         future::ok(())
-                    });
-                // @TODO error handling on the future, do not call .wait here
-                fut.wait().expect("got addons");
+                    })
+                    .or_else(|_| future::err(()));
+                T::exec(Box::new(fut));
             }
         }
 
@@ -106,6 +106,9 @@ mod tests {
                     }
                 }
             })
+        }
+        fn exec(fut: Box<Future<Item=(), Error=()>>) {
+            fut.wait().unwrap();
         }
     }
 }
