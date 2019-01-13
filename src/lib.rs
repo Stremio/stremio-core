@@ -12,6 +12,7 @@ mod tests {
     use futures::{Future,future};
     use std::error::Error;
     use std::rc::Rc;
+    use std::marker::PhantomData;
 
 #[test]
     fn it_works() {
@@ -53,14 +54,15 @@ mod tests {
     }
     fn t_middlewares() {
         // @TODO move this
-        struct UserMiddleware{
+        struct UserMiddleware<T: Environment>{
             id: usize,
             user: Option<String>,
+            env: PhantomData<T>,
         }
-        impl Handler for UserMiddleware {
+        impl<T> Handler for UserMiddleware<T> where T: Environment {
             fn handle(&self, action: &Action, emit: Rc<DispatcherFn>) {
                 emit(&Action::Open);
-                let fut = fetch("https://api.strem.io/addonscollection.json".to_owned())
+                let fut = T::fetch("https://api.strem.io/addonscollection.json".to_owned())
                     .and_then(move |resp| {
                         // @TODO: err handling
                         let addons: Vec<AddonDescriptor> = serde_json::from_slice(&resp).unwrap();
@@ -76,8 +78,8 @@ mod tests {
         // use Environment (immutable ref) in the Handlers 
         // construct reducers and final emit
         let chain = Chain::new(vec![
-            Box::new(UserMiddleware{ id: 1, user: None }),
-            Box::new(UserMiddleware{ id: 2, user: None }),
+            Box::new(UserMiddleware::<Env>{ id: 1, user: None, env: PhantomData }),
+            Box::new(UserMiddleware::<Env>{ id: 2, user: None, env: PhantomData }),
         ], Box::new(|action| {
             println!("final output {:?}", &action);
         }));
@@ -87,16 +89,19 @@ mod tests {
         chain.dispatch(action);
     }
 
-    fn fetch(url: String) -> Box<Future<Item=Box<Vec<u8>>, Error=Box<impl Error>>> {
-        Box::new(match reqwest::get(&url) {
-            Err(e) => future::err(Box::new(e)),
-            Ok(mut resp) => {
-                let mut buf: Vec<u8> = vec![];
-                match resp.copy_to(&mut buf) {
-                    Err(e) => future::err(Box::new(e)),
-                    Ok(_) => future::ok(Box::new(buf)),
+    struct Env();
+    impl Environment for Env {
+        fn fetch(url: String) -> Box<Future<Item=Box<Vec<u8>>, Error=Box<Error>>> {
+            Box::new(match reqwest::get(&url) {
+                Err(e) => future::err(e.into()),
+                Ok(mut resp) => {
+                    let mut buf: Vec<u8> = vec![];
+                    match resp.copy_to(&mut buf) {
+                        Err(e) => future::err(e.into()),
+                        Ok(_) => future::ok(Box::new(buf)),
+                    }
                 }
-            }
-        })
+            })
+        }
     }
 }
