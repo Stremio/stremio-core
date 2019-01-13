@@ -54,8 +54,8 @@ mod tests {
         t_middlewares();
     }
     fn t_middlewares() {
-        // @TODO: test if this works
-        // @TODO move this
+        // @TODO: assert if this works
+        // @TODO move this out
         struct UserMiddleware<T: Environment>{
             id: usize,
             user: Option<String>,
@@ -68,11 +68,15 @@ mod tests {
                     Action::Init => {},
                     _ => { return }
                 }
+                let action_owned = action.to_owned();
                 let fut = T::fetch_serde::<Vec<AddonDescriptor>>("https://api.strem.io/addonscollection.json".to_owned())
                     .and_then(move |addons| {
-                        emit(&Action::AddonsLoaded(addons));
+                        // @TODO Should we have an Into Box on action, so we can write this
+                        // as .clone().into() ?
+                        emit(&Action::WithAddons(addons, Box::new(action_owned)));
                         future::ok(())
                     })
+                    // @TODO handle the error
                     .or_else(|_| future::err(()));
                 T::exec(Box::new(fut));
             }
