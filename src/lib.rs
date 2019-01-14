@@ -24,14 +24,16 @@ mod tests {
         let addons_resp = get_addons("https://api.strem.io/addonsofficialcollection.json").unwrap();
         for addon in addons_resp.iter() {
             for cat in addon.manifest.catalogs.iter() {
+                let req_id = format!("{}/{}/{}", &addon.manifest.id, &cat.type_name, &cat.id);
+                container.dispatch(&Action::CatalogRequested(req_id.to_owned()));
                 container.dispatch(&match get_catalogs(&addon, &cat.type_name, &cat.id) {
-                    Ok(resp) => { Action::CatalogReceived(Ok(resp)) },
-                    Err(_) => { Action::CatalogReceived(Err(())) },
+                    Ok(resp) => { Action::CatalogReceived(req_id, Ok(resp)) },
+                    Err(e) => { Action::CatalogReceived(req_id, Err(e.description().to_owned())) },
                 });
             }
         }
         // @TODO figure out how to do middlewares/reducers pipeline
-        assert_eq!(container.get_state().groups.len(), 8);
+        assert_eq!(container.get_state().groups.len(), 9);
 
         // @TODO move this out; testing is_supported
         let cinemeta_m = &addons_resp[0].manifest;

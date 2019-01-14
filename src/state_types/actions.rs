@@ -1,6 +1,7 @@
 use crate::types::*;
 use serde_derive::*;
 use crate::state_types::catalogs::*;
+use std::error::Error;
 
 #[derive(Debug, Deserialize, Serialize, Clone)]
 // @TODO some generic way to do actions; perhaps enums should be avoided
@@ -12,7 +13,8 @@ pub enum Action {
     Open,
     // @TODO those are temporary events, remove them
     LoadCatalogs,
-    CatalogReceived(Result<CatalogResponse, ()>),
+    CatalogRequested(RequestId),
+    CatalogReceived(RequestId, Result<CatalogResponse, String>),
     CatalogGroupedNew(Box<CatalogGrouped>),
     AddonsLoaded(Box<Vec<AddonDescriptor>>),
     WithAddons(Box<Vec<AddonDescriptor>>, Box<Action>),
