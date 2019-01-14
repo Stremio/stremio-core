@@ -11,6 +11,7 @@ pub struct MetaItem {
     poster: Option<String>,
     background: Option<String>,
     logo: Option<String>,
+    #[serde(default)]
     popularity: f64,
     description: Option<String>,
     release_info: Option<String>,
