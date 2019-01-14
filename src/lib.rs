@@ -4,6 +4,9 @@ use self::types::*;
 pub mod state_types;
 use self::state_types::*;
 
+pub mod middlewares;
+use self::middlewares::*;
+
 #[cfg(test)]
 mod tests {
     use serde_json::{to_string,from_value};
@@ -11,9 +14,8 @@ mod tests {
     use super::*;
     use futures::{Future,future};
     use std::error::Error;
-    use std::rc::Rc;
-    use std::marker::PhantomData;
     use serde::de::DeserializeOwned;
+    use std::marker::PhantomData;
 
 #[test]
     fn it_works() {
@@ -57,40 +59,12 @@ mod tests {
     }
     fn t_middlewares() {
         // @TODO: assert if this works
-        // @TODO move this out
-        struct UserMiddleware<T: Environment>{
-            id: usize,
-            user: Option<String>,
-            env: PhantomData<T>,
-        }
-        impl<T> Handler for UserMiddleware<T> where T: Environment {
-            fn handle(&self, action: &Action, emit: Rc<DispatcherFn>) {
-                // only handle the Init
-                match action {
-                    Action::Init => {},
-                    _ => { return }
-                }
-                let action_owned = action.to_owned();
-                let fut = T::fetch_serde::<Vec<AddonDescriptor>>("https://api.strem.io/addonscollection.json".to_owned())
-                    .and_then(move |addons| {
-                        // @TODO Should we have an Into Box on action, so we can write this
-                        // as .clone().into() ?
-                        emit(&Action::WithAddons(addons, Box::new(action_owned)));
-                        future::ok(())
-                    })
-                    // @TODO handle the error
-                    .or_else(|_| future::err(()));
-                T::exec(Box::new(fut));
-            }
-        }
-
         // @TODO test what happens with no handlers
 
-        // use Environment (immutable ref) in the Handlers 
-        // construct reducers and final emit
         let chain = Chain::new(vec![
-            Box::new(UserMiddleware::<Env>{ id: 1, user: None, env: PhantomData }),
-            Box::new(UserMiddleware::<Env>{ id: 2, user: None, env: PhantomData }),
+            Box::new(UserMiddleware::<Env>{ user: None, env: PhantomData }),
+            Box::new(CatalogMiddleware::<Env>{ env: PhantomData }),
+            // @TODO: reducers multiplexer middleware
         ], Box::new(|action| {
             println!("final output {:?}", &action);
         }));
