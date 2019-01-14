@@ -40,21 +40,21 @@ pub fn catalogs_reducer(state: &CatalogGrouped, action: &Action) -> Option<Box<C
             return Some(Box::new(CatalogGrouped{ groups: new_groups }));
         },
         Action::CatalogReceived(req_id, result) => {
-            let mut new_groups = state.groups.to_owned();
             // @TODO find a more elegant way to do this
-            match new_groups.iter().position(|g| match g {
+            match state.groups.iter().position(|g| match g {
                 Loadable::Loading(r) => req_id == r,
                 _ => false,
             }) {
                 Some(idx) => {
+                    let mut new_groups = state.groups.to_owned();
                     new_groups[idx] = match result {
                         Ok(resp) => Loadable::Ready(resp.to_owned()),
                         Err(e) => Loadable::Message(e.to_owned()),
                     };
+                    return Some(Box::new(CatalogGrouped{ groups: new_groups }));
                 },
-                None => {},
+                None => { return None },
             };
-            return Some(Box::new(CatalogGrouped{ groups: new_groups }));
         },
         _ => {},
     };

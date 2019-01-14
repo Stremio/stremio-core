@@ -14,7 +14,7 @@ impl<T: Environment> CatalogMiddleware<T> {
         // @TODO: better identifier?
         let url = addon.transport_url.replace("/manifest.json", &format!("/catalog/{}/{}.json", cat.type_name, cat.id));
         emit(&Action::CatalogRequested(url.to_owned()));
-        let fut =  T::fetch_serde::<CatalogResponse>(url.to_owned())
+        let fut = T::fetch_serde::<CatalogResponse>(url.to_owned())
             .then(move |res| {
                 emit(&match res {
                     Ok(resp) => Action::CatalogReceived(url, Ok(*resp)),

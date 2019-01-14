@@ -6,8 +6,8 @@ use crate::state_types::catalogs::*;
 // @TODO some generic way to do actions; perhaps enums should be avoided
 // or alternatively we'd use a lot of From and Into in order to have separate events for the
 // middlwares
+// @TODO use named fields for some variants
 pub enum Action {
-    // @TODO args
     Init,
     Open,
     // @TODO those are temporary events, remove them
