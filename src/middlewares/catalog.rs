@@ -32,6 +32,7 @@ impl<T> Handler for CatalogMiddleware<T> where T: Environment {
             Action::WithAddons(addons, _) => {
                 for addon in addons.iter() {
                     // @TODO: extra_supported, extra_required filters
+                    // perhaps we can use is_supported
                     for cat in addon.manifest.catalogs.iter() {
                         self.for_catalog(addon, cat, emit.clone());
                     }

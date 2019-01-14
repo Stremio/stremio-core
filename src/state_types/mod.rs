@@ -1,5 +1,3 @@
-use serde_derive::*;
-
 mod state_container;
 pub use self::state_container::*;
 

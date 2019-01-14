@@ -1,16 +1,12 @@
 pub mod types;
-use self::types::*;
-
 pub mod state_types;
-use self::state_types::*;
-
 pub mod middlewares;
-use self::middlewares::*;
 
 #[cfg(test)]
 mod tests {
-    use serde_json::{to_string,from_value};
-    use reqwest::{Result,get};
+    use self::types::*;
+    use self::state_types::*;
+    use self::middlewares::*;
     use super::*;
     use futures::{Future,future};
     use std::error::Error;

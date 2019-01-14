@@ -1,7 +1,6 @@
 use crate::types::*;
 use serde_derive::*;
 use crate::state_types::catalogs::*;
-use std::error::Error;
 
 #[derive(Debug, Deserialize, Serialize, Clone)]
 // @TODO some generic way to do actions; perhaps enums should be avoided
