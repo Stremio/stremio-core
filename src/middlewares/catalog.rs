@@ -11,6 +11,7 @@ pub struct CatalogMiddleware<T: Environment>{
 impl<T: Environment> CatalogMiddleware<T> {
     fn for_catalog(&self, addon: &AddonDescriptor, cat: &ManifestCatalog, emit: Rc<DispatcherFn>) {
         // @TODO use transport
+        // @TODO: better identifier?
         let url = addon.transport_url.replace("/manifest.json", &format!("/catalog/{}/{}.json", cat.type_name, cat.id));
         emit(&Action::CatalogRequested(url.to_owned()));
         let fut =  T::fetch_serde::<CatalogResponse>(url.to_owned())
@@ -30,6 +31,7 @@ impl<T> Handler for CatalogMiddleware<T> where T: Environment {
             // @TODO: match on CatalogLoad in particular
             Action::WithAddons(addons, _) => {
                 for addon in addons.iter() {
+                    // @TODO: extra_supported, extra_required filters
                     for cat in addon.manifest.catalogs.iter() {
                         self.for_catalog(addon, cat, emit.clone());
                     }
