@@ -10,7 +10,7 @@ impl<S> Container<S> {
     pub fn with_reducer(state: S, reducer: ReducerFn<S>) -> Container<S> {
         Container{
             state: Box::new(state),
-            reducer: reducer,
+            reducer,
         }
     }
     pub fn dispatch(&mut self, action: &Action) {
