@@ -35,9 +35,9 @@ pub fn catalogs_reducer(state: &CatalogGrouped, action: &Action) -> Option<Box<C
     // @TODO: can we make this more DRY
     match action {
         Action::CatalogRequested(req_id) => {
-            let mut new_groups = state.groups.to_owned();
-            new_groups.push(Loadable::Loading(req_id.to_owned()));
-            return Some(Box::new(CatalogGrouped{ groups: new_groups }));
+            let mut groups = state.groups.to_owned();
+            groups.push(Loadable::Loading(req_id.to_owned()));
+            return Some(Box::new(CatalogGrouped{ groups }));
         },
         Action::CatalogReceived(req_id, result) => {
             // @TODO find a more elegant way to do this
@@ -46,12 +46,12 @@ pub fn catalogs_reducer(state: &CatalogGrouped, action: &Action) -> Option<Box<C
                 _ => false,
             }) {
                 Some(idx) => {
-                    let mut new_groups = state.groups.to_owned();
-                    new_groups[idx] = match result {
+                    let mut groups = state.groups.to_owned();
+                    groups[idx] = match result {
                         Ok(resp) => Loadable::Ready(resp.to_owned()),
                         Err(e) => Loadable::Message(e.to_owned()),
                     };
-                    return Some(Box::new(CatalogGrouped{ groups: new_groups }));
+                    return Some(Box::new(CatalogGrouped{ groups }));
                 },
                 None => { return None },
             };
