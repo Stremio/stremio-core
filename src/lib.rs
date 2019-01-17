@@ -70,7 +70,7 @@ mod tests {
         chain.dispatch(action);
     }
 
-    struct Env();
+    struct Env;
     impl Environment for Env {
         fn fetch_serde<T: 'static>(url: String) -> Box<Future<Item=Box<T>, Error=Box<Error>>> where T: DeserializeOwned {
             Box::new(match reqwest::get(&url) {
