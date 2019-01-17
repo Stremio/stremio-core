@@ -18,7 +18,7 @@ mod tests {
         // @TODO: build a pipe of 
         // -> UserMiddleware -> CatalogMiddleware -> DetailMiddleware -> AddonsMiddleware ->
         // PlayerMiddleware -> LibNotifMiddleware -> join(discoverContainer, boardContainer, ...)
-        let mut container = Container::with_reducer(CatalogGrouped::empty(), &catalogs_reducer);
+        let mut container = Container::with_reducer(CatalogGrouped::new_empty(), &catalogs_reducer);
         let addons_resp = get_addons("https://api.strem.io/addonsofficialcollection.json").unwrap();
         for addon in addons_resp.iter() {
             for cat in addon.manifest.catalogs.iter() {

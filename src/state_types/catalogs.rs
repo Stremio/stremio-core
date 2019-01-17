@@ -20,7 +20,7 @@ pub struct CatalogGrouped {
     pub groups: Vec<Loadable<RequestId, CatalogResponse, Message>>
 }
 impl CatalogGrouped {
-    pub fn empty() -> CatalogGrouped {
+    pub fn new_empty() -> CatalogGrouped {
         CatalogGrouped{
             groups: vec![],
         }
