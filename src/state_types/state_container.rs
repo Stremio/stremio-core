@@ -13,10 +13,13 @@ impl<S> Container<S> {
             reducer,
         }
     }
-    pub fn dispatch(&mut self, action: &Action) {
+    pub fn dispatch(&mut self, action: &Action) -> Option<&S> {
         match (self.reducer)(&self.state, action) {
-            Some(new_state) => { self.state = new_state },
-            None => {},
+            Some(new_state) => {
+                self.state = new_state;
+                Some(&self.state)
+            },
+            None => None,
         }
     }
     pub fn get_state(&self) -> &S {
