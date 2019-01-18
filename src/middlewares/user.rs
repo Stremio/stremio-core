@@ -4,6 +4,7 @@ use futures::{future, Future};
 use std::marker::PhantomData;
 use std::rc::Rc;
 
+#[derive(Default)]
 pub struct UserMiddleware<T: Environment> {
     //id: usize,
     pub user: Option<String>,
@@ -11,7 +12,7 @@ pub struct UserMiddleware<T: Environment> {
 }
 impl<T> UserMiddleware<T>
 where
-    T: Environment
+    T: Environment,
 {
     pub fn new() -> UserMiddleware<T> {
         UserMiddleware {
