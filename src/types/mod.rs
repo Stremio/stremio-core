@@ -29,7 +29,7 @@ pub struct MetaResponse {
     pub meta: MetaItem,
 }
 
-#[derive(Deserialize, Serialize,Clone, Debug)]
+#[derive(Deserialize, Serialize, Clone, Debug)]
 pub struct StreamResponse {
     pub streams: Vec<Stream>,
 }

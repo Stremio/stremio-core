@@ -8,7 +8,7 @@ pub struct Container<S: 'static> {
 
 impl<S> Container<S> {
     pub fn with_reducer(state: S, reducer: ReducerFn<S>) -> Container<S> {
-        Container{
+        Container {
             state: Box::new(state),
             reducer,
         }
@@ -18,7 +18,7 @@ impl<S> Container<S> {
             Some(new_state) => {
                 self.state = new_state;
                 Some(&self.state)
-            },
+            }
             None => None,
         }
     }
@@ -26,4 +26,3 @@ impl<S> Container<S> {
         &self.state
     }
 }
-

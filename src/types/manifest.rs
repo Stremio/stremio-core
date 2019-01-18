@@ -1,10 +1,10 @@
 use serde_derive::*;
 
 // https://serde.rs/string-or-struct.html
+use serde::de::{self, Deserialize, Deserializer, MapAccess, Visitor};
 use std::fmt;
-use std::str::FromStr;
 use std::marker::PhantomData;
-use serde::de::{self, Deserialize, Deserializer, Visitor, MapAccess};
+use std::str::FromStr;
 
 #[derive(Debug, PartialEq, Clone, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -59,22 +59,26 @@ impl AddonManifest {
     pub fn is_supported(&self, resource_name: String, type_name: String, id: String) -> bool {
         // catalogs are a special case
         if resource_name == "catalog" {
-            return self.catalogs.iter()
-                .any(|c| c.type_name == type_name && c.id == id)
+            return self
+                .catalogs
+                .iter()
+                .any(|c| c.type_name == type_name && c.id == id);
         }
         let resource = match self.resources.iter().find(|&res| res.name == resource_name) {
             None => return false,
-            Some(resource) => resource
+            Some(resource) => resource,
         };
         // types MUST contain type_name
         // and if there is id_prefixes, our id should start with at least one of them
-        let is_types_match = resource.types
-            .as_ref().or_else(|| self.types.as_ref())
-            .map_or(false, |types| {
-                types.contains(&type_name)
-            });
-        let is_id_match = resource.id_prefixes
-            .as_ref().or_else(|| self.id_prefixes.as_ref())
+        let is_types_match = resource
+            .types
+            .as_ref()
+            .or_else(|| self.types.as_ref())
+            .map_or(false, |types| types.contains(&type_name));
+        let is_id_match = resource
+            .id_prefixes
+            .as_ref()
+            .or_else(|| self.id_prefixes.as_ref())
             .map_or(true, |prefixes| {
                 prefixes.iter().any(|pref| id.starts_with(pref))
             });

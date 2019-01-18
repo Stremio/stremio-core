@@ -1,6 +1,6 @@
+use crate::state_types::catalogs::*;
 use crate::types::*;
 use serde_derive::*;
-use crate::state_types::catalogs::*;
 
 #[derive(Debug, Deserialize, Serialize, Clone)]
 // @TODO some generic way to do actions; perhaps enums should be avoided
@@ -21,5 +21,3 @@ pub enum Action {
 
 // @TODO AddonCollection, Eq on AddonCollection
 // Middleware actions: AddonRequest, AddonResponse
-
-

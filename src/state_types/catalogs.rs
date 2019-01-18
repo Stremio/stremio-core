@@ -1,6 +1,6 @@
-use serde_derive::*;
 use super::actions::*;
 use crate::types::*;
+use serde_derive::*;
 
 // @TODO this might be needed outside of here
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -17,13 +17,11 @@ pub type Message = String;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct CatalogGrouped {
-    pub groups: Vec<Loadable<RequestId, CatalogResponse, Message>>
+    pub groups: Vec<Loadable<RequestId, CatalogResponse, Message>>,
 }
 impl CatalogGrouped {
     pub fn new_empty() -> CatalogGrouped {
-        CatalogGrouped{
-            groups: vec![],
-        }
+        CatalogGrouped { groups: vec![] }
     }
 }
 
@@ -37,8 +35,8 @@ pub fn catalogs_reducer(state: &CatalogGrouped, action: &Action) -> Option<Box<C
         Action::CatalogRequested(req_id) => {
             let mut groups = state.groups.to_owned();
             groups.push(Loadable::Loading(req_id.to_owned()));
-            return Some(Box::new(CatalogGrouped{ groups }));
-        },
+            return Some(Box::new(CatalogGrouped { groups }));
+        }
         Action::CatalogReceived(req_id, result) => {
             // @TODO find a more elegant way to do this
             if let Some(idx) = state.groups.iter().position(|g| match g {
@@ -50,10 +48,10 @@ pub fn catalogs_reducer(state: &CatalogGrouped, action: &Action) -> Option<Box<C
                     Ok(resp) => Loadable::Ready(resp.to_owned()),
                     Err(e) => Loadable::Message(e.to_owned()),
                 };
-                return Some(Box::new(CatalogGrouped{ groups }));
+                return Some(Box::new(CatalogGrouped { groups }));
             };
-        },
-        _ => {},
+        }
+        _ => {}
     };
     // Doesn't mutate
     None
