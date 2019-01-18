@@ -15,8 +15,8 @@ pub enum Action {
     CatalogRequested(RequestId),
     CatalogReceived(RequestId, Result<CatalogResponse, String>),
     CatalogGroupedNew(Box<CatalogGrouped>),
-    AddonsLoaded(Box<Vec<AddonDescriptor>>),
-    WithAddons(Box<Vec<AddonDescriptor>>, Box<Action>),
+    AddonsLoaded(Vec<AddonDescriptor>),
+    WithAddons(Vec<AddonDescriptor>, Box<Action>),
 }
 
 // @TODO AddonCollection, Eq on AddonCollection
