@@ -11,7 +11,6 @@ mod tests {
     use futures::{future, Future};
     use serde::de::DeserializeOwned;
     use std::error::Error;
-    use std::marker::PhantomData;
 
     #[test]
     fn it_works() {
@@ -87,11 +86,8 @@ mod tests {
 
         let chain = Chain::new(
             vec![
-                Box::new(UserMiddleware::<Env> {
-                    user: None,
-                    env: PhantomData,
-                }),
-                Box::new(CatalogMiddleware::<Env> { env: PhantomData }),
+                Box::new(UserMiddleware::<Env>::new()),
+                Box::new(CatalogMiddleware::<Env>::new()),
                 // @TODO: reducers multiplexer middleware
             ],
             Box::new(|action| {

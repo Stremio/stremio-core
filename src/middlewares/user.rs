@@ -9,6 +9,17 @@ pub struct UserMiddleware<T: Environment> {
     pub user: Option<String>,
     pub env: PhantomData<T>,
 }
+impl<T> UserMiddleware<T>
+where
+    T: Environment
+{
+    pub fn new() -> UserMiddleware<T> {
+        UserMiddleware {
+            user: None,
+            env: PhantomData,
+        }
+    }
+}
 impl<T> Handler for UserMiddleware<T>
 where
     T: Environment,

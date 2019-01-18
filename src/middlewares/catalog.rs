@@ -8,7 +8,10 @@ pub struct CatalogMiddleware<T: Environment> {
     //id: usize,
     pub env: PhantomData<T>,
 }
-impl<T: Environment> CatalogMiddleware<T> {
+impl<T: Environment> CatalogMiddleware<T> where T: Environment {
+    pub fn new() -> CatalogMiddleware<T> {
+        CatalogMiddleware { env: PhantomData }
+    }
     fn for_catalog(&self, addon: &AddonDescriptor, cat: &ManifestCatalog, emit: Rc<DispatcherFn>) {
         // @TODO use transport
         // @TODO: better identifier?
