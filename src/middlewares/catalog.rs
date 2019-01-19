@@ -8,11 +8,8 @@ use std::rc::Rc;
 pub struct CatalogMiddleware<T: Environment> {
     pub env: PhantomData<T>,
 }
-impl<T: Environment> CatalogMiddleware<T>
-where
-    T: Environment,
-{
-    pub fn new() -> CatalogMiddleware<T> {
+impl<T: Environment> CatalogMiddleware<T> {
+    pub fn new() -> Self {
         CatalogMiddleware { env: PhantomData }
     }
     fn for_catalog(&self, addon: &AddonDescriptor, cat: &ManifestCatalog, emit: Rc<DispatcherFn>) {
@@ -33,10 +30,7 @@ where
         T::exec(Box::new(fut));
     }
 }
-impl<T> Handler for CatalogMiddleware<T>
-where
-    T: Environment,
-{
+impl<T: Environment> Handler for CatalogMiddleware<T> {
     fn handle(&self, action: &Action, emit: Rc<DispatcherFn>) {
         // @TODO: match on CatalogLoad action
         if let Action::WithAddons(addons, _) = action {

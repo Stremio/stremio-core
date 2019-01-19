@@ -10,21 +10,15 @@ pub struct UserMiddleware<T: Environment> {
     pub user: Option<String>,
     pub env: PhantomData<T>,
 }
-impl<T> UserMiddleware<T>
-where
-    T: Environment,
-{
-    pub fn new() -> UserMiddleware<T> {
+impl<T: Environment> UserMiddleware<T> {
+    pub fn new() -> Self {
         UserMiddleware {
             user: None,
             env: PhantomData,
         }
     }
 }
-impl<T> Handler for UserMiddleware<T>
-where
-    T: Environment,
-{
+impl<T: Environment> Handler for UserMiddleware<T> {
     fn handle(&self, action: &Action, emit: Rc<DispatcherFn>) {
         // only handle the Init
         // @TODO handle LoadCatalogs

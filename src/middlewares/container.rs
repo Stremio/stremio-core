@@ -9,7 +9,7 @@ pub struct ContainerMiddleware<T: 'static> {
     container: ContainerHolder<T>,
 }
 impl<T> ContainerMiddleware<T> {
-    pub fn new(id: usize, container: ContainerHolder<T>) -> ContainerMiddleware<T> {
+    pub fn new(id: usize, container: ContainerHolder<T>) -> Self {
         ContainerMiddleware { id, container }
     }
 }
