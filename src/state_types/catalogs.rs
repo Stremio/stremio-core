@@ -45,7 +45,9 @@ pub fn catalogs_reducer(state: &CatalogGrouped, action: &Action) -> Option<Box<C
             }) {
                 let mut groups = state.groups.to_owned();
                 groups[idx] = match result {
-                    Ok(resp) => Loadable::Ready(resp.to_owned()),
+                    Ok(resp) => Loadable::Ready(CatalogResponse {
+                        metas: resp.metas.iter().take(25).map(|m| m.to_owned()).collect(),
+                    }),
                     Err(e) => Loadable::Message(e.to_owned()),
                 };
                 return Some(Box::new(CatalogGrouped { groups }));
