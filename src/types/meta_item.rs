@@ -1,5 +1,15 @@
 use serde_derive::*;
 
+#[derive(PartialEq, Clone, Debug, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct MetaPreview {
+    id: String,
+    #[serde(rename = "type")]
+    item_type: String,
+    name: String,
+    poster: Option<String>,
+}
+
 // @TODO: should we derive Hash, Eq?
 #[derive(PartialEq, Clone, Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]

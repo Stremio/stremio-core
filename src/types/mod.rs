@@ -20,7 +20,7 @@ pub use self::stream::*;
 
 #[derive(Deserialize, Serialize, Clone, Debug)]
 pub struct CatalogResponse {
-    pub metas: Vec<MetaItem>,
+    pub metas: Vec<MetaPreview>,
 }
 
 #[derive(Deserialize, Serialize, Clone, Debug)]
