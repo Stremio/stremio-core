@@ -2,11 +2,13 @@ use super::actions::*;
 use crate::types::*;
 use serde_derive::*;
 
+const MAX_ITEMS: usize = 25;
+
 // @TODO this might be needed outside of here
 #[derive(Debug, Serialize, Deserialize, Clone)]
-pub enum Loadable<L, R, M> {
+pub enum Loadable<R, M> {
     NotLoaded,
-    Loading(L),
+    Loading,
     Ready(R),
     Message(M),
 }
@@ -17,7 +19,7 @@ pub type Message = String;
 
 #[derive(Debug, Default, Clone, Serialize, Deserialize)]
 pub struct CatalogGrouped {
-    pub groups: Vec<Loadable<RequestId, CatalogResponse, Message>>,
+    pub groups: Vec<(RequestId, Loadable<CatalogResponse, Message>)>,
 }
 impl CatalogGrouped {
     pub fn new() -> CatalogGrouped {
@@ -34,19 +36,21 @@ pub fn catalogs_reducer(state: &CatalogGrouped, action: &Action) -> Option<Box<C
     match action {
         Action::CatalogRequested(req_id) => {
             let mut groups = state.groups.to_owned();
-            groups.push(Loadable::Loading(req_id.to_owned()));
+            groups.push((req_id.to_owned(), Loadable::Loading));
             return Some(Box::new(CatalogGrouped { groups }));
         }
         Action::CatalogReceived(req_id, result) => {
-            // @TODO find a more elegant way to do this
-            if let Some(idx) = state.groups.iter().position(|g| match g {
-                Loadable::Loading(r) => req_id == r,
-                _ => false,
-            }) {
+            if let Some(idx) = state.groups.iter().position(|g| &g.0 == req_id) {
+                // @TODO: is there a way to do this without copying all groups
                 let mut groups = state.groups.to_owned();
-                groups[idx] = match result {
+                groups[idx].1 = match result {
                     Ok(resp) => Loadable::Ready(CatalogResponse {
-                        metas: resp.metas.iter().take(25).map(|m| m.to_owned()).collect(),
+                        metas: resp
+                            .metas
+                            .iter()
+                            .take(MAX_ITEMS)
+                            .map(|m| m.to_owned())
+                            .collect(),
                     }),
                     Err(e) => Loadable::Message(e.to_owned()),
                 };
