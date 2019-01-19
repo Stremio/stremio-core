@@ -109,10 +109,7 @@ mod tests {
 
     struct Env;
     impl Environment for Env {
-        fn fetch_serde<T: 'static>(url: &str) -> Box<Future<Item = Box<T>, Error = Box<Error>>>
-        where
-            T: DeserializeOwned,
-        {
+        fn fetch_serde<T: 'static + DeserializeOwned>(url: &str) -> EnvFuture<T> {
             Box::new(match reqwest::get(url) {
                 Err(e) => future::err(e.into()),
                 Ok(mut resp) => match resp.json() {
