@@ -92,7 +92,7 @@ mod tests {
 
     struct Env;
     impl Environment for Env {
-        fn fetch_serde<T: 'static + DeserializeOwned>(url: &str) -> EnvFuture<T> {
+        fn fetch_serde<T: 'static + DeserializeOwned>(url: &str) -> EnvFuture<Box<T>> {
             Box::new(match reqwest::get(url) {
                 Err(e) => future::err(e.into()),
                 Ok(mut resp) => match resp.json() {
@@ -104,7 +104,7 @@ mod tests {
         fn exec(fut: Box<Future<Item = (), Error = ()>>) {
             fut.wait().unwrap();
         }
-        fn get_storage<T: 'static + DeserializeOwned>(_key: &str) -> EnvFuture<T> {
+        fn get_storage<T: 'static + DeserializeOwned>(_key: &str) -> EnvFuture<Box<T>> {
             Box::new(future::err("unimplemented".into()))
         }
         fn set_storage<T: 'static + Serialize>(_key: &str, _value: &T) -> EnvFuture<()> {
