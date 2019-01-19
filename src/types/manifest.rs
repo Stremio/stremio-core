@@ -58,7 +58,7 @@ pub struct AddonManifest {
 
 impl AddonManifest {
     // @TODO: test
-    pub fn is_supported(&self, resource_name: String, type_name: String, id: String) -> bool {
+    pub fn is_supported(&self, resource_name: &str, type_name: &str, id: &str) -> bool {
         // catalogs are a special case
         if resource_name == "catalog" {
             return self
@@ -76,7 +76,7 @@ impl AddonManifest {
             .types
             .as_ref()
             .or_else(|| self.types.as_ref())
-            .map_or(false, |types| types.contains(&type_name));
+            .map_or(false, |types| types.iter().any(|t| t == type_name));
         let is_id_match = resource
             .id_prefixes
             .as_ref()

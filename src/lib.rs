@@ -35,27 +35,15 @@ mod tests {
         // @TODO move this out; testing is_supported
         let cinemeta_m = &addons_resp[0].manifest;
         assert_eq!(
-            cinemeta_m.is_supported(
-                "meta".to_string(),
-                "movie".to_string(),
-                "tt0234".to_string()
-            ),
+            cinemeta_m.is_supported("meta", "movie", "tt0234"),
             true
         );
         assert_eq!(
-            cinemeta_m.is_supported(
-                "meta".to_string(),
-                "movie".to_string(),
-                "somethingElse".to_string()
-            ),
+            cinemeta_m.is_supported("meta", "movie", "somethingElse"),
             false
         );
         assert_eq!(
-            cinemeta_m.is_supported(
-                "stream".to_string(),
-                "movie".to_string(),
-                "tt0234".to_string()
-            ),
+            cinemeta_m.is_supported("stream", "movie", "tt0234"),
             false
         );
     }
