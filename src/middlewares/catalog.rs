@@ -43,7 +43,9 @@ where
             // @TODO we might need is_catalog_supported
             // https://github.com/Stremio/stremio-aggregators/blob/master/lib/isCatalogSupported.js
             for addon in addons.iter() {
-                let viable_catalogs = addon.manifest.catalogs
+                let viable_catalogs = addon
+                    .manifest
+                    .catalogs
                     .iter()
                     .filter(|cat| cat.extra_required.is_empty());
                 for cat in viable_catalogs {

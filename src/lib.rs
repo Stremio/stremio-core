@@ -34,18 +34,12 @@ mod tests {
 
         // @TODO move this out; testing is_supported
         let cinemeta_m = &addons_resp[0].manifest;
-        assert_eq!(
-            cinemeta_m.is_supported("meta", "movie", "tt0234"),
-            true
-        );
+        assert_eq!(cinemeta_m.is_supported("meta", "movie", "tt0234"), true);
         assert_eq!(
             cinemeta_m.is_supported("meta", "movie", "somethingElse"),
             false
         );
-        assert_eq!(
-            cinemeta_m.is_supported("stream", "movie", "tt0234"),
-            false
-        );
+        assert_eq!(cinemeta_m.is_supported("stream", "movie", "tt0234"), false);
     }
 
     fn get_addons(url: &'static str) -> reqwest::Result<Vec<AddonDescriptor>> {
