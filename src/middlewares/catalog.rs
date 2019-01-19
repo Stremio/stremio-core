@@ -40,6 +40,8 @@ where
     fn handle(&self, action: &Action, emit: Rc<DispatcherFn>) {
         // @TODO: match on CatalogLoad action
         if let Action::WithAddons(addons, _) = action {
+            // @TODO we might need is_catalog_supported
+            // https://github.com/Stremio/stremio-aggregators/blob/master/lib/isCatalogSupported.js
             for addon in addons.iter() {
                 let viable_catalogs = addon.manifest.catalogs
                     .iter()
