@@ -31,6 +31,8 @@ pub struct ManifestCatalog {
     pub type_name: String,
     pub id: String,
     pub name: Option<String>,
+    #[serde(default)]
+    pub extra_required: Vec<String>,
     // @TODO: extraSupported, extraRequired, filters
 }
 

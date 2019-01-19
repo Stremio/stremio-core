@@ -96,7 +96,6 @@ mod tests {
                 // @TODO: reducers multiplexer middleware
             ],
             Box::new(move |action| {
-                //println!("final output {:?}", &action);
                 if let Action::NewState(_) = action {
                     println!("new state {:?}", container_ref.borrow().get_state());
                 }

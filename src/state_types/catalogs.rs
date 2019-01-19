@@ -13,6 +13,8 @@ pub enum Loadable<R, M> {
     Message(M),
 }
 
+// @TODO struct Group, which would have req_id, the content (Loadable) and basic info about the
+// add-on (name, version, maybe more)
 // @TODO better type for RequestId, Message
 pub type RequestId = String;
 pub type Message = String;

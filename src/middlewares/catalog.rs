@@ -38,12 +38,13 @@ where
     T: Environment,
 {
     fn handle(&self, action: &Action, emit: Rc<DispatcherFn>) {
-        // @TODO: match on CatalogLoad in particular
+        // @TODO: match on CatalogLoad action
         if let Action::WithAddons(addons, _) = action {
             for addon in addons.iter() {
-                // @TODO: extra_supported, extra_required filters
-                // perhaps we can use is_supported
-                for cat in addon.manifest.catalogs.iter() {
+                let viable_catalogs = addon.manifest.catalogs
+                    .iter()
+                    .filter(|cat| cat.extra_required.is_empty());
+                for cat in viable_catalogs {
                     self.for_catalog(addon, cat, emit.clone());
                 }
             }
