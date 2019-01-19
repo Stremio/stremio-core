@@ -35,7 +35,7 @@ where
         let action_owned = action.to_owned();
         // @TODO get rid of this hardcode
         let fut = T::fetch_serde::<Vec<AddonDescriptor>>(
-            "https://api.strem.io/addonsofficialcollection.json".to_owned(),
+            "https://api.strem.io/addonsofficialcollection.json",
         )
         .and_then(move |addons| {
             // @TODO Should we have an Into Box on action, so we can write this

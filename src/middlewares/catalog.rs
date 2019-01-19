@@ -23,7 +23,7 @@ where
             &format!("/catalog/{}/{}.json", cat.type_name, cat.id),
         );
         emit(&Action::CatalogRequested(url.to_owned()));
-        let fut = T::fetch_serde::<CatalogResponse>(url.to_owned()).then(move |res| {
+        let fut = T::fetch_serde::<CatalogResponse>(&url).then(move |res| {
             emit(&match res {
                 Ok(resp) => Action::CatalogReceived(url, Ok(*resp)),
                 Err(e) => Action::CatalogReceived(url, Err(e.description().to_owned())),
