@@ -83,15 +83,21 @@ mod tests {
     fn t_middlewares() {
         // @TODO: assert if this works
         // @TODO test what happens with no handlers
-
+        let container = std::rc::Rc::new(std::cell::RefCell::new(Container::with_reducer(CatalogGrouped::new_empty(), &catalogs_reducer)));
+        let container_ref = container.clone();
         let chain = Chain::new(
             vec![
                 Box::new(UserMiddleware::<Env>::new()),
                 Box::new(CatalogMiddleware::<Env>::new()),
+                Box::new(ContainerMiddleware::new(0, container)),
+
                 // @TODO: reducers multiplexer middleware
             ],
-            Box::new(|action| {
-                println!("final output {:?}", &action);
+            Box::new(move |action| {
+                //println!("final output {:?}", &action);
+                if let Action::NewState(_) = action {
+                    println!("new state {:?}", container_ref.borrow().get_state());
+                }
             }),
         );
 

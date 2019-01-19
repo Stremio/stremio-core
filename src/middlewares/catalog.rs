@@ -6,7 +6,6 @@ use std::rc::Rc;
 
 #[derive(Default)]
 pub struct CatalogMiddleware<T: Environment> {
-    //id: usize,
     pub env: PhantomData<T>,
 }
 impl<T: Environment> CatalogMiddleware<T>
