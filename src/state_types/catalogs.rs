@@ -15,7 +15,7 @@ pub enum Loadable<L, R, M> {
 pub type RequestId = String;
 pub type Message = String;
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Default, Clone, Serialize, Deserialize)]
 pub struct CatalogGrouped {
     pub groups: Vec<Loadable<RequestId, CatalogResponse, Message>>,
 }

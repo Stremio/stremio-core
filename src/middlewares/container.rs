@@ -4,7 +4,7 @@ use std::rc::Rc;
 
 type ContainerHolder<T> = Rc<RefCell<Container<T>>>;
 
-pub struct ContainerMiddleware<T: 'static>{
+pub struct ContainerMiddleware<T: 'static> {
     id: usize,
     container: ContainerHolder<T>,
 }
@@ -23,4 +23,3 @@ impl<T> Handler for ContainerMiddleware<T> {
         }
     }
 }
-
