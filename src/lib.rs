@@ -10,6 +10,7 @@ mod tests {
     use super::*;
     use futures::{future, Future};
     use serde::de::DeserializeOwned;
+    use serde::Serialize;
     use std::error::Error;
 
     #[test]
@@ -106,7 +107,7 @@ mod tests {
         fn get_storage<T: 'static + DeserializeOwned>(_key: &str) -> EnvFuture<T> {
             Box::new(future::err("unimplemented".into()))
         }
-        fn set_storage<T: 'static + DeserializeOwned>(_key: &str, _value: &T) -> EnvFuture<()> {
+        fn set_storage<T: 'static + Serialize>(_key: &str, _value: &T) -> EnvFuture<()> {
             Box::new(future::err("unimplemented".into()))
         }
     }
