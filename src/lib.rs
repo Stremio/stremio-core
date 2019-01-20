@@ -75,7 +75,7 @@ mod tests {
             vec![
                 Box::new(UserMiddleware::<Env>::new()),
                 Box::new(CatalogMiddleware::<Env>::new()),
-                Box::new(ContainerMiddleware::new(0, container)),
+                Box::new(ContainerHandler::new(0, container)),
                 // @TODO: reducers multiplexer middleware
             ],
             Box::new(move |action| {

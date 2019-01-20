@@ -4,16 +4,16 @@ use std::rc::Rc;
 
 type ContainerHolder<T> = Rc<RefCell<Container<T>>>;
 
-pub struct ContainerMiddleware<T: 'static> {
+pub struct ContainerHandler<T: 'static> {
     id: usize,
     container: ContainerHolder<T>,
 }
-impl<T> ContainerMiddleware<T> {
+impl<T> ContainerHandler<T> {
     pub fn new(id: usize, container: ContainerHolder<T>) -> Self {
-        ContainerMiddleware { id, container }
+        ContainerHandler { id, container }
     }
 }
-impl<T> Handler for ContainerMiddleware<T> {
+impl<T> Handler for ContainerHandler<T> {
     fn handle(&self, action: &Action, emit: Rc<DispatcherFn>) {
         // because our handler chain will not allow an action to be dispatched recursively to
         // ourselves, this borrow_mut() is safe

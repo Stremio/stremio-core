@@ -12,3 +12,6 @@ pub use self::middleware::*;
 
 mod environment;
 pub use self::environment::*;
+
+mod container_handler;
+pub use self::container_handler::*;

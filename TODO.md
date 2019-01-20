@@ -39,18 +39,18 @@
 * `AddonHTTPTransport<E: Environment>`
 * consider splitting Environment into Storage and Fetcher
 * load/unload dynamics and more things other than Catalog: Detail, StreamSelect
+* graph everything, the entire stremio architecture, including core add-ons and such
 ----
 * Stream: new SPEC; we should have ways to filter streams too (e.g. HTTP + directly playable only)
 * Trait for meta item and lib item; MetaPreview, MetaItem, MetaDetailed
 * CatalogsGrouped to receive some info about the addon
-* implement CatalogsFiltered
+* implement CatalogsFiltered; CatalogsFilteredPreview
 * start implementing libitem/notifitem addon
 * since a lot of things are asynchronous, perhaps we should have a guard; the things to think about are: addon set hash, addon ID, user ID, etc.
 * stuff to look for to be re-implemented: syncer, libitem/notifitem addons, discover ctrl, board ctrl, detail ctrl
 * complex async pieces of logic: open, detectFromURL, openMedia 
 * opening a file (protocol add-ons to be considered)
 * https://blog.cloudflare.com/cloudflare-workers-as-a-serverless-rust-platform/
-* chart everything, the entire stremio architecture, including core add-ons and such
 * crates: stremio-web-environment (only the Environment), stremio-state-ng-web (general API that is exported to JS via bindgen)
 * we should make it so that if a session is expired, we go to the login screen; this should be in the app
 * think of how to do all edge cases in the user, such as pre-installing add-ons
@@ -63,6 +63,7 @@
 * https://github.com/woboq/qmetaobject-rs based UI; needs reqwest (or someting else) async requests
 * libitem/notifitem: https://developers.cloudflare.com/workers/kv/ https://blog.cloudflare.com/cloudflare-workers-as-a-serverless-rust-platform/
 * think of whether this could be used with the Kodi codebase to make stremio embedded
+* all the cinemeta improvements this relies on: e.g. behaviorHints.isNotReleased will affect the Stream view
 
 UserMiddleware
 CatalogsMiddleware
