@@ -32,15 +32,15 @@
 * environment: storage err handling
 
 ## TODO
-* environment: `fetch_serde` should support HTTP headers: pairs?
+* Stream: new SPEC; we should have ways to filter streams too (e.g. HTTP + directly playable only)
+* environment: `fetch_serde` should support HTTP headers: pairs?; also, how to send the body?
 * implement UserMiddleware; think of how (or not to?) to mock storage in the test
 * basic state: Catalog, Detail; and all the possible inner states (describe the structures); StreamSelect
 * tests: Chain, Container, individual middlewares, individual types
-* `AddonHTTPTransport<E: Environment>`
+
+* construct `AddonHTTPTransport<E: Environment>` and give it to the interested middlewares
 * consider splitting Environment into Storage and Fetcher; and maybe take AddonsClient in
 * load/unload dynamics and more things other than Catalog: Detail, StreamSelect
-* Stream: new SPEC; we should have ways to filter streams too (e.g. HTTP + directly playable only)
-----
 * Trait for meta item and lib item; MetaPreview, MetaItem, MetaDetailed
 * CatalogsGrouped to receive some info about the addon
 * implement CatalogsFiltered; CatalogsFilteredPreview
@@ -67,12 +67,6 @@
 * all the cinemeta improvements this relies on: e.g. behaviorHints.isNotReleased will affect the Stream view
 * graph everything, the entire stremio architecture, including core add-ons and such
 
-UserMiddleware
-CatalogsMiddleware
-DetailMiddleware
-AddonsMiddleware
-AnalyticsMiddleware
-PlayerJSMiddleware
 
 example pipeline:
 LoadCatalogs => this will change the state of the `catalogs` to `Loading`
