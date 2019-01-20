@@ -30,9 +30,11 @@
 * Environment: basic storage
 * Optimization: ability to subscribe with a whitelist; for actions not matching the whitelist, subscribe only to the *occurrence*, so that we can manually `get_state()` if needed at the end of the tick (`setImmediate`)
 * environment: storage err handling
+* SPEC: decide if a separate resource will be used for library/notifications; a separate return type (.libItems rather than .metas) is a must; DONE: seems it must be a catalog, otherwise it breaks the semantics of manifest.catalogs; we will restrict it via extraRequired
 
 ## TODO
 * Stream: new SPEC; we should have ways to filter streams too (e.g. HTTP + directly playable only)
+* error handling: consider making an enum that will hold JsValue or other error types; see https://www.youtube.com/watch?v=B5xYBrxVSiE 
 * environment: `fetch_serde` should support HTTP headers: pairs?; also, how to send the body?
 * implement UserMiddleware; think of how (or not to?) to mock storage in the test
 * basic state: Catalog, Detail; and all the possible inner states (describe the structures); StreamSelect
@@ -41,6 +43,7 @@
 * construct `AddonHTTPTransport<E: Environment>` and give it to the interested middlewares
 * consider splitting Environment into Storage and Fetcher; and maybe take AddonsClient in
 * load/unload dynamics and more things other than Catalog: Detail, StreamSelect
+* consider a Trait for the Load family of actions that will return an AddonRequest representation of the form `(resource, type_name, id, extra)` where each can be None (meaning all) or a concrete value (Some())
 * Trait for meta item and lib item; MetaPreview, MetaItem, MetaDetailed
 * CatalogsGrouped to receive some info about the addon
 * implement CatalogsFiltered; CatalogsFilteredPreview
@@ -66,7 +69,7 @@
 * think of whether this could be used with the Kodi codebase to make stremio embedded
 * all the cinemeta improvements this relies on: e.g. behaviorHints.isNotReleased will affect the Stream view
 * graph everything, the entire stremio architecture, including core add-ons and such
-
+* ensure that every time a network error happens, it's properly reflected in the state; and the UI should allow to "Retry" each such operation
 
 example pipeline:
 LoadCatalogs => this will change the state of the `catalogs` to `Loading`
@@ -75,11 +78,6 @@ many AddonRequest(addon, 'catalog')
 many AddonResponse(addon, 'catalog', resp) => each one would update the catalogs state
 
 ---------
-
-// -> UserMiddleware -> CatalogMiddleware -> DetailMiddleware -> AddonsMiddleware ->
-// PlayerMiddleware -> LibNotifMiddleware -> AnalyticsMiddleware -> join(discoverContainer, boardContainer, ...)
-
-// perhaps insert HTTPMiddleware at the end
 
 ## Universe actions: 
 UserDataLoad
@@ -173,4 +171,81 @@ LoadCatalog -> (user middleware does this) WithUser(user, addons, LoadCatalog) -
 
 The reducer, upon a LoadCatalog, should .clone() the action into it's state, and then discard any AddonRequest/AddonResponse that doesn't match that
 
+# Routes
 
+Presumes the following reducers
+
+0: CatalogGrouped (for board
+1: CatalogFilteredWithPreview (for discover); @TODO: this might be two separate reducers: CatalogFiltered, CatalogFilteredPreview
+2: CatalogGrouped (for search)
+3: Detail
+4: Streams
+5: CatalogFiltered (for library)
+6: CatalogGrouped (for notifications)
+7: AddonCatalog
+8: PlayerView
+9: SettingsView
+
+@TODO figure reload/force policies for all of these; for now, we'll just always load everything (naively)
+
+### ?apiURL
+
+overrides the API URL
+this will simply tweak the Environment
+
+### ?addonURL=url
+
+prompts the user to install an add-on or a collection
+this should dispatch Actions::OpenAddonURL
+
+### ?addonURLForce=Url
+
+force adds the given add-on or collection of add-ons; dispatch Actions::InstallAddonURL
+@TODO consider the security aspect of this
+
+### /board
+
+Dispatch LoadCatalogGrouped(0) -> AddonAggrRequest("catalog", *, *, {})
+
+### /discover/:type/:catalogID/:filters?
+
+Dispatch LoadCatalogFiltered(1, type, catalogID, filtered) -> AddonAggrRequest("catalog", type, catalogID, filters)
+
+@TODO routing problem: if /discover is opened, we need to auto-select some (type, catalog, filters); we might just hardcode Cinemeta's top
+
+### /detail/:type/:id/:videoID?
+
+Dispatch LoadDetail(3, type, id) -> AddonAggrRequest("meta", type, id)
+if videoID, dispatch LoadStreams(4, type, id, videoID) -> AddonAggrRequest("stream", type, videoID) ; this also needs to read the last selected stream from storage
+
+@TODO we also need a request to load the library item; unless that's incorporated into the "meta" responses ;) ; we can do the same with notifications
+
+### /library/:type
+
+Dispatch LoadCatalogFiltered(5, type, "library", {}) -> AddonAggrRequest("catalogs", type, "library", { library: 1 })
+
+@TODO decide if a separate resource will be used for the library/notifications
+
+### Notifications (not a route, but a popover)
+
+Dispatch LoadCatalogGrouped(6) -> AddonAggrRequest("catalog", *, *, { notifs: 1 })
+
+### /addons/:category/:type?
+
+Category is Official, ThirdParty, Installed
+
+Dispatch LoadAddonCatalog(7, category, type) -> middleware loads latest collection of the given category and filters by type 
+
+### /player/:type/:id/:videoId/:streamSerialized
+
+Dispatch LoadPlayer(8, type, id, videoId, streamSerialized) -> this will trigger many things, one of them AddonAggrRequest("meta", type, id)
+	another one will be to load the libitem/notifications
+	the player middleware should also keep an internal state of what the player is doing, and persist libitem/last played stream
+
+### /calendar
+
+@TODO
+
+### /intro
+
+@TODO
