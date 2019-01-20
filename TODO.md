@@ -209,7 +209,7 @@ Dispatch LoadCatalogGrouped(0) -> AddonAggrReq(Catalogs())
 
 ### /discover/:type/:addonID/:catalogID/:filters?
 
-Dispatch LoadCatalogFiltered(1, type, catalogID, filtered) -> AddonAggrReq(OfResource("catalog", type, catalogID, filters)) but match it only against the addon with addonID
+Dispatch LoadCatalogFiltered(1, type, addonID, catalogID, filtered) -> AddonAggrReq(OfResource("catalog", type, catalogID, filters)) but match it only against the addon with addonID
 
 @TODO routing problem: if /discover is opened, we need to auto-select some (type, catalog, filters); we might just hardcode Cinemeta's top
 
@@ -222,7 +222,7 @@ if videoID, dispatch LoadStreams(4, type, id, videoID) -> AddonAggrReq(OfResourc
 
 ### /library/:type
 
-Dispatch LoadCatalogFiltered(5, type, "library", {}) -> AddonAggrReq(OfResource("catalogs", type, "library", { library: 1 })) but match against library addon
+Dispatch LoadCatalogFiltered(5, type, "org.stremio.library", "library", { library: 1 }) -> AddonAggrReq(OfResource("catalogs", type, "library", { library: 1 })) but match against library addon
 
 @TODO decide if a separate resource will be used for the library/notifications
 
