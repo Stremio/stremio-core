@@ -43,7 +43,7 @@
 * construct `AddonHTTPTransport<E: Environment>` and give it to the interested middlewares
 * consider splitting Environment into Storage and Fetcher; and maybe take AddonsClient in
 * load/unload dynamics and more things other than Catalog: Detail, StreamSelect
-* consider a Trait for the Load family of actions that will return an AddonRequest representation of the form `(resource, type_name, id, extra)` where each can be None (meaning all) or a concrete value (Some())
+* consider a Trait for the Load family of actions that will return an AddonAggrReq(OfResouce(resource, type, id, extra)) or AddonAggrReq(Catalogs(extra))
 * Trait for meta item and lib item; MetaPreview, MetaItem, MetaDetailed
 * CatalogsGrouped to receive some info about the addon
 * implement CatalogsFiltered; CatalogsFilteredPreview
@@ -205,30 +205,30 @@ force adds the given add-on or collection of add-ons; dispatch Actions::InstallA
 
 ### /board
 
-Dispatch LoadCatalogGrouped(0) -> AddonAggrRequest("catalog", *, *, {})
+Dispatch LoadCatalogGrouped(0) -> AddonAggrReq(Catalogs())
 
-### /discover/:type/:catalogID/:filters?
+### /discover/:type/:addonID/:catalogID/:filters?
 
-Dispatch LoadCatalogFiltered(1, type, catalogID, filtered) -> AddonAggrRequest("catalog", type, catalogID, filters)
+Dispatch LoadCatalogFiltered(1, type, catalogID, filtered) -> AddonAggrReq(OfResource("catalog", type, catalogID, filters)) but match it only against the addon with addonID
 
 @TODO routing problem: if /discover is opened, we need to auto-select some (type, catalog, filters); we might just hardcode Cinemeta's top
 
 ### /detail/:type/:id/:videoID?
 
-Dispatch LoadDetail(3, type, id) -> AddonAggrRequest("meta", type, id)
-if videoID, dispatch LoadStreams(4, type, id, videoID) -> AddonAggrRequest("stream", type, videoID) ; this also needs to read the last selected stream from storage
+Dispatch LoadDetail(3, type, id) -> AddonAggrReq(OfResource("meta", type, id))
+if videoID, dispatch LoadStreams(4, type, id, videoID) -> AddonAggrReq(OfResource("stream", type, videoID)) ; this also needs to read the last selected stream from storage
 
 @TODO we also need a request to load the library item; unless that's incorporated into the "meta" responses ;) ; we can do the same with notifications
 
 ### /library/:type
 
-Dispatch LoadCatalogFiltered(5, type, "library", {}) -> AddonAggrRequest("catalogs", type, "library", { library: 1 })
+Dispatch LoadCatalogFiltered(5, type, "library", {}) -> AddonAggrReq(OfResource("catalogs", type, "library", { library: 1 })) but match against library addon
 
 @TODO decide if a separate resource will be used for the library/notifications
 
 ### Notifications (not a route, but a popover)
 
-Dispatch LoadCatalogGrouped(6) -> AddonAggrRequest("catalog", *, *, { notifs: 1 })
+Dispatch LoadCatalogGrouped(6) -> AddonAggrReq(Catalogs({ notifs: 1 }))
 
 ### /addons/:category/:type?
 
@@ -238,7 +238,7 @@ Dispatch LoadAddonCatalog(7, category, type) -> middleware loads latest collecti
 
 ### /player/:type/:id/:videoId/:streamSerialized
 
-Dispatch LoadPlayer(8, type, id, videoId, streamSerialized) -> this will trigger many things, one of them AddonAggrRequest("meta", type, id)
+Dispatch LoadPlayer(8, type, id, videoId, streamSerialized) -> this will trigger many things, one of them AddonAggrReq(OfResource("meta", type, id))
 	another one will be to load the libitem/notifications
 	the player middleware should also keep an internal state of what the player is doing, and persist libitem/last played stream
 
@@ -247,5 +247,9 @@ Dispatch LoadPlayer(8, type, id, videoId, streamSerialized) -> this will trigger
 @TODO
 
 ### /intro
+
+@TODO
+
+### /settings
 
 @TODO
