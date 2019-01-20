@@ -35,10 +35,11 @@
 ## TODO
 * Stream: new SPEC; we should have ways to filter streams too (e.g. HTTP + directly playable only)
 * error handling: consider making an enum that will hold JsValue or other error types; see https://www.youtube.com/watch?v=B5xYBrxVSiE 
-* environment: `fetch_serde` should support HTTP headers: pairs?; also, how to send the body?
+* environment: `fetch_serde` should support advanced HTTP requests: https://developer.mozilla.org/en-US/docs/Web/API/Request/Request
 * implement UserMiddleware; think of how (or not to?) to mock storage in the test
 * basic state: Catalog, Detail; and all the possible inner states (describe the structures); StreamSelect
 * tests: Chain, Container, individual middlewares, individual types
+* https://github.com/Stremio/stremio-aggregators/blob/master/lib/isCatalogSupported.js
 
 * construct `AddonHTTPTransport<E: Environment>` and give it to the interested middlewares
 * consider splitting Environment into Storage and Fetcher; and maybe take AddonsClient in
@@ -218,7 +219,7 @@ Dispatch LoadCatalogsFiltered(1, type, addonID, catalogID, filtered) -> AddonAgg
 Dispatch LoadDetail(3, type, id) -> AddonAggrReq(OfResource("meta", type, id))
 if videoID, dispatch LoadStreams(4, type, id, videoID) -> AddonAggrReq(OfResource("stream", type, videoID)) ; this also needs to read the last selected stream from storage
 
-@TODO we also need a request to load the library item; unless that's incorporated into the "meta" responses ;) ; we can do the same with notifications
+The Library item and the notifications will be loaded through the AddonAggrReq(OfResource("meta", type, id)); that will match the library/notif addon, and return the results
 
 ### /library/:type
 
