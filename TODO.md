@@ -37,7 +37,7 @@
 * tests: Chain, Container, individual middlewares, individual types
 * basic state: Catalog, Detail; and all the possible inner states (describe the structures)
 * `AddonHTTPTransport<E: Environment>`
-* consider splitting Environment into Storage and Fetcher
+* consider splitting Environment into Storage and Fetcher; and maybe take AddonsClient in
 * load/unload dynamics and more things other than Catalog: Detail, StreamSelect
 * graph everything, the entire stremio architecture, including core add-ons and such
 ----
@@ -53,7 +53,7 @@
 * https://blog.cloudflare.com/cloudflare-workers-as-a-serverless-rust-platform/
 * crates: stremio-web-environment (only the Environment), stremio-state-ng-web (general API that is exported to JS via bindgen)
 * we should make it so that if a session is expired, we go to the login screen; this should be in the app
-* think of how to do all edge cases in the user, such as pre-installing add-ons
+* think of how to do all edge cases in the user, such as pre-installing add-ons (implicit input)
 * behaviorHints - pair (key, val)?
 * separate crates: types, `state_types`
 * when saving the last stream, save the whole object but compressed
@@ -155,7 +155,7 @@ all/most player actions should carry context in some way (stream, or at least st
 this middleware uses Storage to persist PlayerPreferences (volume, subtitles, subtitles size, etc.); we must keep preferences for last N watched `(item_id, video_id)`
 the algo to do this is simple; when we play something, we bump it to the end of the array; when we need to add something, we add to the end and pop from the middle (if `len>N`)
 This should save the selected `(video_id, stream)` for the given `item_id`), when we start playing
-we also need to load `meta` to be able to `ProposeWatchNext`
+we also need to load `meta` to be able to `ProposeWatchNext` (meant to be handled by asking the user or by implicit input)
 
 ## Analytics middleware:
 

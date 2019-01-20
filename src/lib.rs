@@ -104,7 +104,7 @@ mod tests {
         fn exec(fut: Box<Future<Item = (), Error = ()>>) {
             fut.wait().unwrap();
         }
-        fn get_storage<T: 'static + DeserializeOwned>(_key: &str) -> EnvFuture<Box<T>> {
+        fn get_storage<T: 'static + DeserializeOwned>(_key: &str) -> EnvFuture<Box<Option<T>>> {
             Box::new(future::err("unimplemented".into()))
         }
         fn set_storage<T: 'static + Serialize>(_key: &str, _value: &T) -> EnvFuture<()> {
