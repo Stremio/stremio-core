@@ -29,25 +29,26 @@
 * find the reason for calls being slow: `get_state` takes ~50ms; optimized it by reducing the amount of data
 * Environment: basic storage
 * Optimization: ability to subscribe with a whitelist; for actions not matching the whitelist, subscribe only to the *occurrence*, so that we can manually `get_state()` if needed at the end of the tick (`setImmediate`)
+* environment: storage err handling
 
 ## TODO
-* environment: storage err handling
 * environment: `fetch_serde` should support HTTP headers: pairs?
 * implement UserMiddleware; think of how (or not to?) to mock storage in the test
+* basic state: Catalog, Detail; and all the possible inner states (describe the structures); StreamSelect
 * tests: Chain, Container, individual middlewares, individual types
-* basic state: Catalog, Detail; and all the possible inner states (describe the structures)
 * `AddonHTTPTransport<E: Environment>`
 * consider splitting Environment into Storage and Fetcher; and maybe take AddonsClient in
 * load/unload dynamics and more things other than Catalog: Detail, StreamSelect
-* graph everything, the entire stremio architecture, including core add-ons and such
-----
 * Stream: new SPEC; we should have ways to filter streams too (e.g. HTTP + directly playable only)
+----
 * Trait for meta item and lib item; MetaPreview, MetaItem, MetaDetailed
 * CatalogsGrouped to receive some info about the addon
 * implement CatalogsFiltered; CatalogsFilteredPreview
 * start implementing libitem/notifitem addon
 * since a lot of things are asynchronous, perhaps we should have a guard; the things to think about are: addon set hash, addon ID, user ID, etc.
 * stuff to look for to be re-implemented: syncer, libitem/notifitem addons, discover ctrl, board ctrl, detail ctrl
+* environment: consider allowing a dynamic instance, esp for storage
+* environment: the JS side should (1) TRY to load the WASM and (2) TRY to sanity-check the environment; if it doesn't succeed, it should show an error to the user
 * complex async pieces of logic: open, detectFromURL, openMedia 
 * opening a file (protocol add-ons to be considered)
 * https://blog.cloudflare.com/cloudflare-workers-as-a-serverless-rust-platform/
@@ -64,6 +65,7 @@
 * libitem/notifitem: https://developers.cloudflare.com/workers/kv/ https://blog.cloudflare.com/cloudflare-workers-as-a-serverless-rust-platform/
 * think of whether this could be used with the Kodi codebase to make stremio embedded
 * all the cinemeta improvements this relies on: e.g. behaviorHints.isNotReleased will affect the Stream view
+* graph everything, the entire stremio architecture, including core add-ons and such
 
 UserMiddleware
 CatalogsMiddleware
@@ -73,7 +75,7 @@ AnalyticsMiddleware
 PlayerJSMiddleware
 
 example pipeline:
-Load('catalog') => this will change the state of the `catalogs` to `Loading`
+LoadCatalogs => this will change the state of the `catalogs` to `Loading`
 LoadFromAddons(addons, 'catalog') => emitted from the UserMiddleware
 many AddonRequest(addon, 'catalog')
 many AddonResponse(addon, 'catalog', resp) => each one would update the catalogs state
