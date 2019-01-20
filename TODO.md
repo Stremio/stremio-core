@@ -25,7 +25,7 @@
 * clippy
 * reducer multiplexer handler; or just a single StateContainer wrapper, and then the user must construct a compound state container themselves; also, we have to remove the NewState actions with the full state, and make it only a notification; .dispatch of the container should return boolean whether is changed
 * state container will have IDs so that Actions can target them
-* CatalogGrouped: we only wanna render the first ~30
+* CatalogsGrouped: we only wanna render the first ~30
 * find the reason for calls being slow: `get_state` takes ~50ms; optimized it by reducing the amount of data
 * Environment: basic storage
 * Optimization: ability to subscribe with a whitelist; for actions not matching the whitelist, subscribe only to the *occurrence*, so that we can manually `get_state()` if needed at the end of the tick (`setImmediate`)
@@ -43,7 +43,7 @@
 * construct `AddonHTTPTransport<E: Environment>` and give it to the interested middlewares
 * consider splitting Environment into Storage and Fetcher; and maybe take AddonsClient in
 * load/unload dynamics and more things other than Catalog: Detail, StreamSelect
-* consider a Trait for the Load family of actions that will return an AddonAggrReq(OfResouce(resource, type, id, extra)) or AddonAggrReq(Catalogs(extra))
+* consider a Trait for the Load family of actions that will return an AddonAggrReq(OfResouce(resource, type, id, extra)) or AddonAggrReq(Catalogs(extra)); consider also OfAddon (for CatalogsFiltered)
 * Trait for meta item and lib item; MetaPreview, MetaItem, MetaDetailed
 * CatalogsGrouped to receive some info about the addon
 * implement CatalogsFiltered; CatalogsFilteredPreview
@@ -175,13 +175,13 @@ The reducer, upon a LoadCatalog, should .clone() the action into it's state, and
 
 Presumes the following reducers
 
-0: CatalogGrouped (for board
-1: CatalogFilteredWithPreview (for discover); @TODO: this might be two separate reducers: CatalogFiltered, CatalogFilteredPreview
-2: CatalogGrouped (for search)
+0: CatalogsGrouped (for board
+1: CatalogsFilteredWithPreview (for discover); @TODO: this might be two separate reducers: CatalogsFiltered, CatalogsFilteredPreview
+2: CatalogsGrouped (for search)
 3: Detail
 4: Streams
-5: CatalogFiltered (for library)
-6: CatalogGrouped (for notifications)
+5: CatalogsFiltered (for library)
+6: CatalogsGrouped (for notifications)
 7: AddonCatalog
 8: PlayerView
 9: SettingsView
@@ -205,11 +205,11 @@ force adds the given add-on or collection of add-ons; dispatch Actions::InstallA
 
 ### /board
 
-Dispatch LoadCatalogGrouped(0) -> AddonAggrReq(Catalogs())
+Dispatch LoadCatalogsGrouped(0) -> AddonAggrReq(Catalogs())
 
 ### /discover/:type/:addonID/:catalogID/:filters?
 
-Dispatch LoadCatalogFiltered(1, type, addonID, catalogID, filtered) -> AddonAggrReq(OfResource("catalog", type, catalogID, filters)) but match it only against the addon with addonID
+Dispatch LoadCatalogsFiltered(1, type, addonID, catalogID, filtered) -> AddonAggrReq(OfResource("catalog", type, catalogID, filters)) but match it only against the addon with addonID
 
 @TODO routing problem: if /discover is opened, we need to auto-select some (type, catalog, filters); we might just hardcode Cinemeta's top
 
@@ -222,13 +222,11 @@ if videoID, dispatch LoadStreams(4, type, id, videoID) -> AddonAggrReq(OfResourc
 
 ### /library/:type
 
-Dispatch LoadCatalogFiltered(5, type, "org.stremio.library", "library", { library: 1 }) -> AddonAggrReq(OfResource("catalogs", type, "library", { library: 1 })) but match against library addon
-
-@TODO decide if a separate resource will be used for the library/notifications
+Dispatch LoadCatalogsFiltered(5, type, "org.stremio.library", "library", { library: 1 }) -> AddonAggrReq(OfResource("catalogs", type, "library", { library: 1 })) but match against library addon
 
 ### Notifications (not a route, but a popover)
 
-Dispatch LoadCatalogGrouped(6) -> AddonAggrReq(Catalogs({ notifs: 1 }))
+Dispatch LoadCatalogsGrouped(6) -> AddonAggrReq(Catalogs({ notifs: 1 }))
 
 ### /addons/:category/:type?
 
