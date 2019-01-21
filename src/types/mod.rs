@@ -8,7 +8,6 @@ pub use self::manifest::*;
 pub struct AddonDescriptor {
     pub manifest: AddonManifest,
     pub transport_url: String,
-    pub transport_name: String,
     // @TODO flags
 }
 
