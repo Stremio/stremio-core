@@ -31,20 +31,21 @@
 * Optimization: ability to subscribe with a whitelist; for actions not matching the whitelist, subscribe only to the *occurrence*, so that we can manually `get_state()` if needed at the end of the tick (`setImmediate`)
 * environment: storage err handling
 * SPEC: decide if a separate resource will be used for library/notifications; a separate return type (.libItems rather than .metas) is a must; DONE: seems it must be a catalog, otherwise it breaks the semantics of manifest.catalogs; we will restrict it via extraRequired
+* Stream: new SPEC; we should have ways to filter streams too (e.g. HTTP + directly playable only)
 
 ## TODO
-* Stream: new SPEC; we should have ways to filter streams too (e.g. HTTP + directly playable only)
-* error handling: consider making an enum that will hold JsValue or other error types; see https://www.youtube.com/watch?v=B5xYBrxVSiE 
+* refactor: error handling: consider making an enum that will hold JsValue or other error types; see https://www.youtube.com/watch?v=B5xYBrxVSiE 
 * environment: `fetch_serde` should support advanced HTTP requests: https://developer.mozilla.org/en-US/docs/Web/API/Request/Request
 * implement UserMiddleware; think of how (or not to?) to mock storage in the test
 * basic state: Catalog, Detail; and all the possible inner states (describe the structures); StreamSelect
 * tests: Chain, Container, individual middlewares, individual types
 * https://github.com/Stremio/stremio-aggregators/blob/master/lib/isCatalogSupported.js
+* refactor: perhaps we can use Load(Target) and then wrap it in LoadWithUser(user, addons, target) - if Load is the only place we need addons; we won't need Box<> and we can pattern match
+* consider a Trait for the Load family of actions that will return an AddonAggrReq(OfResouce(resource, type, id, extra)) or AddonAggrReq(Catalogs(extra)); consider also OfAddon (for CatalogsFiltered)
 
 * construct `AddonHTTPTransport<E: Environment>` and give it to the interested middlewares
 * consider splitting Environment into Storage and Fetcher; and maybe take AddonsClient in
 * load/unload dynamics and more things other than Catalog: Detail, StreamSelect
-* consider a Trait for the Load family of actions that will return an AddonAggrReq(OfResouce(resource, type, id, extra)) or AddonAggrReq(Catalogs(extra)); consider also OfAddon (for CatalogsFiltered)
 * Trait for meta item and lib item; MetaPreview, MetaItem, MetaDetailed
 * CatalogsGrouped to receive some info about the addon
 * implement CatalogsFiltered; CatalogsFilteredPreview
@@ -176,7 +177,7 @@ The reducer, upon a LoadCatalog, should .clone() the action into it's state, and
 
 Presumes the following reducers
 
-0: CatalogsGrouped (for board
+0: CatalogsGrouped (for board)
 1: CatalogsFilteredWithPreview (for discover); @TODO: this might be two separate reducers: CatalogsFiltered, CatalogsFilteredPreview
 2: CatalogsGrouped (for search)
 3: Detail
@@ -212,6 +213,7 @@ Dispatch LoadCatalogsGrouped(0) -> AddonAggrReq(Catalogs())
 
 Dispatch LoadCatalogsFiltered(1, type, addonID, catalogID, filtered) -> AddonAggrReq(OfResource("catalog", type, catalogID, filters)) but match it only against the addon with addonID
 
+@TODO addonTransportURL instead of addonID
 @TODO routing problem: if /discover is opened, we need to auto-select some (type, catalog, filters); we might just hardcode Cinemeta's top
 
 ### /detail/:type/:id/:videoID?
@@ -239,6 +241,7 @@ Dispatch LoadAddonCatalog(7, category, type) -> middleware loads latest collecti
 
 Dispatch LoadPlayer(8, type, id, videoId, streamSerialized) -> this will trigger many things, one of them AddonAggrReq(OfResource("meta", type, id))
 	another one will be to load the libitem/notifications
+	the player middleware should also request subtitles from the add-on system (AddonAggrReq(OfResource("subtitles", meta, id)))
 	the player middleware should also keep an internal state of what the player is doing, and persist libitem/last played stream
 
 ### /calendar
