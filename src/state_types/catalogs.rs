@@ -6,6 +6,7 @@ const MAX_ITEMS: usize = 25;
 
 // @TODO this might be needed outside of here
 #[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(tag="type", content="content")]
 pub enum Loadable<R, M> {
     NotLoaded,
     Loading,
