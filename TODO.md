@@ -34,6 +34,7 @@
 * Stream: new SPEC; we should have ways to filter streams too (e.g. HTTP + directly playable only)
 
 ## TODO
+* think whether stateful middlewares can be eliminated or mitigated with some memoization-inspired pattern
 * refactor: error handling: consider making an enum that will hold JsValue or other error types; see https://www.youtube.com/watch?v=B5xYBrxVSiE 
 * environment: `fetch_serde` should support advanced HTTP requests: https://developer.mozilla.org/en-US/docs/Web/API/Request/Request
 * implement UserMiddleware; think of how (or not to?) to mock storage in the test
@@ -209,12 +210,12 @@ force adds the given add-on or collection of add-ons; dispatch Actions::InstallA
 
 Dispatch LoadCatalogsGrouped(0) -> AddonAggrReq(Catalogs())
 
-### /discover/:type/:addonID/:catalogID/:filters?
+### /discover/:type/:addonID/:catalogID/:filters?&preview=ID
 
 Dispatch LoadCatalogsFiltered(1, type, addonID, catalogID, filtered) -> AddonAggrReq(OfResource("catalog", type, catalogID, filters)) but match it only against the addon with addonID
 
 @TODO addonTransportURL instead of addonID
-@TODO routing problem: if /discover is opened, we need to auto-select some (type, catalog, filters); we might just hardcode Cinemeta's top
+@TODO routing problem: if /discover is opened, we need to auto-select some (type, catalog, filters); we might just hardcode Cinemeta's top and always go to that
 
 ### /detail/:type/:id/:videoID?
 
@@ -247,11 +248,15 @@ Dispatch LoadPlayer(8, type, id, videoId, streamSerialized) -> this will trigger
 ### /calendar
 
 @TODO
+CalendarMIddleware needs to get the calendar from the stremio-web-services
 
 ### /intro
 
 @TODO
 
 ### /settings
+
+We need ot load the existing settings (settingsmiddleware might hold them anyway)
+and we have to try to connect to the streaming server
 
 @TODO
