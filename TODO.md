@@ -43,6 +43,7 @@
 * https://github.com/Stremio/stremio-aggregators/blob/master/lib/isCatalogSupported.js
 * refactor: perhaps we can use Load(Target) and then wrap it in LoadWithUser(user, addons, target) - if Load is the only place we need addons; we won't need Box<> and we can pattern match
 * consider a Trait for the Load family of actions that will return an AddonAggrReq(OfResouce(resource, type, id, extra)) or AddonAggrReq(Catalogs(extra)); consider also OfAddon (for CatalogsFiltered)
+* `get_state` is very slow: it takes a lot of time for large-ish amounts of data: investigate & open a github issue
 
 * construct `AddonHTTPTransport<E: Environment>` and give it to the interested middlewares
 * consider splitting Environment into Storage and Fetcher; and maybe take AddonsClient in
@@ -66,7 +67,6 @@
 * when saving the last stream, save the whole object but compressed
 * ensure environment caches are in place via the service worker (web)
 * consider: flag `is_in_lib` for catalog items
-* `get_state` takes a lot of time for a lot of data: investigate
 * https://github.com/woboq/qmetaobject-rs based UI; needs reqwest (or someting else) async requests
 * libitem/notifitem: https://developers.cloudflare.com/workers/kv/ https://blog.cloudflare.com/cloudflare-workers-as-a-serverless-rust-platform/
 * think of whether this could be used with the Kodi codebase to make stremio embedded
@@ -214,7 +214,10 @@ Dispatch LoadCatalogsGrouped(0) -> AddonAggrReq(Catalogs())
 
 Dispatch LoadCatalogsFiltered(1, type, addonID, catalogID, filtered) -> AddonAggrReq(OfResource("catalog", type, catalogID, filters)) but match it only against the addon with addonID
 
-@TODO addonTransportURL instead of addonID
+@TODO addonTransportURL and OfAddon instead of addonID; more concise, allows URLs to work for other pepole too, and simplifies the middleware
+
+If, for some reason, we use a `type` that's not available, the particular addon will return an error, which will be transformed into Loadable::Message and handled elegantly 
+
 @TODO routing problem: if /discover is opened, we need to auto-select some (type, catalog, filters); we might just hardcode Cinemeta's top and always go to that
 
 ### /detail/:type/:id/:videoID?
@@ -227,6 +230,8 @@ The Library item and the notifications will be loaded through the AddonAggrReq(O
 ### /library/:type
 
 Dispatch LoadCatalogsFiltered(5, type, "org.stremio.library", "library", { library: 1 }) -> AddonAggrReq(OfResource("catalogs", type, "library", { library: 1 })) but match against library addon
+
+If we do addonTransportURL+OfAddon, and we save the last selected `type` in the UI, If, for some reason, we use a `type` that's not available, the particular addon will return an error, which will be transformed into Loadable::Message and handled elegantly 
 
 ### Notifications (not a route, but a popover)
 
