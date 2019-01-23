@@ -32,11 +32,12 @@
 * environment: storage err handling
 * SPEC: decide if a separate resource will be used for library/notifications; a separate return type (.libItems rather than .metas) is a must; DONE: seems it must be a catalog, otherwise it breaks the semantics of manifest.catalogs; we will restrict it via extraRequired
 * Stream: new SPEC; we should have ways to filter streams too (e.g. HTTP + directly playable only)
+* think whether stateful middlewares can be eliminated or mitigated with some memoization-inspired pattern
 
 ## TODO
-* think whether stateful middlewares can be eliminated or mitigated with some memoization-inspired pattern
 * refactor: error handling: consider making an enum that will hold JsValue or other error types; see https://www.youtube.com/watch?v=B5xYBrxVSiE 
 * environment: `fetch_serde` should support advanced HTTP requests: https://developer.mozilla.org/en-US/docs/Web/API/Request/Request
+* statefulness can be mitigated by using a memoization where the addon transport `get` would return the same results if invoked with the same args again; however, this needs to be out of the transport impl and needs to be explicit
 * implement UserMiddleware; think of how (or not to?) to mock storage in the test
 * basic state: Catalog, Detail; and all the possible inner states (describe the structures); StreamSelect
 * tests: Chain, Container, individual middlewares, individual types
@@ -45,8 +46,10 @@
 * consider a Trait for the Load family of actions that will return an AddonAggrReq(OfResouce(resource, type, id, extra)) or AddonAggrReq(Catalogs(extra)); consider also OfAddon (for CatalogsFiltered); then, our AddonAggr middleware will spawn AddonReq/AddonResp; given a `transport_url`, OfAddon will try to find the addon in the collection, to possibly apply `flags.stremioAuth` or `flags.transport`; of course, it doesn't need to find it, `transport_url` is sufficient to request
 * `get_state` is very slow: it takes a lot of time for large-ish amounts of data: investigate & open a github issue
 
-* construct `AddonHTTPTransport<E: Environment>` and give it to the interested middlewares
+* construct `AddonHTTPTransport<E: Environment>` and give it to the interested middlewares; introduce a long-lived transport
 * consider splitting Environment into Storage and Fetcher; and maybe take AddonsClient in
+
+* spec: notifItems: rethink that spec, crystallize it
 * load/unload dynamics and more things other than Catalog: Detail, StreamSelect
 * Trait for meta item and lib item; MetaPreview, MetaItem, MetaDetailed
 * CatalogsGrouped to receive some info about the addon
@@ -184,10 +187,11 @@ Presumes the following reducers
 3: Detail
 4: Streams
 5: CatalogsFiltered (for library)
-6: CatalogsGrouped (for notifications)
+6: CatalogsFiltered (for notifications; could be specific: CatalogsNotifGrouped)
 7: AddonCatalog
 8: PlayerView
 9: SettingsView
+@TODO a container for Continue Watching
 
 @TODO figure reload/force policies for all of these; for now, we'll just always load everything (naively)
 
