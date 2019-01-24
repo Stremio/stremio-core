@@ -59,8 +59,9 @@
 * stuff to look for to be re-implemented: syncer, libitem/notifitem addons, discover ctrl, board ctrl, detail ctrl
 * environment: consider allowing a dynamic instance, esp for storage
 * environment: the JS side should (1) TRY to load the WASM and (2) TRY to sanity-check the environment; if it doesn't succeed, it should show an error to the user
-* complex async pieces of logic: open, detectFromURL, openMedia 
+* complex async pieces of logic: open, detectFromURL, openMedia
 * opening a file (protocol add-ons to be considered)
+* do we want to add the ability for an addon to update it's results? it could become relatively elegant with AddonResp
 * https://blog.cloudflare.com/cloudflare-workers-as-a-serverless-rust-platform/
 * crates: stremio-web-environment (only the Environment), stremio-state-ng-web (general API that is exported to JS via bindgen)
 * we should make it so that if a session is expired, we go to the login screen; this should be in the app
@@ -126,24 +127,24 @@ It will persist settings in storage
 ## User middleware:
 ...
 LoginOrSignupError 
+LoginOrSignupSuccess
 UserChanged
 AddonCollectionChanged
-AddonAdded
-AddonRemoved
-UserDataPersist
 LoadWithUser user addons ...
+
 
 uses Storage to save authKey, user and AddonCollection (to 1 storage key)
 
-## Catalog middleware
-transforms LoadWithUser, and then AddonAdded/AddonRemoved into -> AddonRequest + AddonResponse
+## AddonAggr
+transforms LoadWithUser(dyn AddonReq) (any action implementing the AddonReq trait), and then AddonAdded/AddonRemoved into -> AddonRequest + AddonResponse
+this can be universally used by a lot (see below)
+
+@TODO should we have an action for ALL pending addon requests being done?
 
 ## Detail middleware
-transforms LoadUserUser, and then AddonAdded/AddonRemoved into -> AddonRequest + AddonResponse
-this goes for the LibItem, for meta and for the streams 
+is it even needed, if we have a completely stateless design?
 Think of how to architect the StreamsPicker; it might need to be a separate reducer; in this case the middleware must be renamed to "DetailAndStream"
 
-## AddonCatalog mdidleware
 
 ## Player (player spec wrapper) middleware:
 LibItemPlayerSave (will be consumed by library addon middleware)
@@ -157,20 +158,30 @@ the algo to do this is simple; when we play something, we bump it to the end of 
 This should save the selected `(video_id, stream)` for the given `item_id`), when we start playing
 we also need to load `meta` to be able to `ProposeWatchNext` (meant to be handled by asking the user or by implicit input)
 
-## Analytics middleware:
-
-needs to take installationID as an arg
+upon a LoadPlayer, we load the PlayerPreferences send a command to the player to select the previously selected subtitles ID (if any)
+if we get a AddonResp for subtitles, we send a addExtraSubtitles command
+if we get an AddonsFinished, we try to select previously selected ID as well (if we haven't succeeded in doing so already)
+if we don't have a selected ID at all, we should go with the default language
+ 
+@TODO NOTE: since we need easy immediate access to the preferences, memoization is the wrong pattern here and we need statefulness
 
 ## Library/Notifications middleware:
+
+It's job is to handle actions that intend to change LibraryItem/NotifItem objects, do those changes/syncs and emit whats going on
 ItemUpdated
 SyncCompleted
-
 
 Final reducers will be catalog, library, notifications, detail, player, settings, intro
 
 player reducer should accurately reflect states like subtitles (from addons) or subtitle files (vtt) loading
 
+## Analytics sink:
+
+needs to take installationID as an arg
+
+
 ------
+
 
 Initial flow to be implemented:
 LoadCatalog -> (user middleware does this) WithUser(user, addons, LoadCatalog) -> AddonRequest, AddonResponse
@@ -230,6 +241,16 @@ Dispatch LoadDetail(3, type, id) -> AddonAggrReq(OfResource("meta", type, id))
 if videoID, dispatch LoadStreams(4, type, id, videoID) -> AddonAggrReq(OfResource("stream", type, videoID)) ; this also needs to read the last selected stream from storage
 
 The Library item and the notifications will be loaded through the AddonAggrReq(OfResource("meta", type, id)); that will match the library/notif addon, and return the results
+
+Complex interactions such:
+
+* marking notifs as dimissed
+* marking videos as watched
+* libItem: removing/adding
+* libItem: changing whether we receive a notification
+
+Since we generate all that from `AddonAggrReq(OfResource("meta", type, id))`, we should trigger a refresh somehow that overrides the memoization for the notif/library stuff
+
 
 ### /library/:type
 
