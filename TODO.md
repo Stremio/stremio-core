@@ -35,17 +35,23 @@
 * think whether stateful middlewares can be eliminated or mitigated with some memoization-inspired pattern
 
 ## TODO
+
 * refactor: error handling: consider making an enum that will hold JsValue or other error types; see https://www.youtube.com/watch?v=B5xYBrxVSiE 
-* environment: `fetch_serde` should support advanced HTTP requests: https://developer.mozilla.org/en-US/docs/Web/API/Request/Request
+
+* environment: `fetch_serde` should support advanced HTTP requests: https://developer.mozilla.org/en-US/docs/Web/API/Request/Request; just use https://github.com/DenisKolodin/yew/blob/fdb9acbd014c5178b6881faef0874495ca49e63f/src/services/fetch.rs#L14
+
+* decide whether the UserM will just pass descriptors or transports; descriptors seems cleaner
+
+* refactor: perhaps we can use Load(Target), where Target is an enum, and then wrap it in LoadWithUser(user, addons, Target) - if Load is the only place we need addons; we won't need Box<> and we can pattern match
+* consider a Trait for the Load family of actions that will return an AddonAggrReq(OfResouce(resource, type, id, extra)) or AddonAggrReq(Catalogs(extra)); consider also OfAddon (for CatalogsFiltered); then, our AddonAggr middleware will spawn AddonReq/AddonResp; given a `transport_url`, OfAddon will try to find the addon in the collection, to possibly apply `flags.stremioAuth` or `flags.transport`; of course, it doesn't need to find it, `transport_url` is sufficient to request
+
 * statefulness can be mitigated by using a memoization where the addon transport `get` would return the same results if invoked with the same args again; however, this needs to be out of the transport impl and needs to be explicit
 * implement UserMiddleware; think of how (or not to?) to mock storage in the test
 * basic state: Catalog, Detail; and all the possible inner states (describe the structures); StreamSelect
 * tests: Chain, Container, individual middlewares, individual types
 * https://github.com/Stremio/stremio-aggregators/blob/master/lib/isCatalogSupported.js
-* refactor: perhaps we can use Load(Target), where Target is an enum, and then wrap it in LoadWithUser(user, addons, Target) - if Load is the only place we need addons; we won't need Box<> and we can pattern match
-* consider a Trait for the Load family of actions that will return an AddonAggrReq(OfResouce(resource, type, id, extra)) or AddonAggrReq(Catalogs(extra)); consider also OfAddon (for CatalogsFiltered); then, our AddonAggr middleware will spawn AddonReq/AddonResp; given a `transport_url`, OfAddon will try to find the addon in the collection, to possibly apply `flags.stremioAuth` or `flags.transport`; of course, it doesn't need to find it, `transport_url` is sufficient to request
-* `get_state` is very slow: it takes a lot of time for large-ish amounts of data: investigate & open a github issue
-
+* `get_state` is very slow: it takes a lot of time for large-ish amounts of data: investigate & open a github issue; the specific thing that's slow is whether we return the data
+* AddonTransport trait, .get(), .manifest(); http addons will be constructed with a URL, while lib/notif addon directly as something that implements AddonTransport
 * construct `AddonHTTPTransport<E: Environment>` and give it to the interested middlewares; introduce a long-lived transport
 * consider splitting Environment into Storage and Fetcher; and maybe take AddonsClient in
 
@@ -93,6 +99,7 @@ BeforeClose
 SettingsLoad
 TryStreamingServer (this will try connecting to the streaming server, as well as probing it's settings and version)
 NetworkStatusChanged
+WindowStateChanged (playerM will react on that to pause the player if the setting is true)
 
 ## Actions from the user
 
@@ -139,6 +146,9 @@ uses Storage to save authKey, user and AddonCollection (to 1 storage key)
 transforms LoadWithUser(dyn AddonReq) (any action implementing the AddonReq trait), and then AddonAdded/AddonRemoved into -> AddonRequest + AddonResponse
 this can be universally used by a lot (see below)
 
+AllAddonRequestsFinished(original action) - wrap the original action
+
+
 @TODO should we have an action for ALL pending addon requests being done?
 
 ## Detail middleware
@@ -165,15 +175,25 @@ if we don't have a selected ID at all, we should go with the default language
  
 @TODO NOTE: since we need easy immediate access to the preferences, memoization is the wrong pattern here and we need statefulness
 
+Please note, there'd be no player reducer for now, as all of the state updates come in the form of player `propValue` or `propChanged` actions, which is very simple to reduce
+
+all of the state: PlayerImplInstance, PlayerPreferences, ItemId/VideoId/MetaDetailed/StreamId
+
 ## Library/Notifications middleware:
 
 It's job is to handle actions that intend to change LibraryItem/NotifItem objects, do those changes/syncs and emit whats going on
-ItemUpdated
+ItemUpdated(ID, we have to have a result here, whether the libitem synced successfully)
 SyncCompleted
+
+The reducer should handle ItemUpdated(...)
 
 Final reducers will be catalog, library, notifications, detail, player, settings, intro
 
 player reducer should accurately reflect states like subtitles (from addons) or subtitle files (vtt) loading
+
+## another middleware for open, openMedia, openAddonURL
+
+@TODO
 
 ## Analytics sink:
 
