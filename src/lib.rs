@@ -92,8 +92,27 @@ mod tests {
 
     struct Env;
     impl Environment for Env {
-        fn fetch_serde<T: 'static + DeserializeOwned>(url: &str) -> EnvFuture<Box<T>> {
-            Box::new(match reqwest::get(url) {
+        fn fetch_serde<IN, OUT>(request: &Request<IN>) -> EnvFuture<Box<OUT>>
+        where
+            IN: 'static + Serialize,
+            OUT: 'static + DeserializeOwned
+        {
+            // @TODO method
+            // @TODO headers
+            // @TODO body
+            /*
+            // Can't work for now, as it needs + Send
+            let client = reqwest::r#async::Client::new();
+            let fut = client.get(&request.uri().to_string())
+                .send()
+                .and_then(|mut res: reqwest::r#async::Response| {
+                    res.json::<OUT>()
+                })
+                .map(|res| Box::new(res))
+                .map_err(|e| e.into());
+            Box::new(fut)
+            */
+            Box::new(match reqwest::get(&request.uri().to_string()) {
                 Err(e) => future::err(e.into()),
                 Ok(mut resp) => match resp.json() {
                     Err(e) => future::err(e.into()),

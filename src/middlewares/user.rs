@@ -28,8 +28,9 @@ impl<T: Environment> Handler for UserMiddleware<T> {
         }
         let action_owned = action.to_owned();
         // @TODO get rid of this hardcode
-        let fut = T::fetch_serde::<Vec<AddonDescriptor>>(
-            "https://api.strem.io/addonsofficialcollection.json",
+        let url = "https://api.strem.io/addonsofficialcollection.json";
+        let fut = T::fetch_serde::<(), Vec<AddonDescriptor>>(
+            &Request::builder().uri(url).body(()).unwrap()
         )
         .and_then(move |addons| {
             // @TODO Should we have an Into Box on action, so we can write this
