@@ -3,7 +3,7 @@ use serde::de::DeserializeOwned;
 use serde::Serialize;
 use std::error::Error;
 
-pub use http::{Request, Method};
+pub use http::{Method, Request};
 
 pub type EnvFuture<T> = Box<Future<Item = T, Error = Box<Error>>>;
 pub trait Environment {

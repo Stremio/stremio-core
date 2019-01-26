@@ -46,6 +46,10 @@
 	headers
 	body: Serializable
 
+	instead of the builder, use ::get(...) or ::post()
+
+	implement in web front-end
+
 * decide whether the UserM will just pass descriptors or transports; descriptors seems cleaner
 
 * refactor: perhaps we can use Load(Target), where Target is an enum, and then wrap it in LoadWithUser(user, addons, Target) - if Load is the only place we need addons; we won't need Box<> and we can pattern match
@@ -89,7 +93,7 @@
 * all the cinemeta improvements this relies on: e.g. behaviorHints.isNotReleased will affect the Stream view
 * graph everything, the entire stremio architecture, including core add-ons and such
 * ensure that every time a network error happens, it's properly reflected in the state; and the UI should allow to "Retry" each such operation
-* api: ensure there's a way to read the error with `env::fetch_serde`, even if the response statuss code is 500 (see stremio-api/errors/errors.go)
+* api: ensure there's a way to read the error with `env::fetch_serde`, even if the response statuss code is 500 (see stremio-api/errors/errors.go); it should work, as we completely ignore HTTP status code for now; probably, we should fix that
 
 example pipeline:
 LoadCatalogs => this will change the state of the `catalogs` to `Loading`

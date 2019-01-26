@@ -95,7 +95,7 @@ mod tests {
         fn fetch_serde<IN, OUT>(request: &Request<IN>) -> EnvFuture<Box<OUT>>
         where
             IN: 'static + Serialize,
-            OUT: 'static + DeserializeOwned
+            OUT: 'static + DeserializeOwned,
         {
             // @TODO method
             // @TODO headers
