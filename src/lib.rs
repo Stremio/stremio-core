@@ -15,9 +15,6 @@ mod tests {
 
     #[test]
     fn it_works() {
-        // @TODO: build a pipe of
-        // -> UserMiddleware -> CatalogMiddleware -> DetailMiddleware -> AddonsMiddleware ->
-        // PlayerMiddleware -> LibNotifMiddleware -> join(discoverContainer, boardContainer, ...)
         let mut container = Container::with_reducer(CatalogGrouped::new(), &catalogs_reducer);
         let addons_resp = get_addons("https://api.strem.io/addonsofficialcollection.json").unwrap();
         for addon in addons_resp.iter() {
@@ -43,6 +40,7 @@ mod tests {
         assert_eq!(cinemeta_m.is_supported("stream", "movie", "tt0234"), false);
     }
 
+    // @TODO: remove these two
     fn get_addons(url: &'static str) -> reqwest::Result<Vec<AddonDescriptor>> {
         Ok(reqwest::get(url)?.json()?)
     }
@@ -79,6 +77,7 @@ mod tests {
                 // @TODO: reducers multiplexer middleware
             ],
             Box::new(move |action| {
+                // @TODO: test if this is actually progressing properly
                 if let Action::NewState(_) = action {
                     println!("new state {:?}", container_ref.borrow().get_state());
                 }
@@ -97,14 +96,9 @@ mod tests {
             IN: 'static + Serialize,
             OUT: 'static + DeserializeOwned,
         {
-            // @TODO method
-            // @TODO headers
-            // @TODO body
             /*
             // Can't work for now, as it needs + Send
-            let client = reqwest::r#async::Client::new();
-            let fut = client.get(&request.uri().to_string())
-                .send()
+            req.send()
                 .and_then(|mut res: reqwest::r#async::Response| {
                     res.json::<OUT>()
                 })
