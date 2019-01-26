@@ -33,12 +33,13 @@
 * SPEC: decide if a separate resource will be used for library/notifications; a separate return type (.libItems rather than .metas) is a must; DONE: seems it must be a catalog, otherwise it breaks the semantics of manifest.catalogs; we will restrict it via extraRequired
 * Stream: new SPEC; we should have ways to filter streams too (e.g. HTTP + directly playable only)
 * think whether stateful middlewares can be eliminated or mitigated with some memoization-inspired pattern
+* `get_state` is very slow: it takes a lot of time for large-ish amounts of data: investigate & open a github issue; the specific thing that's slow is whether we return the data; the reason was the TextEncoder polyfill
+* refactor: error handling: consider making an enum that will hold JsValue or other error types; see https://www.youtube.com/watch?v=B5xYBrxVSiE 
 
 ## TODO
 
-* refactor: error handling: consider making an enum that will hold JsValue or other error types; see https://www.youtube.com/watch?v=B5xYBrxVSiE 
 
-* environment: `fetch_serde` should support advanced HTTP requests: https://developer.mozilla.org/en-US/docs/Web/API/Request/Request; just use https://github.com/DenisKolodin/yew/blob/fdb9acbd014c5178b6881faef0874495ca49e63f/src/services/fetch.rs#L14
+* environment: `fetch_serde` should support advanced HTTP requests: https://developer.mozilla.org/en-US/docs/Web/API/Request/Request; just use https://github.com/DenisKolodin/yew/blob/fdb9acbd014c5178b6881faef0874495ca49e63f/src/services/fetch.rs#L14 (http::Request or a reqwest::Request)
 
 * decide whether the UserM will just pass descriptors or transports; descriptors seems cleaner
 
@@ -50,7 +51,6 @@
 * basic state: Catalog, Detail; and all the possible inner states (describe the structures); StreamSelect
 * tests: Chain, Container, individual middlewares, individual types
 * https://github.com/Stremio/stremio-aggregators/blob/master/lib/isCatalogSupported.js
-* `get_state` is very slow: it takes a lot of time for large-ish amounts of data: investigate & open a github issue; the specific thing that's slow is whether we return the data
 * AddonTransport trait, .get(), .manifest(); http addons will be constructed with a URL, while lib/notif addon directly as something that implements AddonTransport
 * construct `AddonHTTPTransport<E: Environment>` and give it to the interested middlewares; introduce a long-lived transport
 * consider splitting Environment into Storage and Fetcher; and maybe take AddonsClient in
@@ -65,7 +65,7 @@
 * stuff to look for to be re-implemented: syncer, libitem/notifitem addons, discover ctrl, board ctrl, detail ctrl
 * environment: consider allowing a dynamic instance, esp for storage
 * environment: the JS side should (1) TRY to load the WASM and (2) TRY to sanity-check the environment; if it doesn't succeed, it should show an error to the user
-* complex async pieces of logic: open, detectFromURL, openMedia
+* complex async pieces of logic: open, detectFromURL, openMedia; those should be a middleware or just separate async functions; detectFromURL/openMedia are user-agnostic, but open is not; if it's an async function used internally by the middleware, it's still OK cause we won't make the stream requests again if we go to the UI (cause of the memoization)
 * opening a file (protocol add-ons to be considered)
 * do we want to add the ability for an addon to update it's results? it could become relatively elegant with AddonResp
 * https://blog.cloudflare.com/cloudflare-workers-as-a-serverless-rust-platform/
