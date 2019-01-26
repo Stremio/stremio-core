@@ -112,7 +112,13 @@ mod tests {
                 .map_err(|e| e.into());
             Box::new(fut)
             */
-            Box::new(match reqwest::get(&request.uri().to_string()) {
+            let client = reqwest::Client::new();
+            let request = client
+                .request(
+                    reqwest::Method::from_bytes(request.method().as_str().as_bytes()).unwrap(),
+                    &request.uri().to_string()
+                );
+            Box::new(match request.send() {
                 Err(e) => future::err(e.into()),
                 Ok(mut resp) => match resp.json() {
                     Err(e) => future::err(e.into()),

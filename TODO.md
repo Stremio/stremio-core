@@ -35,22 +35,18 @@
 * think whether stateful middlewares can be eliminated or mitigated with some memoization-inspired pattern
 * `get_state` is very slow: it takes a lot of time for large-ish amounts of data: investigate & open a github issue; the specific thing that's slow is whether we return the data; the reason was the TextEncoder polyfill
 * refactor: error handling: consider making an enum that will hold JsValue or other error types; see https://www.youtube.com/watch?v=B5xYBrxVSiE 
-
+* requests: instead of the builder, use ::get(...) or ::post()
+* decide whether the UserM will just pass descriptors or transports; decided on descriptors
 
 ## TODO
 
 
 * environment: `fetch_serde` should support advanced HTTP requests: https://developer.mozilla.org/en-US/docs/Web/API/Request/Request; just use https://github.com/DenisKolodin/yew/blob/fdb9acbd014c5178b6881faef0874495ca49e63f/src/services/fetch.rs#L14 (http::Request or a reqwest::Request);
 	method (enum)
-	url (&str, or IntoUrl)
 	headers
 	body: Serializable
 
-	instead of the builder, use ::get(...) or ::post()
 
-	implement in web front-end
-
-* decide whether the UserM will just pass descriptors or transports; descriptors seems cleaner
 
 * refactor: perhaps we can use Load(Target), where Target is an enum, and then wrap it in LoadWithUser(user, addons, Target) - if Load is the only place we need addons; we won't need Box<> and we can pattern match
 * consider a Trait for the Load family of actions that will return an AddonAggrReq(OfResouce(resource, type, id, extra)) or AddonAggrReq(Catalogs(extra)); consider also OfAddon (for CatalogsFiltered); then, our AddonAggr middleware will spawn AddonReq/AddonResp; given a `transport_url`, OfAddon will try to find the addon in the collection, to possibly apply `flags.stremioAuth` or `flags.transport`; of course, it doesn't need to find it, `transport_url` is sufficient to request
