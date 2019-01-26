@@ -36,6 +36,7 @@
 * `get_state` is very slow: it takes a lot of time for large-ish amounts of data: investigate & open a github issue; the specific thing that's slow is whether we return the data; the reason was the TextEncoder polyfill
 * refactor: error handling: consider making an enum that will hold JsValue or other error types; see https://www.youtube.com/watch?v=B5xYBrxVSiE 
 
+
 ## TODO
 
 
@@ -53,6 +54,8 @@
 * https://github.com/Stremio/stremio-aggregators/blob/master/lib/isCatalogSupported.js
 * AddonTransport trait, .get(), .manifest(); http addons will be constructed with a URL, while lib/notif addon directly as something that implements AddonTransport
 * construct `AddonHTTPTransport<E: Environment>` and give it to the interested middlewares; introduce a long-lived transport
+* start implementing libitem/notifitem addon
+
 * consider splitting Environment into Storage and Fetcher; and maybe take AddonsClient in
 
 * spec: notifItems: rethink that spec, crystallize it
@@ -60,7 +63,6 @@
 * Trait for meta item and lib item; MetaPreview, MetaItem, MetaDetailed
 * CatalogsGrouped to receive some info about the addon
 * implement CatalogsFiltered; CatalogsFilteredPreview
-* start implementing libitem/notifitem addon
 * since a lot of things are asynchronous, perhaps we should have a guard; the things to think about are: addon set hash, addon ID, user ID, etc.
 * stuff to look for to be re-implemented: syncer, libitem/notifitem addons, discover ctrl, board ctrl, detail ctrl
 * environment: consider allowing a dynamic instance, esp for storage
@@ -83,6 +85,7 @@
 * all the cinemeta improvements this relies on: e.g. behaviorHints.isNotReleased will affect the Stream view
 * graph everything, the entire stremio architecture, including core add-ons and such
 * ensure that every time a network error happens, it's properly reflected in the state; and the UI should allow to "Retry" each such operation
+* api: ensure there's a way to read the error with `env::fetch_serde`, even if the response statuss code is 500 (see stremio-api/errors/errors.go)
 
 example pipeline:
 LoadCatalogs => this will change the state of the `catalogs` to `Loading`
