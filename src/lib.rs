@@ -118,6 +118,7 @@ mod tests {
             for (k, v) in in_req.headers() {
                 req = req.header(k.as_str(), v.as_ref());
             }
+            req = req.json(in_req.body());
             Box::new(match req.send() {
                 Err(e) => future::err(e.into()),
                 Ok(mut resp) => match resp.json() {
