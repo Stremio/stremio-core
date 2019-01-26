@@ -106,13 +106,14 @@ mod tests {
                 .map_err(|e| e.into());
             Box::new(fut)
             */
-            let method = reqwest::Method::from_bytes(in_req.method().as_str().as_bytes())
+            let (parts, body) = in_req.into_parts();
+            let method = reqwest::Method::from_bytes(parts.method.as_str().as_bytes())
                 .expect("method is not valid for reqwest");
-            let mut req = reqwest::Client::new().request(method, &in_req.uri().to_string());
-            for (k, v) in in_req.headers() {
+            let mut req = reqwest::Client::new().request(method, &parts.uri.to_string());
+            for (k, v) in parts.headers.iter() {
                 req = req.header(k.as_str(), v.as_ref());
             }
-            req = req.json(in_req.body());
+            req = req.json(&body);
             Box::new(match req.send() {
                 Err(e) => future::err(e.into()),
                 Ok(mut resp) => match resp.json() {
