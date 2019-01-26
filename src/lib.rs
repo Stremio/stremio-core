@@ -91,7 +91,7 @@ mod tests {
 
     struct Env;
     impl Environment for Env {
-        fn fetch_serde<IN, OUT>(in_req: &Request<IN>) -> EnvFuture<Box<OUT>>
+        fn fetch_serde<IN, OUT>(in_req: Request<IN>) -> EnvFuture<Box<OUT>>
         where
             IN: 'static + Serialize,
             OUT: 'static + DeserializeOwned,

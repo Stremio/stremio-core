@@ -31,7 +31,7 @@ impl<T: Environment> Handler for UserMiddleware<T> {
         let req = Request::get("https://api.strem.io/addonsofficialcollection.json")
             .body(())
             .unwrap();
-        let fut = T::fetch_serde::<(), Vec<AddonDescriptor>>(&req)
+        let fut = T::fetch_serde::<(), Vec<AddonDescriptor>>(req)
             .and_then(move |addons| {
                 // @TODO Should we have an Into Box on action, so we can write this
                 // as .clone().into() ?
