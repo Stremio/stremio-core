@@ -92,7 +92,7 @@ mod tests {
 
     struct Env;
     impl Environment for Env {
-        fn fetch_serde<IN, OUT>(request: &Request<IN>) -> EnvFuture<Box<OUT>>
+        fn fetch_serde<IN, OUT>(in_req: &Request<IN>) -> EnvFuture<Box<OUT>>
         where
             IN: 'static + Serialize,
             OUT: 'static + DeserializeOwned,
@@ -112,13 +112,13 @@ mod tests {
                 .map_err(|e| e.into());
             Box::new(fut)
             */
-            let client = reqwest::Client::new();
-            let request = client
-                .request(
-                    reqwest::Method::from_bytes(request.method().as_str().as_bytes()).unwrap(),
-                    &request.uri().to_string()
-                );
-            Box::new(match request.send() {
+            let method = reqwest::Method::from_bytes(in_req.method().as_str().as_bytes())
+                .expect("method is not valid for reqwest");
+            let mut req = reqwest::Client::new().request(method, &in_req.uri().to_string());
+            for (k, v) in in_req.headers() {
+                req = req.header(k.as_str(), v.as_ref());
+            }
+            Box::new(match req.send() {
                 Err(e) => future::err(e.into()),
                 Ok(mut resp) => match resp.json() {
                     Err(e) => future::err(e.into()),

@@ -28,16 +28,18 @@ impl<T: Environment> Handler for UserMiddleware<T> {
         }
         let action_owned = action.to_owned();
         // @TODO get rid of this hardcode
-        let req = Request::get("https://api.strem.io/addonsofficialcollection.json").body(()).unwrap();
+        let req = Request::get("https://api.strem.io/addonsofficialcollection.json")
+            .body(())
+            .unwrap();
         let fut = T::fetch_serde::<(), Vec<AddonDescriptor>>(&req)
-        .and_then(move |addons| {
-            // @TODO Should we have an Into Box on action, so we can write this
-            // as .clone().into() ?
-            emit(&Action::WithAddons(addons.to_vec(), Box::new(action_owned)));
-            future::ok(())
-        })
-        // @TODO handle the error
-        .or_else(|_| future::err(()));
+            .and_then(move |addons| {
+                // @TODO Should we have an Into Box on action, so we can write this
+                // as .clone().into() ?
+                emit(&Action::WithAddons(addons.to_vec(), Box::new(action_owned)));
+                future::ok(())
+            })
+            // @TODO handle the error
+            .or_else(|_| future::err(()));
         T::exec(Box::new(fut));
     }
 }
