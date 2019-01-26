@@ -20,7 +20,7 @@ impl<T: Environment> CatalogMiddleware<T> {
             &format!("/catalog/{}/{}.json", cat.type_name, cat.id),
         );
         emit(&Action::CatalogRequested(url.to_owned()));
-        let req = Request::builder().uri(&url).body(()).unwrap();
+        let req = Request::get(&url).body(()).unwrap();
         let fut = T::fetch_serde::<(), CatalogResponse>(&req).then(move |res| {
             emit(&match res {
                 Ok(resp) => Action::CatalogReceived(url, Ok(*resp)),
