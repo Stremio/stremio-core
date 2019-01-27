@@ -110,9 +110,11 @@ mod tests {
             let method = reqwest::Method::from_bytes(parts.method.as_str().as_bytes())
                 .expect("method is not valid for reqwest");
             let mut req = reqwest::Client::new().request(method, &parts.uri.to_string());
+            // NOTE: both might be HeaderMap, so maybe there's a better way?
             for (k, v) in parts.headers.iter() {
                 req = req.header(k.as_str(), v.as_ref());
             }
+            // @TODO add content-type application/json
             req = req.json(&body);
             Box::new(match req.send() {
                 Err(e) => future::err(e.into()),
