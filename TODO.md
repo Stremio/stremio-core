@@ -42,11 +42,11 @@
 ## TODO
 
 
+* implement UserM; think of how (or not to?) to mock storage in the test
 * refactor: perhaps we can use Load(Target), where Target is an enum, and then wrap it in LoadWithUser(user, addons, Target) - if Load is the only place we need addons; we won't need Box<> and we can pattern match
 * consider a Trait for the Load family of actions that will return an AddonAggrReq(OfResouce(resource, type, id, extra)) or AddonAggrReq(Catalogs(extra)); consider also OfAddon (for CatalogsFiltered); then, our AddonAggr middleware will spawn AddonReq/AddonResp; given a `transport_url`, OfAddon will try to find the addon in the collection, to possibly apply `flags.stremioAuth` or `flags.transport`; of course, it doesn't need to find it, `transport_url` is sufficient to request
 
 * statefulness can be mitigated by using a memoization where the addon transport `get` would return the same results if invoked with the same args again; however, this needs to be out of the transport impl and needs to be explicit
-* implement UserMiddleware; think of how (or not to?) to mock storage in the test
 * basic state: Catalog, Detail; and all the possible inner states (describe the structures); StreamSelect
 * tests: Chain, Container, individual middlewares, individual types
 * https://github.com/Stremio/stremio-aggregators/blob/master/lib/isCatalogSupported.js
