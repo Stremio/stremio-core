@@ -40,7 +40,7 @@ impl<T: Environment> Handler for UserMiddleware<T> {
         let req = Request::post("https://api.strem.io/api/addonCollectionGet")
             .body(APICollectionRequest{})
             .unwrap();
-        let fut = T::fetch_serde::<APICollectionRequest, APIRes<APICollectionRes>>(req)
+        let fut = T::fetch_serde::<_, APIRes<APICollectionRes>>(req)
             .and_then(move |r| {
                 let addons = &r.result.addons;
                 // @TODO Should we have an Into Box on action, so we can write this

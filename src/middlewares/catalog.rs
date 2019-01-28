@@ -21,7 +21,7 @@ impl<T: Environment> CatalogMiddleware<T> {
         );
         emit(&Action::CatalogRequested(url.to_owned()));
         let req = Request::get(&url).body(()).unwrap();
-        let fut = T::fetch_serde::<(), CatalogResponse>(req).then(move |res| {
+        let fut = T::fetch_serde::<_, CatalogResponse>(req).then(move |res| {
             emit(&match res {
                 Ok(resp) => Action::CatalogReceived(url, Ok(*resp)),
                 Err(e) => Action::CatalogReceived(url, Err(e.description().to_owned())),

@@ -85,6 +85,7 @@
 * graph everything, the entire stremio architecture, including core add-ons and such
 * ensure that every time a network error happens, it's properly reflected in the state; and the UI should allow to "Retry" each such operation
 * api: ensure there's a way to read the error with `env::fetch_serde`, even if the response statuss code is 500 (see stremio-api/errors/errors.go); it should work, as we completely ignore HTTP status code for now; probably, we should fix that
+* figure out pausing on minimize/close; this should be handled in the app; probably like this: when closing/minimizing the window, pause if state is playing
 
 example pipeline:
 LoadCatalogs => this will change the state of the `catalogs` to `Loading`
