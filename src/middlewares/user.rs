@@ -3,6 +3,7 @@ use crate::types::*;
 use futures::{future, Future};
 use std::marker::PhantomData;
 use std::rc::Rc;
+use serde_derive::*;
 
 #[derive(Default)]
 pub struct UserMiddleware<T: Environment> {
@@ -27,12 +28,21 @@ impl<T: Environment> Handler for UserMiddleware<T> {
             _ => return,
         }
         let action_owned = action.to_owned();
+        // @TODO find a way to implicitly unwrap the .result field
+        // something like APIWrapper
+        #[derive(Serialize,Clone)]
+        struct APICollectionRequest {};
+        #[derive(Serialize,Deserialize)]
+        struct APIRes<T> { pub result: T };
+        #[derive(Serialize,Deserialize)]
+        struct APICollectionRes { pub addons: Vec<AddonDescriptor> };
         // @TODO get rid of this hardcode
-        let req = Request::get("https://api.strem.io/addonsofficialcollection.json")
-            .body(())
+        let req = Request::post("https://api.strem.io/api/addonCollectionGet")
+            .body(APICollectionRequest{})
             .unwrap();
-        let fut = T::fetch_serde::<(), Vec<AddonDescriptor>>(req)
-            .and_then(move |addons| {
+        let fut = T::fetch_serde::<APICollectionRequest, APIRes<APICollectionRes>>(req)
+            .and_then(move |r| {
+                let addons = &r.result.addons;
                 // @TODO Should we have an Into Box on action, so we can write this
                 // as .clone().into() ?
                 emit(&Action::WithAddons(addons.to_vec(), Box::new(action_owned)));
