@@ -38,9 +38,11 @@
 * requests: instead of the builder, use ::get(...) or ::post()
 * decide whether the UserM will just pass descriptors or transports; decided on descriptors
 * environment: `fetch_serde` should support advanced HTTP requests: https://developer.mozilla.org/en-US/docs/Web/API/Request/Request; just use https://github.com/DenisKolodin/yew/blob/fdb9acbd014c5178b6881faef0874495ca49e63f/src/services/fetch.rs#L14 (http::Request or a reqwest::Request);
+* design decision on reacting on addon installs/uninstalls is: we don't, but issuing a new Load will make the container react on it; and we should always issue new Load's when going to pages
 
 ## TODO
 
+* AddonRequest -> AddonRequests, since we want to guarantee preserved order of requests
 
 * implement UserM; think of how (or not to?) to mock storage in the test
 * UserM: figure ot loading step; perhaps always do the load with a future and do everything in a .then(), but memoize it
@@ -54,6 +56,7 @@
 * AddonTransport trait, .get(), .manifest(); http addons will be constructed with a URL, while lib/notif addon directly as something that implements AddonTransport
 * construct `AddonHTTPTransport<E: Environment>` and give it to the interested middlewares; introduce a long-lived transport
 * start implementing libitem/notifitem addon
+
 
 * consider splitting Environment into Storage and Fetcher; and maybe take AddonsClient in
 
@@ -75,6 +78,7 @@
 * think of how to do all edge cases in the user, such as pre-installing add-ons (implicit input)
 * behaviorHints - pair (key, val)?
 * separate crates: types, `state_types`
+* when playing AND when opening the detail page, we should augment the libItem with meta if it's not already (trigger the updateLibItem action only if this would actually change the libitem)
 * when saving the last stream, save the whole object but compressed
 * ensure environment caches are in place via the service worker (web)
 * consider: flag `is_in_lib` for catalog items
@@ -86,6 +90,7 @@
 * ensure that every time a network error happens, it's properly reflected in the state; and the UI should allow to "Retry" each such operation
 * api: ensure there's a way to read the error with `env::fetch_serde`, even if the response statuss code is 500 (see stremio-api/errors/errors.go); it should work, as we completely ignore HTTP status code for now; probably, we should fix that
 * figure out pausing on minimize/close; this should be handled in the app; probably like this: when closing/minimizing the window, pause if state is playing
+* when you go to player/detail and there doesn't appear to be a supported addon for the /meta/ request, show an error to the user (+tes)
 
 example pipeline:
 LoadCatalogs => this will change the state of the `catalogs` to `Loading`
