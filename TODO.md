@@ -42,6 +42,8 @@
 
 ## TODO
 
+* look into using Into<> to get rid of some .into()'s ?
+
 * AddonRequest -> AddonRequests, since we want to guarantee preserved order of requests
 
 * implement UserM; think of how (or not to?) to mock storage in the test
