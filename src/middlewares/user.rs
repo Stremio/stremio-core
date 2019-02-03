@@ -43,9 +43,7 @@ impl<T: Environment> Handler for UserMiddleware<T> {
         let fut = T::fetch_serde::<_, APIRes<APICollectionRes>>(req)
             .and_then(move |r| {
                 let addons = &r.result.addons;
-                // @TODO Should we have an Into Box on action, so we can write this
-                // as .clone().into() ?
-                emit(&Action::WithAddons(addons.to_vec(), Box::new(action)));
+                emit(&Action::WithAddons(addons.to_vec(), action.into()));
                 future::ok(())
             })
             // @TODO handle the error
