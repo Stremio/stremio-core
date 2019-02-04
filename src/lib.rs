@@ -41,11 +41,11 @@ mod tests {
     }
 
     // @TODO: remove these two
-    fn get_addons(url: &'static str) -> reqwest::Result<Vec<AddonDescriptor>> {
+    fn get_addons(url: &'static str) -> reqwest::Result<Vec<Descriptor>> {
         Ok(reqwest::get(url)?.json()?)
     }
     fn get_catalogs(
-        addon: &AddonDescriptor,
+        addon: &Descriptor,
         catalog_type: &String,
         id: &String,
     ) -> reqwest::Result<CatalogResponse> {

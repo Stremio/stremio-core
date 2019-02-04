@@ -12,7 +12,7 @@ impl<T: Environment> CatalogMiddleware<T> {
     pub fn new() -> Self {
         CatalogMiddleware { env: PhantomData }
     }
-    fn for_catalog(&self, addon: &AddonDescriptor, cat: &ManifestCatalog, emit: Rc<DispatcherFn>) {
+    fn for_catalog(&self, addon: &Descriptor, cat: &ManifestCatalog, emit: Rc<DispatcherFn>) {
         // @TODO use transport
         // @TODO: better identifier?
         let url = addon.transport_url.replace(

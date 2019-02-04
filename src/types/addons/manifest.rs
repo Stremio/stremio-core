@@ -38,7 +38,7 @@ pub struct ManifestCatalog {
 
 #[derive(Debug, PartialEq, Clone, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
-pub struct AddonManifest {
+pub struct Manifest {
     pub id: String,
     pub version: String,
     pub name: String,
@@ -56,7 +56,7 @@ pub struct AddonManifest {
     pub catalogs: Vec<ManifestCatalog>,
 }
 
-impl AddonManifest {
+impl Manifest {
     // @TODO: test
     pub fn is_supported(&self, resource_name: &str, type_name: &str, id: &str) -> bool {
         // catalogs are a special case

@@ -1,9 +1,9 @@
 use crate::state_types::*;
 use crate::types::*;
 use futures::{future, Future};
+use serde_derive::*;
 use std::marker::PhantomData;
 use std::rc::Rc;
-use serde_derive::*;
 
 #[derive(Default)]
 pub struct UserMiddleware<T: Environment> {
@@ -30,15 +30,19 @@ impl<T: Environment> Handler for UserMiddleware<T> {
         let action = action.to_owned();
         // @TODO find a way to implicitly unwrap the .result field
         // @TODO APIWrapper, err handling
-        #[derive(Serialize,Clone)]
+        #[derive(Serialize, Clone)]
         struct APICollectionRequest {};
-        #[derive(Serialize,Deserialize)]
-        struct APIRes<T> { pub result: T };
-        #[derive(Serialize,Deserialize)]
-        struct APICollectionRes { pub addons: Vec<AddonDescriptor> };
+        #[derive(Serialize, Deserialize)]
+        struct APIRes<T> {
+            pub result: T,
+        };
+        #[derive(Serialize, Deserialize)]
+        struct APICollectionRes {
+            pub addons: Vec<Descriptor>,
+        };
         // @TODO get rid of this hardcode
         let req = Request::post("https://api.strem.io/api/addonCollectionGet")
-            .body(APICollectionRequest{})
+            .body(APICollectionRequest {})
             .unwrap();
         let fut = T::fetch_serde::<_, APIRes<APICollectionRes>>(req)
             .and_then(move |r| {
