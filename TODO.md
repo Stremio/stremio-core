@@ -49,12 +49,12 @@
 ## TODO
 
 * refactor: generic AddonResponse (currently uses CatalogResponse)?
+* optimization: optimize the reducers by avoiding copying data on each iteration
+* decide how do we wanna do CatalogsFilteredWithPreview: whether we wanna do it at all, or just have CatalogFiltered always return MetaItem
 
 * implement UserM; think of how (or not to?) to mock storage in the test; LoadWithUser(user, addons, ...)
 * UserM: figure ot loading step; perhaps always do the load with a future and do everything in a .then(), but memoize it
 * given a `transport_url`, WithAddon will try to find the addon in the collection, to possibly apply `flags.stremioAuth` or `flags.transport`; of course, it doesn't need to find it, `transport_url` is sufficient to request; or, it should just carry the flags
-
-* decide how do we wanna do CatalogsFilteredWithPreview: whether we wanna do it at all, or just have CatalogFiltered always return MetaItem
 
 * statefulness can be mitigated by using a memoization where the addon transport `get` would return the same results if invoked with the same args again; however, this needs to be out of the transport impl and needs to be explicit
 * basic state: Catalog, Detail; and all the possible inner states (describe the structures); StreamSelect
