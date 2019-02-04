@@ -43,6 +43,7 @@
 
 ## TODO
 
+* types/addons/{mod,manifest}.rs: Descriptor, ManifestCatalog, ManifestResource, ResourceRef, AggrRequest, Extra, Request
 * refactor: AddonRequest -> AddonRequests, since we want to guarantee preserved order of requests; or rather, drop AddonRequests/CatalogRequest entirely, and just expand WithAddons(addons, ...) plus the action `get_addon_request` directly in the reducer; that will also drop `req_id`
 * implement UserM; think of how (or not to?) to mock storage in the test
 * UserM: figure ot loading step; perhaps always do the load with a future and do everything in a .then(), but memoize it

@@ -30,6 +30,12 @@ pub enum AddonAggrRequest {
     AllCatalogs{ extra: AddonExtra },
 }
 
+impl AddonAggrRequest {
+    pub fn plan(_addons: &Vec<AddonDescriptor>) {
+        // @TODO
+    }
+}
+
 #[derive(Debug, Deserialize, Serialize, Clone)]
 // @TODO use named fields for some variants
 pub enum Action {
