@@ -1,11 +1,11 @@
 use serde_derive::*;
 
 // https://serde.rs/string-or-struct.html
+use crate::types::addons::ResourceRef;
 use serde::de::{self, Deserialize, Deserializer, MapAccess, Visitor};
 use std::fmt;
 use std::marker::PhantomData;
 use std::str::FromStr;
-use crate::types::addons::ResourceRef;
 
 #[derive(Debug, PartialEq, Clone, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -62,7 +62,15 @@ impl Manifest {
     // assert_eq!(cinemeta_m.is_supported("meta", "movie", "tt0234"), true);
     // assert_eq!(cinemeta_m.is_supported("meta", "movie", "somethingElse"), false));
     // assert_eq!(cinemeta_m.is_supported("stream", "movie", "tt0234"), false);
-    pub fn is_supported(&self, ResourceRef { resource, type_name, id, .. }: &ResourceRef) -> bool {
+    pub fn is_supported(
+        &self,
+        ResourceRef {
+            resource,
+            type_name,
+            id,
+            ..
+        }: &ResourceRef,
+    ) -> bool {
         // catalogs are a special case
         if resource == "catalog" {
             return self

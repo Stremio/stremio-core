@@ -43,7 +43,11 @@ mod tests {
         chain.dispatch(action);
 
         // since the Env implementation works synchronously, this is OK
-        assert_eq!(container_ref.borrow().get_state().groups.len(), 6, "groups is the right length");
+        assert_eq!(
+            container_ref.borrow().get_state().groups.len(),
+            6,
+            "groups is the right length"
+        );
     }
 
     struct Env;
