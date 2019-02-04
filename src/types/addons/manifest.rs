@@ -78,7 +78,7 @@ impl Manifest {
                 .iter()
                 .any(|c| &c.type_name == type_name && &c.id == id);
         }
-        let res = match self.resources.iter().find(|&res| &res.name == resource) {
+        let res = match self.resources.iter().find(|res| &res.name == resource) {
             None => return false,
             Some(resource) => resource,
         };
