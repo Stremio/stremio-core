@@ -45,12 +45,12 @@
 * do we want to add the ability for an addon to update it's results? it could become relatively elegant with AddonResp: no for now, but it can be done easily
 * refactor: AddonRequest -> AddonRequests, since we want to guarantee preserved order of requests; or rather, drop AddonRequests/CatalogRequest entirely, and just expand WithAddons(addons, ...) plus the action `get_addon_request` directly in the reducer; that will also drop `req_id` (hash of ResourceRequest?)
 * refactor: perhaps we can use Load(Target), where Target is an enum, and then wrap it in LoadWithUser(user, addons, Target) - if Load is the only place we need addons; we won't need Box<> and we can pattern match
+* decide how do we wanna do CatalogsFilteredWithPreview: whether we wanna do it at all, or just have CatalogFiltered always return MetaItem; DECISION: we will simply represent a page of MetaItem, therefore we don't need anything else for previews; also, paging would be done through `extra`, so a new `Load` will have to be sent
 
 ## TODO
 
 * refactor: generic AddonResponse (currently uses CatalogResponse)?
 * optimization: optimize the reducers by avoiding copying data on each iteration
-* decide how do we wanna do CatalogsFilteredWithPreview: whether we wanna do it at all, or just have CatalogFiltered always return MetaItem
 
 * implement UserM; think of how (or not to?) to mock storage in the test; LoadWithUser(user, addons, ...)
 * UserM: figure ot loading step; perhaps always do the load with a future and do everything in a .then(), but memoize it
@@ -69,9 +69,11 @@
 
 * refactor: consider splitting Environment into Storage and Fetcher; and maybe take AddonsClient in
 
+* refactor: enum representations
+
 * spec: notifItems: rethink that spec, crystallize it
 * Trait for meta item and lib item; MetaPreview, MetaItem, MetaDetailed
-* implement CatalogsFiltered; CatalogsFilteredPreview
+* implement CatalogsFiltered
 * since a lot of things are asynchronous, perhaps we should have a guard; the things to think about are: addon set hash, addon ID, user ID, etc.
 * stuff to look for to be re-implemented: syncer, libitem/notifitem addons, discover ctrl, board ctrl, detail ctrl
 * environment: consider allowing a dynamic instance, esp for storage
