@@ -45,14 +45,11 @@ mod tests {
         let container = container_ref.borrow();
         assert_eq!(container.get_state().groups.len(), 6, "groups is the right length");
         for g in container.get_state().groups.iter() {
-            assert!(
-                if let Loadable::Ready(_) = g.1 {
-                    true
-                } else {
-                    false
-                },
-                "group is loaded"
-            );
+            assert!(match g.1 {
+                Loadable::Ready(_) => true,
+                Loadable::Message(_) => true,
+                _ => false,
+            }, "group is Ready or Message");
         }
     }
 

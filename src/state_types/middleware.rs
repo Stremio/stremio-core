@@ -19,8 +19,8 @@ impl Chain {
         for h_taken in handlers_rev {
             let d_taken = Rc::new(dispatcher.take().unwrap());
             dispatcher = Some(Box::new(move |action| {
-                h_taken.handle(&action, d_taken.clone());
                 d_taken(&action);
+                h_taken.handle(&action, d_taken.clone());
             }));
         }
         Chain {
