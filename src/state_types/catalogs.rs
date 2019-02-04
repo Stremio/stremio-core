@@ -4,7 +4,6 @@ use serde_derive::*;
 
 const MAX_ITEMS: usize = 25;
 
-// @TODO this might be needed outside of here
 #[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(tag = "type", content = "content")]
 pub enum Loadable<R, M> {
@@ -27,9 +26,6 @@ impl CatalogGrouped {
     }
 }
 
-// @TODO if we want to make this generic, we have to make MetaItem/LibItem/NotifItem implement the
-// same trait
-// the event CatalogsReceived must be generic too
 pub fn catalogs_reducer(state: &CatalogGrouped, action: &Action) -> Option<Box<CatalogGrouped>> {
     match action {
         Action::LoadWithAddons(addons, load_action @ ActionLoad::CatalogGrouped) => {
@@ -39,12 +35,14 @@ pub fn catalogs_reducer(state: &CatalogGrouped, action: &Action) -> Option<Box<C
                     .iter()
                     .map(|req| (req.to_owned(), Loadable::Loading))
                     .collect();
-                return Some(Box::new(CatalogGrouped { groups }));
+                Some(Box::new(CatalogGrouped { groups }))
+            } else {
+                None
             }
         }
         Action::AddonResponse(req, result) => {
             if let Some(idx) = state.groups.iter().position(|g| &g.0 == req) {
-                // @TODO: is there a way to do this without copying all groups
+                // @TODO: this copy here is probably expensive; is there a way around it?
                 let mut groups = state.groups.to_owned();
                 groups[idx].1 = match result {
                     Ok(resp) => Loadable::Ready(CatalogResponse {
@@ -57,11 +55,14 @@ pub fn catalogs_reducer(state: &CatalogGrouped, action: &Action) -> Option<Box<C
                     }),
                     Err(e) => Loadable::Message(e.to_owned()),
                 };
-                return Some(Box::new(CatalogGrouped { groups }));
+                Some(Box::new(CatalogGrouped { groups }))
+            } else {
+                None
             }
         }
-        _ => {}
-    };
-    // Doesn't mutate
-    None
+        _ => {
+            // Doesn't mutate
+            None
+        }
+    }
 }

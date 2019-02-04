@@ -20,7 +20,6 @@ impl ActionLoad {
 }
 
 #[derive(Debug, Deserialize, Serialize, Clone)]
-// @TODO use named fields for some variants
 pub enum Action {
     Load(ActionLoad),
     // @TODO this should be renamed to LoadWithUser; we should also have UserLoaded and UserValue,

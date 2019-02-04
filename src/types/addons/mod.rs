@@ -13,7 +13,7 @@ pub struct Descriptor {
 
 // @TODO should we replace resource with an enum?
 
-// @TODO: another type for extra
+// @TODO: a different type for extra (HashMap?)
 pub type Extra = String;
 
 #[derive(Debug, Deserialize, Serialize, Clone, PartialEq, Eq)]
@@ -41,11 +41,9 @@ pub enum AggrRequest {
 
 impl AggrRequest {
     pub fn plan(&self, addons: &[Descriptor]) -> Vec<ResourceRequest> {
-        // @TODO
         match &self {
             AggrRequest::AllCatalogs { extra } => {
-                // @TODO for each addon, go through each catalog, then filter by
-                // is_supported_catalog
+                // @TODO is_supported_catalog
                 addons
                     .iter()
                     .map(|addon| {

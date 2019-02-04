@@ -28,7 +28,6 @@ mod tests {
                 Box::new(UserMiddleware::<Env>::new()),
                 Box::new(AddonsMiddleware::<Env>::new()),
                 Box::new(ContainerHandler::new(0, container)),
-                // @TODO: reducers multiplexer middleware
             ],
             Box::new(move |action| {
                 // @TODO: test if this is actually progressing properly
