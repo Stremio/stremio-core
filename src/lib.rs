@@ -42,11 +42,18 @@ mod tests {
         chain.dispatch(action);
 
         // since the Env implementation works synchronously, this is OK
-        assert_eq!(
-            container_ref.borrow().get_state().groups.len(),
-            6,
-            "groups is the right length"
-        );
+        let container = container_ref.borrow();
+        assert_eq!(container.get_state().groups.len(), 6, "groups is the right length");
+        for g in container.get_state().groups.iter() {
+            assert!(
+                if let Loadable::Ready(_) = g.1 {
+                    true
+                } else {
+                    false
+                },
+                "group is loaded"
+            );
+        }
     }
 
     struct Env;

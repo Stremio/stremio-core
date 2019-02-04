@@ -35,7 +35,6 @@ impl<T: Environment> AddonsMiddleware<T> {
 }
 impl<T: Environment> Handler for AddonsMiddleware<T> {
     fn handle(&self, action: &Action, emit: Rc<DispatcherFn>) {
-        // @TODO can we avoid the identation
         if let Action::LoadWithAddons(addons, action_load) = action {
             if let Some(aggr_req) = action_load.addon_aggr_req() {
                 for resource_req in aggr_req.plan(&addons) {
