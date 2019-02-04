@@ -8,14 +8,13 @@ pub enum Loadable {
     Catalog,
 }
 
-// @TODO AddonAggrRequest
-// @TODO move this out of here; then we may be able to get rid of the prefixes
-// @TODO a way to "plan" addon requests by combining addons and AddonAggrRequest
-// perhaps impl AddonAddrRequest { pub fn plan() }
-// then the plan might return Vec<AddonReqPlan> that we might Hash to match against the response
-// later
+
+// @TODO move all of this out of here
+
+
 // @TODO: another type for extra
 pub type AddonExtra = String;
+
 #[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct AddonResourceRef {
     pub resource: String,
@@ -23,16 +22,43 @@ pub struct AddonResourceRef {
     pub id: String,
     pub extra: AddonExtra,
 }
+
+#[derive(Debug, Deserialize, Serialize, Clone)]
+pub struct AddonRequest {
+    pub transport_url: String,
+    pub resource_ref: AddonResourceRef,
+}
+
+// This is going from the most general to the most concrete aggregation request
 #[derive(Debug, Deserialize, Serialize, Clone)]
 pub enum AddonAggrRequest {
-    AllOfResource(AddonResourceRef),
-    FromAddon{ transport_url: String, resource_ref: AddonResourceRef },
+    // @TODO should AllCatalogs have optional resource and type_name?
     AllCatalogs{ extra: AddonExtra },
+    AllOfResource(AddonResourceRef),
+    // @TODO this can be replaced by AddonRequest
+    FromAddon(AddonRequest),
 }
 
 impl AddonAggrRequest {
-    pub fn plan(_addons: &Vec<AddonDescriptor>) {
+    pub fn plan(&self, addons: &Vec<AddonDescriptor>) -> Vec<AddonRequest> {
         // @TODO
+        match &self {
+            AddonAggrRequest::AllCatalogs{ extra } => {
+                // @TODO for each addon, go through each catalog, then filter by
+                // is_supported_catalog 
+                vec![]
+            },
+            AddonAggrRequest::AllOfResource(resource_ref) => {
+                // filter all addons that match the resource_ref
+                addons.iter()
+                    .filter(|addon| addon.manifest.is_supported(&resource_ref.resource, &resource_ref.type_name, &resource_ref.id))
+                    .map(|addon| AddonRequest{ transport_url: addon.transport_url.to_owned(), resource_ref: resource_ref.to_owned() })
+                    .collect()
+            },
+            AddonAggrRequest::FromAddon(req) => {
+                vec![req.to_owned()]
+            },
+        }
     }
 }
 
@@ -50,8 +76,8 @@ pub enum Action {
 }
 
 impl Action {
-    pub fn get_addon_request(&self) -> AddonAggrRequest {
-        AddonAggrRequest::AllCatalogs{ extra: "".into() }
+    pub fn get_addon_request(&self) -> Option<AddonAggrRequest> {
+        Some(AddonAggrRequest::AllCatalogs{ extra: "".into() })
     }
 }
 
