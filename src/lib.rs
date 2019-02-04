@@ -43,13 +43,20 @@ mod tests {
 
         // since the Env implementation works synchronously, this is OK
         let container = container_ref.borrow();
-        assert_eq!(container.get_state().groups.len(), 6, "groups is the right length");
+        assert_eq!(
+            container.get_state().groups.len(),
+            6,
+            "groups is the right length"
+        );
         for g in container.get_state().groups.iter() {
-            assert!(match g.1 {
-                Loadable::Ready(_) => true,
-                Loadable::Message(_) => true,
-                _ => false,
-            }, "group is Ready or Message");
+            assert!(
+                match g.1 {
+                    Loadable::Ready(_) => true,
+                    Loadable::Message(_) => true,
+                    _ => false,
+                },
+                "group is Ready or Message"
+            );
         }
     }
 
