@@ -41,6 +41,8 @@
 * design decision on reacting on addon installs/uninstalls is: we don't, but issuing a new Load will make the container react on it; and we should always issue new Load's when going to pages
 * look into use Into<> to get rid of some .into()'s ?
 * types/addons/{mod,manifest}.rs: Descriptor, ManifestCatalog, ManifestResource, ResourceRef, AggrRequest, Extra, Request; RequestHash can be used to match the responses
+* CatalogsGrouped to receive some info about the addon (from the manifest): this can be done with the new refactor where we'd use `action_load.plan()` directly in the reducer (at this point we can access addons too)
+* do we want to add the ability for an addon to update it's results? it could become relatively elegant with AddonResp: no for now, but it can be done easily
 
 ## TODO
 
@@ -59,15 +61,14 @@
 * AddonTransport trait, .get(), .manifest(); http addons will be constructed with a URL, while lib/notif addon directly as something that implements AddonTransport
 * construct `AddonHTTPTransport<E: Environment>` and give it to the interested middlewares; introduce a long-lived transport; addon transports can have FromStr trait?
 * start implementing libitem/notifitem addon
+* load/unload dynamics and more things other than Catalog: Detail, StreamSelect
 
 * refactor: mod.rs on `state_types` and types shouldn't glob export everything
 
 * refactor: consider splitting Environment into Storage and Fetcher; and maybe take AddonsClient in
 
 * spec: notifItems: rethink that spec, crystallize it
-* load/unload dynamics and more things other than Catalog: Detail, StreamSelect
 * Trait for meta item and lib item; MetaPreview, MetaItem, MetaDetailed
-* CatalogsGrouped to receive some info about the addon (from the manifest)
 * implement CatalogsFiltered; CatalogsFilteredPreview
 * since a lot of things are asynchronous, perhaps we should have a guard; the things to think about are: addon set hash, addon ID, user ID, etc.
 * stuff to look for to be re-implemented: syncer, libitem/notifitem addons, discover ctrl, board ctrl, detail ctrl
@@ -75,8 +76,6 @@
 * environment: the JS side should (1) TRY to load the WASM and (2) TRY to sanity-check the environment; if it doesn't succeed, it should show an error to the user
 * complex async pieces of logic: open, detectFromURL, openMedia; those should be a middleware or just separate async functions; detectFromURL/openMedia are user-agnostic, but open is not; if it's an async function used internally by the middleware, it's still OK cause we won't make the stream requests again if we go to the UI (cause of the memoization)
 * opening a file (protocol add-ons to be considered)
-* do we want to add the ability for an addon to update it's results? it could become relatively elegant with AddonResp
-* https://blog.cloudflare.com/cloudflare-workers-as-a-serverless-rust-platform/
 * crates: stremio-web-environment (only the Environment), stremio-state-ng-web (general API that is exported to JS via bindgen)
 * we should make it so that if a session is expired, we go to the login screen; this should be in the app
 * think of how to do all edge cases in the user, such as pre-installing add-ons (implicit input)
@@ -96,6 +95,8 @@
 * figure out pausing on minimize/close; this should be handled in the app; probably like this: when closing/minimizing the window, pause if state is playing
 * when you go to player/detail and there doesn't appear to be a supported addon for the /meta/ request, show an error to the user (+tes)
 * document item type agnostic behavior (detail page)
+* refactor: perhaps Resource should be an enum
+* https://blog.cloudflare.com/cloudflare-workers-as-a-serverless-rust-platform/
 
 
 example pipeline:
