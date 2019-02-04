@@ -34,7 +34,7 @@ impl<T: Environment> CatalogMiddleware<T> {
 impl<T: Environment> Handler for CatalogMiddleware<T> {
     fn handle(&self, action: &Action, emit: Rc<DispatcherFn>) {
         // @TODO: match on CatalogLoad action
-        if let Action::WithAddons(addons, _) = action {
+        if let Action::LoadWithAddons(addons, _) = action {
             // @TODO we might need is_catalog_supported
             // https://github.com/Stremio/stremio-aggregators/blob/master/lib/isCatalogSupported.js
             for addon in addons.iter() {

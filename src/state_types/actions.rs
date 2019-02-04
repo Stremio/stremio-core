@@ -12,7 +12,7 @@ pub enum ActionLoad {
 // @TODO use named fields for some variants
 pub enum Action {
     Load(ActionLoad),
-    WithAddons(Vec<Descriptor>, Box<Action>),
+    LoadWithAddons(Vec<Descriptor>, ActionLoad),
     NewState(usize),
 
     // @TODO those are temporary events, remove them
@@ -25,8 +25,8 @@ impl Action {
         // @TODO map WithAddons(addons, CatalogGrouped()) to AllCatalogs
         // map WithAddons(addons, CatalogFiltered()) to FromAddon
         // etc.
-        if let Action::WithAddons(_addons, _action) = &self {
-            // @TODO match if the action is Load
+        if let Action::LoadWithAddons(_addons, _action_load) = &self {
+            // @TODO
             Some(AggrRequest::AllCatalogs { extra: "".into() })
         } else {
             None

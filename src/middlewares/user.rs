@@ -21,13 +21,6 @@ impl<T: Environment> UserMiddleware<T> {
 }
 impl<T: Environment> Handler for UserMiddleware<T> {
     fn handle(&self, action: &Action, emit: Rc<DispatcherFn>) {
-        // only handle the Init
-        // @TODO handle LoadCatalogs
-        match action {
-            Action::Load(_) => {}
-            _ => return,
-        }
-        let action = action.to_owned();
         // @TODO find a way to implicitly unwrap the .result field
         // @TODO APIWrapper, err handling
         #[derive(Serialize, Clone)]
@@ -40,18 +33,22 @@ impl<T: Environment> Handler for UserMiddleware<T> {
         struct APICollectionRes {
             pub addons: Vec<Descriptor>,
         };
+
         // @TODO get rid of this hardcode
-        let req = Request::post("https://api.strem.io/api/addonCollectionGet")
-            .body(APICollectionRequest {})
-            .unwrap();
-        let fut = T::fetch_serde::<_, APIRes<APICollectionRes>>(req)
-            .and_then(move |r| {
-                let addons = &r.result.addons;
-                emit(&Action::WithAddons(addons.to_vec(), action.into()));
-                future::ok(())
-            })
-            // @TODO handle the error
-            .or_else(|_| future::err(()));
-        T::exec(Box::new(fut));
+        if let Action::Load(action_load) = action {
+            let action_load = action_load.to_owned();
+            let req = Request::post("https://api.strem.io/api/addonCollectionGet")
+                .body(APICollectionRequest {})
+                .unwrap();
+            let fut = T::fetch_serde::<_, APIRes<APICollectionRes>>(req)
+                .and_then(move |r| {
+                    let addons = &r.result.addons;
+                    emit(&Action::LoadWithAddons(addons.to_vec(), action_load));
+                    future::ok(())
+                })
+                // @TODO handle the error
+                .or_else(|_| future::err(()));
+            T::exec(Box::new(fut));
+        }
     }
 }
