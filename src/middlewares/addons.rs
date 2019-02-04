@@ -12,21 +12,21 @@ impl<T: Environment> AddonsMiddleware<T> {
     pub fn new() -> Self {
         AddonsMiddleware { env: PhantomData }
     }
-    fn for_request(&self, res_req: ResourceRequest, emit: Rc<DispatcherFn>) {
+    fn for_request(&self, resource_req: ResourceRequest, emit: Rc<DispatcherFn>) {
         // @TODO use transport
         // @TODO: better identifier?
-        let url = res_req.transport_url.replace(
+        let url = resource_req.transport_url.replace(
             "/manifest.json",
             &format!(
                 "/catalog/{}/{}.json",
-                &res_req.resource_ref.type_name, &res_req.resource_ref.id
+                &resource_req.resource_ref.type_name, &resource_req.resource_ref.id
             ),
         );
         let req = Request::get(&url).body(()).unwrap();
         let fut = T::fetch_serde::<_, CatalogResponse>(req).then(move |res| {
             emit(&match res {
-                Ok(resp) => Action::AddonResponse(res_req, Ok(*resp)),
-                Err(e) => Action::AddonResponse(res_req, Err(e.description().to_owned())),
+                Ok(resp) => Action::AddonResponse(resource_req, Ok(*resp)),
+                Err(e) => Action::AddonResponse(resource_req, Err(e.description().to_owned())),
             });
             future::ok(())
         });
