@@ -31,18 +31,17 @@ impl CatalogGrouped {
 // same trait
 // the event CatalogsReceived must be generic too
 pub fn catalogs_reducer(state: &CatalogGrouped, action: &Action) -> Option<Box<CatalogGrouped>> {
-    // @TODO: can we get rid of some of the to_owned's?
-    // @TODO: can we make this more DRY
     match action {
         Action::LoadWithAddons(addons, load_action @ ActionLoad::CatalogGrouped) => {
             if let Some(aggr_req) = load_action.addon_aggr_req() {
-                let groups = aggr_req.plan(&addons)
+                let groups = aggr_req
+                    .plan(&addons)
                     .iter()
-                    .map(|req| (req.to_owned(), Loadable::NotLoaded))
+                    .map(|req| (req.to_owned(), Loadable::Loading))
                     .collect();
-                return Some(Box::new(CatalogGrouped { groups }))
+                return Some(Box::new(CatalogGrouped { groups }));
             }
-        },
+        }
         Action::AddonResponse(req, result) => {
             if let Some(idx) = state.groups.iter().position(|g| &g.0 == req) {
                 // @TODO: is there a way to do this without copying all groups
@@ -59,7 +58,7 @@ pub fn catalogs_reducer(state: &CatalogGrouped, action: &Action) -> Option<Box<C
                     Err(e) => Loadable::Message(e.to_owned()),
                 };
                 return Some(Box::new(CatalogGrouped { groups }));
-            };
+            }
         }
         _ => {}
     };

@@ -50,17 +50,20 @@ impl AggrRequest {
                     .iter()
                     .map(|addon| {
                         let transport_url = addon.transport_url.to_owned();
-                        addon.manifest.catalogs.iter()
-                        .filter(|cat| cat.extra_required.is_empty())
-                        .map(move |cat| ResourceRequest {
-                            transport_url: transport_url.to_owned(),
-                            resource_ref: ResourceRef{
-                                resource: "catalog".to_owned(),
-                                type_name: cat.type_name.to_owned(),
-                                id: cat.id.to_owned(),
-                                extra: extra.to_owned(),
-                            },
-                        })
+                        addon
+                            .manifest
+                            .catalogs
+                            .iter()
+                            .filter(|cat| cat.extra_required.is_empty())
+                            .map(move |cat| ResourceRequest {
+                                transport_url: transport_url.to_owned(),
+                                resource_ref: ResourceRef {
+                                    resource: "catalog".to_owned(),
+                                    type_name: cat.type_name.to_owned(),
+                                    id: cat.id.to_owned(),
+                                    extra: extra.to_owned(),
+                                },
+                            })
                     })
                     .flatten()
                     .collect()

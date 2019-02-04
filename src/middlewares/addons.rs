@@ -17,7 +17,10 @@ impl<T: Environment> AddonsMiddleware<T> {
         // @TODO: better identifier?
         let url = res_req.transport_url.replace(
             "/manifest.json",
-            &format!("/catalog/{}/{}.json", res_req.resource_ref.type_name, res_req.resource_ref.id),
+            &format!(
+                "/catalog/{}/{}.json",
+                res_req.resource_ref.type_name, res_req.resource_ref.id
+            ),
         );
         let res_req = res_req.to_owned();
         let req = Request::get(&url).body(()).unwrap();
