@@ -43,14 +43,14 @@
 * types/addons/{mod,manifest}.rs: Descriptor, ManifestCatalog, ManifestResource, ResourceRef, AggrRequest, Extra, Request; RequestHash can be used to match the responses
 * CatalogsGrouped to receive some info about the addon (from the manifest): this can be done with the new refactor where we'd use `action_load.plan()` directly in the reducer (at this point we can access addons too)
 * do we want to add the ability for an addon to update it's results? it could become relatively elegant with AddonResp: no for now, but it can be done easily
+* refactor: AddonRequest -> AddonRequests, since we want to guarantee preserved order of requests; or rather, drop AddonRequests/CatalogRequest entirely, and just expand WithAddons(addons, ...) plus the action `get_addon_request` directly in the reducer; that will also drop `req_id` (hash of ResourceRequest?)
+* refactor: perhaps we can use Load(Target), where Target is an enum, and then wrap it in LoadWithUser(user, addons, Target) - if Load is the only place we need addons; we won't need Box<> and we can pattern match
 
 ## TODO
 
-* refactor: AddonRequest -> AddonRequests, since we want to guarantee preserved order of requests; or rather, drop AddonRequests/CatalogRequest entirely, and just expand WithAddons(addons, ...) plus the action `get_addon_request` directly in the reducer; that will also drop `req_id` (hash of ResourceRequest?)
-* implement UserM; think of how (or not to?) to mock storage in the test
+* implement UserM; think of how (or not to?) to mock storage in the test; LoadWithUser(user, addons, ...)
 * UserM: figure ot loading step; perhaps always do the load with a future and do everything in a .then(), but memoize it
-* refactor: perhaps we can use Load(Target), where Target is an enum, and then wrap it in LoadWithUser(user, addons, Target) - if Load is the only place we need addons; we won't need Box<> and we can pattern match
-* consider a Trait for the Load family of actions that will return an AddonAggrReq(OfResouce(resource, type, id, extra)) or AddonAggrReq(Catalogs(extra)); consider also OfAddon (for CatalogsFiltered); then, our AddonAggr middleware will spawn AddonReq/AddonResp; given a `transport_url`, OfAddon will try to find the addon in the collection, to possibly apply `flags.stremioAuth` or `flags.transport`; of course, it doesn't need to find it, `transport_url` is sufficient to request
+* given a `transport_url`, WithAddon will try to find the addon in the collection, to possibly apply `flags.stremioAuth` or `flags.transport`; of course, it doesn't need to find it, `transport_url` is sufficient to request; or, it should just carry the flags
 
 * decide how do we wanna do CatalogsFilteredWithPreview: whether we wanna do it at all, or just have CatalogFiltered always return MetaItem
 

@@ -16,7 +16,7 @@ pub struct Descriptor {
 // @TODO: another type for extra
 pub type Extra = String;
 
-#[derive(Debug, Deserialize, Serialize, Clone)]
+#[derive(Debug, Deserialize, Serialize, Clone, PartialEq, Eq)]
 pub struct ResourceRef {
     pub resource: String,
     pub type_name: String,
@@ -24,7 +24,7 @@ pub struct ResourceRef {
     pub extra: Extra,
 }
 
-#[derive(Debug, Deserialize, Serialize, Clone)]
+#[derive(Debug, Deserialize, Serialize, Clone, PartialEq, Eq)]
 pub struct ResourceRequest {
     pub transport_url: String,
     pub resource_ref: ResourceRef,
@@ -36,7 +36,6 @@ pub enum AggrRequest {
     // @TODO should AllCatalogs have optional resource and type_name?
     AllCatalogs { extra: Extra },
     AllOfResource(ResourceRef),
-    // @TODO this can be replaced by Request
     FromAddon(ResourceRequest),
 }
 
@@ -44,10 +43,27 @@ impl AggrRequest {
     pub fn plan(&self, addons: &[Descriptor]) -> Vec<ResourceRequest> {
         // @TODO
         match &self {
-            AggrRequest::AllCatalogs { extra: _ } => {
+            AggrRequest::AllCatalogs { extra } => {
                 // @TODO for each addon, go through each catalog, then filter by
                 // is_supported_catalog
-                vec![]
+                addons
+                    .iter()
+                    .map(|addon| {
+                        let transport_url = addon.transport_url.to_owned();
+                        addon.manifest.catalogs.iter()
+                        .filter(|cat| cat.extra_required.is_empty())
+                        .map(move |cat| ResourceRequest {
+                            transport_url: transport_url.to_owned(),
+                            resource_ref: ResourceRef{
+                                resource: "catalog".to_owned(),
+                                type_name: cat.type_name.to_owned(),
+                                id: cat.id.to_owned(),
+                                extra: extra.to_owned(),
+                            },
+                        })
+                    })
+                    .flatten()
+                    .collect()
             }
             AggrRequest::AllOfResource(resource_ref) => {
                 // filter all addons that match the resource_ref

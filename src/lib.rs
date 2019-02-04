@@ -26,7 +26,7 @@ mod tests {
         let chain = Chain::new(
             vec![
                 Box::new(UserMiddleware::<Env>::new()),
-                Box::new(CatalogMiddleware::<Env>::new()),
+                Box::new(AddonsMiddleware::<Env>::new()),
                 Box::new(ContainerHandler::new(0, container)),
                 // @TODO: reducers multiplexer middleware
             ],
