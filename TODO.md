@@ -58,14 +58,14 @@
 * construct `AddonHTTPTransport<E: Environment>` and give it to the interested middlewares; introduce a long-lived transport
 * start implementing libitem/notifitem addon
 
-* refactor: mod.rs on state_types and types shouldn't glob export everything
+* refactor: mod.rs on `state_types` and types shouldn't glob export everything
 
-* consider splitting Environment into Storage and Fetcher; and maybe take AddonsClient in
+* refactor: consider splitting Environment into Storage and Fetcher; and maybe take AddonsClient in
 
 * spec: notifItems: rethink that spec, crystallize it
 * load/unload dynamics and more things other than Catalog: Detail, StreamSelect
 * Trait for meta item and lib item; MetaPreview, MetaItem, MetaDetailed
-* CatalogsGrouped to receive some info about the addon
+* CatalogsGrouped to receive some info about the addon (from the manifest)
 * implement CatalogsFiltered; CatalogsFilteredPreview
 * since a lot of things are asynchronous, perhaps we should have a guard; the things to think about are: addon set hash, addon ID, user ID, etc.
 * stuff to look for to be re-implemented: syncer, libitem/notifitem addons, discover ctrl, board ctrl, detail ctrl
