@@ -24,7 +24,7 @@ impl<T: Environment> Handler for UserMiddleware<T> {
         // only handle the Init
         // @TODO handle LoadCatalogs
         match action {
-            Action::Init => {}
+            Action::Load(_) => {}
             _ => return,
         }
         let action = action.to_owned();

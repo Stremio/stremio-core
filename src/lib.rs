@@ -85,7 +85,7 @@ mod tests {
         );
 
         // this is the dispatch operation
-        let action = &Action::Init;
+        let action = &Action::Load(ActionLoad::Catalog);
         chain.dispatch(action);
     }
 
