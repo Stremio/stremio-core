@@ -6,55 +6,10 @@ pub mod types;
 mod tests {
     use self::middlewares::*;
     use self::state_types::*;
-    use self::types::*;
     use super::*;
     use futures::{future, Future};
     use serde::de::DeserializeOwned;
     use serde::Serialize;
-    use std::error::Error;
-
-    #[test]
-    fn it_works() {
-        let mut container = Container::with_reducer(CatalogGrouped::new(), &catalogs_reducer);
-        let addons_resp = get_addons("https://api.strem.io/addonsofficialcollection.json").unwrap();
-        for addon in addons_resp.iter() {
-            for cat in addon.manifest.catalogs.iter() {
-                let req_id = format!("{}/{}/{}", &addon.manifest.id, &cat.type_name, &cat.id);
-                container.dispatch(&Action::CatalogRequested(req_id.to_owned()));
-                container.dispatch(&match get_catalogs(&addon, &cat.type_name, &cat.id) {
-                    Ok(resp) => Action::CatalogReceived(req_id, Ok(resp)),
-                    Err(e) => Action::CatalogReceived(req_id, Err(e.description().to_owned())),
-                });
-            }
-        }
-        // @TODO figure out how to do middlewares/reducers pipeline
-        assert_eq!(container.get_state().groups.len(), 9);
-
-        // @TODO move this out; testing is_supported
-        let cinemeta_m = &addons_resp[0].manifest;
-        assert_eq!(cinemeta_m.is_supported("meta", "movie", "tt0234"), true);
-        assert_eq!(
-            cinemeta_m.is_supported("meta", "movie", "somethingElse"),
-            false
-        );
-        assert_eq!(cinemeta_m.is_supported("stream", "movie", "tt0234"), false);
-    }
-
-    // @TODO: remove these two
-    fn get_addons(url: &'static str) -> reqwest::Result<Vec<Descriptor>> {
-        Ok(reqwest::get(url)?.json()?)
-    }
-    fn get_catalogs(
-        addon: &Descriptor,
-        catalog_type: &String,
-        id: &String,
-    ) -> reqwest::Result<CatalogResponse> {
-        let url = addon.transport_url.replace(
-            "/manifest.json",
-            &format!("/catalog/{}/{}.json", catalog_type, id),
-        );
-        Ok(reqwest::get(&url)?.json()?)
-    }
 
     #[test]
     fn middlewares() {
@@ -62,7 +17,6 @@ mod tests {
         t_middlewares();
     }
     fn t_middlewares() {
-        // @TODO: assert if this works
         // @TODO test what happens with no handlers
         let container = std::rc::Rc::new(std::cell::RefCell::new(Container::with_reducer(
             CatalogGrouped::new(),
@@ -79,7 +33,7 @@ mod tests {
             Box::new(move |action| {
                 // @TODO: test if this is actually progressing properly
                 if let Action::NewState(_) = action {
-                    println!("new state {:?}", container_ref.borrow().get_state());
+                    //println!("new state {:?}", container_ref.borrow().get_state());
                 }
             }),
         );
@@ -87,6 +41,9 @@ mod tests {
         // this is the dispatch operation
         let action = &Action::Load(ActionLoad::Catalog);
         chain.dispatch(action);
+
+        // since the Env implementation works synchronously, this is OK
+        assert_eq!(container_ref.borrow().get_state().groups.len(), 6, "groups is the right length");
     }
 
     struct Env;
