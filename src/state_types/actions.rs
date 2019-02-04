@@ -4,8 +4,12 @@ use serde_derive::*;
 
 #[derive(Debug, Deserialize, Serialize, Clone)]
 pub enum ActionLoad {
-    // @TODO CatalogGrouped, CatalogFiltered, etc.
-    Catalog,
+    // @TODO most of these values need content
+    CatalogGrouped,
+    CatalogFiltered,
+    Detail,
+    Streams,
+    AddonCatalog,
 }
 
 #[derive(Debug, Deserialize, Serialize, Clone)]

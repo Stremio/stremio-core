@@ -221,7 +221,7 @@ needs to take installationID as an arg
 
 
 Initial flow to be implemented:
-LoadCatalog -> (user middleware does this) WithUser(user, addons, LoadCatalog) -> AddonRequest, AddonResponse
+LoadCatalog -> (user middleware does this) WithUser(user, addons, LoadCatalog) -> AddonResponse
 
 The reducer, upon a LoadCatalog, should .clone() the action into it's state, and then discard any AddonRequest/AddonResponse that doesn't match that
 

@@ -14,9 +14,9 @@ mod tests {
     #[test]
     fn middlewares() {
         // to make sure we can't use 'static
-        t_middlewares();
+        inner_middlewares();
     }
-    fn t_middlewares() {
+    fn inner_middlewares() {
         // @TODO test what happens with no handlers
         let container = std::rc::Rc::new(std::cell::RefCell::new(Container::with_reducer(
             CatalogGrouped::new(),
@@ -39,7 +39,7 @@ mod tests {
         );
 
         // this is the dispatch operation
-        let action = &Action::Load(ActionLoad::Catalog);
+        let action = &Action::Load(ActionLoad::CatalogGrouped);
         chain.dispatch(action);
 
         // since the Env implementation works synchronously, this is OK
