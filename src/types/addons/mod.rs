@@ -44,7 +44,7 @@ impl AggrRequest {
     pub fn plan(&self, addons: &[Descriptor]) -> Vec<ResourceRequest> {
         // @TODO
         match &self {
-            AggrRequest::AllCatalogs { extra } => {
+            AggrRequest::AllCatalogs { extra: _ } => {
                 // @TODO for each addon, go through each catalog, then filter by
                 // is_supported_catalog
                 vec![]
@@ -53,14 +53,7 @@ impl AggrRequest {
                 // filter all addons that match the resource_ref
                 addons
                     .iter()
-                    .filter(|addon| {
-                        // @TODO perhaps is_supported should take resource_ref
-                        addon.manifest.is_supported(
-                            &resource_ref.resource,
-                            &resource_ref.type_name,
-                            &resource_ref.id,
-                        )
-                    })
+                    .filter(|addon| addon.manifest.is_supported(&resource_ref))
                     .map(|addon| ResourceRequest {
                         transport_url: addon.transport_url.to_owned(),
                         resource_ref: resource_ref.to_owned(),

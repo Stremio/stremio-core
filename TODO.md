@@ -50,12 +50,14 @@
 * refactor: perhaps we can use Load(Target), where Target is an enum, and then wrap it in LoadWithUser(user, addons, Target) - if Load is the only place we need addons; we won't need Box<> and we can pattern match
 * consider a Trait for the Load family of actions that will return an AddonAggrReq(OfResouce(resource, type, id, extra)) or AddonAggrReq(Catalogs(extra)); consider also OfAddon (for CatalogsFiltered); then, our AddonAggr middleware will spawn AddonReq/AddonResp; given a `transport_url`, OfAddon will try to find the addon in the collection, to possibly apply `flags.stremioAuth` or `flags.transport`; of course, it doesn't need to find it, `transport_url` is sufficient to request
 
+* decide how do we wanna do CatalogsFilteredWithPreview: whether we wanna do it at all, or just have CatalogFiltered always return MetaItem
+
 * statefulness can be mitigated by using a memoization where the addon transport `get` would return the same results if invoked with the same args again; however, this needs to be out of the transport impl and needs to be explicit
 * basic state: Catalog, Detail; and all the possible inner states (describe the structures); StreamSelect
 * tests: Chain, Container, individual middlewares, individual types
 * https://github.com/Stremio/stremio-aggregators/blob/master/lib/isCatalogSupported.js
 * AddonTransport trait, .get(), .manifest(); http addons will be constructed with a URL, while lib/notif addon directly as something that implements AddonTransport
-* construct `AddonHTTPTransport<E: Environment>` and give it to the interested middlewares; introduce a long-lived transport
+* construct `AddonHTTPTransport<E: Environment>` and give it to the interested middlewares; introduce a long-lived transport; addon transports can have FromStr trait?
 * start implementing libitem/notifitem addon
 
 * refactor: mod.rs on `state_types` and types shouldn't glob export everything
@@ -184,7 +186,9 @@ upon a LoadPlayer, we load the PlayerPreferences send a command to the player to
 if we get a AddonResp for subtitles, we send a addExtraSubtitles command
 if we get an AddonsFinished, we try to select previously selected ID as well (if we haven't succeeded in doing so already)
 if we don't have a selected ID at all, we should go with the default language
- 
+
+for player messages, it would be very nice if we had some identifier of the current stream, so that we can discard messages coming from a previous stream
+
 @TODO NOTE: since we need easy immediate access to the preferences, memoization is the wrong pattern here and we need statefulness
 
 Please note, there'd be no player reducer for now, as all of the state updates come in the form of player `propValue` or `propChanged` actions, which is very simple to reduce

@@ -5,6 +5,7 @@ use serde::de::{self, Deserialize, Deserializer, MapAccess, Visitor};
 use std::fmt;
 use std::marker::PhantomData;
 use std::str::FromStr;
+use crate::types::addons::ResourceRef;
 
 #[derive(Debug, PartialEq, Clone, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -58,26 +59,29 @@ pub struct Manifest {
 
 impl Manifest {
     // @TODO: test
-    pub fn is_supported(&self, resource_name: &str, type_name: &str, id: &str) -> bool {
+    // assert_eq!(cinemeta_m.is_supported("meta", "movie", "tt0234"), true);
+    // assert_eq!(cinemeta_m.is_supported("meta", "movie", "somethingElse"), false));
+    // assert_eq!(cinemeta_m.is_supported("stream", "movie", "tt0234"), false);
+    pub fn is_supported(&self, ResourceRef { resource, type_name, id, .. }: &ResourceRef) -> bool {
         // catalogs are a special case
-        if resource_name == "catalog" {
+        if resource == "catalog" {
             return self
                 .catalogs
                 .iter()
-                .any(|c| c.type_name == type_name && c.id == id);
+                .any(|c| &c.type_name == type_name && &c.id == id);
         }
-        let resource = match self.resources.iter().find(|&res| res.name == resource_name) {
+        let res = match self.resources.iter().find(|&res| &res.name == resource) {
             None => return false,
             Some(resource) => resource,
         };
         // types MUST contain type_name
         // and if there is id_prefixes, our id should start with at least one of them
-        let is_types_match = resource
+        let is_types_match = res
             .types
             .as_ref()
             .or_else(|| self.types.as_ref())
             .map_or(false, |types| types.iter().any(|t| t == type_name));
-        let is_id_match = resource
+        let is_id_match = res
             .id_prefixes
             .as_ref()
             .or_else(|| self.id_prefixes.as_ref())

@@ -12,7 +12,10 @@ pub enum ActionLoad {
 // @TODO use named fields for some variants
 pub enum Action {
     Load(ActionLoad),
+    // @TODO this should be renamed to LoadWithUser; we should also have UserLoaded and UserValue,
+    // both having (user, addons)
     LoadWithAddons(Vec<Descriptor>, ActionLoad),
+
     NewState(usize),
 
     // @TODO those are temporary events, remove them
@@ -33,6 +36,3 @@ impl Action {
         }
     }
 }
-
-// @TODO AddonCollection, Eq on AddonCollection
-// Middleware actions: AddonRequest, AddonResponse
