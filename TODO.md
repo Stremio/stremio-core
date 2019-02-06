@@ -49,6 +49,7 @@
 
 ## TODO
 
+* storage: set should take Option<T>
 * refactor: generic AddonResponse (currently uses CatalogResponse)?
 * optimization: optimize the reducers by avoiding copying data on each iteration
 
@@ -78,6 +79,7 @@
 * stuff to look for to be re-implemented: syncer, libitem/notifitem addons, discover ctrl, board ctrl, detail ctrl
 * environment: consider allowing a dynamic instance, esp for storage
 * environment: the JS side should (1) TRY to load the WASM and (2) TRY to sanity-check the environment; if it doesn't succeed, it should show an error to the user
+* design flaw: the player is supposed to get the URL to the video itself (from Stream), but then it needs to pull /subtitles/ from the addon system; could be done by wrapping some messages in the state container, but maybe there's a better way?
 * complex async pieces of logic: open, detectFromURL, openMedia; those should be a middleware or just separate async functions; detectFromURL/openMedia are user-agnostic, but open is not; if it's an async function used internally by the middleware, it's still OK cause we won't make the stream requests again if we go to the UI (cause of the memoization)
 * opening a file (protocol add-ons to be considered)
 * crates: stremio-web-environment (only the Environment), stremio-state-ng-web (general API that is exported to JS via bindgen)
@@ -99,8 +101,11 @@
 * figure out pausing on minimize/close; this should be handled in the app; probably like this: when closing/minimizing the window, pause if state is playing
 * when you go to player/detail and there doesn't appear to be a supported addon for the /meta/ request, show an error to the user (+tes)
 * document item type agnostic behavior (detail page)
-* refactor: perhaps Resource should be an enum
 * https://blog.cloudflare.com/cloudflare-workers-as-a-serverless-rust-platform/
+* JS Side: All errors or warnings that come as actions should be reported to sentry
+
+* BACKEND: notifitem generation needs to be reduced (10 per item, max ~300)
+* lib/notif addon: gzip everything?
 
 
 example pipeline:
@@ -219,6 +224,8 @@ player reducer should accurately reflect states like subtitles (from addons) or 
 ## Analytics sink:
 
 needs to take installationID as an arg
+
+every event needs to have a seq number and a session
 
 
 ------
