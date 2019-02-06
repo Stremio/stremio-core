@@ -28,5 +28,6 @@ pub enum Action {
 
     NewState(usize),
 
-    AddonResponse(ResourceRequest, Result<CatalogResponse, String>),
+    // @TODO perhaps we should use some AddonResult type
+    AddonResponse(ResourceRequest, Result<ResourceResponse, String>),
 }

@@ -2,6 +2,7 @@ use serde_derive::*;
 
 mod manifest;
 pub use self::manifest::*;
+use crate::types::meta_item::*;
 
 #[derive(PartialEq, Clone, Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -30,8 +31,18 @@ pub struct ResourceRequest {
     pub resource_ref: ResourceRef,
 }
 
+// If we ever need to return two properties (e.g. `{streams, ads}`) we can use structs
+// and the Untagged representation: https://serde.rs/enum-representations.html#untagged
+#[derive(Deserialize, Serialize, Clone, Debug)]
+#[serde(rename_all = "camelCase")]
+pub enum ResourceResponse {
+    Metas(Vec<MetaPreview>),
+    Meta(MetaItem),
+    //Streams(Vec<Stream>),
+}
+
 // This is going from the most general to the most concrete aggregation request
-#[derive(Debug, Deserialize, Serialize, Clone)]
+#[derive(Debug, Clone)]
 pub enum AggrRequest {
     // @TODO should AllCatalogs have optional resource and type_name?
     AllCatalogs { extra: Extra },
