@@ -26,7 +26,7 @@ impl<T: Environment> AddonsMiddleware<T> {
         let fut = T::fetch_serde::<_, CatalogResponse>(req).then(move |res| {
             emit(&match res {
                 Ok(resp) => Action::AddonResponse(resource_req, Ok(*resp)),
-                Err(e) => Action::AddonResponse(resource_req, Err(e.description().to_owned())),
+                Err(e) => Action::AddonResponse(resource_req, Err(e.to_string())),
             });
             future::ok(())
         });
