@@ -31,14 +31,18 @@ pub struct ResourceRequest {
     pub resource_ref: ResourceRef,
 }
 
-// If we ever need to return two properties (e.g. `{streams, ads}`) we can use structs
-// and the Untagged representation: https://serde.rs/enum-representations.html#untagged
 #[derive(Deserialize, Serialize, Clone, Debug)]
-#[serde(rename_all = "camelCase")]
+#[serde(untagged, rename_all = "camelCase")]
 pub enum ResourceResponse {
-    Metas(Vec<MetaPreview>),
-    Meta(MetaItem),
-    //Streams(Vec<Stream>),
+    Metas {
+        metas: Vec<MetaPreview>,
+        #[serde(default)]
+        skip: u32,
+        #[serde(default)]
+        has_more: bool
+    },
+    Meta { meta: MetaItem },
+    //Streams { streams: Vec<Stream> },
 }
 
 // This is going from the most general to the most concrete aggregation request

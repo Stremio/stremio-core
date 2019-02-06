@@ -46,7 +46,7 @@ pub fn catalogs_reducer(state: &CatalogGrouped, action: &Action) -> Option<Box<C
             if let Some(idx) = state.groups.iter().position(|g| &g.0 == req) {
                 let mut groups = state.groups.to_owned();
                 let group_content = match result {
-                    Ok(ResourceResponse::Metas(metas)) => Loadable::Ready(
+                    Ok(ResourceResponse::Metas{ metas, .. }) => Loadable::Ready(
                         metas
                             .iter()
                             .take(MAX_ITEMS)

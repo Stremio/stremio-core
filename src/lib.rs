@@ -58,16 +58,11 @@ mod tests {
                 "group is Ready or Message"
             );
         }
-        assert!(
-            container.get_state().groups.iter().any(|g| {
-                if let Loadable::Ready(_) = g.1 {
-                    true
-                } else {
-                    false
-                }
-            }),
-            "first group is loaded"
-        );
+        if !container.get_state().groups.iter().any(|g| {
+            if let Loadable::Ready(_) = g.1 { true } else { false }
+        }) {
+            panic!("there are no items that are Ready in state {:?}", container.get_state());
+        }
     }
 
     struct Env;
