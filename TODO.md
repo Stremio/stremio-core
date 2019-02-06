@@ -50,6 +50,7 @@
 * storage: set should take Option<T>
 * more detailed errors on deserialize (environment?)
 * optimization: optimize the reducers by avoiding copying data on each iteration: can't happen for now, conceptually difficult
+* optimization: actually, that worked out with inner Rc<>
 
 ## TODO
 
