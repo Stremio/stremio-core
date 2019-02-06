@@ -1,6 +1,7 @@
 use super::actions::*;
 use crate::types::*;
 use serde_derive::*;
+use std::rc::Rc;
 
 const MAX_ITEMS: usize = 25;
 
@@ -16,10 +17,10 @@ pub enum Loadable<R, M> {
 // @TODO better type for Message
 pub type Message = String;
 
+// @TODO separate type for group
 #[derive(Debug, Default, Clone, Serialize, Deserialize)]
-
 pub struct CatalogGrouped {
-    pub groups: Vec<(ResourceRequest, Loadable<CatalogResponse, Message>)>,
+    pub groups: Vec<Rc<(ResourceRequest, Loadable<CatalogResponse, Message>)>>,
 }
 impl CatalogGrouped {
     pub fn new() -> CatalogGrouped {
@@ -34,7 +35,7 @@ pub fn catalogs_reducer(state: &CatalogGrouped, action: &Action) -> Option<Box<C
                 let groups = aggr_req
                     .plan(&addons)
                     .iter()
-                    .map(|req| (req.to_owned(), Loadable::Loading))
+                    .map(|req| Rc::new((req.to_owned(), Loadable::Loading)))
                     .collect();
                 Some(Box::new(CatalogGrouped { groups }))
             } else {
@@ -43,12 +44,8 @@ pub fn catalogs_reducer(state: &CatalogGrouped, action: &Action) -> Option<Box<C
         }
         Action::AddonResponse(req, result) => {
             if let Some(idx) = state.groups.iter().position(|g| &g.0 == req) {
-                // @TODO: this copy here is probably expensive; is there a way around it?
-                // if there is, we should NOT touch state_container.rs, since it provides a good
-                // conceptual basis
-                // instead, we can either enclose internal fields in Rc<> or Cow<>
                 let mut groups = state.groups.to_owned();
-                groups[idx].1 = match result {
+                let group_content = match result {
                     Ok(resp) => Loadable::Ready(CatalogResponse {
                         metas: resp
                             .metas
@@ -59,6 +56,7 @@ pub fn catalogs_reducer(state: &CatalogGrouped, action: &Action) -> Option<Box<C
                     }),
                     Err(e) => Loadable::Message(e.to_owned()),
                 };
+                groups[idx] = Rc::new((req.to_owned(), group_content));
                 Some(Box::new(CatalogGrouped { groups }))
             } else {
                 None
