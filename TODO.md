@@ -49,11 +49,11 @@
 * decide how do we wanna do CatalogsFilteredWithPreview: whether we wanna do it at all, or just have CatalogFiltered always return MetaItem; DECISION: we will simply represent a page of MetaItem, therefore we don't need anything else for previews; also, paging would be done through `extra`, so a new `Load` will have to be sent
 * storage: set should take Option<T>
 * more detailed errors on deserialize (environment?)
+* optimization: optimize the reducers by avoiding copying data on each iteration: can't happen for now, conceptually difficult
 
 ## TODO
 
 * refactor: generic AddonResponse (currently uses CatalogResponse)?
-* optimization: optimize the reducers by avoiding copying data on each iteration
 
 * implement UserM; think of how (or not to?) to mock storage in the test; LoadWithUser(user, addons, ...)
 * UserM: figure ot loading step; perhaps always do the load with a future and do everything in a .then(), but memoize it
@@ -72,7 +72,7 @@
 
 * refactor: consider splitting Environment into Storage and Fetcher; and maybe take AddonsClient in
 
-* refactor: enum representations
+* refactor: enum representations in serde
 
 * spec: notifItems: rethink that spec, crystallize it
 * Trait for meta item and lib item; MetaPreview, MetaItem, MetaDetailed
@@ -89,6 +89,7 @@
 * think of how to do all edge cases in the user, such as pre-installing add-ons (implicit input)
 * behaviorHints - pair (key, val)?
 * separate crates: types, `state_types`
+* environment (web): separate module, also can we avoid the double deserialization on `fetch_serde`?
 * when playing AND when opening the detail page, we should augment the libItem with meta if it's not already (trigger the updateLibItem action only if this would actually change the libitem)
 * when saving the last stream, save the whole object but compressed
 * ensure environment caches are in place via the service worker (web)
@@ -108,6 +109,7 @@
 
 * BACKEND: notifitem generation needs to be reduced (10 per item, max ~300)
 * lib/notif addon: gzip everything?
+
 
 
 example pipeline:

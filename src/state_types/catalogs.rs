@@ -17,6 +17,7 @@ pub enum Loadable<R, M> {
 pub type Message = String;
 
 #[derive(Debug, Default, Clone, Serialize, Deserialize)]
+
 pub struct CatalogGrouped {
     pub groups: Vec<(ResourceRequest, Loadable<CatalogResponse, Message>)>,
 }
@@ -43,6 +44,9 @@ pub fn catalogs_reducer(state: &CatalogGrouped, action: &Action) -> Option<Box<C
         Action::AddonResponse(req, result) => {
             if let Some(idx) = state.groups.iter().position(|g| &g.0 == req) {
                 // @TODO: this copy here is probably expensive; is there a way around it?
+                // if there is, we should NOT touch state_container.rs, since it provides a good
+                // conceptual basis
+                // instead, we can either enclose internal fields in Rc<> or Cow<>
                 let mut groups = state.groups.to_owned();
                 groups[idx].1 = match result {
                     Ok(resp) => Loadable::Ready(CatalogResponse {
