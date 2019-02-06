@@ -14,5 +14,5 @@ pub trait Environment {
         OUT: 'static + DeserializeOwned;
     fn exec(fut: Box<Future<Item = (), Error = ()>>);
     fn get_storage<T: 'static + DeserializeOwned>(key: &str) -> EnvFuture<Option<Box<T>>>;
-    fn set_storage<T: 'static + Serialize>(key: &str, value: &T) -> EnvFuture<()>;
+    fn set_storage<T: 'static + Serialize>(key: &str, value: Option<&T>) -> EnvFuture<()>;
 }

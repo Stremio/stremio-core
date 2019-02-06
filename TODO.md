@@ -47,10 +47,11 @@
 * refactor: AddonRequest -> AddonRequests, since we want to guarantee preserved order of requests; or rather, drop AddonRequests/CatalogRequest entirely, and just expand WithAddons(addons, ...) plus the action `get_addon_request` directly in the reducer; that will also drop `req_id` (hash of ResourceRequest?)
 * refactor: perhaps we can use Load(Target), where Target is an enum, and then wrap it in LoadWithUser(user, addons, Target) - if Load is the only place we need addons; we won't need Box<> and we can pattern match
 * decide how do we wanna do CatalogsFilteredWithPreview: whether we wanna do it at all, or just have CatalogFiltered always return MetaItem; DECISION: we will simply represent a page of MetaItem, therefore we don't need anything else for previews; also, paging would be done through `extra`, so a new `Load` will have to be sent
+* storage: set should take Option<T>
 
 ## TODO
 
-* storage: set should take Option<T>
+* more detailed errors on deserialize (environment?)
 * refactor: generic AddonResponse (currently uses CatalogResponse)?
 * optimization: optimize the reducers by avoiding copying data on each iteration
 
