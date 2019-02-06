@@ -29,6 +29,7 @@
 * find the reason for calls being slow: `get_state` takes ~50ms; optimized it by reducing the amount of data
 * Environment: basic storage
 * Optimization: ability to subscribe with a whitelist; for actions not matching the whitelist, subscribe only to the *occurrence*, so that we can manually `get_state()` if needed at the end of the tick (`setImmediate`)
+* security: deserializing items with serde should impose a limit on String length (e.g. name, poster, etc.)
 * environment: storage err handling
 * SPEC: decide if a separate resource will be used for library/notifications; a separate return type (.libItems rather than .metas) is a must; DONE: seems it must be a catalog, otherwise it breaks the semantics of manifest.catalogs; we will restrict it via extraRequired
 * Stream: new SPEC; we should have ways to filter streams too (e.g. HTTP + directly playable only)
