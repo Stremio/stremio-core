@@ -58,6 +58,16 @@ mod tests {
                 "group is Ready or Message"
             );
         }
+        assert!(
+            container.get_state().groups.iter().any(|g| {
+                if let Loadable::Ready(_) = g.1 {
+                    true
+                } else {
+                    false
+                }
+            }),
+            "first group is loaded"
+        );
     }
 
     struct Env;
