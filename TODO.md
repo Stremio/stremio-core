@@ -218,6 +218,14 @@ Final reducers will be catalog, library, notifications, detail, player, settings
 
 player reducer should accurately reflect states like subtitles (from addons) or subtitle files (vtt) loading
 
+### continue watching
+
+
+show it if `item.state.video_id != item._id` and `timeOffset == 0` and there is a `video_id`; the goal is to show series that you have a next ep of
+resetting state should work like this: if there is no next video, reset `video_id` to null; 
+first sort by the date of the first notification, second sort by lastWatched; the goal here is to show items with notifications (if overallTimeWatched > 0)
+
+
 ## another middleware for open, openMedia, openAddonURL
 
 @TODO
