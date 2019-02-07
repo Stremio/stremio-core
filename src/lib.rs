@@ -101,7 +101,10 @@ mod tests {
             })
         }
         fn exec(fut: Box<Future<Item = (), Error = ()>>) {
-            fut.wait().unwrap();
+            match fut.wait() {
+                Ok(_) => {},
+                Err(e) => { dbg!(e) },
+            }
         }
         fn get_storage<T: 'static + DeserializeOwned>(_key: &str) -> EnvFuture<Option<Box<T>>> {
             Box::new(future::err("unimplemented".into()))

@@ -23,14 +23,21 @@ impl<T: Environment> Handler for UserMiddleware<T> {
     fn handle(&self, action: &Action, emit: Rc<DispatcherFn>) {
         // @TODO find a way to implicitly unwrap the .result field
         // @TODO APIWrapper, err handling
+        #[derive(Deserialize, Clone)]
+        struct APIErr {
+            message: String
+        };
         #[derive(Serialize, Clone)]
+        // @TODO
         struct APICollectionRequest {};
-        #[derive(Serialize, Deserialize)]
-        struct APIRes<T> {
-            pub result: T,
+        #[derive(Deserialize)]
+        #[serde(untagged)]
+        enum APIResult<T> {
+            Ok{ result: T },
+            Err{ error: APIErr },
         };
         #[derive(Serialize, Deserialize)]
-        struct APICollectionRes {
+        struct APICollection {
             pub addons: Vec<Descriptor>,
         };
 
@@ -40,14 +47,22 @@ impl<T: Environment> Handler for UserMiddleware<T> {
             let req = Request::post("https://api.strem.io/api/addonCollectionGet")
                 .body(APICollectionRequest {})
                 .unwrap();
-            let fut = T::fetch_serde::<_, APIRes<APICollectionRes>>(req)
-                .and_then(move |r| {
-                    let addons = &r.result.addons;
-                    emit(&Action::LoadWithAddons(addons.to_vec(), action_load));
+            let fut = T::fetch_serde::<_, APIResult<APICollection>>(req)
+                .and_then(move |result| {
+                    // @TODO err handling
+                    match *result {
+                        APIResult::Ok{ result: APICollection{ addons }} => {
+                            emit(&Action::LoadWithAddons(addons.to_vec(), action_load));
+                        },
+                        _ => {}
+                    }
                     future::ok(())
                 })
-                // @TODO handle the error
-                .or_else(|_| future::err(()));
+                .or_else(|e| {
+                    // @TODO better handling of this err
+                    dbg!(e);
+                    future::err(())
+                });
             T::exec(Box::new(fut));
         }
     }
