@@ -46,14 +46,14 @@ pub fn catalogs_reducer(state: &CatalogGrouped, action: &Action) -> Option<Box<C
             if let Some(idx) = state.groups.iter().position(|g| &g.0 == req) {
                 let mut groups = state.groups.to_owned();
                 let group_content = match result {
-                    Ok(ResourceResponse::Metas{ metas, .. }) => Loadable::Ready(
+                    Ok(ResourceResponse::Metas{ metas, skip: 0, .. }) => Loadable::Ready(
                         metas
                             .iter()
                             .take(MAX_ITEMS)
                             .map(|m| m.to_owned())
                             .collect()
                     ),
-                    Ok(_) => Loadable::Message("unexpected response kind".to_owned()),
+                    Ok(_) => Loadable::Message("unexpected response".to_owned()),
                     Err(e) => Loadable::Message(e.to_owned()),
                 };
                 groups[idx] = Rc::new((req.to_owned(), group_content));
