@@ -27,40 +27,38 @@ impl<T: Environment> Handler for UserMiddleware<T> {
         struct APIErr {
             message: String
         };
-        #[derive(Serialize, Clone)]
         // @TODO
-        struct APICollectionRequest {};
+        #[derive(Serialize, Clone)]
+        struct CollectionRequest {};
+        #[derive(Serialize, Deserialize)]
+        struct CollectionResponse {
+            pub addons: Vec<Descriptor>,
+        };
         #[derive(Deserialize)]
         #[serde(untagged)]
         enum APIResult<T> {
             Ok{ result: T },
             Err{ error: APIErr },
         };
-        #[derive(Serialize, Deserialize)]
-        struct APICollection {
-            pub addons: Vec<Descriptor>,
-        };
 
-        // @TODO get rid of this hardcode
         if let Action::Load(action_load) = action {
             let action_load = action_load.to_owned();
             let req = Request::post("https://api.strem.io/api/addonCollectionGet")
-                .body(APICollectionRequest {})
+                .body(CollectionRequest {})
                 .unwrap();
-            let fut = T::fetch_serde::<_, APIResult<APICollection>>(req)
+            let fut = T::fetch_serde::<_, APIResult<CollectionResponse>>(req)
                 .and_then(move |result| {
                     // @TODO err handling
                     match *result {
-                        APIResult::Ok{ result: APICollection{ addons }} => {
+                        APIResult::Ok{ result: CollectionResponse{ addons }} => {
                             emit(&Action::LoadWithAddons(addons.to_vec(), action_load));
                         },
-                        _ => {}
+                        _ => {},
                     }
                     future::ok(())
                 })
                 .or_else(|e| {
-                    // @TODO better handling of this err
-                    dbg!(e);
+                    // @TODO err handling
                     future::err(())
                 });
             T::exec(Box::new(fut));
