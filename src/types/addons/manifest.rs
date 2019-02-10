@@ -32,11 +32,11 @@ pub struct ManifestCatalog {
     pub type_name: String,
     pub id: String,
     pub name: Option<String>,
+    // @TODO new extra notation (extra: [{ key, required, values }])
     #[serde(default)]
     pub extra_required: Vec<String>,
     #[serde(default)]
     pub extra_supported: Vec<String>,
-    // @TODO new extra notation (extra: [{ key, required, values }])
 }
 impl ManifestCatalog {
     pub fn is_extra_supported(&self, extra: &[(String, String)]) -> bool {

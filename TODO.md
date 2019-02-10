@@ -52,7 +52,7 @@
 * optimization: optimize the reducers by avoiding copying data on each iteration: can't happen for now, conceptually difficult
 * optimization: actually, that worked out with inner Rc<>
 * refactor: generic AddonResponse (currently uses CatalogResponse)? use an untagged enum
-
+* https://github.com/Stremio/stremio-aggregators/blob/master/lib/isCatalogSupported.js
 
 ## TODO
 
@@ -66,7 +66,6 @@
 
 * basic state: Catalog, Detail; and all the possible inner states (describe the structures); StreamSelect
 * tests: Chain, Container, individual middlewares, individual types
-* https://github.com/Stremio/stremio-aggregators/blob/master/lib/isCatalogSupported.js
 * AddonTransport trait, .get(), .manifest(); http addons will be constructed with a URL, while lib/notif addon directly as something that implements AddonTransport
 * construct `AddonHTTPTransport<E: Environment>` and give it to the interested middlewares; introduce a long-lived transport; addon transports can have FromStr trait?
 * start implementing libitem/notifitem addon
