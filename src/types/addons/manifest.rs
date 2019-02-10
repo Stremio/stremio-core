@@ -7,6 +7,8 @@ use std::fmt;
 use std::marker::PhantomData;
 use std::str::FromStr;
 
+// Resource descriptors
+// those define how a resource may be requested
 #[derive(Debug, PartialEq, Clone, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ManifestResource {
@@ -25,6 +27,17 @@ impl FromStr for ManifestResource {
     }
 }
 
+// Extra descriptors
+// those define the extra properties that may be passed for a catalog
+#[derive(Debug, PartialEq, Clone, Deserialize, Serialize)]
+pub struct ManifestExtra {
+    // @TODO new extra notation (extra: [{ key, required, values }])
+    #[serde(default, rename="extraRequired")]
+    pub required: Vec<String>,
+    #[serde(default, rename="extraSupported")]
+    pub supported: Vec<String>,
+}
+
 #[derive(Debug, PartialEq, Clone, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ManifestCatalog {
@@ -32,17 +45,14 @@ pub struct ManifestCatalog {
     pub type_name: String,
     pub id: String,
     pub name: Option<String>,
-    // @TODO new extra notation (extra: [{ key, required, values }])
-    #[serde(default)]
-    pub extra_required: Vec<String>,
-    #[serde(default)]
-    pub extra_supported: Vec<String>,
+    #[serde(flatten)]
+    pub extra: ManifestExtra,
 }
 impl ManifestCatalog {
     pub fn is_extra_supported(&self, extra: &[(String, String)]) -> bool {
-        let all_supported = extra.iter().all(|(k, _)| self.extra_supported.contains(k));
+        let all_supported = extra.iter().all(|(k, _)| self.extra.supported.contains(k));
         let requirements_satisfied = self
-            .extra_required
+            .extra.required
             .iter()
             .all(|kr| extra.iter().any(|(k, _)| kr == k));
         all_supported && requirements_satisfied
