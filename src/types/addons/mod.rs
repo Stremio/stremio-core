@@ -51,25 +51,22 @@ pub enum AggrRequest {
     FromAddon(ResourceRequest),
 }
 
+// Given an AggrRequest, which describes how to request data from *all* addons,
+// return a vector of individual addon requests
 impl AggrRequest {
     pub fn plan(&self, addons: &[Descriptor]) -> Vec<ResourceRequest> {
         match &self {
             AggrRequest::AllCatalogs { extra } => {
+                // create a request for each catalog that matches the required extra properties
                 addons
                     .iter()
                     .map(|addon| {
                         let transport_url = addon.transport_url.to_owned();
-                        // @TODO: should we split out this logic to something like
-                        // is_catalog_supported?
                         addon
                             .manifest
                             .catalogs
                             .iter()
-                            .filter(|cat| {
-                                let extra_keys: Vec<String> = extra.iter().map(|pair| pair.0.to_owned()).collect();
-                                cat.extra_required.iter().all(|k| extra_keys.contains(k))
-                                    && extra_keys.iter().all(|k| cat.extra_supported.contains(k))
-                            })
+                            .filter(|cat| cat.is_extra_supported(&extra))
                             .map(move |cat| ResourceRequest {
                                 transport_url: transport_url.to_owned(),
                                 resource_ref: ResourceRef {

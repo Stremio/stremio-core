@@ -1,7 +1,7 @@
 use serde_derive::*;
 
+use crate::types::addons::{ResourceRef, Extra};
 // https://serde.rs/string-or-struct.html
-use crate::types::addons::ResourceRef;
 use serde::de::{self, Deserialize, Deserializer, MapAccess, Visitor};
 use std::fmt;
 use std::marker::PhantomData;
@@ -36,7 +36,14 @@ pub struct ManifestCatalog {
     pub extra_required: Vec<String>,
     #[serde(default)]
     pub extra_supported: Vec<String>,
-    // @TODO: extraSupported, extraRequired, filters
+    // @TODO new extra notation (extra: [{ key, required, values }])
+}
+impl ManifestCatalog {
+    pub fn is_extra_supported(&self, extra: &Extra) -> bool {
+        let extra_keys: Vec<String> = extra.iter().map(|pair| pair.0.to_owned()).collect();
+        self.extra_required.iter().all(|k| extra_keys.contains(k))
+            && extra_keys.iter().all(|k| self.extra_supported.contains(k))
+    }
 }
 
 #[derive(Debug, PartialEq, Clone, Deserialize, Serialize)]
