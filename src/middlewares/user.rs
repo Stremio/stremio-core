@@ -8,7 +8,11 @@ use std::rc::Rc;
 // @TODO: auth_key, user, addons
 #[derive(Serialize, Deserialize, Clone, Debug)]
 #[serde(rename_all = "camelCase")]
-struct UserData {}
+struct UserData {
+    auth_key: String,
+    user: User,
+    addons: Vec<Descriptor>,
+}
 
 #[derive(Default)]
 pub struct UserMiddleware<T: Environment> {
@@ -57,8 +61,7 @@ impl<T: Environment> Handler for UserMiddleware<T> {
     }
 }
 
-// @TODO find a way to implicitly unwrap the .result field
-// @TODO APIWrapper, err handling
+// @TODO move those to types/api or something
 #[derive(Deserialize, Clone, Debug)]
 struct APIErr {
     message: String,

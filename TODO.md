@@ -66,12 +66,14 @@
 * construct `AddonHTTPTransport<E: Environment>` and give it to the interested middlewares; introduce a long-lived transport; addon transports can have FromStr trait?
 * AddonM: AddonTransport trait, .get(), .manifest(); http addons will be constructed with a URL, while lib/notif addon directly as something that implements AddonTransport
 
-* given a `transport_url`, FromAddon will try to find the addon in the collection, to possibly apply `flags.stremioAuth` or `flags.transport`; of course, it doesn't need to find it, `transport_url` is sufficient to request; or, it should just carry the flags?
-
 * basic state: Catalog, Detail; and all the possible inner states (describe the structures); StreamSelect
 * tests: Chain, Container, individual middlewares, individual types
 * start implementing libitem/notifitem addon
 * load/unload dynamics and more things other than Catalog: Detail, StreamSelect
+
+* stream type
+
+* legacy transport
 
 * environment implementations: return an error related to the HTTP status code, if it's not 200
 
@@ -80,6 +82,8 @@
 * refactor: consider splitting Environment into Storage and Fetcher; and maybe take AddonsClient in
 
 * refactor: enum representations in serde
+
+* given a `transport_url`, FromAddon will try to find the addon in the collection, to possibly apply `flags.stremioAuth` or `flags.transport`; of course, it doesn't need to find it, `transport_url` is sufficient to request; or, it should just carry the flags?
 
 * spec: notifItems: rethink that spec, crystallize it
 * Trait for meta item and lib item; MetaPreview, MetaItem, MetaDetailed
@@ -95,13 +99,13 @@
 * we should make it so that if a session is expired, we go to the login screen; this should be in the app
 * think of how to do all edge cases in the user, such as pre-installing add-ons (implicit input)
 * behaviorHints - pair (key, val)?
-* separate crates: types, `state_types`
+* refactor: separate crates: types, `state_types`
 * environment (web): separate module, also can we avoid the double deserialization on `fetch_serde`?
 * when playing AND when opening the detail page, we should augment the libItem with meta if it's not already (trigger the updateLibItem action only if this would actually change the libitem)
 * when saving the last stream, save the whole object but compressed
 * player: implement playerPreferences and defaults behavior: picking a default subtitle/audio track; for audio, the logic should try to select your preferred language
 * ensure environment caches are in place via the service worker (web)
-* consider: flag `is_in_lib` for catalog items
+* consider: flag `is_in_lib` for catalog items; could just work for Discover by having another CatlaogFiltered showing ("meta", type, id) from the lib addon
 * https://github.com/woboq/qmetaobject-rs based UI; needs reqwest (or someting else) async requests
 * libitem/notifitem: https://developers.cloudflare.com/workers/kv/ https://blog.cloudflare.com/cloudflare-workers-as-a-serverless-rust-platform/
 * think of whether this could be used with the Kodi codebase to make stremio embedded
@@ -120,6 +124,8 @@
 
 * https://llogiq.github.io/2017/06/01/perf-pitfalls.html if we ever nede optimizations; we do `to_owned` quite a lot, maybe some of those can be avoided; `Cow<>` sounds good too for large collections and etc.
 
+
+work estimation, hours: 5, userM; 4, addonM + transport, 3 legacy transport, 8 refactors, 3 catalogFiltered, 6 detail/streamselect, 12 lib/notif addon, 8 playerM, 3 open, 8 openMedia, 12 others: 72 = 9 weekends assumming 8 hours per weekend
 
 example pipeline:
 LoadCatalogs => this will change the state of the `catalogs` to `Loading`
