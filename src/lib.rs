@@ -38,7 +38,7 @@ mod tests {
         );
 
         // this is the dispatch operation
-        let action = &Action::Load(ActionLoad::CatalogGrouped);
+        let action = &Action::Load(ActionLoad::CatalogGrouped{ extra: vec![].into_iter().collect() });
         chain.dispatch(action);
 
         // since the Env implementation works synchronously, this is OK

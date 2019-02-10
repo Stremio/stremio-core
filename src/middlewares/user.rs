@@ -21,27 +21,7 @@ impl<T: Environment> UserMiddleware<T> {
 }
 impl<T: Environment> Handler for UserMiddleware<T> {
     fn handle(&self, action: &Action, emit: Rc<DispatcherFn>) {
-        // @TODO find a way to implicitly unwrap the .result field
-        // @TODO APIWrapper, err handling
-        #[derive(Deserialize, Clone)]
-        struct APIErr {
-            message: String
-        };
-        // @TODO
-        #[derive(Serialize, Clone)]
-        struct CollectionRequest {};
-        #[derive(Serialize, Deserialize)]
-        struct CollectionResponse {
-            pub addons: Vec<Descriptor>,
-        };
-        #[derive(Deserialize)]
-        #[serde(untagged)]
-        enum APIResult<T> {
-            Ok{ result: T },
-            Err{ error: APIErr },
-        };
-
-        if let Action::Load(action_load) = action {
+       if let Action::Load(action_load) = action {
             let action_load = action_load.to_owned();
             let req = Request::post("https://api.strem.io/api/addonCollectionGet")
                 .body(CollectionRequest {})
@@ -65,3 +45,26 @@ impl<T: Environment> Handler for UserMiddleware<T> {
         }
     }
 }
+
+// @TODO find a way to implicitly unwrap the .result field
+// @TODO APIWrapper, err handling
+#[derive(Deserialize, Clone)]
+struct APIErr {
+    message: String
+}
+// @TODO
+#[derive(Serialize, Clone)]
+struct CollectionRequest {}
+#[derive(Serialize, Deserialize)]
+struct CollectionResponse {
+    pub addons: Vec<Descriptor>,
+}
+#[derive(Deserialize)]
+#[serde(untagged)]
+enum APIResult<T> {
+    Ok{ result: T },
+    Err{ error: APIErr },
+}
+
+//fn api_request<IN, OUT>(request: IN) -> EnvFuture<OUT, APIErr> {
+//}

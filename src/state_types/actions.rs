@@ -4,7 +4,7 @@ use serde_derive::*;
 #[derive(Debug, Deserialize, Serialize, Clone)]
 pub enum ActionLoad {
     // @TODO most of these values need content
-    CatalogGrouped,
+    CatalogGrouped{ extra: Extra },
     CatalogFiltered,
     Detail,
     Streams,
@@ -15,7 +15,10 @@ impl ActionLoad {
         // @TODO map CatalogGrouped to AllCatalogs
         // map CatalogFiltered  to FromAddon
         // etc.
-        Some(AggrRequest::AllCatalogs { extra: "".into() })
+        match self {
+            ActionLoad::CatalogGrouped{ extra } => Some(AggrRequest::AllCatalogs { extra: extra.to_owned() }),
+            _ => None,
+        }
     }
 }
 

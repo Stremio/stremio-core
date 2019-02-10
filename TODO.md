@@ -60,9 +60,10 @@
 
 * UserM: figure ot loading step; perhaps always do the load with a future and do everything in a .then(), but memoize it
 
-* given a `transport_url`, WithAddon will try to find the addon in the collection, to possibly apply `flags.stremioAuth` or `flags.transport`; of course, it doesn't need to find it, `transport_url` is sufficient to request; or, it should just carry the flags
+* given a `transport_url`, FromAddon will try to find the addon in the collection, to possibly apply `flags.stremioAuth` or `flags.transport`; of course, it doesn't need to find it, `transport_url` is sufficient to request; or, it should just carry the flags?
 
 * statefulness can be mitigated by using a memoization where the addon transport `get` would return the same results if invoked with the same args again; however, this needs to be out of the transport impl and needs to be explicit
+
 * basic state: Catalog, Detail; and all the possible inner states (describe the structures); StreamSelect
 * tests: Chain, Container, individual middlewares, individual types
 * https://github.com/Stremio/stremio-aggregators/blob/master/lib/isCatalogSupported.js
@@ -95,6 +96,7 @@
 * environment (web): separate module, also can we avoid the double deserialization on `fetch_serde`?
 * when playing AND when opening the detail page, we should augment the libItem with meta if it's not already (trigger the updateLibItem action only if this would actually change the libitem)
 * when saving the last stream, save the whole object but compressed
+* player: implement playerPreferences and defaults behavior: picking a default subtitle/audio track; for audio, the logic should try to select your preferred language
 * ensure environment caches are in place via the service worker (web)
 * consider: flag `is_in_lib` for catalog items
 * https://github.com/woboq/qmetaobject-rs based UI; needs reqwest (or someting else) async requests
@@ -107,12 +109,14 @@
 * figure out pausing on minimize/close; this should be handled in the app; probably like this: when closing/minimizing the window, pause if state is playing
 * when you go to player/detail and there doesn't appear to be a supported addon for the /meta/ request, show an error to the user (+tes)
 * document item type agnostic behavior (detail page)
+* architecturally, can we get away with not contacting the streming server in the state container?
 * https://blog.cloudflare.com/cloudflare-workers-as-a-serverless-rust-platform/
 * JS Side: All errors or warnings that come as actions should be reported to sentry
 
 * BACKEND: notifitem generation needs to be reduced (10 per item, max ~300)
 * lib/notif addon: gzip everything?
 
+* https://llogiq.github.io/2017/06/01/perf-pitfalls.html if we ever nede optimizations; we do `to_owned` quite a lot, maybe some of those can be avoided; `Cow<>` sounds good too for large collectiosn and etc.
 
 
 example pipeline:

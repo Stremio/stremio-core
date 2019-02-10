@@ -4,6 +4,8 @@ mod manifest;
 pub use self::manifest::*;
 use crate::types::meta_item::*;
 
+use std::collections::HashMap;
+
 #[derive(PartialEq, Clone, Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Descriptor {
@@ -12,10 +14,7 @@ pub struct Descriptor {
     // @TODO flags
 }
 
-// @TODO should we replace resource with an enum?
-
-// @TODO: a different type for extra (HashMap?)
-pub type Extra = String;
+pub type Extra = HashMap<String, String>;
 
 #[derive(Debug, Deserialize, Serialize, Clone, PartialEq, Eq)]
 pub struct ResourceRef {
