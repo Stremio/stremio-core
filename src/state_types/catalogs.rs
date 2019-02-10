@@ -17,10 +17,10 @@ pub enum Loadable<R, M> {
 // @TODO better type for Message
 pub type Message = String;
 
-// @TODO separate type for group
+type Group = Rc<(ResourceRequest, Loadable<Vec<MetaPreview>, Message>)>;
 #[derive(Debug, Default, Clone, Serialize, Deserialize)]
 pub struct CatalogGrouped {
-    pub groups: Vec<Rc<(ResourceRequest, Loadable<Vec<MetaPreview>, Message>)>>,
+    pub groups: Vec<Group>,
 }
 impl CatalogGrouped {
     pub fn new() -> CatalogGrouped {

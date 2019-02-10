@@ -1,6 +1,6 @@
 use serde_derive::*;
 
-use crate::types::addons::{Extra, ResourceRef};
+use crate::types::addons::{ResourceRef};
 // https://serde.rs/string-or-struct.html
 use serde::de::{self, Deserialize, Deserializer, MapAccess, Visitor};
 use std::fmt;
@@ -39,7 +39,7 @@ pub struct ManifestCatalog {
     // @TODO new extra notation (extra: [{ key, required, values }])
 }
 impl ManifestCatalog {
-    pub fn is_extra_supported(&self, extra: &Extra) -> bool {
+    pub fn is_extra_supported(&self, extra: &[(String, String)]) -> bool {
         let all_supported = extra.iter().all(|(k, _)| self.extra_supported.contains(k));
         let requirements_satisfied = self
             .extra_required

@@ -33,6 +33,5 @@ pub enum Action {
 
     NewState(usize),
 
-    // @TODO perhaps we should use some AddonResult type
     AddonResponse(ResourceRequest, Result<ResourceResponse, String>),
 }
