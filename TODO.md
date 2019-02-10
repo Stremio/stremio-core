@@ -60,14 +60,15 @@
 
 * UserM: figure ot loading step; perhaps always do the load with a future and do everything in a .then(), but memoize it
 
-* given a `transport_url`, FromAddon will try to find the addon in the collection, to possibly apply `flags.stremioAuth` or `flags.transport`; of course, it doesn't need to find it, `transport_url` is sufficient to request; or, it should just carry the flags?
+* AddonM: statefulness can be mitigated by using a memoization where the addon transport `get` would return the same results if invoked with the same args again; however, this needs to be out of the transport impl and needs to be explicit
+* construct `AddonHTTPTransport<E: Environment>` and give it to the interested middlewares; introduce a long-lived transport; addon transports can have FromStr trait?
+* AddonM: AddonTransport trait, .get(), .manifest(); http addons will be constructed with a URL, while lib/notif addon directly as something that implements AddonTransport
+* AddonM: extra
 
-* statefulness can be mitigated by using a memoization where the addon transport `get` would return the same results if invoked with the same args again; however, this needs to be out of the transport impl and needs to be explicit
+* given a `transport_url`, FromAddon will try to find the addon in the collection, to possibly apply `flags.stremioAuth` or `flags.transport`; of course, it doesn't need to find it, `transport_url` is sufficient to request; or, it should just carry the flags?
 
 * basic state: Catalog, Detail; and all the possible inner states (describe the structures); StreamSelect
 * tests: Chain, Container, individual middlewares, individual types
-* AddonTransport trait, .get(), .manifest(); http addons will be constructed with a URL, while lib/notif addon directly as something that implements AddonTransport
-* construct `AddonHTTPTransport<E: Environment>` and give it to the interested middlewares; introduce a long-lived transport; addon transports can have FromStr trait?
 * start implementing libitem/notifitem addon
 * load/unload dynamics and more things other than Catalog: Detail, StreamSelect
 
@@ -76,6 +77,8 @@
 * refactor: consider splitting Environment into Storage and Fetcher; and maybe take AddonsClient in
 
 * refactor: enum representations in serde
+
+* environments: return an error related to the HTTP status code, if it's not 200
 
 * spec: notifItems: rethink that spec, crystallize it
 * Trait for meta item and lib item; MetaPreview, MetaItem, MetaDetailed
@@ -104,9 +107,8 @@
 * all the cinemeta improvements this relies on: e.g. behaviorHints.isNotReleased will affect the Stream view
 * graph everything, the entire stremio architecture, including core add-ons and such
 * ensure that every time a network error happens, it's properly reflected in the state; and the UI should allow to "Retry" each such operation
-* api: ensure there's a way to read the error with `env::fetch_serde`, even if the response statuss code is 500 (see stremio-api/errors/errors.go); it should work, as we completely ignore HTTP status code for now; probably, we should fix that
 * figure out pausing on minimize/close; this should be handled in the app; probably like this: when closing/minimizing the window, pause if state is playing
-* when you go to player/detail and there doesn't appear to be a supported addon for the /meta/ request, show an error to the user (+tes)
+* when you go to player/detail and there doesn't appear to be a supported addon for the /meta/ request, show an error to the user (+test for that?)
 * document item type agnostic behavior (detail page)
 * architecturally, can we get away with not contacting the streming server in the state container?
 * https://blog.cloudflare.com/cloudflare-workers-as-a-serverless-rust-platform/
