@@ -5,6 +5,11 @@ use serde_derive::*;
 use std::marker::PhantomData;
 use std::rc::Rc;
 
+// @TODO: auth_key, user, addons
+#[derive(Serialize, Deserialize, Clone, Debug)]
+#[serde(rename_all = "camelCase")]
+struct UserData {}
+
 #[derive(Default)]
 pub struct UserMiddleware<T: Environment> {
     //id: usize,
@@ -21,6 +26,7 @@ impl<T: Environment> UserMiddleware<T> {
 }
 impl<T: Environment> Handler for UserMiddleware<T> {
     fn handle(&self, action: &Action, emit: Rc<DispatcherFn>) {
+        // @TODO Action::SyncAddons, Action::TryLogin
         if let Action::Load(action_load) = action {
             let action_load = action_load.to_owned();
             let req = Request::post("https://api.strem.io/api/addonCollectionGet")
@@ -70,6 +76,3 @@ enum APIResult<T> {
     Ok { result: T },
     Err { error: APIErr },
 }
-
-//fn api_request<IN, OUT>(request: IN) -> EnvFuture<OUT, APIErr> {
-//}

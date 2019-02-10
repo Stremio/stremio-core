@@ -98,6 +98,7 @@ mod tests {
                 req = req.header(k.as_str(), v.as_ref());
             }
             // @TODO add content-type application/json
+            // @TODO: if the response code is not 200, return an error related to that
             req = req.json(&body);
             Box::new(match req.send() {
                 Err(e) => future::err(e.into()),

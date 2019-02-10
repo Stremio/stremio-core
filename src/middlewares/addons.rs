@@ -3,6 +3,7 @@ use crate::types::*;
 use futures::{future, Future};
 use std::marker::PhantomData;
 use std::rc::Rc;
+use url::form_urlencoded;
 
 #[derive(Default)]
 pub struct AddonsMiddleware<T: Environment> {
@@ -14,14 +15,24 @@ impl<T: Environment> AddonsMiddleware<T> {
     }
     fn for_request(&self, resource_req: ResourceRequest, emit: Rc<DispatcherFn>) {
         // @TODO use transport
-        // @TODO: better identifier?
-        let url = resource_req.transport_url.replace(
-            "/manifest.json",
-            &format!(
+        let url_pathname = if resource_req.resource_ref.extra.len() > 0 {
+            let mut extra_encoded = form_urlencoded::Serializer::new(String::new());
+            for (k, v) in resource_req.resource_ref.extra.iter() {
+                extra_encoded.append_pair(&k, &v);
+            }
+            format!(
+                "/catalog/{}/{}/{}.json",
+                &resource_req.resource_ref.type_name,
+                &resource_req.resource_ref.id,
+                &extra_encoded.finish()
+            )
+        } else {
+            format!(
                 "/catalog/{}/{}.json",
                 &resource_req.resource_ref.type_name, &resource_req.resource_ref.id
-            ),
-        );
+            )
+        };
+        let url = resource_req.transport_url.replace("/manifest.json", &url_pathname);
         let req = Request::get(&url).body(()).unwrap();
         let fut = T::fetch_serde::<_, ResourceResponse>(req).then(move |res| {
             emit(&match res {

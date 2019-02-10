@@ -72,13 +72,13 @@
 * start implementing libitem/notifitem addon
 * load/unload dynamics and more things other than Catalog: Detail, StreamSelect
 
+* environment implementations: return an error related to the HTTP status code, if it's not 200
+
 * refactor: mod.rs on `state_types` and types shouldn't glob export everything
 
 * refactor: consider splitting Environment into Storage and Fetcher; and maybe take AddonsClient in
 
 * refactor: enum representations in serde
-
-* environments: return an error related to the HTTP status code, if it's not 200
 
 * spec: notifItems: rethink that spec, crystallize it
 * Trait for meta item and lib item; MetaPreview, MetaItem, MetaDetailed

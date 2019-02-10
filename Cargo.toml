@@ -11,6 +11,7 @@ serde_json = "1.0"
 #vtt = { git = "https://github.com/Ivshti/vtt.git" }
 futures = "0.1.x"
 http = "0.1"
+url = "1.7"
 
 [dev-dependencies]
 reqwest = "0.9.x"
