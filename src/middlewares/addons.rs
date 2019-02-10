@@ -14,8 +14,8 @@ impl<T: Environment> AddonsMiddleware<T> {
         AddonsMiddleware { env: PhantomData }
     }
     fn for_request(&self, resource_req: ResourceRequest, emit: Rc<DispatcherFn>) {
-        // @TODO use transport
-        let url_pathname = if resource_req.resource_ref.extra.len() > 0 {
+        // @TODO use transport abstraction
+        let url_pathname = if resource_req.resource_ref.extra.is_empty() {
             let mut extra_encoded = form_urlencoded::Serializer::new(String::new());
             for (k, v) in resource_req.resource_ref.extra.iter() {
                 extra_encoded.append_pair(&k, &v);
