@@ -44,13 +44,9 @@ mod tests {
         chain.dispatch(action);
 
         // since the Env implementation works synchronously, this is OK
-        let container = container_ref.borrow();
-        assert_eq!(
-            container.get_state().groups.len(),
-            6,
-            "groups is the right length"
-        );
-        for g in container.get_state().groups.iter() {
+        let state = container_ref.borrow().get_state().to_owned();
+        assert_eq!(state.groups.len(), 6, "groups is the right length");
+        for g in state.groups.iter() {
             assert!(
                 match g.1 {
                     Loadable::Ready(_) => true,
@@ -60,7 +56,7 @@ mod tests {
                 "group is Ready or Message"
             );
         }
-        if !container.get_state().groups.iter().any(|g| {
+        if !state.groups.iter().any(|g| {
             if let Loadable::Ready(_) = g.1 {
                 true
             } else {
@@ -69,22 +65,16 @@ mod tests {
         }) {
             panic!(
                 "there are no items that are Ready in state {:?}",
-                container.get_state()
+                state
             );
         }
-        // otherwise, we cannot dispatch(), since that will try to borrow the container mutably
-        drop(container);
 
         // Now try to Search
         let extra = vec![("search".to_owned(), "grand tour".to_owned())];
         let action = &Action::Load(ActionLoad::CatalogGrouped { extra });
         chain.dispatch(action);
-        let container = container_ref.borrow();
-        assert_eq!(
-            container.get_state().groups.len(),
-            4,
-            "groups is the right length when searching"
-        );
+        let state = container_ref.borrow().get_state().to_owned();
+        assert_eq!(state.groups.len(), 4, "groups is the right length when searching");
     }
 
     struct Env;

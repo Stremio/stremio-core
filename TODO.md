@@ -118,7 +118,7 @@
 * BACKEND: notifitem generation needs to be reduced (10 per item, max ~300)
 * lib/notif addon: gzip everything?
 
-* https://llogiq.github.io/2017/06/01/perf-pitfalls.html if we ever nede optimizations; we do `to_owned` quite a lot, maybe some of those can be avoided; `Cow<>` sounds good too for large collectiosn and etc.
+* https://llogiq.github.io/2017/06/01/perf-pitfalls.html if we ever nede optimizations; we do `to_owned` quite a lot, maybe some of those can be avoided; `Cow<>` sounds good too for large collections and etc.
 
 
 example pipeline:
