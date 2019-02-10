@@ -40,9 +40,9 @@ pub struct ManifestCatalog {
 }
 impl ManifestCatalog {
     pub fn is_extra_supported(&self, extra: &Extra) -> bool {
-        let extra_keys: Vec<String> = extra.iter().map(|pair| pair.0.to_owned()).collect();
-        self.extra_required.iter().all(|k| extra_keys.contains(k))
-            && extra_keys.iter().all(|k| self.extra_supported.contains(k))
+        // all requirements are satisfied, and all are in supported
+        self.extra_required.iter().all(|kr| extra.iter().any(|(k, _)| kr == k))
+            && extra.iter().all(|(k, _)| self.extra_supported.contains(k))
     }
 }
 
