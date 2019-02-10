@@ -17,6 +17,8 @@ mod tests {
         inner_middlewares();
     }
     fn inner_middlewares() {
+        // @TODO: Fix: the assumptions we are testing against are pretty much based on the current
+        // official addons; e.g. assuming 6 groups, or 4 groups when searching
         // @TODO test what happens with no handlers
         let container = std::rc::Rc::new(std::cell::RefCell::new(Container::with_reducer(
             CatalogGrouped::new(),
@@ -70,6 +72,19 @@ mod tests {
                 container.get_state()
             );
         }
+        // otherwise, we cannot dispatch(), since that will try to borrow the container mutably
+        drop(container);
+
+        // Now try to Search
+        let extra = vec![("search".to_owned(), "grand tour".to_owned())];
+        let action = &Action::Load(ActionLoad::CatalogGrouped { extra });
+        chain.dispatch(action);
+        let container = container_ref.borrow();
+        assert_eq!(
+            container.get_state().groups.len(),
+            4,
+            "groups is the right length when searching"
+        );
     }
 
     struct Env;

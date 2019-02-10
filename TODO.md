@@ -53,6 +53,7 @@
 * optimization: actually, that worked out with inner Rc<>
 * refactor: generic AddonResponse (currently uses CatalogResponse)? use an untagged enum
 * https://github.com/Stremio/stremio-aggregators/blob/master/lib/isCatalogSupported.js
+* AddonM: extra
 
 ## TODO
 
@@ -63,7 +64,6 @@
 * AddonM: statefulness can be mitigated by using a memoization where the addon transport `get` would return the same results if invoked with the same args again; however, this needs to be out of the transport impl and needs to be explicit
 * construct `AddonHTTPTransport<E: Environment>` and give it to the interested middlewares; introduce a long-lived transport; addon transports can have FromStr trait?
 * AddonM: AddonTransport trait, .get(), .manifest(); http addons will be constructed with a URL, while lib/notif addon directly as something that implements AddonTransport
-* AddonM: extra
 
 * given a `transport_url`, FromAddon will try to find the addon in the collection, to possibly apply `flags.stremioAuth` or `flags.transport`; of course, it doesn't need to find it, `transport_url` is sufficient to request; or, it should just carry the flags?
 
