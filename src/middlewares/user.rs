@@ -33,11 +33,14 @@ impl<T: Environment> Handler for UserMiddleware<T> {
                         APIResult::Ok{ result: CollectionResponse{ addons }} => {
                             emit(&Action::LoadWithAddons(addons.to_vec(), action_load));
                         },
-                        _ => {},
+                        APIResult::Err{ error } => {
+                            // @TODO err handling
+                            dbg!(error);
+                        },
                     }
                     future::ok(())
                 })
-                .or_else(|e| {
+                .or_else(|_e| {
                     // @TODO err handling
                     future::err(())
                 });
@@ -48,7 +51,7 @@ impl<T: Environment> Handler for UserMiddleware<T> {
 
 // @TODO find a way to implicitly unwrap the .result field
 // @TODO APIWrapper, err handling
-#[derive(Deserialize, Clone)]
+#[derive(Deserialize, Clone, Debug)]
 struct APIErr {
     message: String
 }

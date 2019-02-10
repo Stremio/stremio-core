@@ -55,16 +55,21 @@ impl AggrRequest {
     pub fn plan(&self, addons: &[Descriptor]) -> Vec<ResourceRequest> {
         match &self {
             AggrRequest::AllCatalogs { extra } => {
-                // @TODO is_supported_catalog
                 addons
                     .iter()
                     .map(|addon| {
                         let transport_url = addon.transport_url.to_owned();
+                        // @TODO: should we split out this logic to something like
+                        // is_catalog_supported?
                         addon
                             .manifest
                             .catalogs
                             .iter()
-                            .filter(|cat| cat.extra_required.is_empty())
+                            .filter(|cat| {
+                                let extra_keys: Vec<String> = extra.iter().map(|pair| pair.0.to_owned()).collect();
+                                cat.extra_required.iter().all(|k| extra_keys.contains(k))
+                                    && extra_keys.iter().all(|k| cat.extra_supported.contains(k))
+                            })
                             .map(move |cat| ResourceRequest {
                                 transport_url: transport_url.to_owned(),
                                 resource_ref: ResourceRef {
