@@ -1,6 +1,6 @@
 use serde_derive::*;
 
-use crate::types::addons::{ResourceRef};
+use crate::types::addons::ResourceRef;
 // https://serde.rs/string-or-struct.html
 use serde::de::{self, Deserialize, Deserializer, MapAccess, Visitor};
 use std::fmt;
@@ -30,12 +30,28 @@ impl FromStr for ManifestResource {
 // Extra descriptors
 // those define the extra properties that may be passed for a catalog
 #[derive(Debug, PartialEq, Clone, Deserialize, Serialize)]
-pub struct ManifestExtra {
-    // @TODO new extra notation (extra: [{ key, required, values }])
-    #[serde(default, rename="extraRequired")]
-    pub required: Vec<String>,
-    #[serde(default, rename="extraSupported")]
-    pub supported: Vec<String>,
+#[serde(rename_all = "camelCase")]
+pub struct ManifestExtraProp {
+    name: String,
+    #[serde(default)]
+    is_required: bool,
+    values: Option<Vec<String>>,
+}
+#[derive(Debug, PartialEq, Clone, Deserialize, Serialize)]
+#[serde(untagged)]
+pub enum ManifestExtra {
+    Full {
+        #[serde(rename = "extra")]
+        props: Vec<ManifestExtraProp>,
+    },
+    // Simple notation, which was the standard before v3.1 protocol: https://github.com/Stremio/stremio-addon-sdk/milestone/1
+    // kind of obsolete, but addons may use it
+    Simple {
+        #[serde(default, rename = "extraRequired")]
+        required: Vec<String>,
+        #[serde(default, rename = "extraSupported")]
+        supported: Vec<String>,
+    },
 }
 
 #[derive(Debug, PartialEq, Clone, Deserialize, Serialize)]
@@ -50,15 +66,33 @@ pub struct ManifestCatalog {
 }
 impl ManifestCatalog {
     pub fn is_extra_supported(&self, extra: &[(String, String)]) -> bool {
-        let all_supported = extra.iter().all(|(k, _)| self.extra.supported.contains(k));
-        let requirements_satisfied = self
-            .extra.required
-            .iter()
-            .all(|kr| extra.iter().any(|(k, _)| kr == k));
-        all_supported && requirements_satisfied
+        match &self.extra {
+            ManifestExtra::Full { props } => {
+                let all_supported = extra
+                    .iter()
+                    .all(|(k, _)| props.iter().any(|e| k == &e.name));
+                let requirements_satisfied = props
+                    .iter()
+                    .filter(|e| e.is_required)
+                    .all(|e| extra.iter().any(|(k, _)| k == &e.name));
+                all_supported && requirements_satisfied
+            }
+            ManifestExtra::Simple {
+                ref required,
+                ref supported,
+            } => {
+                let all_supported = extra.iter().all(|(k, _)| supported.contains(k));
+                let requirements_satisfied =
+                    required.iter().all(|kr| extra.iter().any(|(k, _)| kr == k));
+                all_supported && requirements_satisfied
+            }
+        }
     }
 }
 
+// The manifest itself
+// the tricky thing here is that resources may either be provided in a short notation, e.g. `"stream"`
+// or long e.g. `{ name: "stream", types: ["movie"], id_prefixes: ["tt"] }`
 #[derive(Debug, PartialEq, Clone, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Manifest {

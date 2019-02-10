@@ -32,7 +32,9 @@ impl<T: Environment> AddonsMiddleware<T> {
                 &resource_req.resource_ref.type_name, &resource_req.resource_ref.id
             )
         };
-        let url = resource_req.transport_url.replace("/manifest.json", &url_pathname);
+        let url = resource_req
+            .transport_url
+            .replace("/manifest.json", &url_pathname);
         let req = Request::get(&url).body(()).unwrap();
         let fut = T::fetch_serde::<_, ResourceResponse>(req).then(move |res| {
             emit(&match res {
