@@ -124,7 +124,7 @@ impl Manifest {
             resource,
             type_name,
             id,
-            ..
+            extra,
         }: &ResourceRef,
     ) -> bool {
         // catalogs are a special case
@@ -132,7 +132,7 @@ impl Manifest {
             return self
                 .catalogs
                 .iter()
-                .any(|c| &c.type_name == type_name && &c.id == id);
+                .any(|c| &c.type_name == type_name && &c.id == id && c.is_extra_supported(&extra));
         }
         let res = match self.resources.iter().find(|res| &res.name == resource) {
             None => return false,

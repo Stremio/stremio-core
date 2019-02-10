@@ -54,6 +54,7 @@
 * refactor: generic AddonResponse (currently uses CatalogResponse)? use an untagged enum
 * https://github.com/Stremio/stremio-aggregators/blob/master/lib/isCatalogSupported.js
 * AddonM: extra
+* extra: advanced notation implemented
 
 ## TODO
 
