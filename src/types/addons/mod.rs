@@ -4,8 +4,6 @@ mod manifest;
 pub use self::manifest::*;
 use crate::types::meta_item::*;
 
-use std::collections::HashMap;
-
 #[derive(PartialEq, Clone, Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Descriptor {
@@ -14,7 +12,7 @@ pub struct Descriptor {
     // @TODO flags
 }
 
-pub type Extra = HashMap<String, String>;
+pub type Extra = Vec<(String, String)>;
 
 #[derive(Debug, Deserialize, Serialize, Clone, PartialEq, Eq)]
 pub struct ResourceRef {
