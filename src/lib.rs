@@ -38,7 +38,7 @@ mod tests {
         );
 
         // this is the dispatch operation
-        let action = &Action::Load(ActionLoad::CatalogGrouped{ extra: vec![] });
+        let action = &Action::Load(ActionLoad::CatalogGrouped { extra: vec![] });
         chain.dispatch(action);
 
         // since the Env implementation works synchronously, this is OK
@@ -59,9 +59,16 @@ mod tests {
             );
         }
         if !container.get_state().groups.iter().any(|g| {
-            if let Loadable::Ready(_) = g.1 { true } else { false }
+            if let Loadable::Ready(_) = g.1 {
+                true
+            } else {
+                false
+            }
         }) {
-            panic!("there are no items that are Ready in state {:?}", container.get_state());
+            panic!(
+                "there are no items that are Ready in state {:?}",
+                container.get_state()
+            );
         }
     }
 
@@ -102,8 +109,8 @@ mod tests {
         }
         fn exec(fut: Box<Future<Item = (), Error = ()>>) {
             match fut.wait() {
-                Ok(_) => {},
-                Err(e) => { dbg!(e) },
+                Ok(_) => {}
+                Err(e) => dbg!(e),
             }
         }
         fn get_storage<T: 'static + DeserializeOwned>(_key: &str) -> EnvFuture<Option<Box<T>>> {

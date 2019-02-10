@@ -30,7 +30,7 @@ impl CatalogGrouped {
 
 pub fn catalogs_reducer(state: &CatalogGrouped, action: &Action) -> Option<Box<CatalogGrouped>> {
     match action {
-        Action::LoadWithAddons(addons, load_action @ ActionLoad::CatalogGrouped{..}) => {
+        Action::LoadWithAddons(addons, load_action @ ActionLoad::CatalogGrouped { .. }) => {
             if let Some(aggr_req) = load_action.addon_aggr_req() {
                 let groups = aggr_req
                     .plan(&addons)
@@ -46,12 +46,8 @@ pub fn catalogs_reducer(state: &CatalogGrouped, action: &Action) -> Option<Box<C
             if let Some(idx) = state.groups.iter().position(|g| &g.0 == req) {
                 let mut groups = state.groups.to_owned();
                 let group_content = match result {
-                    Ok(ResourceResponse::Metas{ metas, skip: 0, .. }) => Loadable::Ready(
-                        metas
-                            .iter()
-                            .take(MAX_ITEMS)
-                            .map(|m| m.to_owned())
-                            .collect()
+                    Ok(ResourceResponse::Metas { metas, skip: 0, .. }) => Loadable::Ready(
+                        metas.iter().take(MAX_ITEMS).map(|m| m.to_owned()).collect(),
                     ),
                     Ok(_) => Loadable::Message("unexpected response".to_owned()),
                     Err(e) => Loadable::Message(e.to_owned()),

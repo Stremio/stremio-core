@@ -36,9 +36,11 @@ pub enum ResourceResponse {
         #[serde(default)]
         skip: u32,
         #[serde(default)]
-        has_more: bool
+        has_more: bool,
     },
-    Meta { meta: MetaItem },
+    Meta {
+        meta: MetaItem,
+    },
     //Streams { streams: Vec<Stream> },
 }
 

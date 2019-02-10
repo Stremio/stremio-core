@@ -21,7 +21,7 @@ impl<T: Environment> UserMiddleware<T> {
 }
 impl<T: Environment> Handler for UserMiddleware<T> {
     fn handle(&self, action: &Action, emit: Rc<DispatcherFn>) {
-       if let Action::Load(action_load) = action {
+        if let Action::Load(action_load) = action {
             let action_load = action_load.to_owned();
             let req = Request::post("https://api.strem.io/api/addonCollectionGet")
                 .body(CollectionRequest {})
@@ -30,13 +30,15 @@ impl<T: Environment> Handler for UserMiddleware<T> {
                 .and_then(move |result| {
                     // @TODO err handling
                     match *result {
-                        APIResult::Ok{ result: CollectionResponse{ addons }} => {
+                        APIResult::Ok {
+                            result: CollectionResponse { addons },
+                        } => {
                             emit(&Action::LoadWithAddons(addons.to_vec(), action_load));
-                        },
-                        APIResult::Err{ error } => {
+                        }
+                        APIResult::Err { error } => {
                             // @TODO err handling
                             dbg!(error);
-                        },
+                        }
                     }
                     future::ok(())
                 })
@@ -53,7 +55,7 @@ impl<T: Environment> Handler for UserMiddleware<T> {
 // @TODO APIWrapper, err handling
 #[derive(Deserialize, Clone, Debug)]
 struct APIErr {
-    message: String
+    message: String,
 }
 // @TODO
 #[derive(Serialize, Clone)]
@@ -65,8 +67,8 @@ struct CollectionResponse {
 #[derive(Deserialize)]
 #[serde(untagged)]
 enum APIResult<T> {
-    Ok{ result: T },
-    Err{ error: APIErr },
+    Ok { result: T },
+    Err { error: APIErr },
 }
 
 //fn api_request<IN, OUT>(request: IN) -> EnvFuture<OUT, APIErr> {
