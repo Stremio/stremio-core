@@ -2,6 +2,7 @@ use crate::types::*;
 use serde_derive::*;
 
 #[derive(Debug, Deserialize, Serialize, Clone)]
+#[serde(tag = "load", content = "args")]
 pub enum ActionLoad {
     // @TODO most of these values need content
     CatalogGrouped { extra: Extra },
@@ -25,6 +26,7 @@ impl ActionLoad {
 }
 
 #[derive(Debug, Deserialize, Serialize, Clone)]
+#[serde(tag = "action", content = "args")]
 pub enum Action {
     Load(ActionLoad),
     // @TODO this should be renamed to LoadWithUser; we should also have UserLoaded and UserValue,

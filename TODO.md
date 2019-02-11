@@ -55,6 +55,7 @@
 * https://github.com/Stremio/stremio-aggregators/blob/master/lib/isCatalogSupported.js
 * AddonM: extra
 * extra: advanced notation implemented
+* refactor: enum representations in serde
 
 ## TODO
 
@@ -80,8 +81,6 @@
 * refactor: mod.rs on `state_types` and types shouldn't glob export everything
 
 * refactor: consider splitting Environment into Storage and Fetcher; and maybe take AddonsClient in
-
-* refactor: enum representations in serde
 
 * given a `transport_url`, FromAddon will try to find the addon in the collection, to possibly apply `flags.stremioAuth` or `flags.transport`; of course, it doesn't need to find it, `transport_url` is sufficient to request; or, it should just carry the flags?
 
