@@ -21,15 +21,18 @@ impl<T: Environment> AddonImpl for AddonHTTPTransport<T> {
                 extra_encoded.append_pair(&k, &v);
             }
             format!(
-                "/catalog/{}/{}/{}.json",
+                "/{}/{}/{}/{}.json",
+                &resource_req.resource_ref.resource,
                 &resource_req.resource_ref.type_name,
                 &resource_req.resource_ref.id,
                 &extra_encoded.finish()
             )
         } else {
             format!(
-                "/catalog/{}/{}.json",
-                &resource_req.resource_ref.type_name, &resource_req.resource_ref.id
+                "/{}/{}/{}.json",
+                &resource_req.resource_ref.resource,
+                &resource_req.resource_ref.type_name,
+                &resource_req.resource_ref.id
             )
         };
         let url = resource_req
