@@ -14,30 +14,31 @@ pub struct AddonHTTPTransport<T: Environment> {
     pub env: PhantomData<T>,
 }
 impl<T: Environment> AddonImpl for AddonHTTPTransport<T> {
-    fn get(resource_req: &ResourceRequest) -> EnvFuture<Box<ResourceResponse>> {
-        let url_pathname = if !resource_req.resource_ref.extra.is_empty() {
+    fn get(
+        ResourceRequest {
+            resource_ref,
+            transport_url,
+        }: &ResourceRequest,
+    ) -> EnvFuture<Box<ResourceResponse>> {
+        let url_pathname = if !resource_ref.extra.is_empty() {
             let mut extra_encoded = form_urlencoded::Serializer::new(String::new());
-            for (k, v) in resource_req.resource_ref.extra.iter() {
+            for (k, v) in resource_ref.extra.iter() {
                 extra_encoded.append_pair(&k, &v);
             }
             format!(
                 "/{}/{}/{}/{}.json",
-                &resource_req.resource_ref.resource,
-                &resource_req.resource_ref.type_name,
-                &resource_req.resource_ref.id,
+                &resource_ref.resource,
+                &resource_ref.type_name,
+                &resource_ref.id,
                 &extra_encoded.finish()
             )
         } else {
             format!(
                 "/{}/{}/{}.json",
-                &resource_req.resource_ref.resource,
-                &resource_req.resource_ref.type_name,
-                &resource_req.resource_ref.id
+                &resource_ref.resource, &resource_ref.type_name, &resource_ref.id
             )
         };
-        let url = resource_req
-            .transport_url
-            .replace("/manifest.json", &url_pathname);
+        let url = transport_url.replace("/manifest.json", &url_pathname);
         // Building a request might fail, if the addon URL is malformed
         match Request::get(&url).body(()) {
             Ok(req) => T::fetch_serde::<_, ResourceResponse>(req),
