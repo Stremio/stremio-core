@@ -35,8 +35,11 @@ impl<T: Environment> AddonImpl for AddonHTTPTransport<T> {
         let url = resource_req
             .transport_url
             .replace("/manifest.json", &url_pathname);
-        let req = Request::get(&url).body(()).unwrap();
-        T::fetch_serde::<_, ResourceResponse>(req)
+        // Building a request might fail, if the addon URL is malformed
+        match Request::get(&url).body(()) {
+            Ok(req) => T::fetch_serde::<_, ResourceResponse>(req),
+            Err(e) => Box::new(future::err(e.into())),
+        }
     }
 }
 
