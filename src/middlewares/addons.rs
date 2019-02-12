@@ -5,16 +5,16 @@ use std::marker::PhantomData;
 use std::rc::Rc;
 use url::form_urlencoded;
 
+pub trait AddonImpl {
+    fn get(resource_req: &ResourceRequest) -> EnvFuture<Box<ResourceResponse>>;
+}
+
 #[derive(Default)]
-pub struct AddonsMiddleware<T: Environment> {
+pub struct AddonHTTPTransport<T: Environment> {
     pub env: PhantomData<T>,
 }
-impl<T: Environment> AddonsMiddleware<T> {
-    pub fn new() -> Self {
-        AddonsMiddleware { env: PhantomData }
-    }
-    fn for_request(&self, resource_req: ResourceRequest, emit: Rc<DispatcherFn>) {
-        // @TODO use transport abstraction
+impl<T: Environment> AddonImpl for AddonHTTPTransport<T> {
+    fn get(resource_req: &ResourceRequest) -> EnvFuture<Box<ResourceResponse>> {
         let url_pathname = if !resource_req.resource_ref.extra.is_empty() {
             let mut extra_encoded = form_urlencoded::Serializer::new(String::new());
             for (k, v) in resource_req.resource_ref.extra.iter() {
@@ -36,7 +36,21 @@ impl<T: Environment> AddonsMiddleware<T> {
             .transport_url
             .replace("/manifest.json", &url_pathname);
         let req = Request::get(&url).body(()).unwrap();
-        let fut = T::fetch_serde::<_, ResourceResponse>(req).then(move |res| {
+        T::fetch_serde::<_, ResourceResponse>(req)
+    }
+}
+
+
+#[derive(Default)]
+pub struct AddonsMiddleware<T: Environment> {
+    pub env: PhantomData<T>,
+}
+impl<T: Environment> AddonsMiddleware<T> {
+    pub fn new() -> Self {
+        AddonsMiddleware { env: PhantomData }
+    }
+    fn for_request(&self, resource_req: ResourceRequest, emit: Rc<DispatcherFn>) {
+        let fut = AddonHTTPTransport::<T>::get(&resource_req).then(move |res| {
             emit(&match res {
                 Ok(resp) => Action::AddonResponse(resource_req, Ok(*resp)),
                 Err(e) => Action::AddonResponse(resource_req, Err(e.to_string())),

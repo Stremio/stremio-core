@@ -60,13 +60,15 @@
 ## TODO
 
 * implement UserM; think of how (or not to?) to mock storage in the test; LoadWithUser(user, addons, ...)
-
 * UserM: figure ot loading step; perhaps always do the load with a future and do everything in a .then(), but memoize it
 * UserM: uninstall/install addons for the user, sync their collection
+* UserM: actions related to the user: Login, Logout, SignUp; PullAddons, PushAddons; PullUser, PushUser (?)
+* UserM: how to protect from responses from previous user?
 * AddonM: statefulness can be mitigated by using a memoization where the addon transport `get` would return the same results if invoked with the same args again; however, this needs to be out of the transport impl and needs to be explicit
 * construct `AddonHTTPTransport<E: Environment>` and give it to the interested middlewares; introduce a long-lived transport; addon transports can have FromStr trait?
 * AddonM: AddonTransport trait, .get(), .manifest(); http addons will be constructed with a URL, while lib/notif addon directly as something that implements AddonTransport
 * addon catalog reducer, actions; handle loading collections in the addonM
+* addonM: given a `transport_url`, FromAddon will try to find the addon in the collection, to possibly apply `flags.stremioAuth` or `flags.transport`; of course, it doesn't need to find it, `transport_url` is sufficient to request; or, it should just carry the flags?
 
 * basic state: Catalog, Detail; and all the possible inner states (describe the structures); StreamSelect
 * tests: Chain, Container, individual middlewares, individual types
@@ -84,7 +86,6 @@
 
 * refactor: consider splitting Environment into Storage and Fetcher; and maybe take AddonsClient in
 
-* given a `transport_url`, FromAddon will try to find the addon in the collection, to possibly apply `flags.stremioAuth` or `flags.transport`; of course, it doesn't need to find it, `transport_url` is sufficient to request; or, it should just carry the flags?
 
 * spec: notifItems: rethink that spec, crystallize it
 * Trait for meta item and lib item; MetaPreview, MetaItem, MetaDetailed
@@ -126,7 +127,7 @@
 * https://llogiq.github.io/2017/06/01/perf-pitfalls.html if we ever nede optimizations; we do `to_owned` quite a lot, maybe some of those can be avoided; `Cow<>` sounds good too for large collections and etc.
 
 
-work estimation, hours: 6, userM; 6, addonM + transport, 3 legacy transport, 8 refactors, 3 catalogFiltered, 6 detail/streamselect, 12 lib/notif addon, 8 playerM, 3 open, 8 openMedia, 12 others: 75 = 10 weekends assumming 8 hours per weekend
+work estimation, hours: 6, userM; 6, addonM + transport, 3 legacy transport, 8 refactors, 3 catalogFiltered, 6 detail/streamselect, 12 lib/notif addon, 8 playerM, 3 open, 8 openMedia, 12 others, 10 tests: 95 = 12 weekends assumming 8 hours per weekend = 6 weeks
 
 example pipeline:
 LoadCatalogs => this will change the state of the `catalogs` to `Loading`
@@ -185,6 +186,18 @@ LoadWithUser user addons ...
 
 
 uses Storage to save authKey, user and AddonCollection (to 1 storage key)
+
+Load -> LoadWithUser(Option<user>, addons, ...); uses storage
+PullAddons -> 
+InstallAddon/RemoveAddon -> 
+UserAction (Login, Signup, Logout) -> UserChanged OR UserActionError(UserAction, err)
+
+consider abstracting errors into APIError(action, network err or API err)
+
+how to protect against race conditions where the responses of requests made with prev authKey arrive? maybe just take a `to_owned()`
+of the auth key in the beginning, and only persist if the auth key matches
+
+how/whether to trigger pull addons on user login? sounds like we should, and we should treat it as one operation
 
 ## AddonAggr
 transforms LoadWithUser(dyn AddonReq) (any action implementing the AddonReq trait), and then AddonAdded/AddonRemoved into -> AddonRequest + AddonResponse
