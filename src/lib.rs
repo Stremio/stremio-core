@@ -63,10 +63,7 @@ mod tests {
                 false
             }
         }) {
-            panic!(
-                "there are no items that are Ready in state {:?}",
-                state
-            );
+            panic!("there are no items that are Ready in state {:?}", state);
         }
 
         // Now try to Search
@@ -74,7 +71,11 @@ mod tests {
         let action = &Action::Load(ActionLoad::CatalogGrouped { extra });
         chain.dispatch(action);
         let state = container_ref.borrow().get_state().to_owned();
-        assert_eq!(state.groups.len(), 4, "groups is the right length when searching");
+        assert_eq!(
+            state.groups.len(),
+            4,
+            "groups is the right length when searching"
+        );
     }
 
     struct Env;

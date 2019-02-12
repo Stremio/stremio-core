@@ -40,12 +40,12 @@ impl<T: Environment> AddonImpl for AddonHTTPTransport<T> {
     }
 }
 
-
 #[derive(Default)]
 pub struct AddonsMiddleware<T: Environment> {
     pub env: PhantomData<T>,
 }
 impl<T: Environment> AddonsMiddleware<T> {
+    // @TODO loading URLs, collections, etc.
     pub fn new() -> Self {
         AddonsMiddleware { env: PhantomData }
     }
