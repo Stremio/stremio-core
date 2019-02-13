@@ -39,7 +39,7 @@ pub enum ResourceResponse {
         has_more: bool,
     },
     Meta {
-        meta: MetaItem,
+        meta: Option<MetaItem>,
     },
     //Streams { streams: Vec<Stream> },
 }
