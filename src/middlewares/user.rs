@@ -76,11 +76,12 @@ impl<T: Environment> Handler for UserMiddleware<T> {
                     emit(&Action::LoadWithAddons(ud.addons.to_vec(), action_load));
                     future::ok(())
                 }))
-                .or_else(|e| {
-                    // @TODO proper handling, must emit some sort of a UserMiddlewareError
-                    dbg!(e);
+                .or_else(enclose!((emit) move |e| {
+                    // @TODO consider that this error is fatal, while the others are not
+                    // perhaps consider a recovery strategy here?
+                    emit(&Action::UserMiddlewareError(e.to_string()));
                     future::err(())
-                });
+                }));
             T::exec(Box::new(fut));
         }
 
