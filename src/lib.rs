@@ -121,7 +121,7 @@ mod tests {
             }
         }
         fn get_storage<T: 'static + DeserializeOwned>(_key: &str) -> EnvFuture<Option<Box<T>>> {
-            Box::new(future::err("unimplemented".into()))
+            Box::new(future::ok(None))
         }
         fn set_storage<T: 'static + Serialize>(_key: &str, _value: Option<&T>) -> EnvFuture<()> {
             Box::new(future::err("unimplemented".into()))

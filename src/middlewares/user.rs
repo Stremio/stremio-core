@@ -10,7 +10,7 @@ use lazy_static::*;
 const USER_DATA_KEY: &str = "userData";
 
 lazy_static! {
-    static ref DEFAULT_ADDONS: Vec<Descriptor> = vec![];
+    static ref DEFAULT_ADDONS: Vec<Descriptor> = serde_json::from_slice(include_bytes!("../../stremio-official-addons/index.json")).expect("official addons JSON parse");
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
@@ -19,13 +19,13 @@ struct Auth {
     user: User,
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, Default)]
+#[derive(Serialize, Deserialize, Clone, Debug)]
 struct UserData {
     auth: Option<Auth>,
     addons: Vec<Descriptor>,
 }
-impl UserData {
-    pub fn new() -> Self {
+impl Default for UserData {
+    fn default() -> Self {
         UserData {
             auth: None,
             addons: DEFAULT_ADDONS.to_owned(),
@@ -68,6 +68,7 @@ impl<T: Environment> Handler for UserMiddleware<T> {
         // @TODO Action::SyncAddons, Action::TryLogin
         if let Action::Load(action_load) = action {
             let action_load = action_load.to_owned();
+            /*
             let req = Request::post("https://api.strem.io/api/addonCollectionGet")
                 .body(CollectionRequest {})
                 .unwrap();
@@ -91,18 +92,17 @@ impl<T: Environment> Handler for UserMiddleware<T> {
                     // @TODO err handling
                     future::err(())
                 });
-            /*
+            */
             let fut = self.load()
                 .and_then(move |ud| {
                     emit(&Action::LoadWithAddons(ud.addons.to_vec(), action_load));
                     future::ok(())
                 })
                 .or_else(|e| {
-                    // @TODO proper handling
+                    // @TODO proper handling, must emit some sort of a UserMiddlewareError
                     dbg!(e);
                     future::err(())
                 });
-            */
             T::exec(Box::new(fut));
         }
     }
