@@ -7,7 +7,7 @@ use serde_derive::*;
 // @TODO type of error?
 #[derive(Deserialize, Clone, Debug)]
 pub struct APIErr {
-    message: String,
+    pub message: String,
 }
 
 // @TODO

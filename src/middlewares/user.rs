@@ -69,31 +69,6 @@ impl<T: Environment> Handler for UserMiddleware<T> {
         // @TODO Action::SyncAddons, Action::TryLogin
         if let Action::Load(action_load) = action {
             let action_load = action_load.to_owned();
-            /*
-            let req = Request::post("https://api.strem.io/api/addonCollectionGet")
-                .body(CollectionRequest {})
-                .unwrap();
-            let fut = T::fetch_serde::<_, APIResult<CollectionResponse>>(req)
-                .and_then(move |result| {
-                    // @TODO err handling
-                    match *result {
-                        APIResult::Ok {
-                            result: CollectionResponse { addons },
-                        } => {
-                            emit(&Action::LoadWithAddons(addons.to_vec(), action_load));
-                        }
-                        APIResult::Err { error } => {
-                            // @TODO err handling
-                            dbg!(error);
-                        }
-                    }
-                    future::ok(())
-                })
-                .or_else(|_e| {
-                    // @TODO err handling
-                    future::err(())
-                });
-            */
             let fut = self
                 .load()
                 .and_then(move |ud| {
@@ -102,6 +77,31 @@ impl<T: Environment> Handler for UserMiddleware<T> {
                 })
                 .or_else(|e| {
                     // @TODO proper handling, must emit some sort of a UserMiddlewareError
+                    dbg!(e);
+                    future::err(())
+                });
+            T::exec(Box::new(fut));
+        }
+
+        if let Action::UserOp(ActionUser::PullAddons) = action {
+            // @TODO get rid of this hardcode
+            let req = Request::post("https://api.strem.io/api/addonCollectionGet")
+                .body(CollectionRequest {})
+                .unwrap();
+            let fut = T::fetch_serde::<_, APIResult<CollectionResponse>>(req)
+                .and_then(|result| {
+                    match *result {
+                        APIResult::Ok {
+                            result: CollectionResponse { addons },
+                        } => T::set_storage(USER_DATA_KEY, Some(&UserData { auth: None, addons })),
+                        // @TODO should this error be handled better?
+                        APIResult::Err { error } => Box::new(future::err(error.message.into())),
+                    }
+                })
+                .or_else(|e| {
+                    // @TODO err handling
+                    // there are a few types of errors here: network errors, deserialization
+                    // errors, API errors
                     dbg!(e);
                     future::err(())
                 });

@@ -26,10 +26,10 @@ impl ActionLoad {
 }
 
 #[derive(Debug, Deserialize, Serialize, Clone)]
-#[serde(tag = "load", content = "args")]
+#[serde(tag = "userOp", content = "args")]
 pub enum ActionUser {
-    Login{ username: String, password: String },
-    Signup{ username: String, password: String },
+    Login { username: String, password: String },
+    Signup { username: String, password: String },
     Logout,
     PullAddons,
     PushAddons,
@@ -39,15 +39,18 @@ pub enum ActionUser {
 #[derive(Debug, Deserialize, Serialize, Clone)]
 #[serde(tag = "action", content = "args")]
 pub enum Action {
+    // Input actions
     Load(ActionLoad),
 
     // user-specific action
-    User(ActionUser),
+    UserOp(ActionUser),
+
+    // Intermediery
     // @TODO this should be renamed to LoadWithUser; we should also have UserLoaded and UserValue,
     // both having (user, addons)
     LoadWithAddons(Vec<Descriptor>, ActionLoad),
-
-    NewState(usize),
-
     AddonResponse(ResourceRequest, Result<ResourceResponse, String>),
+
+    // Output actions
+    NewState(usize),
 }
