@@ -1,19 +1,13 @@
 use crate::state_types::*;
 use crate::types::*;
 use futures::{future, Future};
-use lazy_static::*;
 use serde_derive::*;
 use std::cell::RefCell;
 use std::marker::PhantomData;
 use std::rc::Rc;
 
 const USER_DATA_KEY: &str = "userData";
-
-lazy_static! {
-    static ref DEFAULT_ADDONS: Vec<Descriptor> =
-        serde_json::from_slice(include_bytes!("../../stremio-official-addons/index.json"))
-            .expect("official addons JSON parse");
-}
+const DEFAULT_ADDONS_JSON: &[u8] = include_bytes!("../../stremio-official-addons/index.json");
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 struct Auth {
@@ -28,9 +22,11 @@ struct UserData {
 }
 impl Default for UserData {
     fn default() -> Self {
+        let addons = serde_json::from_slice(DEFAULT_ADDONS_JSON)
+            .expect("official addons JSON parse");
         UserData {
             auth: None,
-            addons: DEFAULT_ADDONS.to_owned(),
+            addons,
         }
     }
 }
