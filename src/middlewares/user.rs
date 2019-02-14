@@ -79,7 +79,7 @@ impl<T: Environment> Handler for UserMiddleware<T> {
                 .or_else(enclose!((emit) move |e| {
                     // @TODO consider that this error is fatal, while the others are not
                     // perhaps consider a recovery strategy here?
-                    emit(&Action::UserMiddlewareError(e.to_string()));
+                    emit(&Action::UserMFatal(e.to_string()));
                     future::err(())
                 }));
             T::exec(Box::new(fut));
@@ -104,7 +104,7 @@ impl<T: Environment> Handler for UserMiddleware<T> {
                     // @TODO better err handling?
                     // there are a few types of errors here: network errors, deserialization
                     // errors, API errors
-                    emit(&Action::UserMiddlewareError(e.to_string()));
+                    emit(&Action::UserMError(e.to_string()));
                     future::err(())
                 }));
             T::exec(Box::new(fut));
