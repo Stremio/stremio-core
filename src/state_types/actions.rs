@@ -52,5 +52,6 @@ pub enum Action {
     AddonResponse(ResourceRequest, Result<ResourceResponse, String>),
 
     // Output actions
+    UserMiddlewareError(String),
     NewState(usize),
 }

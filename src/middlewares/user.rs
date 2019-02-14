@@ -6,6 +6,7 @@ use serde_derive::*;
 use std::cell::RefCell;
 use std::marker::PhantomData;
 use std::rc::Rc;
+use enclose::*;
 
 const USER_DATA_KEY: &str = "userData";
 
@@ -71,10 +72,10 @@ impl<T: Environment> Handler for UserMiddleware<T> {
             let action_load = action_load.to_owned();
             let fut = self
                 .load()
-                .and_then(move |ud| {
+                .and_then(enclose!((emit) move |ud| {
                     emit(&Action::LoadWithAddons(ud.addons.to_vec(), action_load));
                     future::ok(())
-                })
+                }))
                 .or_else(|e| {
                     // @TODO proper handling, must emit some sort of a UserMiddlewareError
                     dbg!(e);
@@ -98,13 +99,13 @@ impl<T: Environment> Handler for UserMiddleware<T> {
                         APIResult::Err { error } => Box::new(future::err(error.message.into())),
                     }
                 })
-                .or_else(|e| {
-                    // @TODO err handling
+                .or_else(enclose!((emit) move |e| {
+                    // @TODO better err handling?
                     // there are a few types of errors here: network errors, deserialization
                     // errors, API errors
-                    dbg!(e);
+                    emit(&Action::UserMiddlewareError(e.to_string()));
                     future::err(())
-                });
+                }));
             T::exec(Box::new(fut));
         }
     }
