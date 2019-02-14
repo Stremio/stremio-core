@@ -4,6 +4,7 @@ use futures::{future, Future};
 use std::marker::PhantomData;
 use std::rc::Rc;
 use url::form_urlencoded;
+use url::percent_encoding::{utf8_percent_encode, DEFAULT_ENCODE_SET};
 
 pub trait AddonImpl {
     fn get(resource_req: &ResourceRequest) -> EnvFuture<Box<ResourceResponse>>;
@@ -27,15 +28,17 @@ impl<T: Environment> AddonImpl for AddonHTTPTransport<T> {
             }
             format!(
                 "/{}/{}/{}/{}.json",
-                &resource_ref.resource,
-                &resource_ref.type_name,
-                &resource_ref.id,
+                &utf8_percent_encode(&resource_ref.resource, DEFAULT_ENCODE_SET),
+                &utf8_percent_encode(&resource_ref.type_name, DEFAULT_ENCODE_SET),
+                &utf8_percent_encode(&resource_ref.id, DEFAULT_ENCODE_SET),
                 &extra_encoded.finish()
             )
         } else {
             format!(
                 "/{}/{}/{}.json",
-                &resource_ref.resource, &resource_ref.type_name, &resource_ref.id
+                &utf8_percent_encode(&resource_ref.resource, DEFAULT_ENCODE_SET),
+                &utf8_percent_encode(&resource_ref.type_name, DEFAULT_ENCODE_SET),
+                &utf8_percent_encode(&resource_ref.id, DEFAULT_ENCODE_SET)
             )
         };
         let url = transport_url.replace("/manifest.json", &url_pathname);
