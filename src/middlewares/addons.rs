@@ -3,8 +3,6 @@ use crate::types::*;
 use futures::{future, Future};
 use std::marker::PhantomData;
 use std::rc::Rc;
-use url::form_urlencoded;
-use url::percent_encoding::{utf8_percent_encode, DEFAULT_ENCODE_SET};
 
 pub trait AddonImpl {
     fn get(resource_req: &ResourceRequest) -> EnvFuture<Box<ResourceResponse>>;
@@ -21,27 +19,7 @@ impl<T: Environment> AddonImpl for AddonHTTPTransport<T> {
             transport_url,
         }: &ResourceRequest,
     ) -> EnvFuture<Box<ResourceResponse>> {
-        let url_pathname = if !resource_ref.extra.is_empty() {
-            let mut extra_encoded = form_urlencoded::Serializer::new(String::new());
-            for (k, v) in resource_ref.extra.iter() {
-                extra_encoded.append_pair(&k, &v);
-            }
-            format!(
-                "/{}/{}/{}/{}.json",
-                &utf8_percent_encode(&resource_ref.resource, DEFAULT_ENCODE_SET),
-                &utf8_percent_encode(&resource_ref.type_name, DEFAULT_ENCODE_SET),
-                &utf8_percent_encode(&resource_ref.id, DEFAULT_ENCODE_SET),
-                &extra_encoded.finish()
-            )
-        } else {
-            format!(
-                "/{}/{}/{}.json",
-                &utf8_percent_encode(&resource_ref.resource, DEFAULT_ENCODE_SET),
-                &utf8_percent_encode(&resource_ref.type_name, DEFAULT_ENCODE_SET),
-                &utf8_percent_encode(&resource_ref.id, DEFAULT_ENCODE_SET)
-            )
-        };
-        let url = transport_url.replace("/manifest.json", &url_pathname);
+        let url = transport_url.replace("/manifest.json", &resource_ref.to_string());
         // Building a request might fail, if the addon URL is malformed
         match Request::get(&url).body(()) {
             Ok(req) => T::fetch_serde::<_, ResourceResponse>(req),
