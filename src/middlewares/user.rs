@@ -107,22 +107,3 @@ impl<T: Environment> Handler for UserMiddleware<T> {
         }
     }
 }
-
-// @TODO move those to types/api or something
-#[derive(Deserialize, Clone, Debug)]
-struct APIErr {
-    message: String,
-}
-// @TODO
-#[derive(Serialize, Clone)]
-struct CollectionRequest {}
-#[derive(Serialize, Deserialize)]
-struct CollectionResponse {
-    pub addons: Vec<Descriptor>,
-}
-#[derive(Deserialize)]
-#[serde(untagged)]
-enum APIResult<T> {
-    Ok { result: T },
-    Err { error: APIErr },
-}
