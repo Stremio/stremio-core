@@ -10,6 +10,8 @@ mod tests {
     use futures::{future, Future};
     use serde::de::DeserializeOwned;
     use serde::Serialize;
+    use std::cell::RefCell;
+    use std::rc::Rc;
 
     #[test]
     fn middlewares() {
@@ -20,7 +22,7 @@ mod tests {
         // @TODO: Fix: the assumptions we are testing against are pretty much based on the current
         // official addons; e.g. assuming 6 groups, or 4 groups when searching
         // @TODO test what happens with no handlers
-        let container = std::rc::Rc::new(std::cell::RefCell::new(Container::with_reducer(
+        let container = Rc::new(RefCell::new(Container::with_reducer(
             CatalogGrouped::new(),
             &catalogs_reducer,
         )));
