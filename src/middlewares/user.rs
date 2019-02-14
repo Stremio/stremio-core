@@ -5,16 +5,32 @@ use serde_derive::*;
 use std::marker::PhantomData;
 use std::rc::Rc;
 use std::cell::RefCell;
+use lazy_static::*;
 
 const USER_DATA_KEY: &str = "userData";
 
+lazy_static! {
+    static ref DEFAULT_ADDONS: Vec<Descriptor> = vec![];
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug)]
+struct Auth {
+    key: String,
+    user: User,
+}
+
 #[derive(Serialize, Deserialize, Clone, Debug, Default)]
-#[serde(rename_all = "camelCase")]
 struct UserData {
-    // @TODO: one option which is either None or Some(authKey + user)
-    auth_key: Option<String>,
-    user: Option<User>,
+    auth: Option<Auth>,
     addons: Vec<Descriptor>,
+}
+impl UserData {
+    pub fn new() -> Self {
+        UserData {
+            auth: None,
+            addons: DEFAULT_ADDONS.to_owned(),
+        }
+    }
 }
 
 #[derive(Default)]
@@ -31,7 +47,7 @@ impl<T: Environment> UserMiddleware<T> {
         }
     }
     // @TODO is there a better way to do this?
-    fn load(&mut self) -> EnvFuture<UserData> {
+    fn load(&self) -> EnvFuture<UserData> {
         let current_state = self.state.borrow().to_owned();
         if let Some(ud) = current_state {
             return Box::new(future::ok(ud))
@@ -41,7 +57,7 @@ impl<T: Environment> UserMiddleware<T> {
         let fut = T::get_storage(USER_DATA_KEY)
            .and_then(move |result: Option<Box<UserData>>| {
                 let ud: UserData = *result.unwrap_or_default();
-                *state.borrow_mut() = Some(ud.to_owned());
+                let _ = state.replace(Some(ud.to_owned()));
                 future::ok(ud)
             });
         Box::new(fut)
@@ -75,6 +91,18 @@ impl<T: Environment> Handler for UserMiddleware<T> {
                     // @TODO err handling
                     future::err(())
                 });
+            /*
+            let fut = self.load()
+                .and_then(move |ud| {
+                    emit(&Action::LoadWithAddons(ud.addons.to_vec(), action_load));
+                    future::ok(())
+                })
+                .or_else(|e| {
+                    // @TODO proper handling
+                    dbg!(e);
+                    future::err(())
+                });
+            */
             T::exec(Box::new(fut));
         }
     }
