@@ -52,6 +52,10 @@ pub enum Action {
     AddonResponse(ResourceRequest, Result<ResourceResponse, String>),
 
     // Output actions
+    // @TODO consider better error reporting for UserMiddlewareError
+    // there are non-fatal and fatal errors, and 3-4 classes of errors (network, deserialization,
+    // storage, etc.)
+    // @TODO consider the name UserMError
     UserMiddlewareError(String),
     NewState(usize),
 }
