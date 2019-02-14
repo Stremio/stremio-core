@@ -1,16 +1,18 @@
 use crate::state_types::*;
 use crate::types::*;
 use futures::{future, Future};
+use lazy_static::*;
 use serde_derive::*;
+use std::cell::RefCell;
 use std::marker::PhantomData;
 use std::rc::Rc;
-use std::cell::RefCell;
-use lazy_static::*;
 
 const USER_DATA_KEY: &str = "userData";
 
 lazy_static! {
-    static ref DEFAULT_ADDONS: Vec<Descriptor> = serde_json::from_slice(include_bytes!("../../stremio-official-addons/index.json")).expect("official addons JSON parse");
+    static ref DEFAULT_ADDONS: Vec<Descriptor> =
+        serde_json::from_slice(include_bytes!("../../stremio-official-addons/index.json"))
+            .expect("official addons JSON parse");
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
@@ -50,16 +52,15 @@ impl<T: Environment> UserMiddleware<T> {
     fn load(&self) -> EnvFuture<UserData> {
         let current_state = self.state.borrow().to_owned();
         if let Some(ud) = current_state {
-            return Box::new(future::ok(ud))
+            return Box::new(future::ok(ud));
         }
 
         let state = self.state.clone();
-        let fut = T::get_storage(USER_DATA_KEY)
-           .and_then(move |result: Option<Box<UserData>>| {
-                let ud: UserData = *result.unwrap_or_default();
-                let _ = state.replace(Some(ud.to_owned()));
-                future::ok(ud)
-            });
+        let fut = T::get_storage(USER_DATA_KEY).and_then(move |result: Option<Box<UserData>>| {
+            let ud: UserData = *result.unwrap_or_default();
+            let _ = state.replace(Some(ud.to_owned()));
+            future::ok(ud)
+        });
         Box::new(fut)
     }
 }
@@ -93,7 +94,8 @@ impl<T: Environment> Handler for UserMiddleware<T> {
                     future::err(())
                 });
             */
-            let fut = self.load()
+            let fut = self
+                .load()
                 .and_then(move |ud| {
                     emit(&Action::LoadWithAddons(ud.addons.to_vec(), action_load));
                     future::ok(())
