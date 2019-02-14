@@ -13,8 +13,8 @@ pub enum ActionLoad {
 }
 impl ActionLoad {
     pub fn addon_aggr_req(&self) -> Option<AggrRequest> {
-        // @TODO map CatalogGrouped to AllCatalogs
-        // map CatalogFiltered  to FromAddon
+        // @TODO map CatalogFilteredto FromAddon
+        // @TODO map Detail/Streams to AllOfResource
         // etc.
         match self {
             ActionLoad::CatalogGrouped { extra } => Some(AggrRequest::AllCatalogs {
@@ -26,9 +26,23 @@ impl ActionLoad {
 }
 
 #[derive(Debug, Deserialize, Serialize, Clone)]
+#[serde(tag = "load", content = "args")]
+pub enum ActionUser {
+    Login{ username: String, password: String },
+    Signup{ username: String, password: String },
+    Logout,
+    PullAddons,
+    PushAddons,
+    // @TODO maybe PullUser, PushUser?
+}
+
+#[derive(Debug, Deserialize, Serialize, Clone)]
 #[serde(tag = "action", content = "args")]
 pub enum Action {
     Load(ActionLoad),
+
+    // user-specific action
+    User(ActionUser),
     // @TODO this should be renamed to LoadWithUser; we should also have UserLoaded and UserValue,
     // both having (user, addons)
     LoadWithAddons(Vec<Descriptor>, ActionLoad),

@@ -57,18 +57,19 @@
 * extra: advanced notation implemented
 * refactor: enum representations in serde
 * addonM: given a `transport_url`, FromAddon will try to find the addon in the collection, to possibly apply `flags.stremioAuth` or `flags.transport`; of course, it doesn't need to find it, `transport_url` is sufficient to request; or, it should just carry the flags; **DECISION:** neither, `stremioAuth` is just put on hold for now, see https://github.com/Stremio/stremio/issues/407
+* implement UserM; think of how (or not to?) to mock storage in the test; LoadWithUser(user, addons, ...)
+* UserM: figure ot loading step; perhaps always do the load with a future and do everything in a .then(), but memoize it
+* construct `AddonHTTPTransport<E: Environment>` and give it to the interested middlewares; introduce a long-lived transport; addon transports can have FromStr trait?
 
 ## TODO
 
-* implement UserM; think of how (or not to?) to mock storage in the test; LoadWithUser(user, addons, ...)
-* UserM: figure ot loading step; perhaps always do the load with a future and do everything in a .then(), but memoize it
+* UserM: mock storage and tests
 * UserM: uninstall/install addons for the user, sync their collection
 * UserM: actions related to the user: Login, Logout, SignUp; PullAddons, PushAddons; PullUser, PushUser (?)
 * UserM: how to protect from responses from previous user?
 * UserM: plug in a built in addon (LibraryAddon)
 
 * AddonM: statefulness can be mitigated by using a memoization where the addon transport `get` would return the same results if invoked with the same args again; however, this needs to be out of the transport impl and needs to be explicit
-* construct `AddonHTTPTransport<E: Environment>` and give it to the interested middlewares; introduce a long-lived transport; addon transports can have FromStr trait?
 * AddonM: AddonTransport trait, .get(), .manifest(); http addons will be constructed with a URL, while lib/notif addon directly as something that implements AddonTransport
 * addon catalog reducer, actions; handle loading collections in the addonM
 
