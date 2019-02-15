@@ -28,8 +28,8 @@ impl ActionLoad {
 #[derive(Debug, Deserialize, Serialize, Clone)]
 #[serde(tag = "userOp", content = "args")]
 pub enum ActionUser {
-    Login { username: String, password: String },
-    Signup { username: String, password: String },
+    Login { email: String, password: String },
+    Signup { email: String, password: String },
     Logout,
     PullAddons,
     PushAddons,

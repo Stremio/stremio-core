@@ -65,6 +65,10 @@
 
 ## TODO
 
+* consider .into for boxing futures
+* consider memoization/resetting
+* TransportUrl type, safety and parsing; ensure malformed ones cant crash the program
+* UserM: refactor addon actions into ActionAddon, UserOp should be renamed to ActionUser
 * UserM: implement the actions; consider matching them against API calls (action, call path, data structure)
 * UserM: uninstall/install addons for the user, sync their collection
 * UserM: AddonsChanged/UserChanged

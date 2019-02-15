@@ -76,7 +76,7 @@ impl<T: Environment> UserMiddleware<T> {
         })));
     }
 
-    fn handle_user_op(&self, user_op: &ActionUser, emit: Rc<DispatcherFn>) {
+    fn handle_action_user(&self, action_user: &ActionUser, emit: Rc<DispatcherFn>) {
         // @TODO actions that do not require auth Login, Register, Logout; those can emit
         // UserOpError and UserChanged
         // @TODO actions that do require auth PullAddons (persist if same auth key), PushAddons
@@ -87,7 +87,7 @@ impl<T: Environment> UserMiddleware<T> {
         // PushAddons/PullAddon just pushes and sends a UserOpWarning if it fails
         // PullAddons will set the storage (if the authkey has not changed), and emit AddonsChanged
         //  it also needs to determine whether the remote dataset is newer or not
-        match user_op {
+        match action_user {
             ActionUser::PullAddons => {
                 // @TODO if we have auth_key
                 // @TODO check if auth_key has changed, before persisting
@@ -96,7 +96,7 @@ impl<T: Environment> UserMiddleware<T> {
                     .expect("failed to build API request");
                 let state = self.state.clone();
                 let fut = T::fetch_serde::<_, APIResult<CollectionResponse>>(req)
-                    .and_then(enclose!((user_op, emit) move |result| {
+                    .and_then(enclose!((action_user, emit) move |result| {
                         match *result {
                             APIResult::Ok {
                                 result: CollectionResponse { addons },
@@ -106,13 +106,13 @@ impl<T: Environment> UserMiddleware<T> {
                                 T::set_storage(USER_DATA_KEY, Some(&new_user_data))
                             }
                             APIResult::Err { error } => {
-                                emit(&Action::UserOpError(user_op, MiddlewareError::API(error)));
+                                emit(&Action::UserOpError(action_user, MiddlewareError::API(error)));
                                 Box::new(future::ok(()))
                             }
                         }
                     }))
-                    .or_else(enclose!((user_op, emit) move |e| {
-                        emit(&Action::UserOpError(user_op, MiddlewareError::Env(e.to_string())));
+                    .or_else(enclose!((action_user, emit) move |e| {
+                        emit(&Action::UserOpError(action_user, MiddlewareError::Env(e.to_string())));
                         future::err(())
                     }));
                 T::exec(Box::new(fut));
@@ -164,8 +164,8 @@ impl<T: Environment> Handler for UserMiddleware<T> {
             self.exec_load_fut(Box::new(fut), emit.clone());
         }
 
-        if let Action::UserOp(user_op) = action {
-            self.handle_user_op(user_op, emit.clone());
+        if let Action::UserOp(action_user) = action {
+            self.handle_action_user(action_user, emit.clone());
         }
     }
 }
