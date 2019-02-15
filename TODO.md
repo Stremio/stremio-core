@@ -62,17 +62,17 @@
 * construct `AddonHTTPTransport<E: Environment>` and give it to the interested middlewares; introduce a long-lived transport; addon transports can have FromStr trait?
 * UserM: actions related to the user: Login, Logout, SignUp; PullAddons, PushAddons; PullUser, PushUser (?)
 * UserM: how to protect from responses from previous user; RESOLVED: simple check with the current `auth_key` will suffice
-* AddonM: statefulness can be mitigated by using a memoization where the addon transport `get` would return the same results if invoked with the same args again; however, this needs to be out of the transport impl and needs to be explicit
 
 ## TODO
 
 * UserM: implement the actions; consider matching them against API calls (action, call path, data structure)
 * UserM: uninstall/install addons for the user, sync their collection
-* UserM: AddonsChanged
+* UserM: AddonsChanged/UserChanged
 * UserM: plug in a built in addon (LibraryAddon)
 * UserM: mock storage and tests
 * AddonM: AddonTransport trait, .get(), .manifest(); http addons will be constructed with a URL, while lib/notif addon directly as something that implements AddonTransport
 * addon catalog reducer, actions; handle loading collections in the addonM
+* AddonM: caching: statefulness can be mitigated by using a memoization where the addon transport `get` would return the same results if invoked with the same args again; however, this needs to be out of the transport impl and needs to be explicit
 
 * basic state: Catalog, Detail; and all the possible inner states (describe the structures); StreamSelect
 * tests: Chain, Container, individual middlewares, individual types
@@ -190,9 +190,9 @@ UserOp (Login, Signup, Logout, PushAddons, PullAddons)
 RemoveAddon/InstallAddon -> only does things locally and emits AddonCollectionChanged; the app should invoke PushAddons if it's online
 
 error origins
+* .load() failed: unrecoverable: UserFatal
 * pulling/pushing addons failed (non fatal): UserOpWarning(action, err)
 * Login/Signup failed (needs user feedback): UserOpError(action, err)
-* .load() failed: unrecoverable: UserFatal
 
 error types
 * fetch (either network or deserialization)

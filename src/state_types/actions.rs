@@ -46,14 +46,12 @@ pub enum Action {
     UserOp(ActionUser),
 
     // Intermediery
-    // @TODO this should be renamed to LoadWithUser; we should also have UserLoaded and UserValue,
-    // both having (user, addons)
-    LoadWithAddons(Vec<Descriptor>, ActionLoad),
+    LoadWithUser(Option<User>, Vec<Descriptor>, ActionLoad),
     AddonResponse(ResourceRequest, Result<ResourceResponse, String>),
 
     // Output actions
     // @TODO consider more detailed error reporting: there are 3-4 classes 
-    // (etwork, deserialization, storage, etc.)
+    // (network, deserialization, storage, etc.)
     UserMFatal(String),
     UserMError(String),
     NewState(usize),

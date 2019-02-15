@@ -30,7 +30,7 @@ impl CatalogGrouped {
 
 pub fn catalogs_reducer(state: &CatalogGrouped, action: &Action) -> Option<Box<CatalogGrouped>> {
     match action {
-        Action::LoadWithAddons(addons, load_action @ ActionLoad::CatalogGrouped { .. }) => {
+        Action::LoadWithUser(_, addons, load_action @ ActionLoad::CatalogGrouped { .. }) => {
             if let Some(aggr_req) = load_action.addon_aggr_req() {
                 let groups = aggr_req
                     .plan(&addons)

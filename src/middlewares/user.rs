@@ -68,14 +68,16 @@ impl<T: Environment> UserMiddleware<T> {
     }
 
     fn handle_user_op(&self, user_op: &ActionUser, emit: Rc<DispatcherFn>) {
-        // @TODO actions that do not require auth Login, Register, Logout
+        // @TODO actions that do not require auth Login, Register, Logout; those can emit
+        // UserOpError and UserChanged
         // @TODO actions that do require auth PullAddons (persist if same auth key), PushAddons
         // Login/Register follow the same code (except the method); and perhaps Register will take
         // extra (gdpr, etc.)
-        // Logout is a separate operation, it clears the UD and sets it to default; perhaps it
+        // Logout is a separate operation, it clears the UD and sets it to default; it
         // should first clear the UD, THEN clear the session, to make it logout even w/o a conn
-        // PushAddons just pushes and sends a UserMError if it fails
-        // PullAddons will set the storage (if the authkey has not changed), and emits AddonsChanged
+        // PushAddons/PullAddon just pushes and sends a UserOpWarning if it fails
+        // PullAddons will set the storage (if the authkey has not changed), and emit AddonsChanged
+        //  it also needs to determine whether the remote dataset is newer or not
         if let ActionUser::PullAddons = user_op {
             // @TODO if we have auth_key
             // @TODO check if auth_key has changed
@@ -115,7 +117,7 @@ impl<T: Environment> Handler for UserMiddleware<T> {
             let fut = self
                 .load()
                 .and_then(enclose!((emit) move |ud| {
-                    emit(&Action::LoadWithAddons(ud.addons.to_vec(), action_load));
+                    emit(&Action::LoadWithUser(ud.auth.map(|a| a.user), ud.addons.to_vec(), action_load));
                     future::ok(())
                 }))
                 .or_else(enclose!((emit) move |e| {
