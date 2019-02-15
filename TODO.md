@@ -65,7 +65,6 @@
 
 ## TODO
 
-* consider .into for boxing futures
 * consider memoization/resetting
 * TransportUrl type, safety and parsing; ensure malformed ones cant crash the program
 * UserM: refactor addon actions into ActionAddon, UserOp should be renamed to ActionUser

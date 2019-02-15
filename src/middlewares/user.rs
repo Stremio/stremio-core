@@ -36,10 +36,11 @@ impl Default for UserData {
     }
 }
 
+type UserDataHolder = Rc<RefCell<Option<UserData>>>;
 #[derive(Default)]
 pub struct UserMiddleware<T: Environment> {
     //id: usize,
-    state: Rc<RefCell<Option<UserData>>>,
+    state: UserDataHolder,
     api_url: String,
     env: PhantomData<T>,
 }
@@ -65,6 +66,12 @@ impl<T: Environment> UserMiddleware<T> {
             future::ok(ud)
         });
         Box::new(fut)
+    }
+
+    fn save(state: UserDataHolder, new_user_data: UserData) -> EnvFuture<()> {
+        let fut = T::set_storage(USER_DATA_KEY, Some(&new_user_data));
+        state.replace(Some(new_user_data));
+        fut
     }
 
     fn exec_load_fut(&self, fut: EnvFuture<()>, emit: Rc<DispatcherFn>) {
@@ -101,9 +108,8 @@ impl<T: Environment> UserMiddleware<T> {
                             APIResult::Ok {
                                 result: CollectionResponse { addons },
                             } => {
-                                let new_user_data = UserData { auth: None, addons };
-                                state.replace(Some(new_user_data.to_owned()));
-                                T::set_storage(USER_DATA_KEY, Some(&new_user_data))
+                                // @TODO preserve auth
+                                Self::save(state, UserData { auth: None, addons })
                             }
                             APIResult::Err { error } => {
                                 emit(&Action::UserOpError(action_user, MiddlewareError::API(error)));
@@ -158,8 +164,7 @@ impl<T: Environment> Handler for UserMiddleware<T> {
                     addons,
                     ..ud
                 };
-                state.replace(Some(new_user_data.to_owned()));
-                T::set_storage(USER_DATA_KEY, Some(&new_user_data))
+                Self::save(state, new_user_data)
             }));
             self.exec_load_fut(Box::new(fut), emit.clone());
         }
