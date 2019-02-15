@@ -9,7 +9,7 @@ use std::marker::PhantomData;
 use std::rc::Rc;
 
 const USER_DATA_KEY: &str = "userData";
-
+const DEFAULT_API_URL: &str = "https://api.strem.io";
 lazy_static! {
     static ref DEFAULT_ADDONS: Vec<Descriptor> =
         serde_json::from_slice(include_bytes!("../../stremio-official-addons/index.json"))
@@ -47,8 +47,8 @@ pub struct UserMiddleware<T: Environment> {
 impl<T: Environment> UserMiddleware<T> {
     pub fn new() -> Self {
         UserMiddleware {
-            state: Rc::new(RefCell::new(None)),
-            api_url: "https://api.strem.io".to_owned(),
+            state: Default::default(),
+            api_url: DEFAULT_API_URL.to_owned(),
             env: PhantomData,
         }
     }
@@ -104,6 +104,7 @@ impl<T: Environment> UserMiddleware<T> {
                 let state = self.state.clone();
                 let fut = T::fetch_serde::<_, APIResult<CollectionResponse>>(req)
                     .and_then(enclose!((action_user, emit) move |result| {
+                        // @TODO fetch_api which returns MiddlewareError?
                         match *result {
                             APIResult::Ok {
                                 result: CollectionResponse { addons },
