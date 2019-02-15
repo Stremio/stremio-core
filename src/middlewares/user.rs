@@ -144,7 +144,7 @@ impl<T: Environment> UserMiddleware<T> {
                     Some(UserData{ auth: Some(Auth{ ref key, .. }), .. }) => key.to_owned(),
                     _ => return
                 };
-                let req = Request::post(format!("{}/api/addonCollection", &self.api_url))
+                let req = Request::post(format!("{}/api/addonCollectionGet", &self.api_url))
                     .body(CollectionRequest { key })
                     .expect("failed to build API request");
                 let state = self.state.clone();
