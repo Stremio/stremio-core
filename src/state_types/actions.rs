@@ -37,6 +37,13 @@ pub enum ActionUser {
 }
 
 #[derive(Debug, Deserialize, Serialize, Clone)]
+#[serde(tag = "err", content = "args")]
+pub enum MiddlewareError {
+    API(APIErr),
+    Env(String),
+}
+
+#[derive(Debug, Deserialize, Serialize, Clone)]
 #[serde(tag = "action", content = "args")]
 pub enum Action {
     // Input actions
@@ -53,9 +60,7 @@ pub enum Action {
     AddonResponse(ResourceRequest, Result<ResourceResponse, String>),
 
     // Output actions
-    // @TODO consider more detailed error reporting: there are 3-4 classes
-    // (network, deserialization, storage, etc.)
-    UserMFatal(String),
-    UserMError(String),
+    UserMiddlewareFatal(MiddlewareError),
+    UserOpError(ActionUser, MiddlewareError),
     NewState(usize),
 }

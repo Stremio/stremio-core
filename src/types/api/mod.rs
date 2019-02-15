@@ -5,7 +5,7 @@ use crate::types::addons::*;
 use serde_derive::*;
 
 // @TODO type of error?
-#[derive(Deserialize, Clone, Debug)]
+#[derive(Deserialize, Serialize, Clone, Debug)]
 pub struct APIErr {
     pub message: String,
 }

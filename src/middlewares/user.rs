@@ -87,7 +87,7 @@ impl<T: Environment> UserMiddleware<T> {
                     .expect("failed to build API request");
                 let state = self.state.clone();
                 let fut = T::fetch_serde::<_, APIResult<CollectionResponse>>(req)
-                    .and_then(move |result| {
+                    .and_then(enclose!((user_op, emit) move |result| {
                         match *result {
                             APIResult::Ok {
                                 result: CollectionResponse { addons },
@@ -96,15 +96,14 @@ impl<T: Environment> UserMiddleware<T> {
                                 state.replace(Some(new_user_data.to_owned()));
                                 T::set_storage(USER_DATA_KEY, Some(&new_user_data))
                             }
-                            // @TODO should this error be handled better?
-                            APIResult::Err { error } => Box::new(future::err(error.message.into())),
+                            APIResult::Err { error } => {
+                                emit(&Action::UserOpError(user_op, MiddlewareError::API(error)));
+                                Box::new(future::ok(()))
+                            }
                         }
-                    })
-                    .or_else(enclose!((emit) move |e| {
-                        // @TODO better err handling?
-                        // there are a few types of errors here: network errors, deserialization
-                        // errors, API errors
-                        emit(&Action::UserMError(e.to_string()));
+                    }))
+                    .or_else(enclose!((user_op, emit) move |e| {
+                        emit(&Action::UserOpError(user_op, MiddlewareError::Env(e.to_string())));
                         future::err(())
                     }));
                 T::exec(Box::new(fut));
@@ -127,7 +126,7 @@ impl<T: Environment> Handler for UserMiddleware<T> {
                     future::ok(())
                 }))
                 .or_else(enclose!((emit) move |e| {
-                    emit(&Action::UserMFatal(e.to_string()));
+                    emit(&Action::UserMiddlewareFatal(MiddlewareError::Env(e.to_string())));
                     future::err(())
                 }));
             T::exec(Box::new(fut));
@@ -140,7 +139,7 @@ impl<T: Environment> Handler for UserMiddleware<T> {
                     future::ok(())
                 }))
                 .or_else(enclose!((emit) move |e| {
-                    emit(&Action::UserMFatal(e.to_string()));
+                    emit(&Action::UserMiddlewareFatal(MiddlewareError::Env(e.to_string())));
                     future::err(())
                 }));
             T::exec(Box::new(fut));

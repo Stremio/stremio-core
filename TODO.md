@@ -183,7 +183,6 @@ It will persist settings in storage
 ## User middleware:
 ...
 
-consider: UserOpSuccess/UserOpError
 consider: UserChanged / AddonCollectionChanged
 
 UserOp (Login, Signup, Logout, PushAddons, PullAddons)
@@ -198,6 +197,8 @@ error types
 * fetch (either network or deserialization)
 * storage (either storage or deserialization)
 * API error
+
+can be generalized to EnvError, APIError
 
 All errors should be sent to Sentry, and all warnings should be displayed to the user, but we should NOT attempt to do stuff when the user is offline (should not attempt to sync addons and etc.)
 
