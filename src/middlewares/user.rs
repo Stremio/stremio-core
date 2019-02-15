@@ -67,6 +67,16 @@ impl<T: Environment> UserMiddleware<T> {
         Box::new(fut)
     }
 
+    fn exec_load_fut(&self, fut: EnvFuture<()>, emit: Rc<DispatcherFn>) {
+        T::exec(Box::new(
+            fut
+            .or_else(enclose!((emit) move |e| {
+                emit(&Action::UserMiddlewareFatal(MiddlewareError::Env(e.to_string())));
+                future::err(())
+            }))
+        ));
+    }
+
     fn handle_user_op(&self, user_op: &ActionUser, emit: Rc<DispatcherFn>) {
         // @TODO actions that do not require auth Login, Register, Logout; those can emit
         // UserOpError and UserChanged
@@ -124,12 +134,8 @@ impl<T: Environment> Handler for UserMiddleware<T> {
                 .and_then(enclose!((emit) move |ud| {
                     emit(&Action::LoadWithUser(ud.auth.map(|a| a.user), ud.addons.to_vec(), action_load));
                     future::ok(())
-                }))
-                .or_else(enclose!((emit) move |e| {
-                    emit(&Action::UserMiddlewareFatal(MiddlewareError::Env(e.to_string())));
-                    future::err(())
                 }));
-            T::exec(Box::new(fut));
+            self.exec_load_fut(Box::new(fut), emit.clone());
         }
 
         if let Action::AddonRemove(descriptor) | Action::AddonInstall(descriptor) = action {
@@ -137,16 +143,12 @@ impl<T: Environment> Handler for UserMiddleware<T> {
                 .and_then(enclose!((emit) move |ud| {
                     //self.save(ud)
                     future::ok(())
-                }))
-                .or_else(enclose!((emit) move |e| {
-                    emit(&Action::UserMiddlewareFatal(MiddlewareError::Env(e.to_string())));
-                    future::err(())
                 }));
-            T::exec(Box::new(fut));
+            self.exec_load_fut(Box::new(fut), emit.clone());
         }
 
         if let Action::UserOp(user_op) = action {
-            self.handle_user_op(user_op, emit);
+            self.handle_user_op(user_op, emit.clone());
         }
     }
 }
