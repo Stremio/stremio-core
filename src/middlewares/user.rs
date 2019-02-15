@@ -130,7 +130,7 @@ impl<T: Environment> Handler for UserMiddleware<T> {
             let fut = self
                 .load()
                 .and_then(enclose!((emit, action_load) move |ud| {
-                    emit(&Action::LoadWithUser(ud.auth.map(|a| a.user), ud.addons.to_vec(), action_load));
+                    emit(&Action::LoadWithUser(ud.auth.map(|a| a.user), ud.addons.to_owned(), action_load));
                     future::ok(())
                 }));
             self.exec_load_fut(Box::new(fut), emit.clone());
