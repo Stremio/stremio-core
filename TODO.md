@@ -127,6 +127,7 @@
 * architecturally, can we get away with not contacting the streming server in the state container?
 * https://blog.cloudflare.com/cloudflare-workers-as-a-serverless-rust-platform/
 * JS Side: All errors or warnings that come as actions should be reported to sentry
+* more manual/automated tests: ensure that when UserMiddlewareFatal happens, it is reported
 
 * BACKEND: notifitem generation needs to be reduced (10 per item, max ~300)
 * lib/notif addon: gzip everything?

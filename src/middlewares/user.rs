@@ -74,7 +74,7 @@ impl<T: Environment> UserMiddleware<T> {
         fut
     }
 
-    fn exec_load_fut(&self, fut: EnvFuture<()>, emit: Rc<DispatcherFn>) {
+    fn exec_or_fatal(fut: EnvFuture<()>, emit: Rc<DispatcherFn>) {
         T::exec(Box::new(fut.or_else(move |e| {
             emit(&Action::UserMiddlewareFatal(MiddlewareError::Env(
                 e.to_string(),
@@ -84,19 +84,32 @@ impl<T: Environment> UserMiddleware<T> {
     }
 
     fn handle_action_user(&self, action_user: &ActionUser, emit: Rc<DispatcherFn>) {
-        // @TODO actions that do not require auth Login, Register, Logout; those can emit
-        // UserOpError and UserChanged
-        // @TODO actions that do require auth PullAddons (persist if same auth key), PushAddons
         // Login/Register follow the same code (except the method); and perhaps Register will take
         // extra (gdpr, etc.)
-        // Logout is a separate operation, it clears the UD and sets it to default; it
-        // should first clear the UD, THEN clear the session, to make it logout even w/o a conn
-        // PushAddons/PullAddon just pushes and sends a UserOpWarning if it fails
-        // PullAddons will set the storage (if the authkey has not changed), and emit AddonsChanged
-        //  it also needs to determine whether the remote dataset is newer or not
+        // @TODO emit UserChanged
         match action_user {
-            ActionUser::Login { .. } | ActionUser::Register { .. } => {}
-            ActionUser::Logout => {}
+            // These DO NOT require authentication
+            ActionUser::Login { .. } | ActionUser::Register { .. } => {
+                // @TODO
+            }
+            // The following actions require authentication
+            ActionUser::Logout => {
+                // NOTE: This will clean up the storage first, and do the API call later
+                // if the API call fails, it will be a UserOpError but the user would still be
+                // logged out
+                let fut = Self::save(self.state.clone(), Default::default())
+                    .and_then(|_| {
+                        // @TODO emit UserChanged ASAP here
+                        // @TODO destroy session
+                        future::ok(())
+                    })
+                    // @TODO remove duplication here
+                    .or_else(enclose!((action_user, emit) move |e| {
+                        emit(&Action::UserOpError(action_user, MiddlewareError::Env(e.to_string())));
+                        future::err(())
+                    }));
+                T::exec(Box::new(fut));
+            }
             ActionUser::PullAddons => {
                 // @TODO if we have auth_key
                 // @TODO check if auth_key has changed, before persisting
@@ -112,6 +125,8 @@ impl<T: Environment> UserMiddleware<T> {
                                 result: CollectionResponse { addons },
                             } => {
                                 // @TODO preserve auth
+                                // @TODO this  needs to determine whether the remote dataset is newer or not
+                                // @TODO emit AddonsChanged
                                 Self::save(state, UserData { auth: None, addons })
                             }
                             APIResult::Err { error } => {
@@ -126,7 +141,9 @@ impl<T: Environment> UserMiddleware<T> {
                     }));
                 T::exec(Box::new(fut));
             }
-            ActionUser::PushAddons => {}
+            ActionUser::PushAddons => {
+                // @TODO
+            }
         }
     }
 }
@@ -140,7 +157,7 @@ impl<T: Environment> Handler for UserMiddleware<T> {
                     emit(&Action::LoadWithUser(ud.auth.map(|a| a.user), ud.addons.to_owned(), action_load));
                     future::ok(())
                 }));
-            self.exec_load_fut(Box::new(fut), emit.clone());
+            Self::exec_or_fatal(Box::new(fut), emit.clone());
         }
 
         if let Action::AddonOp(action_addon) = action {
@@ -168,7 +185,7 @@ impl<T: Environment> Handler for UserMiddleware<T> {
                     };
                     Self::save(state, new_user_data)
                 }));
-            self.exec_load_fut(Box::new(fut), emit.clone());
+            Self::exec_or_fatal(Box::new(fut), emit.clone());
         }
 
         if let Action::UserOp(action_user) = action {
