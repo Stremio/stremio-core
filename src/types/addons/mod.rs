@@ -45,9 +45,11 @@ impl fmt::Display for ResourceRef {
 }
 // @TODO from String?
 
+// @TODO: mayb esomething better?
+pub type TransportUrl = String;
 #[derive(Debug, Deserialize, Serialize, Clone, PartialEq, Eq)]
 pub struct ResourceRequest {
-    pub transport_url: String,
+    pub transport_url: TransportUrl,
     pub resource_ref: ResourceRef,
 }
 

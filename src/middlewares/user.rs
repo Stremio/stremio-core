@@ -143,22 +143,21 @@ impl<T: Environment> Handler for UserMiddleware<T> {
             self.exec_load_fut(Box::new(fut), emit.clone());
         }
 
-        if let Action::AddonRemove(_) | Action::AddonInstall(_) = action {
+        if let Action::AddonOp(action_addon) = action {
             let state = self.state.clone();
-            let fut = self.load().and_then(enclose!((emit, action) move |ud| {
-                let addons = match action {
-                    Action::AddonRemove(descriptor) => {
+            let fut = self.load().and_then(enclose!((emit, action_addon) move |ud| {
+                let addons = match action_addon {
+                    ActionAddon::Remove{ transport_url } => {
                         ud.addons.iter()
-                            .filter(|a| a.transport_url != descriptor.transport_url)
+                            .filter(|a| a.transport_url != transport_url)
                             .cloned()
                             .collect()
                     },
-                    Action::AddonInstall(descriptor) => {
+                    ActionAddon::Install(descriptor) => {
                         let mut addons = ud.addons.to_owned();
                         addons.push(*descriptor);
                         addons
                     },
-                    _ => unreachable!(),
                 };
                 emit(&Action::AddonsChanged(addons.to_owned()));
                 let new_user_data = UserData{

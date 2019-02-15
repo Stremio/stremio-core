@@ -37,6 +37,13 @@ pub enum ActionUser {
 }
 
 #[derive(Debug, Deserialize, Serialize, Clone)]
+#[serde(tag = "addonOp", content = "args")]
+pub enum ActionAddon {
+    Remove{ transport_url: TransportUrl },
+    Install(Box<Descriptor>)
+}
+
+#[derive(Debug, Deserialize, Serialize, Clone)]
 #[serde(tag = "err", content = "args")]
 pub enum MiddlewareError {
     API(APIErr),
@@ -48,8 +55,7 @@ pub enum MiddlewareError {
 pub enum Action {
     // Input actions
     Load(ActionLoad),
-    AddonInstall(Box<Descriptor>),
-    AddonRemove(Box<Descriptor>),
+    AddonOp(ActionAddon),
 
     // user-specific action
     UserOp(ActionUser),
