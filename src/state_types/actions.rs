@@ -29,7 +29,7 @@ impl ActionLoad {
 #[serde(tag = "userOp", content = "args")]
 pub enum ActionUser {
     Login { email: String, password: String },
-    Signup { email: String, password: String },
+    Register { email: String, password: String },
     Logout,
     PullAddons,
     PushAddons,

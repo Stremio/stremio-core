@@ -62,12 +62,12 @@
 * construct `AddonHTTPTransport<E: Environment>` and give it to the interested middlewares; introduce a long-lived transport; addon transports can have FromStr trait?
 * UserM: actions related to the user: Login, Logout, SignUp; PullAddons, PushAddons; PullUser, PushUser (?)
 * UserM: how to protect from responses from previous user; RESOLVED: simple check with the current `auth_key` will suffice
+* UserM: refactor addon actions into ActionAddon, UserOp should be renamed to ActionUser
+* consider memoization/resetting
+* TransportUrl type, safety and parsing; ensure malformed ones cant crash the program; they can't, we handle the case
 
 ## TODO
 
-* consider memoization/resetting
-* TransportUrl type, safety and parsing; ensure malformed ones cant crash the program
-* UserM: refactor addon actions into ActionAddon, UserOp should be renamed to ActionUser
 * UserM: implement the actions; consider matching them against API calls (action, call path, data structure)
 * UserM: uninstall/install addons for the user, sync their collection
 * UserM: AddonsChanged/UserChanged

@@ -95,6 +95,10 @@ impl<T: Environment> UserMiddleware<T> {
         // PullAddons will set the storage (if the authkey has not changed), and emit AddonsChanged
         //  it also needs to determine whether the remote dataset is newer or not
         match action_user {
+            ActionUser::Login{ .. } | ActionUser::Register{ .. } => {
+            },
+            ActionUser::Logout => {
+            },
             ActionUser::PullAddons => {
                 // @TODO if we have auth_key
                 // @TODO check if auth_key has changed, before persisting
@@ -123,10 +127,9 @@ impl<T: Environment> UserMiddleware<T> {
                         future::err(())
                     }));
                 T::exec(Box::new(fut));
-            }
-            _ => {
-                // @TODO
-            }
+            },
+            ActionUser::PushAddons => {
+            },
         }
     }
 }
