@@ -1,12 +1,12 @@
 use crate::state_types::*;
 use crate::types::*;
+use enclose::*;
 use futures::{future, Future};
 use lazy_static::*;
 use serde_derive::*;
 use std::cell::RefCell;
 use std::marker::PhantomData;
 use std::rc::Rc;
-use enclose::*;
 
 const USER_DATA_KEY: &str = "userData";
 
@@ -78,40 +78,46 @@ impl<T: Environment> UserMiddleware<T> {
         // PushAddons/PullAddon just pushes and sends a UserOpWarning if it fails
         // PullAddons will set the storage (if the authkey has not changed), and emit AddonsChanged
         //  it also needs to determine whether the remote dataset is newer or not
-        if let ActionUser::PullAddons = user_op {
-            // @TODO if we have auth_key
-            // @TODO check if auth_key has changed
-            let req = Request::post(format!("{}/api/addonCollection", &self.api_url))
-                .body(CollectionRequest {})
-                .expect("failed to build API request");
-            let fut = T::fetch_serde::<_, APIResult<CollectionResponse>>(req)
-                .and_then(|result| {
-                    match *result {
-                        APIResult::Ok {
-                            result: CollectionResponse { addons },
-                        } => {
-                            // @TODO: other than storage, we should replace the in-mem thing too
-                            T::set_storage(USER_DATA_KEY, Some(&UserData { auth: None, addons }))
-                        },
-                        // @TODO should this error be handled better?
-                        APIResult::Err { error } => Box::new(future::err(error.message.into())),
-                    }
-                })
-                .or_else(enclose!((emit) move |e| {
-                    // @TODO better err handling?
-                    // there are a few types of errors here: network errors, deserialization
-                    // errors, API errors
-                    emit(&Action::UserMError(e.to_string()));
-                    future::err(())
-                }));
-            T::exec(Box::new(fut));
+        match user_op {
+            ActionUser::PullAddons => {
+                // @TODO if we have auth_key
+                // @TODO check if auth_key has changed, before persisting
+                let req = Request::post(format!("{}/api/addonCollection", &self.api_url))
+                    .body(CollectionRequest {})
+                    .expect("failed to build API request");
+                let state = self.state.clone();
+                let fut = T::fetch_serde::<_, APIResult<CollectionResponse>>(req)
+                    .and_then(move |result| {
+                        match *result {
+                            APIResult::Ok {
+                                result: CollectionResponse { addons },
+                            } => {
+                                let new_user_data = UserData { auth: None, addons };
+                                state.replace(Some(new_user_data.to_owned()));
+                                T::set_storage(USER_DATA_KEY, Some(&new_user_data))
+                            }
+                            // @TODO should this error be handled better?
+                            APIResult::Err { error } => Box::new(future::err(error.message.into())),
+                        }
+                    })
+                    .or_else(enclose!((emit) move |e| {
+                        // @TODO better err handling?
+                        // there are a few types of errors here: network errors, deserialization
+                        // errors, API errors
+                        emit(&Action::UserMError(e.to_string()));
+                        future::err(())
+                    }));
+                T::exec(Box::new(fut));
+            }
+            _ => {
+                // @TODO
+            }
         }
     }
 }
 
 impl<T: Environment> Handler for UserMiddleware<T> {
     fn handle(&self, action: &Action, emit: Rc<DispatcherFn>) {
-        // @TODO: add/remove addons; consider AddonsChanged
         if let Action::Load(action_load) = action {
             let action_load = action_load.to_owned();
             let fut = self
@@ -121,8 +127,19 @@ impl<T: Environment> Handler for UserMiddleware<T> {
                     future::ok(())
                 }))
                 .or_else(enclose!((emit) move |e| {
-                    // @TODO consider that this error is fatal, while the others are not
-                    // perhaps consider a recovery strategy here?
+                    emit(&Action::UserMFatal(e.to_string()));
+                    future::err(())
+                }));
+            T::exec(Box::new(fut));
+        }
+
+        if let Action::AddonRemove(descriptor) | Action::AddonInstall(descriptor) = action {
+            let fut = self.load()
+                .and_then(enclose!((emit) move |ud| {
+                    //self.save(ud)
+                    future::ok(())
+                }))
+                .or_else(enclose!((emit) move |e| {
                     emit(&Action::UserMFatal(e.to_string()));
                     future::err(())
                 }));

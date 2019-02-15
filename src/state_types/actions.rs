@@ -33,7 +33,7 @@ pub enum ActionUser {
     Logout,
     PullAddons,
     PushAddons,
-    // @TODO maybe PullUser, PushUser?
+    // @TODO consider PullUser, PushUser?
 }
 
 #[derive(Debug, Deserialize, Serialize, Clone)]
@@ -41,16 +41,19 @@ pub enum ActionUser {
 pub enum Action {
     // Input actions
     Load(ActionLoad),
+    AddonInstall(Box<Descriptor>),
+    AddonRemove(Box<Descriptor>),
 
     // user-specific action
     UserOp(ActionUser),
 
     // Intermediery
     LoadWithUser(Option<User>, Vec<Descriptor>, ActionLoad),
+    AddonsChanged(Vec<Descriptor>),
     AddonResponse(ResourceRequest, Result<ResourceResponse, String>),
 
     // Output actions
-    // @TODO consider more detailed error reporting: there are 3-4 classes 
+    // @TODO consider more detailed error reporting: there are 3-4 classes
     // (network, deserialization, storage, etc.)
     UserMFatal(String),
     UserMError(String),

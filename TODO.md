@@ -192,7 +192,7 @@ RemoveAddon/InstallAddon -> only does things locally and emits AddonCollectionCh
 error origins
 * .load() failed: unrecoverable: UserFatal
 * pulling/pushing addons failed (non fatal): UserOpWarning(action, err)
-* Login/Signup failed (needs user feedback): UserOpError(action, err)
+* Login/Signup failed (needs user feedback): UserOpError(action, err); needs to preserve API error though
 
 error types
 * fetch (either network or deserialization)
