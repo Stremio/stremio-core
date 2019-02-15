@@ -68,13 +68,12 @@ impl<T: Environment> UserMiddleware<T> {
     }
 
     fn exec_load_fut(&self, fut: EnvFuture<()>, emit: Rc<DispatcherFn>) {
-        T::exec(Box::new(
-            fut
-            .or_else(enclose!((emit) move |e| {
-                emit(&Action::UserMiddlewareFatal(MiddlewareError::Env(e.to_string())));
-                future::err(())
-            }))
-        ));
+        T::exec(Box::new(fut.or_else(move |e| {
+            emit(&Action::UserMiddlewareFatal(MiddlewareError::Env(
+                e.to_string(),
+            )));
+            future::err(())
+        })));
     }
 
     fn handle_user_op(&self, user_op: &ActionUser, emit: Rc<DispatcherFn>) {
@@ -128,22 +127,40 @@ impl<T: Environment> UserMiddleware<T> {
 impl<T: Environment> Handler for UserMiddleware<T> {
     fn handle(&self, action: &Action, emit: Rc<DispatcherFn>) {
         if let Action::Load(action_load) = action {
-            let action_load = action_load.to_owned();
             let fut = self
                 .load()
-                .and_then(enclose!((emit) move |ud| {
+                .and_then(enclose!((emit, action_load) move |ud| {
                     emit(&Action::LoadWithUser(ud.auth.map(|a| a.user), ud.addons.to_vec(), action_load));
                     future::ok(())
                 }));
             self.exec_load_fut(Box::new(fut), emit.clone());
         }
 
-        if let Action::AddonRemove(descriptor) | Action::AddonInstall(descriptor) = action {
-            let fut = self.load()
-                .and_then(enclose!((emit) move |ud| {
-                    //self.save(ud)
-                    future::ok(())
-                }));
+        if let Action::AddonRemove(_) | Action::AddonInstall(_) = action {
+            let state = self.state.clone();
+            let fut = self.load().and_then(enclose!((emit, action) move |ud| {
+                let addons = match action {
+                    Action::AddonRemove(descriptor) => {
+                        ud.addons.iter()
+                            .filter(|a| a.transport_url != descriptor.transport_url)
+                            .cloned()
+                            .collect()
+                    },
+                    Action::AddonInstall(descriptor) => {
+                        let mut addons = ud.addons.to_owned();
+                        addons.push(*descriptor);
+                        addons
+                    },
+                    _ => unreachable!(),
+                };
+                emit(&Action::AddonsChanged(addons.to_owned()));
+                let new_user_data = UserData{
+                    addons,
+                    ..ud
+                };
+                state.replace(Some(new_user_data.to_owned()));
+                T::set_storage(USER_DATA_KEY, Some(&new_user_data))
+            }));
             self.exec_load_fut(Box::new(fut), emit.clone());
         }
 
