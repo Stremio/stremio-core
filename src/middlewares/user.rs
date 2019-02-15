@@ -40,16 +40,18 @@ impl Default for UserData {
 pub struct UserMiddleware<T: Environment> {
     //id: usize,
     state: Rc<RefCell<Option<UserData>>>,
-    pub env: PhantomData<T>,
+    api_url: String,
+    env: PhantomData<T>,
 }
 impl<T: Environment> UserMiddleware<T> {
     pub fn new() -> Self {
         UserMiddleware {
             state: Rc::new(RefCell::new(None)),
+            api_url: "https://api.strem.io".to_owned(),
             env: PhantomData,
         }
     }
-    // @TODO is there a better way to do this?
+
     fn load(&self) -> EnvFuture<UserData> {
         let current_state = self.state.borrow().to_owned();
         if let Some(ud) = current_state {
@@ -64,10 +66,50 @@ impl<T: Environment> UserMiddleware<T> {
         });
         Box::new(fut)
     }
+
+    fn handle_user_op(&self, user_op: &ActionUser, emit: Rc<DispatcherFn>) {
+        // @TODO actions that do not require auth Login, Register, Logout
+        // @TODO actions that do require auth PullAddons (persist if same auth key), PushAddons
+        // Login/Register follow the same code (except the method); and perhaps Register will take
+        // extra (gdpr, etc.)
+        // Logout is a separate operation, it clears the UD and sets it to default; perhaps it
+        // should first clear the UD, THEN clear the session, to make it logout even w/o a conn
+        // PushAddons just pushes and sends a UserMError if it fails
+        // PullAddons will set the storage (if the authkey has not changed), and emits AddonsChanged
+        if let ActionUser::PullAddons = user_op {
+            // @TODO if we have auth_key
+            // @TODO check if auth_key has changed
+            let req = Request::post(format!("{}/api/addonCollection", &self.api_url))
+                .body(CollectionRequest {})
+                .expect("failed to build API request");
+            let fut = T::fetch_serde::<_, APIResult<CollectionResponse>>(req)
+                .and_then(|result| {
+                    match *result {
+                        APIResult::Ok {
+                            result: CollectionResponse { addons },
+                        } => {
+                            // @TODO: other than storage, we should replace the in-mem thing too
+                            T::set_storage(USER_DATA_KEY, Some(&UserData { auth: None, addons }))
+                        },
+                        // @TODO should this error be handled better?
+                        APIResult::Err { error } => Box::new(future::err(error.message.into())),
+                    }
+                })
+                .or_else(enclose!((emit) move |e| {
+                    // @TODO better err handling?
+                    // there are a few types of errors here: network errors, deserialization
+                    // errors, API errors
+                    emit(&Action::UserMError(e.to_string()));
+                    future::err(())
+                }));
+            T::exec(Box::new(fut));
+        }
+    }
 }
+
 impl<T: Environment> Handler for UserMiddleware<T> {
     fn handle(&self, action: &Action, emit: Rc<DispatcherFn>) {
-        // @TODO Action::SyncAddons, Action::TryLogin
+        // @TODO: add/remove addons; consider AddonsChanged
         if let Action::Load(action_load) = action {
             let action_load = action_load.to_owned();
             let fut = self
@@ -85,29 +127,8 @@ impl<T: Environment> Handler for UserMiddleware<T> {
             T::exec(Box::new(fut));
         }
 
-        if let Action::UserOp(ActionUser::PullAddons) = action {
-            // @TODO get rid of this hardcode
-            let req = Request::post("https://api.strem.io/api/addonCollectionGet")
-                .body(CollectionRequest {})
-                .unwrap();
-            let fut = T::fetch_serde::<_, APIResult<CollectionResponse>>(req)
-                .and_then(|result| {
-                    match *result {
-                        APIResult::Ok {
-                            result: CollectionResponse { addons },
-                        } => T::set_storage(USER_DATA_KEY, Some(&UserData { auth: None, addons })),
-                        // @TODO should this error be handled better?
-                        APIResult::Err { error } => Box::new(future::err(error.message.into())),
-                    }
-                })
-                .or_else(enclose!((emit) move |e| {
-                    // @TODO better err handling?
-                    // there are a few types of errors here: network errors, deserialization
-                    // errors, API errors
-                    emit(&Action::UserMError(e.to_string()));
-                    future::err(())
-                }));
-            T::exec(Box::new(fut));
+        if let Action::UserOp(user_op) = action {
+            self.handle_user_op(user_op, emit);
         }
     }
 }

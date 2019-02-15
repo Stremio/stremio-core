@@ -60,16 +60,17 @@
 * implement UserM; think of how (or not to?) to mock storage in the test; LoadWithUser(user, addons, ...)
 * UserM: figure ot loading step; perhaps always do the load with a future and do everything in a .then(), but memoize it
 * construct `AddonHTTPTransport<E: Environment>` and give it to the interested middlewares; introduce a long-lived transport; addon transports can have FromStr trait?
+* UserM: actions related to the user: Login, Logout, SignUp; PullAddons, PushAddons; PullUser, PushUser (?)
+* UserM: how to protect from responses from previous user; RESOLVED: simple check with the current `auth_key` will suffice
+* AddonM: statefulness can be mitigated by using a memoization where the addon transport `get` would return the same results if invoked with the same args again; however, this needs to be out of the transport impl and needs to be explicit
 
 ## TODO
 
-* UserM: mock storage and tests
+* UserM: implement the actions; consider matching them against API calls (action, call path, data structure)
 * UserM: uninstall/install addons for the user, sync their collection
-* UserM: actions related to the user: Login, Logout, SignUp; PullAddons, PushAddons; PullUser, PushUser (?)
-* UserM: how to protect from responses from previous user?
+* UserM: AddonsChanged
 * UserM: plug in a built in addon (LibraryAddon)
-
-* AddonM: statefulness can be mitigated by using a memoization where the addon transport `get` would return the same results if invoked with the same args again; however, this needs to be out of the transport impl and needs to be explicit
+* UserM: mock storage and tests
 * AddonM: AddonTransport trait, .get(), .manifest(); http addons will be constructed with a URL, while lib/notif addon directly as something that implements AddonTransport
 * addon catalog reducer, actions; handle loading collections in the addonM
 
@@ -87,8 +88,6 @@
 * environment implementations: return an error related to the HTTP status code, if it's not 200
 
 * refactor: mod.rs on `state_types` and types shouldn't glob export everything
-
-* refactor: consider splitting Environment into Storage and Fetcher; and maybe take AddonsClient in
 
 
 * spec: notifItems: rethink that spec, crystallize it
@@ -120,6 +119,7 @@
 * ensure that every time a network error happens, it's properly reflected in the state; and the UI should allow to "Retry" each such operation
 * figure out pausing on minimize/close; this should be handled in the app; probably like this: when closing/minimizing the window, pause if state is playing
 * when you go to player/detail and there doesn't appear to be a supported addon for the /meta/ request, show an error to the user (+test for that?)
+* refactor: consider splitting Environment into Storage and Fetcher; and maybe take AddonsClient in
 * document item type agnostic behavior (detail page)
 * architecturally, can we get away with not contacting the streming server in the state container?
 * https://blog.cloudflare.com/cloudflare-workers-as-a-serverless-rust-platform/
