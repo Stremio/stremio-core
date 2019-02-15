@@ -39,8 +39,8 @@ pub enum ActionUser {
 #[derive(Debug, Deserialize, Serialize, Clone)]
 #[serde(tag = "addonOp", content = "args")]
 pub enum ActionAddon {
-    Remove{ transport_url: TransportUrl },
-    Install(Box<Descriptor>)
+    Remove { transport_url: TransportUrl },
+    Install(Box<Descriptor>),
 }
 
 #[derive(Debug, Deserialize, Serialize, Clone)]

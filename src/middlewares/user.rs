@@ -95,10 +95,8 @@ impl<T: Environment> UserMiddleware<T> {
         // PullAddons will set the storage (if the authkey has not changed), and emit AddonsChanged
         //  it also needs to determine whether the remote dataset is newer or not
         match action_user {
-            ActionUser::Login{ .. } | ActionUser::Register{ .. } => {
-            },
-            ActionUser::Logout => {
-            },
+            ActionUser::Login { .. } | ActionUser::Register { .. } => {}
+            ActionUser::Logout => {}
             ActionUser::PullAddons => {
                 // @TODO if we have auth_key
                 // @TODO check if auth_key has changed, before persisting
@@ -127,9 +125,8 @@ impl<T: Environment> UserMiddleware<T> {
                         future::err(())
                     }));
                 T::exec(Box::new(fut));
-            },
-            ActionUser::PushAddons => {
-            },
+            }
+            ActionUser::PushAddons => {}
         }
     }
 }
@@ -148,27 +145,29 @@ impl<T: Environment> Handler for UserMiddleware<T> {
 
         if let Action::AddonOp(action_addon) = action {
             let state = self.state.clone();
-            let fut = self.load().and_then(enclose!((emit, action_addon) move |ud| {
-                let addons = match action_addon {
-                    ActionAddon::Remove{ transport_url } => {
-                        ud.addons.iter()
-                            .filter(|a| a.transport_url != transport_url)
-                            .cloned()
-                            .collect()
-                    },
-                    ActionAddon::Install(descriptor) => {
-                        let mut addons = ud.addons.to_owned();
-                        addons.push(*descriptor);
-                        addons
-                    },
-                };
-                emit(&Action::AddonsChanged(addons.to_owned()));
-                let new_user_data = UserData{
-                    addons,
-                    ..ud
-                };
-                Self::save(state, new_user_data)
-            }));
+            let fut = self
+                .load()
+                .and_then(enclose!((emit, action_addon) move |ud| {
+                    let addons = match action_addon {
+                        ActionAddon::Remove{ transport_url } => {
+                            ud.addons.iter()
+                                .filter(|a| a.transport_url != transport_url)
+                                .cloned()
+                                .collect()
+                        },
+                        ActionAddon::Install(descriptor) => {
+                            let mut addons = ud.addons.to_owned();
+                            addons.push(*descriptor);
+                            addons
+                        },
+                    };
+                    emit(&Action::AddonsChanged(addons.to_owned()));
+                    let new_user_data = UserData{
+                        addons,
+                        ..ud
+                    };
+                    Self::save(state, new_user_data)
+                }));
             self.exec_load_fut(Box::new(fut), emit.clone());
         }
 
