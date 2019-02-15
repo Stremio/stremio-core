@@ -68,6 +68,7 @@
 
 ## TODO
 
+* APIRequest/APIResponse should be enums?
 * UserM: implement the actions; consider matching them against API calls (action, call path, data structure)
 * UserM: uninstall/install addons for the user, sync their collection
 * UserM: AddonsChanged/UserChanged

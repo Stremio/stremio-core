@@ -87,10 +87,38 @@ impl<T: Environment> UserMiddleware<T> {
         // Login/Register follow the same code (except the method); and perhaps Register will take
         // extra (gdpr, etc.)
         // @TODO emit UserChanged
+        // @TODO share more code, a lot of those clone the state, all of these handle API errors
         match action_user {
             // These DO NOT require authentication
-            ActionUser::Login { .. } | ActionUser::Register { .. } => {
-                // @TODO
+            ActionUser::Login { email, password } | ActionUser::Register { email, password } => {
+                // @TODO register
+                let req = Request::post(format!("{}/api/login", &self.api_url))
+                    .body(LoginRequest {
+                        email: email.to_owned(),
+                        password: password.to_owned(),
+                    })
+                    .expect("failed to build API request");
+                let state = self.state.clone();
+                let fut = T::fetch_serde::<_, APIResult<AuthResponse>>(req)
+                    .and_then(enclose!((action_user, emit) move |result| {
+                        match *result {
+                            APIResult::Ok {
+                                result: AuthResponse { key, user },
+                            } => {
+                                // @TODO pull addons
+                                Self::save(state, UserData { auth: Some(Auth{ key, user }), addons: DEFAULT_ADDONS.to_owned() })
+                            }
+                            APIResult::Err { error } => {
+                                emit(&Action::UserOpError(action_user, MiddlewareError::API(error)));
+                                Box::new(future::ok(()))
+                            }
+                        }
+                    }))
+                    .or_else(enclose!((action_user, emit) move |e| {
+                        emit(&Action::UserOpError(action_user, MiddlewareError::Env(e.to_string())));
+                        future::err(())
+                    }));
+                T::exec(Box::new(fut));
             }
             // The following actions require authentication
             ActionUser::Logout => {
@@ -111,10 +139,13 @@ impl<T: Environment> UserMiddleware<T> {
                 T::exec(Box::new(fut));
             }
             ActionUser::PullAddons => {
-                // @TODO if we have auth_key
                 // @TODO check if auth_key has changed, before persisting
+                let key = match *self.state.borrow() {
+                    Some(UserData{ auth: Some(Auth{ ref key, .. }), .. }) => key.to_owned(),
+                    _ => return
+                };
                 let req = Request::post(format!("{}/api/addonCollection", &self.api_url))
-                    .body(CollectionRequest {})
+                    .body(CollectionRequest { key })
                     .expect("failed to build API request");
                 let state = self.state.clone();
                 let fut = T::fetch_serde::<_, APIResult<CollectionResponse>>(req)
