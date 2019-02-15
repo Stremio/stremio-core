@@ -182,26 +182,36 @@ It will persist settings in storage
 
 ## User middleware:
 ...
-LoginOrSignupError 
-LoginOrSignupSuccess
-UserChanged
-AddonCollectionChanged
-LoadWithUser user addons ...
 
+consider: UserOpSuccess/UserOpError
+consider: UserChanged / AddonCollectionChanged
 
-uses Storage to save authKey, user and AddonCollection (to 1 storage key)
+UserOp (Login, Signup, Logout, PushAddons, PullAddons)
+RemoveAddon/InstallAddon -> only does things locally and emits AddonCollectionChanged; the app should invoke PushAddons if it's online
 
-Load -> LoadWithUser(Option<user>, addons, ...); uses storage
-PullAddons -> 
-InstallAddon/RemoveAddon -> 
-UserAction (Login, Signup, Logout) -> UserChanged OR UserActionError(UserAction, err)
+error origins
+* pulling/pushing addons failed (non fatal): UserOpWarning(action, err)
+* Login/Signup failed (needs user feedback): UserOpError(action, err)
+* .load() failed: unrecoverable: UserFatal
 
-consider abstracting errors into APIError(action, network err or API err)
+error types
+* fetch (either network or deserialization)
+* storage (either storage or deserialization)
+* API error
+
+All errors should be sent to Sentry, and all warnings should be displayed to the user, but we should NOT attempt to do stuff when the user is offline (should not attempt to sync addons and etc.)
+
+Load -> LoadWithUser(Option<user>, addons, ...)
 
 how to protect against race conditions where the responses of requests made with prev authKey arrive? maybe just take a `to_owned()`
 of the auth key in the beginning, and only persist if the auth key matches
 
 how/whether to trigger pull addons on user login? sounds like we should, and we should treat it as one operation
+
+UserActions
+	Login -> calls login, pulls the collection, persists, emits UserChanged, AddonCollectionChanged OR errors
+	Signup -> calls signup, pulls the collection, persists
+	Logout -> deletes user_data, emits UserChanged/addonCollectionChanged, calls logout (and maybe emits UserMError)
 
 ## AddonAggr
 transforms LoadWithUser(dyn AddonReq) (any action implementing the AddonReq trait), and then AddonAdded/AddonRemoved into -> AddonRequest + AddonResponse
