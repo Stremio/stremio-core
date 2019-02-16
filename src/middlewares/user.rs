@@ -141,8 +141,11 @@ impl<T: Environment> UserMiddleware<T> {
             ActionUser::PullAddons => {
                 // @TODO check if auth_key has changed, before persisting
                 let key = match *self.state.borrow() {
-                    Some(UserData{ auth: Some(Auth{ ref key, .. }), .. }) => key.to_owned(),
-                    _ => return
+                    Some(UserData {
+                        auth: Some(Auth { ref key, .. }),
+                        ..
+                    }) => key.to_owned(),
+                    _ => return,
                 };
                 let req = Request::post(format!("{}/api/addonCollectionGet", &self.api_url))
                     .body(CollectionRequest { key })

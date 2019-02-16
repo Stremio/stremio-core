@@ -4,7 +4,7 @@ use serde_derive::*;
 #[derive(Serialize, Deserialize, Clone, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct User {
-    #[serde(rename="_id")]
+    #[serde(rename = "_id")]
     pub id: String,
     pub email: String,
     pub fb_id: Option<String>,

@@ -2,11 +2,11 @@ use serde_derive::*;
 
 use crate::types::addons::ResourceRef;
 // https://serde.rs/string-or-struct.html
+use semver::Version;
 use serde::de::{self, Deserialize, Deserializer, MapAccess, Visitor};
 use std::fmt;
 use std::marker::PhantomData;
 use std::str::FromStr;
-use semver::Version;
 
 // Resource descriptors
 // those define how a resource may be requested
