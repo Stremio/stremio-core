@@ -7,15 +7,15 @@ mod tests {
     use self::middlewares::*;
     use self::state_types::*;
     use super::*;
+    use enclose::*;
+    use futures::future::lazy;
     use futures::{future, Future};
     use serde::de::DeserializeOwned;
     use serde::Serialize;
     use std::cell::RefCell;
     use std::rc::Rc;
-    use tokio::runtime::current_thread::Runtime;
     use tokio::executor::current_thread::spawn;
-    use futures::future::lazy;
-    use enclose::*;
+    use tokio::runtime::current_thread::Runtime;
 
     #[test]
     fn middlewares() {
@@ -93,7 +93,7 @@ mod tests {
         );
     }
 
-    struct Env{}
+    struct Env {}
     impl Environment for Env {
         fn fetch_serde<IN, OUT>(in_req: Request<IN>) -> EnvFuture<Box<OUT>>
         where
@@ -111,10 +111,9 @@ mod tests {
             // @TODO add content-type application/json
             // @TODO: if the response code is not 200, return an error related to that
             req = req.json(&body);
-            let fut = req.send()
-                .and_then(|mut res: reqwest::r#async::Response| {
-                    res.json::<OUT>()
-                })
+            let fut = req
+                .send()
+                .and_then(|mut res: reqwest::r#async::Response| res.json::<OUT>())
                 .map(|res| Box::new(res))
                 .map_err(|e| e.into());
             Box::new(fut)
