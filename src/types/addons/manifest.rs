@@ -6,6 +6,7 @@ use serde::de::{self, Deserialize, Deserializer, MapAccess, Visitor};
 use std::fmt;
 use std::marker::PhantomData;
 use std::str::FromStr;
+use semver::Version;
 
 // Resource descriptors
 // those define how a resource may be requested
@@ -97,7 +98,7 @@ impl ManifestCatalog {
 #[serde(rename_all = "camelCase")]
 pub struct Manifest {
     pub id: String,
-    pub version: String,
+    pub version: Version,
     pub name: String,
     pub description: Option<String>,
     pub logo: Option<String>,
