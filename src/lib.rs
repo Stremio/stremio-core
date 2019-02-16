@@ -15,6 +15,7 @@ mod tests {
     use tokio::runtime::current_thread::Runtime;
     use tokio::executor::current_thread::spawn;
     use futures::future::lazy;
+    use enclose::*;
 
     #[test]
     fn middlewares() {
@@ -30,7 +31,7 @@ mod tests {
             &catalogs_reducer,
         )));
         let container_ref = container.clone();
-        let chain = Chain::new(
+        let chain = Rc::new(Chain::new(
             vec![
                 Box::new(UserMiddleware::<Env>::new()),
                 Box::new(AddonsMiddleware::<Env>::new()),
@@ -42,15 +43,15 @@ mod tests {
                     //println!("new state {:?}", container_ref.borrow().get_state());
                 }
             }),
-        );
+        ));
 
         let mut rt = Runtime::new().unwrap();
-        rt.spawn(lazy(move || {
+        rt.spawn(lazy(enclose!((chain) move || {
             // this is the dispatch operation
             let action = &Action::Load(ActionLoad::CatalogGrouped { extra: vec![] });
             chain.dispatch(action);
             future::ok(())
-        }));
+        })));
         rt.run().unwrap();
 
         // since this is after the .run() has ended, it will be OK
@@ -76,18 +77,21 @@ mod tests {
             panic!("there are no items that are Ready in state {:?}", state);
         }
 
-        // Now try to Search
-        /*
-        let extra = vec![("search".to_owned(), "grand tour".to_owned())];
-        let action = &Action::Load(ActionLoad::CatalogGrouped { extra });
-        chain.dispatch(action);
+        // Now try the same, but with Search
+        let mut rt = Runtime::new().unwrap();
+        rt.spawn(lazy(enclose!((chain) move || {
+            let extra = vec![("search".to_owned(), "grand tour".to_owned())];
+            let action = &Action::Load(ActionLoad::CatalogGrouped { extra });
+            chain.dispatch(action);
+            future::ok(())
+        })));
+        rt.run().unwrap();
         let state = container_ref.borrow().get_state().to_owned();
         assert_eq!(
             state.groups.len(),
             4,
             "groups is the right length when searching"
         );
-        */
     }
 
     struct Env{}
