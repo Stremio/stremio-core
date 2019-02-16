@@ -38,7 +38,6 @@ mod tests {
                 Box::new(ContainerHandler::new(0, container)),
             ],
             Box::new(move |action| {
-                // @TODO: test if this is actually progressing properly
                 if let Action::NewState(_) = action {
                     //println!("new state {:?}", container_ref.borrow().get_state());
                 }
