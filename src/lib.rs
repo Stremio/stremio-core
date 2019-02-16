@@ -12,6 +12,10 @@ mod tests {
     use serde::Serialize;
     use std::cell::RefCell;
     use std::rc::Rc;
+    use tokio::runtime::current_thread::Runtime;
+    use tokio::executor::current_thread::spawn;
+    use futures::future::lazy;
+    use enclose::*;
 
     #[test]
     fn middlewares() {
@@ -27,7 +31,7 @@ mod tests {
             &catalogs_reducer,
         )));
         let container_ref = container.clone();
-        let chain = Chain::new(
+        let chain = Rc::new(Chain::new(
             vec![
                 Box::new(UserMiddleware::<Env>::new()),
                 Box::new(AddonsMiddleware::<Env>::new()),
@@ -39,13 +43,18 @@ mod tests {
                     //println!("new state {:?}", container_ref.borrow().get_state());
                 }
             }),
-        );
+        ));
 
-        // this is the dispatch operation
-        let action = &Action::Load(ActionLoad::CatalogGrouped { extra: vec![] });
-        chain.dispatch(action);
+        let mut rt = Runtime::new().expect("failed to create tokio runtime");
+        rt.spawn(lazy(enclose!((chain) move || {
+            // this is the dispatch operation
+            let action = &Action::Load(ActionLoad::CatalogGrouped { extra: vec![] });
+            chain.dispatch(action);
+            future::ok(())
+        })));
+        rt.run().expect("failed to run tokio runtime");
 
-        // since the Env implementation works synchronously, this is OK
+        // since this is after the .run() has ended, it will be OK
         let state = container_ref.borrow().get_state().to_owned();
         assert_eq!(state.groups.len(), 6, "groups is the right length");
         for g in state.groups.iter() {
@@ -68,10 +77,15 @@ mod tests {
             panic!("there are no items that are Ready in state {:?}", state);
         }
 
-        // Now try to Search
-        let extra = vec![("search".to_owned(), "grand tour".to_owned())];
-        let action = &Action::Load(ActionLoad::CatalogGrouped { extra });
-        chain.dispatch(action);
+        // Now try the same, but with Search
+        let mut rt = Runtime::new().expect("failed to create tokio runtime");
+        rt.spawn(lazy(enclose!((chain) move || {
+            let extra = vec![("search".to_owned(), "grand tour".to_owned())];
+            let action = &Action::Load(ActionLoad::CatalogGrouped { extra });
+            chain.dispatch(action);
+            future::ok(())
+        })));
+        rt.run().expect("failed to run tokio runtime");
         let state = container_ref.borrow().get_state().to_owned();
         assert_eq!(
             state.groups.len(),
@@ -80,27 +94,17 @@ mod tests {
         );
     }
 
-    struct Env;
+    struct Env{}
     impl Environment for Env {
         fn fetch_serde<IN, OUT>(in_req: Request<IN>) -> EnvFuture<Box<OUT>>
         where
             IN: 'static + Serialize,
             OUT: 'static + DeserializeOwned,
         {
-            /*
-            // Can't work for now, as it needs + Send
-            req.send()
-                .and_then(|mut res: reqwest::r#async::Response| {
-                    res.json::<OUT>()
-                })
-                .map(|res| Box::new(res))
-                .map_err(|e| e.into());
-            Box::new(fut)
-            */
             let (parts, body) = in_req.into_parts();
             let method = reqwest::Method::from_bytes(parts.method.as_str().as_bytes())
                 .expect("method is not valid for reqwest");
-            let mut req = reqwest::Client::new().request(method, &parts.uri.to_string());
+            let mut req = reqwest::r#async::Client::new().request(method, &parts.uri.to_string());
             // NOTE: both might be HeaderMap, so maybe there's a better way?
             for (k, v) in parts.headers.iter() {
                 req = req.header(k.as_str(), v.as_ref());
@@ -108,19 +112,16 @@ mod tests {
             // @TODO add content-type application/json
             // @TODO: if the response code is not 200, return an error related to that
             req = req.json(&body);
-            Box::new(match req.send() {
-                Err(e) => future::err(e.into()),
-                Ok(mut resp) => match resp.json() {
-                    Err(e) => future::err(e.into()),
-                    Ok(resp) => future::ok(Box::new(resp)),
-                },
-            })
+            let fut = req.send()
+                .and_then(|mut res: reqwest::r#async::Response| {
+                    res.json::<OUT>()
+                })
+                .map(|res| Box::new(res))
+                .map_err(|e| e.into());
+            Box::new(fut)
         }
         fn exec(fut: Box<Future<Item = (), Error = ()>>) {
-            match fut.wait() {
-                Ok(_) => {}
-                Err(e) => dbg!(e),
-            }
+            spawn(fut);
         }
         fn get_storage<T: 'static + DeserializeOwned>(_key: &str) -> EnvFuture<Option<Box<T>>> {
             Box::new(future::ok(None))

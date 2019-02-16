@@ -68,6 +68,7 @@
 * UserM: uninstall/install addons for the user, sync their collection
 * semver check for manifest.json
 
+
 ## TODO
 
 
