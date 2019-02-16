@@ -65,18 +65,28 @@
 * UserM: refactor addon actions into ActionAddon, UserOp should be renamed to ActionUser
 * consider memoization/resetting
 * TransportUrl type, safety and parsing; ensure malformed ones cant crash the program; they can't, we handle the case
+* UserM: uninstall/install addons for the user, sync their collection
 
 ## TODO
 
-* APIRequest/APIResponse should be enums?
+* semver check for manifest.json
+
+* APIRequest/APIResponse should be enums? that enum should have a method to get the string name; easily get the api request, and then universally handle the response Error case
 * UserM: implement the actions; consider matching them against API calls (action, call path, data structure)
-* UserM: uninstall/install addons for the user, sync their collection
+* UserM: Pushaddons/pulladdons
 * UserM: AddonsChanged/UserChanged
+
+* AddonM: transport type recognizer
+* AddonM: legacy transport
+* stream type
+
 * UserM: plug in a built in addon (LibraryAddon)
 * UserM: mock storage and tests
 * AddonM: AddonTransport trait, .get(), .manifest(); http addons will be constructed with a URL, while lib/notif addon directly as something that implements AddonTransport
 * addon catalog reducer, actions; handle loading collections in the addonM
 * AddonM: caching: statefulness can be mitigated by using a memoization where the addon transport `get` would return the same results if invoked with the same args again; however, this needs to be out of the transport impl and needs to be explicit
+
+* test if addoncollection can be parsed and understood, once it can be retrieved in the middleware
 
 * basic state: Catalog, Detail; and all the possible inner states (describe the structures); StreamSelect
 * tests: Chain, Container, individual middlewares, individual types
@@ -84,10 +94,8 @@
 * start implementing libitem/notifitem addon
 * load/unload dynamics and more things other than Catalog: Detail, StreamSelect
 
-* stream type
 * video type, detailed meta
 
-* legacy transport
 
 * environment implementations: return an error related to the HTTP status code, if it's not 200
 
@@ -109,7 +117,7 @@
 * think of how to do all edge cases in the user, such as pre-installing add-ons (implicit input)
 * behaviorHints - pair (key, val)?
 * refactor: separate crates: types, `state_types`
-* environment (web): separate module, also can we avoid the double deserialization on `fetch_serde`?
+* environment (web): separate crate, also can we avoid the double deserialization on `fetch_serde`?
 * when playing AND when opening the detail page, we should augment the libItem with meta if it's not already (trigger the updateLibItem action only if this would actually change the libitem)
 * when saving the last stream, save the whole object but compressed
 * player: implement playerPreferences and defaults behavior: picking a default subtitle/audio track; for audio, the logic should try to select your preferred language
@@ -129,6 +137,7 @@
 * https://blog.cloudflare.com/cloudflare-workers-as-a-serverless-rust-platform/
 * JS Side: All errors or warnings that come as actions should be reported to sentry
 * more manual/automated tests: ensure that when UserMiddlewareFatal happens, it is reported
+* fuzzing all addons: load all addons (addonscollection, addonsofficialcollection), request all catalogs, then all metas and then all streams; that way, we find if anything returned by the addons is unserializable by the types crate
 
 * BACKEND: notifitem generation needs to be reduced (10 per item, max ~300)
 * lib/notif addon: gzip everything?
