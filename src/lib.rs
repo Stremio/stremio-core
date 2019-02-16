@@ -45,14 +45,14 @@ mod tests {
             }),
         ));
 
-        let mut rt = Runtime::new().unwrap();
+        let mut rt = Runtime::new().expect("failed to create tokio runtime");
         rt.spawn(lazy(enclose!((chain) move || {
             // this is the dispatch operation
             let action = &Action::Load(ActionLoad::CatalogGrouped { extra: vec![] });
             chain.dispatch(action);
             future::ok(())
         })));
-        rt.run().unwrap();
+        rt.run().expect("failed to run tokio runtime");
 
         // since this is after the .run() has ended, it will be OK
         let state = container_ref.borrow().get_state().to_owned();
@@ -78,14 +78,14 @@ mod tests {
         }
 
         // Now try the same, but with Search
-        let mut rt = Runtime::new().unwrap();
+        let mut rt = Runtime::new().expect("failed to create tokio runtime");
         rt.spawn(lazy(enclose!((chain) move || {
             let extra = vec![("search".to_owned(), "grand tour".to_owned())];
             let action = &Action::Load(ActionLoad::CatalogGrouped { extra });
             chain.dispatch(action);
             future::ok(())
         })));
-        rt.run().unwrap();
+        rt.run().expect("failed to run tokio runtime");
         let state = container_ref.borrow().get_state().to_owned();
         assert_eq!(
             state.groups.len(),
