@@ -75,10 +75,9 @@
 * UserM: implement the actions; consider matching them against API calls (action, call path, data structure)
 * UserM: Pushaddons/PullAddons
 * UserM: AddonsChanged/UserChanged actions
+* bug: AddonsChanged/AddonsChangedFromPull fired before storing
 
 ## TODO
-
-* bug: AddonsChanged/AddonsChangedFromPull fired before storing
 
 * AddonM: transport type recognizer
 * AddonM: legacy transport
