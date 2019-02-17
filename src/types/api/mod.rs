@@ -71,4 +71,9 @@ pub struct AuthResponse {
 pub enum APIResult<T> {
     Err { error: APIErr },
     Ok { result: T },
+    // Sometimes the API returns {success: true} instead of result
+    Success {
+        result: T,
+        success: bool
+    },
 }

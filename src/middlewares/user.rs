@@ -109,8 +109,9 @@ impl<T: Environment> UserMiddleware<T> {
         let fut = T::fetch_serde::<_, APIResult<OUT>>(req)
             .map_err(|e| e.into())
             .and_then(|result| match *result {
-                APIResult::Ok { result } => future::ok(result),
                 APIResult::Err { error } => future::err(error.into()),
+                APIResult::Ok { result, .. } => future::ok(result),
+                APIResult::Success { result, .. } => future::ok(result),
             });
         Box::new(fut)
     }
