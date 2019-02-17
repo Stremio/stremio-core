@@ -44,8 +44,6 @@ impl APIRequest {
             APIRequest::AddonCollectionSet { .. } => "addonCollectionSet",
         }
     }
-}
-impl APIRequest {
     pub fn from_action_with_auth(
         action: &ActionUser,
         key: Option<AuthKey>,
