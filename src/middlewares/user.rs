@@ -129,11 +129,14 @@ impl<T: Environment> UserMiddleware<T> {
         })));
     }
 
-    fn handle_action_user(&self, action_user: &ActionUser, emit: Rc<DispatcherFn>) {
-        let base_url = self.api_url.to_owned();
-        // @TODO call .load first
-        let us = self.state.borrow().to_owned().expect("TODO");
-        let api_req = match us.action_to_request(&action_user) {
+    fn handle_action_user(
+        state: UserStorageHolder,
+        api_url: String,
+        current_storage: UserStorage,
+        action_user: &ActionUser,
+        emit: Rc<DispatcherFn>,
+    ) {
+        let api_req = match current_storage.action_to_request(action_user) {
             Some(r) => r,
             None => {
                 emit(&Action::UserOpError(
@@ -144,16 +147,15 @@ impl<T: Environment> UserMiddleware<T> {
             }
         };
 
-        let state = self.state.clone();
         let fut: MiddlewareFuture<()> = match action_user {
             ActionUser::Login { .. } | ActionUser::Register { .. } => {
                 // Sends the initial request (authentication), and pulls addons collection after
-                let fut = Self::api_fetch::<AuthResponse>(&base_url, api_req)
+                let fut = Self::api_fetch::<AuthResponse>(&api_url, api_req)
                     .and_then(move |AuthResponse { key, user }| {
                         let pull_req = APIRequest::AddonCollectionGet {
                             auth_key: key.to_owned(),
                         };
-                        Self::api_fetch::<CollectionResponse>(&base_url, pull_req).and_then(
+                        Self::api_fetch::<CollectionResponse>(&api_url, pull_req).and_then(
                             move |CollectionResponse { addons }| {
                                 future::ok(UserStorage {
                                     auth: Some(Auth { key, user }),
@@ -177,9 +179,10 @@ impl<T: Environment> UserMiddleware<T> {
                 Box::new(fut)
             }
             ActionUser::PullAddons => {
-                let fut = Self::api_fetch::<CollectionResponse>(&base_url, api_req).and_then(
+                let fut = Self::api_fetch::<CollectionResponse>(&api_url, api_req).and_then(
                     |CollectionResponse { addons }| {
-                        // @TODO: keep auth
+                        // @TODO: keep auth, but check if current_storage key is the same as
+                        // state.borrow() key
                         Self::save(state, UserStorage { auth: None, addons })
                     },
                 );
@@ -236,7 +239,17 @@ impl<T: Environment> Handler for UserMiddleware<T> {
         }
 
         if let Action::UserOp(action_user) = action {
-            self.handle_action_user(action_user, emit.clone());
+            let state = self.state.clone();
+            let api_url = self.api_url.to_owned();
+            let fut = self
+                .load()
+                .and_then(enclose!((emit, action_user) move |ud| {
+                    // handle_action_user will spawn it's own tasks,
+                    // since they are handled with exec_or_error
+                    Self::handle_action_user(state, api_url, ud, &action_user, emit.clone());
+                    future::ok(())
+                }));
+            Self::exec_or_fatal(Box::new(fut), emit.clone());
         }
     }
 }
