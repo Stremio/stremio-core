@@ -110,8 +110,7 @@ impl<T: Environment> UserMiddleware<T> {
             .map_err(|e| e.into())
             .and_then(|result| match *result {
                 APIResult::Err { error } => future::err(error.into()),
-                APIResult::Ok { result, .. } => future::ok(result),
-                APIResult::Success { result, .. } => future::ok(result),
+                APIResult::Ok { result } => future::ok(result),
             });
         Box::new(fut)
     }
@@ -174,7 +173,8 @@ impl<T: Environment> UserMiddleware<T> {
             ActionUser::Logout => {
                 // @TODO: emit AuthChanged
                 let fut = Self::save(state.clone(), Default::default())
-                    .and_then(move |_| Self::api_fetch::<()>(&api_url, api_req));
+                    .and_then(move |_| Self::api_fetch::<SuccessResponse>(&api_url, api_req))
+                    .and_then(|_| future::ok(()));
                 Box::new(fut)
             }
             ActionUser::PullAddons => {
@@ -189,7 +189,8 @@ impl<T: Environment> UserMiddleware<T> {
                 Box::new(fut)
             }
             ActionUser::PushAddons => {
-                let fut = Self::api_fetch::<()>(&api_url, api_req);
+                let fut = Self::api_fetch::<SuccessResponse>(&api_url, api_req)
+                    .and_then(|_| future::ok(()));
                 Box::new(fut)
             }
         };

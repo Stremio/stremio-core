@@ -66,14 +66,18 @@ pub struct AuthResponse {
     pub user: User,
 }
 
+// Sometimes, the API returns {success: true} as a result
+// @TODO find a way to enforce only being able to deserialize `true`
+#[derive(Serialize, Deserialize)]
+pub struct SuccessResponse {
+    pub success: bool,
+}
+
 #[derive(Deserialize)]
 #[serde(untagged)]
 pub enum APIResult<T> {
     Err { error: APIErr },
     Ok { result: T },
-    // Sometimes the API returns {success: true} instead of result
-    Success {
-        result: T,
-        success: bool
-    },
 }
+
+
