@@ -74,11 +74,13 @@ pub enum Action {
 
     // Intermediery
     LoadWithUser(Option<User>, Vec<Descriptor>, ActionLoad),
-    AddonsChanged(Vec<Descriptor>),
     AddonResponse(ResourceRequest, Result<ResourceResponse, String>),
 
     // Output actions
     UserMiddlewareFatal(MiddlewareError),
     UserOpError(ActionUser, MiddlewareError),
+    AddonsChanged,
+    //AddonsChangedFromPull,
+    //AuthChanged(Option<User>),
     NewState(usize),
 }

@@ -129,7 +129,7 @@ impl<T: Environment> UserMiddleware<T> {
         })));
     }
 
-    fn handle_action_user(
+    fn handle_user_op(
         state: UserStorageHolder,
         api_url: String,
         current_storage: UserStorage,
@@ -228,7 +228,7 @@ impl<T: Environment> Handler for UserMiddleware<T> {
                             addons
                         },
                     };
-                    emit(&Action::AddonsChanged(addons.to_owned()));
+                    emit(&Action::AddonsChanged);
                     let new_user_data = UserStorage{
                         addons,
                         ..ud
@@ -244,9 +244,9 @@ impl<T: Environment> Handler for UserMiddleware<T> {
             let fut = self
                 .load()
                 .and_then(enclose!((emit, action_user) move |ud| {
-                    // handle_action_user will spawn it's own tasks,
+                    // handle_user_op will spawn it's own tasks,
                     // since they are handled with exec_or_error
-                    Self::handle_action_user(state, api_url, ud, &action_user, emit.clone());
+                    Self::handle_user_op(state, api_url, ud, &action_user, emit.clone());
                     future::ok(())
                 }));
             Self::exec_or_fatal(Box::new(fut), emit.clone());
