@@ -104,6 +104,7 @@
 
 * refactor: mod.rs on `state_types` and types shouldn't glob export everything
 
+* document loopback actions (implicit input): AddonsChanged->PushAddons (if there's a conn), (as a result of Open) ProposeLoad -> Load; ProposeWatchNext -> Open
 
 * spec: notifItems: rethink that spec, crystallize it
 * Trait for meta item and lib item; MetaPreview, MetaItem, MetaDetailed

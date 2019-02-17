@@ -237,6 +237,8 @@ impl<T: Environment> Handler for UserMiddleware<T> {
             let fut = self
                 .load()
                 .and_then(enclose!((emit, action_load) move |UserStorage{ auth, addons }| {
+                    // @TODO this is the place to inject built-in addons, such as the
+                    // Library/Notifications addon
                     emit(&Action::LoadWithUser(auth.map(|a| a.user), addons.to_owned(), action_load));
                     future::ok(())
                 }));
