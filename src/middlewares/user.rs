@@ -36,6 +36,24 @@ impl Default for UserStorage {
         }
     }
 }
+impl UserStorage {
+    fn get_current_key(&self) -> Option<&AuthKey> {
+        Some(&self.auth.as_ref()?.key)
+    }
+    fn action_to_request(&self, action: &ActionUser) -> Option<APIRequest> {
+        let key = self.get_current_key().map(|k| k.to_owned());
+        Some(match action.to_owned() {
+            ActionUser::Login { email, password } => APIRequest::Login { email, password },
+            ActionUser::Register { email, password } => APIRequest::Register { email, password },
+            ActionUser::Logout => APIRequest::Logout { auth_key: key? },
+            ActionUser::PullAddons => APIRequest::AddonCollectionGet { auth_key: key? },
+            ActionUser::PushAddons => APIRequest::AddonCollectionSet {
+                auth_key: key?,
+                addons: self.addons.to_owned(),
+            },
+        })
+    }
+}
 
 type MiddlewareFuture<T> = Box<Future<Item = T, Error = MiddlewareError>>;
 type UserStorageHolder = Rc<RefCell<Option<UserStorage>>>;
@@ -78,16 +96,6 @@ impl<T: Environment> UserMiddleware<T> {
         Box::new(fut)
     }
 
-    fn get_current_key(state: &UserStorageHolder) -> Option<AuthKey> {
-        match *state.borrow() {
-            Some(UserStorage {
-                auth: Some(Auth { ref key, .. }),
-                ..
-            }) => Some(key.to_owned()),
-            _ => None,
-        }
-    }
-
     fn api_fetch<OUT: 'static>(base_url: &str, api_req: APIRequest) -> MiddlewareFuture<OUT>
     where
         OUT: DeserializeOwned,
@@ -123,12 +131,9 @@ impl<T: Environment> UserMiddleware<T> {
 
     fn handle_action_user(&self, action_user: &ActionUser, emit: Rc<DispatcherFn>) {
         let base_url = self.api_url.to_owned();
-        // @TODO addons
-        let api_req = match APIRequest::from_action_with_auth(
-            action_user,
-            Self::get_current_key(&self.state),
-            vec![],
-        ) {
+        // @TODO call .load first
+        let us = self.state.borrow().to_owned().expect("TODO");
+        let api_req = match us.action_to_request(&action_user) {
             Some(r) => r,
             None => {
                 emit(&Action::UserOpError(
@@ -139,7 +144,6 @@ impl<T: Environment> UserMiddleware<T> {
             }
         };
 
-        // @TODO do load first
         let state = self.state.clone();
         let fut: MiddlewareFuture<()> = match action_user {
             ActionUser::Login { .. } | ActionUser::Register { .. } => {
@@ -174,8 +178,8 @@ impl<T: Environment> UserMiddleware<T> {
             }
             ActionUser::PushAddons => {
                 let fut = future::ok(());
-                Box::new(fut)
                 // @TODO
+                Box::new(fut)
             }
         };
         Self::exec_or_error(fut, action_user.to_owned(), emit.clone());

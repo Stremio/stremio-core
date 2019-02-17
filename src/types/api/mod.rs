@@ -1,6 +1,5 @@
 mod user;
 pub use self::user::*;
-use crate::state_types::*;
 use crate::types::addons::*;
 use serde_derive::*;
 
@@ -43,22 +42,6 @@ impl APIRequest {
             APIRequest::AddonCollectionGet { .. } => "addonCollectionGet",
             APIRequest::AddonCollectionSet { .. } => "addonCollectionSet",
         }
-    }
-    pub fn from_action_with_auth(
-        action: &ActionUser,
-        key: Option<AuthKey>,
-        addons: Vec<Descriptor>,
-    ) -> Option<Self> {
-        Some(match action.to_owned() {
-            ActionUser::Login { email, password } => APIRequest::Login { email, password },
-            ActionUser::Register { email, password } => APIRequest::Register { email, password },
-            ActionUser::Logout => APIRequest::Logout { auth_key: key? },
-            ActionUser::PullAddons => APIRequest::AddonCollectionGet { auth_key: key? },
-            ActionUser::PushAddons => APIRequest::AddonCollectionSet {
-                auth_key: key?,
-                addons: addons.to_owned(),
-            },
-        })
     }
 }
 

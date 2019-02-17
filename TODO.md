@@ -73,6 +73,7 @@
 
 ## TODO
 
+* refactor: load first, UserStorage to convert Action -> request; userStorage to have current_auth_key(), split into files
 * userM: all of the user actions should do a `load()` first
 * UserM: implement the actions; consider matching them against API calls (action, call path, data structure)
 * UserM: Pushaddons/PullAddons
