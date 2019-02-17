@@ -139,7 +139,6 @@ impl<T: Environment> UserMiddleware<T> {
         let state = self.state.clone();
 
         match action_user {
-            // These DO NOT require authentication
             ActionUser::Login { .. } | ActionUser::Register { .. } => {
                 // @TODO register
                 let fut = Self::api_fetch::<AuthResponse>(&base_url, api_req)
@@ -148,12 +147,8 @@ impl<T: Environment> UserMiddleware<T> {
                     });
                 Self::exec_or_error(Box::new(fut), action_user.to_owned(), emit.clone());
             }
-            // The following actions require authentication
             ActionUser::Logout => {
-                // NOTE: This will clean up the storage first, and do the API call later
-                // if the API call fails, it will be a UserOpError but the user would still be
-                // logged out
-                let fut = Self::save(self.state.clone(), Default::default())
+                let fut = Self::save(state.clone(), Default::default())
                     .and_then(|_| {
                         // @TODO emit UserChanged ASAP here
                         // @TODO destroy session

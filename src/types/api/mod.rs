@@ -10,12 +10,15 @@ use serde_derive::*;
 pub type AuthKey = String;
 
 #[derive(Serialize, Clone)]
-#[serde(untagged, rename_all="camelCase")]
+#[serde(untagged)]
 pub enum APIRequest {
     Login{ email: String, password: String },
     Register{ email: String, password: String },
+    #[serde(rename_all="camelCase")]
     Logout{ auth_key: AuthKey },
+    #[serde(rename_all="camelCase")]
     AddonCollectionGet{ auth_key: AuthKey },
+    #[serde(rename_all="camelCase")]
     AddonCollectionSet{ auth_key: AuthKey, addons: Vec<Descriptor> },
 }
 impl APIRequest {

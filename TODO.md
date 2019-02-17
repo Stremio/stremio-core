@@ -69,11 +69,11 @@
 * semver check for manifest.json
 * APIRequest/APIResponse should be enums? that enum should have a method to get the string name; easily get the api request, and then universally handle the response Error case
 * UserM: proper err handling
+* userM: key should be in the enum
 
 ## TODO
 
 * userM: all of the user actions should do a `load()` first
-* userM: key should be in the enum
 * UserM: implement the actions; consider matching them against API calls (action, call path, data structure)
 * UserM: Pushaddons/PullAddons
 * UserM: AddonsChanged/UserChanged actions
