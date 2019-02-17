@@ -71,6 +71,7 @@
 
 ## TODO
 
+* userM: all of the user actions should do a `load()` first
 * userM: key should be in the enum
 * UserM: implement the actions; consider matching them against API calls (action, call path, data structure)
 * UserM: Pushaddons/PullAddons
@@ -145,7 +146,7 @@
 * https://llogiq.github.io/2017/06/01/perf-pitfalls.html if we ever nede optimizations; we do `to_owned` quite a lot, maybe some of those can be avoided; `Cow<>` sounds good too for large collections and etc.
 
 
-work estimation, hours: 6, userM; 6, addonM + transport, 3 legacy transport, 8 refactors, 3 catalogFiltered, 6 detail/streamselect, 12 lib/notif addon, 8 playerM, 3 open, 8 openMedia, 12 others, 10 tests: 95 = 12 weekends assumming 8 hours per weekend = 6 weeks
+work estimation, hours: 24, userM; 12, addonM + transport, 4 legacy transport, 8 refactors, 3 catalogFiltered, 6 detail/streamselect, 24 lib/notif addon, 8 playerM, 8 open, 8 openMedia, 12 others, 10 tests: 127 = 13 weekends assumming 10 hours per weekend = 6 weeks
 
 example pipeline:
 LoadCatalogs => this will change the state of the `catalogs` to `Loading`
@@ -207,12 +208,7 @@ error origins
 * pulling/pushing addons failed (non fatal): UserOpWarning(action, err)
 * Login/Signup failed (needs user feedback): UserOpError(action, err); needs to preserve API error though
 
-error types
-* fetch (either network or deserialization)
-* storage (either storage or deserialization)
-* API error
-
-can be generalized to EnvError, APIError
+can be generalized to EnvError, APIError (it will be nice if we can distinct between fetch and storage errors)
 
 All errors should be sent to Sentry, and all warnings should be displayed to the user, but we should NOT attempt to do stuff when the user is offline (should not attempt to sync addons and etc.)
 
@@ -223,10 +219,6 @@ of the auth key in the beginning, and only persist if the auth key matches
 
 how/whether to trigger pull addons on user login? sounds like we should, and we should treat it as one operation
 
-UserActions
-	Login -> calls login, pulls the collection, persists, emits UserChanged, AddonCollectionChanged OR errors
-	Signup -> calls signup, pulls the collection, persists
-	Logout -> deletes user_data, emits UserChanged/addonCollectionChanged, calls logout (and maybe emits UserMError)
 
 ## AddonAggr
 transforms LoadWithUser(dyn AddonReq) (any action implementing the AddonReq trait), and then AddonAdded/AddonRemoved into -> AddonRequest + AddonResponse
