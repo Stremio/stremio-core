@@ -122,9 +122,6 @@ impl<T: Environment> UserMiddleware<T> {
     }
 
     fn handle_action_user(&self, action_user: &ActionUser, emit: Rc<DispatcherFn>) {
-        // @TODO emit UserChanged
-        // @TODO turn APIRequestBody into APIRequest and put auth in there; only edge case is
-        // AddonCollcetionGet, which works w/o auth too, but we don't care about that usecase
         let base_url = self.api_url.to_owned();
         // @TODO addons
         let api_req = match APIRequest::from_action_with_auth(action_user, Self::get_current_key(&self.state), vec![]) {
@@ -137,15 +134,14 @@ impl<T: Environment> UserMiddleware<T> {
 
         // @TODO do load first
         let state = self.state.clone();
-
-        match action_user {
+        let fut: MiddlewareFuture<()> = match action_user {
             ActionUser::Login { .. } | ActionUser::Register { .. } => {
-                // @TODO register
                 let fut = Self::api_fetch::<AuthResponse>(&base_url, api_req)
                     .and_then(move |AuthResponse{ key, user }| {
+                        // @TODO: Emit UserChanged, Pull Addons
                         Self::save(state, UserData { auth: Some(Auth{ key, user }), addons: DEFAULT_ADDONS.to_owned() })
                     });
-                Self::exec_or_error(Box::new(fut), action_user.to_owned(), emit.clone());
+                Box::new(fut)
             }
             ActionUser::Logout => {
                 let fut = Self::save(state.clone(), Default::default())
@@ -154,19 +150,22 @@ impl<T: Environment> UserMiddleware<T> {
                         // @TODO destroy session
                         future::ok(())
                     });
-                Self::exec_or_error(Box::new(fut), action_user.to_owned(), emit.clone());
+                Box::new(fut)
             }
             ActionUser::PullAddons => {
                 let fut = Self::api_fetch::<CollectionResponse>(&base_url, api_req)
                     .and_then(|CollectionResponse { addons }| {
                         Self::save(state, UserData { auth: None, addons })
                     });
-                Self::exec_or_error(Box::new(fut), action_user.to_owned(), emit.clone());
+                Box::new(fut)
             }
             ActionUser::PushAddons => {
+                let fut = future::ok(());
+                Box::new(fut)
                 // @TODO
             }
-        }
+        };
+        Self::exec_or_error(fut, action_user.to_owned(), emit.clone());
     }
 }
 
