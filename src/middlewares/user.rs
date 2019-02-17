@@ -101,15 +101,28 @@ impl<T: Environment> UserMiddleware<T> {
         Box::new(fut)
     }
 
-    // save_and_emit will only emit AuthChanged if saving to storage is successful
+    // save_and_emit will only emit AuthChanged/AddonsChangedfromPull if saving to storage is successful
     fn save_and_emit(
         state: UserStorageHolder,
-        new_user_data: UserStorage,
+        new_us: UserStorage,
         emit: Rc<DispatcherFn>,
     ) -> MiddlewareFuture<()> {
-        let to_emit = new_user_data.auth.as_ref().map(|a| a.user.to_owned());
-        let fut = Self::save(state, new_user_data).and_then(move |_| {
-            emit(&Action::AuthChanged(to_emit));
+        let addons_changed = state
+            .borrow()
+            .as_ref()
+            .map_or(false, |us| !us.are_addons_same(&new_us.addons));
+        let auth_changed = state
+            .borrow()
+            .as_ref()
+            .map_or(false, |us| us.get_auth_key() != new_us.get_auth_key());
+        let user = new_us.auth.as_ref().map(|a| a.user.to_owned());
+        let fut = Self::save(state, new_us).and_then(move |_| {
+            if auth_changed {
+                emit(&Action::AuthChanged(user));
+            }
+            if addons_changed {
+                emit(&Action::AddonsChangedFromPull);
+            }
             future::ok(())
         });
         Box::new(fut)
@@ -203,10 +216,7 @@ impl<T: Environment> UserMiddleware<T> {
                             Some(ref s) if s.get_auth_key() == current_storage.get_auth_key() => {},
                             _ => { return Box::new(future::err(MiddlewareError::AuthRace)) },
                         }
-                        if !current_storage.are_addons_same(&addons) {
-                            emit(&Action::AddonsChangedFromPull);
-                        }
-                        Self::save(state, UserStorage { auth, addons })
+                        Self::save_and_emit(state, UserStorage { auth, addons }, emit.clone())
                     }),
                 );
                 Box::new(fut)
@@ -251,12 +261,15 @@ impl<T: Environment> Handler for UserMiddleware<T> {
                             addons
                         },
                     };
-                    emit(&Action::AddonsChanged);
                     let new_user_storage = UserStorage{
                         addons,
                         ..us
                     };
                     Self::save(state, new_user_storage)
+                        .and_then(move |_| {
+                            emit(&Action::AddonsChanged);
+                            future::ok(())
+                        })
                 }));
             Self::exec_or_fatal(Box::new(fut), emit.clone());
         }

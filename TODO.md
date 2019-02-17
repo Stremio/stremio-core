@@ -78,6 +78,7 @@
 
 ## TODO
 
+* bug: AddonsChanged/AddonsChangedFromPull fired before storing
 
 * AddonM: transport type recognizer
 * AddonM: legacy transport
