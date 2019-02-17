@@ -88,11 +88,23 @@ impl<T: Environment> UserMiddleware<T> {
         // extra (gdpr, etc.)
         // @TODO emit UserChanged
         // @TODO share more code, a lot of those clone the state, all of these handle API errors
+
+        // @TODO each one can map to a finalized request builder, with the request object itself
+        // that will eliminate the mutability too
+        let method_name = match action_user {
+            ActionUser::Login{ .. } => "login",
+            ActionUser::Register{ .. } => "register",
+            ActionUser::Logout => "logout",
+            ActionUser::PullAddons => "addonCollectionGet",
+            ActionUser::PushAddons => "addonCollectionSet",
+        };
+        let mut req_builder = Request::post(format!("{}/api/{}", &self.api_url, method_name));
+
         match action_user {
             // These DO NOT require authentication
             ActionUser::Login { email, password } | ActionUser::Register { email, password } => {
                 // @TODO register
-                let req = Request::post(format!("{}/api/login", &self.api_url))
+                let req = req_builder
                     .body(LoginRequest {
                         email: email.to_owned(),
                         password: password.to_owned(),
@@ -147,7 +159,7 @@ impl<T: Environment> UserMiddleware<T> {
                     }) => key.to_owned(),
                     _ => return,
                 };
-                let req = Request::post(format!("{}/api/addonCollectionGet", &self.api_url))
+                let req = req_builder
                     .body(CollectionRequest { key })
                     .expect("failed to build API request");
                 let state = self.state.clone();
