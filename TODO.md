@@ -71,10 +71,7 @@
 
 ## TODO
 
-map_error repeats itself a lot
 use .into() for errors in fetch_api
-.to_box or something would help a lot
-move stat = state.clone
 errors - box error in middlewareerror?
 
 * UserM: proper err handling

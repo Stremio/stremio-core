@@ -38,7 +38,6 @@ impl Default for UserData {
 }
 
 type MiddlewareFuture<T> = Box<Future<Item=T, Error=MiddlewareError>>;
-
 type UserDataHolder = Rc<RefCell<Option<UserData>>>;
 #[derive(Default)]
 pub struct UserMiddleware<T: Environment> {
@@ -126,15 +125,16 @@ impl<T: Environment> UserMiddleware<T> {
         // @TODO emit UserChanged
         // @TODO turn APIRequestBody into APIRequest and put auth in there; only edge case is
         // AddonCollcetionGet, which works w/o auth too, but we don't care about that usecase
-        // @TODO do load first
         let base_url = self.api_url.to_owned();
         let api_req = APIRequest{ key: Self::get_current_key(&self.state), body: action_user.into() };
+
+        // @TODO do load first
+        let state = self.state.clone();
 
         match action_user {
             // These DO NOT require authentication
             ActionUser::Login { .. } | ActionUser::Register { .. } => {
                 // @TODO register
-                let state = self.state.clone();
                 let fut = Self::api_fetch::<AuthResponse>(&base_url, api_req)
                     .and_then(move |AuthResponse{ key, user }| {
                         Self::save(state, UserData { auth: Some(Auth{ key, user }), addons: DEFAULT_ADDONS.to_owned() })
@@ -155,7 +155,6 @@ impl<T: Environment> UserMiddleware<T> {
                 Self::exec_or_error(Box::new(fut), action_user.to_owned(), emit.clone());
             }
             ActionUser::PullAddons => {
-                let state = self.state.clone();
                 let fut = Self::api_fetch::<CollectionResponse>(&base_url, api_req)
                     .and_then(|CollectionResponse { addons }| {
                         Self::save(state, UserData { auth: None, addons })
