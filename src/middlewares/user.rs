@@ -54,7 +54,7 @@ impl UserStorage {
         })
     }
     fn are_addons_same(&self, addons: &[Descriptor]) -> bool {
-        let urls = addons.iter().map(|a| &a.transport_url);
+        let urls = self.addons.iter().map(|a| &a.transport_url);
         let new_urls = addons.iter().map(|a| &a.transport_url);
         urls.eq(new_urls)
     }
