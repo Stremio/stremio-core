@@ -74,10 +74,10 @@
 * userM: all of the user actions should do a `load()` first
 * UserM: implement the actions; consider matching them against API calls (action, call path, data structure)
 * UserM: Pushaddons/PullAddons
+* UserM: AddonsChanged/UserChanged actions
 
 ## TODO
 
-* UserM: AddonsChanged/UserChanged actions
 
 * AddonM: transport type recognizer
 * AddonM: legacy transport

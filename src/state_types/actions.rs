@@ -50,7 +50,7 @@ pub enum MiddlewareError {
     API(APIErr),
     Env(String),
     AuthRequired,
-    AuthChanged,
+    AuthRace,
 }
 impl From<APIErr> for MiddlewareError {
     fn from(e: APIErr) -> Self {

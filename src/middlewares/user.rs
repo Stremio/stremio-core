@@ -101,6 +101,20 @@ impl<T: Environment> UserMiddleware<T> {
         Box::new(fut)
     }
 
+    // save_and_emit will only emit AuthChanged if saving to storage is successful
+    fn save_and_emit(
+        state: UserStorageHolder,
+        new_user_data: UserStorage,
+        emit: Rc<DispatcherFn>,
+    ) -> MiddlewareFuture<()> {
+        let to_emit = new_user_data.auth.as_ref().map(|a| a.user.to_owned());
+        let fut = Self::save(state, new_user_data).and_then(move |_| {
+            emit(&Action::AuthChanged(to_emit));
+            future::ok(())
+        });
+        Box::new(fut)
+    }
+
     fn api_fetch<OUT: 'static>(base_url: &str, api_req: APIRequest) -> MiddlewareFuture<OUT>
     where
         OUT: DeserializeOwned,
@@ -169,15 +183,13 @@ impl<T: Environment> UserMiddleware<T> {
                             },
                         )
                     })
-                    .and_then(move |new_user_storage| {
-                        //emit(&Action::AuthChanged(new_user_storage.map(|a| a.user.to_owned())));
-                        Self::save(state, new_user_storage)
-                    });
+                    .and_then(enclose!((emit) | us | Self::save_and_emit(state, us, emit)));
                 Box::new(fut)
             }
             ActionUser::Logout => {
-                //emit(&Action::AuthChanged(None));
-                let fut = Self::save(state.clone(), Default::default())
+                // Reset the storage, and then issue the API request to clean the session
+                // that way, you can logout even w/o a connection
+                let fut = Self::save_and_emit(state.clone(), Default::default(), emit.clone())
                     .and_then(move |_| Self::api_fetch::<SuccessResponse>(&api_url, api_req))
                     .and_then(|_| future::ok(()));
                 Box::new(fut)
@@ -189,7 +201,7 @@ impl<T: Environment> UserMiddleware<T> {
                         // The authentication has changed in between - abort
                         match *state.borrow() {
                             Some(ref s) if s.get_auth_key() == current_storage.get_auth_key() => {},
-                            _ => { return Box::new(future::err(MiddlewareError::AuthChanged)) },
+                            _ => { return Box::new(future::err(MiddlewareError::AuthRace)) },
                         }
                         if current_storage.are_addons_different(&addons) {
                             emit(&Action::AddonsChangedFromPull);
@@ -225,26 +237,26 @@ impl<T: Environment> Handler for UserMiddleware<T> {
             let state = self.state.clone();
             let fut = self
                 .load()
-                .and_then(enclose!((emit, action_addon) move |ud| {
+                .and_then(enclose!((emit, action_addon) move |us| {
                     let addons = match action_addon {
                         ActionAddon::Remove{ transport_url } => {
-                            ud.addons.iter()
+                            us.addons.iter()
                                 .filter(|a| a.transport_url != transport_url)
                                 .cloned()
                                 .collect()
                         },
                         ActionAddon::Install(descriptor) => {
-                            let mut addons = ud.addons.to_owned();
+                            let mut addons = us.addons.to_owned();
                             addons.push(*descriptor);
                             addons
                         },
                     };
                     emit(&Action::AddonsChanged);
-                    let new_user_data = UserStorage{
+                    let new_user_storage = UserStorage{
                         addons,
-                        ..ud
+                        ..us
                     };
-                    Self::save(state, new_user_data)
+                    Self::save(state, new_user_storage)
                 }));
             Self::exec_or_fatal(Box::new(fut), emit.clone());
         }
