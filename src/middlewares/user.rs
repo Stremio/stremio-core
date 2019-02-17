@@ -188,8 +188,7 @@ impl<T: Environment> UserMiddleware<T> {
                 Box::new(fut)
             }
             ActionUser::PushAddons => {
-                let fut = future::ok(());
-                // @TODO
+                let fut = Self::api_fetch::<()>(&api_url, api_req);
                 Box::new(fut)
             }
         };

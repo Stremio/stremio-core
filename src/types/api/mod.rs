@@ -69,6 +69,6 @@ pub struct AuthResponse {
 #[derive(Deserialize)]
 #[serde(untagged)]
 pub enum APIResult<T> {
-    Ok { result: T },
     Err { error: APIErr },
+    Ok { result: T },
 }
