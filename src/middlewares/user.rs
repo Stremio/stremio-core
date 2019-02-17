@@ -148,23 +148,24 @@ impl<T: Environment> UserMiddleware<T> {
         let fut: MiddlewareFuture<()> = match action_user {
             ActionUser::Login { .. } | ActionUser::Register { .. } => {
                 // Sends the initial request (authentication), and pulls addons collection after
-                let fut = Self::api_fetch::<AuthResponse>(&base_url, api_req).and_then(
-                    move |AuthResponse { key, user }| {
+                let fut = Self::api_fetch::<AuthResponse>(&base_url, api_req)
+                    .and_then(move |AuthResponse { key, user }| {
                         let pull_req = APIRequest::AddonCollectionGet {
                             auth_key: key.to_owned(),
                         };
                         Self::api_fetch::<CollectionResponse>(&base_url, pull_req).and_then(
                             move |CollectionResponse { addons }| {
-                                let new_user_storage = UserStorage {
+                                future::ok(UserStorage {
                                     auth: Some(Auth { key, user }),
                                     addons,
-                                };
-                                Self::save(state, new_user_storage)
-                                // @TODO: Emit UserChanged
+                                })
                             },
                         )
-                    },
-                );
+                    })
+                    .and_then(|new_user_storage| {
+                        // @TODO: Emit UserChanged
+                        Self::save(state, new_user_storage)
+                    });
                 Box::new(fut)
             }
             ActionUser::Logout => {
