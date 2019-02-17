@@ -10,49 +10,34 @@ use serde_derive::*;
 pub type AuthKey = String;
 
 #[derive(Serialize, Clone)]
-pub struct APIRequest {
-    #[serde(rename = "authKey")]
-    pub key: Option<AuthKey>,
-    #[serde(flatten)]
-    pub body: APIRequestBody,
-}
-#[derive(Serialize, Clone)]
-#[serde(untagged)]
-pub enum APIRequestBody {
+#[serde(untagged, rename_all="camelCase")]
+pub enum APIRequest {
     Login{ email: String, password: String },
     Register{ email: String, password: String },
-    Logout,
-    AddonCollectionGet,
-    AddonCollectionSet{ addons: Vec<Descriptor> },
+    Logout{ auth_key: AuthKey },
+    AddonCollectionGet{ auth_key: AuthKey },
+    AddonCollectionSet{ auth_key: AuthKey, addons: Vec<Descriptor> },
 }
-impl APIRequestBody {
+impl APIRequest {
     pub fn method_name(&self) -> &str {
         match self {
-            APIRequestBody::Login{ .. } => "login",
-            APIRequestBody::Register{ .. } => "register",
-            APIRequestBody::Logout => "logout",
-            APIRequestBody::AddonCollectionGet => "addonCollectionGet",
-            APIRequestBody::AddonCollectionSet{ .. } => "addonCollectionSet",
-        }
-    }
-    pub fn requires_auth(&self) -> bool {
-        match self {
-            APIRequestBody::Logout => true,
-            APIRequestBody::AddonCollectionSet{ .. } => true,
-            _ => false
+            APIRequest::Login{ .. } => "login",
+            APIRequest::Register{ .. } => "register",
+            APIRequest::Logout{ .. } => "logout",
+            APIRequest::AddonCollectionGet{ .. } => "addonCollectionGet",
+            APIRequest::AddonCollectionSet{ .. } => "addonCollectionSet",
         }
     }
 }
-impl From<&ActionUser> for APIRequestBody {
-    fn from(action: &ActionUser) -> Self {
-        match action.to_owned() {
-            ActionUser::Login{ email, password } => APIRequestBody::Login{ email, password },
-            ActionUser::Register{ email, password } => APIRequestBody::Register{ email, password },
-            ActionUser::Logout => APIRequestBody::Logout,
-            ActionUser::PullAddons => APIRequestBody::AddonCollectionGet,
-            // @TODO
-            ActionUser::PushAddons => APIRequestBody::AddonCollectionSet{ addons: vec![] },
-        }
+impl APIRequest {
+    pub fn from_action_with_auth(action: &ActionUser, key: Option<AuthKey>, addons: Vec<Descriptor>) -> Option<Self> {
+        Some(match action.to_owned() {
+            ActionUser::Login{ email, password } => APIRequest::Login{ email, password },
+            ActionUser::Register{ email, password } => APIRequest::Register{ email, password },
+            ActionUser::Logout => APIRequest::Logout{ auth_key: key? },
+            ActionUser::PullAddons => APIRequest::AddonCollectionGet{ auth_key: key? },
+            ActionUser::PushAddons => APIRequest::AddonCollectionSet{ auth_key: key?, addons: addons.to_owned() }
+        })
     }
 }
 

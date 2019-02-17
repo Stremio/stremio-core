@@ -49,6 +49,7 @@ pub enum ActionAddon {
 pub enum MiddlewareError {
     API(APIErr),
     Env(String),
+    AuthRequired,
 }
 impl From<APIErr> for MiddlewareError {
     fn from(e: APIErr) -> Self {

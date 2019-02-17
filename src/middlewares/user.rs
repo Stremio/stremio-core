@@ -90,7 +90,7 @@ impl<T: Environment> UserMiddleware<T> {
     fn api_fetch<OUT: 'static>(base_url: &str, api_req: APIRequest) -> MiddlewareFuture<OUT>
         where OUT: DeserializeOwned
     {
-        let url = format!("{}/api/{}", base_url, api_req.body.method_name());
+        let url = format!("{}/api/{}", base_url, api_req.method_name());
         let req = match Request::post(url).body(api_req) {
             Ok(req) => req,
             Err(e) => return Box::new(future::err(MiddlewareError::Env(e.to_string()))),
@@ -126,7 +126,14 @@ impl<T: Environment> UserMiddleware<T> {
         // @TODO turn APIRequestBody into APIRequest and put auth in there; only edge case is
         // AddonCollcetionGet, which works w/o auth too, but we don't care about that usecase
         let base_url = self.api_url.to_owned();
-        let api_req = APIRequest{ key: Self::get_current_key(&self.state), body: action_user.into() };
+        // @TODO addons
+        let api_req = match APIRequest::from_action_with_auth(action_user, Self::get_current_key(&self.state), vec![]) {
+            Some(r) => r,
+            None => {
+                emit(&Action::UserOpError(action_user.to_owned(), MiddlewareError::AuthRequired));
+                return;
+            }
+        };
 
         // @TODO do load first
         let state = self.state.clone();
