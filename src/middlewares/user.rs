@@ -3,8 +3,8 @@ use crate::types::*;
 use enclose::*;
 use futures::{future, Future};
 use lazy_static::*;
-use serde_derive::*;
 use serde::de::DeserializeOwned;
+use serde_derive::*;
 use std::cell::RefCell;
 use std::marker::PhantomData;
 use std::rc::Rc;
@@ -37,7 +37,7 @@ impl Default for UserData {
     }
 }
 
-type MiddlewareFuture<T> = Box<Future<Item=T, Error=MiddlewareError>>;
+type MiddlewareFuture<T> = Box<Future<Item = T, Error = MiddlewareError>>;
 type UserDataHolder = Rc<RefCell<Option<UserData>>>;
 #[derive(Default)]
 pub struct UserMiddleware<T: Environment> {
@@ -62,12 +62,13 @@ impl<T: Environment> UserMiddleware<T> {
         }
 
         let state = self.state.clone();
-        let fut = T::get_storage(USER_DATA_KEY).and_then(move |result: Option<Box<UserData>>| {
-            let ud: UserData = *result.unwrap_or_default();
-            let _ = state.replace(Some(ud.to_owned()));
-            future::ok(ud)
-        })
-        .map_err(|e| e.into());
+        let fut = T::get_storage(USER_DATA_KEY)
+            .and_then(move |result: Option<Box<UserData>>| {
+                let ud: UserData = *result.unwrap_or_default();
+                let _ = state.replace(Some(ud.to_owned()));
+                future::ok(ud)
+            })
+            .map_err(|e| e.into());
         Box::new(fut)
     }
 
@@ -88,7 +89,8 @@ impl<T: Environment> UserMiddleware<T> {
     }
 
     fn api_fetch<OUT: 'static>(base_url: &str, api_req: APIRequest) -> MiddlewareFuture<OUT>
-        where OUT: DeserializeOwned
+    where
+        OUT: DeserializeOwned,
     {
         let url = format!("{}/api/{}", base_url, api_req.method_name());
         let req = match Request::post(url).body(api_req) {
@@ -98,11 +100,9 @@ impl<T: Environment> UserMiddleware<T> {
 
         let fut = T::fetch_serde::<_, APIResult<OUT>>(req)
             .map_err(|e| e.into())
-            .and_then(|result| {
-                match *result {
-                    APIResult::Ok{ result } => future::ok(result),
-                    APIResult::Err{ error } => future::err(error.into()),
-                }
+            .and_then(|result| match *result {
+                APIResult::Ok { result } => future::ok(result),
+                APIResult::Err { error } => future::err(error.into()),
             });
         Box::new(fut)
     }
@@ -124,10 +124,17 @@ impl<T: Environment> UserMiddleware<T> {
     fn handle_action_user(&self, action_user: &ActionUser, emit: Rc<DispatcherFn>) {
         let base_url = self.api_url.to_owned();
         // @TODO addons
-        let api_req = match APIRequest::from_action_with_auth(action_user, Self::get_current_key(&self.state), vec![]) {
+        let api_req = match APIRequest::from_action_with_auth(
+            action_user,
+            Self::get_current_key(&self.state),
+            vec![],
+        ) {
             Some(r) => r,
             None => {
-                emit(&Action::UserOpError(action_user.to_owned(), MiddlewareError::AuthRequired));
+                emit(&Action::UserOpError(
+                    action_user.to_owned(),
+                    MiddlewareError::AuthRequired,
+                ));
                 return;
             }
         };
@@ -136,27 +143,34 @@ impl<T: Environment> UserMiddleware<T> {
         let state = self.state.clone();
         let fut: MiddlewareFuture<()> = match action_user {
             ActionUser::Login { .. } | ActionUser::Register { .. } => {
-                let fut = Self::api_fetch::<AuthResponse>(&base_url, api_req)
-                    .and_then(move |AuthResponse{ key, user }| {
+                let fut = Self::api_fetch::<AuthResponse>(&base_url, api_req).and_then(
+                    move |AuthResponse { key, user }| {
                         // @TODO: Emit UserChanged, Pull Addons
-                        Self::save(state, UserData { auth: Some(Auth{ key, user }), addons: DEFAULT_ADDONS.to_owned() })
-                    });
+                        Self::save(
+                            state,
+                            UserData {
+                                auth: Some(Auth { key, user }),
+                                addons: DEFAULT_ADDONS.to_owned(),
+                            },
+                        )
+                    },
+                );
                 Box::new(fut)
             }
             ActionUser::Logout => {
-                let fut = Self::save(state.clone(), Default::default())
-                    .and_then(|_| {
-                        // @TODO emit UserChanged ASAP here
-                        // @TODO destroy session
-                        future::ok(())
-                    });
+                let fut = Self::save(state.clone(), Default::default()).and_then(|_| {
+                    // @TODO emit UserChanged ASAP here
+                    // @TODO destroy session
+                    future::ok(())
+                });
                 Box::new(fut)
             }
             ActionUser::PullAddons => {
-                let fut = Self::api_fetch::<CollectionResponse>(&base_url, api_req)
-                    .and_then(|CollectionResponse { addons }| {
+                let fut = Self::api_fetch::<CollectionResponse>(&base_url, api_req).and_then(
+                    |CollectionResponse { addons }| {
                         Self::save(state, UserData { auth: None, addons })
-                    });
+                    },
+                );
                 Box::new(fut)
             }
             ActionUser::PushAddons => {
