@@ -74,6 +74,16 @@ impl<T: Environment> UserMiddleware<T> {
         fut
     }
 
+    fn get_current_key(state: &UserDataHolder) -> Option<String> {
+        match *state.borrow() {
+            Some(UserData {
+                auth: Some(Auth { ref key, .. }),
+                ..
+            }) => Some(key.to_owned()),
+            _ => None,
+        }
+    }
+
     fn exec_or_fatal(fut: EnvFuture<()>, emit: Rc<DispatcherFn>) {
         T::exec(Box::new(fut.or_else(move |e| {
             emit(&Action::UserMiddlewareFatal(MiddlewareError::Env(
@@ -152,12 +162,9 @@ impl<T: Environment> UserMiddleware<T> {
             }
             ActionUser::PullAddons => {
                 // @TODO check if auth_key has changed, before persisting
-                let key = match *self.state.borrow() {
-                    Some(UserData {
-                        auth: Some(Auth { ref key, .. }),
-                        ..
-                    }) => key.to_owned(),
-                    _ => return,
+                let key = match Self::get_current_key(&self.state) {
+                    Some(key) => key,
+                    None => return,
                 };
                 let req = req_builder
                     .body(CollectionRequest { key })
