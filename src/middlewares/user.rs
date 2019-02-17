@@ -37,6 +37,8 @@ impl Default for UserData {
     }
 }
 
+type MiddlewareFuture<T> = Box<Future<Item=T, Error=MiddlewareError>>;
+
 type UserDataHolder = Rc<RefCell<Option<UserData>>>;
 #[derive(Default)]
 pub struct UserMiddleware<T: Environment> {
@@ -88,11 +90,9 @@ impl<T: Environment> UserMiddleware<T> {
     //fn exec_or_warning(fut: EnvFuture<()>, emit: Rc<DispatcherFn>) {
     //}
 
-    fn exec_or_fatal(fut: EnvFuture<()>, emit: Rc<DispatcherFn>) {
+    fn exec_or_fatal(fut: MiddlewareFuture<()>, emit: Rc<DispatcherFn>) {
         T::exec(Box::new(fut.or_else(move |e| {
-            emit(&Action::UserMiddlewareFatal(MiddlewareError::Env(
-                e.to_string(),
-            )));
+            emit(&Action::UserMiddlewareFatal(e));
             future::err(())
         })));
     }
@@ -102,6 +102,10 @@ impl<T: Environment> UserMiddleware<T> {
         // extra (gdpr, etc.)
         // @TODO emit UserChanged
         // @TODO share more code, a lot of those clone the state, all of these handle API errors
+        // @TODO turn APIRequestBody into APIRequest and put auth in there; only edge case is
+        // AddonCollcetionGet, which works w/o auth too, but we don't care about that usecase
+        // @TODO if it requires authentication, do load first
+        // so perhaps exec a promise first that converts an action to an APIRequest
         let api_request_body: APIRequestBody = action_user.into();
         let req = Request::post(format!("{}/api/{}", &self.api_url, api_request_body.method_name()))
             .body(APIRequest{ key: Self::get_current_key(&self.state), body: api_request_body })
@@ -192,7 +196,8 @@ impl<T: Environment> Handler for UserMiddleware<T> {
                 .and_then(enclose!((emit, action_load) move |ud| {
                     emit(&Action::LoadWithUser(ud.auth.map(|a| a.user), ud.addons.to_owned(), action_load));
                     future::ok(())
-                }));
+                }))
+                .map_err(|e| e.into());
             Self::exec_or_fatal(Box::new(fut), emit.clone());
         }
 
@@ -220,7 +225,8 @@ impl<T: Environment> Handler for UserMiddleware<T> {
                         ..ud
                     };
                     Self::save(state, new_user_data)
-                }));
+                }))
+                .map_err(|e| e.into());
             Self::exec_or_fatal(Box::new(fut), emit.clone());
         }
 

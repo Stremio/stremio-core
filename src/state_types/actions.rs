@@ -1,5 +1,6 @@
 use crate::types::*;
 use serde_derive::*;
+use std::error::Error;
 
 #[derive(Debug, Deserialize, Serialize, Clone)]
 #[serde(tag = "load", content = "args")]
@@ -48,6 +49,16 @@ pub enum ActionAddon {
 pub enum MiddlewareError {
     API(APIErr),
     Env(String),
+}
+impl From<APIErr> for MiddlewareError {
+    fn from(e: APIErr) -> Self {
+        MiddlewareError::API(e)
+    }
+}
+impl From<Box<dyn Error>> for MiddlewareError {
+    fn from(e: Box<dyn Error>) -> Self {
+        MiddlewareError::Env(e.to_string())
+    }
 }
 
 #[derive(Debug, Deserialize, Serialize, Clone)]
