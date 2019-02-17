@@ -67,14 +67,13 @@
 * TransportUrl type, safety and parsing; ensure malformed ones cant crash the program; they can't, we handle the case
 * UserM: uninstall/install addons for the user, sync their collection
 * semver check for manifest.json
-
+* APIRequest/APIResponse should be enums? that enum should have a method to get the string name; easily get the api request, and then universally handle the response Error case
 
 ## TODO
 
-
-* APIRequest/APIResponse should be enums? that enum should have a method to get the string name; easily get the api request, and then universally handle the response Error case
+* userM: key should be in the enum
 * UserM: implement the actions; consider matching them against API calls (action, call path, data structure)
-* UserM: Pushaddons/pulladdons
+* UserM: Pushaddons/PullAddons
 * UserM: AddonsChanged/UserChanged
 
 * AddonM: transport type recognizer

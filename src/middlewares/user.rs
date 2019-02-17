@@ -4,6 +4,7 @@ use enclose::*;
 use futures::{future, Future};
 use lazy_static::*;
 use serde_derive::*;
+use serde::Serialize;
 use std::cell::RefCell;
 use std::marker::PhantomData;
 use std::rc::Rc;
@@ -18,7 +19,7 @@ lazy_static! {
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 struct Auth {
-    key: String,
+    key: AuthKey,
     user: User,
 }
 
@@ -74,7 +75,7 @@ impl<T: Environment> UserMiddleware<T> {
         fut
     }
 
-    fn get_current_key(state: &UserDataHolder) -> Option<String> {
+    fn get_current_key(state: &UserDataHolder) -> Option<AuthKey> {
         match *state.borrow() {
             Some(UserData {
                 auth: Some(Auth { ref key, .. }),
@@ -83,6 +84,9 @@ impl<T: Environment> UserMiddleware<T> {
             _ => None,
         }
     }
+
+    //fn exec_or_warning(fut: EnvFuture<()>, emit: Rc<DispatcherFn>) {
+    //}
 
     fn exec_or_fatal(fut: EnvFuture<()>, emit: Rc<DispatcherFn>) {
         T::exec(Box::new(fut.or_else(move |e| {
@@ -98,28 +102,15 @@ impl<T: Environment> UserMiddleware<T> {
         // extra (gdpr, etc.)
         // @TODO emit UserChanged
         // @TODO share more code, a lot of those clone the state, all of these handle API errors
-
-        // @TODO each one can map to a finalized request builder, with the request object itself
-        // that will eliminate the mutability too
-        let method_name = match action_user {
-            ActionUser::Login{ .. } => "login",
-            ActionUser::Register{ .. } => "register",
-            ActionUser::Logout => "logout",
-            ActionUser::PullAddons => "addonCollectionGet",
-            ActionUser::PushAddons => "addonCollectionSet",
-        };
-        let mut req_builder = Request::post(format!("{}/api/{}", &self.api_url, method_name));
+        let api_request_body: APIRequestBody = action_user.into();
+        let req = Request::post(format!("{}/api/{}", &self.api_url, api_request_body.method_name()))
+            .body(APIRequest{ key: Self::get_current_key(&self.state), body: api_request_body })
+            .expect("failed to build API request");
 
         match action_user {
             // These DO NOT require authentication
-            ActionUser::Login { email, password } | ActionUser::Register { email, password } => {
+            ActionUser::Login { .. } | ActionUser::Register { .. } => {
                 // @TODO register
-                let req = req_builder
-                    .body(LoginRequest {
-                        email: email.to_owned(),
-                        password: password.to_owned(),
-                    })
-                    .expect("failed to build API request");
                 let state = self.state.clone();
                 let fut = T::fetch_serde::<_, APIResult<AuthResponse>>(req)
                     .and_then(enclose!((action_user, emit) move |result| {
@@ -161,14 +152,6 @@ impl<T: Environment> UserMiddleware<T> {
                 T::exec(Box::new(fut));
             }
             ActionUser::PullAddons => {
-                // @TODO check if auth_key has changed, before persisting
-                let key = match Self::get_current_key(&self.state) {
-                    Some(key) => key,
-                    None => return,
-                };
-                let req = req_builder
-                    .body(CollectionRequest { key })
-                    .expect("failed to build API request");
                 let state = self.state.clone();
                 let fut = T::fetch_serde::<_, APIResult<CollectionResponse>>(req)
                     .and_then(enclose!((action_user, emit) move |result| {
