@@ -81,6 +81,6 @@ pub enum Action {
     UserOpError(ActionUser, MiddlewareError),
     AddonsChanged,
     AddonsChangedFromPull,
-    //AuthChanged(Option<User>),
+    AuthChanged(Option<User>),
     NewState(usize),
 }

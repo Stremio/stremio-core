@@ -1,7 +1,7 @@
 use chrono::{DateTime, Utc};
 use serde_derive::*;
 
-#[derive(Serialize, Deserialize, Clone, Debug)]
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub struct User {
     #[serde(rename = "_id")]

@@ -79,5 +79,3 @@ pub enum APIResult<T> {
     Err { error: APIErr },
     Ok { result: T },
 }
-
-

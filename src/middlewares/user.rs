@@ -17,7 +17,7 @@ lazy_static! {
             .expect("official addons JSON parse");
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug)]
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]
 struct Auth {
     key: AuthKey,
     user: User,
@@ -96,7 +96,6 @@ impl<T: Environment> UserMiddleware<T> {
     }
 
     fn save(state: UserStorageHolder, new_user_data: UserStorage) -> MiddlewareFuture<()> {
-        // @TODO AuthChanged
         let fut = T::set_storage(USER_DATA_KEY, Some(&new_user_data)).map_err(|e| e.into());
         state.replace(Some(new_user_data));
         Box::new(fut)
@@ -170,12 +169,14 @@ impl<T: Environment> UserMiddleware<T> {
                             },
                         )
                     })
-                    .and_then(|new_user_storage| {
+                    .and_then(move |new_user_storage| {
+                        //emit(&Action::AuthChanged(new_user_storage.map(|a| a.user.to_owned())));
                         Self::save(state, new_user_storage)
                     });
                 Box::new(fut)
             }
             ActionUser::Logout => {
+                //emit(&Action::AuthChanged(None));
                 let fut = Self::save(state.clone(), Default::default())
                     .and_then(move |_| Self::api_fetch::<SuccessResponse>(&api_url, api_req))
                     .and_then(|_| future::ok(()));
@@ -184,8 +185,12 @@ impl<T: Environment> UserMiddleware<T> {
             ActionUser::PullAddons => {
                 let auth = current_storage.auth.to_owned();
                 let fut = Self::api_fetch::<CollectionResponse>(&api_url, api_req).and_then(
-                    enclose!((emit) move |CollectionResponse { addons }| {
-                        // @TODO consider protecting from races by changing if auth key has changed
+                    enclose!((emit) move |CollectionResponse { addons }| -> MiddlewareFuture<()> {
+                        // The authentication has changed in between - abort
+                        match *state.borrow() {
+                            Some(UserStorage{ auth: ref a, .. }) if *a == auth => {},
+                            _ => { return Box::new(future::ok(())) },
+                        }
                         if current_storage.are_addons_different(&addons) {
                             emit(&Action::AddonsChangedFromPull);
                         }
