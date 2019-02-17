@@ -188,8 +188,8 @@ impl<T: Environment> UserMiddleware<T> {
                     enclose!((emit) move |CollectionResponse { addons }| -> MiddlewareFuture<()> {
                         // The authentication has changed in between - abort
                         match *state.borrow() {
-                            Some(UserStorage{ auth: ref a, .. }) if *a == auth => {},
-                            _ => { return Box::new(future::ok(())) },
+                            Some(ref s) if s.get_auth_key() == current_storage.get_auth_key() => {},
+                            _ => { return Box::new(future::err(MiddlewareError::AuthChanged)) },
                         }
                         if current_storage.are_addons_different(&addons) {
                             emit(&Action::AddonsChangedFromPull);
