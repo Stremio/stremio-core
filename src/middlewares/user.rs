@@ -147,14 +147,22 @@ impl<T: Environment> UserMiddleware<T> {
         let state = self.state.clone();
         let fut: MiddlewareFuture<()> = match action_user {
             ActionUser::Login { .. } | ActionUser::Register { .. } => {
+                // Sends the initial request (authentication), and pulls addons collection after
                 let fut = Self::api_fetch::<AuthResponse>(&base_url, api_req).and_then(
                     move |AuthResponse { key, user }| {
-                        // @TODO: Emit UserChanged, Pull Addons
-                        let new_user_storage = UserStorage {
-                            auth: Some(Auth { key, user }),
-                            addons: DEFAULT_ADDONS.to_owned(),
+                        let pull_req = APIRequest::AddonCollectionGet {
+                            auth_key: key.to_owned(),
                         };
-                        Self::save(state, new_user_storage)
+                        Self::api_fetch::<CollectionResponse>(&base_url, pull_req).and_then(
+                            move |CollectionResponse { addons }| {
+                                let new_user_storage = UserStorage {
+                                    auth: Some(Auth { key, user }),
+                                    addons,
+                                };
+                                Self::save(state, new_user_storage)
+                                // @TODO: Emit UserChanged
+                            },
+                        )
                     },
                 );
                 Box::new(fut)
