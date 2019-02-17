@@ -4,7 +4,7 @@ use enclose::*;
 use futures::{future, Future};
 use lazy_static::*;
 use serde_derive::*;
-use serde::Serialize;
+use serde::de::DeserializeOwned;
 use std::cell::RefCell;
 use std::marker::PhantomData;
 use std::rc::Rc;
@@ -87,8 +87,32 @@ impl<T: Environment> UserMiddleware<T> {
         }
     }
 
-    //fn exec_or_warning(fut: EnvFuture<()>, emit: Rc<DispatcherFn>) {
-    //}
+    fn api_fetch<OUT: 'static>(base_url: &str, api_req: APIRequest) -> MiddlewareFuture<OUT>
+        where OUT: DeserializeOwned
+    {
+        let url = format!("{}/api/{}", base_url, api_req.body.method_name());
+        let req = match Request::post(url).body(api_req) {
+            Ok(req) => req,
+            Err(e) => return Box::new(future::err(MiddlewareError::Env(e.to_string()))),
+        };
+
+        let fut = T::fetch_serde::<_, APIResult<OUT>>(req)
+            .map_err(|e| e.into())
+            .and_then(|result| {
+                match *result {
+                    APIResult::Ok{ result } => future::ok(result),
+                    APIResult::Err{ error } => future::err(MiddlewareError::API(error)),
+                }
+            });
+        Box::new(fut)
+    }
+
+    fn exec_or_error(fut: MiddlewareFuture<()>, action_user: ActionUser, emit: Rc<DispatcherFn>) {
+        T::exec(Box::new(fut.or_else(move |e| {
+            emit(&Action::UserOpError(action_user, e));
+            future::err(())
+        })));
+    }
 
     fn exec_or_fatal(fut: MiddlewareFuture<()>, emit: Rc<DispatcherFn>) {
         T::exec(Box::new(fut.or_else(move |e| {
@@ -98,44 +122,25 @@ impl<T: Environment> UserMiddleware<T> {
     }
 
     fn handle_action_user(&self, action_user: &ActionUser, emit: Rc<DispatcherFn>) {
-        // Login/Register follow the same code (except the method); and perhaps Register will take
-        // extra (gdpr, etc.)
         // @TODO emit UserChanged
-        // @TODO share more code, a lot of those clone the state, all of these handle API errors
         // @TODO turn APIRequestBody into APIRequest and put auth in there; only edge case is
         // AddonCollcetionGet, which works w/o auth too, but we don't care about that usecase
-        // @TODO if it requires authentication, do load first
-        // so perhaps exec a promise first that converts an action to an APIRequest
-        let api_request_body: APIRequestBody = action_user.into();
-        let req = Request::post(format!("{}/api/{}", &self.api_url, api_request_body.method_name()))
-            .body(APIRequest{ key: Self::get_current_key(&self.state), body: api_request_body })
-            .expect("failed to build API request");
+        // @TODO do load first
+        let base_url = self.api_url.to_owned();
+        let api_req = APIRequest{ key: Self::get_current_key(&self.state), body: action_user.into() };
 
         match action_user {
             // These DO NOT require authentication
             ActionUser::Login { .. } | ActionUser::Register { .. } => {
                 // @TODO register
                 let state = self.state.clone();
-                let fut = T::fetch_serde::<_, APIResult<AuthResponse>>(req)
-                    .and_then(enclose!((action_user, emit) move |result| {
-                        match *result {
-                            APIResult::Ok {
-                                result: AuthResponse { key, user },
-                            } => {
-                                // @TODO pull addons
-                                Self::save(state, UserData { auth: Some(Auth{ key, user }), addons: DEFAULT_ADDONS.to_owned() })
-                            }
-                            APIResult::Err { error } => {
-                                emit(&Action::UserOpError(action_user, MiddlewareError::API(error)));
-                                Box::new(future::ok(()))
-                            }
-                        }
-                    }))
-                    .or_else(enclose!((action_user, emit) move |e| {
-                        emit(&Action::UserOpError(action_user, MiddlewareError::Env(e.to_string())));
-                        future::err(())
-                    }));
-                T::exec(Box::new(fut));
+                let fut = Self::api_fetch::<AuthResponse>(&base_url, api_req)
+                    .and_then(move |AuthResponse{ key, user }| {
+                        let fut = Self::save(state, UserData { auth: Some(Auth{ key, user }), addons: DEFAULT_ADDONS.to_owned() })
+                            .map_err(|e| e.into());
+                        Box::new(fut)
+                    });
+                Self::exec_or_error(Box::new(fut), action_user.to_owned(), emit.clone());
             }
             // The following actions require authentication
             ActionUser::Logout => {
@@ -148,38 +153,17 @@ impl<T: Environment> UserMiddleware<T> {
                         // @TODO destroy session
                         future::ok(())
                     })
-                    // @TODO remove duplication here
-                    .or_else(enclose!((action_user, emit) move |e| {
-                        emit(&Action::UserOpError(action_user, MiddlewareError::Env(e.to_string())));
-                        future::err(())
-                    }));
-                T::exec(Box::new(fut));
+                    .map_err(|e| e.into());
+                Self::exec_or_error(Box::new(fut), action_user.to_owned(), emit.clone());
             }
             ActionUser::PullAddons => {
                 let state = self.state.clone();
-                let fut = T::fetch_serde::<_, APIResult<CollectionResponse>>(req)
-                    .and_then(enclose!((action_user, emit) move |result| {
-                        // @TODO fetch_api which returns MiddlewareError?
-                        match *result {
-                            APIResult::Ok {
-                                result: CollectionResponse { addons },
-                            } => {
-                                // @TODO preserve auth
-                                // @TODO this  needs to determine whether the remote dataset is newer or not
-                                // @TODO emit AddonsChanged
-                                Self::save(state, UserData { auth: None, addons })
-                            }
-                            APIResult::Err { error } => {
-                                emit(&Action::UserOpError(action_user, MiddlewareError::API(error)));
-                                Box::new(future::ok(()))
-                            }
-                        }
-                    }))
-                    .or_else(enclose!((action_user, emit) move |e| {
-                        emit(&Action::UserOpError(action_user, MiddlewareError::Env(e.to_string())));
-                        future::err(())
-                    }));
-                T::exec(Box::new(fut));
+                let fut = Self::api_fetch::<CollectionResponse>(&base_url, api_req)
+                    .and_then(|CollectionResponse { addons }| {
+                        Self::save(state, UserData { auth: None, addons })
+                            .map_err(|e| e.into())
+                    });
+                Self::exec_or_error(Box::new(fut), action_user.to_owned(), emit.clone());
             }
             ActionUser::PushAddons => {
                 // @TODO
