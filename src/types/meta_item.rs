@@ -6,6 +6,7 @@ pub struct MetaPreview {
     pub id: String,
     #[serde(rename = "type")]
     pub type_name: String,
+    #[serde(default)]
     pub name: String,
     pub poster: Option<String>,
 }
@@ -17,6 +18,7 @@ pub struct MetaItem {
     pub id: String,
     #[serde(rename = "type")]
     pub type_name: String,
+    #[serde(default)]
     pub name: String,
     pub poster: Option<String>,
     pub background: Option<String>,
