@@ -53,7 +53,7 @@ impl UserStorage {
             },
         })
     }
-    fn are_addons_different(&self, addons: &[Descriptor]) -> bool {
+    fn are_addons_same(&self, addons: &[Descriptor]) -> bool {
         let urls = addons.iter().map(|a| &a.transport_url);
         let new_urls = addons.iter().map(|a| &a.transport_url);
         urls.eq(new_urls)
@@ -203,7 +203,7 @@ impl<T: Environment> UserMiddleware<T> {
                             Some(ref s) if s.get_auth_key() == current_storage.get_auth_key() => {},
                             _ => { return Box::new(future::err(MiddlewareError::AuthRace)) },
                         }
-                        if current_storage.are_addons_different(&addons) {
+                        if !current_storage.are_addons_same(&addons) {
                             emit(&Action::AddonsChangedFromPull);
                         }
                         Self::save(state, UserStorage { auth, addons })
