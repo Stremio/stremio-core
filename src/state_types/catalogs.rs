@@ -49,7 +49,7 @@ pub fn catalogs_reducer(state: &CatalogGrouped, action: &Action) -> Option<Box<C
                     Ok(ResourceResponse::Metas { metas, skip: 0, .. }) => {
                         Loadable::Ready(metas.iter().take(MAX_ITEMS).cloned().collect())
                     }
-                    Ok(_) => Loadable::Message("unexpected response".to_owned()),
+                    Ok(_) => Loadable::Message("unexpected ResourceResponse".to_owned()),
                     Err(e) => Loadable::Message(e.to_owned()),
                 };
                 groups[idx] = Rc::new((req.to_owned(), group_content));
