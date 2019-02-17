@@ -37,11 +37,11 @@ impl Default for UserStorage {
     }
 }
 impl UserStorage {
-    fn get_current_key(&self) -> Option<&AuthKey> {
+    fn get_auth_key(&self) -> Option<&AuthKey> {
         Some(&self.auth.as_ref()?.key)
     }
     fn action_to_request(&self, action: &ActionUser) -> Option<APIRequest> {
-        let key = self.get_current_key().map(|k| k.to_owned());
+        let key = self.get_auth_key().map(|k| k.to_owned());
         Some(match action.to_owned() {
             ActionUser::Login { email, password } => APIRequest::Login { email, password },
             ActionUser::Register { email, password } => APIRequest::Register { email, password },
@@ -165,25 +165,24 @@ impl<T: Environment> UserMiddleware<T> {
                         )
                     })
                     .and_then(|new_user_storage| {
-                        // @TODO: Emit UserChanged
+                        // @TODO: emit AuthChanged
                         Self::save(state, new_user_storage)
                     });
                 Box::new(fut)
             }
             ActionUser::Logout => {
-                let fut = Self::save(state.clone(), Default::default()).and_then(|_| {
-                    // @TODO emit UserChanged ASAP here
-                    // @TODO destroy session
-                    future::ok(())
-                });
+                // @TODO: emit AuthChanged
+                let fut = Self::save(state.clone(), Default::default())
+                    .and_then(move |_| Self::api_fetch::<()>(&api_url, api_req));
                 Box::new(fut)
             }
             ActionUser::PullAddons => {
+                let auth = current_storage.auth.to_owned();
                 let fut = Self::api_fetch::<CollectionResponse>(&api_url, api_req).and_then(
-                    |CollectionResponse { addons }| {
-                        // @TODO: keep auth, but check if current_storage key is the same as
-                        // state.borrow() key
-                        Self::save(state, UserStorage { auth: None, addons })
+                    move |CollectionResponse { addons }| {
+                        // @TODO consider protecting from races by changing if auth key has changed
+                        // @TODO emit AddonsChangedFromPull
+                        Self::save(state, UserStorage { auth, addons })
                     },
                 );
                 Box::new(fut)
