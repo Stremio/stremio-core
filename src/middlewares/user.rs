@@ -24,13 +24,13 @@ struct Auth {
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
-struct UserData {
+struct UserStorage {
     auth: Option<Auth>,
     addons: Vec<Descriptor>,
 }
-impl Default for UserData {
+impl Default for UserStorage {
     fn default() -> Self {
-        UserData {
+        UserStorage {
             auth: None,
             addons: DEFAULT_ADDONS.to_owned(),
         }
@@ -38,11 +38,11 @@ impl Default for UserData {
 }
 
 type MiddlewareFuture<T> = Box<Future<Item = T, Error = MiddlewareError>>;
-type UserDataHolder = Rc<RefCell<Option<UserData>>>;
+type UserStorageHolder = Rc<RefCell<Option<UserStorage>>>;
 #[derive(Default)]
 pub struct UserMiddleware<T: Environment> {
     //id: usize,
-    state: UserDataHolder,
+    state: UserStorageHolder,
     api_url: String,
     env: PhantomData<T>,
 }
@@ -55,7 +55,7 @@ impl<T: Environment> UserMiddleware<T> {
         }
     }
 
-    fn load(&self) -> MiddlewareFuture<UserData> {
+    fn load(&self) -> MiddlewareFuture<UserStorage> {
         let current_state = self.state.borrow().to_owned();
         if let Some(ud) = current_state {
             return Box::new(future::ok(ud));
@@ -63,8 +63,8 @@ impl<T: Environment> UserMiddleware<T> {
 
         let state = self.state.clone();
         let fut = T::get_storage(USER_DATA_KEY)
-            .and_then(move |result: Option<Box<UserData>>| {
-                let ud: UserData = *result.unwrap_or_default();
+            .and_then(move |result: Option<Box<UserStorage>>| {
+                let ud: UserStorage = *result.unwrap_or_default();
                 let _ = state.replace(Some(ud.to_owned()));
                 future::ok(ud)
             })
@@ -72,15 +72,15 @@ impl<T: Environment> UserMiddleware<T> {
         Box::new(fut)
     }
 
-    fn save(state: UserDataHolder, new_user_data: UserData) -> MiddlewareFuture<()> {
+    fn save(state: UserStorageHolder, new_user_data: UserStorage) -> MiddlewareFuture<()> {
         let fut = T::set_storage(USER_DATA_KEY, Some(&new_user_data)).map_err(|e| e.into());
         state.replace(Some(new_user_data));
         Box::new(fut)
     }
 
-    fn get_current_key(state: &UserDataHolder) -> Option<AuthKey> {
+    fn get_current_key(state: &UserStorageHolder) -> Option<AuthKey> {
         match *state.borrow() {
-            Some(UserData {
+            Some(UserStorage {
                 auth: Some(Auth { ref key, .. }),
                 ..
             }) => Some(key.to_owned()),
@@ -146,13 +146,11 @@ impl<T: Environment> UserMiddleware<T> {
                 let fut = Self::api_fetch::<AuthResponse>(&base_url, api_req).and_then(
                     move |AuthResponse { key, user }| {
                         // @TODO: Emit UserChanged, Pull Addons
-                        Self::save(
-                            state,
-                            UserData {
-                                auth: Some(Auth { key, user }),
-                                addons: DEFAULT_ADDONS.to_owned(),
-                            },
-                        )
+                        let new_user_storage = UserStorage {
+                            auth: Some(Auth { key, user }),
+                            addons: DEFAULT_ADDONS.to_owned(),
+                        };
+                        Self::save(state, new_user_storage)
                     },
                 );
                 Box::new(fut)
@@ -168,7 +166,8 @@ impl<T: Environment> UserMiddleware<T> {
             ActionUser::PullAddons => {
                 let fut = Self::api_fetch::<CollectionResponse>(&base_url, api_req).and_then(
                     |CollectionResponse { addons }| {
-                        Self::save(state, UserData { auth: None, addons })
+                        // @TODO: keep auth
+                        Self::save(state, UserStorage { auth: None, addons })
                     },
                 );
                 Box::new(fut)
@@ -188,8 +187,8 @@ impl<T: Environment> Handler for UserMiddleware<T> {
         if let Action::Load(action_load) = action {
             let fut = self
                 .load()
-                .and_then(enclose!((emit, action_load) move |ud| {
-                    emit(&Action::LoadWithUser(ud.auth.map(|a| a.user), ud.addons.to_owned(), action_load));
+                .and_then(enclose!((emit, action_load) move |UserStorage{ auth, addons }| {
+                    emit(&Action::LoadWithUser(auth.map(|a| a.user), addons.to_owned(), action_load));
                     future::ok(())
                 }));
             Self::exec_or_fatal(Box::new(fut), emit.clone());
@@ -214,7 +213,7 @@ impl<T: Environment> Handler for UserMiddleware<T> {
                         },
                     };
                     emit(&Action::AddonsChanged(addons.to_owned()));
-                    let new_user_data = UserData{
+                    let new_user_data = UserStorage{
                         addons,
                         ..ud
                     };
