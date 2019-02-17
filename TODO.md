@@ -57,6 +57,7 @@
 * extra: advanced notation implemented
 * refactor: enum representations in serde
 * addonM: given a `transport_url`, FromAddon will try to find the addon in the collection, to possibly apply `flags.stremioAuth` or `flags.transport`; of course, it doesn't need to find it, `transport_url` is sufficient to request; or, it should just carry the flags; **DECISION:** neither, `stremioAuth` is just put on hold for now, see https://github.com/Stremio/stremio/issues/407
+* graph everything, the entire stremio architecture, including core add-ons and such
 * implement UserM; think of how (or not to?) to mock storage in the test; LoadWithUser(user, addons, ...)
 * UserM: figure ot loading step; perhaps always do the load with a future and do everything in a .then(), but memoize it
 * construct `AddonHTTPTransport<E: Environment>` and give it to the interested middlewares; introduce a long-lived transport; addon transports can have FromStr trait?
@@ -76,6 +77,9 @@
 * UserM: Pushaddons/PullAddons
 * UserM: AddonsChanged/UserChanged actions
 * bug: AddonsChanged/AddonsChangedFromPull fired before storing
+* since a lot of things are asynchronous, perhaps we should have a guard; the things to think about are: addon set hash, addon ID, user ID, etc.; RESOLVED
+* environment: consider allowing a dynamic instance, esp for storage; RESOLVED: No; everything can be done statically
+* architecturally, can we get away with not contacting the streming server in the state container?; YES, and we should; server should be contacted by the players and settings UI only
 
 ## TODO
 
@@ -84,12 +88,13 @@
 * stream type
 
 * UserM: plug in a built in addon (LibraryAddon)
-* UserM: mock storage and tests
 * AddonM: AddonTransport trait, .get(), .manifest(); http addons will be constructed with a URL, while lib/notif addon directly as something that implements AddonTransport
 * addon catalog reducer, actions; handle loading collections in the addonM
 * AddonM: caching: statefulness can be mitigated by using a memoization where the addon transport `get` would return the same results if invoked with the same args again; however, this needs to be out of the transport impl and needs to be explicit
+* UserM: mock storage and tests
 
-* test if addoncollection can be parsed and understood, once it can be retrieved in the middleware
+* test if addoncollection can be parsed and understood, once it can be retrieved via the middleware(s)
+* addon catalog reducer
 
 * basic state: Catalog, Detail; and all the possible inner states (describe the structures); StreamSelect
 * tests: Chain, Container, individual middlewares, individual types
@@ -97,8 +102,7 @@
 * start implementing libitem/notifitem addon
 * load/unload dynamics and more things other than Catalog: Detail, StreamSelect
 
-* video type, detailed meta
-
+* Video type, detailed meta
 
 * environment implementations: return an error related to the HTTP status code, if it's not 200
 
@@ -109,9 +113,7 @@
 * spec: notifItems: rethink that spec, crystallize it
 * Trait for meta item and lib item; MetaPreview, MetaItem, MetaDetailed
 * implement CatalogsFiltered
-* since a lot of things are asynchronous, perhaps we should have a guard; the things to think about are: addon set hash, addon ID, user ID, etc.
 * stuff to look for to be re-implemented: syncer, libitem/notifitem addons, discover ctrl, board ctrl, detail ctrl
-* environment: consider allowing a dynamic instance, esp for storage
 * environment: the JS side should (1) TRY to load the WASM and (2) TRY to sanity-check the environment; if it doesn't succeed, it should show an error to the user
 * design flaw: the player is supposed to get the URL to the video itself (from Stream), but then it needs to pull /subtitles/ from the addon system; could be done by wrapping some messages in the state container, but maybe there's a better way?
 * complex async pieces of logic: open, detectFromURL, openMedia; those should be a middleware or just separate async functions; detectFromURL/openMedia are user-agnostic, but open is not; if it's an async function used internally by the middleware, it's still OK cause we won't make the stream requests again if we go to the UI (cause of the memoization)
@@ -126,18 +128,18 @@
 * when saving the last stream, save the whole object but compressed
 * player: implement playerPreferences and defaults behavior: picking a default subtitle/audio track; for audio, the logic should try to select your preferred language
 * ensure environment caches are in place via the service worker (web)
+
+
 * consider: flag `is_in_lib` for catalog items; could just work for Discover by having another CatlaogFiltered showing ("meta", type, id) from the lib addon
 * https://github.com/woboq/qmetaobject-rs based UI; needs reqwest (or someting else) async requests
 * libitem/notifitem: https://developers.cloudflare.com/workers/kv/ https://blog.cloudflare.com/cloudflare-workers-as-a-serverless-rust-platform/
 * think of whether this could be used with the Kodi codebase to make stremio embedded
 * all the cinemeta improvements this relies on: e.g. behaviorHints.isNotReleased will affect the Stream view
-* graph everything, the entire stremio architecture, including core add-ons and such
 * ensure that every time a network error happens, it's properly reflected in the state; and the UI should allow to "Retry" each such operation
 * figure out pausing on minimize/close; this should be handled in the app; probably like this: when closing/minimizing the window, pause if state is playing
 * when you go to player/detail and there doesn't appear to be a supported addon for the /meta/ request, show an error to the user (+test for that?)
 * refactor: consider splitting Environment into Storage and Fetcher; and maybe take AddonsClient in
 * document item type agnostic behavior (detail page)
-* architecturally, can we get away with not contacting the streming server in the state container?
 * https://blog.cloudflare.com/cloudflare-workers-as-a-serverless-rust-platform/
 * JS Side: All errors or warnings that come as actions should be reported to sentry
 * more manual/automated tests: ensure that when UserMiddlewareFatal happens, it is reported
