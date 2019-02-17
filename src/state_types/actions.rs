@@ -80,7 +80,7 @@ pub enum Action {
     UserMiddlewareFatal(MiddlewareError),
     UserOpError(ActionUser, MiddlewareError),
     AddonsChanged,
-    //AddonsChangedFromPull,
+    AddonsChangedFromPull,
     //AuthChanged(Option<User>),
     NewState(usize),
 }

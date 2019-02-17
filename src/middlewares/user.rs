@@ -53,6 +53,11 @@ impl UserStorage {
             },
         })
     }
+    fn are_addons_different(&self, addons: &[Descriptor]) -> bool {
+        let urls = addons.iter().map(|a| &a.transport_url);
+        let new_urls = addons.iter().map(|a| &a.transport_url);
+        urls.eq(new_urls)
+    }
 }
 
 type MiddlewareFuture<T> = Box<Future<Item = T, Error = MiddlewareError>>;
@@ -91,6 +96,7 @@ impl<T: Environment> UserMiddleware<T> {
     }
 
     fn save(state: UserStorageHolder, new_user_data: UserStorage) -> MiddlewareFuture<()> {
+        // @TODO AuthChanged
         let fut = T::set_storage(USER_DATA_KEY, Some(&new_user_data)).map_err(|e| e.into());
         state.replace(Some(new_user_data));
         Box::new(fut)
@@ -165,13 +171,11 @@ impl<T: Environment> UserMiddleware<T> {
                         )
                     })
                     .and_then(|new_user_storage| {
-                        // @TODO: emit AuthChanged
                         Self::save(state, new_user_storage)
                     });
                 Box::new(fut)
             }
             ActionUser::Logout => {
-                // @TODO: emit AuthChanged
                 let fut = Self::save(state.clone(), Default::default())
                     .and_then(move |_| Self::api_fetch::<SuccessResponse>(&api_url, api_req))
                     .and_then(|_| future::ok(()));
@@ -180,11 +184,13 @@ impl<T: Environment> UserMiddleware<T> {
             ActionUser::PullAddons => {
                 let auth = current_storage.auth.to_owned();
                 let fut = Self::api_fetch::<CollectionResponse>(&api_url, api_req).and_then(
-                    move |CollectionResponse { addons }| {
+                    enclose!((emit) move |CollectionResponse { addons }| {
                         // @TODO consider protecting from races by changing if auth key has changed
-                        // @TODO emit AddonsChangedFromPull
+                        if current_storage.are_addons_different(&addons) {
+                            emit(&Action::AddonsChangedFromPull);
+                        }
                         Self::save(state, UserStorage { auth, addons })
-                    },
+                    }),
                 );
                 Box::new(fut)
             }
