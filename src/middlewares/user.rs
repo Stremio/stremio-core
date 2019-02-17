@@ -56,7 +56,7 @@ impl<T: Environment> UserMiddleware<T> {
         }
     }
 
-    fn load(&self) -> EnvFuture<UserData> {
+    fn load(&self) -> MiddlewareFuture<UserData> {
         let current_state = self.state.borrow().to_owned();
         if let Some(ud) = current_state {
             return Box::new(future::ok(ud));
@@ -67,14 +67,15 @@ impl<T: Environment> UserMiddleware<T> {
             let ud: UserData = *result.unwrap_or_default();
             let _ = state.replace(Some(ud.to_owned()));
             future::ok(ud)
-        });
+        })
+        .map_err(|e| e.into());
         Box::new(fut)
     }
 
-    fn save(state: UserDataHolder, new_user_data: UserData) -> EnvFuture<()> {
-        let fut = T::set_storage(USER_DATA_KEY, Some(&new_user_data));
+    fn save(state: UserDataHolder, new_user_data: UserData) -> MiddlewareFuture<()> {
+        let fut = T::set_storage(USER_DATA_KEY, Some(&new_user_data)).map_err(|e| e.into());
         state.replace(Some(new_user_data));
-        fut
+        Box::new(fut)
     }
 
     fn get_current_key(state: &UserDataHolder) -> Option<AuthKey> {
@@ -136,9 +137,7 @@ impl<T: Environment> UserMiddleware<T> {
                 let state = self.state.clone();
                 let fut = Self::api_fetch::<AuthResponse>(&base_url, api_req)
                     .and_then(move |AuthResponse{ key, user }| {
-                        let fut = Self::save(state, UserData { auth: Some(Auth{ key, user }), addons: DEFAULT_ADDONS.to_owned() })
-                            .map_err(|e| e.into());
-                        Box::new(fut)
+                        Self::save(state, UserData { auth: Some(Auth{ key, user }), addons: DEFAULT_ADDONS.to_owned() })
                     });
                 Self::exec_or_error(Box::new(fut), action_user.to_owned(), emit.clone());
             }
@@ -152,8 +151,7 @@ impl<T: Environment> UserMiddleware<T> {
                         // @TODO emit UserChanged ASAP here
                         // @TODO destroy session
                         future::ok(())
-                    })
-                    .map_err(|e| e.into());
+                    });
                 Self::exec_or_error(Box::new(fut), action_user.to_owned(), emit.clone());
             }
             ActionUser::PullAddons => {
@@ -161,7 +159,6 @@ impl<T: Environment> UserMiddleware<T> {
                 let fut = Self::api_fetch::<CollectionResponse>(&base_url, api_req)
                     .and_then(|CollectionResponse { addons }| {
                         Self::save(state, UserData { auth: None, addons })
-                            .map_err(|e| e.into())
                     });
                 Self::exec_or_error(Box::new(fut), action_user.to_owned(), emit.clone());
             }
@@ -180,8 +177,7 @@ impl<T: Environment> Handler for UserMiddleware<T> {
                 .and_then(enclose!((emit, action_load) move |ud| {
                     emit(&Action::LoadWithUser(ud.auth.map(|a| a.user), ud.addons.to_owned(), action_load));
                     future::ok(())
-                }))
-                .map_err(|e| e.into());
+                }));
             Self::exec_or_fatal(Box::new(fut), emit.clone());
         }
 
@@ -209,8 +205,7 @@ impl<T: Environment> Handler for UserMiddleware<T> {
                         ..ud
                     };
                     Self::save(state, new_user_data)
-                }))
-                .map_err(|e| e.into());
+                }));
             Self::exec_or_fatal(Box::new(fut), emit.clone());
         }
 
