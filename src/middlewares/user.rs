@@ -101,7 +101,7 @@ impl<T: Environment> UserMiddleware<T> {
             .and_then(|result| {
                 match *result {
                     APIResult::Ok{ result } => future::ok(result),
-                    APIResult::Err{ error } => future::err(MiddlewareError::API(error)),
+                    APIResult::Err{ error } => future::err(error.into()),
                 }
             });
         Box::new(fut)
