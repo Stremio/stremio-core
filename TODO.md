@@ -80,6 +80,7 @@
 * since a lot of things are asynchronous, perhaps we should have a guard; the things to think about are: addon set hash, addon ID, user ID, etc.; RESOLVED
 * environment: consider allowing a dynamic instance, esp for storage; RESOLVED: No; everything can be done statically
 * architecturally, can we get away with not contacting the streming server in the state container?; YES, and we should; server should be contacted by the players and settings UI only
+* bug: manifest.resources loses it's properties when serialized/deserialized; shorthand should always be serialized as shorthand
 
 ## TODO
 
