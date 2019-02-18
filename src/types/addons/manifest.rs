@@ -145,7 +145,7 @@ impl Manifest {
         // and if there is id_prefixes, our id should start with at least one of them
         let is_types_match = types
             .as_ref()
-            .map_or(false, |types| types.iter().any(|t| t == type_name));
+            .map_or(false, |types| types.contains(type_name));
         let is_id_match = id_prefixes.as_ref().map_or(true, |prefixes| {
             prefixes.iter().any(|pref| id.starts_with(pref))
         });
