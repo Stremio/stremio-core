@@ -188,7 +188,7 @@ impl<T: Environment> UserMiddleware<T> {
                             auth_key: key.to_owned(),
                         };
                         Self::api_fetch::<CollectionResponse>(&api_url, pull_req).and_then(
-                            move |CollectionResponse { addons }| {
+                            move |CollectionResponse { addons, .. }| {
                                 future::ok(UserStorage {
                                     auth: Some(Auth { key, user }),
                                     addons,
@@ -210,7 +210,8 @@ impl<T: Environment> UserMiddleware<T> {
             ActionUser::PullAddons => {
                 let auth = current_storage.auth.to_owned();
                 let fut = Self::api_fetch::<CollectionResponse>(&api_url, api_req).and_then(
-                    enclose!((emit) move |CollectionResponse { addons }| -> MiddlewareFuture<()> {
+                    enclose!((emit) move |CollectionResponse { addons, .. }| -> MiddlewareFuture<()> {
+                        // @TODO handle last_modified here
                         // The authentication has changed in between - abort
                         match *state.borrow() {
                             Some(ref s) if s.get_auth_key() == current_storage.get_auth_key() => {},

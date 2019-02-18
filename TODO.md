@@ -85,9 +85,10 @@
 
 * AddonM: transport type recognizer
 * AddonM: legacy transport
-* stream type
+* Stream type
 
 * UserM: plug in a built in addon (LibraryAddon)
+
 * AddonM: AddonTransport trait, .get(), .manifest(); http addons will be constructed with a URL, while lib/notif addon directly as something that implements AddonTransport
 * addon catalog reducer, actions; handle loading collections in the addonM
 * AddonM: caching: statefulness can be mitigated by using a memoization where the addon transport `get` would return the same results if invoked with the same args again; however, this needs to be out of the transport impl and needs to be explicit
@@ -108,11 +109,10 @@
 
 * refactor: mod.rs on `state_types` and types shouldn't glob export everything
 
-* document loopback actions (implicit input): AddonsChanged->PushAddons (if there's a conn), (as a result of Open) ProposeLoad -> Load; ProposeWatchNext -> Open
+* document loopback actions (implicit input): `AddonsChanged->PushAddons` (if there's a conn), (as a result of Open) `ProposeLoad -> Load`; `ProposeWatchNext -> Open`
 
-* spec: notifItems: rethink that spec, crystallize it
-* Trait for meta item and lib item; MetaPreview, MetaItem, MetaDetailed
 * implement CatalogsFiltered
+* Trait for meta item and lib item; MetaPreview, MetaItem, MetaDetailed
 * stuff to look for to be re-implemented: syncer, libitem/notifitem addons, discover ctrl, board ctrl, detail ctrl
 * environment: the JS side should (1) TRY to load the WASM and (2) TRY to sanity-check the environment; if it doesn't succeed, it should show an error to the user
 * design flaw: the player is supposed to get the URL to the video itself (from Stream), but then it needs to pull /subtitles/ from the addon system; could be done by wrapping some messages in the state container, but maybe there's a better way?
@@ -127,7 +127,9 @@
 * when playing AND when opening the detail page, we should augment the libItem with meta if it's not already (trigger the updateLibItem action only if this would actually change the libitem)
 * when saving the last stream, save the whole object but compressed
 * player: implement playerPreferences and defaults behavior: picking a default subtitle/audio track; for audio, the logic should try to select your preferred language
+* player: we migh benefit from refactoring the save/load stuff from userM into memoizedStorageSlot and using that
 * ensure environment caches are in place via the service worker (web)
+* spec: notifItems: rethink that spec, crystallize it
 
 
 * consider: flag `is_in_lib` for catalog items; could just work for Discover by having another CatlaogFiltered showing ("meta", type, id) from the lib addon

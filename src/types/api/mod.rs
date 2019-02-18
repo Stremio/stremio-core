@@ -1,5 +1,6 @@
 mod user;
 pub use self::user::*;
+use chrono::{DateTime, Utc};
 use crate::types::addons::*;
 use serde_derive::*;
 
@@ -55,8 +56,10 @@ pub struct APIErr {
 }
 
 #[derive(Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct CollectionResponse {
     pub addons: Vec<Descriptor>,
+    pub last_modified: DateTime<Utc>,
 }
 
 #[derive(Serialize, Deserialize)]
