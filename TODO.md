@@ -88,6 +88,7 @@
 * AddonM: legacy transport
 * Stream type
 
+* UserM: `last_modified` for addons, and `upgrade`
 * UserM: plug in a built in addon (LibraryAddon)
 
 * AddonM: AddonTransport trait, .get(), .manifest(); http addons will be constructed with a URL, while lib/notif addon directly as something that implements AddonTransport

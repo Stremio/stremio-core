@@ -4,7 +4,7 @@ use futures::{future, Future};
 use std::marker::PhantomData;
 use std::rc::Rc;
 
-pub trait AddonImpl {
+pub trait AddonTransport {
     fn get(resource_req: &ResourceRequest) -> EnvFuture<Box<ResourceResponse>>;
 }
 
@@ -12,7 +12,7 @@ pub trait AddonImpl {
 pub struct AddonHTTPTransport<T: Environment> {
     pub env: PhantomData<T>,
 }
-impl<T: Environment> AddonImpl for AddonHTTPTransport<T> {
+impl<T: Environment> AddonTransport for AddonHTTPTransport<T> {
     fn get(
         ResourceRequest {
             resource_ref,
