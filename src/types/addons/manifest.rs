@@ -32,7 +32,7 @@ pub struct ManifestExtraProp {
     name: String,
     #[serde(default)]
     is_required: bool,
-    values: Option<Vec<String>>,
+    options: Option<Vec<String>>,
 }
 #[derive(Debug, PartialEq, Clone, Deserialize, Serialize)]
 #[serde(untagged)]

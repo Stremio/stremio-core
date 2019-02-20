@@ -84,6 +84,8 @@
 
 ## TODO
 
+* learn about error downcasting and how we can use it
+
 * AddonM: transport type recognizer
 * AddonM: legacy transport
 * Stream type
@@ -114,6 +116,7 @@
 * document loopback actions (implicit input): `AddonsChanged->PushAddons` (if there's a conn), (as a result of Open) `ProposeLoad -> Load`; `ProposeWatchNext -> Open`
 
 * implement CatalogsFiltered
+
 * Trait for meta item and lib item; MetaPreview, MetaItem, MetaDetailed
 * stuff to look for to be re-implemented: syncer, libitem/notifitem addons, discover ctrl, board ctrl, detail ctrl
 * environment: the JS side should (1) TRY to load the WASM and (2) TRY to sanity-check the environment; if it doesn't succeed, it should show an error to the user
