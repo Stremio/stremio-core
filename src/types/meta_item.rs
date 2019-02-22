@@ -1,6 +1,6 @@
 use serde_derive::*;
 
-#[derive(PartialEq, Clone, Debug, Deserialize, Serialize)]
+#[derive(PartialEq, Clone, Debug, Deserialize, Serialize, Default)]
 #[serde(rename_all = "camelCase")]
 pub struct MetaPreview {
     pub id: String,
@@ -14,7 +14,7 @@ pub struct MetaPreview {
 }
 
 // @TODO: should we derive Hash, Eq?
-#[derive(PartialEq, Clone, Debug, Deserialize, Serialize)]
+#[derive(PartialEq, Clone, Debug, Deserialize, Serialize, Default)]
 #[serde(rename_all = "camelCase")]
 pub struct MetaItem {
     pub id: String,
