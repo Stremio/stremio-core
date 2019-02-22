@@ -69,7 +69,7 @@ impl FromStr for ResourceRef {
 
     // @TODO remove .json at the end
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        if !s.starts_with("/") {
+        if !s.starts_with('/') {
             return Err(ParseResourceErr::WrongPrefix);
         }
         if !s.ends_with(".json") {
