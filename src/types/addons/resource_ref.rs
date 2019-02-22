@@ -123,4 +123,13 @@ mod tests {
         let r = ResourceRef::with_extra("catalog", "movie", "top/лол.f", extra);
         assert_eq!(r, ResourceRef::from_str(&r.to_string()).unwrap());
     }
+
+    #[test]
+    fn compatible_with_js() {
+        let extra = &[("search".into(), "the office".into())];
+        assert_eq!(
+            "/catalog/series/top/search=the+office.json",
+            ResourceRef::with_extra("catalog", "series", "top", extra).to_string()
+        );
+    }
 }
