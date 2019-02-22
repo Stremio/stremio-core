@@ -109,12 +109,12 @@ pub struct Manifest {
     pub logo: Option<String>,
     pub background: Option<String>,
     pub resources: Vec<ManifestResource>,
-    pub types: Option<Vec<String>>,
+    pub types: Vec<String>,
     pub id_prefixes: Option<Vec<String>>,
-    // @TODO: more efficient data structure?
-    //pub behavior_hints: Vec<String>,
     #[serde(default)]
     pub catalogs: Vec<ManifestCatalog>,
+    // @TODO: more efficient data structure?
+    //pub behavior_hints: Vec<String>,
 }
 
 impl Manifest {
@@ -143,19 +143,17 @@ impl Manifest {
             Some(resource) => resource,
         };
         let types = match res {
-            ManifestResource::Short(_) => &self.types,
-            ManifestResource::Full { types, .. } => types,
+            ManifestResource::Short(_) => Some(&self.types),
+            ManifestResource::Full { types, .. } => types.as_ref(),
         };
         let id_prefixes = match res {
-            ManifestResource::Short(_) => &self.id_prefixes,
-            ManifestResource::Full { id_prefixes, .. } => id_prefixes,
+            ManifestResource::Short(_) => self.id_prefixes.as_ref(),
+            ManifestResource::Full { id_prefixes, .. } => id_prefixes.as_ref(),
         };
         // types MUST contain type_name
         // and if there is id_prefixes, our id should start with at least one of them
-        let is_types_match = types
-            .as_ref()
-            .map_or(false, |types| types.contains(type_name));
-        let is_id_match = id_prefixes.as_ref().map_or(true, |prefixes| {
+        let is_types_match = types.map_or(false, |types| types.contains(type_name));
+        let is_id_match = id_prefixes.map_or(true, |prefixes| {
             prefixes.iter().any(|pref| id.starts_with(pref))
         });
         is_types_match && is_id_match
