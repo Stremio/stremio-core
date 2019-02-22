@@ -9,6 +9,8 @@ pub struct MetaPreview {
     #[serde(default)]
     pub name: String,
     pub poster: Option<String>,
+    // @TODO maybe this should be an enum?
+    pub poster_shape: Option<String>,
 }
 
 // @TODO: should we derive Hash, Eq?
@@ -27,6 +29,7 @@ pub struct MetaItem {
     pub popularity: f64,
     pub description: Option<String>,
     pub release_info: Option<String>,
+    pub poster_shape: Option<String>,
     // @TODO: other
     // @TODO videos
     // @TODO crew
