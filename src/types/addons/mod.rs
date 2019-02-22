@@ -2,6 +2,7 @@ use serde_derive::*;
 use std::fmt;
 use url::form_urlencoded;
 use url::percent_encoding::{utf8_percent_encode, DEFAULT_ENCODE_SET};
+use std::str::FromStr;
 
 mod manifest;
 pub use self::manifest::*;
@@ -24,6 +25,7 @@ pub struct ResourceRef {
     pub id: String,
     pub extra: Extra,
 }
+// @TODO test going to string/from string
 impl fmt::Display for ResourceRef {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(
@@ -43,7 +45,26 @@ impl fmt::Display for ResourceRef {
         write!(f, ".json")
     }
 }
-// @TODO from String?
+pub enum ParseResourceErr {
+    DoesNotStartWithSlash,
+    InvalidLength(usize),
+}
+impl FromStr for ResourceRef {
+    type Err = ParseResourceErr; 
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        if !s.starts_with("/") {
+            return Err(ParseResourceErr::DoesNotStartWithSlash);
+        }
+        let components: Vec<&str> = s.split(',').skip(1).collect();
+        match components.len() {
+            // @TODO extra, utf8 percent decode
+            3 => Ok(ResourceRef{ resource: components[0].to_owned(), type_name: components[1].to_owned(), id: components[2].to_owned(), extra: vec![] }),
+            4 => Ok(ResourceRef{ resource: components[0].to_owned(), type_name: components[1].to_owned(), id: components[2].to_owned(), extra: vec![] }),
+            i => Err(ParseResourceErr::InvalidLength(i)),
+        }
+    }
+}
 
 pub type TransportUrl = String;
 #[derive(Debug, Deserialize, Serialize, Clone, PartialEq, Eq)]

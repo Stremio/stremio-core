@@ -84,11 +84,12 @@
 
 ## TODO
 
-* learn about error downcasting and how we can use it
 
 * AddonM: transport type recognizer
 * AddonM: legacy transport
 * Stream type
+
+* learn about error downcasting and how we can use it
 
 * UserM: `last_modified` for addons, and `upgrade`
 * UserM: plug in a built in addon (LibraryAddon)
