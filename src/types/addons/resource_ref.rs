@@ -2,7 +2,7 @@ use serde_derive::*;
 use std::fmt;
 use std::str::FromStr;
 use url::form_urlencoded;
-use url::percent_encoding::{utf8_percent_encode, percent_decode, PATH_SEGMENT_ENCODE_SET};
+use url::percent_encoding::{percent_decode, utf8_percent_encode, PATH_SEGMENT_ENCODE_SET};
 pub type Extra = Vec<(String, String)>;
 
 // ResourceRef is the type that represents a reference to a specific resource path
@@ -67,11 +67,7 @@ impl FromStr for ResourceRef {
         if !s.ends_with(".json") {
             return Err(ParseResourceErr::WrongSuffix);
         }
-        let components: Vec<&str> = s
-            .trim_end_matches(".json")
-            .split('/')
-            .skip(1)
-            .collect();
+        let components: Vec<&str> = s.trim_end_matches(".json").split('/').skip(1).collect();
         match components.len() {
             // @TODO extra, utf8 percent decode
             3 => Ok(ResourceRef {
@@ -91,7 +87,10 @@ impl FromStr for ResourceRef {
     }
 }
 fn parse_component(s: &str) -> Result<String, ParseResourceErr> {
-    Ok(percent_decode(s.as_bytes()).decode_utf8().map_err(|_| ParseResourceErr::DecodeErr)?.to_string())
+    Ok(percent_decode(s.as_bytes())
+        .decode_utf8()
+        .map_err(|_| ParseResourceErr::DecodeErr)?
+        .to_string())
 }
 
 #[cfg(test)]
@@ -106,6 +105,5 @@ mod tests {
     }
 
     #[test]
-    fn with_extra() {
-    }
+    fn with_extra() {}
 }
