@@ -62,12 +62,10 @@ pub enum ParseResourceErr {
     WrongSuffix,
     InvalidLength(usize),
     DecodeErr,
-    DecodeExtraErr,
 }
 impl FromStr for ResourceRef {
     type Err = ParseResourceErr;
 
-    // @TODO remove .json at the end
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         if !s.starts_with('/') {
             return Err(ParseResourceErr::WrongPrefix);
@@ -77,7 +75,6 @@ impl FromStr for ResourceRef {
         }
         let components: Vec<&str> = s.trim_end_matches(".json").split('/').skip(1).collect();
         match components.len() {
-            // @TODO extra, utf8 percent decode
             3 => Ok(ResourceRef {
                 resource: parse_component(components[0])?,
                 type_name: parse_component(components[1])?,
