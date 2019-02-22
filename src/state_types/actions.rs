@@ -6,7 +6,7 @@ use std::error::Error;
 #[serde(tag = "load", content = "args")]
 pub enum ActionLoad {
     // @TODO most of these values need content
-    CatalogGrouped { extra: Extra },
+    CatalogGrouped { extra: Vec<ExtraProp> },
     CatalogFiltered,
     Detail,
     Streams,

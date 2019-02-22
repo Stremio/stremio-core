@@ -3,7 +3,7 @@ use std::fmt;
 use std::str::FromStr;
 use url::form_urlencoded;
 use url::percent_encoding::{percent_decode, utf8_percent_encode, PATH_SEGMENT_ENCODE_SET};
-pub type Extra = Vec<(String, String)>;
+pub type ExtraProp = (String, String);
 
 // ResourceRef is the type that represents a reference to a specific resource path
 // in the addon system
@@ -14,7 +14,7 @@ pub struct ResourceRef {
     pub resource: String,
     pub type_name: String,
     pub id: String,
-    pub extra: Extra,
+    pub extra: Vec<ExtraProp>,
 }
 
 impl ResourceRef {
@@ -24,6 +24,14 @@ impl ResourceRef {
             type_name: type_name.to_owned(),
             id: id.to_owned(),
             extra: vec![],
+        }
+    }
+    pub fn with_extra(resource: &str, type_name: &str, id: &str, extra: &[ExtraProp]) -> Self {
+        ResourceRef {
+            resource: resource.to_owned(),
+            type_name: type_name.to_owned(),
+            id: id.to_owned(),
+            extra: extra.to_owned(),
         }
     }
 }
@@ -80,7 +88,9 @@ impl FromStr for ResourceRef {
                 resource: parse_component(components[0])?,
                 type_name: parse_component(components[1])?,
                 id: parse_component(components[2])?,
-                extra: vec![],
+                extra: form_urlencoded::parse(components[3].as_bytes())
+                    .into_owned()
+                    .collect(),
             }),
             i => Err(ParseResourceErr::InvalidLength(i)),
         }
@@ -99,11 +109,18 @@ mod tests {
 
     #[test]
     fn without_extra() {
-        // @TODO helper for this?
-        let r = ResourceRef::without_extra("catalog", "movie", "top/.f");
+        // We're using UTF8, slashes and dots in the ID to test if we're properly URL path encoding
+        let r = ResourceRef::without_extra("catalog", "movie", "top/лол/.f");
         assert_eq!(r, ResourceRef::from_str(&r.to_string()).unwrap());
     }
 
     #[test]
-    fn with_extra() {}
+    fn with_extra() {
+        let extra = &[
+            ("search".into(), "тест".into()),
+            ("another".into(), "/something/".into()),
+        ];
+        let r = ResourceRef::with_extra("catalog", "movie", "top/лол.f", extra);
+        assert_eq!(r, ResourceRef::from_str(&r.to_string()).unwrap());
+    }
 }

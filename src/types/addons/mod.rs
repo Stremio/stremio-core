@@ -44,7 +44,7 @@ pub enum ResourceResponse {
 #[derive(Debug, Clone)]
 pub enum AggrRequest {
     // @TODO should AllCatalogs have optional resource and type_name?
-    AllCatalogs { extra: Extra },
+    AllCatalogs { extra: Vec<ExtraProp> },
     AllOfResource(ResourceRef),
     FromAddon(ResourceRequest),
 }
