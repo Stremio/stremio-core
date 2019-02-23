@@ -75,19 +75,14 @@ impl FromStr for ResourceRef {
         }
         let components: Vec<&str> = s.trim_end_matches(".json").split('/').skip(1).collect();
         match components.len() {
-            3 => Ok(ResourceRef {
+            3 | 4 => Ok(ResourceRef {
                 resource: parse_component(components[0])?,
                 type_name: parse_component(components[1])?,
                 id: parse_component(components[2])?,
-                extra: vec![],
-            }),
-            4 => Ok(ResourceRef {
-                resource: parse_component(components[0])?,
-                type_name: parse_component(components[1])?,
-                id: parse_component(components[2])?,
-                extra: form_urlencoded::parse(components[3].as_bytes())
-                    .into_owned()
-                    .collect(),
+                extra: components
+                    .get(3)
+                    .map(|e| form_urlencoded::parse(e.as_bytes()).into_owned().collect())
+                    .unwrap_or_else(|| vec![]),
             }),
             i => Err(ParseResourceErr::InvalidLength(i)),
         }
