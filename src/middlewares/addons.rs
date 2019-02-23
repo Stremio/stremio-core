@@ -1,9 +1,9 @@
 use crate::state_types::*;
 use crate::types::*;
 use futures::{future, Future};
+use std::error::Error;
 use std::marker::PhantomData;
 use std::rc::Rc;
-use std::error::Error;
 
 // @TODO facilitate detect from URL (manifest)
 pub trait AddonTransport {
@@ -34,14 +34,17 @@ fn try_build_request(
     let url = if transport_url.ends_with(MANIFEST_PATH) {
         transport_url.replace(MANIFEST_PATH, &resource_ref.to_string())
     } else if transport_url.ends_with(LEGACY_PATH) {
-        format!("{}/{}", &transport_url, build_legacy_url_path(&resource_ref)?)
+        format!(
+            "{}/{}",
+            &transport_url,
+            build_legacy_url_path(&resource_ref)?
+        )
     } else {
         // @TODO better errors
-        return Err("invalid transport_url".into())
+        return Err("invalid transport_url".into());
     };
     // Building a request might fail, if the addon URL is malformed
-    Request::get(&url).body(())
-        .map_err(|e| e.into())
+    Request::get(&url).body(()).map_err(|e| e.into())
 }
 fn build_legacy_url_path(_resource_ref: &ResourceRef) -> Result<String, Box<dyn Error>> {
     Ok("".to_owned())
@@ -50,22 +53,6 @@ fn build_legacy_url_path(_resource_ref: &ResourceRef) -> Result<String, Box<dyn 
 #[derive(Default)]
 pub struct AddonsMiddleware<T: Environment> {
     pub env: PhantomData<T>,
-}
-impl<T: Environment> AddonsMiddleware<T> {
-    // @TODO loading URLs, collections, etc.
-    pub fn new() -> Self {
-        AddonsMiddleware { env: PhantomData }
-    }
-    fn for_request(&self, resource_req: ResourceRequest, emit: Rc<DispatcherFn>) {
-        let fut = AddonHTTPTransport::<T>::get(&resource_req).then(move |res| {
-            emit(&match res {
-                Ok(resp) => Action::AddonResponse(resource_req, Ok(*resp)),
-                Err(e) => Action::AddonResponse(resource_req, Err(e.to_string())),
-            });
-            future::ok(())
-        });
-        T::exec(Box::new(fut));
-    }
 }
 impl<T: Environment> Handler for AddonsMiddleware<T> {
     fn handle(&self, action: &Action, emit: Rc<DispatcherFn>) {
@@ -78,3 +65,21 @@ impl<T: Environment> Handler for AddonsMiddleware<T> {
         }
     }
 }
+impl<T: Environment> AddonsMiddleware<T> {
+    // @TODO loading URLs, collections, etc.
+    pub fn new() -> Self {
+        AddonsMiddleware { env: PhantomData }
+    }
+    fn for_request(&self, resource_req: ResourceRequest, emit: Rc<DispatcherFn>) {
+        // @TODO a bunch of transports, detect them here
+        let fut = AddonHTTPTransport::<T>::get(&resource_req).then(move |res| {
+            emit(&match res {
+                Ok(resp) => Action::AddonResponse(resource_req, Ok(*resp)),
+                Err(e) => Action::AddonResponse(resource_req, Err(e.to_string())),
+            });
+            future::ok(())
+        });
+        T::exec(Box::new(fut));
+    }
+}
+
