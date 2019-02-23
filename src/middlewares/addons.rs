@@ -3,29 +3,48 @@ use crate::types::*;
 use futures::{future, Future};
 use std::marker::PhantomData;
 use std::rc::Rc;
+use std::error::Error;
 
+// @TODO facilitate detect from URL (manifest)
 pub trait AddonTransport {
     fn get(resource_req: &ResourceRequest) -> EnvFuture<Box<ResourceResponse>>;
 }
 
+// @TODO move the trasnport out of here
+const MANIFEST_PATH: &str = "/manifest.json";
+const LEGACY_PATH: &str = "/stremio/v1";
 #[derive(Default)]
 pub struct AddonHTTPTransport<T: Environment> {
     pub env: PhantomData<T>,
 }
 impl<T: Environment> AddonTransport for AddonHTTPTransport<T> {
-    fn get(
-        ResourceRequest {
-            resource_ref,
-            transport_url,
-        }: &ResourceRequest,
-    ) -> EnvFuture<Box<ResourceResponse>> {
-        let url = transport_url.replace("/manifest.json", &resource_ref.to_string());
-        // Building a request might fail, if the addon URL is malformed
-        match Request::get(&url).body(()) {
+    fn get(resource_req: &ResourceRequest) -> EnvFuture<Box<ResourceResponse>> {
+        match try_build_request(resource_req) {
             Ok(req) => T::fetch_serde::<_, ResourceResponse>(req),
-            Err(e) => Box::new(future::err(e.into())),
+            Err(e) => Box::new(future::err(e)),
         }
     }
+}
+fn try_build_request(
+    ResourceRequest {
+        resource_ref,
+        transport_url,
+    }: &ResourceRequest,
+) -> Result<Request<()>, Box<dyn Error>> {
+    let url = if transport_url.ends_with(MANIFEST_PATH) {
+        transport_url.replace(MANIFEST_PATH, &resource_ref.to_string())
+    } else if transport_url.ends_with(LEGACY_PATH) {
+        format!("{}/{}", &transport_url, build_legacy_url_path(&resource_ref)?)
+    } else {
+        // @TODO better errors
+        return Err("invalid transport_url".into())
+    };
+    // Building a request might fail, if the addon URL is malformed
+    Request::get(&url).body(())
+        .map_err(|e| e.into())
+}
+fn build_legacy_url_path(_resource_ref: &ResourceRef) -> Result<String, Box<dyn Error>> {
+    Ok("".to_owned())
 }
 
 #[derive(Default)]

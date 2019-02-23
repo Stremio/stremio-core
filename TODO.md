@@ -82,11 +82,13 @@
 * architecturally, can we get away with not contacting the streming server in the state container?; YES, and we should; server should be contacted by the players and settings UI only
 * bug: manifest.resources loses it's properties when serialized/deserialized; shorthand should always be serialized as shorthand
 
-## TODO
 
+
+## TODO
 
 * AddonM: transport type recognizer
 * AddonM: legacy transport
+
 * Stream type
 
 * learn about error downcasting and how we can use it
@@ -139,7 +141,6 @@
 * player: we migh benefit from refactoring the save/load stuff from userM into memoizedStorageSlot and using that
 * ensure environment caches are in place via the service worker (web)
 * spec: notifItems: rethink that spec, crystallize it
-
 
 * consider: flag `is_in_lib` for catalog items; could just work for Discover by having another CatlaogFiltered showing ("meta", type, id) from the lib addon
 * https://github.com/woboq/qmetaobject-rs based UI; needs reqwest (or someting else) async requests
