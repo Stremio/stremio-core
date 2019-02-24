@@ -81,7 +81,7 @@
 * environment: consider allowing a dynamic instance, esp for storage; RESOLVED: No; everything can be done statically
 * architecturally, can we get away with not contacting the streming server in the state container?; YES, and we should; server should be contacted by the players and settings UI only
 * bug: manifest.resources loses it's properties when serialized/deserialized; shorthand should always be serialized as shorthand
-
+* refactor: mod.rs on `state_types` and types shouldn't glob export everything
 
 
 ## TODO
@@ -91,7 +91,6 @@
 * AddonM: AddonTransport trait, .get(), .manifest(); http addons will be constructed with a URL, while lib/notif addon directly as something that implements AddonTransport
 
 * start doing documentation comments
-* refactor: mod.rs on `state_types` and types shouldn't glob export everything
 
 * Stream type
 
