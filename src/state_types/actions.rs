@@ -1,4 +1,5 @@
-use crate::types::*;
+use crate::types::addons::*;
+use crate::types::api::*;
 use serde_derive::*;
 use std::error::Error;
 

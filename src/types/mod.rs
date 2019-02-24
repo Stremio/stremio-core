@@ -1,8 +1,5 @@
-mod addons;
-pub use self::addons::*;
-
-mod api;
-pub use self::api::*;
+pub mod addons;
+pub mod api;
 
 mod meta_item;
 pub use self::meta_item::*;

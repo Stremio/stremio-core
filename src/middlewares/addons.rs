@@ -1,5 +1,5 @@
 use crate::state_types::*;
-use crate::types::*;
+use crate::types::addons::*;
 use futures::{future, Future};
 use std::error::Error;
 use std::marker::PhantomData;
@@ -49,11 +49,11 @@ fn try_build_request(
 }
 fn build_legacy_url_path(resource_ref: &ResourceRef) -> Result<String, Box<dyn Error>> {
     match &resource_ref.resource as &str {
-        "catalog" => {},
-        "meta" => {},
-        "streams" => {},
+        "catalog" => {}
+        "meta" => {}
+        "streams" => {}
         // @TODO better error
-        _ => return Err("legacy transport: unsupported resource".into())
+        _ => return Err("legacy transport: unsupported resource".into()),
     }
     Ok("".to_owned())
 }
@@ -90,4 +90,3 @@ impl<T: Environment> AddonsMiddleware<T> {
         T::exec(Box::new(fut));
     }
 }
-

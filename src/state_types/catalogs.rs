@@ -1,5 +1,6 @@
 use super::actions::*;
-use crate::types::*;
+use crate::types::addons::*;
+use crate::types::MetaPreview;
 use serde_derive::*;
 use std::rc::Rc;
 

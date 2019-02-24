@@ -1,5 +1,6 @@
 use crate::state_types::*;
-use crate::types::*;
+use crate::types::addons::*;
+use crate::types::api::*;
 use enclose::*;
 use futures::{future, Future};
 use lazy_static::*;
