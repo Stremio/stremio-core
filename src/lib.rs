@@ -4,9 +4,8 @@ pub mod types;
 
 #[cfg(test)]
 mod tests {
-    use self::middlewares::*;
-    use self::state_types::*;
-    use super::*;
+    use crate::middlewares::*;
+    use crate::state_types::*;
     use enclose::*;
     use futures::future::lazy;
     use futures::{future, Future};

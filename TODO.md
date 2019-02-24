@@ -88,6 +88,10 @@
 
 * AddonM: transport type recognizer
 * AddonM: legacy transport
+* AddonM: AddonTransport trait, .get(), .manifest(); http addons will be constructed with a URL, while lib/notif addon directly as something that implements AddonTransport
+
+* start doing documentation comments
+* refactor: mod.rs on `state_types` and types shouldn't glob export everything
 
 * Stream type
 
@@ -96,7 +100,6 @@
 * UserM: `last_modified` for addons, and `upgrade`
 * UserM: plug in a built in addon (LibraryAddon)
 
-* AddonM: AddonTransport trait, .get(), .manifest(); http addons will be constructed with a URL, while lib/notif addon directly as something that implements AddonTransport
 * addon catalog reducer, actions; handle loading collections in the addonM
 * AddonM: caching: statefulness can be mitigated by using a memoization where the addon transport `get` would return the same results if invoked with the same args again; however, this needs to be out of the transport impl and needs to be explicit
 * UserM: mock storage and tests
@@ -117,7 +120,6 @@
 
 * environment implementations: return an error related to the HTTP status code, if it's not 200
 
-* refactor: mod.rs on `state_types` and types shouldn't glob export everything
 
 * document loopback actions (implicit input): `AddonsChanged->PushAddons` (if there's a conn), (as a result of Open) `ProposeLoad -> Load`; `ProposeWatchNext -> Open`
 
@@ -163,7 +165,7 @@
 * https://llogiq.github.io/2017/06/01/perf-pitfalls.html if we ever nede optimizations; we do `to_owned` quite a lot, maybe some of those can be avoided; `Cow<>` sounds good too for large collections and etc.
 
 
-work estimation, hours: 24, userM; 12, addonM + transport, 4 legacy transport, 8 refactors, 3 catalogFiltered, 6 detail/streamselect, 24 lib/notif addon, 8 playerM, 8 open, 8 openMedia, 12 others, 10 tests: 127 = 13 weekends assumming 10 hours per weekend = 6 weeks
+work estimation, hours: 24 userM, 12 addonM + transport, 4 legacy transport, 8 refactors, 3 catalogFiltered, 6 detail/streamselect, 24 lib/notif addon, 8 playerM, 8 open, 8 openMedia, 12 others, 10 tests: 127 = 13 weekends assumming 10 hours per weekend = 6 weeks
 
 example pipeline:
 LoadCatalogs => this will change the state of the `catalogs` to `Loading`

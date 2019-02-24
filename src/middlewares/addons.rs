@@ -10,7 +10,8 @@ pub trait AddonTransport {
     fn get(resource_req: &ResourceRequest) -> EnvFuture<Box<ResourceResponse>>;
 }
 
-// @TODO move the trasnport out of here
+// @TODO move the transport out of here
+// @TODO multi-transports, detection
 const MANIFEST_PATH: &str = "/manifest.json";
 const LEGACY_PATH: &str = "/stremio/v1";
 #[derive(Default)]
@@ -46,7 +47,14 @@ fn try_build_request(
     // Building a request might fail, if the addon URL is malformed
     Request::get(&url).body(()).map_err(|e| e.into())
 }
-fn build_legacy_url_path(_resource_ref: &ResourceRef) -> Result<String, Box<dyn Error>> {
+fn build_legacy_url_path(resource_ref: &ResourceRef) -> Result<String, Box<dyn Error>> {
+    match &resource_ref.resource as &str {
+        "catalog" => {},
+        "meta" => {},
+        "streams" => {},
+        // @TODO better error
+        _ => return Err("legacy transport: unsupported resource".into())
+    }
     Ok("".to_owned())
 }
 
