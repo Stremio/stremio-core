@@ -49,10 +49,11 @@ impl APIRequest {
 //
 // Responses
 //
-// @TODO type of error?
+// @TODO perhaps we can translate this u64 to an enum
 #[derive(Deserialize, Serialize, Clone, Debug)]
 pub struct APIErr {
     pub message: String,
+    pub code: u64,
 }
 
 #[derive(Serialize, Deserialize)]
