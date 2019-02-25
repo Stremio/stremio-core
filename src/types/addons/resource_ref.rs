@@ -118,9 +118,12 @@ mod tests {
 
     #[test]
     fn compatible_with_js() {
-        let extra = &[("search".into(), "the office".into())];
+        let extra = &[
+            ("search".into(), "the office".into()),
+            ("foo".into(), "bar".into())
+        ];
         assert_eq!(
-            "/catalog/series/top/search=the+office.json",
+            "/catalog/series/top/search=the+office&foo=bar.json",
             ResourceRef::with_extra("catalog", "series", "top", extra).to_string()
         );
     }
