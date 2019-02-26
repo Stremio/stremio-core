@@ -213,6 +213,14 @@ PlayerCommand
 
 It will persist settings in storage
 
+
+figure out whether we need a settings container/middleware in stremio-state-ng; check list of settings, check which ones are user synced
+	think which ones can actually be storred as addon flags
+	ensure there's a simple, usable and global pattern for settings
+	also think about which ones have to be applied in the state container itself
+	https://github.com/Stremio/labs/issues/20
+
+
 ## User middleware:
 ...
 
@@ -276,6 +284,24 @@ for player messages, it would be very nice if we had some identifier of the curr
 Please note, there'd be no player reducer for now, as all of the state updates come in the form of player `propValue` or `propChanged` actions, which is very simple to reduce
 
 all of the state: PlayerImplInstance, PlayerPreferences, ItemId/VideoId/MetaDetailed/StreamId
+
+figure out state container + player impl + subtitles hash
+	can be done by the player impl emitting an event for playback started with extra optional prop `opensubHash`
+
+### More thoughts on Player
+
+It will be very stateful, so it should be named Actor perhaps?
+
+It will "enclose" the player implementation, sending all control msgs into it and taking all observe messages along the chain
+
+It’s job will be to load the library item, mutate it as the player advances; when the player starts playing it should request subtitles from the addon system (for this, it should keep a copy from all subtitle addons that’s changed on every LoadWithUser(Player...)) ) and do addExtraSubtitles and perhaps set selected subtitles when applying PlayerPreferences; 
+Call addExtraSubtiles with a concatted result from each addon; the result actually starts with the `stream.subtitles` (if any) 
+
+It should also mutate and persist PlayerPreferences itself
+
+Also the Load actions that are translated to Aggr requests will be responsible for loading the meta when the player loads 
+
+Since it knows the current library item, it can also attach a “session ID” to player messages are they’re passed along; this could be used in the reducers to prevent races 
 
 ## Library/Notifications middleware:
 
