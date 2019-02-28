@@ -111,32 +111,41 @@ mod tests {
 
     #[test]
     fn is_extra_supported_short() {
+        let foo = [("foo".into(), "".into())];
+        let bar = [("bar".into(), "".into())];
         let catalog = get_catalog(ManifestExtra::Short {
             required: vec![],
             supported: vec!["foo".into()],
         });
+        // "foo" is optional - so it's ok not to pass it
         assert!(catalog.is_extra_supported(&[]));
-        assert!(catalog.is_extra_supported(&[("foo".into(), "".into())]));
-        assert!(!catalog.is_extra_supported(&[("bar".into(), "".into())]));
+        assert!(catalog.is_extra_supported(&foo));
+        // but "bar" isn't even supported
+        assert!(!catalog.is_extra_supported(&bar));
         let catalog = get_catalog(ManifestExtra::Short {
             required: vec!["foo".into()],
             supported: vec!["foo".into()],
         });
+        // now we've made "foo" required
         assert!(!catalog.is_extra_supported(&[]));
-        assert!(catalog.is_extra_supported(&[("foo".into(), "".into())]));
+        assert!(catalog.is_extra_supported(&foo));
     }
 
     #[test]
     fn is_extra_supported_full() {
+        let foo = [("foo".into(), "".into())];
+        let bar = [("bar".into(), "".into())];
         let catalog = get_catalog(ManifestExtra::Full {
             props: vec![ManifestExtraProp {
                 name: "foo".into(),
                 ..Default::default()
             }],
         });
+        // "foo" is optional - so it's ok not to pass it
         assert!(catalog.is_extra_supported(&[]));
-        assert!(catalog.is_extra_supported(&[("foo".into(), "".into())]));
-        assert!(!catalog.is_extra_supported(&[("bar".into(), "".into())]));
+        assert!(catalog.is_extra_supported(&foo));
+        // but "bar" isn't even supported
+        assert!(!catalog.is_extra_supported(&bar));
         let catalog = get_catalog(ManifestExtra::Full {
             props: vec![ManifestExtraProp {
                 name: "foo".into(),
@@ -144,7 +153,8 @@ mod tests {
                 ..Default::default()
             }],
         });
+        // now we've made "foo" required
         assert!(!catalog.is_extra_supported(&[]));
-        assert!(catalog.is_extra_supported(&[("foo".into(), "".into())]));
+        assert!(catalog.is_extra_supported(&foo));
     }
 }
