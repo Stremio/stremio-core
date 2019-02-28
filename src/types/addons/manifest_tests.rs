@@ -2,7 +2,9 @@
 mod tests {
     // @TODO manifest with ManifestResource::Full
     // @TODO is_extra_supported
-    use super::super::{Manifest, ManifestResource, ResourceRef};
+    use super::super::{
+        Manifest, ManifestCatalog, ManifestExtra, ManifestExtraProp, ManifestResource, ResourceRef,
+    };
 
     fn sample_manifest(
         resources: Vec<ManifestResource>,
@@ -24,6 +26,7 @@ mod tests {
 
     #[test]
     fn is_supported_short() {
+        // without id_prefixes - should only match on resources and types
         let manifest = sample_manifest(vec![ManifestResource::Short("stream".into())], None);
         assert_eq!(
             manifest.is_supported(&ResourceRef::without_extra("catalog", "movie", "something")),
@@ -37,6 +40,7 @@ mod tests {
             manifest.is_supported(&ResourceRef::without_extra("stream", "movie", "something")),
             true
         );
+        // test id_prefixes
         let manifest = sample_manifest(
             vec![ManifestResource::Short("stream".into())],
             Some(vec!["tt".into(), "kek".into()]),
@@ -96,4 +100,51 @@ mod tests {
         );
     }
 
+    fn get_catalog(extra: ManifestExtra) -> ManifestCatalog {
+        ManifestCatalog {
+            type_name: "movie".into(),
+            id: "top".into(),
+            name: None,
+            extra,
+        }
+    }
+
+    #[test]
+    fn is_extra_supported_short() {
+        let catalog = get_catalog(ManifestExtra::Short {
+            required: vec![],
+            supported: vec!["foo".into()],
+        });
+        assert!(catalog.is_extra_supported(&[]));
+        assert!(catalog.is_extra_supported(&[("foo".into(), "".into())]));
+        assert!(!catalog.is_extra_supported(&[("bar".into(), "".into())]));
+        let catalog = get_catalog(ManifestExtra::Short {
+            required: vec!["foo".into()],
+            supported: vec!["foo".into()],
+        });
+        assert!(!catalog.is_extra_supported(&[]));
+        assert!(catalog.is_extra_supported(&[("foo".into(), "".into())]));
+    }
+
+    #[test]
+    fn is_extra_supported_full() {
+        let catalog = get_catalog(ManifestExtra::Full {
+            props: vec![ManifestExtraProp {
+                name: "foo".into(),
+                ..Default::default()
+            }],
+        });
+        assert!(catalog.is_extra_supported(&[]));
+        assert!(catalog.is_extra_supported(&[("foo".into(), "".into())]));
+        assert!(!catalog.is_extra_supported(&[("bar".into(), "".into())]));
+        let catalog = get_catalog(ManifestExtra::Full {
+            props: vec![ManifestExtraProp {
+                name: "foo".into(),
+                is_required: true,
+                ..Default::default()
+            }],
+        });
+        assert!(!catalog.is_extra_supported(&[]));
+        assert!(catalog.is_extra_supported(&[("foo".into(), "".into())]));
+    }
 }

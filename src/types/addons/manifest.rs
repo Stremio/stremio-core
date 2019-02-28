@@ -27,21 +27,21 @@ impl ManifestResource {
 // Extra descriptors
 // those define the extra properties that may be passed for a catalog
 #[derive(Debug, Clone, PartialEq, Deserialize, Serialize)]
-struct OptionsLimit(u32);
+pub struct OptionsLimit(u32);
 impl Default for OptionsLimit {
     fn default() -> OptionsLimit {
         OptionsLimit(1)
     }
 }
-#[derive(Debug, PartialEq, Clone, Deserialize, Serialize)]
+#[derive(Debug, PartialEq, Clone, Deserialize, Serialize, Default)]
 #[serde(rename_all = "camelCase")]
 pub struct ManifestExtraProp {
-    name: String,
+    pub name: String,
     #[serde(default)]
-    is_required: bool,
-    options: Option<Vec<String>>,
+    pub is_required: bool,
+    pub options: Option<Vec<String>>,
     #[serde(default)]
-    options_limit: OptionsLimit,
+    pub options_limit: OptionsLimit,
 }
 #[derive(Debug, PartialEq, Clone, Deserialize, Serialize)]
 #[serde(untagged)]
