@@ -159,3 +159,63 @@ impl Manifest {
         is_types_match && is_id_match
     }
 }
+
+#[cfg(test)]
+mod test {
+    use super::{Manifest, ManifestResource, ResourceRef};
+
+    fn sample_manifest(
+        resources: Vec<ManifestResource>,
+        id_prefixes: Option<Vec<String>>,
+    ) -> Manifest {
+        Manifest {
+            id: "org.test".into(),
+            name: "test".into(),
+            version: semver::Version::new(1, 0, 0),
+            resources,
+            types: vec!["movie".into()],
+            catalogs: vec![],
+            background: None,
+            logo: None,
+            id_prefixes,
+            description: None,
+        }
+    }
+
+    #[test]
+    fn is_supported_short() {
+        let manifest = sample_manifest(vec![ManifestResource::Short("stream".into())], None);
+        assert_eq!(
+            manifest.is_supported(&ResourceRef::without_extra("catalog", "movie", "something")),
+            false
+        );
+        assert_eq!(
+            manifest.is_supported(&ResourceRef::without_extra("stream", "series", "something")),
+            false
+        );
+        assert_eq!(
+            manifest.is_supported(&ResourceRef::without_extra("stream", "movie", "something")),
+            true
+        );
+        let manifest = sample_manifest(
+            vec![ManifestResource::Short("stream".into())],
+            Some(vec!["tt".into(), "kek".into()]),
+        );
+        assert_eq!(
+            manifest.is_supported(&ResourceRef::without_extra("stream", "movie", "something")),
+            false
+        );
+        assert_eq!(
+            manifest.is_supported(&ResourceRef::without_extra("stream", "movie", "tt2314")),
+            true
+        );
+        assert_eq!(
+            manifest.is_supported(&ResourceRef::without_extra(
+                "stream",
+                "movie",
+                "keksomething"
+            )),
+            true
+        );
+    }
+}

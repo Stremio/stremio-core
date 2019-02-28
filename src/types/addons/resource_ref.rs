@@ -120,7 +120,7 @@ mod tests {
     fn compatible_with_js() {
         let extra = &[
             ("search".into(), "the office".into()),
-            ("foo".into(), "bar".into())
+            ("foo".into(), "bar".into()),
         ];
         assert_eq!(
             "/catalog/series/top/search=the+office&foo=bar.json",

@@ -120,7 +120,7 @@
 * environment implementations: return an error related to the HTTP status code, if it's not 200
 
 
-* document loopback actions (implicit input): `AddonsChanged->PushAddons` (if there's a conn), (as a result of Open) `ProposeLoad -> Load`; `ProposeWatchNext -> Open`
+* document loopback actions (implicit input): `AddonsChanged->PushAddons` (if there's a conn), (as a result of Open) `ProposeLoad -> Load`; `ProposeWatchNext -> Open`; also those that are results of OpenMedia, InstallAndOpenAddon
 
 * implement CatalogsFiltered
 
@@ -129,6 +129,7 @@
 * environment: the JS side should (1) TRY to load the WASM and (2) TRY to sanity-check the environment; if it doesn't succeed, it should show an error to the user
 * design flaw: the player is supposed to get the URL to the video itself (from Stream), but then it needs to pull /subtitles/ from the addon system; could be done by wrapping some messages in the state container, but maybe there's a better way?
 * complex async pieces of logic: open, detectFromURL, openMedia; those should be a middleware or just separate async functions; detectFromURL/openMedia are user-agnostic, but open is not; if it's an async function used internally by the middleware, it's still OK cause we won't make the stream requests again if we go to the UI (cause of the memoization)
+* ?addonOpen/InstallAndOpenAddon: another async action
 * opening a file (protocol add-ons to be considered)
 * crates: stremio-web-environment (only the Environment), stremio-state-ng-web (general API that is exported to JS via bindgen)
 * we should make it so that if a session is expired, we go to the login screen; this should be in the app
@@ -157,6 +158,7 @@
 * JS Side: All errors or warnings that come as actions should be reported to sentry
 * more manual/automated tests: ensure that when UserMiddlewareFatal happens, it is reported
 * fuzzing all addons: load all addons (addonscollection, addonsofficialcollection), request all catalogs, then all metas and then all streams; that way, we find if anything returned by the addons is unserializable by the types crate
+* Discover UI: if we've opened an addon that is not installed, there should be an "This addon is not installed. Install now?" notification on top
 
 * BACKEND: notifitem generation needs to be reduced (10 per item, max ~300)
 * lib/notif addon: gzip everything?
