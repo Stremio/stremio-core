@@ -27,10 +27,6 @@ pub struct ResourceRequest {
 pub enum ResourceResponse {
     Metas {
         metas: Vec<MetaPreview>,
-        #[serde(default)]
-        skip: u32,
-        #[serde(default)]
-        has_more: bool,
     },
     Meta {
         // NOTE: we are not putting this in Option<>, since that way it gives us a valid
