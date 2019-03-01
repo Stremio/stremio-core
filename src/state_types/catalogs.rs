@@ -14,6 +14,14 @@ pub enum Loadable<R, M> {
     Ready(R),
     Message(M),
 }
+impl<R, M> Loadable<R, M> {
+    pub fn is_ready(&self) -> bool {
+        match self {
+            Loadable::Ready(_) => true,
+            _ => false,
+        }
+    }
+}
 
 // @TODO better type for Message
 pub type Message = String;

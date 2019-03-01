@@ -55,6 +55,7 @@ mod tests {
         // since this is after the .run() has ended, it will be OK
         let state = container_ref.borrow().get_state().to_owned();
         assert_eq!(state.groups.len(), 6, "groups is the right length");
+        assert!(state.groups[0].1.is_ready());
         for g in state.groups.iter() {
             assert!(
                 match g.1 {
@@ -72,7 +73,7 @@ mod tests {
                 false
             }
         }) {
-            panic!("there are no items that are Ready in state {:?}", state);
+            panic!("there are no items that are Ready {:?}", state);
         }
 
         // Now try the same, but with Search
