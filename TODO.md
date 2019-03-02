@@ -82,6 +82,8 @@
 * architecturally, can we get away with not contacting the streming server in the state container?; YES, and we should; server should be contacted by the players and settings UI only
 * bug: manifest.resources loses it's properties when serialized/deserialized; shorthand should always be serialized as shorthand
 * refactor: mod.rs on `state_types` and types shouldn't glob export everything
+* learn about error downcasting and how we can use it
+* decide on all the settings: which ones are kept where
 
 
 ## TODO
@@ -90,13 +92,14 @@
 * AddonM: legacy transport
 * AddonM: AddonTransport trait, .get(), .manifest(); http addons will be constructed with a URL, while lib/notif addon directly as something that implements AddonTransport
 
+* UserM: `last_modified` for addons, prevent race conditions by updating `last_modified` each time we modify; consider sequence numbers too
+* UserM: upgrade addons when doing the first pull
+
+
 * start doing documentation comments
 
 * Stream type
 
-* learn about error downcasting and how we can use it
-
-* UserM: `last_modified` for addons, and `upgrade`
 * UserM: plug in a built in addon (LibraryAddon)
 
 * addon catalog reducer, actions; handle loading collections in the addonM
@@ -221,6 +224,39 @@ figure out whether we need a settings container/middleware in stremio-state-ng; 
 	ensure there's a simple, usable and global pattern for settings
 	also think about which ones have to be applied in the state container itself
 	https://github.com/Stremio/labs/issues/20
+
+### All Settings:
+
+Settings can be stored in 4 places: localStorage, user, addonCollection, server
+
+language: currently user, considering localStorage
+autoplay_next_video: localStorage
+
+player_mpv_hwdec: localStorage
+player_mpv_cache_size: localStorage
+player_esc_exits_fullscreen: localStorage
+player_pause_on_minimize: localStorage
+player_separate_window: localStorage
+player_use_external: localStorage
+
+player_default_external: localStorage; consider introducing a new setings location "shell", and store this one there
+
+server_cache_location: server
+server_cache_size: server
+server_torrent_profile: server
+
+server_fallback_url: localStorage
+
+show_ep_synnopsis: localStorage; could be addonCollection (cinemeta flag)
+subtitles_language: localStorage
+subtitles_size: localStorage
+subtitles_fgcolor: localStorage
+subtitles_outline_color: localStorage
+subtitles_background: localStorage
+
+autoplay_addon: addonCollection: this will be an `autoplay` flag for each addon in the collection; that, combined with the order of the addons in the collection, will determine autoplay behavior; the flag may contain details, such as `{ onlyGroups: ["hd"] }` (more about groups: https://github.com/Stremio/stremio/issues/524)
+
+Notifications will be handled through the User Panel
 
 
 ## User middleware:
