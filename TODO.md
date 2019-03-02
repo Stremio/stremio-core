@@ -97,7 +97,6 @@
 
 * start doing documentation comments
 
-* refactor: separate crates: types, `state_types`
 
 * Stream type
 
@@ -124,10 +123,11 @@
 
 * environment implementations: return an error related to the HTTP status code, if it's not 200
 
-
 * document loopback actions (implicit input): `AddonsChanged->PushAddons` (if there's a conn), (as a result of Open) `ProposeLoad -> Load`; `ProposeWatchNext -> Open`; also those that are results of OpenMedia, InstallAndOpenAddon
 
 * implement CatalogsFiltered
+
+* refactor: separate crates: types, `state_types`
 
 * Trait for meta item and lib item; MetaPreview, MetaItem, MetaDetailed
 * stuff to look for to be re-implemented: syncer, libitem/notifitem addons, discover ctrl, board ctrl, detail ctrl

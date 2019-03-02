@@ -1,3 +1,4 @@
+pub mod addon_transport;
 pub mod middlewares;
 pub mod state_types;
 pub mod types;
