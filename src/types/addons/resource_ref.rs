@@ -34,6 +34,12 @@ impl ResourceRef {
             extra: extra.to_owned(),
         }
     }
+    pub fn get_extra_first(&self, key: &str) -> Option<&str> {
+        self.extra
+            .iter()
+            .find(|(k, _)| k == key)
+            .map(|(_, v)| v as &str)
+    }
 }
 
 impl fmt::Display for ResourceRef {
@@ -126,5 +132,16 @@ mod tests {
             "/catalog/series/top/search=the+office&foo=bar.json",
             ResourceRef::with_extra("catalog", "series", "top", extra).to_string()
         );
+    }
+
+    #[test]
+    fn get_extra_first() {
+        let extra = &[
+            ("search".into(), "the office".into()),
+            ("foo".into(), "bar".into()),
+            ("foo".into(), "test".into()),
+        ];
+        let r = ResourceRef::with_extra("catalog", "series", "top", extra);
+        assert_eq!(r.get_extra_first("foo"), Some("bar"));
     }
 }

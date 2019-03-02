@@ -90,6 +90,7 @@
 
 * AddonM: transport type recognizer
 * AddonM: legacy transport
+* legacy transport: (and all transports): manifest retrieval
 * AddonM: AddonTransport trait, .get(), .manifest(); http addons will be constructed with a URL, while lib/notif addon directly as something that implements AddonTransport
 
 * UserM: `last_modified` for addons, prevent race conditions by updating `last_modified` each time we modify; consider sequence numbers too
