@@ -34,7 +34,7 @@ impl ResourceRef {
             extra: extra.to_owned(),
         }
     }
-    pub fn get_extra_first(&self, key: &str) -> Option<&str> {
+    pub fn get_extra_first_val(&self, key: &str) -> Option<&str> {
         self.extra
             .iter()
             .find(|(k, _)| k == key)
@@ -135,13 +135,13 @@ mod tests {
     }
 
     #[test]
-    fn get_extra_first() {
+    fn get_extra_first_val() {
         let extra = &[
             ("search".into(), "the office".into()),
             ("foo".into(), "bar".into()),
             ("foo".into(), "test".into()),
         ];
         let r = ResourceRef::with_extra("catalog", "series", "top", extra);
-        assert_eq!(r.get_extra_first("foo"), Some("bar"));
+        assert_eq!(r.get_extra_first_val("foo"), Some("bar"));
     }
 }
