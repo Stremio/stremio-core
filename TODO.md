@@ -84,7 +84,7 @@
 * refactor: mod.rs on `state_types` and types shouldn't glob export everything
 * learn about error downcasting and how we can use it
 * decide on all the settings: which ones are kept where
-
+* design flaw: the player is supposed to get the URL to the video itself (from Stream), but then it needs to pull /subtitles/ from the addon system; could be done by wrapping some messages in the state container, but maybe there's a better way? - WILL BE done through an event for playback started emitted by the implementation, that contains an `opensubHash`
 
 ## TODO
 
@@ -95,8 +95,9 @@
 * UserM: `last_modified` for addons, prevent race conditions by updating `last_modified` each time we modify; consider sequence numbers too
 * UserM: upgrade addons when doing the first pull
 
-
 * start doing documentation comments
+
+* refactor: separate crates: types, `state_types`
 
 * Stream type
 
@@ -131,7 +132,6 @@
 * Trait for meta item and lib item; MetaPreview, MetaItem, MetaDetailed
 * stuff to look for to be re-implemented: syncer, libitem/notifitem addons, discover ctrl, board ctrl, detail ctrl
 * environment: the JS side should (1) TRY to load the WASM and (2) TRY to sanity-check the environment; if it doesn't succeed, it should show an error to the user
-* design flaw: the player is supposed to get the URL to the video itself (from Stream), but then it needs to pull /subtitles/ from the addon system; could be done by wrapping some messages in the state container, but maybe there's a better way?
 * complex async pieces of logic: open, detectFromURL, openMedia; those should be a middleware or just separate async functions; detectFromURL/openMedia are user-agnostic, but open is not; if it's an async function used internally by the middleware, it's still OK cause we won't make the stream requests again if we go to the UI (cause of the memoization)
 * ?addonOpen/InstallAndOpenAddon: another async action
 * opening a file (protocol add-ons to be considered)
@@ -139,7 +139,6 @@
 * we should make it so that if a session is expired, we go to the login screen; this should be in the app
 * think of how to do all edge cases in the user, such as pre-installing add-ons (implicit input)
 * behaviorHints - pair (key, val)?
-* refactor: separate crates: types, `state_types`
 * environment (web): separate crate, also can we avoid the double deserialization on `fetch_serde`?
 * when playing AND when opening the detail page, we should augment the libItem with meta if it's not already (trigger the updateLibItem action only if this would actually change the libitem)
 * when saving the last stream, save the whole object but compressed
@@ -233,11 +232,11 @@ Settings can be stored in 4 places: localStorage, user, addonCollection, server
 language: currently user, considering localStorage
 autoplay_next_video: localStorage
 
-player_mpv_hwdec: localStorage
-player_mpv_cache_size: localStorage
+player_mpv_hwdec: localStorage; considering Shell
+player_mpv_cache_size: localStorage; considering Shell
+player_mpv_separate_window: localStorage; considering Shell
 player_esc_exits_fullscreen: localStorage
 player_pause_on_minimize: localStorage
-player_separate_window: localStorage
 player_use_external: localStorage
 
 player_default_external: localStorage; consider introducing a new setings location "shell", and store this one there
@@ -324,7 +323,7 @@ Please note, there'd be no player reducer for now, as all of the state updates c
 
 all of the state: PlayerImplInstance, PlayerPreferences, ItemId/VideoId/MetaDetailed/StreamId
 
-figure out state container + player impl + subtitles hash
+figure out state container + player impl + subtitles hash (requesting /subtitles)
 	can be done by the player impl emitting an event for playback started with extra optional prop `opensubHash`
 
 ### More thoughts on Player
