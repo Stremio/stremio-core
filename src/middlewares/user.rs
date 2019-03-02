@@ -6,7 +6,9 @@ use futures::{future, Future};
 use lazy_static::*;
 use serde::de::DeserializeOwned;
 use serde_derive::*;
+use std::borrow::ToOwned;
 use std::cell::RefCell;
+use std::convert::Into;
 use std::marker::PhantomData;
 use std::rc::Rc;
 
@@ -42,7 +44,7 @@ impl UserStorage {
         Some(&self.auth.as_ref()?.key)
     }
     fn action_to_request(&self, action: &ActionUser) -> Option<APIRequest> {
-        let key = self.get_auth_key().map(|k| k.to_owned());
+        let key = self.get_auth_key().map(ToOwned::to_owned);
         Some(match action.to_owned() {
             ActionUser::Login { email, password } => APIRequest::Login { email, password },
             ActionUser::Register { email, password } => APIRequest::Register { email, password },
@@ -92,12 +94,12 @@ impl<T: Environment> UserMiddleware<T> {
                 let _ = state.replace(Some(ud.to_owned()));
                 future::ok(ud)
             })
-            .map_err(|e| e.into());
+            .map_err(Into::into);
         Box::new(fut)
     }
 
     fn save(state: UserStorageHolder, new_user_data: UserStorage) -> MiddlewareFuture<()> {
-        let fut = T::set_storage(USER_DATA_KEY, Some(&new_user_data)).map_err(|e| e.into());
+        let fut = T::set_storage(USER_DATA_KEY, Some(&new_user_data)).map_err(Into::into);
         state.replace(Some(new_user_data));
         Box::new(fut)
     }
@@ -140,7 +142,7 @@ impl<T: Environment> UserMiddleware<T> {
         };
 
         let fut = T::fetch_serde::<_, APIResult<OUT>>(req)
-            .map_err(|e| e.into())
+            .map_err(Into::into)
             .and_then(|result| match *result {
                 APIResult::Err { error } => future::err(error.into()),
                 APIResult::Ok { result } => future::ok(result),

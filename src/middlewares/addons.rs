@@ -1,6 +1,7 @@
 use crate::state_types::*;
 use crate::types::addons::*;
 use futures::{future, Future};
+use std::convert::Into;
 use std::error::Error;
 use std::marker::PhantomData;
 use std::rc::Rc;
@@ -45,7 +46,7 @@ fn try_build_request(
         return Err("invalid transport_url".into());
     };
     // Building a request might fail, if the addon URL is malformed
-    Request::get(&url).body(()).map_err(|e| e.into())
+    Request::get(&url).body(()).map_err(Into::into)
 }
 fn build_legacy_url_path(resource_ref: &ResourceRef) -> Result<String, Box<dyn Error>> {
     match &resource_ref.resource as &str {

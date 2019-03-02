@@ -101,13 +101,14 @@
 * Stream type
 
 * UserM: plug in a built in addon (LibraryAddon)
+* UserM: because of the settings, we might need to rename it to ContextM/LoadWithCtx
 
 * addon catalog reducer, actions; handle loading collections in the addonM
 * AddonM: caching: statefulness can be mitigated by using a memoization where the addon transport `get` would return the same results if invoked with the same args again; however, this needs to be out of the transport impl and needs to be explicit
 * UserM: mock storage and tests
 
 * API types: `()` should be (de)serialized as `{success: "true"}`
-* consider ResourceRef to have ResourceType
+* consider ResourceRef having ResourceType
 
 * test if addoncollection can be parsed and understood, once it can be retrieved via the middleware(s)
 * addon catalog reducer
