@@ -62,9 +62,9 @@ fn build_legacy_req(req: &ResourceRequest) -> Result<Request<()>, Box<dyn Error>
             let id = &req.resource_ref.id;
             let genre = req.resource_ref.get_extra_first_val("genre");
             let query = if let Some(genre) = genre {
-                json!({ "type": &type_name, "genre": genre })
+                json!({ "type": type_name, "genre": genre })
             } else {
-                json!({ "type": &type_name })
+                json!({ "type": type_name })
             };
             // Just follows the convention set out by stremboard
             // L287 cffb94e4a9c57f5872e768eff25164b53f004a2b
