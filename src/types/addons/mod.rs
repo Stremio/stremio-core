@@ -24,7 +24,7 @@ pub struct ResourceRequest {
 }
 
 #[derive(Deserialize, Serialize, Clone, Debug)]
-#[serde(untagged, rename_all = "camelCase")]
+#[serde(untagged)]
 pub enum ResourceResponse {
     Metas { metas: Vec<MetaPreview> },
     Meta {
