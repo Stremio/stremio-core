@@ -93,14 +93,24 @@ fn build_legacy_req(req: &ResourceRequest) -> Result<Request<()>, Box<dyn Error>
         }
         "meta" => build_jsonrpc(
             "meta.get",
-            json!({
-                "query": query_from_id(id),
-            }),
+            json!({ "query": query_from_id(id) }),
         ),
         // @TODO
-        "streams" => json!({}),
+        "streams" => {
+            let mut query = match query_from_id(id) {
+                Value::Object(q) => q,
+                _ => return Err("legacy: stream request without a valid id".into()),
+            };
+
+            query.insert("type".into(), Value::String(type_name.to_owned()));
+
+            // @TODO
+            let _parts: Vec<&str> = id.split(':').collect();
+
+            Value::Object(query)
+        }
         // @TODO better error
-        _ => return Err("legacy transport: unsupported resource".into()),
+        _ => return Err("legacy: unsupported resource".into()),
     };
     // NOTE: tihs is not using a URL safe base64 standard, which means that technically this is
     // not safe; however, the original implementation of stremio-addons work the same way,
@@ -121,14 +131,14 @@ fn build_jsonrpc(method: &str, params: Value) -> Value {
 }
 
 fn query_from_id(id: &str) -> Value {
+    let parts: Vec<&str> = id.split(':').collect();
     if id.starts_with(IMDB_PREFIX) {
-        return json!({ "imdb_id": id });
+        return json!({ "imdb_id": parts[0] });
     }
     if id.starts_with(YT_PREFIX) {
-        return json!({ "yt_id": id });
+        return json!({ "yt_id": parts[0] });
     }
-    let parts: Vec<&str> = id.split(':').collect();
-    if parts.len() == 2 {
+    if parts.len() >= 2 {
         return json!({ parts[0].to_owned(): parts[1] });
     }
     Value::Null
