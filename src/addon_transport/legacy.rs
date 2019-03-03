@@ -98,7 +98,7 @@ fn build_legacy_req(req: &ResourceRequest) -> Result<Request<()>, Box<dyn Error>
                 _ => return Err("legacy: stream request without a valid id".into()),
             };
             query.insert("type".into(), Value::String(type_name.to_owned()));
-            build_jsonrpc("stream.find", Value::Object(query))
+            build_jsonrpc("stream.find", json!({ "query": query }))
         }
         // @TODO better error
         _ => return Err("legacy: unsupported request".into()),
