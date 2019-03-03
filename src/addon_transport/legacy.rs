@@ -58,6 +58,15 @@ fn build_legacy_req(req: &ResourceRequest) -> Result<Request<()>, Box<dyn Error>
     let q_json = match &req.resource_ref.resource as &str {
         // @TODO
         "catalog" => {
+            // We need to make a struct, cause we want to skip `genre`
+            #[derive(Serialize)]
+            struct CatalogQuery<'a> {
+                #[serde(rename="type")]
+                type_name: &'a str,
+                #[serde(skip_serializing_if="Option::is_none")]
+                genre: Option<&'a str>,
+            }
+
             // Just follows the convention set out by stremboard
             // L287 cffb94e4a9c57f5872e768eff25164b53f004a2b
             let sort = if req.resource_ref.id == "top" {
@@ -70,9 +79,9 @@ fn build_legacy_req(req: &ResourceRequest) -> Result<Request<()>, Box<dyn Error>
             };
             json!({
                 "params": [Value::Null, {
-                    "query": {
-                        "type": &req.resource_ref.type_name,
-                        "genre": req.resource_ref.get_extra_first_val("genre"),
+                    "query": CatalogQuery {
+                        type_name: &req.resource_ref.type_name,
+                        genre: req.resource_ref.get_extra_first_val("genre"),
                     },
                     "limit": 100,
                     "sort": sort,
