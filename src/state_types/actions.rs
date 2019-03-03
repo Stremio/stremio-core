@@ -79,7 +79,7 @@ pub enum Action {
     UserOp(ActionUser),
 
     // Intermediery
-    LoadWithUser(Option<User>, Vec<Descriptor>, ActionLoad),
+    LoadWithCtx(Option<User>, Vec<Descriptor>, ActionLoad),
     AddonResponse(ResourceRequest, Result<ResourceResponse, String>),
 
     // Output actions
