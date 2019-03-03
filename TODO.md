@@ -86,10 +86,10 @@
 * decide on all the settings: which ones are kept where
 * design flaw: the player is supposed to get the URL to the video itself (from Stream), but then it needs to pull /subtitles/ from the addon system; could be done by wrapping some messages in the state container, but maybe there's a better way? - WILL BE done through an event for playback started emitted by the implementation, that contains an `opensubHash`
 * AddonM: transport type recognizer
+* Stream type, .source
 
 ## TODO
 
-* Stream type, .source
 * AddonM: legacy transport
 * legacy transport: (and all transports): manifest retrieval
 * AddonM: AddonTransport trait, .get(), .manifest(); http addons will be constructed with a URL, while lib/notif addon directly as something that implements AddonTransport
@@ -99,7 +99,9 @@
 
 * start doing documentation comments
 
+* Stream type: full spec
 
+* consider using [Url](https://docs.rs/url_serde/0.2.0/url_serde/) for `transport_url`, addon `logo`/`poster`, meta `poster`/`logo`/`background`, stream `url`/`external_url`
 
 * UserM: plug in a built in addon (LibraryAddon)
 * UserM: because of the settings, we might need to rename it to ContextM/LoadWithCtx
