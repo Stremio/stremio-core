@@ -74,6 +74,7 @@ fn build_legacy_req(req: &ResourceRequest) -> Result<Request<()>, Box<dyn Error>
                 "method": "meta.find",
                 "params": [Value::Null, {
                     "query": {
+                        "type": &req.resource_ref.type_name,
                         "genre": req.resource_ref.get_extra_first_val("genre"),
                     },
                     "sort": sort,
