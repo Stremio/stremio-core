@@ -4,6 +4,7 @@ mod resource_ref;
 pub use self::manifest::*;
 pub use self::resource_ref::*;
 use crate::types::meta_item::*;
+use crate::types::stream::*;
 mod manifest_tests;
 
 pub type TransportUrl = String;
@@ -25,16 +26,14 @@ pub struct ResourceRequest {
 #[derive(Deserialize, Serialize, Clone, Debug)]
 #[serde(untagged, rename_all = "camelCase")]
 pub enum ResourceResponse {
-    Metas {
-        metas: Vec<MetaPreview>,
-    },
+    Metas { metas: Vec<MetaPreview> },
     Meta {
         // NOTE: we are not putting this in Option<>, since that way it gives us a valid
         // fallback to all of the previous variants, therefore resulting in inaccurate err messages
         // To support other /meta/ responses (meta extensions), we should make a MetaExt variant
         meta: MetaItem,
     },
-    //Streams { streams: Vec<Stream> },
+    Streams { streams: Vec<Stream> },
 }
 
 // This is going from the most general to the most concrete aggregation request

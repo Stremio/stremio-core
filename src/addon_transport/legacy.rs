@@ -29,7 +29,6 @@ impl<T: Environment> AddonTransport for AddonLegacyTransport<T> {
             Err(e) => return Box::new(future::err(e.into())),
         };
 
-        // @TODO JsonRpcResponse wrapper, convert to ResourceResponse
         match &req.resource_ref.resource as &str {
             "catalog" => Box::new(
                 T::fetch_serde::<_, JsonRPCResp<Vec<MetaPreview>>>(fetch_req)
@@ -39,7 +38,10 @@ impl<T: Environment> AddonTransport for AddonLegacyTransport<T> {
                 T::fetch_serde::<_, JsonRPCResp<MetaItem>>(fetch_req)
                     .map(|r| Box::new(ResourceResponse::Meta{ meta: (*r).result }))
             ),
-            // @TODO streams
+            "stream" => Box::new(
+                T::fetch_serde::<_, JsonRPCResp<Vec<Stream>>>(fetch_req)
+                    .map(|r| Box::new(ResourceResponse::Streams{ streams: (*r).result }))
+            ),
             // @TODO better error
             _ => Box::new(future::err("legacy transport: unsupported response".into())),
         }
