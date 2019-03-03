@@ -4,7 +4,7 @@ use futures::{future, Future};
 use std::marker::PhantomData;
 use std::rc::Rc;
 
-// @TODO multi-transports, detection
+// AddonHTTPTransport supports the v3 addon protocol and has a legacy adapter
 use crate::addon_transport::{AddonHTTPTransport, AddonTransport};
 
 #[derive(Default)]

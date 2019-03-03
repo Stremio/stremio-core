@@ -6,6 +6,7 @@ use std::error::Error;
 use std::marker::PhantomData;
 use super::AddonTransport;
 use serde_json::json;
+use serde_json::value::Value;
 
 pub struct AddonLegacyTransport<T: Environment> {
     pub env: PhantomData<T>,
@@ -36,7 +37,30 @@ impl<T: Environment> AddonTransport for AddonLegacyTransport<T> {
 fn build_legacy_req(req: &ResourceRequest) -> Result<Request<()>, Box<dyn Error>> {
     let q_json = match &req.resource_ref.resource as &str {
         // @TODO
-        "catalog" => json!({}),
+        "catalog" => {
+	    // Just follows the convention set out by stremboard
+	    // L287 cffb94e4a9c57f5872e768eff25164b53f004a2b
+            let sort = if req.resource_ref.id == "top" {
+                Value::Null
+            } else {
+                json!({
+                    req.resource_ref.id.to_owned(): -1,
+                    "popularity": -1
+                })
+            };
+            json!({
+                "jsonrpc": "2.0",
+                "method": "stream.find",
+                "params": [Value::Null, {
+                    "query": {
+                        "genre": req.resource_ref.get_extra_first_val("genre"),
+                    },
+                    "sort": sort,
+                    "limit": 100,
+                    "skip": req.resource_ref.get_extra_first_val("skip"),
+                }]
+            })
+        },
         "meta" => json!({}),
         "streams" => json!({}),
         // @TODO better error
