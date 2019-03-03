@@ -76,7 +76,9 @@ fn build_legacy_req(req: &ResourceRequest) -> Result<Request<()>, Box<dyn Error>
                     },
                     "limit": 100,
                     "sort": sort,
-                    "skip": req.resource_ref.get_extra_first_val("skip"),
+                    "skip": req.resource_ref.get_extra_first_val("skip")
+                        .map(|s| s.parse::<i32>().unwrap_or(0))
+                        .unwrap_or(0),
                 }],
                 "method": "meta.find",
                 "id": 1,
