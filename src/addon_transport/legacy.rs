@@ -8,6 +8,9 @@ use super::AddonTransport;
 use serde_json::json;
 use serde_json::value::Value;
 
+// @TODO tests
+// test whether we can map some pre-defined request to the proper expected result,
+// which we'll take from the JS adapter and the legacy JS system
 pub struct AddonLegacyTransport<T: Environment> {
     pub env: PhantomData<T>,
 }
@@ -18,6 +21,7 @@ impl<T: Environment> AddonTransport for AddonLegacyTransport<T> {
             Err(e) => return Box::new(future::err(e.into())),
         };
 
+        // @TODO JsonRpcResponse wrapper, convert to ResourceResponse
         match &req.resource_ref.resource as &str {
             "catalog" => Box::new(
                 T::fetch_serde::<_, Vec<MetaPreview>>(fetch_req)
@@ -51,6 +55,7 @@ fn build_legacy_req(req: &ResourceRequest) -> Result<Request<()>, Box<dyn Error>
             json!({
                 "jsonrpc": "2.0",
                 "method": "stream.find",
+                "id": 1,
                 "params": [Value::Null, {
                     "query": {
                         "genre": req.resource_ref.get_extra_first_val("genre"),
@@ -61,6 +66,7 @@ fn build_legacy_req(req: &ResourceRequest) -> Result<Request<()>, Box<dyn Error>
                 }]
             })
         },
+        // @TODO
         "meta" => json!({}),
         "streams" => json!({}),
         // @TODO better error
