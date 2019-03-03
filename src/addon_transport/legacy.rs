@@ -52,6 +52,9 @@ impl<T: Environment> AddonTransport for AddonLegacyTransport<T> {
 }
 
 fn build_legacy_req(req: &ResourceRequest) -> Result<Request<()>, Box<dyn Error>> {
+    // Limitations of this legacy adapter:
+    // * does not support subtitles
+    // * does not support searching (meta.search)
     let q_json = match &req.resource_ref.resource as &str {
         // @TODO
         "catalog" => {
@@ -68,7 +71,7 @@ fn build_legacy_req(req: &ResourceRequest) -> Result<Request<()>, Box<dyn Error>
             json!({
                 "jsonrpc": "2.0",
                 "id": 1,
-                "method": "stream.find",
+                "method": "meta.find",
                 "params": [Value::Null, {
                     "query": {
                         "genre": req.resource_ref.get_extra_first_val("genre"),

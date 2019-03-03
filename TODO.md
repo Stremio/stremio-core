@@ -101,8 +101,6 @@
 
 * Stream type: full spec
 
-* consider using [Url](https://docs.rs/url_serde/0.2.0/url_serde/) for `transport_url`, addon `logo`/`poster`, meta `poster`/`logo`/`background`, stream `url`/`external_url`
-
 * UserM: plug in a built in addon (LibraryAddon)
 * UserM: because of the settings, we might need to rename it to ContextM/LoadWithCtx
 
@@ -113,7 +111,7 @@
 * API types: `()` should be (de)serialized as `{success: "true"}`
 * consider ResourceRef having ResourceType
 
-* test if addoncollection can be parsed and understood, once it can be retrieved via the middleware(s)
+* test if addoncollection can be parsed and understood, once the middleware(s) can retrieve collections
 * addon catalog reducer
 
 * basic state: Catalog, Detail; and all the possible inner states (describe the structures); StreamSelect
@@ -170,6 +168,8 @@
 * lib/notif addon: gzip everything?
 
 * https://llogiq.github.io/2017/06/01/perf-pitfalls.html if we ever nede optimizations; we do `to_owned` quite a lot, maybe some of those can be avoided; `Cow<>` sounds good too for large collections and etc.
+
+* refactor: consider using [Url](https://docs.rs/url_serde/0.2.0/url_serde/) for `transport_url`, addon `logo`/`poster`, meta `poster`/`logo`/`background`, stream `url`/`external_url`
 
 
 work estimation, hours: 24 userM, 12 addonM + transport, 4 legacy transport, 8 refactors, 3 catalogFiltered, 6 detail/streamselect, 24 lib/notif addon, 8 playerM, 8 open, 8 openMedia, 12 others, 10 tests: 127 = 13 weekends assumming 10 hours per weekend = 6 weeks
