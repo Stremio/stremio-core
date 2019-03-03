@@ -103,7 +103,7 @@ fn build_legacy_req(req: &ResourceRequest) -> Result<Request<()>, Box<dyn Error>
         // @TODO better error
         _ => return Err("legacy: unsupported resource".into()),
     };
-    // NOTE: tihs is not using a URL safe base64 standard, which means that technically this is
+    // NOTE: this is not using a URL safe base64 standard, which means that technically this is
     // not safe; however, the original implementation of stremio-addons work the same way,
     // so we're technically replicating a legacy bug on purpose
     // https://github.com/Stremio/stremio-addons/blob/v2.8.14/rpc.js#L53
