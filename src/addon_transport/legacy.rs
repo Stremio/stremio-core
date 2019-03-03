@@ -9,6 +9,9 @@ use serde_json::value::Value;
 use std::error::Error;
 use std::marker::PhantomData;
 
+const IMDB_PREFIX: &str = "tt";
+const YT_PREFIX: &str = "UC";
+
 // @TODO this can also be an error, so consider using that and turning it into a meaningful err
 // @TODO: also, mapping to ResourceResponse can be done here
 #[derive(Deserialize)]
@@ -55,11 +58,14 @@ fn build_legacy_req(req: &ResourceRequest) -> Result<Request<()>, Box<dyn Error>
     // Limitations of this legacy adapter:
     // * does not support subtitles
     // * does not support searching (meta.search)
+    // Those limitations are intentional, to avoid this getting complicated
+    // They affect functionality very little - there are no subtitles add-ons using the legacy
+    // protocol (other than OpenSubtitles, which will be ported) and there's only one
+    // known legacy add-on that support search (Stremio/stremio #379)
+    let type_name = &req.resource_ref.type_name;
+    let id = &req.resource_ref.id;
     let q_json = match &req.resource_ref.resource as &str {
-        // @TODO
         "catalog" => {
-            let type_name = &req.resource_ref.type_name;
-            let id = &req.resource_ref.id;
             let genre = req.resource_ref.get_extra_first_val("genre");
             let query = if let Some(genre) = genre {
                 json!({ "type": type_name, "genre": genre })
@@ -73,22 +79,19 @@ fn build_legacy_req(req: &ResourceRequest) -> Result<Request<()>, Box<dyn Error>
             } else {
                 Value::Null
             };
-            json!({
-                "params": [Value::Null, {
-                    "query": query,
-                    "limit": 100,
-                    "sort": sort,
-                    "skip": req.resource_ref.get_extra_first_val("skip")
-                        .map(|s| s.parse::<i32>().unwrap_or(0))
-                        .unwrap_or(0),
-                }],
-                "method": "meta.find",
-                "id": 1,
-                "jsonrpc": "2.0",
-            })
+            build_jsonrpc("meta.find", json!({
+                "query": query,
+                "limit": 100,
+                "sort": sort,
+                "skip": req.resource_ref.get_extra_first_val("skip")
+                    .map(|s| s.parse::<i32>().unwrap_or(0))
+                    .unwrap_or(0),
+            }))
         }
+        "meta" => build_jsonrpc("meta.get", json!({
+            "query": query_from_id(id),
+        })),
         // @TODO
-        "meta" => json!({}),
         "streams" => json!({}),
         // @TODO better error
         _ => return Err("legacy transport: unsupported resource".into()),
@@ -100,4 +103,27 @@ fn build_legacy_req(req: &ResourceRequest) -> Result<Request<()>, Box<dyn Error>
     let param_str = base64::encode(&serde_json::to_string(&q_json)?);
     let url = format!("{}/q.json?b={}", &req.transport_url, param_str);
     Ok(Request::get(&url).body(())?)
+}
+
+fn build_jsonrpc(method: &str, params: Value) -> Value {
+    json!({
+        "params": [Value::Null, params],
+        "method": method,
+        "id": 1,
+        "jsonrpc": "2.0",
+    })
+}
+
+fn query_from_id(id: &str) -> Value {
+    if id.starts_with(IMDB_PREFIX) {
+        return json!({ "imdb_id": id });
+    }
+    if id.starts_with(YT_PREFIX) {
+        return json!({ "yt_id": id });
+    }
+    let parts: Vec<&str> = id.split(':').collect();
+    if parts.len() == 2 {
+        return json!({ parts[0].to_owned(): parts[1] });
+    }
+    Value::Null
 }
