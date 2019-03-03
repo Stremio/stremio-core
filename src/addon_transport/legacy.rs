@@ -49,7 +49,7 @@ impl<T: Environment> AddonTransport for AddonLegacyTransport<T> {
                 }),
             ),
             // @TODO better error
-            _ => Box::new(future::err("legacy transport: unsupported response".into())),
+            _ => Box::new(future::err("legacy: unsupported response".into())),
         }
     }
 }
@@ -92,7 +92,7 @@ fn build_legacy_req(req: &ResourceRequest) -> Result<Request<()>, Box<dyn Error>
             )
         }
         "meta" => build_jsonrpc("meta.get", json!({ "query": query_from_id(id) })),
-        "streams" => {
+        "stream" => {
             let mut query = match query_from_id(id) {
                 Value::Object(q) => q,
                 _ => return Err("legacy: stream request without a valid id".into()),
@@ -101,7 +101,7 @@ fn build_legacy_req(req: &ResourceRequest) -> Result<Request<()>, Box<dyn Error>
             Value::Object(query)
         }
         // @TODO better error
-        _ => return Err("legacy: unsupported resource".into()),
+        _ => return Err("legacy: unsupported request".into()),
     };
     // NOTE: this is not using a URL safe base64 standard, which means that technically this is
     // not safe; however, the original implementation of stremio-addons work the same way,
