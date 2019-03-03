@@ -69,18 +69,18 @@ fn build_legacy_req(req: &ResourceRequest) -> Result<Request<()>, Box<dyn Error>
                 })
             };
             json!({
-                "jsonrpc": "2.0",
-                "id": 1,
-                "method": "meta.find",
                 "params": [Value::Null, {
                     "query": {
                         "type": &req.resource_ref.type_name,
                         "genre": req.resource_ref.get_extra_first_val("genre"),
                     },
-                    "sort": sort,
                     "limit": 100,
+                    "sort": sort,
                     "skip": req.resource_ref.get_extra_first_val("skip"),
-                }]
+                }],
+                "method": "meta.find",
+                "id": 1,
+                "jsonrpc": "2.0",
             })
         }
         // @TODO
