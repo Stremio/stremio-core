@@ -24,7 +24,7 @@ impl ActionLoad {
                 ResourceRef::without_extra("meta", type_name, id),
             )),
             ActionLoad::Streams { type_name, id } => Some(AggrRequest::AllOfResource(
-                ResourceRef::without_extra("catalog", type_name, id),
+                ResourceRef::without_extra("stream", type_name, id),
             )),
             _ => None,
         }
