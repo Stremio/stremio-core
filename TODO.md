@@ -87,10 +87,10 @@
 * design flaw: the player is supposed to get the URL to the video itself (from Stream), but then it needs to pull /subtitles/ from the addon system; could be done by wrapping some messages in the state container, but maybe there's a better way? - WILL BE done through an event for playback started emitted by the implementation, that contains an `opensubHash`
 * AddonM: transport type recognizer
 * Stream type, .source
+* AddonM: legacy transport
 
 ## TODO
 
-* AddonM: legacy transport
 * legacy transport: (and all transports): manifest retrieval
 * AddonM: AddonTransport trait, .get(), .manifest(); http addons will be constructed with a URL, while lib/notif addon directly as something that implements AddonTransport
 
