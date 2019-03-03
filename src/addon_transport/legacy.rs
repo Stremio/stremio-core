@@ -86,27 +86,18 @@ fn build_legacy_req(req: &ResourceRequest) -> Result<Request<()>, Box<dyn Error>
                     "limit": 100,
                     "sort": sort,
                     "skip": req.resource_ref.get_extra_first_val("skip")
-                        .map(|s| s.parse::<i32>().unwrap_or(0))
+                        .map(|s| s.parse::<u32>().unwrap_or(0))
                         .unwrap_or(0),
                 }),
             )
         }
-        "meta" => build_jsonrpc(
-            "meta.get",
-            json!({ "query": query_from_id(id) }),
-        ),
-        // @TODO
+        "meta" => build_jsonrpc("meta.get", json!({ "query": query_from_id(id) })),
         "streams" => {
             let mut query = match query_from_id(id) {
                 Value::Object(q) => q,
                 _ => return Err("legacy: stream request without a valid id".into()),
             };
-
             query.insert("type".into(), Value::String(type_name.to_owned()));
-
-            // @TODO
-            let _parts: Vec<&str> = id.split(':').collect();
-
             Value::Object(query)
         }
         // @TODO better error
@@ -132,13 +123,34 @@ fn build_jsonrpc(method: &str, params: Value) -> Value {
 
 fn query_from_id(id: &str) -> Value {
     let parts: Vec<&str> = id.split(':').collect();
+    // IMDb format: tt...:(season:episode)?
     if id.starts_with(IMDB_PREFIX) {
-        return json!({ "imdb_id": parts[0] });
+        if parts.len() == 3 {
+            return json!({
+                "imdb_id": parts[0],
+                "season": parts[1].parse::<u16>().unwrap_or(1),
+                "episode": parts[2].parse::<u16>().unwrap_or(1),
+            });
+        } else {
+            return json!({ "imdb_id": parts[0] });
+        }
     }
+    // YouTube format: UC...:video_id?
     if id.starts_with(YT_PREFIX) {
-        return json!({ "yt_id": parts[0] });
+        if parts.len() == 2 {
+            return json!({ "yt_id": parts[0], "video_id": parts[1] });
+        } else {
+            return json!({ "yt_id": parts[0] });
+        }
     }
-    if parts.len() >= 2 {
+    // generic format: id_prefix:id:video_id?
+    if parts.len() == 3 {
+        return json!({
+            parts[0].to_owned(): parts[1],
+            "video_id": parts[2]
+        });
+    }
+    if parts.len() == 2 {
         return json!({ parts[0].to_owned(): parts[1] });
     }
     Value::Null
