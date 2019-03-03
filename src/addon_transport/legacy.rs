@@ -1,13 +1,13 @@
+use super::AddonTransport;
 use crate::state_types::{EnvFuture, Environment, Request};
 use crate::types::addons::{ResourceRequest, ResourceResponse};
 use crate::types::*;
 use futures::{future, Future};
-use std::error::Error;
-use std::marker::PhantomData;
-use super::AddonTransport;
+use serde_derive::*;
 use serde_json::json;
 use serde_json::value::Value;
-use serde_derive::*;
+use std::error::Error;
+use std::marker::PhantomData;
 
 // @TODO this can also be an error, so consider using that and turning it into a meaningful err
 // @TODO: also, mapping to ResourceResponse can be done here
@@ -32,15 +32,18 @@ impl<T: Environment> AddonTransport for AddonLegacyTransport<T> {
         match &req.resource_ref.resource as &str {
             "catalog" => Box::new(
                 T::fetch_serde::<_, JsonRPCResp<Vec<MetaPreview>>>(fetch_req)
-                    .map(|r| Box::new(ResourceResponse::Metas { metas: (*r).result }))
+                    .map(|r| Box::new(ResourceResponse::Metas { metas: (*r).result })),
             ),
             "meta" => Box::new(
                 T::fetch_serde::<_, JsonRPCResp<MetaItem>>(fetch_req)
-                    .map(|r| Box::new(ResourceResponse::Meta{ meta: (*r).result }))
+                    .map(|r| Box::new(ResourceResponse::Meta { meta: (*r).result })),
             ),
             "stream" => Box::new(
-                T::fetch_serde::<_, JsonRPCResp<Vec<Stream>>>(fetch_req)
-                    .map(|r| Box::new(ResourceResponse::Streams{ streams: (*r).result }))
+                T::fetch_serde::<_, JsonRPCResp<Vec<Stream>>>(fetch_req).map(|r| {
+                    Box::new(ResourceResponse::Streams {
+                        streams: (*r).result,
+                    })
+                }),
             ),
             // @TODO better error
             _ => Box::new(future::err("legacy transport: unsupported response".into())),
@@ -52,8 +55,8 @@ fn build_legacy_req(req: &ResourceRequest) -> Result<Request<()>, Box<dyn Error>
     let q_json = match &req.resource_ref.resource as &str {
         // @TODO
         "catalog" => {
-	    // Just follows the convention set out by stremboard
-	    // L287 cffb94e4a9c57f5872e768eff25164b53f004a2b
+            // Just follows the convention set out by stremboard
+            // L287 cffb94e4a9c57f5872e768eff25164b53f004a2b
             let sort = if req.resource_ref.id == "top" {
                 Value::Null
             } else {
@@ -75,7 +78,7 @@ fn build_legacy_req(req: &ResourceRequest) -> Result<Request<()>, Box<dyn Error>
                     "skip": req.resource_ref.get_extra_first_val("skip"),
                 }]
             })
-        },
+        }
         // @TODO
         "meta" => json!({}),
         "streams" => json!({}),

@@ -1,6 +1,6 @@
 use crate::state_types::{EnvFuture, Environment, Request};
 use crate::types::addons::{ResourceRequest, ResourceResponse};
-use futures::{future};
+use futures::future;
 use std::marker::PhantomData;
 
 mod legacy;
@@ -42,4 +42,3 @@ impl<T: Environment> AddonHTTPTransport<T> {
         }
     }
 }
-
