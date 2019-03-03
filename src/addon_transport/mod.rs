@@ -1,9 +1,9 @@
 use crate::state_types::{EnvFuture, Environment, Request};
-use crate::types::addons::{ResourceRef, ResourceRequest, ResourceResponse};
+use crate::types::addons::{ResourceRequest, ResourceResponse};
 use futures::future;
-use std::convert::Into;
 use std::error::Error;
 use std::marker::PhantomData;
+use serde_json::json;
 
 // @TODO facilitate detect from URL (manifest)
 pub trait AddonTransport {
@@ -17,42 +17,49 @@ pub struct AddonHTTPTransport<T: Environment> {
     pub env: PhantomData<T>,
 }
 impl<T: Environment> AddonTransport for AddonHTTPTransport<T> {
-    fn get(resource_req: &ResourceRequest) -> EnvFuture<Box<ResourceResponse>> {
-        // @TODO depending on whether it's legacy or not, the response will be handled differently
-        match try_build_request(resource_req) {
-            Ok(req) => T::fetch_serde::<_, ResourceResponse>(req),
-            Err(e) => Box::new(future::err(e)),
+    fn get(req: &ResourceRequest) -> EnvFuture<Box<ResourceResponse>> {
+        if req.transport_url.ends_with(MANIFEST_PATH) {
+            Self::get_http(req)
+        } else if req.transport_url.ends_with(LEGACY_PATH) {
+            Self::get_legacy(req)
+        } else {
+            Box::new(future::err("invalid transport_url".into()))
         }
     }
 }
-fn try_build_request(
-    ResourceRequest {
-        resource_ref,
-        transport_url,
-    }: &ResourceRequest,
-) -> Result<Request<()>, Box<dyn Error>> {
-    let url = if transport_url.ends_with(MANIFEST_PATH) {
-        transport_url.replace(MANIFEST_PATH, &resource_ref.to_string())
-    } else if transport_url.ends_with(LEGACY_PATH) {
-        format!(
-            "{}/{}",
-            &transport_url,
-            build_legacy_url_path(&resource_ref)?
-        )
-    } else {
-        // @TODO better errors
-        return Err("invalid transport_url".into());
-    };
-    // Building a request might fail, if the addon URL is malformed
-    Request::get(&url).body(()).map_err(Into::into)
+
+impl<T: Environment> AddonHTTPTransport<T> {
+    fn get_http(req: &ResourceRequest) -> EnvFuture<Box<ResourceResponse>> {
+        let url = req.transport_url.replace(MANIFEST_PATH, &req.resource_ref.to_string());
+        match Request::get(&url).body(()) {
+            Ok(r) => T::fetch_serde::<_, ResourceResponse>(r),
+            Err(e) => Box::new(future::err(e.into())),
+        }
+    }
+
+    // @TODO isolate this into legacy.rs
+    fn get_legacy(req: &ResourceRequest) -> EnvFuture<Box<ResourceResponse>> {
+        let fetch_req = match build_legacy_req(req) {
+            Ok(r) => r,
+            Err(e) => return Box::new(future::err(e.into())),
+        }
+
+        // @TODO response handling
+        T::fetch_serde::<_, ResourceResponse>(fetch_req)
+    }
 }
-fn build_legacy_url_path(resource_ref: &ResourceRef) -> Result<String, Box<dyn Error>> {
-    match &resource_ref.resource as &str {
-        "catalog" => {}
-        "meta" => {}
-        "streams" => {}
+
+fn build_legacy_req(req: &ResourceRequest) -> Result<Request<()>, Box<dyn Error>> {
+    let q_json = match &req.resource_ref.resource as &str {
+        // @TODO
+        "catalog" => { json!({}) }
+        "meta" => { json!({}) }
+        "streams" => { json!({}) }
         // @TODO better error
         _ => return Err("legacy transport: unsupported resource".into()),
-    }
-    Ok("".to_owned())
+    };
+    // @TODO: base64, url encoded
+    let param_str = serde_json::to_string(&q_json)?;
+    let url = format!("{}/q.json?b={}", &req.transport_url, param_str);
+    Ok(Request::get(&url).body(())?)
 }
