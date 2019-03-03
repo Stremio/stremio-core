@@ -17,6 +17,7 @@ lazy_static = "1.2.0"
 enclose = "0.1.3"
 semver = { version = "0.9.0", features = ["serde"] }
 base64 = "0.10.1"
+serde_hex = { git="https://github.com/forrest-marshall/serde-hex", package="serde-hex" }
 
 [dev-dependencies]
 reqwest = "0.9.x"
