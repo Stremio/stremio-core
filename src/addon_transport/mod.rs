@@ -1,10 +1,10 @@
 use crate::state_types::{EnvFuture, Environment, Request};
 use crate::types::addons::{ResourceRequest, ResourceResponse};
-use futures::future;
+use crate::types::*;
+use futures::{future, Future};
+use serde_json::json;
 use std::error::Error;
 use std::marker::PhantomData;
-use serde_json::json;
-
 
 // @TODO facilitate detect from URL (manifest)
 pub trait AddonTransport {
@@ -31,7 +31,9 @@ impl<T: Environment> AddonTransport for AddonHTTPTransport<T> {
 
 impl<T: Environment> AddonHTTPTransport<T> {
     fn get_http(req: &ResourceRequest) -> EnvFuture<Box<ResourceResponse>> {
-        let url = req.transport_url.replace(MANIFEST_PATH, &req.resource_ref.to_string());
+        let url = req
+            .transport_url
+            .replace(MANIFEST_PATH, &req.resource_ref.to_string());
         match Request::get(&url).body(()) {
             Ok(r) => T::fetch_serde::<_, ResourceResponse>(r),
             Err(e) => Box::new(future::err(e.into())),
@@ -45,17 +47,28 @@ impl<T: Environment> AddonHTTPTransport<T> {
             Err(e) => return Box::new(future::err(e.into())),
         };
 
-        // @TODO response handling
-        T::fetch_serde::<_, ResourceResponse>(fetch_req)
+        match &req.resource_ref.resource as &str {
+            "catalog" => Box::new(
+                T::fetch_serde::<_, Vec<MetaPreview>>(fetch_req)
+                    .map(|r| Box::new(ResourceResponse::Metas { metas: *r }))
+            ),
+            "meta" => Box::new(
+                T::fetch_serde::<_, MetaItem>(fetch_req)
+                    .map(|r| Box::new(ResourceResponse::Meta{ meta: *r }))
+            ),
+            // @TODO streams
+            // @TODO better error
+            _ => Box::new(future::err("unsupported request".into())),
+        }
     }
 }
 
 fn build_legacy_req(req: &ResourceRequest) -> Result<Request<()>, Box<dyn Error>> {
     let q_json = match &req.resource_ref.resource as &str {
         // @TODO
-        "catalog" => { json!({}) }
-        "meta" => { json!({}) }
-        "streams" => { json!({}) }
+        "catalog" => json!({}),
+        "meta" => json!({}),
+        "streams" => json!({}),
         // @TODO better error
         _ => return Err("legacy transport: unsupported resource".into()),
     };
