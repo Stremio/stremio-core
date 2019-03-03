@@ -128,7 +128,7 @@
 
 * implement CatalogsFiltered
 
-* refactor: separate crates: types, `state_types`
+* refactor: separate crates: types, `state_types`; the point of that is to not install any unneeded deps
 
 * Trait for meta item and lib item; MetaPreview, MetaItem, MetaDetailed
 * stuff to look for to be re-implemented: syncer, libitem/notifitem addons, discover ctrl, board ctrl, detail ctrl

@@ -5,6 +5,7 @@ use std::error::Error;
 use std::marker::PhantomData;
 use serde_json::json;
 
+
 // @TODO facilitate detect from URL (manifest)
 pub trait AddonTransport {
     fn get(resource_req: &ResourceRequest) -> EnvFuture<Box<ResourceResponse>>;
@@ -42,7 +43,7 @@ impl<T: Environment> AddonHTTPTransport<T> {
         let fetch_req = match build_legacy_req(req) {
             Ok(r) => r,
             Err(e) => return Box::new(future::err(e.into())),
-        }
+        };
 
         // @TODO response handling
         T::fetch_serde::<_, ResourceResponse>(fetch_req)
@@ -58,8 +59,11 @@ fn build_legacy_req(req: &ResourceRequest) -> Result<Request<()>, Box<dyn Error>
         // @TODO better error
         _ => return Err("legacy transport: unsupported resource".into()),
     };
-    // @TODO: base64, url encoded
-    let param_str = serde_json::to_string(&q_json)?;
+    // NOTE: tihs is not using a URL safe base64 standard, which means that technically this is
+    // not safe; however, the original implementation of stremio-addons work the same way,
+    // so we're technically replicating a legacy bug on purpose
+    // https://github.com/Stremio/stremio-addons/blob/v2.8.14/rpc.js#L53
+    let param_str = base64::encode(&serde_json::to_string(&q_json)?);
     let url = format!("{}/q.json?b={}", &req.transport_url, param_str);
     Ok(Request::get(&url).body(())?)
 }
