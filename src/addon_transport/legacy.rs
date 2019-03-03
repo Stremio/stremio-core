@@ -7,6 +7,14 @@ use std::marker::PhantomData;
 use super::AddonTransport;
 use serde_json::json;
 use serde_json::value::Value;
+use serde_derive::*;
+
+// @TODO this can also be an error, so consider using that and turning it into a meaningful err
+// @TODO: also, mapping to ResourceResponse can be done here
+#[derive(Deserialize)]
+struct JsonRPCResp<T> {
+    result: T,
+}
 
 // @TODO tests
 // test whether we can map some pre-defined request to the proper expected result,
@@ -24,12 +32,12 @@ impl<T: Environment> AddonTransport for AddonLegacyTransport<T> {
         // @TODO JsonRpcResponse wrapper, convert to ResourceResponse
         match &req.resource_ref.resource as &str {
             "catalog" => Box::new(
-                T::fetch_serde::<_, Vec<MetaPreview>>(fetch_req)
-                    .map(|r| Box::new(ResourceResponse::Metas { metas: *r }))
+                T::fetch_serde::<_, JsonRPCResp<Vec<MetaPreview>>>(fetch_req)
+                    .map(|r| Box::new(ResourceResponse::Metas { metas: (*r).result }))
             ),
             "meta" => Box::new(
-                T::fetch_serde::<_, MetaItem>(fetch_req)
-                    .map(|r| Box::new(ResourceResponse::Meta{ meta: *r }))
+                T::fetch_serde::<_, JsonRPCResp<MetaItem>>(fetch_req)
+                    .map(|r| Box::new(ResourceResponse::Meta{ meta: (*r).result }))
             ),
             // @TODO streams
             // @TODO better error
@@ -54,8 +62,8 @@ fn build_legacy_req(req: &ResourceRequest) -> Result<Request<()>, Box<dyn Error>
             };
             json!({
                 "jsonrpc": "2.0",
-                "method": "stream.find",
                 "id": 1,
+                "method": "stream.find",
                 "params": [Value::Null, {
                     "query": {
                         "genre": req.resource_ref.get_extra_first_val("genre"),
