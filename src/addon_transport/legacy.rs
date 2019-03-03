@@ -58,31 +58,24 @@ fn build_legacy_req(req: &ResourceRequest) -> Result<Request<()>, Box<dyn Error>
     let q_json = match &req.resource_ref.resource as &str {
         // @TODO
         "catalog" => {
-            // We need to make a struct, cause we want to skip `genre`
-            #[derive(Serialize)]
-            struct CatalogQuery<'a> {
-                #[serde(rename="type")]
-                type_name: &'a str,
-                #[serde(skip_serializing_if="Option::is_none")]
-                genre: Option<&'a str>,
-            }
-
+            let type_name = &req.resource_ref.type_name;
+            let id = &req.resource_ref.id;
+            let genre = req.resource_ref.get_extra_first_val("genre");
+            let query = if let Some(genre) = genre {
+                json!({ "type": &type_name, "genre": genre })
+            } else {
+                json!({ "type": &type_name })
+            };
             // Just follows the convention set out by stremboard
             // L287 cffb94e4a9c57f5872e768eff25164b53f004a2b
-            let sort = if req.resource_ref.id == "top" {
-                Value::Null
+            let sort = if id != "top" {
+                json!({ id.to_owned(): -1, "popularity": -1 })
             } else {
-                json!({
-                    req.resource_ref.id.to_owned(): -1,
-                    "popularity": -1
-                })
+                Value::Null
             };
             json!({
                 "params": [Value::Null, {
-                    "query": CatalogQuery {
-                        type_name: &req.resource_ref.type_name,
-                        genre: req.resource_ref.get_extra_first_val("genre"),
-                    },
+                    "query": query,
                     "limit": 100,
                     "sort": sort,
                     "skip": req.resource_ref.get_extra_first_val("skip")
