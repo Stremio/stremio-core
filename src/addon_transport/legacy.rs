@@ -79,18 +79,24 @@ fn build_legacy_req(req: &ResourceRequest) -> Result<Request<()>, Box<dyn Error>
             } else {
                 Value::Null
             };
-            build_jsonrpc("meta.find", json!({
-                "query": query,
-                "limit": 100,
-                "sort": sort,
-                "skip": req.resource_ref.get_extra_first_val("skip")
-                    .map(|s| s.parse::<i32>().unwrap_or(0))
-                    .unwrap_or(0),
-            }))
+            build_jsonrpc(
+                "meta.find",
+                json!({
+                    "query": query,
+                    "limit": 100,
+                    "sort": sort,
+                    "skip": req.resource_ref.get_extra_first_val("skip")
+                        .map(|s| s.parse::<i32>().unwrap_or(0))
+                        .unwrap_or(0),
+                }),
+            )
         }
-        "meta" => build_jsonrpc("meta.get", json!({
-            "query": query_from_id(id),
-        })),
+        "meta" => build_jsonrpc(
+            "meta.get",
+            json!({
+                "query": query_from_id(id),
+            }),
+        ),
         // @TODO
         "streams" => json!({}),
         // @TODO better error
