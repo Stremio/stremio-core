@@ -64,6 +64,7 @@ impl From<Vec<Stream>> for ResourceResponse {
     }
 }
 
+#[allow(clippy::boxed_local)]
 fn map_response<T: 'static + Sized>(resp: Box<JsonRPCResp<T>>) -> EnvFuture<T> {
     Box::new(match *resp {
         JsonRPCResp::Result { result } => future::ok(result),
