@@ -7,9 +7,8 @@ use serde_derive::*;
 use serde_json::json;
 use serde_json::value::Value;
 use std::error::Error;
-use std::marker::PhantomData;
 use std::fmt;
-
+use std::marker::PhantomData;
 
 const IMDB_PREFIX: &str = "tt";
 const YT_PREFIX: &str = "UC";
@@ -45,7 +44,7 @@ pub struct JsonRPCErr {
 #[derive(Deserialize)]
 #[serde(untagged)]
 pub enum JsonRPCResp<T> {
-    Result{ result: T },
+    Result { result: T },
     Error { error: JsonRPCErr },
 }
 
@@ -66,12 +65,11 @@ impl From<Vec<Stream>> for ResourceResponse {
 }
 
 fn map_response<T: 'static + Sized>(resp: Box<JsonRPCResp<T>>) -> EnvFuture<T> {
-    match *resp {
-        JsonRPCResp::Result{ result } => Box::new(future::ok(result)),
-        JsonRPCResp::Error{ error } => Box::new(future::err(LegacyErr::JsonRPC(error).into())),
-    }
+    Box::new(match *resp {
+        JsonRPCResp::Result { result } => future::ok(result),
+        JsonRPCResp::Error { error } => future::err(LegacyErr::JsonRPC(error).into()),
+    })
 }
-
 
 pub struct AddonLegacyTransport<T: Environment> {
     pub env: PhantomData<T>,
@@ -80,7 +78,7 @@ impl<T: Environment> AddonTransport for AddonLegacyTransport<T> {
     fn get(req: &ResourceRequest) -> EnvFuture<Box<ResourceResponse>> {
         let fetch_req = match build_legacy_req(req) {
             Ok(r) => r,
-            Err(e) => return Box::new(future::err(e.into())),
+            Err(e) => return Box::new(future::err(e)),
         };
 
         match &req.resource_ref.resource as &str {
@@ -143,6 +141,7 @@ fn build_legacy_req(req: &ResourceRequest) -> Result<Request<()>, Box<dyn Error>
         }
         "meta" => build_jsonrpc("meta.get", json!({ "query": query_from_id(id) })),
         "stream" => {
+            // Just use the query, but add "type" to it
             let mut query = match query_from_id(id) {
                 Value::Object(q) => q,
                 _ => return Err("legacy: stream request without a valid id".into()),
