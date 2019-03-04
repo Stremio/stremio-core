@@ -158,7 +158,6 @@ mod test {
     use super::*;
     use crate::types::addons::ResourceRef;
 
-    // @TODO consider implementing stream_other
     // Those are a bit sensitive for now, but that's a good thing, since it will force us
     // to pay attention to minor details that might matter with the legacy system
     // (e.g. omitting values vs `null` values)
@@ -169,10 +168,23 @@ mod test {
             resource_ref: ResourceRef::without_extra("catalog", "tv", "popularities.mixer"),
         };
         assert_eq!(
-            build_legacy_req(&resource_req).unwrap().uri().to_string(),
-            "https://stremio-mixer.schneider.ax/stremioget/stremio/v1/q.json?b=eyJpZCI6MSwianNvbnJwYyI6IjIuMCIsIm1ldGhvZCI6Im1ldGEuZmluZCIsInBhcmFtcyI6W251bGwseyJsaW1pdCI6MTAwLCJxdWVyeSI6eyJ0eXBlIjoidHYifSwic2tpcCI6MCwic29ydCI6eyJwb3B1bGFyaXRpZXMubWl4ZXIiOi0xLCJwb3B1bGFyaXR5IjotMX19XX0=".to_owned(),
+            &build_legacy_req(&resource_req).unwrap().uri().to_string(),
+            "https://stremio-mixer.schneider.ax/stremioget/stremio/v1/q.json?b=eyJpZCI6MSwianNvbnJwYyI6IjIuMCIsIm1ldGhvZCI6Im1ldGEuZmluZCIsInBhcmFtcyI6W251bGwseyJsaW1pdCI6MTAwLCJxdWVyeSI6eyJ0eXBlIjoidHYifSwic2tpcCI6MCwic29ydCI6eyJwb3B1bGFyaXRpZXMubWl4ZXIiOi0xLCJwb3B1bGFyaXR5IjotMX19XX0=",
         );
     }
+
+    #[test]
+    fn meta_imdb() {
+        let resource_req = ResourceRequest {
+            transport_url: "https://foo-bar.com/stremio/v1".to_owned(),
+            resource_ref: ResourceRef::without_extra("meta", "movie", "tt2134"),
+        };
+        assert_eq!(
+            &build_legacy_req(&resource_req).unwrap().uri().to_string(),
+            "https://foo-bar.com/stremio/v1/q.json?b=eyJpZCI6MSwianNvbnJwYyI6IjIuMCIsIm1ldGhvZCI6Im1ldGEuZ2V0IiwicGFyYW1zIjpbbnVsbCx7InF1ZXJ5Ijp7ImltZGJfaWQiOiJ0dDIxMzQifX1dfQ=="
+        );
+    }
+
     #[test]
     fn stream_imdb() {
         let resource_req = ResourceRequest {
@@ -180,8 +192,30 @@ mod test {
             resource_ref: ResourceRef::without_extra("stream", "series", "tt0386676:5:1"),
         };
         assert_eq!(
-            build_legacy_req(&resource_req).unwrap().uri().to_string(),
+            &build_legacy_req(&resource_req).unwrap().uri().to_string(),
             "https://legacywatchhub.strem.io/stremio/v1/q.json?b=eyJpZCI6MSwianNvbnJwYyI6IjIuMCIsIm1ldGhvZCI6InN0cmVhbS5maW5kIiwicGFyYW1zIjpbbnVsbCx7InF1ZXJ5Ijp7ImVwaXNvZGUiOjEsImltZGJfaWQiOiJ0dDAzODY2NzYiLCJzZWFzb24iOjUsInR5cGUiOiJzZXJpZXMifX1dfQ=="
+        );
+    }
+
+    #[test]
+    fn query_meta() {
+        assert_eq!(
+            query_from_id("tt0386676"),
+            json!({ "imdb_id": "tt0386676" })
+        );
+        assert_eq!(query_from_id("UC2312"), json!({ "yt_id": "UC2312" }));
+        assert_eq!(query_from_id("custom:test"), json!({ "custom": "test" }));
+    }
+    #[test]
+    fn query_stream() {
+        assert_eq!(
+            query_from_id("tt0386676:5:2"),
+            json!({ "imdb_id": "tt0386676", "season": 5, "episode": 2 })
+        );
+        assert_eq!(query_from_id("yt_id:video"), json!({ "yt_id": "video" }));
+        assert_eq!(
+            query_from_id("custom:test:vid"),
+            json!({ "custom": "test", "video_id": "vid" })
         );
     }
 }
