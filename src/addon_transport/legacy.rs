@@ -8,15 +8,38 @@ use serde_json::json;
 use serde_json::value::Value;
 use std::error::Error;
 use std::marker::PhantomData;
+use std::fmt;
+
 
 const IMDB_PREFIX: &str = "tt";
 const YT_PREFIX: &str = "UC";
 
-#[derive(Deserialize)]
+#[derive(Debug)]
+pub enum LegacyErr {
+    JsonRPC(JsonRPCErr),
+    UnsupportedResource,
+    UnsupportedRequest,
+}
+impl fmt::Display for LegacyErr {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{:?}", self)
+    }
+}
+impl Error for LegacyErr {
+    fn description(&self) -> &str {
+        match self {
+            LegacyErr::JsonRPC(err) => &err.message,
+            LegacyErr::UnsupportedResource => "legacy transport: unsupported resource",
+            LegacyErr::UnsupportedRequest => "legacy transport: unsupported request",
+        }
+    }
+}
+
+#[derive(Deserialize, Debug)]
 pub struct JsonRPCErr {
     message: String,
-    //#[serde(default)]
-    //code: i64,
+    #[serde(default)]
+    code: i64,
 }
 
 #[derive(Deserialize)]
@@ -45,8 +68,7 @@ impl From<Vec<Stream>> for ResourceResponse {
 fn map_response<T: 'static + Sized>(resp: Box<JsonRPCResp<T>>) -> EnvFuture<T> {
     match *resp {
         JsonRPCResp::Result{ result } => Box::new(future::ok(result)),
-        // @TODO better error
-        JsonRPCResp::Error{ error } => Box::new(future::err(error.message.into())),
+        JsonRPCResp::Error{ error } => Box::new(future::err(LegacyErr::JsonRPC(error).into())),
     }
 }
 
@@ -77,8 +99,7 @@ impl<T: Environment> AddonTransport for AddonLegacyTransport<T> {
                     .and_then(map_response)
                     .map(|r| Box::new(r.into())),
             ),
-            // @TODO better error
-            _ => Box::new(future::err("legacy: unsupported response".into())),
+            _ => Box::new(future::err(LegacyErr::UnsupportedResource.into())),
         }
     }
 }
@@ -129,8 +150,7 @@ fn build_legacy_req(req: &ResourceRequest) -> Result<Request<()>, Box<dyn Error>
             query.insert("type".into(), Value::String(type_name.to_owned()));
             build_jsonrpc("stream.find", json!({ "query": query }))
         }
-        // @TODO better error
-        _ => return Err("legacy: unsupported request".into()),
+        _ => return Err(LegacyErr::UnsupportedRequest.into()),
     };
     // NOTE: this is not using a URL safe base64 standard, which means that technically this is
     // not safe; however, the original implementation of stremio-addons work the same way,
