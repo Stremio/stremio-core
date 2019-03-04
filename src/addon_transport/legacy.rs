@@ -174,18 +174,6 @@ mod test {
     }
 
     #[test]
-    fn meta_imdb() {
-        let resource_req = ResourceRequest {
-            transport_url: "https://foo-bar.com/stremio/v1".to_owned(),
-            resource_ref: ResourceRef::without_extra("meta", "movie", "tt2134"),
-        };
-        assert_eq!(
-            &build_legacy_req(&resource_req).unwrap().uri().to_string(),
-            "https://foo-bar.com/stremio/v1/q.json?b=eyJpZCI6MSwianNvbnJwYyI6IjIuMCIsIm1ldGhvZCI6Im1ldGEuZ2V0IiwicGFyYW1zIjpbbnVsbCx7InF1ZXJ5Ijp7ImltZGJfaWQiOiJ0dDIxMzQifX1dfQ=="
-        );
-    }
-
-    #[test]
     fn stream_imdb() {
         let resource_req = ResourceRequest {
             transport_url: "https://legacywatchhub.strem.io/stremio/v1".to_owned(),
