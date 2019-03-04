@@ -12,12 +12,41 @@ use std::marker::PhantomData;
 const IMDB_PREFIX: &str = "tt";
 const YT_PREFIX: &str = "UC";
 
-// @TODO this can also be an error, so consider using that and turning it into a meaningful err
-// @TODO: also, mapping to ResourceResponse can be done here
 #[derive(Deserialize)]
-struct JsonRPCResp<T> {
-    result: T,
+#[serde(rename_all = "camelCase")]
+pub enum JsonRPCResp<T> {
+    Result(T),
+    Error {
+        message: String,
+        #[serde(default)]
+        code: i64,
+    },
 }
+
+impl From<Vec<MetaPreview>> for ResourceResponse {
+    fn from(metas: Vec<MetaPreview>) -> Self {
+        ResourceResponse::Metas { metas }
+    }
+}
+impl From<MetaItem> for ResourceResponse {
+    fn from(meta: MetaItem) -> Self {
+        ResourceResponse::Meta { meta }
+    }
+}
+impl From<Vec<Stream>> for ResourceResponse {
+    fn from(streams: Vec<Stream>) -> Self {
+        ResourceResponse::Streams { streams }
+    }
+}
+
+fn map_response<T: 'static + Sized>(resp: Box<JsonRPCResp<T>>) -> EnvFuture<T> {
+    match *resp {
+        JsonRPCResp::Result(r) => Box::new(future::ok(r)),
+        // @TODO better error
+        JsonRPCResp::Error{ message, .. } => Box::new(future::err(message.into())),
+    }
+}
+
 
 pub struct AddonLegacyTransport<T: Environment> {
     pub env: PhantomData<T>,
@@ -32,18 +61,18 @@ impl<T: Environment> AddonTransport for AddonLegacyTransport<T> {
         match &req.resource_ref.resource as &str {
             "catalog" => Box::new(
                 T::fetch_serde::<_, JsonRPCResp<Vec<MetaPreview>>>(fetch_req)
-                    .map(|r| Box::new(ResourceResponse::Metas { metas: (*r).result })),
+                    .and_then(map_response)
+                    .map(|r| Box::new(r.into())),
             ),
             "meta" => Box::new(
                 T::fetch_serde::<_, JsonRPCResp<MetaItem>>(fetch_req)
-                    .map(|r| Box::new(ResourceResponse::Meta { meta: (*r).result })),
+                    .and_then(map_response)
+                    .map(|r| Box::new(r.into())),
             ),
             "stream" => Box::new(
-                T::fetch_serde::<_, JsonRPCResp<Vec<Stream>>>(fetch_req).map(|r| {
-                    Box::new(ResourceResponse::Streams {
-                        streams: (*r).result,
-                    })
-                }),
+                T::fetch_serde::<_, JsonRPCResp<Vec<Stream>>>(fetch_req)
+                    .and_then(map_response)
+                    .map(|r| Box::new(r.into())),
             ),
             // @TODO better error
             _ => Box::new(future::err("legacy: unsupported response".into())),
