@@ -13,14 +13,17 @@ const IMDB_PREFIX: &str = "tt";
 const YT_PREFIX: &str = "UC";
 
 #[derive(Deserialize)]
-#[serde(rename_all = "camelCase")]
+pub struct JsonRPCErr {
+    message: String,
+    //#[serde(default)]
+    //code: i64,
+}
+
+#[derive(Deserialize)]
+#[serde(untagged)]
 pub enum JsonRPCResp<T> {
-    Result(T),
-    Error {
-        message: String,
-        #[serde(default)]
-        code: i64,
-    },
+    Result{ result: T },
+    Error { error: JsonRPCErr },
 }
 
 impl From<Vec<MetaPreview>> for ResourceResponse {
@@ -41,9 +44,9 @@ impl From<Vec<Stream>> for ResourceResponse {
 
 fn map_response<T: 'static + Sized>(resp: Box<JsonRPCResp<T>>) -> EnvFuture<T> {
     match *resp {
-        JsonRPCResp::Result(r) => Box::new(future::ok(r)),
+        JsonRPCResp::Result{ result } => Box::new(future::ok(result)),
         // @TODO better error
-        JsonRPCResp::Error{ message, .. } => Box::new(future::err(message.into())),
+        JsonRPCResp::Error{ error } => Box::new(future::err(error.message.into())),
     }
 }
 
