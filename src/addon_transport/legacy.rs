@@ -19,9 +19,6 @@ struct JsonRPCResp<T> {
     result: T,
 }
 
-// @TODO tests
-// test whether we can map some pre-defined request to the proper expected result,
-// which we'll take from the JS adapter and the legacy JS system
 pub struct AddonLegacyTransport<T: Environment> {
     pub env: PhantomData<T>,
 }
@@ -154,4 +151,37 @@ fn query_from_id(id: &str) -> Value {
         return json!({ parts[0].to_owned(): parts[1] });
     }
     Value::Null
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+    use crate::types::addons::ResourceRef;
+
+    // @TODO consider implementing stream_other
+    // Those are a bit sensitive for now, but that's a good thing, since it will force us
+    // to pay attention to minor details that might matter with the legacy system
+    // (e.g. omitting values vs `null` values)
+    #[test]
+    fn catalog() {
+        let resource_req = ResourceRequest {
+            transport_url: "https://stremio-mixer.schneider.ax/stremioget/stremio/v1".to_owned(),
+            resource_ref: ResourceRef::without_extra("catalog", "tv", "popularities.mixer"),
+        };
+        assert_eq!(
+            build_legacy_req(&resource_req).unwrap().uri().to_string(),
+            "https://stremio-mixer.schneider.ax/stremioget/stremio/v1/q.json?b=eyJpZCI6MSwianNvbnJwYyI6IjIuMCIsIm1ldGhvZCI6Im1ldGEuZmluZCIsInBhcmFtcyI6W251bGwseyJsaW1pdCI6MTAwLCJxdWVyeSI6eyJ0eXBlIjoidHYifSwic2tpcCI6MCwic29ydCI6eyJwb3B1bGFyaXRpZXMubWl4ZXIiOi0xLCJwb3B1bGFyaXR5IjotMX19XX0=".to_owned(),
+        );
+    }
+    #[test]
+    fn stream_imdb() {
+        let resource_req = ResourceRequest {
+            transport_url: "https://legacywatchhub.strem.io/stremio/v1".to_owned(),
+            resource_ref: ResourceRef::without_extra("stream", "series", "tt0386676:5:1"),
+        };
+        assert_eq!(
+            build_legacy_req(&resource_req).unwrap().uri().to_string(),
+            "https://legacywatchhub.strem.io/stremio/v1/q.json?b=eyJpZCI6MSwianNvbnJwYyI6IjIuMCIsIm1ldGhvZCI6InN0cmVhbS5maW5kIiwicGFyYW1zIjpbbnVsbCx7InF1ZXJ5Ijp7ImVwaXNvZGUiOjEsImltZGJfaWQiOiJ0dDAzODY2NzYiLCJzZWFzb24iOjUsInR5cGUiOiJzZXJpZXMifX1dfQ=="
+        );
+    }
 }
