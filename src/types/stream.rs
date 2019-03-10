@@ -7,8 +7,11 @@ pub struct Stream {
     pub name: Option<String>,
     pub description: Option<String>,
     pub thumbnail: Option<String>,
+    #[serde(default)]
+    pub subtitles: Vec<SubtitlesSource>,
     #[serde(flatten)]
     pub source: StreamSource,
+    // @TODO behavior_hints
 }
 
 #[derive(Eq, PartialEq, Clone, Debug, Deserialize, Serialize)]
@@ -33,6 +36,14 @@ pub enum StreamSource {
     },
 }
 
+#[derive(Eq, PartialEq, Clone, Debug, Deserialize, Serialize)]
+pub struct SubtitlesSource {
+    pub id: String,
+    // @TODO: ISO 639-2
+    pub lang: String,
+    pub url: String,
+}
+
 #[cfg(test)]
 mod test {
     use super::*;
@@ -47,6 +58,7 @@ mod test {
                 name: Some("test stream".into()),
                 description: None,
                 thumbnail: None,
+                subtitles: vec![],
                 source: StreamSource::Torrent {
                     info_hash: [
                         0x07, 0xa9, 0xde, 0x97, 0x50, 0x15, 0x84, 0x71, 0xc3, 0x30, 0x2e, 0x4e,
