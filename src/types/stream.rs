@@ -5,15 +5,18 @@ use serde_hex::{SerHex, Strict};
 #[derive(PartialEq, Clone, Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Stream {
-    pub name: Option<String>,
-    pub description: Option<String>,
-    pub thumbnail: Option<String>,
-    #[serde(default)]
-    pub subtitles: Vec<SubtitlesSource>,
     #[serde(flatten)]
     pub source: StreamSource,
+    #[serde(skip_serializing_if="Option::is_none")]
+    pub name: Option<String>,
+    #[serde(skip_serializing_if="Option::is_none")]
+    pub description: Option<String>,
+    #[serde(skip_serializing_if="Option::is_none")]
+    pub thumbnail: Option<String>,
+    #[serde(default, skip_serializing_if="Vec::is_empty")]
+    pub subtitles: Vec<SubtitlesSource>,
     // @TODO better data structure
-    #[serde(default)]
+    #[serde(default, skip_serializing_if="serde_json::Map::is_empty")]
     pub behavior_hints: serde_json::Map<String, serde_json::Value>,
 }
 
