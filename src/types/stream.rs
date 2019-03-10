@@ -4,8 +4,9 @@ use serde_hex::{SerHex, Strict};
 #[derive(PartialEq, Clone, Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Stream {
-    // @TODO: all props from the new spec
     pub name: Option<String>,
+    pub description: Option<String>,
+    pub thumbnail: Option<String>,
     #[serde(flatten)]
     pub source: StreamSource,
 }
@@ -26,6 +27,10 @@ pub enum StreamSource {
     External {
         external_url: String,
     },
+    #[serde(rename_all = "camelCase")]
+    PlayerFrame {
+        player_frame_url: String
+    },
 }
 
 #[cfg(test)]
@@ -40,6 +45,8 @@ mod test {
             stream,
             Stream {
                 name: Some("test stream".into()),
+                description: None,
+                thumbnail: None,
                 source: StreamSource::Torrent {
                     info_hash: [
                         0x07, 0xa9, 0xde, 0x97, 0x50, 0x15, 0x84, 0x71, 0xc3, 0x30, 0x2e, 0x4e,

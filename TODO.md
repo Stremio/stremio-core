@@ -91,6 +91,10 @@
 
 ## TODO
 
+* consider full router in the example
+
+* Stream type: full spec
+
 * legacy transport: (and all transports): manifest retrieval
 * AddonM: AddonTransport trait, .get(), .manifest(); http addons will be constructed with a URL, while lib/notif addon directly as something that implements AddonTransport
 
@@ -99,14 +103,14 @@
 
 * start doing documentation comments
 
-* Stream type: full spec
-
 * UserM: plug in a built in addon (LibraryAddon)
 * UserM: because of the settings, we might need to rename it to ContextM/LoadWithCtx
 
 * addon catalog reducer, actions; handle loading collections in the addonM
 * AddonM: caching: statefulness can be mitigated by using a memoization where the addon transport `get` would return the same results if invoked with the same args again; however, this needs to be out of the transport impl and needs to be explicit
 * UserM: mock storage and tests
+
+* implement CatalogsFiltered
 
 * API types: `()` should be (de)serialized as `{success: "true"}`
 * consider ResourceRef having ResourceType
@@ -126,7 +130,6 @@
 
 * document loopback actions (implicit input): `AddonsChanged->PushAddons` (if there's a conn), (as a result of Open) `ProposeLoad -> Load`; `ProposeWatchNext -> Open`; also those that are results of OpenMedia, InstallAndOpenAddon
 
-* implement CatalogsFiltered
 
 * refactor: separate crates: types, `state_types`; the point of that is to not install any unneeded deps
 
@@ -172,7 +175,7 @@
 * refactor: consider using [Url](https://docs.rs/url_serde/0.2.0/url_serde/) for `transport_url`, addon `logo`/`poster`, meta `poster`/`logo`/`background`, stream `url`/`external_url`
 
 
-work estimation, hours: 24 userM, 12 addonM + transport, 4 legacy transport, 8 refactors, 3 catalogFiltered, 6 detail/streamselect, 24 lib/notif addon, 8 playerM, 8 open, 8 openMedia, 12 others, 10 tests: 127 = 13 weekends assumming 10 hours per weekend = 6 weeks
+work estimation, hours: 24 userM, 12 addonM + transport, 10 legacy transport, 8 refactors, 3 catalogFiltered, 6 detail/streamselect, 24 lib/notif addon, 8 playerM, 8 open, 8 openMedia, 12 others, 10 tests: 127 = 13 weekends assumming 10 hours per weekend = 6 weeks
 
 example pipeline:
 LoadCatalogs => this will change the state of the `catalogs` to `Loading`
