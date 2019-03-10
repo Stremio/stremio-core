@@ -1,6 +1,7 @@
 use serde_derive::*;
 use serde_hex::{SerHex, Strict};
 
+// @TODO: Hash
 #[derive(PartialEq, Clone, Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Stream {
@@ -11,7 +12,9 @@ pub struct Stream {
     pub subtitles: Vec<SubtitlesSource>,
     #[serde(flatten)]
     pub source: StreamSource,
-    // @TODO behavior_hints
+    // @TODO better data structure
+    #[serde(default)]
+    pub behavior_hints: serde_json::Map<String, serde_json::Value>,
 }
 
 #[derive(Eq, PartialEq, Clone, Debug, Deserialize, Serialize)]
@@ -58,7 +61,8 @@ mod test {
                 name: Some("test stream".into()),
                 description: None,
                 thumbnail: None,
-                subtitles: vec![],
+                subtitles: Default::default(),
+                behavior_hints: Default::default(),
                 source: StreamSource::Torrent {
                     info_hash: [
                         0x07, 0xa9, 0xde, 0x97, 0x50, 0x15, 0x84, 0x71, 0xc3, 0x30, 0x2e, 0x4e,
