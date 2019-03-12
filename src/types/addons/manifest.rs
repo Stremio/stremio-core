@@ -4,6 +4,8 @@ use serde_derive::*;
 
 // Resource descriptors
 // those define how a resource may be requested
+// the tricky thing here is that resources may either be provided in a short notation, e.g. `"stream"`
+// or long e.g. `{ name: "stream", types: ["movie"], id_prefixes: ["tt"] }`
 #[derive(Debug, PartialEq, Clone, Deserialize, Serialize)]
 #[serde(untagged)]
 pub enum ManifestResource {
@@ -97,8 +99,8 @@ impl ManifestCatalog {
 }
 
 // The manifest itself
-// the tricky thing here is that resources may either be provided in a short notation, e.g. `"stream"`
-// or long e.g. `{ name: "stream", types: ["movie"], id_prefixes: ["tt"] }`
+// @TODO consider separating the meta in .meta (#[serde(flatten)]), in order to be able to
+// construct a manifest from meta + addon builder separately
 #[derive(Debug, PartialEq, Clone, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Manifest {

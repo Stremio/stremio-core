@@ -1,8 +1,11 @@
 use serde_derive::*;
 use serde_hex::{SerHex, Strict};
 
-// @TODO: Hash
-#[derive(PartialEq, Clone, Debug, Deserialize, Serialize)]
+// * Deduplication can be achieved by simple comparison (Eq)
+// * @TODO Sorting
+// * @TODO Serializing/deserializing streams with gzip+base64, for URLs
+
+#[derive(Eq, PartialEq, Clone, Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Stream {
     #[serde(flatten)]
