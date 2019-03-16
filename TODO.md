@@ -89,12 +89,10 @@
 * Stream type, .source
 * AddonM: legacy transport
 * Stream type: full spec
+* consider full router in e example
 
 
 ## TODO
-
-* consider full router in the example
-
 
 * legacy transport: (and all transports): manifest retrieval
 * AddonM: AddonTransport trait, .get(), .manifest(); http addons will be constructed with a URL, while lib/notif addon directly as something that implements AddonTransport
