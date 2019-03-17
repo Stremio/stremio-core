@@ -61,6 +61,11 @@ pub enum ManifestExtra {
         supported: Vec<String>,
     },
 }
+impl Default for ManifestExtra {
+    fn default() -> Self {
+        ManifestExtra::Full{ props: vec![] }
+    }
+}
 
 #[derive(Debug, PartialEq, Clone, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
