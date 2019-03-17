@@ -1,5 +1,5 @@
 use crate::state_types::{EnvFuture, Environment, Request};
-use crate::types::addons::{ResourceRequest, ResourceResponse};
+use crate::types::addons::*;
 use futures::future;
 use std::marker::PhantomData;
 
@@ -9,6 +9,7 @@ use self::legacy::AddonLegacyTransport;
 // @TODO facilitate detect from URL (manifest)
 pub trait AddonTransport {
     fn get(resource_req: &ResourceRequest) -> EnvFuture<Box<ResourceResponse>>;
+    fn fetch_manifest(url: &TransportUrl) -> EnvFuture<Box<Manifest>>;
 }
 
 const MANIFEST_PATH: &str = "/manifest.json";
@@ -27,6 +28,19 @@ impl<T: Environment> AddonTransport for AddonHTTPTransport<T> {
             AddonLegacyTransport::<T>::get(req)
         } else {
             Box::new(future::err("invalid transport_url".into()))
+        }
+    }
+    fn fetch_manifest(url: &TransportUrl) -> EnvFuture<Box<Manifest>> {
+        // This method detects the used transport type, and invokes it
+        if url.ends_with(MANIFEST_PATH) {
+            match Request::get(url).body(()) {
+                Ok(r) => T::fetch_serde::<_, Manifest>(r),
+                Err(e) => Box::new(future::err(e.into())),
+            }
+        } else if url.ends_with(LEGACY_PATH) {
+            AddonLegacyTransport::<T>::fetch_manifest(url)
+        } else {
+            Box::new(future::err("invalid url".into()))
         }
     }
 }

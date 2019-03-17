@@ -97,6 +97,7 @@
 * legacy transport: (and all transports): manifest retrieval
 * AddonM: AddonTransport trait, .get(), .manifest(); http addons will be constructed with a URL, while lib/notif addon directly as something that implements AddonTransport
 
+
 * UserM: `last_modified` for addons, prevent race conditions by updating `last_modified` each time we modify; consider sequence numbers too
 * UserM: upgrade addons when doing the first pull
 
@@ -109,10 +110,9 @@
 * AddonM: caching: statefulness can be mitigated by using a memoization where the addon transport `get` would return the same results if invoked with the same args again; however, this needs to be out of the transport impl and needs to be explicit
 * UserM: mock storage and tests
 
-* implement CatalogsFiltered
+* implement CatalogsFiltered, Streams
 
 * API types: `()` should be (de)serialized as `{success: "true"}`
-* consider ResourceRef having ResourceType
 
 * test if addoncollection can be parsed and understood, once the middleware(s) can retrieve collections
 * addon catalog reducer
@@ -128,7 +128,6 @@
 * environment implementations: return an error related to the HTTP status code, if it's not 200
 
 * document loopback actions (implicit input): `AddonsChanged->PushAddons` (if there's a conn), (as a result of Open) `ProposeLoad -> Load`; `ProposeWatchNext -> Open`; also those that are results of OpenMedia, InstallAndOpenAddon
-
 
 * refactor: separate crates: types, `state_types`; the point of that is to not install any unneeded deps
 

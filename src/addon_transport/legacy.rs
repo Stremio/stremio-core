@@ -1,6 +1,6 @@
 use super::AddonTransport;
 use crate::state_types::{EnvFuture, Environment, Request};
-use crate::types::addons::{ResourceRequest, ResourceResponse};
+use crate::types::addons::{ResourceRequest, ResourceResponse, TransportUrl, Manifest};
 use crate::types::*;
 use futures::{future, Future};
 use serde_derive::*;
@@ -100,6 +100,9 @@ impl<T: Environment> AddonTransport for AddonLegacyTransport<T> {
             ),
             _ => Box::new(future::err(LegacyErr::UnsupportedResource.into())),
         }
+    }
+    fn fetch_manifest(url: &TransportUrl) -> EnvFuture<Box<Manifest>> {
+        unimplemented!();
     }
 }
 
