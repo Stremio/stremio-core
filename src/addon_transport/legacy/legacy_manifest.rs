@@ -19,9 +19,18 @@ pub struct LegacySort {
     types: Option<Vec<String>>,
 }
 
+// A wrapper is needed cause of the way the legacy
+// system returns the results
+// the JSON RPC response contains { manifest, methods }
+// We don't need methods cause we have them in the manifest
 #[derive(Deserialize)]
 pub struct LegacyManifestResp {
     manifest: LegacyManifest,
+}
+impl From<LegacyManifestResp> for Manifest {
+    fn from(resp: LegacyManifestResp) -> Self {
+        resp.manifest.into()
+    }
 }
 
 #[derive(Deserialize)]
@@ -39,9 +48,8 @@ pub struct LegacyManifest {
     id_property: Option<LegacyIdProperty>,
     sorts: Option<Vec<LegacySort>>,
 }
-impl From<LegacyManifestResp> for Manifest {
-    fn from(resp: LegacyManifestResp) -> Self {
-        let m = resp.manifest;
+impl From<LegacyManifest> for Manifest {
+    fn from(m: LegacyManifest) -> Self {
         // Catalogs: if there are sorts, add a catalog for each type for each sort
         // if there are no sorts, do that just for the types
         let types = m.types.to_owned();
