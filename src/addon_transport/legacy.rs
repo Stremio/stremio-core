@@ -86,7 +86,8 @@ fn map_response<T: 'static + Sized>(resp: Box<JsonRPCResp<T>>) -> EnvFuture<T> {
 // Manifest types
 //
 #[derive(Deserialize)]
-enum LegacyIdProperty { One(String), More(Vec<String>) }
+#[serde(untagged)]
+enum LegacyIdProperty { One(String), Many(Vec<String>) }
 
 #[derive(Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -96,11 +97,13 @@ struct LegacyManifest {
     description: Option<String>,
     logo: Option<String>,
     background: Option<String>,
+    #[serde(default)]
     version: semver::Version,
     methods: Vec<String>,
     types: Vec<String>,
     contact_email: Option<String>,
     id_property: Option<LegacyIdProperty>,
+    // @TODO sorts
 }
 impl From<LegacyManifest> for Manifest {
     fn from(m: LegacyManifest) -> Self {
