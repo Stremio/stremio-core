@@ -10,6 +10,9 @@ use std::error::Error;
 use std::fmt;
 use std::marker::PhantomData;
 
+mod legacy_manifest;
+use self::legacy_manifest::LegacyManifest;
+
 const IMDB_PREFIX: &str = "tt";
 const YT_PREFIX: &str = "UC";
 
@@ -80,51 +83,6 @@ fn map_response<T: 'static + Sized>(resp: Box<JsonRPCResp<T>>) -> EnvFuture<T> {
         JsonRPCResp::Result { result } => future::ok(result),
         JsonRPCResp::Error { error } => future::err(LegacyErr::JsonRPC(error).into()),
     })
-}
-
-//
-// Manifest types
-//
-#[derive(Deserialize)]
-#[serde(untagged)]
-enum LegacyIdProperty { One(String), Many(Vec<String>) }
-
-#[derive(Deserialize)]
-#[serde(rename_all = "camelCase")]
-struct LegacyManifest {
-    id: String,
-    name: String,
-    description: Option<String>,
-    logo: Option<String>,
-    background: Option<String>,
-    #[serde(default)]
-    version: semver::Version,
-    methods: Vec<String>,
-    types: Vec<String>,
-    contact_email: Option<String>,
-    id_property: Option<LegacyIdProperty>,
-    // @TODO sorts
-}
-impl From<LegacyManifest> for Manifest {
-    fn from(m: LegacyManifest) -> Self {
-        let mut resources: Vec<ManifestResource> = vec![];
-        let mut catalogs: Vec<ManifestCatalog> = vec![];
-        let id_prefixes = None;
-        //if m.methods.includes
-        Manifest {
-            id: m.id,
-            name: m.name,
-            version: m.version,
-            resources,
-            types: m.types,
-            catalogs,
-            background: m.background,
-            logo: m.logo,
-            id_prefixes,
-            description: m.description,
-            contact_email: m.contact_email,
-        }
-    }
 }
 
 //
