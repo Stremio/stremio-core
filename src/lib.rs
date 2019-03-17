@@ -99,16 +99,16 @@ mod tests {
     fn transport_manifests() {
         let mut rt = Runtime::new().expect("failed to create tokio runtime");
         rt.spawn(lazy(|| {
-            let cinemeta_url = "https://v3-cinemeta.strem.io/manifest.json".to_string();
-            let legacy_url = "https://opensubtitles.strem.io/stremioget/stremio/v1".to_string();
-            let fut1 = AddonHTTPTransport::<Env>::fetch_manifest(&cinemeta_url)
+            let cinemeta_url = "https://v3-cinemeta.strem.io/manifest.json";
+            let legacy_url = "https://opensubtitles.strem.io/stremioget/stremio/v1";
+            let fut1 = AddonHTTPTransport::<Env>::fetch_manifest(cinemeta_url)
                 .then(|res| {
                     if let Err(e) = res {
                         panic!("failed getting cinemeta manifest {:?}", e);
                     }
                     future::ok(())
                 });
-            let fut2 = AddonHTTPTransport::<Env>::fetch_manifest(&legacy_url)
+            let fut2 = AddonHTTPTransport::<Env>::fetch_manifest(legacy_url)
                 .then(|res| {
                     if let Err(e) = res {
                         panic!("failed getting legacy manifest {:?}", e);

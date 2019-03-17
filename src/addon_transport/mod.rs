@@ -9,7 +9,7 @@ use self::legacy::AddonLegacyTransport;
 // @TODO facilitate detect from URL (manifest)
 pub trait AddonTransport {
     fn get(resource_req: &ResourceRequest) -> EnvFuture<Box<ResourceResponse>>;
-    fn fetch_manifest(url: &TransportUrl) -> EnvFuture<Box<Manifest>>;
+    fn fetch_manifest(url: &str) -> EnvFuture<Box<Manifest>>;
 }
 
 const MANIFEST_PATH: &str = "/manifest.json";
@@ -30,7 +30,7 @@ impl<T: Environment> AddonTransport for AddonHTTPTransport<T> {
             Box::new(future::err("invalid transport_url".into()))
         }
     }
-    fn fetch_manifest(url: &TransportUrl) -> EnvFuture<Box<Manifest>> {
+    fn fetch_manifest(url: &str) -> EnvFuture<Box<Manifest>> {
         // This method detects the used transport type, and invokes it
         if url.ends_with(MANIFEST_PATH) {
             match Request::get(url).body(()) {

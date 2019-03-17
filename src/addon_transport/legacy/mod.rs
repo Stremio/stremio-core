@@ -117,7 +117,7 @@ impl<T: Environment> AddonTransport for AddonLegacyTransport<T> {
             _ => Box::new(future::err(LegacyErr::UnsupportedResource.into())),
         }
     }
-    fn fetch_manifest(url: &TransportUrl) -> EnvFuture<Box<Manifest>> {
+    fn fetch_manifest(url: &str) -> EnvFuture<Box<Manifest>> {
         let url = format!("{}/q.json?b={}", url, MANIFEST_REQUEST_PARAM);
         match Request::get(url).body(()) {
             Ok(r) => Box::new(
