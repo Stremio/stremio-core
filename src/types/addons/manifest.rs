@@ -63,7 +63,7 @@ pub enum ManifestExtra {
 }
 impl Default for ManifestExtra {
     fn default() -> Self {
-        ManifestExtra::Full{ props: vec![] }
+        ManifestExtra::Full { props: vec![] }
     }
 }
 
