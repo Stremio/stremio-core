@@ -1,6 +1,6 @@
 use super::AddonTransport;
 use crate::state_types::{EnvFuture, Environment, Request};
-use crate::types::addons::{ResourceRequest, ResourceResponse, TransportUrl, Manifest};
+use crate::types::addons::*;
 use crate::types::*;
 use futures::{future, Future};
 use serde_derive::*;
@@ -13,6 +13,13 @@ use std::marker::PhantomData;
 const IMDB_PREFIX: &str = "tt";
 const YT_PREFIX: &str = "UC";
 
+// this is base64 for {"params":[],"method":"meta","id":1,"jsonrpc":"2.0"}
+const MANIFEST_REQUEST_PARAM: &str =
+    "eyJwYXJhbXMiOltdLCJtZXRob2QiOiJtZXRhIiwiaWQiOjEsImpzb25ycGMiOiIyLjAifQ==";
+
+//
+// Errors
+//
 #[derive(Debug)]
 pub enum LegacyErr {
     JsonRPC(JsonRPCErr),
@@ -34,6 +41,9 @@ impl Error for LegacyErr {
     }
 }
 
+//
+// JSON RPC types
+//
 #[derive(Deserialize, Debug)]
 pub struct JsonRPCErr {
     message: String,
@@ -72,6 +82,51 @@ fn map_response<T: 'static + Sized>(resp: Box<JsonRPCResp<T>>) -> EnvFuture<T> {
     })
 }
 
+//
+// Manifest types
+//
+#[derive(Deserialize)]
+enum LegacyIdProperty { One(String), More(Vec<String>) }
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct LegacyManifest {
+    id: String,
+    name: String,
+    description: Option<String>,
+    logo: Option<String>,
+    background: Option<String>,
+    version: semver::Version,
+    methods: Vec<String>,
+    types: Vec<String>,
+    contact_email: Option<String>,
+    id_property: Option<LegacyIdProperty>,
+}
+impl From<LegacyManifest> for Manifest {
+    fn from(m: LegacyManifest) -> Self {
+        let mut resources: Vec<ManifestResource> = vec![];
+        let mut catalogs: Vec<ManifestCatalog> = vec![];
+        let id_prefixes = None;
+        //if m.methods.includes
+        Manifest {
+            id: m.id,
+            name: m.name,
+            version: m.version,
+            resources,
+            types: m.types,
+            catalogs,
+            background: m.background,
+            logo: m.logo,
+            id_prefixes,
+            description: m.description,
+            contact_email: m.contact_email,
+        }
+    }
+}
+
+//
+// Transport implementation
+//
 pub struct AddonLegacyTransport<T: Environment> {
     pub env: PhantomData<T>,
 }
@@ -102,7 +157,15 @@ impl<T: Environment> AddonTransport for AddonLegacyTransport<T> {
         }
     }
     fn fetch_manifest(url: &TransportUrl) -> EnvFuture<Box<Manifest>> {
-        unimplemented!();
+        let url = format!("{}/q.json?b={}", url, MANIFEST_REQUEST_PARAM);
+        match Request::get(url).body(()) {
+            Ok(r) => Box::new(
+                T::fetch_serde::<_, JsonRPCResp<LegacyManifest>>(r)
+                    .and_then(map_response)
+                    .map(|m| Box::new(m.into())),
+            ),
+            Err(e) => Box::new(future::err(e.into())),
+        }
     }
 }
 
