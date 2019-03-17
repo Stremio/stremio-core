@@ -10,16 +10,16 @@ use serde_hex::{SerHex, Strict};
 pub struct Stream {
     #[serde(flatten)]
     pub source: StreamSource,
-    #[serde(skip_serializing_if="Option::is_none")]
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
-    #[serde(skip_serializing_if="Option::is_none")]
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
-    #[serde(skip_serializing_if="Option::is_none")]
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub thumbnail: Option<String>,
-    #[serde(default, skip_serializing_if="Vec::is_empty")]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub subtitles: Vec<SubtitlesSource>,
     // @TODO better data structure
-    #[serde(default, skip_serializing_if="serde_json::Map::is_empty")]
+    #[serde(default, skip_serializing_if = "serde_json::Map::is_empty")]
     pub behavior_hints: serde_json::Map<String, serde_json::Value>,
 }
 
@@ -41,7 +41,7 @@ pub enum StreamSource {
     },
     #[serde(rename_all = "camelCase")]
     PlayerFrame {
-        player_frame_url: String
+        player_frame_url: String,
     },
 }
 
