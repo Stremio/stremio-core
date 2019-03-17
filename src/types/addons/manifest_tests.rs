@@ -17,6 +17,7 @@ mod tests {
             resources,
             types: vec!["movie".into()],
             catalogs: vec![],
+            contact_email: None,
             background: None,
             logo: None,
             id_prefixes,

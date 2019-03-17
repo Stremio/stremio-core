@@ -107,6 +107,7 @@ pub struct Manifest {
     pub id: String,
     pub version: Version,
     pub name: String,
+    pub contact_email: Option<String>,
     pub description: Option<String>,
     pub logo: Option<String>,
     pub background: Option<String>,
