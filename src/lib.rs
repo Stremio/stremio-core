@@ -7,6 +7,7 @@ pub mod types;
 mod tests {
     use crate::middlewares::*;
     use crate::state_types::*;
+    use crate::addon_transport::*;
     use enclose::*;
     use futures::future::lazy;
     use futures::{future, Future};
@@ -92,6 +93,21 @@ mod tests {
             4,
             "groups is the right length when searching"
         );
+    }
+
+    #[test]
+    fn transport_manifests() {
+        let mut rt = Runtime::new().expect("failed to create tokio runtime");
+        rt.spawn(lazy(|| {
+            let cinemeta_url = "https://v3-cinemeta.strem.io/manifest.json".to_string();
+            AddonHTTPTransport::<Env>::fetch_manifest(&cinemeta_url)
+                .and_then(|m| {
+                    dbg!(&m);
+                    future::ok(())
+                })
+                .or_else(|_| future::err(()))
+        }));
+        rt.run().expect("faild to run tokio runtime");
     }
 
     struct Env {}
