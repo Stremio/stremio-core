@@ -20,6 +20,11 @@ pub struct LegacySort {
 }
 
 #[derive(Deserialize)]
+pub struct LegacyManifestResp {
+    manifest: LegacyManifest,
+}
+
+#[derive(Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct LegacyManifest {
     id: String,
@@ -34,8 +39,9 @@ pub struct LegacyManifest {
     id_property: Option<LegacyIdProperty>,
     sorts: Option<Vec<LegacySort>>,
 }
-impl From<LegacyManifest> for Manifest {
-    fn from(m: LegacyManifest) -> Self {
+impl From<LegacyManifestResp> for Manifest {
+    fn from(resp: LegacyManifestResp) -> Self {
+        let m = resp.manifest;
         // Catalogs: if there are sorts, add a catalog for each type for each sort
         // if there are no sorts, do that just for the types
         let types = m.types.to_owned();

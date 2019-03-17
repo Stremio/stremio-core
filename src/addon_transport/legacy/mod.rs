@@ -11,7 +11,7 @@ use std::fmt;
 use std::marker::PhantomData;
 
 mod legacy_manifest;
-use self::legacy_manifest::LegacyManifest;
+use self::legacy_manifest::LegacyManifestResp;
 
 const IMDB_PREFIX: &str = "tt";
 const YT_PREFIX: &str = "UC";
@@ -121,7 +121,7 @@ impl<T: Environment> AddonTransport for AddonLegacyTransport<T> {
         let url = format!("{}/q.json?b={}", url, MANIFEST_REQUEST_PARAM);
         match Request::get(url).body(()) {
             Ok(r) => Box::new(
-                T::fetch_serde::<_, JsonRPCResp<LegacyManifest>>(r)
+                T::fetch_serde::<_, JsonRPCResp<LegacyManifestResp>>(r)
                     .and_then(map_response)
                     .map(|m| Box::new(m.into())),
             ),

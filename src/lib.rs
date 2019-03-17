@@ -100,12 +100,23 @@ mod tests {
         let mut rt = Runtime::new().expect("failed to create tokio runtime");
         rt.spawn(lazy(|| {
             let cinemeta_url = "https://v3-cinemeta.strem.io/manifest.json".to_string();
-            AddonHTTPTransport::<Env>::fetch_manifest(&cinemeta_url)
-                .and_then(|m| {
-                    dbg!(&m);
+            let legacy_url = "https://opensubtitles.strem.io/stremioget/stremio/v1".to_string();
+            let fut1 = AddonHTTPTransport::<Env>::fetch_manifest(&cinemeta_url)
+                .then(|res| {
+                    if let Err(e) = res {
+                        panic!("failed getting cinemeta manifest {:?}", e);
+                    }
                     future::ok(())
-                })
-                .or_else(|_| future::err(()))
+                });
+            let fut2 = AddonHTTPTransport::<Env>::fetch_manifest(&legacy_url)
+                .then(|res| {
+                    if let Err(e) = res {
+                        panic!("failed getting legacy manifest {:?}", e);
+                    }
+                    future::ok(())
+                });
+            fut1.join(fut2)
+                .map(|(_, _)| ())
         }));
         rt.run().expect("faild to run tokio runtime");
     }
