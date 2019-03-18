@@ -53,7 +53,8 @@ impl From<LegacyManifest> for Manifest {
         // Catalogs: if there are sorts, add a catalog for each type for each sort
         // if there are no sorts, do that just for the types
         let types = m.types.to_owned();
-        let catalogs: Vec<ManifestCatalog> = if m.methods.iter().any(|x| x == "meta.find") {
+        let is_find = m.methods.iter().any(|x| x == "meta.find");
+        let catalogs: Vec<ManifestCatalog> = if is_find {
             match m.sorts {
                 Some(sorts) => sorts
                     .iter()
