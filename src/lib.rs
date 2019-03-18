@@ -5,9 +5,9 @@ pub mod types;
 
 #[cfg(test)]
 mod tests {
+    use crate::addon_transport::*;
     use crate::middlewares::*;
     use crate::state_types::*;
-    use crate::addon_transport::*;
     use enclose::*;
     use futures::future::lazy;
     use futures::{future, Future};
@@ -101,22 +101,19 @@ mod tests {
         rt.spawn(lazy(|| {
             let cinemeta_url = "https://v3-cinemeta.strem.io/manifest.json";
             let legacy_url = "https://opensubtitles.strem.io/stremioget/stremio/v1";
-            let fut1 = AddonHTTPTransport::<Env>::fetch_manifest(cinemeta_url)
-                .then(|res| {
-                    if let Err(e) = res {
-                        panic!("failed getting cinemeta manifest {:?}", e);
-                    }
-                    future::ok(())
-                });
-            let fut2 = AddonHTTPTransport::<Env>::fetch_manifest(legacy_url)
-                .then(|res| {
-                    if let Err(e) = res {
-                        panic!("failed getting legacy manifest {:?}", e);
-                    }
-                    future::ok(())
-                });
-            fut1.join(fut2)
-                .map(|(_, _)| ())
+            let fut1 = AddonHTTPTransport::<Env>::fetch_manifest(cinemeta_url).then(|res| {
+                if let Err(e) = res {
+                    panic!("failed getting cinemeta manifest {:?}", e);
+                }
+                future::ok(())
+            });
+            let fut2 = AddonHTTPTransport::<Env>::fetch_manifest(legacy_url).then(|res| {
+                if let Err(e) = res {
+                    panic!("failed getting legacy manifest {:?}", e);
+                }
+                future::ok(())
+            });
+            fut1.join(fut2).map(|(_, _)| ())
         }));
         rt.run().expect("faild to run tokio runtime");
     }
