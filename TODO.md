@@ -96,6 +96,10 @@
 
 ## TODO
 
+* AddonTransportMuxer; construct with a BTreeMap of <TransportUrl, AddonInterface>; ContextM will emit LibraryAddonUpdated(interface) or SetInternalAddon({addon,transport_url}), which will be `skip_serializing`; AddonM will react on this and replace it's instance of the muxer with a new one;
+* Detect transport type function, Result<dyn AddonInterface>; to return the library addon interface
+
+* handle loading collections in the addonM; detectFromURL
 
 * UserM: `last_modified` for addons, prevent race conditions by updating `last_modified` each time we modify; consider sequence numbers too
 * UserM: upgrade addons when doing the first pull
@@ -105,7 +109,6 @@
 * UserM: plug in a built in addon (LibraryAddon)
 * UserM: because of the settings, we might need to rename it to ContextM/LoadWithCtx
 
-* addon catalog reducer, actions; handle loading collections in the addonM
 * AddonM: caching: statefulness can be mitigated by using a memoization where the addon transport `get` would return the same results if invoked with the same args again; however, this needs to be out of the transport impl and needs to be explicit
 * UserM: mock storage and tests
 
@@ -114,7 +117,7 @@
 * API types: `()` should be (de)serialized as `{success: "true"}`
 
 * test if addoncollection can be parsed and understood, once the middleware(s) can retrieve collections
-* addon catalog reducer
+* addon catalog reducer, actions
 
 * basic state: Catalog, Detail; and all the possible inner states (describe the structures); StreamSelect
 * tests: Chain, Container, individual middlewares, individual types

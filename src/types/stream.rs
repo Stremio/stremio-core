@@ -11,9 +11,7 @@ pub struct Stream {
     #[serde(flatten)]
     pub source: StreamSource,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub name: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub description: Option<String>,
+    pub title: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub thumbnail: Option<String>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -59,13 +57,12 @@ mod test {
 
     #[test]
     pub fn deserialize() {
-        let stream_json = "{\"infoHash\":\"07a9de9750158471c3302e4e95edb1107f980fa6\",\"fileIdx\":1,\"name\":\"test stream\"}";
+        let stream_json = "{\"infoHash\":\"07a9de9750158471c3302e4e95edb1107f980fa6\",\"fileIdx\":1,\"title\":\"test stream\"}";
         let stream: Stream = serde_json::from_str(&stream_json).unwrap();
         assert_eq!(
             stream,
             Stream {
-                name: Some("test stream".into()),
-                description: None,
+                title: Some("test stream".into()),
                 thumbnail: None,
                 subtitles: Default::default(),
                 behavior_hints: Default::default(),
