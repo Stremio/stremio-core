@@ -1,0 +1,9 @@
+{
+    "name": "state-container-web",
+    "version": "0.1.0",
+    "main": "build/release/state_container_web.js",
+    "license": "MIT",
+    "scripts": {
+        "build": "./build.sh"
+    }
+}
