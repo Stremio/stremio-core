@@ -96,6 +96,8 @@
 
 ## TODO
 
+* Video struct
+
 * AddonTransportMuxer; construct with a BTreeMap of <TransportUrl, AddonInterface>; ContextM will emit LibraryAddonUpdated(interface) or SetInternalAddon({addon,transport_url}), which will be `skip_serializing`; AddonM will react on this and replace it's instance of the muxer with a new one;
 * Detect transport type function, Result<dyn AddonInterface>; to return the library addon interface
 
