@@ -1,3 +1,4 @@
 /target
 /node_modules
+/wasm-product
 yarn.lock
