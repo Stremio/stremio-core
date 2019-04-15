@@ -2,7 +2,9 @@
 rustup default nightly
 rustup target add wasm32-unknown-unknown
 cargo install wasm-bindgen-cli
-npm run build
+cargo install wasm-pack
+yarn install
+yarn run build
 ```
 
 ```
