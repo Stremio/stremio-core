@@ -1,6 +1,6 @@
 {
     "name": "stremio-state-container-web",
-    "version": "0.2.0",
+    "version": "0.3.0",
     "main": "build/lib.js",
     "license": "MIT",
     "scripts": {
