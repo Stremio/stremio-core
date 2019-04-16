@@ -91,8 +91,8 @@ function __widl_f_json_Response(arg0, exnptr) {
 }
 
 __exports.__widl_f_json_Response = __widl_f_json_Response;
-var cachedTextEncoder = new TextEncoder('utf-8');
 var WASM_VECTOR_LEN = 0;
+var cachedTextEncoder = new TextEncoder('utf-8');
 var passStringToWasm;
 
 if (typeof cachedTextEncoder.encodeInto === 'function') {
@@ -110,15 +110,14 @@ if (typeof cachedTextEncoder.encodeInto === 'function') {
           read = _cachedTextEncoder$en.read,
           written = _cachedTextEncoder$en.written;
 
-      arg = arg.substring(read);
       writeOffset += written;
 
-      if (arg.length === 0) {
+      if (read === arg.length) {
         break;
       }
 
-      ptr = wasm.__wbindgen_realloc(ptr, size, size * 2);
-      size *= 2;
+      arg = arg.substring(read);
+      ptr = wasm.__wbindgen_realloc(ptr, size, size += arg.length * 3);
     }
 
     WASM_VECTOR_LEN = writeOffset;
@@ -193,26 +192,26 @@ function __widl_f_fetch_with_request_Window(arg0, arg1) {
 
 __exports.__widl_f_fetch_with_request_Window = __widl_f_fetch_with_request_Window;
 
-function __wbg_instanceof_Error_fdac2ec12870b182(idx) {
+function __wbg_instanceof_Error_19bd7a7890e3fd6c(idx) {
   return getObject(idx) instanceof Error ? 1 : 0;
 }
 
-__exports.__wbg_instanceof_Error_fdac2ec12870b182 = __wbg_instanceof_Error_fdac2ec12870b182;
+__exports.__wbg_instanceof_Error_19bd7a7890e3fd6c = __wbg_instanceof_Error_19bd7a7890e3fd6c;
 
-function __wbg_toString_e8fd6ec59829ff8c(arg0) {
+function __wbg_toString_51b1ec90e420207d(arg0) {
   return addHeapObject(getObject(arg0).toString());
 }
 
-__exports.__wbg_toString_e8fd6ec59829ff8c = __wbg_toString_e8fd6ec59829ff8c;
+__exports.__wbg_toString_51b1ec90e420207d = __wbg_toString_51b1ec90e420207d;
 
-function __wbg_newnoargs_b4526aa2a6db81de(arg0, arg1) {
+function __wbg_newnoargs_cb83ac9bfa714d41(arg0, arg1) {
   var varg0 = getStringFromWasm(arg0, arg1);
   return addHeapObject(new Function(varg0));
 }
 
-__exports.__wbg_newnoargs_b4526aa2a6db81de = __wbg_newnoargs_b4526aa2a6db81de;
+__exports.__wbg_newnoargs_cb83ac9bfa714d41 = __wbg_newnoargs_cb83ac9bfa714d41;
 
-function __wbg_call_a7a8823c404228ab(arg0, arg1, exnptr) {
+function __wbg_call_75755734bfea4d37(arg0, arg1, exnptr) {
   try {
     return addHeapObject(getObject(arg0).call(getObject(arg1)));
   } catch (e) {
@@ -220,9 +219,9 @@ function __wbg_call_a7a8823c404228ab(arg0, arg1, exnptr) {
   }
 }
 
-__exports.__wbg_call_a7a8823c404228ab = __wbg_call_a7a8823c404228ab;
+__exports.__wbg_call_75755734bfea4d37 = __wbg_call_75755734bfea4d37;
 
-function __wbg_call_e6e8911c46484a33(arg0, arg1, arg2, exnptr) {
+function __wbg_call_0492299fb1f5901e(arg0, arg1, arg2, exnptr) {
   try {
     return addHeapObject(getObject(arg0).call(getObject(arg1), getObject(arg2)));
   } catch (e) {
@@ -230,15 +229,15 @@ function __wbg_call_e6e8911c46484a33(arg0, arg1, arg2, exnptr) {
   }
 }
 
-__exports.__wbg_call_e6e8911c46484a33 = __wbg_call_e6e8911c46484a33;
+__exports.__wbg_call_0492299fb1f5901e = __wbg_call_0492299fb1f5901e;
 
-function __wbg_new_7fc81df805aaefb0() {
+function __wbg_new_2dc379b3ba5ebef6() {
   return addHeapObject(new Object());
 }
 
-__exports.__wbg_new_7fc81df805aaefb0 = __wbg_new_7fc81df805aaefb0;
+__exports.__wbg_new_2dc379b3ba5ebef6 = __wbg_new_2dc379b3ba5ebef6;
 
-function __wbg_set_4c196bb000d34157(arg0, arg1, arg2, exnptr) {
+function __wbg_set_2624d1f32a3776d1(arg0, arg1, arg2, exnptr) {
   try {
     return Reflect.set(getObject(arg0), getObject(arg1), getObject(arg2));
   } catch (e) {
@@ -246,9 +245,9 @@ function __wbg_set_4c196bb000d34157(arg0, arg1, arg2, exnptr) {
   }
 }
 
-__exports.__wbg_set_4c196bb000d34157 = __wbg_set_4c196bb000d34157;
+__exports.__wbg_set_2624d1f32a3776d1 = __wbg_set_2624d1f32a3776d1;
 
-function __wbg_new_7440491cc5e719b8(arg0, arg1) {
+function __wbg_new_ce158cf1048d4c17(arg0, arg1) {
   var cbarg0 = function cbarg0(arg0, arg1) {
     var a = this.a;
     this.a = 0;
@@ -271,25 +270,25 @@ function __wbg_new_7440491cc5e719b8(arg0, arg1) {
   }
 }
 
-__exports.__wbg_new_7440491cc5e719b8 = __wbg_new_7440491cc5e719b8;
+__exports.__wbg_new_ce158cf1048d4c17 = __wbg_new_ce158cf1048d4c17;
 
-function __wbg_resolve_ec1f85083faa6c47(arg0) {
+function __wbg_resolve_de6a9d3662905882(arg0) {
   return addHeapObject(Promise.resolve(getObject(arg0)));
 }
 
-__exports.__wbg_resolve_ec1f85083faa6c47 = __wbg_resolve_ec1f85083faa6c47;
+__exports.__wbg_resolve_de6a9d3662905882 = __wbg_resolve_de6a9d3662905882;
 
-function __wbg_then_f1813c1d50cb0b3d(arg0, arg1) {
+function __wbg_then_3faaae6de0104bf6(arg0, arg1) {
   return addHeapObject(getObject(arg0).then(getObject(arg1)));
 }
 
-__exports.__wbg_then_f1813c1d50cb0b3d = __wbg_then_f1813c1d50cb0b3d;
+__exports.__wbg_then_3faaae6de0104bf6 = __wbg_then_3faaae6de0104bf6;
 
-function __wbg_then_37317e38a820e922(arg0, arg1, arg2) {
+function __wbg_then_76e86e45033cabdf(arg0, arg1, arg2) {
   return addHeapObject(getObject(arg0).then(getObject(arg1), getObject(arg2)));
 }
 
-__exports.__wbg_then_37317e38a820e922 = __wbg_then_37317e38a820e922;
+__exports.__wbg_then_76e86e45033cabdf = __wbg_then_76e86e45033cabdf;
 var stack_pointer = 32;
 
 function addBorrowedObject(obj) {
@@ -450,7 +449,7 @@ function __wbindgen_throw(ptr, len) {
 
 __exports.__wbindgen_throw = __wbindgen_throw;
 
-function __wbindgen_closure_wrapper233(a, b, _ignored) {
+function __wbindgen_closure_wrapper235(a, b, _ignored) {
   var f = wasm.__wbg_function_table.get(14);
 
   var d = wasm.__wbg_function_table.get(15);
@@ -474,7 +473,7 @@ function __wbindgen_closure_wrapper233(a, b, _ignored) {
   return addHeapObject(real);
 }
 
-__exports.__wbindgen_closure_wrapper233 = __wbindgen_closure_wrapper233;
+__exports.__wbindgen_closure_wrapper235 = __wbindgen_closure_wrapper235;
 
 function freeContainerService(ptr) {
   wasm.__wbg_containerservice_free(ptr);
@@ -549,14 +548,14 @@ function __wbindgen_object_drop_ref(i) {
 
 __exports.__wbindgen_object_drop_ref = __wbindgen_object_drop_ref;
 
-function init(module_or_path, maybe_memory) {
+function init(module) {
   var result;
   var imports = {
-    './state_container_web': __exports
+    './stremio_state_container_web': __exports
   };
 
-  if (module_or_path instanceof URL || typeof module_or_path === 'string' || module_or_path instanceof Request) {
-    var response = fetch(module_or_path);
+  if (module instanceof URL || typeof module === 'string' || module instanceof Request) {
+    var response = fetch(module);
 
     if (typeof WebAssembly.instantiateStreaming === 'function') {
       result = WebAssembly.instantiateStreaming(response, imports)["catch"](function (e) {
@@ -575,11 +574,15 @@ function init(module_or_path, maybe_memory) {
       });
     }
   } else {
-    result = WebAssembly.instantiate(module_or_path, imports).then(function (instance) {
-      return {
-        instance: instance,
-        module: module_or_path
-      };
+    result = WebAssembly.instantiate(module, imports).then(function (result) {
+      if (result instanceof WebAssembly.Instance) {
+        return {
+          instance: result,
+          module: module
+        };
+      } else {
+        return result;
+      }
     });
   }
 

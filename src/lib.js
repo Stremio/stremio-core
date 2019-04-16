@@ -1,7 +1,7 @@
-import initStateContainer, { ContainerService } from './state_container_web.js';
+import compileStateContainer, { ContainerService } from './stremio_state_container_web.js';
 
-export function init() {
-    return initStateContainer('state_container_web.wasm')
+export function load() {
+    return compileStateContainer('stremio_state_container_web.wasm')
         .then(() => {
             const events = {};
             const containerService = new ContainerService(({ action, args }) => {
