@@ -31,14 +31,18 @@ mod tests {
             CatalogGrouped::new(),
             &catalogs_reducer,
         )));
-        let container_ref = container.clone();
-        let chain = Rc::new(Chain::new(
-            vec![
-                Box::new(UserMiddleware::<Env>::new()),
-                Box::new(AddonsMiddleware::<Env>::new()),
-                Box::new(ContainerHandler::new(0, container, Box::new(|_| ()))),
-            ]
-        ));
+        let chain = Rc::new(Chain::new(vec![
+            Box::new(UserMiddleware::<Env>::new()),
+            Box::new(AddonsMiddleware::<Env>::new()),
+            Box::new(FinalHandler::new(
+                vec![("board".to_owned(), container.clone())],
+                Box::new(|_action| {
+                    //if let Action::NewState(_) = _action {
+                    //    dbg!(_action);
+                    //}
+                }),
+            )),
+        ]));
 
         let mut rt = Runtime::new().expect("failed to create tokio runtime");
         rt.spawn(lazy(enclose!((chain) move || {
@@ -50,7 +54,7 @@ mod tests {
         rt.run().expect("failed to run tokio runtime");
 
         // since this is after the .run() has ended, it will be OK
-        let state = container_ref.borrow().get_state().to_owned();
+        let state = container.borrow().get_state().to_owned();
         assert_eq!(state.groups.len(), 6, "groups is the right length");
         assert!(state.groups[0].1.is_ready());
         for g in state.groups.iter() {
@@ -82,7 +86,7 @@ mod tests {
             future::ok(())
         })));
         rt.run().expect("failed to run tokio runtime");
-        let state = container_ref.borrow().get_state().to_owned();
+        let state = container.borrow().get_state().to_owned();
         assert_eq!(
             state.groups.len(),
             4,

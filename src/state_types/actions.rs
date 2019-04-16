@@ -88,5 +88,5 @@ pub enum Action {
     AddonsChanged,
     AddonsChangedFromPull,
     AuthChanged(Option<User>),
-    NewState(usize),
+    NewState(String),
 }

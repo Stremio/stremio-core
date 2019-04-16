@@ -18,18 +18,15 @@ pub struct Chain {
 impl Chain {
     pub fn new(mut handlers: Vec<Box<Handler>>) -> Chain {
         let empty_cb: DispatcherFn = Box::new(|_| ());
-        let dispatcher = handlers
-            .drain(0..)
-            .rev()
-            .fold(empty_cb, |next, handler| {
-                let next = Rc::new(next);
-                Box::new(move |action| {
-                    // propagate the action up the chain, but also allow the handler to
-                    // emit actions from the same point of the chain
-                    next(&action);
-                    handler.handle(&action, next.clone());
-                })
-            });
+        let dispatcher = handlers.drain(0..).rev().fold(empty_cb, |next, handler| {
+            let next = Rc::new(next);
+            Box::new(move |action| {
+                // propagate the action up the chain, but also allow the handler to
+                // emit actions from the same point of the chain
+                next(&action);
+                handler.handle(&action, next.clone());
+            })
+        });
         Chain { dispatcher }
     }
     pub fn dispatch(&self, action: &Action) {

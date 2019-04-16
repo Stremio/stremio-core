@@ -93,10 +93,11 @@
 * legacy transport: (and all transports): manifest retrieval
 * AddonM: AddonTransport trait, .get(), .manifest(); http addons will be constructed with a URL, while lib/notif addon directly as something that implements AddonTransport
 * refactor: Chain should not have a final callback
+* refactor: FinalHandler/ContainersHandler in place of ContainerHandler, which will contain the final callback
 
 ## TODO
 
-* refactor: FinalHandler/ContainersHandler in place of ContainerHandler, which will contain the final callback;  Actions should not contain final stuff
+* Actions should not contain final stuff, FinalHandler should take it's own type
 * refactor: figure out some identifier that links the Load to the actual end container
 
 * Video struct
@@ -125,7 +126,7 @@
 * addon catalog reducer, actions
 
 * basic state: Catalog, Detail; and all the possible inner states (describe the structures); StreamSelect
-* tests: Chain, Container, individual middlewares, individual types
+* tests: Container, individual middlewares, individual types
 * Load to be able to target particular containers
 * start implementing libitem/notifitem addon
 * load/unload dynamics and more things other than Catalog: Detail, StreamSelect
