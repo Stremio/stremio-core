@@ -11,8 +11,7 @@ pub struct Chain {
     dispatcher: DispatcherFn,
 }
 impl Chain {
-    pub fn new(handlers: Vec<Box<Handler>>) -> Chain {
-        let mut handlers = handlers;
+    pub fn new(mut handlers: Vec<Box<Handler>>) -> Chain {
         let empty_cb: DispatcherFn = Box::new(|_| ());
         let dispatcher = handlers
             .drain(0..)
