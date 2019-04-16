@@ -11,13 +11,14 @@ pub struct Chain {
     dispatcher: DispatcherFn,
 }
 impl Chain {
-    pub fn new(handlers: Vec<Box<Handler>>, recv: DispatcherFn) -> Chain {
+    pub fn new(handlers: Vec<Box<Handler>>) -> Chain {
+        // @TODO more elegant implementation?
         // perhaps this might be helpful to remove the unwraps: https://www.reddit.com/r/rust/comments/64f9c8/idea_replace_with_is_it_safe/
-        let mut dispatcher = Some(recv);
+        let mut dispatcher: Option<DispatcherFn> = None;
         let mut handlers_rev = handlers;
         handlers_rev.reverse();
         for h_taken in handlers_rev {
-            let d_taken = Rc::new(dispatcher.take().unwrap());
+            let d_taken = Rc::new(dispatcher.take().unwrap_or_else(|| Box::new(|_| ())));
             dispatcher = Some(Box::new(move |action| {
                 d_taken(&action);
                 h_taken.handle(&action, d_taken.clone());
