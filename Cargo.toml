@@ -1,5 +1,5 @@
 [package]
-name = "state-container-web"
+name = "stremio-state-container-web"
 version = "0.1.0"
 authors = ["Smart Code Ltd."]
 edition = "2018"
