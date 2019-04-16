@@ -36,3 +36,36 @@ impl Chain {
         (self.dispatcher)(action);
     }
 }
+
+#[cfg(test)]
+mod test {
+    use super::*;
+    use std::cell::RefCell;
+    #[test]
+    fn propagation() {
+        struct Bouncer {};
+        impl Handler for Bouncer {
+            fn handle(&self, _: &Action, emit: Rc<DispatcherFn>) {
+                emit(&Action::AddonsChanged);
+            }
+        }
+
+        struct Consumer {
+            pub num: RefCell(u32)
+        };
+        impl Handler for Consumer {
+            fn handle(&self, action: &Action, emit: Rc<DispatcherFn>) {
+                *self.num.borrow_mut() += 1;
+            }
+        }
+        
+        let chain = Chain::new(vec![
+            Box::new(Bouncer{}),
+            Box::new(Bouncer{}),
+            Box::new(Bouncer{}),
+            Box::new(Consumer{ num: RefCell::new(0) })
+        ]);
+        chain.dispatch(&Action::AddonsChanged);
+        assert_eq!(consumer.num, 2**3, "correct number of actions emitted");
+    }
+}
