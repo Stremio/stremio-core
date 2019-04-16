@@ -36,7 +36,7 @@ mod tests {
             vec![
                 Box::new(UserMiddleware::<Env>::new()),
                 Box::new(AddonsMiddleware::<Env>::new()),
-                Box::new(ContainerHandler::new(0, container)),
+                Box::new(ContainerHandler::new(0, container, Box::new(|_| ()))),
             ],
             Box::new(move |action| {
                 if let Action::NewState(_) = action {
