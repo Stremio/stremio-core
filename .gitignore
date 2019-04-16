@@ -1,4 +1,4 @@
 /target
 /node_modules
-/wasm-product
+/wasm_build
 yarn.lock
