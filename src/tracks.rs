@@ -70,8 +70,8 @@ mod tests {
             Track { start: 10, end: 12, content: "".to_string() },
             Track { start: 13, end: 15, content: "".to_string() },
         ]);
-        assert_eq!(finder.find(9), Some(&vec![0, 3, 4]));
-        assert_eq!(finder.find(5), Some(&vec![0, 2]));
+        assert_eq!(finder.find(9), Some(vec![0, 3, 4].as_slice()));
+        assert_eq!(finder.find(5), Some(vec![0, 2].as_slice()));
     }
     #[test]
     fn from_file() {
@@ -84,7 +84,7 @@ mod tests {
             content: s.text.to_owned(),
         }).collect();
         let finder = Finder::from_tracks(tracks);
-        assert_eq!(finder.find(6690000), Some(&vec![1910]));
+        assert_eq!(finder.find(6690000), Some(vec![1910].as_slice()));
         println!("{}", now.elapsed().as_micros());
         //println!("subs: {:?}", tracks);
     }
