@@ -16,9 +16,9 @@ pub struct Chain {
     dispatcher: DispatcherFn,
 }
 impl Chain {
-    pub fn new(mut handlers: Vec<Box<Handler>>) -> Chain {
+    pub fn new(handlers: Vec<Box<Handler>>) -> Chain {
         let empty_cb: DispatcherFn = Box::new(|_| ());
-        let dispatcher = handlers.drain(0..).rev().fold(empty_cb, |next, handler| {
+        let dispatcher = handlers.into_iter().rev().fold(empty_cb, |next, handler| {
             let next = Rc::new(next);
             Box::new(move |action| {
                 // propagate the action up the chain, but also allow the handler to
