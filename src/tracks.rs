@@ -49,10 +49,10 @@ impl Finder {
             tracks: tracks,
         }
     }
-    fn find(&self, x: u64) -> Option<&Vec<usize>> {
+    fn find(&self, x: u64) -> Option<&[usize]> {
         self.start_map.range((Unbounded, Included(x)))
             .last()
-            .map(|(_, idxs)| idxs)
+            .map(|(_, idxs)| idxs.as_slice())
     }
 }
 
