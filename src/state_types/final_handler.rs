@@ -4,12 +4,17 @@ use std::rc::Rc;
 
 type ContainerHolder = Rc<RefCell<ContainerInterface>>;
 
+#[derive(Debug)]
+pub enum Event<'a, T> { Action(&'a Action), NewState(&'a T) }
+
+type FinalFn<T> = Box<Fn(Event<T>)>;
+
 pub struct FinalHandler<T> {
     containers: Vec<(T, ContainerHolder)>,
-    cb: DispatcherFn,
+    cb: FinalFn<T>,
 }
 impl<T> FinalHandler<T> {
-    pub fn new(containers: Vec<(T, ContainerHolder)>, cb: DispatcherFn) -> Self {
+    pub fn new(containers: Vec<(T, ContainerHolder)>, cb: FinalFn<T>) -> Self {
         FinalHandler { containers, cb }
     }
 }
@@ -18,12 +23,11 @@ impl<T> Handler for FinalHandler<T> {
     fn handle(&self, action: &Action, _: Rc<DispatcherFn>) {
         // because our handler chain will not allow an action to be dispatched recursively to
         // ourselves, this borrow_mut() is safe
-        (self.cb)(action);
-        for (_, container) in self.containers.iter() {
+        (self.cb)(Event::Action(action));
+        for (id, container) in self.containers.iter() {
             let has_new_state = container.borrow_mut().dispatch(action);
             if has_new_state {
-                // @TODO
-                //(self.cb)(&Action::NewState(id.to_owned()));
+                (self.cb)(Event::NewState(id));
             }
         }
     }

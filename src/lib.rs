@@ -37,9 +37,9 @@ mod tests {
                 Box::new(AddonsMiddleware::<Env>::new()),
                 Box::new(FinalHandler::new(vec![
                     ("board".to_owned(), container.clone())
-                ], Box::new(|_action| {
-                    //if let Action::NewState(_) = _action {
-                    //    dbg!(_action);
+                ], Box::new(|_event| {
+                    //if let Event::NewState(_) = _event {
+                    //    dbg!(_event);
                     //}
                 }))),
             ]
