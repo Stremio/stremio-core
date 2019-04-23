@@ -31,18 +31,19 @@ mod tests {
             CatalogGrouped::new(),
             &catalogs_reducer,
         )));
-        let chain = Rc::new(Chain::new(vec![
-            Box::new(UserMiddleware::<Env>::new()),
-            Box::new(AddonsMiddleware::<Env>::new()),
-            Box::new(FinalHandler::new(
-                vec![("board".to_owned(), container.clone())],
-                Box::new(|_action| {
+        let chain = Rc::new(Chain::new(
+            vec![
+                Box::new(UserMiddleware::<Env>::new()),
+                Box::new(AddonsMiddleware::<Env>::new()),
+                Box::new(FinalHandler::new(vec![
+                    ("board".to_owned(), container.clone())
+                ], Box::new(|_action| {
                     //if let Action::NewState(_) = _action {
                     //    dbg!(_action);
                     //}
-                }),
-            )),
-        ]));
+                }))),
+            ]
+        ));
 
         let mut rt = Runtime::new().expect("failed to create tokio runtime");
         rt.spawn(lazy(enclose!((chain) move || {

@@ -3,18 +3,17 @@ use std::cell::RefCell;
 use std::rc::Rc;
 
 type ContainerHolder = Rc<RefCell<ContainerInterface>>;
-type Containers = Vec<(String, ContainerHolder)>;
-pub struct FinalHandler {
-    containers: Containers,
+pub struct FinalHandler<T> {
+    containers: Vec<(T, ContainerHolder)>,
     cb: DispatcherFn,
 }
-impl FinalHandler {
-    pub fn new(containers: Containers, cb: DispatcherFn) -> Self {
+impl<T> FinalHandler<T> {
+    pub fn new(containers: Vec<(T, ContainerHolder)>, cb: DispatcherFn) -> Self {
         FinalHandler { containers, cb }
     }
 }
 
-impl Handler for FinalHandler {
+impl<T> Handler for FinalHandler<T> {
     fn handle(&self, action: &Action, _: Rc<DispatcherFn>) {
         // because our handler chain will not allow an action to be dispatched recursively to
         // ourselves, this borrow_mut() is safe
@@ -22,8 +21,28 @@ impl Handler for FinalHandler {
         for (id, container) in self.containers.iter() {
             let has_new_state = container.borrow_mut().dispatch(action);
             if has_new_state {
-                (self.cb)(&Action::NewState(id.to_owned()));
+                // @TODO
+                //(self.cb)(&Action::NewState(id.to_owned()));
             }
         }
     }
 }
+
+/*
+// ContainerMuxer: this allows you to manage multiple containers
+struct ContainerMuxer {
+    chain: Chain,
+}
+impl ContainerMuxer {
+    pub fn new<T: 'static>(
+        middlewares: Vec<Box<Handler>>,
+        containers: Vec<(T, ContainerHolder)>,
+        cb: DispatcherFn
+    ) -> Self {
+        let mut handlers = middlewares;
+        handlers.push(Box::new(FinalHandler::new(containers, cb)));
+        let chain = Chain::new(handlers);
+        ContainerMuxer { chain }
+    }
+}
+*/
