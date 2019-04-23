@@ -36,17 +36,16 @@ impl<T> Handler for FinalHandler<T> {
     }
 }
 
-/*
 // ContainerMuxer: this allows you to manage multiple containers
 struct ContainerMuxer {
-    containers: Vec<(T, ContainerHolder)>,
+    //containers: Vec<(T, ContainerHolder)>,
     chain: Chain,
 }
 impl ContainerMuxer {
     pub fn new<T: 'static>(
         middlewares: Vec<Box<Handler>>,
         containers: Vec<(T, ContainerHolder)>,
-        cb: DispatcherFn
+        cb: FinalFn<T>
     ) -> Self {
         let mut handlers = middlewares;
         handlers.push(Box::new(FinalHandler::new(containers, cb)));
@@ -56,11 +55,9 @@ impl ContainerMuxer {
     pub fn dispatch(&self, action: &Action) {
         self.chain.dispatch(action)
     }
-    pub fn dispatch_to(&self, id: &T, action: &Action) {
-
-    }
+    //pub fn dispatch_to<T: 'static>(&self, id: &T, action: &Action) {
+    //}
 }
-*/
 
 // a helper to ensure that this container receives LoadWithCtx only if a previous Load has been
 // dispatched with the same action
