@@ -98,7 +98,9 @@
 
 ## TODO
 
+* Load to be able to target particular containers; ContainerMuxer
 * refactor: figure out some identifier that links the Load to the actual end container
+
 
 * Video struct
 
@@ -127,7 +129,6 @@
 
 * basic state: Catalog, Detail; and all the possible inner states (describe the structures); StreamSelect
 * tests: Container, individual middlewares, individual types
-* Load to be able to target particular containers
 * start implementing libitem/notifitem addon
 * load/unload dynamics and more things other than Catalog: Detail, StreamSelect
 

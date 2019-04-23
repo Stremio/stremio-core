@@ -3,8 +3,7 @@ use crate::types::api::*;
 use serde_derive::*;
 use std::error::Error;
 
-
-#[derive(Debug, Deserialize, Serialize, Clone)]
+#[derive(Debug, Deserialize, Serialize, Clone, PartialEq)]
 #[serde(tag = "load", content = "args")]
 pub enum ActionLoad {
     CatalogGrouped { extra: Vec<ExtraProp> },

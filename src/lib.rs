@@ -32,20 +32,21 @@ mod tests {
             &catalogs_reducer,
         )));
         #[derive(Debug)]
-        enum ContainerId { Board };
-        let chain = Rc::new(Chain::new(
-            vec![
-                Box::new(UserMiddleware::<Env>::new()),
-                Box::new(AddonsMiddleware::<Env>::new()),
-                Box::new(FinalHandler::new(vec![
-                    (ContainerId::Board, container.clone())
-                ], Box::new(|_event| {
+        enum ContainerId {
+            Board,
+        };
+        let chain = Rc::new(Chain::new(vec![
+            Box::new(UserMiddleware::<Env>::new()),
+            Box::new(AddonsMiddleware::<Env>::new()),
+            Box::new(FinalHandler::new(
+                vec![(ContainerId::Board, container.clone())],
+                Box::new(|_event| {
                     //if let Event::NewState(_) = _event {
                     //    dbg!(_event);
                     //}
-                }))),
-            ]
-        ));
+                }),
+            )),
+        ]));
 
         let mut rt = Runtime::new().expect("failed to create tokio runtime");
         rt.spawn(lazy(enclose!((chain) move || {

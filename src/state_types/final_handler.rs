@@ -5,7 +5,10 @@ use std::rc::Rc;
 type ContainerHolder = Rc<RefCell<ContainerInterface>>;
 
 #[derive(Debug)]
-pub enum Event<'a, T> { Action(&'a Action), NewState(&'a T) }
+pub enum Event<'a, T> {
+    Action(&'a Action),
+    NewState(&'a T),
+}
 
 type FinalFn<T> = Box<Fn(Event<T>)>;
 
@@ -58,3 +61,37 @@ impl ContainerMuxer {
     }
 }
 */
+
+// a helper to ensure that this container receives LoadWithCtx only if a previous Load has been
+// dispatched with the same action
+struct ContainerLoadFilter {
+    container: Box<dyn ContainerInterface>,
+    last_load: Option<ActionLoad>,
+}
+impl ContainerLoadFilter {
+    pub fn new(container: Box<dyn ContainerInterface>) -> Self {
+        ContainerLoadFilter {
+            container,
+            last_load: None,
+        }
+    }
+}
+impl ContainerInterface for ContainerLoadFilter {
+    fn dispatch(&mut self, action: &Action) -> bool {
+        match action {
+            Action::Load(action_load) => {
+                self.last_load = Some(action_load.to_owned());
+            }
+            Action::LoadWithCtx(_, _, action_load) => {
+                if Some(action_load) != self.last_load.as_ref() {
+                    return false;
+                }
+            }
+            _ => {}
+        };
+        self.dispatch(action)
+    }
+    fn get_state_serialized(&self) -> Result<String, serde_json::Error> {
+        self.container.get_state_serialized()
+    }
+}
