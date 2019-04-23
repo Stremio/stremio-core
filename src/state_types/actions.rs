@@ -3,14 +3,15 @@ use crate::types::api::*;
 use serde_derive::*;
 use std::error::Error;
 
+
 #[derive(Debug, Deserialize, Serialize, Clone)]
 #[serde(tag = "load", content = "args")]
 pub enum ActionLoad {
-    // @TODO most of these values need content
     CatalogGrouped { extra: Vec<ExtraProp> },
-    CatalogFiltered,
+    CatalogFiltered { resource_ref: Box<ResourceRef> },
     Detail { type_name: String, id: String },
     Streams { type_name: String, id: String },
+    // @TODO most of these values need content
     AddonCatalog,
 }
 impl ActionLoad {
