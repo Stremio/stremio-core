@@ -94,10 +94,10 @@
 * AddonM: AddonTransport trait, .get(), .manifest(); http addons will be constructed with a URL, while lib/notif addon directly as something that implements AddonTransport
 * refactor: Chain should not have a final callback
 * refactor: FinalHandler/ContainersHandler in place of ContainerHandler, which will contain the final callback
+* Actions should not contain final stuff, FinalHandler should take it's own type
 
 ## TODO
 
-* Actions should not contain final stuff, FinalHandler should take it's own type
 * refactor: figure out some identifier that links the Load to the actual end container
 
 * Video struct

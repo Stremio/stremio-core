@@ -31,12 +31,14 @@ mod tests {
             CatalogGrouped::new(),
             &catalogs_reducer,
         )));
+        #[derive(Debug)]
+        enum ContainerId { Board };
         let chain = Rc::new(Chain::new(
             vec![
                 Box::new(UserMiddleware::<Env>::new()),
                 Box::new(AddonsMiddleware::<Env>::new()),
                 Box::new(FinalHandler::new(vec![
-                    ("board".to_owned(), container.clone())
+                    (ContainerId::Board, container.clone())
                 ], Box::new(|_event| {
                     //if let Event::NewState(_) = _event {
                     //    dbg!(_event);
