@@ -3,6 +3,7 @@ use std::cell::RefCell;
 use std::rc::Rc;
 
 type ContainerHolder = Rc<RefCell<ContainerInterface>>;
+
 pub struct FinalHandler<T> {
     containers: Vec<(T, ContainerHolder)>,
     cb: DispatcherFn,
@@ -18,7 +19,7 @@ impl<T> Handler for FinalHandler<T> {
         // because our handler chain will not allow an action to be dispatched recursively to
         // ourselves, this borrow_mut() is safe
         (self.cb)(action);
-        for (id, container) in self.containers.iter() {
+        for (_, container) in self.containers.iter() {
             let has_new_state = container.borrow_mut().dispatch(action);
             if has_new_state {
                 // @TODO
@@ -31,6 +32,7 @@ impl<T> Handler for FinalHandler<T> {
 /*
 // ContainerMuxer: this allows you to manage multiple containers
 struct ContainerMuxer {
+    containers: Vec<(T, ContainerHolder)>,
     chain: Chain,
 }
 impl ContainerMuxer {
@@ -43,6 +45,12 @@ impl ContainerMuxer {
         handlers.push(Box::new(FinalHandler::new(containers, cb)));
         let chain = Chain::new(handlers);
         ContainerMuxer { chain }
+    }
+    pub fn dispatch(&self, action: &Action) {
+        self.chain.dispatch(action)
+    }
+    pub fn dispatch_to(&self, id: &T, action: &Action) {
+
     }
 }
 */
