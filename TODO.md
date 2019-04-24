@@ -99,6 +99,9 @@
 ## TODO
 
 * Load to be able to target particular containers; ContainerMuxer
+	it will have to remmeber it's last Load itself
+	drop Rc<>, just access the containers directly in the muxer
+	downcast??
 * refactor: figure out some identifier that links the Load to the actual end container
 
 
