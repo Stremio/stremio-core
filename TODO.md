@@ -105,7 +105,6 @@
 	emit a ref to &ContainerInterface with NewState; that can be downcast (this will probably need Rc<RefCell)
 * refactor: figure out some identifier that links the Load to the actual end container
 
-
 * Video struct
 
 * AddonTransportMuxer; construct with a BTreeMap of <TransportUrl, AddonInterface>; ContextM will emit LibraryAddonUpdated(interface) or SetInternalAddon({addon,transport_url}), which will be `skip_serializing`; AddonM will react on this and replace it's instance of the muxer with a new one;

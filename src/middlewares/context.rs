@@ -238,14 +238,15 @@ impl<T: Environment> ContextMiddleware<T> {
 impl<T: Environment> Handler for ContextMiddleware<T> {
     fn handle(&self, action: &Action, emit: Rc<DispatcherFn>) {
         if let Action::Load(action_load) = action {
-            let fut = self
-                .load()
-                .and_then(enclose!((emit, action_load) move |UserStorage{ auth, addons }| {
+            let fut = self.load().and_then(
+                enclose!((emit, action_load) move |UserStorage{ auth, addons }| {
                     // @TODO this is the place to inject built-in addons, such as the
                     // Library/Notifications addon
-                    emit(&Action::LoadWithCtx(auth.map(|a| a.user), addons.to_owned(), action_load));
+                    let ctx = Context { user:auth.map(|a| a.user), addons: addons.to_owned() };
+                    emit(&Action::LoadWithCtx(ctx, action_load));
                     future::ok(())
-                }));
+                }),
+            );
             Self::exec_or_fatal(Box::new(fut), emit.clone());
         }
 

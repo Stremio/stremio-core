@@ -21,19 +21,22 @@ impl ContainerMuxer {
     pub fn new<T: 'static>(
         middlewares: Vec<Box<Handler>>,
         containers: Vec<(T, ContainerHolder)>,
-        cb: FinalFn<T>
+        cb: FinalFn<T>,
     ) -> Self {
-        let chain = Chain::new(middlewares, Box::new(move |action| {
-            // because our handler chain will not allow an action to be dispatched recursively to
-            // ourselves, this borrow_mut() is safe
-            cb(Event::Action(action));
-            for (id, container) in containers.iter() {
-                let has_new_state = container.borrow_mut().dispatch(action);
-                if has_new_state {
-                    cb(Event::NewState(id));
+        let chain = Chain::new(
+            middlewares,
+            Box::new(move |action| {
+                // because our handler chain will not allow an action to be dispatched recursively to
+                // ourselves, this borrow_mut() is safe
+                cb(Event::Action(action));
+                for (id, container) in containers.iter() {
+                    let has_new_state = container.borrow_mut().dispatch(action);
+                    if has_new_state {
+                        cb(Event::NewState(id));
+                    }
                 }
-            }
-        }));
+            }),
+        );
         ContainerMuxer { chain }
     }
     pub fn dispatch(&self, action: &Action) {

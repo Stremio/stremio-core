@@ -69,6 +69,12 @@ impl From<Box<dyn Error>> for MiddlewareError {
 }
 
 #[derive(Debug, Deserialize, Serialize, Clone)]
+pub struct Context {
+    pub user: Option<User>,
+    pub addons: Vec<Descriptor>,
+}
+
+#[derive(Debug, Deserialize, Serialize, Clone)]
 #[serde(tag = "action", content = "args")]
 pub enum Action {
     // Input actions
@@ -79,7 +85,7 @@ pub enum Action {
     UserOp(ActionUser),
 
     // Intermediery
-    LoadWithCtx(Option<User>, Vec<Descriptor>, ActionLoad),
+    LoadWithCtx(Context, ActionLoad),
     AddonResponse(ResourceRequest, Result<ResourceResponse, String>),
 
     // Output actions

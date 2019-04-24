@@ -35,16 +35,17 @@ mod tests {
         enum ContainerId {
             Board,
         };
-        let muxer = Rc::new(ContainerMuxer::new(vec![
-            Box::new(ContextMiddleware::<Env>::new()),
-            Box::new(AddonsMiddleware::<Env>::new()),
-        ], vec![
-            (ContainerId::Board, container.clone())
-        ], Box::new(|_event| {
+        let muxer = Rc::new(ContainerMuxer::new(
+            vec![
+                Box::new(ContextMiddleware::<Env>::new()),
+                Box::new(AddonsMiddleware::<Env>::new()),
+            ],
+            vec![(ContainerId::Board, container.clone())],
+            Box::new(|_event| {
                 //if let Event::NewState(_) = _event {
                 //    dbg!(_event);
                 //}
-            })
+            }),
         ));
 
         let mut rt = Runtime::new().expect("failed to create tokio runtime");
