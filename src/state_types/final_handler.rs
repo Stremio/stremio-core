@@ -12,39 +12,9 @@ pub enum Event<'a, T> {
 
 type FinalFn<T> = Box<Fn(Event<T>)>;
 
-pub struct FinalHandler<T> {
-    containers: Vec<(T, ContainerHolder)>,
-    //filters: Vec<Option<Box<Fn(&Action) -> bool>>>,
-    cb: FinalFn<T>,
-}
-impl<T> FinalHandler<T> {
-    pub fn new(containers: Vec<(T, ContainerHolder)>, cb: FinalFn<T>) -> Self {
-        FinalHandler {
-            containers,
-            //filters: vec![],
-            cb
-        }
-    }
-}
-
-impl<T> Handler for FinalHandler<T> {
-    fn handle(&self, action: &Action, _: Rc<DispatcherFn>) {
-        // because our handler chain will not allow an action to be dispatched recursively to
-        // ourselves, this borrow_mut() is safe
-        (self.cb)(Event::Action(action));
-        for (id, container) in self.containers.iter() {
-            let has_new_state = container.borrow_mut().dispatch(action);
-            if has_new_state {
-                (self.cb)(Event::NewState(id));
-            }
-        }
-    }
-}
-
-/*
 // ContainerMuxer: this allows you to manage multiple containers
 // @TODO drop the Rc, or at least the RefCell
-struct ContainerMuxer {
+pub struct ContainerMuxer {
     chain: Chain,
 }
 impl ContainerMuxer {
@@ -53,9 +23,17 @@ impl ContainerMuxer {
         containers: Vec<(T, ContainerHolder)>,
         cb: FinalFn<T>
     ) -> Self {
-        let mut handlers = middlewares;
-        handlers.push(Box::new(FinalHandler::new(containers, cb)));
-        let chain = Chain::new(handlers);
+        let chain = Chain::new(middlewares, Box::new(move |action| {
+            // because our handler chain will not allow an action to be dispatched recursively to
+            // ourselves, this borrow_mut() is safe
+            cb(Event::Action(action));
+            for (id, container) in containers.iter() {
+                let has_new_state = container.borrow_mut().dispatch(action);
+                if has_new_state {
+                    cb(Event::NewState(id));
+                }
+            }
+        }));
         ContainerMuxer { chain }
     }
     pub fn dispatch(&self, action: &Action) {
@@ -64,4 +42,3 @@ impl ContainerMuxer {
     //pub fn dispatch_to<T: 'static>(&self, id: &T, action: &Action) {
     //}
 }
-*/

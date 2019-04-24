@@ -35,24 +35,23 @@ mod tests {
         enum ContainerId {
             Board,
         };
-        let chain = Rc::new(Chain::new(vec![
+        let muxer = Rc::new(ContainerMuxer::new(vec![
             Box::new(UserMiddleware::<Env>::new()),
             Box::new(AddonsMiddleware::<Env>::new()),
-            Box::new(FinalHandler::new(
-                vec![(ContainerId::Board, container.clone())],
-                Box::new(|_event| {
-                    //if let Event::NewState(_) = _event {
-                    //    dbg!(_event);
-                    //}
-                }),
-            )),
-        ]));
+        ], vec![
+            (ContainerId::Board, container.clone())
+        ], Box::new(|_event| {
+                //if let Event::NewState(_) = _event {
+                //    dbg!(_event);
+                //}
+            })
+        ));
 
         let mut rt = Runtime::new().expect("failed to create tokio runtime");
-        rt.spawn(lazy(enclose!((chain) move || {
+        rt.spawn(lazy(enclose!((muxer) move || {
             // this is the dispatch operation
             let action = &Action::Load(ActionLoad::CatalogGrouped { extra: vec![] });
-            chain.dispatch(action);
+            muxer.dispatch(action);
             future::ok(())
         })));
         rt.run().expect("failed to run tokio runtime");
@@ -83,10 +82,10 @@ mod tests {
 
         // Now try the same, but with Search
         let mut rt = Runtime::new().expect("failed to create tokio runtime");
-        rt.spawn(lazy(enclose!((chain) move || {
+        rt.spawn(lazy(enclose!((muxer) move || {
             let extra = vec![("search".to_owned(), "grand tour".to_owned())];
             let action = &Action::Load(ActionLoad::CatalogGrouped { extra });
-            chain.dispatch(action);
+            muxer.dispatch(action);
             future::ok(())
         })));
         rt.run().expect("failed to run tokio runtime");
