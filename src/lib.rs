@@ -36,7 +36,7 @@ mod tests {
             Board,
         };
         let muxer = Rc::new(ContainerMuxer::new(vec![
-            Box::new(UserMiddleware::<Env>::new()),
+            Box::new(ContextMiddleware::<Env>::new()),
             Box::new(AddonsMiddleware::<Env>::new()),
         ], vec![
             (ContainerId::Board, container.clone())

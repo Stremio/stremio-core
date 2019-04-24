@@ -83,7 +83,7 @@ pub enum Action {
     AddonResponse(ResourceRequest, Result<ResourceResponse, String>),
 
     // Output actions
-    UserMiddlewareFatal(MiddlewareError),
+    ContextMiddlewareFatal(MiddlewareError),
     UserOpError(ActionUser, MiddlewareError),
     AddonsChanged,
     AddonsChangedFromPull,

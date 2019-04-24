@@ -66,15 +66,15 @@ impl UserStorage {
 type MiddlewareFuture<T> = Box<Future<Item = T, Error = MiddlewareError>>;
 type UserStorageHolder = Rc<RefCell<Option<UserStorage>>>;
 #[derive(Default)]
-pub struct UserMiddleware<T: Environment> {
+pub struct ContextMiddleware<T: Environment> {
     //id: usize,
     state: UserStorageHolder,
     api_url: String,
     env: PhantomData<T>,
 }
-impl<T: Environment> UserMiddleware<T> {
+impl<T: Environment> ContextMiddleware<T> {
     pub fn new() -> Self {
-        UserMiddleware {
+        ContextMiddleware {
             state: Default::default(),
             api_url: DEFAULT_API_URL.to_owned(),
             env: PhantomData,
@@ -159,7 +159,7 @@ impl<T: Environment> UserMiddleware<T> {
 
     fn exec_or_fatal(fut: MiddlewareFuture<()>, emit: Rc<DispatcherFn>) {
         T::exec(Box::new(fut.or_else(move |e| {
-            emit(&Action::UserMiddlewareFatal(e));
+            emit(&Action::ContextMiddlewareFatal(e));
             future::err(())
         })));
     }
@@ -235,7 +235,7 @@ impl<T: Environment> UserMiddleware<T> {
     }
 }
 
-impl<T: Environment> Handler for UserMiddleware<T> {
+impl<T: Environment> Handler for ContextMiddleware<T> {
     fn handle(&self, action: &Action, emit: Rc<DispatcherFn>) {
         if let Action::Load(action_load) = action {
             let fut = self
