@@ -100,8 +100,9 @@
 
 * Load to be able to target particular containers; ContainerMuxer
 	it will have to remmeber it's last Load itself
-	drop Rc<>, just access the containers directly in the muxer
-	downcast??
+	filter Loads when we send a load to a container
+	downcast from the muxer?
+	emit a ref to &ContainerInterface with NewState; that can be downcast (this will probably need Rc<RefCell)
 * refactor: figure out some identifier that links the Load to the actual end container
 
 
