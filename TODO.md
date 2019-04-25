@@ -196,7 +196,6 @@ many AddonResponse(addon, 'catalog', resp) => each one would update the catalogs
 ---------
 
 ## Universe actions: 
-UserDataLoad
 InitiateSync (or separate events; see https://github.com/Stremio/stremio/issues/388)
 BeforeClose
 SettingsLoad
@@ -206,7 +205,7 @@ WindowStateChanged (playerM will react on that to pause the player if the settin
 
 ## Actions from the user
 
-Load reducerType reducerId ...
+Load
 	works for opening catalogs/detail/load/search
 	reducerType is needed so that middlewares know to react; we can remove that by instructing the middlewares which reducerIds they should care about
 	the library middleware will try to attach a selected type if there isn't one
@@ -233,7 +232,6 @@ PlayerCommand
 ## Settings middleware:
 
 It will persist settings in storage
-
 
 figure out whether we need a settings container/middleware in stremio-state-ng; check list of settings, check which ones are user synced
 	think which ones can actually be storred as addon flags
@@ -292,7 +290,7 @@ can be generalized to EnvError, APIError (it will be nice if we can distinct bet
 
 All errors should be sent to Sentry, and all warnings should be displayed to the user, but we should NOT attempt to do stuff when the user is offline (should not attempt to sync addons and etc.)
 
-Load -> LoadWithUser(Option<user>, addons, ...)
+Load -> LoadWithContext(Context{ Option<user>, addons }, ...)
 
 how to protect against race conditions where the responses of requests made with prev authKey arrive? maybe just take a `to_owned()`
 of the auth key in the beginning, and only persist if the auth key matches
@@ -404,9 +402,9 @@ Presumes the following reducers
 
 0: CatalogsGrouped (for board)
 1: CatalogsFilteredWithPreview (for discover); @TODO: this might be two separate reducers: CatalogsFiltered, CatalogsFilteredPreview
-2: CatalogsGrouped (for search)
-3: Detail
-4: Streams
+2: CatalogsGrouped or Search (for search)
+3: Detail (for detail)
+4: Streams (for detail)
 5: CatalogsFiltered (for library)
 6: CatalogsFiltered (for notifications; could be specific: CatalogsNotifGrouped)
 7: AddonCatalog
