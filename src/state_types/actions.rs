@@ -3,14 +3,14 @@ use crate::types::api::*;
 use serde_derive::*;
 use std::error::Error;
 
-#[derive(Debug, Deserialize, Serialize, Clone)]
+#[derive(Debug, Deserialize, Serialize, Clone, PartialEq)]
 #[serde(tag = "load", content = "args")]
 pub enum ActionLoad {
-    // @TODO most of these values need content
     CatalogGrouped { extra: Vec<ExtraProp> },
-    CatalogFiltered,
+    CatalogFiltered { resource_ref: Box<ResourceRef> },
     Detail { type_name: String, id: String },
     Streams { type_name: String, id: String },
+    // @TODO most of these values need content
     AddonCatalog,
 }
 impl ActionLoad {
@@ -69,6 +69,12 @@ impl From<Box<dyn Error>> for MiddlewareError {
 }
 
 #[derive(Debug, Deserialize, Serialize, Clone)]
+pub struct Context {
+    pub user: Option<User>,
+    pub addons: Vec<Descriptor>,
+}
+
+#[derive(Debug, Deserialize, Serialize, Clone)]
 #[serde(tag = "action", content = "args")]
 pub enum Action {
     // Input actions
@@ -79,14 +85,13 @@ pub enum Action {
     UserOp(ActionUser),
 
     // Intermediery
-    LoadWithCtx(Option<User>, Vec<Descriptor>, ActionLoad),
+    LoadWithCtx(Context, ActionLoad),
     AddonResponse(ResourceRequest, Result<ResourceResponse, String>),
 
     // Output actions
-    UserMiddlewareFatal(MiddlewareError),
+    ContextMiddlewareFatal(MiddlewareError),
     UserOpError(ActionUser, MiddlewareError),
     AddonsChanged,
     AddonsChangedFromPull,
     AuthChanged(Option<User>),
-    NewState(usize),
 }

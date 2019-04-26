@@ -7,31 +7,28 @@ use super::actions::Action;
 // to pass the action along the chain and give the handler an ability to emit new actions from that point of the chain onward
 use std::rc::Rc;
 pub type DispatcherFn = Box<Fn(&Action)>;
+
+pub trait Handler {
+    fn handle(&self, action: &Action, emit: Rc<DispatcherFn>);
+}
+
 pub struct Chain {
     dispatcher: DispatcherFn,
 }
 impl Chain {
-    pub fn new(handlers: Vec<Box<Handler>>, recv: DispatcherFn) -> Chain {
-        // perhaps this might be helpful to remove the unwraps: https://www.reddit.com/r/rust/comments/64f9c8/idea_replace_with_is_it_safe/
-        let mut dispatcher = Some(recv);
-        let mut handlers_rev = handlers;
-        handlers_rev.reverse();
-        for h_taken in handlers_rev {
-            let d_taken = Rc::new(dispatcher.take().unwrap());
-            dispatcher = Some(Box::new(move |action| {
-                d_taken(&action);
-                h_taken.handle(&action, d_taken.clone());
-            }));
-        }
-        Chain {
-            dispatcher: dispatcher.unwrap(),
-        }
+    pub fn new(handlers: Vec<Box<Handler>>, cb: DispatcherFn) -> Chain {
+        let dispatcher = handlers.into_iter().rev().fold(cb, |next, handler| {
+            let next = Rc::new(next);
+            Box::new(move |action| {
+                // propagate the action up the chain, but also allow the handler to
+                // emit actions from the same point of the chain
+                next(&action);
+                handler.handle(&action, next.clone());
+            })
+        });
+        Chain { dispatcher }
     }
     pub fn dispatch(&self, action: &Action) {
         (self.dispatcher)(action);
     }
-}
-
-pub trait Handler {
-    fn handle(&self, action: &Action, emit: Rc<DispatcherFn>);
 }

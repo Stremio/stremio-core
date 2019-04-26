@@ -13,5 +13,5 @@ pub use self::chain::*;
 mod environment;
 pub use self::environment::*;
 
-mod container_handler;
-pub use self::container_handler::*;
+mod container_muxer;
+pub use self::container_muxer::*;

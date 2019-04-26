@@ -15,8 +15,8 @@ mod tests {
     use serde::Serialize;
     use std::cell::RefCell;
     use std::rc::Rc;
+    use tokio::runtime::current_thread::run;
     use tokio::executor::current_thread::spawn;
-    use tokio::runtime::current_thread::Runtime;
 
     #[test]
     fn middlewares() {
@@ -31,31 +31,32 @@ mod tests {
             CatalogGrouped::new(),
             &catalogs_reducer,
         )));
-        let container_ref = container.clone();
-        let chain = Rc::new(Chain::new(
+        #[derive(Debug, Clone)]
+        enum ContainerId {
+            Board,
+        };
+        let muxer = Rc::new(ContainerMuxer::new(
             vec![
-                Box::new(UserMiddleware::<Env>::new()),
+                Box::new(ContextMiddleware::<Env>::new()),
                 Box::new(AddonsMiddleware::<Env>::new()),
-                Box::new(ContainerHandler::new(0, container)),
             ],
-            Box::new(move |action| {
-                if let Action::NewState(_) = action {
-                    //println!("new state {:?}", container_ref.borrow().get_state());
-                }
+            vec![(ContainerId::Board, container.clone())],
+            Box::new(|_event| {
+                //if let Event::NewState(_) = _event {
+                //    dbg!(_event);
+                //}
             }),
         ));
 
-        let mut rt = Runtime::new().expect("failed to create tokio runtime");
-        rt.spawn(lazy(enclose!((chain) move || {
+        run(lazy(enclose!((muxer) move || {
             // this is the dispatch operation
             let action = &Action::Load(ActionLoad::CatalogGrouped { extra: vec![] });
-            chain.dispatch(action);
+            muxer.dispatch(action);
             future::ok(())
         })));
-        rt.run().expect("failed to run tokio runtime");
 
         // since this is after the .run() has ended, it will be OK
-        let state = container_ref.borrow().get_state().to_owned();
+        let state = container.borrow().get_state().to_owned();
         assert_eq!(state.groups.len(), 6, "groups is the right length");
         assert!(state.groups[0].1.is_ready());
         for g in state.groups.iter() {
@@ -79,15 +80,13 @@ mod tests {
         }
 
         // Now try the same, but with Search
-        let mut rt = Runtime::new().expect("failed to create tokio runtime");
-        rt.spawn(lazy(enclose!((chain) move || {
+        run(lazy(enclose!((muxer) move || {
             let extra = vec![("search".to_owned(), "grand tour".to_owned())];
             let action = &Action::Load(ActionLoad::CatalogGrouped { extra });
-            chain.dispatch(action);
+            muxer.dispatch(action);
             future::ok(())
         })));
-        rt.run().expect("failed to run tokio runtime");
-        let state = container_ref.borrow().get_state().to_owned();
+        let state = container.borrow().get_state().to_owned();
         assert_eq!(
             state.groups.len(),
             4,
@@ -97,8 +96,7 @@ mod tests {
 
     #[test]
     fn transport_manifests() {
-        let mut rt = Runtime::new().expect("failed to create tokio runtime");
-        rt.spawn(lazy(|| {
+        run(lazy(|| {
             let cinemeta_url = "https://v3-cinemeta.strem.io/manifest.json";
             let legacy_url = "https://opensubtitles.strem.io/stremioget/stremio/v1";
             let fut1 = AddonHTTPTransport::<Env>::manifest(cinemeta_url).then(|res| {
@@ -115,7 +113,6 @@ mod tests {
             });
             fut1.join(fut2).map(|(_, _)| ())
         }));
-        rt.run().expect("faild to run tokio runtime");
     }
 
     struct Env {}

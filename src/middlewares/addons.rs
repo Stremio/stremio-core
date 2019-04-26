@@ -13,7 +13,7 @@ pub struct AddonsMiddleware<T: Environment> {
 }
 impl<T: Environment> Handler for AddonsMiddleware<T> {
     fn handle(&self, action: &Action, emit: Rc<DispatcherFn>) {
-        if let Action::LoadWithCtx(_, addons, action_load) = action {
+        if let Action::LoadWithCtx(Context { addons, .. }, action_load) = action {
             if let Some(aggr_req) = action_load.addon_aggr_req() {
                 for resource_req in aggr_req.plan(&addons) {
                     Self::for_request(resource_req, emit.clone())

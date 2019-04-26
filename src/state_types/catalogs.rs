@@ -11,6 +11,7 @@ const MAX_ITEMS: usize = 25;
 pub enum Loadable<R, M> {
     NotLoaded,
     Loading,
+    ReadyEmpty,
     Ready(R),
     Message(M),
 }
@@ -39,7 +40,10 @@ impl CatalogGrouped {
 
 pub fn catalogs_reducer(state: &CatalogGrouped, action: &Action) -> Option<Box<CatalogGrouped>> {
     match action {
-        Action::LoadWithCtx(_, addons, load_action @ ActionLoad::CatalogGrouped { .. }) => {
+        Action::LoadWithCtx(
+            Context { addons, .. },
+            load_action @ ActionLoad::CatalogGrouped { .. },
+        ) => {
             if let Some(aggr_req) = load_action.addon_aggr_req() {
                 let groups = aggr_req
                     .plan(&addons)
@@ -55,6 +59,9 @@ pub fn catalogs_reducer(state: &CatalogGrouped, action: &Action) -> Option<Box<C
             if let Some(idx) = state.groups.iter().position(|g| &g.0 == req) {
                 let mut groups = state.groups.to_owned();
                 let group_content = match result {
+                    Ok(ResourceResponse::Metas { metas }) if metas.len() == 0 => {
+                        Loadable::ReadyEmpty
+                    }
                     Ok(ResourceResponse::Metas { metas }) => {
                         Loadable::Ready(metas.iter().take(MAX_ITEMS).cloned().collect())
                     }

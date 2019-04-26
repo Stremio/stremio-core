@@ -92,9 +92,29 @@
 * consider full router in e example
 * legacy transport: (and all transports): manifest retrieval
 * AddonM: AddonTransport trait, .get(), .manifest(); http addons will be constructed with a URL, while lib/notif addon directly as something that implements AddonTransport
-
+* refactor: Chain should not have a final callback
+* refactor: FinalHandler/ContainersHandler in place of ContainerHandler, which will contain the final callback
+* Actions should not contain final stuff, FinalHandler should take it's own type
 
 ## TODO
+
+experiments
+	try to make a UI with conrod (https://github.com/tokio-rs/tokio-core/issues/150)
+	maybe integrate in 4.x as a demo?
+state container: all issues to github
+state container: document PlayerPreferences and etc.
+state container: catalogfiltered should be split by pages; streams should be split by addons; should it be used by board?
+calendar can be implemented via addons (library addon)
+	upcoming eps might be related
+container might be a trait with default methods; that way, you can construct them with args
+
+
+* Load to be able to target particular containers; ContainerMuxer
+	it will have to remmeber it's last Load itself
+	filter Loads when we send a load to a container
+	downcast from the muxer?
+	emit a ref to &ContainerInterface with NewState; that can be downcast (this will probably need Rc<RefCell)
+* refactor: figure out some identifier that links the Load to the actual end container
 
 * Video struct
 
@@ -116,14 +136,13 @@
 
 * implement CatalogsFiltered, Streams
 
-* API types: `()` should be (de)serialized as `{success: "true"}`
+* API types: SuccessResponse should be (de)serialized as `{success: true}`
 
 * test if addoncollection can be parsed and understood, once the middleware(s) can retrieve collections
 * addon catalog reducer, actions
 
 * basic state: Catalog, Detail; and all the possible inner states (describe the structures); StreamSelect
-* tests: Chain, Container, individual middlewares, individual types
-* Load to be able to target particular containers
+* tests: Container, individual middlewares, individual types
 * start implementing libitem/notifitem addon
 * load/unload dynamics and more things other than Catalog: Detail, StreamSelect
 
@@ -188,7 +207,6 @@ many AddonResponse(addon, 'catalog', resp) => each one would update the catalogs
 ---------
 
 ## Universe actions: 
-UserDataLoad
 InitiateSync (or separate events; see https://github.com/Stremio/stremio/issues/388)
 BeforeClose
 SettingsLoad
@@ -198,7 +216,7 @@ WindowStateChanged (playerM will react on that to pause the player if the settin
 
 ## Actions from the user
 
-Load reducerType reducerId ...
+Load
 	works for opening catalogs/detail/load/search
 	reducerType is needed so that middlewares know to react; we can remove that by instructing the middlewares which reducerIds they should care about
 	the library middleware will try to attach a selected type if there isn't one
@@ -225,7 +243,6 @@ PlayerCommand
 ## Settings middleware:
 
 It will persist settings in storage
-
 
 figure out whether we need a settings container/middleware in stremio-state-ng; check list of settings, check which ones are user synced
 	think which ones can actually be storred as addon flags
@@ -284,7 +301,7 @@ can be generalized to EnvError, APIError (it will be nice if we can distinct bet
 
 All errors should be sent to Sentry, and all warnings should be displayed to the user, but we should NOT attempt to do stuff when the user is offline (should not attempt to sync addons and etc.)
 
-Load -> LoadWithUser(Option<user>, addons, ...)
+Load -> LoadWithContext(Context{ Option<user>, addons }, ...)
 
 how to protect against race conditions where the responses of requests made with prev authKey arrive? maybe just take a `to_owned()`
 of the auth key in the beginning, and only persist if the auth key matches
@@ -396,9 +413,9 @@ Presumes the following reducers
 
 0: CatalogsGrouped (for board)
 1: CatalogsFilteredWithPreview (for discover); @TODO: this might be two separate reducers: CatalogsFiltered, CatalogsFilteredPreview
-2: CatalogsGrouped (for search)
-3: Detail
-4: Streams
+2: CatalogsGrouped or Search (for search)
+3: Detail (for detail)
+4: Streams (for detail)
 5: CatalogsFiltered (for library)
 6: CatalogsFiltered (for notifications; could be specific: CatalogsNotifGrouped)
 7: AddonCatalog
@@ -480,7 +497,6 @@ Dispatch LoadPlayer(8, type, id, videoId, streamSerialized) -> this will trigger
 ### /calendar
 
 @TODO
-CalendarMIddleware needs to get the calendar from the stremio-web-services
 
 ### /intro
 
