@@ -95,6 +95,7 @@
 * refactor: Chain should not have a final callback
 * refactor: FinalHandler/ContainersHandler in place of ContainerHandler, which will contain the final callback
 * Actions should not contain final stuff, FinalHandler should take it's own type
+* reworked Container API: Container struct needs to be mutable now; ContainerHolder handles interior mutability; the ContainerInterface trait assumes interior mutability
 
 ## TODO
 
