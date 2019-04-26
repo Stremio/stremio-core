@@ -99,7 +99,7 @@
 ## TODO
 
 experiments
-	try to make a UI with conrod
+	try to make a UI with conrod (https://github.com/tokio-rs/tokio-core/issues/150)
 	maybe integrate in 4.x as a demo?
 state container: all issues to github
 state container: document PlayerPreferences and etc.
