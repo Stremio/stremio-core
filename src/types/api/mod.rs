@@ -90,6 +90,7 @@ pub enum APIResult<T> {
 }
 
 // Always true
+// consider moving into a separate module
 #[derive(Debug, Clone, Copy, PartialEq, PartialOrd, Eq, Ord)]
 pub struct True;
 

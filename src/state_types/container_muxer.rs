@@ -1,8 +1,6 @@
 use crate::state_types::*;
 use serde_derive::*;
-use std::rc::Rc;
-
-type ContainerHolder = Rc<ContainerInterface>;
+use std::ops::Deref;
 
 #[derive(Debug, Clone, Serialize)]
 #[serde(tag = "event", content = "args")]
@@ -22,9 +20,9 @@ pub struct ContainerMuxer {
     chain: Chain,
 }
 impl ContainerMuxer {
-    pub fn new<T: 'static + Clone>(
+    pub fn new<T: 'static + Clone, U: 'static + Deref<Target=ContainerInterface>>(
         middlewares: Vec<Box<Handler>>,
-        containers: Vec<(T, ContainerHolder)>,
+        containers: Vec<(T, U)>,
         cb: FinalFn<T>,
     ) -> Self {
         let chain = Chain::new(
