@@ -2,7 +2,7 @@ use super::actions::Action;
 use serde::Serialize;
 use std::cell::{Ref, RefCell};
 
-pub type ReducerFn<S> = &'static Fn(&S, &Action) -> Option<Box<S>>;
+pub type ReducerFn<S> = &'static (Fn(&S, &Action) -> Option<Box<S>> + Send + Sync);
 
 pub trait ContainerInterface {
     fn dispatch(&self, action: &Action) -> bool;

@@ -2,7 +2,7 @@ use super::actions::*;
 use crate::types::addons::*;
 use crate::types::MetaPreview;
 use serde_derive::*;
-use std::rc::Rc;
+use std::sync::Arc;
 
 const MAX_ITEMS: usize = 25;
 
@@ -27,7 +27,7 @@ impl<R, M> Loadable<R, M> {
 // @TODO better type for Message
 pub type Message = String;
 
-type Group = Rc<(ResourceRequest, Loadable<Vec<MetaPreview>, Message>)>;
+type Group = Arc<(ResourceRequest, Loadable<Vec<MetaPreview>, Message>)>;
 #[derive(Debug, Default, Clone, Serialize, Deserialize)]
 pub struct CatalogGrouped {
     pub groups: Vec<Group>,
@@ -48,7 +48,7 @@ pub fn catalogs_reducer(state: &CatalogGrouped, action: &Action) -> Option<Box<C
                 let groups = aggr_req
                     .plan(&addons)
                     .iter()
-                    .map(|req| Rc::new((req.to_owned(), Loadable::Loading)))
+                    .map(|req| Arc::new((req.to_owned(), Loadable::Loading)))
                     .collect();
                 Some(Box::new(CatalogGrouped { groups }))
             } else {
@@ -68,7 +68,7 @@ pub fn catalogs_reducer(state: &CatalogGrouped, action: &Action) -> Option<Box<C
                     Ok(_) => Loadable::Message("unexpected ResourceResponse".to_owned()),
                     Err(e) => Loadable::Message(e.to_owned()),
                 };
-                groups[idx] = Rc::new((req.to_owned(), group_content));
+                groups[idx] = Arc::new((req.to_owned(), group_content));
                 Some(Box::new(CatalogGrouped { groups }))
             } else {
                 None
