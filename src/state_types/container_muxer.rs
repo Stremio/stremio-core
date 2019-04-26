@@ -1,12 +1,15 @@
 use crate::state_types::*;
-use std::rc::Rc;
 use serde_derive::*;
+use std::rc::Rc;
 
 type ContainerHolder = Rc<ContainerInterface>;
 
 #[derive(Debug, Clone, Serialize)]
 #[serde(tag = "event", content = "args")]
-pub enum Event<'a, T> where T: Clone {
+pub enum Event<'a, T>
+where
+    T: Clone,
+{
     Action(&'a Action),
     NewState(&'a T),
 }

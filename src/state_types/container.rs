@@ -1,6 +1,6 @@
 use super::actions::Action;
-use std::cell::{Ref, RefCell};
 use serde::Serialize;
+use std::cell::{Ref, RefCell};
 
 pub type ReducerFn<S> = &'static Fn(&S, &Action) -> Option<Box<S>>;
 
@@ -8,7 +8,6 @@ pub trait ContainerInterface {
     fn dispatch(&self, action: &Action) -> bool;
     fn get_state_serialized(&self) -> Result<String, serde_json::Error>;
 }
-
 
 pub struct Container<S: 'static> {
     state: S,
@@ -28,7 +27,7 @@ impl<S> Container<S> {
                 self.state = *new_state;
                 true
             }
-            None => false
+            None => false,
         }
     }
 }

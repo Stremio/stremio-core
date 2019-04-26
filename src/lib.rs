@@ -14,8 +14,8 @@ mod tests {
     use serde::de::DeserializeOwned;
     use serde::Serialize;
     use std::rc::Rc;
-    use tokio::runtime::current_thread::run;
     use tokio::executor::current_thread::spawn;
+    use tokio::runtime::current_thread::run;
 
     #[test]
     fn middlewares() {
