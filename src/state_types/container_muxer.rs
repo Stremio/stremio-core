@@ -1,9 +1,8 @@
 use crate::state_types::*;
-use std::cell::RefCell;
 use std::rc::Rc;
 use serde_derive::*;
 
-type ContainerHolder = Rc<RefCell<ContainerInterface>>;
+type ContainerHolder = Rc<ContainerInterface>;
 
 #[derive(Debug, Clone, Serialize)]
 #[serde(tag = "event", content = "args")]
@@ -28,11 +27,9 @@ impl ContainerMuxer {
         let chain = Chain::new(
             middlewares,
             Box::new(move |action| {
-                // because our handler chain will not allow an action to be dispatched recursively to
-                // ourselves, this borrow_mut() is safe
                 cb(Event::Action(action));
                 for (id, container) in containers.iter() {
-                    let has_new_state = container.borrow_mut().dispatch(action);
+                    let has_new_state = container.dispatch(action);
                     if has_new_state {
                         cb(Event::NewState(id));
                     }

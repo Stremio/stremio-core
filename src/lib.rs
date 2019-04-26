@@ -13,7 +13,6 @@ mod tests {
     use futures::{future, Future};
     use serde::de::DeserializeOwned;
     use serde::Serialize;
-    use std::cell::RefCell;
     use std::rc::Rc;
     use tokio::runtime::current_thread::run;
     use tokio::executor::current_thread::spawn;
@@ -27,10 +26,10 @@ mod tests {
         // @TODO: Fix: the assumptions we are testing against are pretty much based on the current
         // official addons; e.g. assuming 6 groups, or 4 groups when searching
         // @TODO test what happens with no handlers
-        let container = Rc::new(RefCell::new(Container::with_reducer(
+        let container = Rc::new(Container::with_reducer(
             CatalogGrouped::new(),
             &catalogs_reducer,
-        )));
+        ));
         #[derive(Debug, Clone)]
         enum ContainerId {
             Board,
@@ -56,7 +55,7 @@ mod tests {
         })));
 
         // since this is after the .run() has ended, it will be OK
-        let state = container.borrow().get_state().to_owned();
+        let state = container.get_state().to_owned();
         assert_eq!(state.groups.len(), 6, "groups is the right length");
         assert!(state.groups[0].1.is_ready());
         for g in state.groups.iter() {
@@ -86,7 +85,7 @@ mod tests {
             muxer.dispatch(action);
             future::ok(())
         })));
-        let state = container.borrow().get_state().to_owned();
+        let state = container.get_state().to_owned();
         assert_eq!(
             state.groups.len(),
             4,
