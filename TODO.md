@@ -101,6 +101,8 @@
 Container trait
 ContainerHolder trait
 
+cannot dispatch while holding a ref to the state
+
 experiments
 	try to make a UI with conrod (https://github.com/tokio-rs/tokio-core/issues/150)
 	maybe integrate in 4.x as a demo?
