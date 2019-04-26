@@ -1,6 +1,7 @@
 use crate::state_types::*;
 use std::cell::RefCell;
 use std::rc::Rc;
+use serde_derive::*;
 
 type ContainerHolder = Rc<RefCell<ContainerInterface>>;
 
