@@ -4,7 +4,8 @@ use std::rc::Rc;
 
 type ContainerHolder = Rc<RefCell<ContainerInterface>>;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize)]
+#[serde(tag = "event", content = "args")]
 pub enum Event<'a, T> where T: Clone {
     Action(&'a Action),
     NewState(&'a T),
