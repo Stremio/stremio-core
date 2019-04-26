@@ -1,56 +1,43 @@
 use super::actions::Action;
 use serde::Serialize;
 use std::cell::{Ref, RefCell};
-
-pub type ReducerFn<S> = &'static (Fn(&S, &Action) -> Option<Box<S>> + Send + Sync);
+use std::ops::Deref;
 
 pub trait ContainerInterface {
     fn dispatch(&self, action: &Action) -> bool;
     fn get_state_serialized(&self) -> Result<String, serde_json::Error>;
 }
 
-pub struct Container<S: 'static> {
-    state: S,
-    reducer: ReducerFn<S>,
+pub trait Container {
+    fn dispatch(&self, action: &Action) -> Option<Box<Self>>;
 }
 
-impl<S> Container<S> {
-    pub fn with_reducer(state: S, reducer: ReducerFn<S>) -> Container<S> {
-        Container { state, reducer }
-    }
-    pub fn get_state(&self) -> &S {
-        &self.state
-    }
-    pub fn dispatch(&mut self, action: &Action) -> bool {
-        match (self.reducer)(&self.state, action) {
-            Some(new_state) => {
-                self.state = *new_state;
-                true
-            }
-            None => false,
-        }
-    }
-}
+pub struct ContainerHolder<S: Container + 'static>(RefCell<S>);
 
-pub struct ContainerHolder<S: 'static>(RefCell<Container<S>>);
-
-impl<S> ContainerHolder<S> {
-    pub fn new(container: Container<S>) -> Self {
+impl<S> ContainerHolder<S> where S: Container {
+    pub fn new(container: S) -> Self {
         ContainerHolder(RefCell::new(container))
     }
     pub fn borrow_state(&self) -> Ref<'_, S> {
-        Ref::map(self.0.borrow(), |m| &m.state)
+        self.0.borrow()
     }
 }
 
 impl<S> ContainerInterface for ContainerHolder<S>
 where
-    S: Serialize,
+    S: Serialize + Container,
 {
     fn dispatch(&self, action: &Action) -> bool {
-        self.0.borrow_mut().dispatch(action)
+        let maybe_new_state = self.0.borrow().dispatch(action);
+        match maybe_new_state {
+            Some(state) => {
+                *self.0.borrow_mut() = *state;
+                true
+            }
+            None => false
+        }
     }
     fn get_state_serialized(&self) -> Result<String, serde_json::Error> {
-        serde_json::to_string(&self.0.borrow().get_state())
+        serde_json::to_string(self.0.borrow().deref())
     }
 }

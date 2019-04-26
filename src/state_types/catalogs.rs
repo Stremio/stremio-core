@@ -1,5 +1,6 @@
 use super::actions::*;
 use crate::types::addons::*;
+use crate::state_types::Container;
 use crate::types::MetaPreview;
 use serde_derive::*;
 use std::sync::Arc;
@@ -35,6 +36,11 @@ pub struct CatalogGrouped {
 impl CatalogGrouped {
     pub fn new() -> CatalogGrouped {
         CatalogGrouped { groups: vec![] }
+    }
+}
+impl Container for CatalogGrouped {
+    fn dispatch(&self, action: &Action) -> Option<Box<Self>> {
+        catalogs_reducer(&self, action)
     }
 }
 

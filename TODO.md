@@ -96,9 +96,11 @@
 * refactor: FinalHandler/ContainersHandler in place of ContainerHandler, which will contain the final callback
 * Actions should not contain final stuff, FinalHandler should take it's own type
 * reworked Container API: Container struct needs to be mutable now; ContainerHolder handles interior mutability; the ContainerInterface trait assumes interior mutability
+* container might be a trait with default methods; that way, you can construct them with args; eliminates mutability too
 
 ## TODO
 
+* cataloggrouped: consider dropping the Arc and just copying
 experiments
 	try to make a UI with conrod (https://github.com/tokio-rs/tokio-core/issues/150)
 	maybe integrate in 4.x as a demo?
@@ -107,9 +109,6 @@ state container: document PlayerPreferences and etc.
 state container: catalogfiltered should be split by pages; streams should be split by addons; should it be used by board?
 calendar can be implemented via addons (library addon)
 	upcoming eps might be related
-
-* container might be a trait with default methods; that way, you can construct them with args
-
 
 * Load to be able to target particular containers; ContainerMuxer
 	it will have to remmeber it's last Load itself
