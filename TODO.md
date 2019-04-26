@@ -107,7 +107,8 @@ state container: document PlayerPreferences and etc.
 state container: catalogfiltered should be split by pages; streams should be split by addons; should it be used by board?
 calendar can be implemented via addons (library addon)
 	upcoming eps might be related
-container might be a trait with default methods; that way, you can construct them with args
+
+* container might be a trait with default methods; that way, you can construct them with args
 
 
 * Load to be able to target particular containers; ContainerMuxer
@@ -153,7 +154,6 @@ container might be a trait with default methods; that way, you can construct the
 
 * document loopback actions (implicit input): `AddonsChanged->PushAddons` (if there's a conn), (as a result of Open) `ProposeLoad -> Load`; `ProposeWatchNext -> Open`; also those that are results of OpenMedia, InstallAndOpenAddon
 
-* refactor: separate crates: types, `state_types`; the point of that is to not install any unneeded deps
 
 * Trait for meta item and lib item; MetaPreview, MetaItem, MetaDetailed
 * stuff to look for to be re-implemented: syncer, libitem/notifitem addons, discover ctrl, board ctrl, detail ctrl
@@ -161,7 +161,10 @@ container might be a trait with default methods; that way, you can construct the
 * complex async pieces of logic: open, detectFromURL, openMedia; those should be a middleware or just separate async functions; detectFromURL/openMedia are user-agnostic, but open is not; if it's an async function used internally by the middleware, it's still OK cause we won't make the stream requests again if we go to the UI (cause of the memoization)
 * ?addonOpen/InstallAndOpenAddon: another async action
 * opening a file (protocol add-ons to be considered)
+
+* refactor: separate crates: types, `state_types`; the point of that is to not install any unneeded deps
 * crates: stremio-web-environment (only the Environment), stremio-state-ng-web (general API that is exported to JS via bindgen)
+
 * we should make it so that if a session is expired, we go to the login screen; this should be in the app
 * think of how to do all edge cases in the user, such as pre-installing add-ons (implicit input)
 * behaviorHints - pair (key, val)?
