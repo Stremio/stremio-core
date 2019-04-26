@@ -26,10 +26,7 @@ mod tests {
         // @TODO: Fix: the assumptions we are testing against are pretty much based on the current
         // official addons; e.g. assuming 6 groups, or 4 groups when searching
         // @TODO test what happens with no handlers
-        let container = Rc::new(ContainerHolder::new(Container::with_reducer(
-            CatalogGrouped::new(),
-            &catalogs_reducer,
-        )));
+        let container = Rc::new(ContainerHolder::new(CatalogGrouped::new()));
         #[derive(Debug, Clone)]
         enum ContainerId {
             Board,

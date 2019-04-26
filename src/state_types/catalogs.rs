@@ -1,5 +1,6 @@
 use super::actions::*;
 use crate::types::addons::*;
+use crate::state_types::Container;
 use crate::types::MetaPreview;
 use serde_derive::*;
 use std::sync::Arc;
@@ -37,8 +38,13 @@ impl CatalogGrouped {
         CatalogGrouped { groups: vec![] }
     }
 }
+impl Container for CatalogGrouped {
+    fn dispatch(&self, action: &Action) -> Option<Box<Self>> {
+        catalogs_reducer(&self, action)
+    }
+}
 
-pub fn catalogs_reducer(state: &CatalogGrouped, action: &Action) -> Option<Box<CatalogGrouped>> {
+fn catalogs_reducer(state: &CatalogGrouped, action: &Action) -> Option<Box<CatalogGrouped>> {
     match action {
         Action::LoadWithCtx(
             Context { addons, .. },
