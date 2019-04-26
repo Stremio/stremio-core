@@ -98,6 +98,17 @@
 
 ## TODO
 
+experiments
+	try to make a UI with conrod
+	maybe integrate in 4.x as a demo?
+state container: all issues to github
+state container: document PlayerPreferences and etc.
+state container: catalogfiltered should be split by pages; streams should be split by addons; should it be used by board?
+calendar can be implemented via addons (library addon)
+	upcoming eps might be related
+container might be a trait with default methods; that way, you can construct them with args
+
+
 * Load to be able to target particular containers; ContainerMuxer
 	it will have to remmeber it's last Load itself
 	filter Loads when we send a load to a container
@@ -125,7 +136,7 @@
 
 * implement CatalogsFiltered, Streams
 
-* API types: `()` should be (de)serialized as `{success: "true"}`
+* API types: SuccessResponse should be (de)serialized as `{success: true}`
 
 * test if addoncollection can be parsed and understood, once the middleware(s) can retrieve collections
 * addon catalog reducer, actions
@@ -486,7 +497,6 @@ Dispatch LoadPlayer(8, type, id, videoId, streamSerialized) -> this will trigger
 ### /calendar
 
 @TODO
-CalendarMIddleware needs to get the calendar from the stremio-web-services
 
 ### /intro
 
