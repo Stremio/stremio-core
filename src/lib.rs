@@ -31,7 +31,7 @@ mod tests {
             CatalogGrouped::new(),
             &catalogs_reducer,
         )));
-        #[derive(Debug)]
+        #[derive(Debug, Clone)]
         enum ContainerId {
             Board,
         };

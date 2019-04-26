@@ -5,7 +5,7 @@ use std::rc::Rc;
 type ContainerHolder = Rc<RefCell<ContainerInterface>>;
 
 #[derive(Debug, Clone)]
-pub enum Event<'a, T> {
+pub enum Event<'a, T> where T: Clone {
     Action(&'a Action),
     NewState(&'a T),
 }
@@ -18,7 +18,7 @@ pub struct ContainerMuxer {
     chain: Chain,
 }
 impl ContainerMuxer {
-    pub fn new<T: 'static>(
+    pub fn new<T: 'static + Clone>(
         middlewares: Vec<Box<Handler>>,
         containers: Vec<(T, ContainerHolder)>,
         cb: FinalFn<T>,
