@@ -44,7 +44,7 @@ impl Container for CatalogGrouped {
     }
 }
 
-pub fn catalogs_reducer(state: &CatalogGrouped, action: &Action) -> Option<Box<CatalogGrouped>> {
+fn catalogs_reducer(state: &CatalogGrouped, action: &Action) -> Option<Box<CatalogGrouped>> {
     match action {
         Action::LoadWithCtx(
             Context { addons, .. },
