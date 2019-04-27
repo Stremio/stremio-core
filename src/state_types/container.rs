@@ -1,6 +1,6 @@
 use super::actions::Action;
 use serde::Serialize;
-use std::cell::{Ref, RefCell};
+use std::cell::RefCell;
 use std::ops::Deref;
 
 pub trait ContainerInterface {
@@ -14,12 +14,12 @@ pub trait Container {
 
 pub struct ContainerHolder<S: Container + 'static>(RefCell<S>);
 
-impl<S> ContainerHolder<S> where S: Container {
+impl<S> ContainerHolder<S> where S: Container + Clone {
     pub fn new(container: S) -> Self {
         ContainerHolder(RefCell::new(container))
     }
-    pub fn borrow_state(&self) -> Ref<'_, S> {
-        self.0.borrow()
+    pub fn get_state_owned(&self) -> S {
+        self.0.borrow().to_owned()
     }
 }
 

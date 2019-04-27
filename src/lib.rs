@@ -52,7 +52,7 @@ mod tests {
         })));
 
         // since this is after the .run() has ended, it will be OK
-        let state = container.borrow_state().to_owned();
+        let state = container.get_state_owned();
         assert_eq!(state.groups.len(), 6, "groups is the right length");
         assert!(state.groups[0].1.is_ready());
         for g in state.groups.iter() {
@@ -82,7 +82,7 @@ mod tests {
             muxer.dispatch(action);
             future::ok(())
         })));
-        let state = container.borrow_state().to_owned();
+        let state = container.get_state_owned();
         assert_eq!(
             state.groups.len(),
             4,

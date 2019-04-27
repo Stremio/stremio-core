@@ -105,7 +105,7 @@ experiments
 	try to make a UI with conrod (https://github.com/tokio-rs/tokio-core/issues/150)
 	maybe integrate in 4.x as a demo?
 state container: all issues to github
-state container: document PlayerPreferences and etc.
+state container: document PlayerPreferences and etc.; binging, saving library item state, marking episodes watched, marking notifications seen
 state container: catalogfiltered should be split by pages; streams should be split by addons; should it be used by board?
 calendar can be implemented via addons (library addon)
 	upcoming eps might be related
