@@ -20,7 +20,7 @@ pub struct ContainerMuxer {
     chain: Chain,
 }
 impl ContainerMuxer {
-    pub fn new<T: 'static + Clone, U: 'static + Deref<Target=ContainerInterface>>(
+    pub fn new<T: 'static + Clone, U: 'static + Deref<Target = ContainerInterface>>(
         middlewares: Vec<Box<Handler>>,
         containers: Vec<(T, U)>,
         cb: FinalFn<T>,

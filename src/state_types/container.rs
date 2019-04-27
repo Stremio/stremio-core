@@ -14,7 +14,10 @@ pub trait Container {
 
 pub struct ContainerHolder<S: Container + 'static>(RefCell<S>);
 
-impl<S> ContainerHolder<S> where S: Container + Clone {
+impl<S> ContainerHolder<S>
+where
+    S: Container + Clone,
+{
     pub fn new(container: S) -> Self {
         ContainerHolder(RefCell::new(container))
     }
@@ -34,7 +37,7 @@ where
                 *self.0.borrow_mut() = *state;
                 true
             }
-            None => false
+            None => false,
         }
     }
     fn get_state_serialized(&self) -> Result<String, serde_json::Error> {

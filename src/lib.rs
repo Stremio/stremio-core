@@ -36,7 +36,10 @@ mod tests {
                 Box::new(ContextMiddleware::<Env>::new()),
                 Box::new(AddonsMiddleware::<Env>::new()),
             ],
-            vec![(ContainerId::Board, container.clone() as Rc<dyn ContainerInterface>)],
+            vec![(
+                ContainerId::Board,
+                container.clone() as Rc<dyn ContainerInterface>,
+            )],
             Box::new(|_event| {
                 //if let Event::NewState(_) = _event {
                 //    dbg!(_event);
