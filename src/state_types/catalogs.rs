@@ -7,7 +7,7 @@ use std::sync::Arc;
 
 const MAX_ITEMS: usize = 25;
 
-#[derive(Debug, Serialize, Deserialize, Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
 #[serde(tag = "type", content = "content")]
 pub enum Loadable<R, M> {
     Loading,
@@ -94,7 +94,7 @@ fn catalogs_reducer(state: &CatalogGrouped, action: &Action) -> Option<Box<Catal
 pub struct CatalogFiltered {
     pub item_pages: Vec<LoadableItems>,
     pub catalogs: Vec<ManifestCatalog>,
-    pub selected: Option<ResourceRef>,
+    pub selected: Option<ResourceRequest>,
     // @TODO: additional filters
     // @TODO pagination; this can be done by incrementing skip in the ResourceRef
 }
@@ -112,22 +112,40 @@ impl Container for CatalogFiltered {
         match action {
             Action::LoadWithCtx(
                 Context { addons, .. },
-                ActionLoad::CatalogFiltered { resource_ref },
+                ActionLoad::CatalogFiltered { resource_req },
             ) => {
                 //dbg!(&addons);
-                //dbg!(&resource_ref);
-                // @TODO selected catalog
+                //dbg!(&resource_req);
+                // @TODO pagination
                 let catalogs = addons
                     .iter()
                     .map(|a| &a.manifest.catalogs)
                     .cloned()
                     .flatten()
+                    .filter(|cat| cat.is_extra_supported(&vec![]))
                     .collect();
                 Some(Box::new(CatalogFiltered {
                     catalogs,
                     item_pages: vec![Loadable::Loading],
-                    selected: Some(*resource_ref.to_owned()),
+                    selected: Some(*resource_req.to_owned()),
                 }))
+            }
+            Action::AddonResponse(req, result)
+                if Some(req) == self.selected.as_ref()
+                    && self.item_pages.last() == Some(&Loadable::Loading) =>
+            {
+                // @TODO pagination
+                let mut new_state = self.to_owned();
+                // @TODO: this code kind of duplicates with CatalogGrouped
+                new_state.item_pages[0] = match result {
+                    Ok(ResourceResponse::Metas { metas }) if metas.len() == 0 => {
+                        Loadable::ReadyEmpty
+                    }
+                    Ok(ResourceResponse::Metas { metas }) => Loadable::Ready(metas.to_owned()),
+                    Ok(_) => Loadable::Message("unexpected ResourceResponse".to_owned()),
+                    Err(e) => Loadable::Message(e.to_owned()),
+                };
+                Some(Box::new(new_state))
             }
             _ => None,
         }
