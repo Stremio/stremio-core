@@ -94,14 +94,16 @@ fn catalogs_reducer(state: &CatalogGrouped, action: &Action) -> Option<Box<Catal
 pub struct CatalogFiltered {
     pub item_pages: Vec<LoadableItems>,
     pub catalogs: Vec<ManifestCatalog>,
+    pub selected: Option<ResourceRef>,
     // @TODO: additional filters
-    // @TODO pages
+    // @TODO pagination; this can be done by incrementing skip in the ResourceRef
 }
 impl CatalogFiltered {
     pub fn new() -> CatalogFiltered {
         CatalogFiltered {
             item_pages: vec![],
             catalogs: vec![],
+            selected: None,
         }
     }
 }
@@ -114,13 +116,20 @@ impl Container for CatalogFiltered {
             ) => {
                 //dbg!(&addons);
                 //dbg!(&resource_ref);
-                let catalogs = addons.iter().map(|a| &a.manifest.catalogs).cloned().flatten().collect();
-                Some(Box::new(CatalogFiltered{
+                // @TODO selected catalog
+                let catalogs = addons
+                    .iter()
+                    .map(|a| &a.manifest.catalogs)
+                    .cloned()
+                    .flatten()
+                    .collect();
+                Some(Box::new(CatalogFiltered {
                     catalogs,
                     item_pages: vec![Loadable::Loading],
+                    selected: Some(*resource_ref.to_owned()),
                 }))
-            },
-            _ => None
+            }
+            _ => None,
         }
     }
 }
