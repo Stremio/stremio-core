@@ -96,6 +96,7 @@
 * refactor: FinalHandler/ContainersHandler in place of ContainerHandler, which will contain the final callback
 * Actions should not contain final stuff, FinalHandler should take it's own type
 * reworked Container API: Container struct needs to be mutable now; ContainerHolder handles interior mutability; the ContainerInterface trait assumes interior mutability
+* API types: SuccessResponse should be (de)serialized as `{success: true}`
 * container might be a trait with default methods; that way, you can construct them with args; eliminates mutability too
 * try to make a UI with conrod (https://github.com/tokio-rs/tokio-core/issues/150)
 * implement a basic CatalogsFiltered
@@ -104,7 +105,8 @@
 
 ## TODO
 
-* implement a Streams reducer
+* implement a Streams container
+* implement a Detail container (MetaDetailed?)
 
 * Video struct
 
@@ -115,7 +117,6 @@
 	emit a ref to &ContainerInterface with NewState; that can be downcast (this will probably need Rc<RefCell)
 * refactor: figure out some identifier that links the Load to the actual end container
 
-
 * state container: all issues to github
 * state container: document PlayerPreferences and etc.; binging, saving library item state, marking episodes watched, marking notifications seen
 * state container: catalogfiltered should be split by pages; streams should be split by addons
@@ -123,7 +124,6 @@
 * decide what to use for Continue watching; probably a catalog in the Library add-on
 * DESIGN: calendar can be implemented via addons (library addon)
 	upcoming eps might be related
-
 
 
 * AddonTransportMuxer; construct with a BTreeMap of <TransportUrl, AddonInterface>; ContextM will emit LibraryAddonUpdated(interface) or SetInternalAddon({addon,transport_url}), which will be `skip_serializing`; AddonM will react on this and replace it's instance of the muxer with a new one;
@@ -143,17 +143,11 @@
 * UserM: mock storage and tests
 
 
-* API types: SuccessResponse should be (de)serialized as `{success: true}`
-
 * test if addoncollection can be parsed and understood, once the middleware(s) can retrieve collections
 * addon catalog reducer, actions
 
-* basic state: Catalog, Detail; and all the possible inner states (describe the structures); StreamSelect
 * tests: Container, individual middlewares, individual types
 * start implementing libitem/notifitem addon
-* load/unload dynamics and more things other than Catalog: Detail, StreamSelect
-
-* Video type, detailed meta
 
 * environment implementations: return an error related to the HTTP status code, if it's not 200
 
