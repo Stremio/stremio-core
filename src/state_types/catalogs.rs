@@ -28,7 +28,10 @@ macro_rules! result_to_loadable {
     ($r:ident, $e:expr) => {
         match $r {
             Ok(ResourceResponse::Metas { metas }) if metas.len() == 0 => Loadable::ReadyEmpty,
-            Ok(ResourceResponse::Metas { metas }) => Loadable::Ready(($e)(metas)),
+            Ok(ResourceResponse::Metas { metas }) => {
+                let mapper = $e;
+                Loadable::Ready(mapper(metas))
+            },
             Ok(_) => Loadable::Message("unexpected ResourceResponse".to_owned()),
             Err(e) => Loadable::Message(e.to_owned()),
         }
