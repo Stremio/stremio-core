@@ -105,6 +105,8 @@
 
 ## TODO
 
+
+
 * test for CatalogFiltered
 
 * implement a Streams container
@@ -126,6 +128,11 @@
 * decide what to use for Continue watching; probably a catalog in the Library add-on
 * DESIGN: calendar can be implemented via addons (library addon)
 	upcoming eps might be related
+
+
+
+* library addon - handles interior mutability (Arc + Mutex); handles: .addon() -> AddonInterface; .middleware() -> Handler
+
 
 
 * AddonTransportMuxer; construct with a BTreeMap of <TransportUrl, AddonInterface>; ContextM will emit LibraryAddonUpdated(interface) or SetInternalAddon({addon,transport_url}), which will be `skip_serializing`; AddonM will react on this and replace it's instance of the muxer with a new one;

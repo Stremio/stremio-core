@@ -16,6 +16,11 @@ mod tests {
     use std::rc::Rc;
     use tokio::executor::current_thread::spawn;
     use tokio::runtime::current_thread::run;
+    
+    #[derive(Debug, Clone)]
+    enum ContainerId {
+        Board,
+    }
 
     #[test]
     fn middlewares() {
@@ -27,10 +32,6 @@ mod tests {
         // official addons; e.g. assuming 6 groups, or 4 groups when searching
         // @TODO test what happens with no handlers
         let container = Rc::new(ContainerHolder::new(CatalogGrouped::new()));
-        #[derive(Debug, Clone)]
-        enum ContainerId {
-            Board,
-        };
         let muxer = Rc::new(ContainerMuxer::new(
             vec![
                 Box::new(ContextMiddleware::<Env>::new()),
@@ -68,13 +69,7 @@ mod tests {
                 "group is Ready or Message"
             );
         }
-        if !state.groups.iter().any(|g| {
-            if let Loadable::Ready(_) = g.1 {
-                true
-            } else {
-                false
-            }
-        }) {
+        if !state.groups.iter().any(|g| g.1.is_ready()) {
             panic!("there are no items that are Ready {:?}", state);
         }
 
