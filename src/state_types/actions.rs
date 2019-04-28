@@ -7,7 +7,7 @@ use std::error::Error;
 #[serde(tag = "load", content = "args")]
 pub enum ActionLoad {
     CatalogGrouped { extra: Vec<ExtraProp> },
-    CatalogFiltered { resource_req: Box<ResourceRequest> },
+    CatalogFiltered { resource_req: ResourceRequest },
     Detail { type_name: String, id: String },
     Streams { type_name: String, id: String },
     // @TODO most of these values need content
@@ -20,8 +20,8 @@ impl ActionLoad {
                 extra: extra.to_owned(),
             }),
             ActionLoad::CatalogFiltered { resource_req } => {
-                Some(AggrRequest::FromAddon(*resource_req.to_owned()))
-            },
+                Some(AggrRequest::FromAddon(resource_req.to_owned()))
+            }
             ActionLoad::Detail { type_name, id } => Some(AggrRequest::AllOfResource(
                 ResourceRef::without_extra("meta", type_name, id),
             )),

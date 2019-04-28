@@ -96,17 +96,17 @@ mod tests {
             "groups is the right length when searching"
         );
 
-        let resource_req = Box::new(ResourceRequest {
+        let resource_req = ResourceRequest {
             transport_url: "https://v3-cinemeta.strem.io/manifest.json".to_owned(),
             resource_ref: ResourceRef::without_extra("catalog", "movie", "top"),
-        });
+        };
         run(lazy(enclose!((muxer, resource_req) move || {
             let action = &Action::Load(ActionLoad::CatalogFiltered { resource_req });
             muxer.dispatch(action);
             future::ok(())
         })));
         let state = container_filtered.get_state_owned();
-        assert_eq!(state.selected, Some(*resource_req), "selected is right");
+        assert_eq!(state.selected, Some(resource_req), "selected is right");
         assert_eq!(state.item_pages.len(), 1, "item_pages is the right length");
         assert!(state.item_pages[0].is_ready(), "first page is ready");
     }

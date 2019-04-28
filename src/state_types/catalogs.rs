@@ -140,7 +140,7 @@ impl Container for CatalogFiltered {
                 Some(Box::new(CatalogFiltered {
                     catalogs,
                     item_pages: vec![Loadable::Loading],
-                    selected: Some(*resource_req.to_owned()),
+                    selected: Some(resource_req.to_owned()),
                 }))
             }
             Action::AddonResponse(req, result)
