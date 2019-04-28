@@ -97,24 +97,27 @@
 * Actions should not contain final stuff, FinalHandler should take it's own type
 * reworked Container API: Container struct needs to be mutable now; ContainerHolder handles interior mutability; the ContainerInterface trait assumes interior mutability
 * container might be a trait with default methods; that way, you can construct them with args; eliminates mutability too
+* try to make a UI with conrod (https://github.com/tokio-rs/tokio-core/issues/150)
 
 ## TODO
 
-* cataloggrouped: consider dropping the Arc and just copying
-experiments
-	try to make a UI with conrod (https://github.com/tokio-rs/tokio-core/issues/150)
-	maybe integrate in 4.x as a demo?
-state container: all issues to github
-state container: document PlayerPreferences and etc.; binging, saving library item state, marking episodes watched, marking notifications seen
-state container: catalogfiltered should be split by pages; streams should be split by addons; should it be used by board?
-calendar can be implemented via addons (library addon)
-	upcoming eps might be related
+
+* implement CatalogsFiltered, Streams
 
 * Load to be able to target particular containers; ContainerMuxer
 	it will have to remmeber it's last Load itself
 	filter Loads when we send a load to a container
 	downcast from the muxer?
 	emit a ref to &ContainerInterface with NewState; that can be downcast (this will probably need Rc<RefCell)
+
+
+* cataloggrouped: consider dropping the Arc and just copying; measure the performance, and keep in mind cases with more groups
+* state container: all issues to github
+* state container: document PlayerPreferences and etc.; binging, saving library item state, marking episodes watched, marking notifications seen
+* state container: catalogfiltered should be split by pages; streams should be split by addons; should it be used by board?
+* DESIGN: calendar can be implemented via addons (library addon)
+	upcoming eps might be related
+
 * refactor: figure out some identifier that links the Load to the actual end container
 
 * Video struct
@@ -135,7 +138,6 @@ calendar can be implemented via addons (library addon)
 * AddonM: caching: statefulness can be mitigated by using a memoization where the addon transport `get` would return the same results if invoked with the same args again; however, this needs to be out of the transport impl and needs to be explicit
 * UserM: mock storage and tests
 
-* implement CatalogsFiltered, Streams
 
 * API types: SuccessResponse should be (de)serialized as `{success: true}`
 

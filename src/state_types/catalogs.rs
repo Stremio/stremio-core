@@ -27,7 +27,8 @@ impl<R, M> Loadable<R, M> {
 // @TODO better type for Message
 pub type Message = String;
 
-type Group = Arc<(ResourceRequest, Loadable<Vec<MetaPreview>, Message>)>;
+type LoadableItems = Loadable<Vec<MetaPreview>, Message>;
+type Group = Arc<(ResourceRequest, LoadableItems)>;
 #[derive(Debug, Default, Clone, Serialize, Deserialize)]
 pub struct CatalogGrouped {
     pub groups: Vec<Group>,
@@ -82,6 +83,44 @@ fn catalogs_reducer(state: &CatalogGrouped, action: &Action) -> Option<Box<Catal
         _ => {
             // Doesn't mutate
             None
+        }
+    }
+}
+
+//
+// Filtered catalogs
+//
+#[derive(Debug, Default, Clone, Serialize, Deserialize)]
+pub struct CatalogFiltered {
+    pub item_pages: Vec<LoadableItems>,
+    pub catalogs: Vec<ManifestCatalog>,
+    // @TODO: additional filters
+    // @TODO pages
+}
+impl CatalogFiltered {
+    pub fn new() -> CatalogFiltered {
+        CatalogFiltered {
+            item_pages: vec![],
+            catalogs: vec![],
+        }
+    }
+}
+impl Container for CatalogFiltered {
+    fn dispatch(&self, action: &Action) -> Option<Box<Self>> {
+        match action {
+            Action::LoadWithCtx(
+                Context { addons, .. },
+                ActionLoad::CatalogFiltered { resource_ref },
+            ) => {
+                //dbg!(&addons);
+                //dbg!(&resource_ref);
+                let catalogs = addons.iter().map(|a| &a.manifest.catalogs).cloned().flatten().collect();
+                Some(Box::new(CatalogFiltered{
+                    catalogs,
+                    item_pages: vec![Loadable::Loading],
+                }))
+            },
+            _ => None
         }
     }
 }
