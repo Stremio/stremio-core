@@ -42,6 +42,7 @@ macro_rules! result_to_loadable {
 pub type Message = String;
 
 type LoadableItems = Loadable<Vec<MetaPreview>, Message>;
+// Here's why we use Arc: https://gist.github.com/Ivshti/7ddf0fa6c7d50b5211d8f771241f64ab
 type Group = Arc<(ResourceRequest, LoadableItems)>;
 #[derive(Debug, Default, Clone, Serialize, Deserialize)]
 pub struct CatalogGrouped {

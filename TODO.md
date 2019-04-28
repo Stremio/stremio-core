@@ -98,29 +98,33 @@
 * reworked Container API: Container struct needs to be mutable now; ContainerHolder handles interior mutability; the ContainerInterface trait assumes interior mutability
 * container might be a trait with default methods; that way, you can construct them with args; eliminates mutability too
 * try to make a UI with conrod (https://github.com/tokio-rs/tokio-core/issues/150)
+* implement a basic CatalogsFiltered
+* cataloggrouped: consider dropping the Arc and just copying; measure the performance, and keep in mind cases with more groups; turns out, Arc is actually fastest: https://gist.github.com/Ivshti/7ddf0fa6c7d50b5211d8f771241f64ab
+
 
 ## TODO
 
+* implement a Streams reducer
 
-* implement CatalogsFiltered, Streams
+* Video struct
 
 * Load to be able to target particular containers; ContainerMuxer
 	it will have to remmeber it's last Load itself
 	filter Loads when we send a load to a container
 	downcast from the muxer?
 	emit a ref to &ContainerInterface with NewState; that can be downcast (this will probably need Rc<RefCell)
+* refactor: figure out some identifier that links the Load to the actual end container
 
 
-* cataloggrouped: consider dropping the Arc and just copying; measure the performance, and keep in mind cases with more groups
 * state container: all issues to github
 * state container: document PlayerPreferences and etc.; binging, saving library item state, marking episodes watched, marking notifications seen
-* state container: catalogfiltered should be split by pages; streams should be split by addons; should it be used by board?
+* state container: catalogfiltered should be split by pages; streams should be split by addons
+
+* decide what to use for Continue watching; probably a catalog in the Library add-on
 * DESIGN: calendar can be implemented via addons (library addon)
 	upcoming eps might be related
 
-* refactor: figure out some identifier that links the Load to the actual end container
 
-* Video struct
 
 * AddonTransportMuxer; construct with a BTreeMap of <TransportUrl, AddonInterface>; ContextM will emit LibraryAddonUpdated(interface) or SetInternalAddon({addon,transport_url}), which will be `skip_serializing`; AddonM will react on this and replace it's instance of the muxer with a new one;
 * Detect transport type function, Result<dyn AddonInterface>; to return the library addon interface
@@ -154,7 +158,6 @@
 * environment implementations: return an error related to the HTTP status code, if it's not 200
 
 * document loopback actions (implicit input): `AddonsChanged->PushAddons` (if there's a conn), (as a result of Open) `ProposeLoad -> Load`; `ProposeWatchNext -> Open`; also those that are results of OpenMedia, InstallAndOpenAddon
-
 
 * Trait for meta item and lib item; MetaPreview, MetaItem, MetaDetailed
 * stuff to look for to be re-implemented: syncer, libitem/notifitem addons, discover ctrl, board ctrl, detail ctrl
