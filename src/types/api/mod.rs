@@ -112,8 +112,11 @@ impl<'de> Deserialize<'de> for True {
             where
                 E: de::Error,
             {
-                if value { Ok(True) }
-                else { Err(E::invalid_value(Unexpected::Bool(value), &self)) }
+                if value {
+                    Ok(True)
+                } else {
+                    Err(E::invalid_value(Unexpected::Bool(value), &self))
+                }
             }
         }
 

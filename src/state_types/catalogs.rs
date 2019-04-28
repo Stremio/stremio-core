@@ -31,7 +31,7 @@ macro_rules! result_to_loadable {
             Ok(ResourceResponse::Metas { metas }) => {
                 let mapper = $e;
                 Loadable::Ready(mapper(metas))
-            },
+            }
             Ok(_) => Loadable::Message("unexpected ResourceResponse".to_owned()),
             Err(e) => Loadable::Message(e.to_owned()),
         }
