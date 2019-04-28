@@ -24,6 +24,17 @@ impl<R, M> Loadable<R, M> {
     }
 }
 
+macro_rules! result_to_loadable {
+    ($r:ident, $e:expr) => {
+        match $r {
+            Ok(ResourceResponse::Metas { metas }) if metas.len() == 0 => Loadable::ReadyEmpty,
+            Ok(ResourceResponse::Metas { metas }) => Loadable::Ready(($e)(metas)),
+            Ok(_) => Loadable::Message("unexpected ResourceResponse".to_owned()),
+            Err(e) => Loadable::Message(e.to_owned()),
+        }
+    };
+}
+
 // @TODO better type for Message
 pub type Message = String;
 
@@ -64,16 +75,11 @@ fn catalogs_reducer(state: &CatalogGrouped, action: &Action) -> Option<Box<Catal
         Action::AddonResponse(req, result) => {
             if let Some(idx) = state.groups.iter().position(|g| &g.0 == req) {
                 let mut groups = state.groups.to_owned();
-                let group_content = match result {
-                    Ok(ResourceResponse::Metas { metas }) if metas.len() == 0 => {
-                        Loadable::ReadyEmpty
-                    }
-                    Ok(ResourceResponse::Metas { metas }) => {
-                        Loadable::Ready(metas.iter().take(MAX_ITEMS).cloned().collect())
-                    }
-                    Ok(_) => Loadable::Message("unexpected ResourceResponse".to_owned()),
-                    Err(e) => Loadable::Message(e.to_owned()),
-                };
+                let group_content = result_to_loadable!(result, |m: &[MetaPreview]| m
+                    .iter()
+                    .take(MAX_ITEMS)
+                    .cloned()
+                    .collect());
                 groups[idx] = Arc::new((req.to_owned(), group_content));
                 Some(Box::new(CatalogGrouped { groups }))
             } else {
@@ -89,13 +95,14 @@ fn catalogs_reducer(state: &CatalogGrouped, action: &Action) -> Option<Box<Catal
 
 //
 // Filtered catalogs
-//
+// @TODO extra (filters)
+// @TODO pagination
 #[derive(Debug, Default, Clone, Serialize, Deserialize)]
 pub struct CatalogFiltered {
     pub item_pages: Vec<LoadableItems>,
     pub catalogs: Vec<ManifestCatalog>,
     pub selected: Option<ResourceRequest>,
-    // @TODO: additional filters
+    // @TODO: extra (filters)
     // @TODO pagination; this can be done by incrementing skip in the ResourceRef
 }
 impl CatalogFiltered {
@@ -136,15 +143,8 @@ impl Container for CatalogFiltered {
             {
                 // @TODO pagination
                 let mut new_state = self.to_owned();
-                // @TODO: this code kind of duplicates with CatalogGrouped
-                new_state.item_pages[0] = match result {
-                    Ok(ResourceResponse::Metas { metas }) if metas.len() == 0 => {
-                        Loadable::ReadyEmpty
-                    }
-                    Ok(ResourceResponse::Metas { metas }) => Loadable::Ready(metas.to_owned()),
-                    Ok(_) => Loadable::Message("unexpected ResourceResponse".to_owned()),
-                    Err(e) => Loadable::Message(e.to_owned()),
-                };
+                new_state.item_pages[0] =
+                    result_to_loadable!(result, |m: &[MetaPreview]| m.to_owned());
                 Some(Box::new(new_state))
             }
             _ => None,
