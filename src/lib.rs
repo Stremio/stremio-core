@@ -18,7 +18,7 @@ mod tests {
     use tokio::executor::current_thread::spawn;
     use tokio::runtime::current_thread::run;
 
-    #[derive(Debug, Clone)]
+    #[derive(Debug, Eq, Ord, PartialEq, PartialOrd, Clone)]
     enum ContainerId {
         Board,
         Discover,
