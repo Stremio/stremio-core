@@ -8,6 +8,7 @@ mod tests {
     use crate::addon_transport::*;
     use crate::middlewares::*;
     use crate::state_types::*;
+    use crate::types::addons::{ResourceRef, ResourceRequest};
     use enclose::*;
     use futures::future::lazy;
     use futures::{future, Future};
@@ -16,10 +17,11 @@ mod tests {
     use std::rc::Rc;
     use tokio::executor::current_thread::spawn;
     use tokio::runtime::current_thread::run;
-    
+
     #[derive(Debug, Clone)]
     enum ContainerId {
         Board,
+        Discover,
     }
 
     #[test]
@@ -32,15 +34,22 @@ mod tests {
         // official addons; e.g. assuming 6 groups, or 4 groups when searching
         // @TODO test what happens with no handlers
         let container = Rc::new(ContainerHolder::new(CatalogGrouped::new()));
+        let container_filtered = Rc::new(ContainerHolder::new(CatalogFiltered::new()));
         let muxer = Rc::new(ContainerMuxer::new(
             vec![
                 Box::new(ContextMiddleware::<Env>::new()),
                 Box::new(AddonsMiddleware::<Env>::new()),
             ],
-            vec![(
-                ContainerId::Board,
-                container.clone() as Rc<dyn ContainerInterface>,
-            )],
+            vec![
+                (
+                    ContainerId::Board,
+                    container.clone() as Rc<dyn ContainerInterface>,
+                ),
+                (
+                    ContainerId::Discover,
+                    container_filtered.clone() as Rc<dyn ContainerInterface>,
+                ),
+            ],
             Box::new(|_event| {
                 //if let Event::NewState(_) = _event {
                 //    dbg!(_event);
@@ -86,6 +95,20 @@ mod tests {
             4,
             "groups is the right length when searching"
         );
+
+        let resource_req = Box::new(ResourceRequest {
+            transport_url: "https://v3-cinemeta.strem.io/manifest.json".to_owned(),
+            resource_ref: ResourceRef::without_extra("catalog", "movie", "top"),
+        });
+        run(lazy(enclose!((muxer, resource_req) move || {
+            let action = &Action::Load(ActionLoad::CatalogFiltered { resource_req });
+            muxer.dispatch(action);
+            future::ok(())
+        })));
+        let state = container_filtered.get_state_owned();
+        assert_eq!(state.selected, Some(*resource_req), "selected is right");
+        assert_eq!(state.item_pages.len(), 1, "item_pages is the right length");
+        assert!(state.item_pages[0].is_ready(), "first page is ready");
     }
 
     #[test]

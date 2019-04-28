@@ -20,7 +20,7 @@ impl ActionLoad {
                 extra: extra.to_owned(),
             }),
             ActionLoad::CatalogFiltered { resource_req } => {
-                Some(AggrRequest::FromAddon(resource_req.to_owned()))
+                Some(AggrRequest::FromAddon(*resource_req.to_owned()))
             },
             ActionLoad::Detail { type_name, id } => Some(AggrRequest::AllOfResource(
                 ResourceRef::without_extra("meta", type_name, id),
