@@ -15,11 +15,13 @@ pub enum ActionLoad {
 }
 impl ActionLoad {
     pub fn addon_aggr_req(&self) -> Option<AggrRequest> {
-        // @TODO map CatalogFiltered to FromAddon
         match self {
             ActionLoad::CatalogGrouped { extra } => Some(AggrRequest::AllCatalogs {
                 extra: extra.to_owned(),
             }),
+            ActionLoad::CatalogFiltered { resource_req } => {
+                Some(AggrRequest::FromAddon(resource_req.to_owned()))
+            },
             ActionLoad::Detail { type_name, id } => Some(AggrRequest::AllOfResource(
                 ResourceRef::without_extra("meta", type_name, id),
             )),
