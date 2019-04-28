@@ -105,6 +105,8 @@
 
 ## TODO
 
+* test for CatalogFiltered
+
 * implement a Streams container
 * implement a Detail container (MetaDetailed?)
 
@@ -136,11 +138,11 @@
 
 * start doing documentation comments
 
-* UserM: plug in a built in addon (LibraryAddon)
-* UserM: because of the settings, we might need to rename it to ContextM/LoadWithCtx
+* ContextM: plug in a built in addon (LibraryAddon)
+* ContextM: because of the settings, we might need to rename it to ContextM/LoadWithCtx
 
 * AddonM: caching: statefulness can be mitigated by using a memoization where the addon transport `get` would return the same results if invoked with the same args again; however, this needs to be out of the transport impl and needs to be explicit
-* UserM: mock storage and tests
+* ContextM: mock storage and tests
 
 
 * test if addoncollection can be parsed and understood, once the middleware(s) can retrieve collections

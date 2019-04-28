@@ -18,7 +18,7 @@ pub enum Loadable<R, M> {
 impl<R, M> Loadable<R, M> {
     pub fn is_ready(&self) -> bool {
         match self {
-            Loadable::Ready(_) => true,
+            Loadable::Ready(_) | Loadable::ReadyEmpty => true,
             _ => false,
         }
     }
