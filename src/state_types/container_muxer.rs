@@ -40,14 +40,11 @@ where
                 for (id, container) in containers.iter() {
                     // If we've set a filter for this container ID,
                     // we will only allow Load/LoadWithCtx that match it
-                    match action {
-                        Action::Load(x) | Action::LoadWithCtx(_, x) => {
-                            match filters.borrow().get(id) {
-                                Some(y) if x != y => continue,
-                                _ => (),
-                            }
+                    if let Some(x) = filters.borrow().get(id) {
+                        match action {
+                            Action::Load(y) | Action::LoadWithCtx(_, y) if x != y => continue,
+                            _ => ()
                         }
-                        _ => (),
                     }
                     let has_new_state = container.dispatch(action);
                     if has_new_state {
