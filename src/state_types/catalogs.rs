@@ -129,7 +129,7 @@ impl Container for CatalogFiltered {
                     .map(|a| &a.manifest.catalogs)
                     .cloned()
                     .flatten()
-                    .filter(|cat| cat.is_extra_supported(&vec![]))
+                    .filter(|cat| cat.is_extra_supported(&[]))
                     .collect();
                 Some(Box::new(CatalogFiltered {
                     catalogs,
