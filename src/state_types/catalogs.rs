@@ -109,7 +109,11 @@ pub struct CatalogFiltered {
     // @TODO catalogs to be { is_selected, resource_ref, name, type }
     // is_selected will be whether the resource_ref matches selected, excluding the page
     // @TODO: extra (filters)
-    // @TODO pagination; this can be done by incrementing skip in the ResourceRef
+    // @TODO pagination; this can be done by incrementing skip in the ResourceRef when requesting
+    // the next page; in LoadWithCtx, when we see that the request is for the next page, we add
+    // another entry to item_pages
+    // @TODO consider having `types` as well, with `is_selected`; this will just be an aggregated
+    // view of `catalogs` for convenience
 }
 impl CatalogFiltered {
     pub fn new() -> CatalogFiltered {

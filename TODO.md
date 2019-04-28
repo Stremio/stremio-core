@@ -101,15 +101,12 @@
 * try to make a UI with conrod (https://github.com/tokio-rs/tokio-core/issues/150)
 * implement a basic CatalogsFiltered
 * cataloggrouped: consider dropping the Arc and just copying; measure the performance, and keep in mind cases with more groups; turns out, Arc is actually fastest: https://gist.github.com/Ivshti/7ddf0fa6c7d50b5211d8f771241f64ab
-
+* test for CatalogFiltered
 
 ## TODO
 
 
-
-* test for CatalogFiltered
-
-* implement a Streams container
+* implement a Streams container;  should be split by addons
 * implement a Detail container (MetaDetailed?)
 
 * Video struct
@@ -123,7 +120,8 @@
 
 * state container: all issues to github
 * state container: document PlayerPreferences and etc.; binging, saving library item state, marking episodes watched, marking notifications seen
-* state container: catalogfiltered should be split by pages; streams should be split by addons
+
+* state container: catalogfiltered should be split by pages; check out all the TODOs in CatalogFiltered too 
 
 * decide what to use for Continue watching; probably a catalog in the Library add-on
 * DESIGN: calendar can be implemented via addons (library addon)
