@@ -101,8 +101,7 @@ mod tests {
             resource_ref: ResourceRef::without_extra("catalog", "movie", "top"),
         };
         run(lazy(enclose!((muxer, resource_req) move || {
-            let action = &Action::Load(ActionLoad::CatalogFiltered { resource_req });
-            muxer.dispatch(action);
+            muxer.dispatch_load_to(&ContainerId::Discover, &ActionLoad::CatalogFiltered { resource_req });
             future::ok(())
         })));
         let state = container_filtered.get_state_owned();
