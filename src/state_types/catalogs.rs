@@ -1,7 +1,7 @@
 use super::actions::*;
 use crate::state_types::Container;
 use crate::types::addons::*;
-use crate::types::MetaPreview;
+use crate::types::{MetaPreview, Stream};
 use serde_derive::*;
 use std::sync::Arc;
 
@@ -158,6 +158,54 @@ impl Container for CatalogFiltered {
                 Some(Box::new(new_state))
             }
             _ => None,
+        }
+    }
+}
+
+// @TODO streams should contain info about which addon the response is from
+pub type LoadableStreams = Loadable<Vec<Stream>, Message>;
+#[derive(Debug, Default, Clone, Serialize, Deserialize)]
+pub struct Streams {
+    pub groups: Vec<(ResourceRequest, LoadableStreams)>,
+}
+impl Streams {
+    pub fn new() -> Streams {
+        Streams {
+            groups: vec![],
+        }
+    }
+}
+impl Container for Streams {
+    fn dispatch(&self, action: &Action) -> Option<Box<Self>> {
+        match action {
+            Action::LoadWithCtx(
+                Context { addons, .. },
+                load_action @ ActionLoad::Streams { .. },
+            ) => {
+                if let Some(aggr_req) = load_action.addon_aggr_req() {
+                    let groups = aggr_req
+                        .plan(&addons)
+                        .iter()
+                        .map(|req| (req.to_owned(), Loadable::Loading))
+                        .collect();
+                    return Some(Box::new(Streams { groups }));
+                }
+                None
+            }
+            Action::AddonResponse(req, result) => {
+                if let Some(idx) = self.groups.iter().position(|g| &g.0 == req) {
+                    let mut groups = self.groups.to_owned();
+                    groups[idx].1 = match result {
+                        Ok(ResourceResponse::Streams { streams }) if streams.len() == 0 => Loadable::ReadyEmpty,
+                        Ok(ResourceResponse::Streams { streams }) => { Loadable::Ready(streams.to_owned()) },
+                        Ok(_) => Loadable::Message("unexpected ResourceResponse".to_owned()),
+                        Err(e) => Loadable::Message(e.to_owned()),
+                    };
+                    return Some(Box::new(Streams { groups }))
+                }
+                None
+            }
+            _ => None
         }
     }
 }
