@@ -29,10 +29,7 @@ macro_rules! result_to_loadable {
     ($r:ident, $m:ident, $p:pat, $e:expr) => {
         match $r {
             Ok($p) if $m.len() == 0 => Loadable::ReadyEmpty,
-            Ok($p) => {
-                let mapper = $e;
-                Loadable::Ready(mapper($m))
-            }
+            Ok($p) => Loadable::Ready($e),
             Ok(_) => Loadable::Message(UNEXPECTED_RESP_MSG.to_owned()),
             Err(e) => Loadable::Message(e.to_owned()),
         }
@@ -84,7 +81,7 @@ fn catalogs_reducer(state: &CatalogGrouped, action: &Action) -> Option<Box<Catal
                     result,
                     metas,
                     ResourceResponse::Metas { metas },
-                    |m: &[MetaPreview]| m.iter().take(MAX_ITEMS).cloned().collect()
+                    metas.iter().take(MAX_ITEMS).cloned().collect()
                 );
                 groups[idx] = Arc::new((req.to_owned(), group_content));
                 Some(Box::new(CatalogGrouped { groups }))
@@ -159,7 +156,7 @@ impl Container for CatalogFiltered {
                     result,
                     metas,
                     ResourceResponse::Metas { metas },
-                    |m: &[MetaPreview]| m.to_owned()
+                    metas.to_owned()
                 );
                 Some(Box::new(new_state))
             }
@@ -168,6 +165,7 @@ impl Container for CatalogFiltered {
     }
 }
 
+// @TODO split this out
 // @TODO streams should contain info about which addon the response is from
 pub type LoadableStreams = Loadable<Vec<Stream>, Message>;
 #[derive(Debug, Default, Clone, Serialize, Deserialize)]
@@ -203,7 +201,7 @@ impl Container for Streams {
                         result,
                         streams,
                         ResourceResponse::Streams { streams },
-                        |s: &[Stream]| s.to_owned()
+                        streams.to_owned()
                     );
                     return Some(Box::new(Streams { groups }));
                 }
