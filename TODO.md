@@ -102,31 +102,39 @@
 * implement a basic CatalogsFiltered
 * cataloggrouped: consider dropping the Arc and just copying; measure the performance, and keep in mind cases with more groups; turns out, Arc is actually fastest: https://gist.github.com/Ivshti/7ddf0fa6c7d50b5211d8f771241f64ab
 * test for CatalogFiltered
-
-## TODO
-
-
-* implement a Streams container;  should be split by addons
-* implement a Detail container (MetaDetailed?)
-
-* Video struct
-
 * Load to be able to target particular containers; ContainerMuxer
 	it will have to remmeber it's last Load itself
 	filter Loads when we send a load to a container
 	downcast from the muxer?
 	emit a ref to &ContainerInterface with NewState; that can be downcast (this will probably need Rc<RefCell)
 * refactor: figure out some identifier that links the Load to the actual end container
+* state container: catalogfiltered should be split by pages
+
+
+
+## TODO
 
 * state container: all issues to github
-* state container: document PlayerPreferences and etc.; binging, saving library item state, marking episodes watched, marking notifications seen
 
-* state container: catalogfiltered should be split by pages; check out all the TODOs in CatalogFiltered too 
 
-* decide what to use for Continue watching; probably a catalog in the Library add-on
+* DESIGN decide what to use for Continue watching; probably a catalog in the Library add-on
 * DESIGN: calendar can be implemented via addons (library addon)
 	upcoming eps might be related
 
+
+
+* implement a Streams container; should be split by addons
+* implement a Detail container (MetaDetailed?)
+
+* should we enforce that containers need to be Send + Sync ??
+
+* Video struct
+
+* LibItem struct
+
+* state container: document PlayerPreferences and etc.; binging, saving library item state, marking episodes watched, marking notifications seen
+
+* CatalogFiltered: all the code TODOs (pagination, etc.)
 
 
 * library addon - handles interior mutability (Arc + Mutex); handles: .addon() -> AddonInterface; .middleware() -> Handler
