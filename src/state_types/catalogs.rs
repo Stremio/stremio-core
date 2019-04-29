@@ -6,6 +6,7 @@ use serde_derive::*;
 use std::sync::Arc;
 
 const MAX_ITEMS: usize = 25;
+const UNEXPECTED_RESP_MSG: &str = "unexpected ResourceResponse";
 
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
 #[serde(tag = "type", content = "content")]
@@ -25,14 +26,14 @@ impl<R, M> Loadable<R, M> {
 }
 
 macro_rules! result_to_loadable {
-    ($r:ident, $e:expr) => {
+    ($r:ident, $m:ident, $p:pat, $e:expr) => {
         match $r {
-            Ok(ResourceResponse::Metas { metas }) if metas.len() == 0 => Loadable::ReadyEmpty,
-            Ok(ResourceResponse::Metas { metas }) => {
+            Ok($p) if $m.len() == 0 => Loadable::ReadyEmpty,
+            Ok($p) => {
                 let mapper = $e;
-                Loadable::Ready(mapper(metas))
+                Loadable::Ready(mapper($m))
             }
-            Ok(_) => Loadable::Message("unexpected ResourceResponse".to_owned()),
+            Ok(_) => Loadable::Message(UNEXPECTED_RESP_MSG.to_owned()),
             Err(e) => Loadable::Message(e.to_owned()),
         }
     };
@@ -79,11 +80,12 @@ fn catalogs_reducer(state: &CatalogGrouped, action: &Action) -> Option<Box<Catal
         Action::AddonResponse(req, result) => {
             if let Some(idx) = state.groups.iter().position(|g| &g.0 == req) {
                 let mut groups = state.groups.to_owned();
-                let group_content = result_to_loadable!(result, |m: &[MetaPreview]| m
-                    .iter()
-                    .take(MAX_ITEMS)
-                    .cloned()
-                    .collect());
+                let group_content = result_to_loadable!(
+                    result,
+                    metas,
+                    ResourceResponse::Metas { metas },
+                    |m: &[MetaPreview]| m.iter().take(MAX_ITEMS).cloned().collect()
+                );
                 groups[idx] = Arc::new((req.to_owned(), group_content));
                 Some(Box::new(CatalogGrouped { groups }))
             } else {
@@ -153,8 +155,12 @@ impl Container for CatalogFiltered {
             {
                 // @TODO pagination
                 let mut new_state = self.to_owned();
-                new_state.item_pages[0] =
-                    result_to_loadable!(result, |m: &[MetaPreview]| m.to_owned());
+                new_state.item_pages[0] = result_to_loadable!(
+                    result,
+                    metas,
+                    ResourceResponse::Metas { metas },
+                    |m: &[MetaPreview]| m.to_owned()
+                );
                 Some(Box::new(new_state))
             }
             _ => None,
@@ -170,9 +176,7 @@ pub struct Streams {
 }
 impl Streams {
     pub fn new() -> Streams {
-        Streams {
-            groups: vec![],
-        }
+        Streams { groups: vec![] }
     }
 }
 impl Container for Streams {
@@ -195,17 +199,17 @@ impl Container for Streams {
             Action::AddonResponse(req, result) => {
                 if let Some(idx) = self.groups.iter().position(|g| &g.0 == req) {
                     let mut groups = self.groups.to_owned();
-                    groups[idx].1 = match result {
-                        Ok(ResourceResponse::Streams { streams }) if streams.len() == 0 => Loadable::ReadyEmpty,
-                        Ok(ResourceResponse::Streams { streams }) => { Loadable::Ready(streams.to_owned()) },
-                        Ok(_) => Loadable::Message("unexpected ResourceResponse".to_owned()),
-                        Err(e) => Loadable::Message(e.to_owned()),
-                    };
-                    return Some(Box::new(Streams { groups }))
+                    groups[idx].1 = result_to_loadable!(
+                        result,
+                        streams,
+                        ResourceResponse::Streams { streams },
+                        |s: &[Stream]| s.to_owned()
+                    );
+                    return Some(Box::new(Streams { groups }));
                 }
                 None
             }
-            _ => None
+            _ => None,
         }
     }
 }
