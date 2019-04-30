@@ -121,7 +121,7 @@
 * DESIGN: calendar can be implemented via addons (library addon)
 	upcoming eps might be related
 
-
+* DESIGN: streams for youtube should just be embedded in video.streams (the results of the addon itself)
 
 * implement a Streams container; should be split by addons
 * implement a Detail container (MetaDetailed?)
@@ -175,7 +175,6 @@
 * ?addonOpen/InstallAndOpenAddon: another async action
 * opening a file (protocol add-ons to be considered)
 
-* refactor: separate crates: types, `state_types`; the point of that is to not install any unneeded deps
 * crates: stremio-web-environment (only the Environment), stremio-state-ng-web (general API that is exported to JS via bindgen)
 
 * we should make it so that if a session is expired, we go to the login screen; this should be in the app
