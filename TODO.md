@@ -109,35 +109,38 @@
 	emit a ref to &ContainerInterface with NewState; that can be downcast (this will probably need Rc<RefCell)
 * refactor: figure out some identifier that links the Load to the actual end container
 * state container: catalogfiltered should be split by pages
+* implement a Streams container; should be split by addons
 
 
 
 ## TODO
 
+* LibItem struct
+
+* library addon - handles interior mutability (Arc + Mutex); handles: .addon() -> AddonInterface; .middleware() -> Handler
+
+
 * state container: all issues to github
 
 
 * DESIGN decide what to use for Continue watching; probably a catalog in the Library add-on
+	also, notifications should be CatalogGrouped after all - to allow more addons extending it
 * DESIGN: calendar can be implemented via addons (library addon)
 	upcoming eps might be related
 
 * DESIGN: streams for youtube should just be embedded in video.streams (the results of the addon itself)
 
-* implement a Streams container; should be split by addons
+* DESIGN: consider merging Streams and Detail, cause Streams should show streams from .video.streams if any; also this is tightly coupled with open(); and even LibItem cause of "last selected" (although that one will be returned in the Detail groups by the library addon)
 * implement a Detail container (MetaDetailed?)
 
 * should we enforce that containers need to be Send + Sync ??
 
 * Video struct
 
-* LibItem struct
 
 * state container: document PlayerPreferences and etc.; binging, saving library item state, marking episodes watched, marking notifications seen
 
 * CatalogFiltered: all the code TODOs (pagination, etc.)
-
-
-* library addon - handles interior mutability (Arc + Mutex); handles: .addon() -> AddonInterface; .middleware() -> Handler
 
 
 

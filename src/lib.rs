@@ -108,6 +108,15 @@ mod tests {
         assert_eq!(state.selected, Some(resource_req), "selected is right");
         assert_eq!(state.item_pages.len(), 1, "item_pages is the right length");
         assert!(state.item_pages[0].is_ready(), "first page is ready");
+
+        /*
+        // @TODO
+        run(lazy(enclose!((muxer, resource_req) move || {
+            muxer.dispatch_load_to(&ContainerId::Streams, &ActionLoad::Streams { type_name: "channel", id: "some_id" });
+            future::ok(())
+        })));
+        let state = container_streams.get_state_owned();
+        */
     }
 
     #[test]
