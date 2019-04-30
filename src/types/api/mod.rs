@@ -38,6 +38,15 @@ pub enum APIRequest {
         auth_key: AuthKey,
         addons: Vec<Descriptor>,
     },
+    #[serde(rename_all = "camelCase")]
+    DatastoreGet {
+        auth_key: AuthKey,
+        collection: String,
+        #[serde(default)]
+        ids: Vec<String>,
+        all: bool
+    }
+    // @TODO datastoreMeta, datastorePut
 }
 impl APIRequest {
     pub fn method_name(&self) -> &str {
@@ -47,6 +56,7 @@ impl APIRequest {
             APIRequest::Logout { .. } => "logout",
             APIRequest::AddonCollectionGet { .. } => "addonCollectionGet",
             APIRequest::AddonCollectionSet { .. } => "addonCollectionSet",
+            APIRequest::DatastoreGet { .. } => "datastoreGet",
         }
     }
 }
