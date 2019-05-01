@@ -112,12 +112,15 @@
 * implement a Streams container; should be split by addons
 * LibItem struct
 * LibItem struct: deserialize an emtpy string as None
-
+* rename to stremio-core
 
 
 ## TODO
 
+
 * DESIGN: API: consider filtering out jibberish in some way (other, type trailer, etc.)
+
+* basic watched-bitfield
 
 * library addon - handles interior mutability (Arc + Mutex); handles: .addon() -> AddonInterface; .middleware() -> Handler
 

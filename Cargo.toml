@@ -1,5 +1,5 @@
 [package]
-name = "stremio-state-ng"
+name = "stremio-core"
 version = "0.1.0"
 authors = ["Ivo Georgiev <ivo@strem.io>"]
 edition = "2018"
