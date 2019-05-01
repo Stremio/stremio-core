@@ -140,6 +140,18 @@ mod tests {
         }));
     }
 
+    #[test]
+    fn sample_storage() {
+        let key = "foo".to_owned();
+        let value = "fooobar".to_owned();
+        assert!(Env::get_storage::<String>(&key).wait().unwrap().is_none());
+        assert_eq!(Env::set_storage(&key, Some(&value)).wait().unwrap(), ());
+        assert_eq!(
+            *Env::get_storage::<String>(&key).wait().unwrap().unwrap(),
+            value
+        );
+    }
+
     use lazy_static::*;
     use std::collections::BTreeMap;
     use std::sync::Mutex;
