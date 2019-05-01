@@ -32,7 +32,7 @@ pub struct LibItem {
     pub removed: bool,
     pub temp: bool,
 
-    #[serde(rename = "_ctime", deserialize_with = "empty_string_as_none")]
+    #[serde(rename = "_ctime", deserialize_with = "empty_string_as_none", default)]
     pub ctime: Option<DateTime<Utc>>,
     #[serde(rename = "_mtime")]
     pub mtime: DateTime<Utc>,
@@ -42,13 +42,13 @@ pub struct LibItem {
     pub name: String,
     #[serde(rename = "type")]
     pub type_name: String,
-    #[serde(deserialize_with = "empty_string_as_none")]
+    #[serde(deserialize_with = "empty_string_as_none", default)]
     pub poster: Option<String>,
-    #[serde(deserialize_with = "empty_string_as_none")]
+    #[serde(deserialize_with = "empty_string_as_none", default)]
     pub background: Option<String>,
-    #[serde(deserialize_with = "empty_string_as_none")]
+    #[serde(deserialize_with = "empty_string_as_none", default)]
     pub logo: Option<String>,
-    #[serde(deserialize_with = "empty_string_as_none")]
+    #[serde(deserialize_with = "empty_string_as_none", default)]
     pub year: Option<String>,
 }
 
