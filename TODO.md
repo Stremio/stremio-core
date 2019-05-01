@@ -110,12 +110,14 @@
 * refactor: figure out some identifier that links the Load to the actual end container
 * state container: catalogfiltered should be split by pages
 * implement a Streams container; should be split by addons
+* LibItem struct
+* LibItem struct: deserialize an emtpy string as None
 
 
 
 ## TODO
 
-* LibItem struct
+* DESIGN: API: consider filtering out jibberish in some way (other, type trailer, etc.)
 
 * library addon - handles interior mutability (Arc + Mutex); handles: .addon() -> AddonInterface; .middleware() -> Handler
 
@@ -127,6 +129,7 @@
 	also, notifications should be CatalogGrouped after all - to allow more addons extending it
 * DESIGN: calendar can be implemented via addons (library addon)
 	upcoming eps might be related
+	also, if we are gonna implement it by requesting /meta/ for each item individually, we can handle notifications in the same bit as well
 
 * DESIGN: streams for youtube should just be embedded in video.streams (the results of the addon itself)
 

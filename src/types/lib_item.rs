@@ -1,30 +1,26 @@
 use chrono::{DateTime, Utc};
+use serde::de::IntoDeserializer;
 use serde::{Deserialize, Serialize};
+
+// Reference: https://github.com/Stremio/stremio-api/blob/master/types/libraryItem.go
 
 // @TODO: u64 vs u32
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq, Ord, PartialOrd)]
 #[serde(rename_all = "camelCase")]
 pub struct LibItemState {
-    //#[serde(default)]
-    //pub last_watched: Option<DateTime<Utc>>,
-    #[serde(default)]
+    #[serde(deserialize_with = "empty_string_as_none")]
+    pub last_watched: Option<DateTime<Utc>>,
     pub time_watched: u64,
-    #[serde(default)]
     pub time_offset: u64,
-    #[serde(default)]
     pub overall_time_watched: u64,
-    #[serde(default)]
     pub times_watched: u32,
     // @TODO: consider bool that can be deserialized from an integer
-    #[serde(default)]
     pub flagged_watched: u32,
-    #[serde(default)]
     pub duration: u64,
-    #[serde(rename = "video_id")]
+    #[serde(rename = "video_id", deserialize_with = "empty_string_as_none")]
     pub video_id: Option<String>,
     // @TODO bitfield, special type
     pub watched: Option<String>,
-    #[serde(default)]
     pub no_notif: bool,
 }
 
@@ -33,25 +29,40 @@ pub struct LibItem {
     #[serde(rename = "_id")]
     pub id: String,
 
-    #[serde(default)]
     pub removed: bool,
-    #[serde(default)]
     pub temp: bool,
 
-    //#[serde(rename = "_ctime")]
-    //pub ctime: DateTime<Utc>,
-    //#[serde(rename = "_mtime")]
-    //pub mtime: DateTime<Utc>,
+    #[serde(rename = "_ctime", deserialize_with = "empty_string_as_none")]
+    pub ctime: Option<DateTime<Utc>>,
+    #[serde(rename = "_mtime")]
+    pub mtime: DateTime<Utc>,
 
     pub state: LibItemState,
 
     pub name: String,
     #[serde(rename = "type")]
     pub type_name: String,
+    #[serde(deserialize_with = "empty_string_as_none")]
     pub poster: Option<String>,
+    #[serde(deserialize_with = "empty_string_as_none")]
     pub background: Option<String>,
+    #[serde(deserialize_with = "empty_string_as_none")]
     pub logo: Option<String>,
+    #[serde(deserialize_with = "empty_string_as_none")]
     pub year: Option<String>,
+}
+
+fn empty_string_as_none<'de, D, T>(de: D) -> Result<Option<T>, D::Error>
+where
+    D: serde::Deserializer<'de>,
+    T: serde::Deserialize<'de>,
+{
+    let opt = Option::<String>::deserialize(de)?;
+    let opt = opt.as_ref().map(String::as_str);
+    match opt {
+        None | Some("") => Ok(None),
+        Some(s) => T::deserialize(s.into_deserializer()).map(Some),
+    }
 }
 
 #[cfg(test)]
@@ -65,7 +76,12 @@ mod test {
         {"state":{"lastWatched":"2016-06-03T08:36:42.494Z","timeWatched":0,"timeOffset":0,"overallTimeWatched":0,"timesWatched":0,"flaggedWatched":0,"duration":0,"video_id":"","watched":"","noNotif":false,"season":0,"episode":0,"watchedEpisodes":[]},"_id":"tt0004972","removed":true,"temp":true,"_ctime":"2016-06-03T08:29:46.612Z","_mtime":"2016-06-03T08:36:43.991Z","name":"The Birth of a Nation","type":"movie","poster":"https://images.metahub.space/poster/medium/tt0004972/img","background":"","logo":"","year":"","imdb_id":"tt0004972"}
         "#;
         let l: LibItem = serde_json::from_str(&serialized).unwrap();
-        //dbg!(&l);
+        assert_eq!(l.background, None, "background deserialized correctly");
+        assert_eq!(
+            l.poster,
+            Some("https://images.metahub.space/poster/medium/tt0004972/img".to_owned()),
+            "poster deserialized correctly"
+        );
         // @TODO assertions
     }
 }
