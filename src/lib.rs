@@ -144,11 +144,13 @@ mod tests {
     fn sample_storage() {
         let key = "foo".to_owned();
         let value = "fooobar".to_owned();
+        // Notihng in the beginning
         assert!(Env::get_storage::<String>(&key).wait().unwrap().is_none());
+        // Then set and read
         assert_eq!(Env::set_storage(&key, Some(&value)).wait().unwrap(), ());
         assert_eq!(
-            *Env::get_storage::<String>(&key).wait().unwrap().unwrap(),
-            value
+            Env::get_storage::<String>(&key).wait().unwrap(),
+            Some(Box::new(value))
         );
     }
 
