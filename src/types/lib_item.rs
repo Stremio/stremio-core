@@ -5,18 +5,26 @@ use serde::{Deserialize, Serialize};
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq, Ord, PartialOrd)]
 #[serde(rename_all = "camelCase")]
 pub struct LibItemState {
-    pub last_watched: Option<DateTime<Utc>>,
+    //#[serde(default)]
+    //pub last_watched: Option<DateTime<Utc>>,
+    #[serde(default)]
     pub time_watched: u64,
+    #[serde(default)]
     pub time_offset: u64,
+    #[serde(default)]
     pub overall_time_watched: u64,
+    #[serde(default)]
     pub times_watched: u32,
     // @TODO: consider bool that can be deserialized from an integer
+    #[serde(default)]
     pub flagged_watched: u32,
+    #[serde(default)]
     pub duration: u64,
     #[serde(rename = "video_id")]
     pub video_id: Option<String>,
     // @TODO bitfield, special type
     pub watched: Option<String>,
+    #[serde(default)]
     pub no_notif: bool,
 }
 
@@ -25,13 +33,15 @@ pub struct LibItem {
     #[serde(rename = "_id")]
     pub id: String,
 
+    #[serde(default)]
     pub removed: bool,
+    #[serde(default)]
     pub temp: bool,
 
-    #[serde(rename = "_ctime")]
-    pub ctime: DateTime<Utc>,
-    #[serde(rename = "_mtime")]
-    pub mtime: DateTime<Utc>,
+    //#[serde(rename = "_ctime")]
+    //pub ctime: DateTime<Utc>,
+    //#[serde(rename = "_mtime")]
+    //pub mtime: DateTime<Utc>,
 
     pub state: LibItemState,
 
