@@ -147,6 +147,8 @@ mod tests {
         // Notihng in the beginning
         assert!(Env::get_storage::<String>(&key).wait().unwrap().is_none());
         // Then set and read
+        // with sled, set_storage takes 73993042ns for 10000 iterations (or 74ms)
+        //  get_storage takes 42076632 (or 42ms) for 10000 iterations
         assert_eq!(Env::set_storage(&key, Some(&value)).wait().unwrap(), ());
         assert_eq!(
             Env::get_storage::<String>(&key).wait().unwrap(),

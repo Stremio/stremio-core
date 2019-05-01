@@ -118,17 +118,17 @@
 ## TODO
 
 
-* DESIGN: API: consider filtering out jibberish in some way (other, type trailer, etc.)
 
 
 * basic watched-bitfield
 
-* library addon - handles interior mutability (Arc + Mutex); handles: .addon() -> AddonInterface; .middleware() -> Handler
+* library addon - handles interior mutability (Arc + Mutex); handles: .addon() -> AddonInterface; .middleware() -> Handler; also LibAction
 
 
 * state container: all issues to github
 
 
+* DESIGN: API: consider filtering out jibberish in some way (other, type trailer, etc.)
 * DESIGN decide what to use for Continue watching; probably a catalog in the Library add-on
 	also, notifications should be CatalogGrouped after all - to allow more addons extending it
 * DESIGN: calendar can be implemented via addons (library addon)
