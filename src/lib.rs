@@ -190,11 +190,12 @@ mod tests {
             spawn(fut);
         }
         fn get_storage<T: 'static + DeserializeOwned>(key: &str) -> EnvFuture<Option<Box<T>>> {
+            let opt = match STORAGE.get(key.as_bytes()) {
+                Ok(s) => s,
+                Err(e) => return Box::new(future::err(e.into())),
+            };
             Box::new(future::ok(
-                STORAGE
-                    .get(key.as_bytes())
-                    .unwrap()
-                    .map(|v| Box::new(serde_json::from_slice(&*v).unwrap())),
+                opt.map(|v| Box::new(serde_json::from_slice(&*v).unwrap())),
             ))
         }
         fn set_storage<T: 'static + Serialize>(key: &str, value: Option<&T>) -> EnvFuture<()> {
