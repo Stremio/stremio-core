@@ -140,6 +140,12 @@ mod tests {
         }));
     }
 
+    use lazy_static::*;
+    use std::collections::BTreeMap;
+    use std::sync::Mutex;
+    lazy_static! {
+        static ref STORAGE: Mutex<BTreeMap<String, String>> = { Default::default() };
+    }
     struct Env {}
     impl Environment for Env {
         fn fetch_serde<IN, OUT>(in_req: Request<IN>) -> EnvFuture<Box<OUT>>
@@ -168,11 +174,22 @@ mod tests {
         fn exec(fut: Box<Future<Item = (), Error = ()>>) {
             spawn(fut);
         }
-        fn get_storage<T: 'static + DeserializeOwned>(_key: &str) -> EnvFuture<Option<Box<T>>> {
-            Box::new(future::ok(None))
+        fn get_storage<T: 'static + DeserializeOwned>(key: &str) -> EnvFuture<Option<Box<T>>> {
+            Box::new(future::ok(
+                STORAGE
+                    .lock()
+                    .unwrap()
+                    .get(key)
+                    .map(|v| Box::new(serde_json::from_str(&v).unwrap())),
+            ))
         }
-        fn set_storage<T: 'static + Serialize>(_key: &str, _value: Option<&T>) -> EnvFuture<()> {
-            Box::new(future::err("unimplemented".into()))
+        fn set_storage<T: 'static + Serialize>(key: &str, value: Option<&T>) -> EnvFuture<()> {
+            let mut storage = STORAGE.lock().unwrap();
+            match value {
+                Some(v) => storage.insert(key.to_string(), serde_json::to_string(v).unwrap()),
+                None => storage.remove(key),
+            };
+            Box::new(future::ok(()))
         }
     }
 }

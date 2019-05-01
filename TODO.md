@@ -120,6 +120,7 @@
 
 * DESIGN: API: consider filtering out jibberish in some way (other, type trailer, etc.)
 
+
 * basic watched-bitfield
 
 * library addon - handles interior mutability (Arc + Mutex); handles: .addon() -> AddonInterface; .middleware() -> Handler
@@ -137,6 +138,9 @@
 * DESIGN: streams for youtube should just be embedded in video.streams (the results of the addon itself)
 
 * DESIGN: consider merging Streams and Detail, cause Streams should show streams from .video.streams if any; also this is tightly coupled with open(); and even LibItem cause of "last selected" (although that one will be returned in the Detail groups by the library addon)
+
+* DESIGN: rust-based shell? few binaries: app, server (maybe those should be in 1, with different modes) and autoupdater; the missing piece here is the web view; ultralight or servo are candidates
+
 * implement a Detail container (MetaDetailed?)
 
 * should we enforce that containers need to be Send + Sync ??
