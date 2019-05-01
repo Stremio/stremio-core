@@ -155,10 +155,11 @@ mod tests {
     }
 
     use lazy_static::*;
-    use std::collections::BTreeMap;
-    use std::sync::Mutex;
+    use sled::Db;
     lazy_static! {
-        static ref STORAGE: Mutex<BTreeMap<String, String>> = { Default::default() };
+        static ref STORAGE: sled::Db = {
+            Db::start_default("./store").expect("failed to start sled")
+        };
     }
     struct Env {}
     impl Environment for Env {
@@ -191,19 +192,20 @@ mod tests {
         fn get_storage<T: 'static + DeserializeOwned>(key: &str) -> EnvFuture<Option<Box<T>>> {
             Box::new(future::ok(
                 STORAGE
-                    .lock()
+                    .get(key.as_bytes())
                     .unwrap()
-                    .get(key)
-                    .map(|v| Box::new(serde_json::from_str(&v).unwrap())),
+                    .map(|v| Box::new(serde_json::from_slice(&*v).unwrap())),
             ))
         }
         fn set_storage<T: 'static + Serialize>(key: &str, value: Option<&T>) -> EnvFuture<()> {
-            let mut storage = STORAGE.lock().unwrap();
-            match value {
-                Some(v) => storage.insert(key.to_string(), serde_json::to_string(v).unwrap()),
-                None => storage.remove(key),
+            let res = match value {
+                Some(v) => STORAGE.set(key.as_bytes(), serde_json::to_string(v).unwrap().as_bytes()),
+                None => STORAGE.del(key),
             };
-            Box::new(future::ok(()))
+            match res {
+                Ok(_) => Box::new(future::ok(())),
+                Err(e) => Box::new(future::err(e.into())),
+            }
         }
     }
 }

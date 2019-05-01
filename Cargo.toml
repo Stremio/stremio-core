@@ -22,3 +22,4 @@ serde_hex = { git="https://github.com/forrest-marshall/serde-hex", package="serd
 [dev-dependencies]
 reqwest = "0.9.x"
 tokio = "0.1"
+sled = "0.23.0"
