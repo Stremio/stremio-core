@@ -144,7 +144,7 @@ mod tests {
     fn sample_storage() {
         let key = "foo".to_owned();
         let value = "fooobar".to_owned();
-        // Notihng in the beginning
+        // Nothing in the beginning
         assert!(Env::get_storage::<String>(&key).wait().unwrap().is_none());
         // Then set and read
         assert_eq!(Env::set_storage(&key, Some(&value)).wait().unwrap(), ());
@@ -152,6 +152,10 @@ mod tests {
             Env::get_storage::<String>(&key).wait().unwrap(),
             Some(Box::new(value))
         );
+        // performance with sled
+        // 10,000 iterations
+        // set_storage: 2066168715ns (~2s)
+        // get_storage: 225117363ns
     }
 
     use lazy_static::*;
