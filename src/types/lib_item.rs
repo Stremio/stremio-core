@@ -20,6 +20,7 @@ pub struct LibItemState {
     #[serde(rename = "video_id", deserialize_with = "empty_string_as_none")]
     pub video_id: Option<String>,
     // @TODO bitfield, special type
+    #[serde(deserialize_with = "empty_string_as_none")]
     pub watched: Option<String>,
     pub no_notif: bool,
 }
