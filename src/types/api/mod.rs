@@ -44,9 +44,8 @@ pub enum APIRequest {
         collection: String,
         #[serde(default)]
         ids: Vec<String>,
-        all: bool
-    }
-    // @TODO datastoreMeta, datastorePut
+        all: bool,
+    }, // @TODO datastoreMeta, datastorePut
 }
 impl APIRequest {
     pub fn method_name(&self) -> &str {
@@ -92,7 +91,7 @@ pub struct SuccessResponse {
     pub success: True,
 }
 
-#[derive(Deserialize)]
+#[derive(Deserialize, Debug)]
 #[serde(untagged)]
 pub enum APIResult<T> {
     Err { error: APIErr },
