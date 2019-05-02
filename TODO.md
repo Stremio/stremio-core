@@ -120,6 +120,8 @@
 
 * basic watched-bitfield
 
+* Video struct
+
 * library addon - handles interior mutability (Arc + Mutex); handles: .addon() -> AddonInterface; .middleware() -> Handler; also LibAction
 
 
@@ -130,7 +132,6 @@
 
 * should we enforce that containers need to be Send + Sync ??
 
-* Video struct
 
 
 * state container: document PlayerPreferences and etc.; binging, saving library item state, marking episodes watched, marking notifications seen

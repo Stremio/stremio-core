@@ -1,6 +1,8 @@
 use serde_derive::*;
+use chrono::{DateTime, Utc};
+use super::stream::*;
 
-#[derive(PartialEq, Clone, Debug, Deserialize, Serialize, Default)]
+#[derive(PartialEq, Eq, Clone, Debug, Deserialize, Serialize, Default)]
 #[serde(rename_all = "camelCase")]
 pub struct MetaPreview {
     pub id: String,
@@ -13,10 +15,9 @@ pub struct MetaPreview {
     pub poster_shape: Option<String>,
 }
 
-// @TODO: should we derive Hash, Eq?
 #[derive(PartialEq, Clone, Debug, Deserialize, Serialize, Default)]
 #[serde(rename_all = "camelCase")]
-pub struct MetaItem {
+pub struct MetaDetail {
     pub id: String,
     #[serde(rename = "type")]
     pub type_name: String,
@@ -30,7 +31,22 @@ pub struct MetaItem {
     pub description: Option<String>,
     pub release_info: Option<String>,
     pub poster_shape: Option<String>,
+    // @TODO: default to one video
+    #[serde(default)]
+    pub videos: Vec<Video>,
     // @TODO: other
     // @TODO videos
     // @TODO crew
+}
+
+
+#[derive(PartialEq, Clone, Debug, Deserialize, Serialize, Default)]
+#[serde(rename_all = "camelCase")]
+pub struct Video {
+    pub id: String,
+    pub name: String,
+    pub released: Option<DateTime<Utc>>,
+    pub description: Option<String>,
+    pub poster: Option<String>,
+    pub streams: Option<Vec<Stream>>,
 }
