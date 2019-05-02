@@ -113,6 +113,7 @@
 * LibItem struct
 * LibItem struct: deserialize an emtpy string as None
 * rename to stremio-core
+* Video struct
 
 
 ## TODO
@@ -120,7 +121,6 @@
 
 * basic watched-bitfield
 
-* Video struct
 
 * library addon - handles interior mutability (Arc + Mutex); handles: .addon() -> AddonInterface; .middleware() -> Handler; also LibAction
 
