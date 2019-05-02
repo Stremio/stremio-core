@@ -149,14 +149,12 @@ mod tests {
                 resource_ref: ResourceRef::without_extra("meta", "series", "tt0386676"),
             })
             .then(|res| {
-                match res {
+                match res.map(|x| *x) {
                     Err(e) => panic!("failed getting metadata {:?}", e),
-                    Ok(resp) => match *resp {
-                        ResourceResponse::Meta { meta } => {
-                            assert!(meta.videos.len() > 0, "has videos")
-                        }
-                        _ => panic!("unexpected response"),
+                    Ok(ResourceResponse::Meta { meta }) => {
+                        assert!(meta.videos.len() > 0, "has videos")
                     },
+                    _ => panic!("unexpected response"),
                 };
                 future::ok(())
             })
