@@ -121,7 +121,6 @@
 
 * basic watched-bitfield
 
-
 * library addon - handles interior mutability (Arc + Mutex); handles: .addon() -> AddonInterface; .middleware() -> Handler; also LibAction
 
 
@@ -233,9 +232,6 @@ WindowStateChanged (playerM will react on that to pause the player if the settin
 
 Load
 	works for opening catalogs/detail/load/search
-	reducerType is needed so that middlewares know to react; we can remove that by instructing the middlewares which reducerIds they should care about
-	the library middleware will try to attach a selected type if there isn't one
-	the catalogs middleware should dispatch msgs intended for the grouped or filtered reducers; the search should go through to the grouped; we will use separate reducerIds for board/search
 Unload
 TryLogin
 TrySignup
@@ -432,11 +428,10 @@ Presumes the following reducers
 3: Detail (for detail)
 4: Streams (for detail)
 5: CatalogsFiltered (for library)
-6: CatalogsFiltered (for notifications; could be specific: CatalogsNotifGrouped)
+6: Notifications (for notifications; could be specific: CatalogsNotifGrouped)
 7: AddonCatalog
 8: PlayerView
 9: SettingsView
-@TODO a container for Continue Watching
 
 @TODO figure reload/force policies for all of these; for now, we'll just always load everything (naively)
 
@@ -488,23 +483,23 @@ Since we generate all that from `AddonAggrReq(OfResource("meta", type, id))`, we
 
 ### /library/:type
 
-Dispatch LoadCatalogsFiltered(5, type, "org.stremio.library", "library", { library: 1 }) -> AddonAggrReq(OfResource("catalogs", type, "library", { library: 1 })) but match against library addon
+Dispatch Load(CatalogFiltered(type, "org.stremio.library", "library", { library: 1 })) -> AddonAggrReq(OfResource("catalogs", type, "library", { library: 1 })) but match against library addon
 
 If we do addonTransportURL+OfAddon, and we save the last selected `type` in the UI, If, for some reason, we use a `type` that's not available, the particular addon will return an error, which will be transformed into Loadable::Message and handled elegantly 
 
 ### Notifications (not a route, but a popover)
 
-Dispatch LoadCatalogsGrouped(6) -> AddonAggrReq(Catalogs({ notifs: 1 }))
+Dispatch Load(Notifications) -> AddonAggrReq(Catalogs({ notifs: 1 }))
 
 ### /addons/:category/:type?
 
 Category is Official, ThirdParty, Installed
 
-Dispatch LoadAddonCatalog(7, category, type) -> middleware loads latest collection of the given category and filters by type 
+Dispatch Load(AddonCatalog(category, type)) -> middleware loads latest collection of the given category and filters by type 
 
 ### /player/:type/:id/:videoId/:streamSerialized
 
-Dispatch LoadPlayer(8, type, id, videoId, streamSerialized) -> this will trigger many things, one of them AddonAggrReq(OfResource("meta", type, id))
+Dispatch Load(Player(type, id, videoId, streamSerialized)) -> this will trigger many things, one of them AddonAggrReq(OfResource("meta", type, id))
 	another one will be to load the libitem/notifications
 	the player middleware should also request subtitles from the add-on system (AddonAggrReq(OfResource("subtitles", meta, id)))
 	the player middleware should also keep an internal state of what the player is doing, and persist libitem/last played stream
