@@ -1,7 +1,7 @@
 use crate::types::addons::ResourceRef;
+use either::Either;
 use semver::Version;
 use serde_derive::*;
-use either::Either;
 
 // Resource descriptors
 // those define how a resource may be requested
@@ -82,14 +82,15 @@ impl ManifestCatalog {
     pub fn extra_iter<'a>(&'a self) -> impl Iterator<Item = ManifestExtraProp> + 'a {
         match &self.extra {
             ManifestExtra::Full { ref props } => Either::Left(props.iter().cloned()),
-            ManifestExtra::Short { required, supported } => Either::Right(supported.iter().map(move |name| {
-                ManifestExtraProp {
-                    name: name.to_owned(),
-                    is_required: required.contains(name),
-                    options: None,
-                    options_limit: Default::default()
-                }
-            }))
+            ManifestExtra::Short {
+                required,
+                supported,
+            } => Either::Right(supported.iter().map(move |name| ManifestExtraProp {
+                name: name.to_owned(),
+                is_required: required.contains(name),
+                options: None,
+                options_limit: Default::default(),
+            })),
         }
     }
     pub fn is_extra_supported(&self, extra: &[(String, String)]) -> bool {

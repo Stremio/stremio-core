@@ -153,7 +153,7 @@ mod tests {
                     Err(e) => panic!("failed getting metadata {:?}", e),
                     Ok(ResourceResponse::Meta { meta }) => {
                         assert!(meta.videos.len() > 0, "has videos")
-                    },
+                    }
                     _ => panic!("unexpected response"),
                 };
                 future::ok(())
