@@ -1,6 +1,8 @@
+use super::stream::*;
+use chrono::{DateTime, Utc};
 use serde_derive::*;
 
-#[derive(PartialEq, Clone, Debug, Deserialize, Serialize, Default)]
+#[derive(PartialEq, Eq, Clone, Debug, Deserialize, Serialize, Default)]
 #[serde(rename_all = "camelCase")]
 pub struct MetaPreview {
     pub id: String,
@@ -13,10 +15,10 @@ pub struct MetaPreview {
     pub poster_shape: Option<String>,
 }
 
-// @TODO: should we derive Hash, Eq?
-#[derive(PartialEq, Clone, Debug, Deserialize, Serialize, Default)]
+// https://github.com/Stremio/stremio-addon-sdk/blob/master/docs/api/responses/meta.md#meta-object
+#[derive(PartialEq, Clone, Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
-pub struct MetaItem {
+pub struct MetaDetail {
     pub id: String,
     #[serde(rename = "type")]
     pub type_name: String,
@@ -30,7 +32,23 @@ pub struct MetaItem {
     pub description: Option<String>,
     pub release_info: Option<String>,
     pub poster_shape: Option<String>,
+    // @TODO: default to one video
+    #[serde(default)]
+    pub videos: Vec<Video>,
     // @TODO: other
     // @TODO videos
     // @TODO crew
+}
+
+// https://github.com/Stremio/stremio-addon-sdk/blob/master/docs/api/responses/meta.md#video-object
+#[derive(PartialEq, Clone, Debug, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct Video {
+    pub id: String,
+    #[serde(alias = "name")]
+    pub title: String,
+    pub released: DateTime<Utc>,
+    pub overview: Option<String>,
+    pub thumbnail: Option<String>,
+    pub streams: Option<Vec<Stream>>,
 }

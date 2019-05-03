@@ -33,7 +33,7 @@ pub enum ResourceResponse {
         // NOTE: we are not putting this in Option<>, since that way it gives us a valid
         // fallback to all of the previous variants, therefore resulting in inaccurate err messages
         // To support other /meta/ responses (meta extensions), we should make a MetaExt variant
-        meta: MetaItem,
+        meta: MetaDetail,
     },
     Streams {
         streams: Vec<Stream>,

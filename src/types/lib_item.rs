@@ -83,6 +83,5 @@ mod test {
             Some("https://images.metahub.space/poster/medium/tt0004972/img".to_owned()),
             "poster deserialized correctly"
         );
-        // @TODO assertions
     }
 }

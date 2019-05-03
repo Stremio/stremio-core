@@ -8,7 +8,7 @@ mod tests {
     use crate::addon_transport::*;
     use crate::middlewares::*;
     use crate::state_types::*;
-    use crate::types::addons::{ResourceRef, ResourceRequest};
+    use crate::types::addons::{ResourceRef, ResourceRequest, ResourceResponse};
     use enclose::*;
     use futures::future::lazy;
     use futures::{future, Future};
@@ -137,6 +137,27 @@ mod tests {
                 future::ok(())
             });
             fut1.join(fut2).map(|(_, _)| ())
+        }));
+    }
+
+    #[test]
+    fn get_videos() {
+        run(lazy(|| {
+            let transport_url = "https://v3-cinemeta.strem.io/manifest.json".to_owned();
+            AddonHTTPTransport::<Env>::get(&ResourceRequest {
+                transport_url,
+                resource_ref: ResourceRef::without_extra("meta", "series", "tt0386676"),
+            })
+            .then(|res| {
+                match res.map(|x| *x) {
+                    Err(e) => panic!("failed getting metadata {:?}", e),
+                    Ok(ResourceResponse::Meta { meta }) => {
+                        assert!(meta.videos.len() > 0, "has videos")
+                    },
+                    _ => panic!("unexpected response"),
+                };
+                future::ok(())
+            })
         }));
     }
 

@@ -66,8 +66,8 @@ impl From<Vec<MetaPreview>> for ResourceResponse {
         ResourceResponse::Metas { metas }
     }
 }
-impl From<MetaItem> for ResourceResponse {
-    fn from(meta: MetaItem) -> Self {
+impl From<MetaDetail> for ResourceResponse {
+    fn from(meta: MetaDetail) -> Self {
         ResourceResponse::Meta { meta }
     }
 }
@@ -105,7 +105,7 @@ impl<T: Environment> AddonTransport for AddonLegacyTransport<T> {
                     .map(|r| Box::new(r.into())),
             ),
             "meta" => Box::new(
-                T::fetch_serde::<_, JsonRPCResp<MetaItem>>(fetch_req)
+                T::fetch_serde::<_, JsonRPCResp<MetaDetail>>(fetch_req)
                     .and_then(map_response)
                     .map(|r| Box::new(r.into())),
             ),
