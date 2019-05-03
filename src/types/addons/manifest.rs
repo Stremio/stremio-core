@@ -78,28 +78,29 @@ pub struct ManifestCatalog {
     pub extra: ManifestExtra,
 }
 impl ManifestCatalog {
-    pub fn is_extra_supported(&self, extra: &[(String, String)]) -> bool {
+    pub fn get_extra(&self) -> Vec<ManifestExtraProp> {
         match &self.extra {
-            ManifestExtra::Full { props } => {
-                let all_supported = extra
-                    .iter()
-                    .all(|(k, _)| props.iter().any(|e| k == &e.name));
-                let requirements_satisfied = props
-                    .iter()
-                    .filter(|e| e.is_required)
-                    .all(|e| extra.iter().any(|(k, _)| k == &e.name));
-                all_supported && requirements_satisfied
-            }
-            ManifestExtra::Short {
-                ref required,
-                ref supported,
-            } => {
-                let all_supported = extra.iter().all(|(k, _)| supported.contains(k));
-                let requirements_satisfied =
-                    required.iter().all(|kr| extra.iter().any(|(k, _)| kr == k));
-                all_supported && requirements_satisfied
-            }
+            ManifestExtra::Full { ref props } => props.to_owned(),
+            ManifestExtra::Short { ref required, ref supported } => supported.iter().map(|name| {
+                ManifestExtraProp {
+                    name: name.to_owned(),
+                    is_required: required.contains(name),
+                    options: None,
+                    options_limit: Default::default()
+                }
+            }).collect()
         }
+    }
+    pub fn is_extra_supported(&self, extra: &[(String, String)]) -> bool {
+        let all_supported = extra
+            .iter()
+            .all(|(k, _)| self.get_extra().iter().any(|e| k == &e.name));
+        let requirements_satisfied = self
+            .get_extra()
+            .iter()
+            .filter(|e| e.is_required)
+            .all(|e| extra.iter().any(|(k, _)| k == &e.name));
+        all_supported && requirements_satisfied
     }
 }
 

@@ -114,6 +114,7 @@
 * LibItem struct: deserialize an emtpy string as None
 * rename to stremio-core
 * Video struct
+* manifest: make the extra field for catalogs private, and have `get_extra()` function that returns in a uniform notation; use that
 
 
 ## TODO
@@ -483,9 +484,12 @@ Since we generate all that from `AddonAggrReq(OfResource("meta", type, id))`, we
 
 ### /library/:type
 
-Dispatch Load(CatalogFiltered(type, "org.stremio.library", "library", { library: 1 })) -> AddonAggrReq(OfResource("catalogs", type, "library", { library: 1 })) but match against library addon
+Dispatch Load(CatalogFiltered(type, "stremio://library", "library", { library: 1 })) -> AddonAggrReq(OfAddon("stremio://library", "catalogs", type, "library", { library: 1 })) but match against library addon
 
 If we do addonTransportURL+OfAddon, and we save the last selected `type` in the UI, If, for some reason, we use a `type` that's not available, the particular addon will return an error, which will be transformed into Loadable::Message and handled elegantly 
+
+NOTE: the library addon manifest will include catalogs only for the types of the items the user has
+
 
 ### Notifications (not a route, but a popover)
 

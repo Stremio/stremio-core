@@ -1,7 +1,5 @@
 #[cfg(test)]
 mod tests {
-    // @TODO manifest with ManifestResource::Full
-    // @TODO is_extra_supported
     use super::super::{
         Manifest, ManifestCatalog, ManifestExtra, ManifestExtraProp, ManifestResource, ResourceRef,
     };
