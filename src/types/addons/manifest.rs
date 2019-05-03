@@ -1,6 +1,7 @@
 use crate::types::addons::ResourceRef;
 use semver::Version;
 use serde_derive::*;
+use either::Either;
 
 // Resource descriptors
 // those define how a resource may be requested
@@ -78,27 +79,25 @@ pub struct ManifestCatalog {
     pub extra: ManifestExtra,
 }
 impl ManifestCatalog {
-    // @TODO make this return an iterator of references
-    pub fn get_extra(&self) -> Vec<ManifestExtraProp> {
+    pub fn extra_iter<'a>(&'a self) -> impl Iterator<Item = ManifestExtraProp> + 'a {
         match &self.extra {
-            ManifestExtra::Full { ref props } => props.to_owned(),
-            ManifestExtra::Short { ref required, ref supported } => supported.iter().map(|name| {
+            ManifestExtra::Full { ref props } => Either::Left(props.iter().cloned()),
+            ManifestExtra::Short { required, supported } => Either::Right(supported.iter().map(move |name| {
                 ManifestExtraProp {
                     name: name.to_owned(),
                     is_required: required.contains(name),
                     options: None,
                     options_limit: Default::default()
                 }
-            }).collect()
+            }))
         }
     }
     pub fn is_extra_supported(&self, extra: &[(String, String)]) -> bool {
-        let props = self.get_extra();
         let all_supported = extra
             .iter()
-            .all(|(k, _)| props.iter().any(|e| k == &e.name));
-        let requirements_satisfied = props
-            .iter()
+            .all(|(k, _)| self.extra_iter().any(|e| k == &e.name));
+        let requirements_satisfied = self
+            .extra_iter()
             .filter(|e| e.is_required)
             .all(|e| extra.iter().any(|(k, _)| k == &e.name));
         all_supported && requirements_satisfied
