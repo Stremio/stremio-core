@@ -92,8 +92,7 @@ impl ManifestCatalog {
                 Cow::Owned(ManifestExtraProp {
                     name: name.to_owned(),
                     is_required: required.contains(name),
-                    options: None,
-                    options_limit: Default::default(),
+                    ..Default::default()
                 })
             })),
         }
