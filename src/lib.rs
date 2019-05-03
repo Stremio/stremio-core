@@ -166,7 +166,8 @@ mod tests {
         let key = "foo".to_owned();
         let value = "fooobar".to_owned();
         // Nothing in the beginning
-        assert!(Env::get_storage::<String>(&key).wait().unwrap().is_none());
+        // Disabled cause we're testing with persistent storage (sled)
+        //assert!(Env::get_storage::<String>(&key).wait().unwrap().is_none());
         // Then set and read
         // with Mutex and BTreeMap, set_storage takes 73993042ns for 10000 iterations (or 74ms)
         //  get_storage takes 42076632 (or 42ms) for 10000 iterations
