@@ -83,7 +83,7 @@ impl ManifestCatalog {
     pub fn extra_iter<'a>(&'a self) -> impl Iterator<Item = Cow<ManifestExtraProp>> + 'a {
         match &self.extra {
             ManifestExtra::Full { ref props } => {
-                Either::Left(props.iter().map(|x| Cow::Borrowed(x)))
+                Either::Left(props.iter().map(Cow::Borrowed))
             }
             ManifestExtra::Short {
                 required,
