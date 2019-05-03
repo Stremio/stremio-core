@@ -78,6 +78,7 @@ pub struct ManifestCatalog {
     pub extra: ManifestExtra,
 }
 impl ManifestCatalog {
+    // @TODO make this return an iterator of references
     pub fn get_extra(&self) -> Vec<ManifestExtraProp> {
         match &self.extra {
             ManifestExtra::Full { ref props } => props.to_owned(),
@@ -92,11 +93,11 @@ impl ManifestCatalog {
         }
     }
     pub fn is_extra_supported(&self, extra: &[(String, String)]) -> bool {
+        let props = self.get_extra();
         let all_supported = extra
             .iter()
-            .all(|(k, _)| self.get_extra().iter().any(|e| k == &e.name));
-        let requirements_satisfied = self
-            .get_extra()
+            .all(|(k, _)| props.iter().any(|e| k == &e.name));
+        let requirements_satisfied = props
             .iter()
             .filter(|e| e.is_required)
             .all(|e| extra.iter().any(|(k, _)| k == &e.name));
