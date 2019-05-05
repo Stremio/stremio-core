@@ -83,6 +83,8 @@ impl<T: Environment> ContextMiddleware<T> {
         }
     }
 
+    // Load from storage: will be called every time we need to translate
+    // Action::Load into Internal::LoadWithCtx
     fn load(&self) -> MiddlewareFuture<UserStorage> {
         let current_state = self.state.borrow().to_owned();
         if let Some(ud) = current_state {
