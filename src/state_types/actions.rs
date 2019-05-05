@@ -33,7 +33,7 @@ impl ActionLoad {
     }
 }
 
-#[derive(Debug, Deserialize, Serialize, Clone)]
+#[derive(Debug, Deserialize, Clone)]
 #[serde(tag = "userOp", content = "args")]
 pub enum ActionUser {
     Login { email: String, password: String },
@@ -76,6 +76,8 @@ pub struct Context {
     pub addons: Vec<Descriptor>,
 }
 
+// @TODO alternatively, this could just be an enum of Input(...), Mid(...), Output(...)
+// that does not implement Serialize/Deserialize; and we only do so for the inner values
 #[derive(Debug, Deserialize, Serialize, Clone)]
 #[serde(tag = "action", content = "args")]
 pub enum Action {
@@ -84,8 +86,6 @@ pub enum Action {
     Load(ActionLoad),
     #[serde(skip_serializing)]
     AddonOp(ActionAddon),
-
-    // user-specific action
     #[serde(skip_serializing)]
     UserOp(ActionUser),
 
