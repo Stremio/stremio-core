@@ -33,7 +33,7 @@ impl ActionLoad {
     }
 }
 
-#[derive(Debug, Deserialize, Clone)]
+#[derive(Debug, Deserialize, Serialize, Clone)]
 #[serde(tag = "userOp", content = "args")]
 pub enum ActionUser {
     Login { email: String, password: String },
@@ -76,8 +76,9 @@ pub struct Context {
     pub addons: Vec<Descriptor>,
 }
 
-// @TODO alternatively, this could just be an enum of Input(...), Mid(...), Output(...)
+// @TODO alternatively, this could just be an enum of Msg { Action, Internal, Event }
 // that does not implement Serialize/Deserialize; and we only do so for the inner values
+// if we do that, the From traits will be targeting Msg and all functions will be taking Msg
 #[derive(Debug, Deserialize, Serialize, Clone)]
 #[serde(tag = "action", content = "args")]
 pub enum Action {
@@ -107,3 +108,4 @@ pub enum Action {
     #[serde(skip_deserializing)]
     AuthChanged(Option<User>),
 }
+

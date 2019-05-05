@@ -116,12 +116,14 @@
 * Video struct
 * manifest: make the extra field for catalogs private, and have `get_extra()` function that returns in a uniform notation; use that
 * actions: consider #[serde(skip)] for many things; rationale: shaves off binary size (cause of generating serialize/deserialize); also enforces correct usage
-* Optimization: web example takes 350ms to load the JS/babel/all webpack shit; try without webpack; TRIED WITHOUT WEBPACK; but it turned out the time waste was in third party extensions! Always benchmark without extensions!
+* Optimization: web example takes 350ms to load the JS/babel/all webpack shit; try without webpack; TRIED WITHOUT WEBPACK; but it turned out the time waste was in third party extensions! Always benchmark without extensions! ; now takes around ~50ms to load everything with cache
 
 ## TODO
 
 
-* Optimization: fetch to not parse JSON
+* Optimization ideas to be explored: CatalogFiltered pagination; web version: CI to use a headless browser to measure load times 
+
+* Optimization: web environment: fetch to not parse JSON (twice)
 
 * basic watched-bitfield
 	just parses to `struct { anchor_video, bitmap }`
