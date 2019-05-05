@@ -87,7 +87,9 @@ pub enum Action {
     UserOp(ActionUser),
 
     // Intermediery
+    #[serde(skip)]
     LoadWithCtx(Context, ActionLoad),
+    #[serde(skip)]
     AddonResponse(ResourceRequest, Result<ResourceResponse, String>),
 
     // Output actions
