@@ -116,9 +116,10 @@
 * Video struct
 * manifest: make the extra field for catalogs private, and have `get_extra()` function that returns in a uniform notation; use that
 * actions: consider #[serde(skip)] for many things; rationale: shaves off binary size (cause of generating serialize/deserialize); also enforces correct usage
-
+* Optimization: web example takes 350ms to load the JS/babel/all webpack shit; try without webpack; TRIED WITHOUT WEBPACK; but it turned out the time waste was in third party extensions! Always benchmark without extensions!
 
 ## TODO
+
 
 * Optimization: fetch to not parse JSON
 
@@ -175,11 +176,7 @@
 * test if addoncollection can be parsed and understood, once the middleware(s) can retrieve collections
 * addon catalog reducer, actions
 
-* optimizations: WebAssembly.instantiateStreaming and https://rustwasm.github.io/book/reference/code-size.html#optimizing-builds-for-code-size
-
-* optimization: wasm-opt -Os -o output.wasm input.wasm
-
-* Optimizations: run twiggy from time to time
+* Optimizations: run twiggy from time to time on the resulting WASM
 
 * tests: Container, individual middlewares, individual types
 * start implementing libitem/notifitem addon
@@ -195,7 +192,7 @@
 * ?addonOpen/InstallAndOpenAddon: another async action
 * opening a file (protocol add-ons to be considered)
 
-* crates: stremio-web-environment (only the Environment), stremio-state-ng-web (general API that is exported to JS via bindgen)
+* crates: stremio-web-environment (only the Environment), stremio-core-web (general API that is exported to JS via bindgen)
 
 * we should make it so that if a session is expired, we go to the login screen; this should be in the app
 * think of how to do all edge cases in the user, such as pre-installing add-ons (implicit input)
