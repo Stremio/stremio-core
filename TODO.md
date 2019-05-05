@@ -115,12 +115,27 @@
 * rename to stremio-core
 * Video struct
 * manifest: make the extra field for catalogs private, and have `get_extra()` function that returns in a uniform notation; use that
+* actions: consider #[serde(skip)] for many things; rationale: shaves off binary size (cause of generating serialize/deserialize); also enforces correct usage
 
 
 ## TODO
 
+* Optimization: fetch to not parse JSON
 
 * basic watched-bitfield
+	just parses to `struct { anchor_video, bitmap }`
+	`.mark_watched(videos: &[Video], video: &Video, watched: bool)`
+		identity if the anchor_video is within the same position of videos
+			it is -> continue
+			it is not -> re-create bitmap by rewriting the previous bitmap into a new bitmap of size `videos.len()` with an offset
+		set `bitmap[videos.index_of(video)] = watched`, but also resize bitmap in order to fit that index
+		set anchor_video to the last watched video
+
+	document assumptions: stable order from the addon
+
+* consider alternative Actions; where it's split in Input/Mid/Output but it can be constructed (instantiated) and deconstructed (matched against) easily
+	Msg: Action, Internal, Event
+	split into msg.rs and actions.rs
 
 * library addon - handles interior mutability (Arc + Mutex); handles: .addon() -> AddonInterface; .middleware() -> Handler; also LibAction
 
@@ -160,6 +175,12 @@
 * test if addoncollection can be parsed and understood, once the middleware(s) can retrieve collections
 * addon catalog reducer, actions
 
+* optimizations: WebAssembly.instantiateStreaming and https://rustwasm.github.io/book/reference/code-size.html#optimizing-builds-for-code-size
+
+* optimization: wasm-opt -Os -o output.wasm input.wasm
+
+* Optimizations: run twiggy from time to time
+
 * tests: Container, individual middlewares, individual types
 * start implementing libitem/notifitem addon
 
@@ -179,7 +200,6 @@
 * we should make it so that if a session is expired, we go to the login screen; this should be in the app
 * think of how to do all edge cases in the user, such as pre-installing add-ons (implicit input)
 * behaviorHints - pair (key, val)?
-* environment (web): separate crate, also can we avoid the double deserialization on `fetch_serde`?
 * when playing AND when opening the detail page, we should augment the libItem with meta if it's not already (trigger the updateLibItem action only if this would actually change the libitem)
 * when saving the last stream, save the whole object but compressed
 * player: implement playerPreferences and defaults behavior: picking a default subtitle/audio track; for audio, the logic should try to select your preferred language
