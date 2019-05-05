@@ -45,7 +45,8 @@ pub enum APIRequest {
         #[serde(default)]
         ids: Vec<String>,
         all: bool,
-    }, // @TODO datastoreMeta, datastorePut
+    },
+    // @TODO datastoreMeta, datastorePut
 }
 impl APIRequest {
     pub fn method_name(&self) -> &str {

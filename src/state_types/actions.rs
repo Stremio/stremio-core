@@ -102,6 +102,7 @@ impl From<Box<dyn Error>> for MiddlewareError {
 }
 
 #[derive(Debug, Serialize)]
+#[serde(tag = "output", content = "args")]
 pub enum Output {
     ContextMiddlewareFatal(MiddlewareError),
     UserOpError(ActionUser, MiddlewareError),
