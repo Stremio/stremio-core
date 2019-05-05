@@ -3,7 +3,7 @@ use crate::types::api::*;
 use serde_derive::*;
 use std::error::Error;
 
-#[derive(Debug, Deserialize, Serialize, Clone, PartialEq)]
+#[derive(Debug, Deserialize, Clone, PartialEq)]
 #[serde(tag = "load", content = "args")]
 pub enum ActionLoad {
     CatalogGrouped { extra: Vec<ExtraProp> },
@@ -44,14 +44,14 @@ pub enum ActionUser {
     // @TODO consider PullUser, PushUser?
 }
 
-#[derive(Debug, Deserialize, Serialize, Clone)]
+#[derive(Debug, Deserialize, Clone)]
 #[serde(tag = "addonOp", content = "args")]
 pub enum ActionAddon {
     Remove { transport_url: TransportUrl },
     Install(Box<Descriptor>),
 }
 
-#[derive(Debug, Deserialize, Serialize, Clone)]
+#[derive(Debug, Serialize, Clone)]
 #[serde(tag = "err", content = "args")]
 pub enum MiddlewareError {
     API(APIErr),
@@ -80,10 +80,13 @@ pub struct Context {
 #[serde(tag = "action", content = "args")]
 pub enum Action {
     // Input actions
+    #[serde(skip_serializing)]
     Load(ActionLoad),
+    #[serde(skip_serializing)]
     AddonOp(ActionAddon),
 
     // user-specific action
+    #[serde(skip_serializing)]
     UserOp(ActionUser),
 
     // Intermediery
@@ -93,9 +96,14 @@ pub enum Action {
     AddonResponse(ResourceRequest, Result<ResourceResponse, String>),
 
     // Output actions
+    #[serde(skip_deserializing)]
     ContextMiddlewareFatal(MiddlewareError),
+    #[serde(skip_deserializing)]
     UserOpError(ActionUser, MiddlewareError),
+    #[serde(skip_deserializing)]
     AddonsChanged,
+    #[serde(skip_deserializing)]
     AddonsChangedFromPull,
+    #[serde(skip_deserializing)]
     AuthChanged(Option<User>),
 }
