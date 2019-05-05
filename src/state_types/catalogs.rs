@@ -1,3 +1,4 @@
+use super::actions::Internal::*;
 use super::actions::*;
 use crate::state_types::Container;
 use crate::types::addons::*;
@@ -52,17 +53,17 @@ impl CatalogGrouped {
     }
 }
 impl Container for CatalogGrouped {
-    fn dispatch(&self, action: &Action) -> Option<Box<Self>> {
-        catalogs_reducer(&self, action)
+    fn dispatch(&self, msg: &Msg) -> Option<Box<Self>> {
+        catalogs_reducer(&self, msg)
     }
 }
 
-fn catalogs_reducer(state: &CatalogGrouped, action: &Action) -> Option<Box<CatalogGrouped>> {
-    match action {
-        Action::LoadWithCtx(
+fn catalogs_reducer(state: &CatalogGrouped, msg: &Msg) -> Option<Box<CatalogGrouped>> {
+    match msg {
+        Msg::Internal(LoadWithCtx(
             Context { addons, .. },
             load_action @ ActionLoad::CatalogGrouped { .. },
-        ) => {
+        )) => {
             if let Some(aggr_req) = load_action.addon_aggr_req() {
                 let groups = aggr_req
                     .plan(&addons)
@@ -74,7 +75,7 @@ fn catalogs_reducer(state: &CatalogGrouped, action: &Action) -> Option<Box<Catal
                 None
             }
         }
-        Action::AddonResponse(req, result) => {
+        Msg::Internal(AddonResponse(req, result)) => {
             if let Some(idx) = state.groups.iter().position(|g| &g.0 == req) {
                 let mut groups = state.groups.to_owned();
                 let group_content = result_to_loadable!(
@@ -124,12 +125,12 @@ impl CatalogFiltered {
     }
 }
 impl Container for CatalogFiltered {
-    fn dispatch(&self, action: &Action) -> Option<Box<Self>> {
-        match action {
-            Action::LoadWithCtx(
+    fn dispatch(&self, msg: &Msg) -> Option<Box<Self>> {
+        match msg {
+            Msg::Internal(LoadWithCtx(
                 Context { addons, .. },
                 ActionLoad::CatalogFiltered { resource_req },
-            ) => {
+            )) => {
                 //dbg!(&addons);
                 //dbg!(&resource_req);
                 // @TODO pagination
@@ -146,7 +147,7 @@ impl Container for CatalogFiltered {
                     selected: Some(resource_req.to_owned()),
                 }))
             }
-            Action::AddonResponse(req, result)
+            Msg::Internal(AddonResponse(req, result))
                 if Some(req) == self.selected.as_ref()
                     && self.item_pages.last() == Some(&Loadable::Loading) =>
             {
@@ -178,12 +179,12 @@ impl Streams {
     }
 }
 impl Container for Streams {
-    fn dispatch(&self, action: &Action) -> Option<Box<Self>> {
-        match action {
-            Action::LoadWithCtx(
+    fn dispatch(&self, msg: &Msg) -> Option<Box<Self>> {
+        match msg {
+            Msg::Internal(LoadWithCtx(
                 Context { addons, .. },
                 load_action @ ActionLoad::Streams { .. },
-            ) => {
+            )) => {
                 if let Some(aggr_req) = load_action.addon_aggr_req() {
                     let groups = aggr_req
                         .plan(&addons)
@@ -194,7 +195,7 @@ impl Container for Streams {
                 }
                 None
             }
-            Action::AddonResponse(req, result) => {
+            Msg::Internal(AddonResponse(req, result)) => {
                 if let Some(idx) = self.groups.iter().position(|g| &g.0 == req) {
                     let mut groups = self.groups.to_owned();
                     groups[idx].1 = result_to_loadable!(

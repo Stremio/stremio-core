@@ -12,8 +12,8 @@ pub struct AddonsMiddleware<T: Environment> {
     pub env: PhantomData<T>,
 }
 impl<T: Environment> Handler for AddonsMiddleware<T> {
-    fn handle(&self, action: &Action, emit: Rc<DispatcherFn>) {
-        if let Action::LoadWithCtx(Context { addons, .. }, action_load) = action {
+    fn handle(&self, msg: &Msg, emit: Rc<DispatcherFn>) {
+        if let Msg::Internal(Internal::LoadWithCtx(Context { addons, .. }, action_load)) = msg {
             if let Some(aggr_req) = action_load.addon_aggr_req() {
                 for resource_req in aggr_req.plan(&addons) {
                     Self::for_request(resource_req, emit.clone())
@@ -30,8 +30,8 @@ impl<T: Environment> AddonsMiddleware<T> {
     fn for_request(resource_req: ResourceRequest, emit: Rc<DispatcherFn>) {
         let fut = AddonHTTPTransport::<T>::get(&resource_req).then(move |res| {
             emit(&match res {
-                Ok(resp) => Action::AddonResponse(resource_req, Ok(*resp)),
-                Err(e) => Action::AddonResponse(resource_req, Err(e.to_string())),
+                Ok(resp) => Msg::Internal(Internal::AddonResponse(resource_req, Ok(*resp))),
+                Err(e) => Msg::Internal(Internal::AddonResponse(resource_req, Err(e.to_string()))),
             });
             future::ok(())
         });

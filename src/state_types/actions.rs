@@ -3,6 +3,9 @@ use crate::types::api::*;
 use serde_derive::*;
 use std::error::Error;
 
+//
+// Input actions: those are triggered by users
+//
 #[derive(Debug, Deserialize, Clone, PartialEq)]
 #[serde(tag = "load", content = "args")]
 pub enum ActionLoad {
@@ -51,6 +54,34 @@ pub enum ActionAddon {
     Install(Box<Descriptor>),
 }
 
+#[derive(Debug, Deserialize, Clone)]
+#[serde(tag = "action", content = "args")]
+pub enum Action {
+    Load(ActionLoad),
+    AddonOp(ActionAddon),
+    UserOp(ActionUser),
+}
+
+//
+// Intermediery messages
+// those are emitted by the middlewares and received by containers
+//
+#[derive(Debug)]
+pub struct Context {
+    pub user: Option<User>,
+    pub addons: Vec<Descriptor>,
+}
+
+#[derive(Debug)]
+pub enum Internal {
+    LoadWithCtx(Context, ActionLoad),
+    AddonResponse(ResourceRequest, Result<ResourceResponse, String>),
+}
+
+//
+// Output: events
+// Those are meant to be user directly by users of the stremio-core crate
+//
 #[derive(Debug, Serialize, Clone)]
 #[serde(tag = "err", content = "args")]
 pub enum MiddlewareError {
@@ -70,47 +101,37 @@ impl From<Box<dyn Error>> for MiddlewareError {
     }
 }
 
-#[derive(Debug, Deserialize, Serialize, Clone)]
-pub struct Context {
-    pub user: Option<User>,
-    pub addons: Vec<Descriptor>,
-}
-
-// @TODO alternatively, this could just be an enum of Msg { Action, Internal, Event }
-// that does not implement Serialize/Deserialize; and we only do so for the inner values
-// if we do that, the From traits will be targeting Msg and all functions will be taking Msg
-#[derive(Debug, Deserialize, Serialize, Clone)]
-#[serde(tag = "action", content = "args")]
-pub enum Action {
-    // Input actions
-    #[serde(skip_serializing)]
-    Load(ActionLoad),
-    #[serde(skip_serializing)]
-    AddonOp(ActionAddon),
-    #[serde(skip_serializing)]
-    UserOp(ActionUser),
-
-    // Intermediery
-    #[serde(skip)]
-    LoadWithCtx(Context, ActionLoad),
-    #[serde(skip)]
-    AddonResponse(ResourceRequest, Result<ResourceResponse, String>),
-
-    // Output actions
-    #[serde(skip_deserializing)]
+#[derive(Debug, Serialize)]
+pub enum Output {
     ContextMiddlewareFatal(MiddlewareError),
-    #[serde(skip_deserializing)]
     UserOpError(ActionUser, MiddlewareError),
-    #[serde(skip_deserializing)]
     AddonsChanged,
-    #[serde(skip_deserializing)]
     AddonsChangedFromPull,
-    #[serde(skip_deserializing)]
     AuthChanged(Option<User>),
 }
 
-impl From<ActionLoad> for Action {
-    fn from(load: ActionLoad) -> Self {
-        Action::Load(load)
+//
+// Final enum Msg
+// sum type of actions, internals and outputs
+//
+#[derive(Debug)]
+pub enum Msg {
+    Action(Action),
+    Internal(Internal),
+    Output(Output),
+}
+impl From<Action> for Msg {
+    fn from(a: Action) -> Self {
+        Msg::Action(a)
+    }
+}
+impl From<Internal> for Msg {
+    fn from(i: Internal) -> Self {
+        Msg::Internal(i)
+    }
+}
+impl From<Output> for Msg {
+    fn from(o: Output) -> Self {
+        Msg::Output(o)
     }
 }

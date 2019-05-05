@@ -12,7 +12,7 @@ pub enum Event<'a, T>
 where
     T: Clone,
 {
-    Action(&'a Action),
+    Output(&'a Output),
     NewState(&'a T),
 }
 
@@ -35,18 +35,20 @@ where
         let filters = Rc::new(RefCell::new(BTreeMap::new()));
         let chain = Chain::new(
             middlewares,
-            Box::new(enclose!((filters) move |action| {
-                cb(Event::Action(action));
+            Box::new(enclose!((filters) move |msg| {
+                if let Msg::Output(o) = msg {
+                    cb(Event::Output(o));
+                }
                 for (id, container) in containers.iter() {
                     // If we've set a filter for this container ID,
                     // we will only allow Load/LoadWithCtx that match it
                     if let Some(x) = filters.borrow().get(id) {
-                        match action {
-                            Action::Load(y) | Action::LoadWithCtx(_, y) if x != y => continue,
+                        match msg {
+                            Msg::Action(Action::Load(y)) | Msg::Internal(Internal::LoadWithCtx(_, y)) if x != y => continue,
                             _ => ()
                         }
                     }
-                    let has_new_state = container.dispatch(action);
+                    let has_new_state = container.dispatch(msg);
                     if has_new_state {
                         cb(Event::NewState(id));
                     }
@@ -59,12 +61,13 @@ where
         if let Action::Load(_) = action {
             self.filters.borrow_mut().clear();
         }
-        self.chain.dispatch(action)
+        self.chain.dispatch(&action.to_owned().into())
     }
     pub fn dispatch_load_to(&self, id: &T, action_load: &ActionLoad) {
         self.filters
             .borrow_mut()
             .insert(id.to_owned(), action_load.to_owned());
-        self.chain.dispatch(&Action::Load(action_load.to_owned()));
+        self.chain
+            .dispatch(&Action::Load(action_load.to_owned()).into());
     }
 }

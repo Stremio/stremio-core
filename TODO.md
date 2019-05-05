@@ -117,9 +117,12 @@
 * manifest: make the extra field for catalogs private, and have `get_extra()` function that returns in a uniform notation; use that
 * actions: consider #[serde(skip)] for many things; rationale: shaves off binary size (cause of generating serialize/deserialize); also enforces correct usage
 * Optimization: web example takes 350ms to load the JS/babel/all webpack shit; try without webpack; TRIED WITHOUT WEBPACK; but it turned out the time waste was in third party extensions! Always benchmark without extensions! ; now takes around ~50ms to load everything with cache
+* consider alternative Actions; where it's split in Input/Mid/Output but it can be constructed (instantiated) and deconstructed (matched against) easily
+	Msg: Action, Internal, Event
+	split into msg.rs and actions.rs
+
 
 ## TODO
-
 
 * Optimization ideas to be explored: CatalogFiltered pagination; web version: CI to use a headless browser to measure load times 
 
@@ -135,10 +138,6 @@
 		set anchor_video to the last watched video
 
 	document assumptions: stable order from the addon
-
-* consider alternative Actions; where it's split in Input/Mid/Output but it can be constructed (instantiated) and deconstructed (matched against) easily
-	Msg: Action, Internal, Event
-	split into msg.rs and actions.rs
 
 * library addon - handles interior mutability (Arc + Mutex); handles: .addon() -> AddonInterface; .middleware() -> Handler; also LibAction
 

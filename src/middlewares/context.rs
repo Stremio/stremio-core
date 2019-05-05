@@ -1,3 +1,4 @@
+use crate::state_types::Output::*;
 use crate::state_types::*;
 use crate::types::addons::*;
 use crate::types::api::*;
@@ -20,6 +21,7 @@ lazy_static! {
             .expect("official addons JSON parse");
 }
 
+// These will be stored, so they need to implement both Serialize and Deserilaize
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]
 struct Auth {
     key: AuthKey,
@@ -121,10 +123,10 @@ impl<T: Environment> ContextMiddleware<T> {
         let user = new_us.auth.as_ref().map(|a| a.user.to_owned());
         let fut = Self::save(state, new_us).and_then(move |_| {
             if auth_changed {
-                emit(&Action::AuthChanged(user));
+                emit(&AuthChanged(user).into());
             }
             if addons_changed {
-                emit(&Action::AddonsChangedFromPull);
+                emit(&AddonsChangedFromPull.into());
             }
             future::ok(())
         });
@@ -152,14 +154,14 @@ impl<T: Environment> ContextMiddleware<T> {
 
     fn exec_or_error(fut: MiddlewareFuture<()>, action_user: ActionUser, emit: Rc<DispatcherFn>) {
         T::exec(Box::new(fut.or_else(move |e| {
-            emit(&Action::UserOpError(action_user, e));
+            emit(&UserOpError(action_user, e).into());
             future::err(())
         })));
     }
 
     fn exec_or_fatal(fut: MiddlewareFuture<()>, emit: Rc<DispatcherFn>) {
         T::exec(Box::new(fut.or_else(move |e| {
-            emit(&Action::ContextMiddlewareFatal(e));
+            emit(&ContextMiddlewareFatal(e).into());
             future::err(())
         })));
     }
@@ -174,10 +176,7 @@ impl<T: Environment> ContextMiddleware<T> {
         let api_req = match current_storage.action_to_request(action_user) {
             Some(r) => r,
             None => {
-                emit(&Action::UserOpError(
-                    action_user.to_owned(),
-                    MiddlewareError::AuthRequired,
-                ));
+                emit(&UserOpError(action_user.to_owned(), MiddlewareError::AuthRequired).into());
                 return;
             }
         };
@@ -236,21 +235,21 @@ impl<T: Environment> ContextMiddleware<T> {
 }
 
 impl<T: Environment> Handler for ContextMiddleware<T> {
-    fn handle(&self, action: &Action, emit: Rc<DispatcherFn>) {
-        if let Action::Load(action_load) = action {
+    fn handle(&self, msg: &Msg, emit: Rc<DispatcherFn>) {
+        if let Msg::Action(Action::Load(action_load)) = msg {
             let fut = self.load().and_then(
                 enclose!((emit, action_load) move |UserStorage{ auth, addons }| {
                     // @TODO this is the place to inject built-in addons, such as the
                     // Library/Notifications addon
                     let ctx = Context { user:auth.map(|a| a.user), addons: addons.to_owned() };
-                    emit(&Action::LoadWithCtx(ctx, action_load));
+                    emit(&Internal::LoadWithCtx(ctx, action_load).into());
                     future::ok(())
                 }),
             );
             Self::exec_or_fatal(Box::new(fut), emit.clone());
         }
 
-        if let Action::AddonOp(action_addon) = action {
+        if let Msg::Action(Action::AddonOp(action_addon)) = msg {
             let state = self.state.clone();
             let fut = self
                 .load()
@@ -274,14 +273,14 @@ impl<T: Environment> Handler for ContextMiddleware<T> {
                     };
                     Self::save(state, new_user_storage)
                         .and_then(move |_| {
-                            emit(&Action::AddonsChanged);
+                            emit(&AddonsChanged.into());
                             future::ok(())
                         })
                 }));
             Self::exec_or_fatal(Box::new(fut), emit.clone());
         }
 
-        if let Action::UserOp(action_user) = action {
+        if let Msg::Action(Action::UserOp(action_user)) = msg {
             let state = self.state.clone();
             let api_url = self.api_url.to_owned();
             let fut = self
