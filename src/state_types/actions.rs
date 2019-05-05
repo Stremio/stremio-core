@@ -109,3 +109,8 @@ pub enum Action {
     AuthChanged(Option<User>),
 }
 
+impl From<ActionLoad> for Action {
+    fn from(load: ActionLoad) -> Self {
+        Action::Load(load)
+    }
+}

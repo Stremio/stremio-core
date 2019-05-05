@@ -59,7 +59,7 @@ mod tests {
 
         run(lazy(enclose!((muxer) move || {
             // this is the dispatch operation
-            let action = &Action::Load(ActionLoad::CatalogGrouped { extra: vec![] });
+            let action = &(ActionLoad::CatalogGrouped { extra: vec![] }).into();
             muxer.dispatch(action);
             future::ok(())
         })));
@@ -85,7 +85,7 @@ mod tests {
         // Now try the same, but with Search
         run(lazy(enclose!((muxer) move || {
             let extra = vec![("search".to_owned(), "grand tour".to_owned())];
-            let action = &Action::Load(ActionLoad::CatalogGrouped { extra });
+            let action = &(ActionLoad::CatalogGrouped { extra }).into();
             muxer.dispatch(action);
             future::ok(())
         })));
