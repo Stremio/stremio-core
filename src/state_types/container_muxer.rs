@@ -8,15 +8,15 @@ use std::rc::Rc;
 
 #[derive(Debug, Clone, Serialize)]
 #[serde(tag = "event", content = "args")]
-pub enum Event<'a, T>
+pub enum MuxerEvent<'a, T>
 where
     T: Clone,
 {
-    Output(&'a Output),
+    Event(&'a Event),
     NewState(&'a T),
 }
 
-type FinalFn<T> = Box<Fn(Event<T>)>;
+type FinalFn<T> = Box<Fn(MuxerEvent<T>)>;
 
 // ContainerMuxer: this allows you to manage multiple containers
 pub struct ContainerMuxer<U> {
@@ -36,8 +36,8 @@ where
         let chain = Chain::new(
             middlewares,
             Box::new(enclose!((filters) move |msg| {
-                if let Msg::Output(o) = msg {
-                    cb(Event::Output(o));
+                if let Msg::Event(o) = msg {
+                    cb(MuxerEvent::Event(o));
                 }
                 for (id, container) in containers.iter() {
                     // If we've set a filter for this container ID,
@@ -50,7 +50,7 @@ where
                     }
                     let has_new_state = container.dispatch(msg);
                     if has_new_state {
-                        cb(Event::NewState(id));
+                        cb(MuxerEvent::NewState(id));
                     }
                 }
             })),

@@ -79,7 +79,7 @@ pub enum Internal {
 }
 
 //
-// Output: events
+// Event
 // Those are meant to be user directly by users of the stremio-core crate
 //
 #[derive(Debug, Serialize, Clone)]
@@ -102,8 +102,8 @@ impl From<Box<dyn Error>> for MiddlewareError {
 }
 
 #[derive(Debug, Serialize)]
-#[serde(tag = "output", content = "args")]
-pub enum Output {
+#[serde(tag = "event", content = "args")]
+pub enum Event {
     ContextMiddlewareFatal(MiddlewareError),
     UserOpError(ActionUser, MiddlewareError),
     AddonsChanged,
@@ -119,7 +119,7 @@ pub enum Output {
 pub enum Msg {
     Action(Action),
     Internal(Internal),
-    Output(Output),
+    Event(Event),
 }
 impl From<Action> for Msg {
     fn from(a: Action) -> Self {
@@ -131,8 +131,8 @@ impl From<Internal> for Msg {
         Msg::Internal(i)
     }
 }
-impl From<Output> for Msg {
-    fn from(o: Output) -> Self {
-        Msg::Output(o)
+impl From<Event> for Msg {
+    fn from(o: Event) -> Self {
+        Msg::Event(o)
     }
 }
