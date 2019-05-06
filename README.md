@@ -19,3 +19,8 @@ Also see:
 cargo clippy
 cargo fmt
 ```
+
+
+## Adding new actions
+
+Defining actions and what middleware requests they should trigger is defined in `src/state_types/msg/actions`

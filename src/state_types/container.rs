@@ -1,4 +1,4 @@
-use super::actions::Msg;
+use super::msg::Msg;
 use serde::Serialize;
 use std::cell::RefCell;
 use std::ops::Deref;

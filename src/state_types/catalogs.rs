@@ -1,5 +1,5 @@
-use super::actions::Internal::*;
-use super::actions::*;
+use super::msg::Internal::*;
+use super::msg::*;
 use crate::state_types::Container;
 use crate::types::addons::*;
 use crate::types::{MetaPreview, Stream};

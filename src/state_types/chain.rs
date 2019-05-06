@@ -1,4 +1,4 @@
-use super::actions::Msg;
+use super::msg::Msg;
 
 // Build a chain of Handlers
 // the flow is: .dispatch() -> <all handlers> -> recv
