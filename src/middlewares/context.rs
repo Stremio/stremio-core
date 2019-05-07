@@ -121,11 +121,15 @@ impl<T: Environment + 'static> ContextMiddleware<T> {
 
     // save_and_emit will only emit AuthChanged/AddonsChangedfromPull if saving to storage is successful
     fn save_and_emit(&self, new_us: UserStorage, emit: Rc<DispatcherFn>) -> MiddlewareFuture<()> {
-        let state = self.state.borrow();
-        let addons_changed = state
+        // @WARNING: borrows need to be dropped before calling .save
+        let addons_changed = self
+            .state
+            .borrow()
             .as_ref()
             .map_or(false, |us| !us.are_addons_same(&new_us.addons));
-        let auth_changed = state
+        let auth_changed = self
+            .state
+            .borrow()
             .as_ref()
             .map_or(false, |us| us.get_auth_key() != new_us.get_auth_key());
         let user = new_us.auth.as_ref().map(|a| a.user.to_owned());
