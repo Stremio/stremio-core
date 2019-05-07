@@ -25,6 +25,21 @@ pub struct LibItemState {
     pub no_notif: bool,
 }
 
+// WARNING: must be JSON-compatible with LibItem (see test)
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq, Ord, PartialOrd)]
+pub struct LibItemPreview {
+    #[serde(rename = "_id")]
+    pub id: String,
+    pub name: String,
+    #[serde(rename = "type")]
+    pub type_name: String,
+    #[serde(deserialize_with = "empty_string_as_none", default)]
+    pub poster: Option<String>,
+    #[serde(rename = "_mtime")]
+    pub mtime: DateTime<Utc>,
+}
+
+
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq, Ord, PartialOrd)]
 pub struct LibItem {
     #[serde(rename = "_id")]
@@ -93,5 +108,10 @@ mod test {
             Some("https://images.metahub.space/poster/medium/tt0004972/img".to_owned()),
             "poster deserialized correctly"
         );
+
+        let l_preview: LibItemPreview = serde_json::from_str(&serialized).unwrap();
+        assert_eq!(l.id, l_preview.id);
+        assert_eq!(l.type_name, l_preview.type_name);
+        assert_eq!(l.mtime, l_preview.mtime);
     }
 }

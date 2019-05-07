@@ -59,5 +59,3 @@ pub enum Action {
     AddonOp(ActionAddon),
     UserOp(ActionUser),
 }
-
-
