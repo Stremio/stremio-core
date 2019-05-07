@@ -94,6 +94,10 @@ impl<T: Environment + 'static> ContextMiddleware<T> {
         }
     }
 
+    fn state_map_or<U, F: FnOnce(&UserStorage) -> U>(&self, default: U, f: F) -> U {
+        self.state.borrow().as_ref().map_or(default, f)
+    }
+
     // Load from storage: will be called every time we need to translate
     // Action::Load into Internal::LoadWithCtx
     fn load(&self) -> MiddlewareFuture<UserStorage> {
@@ -122,16 +126,9 @@ impl<T: Environment + 'static> ContextMiddleware<T> {
     // save_and_emit will only emit AuthChanged/AddonsChangedfromPull if saving to storage is successful
     fn save_and_emit(&self, new_us: UserStorage, emit: Rc<DispatcherFn>) -> MiddlewareFuture<()> {
         // @WARNING: borrows need to be dropped before calling .save
-        let addons_changed = self
-            .state
-            .borrow()
-            .as_ref()
-            .map_or(false, |us| !us.are_addons_same(&new_us.addons));
-        let auth_changed = self
-            .state
-            .borrow()
-            .as_ref()
-            .map_or(false, |us| us.get_auth_key() != new_us.get_auth_key());
+        let addons_changed = self.state_map_or(false, |us| !us.are_addons_same(&new_us.addons));
+        let auth_changed =
+            self.state_map_or(false, |us| us.get_auth_key() != new_us.get_auth_key());
         let user = new_us.auth.as_ref().map(|a| a.user.to_owned());
         let fut = self.save(new_us).and_then(move |_| {
             if auth_changed {
