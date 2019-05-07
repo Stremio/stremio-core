@@ -79,7 +79,7 @@ impl<T: Environment> Clone for ContextMiddleware<T> {
         ContextMiddleware {
             state: self.state.clone(),
             api_url: self.api_url.clone(),
-            env: PhantomData
+            env: PhantomData,
         }
     }
 }
@@ -119,14 +119,14 @@ impl<T: Environment + 'static> ContextMiddleware<T> {
     }
 
     // save_and_emit will only emit AuthChanged/AddonsChangedfromPull if saving to storage is successful
-    fn save_and_emit(
-        &self,
-        new_us: UserStorage,
-        emit: Rc<DispatcherFn>,
-    ) -> MiddlewareFuture<()> {
+    fn save_and_emit(&self, new_us: UserStorage, emit: Rc<DispatcherFn>) -> MiddlewareFuture<()> {
         let state = self.state.borrow();
-        let addons_changed = state.as_ref().map_or(false, |us| !us.are_addons_same(&new_us.addons));
-        let auth_changed = state.as_ref().map_or(false, |us| us.get_auth_key() != new_us.get_auth_key());
+        let addons_changed = state
+            .as_ref()
+            .map_or(false, |us| !us.are_addons_same(&new_us.addons));
+        let auth_changed = state
+            .as_ref()
+            .map_or(false, |us| us.get_auth_key() != new_us.get_auth_key());
         let user = new_us.auth.as_ref().map(|a| a.user.to_owned());
         let fut = self.save(new_us).and_then(move |_| {
             if auth_changed {
@@ -213,7 +213,8 @@ impl<T: Environment + 'static> ContextMiddleware<T> {
             ActionUser::Logout => {
                 // Reset the storage, and then issue the API request to clean the session
                 // that way, you can logout even w/o a connection
-                let fut = ctxm.save_and_emit(Default::default(), emit.clone())
+                let fut = ctxm
+                    .save_and_emit(Default::default(), emit.clone())
                     .and_then(move |_| Self::api_fetch::<SuccessResponse>(&api_url, api_req))
                     .and_then(|_| future::ok(()));
                 Box::new(fut)
