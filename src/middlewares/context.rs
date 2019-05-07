@@ -67,14 +67,24 @@ impl UserStorage {
 
 type MiddlewareFuture<T> = Box<Future<Item = T, Error = MiddlewareError>>;
 type UserStorageHolder = Rc<RefCell<Option<UserStorage>>>;
+
 #[derive(Default)]
 pub struct ContextMiddleware<T: Environment> {
-    //id: usize,
     state: UserStorageHolder,
     api_url: String,
     env: PhantomData<T>,
 }
-impl<T: Environment> ContextMiddleware<T> {
+impl<T: Environment> Clone for ContextMiddleware<T> {
+    fn clone(&self) -> Self {
+        ContextMiddleware {
+            state: self.state.clone(),
+            api_url: self.api_url.clone(),
+            env: PhantomData
+        }
+    }
+}
+
+impl<T: Environment + 'static> ContextMiddleware<T> {
     pub fn new() -> Self {
         ContextMiddleware {
             state: Default::default(),
@@ -102,28 +112,23 @@ impl<T: Environment> ContextMiddleware<T> {
         Box::new(fut)
     }
 
-    fn save(state: UserStorageHolder, new_user_data: UserStorage) -> MiddlewareFuture<()> {
+    fn save(&self, new_user_data: UserStorage) -> MiddlewareFuture<()> {
         let fut = T::set_storage(USER_DATA_KEY, Some(&new_user_data)).map_err(Into::into);
-        state.replace(Some(new_user_data));
+        self.state.replace(Some(new_user_data));
         Box::new(fut)
     }
 
     // save_and_emit will only emit AuthChanged/AddonsChangedfromPull if saving to storage is successful
     fn save_and_emit(
-        state: UserStorageHolder,
+        &self,
         new_us: UserStorage,
         emit: Rc<DispatcherFn>,
     ) -> MiddlewareFuture<()> {
-        let addons_changed = state
-            .borrow()
-            .as_ref()
-            .map_or(false, |us| !us.are_addons_same(&new_us.addons));
-        let auth_changed = state
-            .borrow()
-            .as_ref()
-            .map_or(false, |us| us.get_auth_key() != new_us.get_auth_key());
+        let state = self.state.borrow();
+        let addons_changed = state.as_ref().map_or(false, |us| !us.are_addons_same(&new_us.addons));
+        let auth_changed = state.as_ref().map_or(false, |us| us.get_auth_key() != new_us.get_auth_key());
         let user = new_us.auth.as_ref().map(|a| a.user.to_owned());
-        let fut = Self::save(state, new_us).and_then(move |_| {
+        let fut = self.save(new_us).and_then(move |_| {
             if auth_changed {
                 emit(&AuthChanged(user).into());
             }
@@ -169,12 +174,14 @@ impl<T: Environment> ContextMiddleware<T> {
     }
 
     fn handle_user_op(
-        state: UserStorageHolder,
-        api_url: String,
+        &self,
         current_storage: UserStorage,
         action_user: &ActionUser,
         emit: Rc<DispatcherFn>,
     ) {
+        let api_url = self.api_url.to_owned();
+        let ctxm = self;
+
         let api_req = match current_storage.action_to_request(action_user) {
             Some(r) => r,
             None => {
@@ -200,13 +207,13 @@ impl<T: Environment> ContextMiddleware<T> {
                             },
                         )
                     })
-                    .and_then(enclose!((emit) | us | Self::save_and_emit(state, us, emit)));
+                    .and_then(enclose!((emit, ctxm) move |us| ctxm.save_and_emit(us, emit)));
                 Box::new(fut)
             }
             ActionUser::Logout => {
                 // Reset the storage, and then issue the API request to clean the session
                 // that way, you can logout even w/o a connection
-                let fut = Self::save_and_emit(state.clone(), Default::default(), emit.clone())
+                let fut = ctxm.save_and_emit(Default::default(), emit.clone())
                     .and_then(move |_| Self::api_fetch::<SuccessResponse>(&api_url, api_req))
                     .and_then(|_| future::ok(()));
                 Box::new(fut)
@@ -214,14 +221,14 @@ impl<T: Environment> ContextMiddleware<T> {
             ActionUser::PullAddons => {
                 let auth = current_storage.auth.to_owned();
                 let fut = Self::api_fetch::<CollectionResponse>(&api_url, api_req).and_then(
-                    enclose!((emit) move |CollectionResponse { addons, .. }| -> MiddlewareFuture<()> {
+                    enclose!((ctxm, emit) move |CollectionResponse { addons, .. }| -> MiddlewareFuture<()> {
                         // @TODO handle last_modified here
                         // The authentication has changed in between - abort
-                        match *state.borrow() {
+                        match *ctxm.state.borrow() {
                             Some(ref s) if s.get_auth_key() == current_storage.get_auth_key() => {},
                             _ => { return Box::new(future::err(MiddlewareError::AuthRace)) },
                         }
-                        Self::save_and_emit(state, UserStorage { auth, addons }, emit.clone())
+                        ctxm.save_and_emit(UserStorage { auth, addons }, emit.clone())
                     }),
                 );
                 Box::new(fut)
@@ -236,14 +243,17 @@ impl<T: Environment> ContextMiddleware<T> {
     }
 }
 
-impl<T: Environment> Handler for ContextMiddleware<T> {
+impl<T: Environment + 'static> Handler for ContextMiddleware<T> {
     fn handle(&self, msg: &Msg, emit: Rc<DispatcherFn>) {
+        // Cloning this is fine (in the enclose!), cause the state is in an Rc
+        let ctxm = self;
+
         if let Msg::Action(Action::Load(action_load)) = msg {
             let fut = self.load().and_then(
                 enclose!((emit, action_load) move |UserStorage{ auth, addons }| {
                     // @TODO this is the place to inject built-in addons, such as the
                     // Library/Notifications addon
-                    let ctx = Context { user:auth.map(|a| a.user), addons: addons.to_owned() };
+                    let ctx = Context { user: auth.map(|a| a.user), addons: addons.to_owned() };
                     emit(&Internal::LoadWithCtx(ctx, action_load).into());
                     future::ok(())
                 }),
@@ -252,10 +262,9 @@ impl<T: Environment> Handler for ContextMiddleware<T> {
         }
 
         if let Msg::Action(Action::AddonOp(action_addon)) = msg {
-            let state = self.state.clone();
             let fut = self
                 .load()
-                .and_then(enclose!((emit, action_addon) move |us| {
+                .and_then(enclose!((emit, action_addon, ctxm) move |us| {
                     let addons = match action_addon {
                         ActionAddon::Remove{ transport_url } => {
                             us.addons.iter()
@@ -273,7 +282,7 @@ impl<T: Environment> Handler for ContextMiddleware<T> {
                         addons,
                         ..us
                     };
-                    Self::save(state, new_user_storage)
+                    ctxm.save(new_user_storage)
                         .and_then(move |_| {
                             emit(&AddonsChanged.into());
                             future::ok(())
@@ -283,14 +292,12 @@ impl<T: Environment> Handler for ContextMiddleware<T> {
         }
 
         if let Msg::Action(Action::UserOp(action_user)) = msg {
-            let state = self.state.clone();
-            let api_url = self.api_url.to_owned();
             let fut = self
                 .load()
-                .and_then(enclose!((emit, action_user) move |ud| {
+                .and_then(enclose!((emit, action_user, ctxm) move |ud| {
                     // handle_user_op will spawn it's own tasks,
                     // since they are handled with exec_or_error
-                    Self::handle_user_op(state, api_url, ud, &action_user, emit.clone());
+                    ctxm.handle_user_op(ud, &action_user, emit);
                     future::ok(())
                 }));
             Self::exec_or_fatal(Box::new(fut), emit.clone());
