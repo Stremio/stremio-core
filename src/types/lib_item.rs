@@ -59,7 +59,7 @@ impl LibItem {
     }
     // Must return a result that's in a logical conjunction (&&) with .should_persist()
     pub fn should_push(&self) -> bool {
-        self.should_persist() && true
+        self.should_persist() && self.type_name != "other"
     }
 }
 
