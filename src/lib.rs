@@ -191,6 +191,7 @@ mod tests {
                         .collect::<Vec<&LibItem>>();
                     dbg!(&watched_items);
                     */
+                    // @TODO build_map helper
                     let map_remote = result
                         .iter()
                         .map(|x| (x.id.to_owned(), x.mtime.to_owned()))
@@ -199,17 +200,15 @@ mod tests {
                     let map_local = map_remote.clone(); // @TODO
                     let to_pull_ids = map_remote
                         .iter()
-                        .filter_map(|(k, v)| {
-                            match map_local.get(k) {
-                                Some(date) if date < v => Some(k),
-                                None => Some(k),
-                                _ => None
-                            }
-                        })
-                        .cloned()
+                        .filter(|(k, v)| map_local.get(*k).map_or(true, |date| date < v))
+                        .map(|(k, _)| k.to_owned())
                         .collect::<Vec<String>>();
-
+                    let to_push = items_local
+                        .iter()
+                        .filter(|i| map_remote.get(&i.id).map_or(true, |date| date < &i.mtime))
+                        .collect::<Vec<&LibItem>>();
                     dbg!(to_pull_ids);
+                    dbg!(to_push);
                 }
                 future::ok(())
             })
