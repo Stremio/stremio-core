@@ -162,6 +162,61 @@ mod tests {
     }
 
     #[test]
+    fn libitems() {
+        use crate::types::api::*;
+        use crate::types::LibItem;
+        use chrono::{DateTime, Utc};
+        use std::collections::HashMap;
+
+        let auth_key = "=".into();
+
+        run(lazy(|| {
+
+            let base_url = "https://api.strem.io";
+            let api_req = APIRequest::DatastoreGet {
+                auth_key,
+                collection: "libraryItem".into(),
+                ids: vec![],
+                all: true,
+            };
+            let url = format!("{}/api/{}", &base_url, api_req.method_name());
+            let req = Request::post(url).body(api_req).unwrap();
+
+            let fut = Env::fetch_serde::<_, APIResult<Vec<LibItem>>>(req);
+            fut.then(|r| {
+                if let APIResult::Ok { result } = *r.unwrap() {
+                    /*let watched_items = result
+                        .iter()
+                        .filter(|l| l.state.overall_time_watched > 3600000 && l.type_name == "series")
+                        .collect::<Vec<&LibItem>>();
+                    dbg!(&watched_items);
+                    */
+                    let map_remote = result
+                        .iter()
+                        .map(|x| (x.id.to_owned(), x.mtime.to_owned()))
+                        .collect::<HashMap<String, DateTime<Utc>>>();
+                    let items_local = result.clone(); // @TODO
+                    let map_local = map_remote.clone(); // @TODO
+                    let to_pull_ids = map_remote
+                        .iter()
+                        .filter_map(|(k, v)| {
+                            match map_local.get(k) {
+                                Some(date) if date < v => Some(k),
+                                None => Some(k),
+                                _ => None
+                            }
+                        })
+                        .cloned()
+                        .collect::<Vec<String>>();
+
+                    dbg!(to_pull_ids);
+                }
+                future::ok(())
+            })
+        }));
+}
+
+    #[test]
     fn sample_storage() {
         let key = "foo".to_owned();
         let value = "fooobar".to_owned();

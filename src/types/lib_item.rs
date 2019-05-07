@@ -53,6 +53,16 @@ pub struct LibItem {
     pub year: Option<String>,
 }
 
+impl LibItem {
+    pub fn should_persist(&self) -> bool {
+        true
+    }
+    // Must return a result that's in a logical conjunction (&&) with .should_persist()
+    pub fn should_push(&self) -> bool {
+        self.should_persist() && true
+    }
+}
+
 fn empty_string_as_none<'de, D, T>(de: D) -> Result<Option<T>, D::Error>
 where
     D: serde::Deserializer<'de>,
