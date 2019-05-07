@@ -74,6 +74,7 @@ pub struct ContextMiddleware<T: Environment> {
     api_url: String,
     env: PhantomData<T>,
 }
+// needed cause of https://github.com/rust-lang/rust/issues/26925
 impl<T: Environment> Clone for ContextMiddleware<T> {
     fn clone(&self) -> Self {
         ContextMiddleware {
