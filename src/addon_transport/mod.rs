@@ -23,7 +23,6 @@ const LEGACY_PATH: &str = "/stremio/v1";
 #[derive(Default)]
 pub struct AddonHTTPTransport<T: Environment> {
     pub env: PhantomData<T>,
-    //pub extra_addons: HashMap<String, Box<dyn AddonInterface>>,
 }
 impl<T: Environment> AddonTransport for AddonHTTPTransport<T> {
     fn get(req: &ResourceRequest) -> EnvFuture<ResourceResponse> {
