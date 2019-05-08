@@ -121,11 +121,13 @@
 	Msg: Action, Internal, Event
 	split into msg.rs and actions.rs
 * research libitempreview memory use: it uses around 300MB for a million of items, so it's fine to just keep an in-memory undex
+* library addon - handles interior mutability (Arc + Mutex); implement Handler and AddonInterface
 
 ## TODO
 
+* Libaddon: implement .descriptor() to add it to contextm
 
-* library addon - handles interior mutability (Arc + Mutex); handle: .addon() -> AddonInterface; .middleware() -> Handler; also LibAction
+* LibAddon: LibAction
 
 * AddonTransportMuxer; construct with a BTreeMap of <TransportUrl, AddonInterface>; ContextM will emit LibraryAddonUpdated(interface) or SetInternalAddon({addon,transport_url}), which will be `skip_serializing`; AddonM will react on this and replace it's instance of the muxer with a new one;
 * Detect transport type function, Result<dyn AddonInterface>; to return the library addon interface

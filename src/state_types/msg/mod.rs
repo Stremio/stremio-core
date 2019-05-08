@@ -3,6 +3,7 @@ use crate::types::api::*;
 use crate::addon_transport::AddonInterface;
 use serde_derive::*;
 use std::error::Error;
+use std::rc::Rc;
 
 mod actions;
 pub use actions::*;
@@ -19,7 +20,7 @@ pub struct Context {
 
 pub enum Internal {
     LoadWithCtx(Context, ActionLoad),
-    SetInternalAddon(String, Box<dyn AddonInterface>),
+    SetInternalAddon(String, Rc<dyn AddonInterface>),
     AddonResponse(ResourceRequest, Result<ResourceResponse, String>),
 }
 
