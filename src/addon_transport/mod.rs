@@ -2,11 +2,16 @@ use crate::state_types::{EnvFuture, Environment, Request};
 use crate::types::addons::*;
 use futures::future;
 use std::marker::PhantomData;
+//use std::collections::HashMap;
 
 mod legacy;
 use self::legacy::AddonLegacyTransport;
 
-// @TODO facilitate detect from URL (manifest)
+pub trait AddonInterface {
+    fn get(&self, resource_ref: &ResourceRef) -> EnvFuture<ResourceResponse>;
+    fn manifest(&self) -> EnvFuture<Manifest>;
+}
+
 pub trait AddonTransport {
     fn get(resource_req: &ResourceRequest) -> EnvFuture<ResourceResponse>;
     fn manifest(url: &str) -> EnvFuture<Manifest>;
@@ -18,6 +23,7 @@ const LEGACY_PATH: &str = "/stremio/v1";
 #[derive(Default)]
 pub struct AddonHTTPTransport<T: Environment> {
     pub env: PhantomData<T>,
+    //pub extra_addons: HashMap<String, Box<dyn AddonInterface>>,
 }
 impl<T: Environment> AddonTransport for AddonHTTPTransport<T> {
     fn get(req: &ResourceRequest) -> EnvFuture<ResourceResponse> {
