@@ -1,5 +1,6 @@
 use crate::types::addons::*;
 use crate::types::api::*;
+use crate::addon_transport::AddonInterface;
 use serde_derive::*;
 use std::error::Error;
 
@@ -16,9 +17,9 @@ pub struct Context {
     pub addons: Vec<Descriptor>,
 }
 
-#[derive(Debug)]
 pub enum Internal {
     LoadWithCtx(Context, ActionLoad),
+    SetInternalAddon(String, Box<dyn AddonInterface>),
     AddonResponse(ResourceRequest, Result<ResourceResponse, String>),
 }
 
@@ -59,7 +60,6 @@ pub enum Event {
 // Final enum Msg
 // sum type of actions, internals and outputs
 //
-#[derive(Debug)]
 pub enum Msg {
     Action(Action),
     Internal(Internal),
