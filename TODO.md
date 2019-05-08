@@ -120,9 +120,16 @@
 * consider alternative Actions; where it's split in Input/Mid/Output but it can be constructed (instantiated) and deconstructed (matched against) easily
 	Msg: Action, Internal, Event
 	split into msg.rs and actions.rs
-
+* research libitempreview memory use: it uses around 300MB for a million of items, so it's fine to just keep an in-memory undex
 
 ## TODO
+
+* library addon - handles interior mutability (Arc + Mutex); handle: .addon() -> AddonInterface; .middleware() -> Handler; also LibAction
+
+* AddonTransportMuxer; construct with a BTreeMap of <TransportUrl, AddonInterface>; ContextM will emit LibraryAddonUpdated(interface) or SetInternalAddon({addon,transport_url}), which will be `skip_serializing`; AddonM will react on this and replace it's instance of the muxer with a new one;
+* Detect transport type function, Result<dyn AddonInterface>; to return the library addon interface
+
+* ContextM: plug in a built in addon (LibraryAddon)
 
 * Optimization ideas to be explored: CatalogFiltered pagination; web version: CI to use a headless browser to measure load times 
 
@@ -139,13 +146,12 @@
 
 	document assumptions: stable order from the addon
 
-* library addon - handles interior mutability (Arc + Mutex); handles: .addon() -> AddonInterface; .middleware() -> Handler; also LibAction
 
 
 * state container: all issues to github
 
 
-* implement a Detail container (MetaDetailed?)
+* implement a Detail container (MetaDetailed?); should expand watched-bitfield into true/false properties
 
 * should we enforce that containers need to be Send + Sync ??
 
@@ -156,23 +162,18 @@
 * CatalogFiltered: all the code TODOs (pagination, etc.)
 
 
-
-* AddonTransportMuxer; construct with a BTreeMap of <TransportUrl, AddonInterface>; ContextM will emit LibraryAddonUpdated(interface) or SetInternalAddon({addon,transport_url}), which will be `skip_serializing`; AddonM will react on this and replace it's instance of the muxer with a new one;
-* Detect transport type function, Result<dyn AddonInterface>; to return the library addon interface
-
 * handle loading collections in the addonM; detectFromURL
 
-* UserM: `last_modified` for addons, prevent race conditions by updating `last_modified` each time we modify; consider sequence numbers too
-* UserM: upgrade addons when doing the first pull
+* contextM: `last_modified` for addons, prevent race conditions by updating `last_modified` each time we modify; consider sequence numbers too
+* contextM: upgrade addons when doing the first pull
+* contextM: settings
 
 * start doing documentation comments
 
-* ContextM: plug in a built in addon (LibraryAddon)
-* ContextM: because of the settings, we might need to rename it to ContextM/LoadWithCtx
 
 * AddonM: caching: statefulness can be mitigated by using a memoization where the addon transport `get` would return the same results if invoked with the same args again; however, this needs to be out of the transport impl and needs to be explicit
-* ContextM: mock storage and tests
 
+* ContextM: tests; especially for dangerous (cause of the RefCell) things like the `save_and_emit`; full tests chain (register, logout, login, push addons, logout)
 
 * test if addoncollection can be parsed and understood, once the middleware(s) can retrieve collections
 * addon catalog reducer, actions
