@@ -3,7 +3,7 @@ mod manifest;
 mod resource_ref;
 pub use self::manifest::*;
 pub use self::resource_ref::*;
-use crate::types::{LibItem, MetaPreview, MetaDetail, Stream};
+use crate::types::{LibItem, MetaDetail, MetaPreview, Stream};
 mod manifest_tests;
 
 pub type TransportUrl = String;

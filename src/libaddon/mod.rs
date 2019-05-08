@@ -1,7 +1,7 @@
-use crate::addon_transport::AddonTransport;
+//use crate::addon_transport::AddonTransport;
 use crate::state_types::{EnvFuture, Environment, Handler};
-use crate::types::{LibItem, LibItemPreview};
 use crate::types::addons::{Manifest, ResourceRef, ResourceResponse};
+use crate::types::{LibItem, LibItemPreview};
 use futures::future::Shared;
 use futures::{future, Future};
 use std::marker::PhantomData;
@@ -24,12 +24,16 @@ impl<T: Environment + 'static> LibAddon<T> {
         }
     }
 }
-
+impl<T: Environment + 'static> Default for LibAddon<T> {
+    fn default() -> Self {
+        Self::new()
+    }
+}
 impl<T: Environment + 'static> Clone for LibAddon<T> {
     fn clone(&self) -> Self {
         LibAddon {
             idx_loader: self.idx_loader.clone(),
-            env: PhantomData
+            env: PhantomData,
         }
     }
 }
@@ -62,7 +66,6 @@ pub trait AddonInterface {
     fn get(&self, resource_ref: &ResourceRef) -> EnvFuture<ResourceResponse>;
     fn manifest(&self) -> EnvFuture<Manifest>;
 }
-
 
 impl<T: Environment + 'static> AddonInterface for LibAddon<T> {
     fn get(&self, resource_ref: &ResourceRef) -> EnvFuture<ResourceResponse> {

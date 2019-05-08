@@ -1,8 +1,8 @@
 pub mod addon_transport;
+pub mod libaddon;
 pub mod middlewares;
 pub mod state_types;
 pub mod types;
-pub mod libaddon;
 
 #[cfg(test)]
 mod tests {
@@ -173,7 +173,6 @@ mod tests {
         let auth_key = "=".into();
 
         run(lazy(|| {
-
             let base_url = "https://api.strem.io";
             let api_req = APIRequest::DatastoreGet {
                 auth_key,
