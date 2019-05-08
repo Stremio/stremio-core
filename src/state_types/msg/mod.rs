@@ -1,6 +1,6 @@
+use crate::addon_transport::AddonInterface;
 use crate::types::addons::*;
 use crate::types::api::*;
-use crate::addon_transport::AddonInterface;
 use serde_derive::*;
 use std::error::Error;
 use std::rc::Rc;

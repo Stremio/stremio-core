@@ -1,14 +1,14 @@
+use crate::state_types::Internal::*;
 use crate::state_types::*;
 use crate::types::addons::*;
-use crate::state_types::Internal::*;
 use futures::{future, Future};
-use std::marker::PhantomData;
-use std::rc::Rc;
 use std::cell::RefCell;
 use std::collections::HashMap;
+use std::marker::PhantomData;
+use std::rc::Rc;
 
 // AddonHTTPTransport supports the v3 addon protocol and has a legacy adapter
-use crate::addon_transport::{AddonHTTPTransport, AddonTransport, AddonInterface};
+use crate::addon_transport::{AddonHTTPTransport, AddonInterface, AddonTransport};
 
 #[derive(Default)]
 pub struct AddonsMiddleware<T: Environment> {
@@ -27,21 +27,26 @@ impl<T: Environment> Handler for AddonsMiddleware<T> {
                 }
             }
             Msg::Internal(SetInternalAddon(url, iface)) => {
-                self.extra_addons.borrow_mut().insert(url.to_owned(), iface.clone());
+                self.extra_addons
+                    .borrow_mut()
+                    .insert(url.to_owned(), iface.clone());
             }
-            _ => ()
+            _ => (),
         }
     }
 }
 impl<T: Environment> AddonsMiddleware<T> {
     // @TODO loading URLs, collections, etc.
     pub fn new() -> Self {
-        AddonsMiddleware { env: PhantomData, extra_addons: Default::default() }
+        AddonsMiddleware {
+            env: PhantomData,
+            extra_addons: Default::default(),
+        }
     }
     fn for_request(&self, resource_req: ResourceRequest, emit: Rc<DispatcherFn>) {
         let req_fut = match self.extra_addons.borrow().get(&resource_req.transport_url) {
             Some(addon) => addon.get(&resource_req.resource_ref),
-            _ => AddonHTTPTransport::<T>::get(&resource_req)
+            _ => AddonHTTPTransport::<T>::get(&resource_req),
         };
         let fut = req_fut.then(move |res| {
             emit(&match res {

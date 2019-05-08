@@ -1,7 +1,7 @@
 //use crate::addon_transport::AddonTransport;
+use crate::addon_transport::AddonInterface;
 use crate::state_types::{EnvFuture, Environment, Handler};
 use crate::types::addons::{Manifest, ResourceRef, ResourceResponse};
-use crate::addon_transport::AddonInterface;
 use crate::types::{LibItem, LibItemPreview};
 use futures::future::Shared;
 use futures::{future, Future};
@@ -67,27 +67,28 @@ impl<T: Environment + 'static> AddonInterface for LibAddon<T> {
         unimplemented!()
     }
     fn manifest(&self) -> EnvFuture<Manifest> {
-        Box::new(self.idx_loader
-            .clone()
-            .and_then(|idx| {
-                future::ok(Manifest {
-                    id: "org.stremio.libitem".into(),
-                    name: "Library".into(),
-                    version: semver::Version::parse(env!("CARGO_PKG_VERSION")).unwrap(),
-                    // @TODO dynamic
-                    resources: vec![],
-                    types: vec!["movie".into()],
-                    catalogs: vec![],
-                    contact_email: None,
-                    background: None,
-                    logo: None,
-                    id_prefixes: None,
-                    description: None,
+        Box::new(
+            self.idx_loader
+                .clone()
+                .and_then(|idx| {
+                    future::ok(Manifest {
+                        id: "org.stremio.libitem".into(),
+                        name: "Library".into(),
+                        version: semver::Version::parse(env!("CARGO_PKG_VERSION")).unwrap(),
+                        // @TODO dynamic
+                        resources: vec![],
+                        types: vec!["movie".into()],
+                        catalogs: vec![],
+                        contact_email: None,
+                        background: None,
+                        logo: None,
+                        id_prefixes: None,
+                        description: None,
+                    })
+                    // @TODO fix by making the idx_loader result in a Cloneable error
+                    // this is not trivial to fix, as the underlying error is also a Box<dyn Error>
                 })
-                // @TODO fix by making the idx_loader result in a Cloneable error
-                // this is not trivial to fix, as the underlying error is also a Box<dyn Error>
-            })
-            .map_err(|_| "index loading error".into())
+                .map_err(|_| "index loading error".into()),
         )
     }
 }

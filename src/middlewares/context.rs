@@ -201,11 +201,9 @@ impl<T: Environment + 'static> ContextMiddleware<T> {
                             auth_key: key.to_owned(),
                         };
                         Self::api_fetch::<CollectionResponse>(&api_url, pull_req).map(
-                            move |CollectionResponse { addons, .. }| {
-                                UserStorage {
-                                    auth: Some(Auth { key, user }),
-                                    addons,
-                                }
+                            move |CollectionResponse { addons, .. }| UserStorage {
+                                auth: Some(Auth { key, user }),
+                                addons,
                             },
                         )
                     })
@@ -237,8 +235,7 @@ impl<T: Environment + 'static> ContextMiddleware<T> {
                 Box::new(fut)
             }
             ActionUser::PushAddons => {
-                let fut = Self::api_fetch::<SuccessResponse>(&api_url, api_req)
-                    .map(|_| ());
+                let fut = Self::api_fetch::<SuccessResponse>(&api_url, api_req).map(|_| ());
                 Box::new(fut)
             }
         };
