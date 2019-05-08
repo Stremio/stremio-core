@@ -209,8 +209,8 @@ mod tests {
                         .iter()
                         .filter(|i| map_remote.get(&i.id).map_or(true, |date| date < &i.mtime))
                         .collect::<Vec<&LibItem>>();
-                    dbg!(to_pull_ids);
-                    dbg!(to_push);
+                    //dbg!(to_pull_ids);
+                    //dbg!(to_push);
                 }
                 future::ok(())
             })
