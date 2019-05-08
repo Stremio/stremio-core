@@ -102,17 +102,17 @@ impl<T: Environment> AddonTransport for AddonLegacyTransport<T> {
             "catalog" => Box::new(
                 T::fetch_serde::<_, JsonRPCResp<Vec<MetaPreview>>>(fetch_req)
                     .and_then(map_response)
-                    .map(|r| r.into()),
+                    .map(Into::into),
             ),
             "meta" => Box::new(
                 T::fetch_serde::<_, JsonRPCResp<MetaDetail>>(fetch_req)
                     .and_then(map_response)
-                    .map(|r| r.into()),
+                    .map(Into::into),
             ),
             "stream" => Box::new(
                 T::fetch_serde::<_, JsonRPCResp<Vec<Stream>>>(fetch_req)
                     .and_then(map_response)
-                    .map(|r| r.into()),
+                    .map(Into::into),
             ),
             _ => Box::new(future::err(LegacyErr::UnsupportedResource.into())),
         }
@@ -123,7 +123,7 @@ impl<T: Environment> AddonTransport for AddonLegacyTransport<T> {
             Ok(r) => Box::new(
                 T::fetch_serde::<_, JsonRPCResp<LegacyManifestResp>>(r)
                     .and_then(map_response)
-                    .map(|m| m.into()),
+                    .map(Into::into),
             ),
             Err(e) => Box::new(future::err(e.into())),
         }
