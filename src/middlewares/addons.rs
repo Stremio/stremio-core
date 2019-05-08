@@ -30,7 +30,7 @@ impl<T: Environment> AddonsMiddleware<T> {
     fn for_request(resource_req: ResourceRequest, emit: Rc<DispatcherFn>) {
         let fut = AddonHTTPTransport::<T>::get(&resource_req).then(move |res| {
             emit(&match res {
-                Ok(resp) => Msg::Internal(Internal::AddonResponse(resource_req, Ok(*resp))),
+                Ok(resp) => Msg::Internal(Internal::AddonResponse(resource_req, Ok(resp))),
                 Err(e) => Msg::Internal(Internal::AddonResponse(resource_req, Err(e.to_string()))),
             });
             future::ok(())

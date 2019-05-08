@@ -39,7 +39,6 @@ pub struct LibItemPreview {
     pub mtime: DateTime<Utc>,
 }
 
-
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq, Ord, PartialOrd)]
 pub struct LibItem {
     #[serde(rename = "_id")]

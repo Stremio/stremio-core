@@ -154,7 +154,7 @@ impl<T: Environment + 'static> ContextMiddleware<T> {
 
         let fut = T::fetch_serde::<_, APIResult<OUT>>(req)
             .map_err(Into::into)
-            .and_then(|result| match *result {
+            .and_then(|res| match res {
                 APIResult::Err { error } => future::err(error.into()),
                 APIResult::Ok { result } => future::ok(result),
             });

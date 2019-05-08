@@ -2,6 +2,7 @@ pub mod addon_transport;
 pub mod middlewares;
 pub mod state_types;
 pub mod types;
+pub mod libaddon;
 
 #[cfg(test)]
 mod tests {
@@ -149,7 +150,7 @@ mod tests {
                 resource_ref: ResourceRef::without_extra("meta", "series", "tt0386676"),
             })
             .then(|res| {
-                match res.map(|x| *x) {
+                match res {
                     Err(e) => panic!("failed getting metadata {:?}", e),
                     Ok(ResourceResponse::Meta { meta }) => {
                         assert!(meta.videos.len() > 0, "has videos")
@@ -163,6 +164,7 @@ mod tests {
 
     #[test]
     fn libitems() {
+        use crate::libaddon::*;
         use crate::types::api::*;
         use crate::types::LibItem;
         use chrono::{DateTime, Utc};
@@ -184,7 +186,7 @@ mod tests {
 
             let fut = Env::fetch_serde::<_, APIResult<Vec<LibItem>>>(req);
             fut.then(|r| {
-                if let APIResult::Ok { result } = *r.unwrap() {
+                if let Ok(APIResult::Ok { result }) = r {
                     /*let watched_items = result
                         .iter()
                         .filter(|l| l.state.overall_time_watched > 3600000 && l.type_name == "series")
@@ -213,7 +215,7 @@ mod tests {
                 future::ok(())
             })
         }));
-}
+    }
 
     #[test]
     fn sample_storage() {
@@ -227,7 +229,7 @@ mod tests {
         assert_eq!(Env::set_storage(&key, Some(&value)).wait().unwrap(), ());
         assert_eq!(
             Env::get_storage::<String>(&key).wait().unwrap(),
-            Some(Box::new(value))
+            Some(value)
         );
     }
 
@@ -239,7 +241,7 @@ mod tests {
     }
     struct Env {}
     impl Environment for Env {
-        fn fetch_serde<IN, OUT>(in_req: Request<IN>) -> EnvFuture<Box<OUT>>
+        fn fetch_serde<IN, OUT>(in_req: Request<IN>) -> EnvFuture<OUT>
         where
             IN: 'static + Serialize,
             OUT: 'static + DeserializeOwned,
@@ -258,20 +260,19 @@ mod tests {
             let fut = req
                 .send()
                 .and_then(|mut res: reqwest::r#async::Response| res.json::<OUT>())
-                .map(|res| Box::new(res))
                 .map_err(|e| e.into());
             Box::new(fut)
         }
         fn exec(fut: Box<Future<Item = (), Error = ()>>) {
             spawn(fut);
         }
-        fn get_storage<T: 'static + DeserializeOwned>(key: &str) -> EnvFuture<Option<Box<T>>> {
+        fn get_storage<T: 'static + DeserializeOwned>(key: &str) -> EnvFuture<Option<T>> {
             Box::new(future::ok(
                 STORAGE
                     .lock()
                     .unwrap()
                     .get(key)
-                    .map(|v| Box::new(serde_json::from_str(&v).unwrap())),
+                    .map(|v| serde_json::from_str(&v).unwrap()),
             ))
         }
         fn set_storage<T: 'static + Serialize>(key: &str, value: Option<&T>) -> EnvFuture<()> {

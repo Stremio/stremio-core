@@ -78,8 +78,8 @@ impl From<Vec<Stream>> for ResourceResponse {
 }
 
 #[allow(clippy::boxed_local)]
-fn map_response<T: 'static + Sized>(resp: Box<JsonRPCResp<T>>) -> EnvFuture<T> {
-    Box::new(match *resp {
+fn map_response<T: 'static + Sized>(resp: JsonRPCResp<T>) -> EnvFuture<T> {
+    Box::new(match resp {
         JsonRPCResp::Result { result } => future::ok(result),
         JsonRPCResp::Error { error } => future::err(LegacyErr::JsonRPC(error).into()),
     })
@@ -92,7 +92,7 @@ pub struct AddonLegacyTransport<T: Environment> {
     pub env: PhantomData<T>,
 }
 impl<T: Environment> AddonTransport for AddonLegacyTransport<T> {
-    fn get(req: &ResourceRequest) -> EnvFuture<Box<ResourceResponse>> {
+    fn get(req: &ResourceRequest) -> EnvFuture<ResourceResponse> {
         let fetch_req = match build_legacy_req(req) {
             Ok(r) => r,
             Err(e) => return Box::new(future::err(e)),
@@ -102,28 +102,28 @@ impl<T: Environment> AddonTransport for AddonLegacyTransport<T> {
             "catalog" => Box::new(
                 T::fetch_serde::<_, JsonRPCResp<Vec<MetaPreview>>>(fetch_req)
                     .and_then(map_response)
-                    .map(|r| Box::new(r.into())),
+                    .map(|r| r.into()),
             ),
             "meta" => Box::new(
                 T::fetch_serde::<_, JsonRPCResp<MetaDetail>>(fetch_req)
                     .and_then(map_response)
-                    .map(|r| Box::new(r.into())),
+                    .map(|r| r.into()),
             ),
             "stream" => Box::new(
                 T::fetch_serde::<_, JsonRPCResp<Vec<Stream>>>(fetch_req)
                     .and_then(map_response)
-                    .map(|r| Box::new(r.into())),
+                    .map(|r| r.into()),
             ),
             _ => Box::new(future::err(LegacyErr::UnsupportedResource.into())),
         }
     }
-    fn manifest(url: &str) -> EnvFuture<Box<Manifest>> {
+    fn manifest(url: &str) -> EnvFuture<Manifest> {
         let url = format!("{}/q.json?b={}", url, MANIFEST_REQUEST_PARAM);
         match Request::get(url).body(()) {
             Ok(r) => Box::new(
                 T::fetch_serde::<_, JsonRPCResp<LegacyManifestResp>>(r)
                     .and_then(map_response)
-                    .map(|m| Box::new(m.into())),
+                    .map(|m| m.into()),
             ),
             Err(e) => Box::new(future::err(e.into())),
         }

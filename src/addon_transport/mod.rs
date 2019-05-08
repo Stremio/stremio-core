@@ -8,8 +8,8 @@ use self::legacy::AddonLegacyTransport;
 
 // @TODO facilitate detect from URL (manifest)
 pub trait AddonTransport {
-    fn get(resource_req: &ResourceRequest) -> EnvFuture<Box<ResourceResponse>>;
-    fn manifest(url: &str) -> EnvFuture<Box<Manifest>>;
+    fn get(resource_req: &ResourceRequest) -> EnvFuture<ResourceResponse>;
+    fn manifest(url: &str) -> EnvFuture<Manifest>;
 }
 
 const MANIFEST_PATH: &str = "/manifest.json";
@@ -20,7 +20,7 @@ pub struct AddonHTTPTransport<T: Environment> {
     pub env: PhantomData<T>,
 }
 impl<T: Environment> AddonTransport for AddonHTTPTransport<T> {
-    fn get(req: &ResourceRequest) -> EnvFuture<Box<ResourceResponse>> {
+    fn get(req: &ResourceRequest) -> EnvFuture<ResourceResponse> {
         // This method detects the used transport type, and invokes it
         if req.transport_url.ends_with(MANIFEST_PATH) {
             Self::get_http(req)
@@ -30,7 +30,7 @@ impl<T: Environment> AddonTransport for AddonHTTPTransport<T> {
             Box::new(future::err("invalid transport_url".into()))
         }
     }
-    fn manifest(url: &str) -> EnvFuture<Box<Manifest>> {
+    fn manifest(url: &str) -> EnvFuture<Manifest> {
         // This method detects the used transport type, and invokes it
         if url.ends_with(MANIFEST_PATH) {
             match Request::get(url).body(()) {
@@ -46,7 +46,7 @@ impl<T: Environment> AddonTransport for AddonHTTPTransport<T> {
 }
 
 impl<T: Environment> AddonHTTPTransport<T> {
-    fn get_http(req: &ResourceRequest) -> EnvFuture<Box<ResourceResponse>> {
+    fn get_http(req: &ResourceRequest) -> EnvFuture<ResourceResponse> {
         let url = req
             .transport_url
             .replace(MANIFEST_PATH, &req.resource_ref.to_string());
