@@ -200,12 +200,12 @@ impl<T: Environment + 'static> ContextMiddleware<T> {
                         let pull_req = APIRequest::AddonCollectionGet {
                             auth_key: key.to_owned(),
                         };
-                        Self::api_fetch::<CollectionResponse>(&api_url, pull_req).and_then(
+                        Self::api_fetch::<CollectionResponse>(&api_url, pull_req).map(
                             move |CollectionResponse { addons, .. }| {
-                                future::ok(UserStorage {
+                                UserStorage {
                                     auth: Some(Auth { key, user }),
                                     addons,
-                                })
+                                }
                             },
                         )
                     })
@@ -218,7 +218,7 @@ impl<T: Environment + 'static> ContextMiddleware<T> {
                 let fut = ctxm
                     .save_and_emit(Default::default(), emit.clone())
                     .and_then(move |_| Self::api_fetch::<SuccessResponse>(&api_url, api_req))
-                    .and_then(|_| future::ok(()));
+                    .map(|_| ());
                 Box::new(fut)
             }
             ActionUser::PullAddons => {
@@ -238,7 +238,7 @@ impl<T: Environment + 'static> ContextMiddleware<T> {
             }
             ActionUser::PushAddons => {
                 let fut = Self::api_fetch::<SuccessResponse>(&api_url, api_req)
-                    .and_then(|_| future::ok(()));
+                    .map(|_| ());
                 Box::new(fut)
             }
         };
