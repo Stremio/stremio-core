@@ -122,17 +122,23 @@
 	split into msg.rs and actions.rs
 * research libitempreview memory use: it uses around 300MB for a million of items, so it's fine to just keep an in-memory undex
 * library addon - handles interior mutability (Arc + Mutex); implement Handler and AddonInterface
+* AddonTransportMuxer; construct with a BTreeMap of <TransportUrl, AddonInterface>; ContextM will emit LibraryAddonUpdated(interface) or SetInternalAddon({addon,transport_url})
+* Detect transport type function, Result<dyn AddonInterface>; to return the library addon interface; NOT NEEDED: see Addon middleware (it holds `extra_addons`)
 
 ## TODO
 
+* PROBLEM: CatalogFiltered requires all rows to be MetaPreview; continue watching is LibItem
+	either use a separate container (original plan)
+	or make the container polymorphic (security implications?)
+	or map to MetaPreview
+
+* ContextM: plug in a built in addon (LibraryAddon) via emitting SetInternalAddon
+
 * Libaddon: implement .descriptor() to add it to contextm
 
-* LibAddon: LibAction
+* LibAddon: LibAction, a sum action of all possible things you can do with the library
 
-* AddonTransportMuxer; construct with a BTreeMap of <TransportUrl, AddonInterface>; ContextM will emit LibraryAddonUpdated(interface) or SetInternalAddon({addon,transport_url}), which will be `skip_serializing`; AddonM will react on this and replace it's instance of the muxer with a new one;
-* Detect transport type function, Result<dyn AddonInterface>; to return the library addon interface
 
-* ContextM: plug in a built in addon (LibraryAddon)
 
 * Optimization ideas to be explored: CatalogFiltered pagination; web version: CI to use a headless browser to measure load times 
 

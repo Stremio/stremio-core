@@ -2,7 +2,6 @@ use crate::state_types::{EnvFuture, Environment, Request};
 use crate::types::addons::*;
 use futures::future;
 use std::marker::PhantomData;
-//use std::collections::HashMap;
 
 mod legacy;
 use self::legacy::AddonLegacyTransport;
