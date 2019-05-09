@@ -1,8 +1,8 @@
 //use crate::addon_transport::AddonTransport;
 use crate::addon_transport::AddonInterface;
-use crate::state_types::{EnvFuture, Environment, Handler};
+use crate::state_types::{EnvFuture, Environment};
 use crate::types::addons::{Manifest, ResourceRef, ResourceResponse};
-use crate::types::{LibItem, LibItemPreview};
+use crate::types::{LibItemPreview};
 use futures::future::Shared;
 use futures::{future, Future};
 use std::marker::PhantomData;
@@ -63,14 +63,14 @@ impl Handler for LibAddon {
 */
 
 impl<T: Environment + 'static> AddonInterface for LibAddon<T> {
-    fn get(&self, resource_ref: &ResourceRef) -> EnvFuture<ResourceResponse> {
+    fn get(&self, _: &ResourceRef) -> EnvFuture<ResourceResponse> {
         unimplemented!()
     }
     fn manifest(&self) -> EnvFuture<Manifest> {
         Box::new(
             self.idx_loader
                 .clone()
-                .and_then(|idx| {
+                .and_then(|_idx| {
                     future::ok(Manifest {
                         id: "org.stremio.libitem".into(),
                         name: "Library".into(),

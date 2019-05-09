@@ -133,7 +133,7 @@ mod tests {
                     }
                     future::ok(())
                 });
-            let fut2 = AddonHTTPTransport::<Env>::from_url(&cinemeta_url)
+            let fut2 = AddonLegacyTransport::<Env>::from_url(&legacy_url)
                 .manifest()
                 .then(|res| {
                     if let Err(e) = res {
