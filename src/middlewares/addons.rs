@@ -7,8 +7,7 @@ use std::collections::HashMap;
 use std::marker::PhantomData;
 use std::rc::Rc;
 
-// AddonHTTPTransport supports the v3 addon protocol and has a legacy adapter
-use crate::addon_transport::{AddonHTTPTransport, AddonInterface, AddonTransport};
+use crate::addon_transport::*;
 
 #[derive(Default)]
 pub struct AddonsMiddleware<T: Environment> {
@@ -43,15 +42,22 @@ impl<T: Environment> AddonsMiddleware<T> {
             extra_addons: Default::default(),
         }
     }
-    fn for_request(&self, resource_req: ResourceRequest, emit: Rc<DispatcherFn>) {
-        let req_fut = match self.extra_addons.borrow().get(&resource_req.transport_url) {
-            Some(addon) => addon.get(&resource_req.resource_ref),
-            _ => AddonHTTPTransport::<T>::get(&resource_req),
+    fn for_request(&self, req: ResourceRequest, emit: Rc<DispatcherFn>) {
+        let url = &req.transport_url;
+        let req_fut = match self.extra_addons.borrow().get(url) {
+            Some(addon) => addon.get(&req.resource_ref),
+            None if url.ends_with(MANIFEST_PATH) => {
+                AddonHTTPTransport::<T>::from_url(url).get(&req.resource_ref)
+            }
+            None if url.ends_with(LEGACY_PATH) => {
+                AddonLegacyTransport::<T>::from_url(url).get(&req.resource_ref)
+            }
+            _ => Box::new(future::err("invalid transport_url".into())),
         };
         let fut = req_fut.then(move |res| {
             emit(&match res {
-                Ok(resp) => Internal::AddonResponse(resource_req, Ok(resp)).into(),
-                Err(e) => Internal::AddonResponse(resource_req, Err(e.to_string())).into(),
+                Ok(resp) => Internal::AddonResponse(req, Ok(resp)).into(),
+                Err(e) => Internal::AddonResponse(req, Err(e.to_string())).into(),
             });
             future::ok(())
         });

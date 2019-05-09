@@ -125,18 +125,22 @@ mod tests {
         run(lazy(|| {
             let cinemeta_url = "https://v3-cinemeta.strem.io/manifest.json";
             let legacy_url = "https://opensubtitles.strem.io/stremioget/stremio/v1";
-            let fut1 = AddonHTTPTransport::<Env>::manifest(cinemeta_url).then(|res| {
-                if let Err(e) = res {
-                    panic!("failed getting cinemeta manifest {:?}", e);
-                }
-                future::ok(())
-            });
-            let fut2 = AddonHTTPTransport::<Env>::manifest(legacy_url).then(|res| {
-                if let Err(e) = res {
-                    panic!("failed getting legacy manifest {:?}", e);
-                }
-                future::ok(())
-            });
+            let fut1 = AddonHTTPTransport::<Env>::from_url(&cinemeta_url)
+                .manifest()
+                .then(|res| {
+                    if let Err(e) = res {
+                        panic!("failed getting cinemeta manifest {:?}", e);
+                    }
+                    future::ok(())
+                });
+            let fut2 = AddonHTTPTransport::<Env>::from_url(&cinemeta_url)
+                .manifest()
+                .then(|res| {
+                    if let Err(e) = res {
+                        panic!("failed getting legacy manifest {:?}", e);
+                    }
+                    future::ok(())
+                });
             fut1.join(fut2).map(|(_, _)| ())
         }));
     }
@@ -144,27 +148,24 @@ mod tests {
     #[test]
     fn get_videos() {
         run(lazy(|| {
-            let transport_url = "https://v3-cinemeta.strem.io/manifest.json".to_owned();
-            AddonHTTPTransport::<Env>::get(&ResourceRequest {
-                transport_url,
-                resource_ref: ResourceRef::without_extra("meta", "series", "tt0386676"),
-            })
-            .then(|res| {
-                match res {
-                    Err(e) => panic!("failed getting metadata {:?}", e),
-                    Ok(ResourceResponse::Meta { meta }) => {
-                        assert!(meta.videos.len() > 0, "has videos")
-                    }
-                    _ => panic!("unexpected response"),
-                };
-                future::ok(())
-            })
+            let transport_url = "https://v3-cinemeta.strem.io/manifest.json";
+            AddonHTTPTransport::<Env>::from_url(&transport_url)
+                .get(&ResourceRef::without_extra("meta", "series", "tt0386676"))
+                .then(|res| {
+                    match res {
+                        Err(e) => panic!("failed getting metadata {:?}", e),
+                        Ok(ResourceResponse::Meta { meta }) => {
+                            assert!(meta.videos.len() > 0, "has videos")
+                        }
+                        _ => panic!("unexpected response"),
+                    };
+                    future::ok(())
+                })
         }));
     }
 
     #[test]
     fn libitems() {
-        use crate::libaddon::*;
         use crate::types::api::*;
         use crate::types::LibItem;
         use chrono::{DateTime, Utc};
@@ -199,12 +200,12 @@ mod tests {
                         .collect::<HashMap<String, DateTime<Utc>>>();
                     let items_local = result.clone(); // @TODO
                     let map_local = map_remote.clone(); // @TODO
-                    let to_pull_ids = map_remote
+                    let _to_pull_ids = map_remote
                         .iter()
                         .filter(|(k, v)| map_local.get(*k).map_or(true, |date| date < v))
                         .map(|(k, _)| k.to_owned())
                         .collect::<Vec<String>>();
-                    let to_push = items_local
+                    let _to_push = items_local
                         .iter()
                         .filter(|i| map_remote.get(&i.id).map_or(true, |date| date < &i.mtime))
                         .collect::<Vec<&LibItem>>();

@@ -1,4 +1,4 @@
-use super::AddonTransport;
+use super::AddonInterface;
 use crate::state_types::{EnvFuture, Environment, Request};
 use crate::types::addons::*;
 use crate::types::*;
@@ -88,17 +88,28 @@ fn map_response<T: 'static + Sized>(resp: JsonRPCResp<T>) -> EnvFuture<T> {
 //
 // Transport implementation
 //
-pub struct AddonLegacyTransport<T: Environment> {
-    pub env: PhantomData<T>,
+pub struct AddonLegacyTransport<'a, T: Environment> {
+    env: PhantomData<T>,
+    transport_url: &'a str,
 }
-impl<T: Environment> AddonTransport for AddonLegacyTransport<T> {
-    fn get(req: &ResourceRequest) -> EnvFuture<ResourceResponse> {
-        let fetch_req = match build_legacy_req(req) {
+
+impl<'a, T: Environment> AddonLegacyTransport<'a, T> {
+    pub fn from_url(transport_url: &'a str) -> Self {
+        AddonLegacyTransport {
+            env: PhantomData,
+            transport_url,
+        }
+    }
+}
+
+impl<'a, T: Environment> AddonInterface for AddonLegacyTransport<'a, T> {
+    fn get(&self, resource_ref: &ResourceRef) -> EnvFuture<ResourceResponse> {
+        let fetch_req = match build_legacy_req(self.transport_url, resource_ref) {
             Ok(r) => r,
             Err(e) => return Box::new(future::err(e)),
         };
 
-        match &req.resource_ref.resource as &str {
+        match &resource_ref.resource as &str {
             "catalog" => Box::new(
                 T::fetch_serde::<_, JsonRPCResp<Vec<MetaPreview>>>(fetch_req)
                     .and_then(map_response)
@@ -117,8 +128,8 @@ impl<T: Environment> AddonTransport for AddonLegacyTransport<T> {
             _ => Box::new(future::err(LegacyErr::UnsupportedResource.into())),
         }
     }
-    fn manifest(url: &str) -> EnvFuture<Manifest> {
-        let url = format!("{}/q.json?b={}", url, MANIFEST_REQUEST_PARAM);
+    fn manifest(&self) -> EnvFuture<Manifest> {
+        let url = format!("{}/q.json?b={}", self.transport_url, MANIFEST_REQUEST_PARAM);
         match Request::get(url).body(()) {
             Ok(r) => Box::new(
                 T::fetch_serde::<_, JsonRPCResp<LegacyManifestResp>>(r)
@@ -130,7 +141,10 @@ impl<T: Environment> AddonTransport for AddonLegacyTransport<T> {
     }
 }
 
-fn build_legacy_req(req: &ResourceRequest) -> Result<Request<()>, Box<dyn Error>> {
+fn build_legacy_req(
+    transport_url: &str,
+    resource_ref: &ResourceRef,
+) -> Result<Request<()>, Box<dyn Error>> {
     // Limitations of this legacy adapter:
     // * does not support subtitles
     // * does not support searching (meta.search)
@@ -138,11 +152,11 @@ fn build_legacy_req(req: &ResourceRequest) -> Result<Request<()>, Box<dyn Error>
     // They affect functionality very little - there are no subtitles add-ons using the legacy
     // protocol (other than OpenSubtitles, which will be ported) and there's only one
     // known legacy add-on that support search (Stremio/stremio #379)
-    let type_name = &req.resource_ref.type_name;
-    let id = &req.resource_ref.id;
-    let q_json = match &req.resource_ref.resource as &str {
+    let type_name = &resource_ref.type_name;
+    let id = &resource_ref.id;
+    let q_json = match &resource_ref.resource as &str {
         "catalog" => {
-            let genre = req.resource_ref.get_extra_first_val("genre");
+            let genre = resource_ref.get_extra_first_val("genre");
             let query = if let Some(genre) = genre {
                 json!({ "type": type_name, "genre": genre })
             } else {
@@ -161,7 +175,7 @@ fn build_legacy_req(req: &ResourceRequest) -> Result<Request<()>, Box<dyn Error>
                     "query": query,
                     "limit": 100,
                     "sort": sort,
-                    "skip": req.resource_ref.get_extra_first_val("skip")
+                    "skip": resource_ref.get_extra_first_val("skip")
                         .map(|s| s.parse::<u32>().unwrap_or(0))
                         .unwrap_or(0),
                 }),
@@ -184,7 +198,7 @@ fn build_legacy_req(req: &ResourceRequest) -> Result<Request<()>, Box<dyn Error>
     // so we're technically replicating a legacy bug on purpose
     // https://github.com/Stremio/stremio-addons/blob/v2.8.14/rpc.js#L53
     let param_str = base64::encode(&serde_json::to_string(&q_json)?);
-    let url = format!("{}/q.json?b={}", &req.transport_url, param_str);
+    let url = format!("{}/q.json?b={}", transport_url, param_str);
     Ok(Request::get(&url).body(())?)
 }
 
@@ -242,24 +256,20 @@ mod test {
     // (e.g. omitting values vs `null` values)
     #[test]
     fn catalog() {
-        let resource_req = ResourceRequest {
-            transport_url: "https://stremio-mixer.schneider.ax/stremioget/stremio/v1".to_owned(),
-            resource_ref: ResourceRef::without_extra("catalog", "tv", "popularities.mixer"),
-        };
+        let transport_url = "https://stremio-mixer.schneider.ax/stremioget/stremio/v1".to_owned();
+        let resource_ref = ResourceRef::without_extra("catalog", "tv", "popularities.mixer");
         assert_eq!(
-            &build_legacy_req(&resource_req).unwrap().uri().to_string(),
+            &build_legacy_req(&transport_url, &resource_ref).unwrap().uri().to_string(),
             "https://stremio-mixer.schneider.ax/stremioget/stremio/v1/q.json?b=eyJpZCI6MSwianNvbnJwYyI6IjIuMCIsIm1ldGhvZCI6Im1ldGEuZmluZCIsInBhcmFtcyI6W251bGwseyJsaW1pdCI6MTAwLCJxdWVyeSI6eyJ0eXBlIjoidHYifSwic2tpcCI6MCwic29ydCI6eyJwb3B1bGFyaXRpZXMubWl4ZXIiOi0xLCJwb3B1bGFyaXR5IjotMX19XX0=",
         );
     }
 
     #[test]
     fn stream_imdb() {
-        let resource_req = ResourceRequest {
-            transport_url: "https://legacywatchhub.strem.io/stremio/v1".to_owned(),
-            resource_ref: ResourceRef::without_extra("stream", "series", "tt0386676:5:1"),
-        };
+        let transport_url = "https://legacywatchhub.strem.io/stremio/v1".to_owned();
+        let resource_ref = ResourceRef::without_extra("stream", "series", "tt0386676:5:1");
         assert_eq!(
-            &build_legacy_req(&resource_req).unwrap().uri().to_string(),
+            &build_legacy_req(&transport_url, &resource_ref).unwrap().uri().to_string(),
             "https://legacywatchhub.strem.io/stremio/v1/q.json?b=eyJpZCI6MSwianNvbnJwYyI6IjIuMCIsIm1ldGhvZCI6InN0cmVhbS5maW5kIiwicGFyYW1zIjpbbnVsbCx7InF1ZXJ5Ijp7ImVwaXNvZGUiOjEsImltZGJfaWQiOiJ0dDAzODY2NzYiLCJzZWFzb24iOjUsInR5cGUiOiJzZXJpZXMifX1dfQ=="
         );
     }
