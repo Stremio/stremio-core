@@ -123,6 +123,14 @@ mod tests {
     }
 
     #[test]
+    fn empty_extra() {
+        let extra = &[];
+        let r = ResourceRef::with_extra("catalog", "movie", "kek", extra);
+        assert_eq!(r, ResourceRef::from_str(&r.to_string()).unwrap());
+        assert_eq!(&r.to_string(), "/catalog/movie/kek.json");
+    }
+
+    #[test]
     fn compatible_with_js() {
         let extra = &[
             ("search".into(), "the office".into()),
