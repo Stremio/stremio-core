@@ -124,13 +124,19 @@
 * library addon - handles interior mutability (Arc + Mutex); implement Handler and AddonInterface
 * AddonTransportMuxer; construct with a BTreeMap of <TransportUrl, AddonInterface>; ContextM will emit LibraryAddonUpdated(interface) or SetInternalAddon({addon,transport_url})
 * Detect transport type function, Result<dyn AddonInterface>; to return the library addon interface; NOT NEEDED: see Addon middleware (it holds `extra_addons`)
+* PROBLEM: CatalogFiltered requires all rows to be MetaPreview; continue watching is LibItem
+	either use a separate container (original plan) <- DOING THIS
+	or make the container polymorphic (security implications?)
+	or map to MetaPreview
 
 ## TODO
 
-* PROBLEM: CatalogFiltered requires all rows to be MetaPreview; continue watching is LibItem
-	either use a separate container (original plan)
-	or make the container polymorphic (security implications?)
-	or map to MetaPreview
+
+* LibAddon catalogs
+	type can be "any" or any valid stremio type
+	extra properties are required
+	id: "library", type, extra: { isLib }
+	id: "videos", type, extra: { newVideos }
 
 * ContextM: plug in a built in addon (LibraryAddon) via emitting SetInternalAddon
 

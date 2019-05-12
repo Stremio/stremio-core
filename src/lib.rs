@@ -224,7 +224,7 @@ mod tests {
         // Notihng in the beginning
         assert!(Env::get_storage::<String>(&key).wait().unwrap().is_none());
         // Then set and read
-        // with Mutex and BTreeMap, set_storage takes 73993042ns for 10000 iterations (or 74ms)
+        // with RwLock and BTreeMap, set_storage takes 73993042ns for 10000 iterations (or 74ms)
         //  get_storage takes 42076632 (or 42ms) for 10000 iterations
         assert_eq!(Env::set_storage(&key, Some(&value)).wait().unwrap(), ());
         assert_eq!(
@@ -235,9 +235,9 @@ mod tests {
 
     use lazy_static::*;
     use std::collections::BTreeMap;
-    use std::sync::Mutex;
+    use std::sync::RwLock;
     lazy_static! {
-        static ref STORAGE: Mutex<BTreeMap<String, String>> = { Default::default() };
+        static ref STORAGE: RwLock<BTreeMap<String, String>> = { Default::default() };
     }
     struct Env {}
     impl Environment for Env {
@@ -269,14 +269,14 @@ mod tests {
         fn get_storage<T: 'static + DeserializeOwned>(key: &str) -> EnvFuture<Option<T>> {
             Box::new(future::ok(
                 STORAGE
-                    .lock()
+                    .read()
                     .unwrap()
                     .get(key)
                     .map(|v| serde_json::from_str(&v).unwrap()),
             ))
         }
         fn set_storage<T: 'static + Serialize>(key: &str, value: Option<&T>) -> EnvFuture<()> {
-            let mut storage = STORAGE.lock().unwrap();
+            let mut storage = STORAGE.write().unwrap();
             match value {
                 Some(v) => storage.insert(key.to_string(), serde_json::to_string(v).unwrap()),
                 None => storage.remove(key),
