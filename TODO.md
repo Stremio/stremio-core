@@ -131,6 +131,7 @@
 
 ## TODO
 
+* LibAddon: start with cinemeta CF worker to deliver last-videos catalog
 
 * LibAddon catalogs
 	type can be "any" or any valid stremio type
@@ -161,9 +162,11 @@
 
 	document assumptions: stable order from the addon
 
-
-
 * state container: all issues to github
+
+* same UI via seed/sauron
+
+
 
 
 * implement a Detail container (MetaDetailed?); should expand watched-bitfield into true/false properties
