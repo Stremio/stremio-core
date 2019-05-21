@@ -128,45 +128,21 @@
 	either use a separate container (original plan) <- DOING THIS
 	or make the container polymorphic (security implications?)
 	or map to MetaPreview
+* DESIGN: middlewares vs elm-like Cmd? it doesn't seem we can do eveyrthing with Cmd (e.g. Context) 
 
 ## TODO
 
-* LibAddon: start with cinemeta CF worker to deliver last-videos catalog
 
-* LibAddon catalogs
-	type can be "any" or any valid stremio type
-	extra properties are required
-	id: "library", type, extra: { isLib }
-	id: "videos", type, extra: { newVideos }
-
-* ContextM: plug in a built in addon (LibraryAddon) via emitting SetInternalAddon
-
-* Libaddon: implement .descriptor() to add it to contextm
-
-* LibAddon: LibAction, a sum action of all possible things you can do with the library
+* LibAddon: https://github.com/Stremio/stremio-core/issues/33
 
 
+* state container: all issues to github
 
 * Optimization ideas to be explored: CatalogFiltered pagination; web version: CI to use a headless browser to measure load times 
 
 * Optimization: web environment: fetch to not parse JSON (twice)
 
-* basic watched-bitfield
-	just parses to `struct { anchor_video, bitmap }`
-	`.mark_watched(videos: &[Video], video: &Video, watched: bool)`
-		identity if the anchor_video is within the same position of videos
-			it is -> continue
-			it is not -> re-create bitmap by rewriting the previous bitmap into a new bitmap of size `videos.len()` with an offset
-		set `bitmap[videos.index_of(video)] = watched`, but also resize bitmap in order to fit that index
-		set anchor_video to the last watched video
-
-	document assumptions: stable order from the addon
-
-* state container: all issues to github
-
-* same UI via seed/sauron
-
-
+* basic watched-bitfield: https://github.com/Stremio/stremio-core/issues/34
 
 
 * implement a Detail container (MetaDetailed?); should expand watched-bitfield into true/false properties
