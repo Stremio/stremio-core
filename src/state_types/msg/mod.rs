@@ -47,7 +47,7 @@ impl From<Box<dyn Error>> for MiddlewareError {
     }
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Clone, Serialize)]
 #[serde(tag = "event", content = "args")]
 pub enum Event {
     ContextMiddlewareFatal(MiddlewareError),
