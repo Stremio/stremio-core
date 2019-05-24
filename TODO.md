@@ -129,31 +129,40 @@
 	or make the container polymorphic (security implications?)
 	or map to MetaPreview
 * DESIGN: middlewares vs elm-like Cmd? it doesn't seem we can do eveyrthing with Cmd (e.g. Context) 
+* https://llogiq.github.io/2017/06/01/perf-pitfalls.html if we ever need optimizations; we do `to_owned` quite a lot, maybe some of those can be avoided; `Cow<>` sounds good too for large collections and etc.; we likely won't
+
 
 ## TODO
 
-
 * LibAddon: https://github.com/Stremio/stremio-core/issues/33
 
-
-* state container: all issues to github
-
-* Optimization ideas to be explored: CatalogFiltered pagination; web version: CI to use a headless browser to measure load times 
-
-* Optimization: web environment: fetch to not parse JSON (twice)
-
-* basic watched-bitfield: https://github.com/Stremio/stremio-core/issues/34
+* TO GITHUB: Document playerMiddleware design, remove it from this file
 
 
 * implement a Detail container (MetaDetailed?); should expand watched-bitfield into true/false properties
 
-* should we enforce that containers need to be Send + Sync ??
-
-
-
 * state container: document PlayerPreferences and etc.; binging, saving library item state, marking episodes watched, marking notifications seen
 
+
+* basic watched-bitfield: https://github.com/Stremio/stremio-core/issues/34
+
+* state container: all issues to github
+
+
 * CatalogFiltered: all the code TODOs (pagination, etc.)
+
+
+
+
+* Optimization: web environment: fetch to not parse JSON (twice)
+
+* Optimization ideas to be explored: CatalogFiltered pagination
+
+* Optimization: web version: CI to use a headless browser to measure load times 
+
+
+* should we enforce that containers need to be Send + Sync ??
+
 
 
 * handle loading collections in the addonM; detectFromURL
@@ -203,6 +212,7 @@
 * consider: flag `is_in_lib` for catalog items; could just work for Discover by having another CatlaogFiltered showing ("meta", type, id) from the lib addon
 * https://github.com/woboq/qmetaobject-rs based UI; needs reqwest (or someting else) async requests
 * libitem/notifitem: https://developers.cloudflare.com/workers/kv/ https://blog.cloudflare.com/cloudflare-workers-as-a-serverless-rust-platform/
+* https://blog.cloudflare.com/cloudflare-workers-as-a-serverless-rust-platform/
 * think of whether this could be used with the Kodi codebase to make stremio embedded
 * all the cinemeta improvements this relies on: e.g. behaviorHints.isNotReleased will affect the Stream view
 * ensure that every time a network error happens, it's properly reflected in the state; and the UI should allow to "Retry" each such operation
@@ -210,16 +220,12 @@
 * when you go to player/detail and there doesn't appear to be a supported addon for the /meta/ request, show an error to the user (+test for that?)
 * refactor: consider splitting Environment into Storage and Fetcher; and maybe take AddonsClient in
 * document item type agnostic behavior (detail page)
-* https://blog.cloudflare.com/cloudflare-workers-as-a-serverless-rust-platform/
 * JS Side: All errors or warnings that come as actions should be reported to sentry
 * more manual/automated tests: ensure that when UserMiddlewareFatal happens, it is reported
 * fuzzing all addons: load all addons (addonscollection, addonsofficialcollection), request all catalogs, then all metas and then all streams; that way, we find if anything returned by the addons is unserializable by the types crate
-* Discover UI: if we've opened an addon that is not installed, there should be an "This addon is not installed. Install now?" notification on top
-
-* BACKEND: notifitem generation needs to be reduced (10 per item, max ~300)
+* UX: Discover UI: if we've opened an addon that is not installed, there should be an "This addon is not installed. Install now?" notification on top
 * lib/notif addon: gzip everything?
 
-* https://llogiq.github.io/2017/06/01/perf-pitfalls.html if we ever nede optimizations; we do `to_owned` quite a lot, maybe some of those can be avoided; `Cow<>` sounds good too for large collections and etc.
 
 * refactor: consider using [Url](https://docs.rs/url_serde/0.2.0/url_serde/) for `transport_url`, addon `logo`/`poster`, meta `poster`/`logo`/`background`, stream `url`/`external_url`
 
