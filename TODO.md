@@ -130,14 +130,29 @@
 	or map to MetaPreview
 * DESIGN: middlewares vs elm-like Cmd? it doesn't seem we can do eveyrthing with Cmd (e.g. Context) 
 * https://llogiq.github.io/2017/06/01/perf-pitfalls.html if we ever need optimizations; we do `to_owned` quite a lot, maybe some of those can be avoided; `Cow<>` sounds good too for large collections and etc.; we likely won't
-
+* spec: notifItems: rethink that spec, crystallize it
 
 ## TODO
 
+* state container: all issues to github
+
+* Consider StandardStremio - a container muxer with everything you need
+
+* seed impl - TODO
+	routing
+	document potential design changes
+		mutate state, in place
+		muxer/chain to return a Stream
+		better ways to manage middlewares? 
+	optimization/perf
+
+
 * LibAddon: https://github.com/Stremio/stremio-core/issues/33
+* lib/notif addon: gzip everything in storage?
+* Think of working this around: when playing AND when opening the detail page, we should augment the libItem with meta if it's not already (trigger the updateLibItem action only if this would actually change the libitem)
 
-* TO GITHUB: Document playerMiddleware design, remove it from this file
 
+* TO GITHUB: Document PlayerMiddleware design, remove it from this file
 
 * implement a Detail container (MetaDetailed?); should expand watched-bitfield into true/false properties
 
@@ -146,12 +161,11 @@
 
 * basic watched-bitfield: https://github.com/Stremio/stremio-core/issues/34
 
-* state container: all issues to github
-
 
 * CatalogFiltered: all the code TODOs (pagination, etc.)
 
 
+* Design: consider a AddonEffects trait (with a fn that returns AggrRequest) instead of `addon_aggr_req`; and in general, a mechanisms for Containers to define thier own Load parameters; could be a trait associated type that we use in Actions
 
 
 * Optimization: web environment: fetch to not parse JSON (twice)
@@ -164,7 +178,6 @@
 * should we enforce that containers need to be Send + Sync ??
 
 
-
 * handle loading collections in the addonM; detectFromURL
 
 * contextM: `last_modified` for addons, prevent race conditions by updating `last_modified` each time we modify; consider sequence numbers too
@@ -172,7 +185,6 @@
 * contextM: settings
 
 * start doing documentation comments
-
 
 * AddonM: caching: statefulness can be mitigated by using a memoization where the addon transport `get` would return the same results if invoked with the same args again; however, this needs to be out of the transport impl and needs to be explicit
 
@@ -183,15 +195,14 @@
 
 * Optimizations: run twiggy from time to time on the resulting WASM
 
-* tests: Container, individual middlewares, individual types
 * start implementing libitem/notifitem addon
 
 * environment implementations: return an error related to the HTTP status code, if it's not 200
 
 * document loopback actions (implicit input): `AddonsChanged->PushAddons` (if there's a conn), (as a result of Open) `ProposeLoad -> Load`; `ProposeWatchNext -> Open`; also those that are results of OpenMedia, InstallAndOpenAddon
 
-* Trait for meta item and lib item; MetaPreview, MetaItem, MetaDetailed
-* stuff to look for to be re-implemented: syncer, libitem/notifitem addons, discover ctrl, board ctrl, detail ctrl
+* Trait for meta item and lib item (id + type); MetaPreview, MetaItem, MetaDetailed
+
 * environment: the JS side should (1) TRY to load the WASM and (2) TRY to sanity-check the environment; if it doesn't succeed, it should show an error to the user
 * complex async pieces of logic: open, detectFromURL, openMedia; those should be a middleware or just separate async functions; detectFromURL/openMedia are user-agnostic, but open is not; if it's an async function used internally by the middleware, it's still OK cause we won't make the stream requests again if we go to the UI (cause of the memoization)
 * ?addonOpen/InstallAndOpenAddon: another async action
@@ -201,16 +212,14 @@
 
 * we should make it so that if a session is expired, we go to the login screen; this should be in the app
 * think of how to do all edge cases in the user, such as pre-installing add-ons (implicit input)
-* behaviorHints - pair (key, val)?
-* when playing AND when opening the detail page, we should augment the libItem with meta if it's not already (trigger the updateLibItem action only if this would actually change the libitem)
-* when saving the last stream, save the whole object but compressed
+* behaviorHints - pair (key, val)
+* when saving the last stream, save the whole stream object but compressed
 * player: implement playerPreferences and defaults behavior: picking a default subtitle/audio track; for audio, the logic should try to select your preferred language
-* player: we migh benefit from refactoring the save/load stuff from userM into memoizedStorageSlot and using that
+* player: we might benefit from refactoring the save/load stuff from userM into memoizedStorageSlot and using that
 * ensure environment caches are in place via the service worker (web)
-* spec: notifItems: rethink that spec, crystallize it
 
 * consider: flag `is_in_lib` for catalog items; could just work for Discover by having another CatlaogFiltered showing ("meta", type, id) from the lib addon
-* https://github.com/woboq/qmetaobject-rs based UI; needs reqwest (or someting else) async requests
+
 * libitem/notifitem: https://developers.cloudflare.com/workers/kv/ https://blog.cloudflare.com/cloudflare-workers-as-a-serverless-rust-platform/
 * https://blog.cloudflare.com/cloudflare-workers-as-a-serverless-rust-platform/
 * think of whether this could be used with the Kodi codebase to make stremio embedded
@@ -218,25 +227,18 @@
 * ensure that every time a network error happens, it's properly reflected in the state; and the UI should allow to "Retry" each such operation
 * figure out pausing on minimize/close; this should be handled in the app; probably like this: when closing/minimizing the window, pause if state is playing
 * when you go to player/detail and there doesn't appear to be a supported addon for the /meta/ request, show an error to the user (+test for that?)
-* refactor: consider splitting Environment into Storage and Fetcher; and maybe take AddonsClient in
+* refactor: consider splitting Environment into Storage and Fetcher; and maybe take an extra AddonsClient in
 * document item type agnostic behavior (detail page)
 * JS Side: All errors or warnings that come as actions should be reported to sentry
 * more manual/automated tests: ensure that when UserMiddlewareFatal happens, it is reported
 * fuzzing all addons: load all addons (addonscollection, addonsofficialcollection), request all catalogs, then all metas and then all streams; that way, we find if anything returned by the addons is unserializable by the types crate
 * UX: Discover UI: if we've opened an addon that is not installed, there should be an "This addon is not installed. Install now?" notification on top
-* lib/notif addon: gzip everything?
 
 
 * refactor: consider using [Url](https://docs.rs/url_serde/0.2.0/url_serde/) for `transport_url`, addon `logo`/`poster`, meta `poster`/`logo`/`background`, stream `url`/`external_url`
 
 
 work estimation, hours: 24 userM, 12 addonM + transport, 10 legacy transport, 8 refactors, 3 catalogFiltered, 6 detail/streamselect, 24 lib/notif addon, 8 playerM, 8 open, 8 openMedia, 12 others, 10 tests: 127 = 13 weekends assumming 10 hours per weekend = 6 weeks
-
-example pipeline:
-LoadCatalogs => this will change the state of the `catalogs` to `Loading`
-LoadFromAddons(addons, 'catalog') => emitted from the UserMiddleware
-many AddonRequest(addon, 'catalog')
-many AddonResponse(addon, 'catalog', resp) => each one would update the catalogs state
 
 ---------
 
@@ -271,7 +273,9 @@ NotifDismiss id
 PlayerSetProp
 PlayerCommand
 
-## Settings middleware:
+## Settings middleware
+
+(or this could be a part of the ContextM, formerly known as UserM)
 
 It will persist settings in storage
 
@@ -281,7 +285,7 @@ figure out whether we need a settings container/middleware in stremio-state-ng; 
 	also think about which ones have to be applied in the state container itself
 	https://github.com/Stremio/labs/issues/20
 
-### All Settings:
+### All Settings
 
 Settings can be stored in 4 places: localStorage, user, addonCollection, server
 
@@ -354,7 +358,8 @@ is it even needed, if we have a completely stateless design?
 Think of how to architect the StreamsPicker; it might need to be a separate reducer; in this case the middleware must be renamed to "DetailAndStream"
 
 
-## Player (player spec wrapper) middleware:
+## Player (player spec wrapper) middleware
+
 LibItemPlayerSave (will be consumed by library addon middleware)
 alternatively, LibItemSetTime/LibItemSetVideoID
 ... everything from the player spec
@@ -450,8 +455,8 @@ Presumes the following reducers
 5: CatalogsFiltered (for library)
 6: Notifications (for notifications; could be specific: CatalogsNotifGrouped)
 7: AddonCatalog
-8: PlayerView
-9: SettingsView
+8: Player
+9: Settings
 
 @TODO figure reload/force policies for all of these; for now, we'll just always load everything (naively)
 
