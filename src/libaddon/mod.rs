@@ -9,6 +9,7 @@ use futures::{future, Future};
 use std::marker::PhantomData;
 use std::sync::{Arc, RwLock};
 use std::rc::Rc;
+use std::collections::HashSet;
 
 type SharedIndex = Arc<RwLock<Vec<LibItem>>>;
 
@@ -22,12 +23,11 @@ impl<Env: Environment + 'static> LibAddon<Env> {
     pub fn with_authkey(auth_key: String) -> Self {
         let key = format!("library:{}", auth_key.chars().take(6).collect::<String>());
         // flatten cause it's an Option<Vec<...>>
-        let fut = Env::get_storage::<Vec<String>>(&key)
+        let idx_loader = Env::get_storage::<Vec<String>>(&key)
             .and_then(|keys| join_all(keys.into_iter().flatten().map(|k| Env::get_storage::<LibItem>(&k))))
-            .map(|items| Arc::new(RwLock::new(items;.into_iter().flatten().collect())));
-
+            .map(|items| Arc::new(RwLock::new(items.into_iter().flatten().collect())));
         LibAddon {
-            idx_loader: Future::shared(Box::new(fut)),
+            idx_loader: Future::shared(Box::new(idx_loader)),
             auth_key,
             env: PhantomData,
         }
@@ -72,14 +72,17 @@ impl<T: Environment + 'static> AddonInterface for LibAddon<T> {
         Box::new(
             self.idx_loader
                 .clone()
-                .and_then(|_idx| {
+                .and_then(|idx| {
+                    let idx = idx.read().expect("unable to read idx");
+                    let types: HashSet<_> = idx.iter().map(|x| x.type_name.to_owned()).collect();
+                    let types: Vec<_> = types.into_iter().collect();
                     future::ok(Manifest {
                         id: "org.stremio.libitem".into(),
                         name: "Library".into(),
                         version: semver::Version::parse(env!("CARGO_PKG_VERSION")).unwrap(),
                         // @TODO dynamic
                         resources: vec![],
-                        types: vec!["movie".into()],
+                        types,
                         catalogs: vec![],
                         contact_email: None,
                         background: None,
