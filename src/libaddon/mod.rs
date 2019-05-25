@@ -1,39 +1,43 @@
 //use crate::addon_transport::AddonTransport;
 use crate::addon_transport::AddonInterface;
-use crate::state_types::{EnvFuture, Environment};
+use crate::state_types::{EnvFuture, Environment, Handler, DispatcherFn, Msg};
 use crate::types::addons::{Manifest, ResourceRef, ResourceResponse};
-use crate::types::{LibItemPreview};
+use crate::types::LibItem;
 use futures::future::Shared;
+use futures::future::join_all;
 use futures::{future, Future};
 use std::marker::PhantomData;
-use std::sync::{Arc, Mutex};
+use std::sync::{Arc, RwLock};
+use std::rc::Rc;
 
-type SharedIndex = Arc<Mutex<Vec<LibItemPreview>>>;
+type SharedIndex = Arc<RwLock<Vec<LibItem>>>;
 
 pub struct LibAddon<T: Environment + 'static> {
     pub idx_loader: Shared<EnvFuture<SharedIndex>>,
+    auth_key: String,
     env: PhantomData<T>,
 }
 
-impl<T: Environment + 'static> LibAddon<T> {
-    pub fn new() -> Self {
-        let idx = Arc::new(Mutex::new(Vec::new()));
-        let fut = Box::new(future::ok(idx));
+impl<Env: Environment + 'static> LibAddon<Env> {
+    pub fn with_authkey(auth_key: String) -> Self {
+        let key = format!("library:{}", auth_key.chars().take(6).collect::<String>());
+        // flatten cause it's an Option<Vec<...>>
+        let fut = Env::get_storage::<Vec<String>>(&key)
+            .and_then(|keys| join_all(keys.into_iter().flatten().map(|k| Env::get_storage::<LibItem>(&k))))
+            .map(|items| Arc::new(RwLock::new(items;.into_iter().flatten().collect())));
+
         LibAddon {
-            idx_loader: Future::shared(fut),
+            idx_loader: Future::shared(Box::new(fut)),
+            auth_key,
             env: PhantomData,
         }
-    }
-}
-impl<T: Environment + 'static> Default for LibAddon<T> {
-    fn default() -> Self {
-        Self::new()
     }
 }
 impl<T: Environment + 'static> Clone for LibAddon<T> {
     fn clone(&self) -> Self {
         LibAddon {
             idx_loader: self.idx_loader.clone(),
+            auth_key: self.auth_key.clone(),
             env: PhantomData,
         }
     }
@@ -48,19 +52,17 @@ impl<T: Environment + 'static> Clone for LibAddon<T> {
 // add_to_idx: will get the index; update the index; if the item ID was not in the index, persist
 // the ids array
 
-// to load the index, we will use a Shared future
-
 // @TODO try this: create a LibAddon, write to it's index, clone it, check the index on the second
 // one
 
 // @TODO sync pipeline
 // @TODO videos pipeline
 
-/*
-impl Handler for LibAddon {
-    // will handle all actions here
+impl<T: Environment + 'static> Handler for LibAddon<T> {
+    fn handle(&self, _action: &Msg, _emit: Rc<DispatcherFn>) {
+        unimplemented!()
+    }
 }
-*/
 
 impl<T: Environment + 'static> AddonInterface for LibAddon<T> {
     fn get(&self, _: &ResourceRef) -> EnvFuture<ResourceResponse> {
@@ -85,9 +87,9 @@ impl<T: Environment + 'static> AddonInterface for LibAddon<T> {
                         id_prefixes: None,
                         description: None,
                     })
-                    // @TODO fix by making the idx_loader result in a Cloneable error
-                    // this is not trivial to fix, as the underlying error is also a Box<dyn Error>
                 })
+                // @TODO fix by making the idx_loader result in a Cloneable error
+                // this is not trivial to fix, as the underlying error is also a Box<dyn Error>
                 .map_err(|_| "index loading error".into()),
         )
     }
