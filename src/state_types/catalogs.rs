@@ -53,7 +53,7 @@ impl CatalogGrouped {
     }
 }
 impl Container for CatalogGrouped {
-    fn dispatch(&self, msg: &Msg) -> Option<Box<Self>> {
+    fn update(&self, msg: &Msg) -> Option<Box<Self>> {
         catalogs_reducer(&self, msg)
     }
 }
@@ -125,7 +125,7 @@ impl CatalogFiltered {
     }
 }
 impl Container for CatalogFiltered {
-    fn dispatch(&self, msg: &Msg) -> Option<Box<Self>> {
+    fn update(&self, msg: &Msg) -> Option<Box<Self>> {
         match msg {
             Msg::Internal(LoadWithCtx(
                 Context { addons, .. },
@@ -179,7 +179,7 @@ impl Streams {
     }
 }
 impl Container for Streams {
-    fn dispatch(&self, msg: &Msg) -> Option<Box<Self>> {
+    fn update(&self, msg: &Msg) -> Option<Box<Self>> {
         match msg {
             Msg::Internal(LoadWithCtx(
                 Context { addons, .. },

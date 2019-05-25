@@ -48,7 +48,7 @@ where
                             _ => ()
                         }
                     }
-                    let has_new_state = container.dispatch(msg);
+                    let has_new_state = container.update(msg);
                     if has_new_state {
                         cb(MuxerEvent::NewState(id));
                     }

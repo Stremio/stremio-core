@@ -4,12 +4,12 @@ use std::cell::RefCell;
 use std::ops::Deref;
 
 pub trait ContainerInterface {
-    fn dispatch(&self, action: &Msg) -> bool;
+    fn update(&self, action: &Msg) -> bool;
     fn get_state_serialized(&self) -> Result<String, serde_json::Error>;
 }
 
 pub trait Container {
-    fn dispatch(&self, action: &Msg) -> Option<Box<Self>>;
+    fn update(&self, action: &Msg) -> Option<Box<Self>>;
 }
 
 pub struct ContainerHolder<S: Container + 'static>(RefCell<S>);
@@ -30,8 +30,8 @@ impl<S> ContainerInterface for ContainerHolder<S>
 where
     S: Serialize + Container,
 {
-    fn dispatch(&self, action: &Msg) -> bool {
-        let maybe_new_state = self.0.borrow().dispatch(action);
+    fn update(&self, action: &Msg) -> bool {
+        let maybe_new_state = self.0.borrow().update(action);
         match maybe_new_state {
             Some(state) => {
                 *self.0.borrow_mut() = *state;
