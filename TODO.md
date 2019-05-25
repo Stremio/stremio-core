@@ -138,13 +138,12 @@
 
 * Consider StandardStremio - a container muxer with everything you need
 
-* seed impl - TODO
-	routing
-	document potential design changes
-		mutate state, in place
-		muxer/chain to return a Stream
-		better ways to manage middlewares? 
-	optimization/perf
+* seed impl - routing
+
+* document potential design changes
+	mutate state, in place
+	muxer/chain to return a Stream
+	better ways to manage middlewares? 
 
 
 * LibAddon: https://github.com/Stremio/stremio-core/issues/33
@@ -157,7 +156,6 @@
 * implement a Detail container (MetaDetailed?); should expand watched-bitfield into true/false properties
 
 * state container: document PlayerPreferences and etc.; binging, saving library item state, marking episodes watched, marking notifications seen
-
 
 * basic watched-bitfield: https://github.com/Stremio/stremio-core/issues/34
 
@@ -195,8 +193,6 @@
 
 * Optimizations: run twiggy from time to time on the resulting WASM
 
-* start implementing libitem/notifitem addon
-
 * environment implementations: return an error related to the HTTP status code, if it's not 200
 
 * document loopback actions (implicit input): `AddonsChanged->PushAddons` (if there's a conn), (as a result of Open) `ProposeLoad -> Load`; `ProposeWatchNext -> Open`; also those that are results of OpenMedia, InstallAndOpenAddon
@@ -233,7 +229,6 @@
 * more manual/automated tests: ensure that when UserMiddlewareFatal happens, it is reported
 * fuzzing all addons: load all addons (addonscollection, addonsofficialcollection), request all catalogs, then all metas and then all streams; that way, we find if anything returned by the addons is unserializable by the types crate
 * UX: Discover UI: if we've opened an addon that is not installed, there should be an "This addon is not installed. Install now?" notification on top
-
 
 * refactor: consider using [Url](https://docs.rs/url_serde/0.2.0/url_serde/) for `transport_url`, addon `logo`/`poster`, meta `poster`/`logo`/`background`, stream `url`/`external_url`
 
