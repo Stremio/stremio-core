@@ -46,6 +46,11 @@ pub enum APIRequest {
         ids: Vec<String>,
         all: bool,
     },
+    #[serde(rename_all = "camelCase")]
+    DatastoreMeta {
+        auth_key: AuthKey,
+        collection: String,
+    }
     // @TODO datastoreMeta, datastorePut
 }
 impl APIRequest {
@@ -57,6 +62,7 @@ impl APIRequest {
             APIRequest::AddonCollectionGet { .. } => "addonCollectionGet",
             APIRequest::AddonCollectionSet { .. } => "addonCollectionSet",
             APIRequest::DatastoreGet { .. } => "datastoreGet",
+            APIRequest::DatastoreMeta { .. } => "datastoreMeta",
         }
     }
 }
