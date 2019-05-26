@@ -11,7 +11,20 @@ use std::sync::{Arc, RwLock};
 use std::rc::Rc;
 use std::collections::HashSet;
 
-type SharedIndex = Arc<RwLock<Vec<LibItem>>>;
+#[derive(Clone)]
+pub struct SharedIndex(Arc<RwLock<Vec<LibItem>>>);
+
+impl SharedIndex {
+    fn from_items(items: Vec<LibItem>) -> Self {
+        SharedIndex(Arc::new(RwLock::new(items)))
+    }
+    // @TODO: get_resources
+    fn get_types(&self) -> Vec<String> {
+        let idx = self.0.read().expect("unable to read idx");
+        let types: HashSet<_> = idx.iter().map(|x| x.type_name.to_owned()).collect();
+        types.into_iter().collect()
+    }
+}
 
 pub struct LibAddon<T: Environment + 'static> {
     pub idx_loader: Shared<EnvFuture<SharedIndex>>,
@@ -25,7 +38,7 @@ impl<Env: Environment + 'static> LibAddon<Env> {
         // flatten cause it's an Option<Vec<...>>
         let idx_loader = Env::get_storage::<Vec<String>>(&key)
             .and_then(|keys| join_all(keys.into_iter().flatten().map(|k| Env::get_storage::<LibItem>(&k))))
-            .map(|items| Arc::new(RwLock::new(items.into_iter().flatten().collect())));
+            .map(|items| SharedIndex::from_items(items.into_iter().flatten().collect()));
         LibAddon {
             idx_loader: Future::shared(Box::new(idx_loader)),
             auth_key,
@@ -42,18 +55,6 @@ impl<T: Environment + 'static> Clone for LibAddon<T> {
         }
     }
 }
-
-// when getting a catalog: query index, and get all full libitems with that ID (up to 100)
-// when getting detail: get ID from storage directly
-// when adding to library: get ID from storage, .unwrap_or(Default::default()).unremove().save() ;
-//   and add to idx
-//   and push to API
-
-// add_to_idx: will get the index; update the index; if the item ID was not in the index, persist
-// the ids array
-
-// @TODO try this: create a LibAddon, write to it's index, clone it, check the index on the second
-// one
 
 // @TODO sync pipeline
 // @TODO videos pipeline
@@ -73,16 +74,13 @@ impl<T: Environment + 'static> AddonInterface for LibAddon<T> {
             self.idx_loader
                 .clone()
                 .and_then(|idx| {
-                    let idx = idx.read().expect("unable to read idx");
-                    let types: HashSet<_> = idx.iter().map(|x| x.type_name.to_owned()).collect();
-                    let types: Vec<_> = types.into_iter().collect();
                     future::ok(Manifest {
                         id: "org.stremio.libitem".into(),
                         name: "Library".into(),
                         version: semver::Version::parse(env!("CARGO_PKG_VERSION")).unwrap(),
                         // @TODO dynamic
                         resources: vec![],
-                        types,
+                        types: idx.get_types(),
                         catalogs: vec![],
                         contact_email: None,
                         background: None,

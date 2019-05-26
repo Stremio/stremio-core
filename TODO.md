@@ -147,7 +147,7 @@
 
 
 * LibAddon: https://github.com/Stremio/stremio-core/issues/33
-* lib/notif addon: gzip everything in storage?
+
 * Think of working this around: when playing AND when opening the detail page, we should augment the libItem with meta if it's not already (trigger the updateLibItem action only if this would actually change the libitem)
 
 

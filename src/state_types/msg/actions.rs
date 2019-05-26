@@ -1,4 +1,5 @@
 use crate::types::addons::*;
+use crate::types::LibItem;
 use serde_derive::*;
 
 //
@@ -58,4 +59,6 @@ pub enum Action {
     Load(ActionLoad),
     AddonOp(ActionAddon),
     UserOp(ActionUser),
+    LibSync,
+    LibUpdate(LibItem)
 }
