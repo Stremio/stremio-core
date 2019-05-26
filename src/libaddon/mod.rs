@@ -9,7 +9,6 @@ use std::collections::HashSet;
 use std::marker::PhantomData;
 use std::rc::Rc;
 use std::sync::{Arc, RwLock};
-use enclose::*;
 
 struct LibSyncStats { pulled: u64, pushed: u64 }
 
@@ -26,9 +25,6 @@ impl SharedIndex {
         let idx = self.0.read().expect("unable to read idx");
         let types: HashSet<_> = idx.iter().map(|x| x.type_name.to_owned()).collect();
         types.into_iter().collect()
-    }
-    fn sync_with_api(&self, auth_key: String) -> MiddlewareFuture<LibSyncStats> {
-        unimplemented!()
     }
 }
 
@@ -69,6 +65,14 @@ impl<Env: Environment + 'static> LibAddon<Env> {
         // for this, we have to convert a Box<dyn Error> into a Shared error
         Box::new(self.idx_loader.clone().map_err(|_| MiddlewareError::LibIdx))
     }
+    // @TODO: persist the new index, but in self.sync_with_api
+    fn sync_with_api(&self) -> MiddlewareFuture<LibSyncStats> {
+        /*Box::new(self.with_idx()
+            .and_then(|idx| {
+            })
+        )*/
+        unimplemented!()
+    }
 }
 
 impl<T: Environment + 'static> Clone for LibAddon<T> {
@@ -86,10 +90,8 @@ impl<Env: Environment + 'static> Handler for LibAddon<Env> {
     fn handle(&self, msg: &Msg, emit: Rc<DispatcherFn>) {
         match msg {
             Msg::Action(Action::LibSync) => {
-                let auth_key = self.auth_key.clone();
                 // @TODO proper err handling
-                let sync_fut = self.with_idx()
-                    .and_then(move |idx| idx.sync_with_api(auth_key))
+                let sync_fut = self.sync_with_api()
                     .and_then(move |LibSyncStats { pushed, pulled }| {
                         emit(&Msg::Event(Event::LibSynced{ pushed, pulled }));
                         future::ok(())
