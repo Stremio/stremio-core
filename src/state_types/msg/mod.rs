@@ -55,6 +55,7 @@ pub enum Event {
     AddonsChanged,
     AddonsChangedFromPull,
     AuthChanged(Option<User>),
+    LibSynced{ pushed: u64, pulled: u64 }
 }
 
 //

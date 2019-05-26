@@ -1,6 +1,5 @@
-//use crate::addon_transport::AddonTransport;
 use crate::addon_transport::AddonInterface;
-use crate::state_types::{DispatcherFn, EnvFuture, Environment, Handler, Msg};
+use crate::state_types::*;
 use crate::types::addons::{Manifest, ResourceRef, ResourceResponse};
 use crate::types::LibItem;
 use futures::future::join_all;
@@ -10,6 +9,9 @@ use std::collections::HashSet;
 use std::marker::PhantomData;
 use std::rc::Rc;
 use std::sync::{Arc, RwLock};
+use enclose::*;
+
+struct LibSyncStats { pulled: u64, pushed: u64 }
 
 #[derive(Clone)]
 pub struct SharedIndex(Arc<RwLock<Vec<LibItem>>>);
@@ -23,6 +25,9 @@ impl SharedIndex {
         let idx = self.0.read().expect("unable to read idx");
         let types: HashSet<_> = idx.iter().map(|x| x.type_name.to_owned()).collect();
         types.into_iter().collect()
+    }
+    fn sync_with_api(&self, auth_key: String) -> EnvFuture<LibSyncStats> {
+        unimplemented!()
     }
 }
 
@@ -65,13 +70,32 @@ impl<T: Environment + 'static> Clone for LibAddon<T> {
 // @TODO sync pipeline
 // @TODO videos pipeline
 
-impl<T: Environment + 'static> Handler for LibAddon<T> {
-    fn handle(&self, _action: &Msg, _emit: Rc<DispatcherFn>) {
-        unimplemented!()
+impl<Env: Environment + 'static> Handler for LibAddon<Env> {
+    fn handle(&self, msg: &Msg, emit: Rc<DispatcherFn>) {
+        match msg {
+            Msg::Action(Action::LibSync) => {
+                let auth_key = self.auth_key.clone();
+                // @TODO proper err handling
+                let sync_fut = self.idx_loader
+                    .clone()
+                    .map_err(|_| "test".into())
+                    .and_then(move |idx| idx.sync_with_api(auth_key))
+                    .and_then(move |LibSyncStats { pushed, pulled }| {
+                        emit(&Msg::Event(Event::LibSynced{ pushed, pulled }));
+                        future::ok(())
+                    })
+                    .map_err(|_| ());
+                Env::exec(Box::new(sync_fut))
+            }
+            Msg::Action(Action::LibUpdate(item)) => {
+                unimplemented!()
+            }
+            _ => ()
+        }
     }
 }
 
-impl<T: Environment + 'static> AddonInterface for LibAddon<T> {
+impl<Env: Environment + 'static> AddonInterface for LibAddon<Env> {
     fn get(&self, _: &ResourceRef) -> EnvFuture<ResourceResponse> {
         unimplemented!()
     }

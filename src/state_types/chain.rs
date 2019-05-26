@@ -9,7 +9,7 @@ use std::rc::Rc;
 pub type DispatcherFn = Box<Fn(&Msg)>;
 
 pub trait Handler {
-    fn handle(&self, action: &Msg, emit: Rc<DispatcherFn>);
+    fn handle(&self, msg: &Msg, emit: Rc<DispatcherFn>);
 }
 
 pub struct Chain {
