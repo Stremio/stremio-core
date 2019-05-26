@@ -12,6 +12,15 @@ use std::collections::HashSet;
 use std::marker::PhantomData;
 use std::rc::Rc;
 use std::sync::{Arc, RwLock};
+use chrono::serde::ts_milliseconds;
+use serde::Deserialize;
+
+#[derive(Debug, Deserialize)]
+struct LibMTime(
+    String,
+    #[serde(with = "ts_milliseconds")]
+    DateTime<Utc>
+);
 
 #[derive(Debug, Clone)]
 pub struct LibSyncStats {
@@ -45,12 +54,12 @@ type MiddlewareFuture<T> = Box<Future<Item = T, Error = MiddlewareError>>;
 // @TODO videos pipeline
 pub struct LibAddon<T: Environment + 'static> {
     pub idx_loader: Shared<EnvFuture<SharedIndex>>,
-    auth_key: String,
+    auth_key: AuthKey,
     env: PhantomData<T>,
 }
 
 impl<Env: Environment + 'static> LibAddon<Env> {
-    pub fn with_authkey(auth_key: String) -> Self {
+    pub fn with_authkey(auth_key: AuthKey) -> Self {
         let key = format!("library:{}", auth_key.chars().take(6).collect::<String>());
         // flatten cause it's an Option<Vec<...>>
         let idx_loader = Env::get_storage::<Vec<String>>(&key)
@@ -85,11 +94,9 @@ impl<Env: Environment + 'static> LibAddon<Env> {
     pub fn sync_with_api(&self) -> MiddlewareFuture<LibSyncStats> {
         // @TODO not hardcoded
         let base_url = "https://api.strem.io";
-        let api_req = APIRequest::DatastoreGet {
+        let api_req = APIRequest::DatastoreMeta {
             auth_key: self.auth_key.clone(),
             collection: "libraryItem".into(),
-            ids: vec![],
-            all: true,
         };
         let url = format!("{}/api/{}", &base_url, api_req.method_name());
         let req = Request::post(url).body(api_req).unwrap();
@@ -98,14 +105,15 @@ impl<Env: Environment + 'static> LibAddon<Env> {
         // then dispatch the datastorePut/datastoreGet simultaniously
         let sync_fut = self.with_idx()
             .and_then(|idx| {
-                Env::fetch_serde::<_, APIResult<Vec<LibItem>>>(req)
+                Env::fetch_serde::<_, APIResult<Vec<LibMTime>>>(req)
                     .then(move |resp| {
+                        dbg!(&resp);
                         if let Ok(APIResult::Ok { result }) = resp {
                             // @TODO use some method on .idx
                             let idx = idx.0.read().unwrap();
                             let map_remote = result
-                                .iter()
-                                .map(|x| (x.id.to_owned(), x.mtime.to_owned()))
+                                .into_iter()
+                                .map(|LibMTime(k, mtime)| (k, mtime))
                                 .collect::<HashMap<String, DateTime<Utc>>>();
                             let to_pull_ids = map_remote
                                 .iter()
