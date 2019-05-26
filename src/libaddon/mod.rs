@@ -1,15 +1,15 @@
 //use crate::addon_transport::AddonTransport;
 use crate::addon_transport::AddonInterface;
-use crate::state_types::{EnvFuture, Environment, Handler, DispatcherFn, Msg};
+use crate::state_types::{DispatcherFn, EnvFuture, Environment, Handler, Msg};
 use crate::types::addons::{Manifest, ResourceRef, ResourceResponse};
 use crate::types::LibItem;
-use futures::future::Shared;
 use futures::future::join_all;
+use futures::future::Shared;
 use futures::{future, Future};
-use std::marker::PhantomData;
-use std::sync::{Arc, RwLock};
-use std::rc::Rc;
 use std::collections::HashSet;
+use std::marker::PhantomData;
+use std::rc::Rc;
+use std::sync::{Arc, RwLock};
 
 #[derive(Clone)]
 pub struct SharedIndex(Arc<RwLock<Vec<LibItem>>>);
@@ -37,7 +37,13 @@ impl<Env: Environment + 'static> LibAddon<Env> {
         let key = format!("library:{}", auth_key.chars().take(6).collect::<String>());
         // flatten cause it's an Option<Vec<...>>
         let idx_loader = Env::get_storage::<Vec<String>>(&key)
-            .and_then(|keys| join_all(keys.into_iter().flatten().map(|k| Env::get_storage::<LibItem>(&k))))
+            .and_then(|keys| {
+                join_all(
+                    keys.into_iter()
+                        .flatten()
+                        .map(|k| Env::get_storage::<LibItem>(&k)),
+                )
+            })
             .map(|items| SharedIndex::from_items(items.into_iter().flatten().collect()));
         LibAddon {
             idx_loader: Future::shared(Box::new(idx_loader)),

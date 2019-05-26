@@ -60,5 +60,5 @@ pub enum Action {
     AddonOp(ActionAddon),
     UserOp(ActionUser),
     LibSync,
-    LibUpdate(LibItem)
+    LibUpdate(LibItem),
 }
