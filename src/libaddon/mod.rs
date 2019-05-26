@@ -28,6 +28,7 @@ impl SharedIndex {
         SharedIndex(Arc::new(RwLock::new(map)))
     }
     // @TODO: get_resources
+    // @TODO: get_catalogs
     fn get_types(&self) -> Vec<String> {
         let idx = self.0.read().expect("unable to read idx");
         let types: HashSet<_> = idx.iter().map(|(_, x)| x.type_name.to_owned()).collect();
@@ -93,53 +94,45 @@ impl<Env: Environment + 'static> LibAddon<Env> {
         let url = format!("{}/api/{}", &base_url, api_req.method_name());
         let req = Request::post(url).body(api_req).unwrap();
 
-        Box::new(
-            Env::fetch_serde::<_, APIResult<Vec<LibItem>>>(req).then(|r| {
-                if let Ok(APIResult::Ok { result }) = r {
-                    /*let watched_items = result
-                        .iter()
-                        .filter(|l| l.state.overall_time_watched > 3600000 && l.type_name == "series")
-                        .collect::<Vec<&LibItem>>();
-                    dbg!(&watched_items);
-                    */
-                    // @TODO build_map helper
-                    let idx: HashMap<String, LibItem> = HashMap::new();
-                    let idx = &idx;
-                    let map_remote = result
-                        .iter()
-                        .map(|x| (x.id.to_owned(), x.mtime.to_owned()))
-                        .collect::<HashMap<String, DateTime<Utc>>>();
-                    let to_pull_ids = map_remote
-                        .iter()
-                        .filter(|(k, v)| idx.get(*k).map_or(true, |item| &item.mtime < v))
-                        .map(|(k, _)| k.to_owned())
-                        .collect::<Vec<String>>();
-                    let to_push = idx
-                        .iter()
-                        .filter(|(id, item)| {
-                            map_remote.get(*id).map_or(true, |date| date < &item.mtime)
-                        })
-                        .map(|(_, v)| v)
-                        .collect::<Vec<&LibItem>>();
-                    //dbg!(to_pull_ids);
-                    //dbg!(to_push);
-                    return future::ok(LibSyncStats {
-                        pulled: to_pull_ids.len() as u64,
-                        pushed: to_push.len() as u64,
-                    });
-                }
-                // @TODO proper error
-                future::err(MiddlewareError::LibIdx)
-            }),
-        )
-
-        /*
-        Box::new(self.with_idx()
+        // @TODO datastoreMeta first
+        // then dispatch the datastorePut/datastoreGet simultaniously
+        let sync_fut = self.with_idx()
             .and_then(|idx| {
-            })
-        )
-        */
+                Env::fetch_serde::<_, APIResult<Vec<LibItem>>>(req)
+                    .then(move |resp| {
+                        if let Ok(APIResult::Ok { result }) = resp {
+                            // @TODO use some method on .idx
+                            let idx = idx.0.read().unwrap();
+                            let map_remote = result
+                                .iter()
+                                .map(|x| (x.id.to_owned(), x.mtime.to_owned()))
+                                .collect::<HashMap<String, DateTime<Utc>>>();
+                            let to_pull_ids = map_remote
+                                .iter()
+                                .filter(|(k, v)| idx.get(*k).map_or(true, |item| &item.mtime < v))
+                                .map(|(k, _)| k.to_owned())
+                                .collect::<Vec<String>>();
+                            let to_push = idx
+                                .iter()
+                                .filter(|(id, item)| {
+                                    map_remote.get(*id).map_or(true, |date| date < &item.mtime)
+                                })
+                                .map(|(_, v)| v)
+                                .collect::<Vec<&LibItem>>();
+ 
+                            return future::ok(LibSyncStats {
+                                pulled: to_pull_ids.len() as u64,
+                                pushed: to_push.len() as u64,
+                            });
+                        }
+                        // @TODO proper error
+                        future::err(MiddlewareError::LibIdx)
+                    })
+            });
+
+        Box::new(sync_fut)
     }
+    // @TODO push_to_api
 }
 
 impl<T: Environment + 'static> Clone for LibAddon<T> {
@@ -163,14 +156,14 @@ impl<Env: Environment + 'static> Handler for LibAddon<Env> {
                         emit(&Msg::Event(Event::LibSynced { pushed, pulled }));
                         future::ok(())
                     })
-                    .or_else(|e| {
+                    .or_else(|_e| {
                         // @TODO err handling
                         //emit(&Msg::)
                         future::err(())
                     });
                 Env::exec(Box::new(sync_fut))
             }
-            Msg::Action(Action::LibUpdate(item)) => {
+            Msg::Action(Action::LibUpdate(_item)) => {
                 // @TODO push_to_api
                 // @TODO idx.update_item(); if it's new, persist it
                 unimplemented!()
