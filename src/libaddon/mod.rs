@@ -18,16 +18,16 @@ pub struct LibSyncStats { pulled: u64, pushed: u64 }
 
 // SharedIndex is a global, thread-safe index of library items
 #[derive(Clone)]
-pub struct SharedIndex(Arc<RwLock<Vec<LibItem>>>);
+pub struct SharedIndex(Arc<RwLock<HashMap<String, LibItem>>>);
 
 impl SharedIndex {
     fn from_items(items: Vec<LibItem>) -> Self {
-        SharedIndex(Arc::new(RwLock::new(items)))
+        SharedIndex(Arc::new(RwLock::new(items.into_iter().map(|x| (x.id.clone(), x)).collect())))
     }
     // @TODO: get_resources
     fn get_types(&self) -> Vec<String> {
         let idx = self.0.read().expect("unable to read idx");
-        let types: HashSet<_> = idx.iter().map(|x| x.type_name.to_owned()).collect();
+        let types: HashSet<_> = idx.iter().map(|(_, x)| x.type_name.to_owned()).collect();
         types.into_iter().collect()
     }
 }
@@ -92,20 +92,21 @@ impl<Env: Environment + 'static> LibAddon<Env> {
                     dbg!(&watched_items);
                     */
                     // @TODO build_map helper
+                    let idx: HashMap<String, LibItem> = HashMap::new();
+                    let idx = &idx;
                     let map_remote = result
                         .iter()
                         .map(|x| (x.id.to_owned(), x.mtime.to_owned()))
                         .collect::<HashMap<String, DateTime<Utc>>>();
-                    let items_local: Vec<LibItem> = vec![];
-                    let map_local = HashMap::<String, DateTime<Utc>>::new();
                     let to_pull_ids = map_remote
                         .iter()
-                        .filter(|(k, v)| map_local.get(*k).map_or(true, |date| date < v))
+                        .filter(|(k, v)| idx.get(*k).map_or(true, |item| &item.mtime < v))
                         .map(|(k, _)| k.to_owned())
                         .collect::<Vec<String>>();
-                    let to_push = items_local
+                    let to_push = idx
                         .iter()
-                        .filter(|i| map_remote.get(&i.id).map_or(true, |date| date < &i.mtime))
+                        .filter(|(id, item)| map_remote.get(*id).map_or(true, |date| date < &item.mtime))
+                        .map(|(_, v)| v)
                         .collect::<Vec<&LibItem>>();
                     //dbg!(to_pull_ids);
                     //dbg!(to_push);
