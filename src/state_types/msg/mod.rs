@@ -35,7 +35,7 @@ pub enum MiddlewareError {
     Env(String),
     AuthRequired,
     AuthRace,
-    LibIdx
+    LibIdx,
 }
 impl From<APIErr> for MiddlewareError {
     fn from(e: APIErr) -> Self {
@@ -56,7 +56,7 @@ pub enum Event {
     AddonsChanged,
     AddonsChangedFromPull,
     AuthChanged(Option<User>),
-    LibSynced{ pushed: u64, pulled: u64 }
+    LibSynced { pushed: u64, pulled: u64 },
 }
 
 //
