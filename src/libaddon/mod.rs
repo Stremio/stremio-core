@@ -2,6 +2,9 @@ use crate::addon_transport::AddonInterface;
 use crate::state_types::*;
 use crate::types::addons::{Manifest, ResourceRef, ResourceResponse};
 use crate::types::LibItem;
+use crate::types::api::*;
+use chrono::{DateTime, Utc};
+use std::collections::HashMap;
 use futures::future::join_all;
 use futures::future::{Shared, SharedItem};
 use futures::{future, Future};
@@ -10,7 +13,8 @@ use std::marker::PhantomData;
 use std::rc::Rc;
 use std::sync::{Arc, RwLock};
 
-struct LibSyncStats { pulled: u64, pushed: u64 }
+#[derive(Debug, Clone)]
+pub struct LibSyncStats { pulled: u64, pushed: u64 }
 
 // SharedIndex is a global, thread-safe index of library items
 #[derive(Clone)]
@@ -66,12 +70,57 @@ impl<Env: Environment + 'static> LibAddon<Env> {
         Box::new(self.idx_loader.clone().map_err(|_| MiddlewareError::LibIdx))
     }
     // @TODO: persist the new index, but in self.sync_with_api
-    fn sync_with_api(&self) -> MiddlewareFuture<LibSyncStats> {
-        /*Box::new(self.with_idx()
+    pub fn sync_with_api(&self) -> MiddlewareFuture<LibSyncStats> {
+        // @TODO not hardcoded
+        let base_url = "https://api.strem.io";
+        let api_req = APIRequest::DatastoreGet {
+            auth_key: self.auth_key.clone(),
+            collection: "libraryItem".into(),
+            ids: vec![],
+            all: true,
+        };
+        let url = format!("{}/api/{}", &base_url, api_req.method_name());
+        let req = Request::post(url).body(api_req).unwrap();
+
+        Box::new(Env::fetch_serde::<_, APIResult<Vec<LibItem>>>(req)
+            .then(|r| {
+                if let Ok(APIResult::Ok { result }) = r {
+                    /*let watched_items = result
+                        .iter()
+                        .filter(|l| l.state.overall_time_watched > 3600000 && l.type_name == "series")
+                        .collect::<Vec<&LibItem>>();
+                    dbg!(&watched_items);
+                    */
+                    // @TODO build_map helper
+                    let map_remote = result
+                        .iter()
+                        .map(|x| (x.id.to_owned(), x.mtime.to_owned()))
+                        .collect::<HashMap<String, DateTime<Utc>>>();
+                    let items_local: Vec<LibItem> = vec![];
+                    let map_local = HashMap::<String, DateTime<Utc>>::new();
+                    let to_pull_ids = map_remote
+                        .iter()
+                        .filter(|(k, v)| map_local.get(*k).map_or(true, |date| date < v))
+                        .map(|(k, _)| k.to_owned())
+                        .collect::<Vec<String>>();
+                    let to_push = items_local
+                        .iter()
+                        .filter(|i| map_remote.get(&i.id).map_or(true, |date| date < &i.mtime))
+                        .collect::<Vec<&LibItem>>();
+                    //dbg!(to_pull_ids);
+                    //dbg!(to_push);
+                    return future::ok(LibSyncStats { pulled: to_pull_ids.len() as u64, pushed: to_push.len() as u64 });
+                }
+                // @TODO proper error
+                future::err(MiddlewareError::LibIdx)
+            }))
+
+        /*
+        Box::new(self.with_idx()
             .and_then(|idx| {
             })
-        )*/
-        unimplemented!()
+        )
+        */
     }
 }
 
@@ -97,13 +146,15 @@ impl<Env: Environment + 'static> Handler for LibAddon<Env> {
                         future::ok(())
                     })
                     .or_else(|e| {
-                        // @TODO
+                        // @TODO err handling
                         //emit(&Msg::)
                         future::err(())
                     });
                 Env::exec(Box::new(sync_fut))
             }
             Msg::Action(Action::LibUpdate(item)) => {
+                // @TODO push_to_api
+                // @TODO idx.update_item(); if it's new, persist it
                 unimplemented!()
             }
             _ => ()

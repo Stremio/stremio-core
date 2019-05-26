@@ -166,54 +166,17 @@ mod tests {
 
     #[test]
     fn libitems() {
-        use crate::types::api::*;
-        use crate::types::LibItem;
-        use chrono::{DateTime, Utc};
-        use std::collections::HashMap;
+        use crate::libaddon::LibAddon;
 
         let auth_key = "=".into();
 
         run(lazy(|| {
-            let base_url = "https://api.strem.io";
-            let api_req = APIRequest::DatastoreGet {
-                auth_key,
-                collection: "libraryItem".into(),
-                ids: vec![],
-                all: true,
-            };
-            let url = format!("{}/api/{}", &base_url, api_req.method_name());
-            let req = Request::post(url).body(api_req).unwrap();
-
-            let fut = Env::fetch_serde::<_, APIResult<Vec<LibItem>>>(req);
-            fut.then(|r| {
-                if let Ok(APIResult::Ok { result }) = r {
-                    /*let watched_items = result
-                        .iter()
-                        .filter(|l| l.state.overall_time_watched > 3600000 && l.type_name == "series")
-                        .collect::<Vec<&LibItem>>();
-                    dbg!(&watched_items);
-                    */
-                    // @TODO build_map helper
-                    let map_remote = result
-                        .iter()
-                        .map(|x| (x.id.to_owned(), x.mtime.to_owned()))
-                        .collect::<HashMap<String, DateTime<Utc>>>();
-                    let items_local = result.clone(); // @TODO
-                    let map_local = map_remote.clone(); // @TODO
-                    let _to_pull_ids = map_remote
-                        .iter()
-                        .filter(|(k, v)| map_local.get(*k).map_or(true, |date| date < v))
-                        .map(|(k, _)| k.to_owned())
-                        .collect::<Vec<String>>();
-                    let _to_push = items_local
-                        .iter()
-                        .filter(|i| map_remote.get(&i.id).map_or(true, |date| date < &i.mtime))
-                        .collect::<Vec<&LibItem>>();
-                    //dbg!(to_pull_ids);
-                    //dbg!(to_push);
-                }
-                future::ok(())
-            })
+            let addon = LibAddon::<Env>::with_authkey(auth_key);
+            addon.sync_with_api()
+                .then(|stats| {
+                    dbg!(&stats.unwrap());
+                    future::ok(())
+                })
         }));
     }
 
