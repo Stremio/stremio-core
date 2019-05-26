@@ -191,9 +191,10 @@ impl Container for Streams {
                         .iter()
                         .map(|req| (req.to_owned(), Loadable::Loading))
                         .collect();
-                    return Some(Box::new(Streams { groups }));
+                    Some(Box::new(Streams { groups }))
+                } else {
+                    None
                 }
-                None
             }
             Msg::Internal(AddonResponse(req, result)) => {
                 if let Some(idx) = self.groups.iter().position(|g| &g.0 == req) {
@@ -204,9 +205,10 @@ impl Container for Streams {
                         ResourceResponse::Streams { streams },
                         streams.to_owned()
                     );
-                    return Some(Box::new(Streams { groups }));
+                    Some(Box::new(Streams { groups }))
+                } else {
+                    None
                 }
-                None
             }
             _ => None,
         }
