@@ -35,6 +35,7 @@ pub enum MiddlewareError {
     Env(String),
     AuthRequired,
     AuthRace,
+    LibIdx
 }
 impl From<APIErr> for MiddlewareError {
     fn from(e: APIErr) -> Self {

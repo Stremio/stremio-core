@@ -3,7 +3,7 @@ use crate::state_types::*;
 use crate::types::addons::{Manifest, ResourceRef, ResourceResponse};
 use crate::types::LibItem;
 use futures::future::join_all;
-use futures::future::Shared;
+use futures::future::{Shared, SharedItem};
 use futures::{future, Future};
 use std::collections::HashSet;
 use std::marker::PhantomData;
@@ -13,6 +13,7 @@ use enclose::*;
 
 struct LibSyncStats { pulled: u64, pushed: u64 }
 
+// SharedIndex is a global, thread-safe index of library items
 #[derive(Clone)]
 pub struct SharedIndex(Arc<RwLock<Vec<LibItem>>>);
 
@@ -26,11 +27,18 @@ impl SharedIndex {
         let types: HashSet<_> = idx.iter().map(|x| x.type_name.to_owned()).collect();
         types.into_iter().collect()
     }
-    fn sync_with_api(&self, auth_key: String) -> EnvFuture<LibSyncStats> {
+    fn sync_with_api(&self, auth_key: String) -> MiddlewareFuture<LibSyncStats> {
         unimplemented!()
     }
 }
 
+// The same similar pattern is used in ContextM
+type MiddlewareFuture<T> = Box<Future<Item = T, Error = MiddlewareError>>;
+
+// LibAddon: the struct that represents a LibAddon for a single session (auth_key)
+// can be safely cloned in order to attach to middlewares and etc.
+// Implements Handle (to respond to actions) and AddonInterface
+// @TODO videos pipeline
 pub struct LibAddon<T: Environment + 'static> {
     pub idx_loader: Shared<EnvFuture<SharedIndex>>,
     auth_key: String,
@@ -56,7 +64,13 @@ impl<Env: Environment + 'static> LibAddon<Env> {
             env: PhantomData,
         }
     }
+    fn with_idx(&self) -> MiddlewareFuture<SharedItem<SharedIndex>> {
+        // @TODO consider a more detailed error
+        // for this, we have to convert a Box<dyn Error> into a Shared error
+        Box::new(self.idx_loader.clone().map_err(|_| MiddlewareError::LibIdx))
+    }
 }
+
 impl<T: Environment + 'static> Clone for LibAddon<T> {
     fn clone(&self) -> Self {
         LibAddon {
@@ -67,8 +81,6 @@ impl<T: Environment + 'static> Clone for LibAddon<T> {
     }
 }
 
-// @TODO sync pipeline
-// @TODO videos pipeline
 
 impl<Env: Environment + 'static> Handler for LibAddon<Env> {
     fn handle(&self, msg: &Msg, emit: Rc<DispatcherFn>) {
@@ -76,15 +88,17 @@ impl<Env: Environment + 'static> Handler for LibAddon<Env> {
             Msg::Action(Action::LibSync) => {
                 let auth_key = self.auth_key.clone();
                 // @TODO proper err handling
-                let sync_fut = self.idx_loader
-                    .clone()
-                    .map_err(|_| "test".into())
+                let sync_fut = self.with_idx()
                     .and_then(move |idx| idx.sync_with_api(auth_key))
                     .and_then(move |LibSyncStats { pushed, pulled }| {
                         emit(&Msg::Event(Event::LibSynced{ pushed, pulled }));
                         future::ok(())
                     })
-                    .map_err(|_| ());
+                    .or_else(|e| {
+                        // @TODO
+                        //emit(&Msg::)
+                        future::err(())
+                    });
                 Env::exec(Box::new(sync_fut))
             }
             Msg::Action(Action::LibUpdate(item)) => {
@@ -101,8 +115,11 @@ impl<Env: Environment + 'static> AddonInterface for LibAddon<Env> {
     }
     fn manifest(&self) -> EnvFuture<Manifest> {
         Box::new(
-            self.idx_loader
-                .clone()
+            self
+                .with_idx()
+                // @TODO
+                //.map_err(Into::into)
+                .map_err(|_| "error loading library index".into())
                 .and_then(|idx| {
                     future::ok(Manifest {
                         id: "org.stremio.libitem".into(),
@@ -119,9 +136,6 @@ impl<Env: Environment + 'static> AddonInterface for LibAddon<Env> {
                         description: None,
                     })
                 })
-                // @TODO fix by making the idx_loader result in a Cloneable error
-                // this is not trivial to fix, as the underlying error is also a Box<dyn Error>
-                .map_err(|_| "index loading error".into()),
         )
     }
 }
