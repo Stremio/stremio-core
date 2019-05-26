@@ -1,28 +1,31 @@
 use crate::addon_transport::AddonInterface;
 use crate::state_types::*;
 use crate::types::addons::{Manifest, ResourceRef, ResourceResponse};
-use crate::types::LibItem;
 use crate::types::api::*;
+use crate::types::LibItem;
 use chrono::{DateTime, Utc};
-use std::collections::HashMap;
 use futures::future::join_all;
 use futures::future::{Shared, SharedItem};
 use futures::{future, Future};
+use std::collections::HashMap;
 use std::collections::HashSet;
 use std::marker::PhantomData;
 use std::rc::Rc;
 use std::sync::{Arc, RwLock};
 
 #[derive(Debug, Clone)]
-pub struct LibSyncStats { pulled: u64, pushed: u64 }
+pub struct LibSyncStats {
+    pulled: u64,
+    pushed: u64,
+}
 
 // SharedIndex is a global, thread-safe index of library items
 #[derive(Clone)]
 pub struct SharedIndex(Arc<RwLock<HashMap<String, LibItem>>>);
 
 impl SharedIndex {
-    fn from_items(items: Vec<LibItem>) -> Self {
-        SharedIndex(Arc::new(RwLock::new(items.into_iter().map(|x| (x.id.clone(), x)).collect())))
+    fn from_map(map: HashMap<String, LibItem>) -> Self {
+        SharedIndex(Arc::new(RwLock::new(map)))
     }
     // @TODO: get_resources
     fn get_types(&self) -> Vec<String> {
@@ -57,7 +60,15 @@ impl<Env: Environment + 'static> LibAddon<Env> {
                         .map(|k| Env::get_storage::<LibItem>(&k)),
                 )
             })
-            .map(|items| SharedIndex::from_items(items.into_iter().flatten().collect()));
+            .map(|items| {
+                SharedIndex::from_map(
+                    items
+                        .into_iter()
+                        .flatten()
+                        .map(|i| (i.id.clone(), i))
+                        .collect(),
+                )
+            });
         LibAddon {
             idx_loader: Future::shared(Box::new(idx_loader)),
             auth_key,
@@ -82,8 +93,8 @@ impl<Env: Environment + 'static> LibAddon<Env> {
         let url = format!("{}/api/{}", &base_url, api_req.method_name());
         let req = Request::post(url).body(api_req).unwrap();
 
-        Box::new(Env::fetch_serde::<_, APIResult<Vec<LibItem>>>(req)
-            .then(|r| {
+        Box::new(
+            Env::fetch_serde::<_, APIResult<Vec<LibItem>>>(req).then(|r| {
                 if let Ok(APIResult::Ok { result }) = r {
                     /*let watched_items = result
                         .iter()
@@ -105,16 +116,22 @@ impl<Env: Environment + 'static> LibAddon<Env> {
                         .collect::<Vec<String>>();
                     let to_push = idx
                         .iter()
-                        .filter(|(id, item)| map_remote.get(*id).map_or(true, |date| date < &item.mtime))
+                        .filter(|(id, item)| {
+                            map_remote.get(*id).map_or(true, |date| date < &item.mtime)
+                        })
                         .map(|(_, v)| v)
                         .collect::<Vec<&LibItem>>();
                     //dbg!(to_pull_ids);
                     //dbg!(to_push);
-                    return future::ok(LibSyncStats { pulled: to_pull_ids.len() as u64, pushed: to_push.len() as u64 });
+                    return future::ok(LibSyncStats {
+                        pulled: to_pull_ids.len() as u64,
+                        pushed: to_push.len() as u64,
+                    });
                 }
                 // @TODO proper error
                 future::err(MiddlewareError::LibIdx)
-            }))
+            }),
+        )
 
         /*
         Box::new(self.with_idx()
@@ -135,15 +152,15 @@ impl<T: Environment + 'static> Clone for LibAddon<T> {
     }
 }
 
-
 impl<Env: Environment + 'static> Handler for LibAddon<Env> {
     fn handle(&self, msg: &Msg, emit: Rc<DispatcherFn>) {
         match msg {
             Msg::Action(Action::LibSync) => {
                 // @TODO proper err handling
-                let sync_fut = self.sync_with_api()
+                let sync_fut = self
+                    .sync_with_api()
                     .and_then(move |LibSyncStats { pushed, pulled }| {
-                        emit(&Msg::Event(Event::LibSynced{ pushed, pulled }));
+                        emit(&Msg::Event(Event::LibSynced { pushed, pulled }));
                         future::ok(())
                     })
                     .or_else(|e| {
@@ -158,7 +175,7 @@ impl<Env: Environment + 'static> Handler for LibAddon<Env> {
                 // @TODO idx.update_item(); if it's new, persist it
                 unimplemented!()
             }
-            _ => ()
+            _ => (),
         }
     }
 }
@@ -169,8 +186,7 @@ impl<Env: Environment + 'static> AddonInterface for LibAddon<Env> {
     }
     fn manifest(&self) -> EnvFuture<Manifest> {
         Box::new(
-            self
-                .with_idx()
+            self.with_idx()
                 // @TODO
                 //.map_err(Into::into)
                 .map_err(|_| "error loading library index".into())
@@ -189,7 +205,7 @@ impl<Env: Environment + 'static> AddonInterface for LibAddon<Env> {
                         id_prefixes: None,
                         description: None,
                     })
-                })
+                }),
         )
     }
 }
