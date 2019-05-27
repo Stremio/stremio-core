@@ -149,14 +149,11 @@
 
 * LibAddon: https://github.com/Stremio/stremio-core/issues/33
 
-* Think of working this around: when playing AND when opening the detail page, we should augment the libItem with meta if it's not already (trigger the updateLibItem action only if this would actually change the libitem)
-
-
 * TO GITHUB: Document PlayerMiddleware design, remove it from this file
+* document PlayerPreferences and etc.; binging, saving library item state, marking episodes watched, marking notifications seen
 
-* implement a Detail container (MetaDetailed?); should expand watched-bitfield into true/false properties
+* implement a Detail container: https://github.com/Stremio/stremio-core/issues/37
 
-* state container: document PlayerPreferences and etc.; binging, saving library item state, marking episodes watched, marking notifications seen
 
 * basic watched-bitfield: https://github.com/Stremio/stremio-core/issues/34
 
@@ -217,7 +214,7 @@
 * libitem/notifitem: https://developers.cloudflare.com/workers/kv/ https://blog.cloudflare.com/cloudflare-workers-as-a-serverless-rust-platform/
 * https://blog.cloudflare.com/cloudflare-workers-as-a-serverless-rust-platform/
 * think of whether this could be used with the Kodi codebase to make stremio embedded
-* all the cinemeta improvements this relies on: e.g. behaviorHints.isNotReleased will affect the Stream view
+* all the cinemeta improvements this relies on: e.g. behaviorHints.isNotReleased will affect the Detail view
 * ensure that every time a network error happens, it's properly reflected in the state; and the UI should allow to "Retry" each such operation
 * figure out pausing on minimize/close; this should be handled in the app; probably like this: when closing/minimizing the window, pause if state is playing
 * when you go to player/detail and there doesn't appear to be a supported addon for the /meta/ request, show an error to the user (+test for that?)
@@ -334,20 +331,6 @@ how to protect against race conditions where the responses of requests made with
 of the auth key in the beginning, and only persist if the auth key matches
 
 how/whether to trigger pull addons on user login? sounds like we should, and we should treat it as one operation
-
-
-## AddonAggr
-transforms LoadWithUser(dyn AddonReq) (any action implementing the AddonReq trait), and then AddonAdded/AddonRemoved into -> AddonRequest + AddonResponse
-this can be universally used by a lot (see below)
-
-AllAddonRequestsFinished(original action) - wrap the original action
-
-
-@TODO should we have an action for ALL pending addon requests being done?
-
-## Detail middleware
-is it even needed, if we have a completely stateless design?
-Think of how to architect the StreamsPicker; it might need to be a separate reducer; in this case the middleware must be renamed to "DetailAndStream"
 
 
 ## Player (player spec wrapper) middleware
