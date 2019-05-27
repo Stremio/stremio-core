@@ -35,6 +35,7 @@ pub struct MetaDetail {
     // @TODO: default to one video
     #[serde(default)]
     pub videos: Vec<Video>,
+    pub featured_vid: Option<String>,
     // @TODO: other
     // @TODO videos
     // @TODO crew
