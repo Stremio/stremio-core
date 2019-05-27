@@ -131,6 +131,7 @@
 * DESIGN: middlewares vs elm-like Cmd? it doesn't seem we can do eveyrthing with Cmd (e.g. Context) 
 * https://llogiq.github.io/2017/06/01/perf-pitfalls.html if we ever need optimizations; we do `to_owned` quite a lot, maybe some of those can be avoided; `Cow<>` sounds good too for large collections and etc.; we likely won't
 * spec: notifItems: rethink that spec, crystallize it
+* decide: complex async pieces of logic: open, detectFromURL, openMedia; those should be a middleware or just separate async functions; detectFromURL/openMedia are user-agnostic, but open is not; if it's an async function used internally by the middleware, it's still OK cause we won't make the stream requests again if we go to the UI (cause of the memoization); decided: should be separate functions `recommend_open` and`recommend_open_media`, that get invoked by some middleware (prob ContextM)
 
 ## TODO
 
@@ -159,7 +160,6 @@
 
 * basic watched-bitfield: https://github.com/Stremio/stremio-core/issues/34
 
-
 * CatalogFiltered: all the code TODOs (pagination, etc.)
 
 
@@ -171,7 +171,6 @@
 * Optimization ideas to be explored: CatalogFiltered pagination
 
 * Optimization: web version: CI to use a headless browser to measure load times 
-
 
 * should we enforce that containers need to be Send + Sync ??
 
@@ -200,7 +199,6 @@
 * Trait for meta item and lib item (id + type); MetaPreview, MetaItem, MetaDetailed
 
 * environment: the JS side should (1) TRY to load the WASM and (2) TRY to sanity-check the environment; if it doesn't succeed, it should show an error to the user
-* complex async pieces of logic: open, detectFromURL, openMedia; those should be a middleware or just separate async functions; detectFromURL/openMedia are user-agnostic, but open is not; if it's an async function used internally by the middleware, it's still OK cause we won't make the stream requests again if we go to the UI (cause of the memoization)
 * ?addonOpen/InstallAndOpenAddon: another async action
 * opening a file (protocol add-ons to be considered)
 
@@ -224,7 +222,6 @@
 * figure out pausing on minimize/close; this should be handled in the app; probably like this: when closing/minimizing the window, pause if state is playing
 * when you go to player/detail and there doesn't appear to be a supported addon for the /meta/ request, show an error to the user (+test for that?)
 * refactor: consider splitting Environment into Storage and Fetcher; and maybe take an extra AddonsClient in
-* document item type agnostic behavior (detail page)
 * JS Side: All errors or warnings that come as actions should be reported to sentry
 * more manual/automated tests: ensure that when UserMiddlewareFatal happens, it is reported
 * fuzzing all addons: load all addons (addonscollection, addonsofficialcollection), request all catalogs, then all metas and then all streams; that way, we find if anything returned by the addons is unserializable by the types crate
