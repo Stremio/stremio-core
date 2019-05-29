@@ -35,8 +35,12 @@ pub struct MetaDetail {
     // @TODO: default to one video
     #[serde(default)]
     pub videos: Vec<Video>,
+    // This is a video id; the case of the video not being in .videos must be handled at runtime
     pub featured_vid: Option<String>,
-    // @TODO: other
+    // @TODO: consider using a URL type
+    pub website: Option<String>,
+    // @TODO use some ISO language type
+    //pub language: Option<String>,
     // @TODO crew
     // @TODO genres
 }
