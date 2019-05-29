@@ -37,8 +37,8 @@ pub struct MetaDetail {
     pub videos: Vec<Video>,
     pub featured_vid: Option<String>,
     // @TODO: other
-    // @TODO videos
     // @TODO crew
+    // @TODO genres
 }
 
 // https://github.com/Stremio/stremio-addon-sdk/blob/master/docs/api/responses/meta.md#video-object
@@ -52,4 +52,13 @@ pub struct Video {
     pub overview: Option<String>,
     pub thumbnail: Option<String>,
     pub streams: Option<Vec<Stream>>,
+    // @TODO: season AND episode (but they have to go together)
+    #[serde(flatten)]
+    pub series_info: Option<SeriesInfo>,
+}
+
+#[derive(PartialEq, Clone, Debug, Deserialize, Serialize)]
+pub struct SeriesInfo {
+    pub season: u32,
+    pub episode: u32,
 }
