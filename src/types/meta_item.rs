@@ -31,6 +31,7 @@ pub struct MetaDetail {
     pub popularity: f64,
     pub description: Option<String>,
     pub release_info: Option<String>,
+    pub runtime: Option<String>,
     pub poster_shape: Option<String>,
     // @TODO: default to one video
     #[serde(default)]
