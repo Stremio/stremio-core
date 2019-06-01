@@ -6,7 +6,6 @@ use crate::types::{MetaPreview, Stream};
 use serde_derive::*;
 use std::sync::Arc;
 
-const MAX_ITEMS: usize = 25;
 const UNEXPECTED_RESP_MSG: &str = "unexpected ResourceResponse";
 
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
@@ -82,7 +81,7 @@ fn catalogs_reducer(state: &CatalogGrouped, msg: &Msg) -> Option<Box<CatalogGrou
                     result,
                     metas,
                     ResourceResponse::Metas { metas },
-                    metas.iter().take(MAX_ITEMS).cloned().collect()
+                    metas.to_owned()
                 );
                 groups[idx] = Arc::new((req.to_owned(), group_content));
                 Some(Box::new(CatalogGrouped { groups }))
