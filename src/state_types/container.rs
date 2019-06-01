@@ -8,7 +8,7 @@ pub trait ContainerInterface {
     fn get_state_serialized(&self) -> Result<String, serde_json::Error>;
 }
 
-pub trait Container {
+pub trait Container: Send + Sync {
     fn update(&self, action: &Msg) -> Option<Box<Self>>;
 }
 
