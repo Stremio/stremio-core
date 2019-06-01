@@ -107,7 +107,6 @@ impl<Env: Environment + 'static> LibAddon<Env> {
             .and_then(|idx| {
                 Env::fetch_serde::<_, APIResult<Vec<LibMTime>>>(req)
                     .then(move |resp| {
-                        dbg!(&resp);
                         if let Ok(APIResult::Ok { result }) = resp {
                             // @TODO use some method on .idx
                             let idx = idx.0.read().unwrap();
