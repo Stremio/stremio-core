@@ -135,54 +135,27 @@
 
 ## TODO
 
-* state container: all issues to github
 
-* Consider StandardStremio - a container muxer with everything you need
+* all issues to github; take into account iOS notes too
 
-* seed impl - routing
-
-* document potential design changes
-	mutate state, in place
-	muxer/chain to return a Stream
-	better ways to manage middlewares? 
-
-
-* LibAddon: https://github.com/Stremio/stremio-core/issues/33
+* notifications in library view? how will that be implemented?
+	The LibAddon already has notification info, it just has to return it
 
 * TO GITHUB: Document PlayerMiddleware design, remove it from this file
 * document PlayerPreferences and etc.; binging, saving library item state, marking episodes watched, marking notifications seen
+	mode of operation: either with a libitem, or without one
 
-* implement a Detail container: https://github.com/Stremio/stremio-core/issues/37
-
-
-* basic watched-bitfield: https://github.com/Stremio/stremio-core/issues/34
-
-* CatalogFiltered: all the code TODOs (pagination, etc.)
-
-
-* Design: consider a AddonEffects trait (with a fn that returns AggrRequest) instead of `addon_aggr_req`; and in general, a mechanisms for Containers to define thier own Load parameters; could be a trait associated type that we use in Actions
-
+* Open (`recommend_open`) should always pull the libitem first; this is a UX improvement, ensures we do not lose our playing status on another device if we just click before syncing on one device
 
 * Optimization: web environment: fetch to not parse JSON (twice)
 
-* Optimization ideas to be explored: CatalogFiltered pagination
-
 * Optimization: web version: CI to use a headless browser to measure load times 
-
-* should we enforce that containers need to be Send + Sync ??
-
 
 * handle loading collections in the addonM; detectFromURL
 
 * contextM: `last_modified` for addons, prevent race conditions by updating `last_modified` each time we modify; consider sequence numbers too
-* contextM: upgrade addons when doing the first pull
+* contextM: upgrade addons when doing the first pull (by sending the relevant args to addonCollectionGet)
 * contextM: settings
-
-* start doing documentation comments
-
-* AddonM: caching: statefulness can be mitigated by using a memoization where the addon transport `get` would return the same results if invoked with the same args again; however, this needs to be out of the transport impl and needs to be explicit
-
-* ContextM: tests; especially for dangerous (cause of the RefCell) things like the `save_and_emit`; full tests chain (register, logout, login, push addons, logout)
 
 * test if addoncollection can be parsed and understood, once the middleware(s) can retrieve collections
 * addon catalog reducer, actions
@@ -193,31 +166,19 @@
 
 * document loopback actions (implicit input): `AddonsChanged->PushAddons` (if there's a conn), (as a result of Open) `ProposeLoad -> Load`; `ProposeWatchNext -> Open`; also those that are results of OpenMedia, InstallAndOpenAddon
 
-* Trait for meta item and lib item (id + type); MetaPreview, MetaItem, MetaDetailed
-
 * environment: the JS side should (1) TRY to load the WASM and (2) TRY to sanity-check the environment; if it doesn't succeed, it should show an error to the user
 * ?addonOpen/InstallAndOpenAddon: another async action
 * opening a file (protocol add-ons to be considered)
 
-* crates: stremio-web-environment (only the Environment), stremio-core-web (general API that is exported to JS via bindgen)
-
-* we should make it so that if a session is expired, we go to the login screen; this should be in the app
+* we should make it so that if a session is expired, we go to the login screen; this should probably be in the app
 * think of how to do all edge cases in the user, such as pre-installing add-ons (implicit input)
 * behaviorHints - pair (key, val)
-* when saving the last stream, save the whole stream object but compressed
 * player: implement playerPreferences and defaults behavior: picking a default subtitle/audio track; for audio, the logic should try to select your preferred language
 * player: we might benefit from refactoring the save/load stuff from userM into memoizedStorageSlot and using that
-* ensure environment caches are in place via the service worker (web)
-
-* consider: flag `is_in_lib` for catalog items; could just work for Discover by having another CatlaogFiltered showing ("meta", type, id) from the lib addon
-
-* libitem/notifitem: https://developers.cloudflare.com/workers/kv/ https://blog.cloudflare.com/cloudflare-workers-as-a-serverless-rust-platform/
-* https://blog.cloudflare.com/cloudflare-workers-as-a-serverless-rust-platform/
 * think of whether this could be used with the Kodi codebase to make stremio embedded
 * all the cinemeta improvements this relies on: e.g. behaviorHints.isNotReleased will affect the Detail view
 * ensure that every time a network error happens, it's properly reflected in the state; and the UI should allow to "Retry" each such operation
 * figure out pausing on minimize/close; this should be handled in the app; probably like this: when closing/minimizing the window, pause if state is playing
-* when you go to player/detail and there doesn't appear to be a supported addon for the /meta/ request, show an error to the user (+test for that?)
 * refactor: consider splitting Environment into Storage and Fetcher; and maybe take an extra AddonsClient in
 * JS Side: All errors or warnings that come as actions should be reported to sentry
 * more manual/automated tests: ensure that when UserMiddlewareFatal happens, it is reported
@@ -230,14 +191,6 @@
 work estimation, hours: 24 userM, 12 addonM + transport, 10 legacy transport, 8 refactors, 3 catalogFiltered, 6 detail/streamselect, 24 lib/notif addon, 8 playerM, 8 open, 8 openMedia, 12 others, 10 tests: 127 = 13 weekends assumming 10 hours per weekend = 6 weeks
 
 ---------
-
-## Universe actions: 
-InitiateSync (or separate events; see https://github.com/Stremio/stremio/issues/388)
-BeforeClose
-SettingsLoad
-TryStreamingServer (this will try connecting to the streaming server, as well as probing it's settings and version)
-NetworkStatusChanged
-WindowStateChanged (playerM will react on that to pause the player if the setting is true)
 
 ## Actions from the user
 
@@ -399,6 +352,8 @@ the classic reason to show an item in continue watching is if `(!removed || temp
 
 All of this should be defined in `lib_item.is_in_continue_watching()`
 
+"So that if you finish an episode, and the item is auto set to the next one, it should show; can be implemented via an edge case if time offset is 0 but time watched is high, and video of is set, show it" - from email notes; pretty much says the same thing
+
 ## another middleware for open, openMedia, openAddonURL
 
 @TODO
@@ -471,7 +426,7 @@ if videoID, dispatch LoadStreams(4, type, id, videoID) -> AddonAggrReq(OfResourc
 
 The Library item and the notifications will be loaded through the AddonAggrReq(OfResource("meta", type, id)); that will match the library/notif addon, and return the results
 
-Complex interactions such:
+Complex interactions:
 
 * marking notifs as dimissed
 * marking videos as watched
