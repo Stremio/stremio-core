@@ -135,11 +135,7 @@
 
 ## TODO
 
-
 * all issues to github; take into account iOS notes too
-
-* notifications in library view? how will that be implemented?
-	The LibAddon already has notification info, it just has to return it
 
 * TO GITHUB: Document PlayerMiddleware design, remove it from this file
 * document PlayerPreferences and etc.; binging, saving library item state, marking episodes watched, marking notifications seen
@@ -147,7 +143,7 @@
 
 * Open (`recommend_open`) should always pull the libitem first; this is a UX improvement, ensures we do not lose our playing status on another device if we just click before syncing on one device
 
-* Optimization: web environment: fetch to not parse JSON (twice)
+* UX: Discover UI: if we've opened an addon that is not installed, there should be an "This addon is not installed. Install now?" notification on top
 
 * Optimization: web version: CI to use a headless browser to measure load times 
 
@@ -162,31 +158,21 @@
 
 * Optimizations: run twiggy from time to time on the resulting WASM
 
-* environment implementations: return an error related to the HTTP status code, if it's not 200
-
 * document loopback actions (implicit input): `AddonsChanged->PushAddons` (if there's a conn), (as a result of Open) `ProposeLoad -> Load`; `ProposeWatchNext -> Open`; also those that are results of OpenMedia, InstallAndOpenAddon
 
 * environment: the JS side should (1) TRY to load the WASM and (2) TRY to sanity-check the environment; if it doesn't succeed, it should show an error to the user
-* ?addonOpen/InstallAndOpenAddon: another async action
-* opening a file (protocol add-ons to be considered)
 
-* we should make it so that if a session is expired, we go to the login screen; this should probably be in the app
-* think of how to do all edge cases in the user, such as pre-installing add-ons (implicit input)
-* behaviorHints - pair (key, val)
+* ?addonOpen/InstallAndOpenAddon: another async action
+
+* UX: we should make it so that if a session is expired, we go to the login screen; this should probably be in the app
 * player: implement playerPreferences and defaults behavior: picking a default subtitle/audio track; for audio, the logic should try to select your preferred language
 * player: we might benefit from refactoring the save/load stuff from userM into memoizedStorageSlot and using that
-* think of whether this could be used with the Kodi codebase to make stremio embedded
-* all the cinemeta improvements this relies on: e.g. behaviorHints.isNotReleased will affect the Detail view
 * ensure that every time a network error happens, it's properly reflected in the state; and the UI should allow to "Retry" each such operation
 * figure out pausing on minimize/close; this should be handled in the app; probably like this: when closing/minimizing the window, pause if state is playing
 * refactor: consider splitting Environment into Storage and Fetcher; and maybe take an extra AddonsClient in
 * JS Side: All errors or warnings that come as actions should be reported to sentry
 * more manual/automated tests: ensure that when UserMiddlewareFatal happens, it is reported
 * fuzzing all addons: load all addons (addonscollection, addonsofficialcollection), request all catalogs, then all metas and then all streams; that way, we find if anything returned by the addons is unserializable by the types crate
-* UX: Discover UI: if we've opened an addon that is not installed, there should be an "This addon is not installed. Install now?" notification on top
-
-* refactor: consider using [Url](https://docs.rs/url_serde/0.2.0/url_serde/) for `transport_url`, addon `logo`/`poster`, meta `poster`/`logo`/`background`, stream `url`/`external_url`
-
 
 work estimation, hours: 24 userM, 12 addonM + transport, 10 legacy transport, 8 refactors, 3 catalogFiltered, 6 detail/streamselect, 24 lib/notif addon, 8 playerM, 8 open, 8 openMedia, 12 others, 10 tests: 127 = 13 weekends assumming 10 hours per weekend = 6 weeks
 
