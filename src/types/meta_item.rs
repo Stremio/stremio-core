@@ -38,8 +38,11 @@ pub struct MetaDetail {
     pub videos: Vec<Video>,
     // This is a video id; the case of the video not being in .videos must be handled at runtime
     pub featured_vid: Option<String>,
+    // @TODO: decide between HashMap or a Vec(String, String)
     // @TODO: consider using a URL type
-    pub website: Option<String>,
+    // NOTE: this is also used instead of "website"
+    #[serde(default)]
+    pub external_urls: Vec<(String, String)>,
     // @TODO use some ISO language type
     //pub language: Option<String>,
     // @TODO crew
