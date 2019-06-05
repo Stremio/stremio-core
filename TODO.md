@@ -213,64 +213,6 @@ figure out whether we need a settings container/middleware in stremio-state-ng; 
 	also think about which ones have to be applied in the state container itself
 	https://github.com/Stremio/labs/issues/20
 
-### All Settings
-
-Settings can be stored in 4 places: localStorage, user, addonCollection, server
-
-language: currently user, considering localStorage
-autoplay_next_video: localStorage
-
-player_mpv_hwdec: localStorage; considering Shell
-player_mpv_cache_size: localStorage; considering Shell
-player_mpv_separate_window: localStorage; considering Shell
-player_esc_exits_fullscreen: localStorage
-player_pause_on_minimize: localStorage
-player_use_external: localStorage
-
-player_default_external: localStorage; consider introducing a new setings location "shell", and store this one there
-
-server_cache_location: server
-server_cache_size: server
-server_torrent_profile: server
-
-server_fallback_url: localStorage
-
-show_ep_synnopsis: localStorage; could be addonCollection (cinemeta flag)
-subtitles_language: localStorage
-subtitles_size: localStorage
-subtitles_fgcolor: localStorage
-subtitles_outline_color: localStorage
-subtitles_background: localStorage
-
-autoplay_addon: addonCollection: this will be an `autoplay` flag for each addon in the collection; that, combined with the order of the addons in the collection, will determine autoplay behavior; the flag may contain details, such as `{ onlyGroups: ["hd"] }` (more about groups: https://github.com/Stremio/stremio/issues/524)
-
-Notifications will be handled through the User Panel
-
-
-## User middleware:
-...
-
-consider: UserChanged / AddonCollectionChanged
-
-UserOp (Login, Signup, Logout, PushAddons, PullAddons)
-RemoveAddon/InstallAddon -> only does things locally and emits AddonCollectionChanged; the app should invoke PushAddons if it's online
-
-error origins
-* .load() failed: unrecoverable: UserFatal
-* pulling/pushing addons failed (non fatal): UserOpWarning(action, err)
-* Login/Signup failed (needs user feedback): UserOpError(action, err); needs to preserve API error though
-
-can be generalized to EnvError, APIError (it will be nice if we can distinct between fetch and storage errors)
-
-All errors should be sent to Sentry, and all warnings should be displayed to the user, but we should NOT attempt to do stuff when the user is offline (should not attempt to sync addons and etc.)
-
-Load -> LoadWithContext(Context{ Option<user>, addons }, ...)
-
-how to protect against race conditions where the responses of requests made with prev authKey arrive? maybe just take a `to_owned()`
-of the auth key in the beginning, and only persist if the auth key matches
-
-how/whether to trigger pull addons on user login? sounds like we should, and we should treat it as one operation
-
 
 ## Player (player spec wrapper) middleware
 
@@ -316,29 +258,7 @@ Also the Load actions that are translated to Aggr requests will be responsible f
 
 Since it knows the current library item, it can also attach a “session ID” to player messages are they’re passed along; this could be used in the reducers to prevent races 
 
-## Library/Notifications middleware:
-
-It's job is to handle actions that intend to change LibraryItem/NotifItem objects, do those changes/syncs and emit whats going on
-ItemUpdated(ID, we have to have a result here, whether the libitem synced successfully)
-SyncCompleted
-
-The reducer should handle ItemUpdated(...)
-
-Final reducers will be catalog, library, notifications, detail, player, settings, intro
-
-player reducer should accurately reflect states like subtitles (from addons) or subtitle files (vtt) loading
-
 ### continue watching
-
-show an item if `item.state.video_id != item._id` and `timeOffset == 0` and there is a `video_id`; the goal is to show series that you have a next ep of
-resetting state should work like this: if there is no next video, reset `video_id` to null; 
-first sort by the date of the first notification, second sort by lastWatched; the goal here is to show items with notifications (if overallTimeWatched > 0)
-
-the classic reason to show an item in continue watching is if `(!removed || temp) && timeOffset > 0`; extend that by also requiring `timeOffset < duration*0.95`
-
-All of this should be defined in `lib_item.is_in_continue_watching()`
-
-"So that if you finish an episode, and the item is auto set to the next one, it should show; can be implemented via an edge case if time offset is 0 but time watched is high, and video of is set, show it" - from email notes; pretty much says the same thing
 
 ## another middleware for open, openMedia, openAddonURL
 
@@ -350,7 +270,6 @@ needs to take installationID as an arg
 
 every event needs to have a seq number and a session
 
-
 ------
 
 
@@ -360,21 +279,6 @@ LoadCatalog -> (user middleware does this) WithUser(user, addons, LoadCatalog) -
 The reducer, upon a LoadCatalog, should .clone() the action into it's state, and then discard any AddonRequest/AddonResponse that doesn't match that
 
 # Routes
-
-Presumes the following reducers
-
-0: CatalogsGrouped (for board)
-1: CatalogsFilteredWithPreview (for discover); @TODO: this might be two separate reducers: CatalogsFiltered, CatalogsFilteredPreview
-2: CatalogsGrouped or Search (for search)
-3: Detail (for detail)
-4: Streams (for detail)
-5: CatalogsFiltered (for library)
-6: Notifications (for notifications; could be specific: CatalogsNotifGrouped)
-7: AddonCatalog
-8: Player
-9: Settings
-
-@TODO figure reload/force policies for all of these; for now, we'll just always load everything (naively)
 
 ### ?apiURL
 
@@ -405,23 +309,6 @@ If, for some reason, we use a `type` that's not available, the particular addon 
 
 @TODO routing problem: if /discover is opened, we need to auto-select some (type, catalog, filters); we might just hardcode Cinemeta's top and always go to that
 
-### /detail/:type/:id/:videoID?
-
-Dispatch LoadDetail(3, type, id) -> AddonAggrReq(OfResource("meta", type, id))
-if videoID, dispatch LoadStreams(4, type, id, videoID) -> AddonAggrReq(OfResource("stream", type, videoID)) ; this also needs to read the last selected stream from storage
-
-The Library item and the notifications will be loaded through the AddonAggrReq(OfResource("meta", type, id)); that will match the library/notif addon, and return the results
-
-Complex interactions:
-
-* marking notifs as dimissed
-* marking videos as watched
-* libItem: removing/adding
-* libItem: changing whether we receive a notification
-
-Since we generate all that from `AddonAggrReq(OfResource("meta", type, id))`, we should trigger a refresh somehow that overrides the memoization for the notif/library stuff
-
-
 ### /library/:type
 
 Dispatch Load(CatalogFiltered(type, "stremio://library", "library", { library: 1 })) -> AddonAggrReq(OfAddon("stremio://library", "catalogs", type, "library", { library: 1 })) but match against library addon
@@ -447,18 +334,3 @@ Dispatch Load(Player(type, id, videoId, streamSerialized)) -> this will trigger 
 	another one will be to load the libitem/notifications
 	the player middleware should also request subtitles from the add-on system (AddonAggrReq(OfResource("subtitles", meta, id)))
 	the player middleware should also keep an internal state of what the player is doing, and persist libitem/last played stream
-
-### /calendar
-
-@TODO
-
-### /intro
-
-@TODO
-
-### /settings
-
-We need ot load the existing settings (settingsmiddleware might hold them anyway)
-and we have to try to connect to the streaming server
-
-@TODO
