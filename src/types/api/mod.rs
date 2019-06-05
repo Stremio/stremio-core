@@ -32,6 +32,7 @@ pub enum APIRequest {
     #[serde(rename_all = "camelCase")]
     AddonCollectionGet {
         auth_key: AuthKey,
+        update: bool,
     },
     #[serde(rename_all = "camelCase")]
     AddonCollectionSet {

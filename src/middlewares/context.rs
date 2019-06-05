@@ -51,7 +51,10 @@ impl UserStorage {
             ActionUser::Login { email, password } => APIRequest::Login { email, password },
             ActionUser::Register { email, password } => APIRequest::Register { email, password },
             ActionUser::Logout => APIRequest::Logout { auth_key: key? },
-            ActionUser::PullAddons => APIRequest::AddonCollectionGet { auth_key: key? },
+            ActionUser::PullAddons => APIRequest::AddonCollectionGet {
+                auth_key: key?,
+                update: false,
+            },
             ActionUser::PushAddons => APIRequest::AddonCollectionSet {
                 auth_key: key?,
                 addons: self.addons.to_owned(),
@@ -199,6 +202,7 @@ impl<T: Environment + 'static> ContextMiddleware<T> {
                     .and_then(move |AuthResponse { key, user }| {
                         let pull_req = APIRequest::AddonCollectionGet {
                             auth_key: key.to_owned(),
+                            update: true,
                         };
                         Self::api_fetch::<CollectionResponse>(&api_url, pull_req).map(
                             move |CollectionResponse { addons, .. }| UserStorage {
