@@ -153,7 +153,6 @@
 
 * contextM: `last_modified` for addons, prevent race conditions by updating `last_modified` each time we modify; consider sequence numbers too
 * contextM: upgrade addons when doing the first pull (by sending the relevant args to addonCollectionGet)
-* contextM: settings
 
 * handle loading collections in the addonM
 * test if addoncollection can be parsed and understood, once the middleware(s) can retrieve collections
@@ -201,19 +200,6 @@ NotifDismiss id
 PlayerSetProp
 PlayerCommand
 
-## Settings middleware
-
-(or this could be a part of the ContextM, formerly known as UserM)
-
-It will persist settings in storage
-
-figure out whether we need a settings container/middleware in stremio-state-ng; check list of settings, check which ones are user synced
-	think which ones can actually be storred as addon flags
-	ensure there's a simple, usable and global pattern for settings
-	also think about which ones have to be applied in the state container itself
-	https://github.com/Stremio/labs/issues/20
-
-
 ## Player (player spec wrapper) middleware
 
 LibItemPlayerSave (will be consumed by library addon middleware)
@@ -258,25 +244,7 @@ Also the Load actions that are translated to Aggr requests will be responsible f
 
 Since it knows the current library item, it can also attach a “session ID” to player messages are they’re passed along; this could be used in the reducers to prevent races 
 
-### continue watching
-
-## another middleware for open, openMedia, openAddonURL
-
-@TODO
-
-## Analytics sink:
-
-needs to take installationID as an arg
-
-every event needs to have a seq number and a session
-
-------
-
-
-Initial flow to be implemented:
-LoadCatalog -> (user middleware does this) WithUser(user, addons, LoadCatalog) -> AddonResponse
-
-The reducer, upon a LoadCatalog, should .clone() the action into it's state, and then discard any AddonRequest/AddonResponse that doesn't match that
+----
 
 # Routes
 
