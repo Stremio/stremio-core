@@ -132,8 +132,13 @@
 * https://llogiq.github.io/2017/06/01/perf-pitfalls.html if we ever need optimizations; we do `to_owned` quite a lot, maybe some of those can be avoided; `Cow<>` sounds good too for large collections and etc.; we likely won't
 * spec: notifItems: rethink that spec, crystallize it
 * decide: complex async pieces of logic: open, detectFromURL, openMedia; those should be a middleware or just separate async functions; detectFromURL/openMedia are user-agnostic, but open is not; if it's an async function used internally by the middleware, it's still OK cause we won't make the stream requests again if we go to the UI (cause of the memoization); decided: should be separate functions `recommend_open` and`recommend_open_media`, that get invoked by some middleware (prob ContextM)
+* refactor: consider splitting Environment into Storage and Fetcher; and maybe take an extra AddonsClient in; won't do it: there's no point of it, also all methods are intended to be static cause that way we ensure it's a singleton
+
 
 ## TODO
+
+* Optimization: web version: CI to use a headless browser to measure load times
+* integration testing plan; some e2e tests (e.g. player, settings, login/logout, libitem sync) will be nice
 
 * all issues to github; take into account iOS notes too
 
@@ -144,15 +149,13 @@
 * Open (`recommend_open`) should always pull the libitem first; this is a UX improvement, ensures we do not lose our playing status on another device if we just click before syncing on one device
 
 * UX: Discover UI: if we've opened an addon that is not installed, there should be an "This addon is not installed. Install now?" notification on top
-
-* Optimization: web version: CI to use a headless browser to measure load times 
-
-* handle loading collections in the addonM; detectFromURL
+	ContainerFiltered can have is_addon_installed
 
 * contextM: `last_modified` for addons, prevent race conditions by updating `last_modified` each time we modify; consider sequence numbers too
 * contextM: upgrade addons when doing the first pull (by sending the relevant args to addonCollectionGet)
 * contextM: settings
 
+* handle loading collections in the addonM
 * test if addoncollection can be parsed and understood, once the middleware(s) can retrieve collections
 * addon catalog reducer, actions
 
@@ -169,12 +172,9 @@
 * player: we might benefit from refactoring the save/load stuff from userM into memoizedStorageSlot and using that
 * ensure that every time a network error happens, it's properly reflected in the state; and the UI should allow to "Retry" each such operation
 * figure out pausing on minimize/close; this should be handled in the app; probably like this: when closing/minimizing the window, pause if state is playing
-* refactor: consider splitting Environment into Storage and Fetcher; and maybe take an extra AddonsClient in
-* JS Side: All errors or warnings that come as actions should be reported to sentry
-* more manual/automated tests: ensure that when UserMiddlewareFatal happens, it is reported
+* JS Side: All errors or warnings that come as actions should be reported to sentry; including UserMiddlewareFatal
 * fuzzing all addons: load all addons (addonscollection, addonsofficialcollection), request all catalogs, then all metas and then all streams; that way, we find if anything returned by the addons is unserializable by the types crate
 
-work estimation, hours: 24 userM, 12 addonM + transport, 10 legacy transport, 8 refactors, 3 catalogFiltered, 6 detail/streamselect, 24 lib/notif addon, 8 playerM, 8 open, 8 openMedia, 12 others, 10 tests: 127 = 13 weekends assumming 10 hours per weekend = 6 weeks
 
 ---------
 
