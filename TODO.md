@@ -142,23 +142,12 @@
 
 * all issues to github; take into account iOS notes too
 
-* TO GITHUB: Document PlayerMiddleware design, remove it from this file
 * document PlayerPreferences and etc.; binging, saving library item state, marking episodes watched, marking notifications seen
 	mode of operation: either with a libitem, or without one
 
 * Open (`recommend_open`) should always pull the libitem first; this is a UX improvement, ensures we do not lose our playing status on another device if we just click before syncing on one device
 
-* UX: Discover UI: if we've opened an addon that is not installed, there should be an "This addon is not installed. Install now?" notification on top
-	ContainerFiltered can have is_addon_installed
-
 * contextM: `last_modified` for addons, prevent race conditions by updating `last_modified` each time we modify; consider sequence numbers too
-* contextM: upgrade addons when doing the first pull (by sending the relevant args to addonCollectionGet)
-
-* handle loading collections in the addonM
-* test if addoncollection can be parsed and understood, once the middleware(s) can retrieve collections
-* addon catalog reducer, actions
-
-* Optimizations: run twiggy from time to time on the resulting WASM
 
 * document loopback actions (implicit input): `AddonsChanged->PushAddons` (if there's a conn), (as a result of Open) `ProposeLoad -> Load`; `ProposeWatchNext -> Open`; also those that are results of OpenMedia, InstallAndOpenAddon
 
@@ -168,7 +157,6 @@
 
 * UX: we should make it so that if a session is expired, we go to the login screen; this should probably be in the app
 * player: implement playerPreferences and defaults behavior: picking a default subtitle/audio track; for audio, the logic should try to select your preferred language
-* player: we might benefit from refactoring the save/load stuff from userM into memoizedStorageSlot and using that
 * ensure that every time a network error happens, it's properly reflected in the state; and the UI should allow to "Retry" each such operation
 * figure out pausing on minimize/close; this should be handled in the app; probably like this: when closing/minimizing the window, pause if state is playing
 * JS Side: All errors or warnings that come as actions should be reported to sentry; including UserMiddlewareFatal

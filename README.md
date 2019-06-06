@@ -30,6 +30,12 @@ cargo clippy
 cargo fmt
 ```
 
+## Optimizing WASM output
+
+WASM output binary can get large, especially if we derive Serialize/Deserialize in places we don't need to
+
+We can optimize it by running twiggy: `twiggy top ..._bg.wasm` and seeing what the biggest code size offenders are
+
 
 ## Adding new actions
 
