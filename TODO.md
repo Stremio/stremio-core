@@ -134,105 +134,7 @@
 * decide: complex async pieces of logic: open, detectFromURL, openMedia; those should be a middleware or just separate async functions; detectFromURL/openMedia are user-agnostic, but open is not; if it's an async function used internally by the middleware, it's still OK cause we won't make the stream requests again if we go to the UI (cause of the memoization); decided: should be separate functions `recommend_open` and`recommend_open_media`, that get invoked by some middleware (prob ContextM)
 * refactor: consider splitting Environment into Storage and Fetcher; and maybe take an extra AddonsClient in; won't do it: there's no point of it, also all methods are intended to be static cause that way we ensure it's a singleton
 
-
-## TODO
-
-* Optimization: web version: CI to use a headless browser to measure load times
-* integration testing plan; some e2e tests (e.g. player, settings, login/logout, libitem sync) will be nice
-
-* all issues to github; take into account iOS notes too
-
-* document PlayerPreferences and etc.; binging, saving library item state, marking episodes watched, marking notifications seen
-	mode of operation: either with a libitem, or without one
-
-* Open (`recommend_open`) should always pull the libitem first; this is a UX improvement, ensures we do not lose our playing status on another device if we just click before syncing on one device
-
-* contextM: `last_modified` for addons, prevent race conditions by updating `last_modified` each time we modify; consider sequence numbers too
-
-* document loopback actions (implicit input): `AddonsChanged->PushAddons` (if there's a conn), (as a result of Open) `ProposeLoad -> Load`; `ProposeWatchNext -> Open`; also those that are results of OpenMedia, InstallAndOpenAddon
-
-* environment: the JS side should (1) TRY to load the WASM and (2) TRY to sanity-check the environment; if it doesn't succeed, it should show an error to the user
-
-* ?addonOpen/InstallAndOpenAddon: another async action
-
-* UX: we should make it so that if a session is expired, we go to the login screen; this should probably be in the app
-* player: implement playerPreferences and defaults behavior: picking a default subtitle/audio track; for audio, the logic should try to select your preferred language
-* ensure that every time a network error happens, it's properly reflected in the state; and the UI should allow to "Retry" each such operation
-* figure out pausing on minimize/close; this should be handled in the app; probably like this: when closing/minimizing the window, pause if state is playing
-* JS Side: All errors or warnings that come as actions should be reported to sentry; including UserMiddlewareFatal
-* fuzzing all addons: load all addons (addonscollection, addonsofficialcollection), request all catalogs, then all metas and then all streams; that way, we find if anything returned by the addons is unserializable by the types crate
-
-
----------
-
-## Actions from the user
-
-Load
-	works for opening catalogs/detail/load/search
-Unload
-TryLogin
-TrySignup
-TryOpen libItem|metaItem intent videoId?
-TryOpenURL
-LibAdd type id
-LibRemove type id
-LibRewind type id
-LibDismissAllNotifs type id
-LibSetReceiveNotifs type id
-LibMarkWatched type id
-LibMarkVideoWatched type id videoId true|false
-TryAddonRemove
-TryAddonAdd
-TryAddonOpenURL - consider if this should be merged with TryOpenURL
-NotifDismiss id
-PlayerSetProp
-PlayerCommand
-
-## Player (player spec wrapper) middleware
-
-LibItemPlayerSave (will be consumed by library addon middleware)
-alternatively, LibItemSetTime/LibItemSetVideoID
-... everything from the player spec
-ProposeWatchNext
-this should also start loading the subtitles from addons and such
-all/most player actions should carry context in some way (stream, or at least stream ID, and maybe video ID, item ID)
-this middleware uses Storage to persist PlayerPreferences (volume, subtitles, subtitles size, etc.); we must keep preferences for last N watched `(item_id, video_id)`
-the algo to do this is simple; when we play something, we bump it to the end of the array; when we need to add something, we add to the end and pop from the middle (if `len>N`)
-This should save the selected `(video_id, stream)` for the given `item_id`), when we start playing
-we also need to load `meta` to be able to `ProposeWatchNext` (meant to be handled by asking the user or by implicit input)
-
-upon a LoadPlayer, we load the PlayerPreferences send a command to the player to select the previously selected subtitles ID (if any)
-if we get a AddonResp for subtitles, we send a addExtraSubtitles command
-if we get an AddonsFinished, we try to select previously selected ID as well (if we haven't succeeded in doing so already)
-if we don't have a selected ID at all, we should go with the default language
-
-for player messages, it would be very nice if we had some identifier of the current stream, so that we can discard messages coming from a previous stream
-
-@TODO NOTE: since we need easy immediate access to the preferences, memoization is the wrong pattern here and we need statefulness
-
-Please note, there'd be no player reducer for now, as all of the state updates come in the form of player `propValue` or `propChanged` actions, which is very simple to reduce
-
-all of the state: PlayerImplInstance, PlayerPreferences, ItemId/VideoId/MetaDetailed/StreamId
-
-figure out state container + player impl + subtitles hash (requesting /subtitles)
-	can be done by the player impl emitting an event for playback started with extra optional prop `opensubHash`
-
-### More thoughts on Player
-
-It will be very stateful, so it should be named Actor perhaps?
-
-It will "enclose" the player implementation, sending all control msgs into it and taking all observe messages along the chain
-
-It’s job will be to load the library item, mutate it as the player advances; when the player starts playing it should request subtitles from the addon system (for this, it should keep a copy from all subtitle addons that’s changed on every LoadWithUser(Player...)) ) and do addExtraSubtitles and perhaps set selected subtitles when applying PlayerPreferences; 
-Call addExtraSubtiles with a concatted result from each addon; the result actually starts with the `stream.subtitles` (if any) 
-
-It should also mutate and persist PlayerPreferences itself
-
-Also the Load actions that are translated to Aggr requests will be responsible for loading the meta when the player loads 
-
-Since it knows the current library item, it can also attach a “session ID” to player messages are they’re passed along; this could be used in the reducers to prevent races 
-
-----
+---
 
 # Routes
 
@@ -272,17 +174,6 @@ Dispatch Load(CatalogFiltered(type, "stremio://library", "library", { library: 1
 If we do addonTransportURL+OfAddon, and we save the last selected `type` in the UI, If, for some reason, we use a `type` that's not available, the particular addon will return an error, which will be transformed into Loadable::Message and handled elegantly 
 
 NOTE: the library addon manifest will include catalogs only for the types of the items the user has
-
-
-### Notifications (not a route, but a popover)
-
-Dispatch Load(Notifications) -> AddonAggrReq(Catalogs({ notifs: 1 }))
-
-### /addons/:category/:type?
-
-Category is Official, ThirdParty, Installed
-
-Dispatch Load(AddonCatalog(category, type)) -> middleware loads latest collection of the given category and filters by type 
 
 ### /player/:type/:id/:videoId/:streamSerialized
 
