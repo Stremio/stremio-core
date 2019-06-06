@@ -9,7 +9,7 @@ mod tests {
     use crate::addon_transport::*;
     use crate::middlewares::*;
     use crate::state_types::*;
-    use crate::types::addons::{ResourceRef, ResourceRequest, ResourceResponse};
+    use crate::types::addons::{ResourceRef, ResourceRequest, ResourceResponse, Descriptor};
     use enclose::*;
     use futures::future::lazy;
     use futures::{future, Future};
@@ -155,6 +155,7 @@ mod tests {
                     match res {
                         Err(e) => panic!("failed getting metadata {:?}", e),
                         Ok(ResourceResponse::Meta { meta }) => {
+                            //dbg!(&meta.videos);
                             assert!(meta.videos.len() > 0, "has videos")
                         }
                         _ => panic!("unexpected response"),
@@ -165,18 +166,35 @@ mod tests {
     }
 
     #[test]
+    fn addon_collection() {
+        run(lazy(|| {
+            let collection_url = "https://api.strem.io/addonscollection.json";
+            let req = Request::get(collection_url).body(()).unwrap();
+            Env::fetch_serde::<_, Vec<Descriptor>>(req)
+                .then(|res| {
+                    match res {
+                        Err(e) => panic!("failed getting addon collection {:?}", e),
+                        Ok(collection) => {
+                            assert!(collection.len() > 0, "has addons")
+                        }
+                    };
+                    future::ok(())
+                })
+        }));
+    }
+
+    #[test]
     fn libitems() {
         use crate::libaddon::LibAddon;
 
-        let auth_key = "=".into();
+        let auth_key = "".into();
 
         run(lazy(|| {
             let addon = LibAddon::<Env>::with_authkey(auth_key);
-            addon.sync_with_api()
-                .then(|stats| {
-                    dbg!(&stats.unwrap());
-                    future::ok(())
-                })
+            addon.sync_with_api().then(|_stats| {
+                //dbg!(&stats.unwrap());
+                future::ok(())
+            })
         }));
     }
 
