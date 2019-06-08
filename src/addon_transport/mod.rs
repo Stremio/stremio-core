@@ -4,7 +4,7 @@ use futures::future;
 use std::marker::PhantomData;
 
 mod legacy;
-pub use self::legacy::AddonLegacyTransport;
+use self::legacy::AddonLegacyTransport;
 
 pub const MANIFEST_PATH: &str = "/manifest.json";
 pub const LEGACY_PATH: &str = "/stremio/v1";
@@ -20,10 +20,10 @@ pub struct AddonHTTPTransport<T: Environment> {
     transport_url: String,
 }
 impl<T: Environment> AddonHTTPTransport<T> {
-    pub fn from_url(transport_url: &str) -> Self {
+    pub fn from_url(url: &str) -> Self {
         AddonHTTPTransport {
             env: PhantomData,
-            transport_url: transport_url.to_owned(),
+            transport_url: url.to_owned(),
         }
     }
 }
