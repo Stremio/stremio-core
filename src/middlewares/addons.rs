@@ -46,13 +46,7 @@ impl<T: Environment> AddonsMiddleware<T> {
         let url = &req.transport_url;
         let req_fut = match self.extra_addons.borrow().get(url) {
             Some(addon) => addon.get(&req.resource_ref),
-            None if url.ends_with(MANIFEST_PATH) => {
-                AddonHTTPTransport::<T>::from_url(url).get(&req.resource_ref)
-            }
-            None if url.ends_with(LEGACY_PATH) => {
-                AddonLegacyTransport::<T>::from_url(url).get(&req.resource_ref)
-            }
-            _ => Box::new(future::err("invalid transport_url".into())),
+            None => AddonHTTPTransport::<T>::from_url(url).get(&req.resource_ref),
         };
         let fut = req_fut.then(move |res| {
             emit(&match res {

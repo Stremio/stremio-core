@@ -15,6 +15,7 @@ pub enum ActionLoad {
     // @TODO most of these values need content
     AddonCatalog,
 }
+// @TODO: drop this from here
 impl ActionLoad {
     pub fn addon_aggr_req(&self) -> Option<AggrRequest> {
         match self {

@@ -29,6 +29,10 @@ impl<T: Environment> AddonHTTPTransport<T> {
 }
 impl<T: Environment> AddonInterface for AddonHTTPTransport<T> {
     fn get(&self, resource_ref: &ResourceRef) -> EnvFuture<ResourceResponse> {
+        if self.transport_url.ends_with(LEGACY_PATH) {
+            return AddonLegacyTransport::<T>::from_url(&self.transport_url).get(&resource_ref);
+        }
+
         let url = self
             .transport_url
             .replace(MANIFEST_PATH, &resource_ref.to_string());
@@ -38,6 +42,10 @@ impl<T: Environment> AddonInterface for AddonHTTPTransport<T> {
         }
     }
     fn manifest(&self) -> EnvFuture<Manifest> {
+        if self.transport_url.ends_with(LEGACY_PATH) {
+            return AddonLegacyTransport::<T>::from_url(&self.transport_url).manifest();
+        }
+
         match Request::get(&self.transport_url).body(()) {
             Ok(r) => T::fetch_serde::<_, Manifest>(r),
             Err(e) => Box::new(future::err(e.into())),
