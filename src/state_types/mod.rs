@@ -28,7 +28,8 @@ use crate::types::addons::{AggrRequest, ResourceRequest};
 use futures::future;
 use futures::future::Future;
 // @TODO move loadable
-// @TODO type aliases like in catalogs
+// @TODO type aliases like in catalogs (Group, etc.)
+// @TODO Arc
 type Group<Item> = (ResourceRequest, Loadable<Vec<Item>, String>);
 pub struct AddonAggr<Item> {
     // @TODO generic err type
@@ -51,8 +52,14 @@ impl<Item> Update for AddonAggr<Item> {
     fn update(&mut self, msg: &Msg) -> Effects {
         match msg {
             Msg::Internal(Internal::AddonResponse(req, result)) => {
-                // @TODO
-                Effects::none()
+                if let Some(idx) = self.groups.iter().position(|g| &g.0 == req) {
+                    // we may need try_into on ResourceResponse
+                    let group_content = Loadable::Loading; // @TODO
+                    self.groups[idx] = (req.to_owned(), group_content);
+                    Effects::none()
+                } else {
+                    Effects::none().unchanged()
+                }
             }
             _ => Effects::none().unchanged(),
         }
