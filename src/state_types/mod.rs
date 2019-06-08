@@ -27,6 +27,7 @@ pub trait UpdateWithCtx {
 use crate::types::addons::{AggrRequest, ResourceRequest};
 use futures::future;
 use futures::future::Future;
+use msg::Internal::*;
 // @TODO move loadable
 // @TODO type aliases like in catalogs (Group, etc.)
 // @TODO Arc
@@ -51,7 +52,7 @@ impl<Item> AddonAggr<Item> {
 impl<Item> Update for AddonAggr<Item> {
     fn update(&mut self, msg: &Msg) -> Effects {
         match msg {
-            Msg::Internal(Internal::AddonResponse(req, result)) => {
+            Msg::Internal(AddonResponse(req, result)) => {
                 if let Some(idx) = self.groups.iter().position(|g| &g.0 == req) {
                     // we may need try_into on ResourceResponse
                     let group_content = Loadable::Loading; // @TODO
@@ -72,8 +73,8 @@ fn addon_get<Env: Environment + 'static>(req: &ResourceRequest) -> Effect {
         Env::addon_transport(&req.base)
             .get(&req.path)
             .then(move |res| match res {
-                Ok(resp) => future::ok(Internal::AddonResponse(req, Ok(resp)).into()),
-                Err(e) => future::err(Internal::AddonResponse(req, Err(e.to_string())).into()),
+                Ok(resp) => future::ok(AddonResponse(req, Ok(resp)).into()),
+                Err(e) => future::err(AddonResponse(req, Err(e.to_string())).into()),
             }),
     )
 }
