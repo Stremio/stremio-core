@@ -105,8 +105,8 @@ pub struct CatalogFiltered {
     pub item_pages: Vec<LoadableItems>,
     pub catalogs: Vec<ManifestCatalog>,
     pub selected: Option<ResourceRequest>,
-    // @TODO catalogs to be { is_selected, resource_ref, name, type }
-    // is_selected will be whether the resource_ref matches selected, excluding the page
+    // @TODO catalogs to be { is_selected, path, name, type }
+    // is_selected will be whether the path matches selected, excluding the page
     // @TODO: extra (filters)
     // @TODO pagination; this can be done by incrementing skip in the ResourceRef when requesting
     // the next page; in LoadWithCtx, when we see that the request is for the next page, we add

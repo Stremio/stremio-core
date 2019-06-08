@@ -69,8 +69,8 @@ fn addon_get<Env: Environment + 'static>(req: &ResourceRequest) -> Effect {
     // we will need that, cause we have to move it into the closure
     let req = req.clone();
     Box::new(
-        Env::addon_transport(&req.transport_url)
-            .get(&req.resource_ref)
+        Env::addon_transport(&req.base)
+            .get(&req.path)
             .then(move |res| match res {
                 Ok(resp) => future::ok(Internal::AddonResponse(req, Ok(resp)).into()),
                 Err(e) => future::err(Internal::AddonResponse(req, Err(e.to_string())).into()),

@@ -18,8 +18,8 @@ pub struct Descriptor {
 
 #[derive(Debug, Deserialize, Serialize, Clone, PartialEq, Eq)]
 pub struct ResourceRequest {
-    pub transport_url: TransportUrl,
-    pub resource_ref: ResourceRef,
+    pub base: TransportUrl,
+    pub path: ResourceRef,
 }
 
 #[derive(Deserialize, Serialize, Clone, Debug)]
@@ -68,8 +68,8 @@ impl AggrRequest {
                             .iter()
                             .filter(|cat| cat.is_extra_supported(&extra))
                             .map(move |cat| ResourceRequest {
-                                transport_url: transport_url.to_owned(),
-                                resource_ref: ResourceRef {
+                                base: transport_url.to_owned(),
+                                path: ResourceRef {
                                     resource: "catalog".to_owned(),
                                     type_name: cat.type_name.to_owned(),
                                     id: cat.id.to_owned(),
@@ -80,14 +80,14 @@ impl AggrRequest {
                     .flatten()
                     .collect()
             }
-            AggrRequest::AllOfResource(resource_ref) => {
-                // filter all addons that match the resource_ref
+            AggrRequest::AllOfResource(path) => {
+                // filter all addons that match the path
                 addons
                     .iter()
-                    .filter(|addon| addon.manifest.is_supported(&resource_ref))
+                    .filter(|addon| addon.manifest.is_supported(&path))
                     .map(|addon| ResourceRequest {
-                        transport_url: addon.transport_url.to_owned(),
-                        resource_ref: resource_ref.to_owned(),
+                        base: addon.transport_url.to_owned(),
+                        path: path.to_owned(),
                     })
                     .collect()
             }

@@ -98,8 +98,8 @@ mod tests {
         );
 
         let resource_req = ResourceRequest {
-            transport_url: "https://v3-cinemeta.strem.io/manifest.json".to_owned(),
-            resource_ref: ResourceRef::without_extra("catalog", "movie", "top"),
+            base: "https://v3-cinemeta.strem.io/manifest.json".to_owned(),
+            path: ResourceRef::without_extra("catalog", "movie", "top"),
         };
         run(lazy(enclose!((muxer, resource_req) move || {
             muxer.dispatch_load_to(&ContainerId::Discover, &ActionLoad::CatalogFiltered { resource_req });

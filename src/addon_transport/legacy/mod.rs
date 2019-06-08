@@ -103,13 +103,13 @@ impl<'a, T: Environment> AddonLegacyTransport<'a, T> {
 }
 
 impl<'a, T: Environment> AddonInterface for AddonLegacyTransport<'a, T> {
-    fn get(&self, resource_ref: &ResourceRef) -> EnvFuture<ResourceResponse> {
-        let fetch_req = match build_legacy_req(self.transport_url, resource_ref) {
+    fn get(&self, path: &ResourceRef) -> EnvFuture<ResourceResponse> {
+        let fetch_req = match build_legacy_req(self.transport_url, path) {
             Ok(r) => r,
             Err(e) => return Box::new(future::err(e)),
         };
 
-        match &resource_ref.resource as &str {
+        match &path.resource as &str {
             "catalog" => Box::new(
                 T::fetch_serde::<_, JsonRPCResp<Vec<MetaPreview>>>(fetch_req)
                     .and_then(map_response)
@@ -143,7 +143,7 @@ impl<'a, T: Environment> AddonInterface for AddonLegacyTransport<'a, T> {
 
 fn build_legacy_req(
     transport_url: &str,
-    resource_ref: &ResourceRef,
+    path: &ResourceRef,
 ) -> Result<Request<()>, Box<dyn Error>> {
     // Limitations of this legacy adapter:
     // * does not support subtitles
@@ -152,11 +152,11 @@ fn build_legacy_req(
     // They affect functionality very little - there are no subtitles add-ons using the legacy
     // protocol (other than OpenSubtitles, which will be ported) and there's only one
     // known legacy add-on that support search (Stremio/stremio #379)
-    let type_name = &resource_ref.type_name;
-    let id = &resource_ref.id;
-    let q_json = match &resource_ref.resource as &str {
+    let type_name = &path.type_name;
+    let id = &path.id;
+    let q_json = match &path.resource as &str {
         "catalog" => {
-            let genre = resource_ref.get_extra_first_val("genre");
+            let genre = path.get_extra_first_val("genre");
             let query = if let Some(genre) = genre {
                 json!({ "type": type_name, "genre": genre })
             } else {
@@ -175,7 +175,7 @@ fn build_legacy_req(
                     "query": query,
                     "limit": 100,
                     "sort": sort,
-                    "skip": resource_ref.get_extra_first_val("skip")
+                    "skip": path.get_extra_first_val("skip")
                         .map(|s| s.parse::<u32>().unwrap_or(0))
                         .unwrap_or(0),
                 }),
@@ -257,9 +257,9 @@ mod test {
     #[test]
     fn catalog() {
         let transport_url = "https://stremio-mixer.schneider.ax/stremioget/stremio/v1".to_owned();
-        let resource_ref = ResourceRef::without_extra("catalog", "tv", "popularities.mixer");
+        let path = ResourceRef::without_extra("catalog", "tv", "popularities.mixer");
         assert_eq!(
-            &build_legacy_req(&transport_url, &resource_ref).unwrap().uri().to_string(),
+            &build_legacy_req(&transport_url, &path).unwrap().uri().to_string(),
             "https://stremio-mixer.schneider.ax/stremioget/stremio/v1/q.json?b=eyJpZCI6MSwianNvbnJwYyI6IjIuMCIsIm1ldGhvZCI6Im1ldGEuZmluZCIsInBhcmFtcyI6W251bGwseyJsaW1pdCI6MTAwLCJxdWVyeSI6eyJ0eXBlIjoidHYifSwic2tpcCI6MCwic29ydCI6eyJwb3B1bGFyaXRpZXMubWl4ZXIiOi0xLCJwb3B1bGFyaXR5IjotMX19XX0=",
         );
     }
@@ -267,9 +267,9 @@ mod test {
     #[test]
     fn stream_imdb() {
         let transport_url = "https://legacywatchhub.strem.io/stremio/v1".to_owned();
-        let resource_ref = ResourceRef::without_extra("stream", "series", "tt0386676:5:1");
+        let path = ResourceRef::without_extra("stream", "series", "tt0386676:5:1");
         assert_eq!(
-            &build_legacy_req(&transport_url, &resource_ref).unwrap().uri().to_string(),
+            &build_legacy_req(&transport_url, &path).unwrap().uri().to_string(),
             "https://legacywatchhub.strem.io/stremio/v1/q.json?b=eyJpZCI6MSwianNvbnJwYyI6IjIuMCIsIm1ldGhvZCI6InN0cmVhbS5maW5kIiwicGFyYW1zIjpbbnVsbCx7InF1ZXJ5Ijp7ImVwaXNvZGUiOjEsImltZGJfaWQiOiJ0dDAzODY2NzYiLCJzZWFzb24iOjUsInR5cGUiOiJzZXJpZXMifX1dfQ=="
         );
     }

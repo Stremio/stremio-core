@@ -13,6 +13,17 @@ use std::convert::Into;
 use std::marker::PhantomData;
 use std::rc::Rc;
 
+// elmification:
+// AuthChanged/AddonsChangedFromPull -> CtxUpdated{ addons_changed, user_changed } OR drop it
+// AddonsChanged is pointless!
+// all the errors (UserOpError, ContextMFatal) are easy to deal with
+// but ContextMFatal will turn the state of the model to "fatal"
+// save() -> Effect
+// UserStorage and Context should be the same thing
+//
+// mutations from user op: we will either replace the whole context (Login/Register) or only update
+// the addons
+
 const USER_DATA_KEY: &str = "userData";
 const DEFAULT_API_URL: &str = "https://api.strem.io";
 lazy_static! {

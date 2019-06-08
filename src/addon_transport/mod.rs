@@ -10,7 +10,7 @@ pub const MANIFEST_PATH: &str = "/manifest.json";
 pub const LEGACY_PATH: &str = "/stremio/v1";
 
 pub trait AddonInterface {
-    fn get(&self, resource_ref: &ResourceRef) -> EnvFuture<ResourceResponse>;
+    fn get(&self, path: &ResourceRef) -> EnvFuture<ResourceResponse>;
     fn manifest(&self) -> EnvFuture<Manifest>;
 }
 
@@ -28,14 +28,14 @@ impl<T: Environment> AddonHTTPTransport<T> {
     }
 }
 impl<T: Environment> AddonInterface for AddonHTTPTransport<T> {
-    fn get(&self, resource_ref: &ResourceRef) -> EnvFuture<ResourceResponse> {
+    fn get(&self, path: &ResourceRef) -> EnvFuture<ResourceResponse> {
         if self.transport_url.ends_with(LEGACY_PATH) {
-            return AddonLegacyTransport::<T>::from_url(&self.transport_url).get(&resource_ref);
+            return AddonLegacyTransport::<T>::from_url(&self.transport_url).get(&path);
         }
 
         let url = self
             .transport_url
-            .replace(MANIFEST_PATH, &resource_ref.to_string());
+            .replace(MANIFEST_PATH, &path.to_string());
         match Request::get(&url).body(()) {
             Ok(r) => T::fetch_serde::<_, ResourceResponse>(r),
             Err(e) => Box::new(future::err(e.into())),

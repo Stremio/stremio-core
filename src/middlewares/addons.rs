@@ -43,10 +43,9 @@ impl<T: Environment> AddonsMiddleware<T> {
         }
     }
     fn for_request(&self, req: ResourceRequest, emit: Rc<DispatcherFn>) {
-        let url = &req.transport_url;
-        let req_fut = match self.extra_addons.borrow().get(url) {
-            Some(addon) => addon.get(&req.resource_ref),
-            None => AddonHTTPTransport::<T>::from_url(url).get(&req.resource_ref),
+        let req_fut = match self.extra_addons.borrow().get(&req.base) {
+            Some(addon) => addon.get(&req.path),
+            None => AddonHTTPTransport::<T>::from_url(&req.base).get(&req.path),
         };
         let fut = req_fut.then(move |res| {
             emit(&match res {
