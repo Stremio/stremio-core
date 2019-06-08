@@ -3,7 +3,7 @@ mod manifest;
 mod resource_ref;
 pub use self::manifest::*;
 pub use self::resource_ref::*;
-use crate::types::{LibItem, MetaDetail, MetaPreview, Stream};
+use crate::types::{MetaDetail, MetaPreview, Stream};
 mod manifest_tests;
 
 pub type TransportUrl = String;
@@ -34,12 +34,10 @@ pub enum ResourceResponse {
         // To support other /meta/ responses (meta extensions), we should make a MetaExt variant
         meta: MetaDetail,
     },
-    LibItems {
-        libitems: Vec<LibItem>,
-    },
     Streams {
         streams: Vec<Stream>,
     },
+    // @TODO subtitles
 }
 
 // This is going from the most general to the most concrete aggregation request
