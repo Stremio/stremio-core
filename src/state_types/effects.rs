@@ -1,7 +1,7 @@
 use super::msg::Msg;
 use futures::Future;
 
-pub type Effect = Box<Future<Item = Msg, Error = Msg>>;
+pub type Effect = Box<dyn Future<Item = Msg, Error = Msg>>;
 
 pub struct Effects {
     pub effects: Vec<Effect>,

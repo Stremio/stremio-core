@@ -1,6 +1,7 @@
 use crate::addon_transport::AddonInterface;
 use crate::types::addons::*;
 use crate::types::api::*;
+use crate::state_types::Context;
 use serde_derive::*;
 use std::error::Error;
 use std::rc::Rc;
@@ -12,12 +13,6 @@ pub use actions::*;
 // Intermediery messages
 // those are emitted by the middlewares and received by containers
 //
-#[derive(Debug)]
-pub struct Context {
-    pub user: Option<User>,
-    pub addons: Vec<Descriptor>,
-}
-
 pub enum Internal {
     LoadWithCtx(Context, ActionLoad),
     SetInternalAddon(String, Rc<dyn AddonInterface>),
