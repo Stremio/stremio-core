@@ -25,24 +25,23 @@ pub trait UpdateWithCtx {
 }
 
 use crate::types::addons::{AggrRequest, ResourceRequest};
+use futures::future;
+use futures::future::Future;
 // @TODO move loadable
 // @TODO type aliases like in catalogs
+type Group<Item> = (ResourceRequest, Loadable<Vec<Item>, String>);
 pub struct AddonAggr<Item> {
     // @TODO generic err type
-    pub groups: Vec<(ResourceRequest, Loadable<Vec<Item>, String>)>
+    pub groups: Vec<Group<Item>>
 }
 impl<Item> AddonAggr<Item> {
-    pub fn new(addons: &[Descriptor], aggr_req: &AggrRequest) -> (Self, Effects) {
-        let groups = aggr_req
+    pub fn new<Env: Environment + 'static>(addons: &[Descriptor], aggr_req: &AggrRequest) -> (Self, Effects) {
+        let (effects, groups): (Vec<_>, Vec<_>) = aggr_req
             .plan(&addons)
             .into_iter()
-            .map(|addon_req| (addon_req, Loadable::Loading))
-            .collect();
-        (
-            AddonAggr { groups },
-            // @TODO effects; we can probably do that with unzip
-            Effects::none()
-        )
+            .map(|addon_req| (addon_get::<Env>(&addon_req), (addon_req, Loadable::Loading)))
+            .unzip();
+        (AddonAggr { groups }, Effects::many(effects))
     }
 }
 impl<Item> Update for AddonAggr<Item> {
@@ -55,6 +54,18 @@ impl<Item> Update for AddonAggr<Item> {
             _ => Effects::none().unchanged()
         }
     }
+}
+fn addon_get<Env: Environment + 'static>(req: &ResourceRequest) -> Effect {
+    // we will need that, cause we have to move it into the closure
+    let req = req.clone();
+    Box::new(Env::addon_transport(&req.transport_url)
+        .get(&req.resource_ref)
+        .then(move |res| {
+            match res {
+                Ok(resp) => future::ok(Internal::AddonResponse(req, Ok(resp)).into()),
+                Err(e) => future::err(Internal::AddonResponse(req, Err(e.to_string())).into()),
+            }
+        }))
 }
 
 // @TODO everything underneath will be dropped with the Elm architecture rewrite
