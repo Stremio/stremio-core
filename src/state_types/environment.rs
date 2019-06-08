@@ -1,9 +1,9 @@
+use crate::addon_transport::{AddonHTTPTransport, AddonInterface};
+use crate::types::addons::TransportUrl;
 use futures::Future;
 use serde::de::DeserializeOwned;
 use serde::Serialize;
 use std::error::Error;
-use crate::types::addons::TransportUrl;
-use crate::addon_transport::{AddonHTTPTransport, AddonInterface};
 
 pub use http::Request;
 
@@ -18,7 +18,8 @@ pub trait Environment {
     fn get_storage<T: 'static + DeserializeOwned>(key: &str) -> EnvFuture<Option<T>>;
     fn set_storage<T: 'static + Serialize>(key: &str, value: Option<&T>) -> EnvFuture<()>;
     fn addon_transport(url: &TransportUrl) -> Box<dyn AddonInterface>
-        where Self: Sized + 'static
+    where
+        Self: Sized + 'static,
     {
         Box::new(AddonHTTPTransport::<Self>::from_url(url))
     }

@@ -7,8 +7,8 @@ pub use self::msg::*;
 mod effects;
 pub use self::effects::*;
 
-use crate::types::api::User;
 use crate::types::addons::Descriptor;
+use crate::types::api::User;
 #[derive(Debug)]
 pub struct Context {
     pub user: Option<User>,
@@ -32,10 +32,13 @@ use futures::future::Future;
 type Group<Item> = (ResourceRequest, Loadable<Vec<Item>, String>);
 pub struct AddonAggr<Item> {
     // @TODO generic err type
-    pub groups: Vec<Group<Item>>
+    pub groups: Vec<Group<Item>>,
 }
 impl<Item> AddonAggr<Item> {
-    pub fn new<Env: Environment + 'static>(addons: &[Descriptor], aggr_req: &AggrRequest) -> (Self, Effects) {
+    pub fn new<Env: Environment + 'static>(
+        addons: &[Descriptor],
+        aggr_req: &AggrRequest,
+    ) -> (Self, Effects) {
         let (effects, groups): (Vec<_>, Vec<_>) = aggr_req
             .plan(&addons)
             .into_iter()
@@ -50,22 +53,22 @@ impl<Item> Update for AddonAggr<Item> {
             Msg::Internal(Internal::AddonResponse(req, result)) => {
                 // @TODO
                 Effects::none()
-            },
-            _ => Effects::none().unchanged()
+            }
+            _ => Effects::none().unchanged(),
         }
     }
 }
 fn addon_get<Env: Environment + 'static>(req: &ResourceRequest) -> Effect {
     // we will need that, cause we have to move it into the closure
     let req = req.clone();
-    Box::new(Env::addon_transport(&req.transport_url)
-        .get(&req.resource_ref)
-        .then(move |res| {
-            match res {
+    Box::new(
+        Env::addon_transport(&req.transport_url)
+            .get(&req.resource_ref)
+            .then(move |res| match res {
                 Ok(resp) => future::ok(Internal::AddonResponse(req, Ok(resp)).into()),
                 Err(e) => future::err(Internal::AddonResponse(req, Err(e.to_string())).into()),
-            }
-        }))
+            }),
+    )
 }
 
 // @TODO everything underneath will be dropped with the Elm architecture rewrite
