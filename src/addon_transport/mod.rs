@@ -15,19 +15,19 @@ pub trait AddonInterface {
 }
 
 #[derive(Default)]
-pub struct AddonHTTPTransport<'a, T: Environment> {
+pub struct AddonHTTPTransport<T: Environment> {
     env: PhantomData<T>,
-    transport_url: &'a str,
+    transport_url: String,
 }
-impl<'a, T: Environment> AddonHTTPTransport<'a, T> {
-    pub fn from_url(transport_url: &'a str) -> Self {
+impl<T: Environment> AddonHTTPTransport<T> {
+    pub fn from_url(transport_url: &str) -> Self {
         AddonHTTPTransport {
             env: PhantomData,
-            transport_url,
+            transport_url: transport_url.to_owned(),
         }
     }
 }
-impl<'a, T: Environment> AddonInterface for AddonHTTPTransport<'a, T> {
+impl<T: Environment> AddonInterface for AddonHTTPTransport<T> {
     fn get(&self, resource_ref: &ResourceRef) -> EnvFuture<ResourceResponse> {
         let url = self
             .transport_url
@@ -38,7 +38,7 @@ impl<'a, T: Environment> AddonInterface for AddonHTTPTransport<'a, T> {
         }
     }
     fn manifest(&self) -> EnvFuture<Manifest> {
-        match Request::get(self.transport_url).body(()) {
+        match Request::get(&self.transport_url).body(()) {
             Ok(r) => T::fetch_serde::<_, Manifest>(r),
             Err(e) => Box::new(future::err(e.into())),
         }
