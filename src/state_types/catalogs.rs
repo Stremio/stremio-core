@@ -66,8 +66,8 @@ fn catalogs_reducer(state: &CatalogGrouped, msg: &Msg) -> Option<Box<CatalogGrou
             if let Some(aggr_req) = load_action.addon_aggr_req() {
                 let groups = aggr_req
                     .plan(&addons)
-                    .iter()
-                    .map(|req| Arc::new((req.to_owned(), Loadable::Loading)))
+                    .into_iter()
+                    .map(|req| Arc::new((req, Loadable::Loading)))
                     .collect();
                 Some(Box::new(CatalogGrouped { groups }))
             } else {
@@ -187,8 +187,8 @@ impl Container for Streams {
                 if let Some(aggr_req) = load_action.addon_aggr_req() {
                     let groups = aggr_req
                         .plan(&addons)
-                        .iter()
-                        .map(|req| (req.to_owned(), Loadable::Loading))
+                        .into_iter()
+                        .map(|req| (req, Loadable::Loading))
                         .collect();
                     Some(Box::new(Streams { groups }))
                 } else {

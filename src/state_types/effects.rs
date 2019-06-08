@@ -30,12 +30,12 @@ impl Effects {
         }
     }
 
-    pub fn unchanged(&mut self) -> &mut Self {
+    pub fn unchanged(mut self) -> Self {
         self.has_changed = false;
         self
     }
 
-    pub fn join(&mut self, mut x: Effects) -> &mut Self {
+    pub fn join(mut self, mut x: Effects) -> Self {
         self.has_changed = self.has_changed || x.has_changed;
         self.effects.append(&mut x.effects);
         self
