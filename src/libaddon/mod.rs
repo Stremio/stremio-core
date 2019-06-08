@@ -3,24 +3,20 @@ use crate::state_types::*;
 use crate::types::addons::{Manifest, ResourceRef, ResourceResponse};
 use crate::types::api::*;
 use crate::types::LibItem;
+use chrono::serde::ts_milliseconds;
 use chrono::{DateTime, Utc};
 use futures::future::join_all;
 use futures::future::{Shared, SharedItem};
 use futures::{future, Future};
+use serde::Deserialize;
 use std::collections::HashMap;
 use std::collections::HashSet;
 use std::marker::PhantomData;
 use std::rc::Rc;
 use std::sync::{Arc, RwLock};
-use chrono::serde::ts_milliseconds;
-use serde::Deserialize;
 
 #[derive(Debug, Deserialize)]
-struct LibMTime(
-    String,
-    #[serde(with = "ts_milliseconds")]
-    DateTime<Utc>
-);
+struct LibMTime(String, #[serde(with = "ts_milliseconds")] DateTime<Utc>);
 
 #[derive(Debug, Clone)]
 pub struct LibSyncStats {
@@ -103,39 +99,37 @@ impl<Env: Environment + 'static> LibAddon<Env> {
 
         // @TODO datastoreMeta first
         // then dispatch the datastorePut/datastoreGet simultaniously
-        let sync_fut = self.with_idx()
-            .and_then(|idx| {
-                Env::fetch_serde::<_, APIResult<Vec<LibMTime>>>(req)
-                    .then(move |resp| {
-                        if let Ok(APIResult::Ok { result }) = resp {
-                            // @TODO use some method on .idx
-                            let idx = idx.0.read().unwrap();
-                            let map_remote = result
-                                .into_iter()
-                                .map(|LibMTime(k, mtime)| (k, mtime))
-                                .collect::<HashMap<String, DateTime<Utc>>>();
-                            let to_pull_ids = map_remote
-                                .iter()
-                                .filter(|(k, v)| idx.get(*k).map_or(true, |item| &item.mtime < v))
-                                .map(|(k, _)| k.to_owned())
-                                .collect::<Vec<String>>();
-                            let to_push = idx
-                                .iter()
-                                .filter(|(id, item)| {
-                                    map_remote.get(*id).map_or(true, |date| date < &item.mtime)
-                                })
-                                .map(|(_, v)| v)
-                                .collect::<Vec<&LibItem>>();
- 
-                            return future::ok(LibSyncStats {
-                                pulled: to_pull_ids.len() as u64,
-                                pushed: to_push.len() as u64,
-                            });
-                        }
-                        // @TODO proper error
-                        future::err(MiddlewareError::LibIdx)
-                    })
-            });
+        let sync_fut = self.with_idx().and_then(|idx| {
+            Env::fetch_serde::<_, APIResult<Vec<LibMTime>>>(req).then(move |resp| {
+                if let Ok(APIResult::Ok { result }) = resp {
+                    // @TODO use some method on .idx
+                    let idx = idx.0.read().unwrap();
+                    let map_remote = result
+                        .into_iter()
+                        .map(|LibMTime(k, mtime)| (k, mtime))
+                        .collect::<HashMap<String, DateTime<Utc>>>();
+                    let to_pull_ids = map_remote
+                        .iter()
+                        .filter(|(k, v)| idx.get(*k).map_or(true, |item| &item.mtime < v))
+                        .map(|(k, _)| k.to_owned())
+                        .collect::<Vec<String>>();
+                    let to_push = idx
+                        .iter()
+                        .filter(|(id, item)| {
+                            map_remote.get(*id).map_or(true, |date| date < &item.mtime)
+                        })
+                        .map(|(_, v)| v)
+                        .collect::<Vec<&LibItem>>();
+
+                    return future::ok(LibSyncStats {
+                        pulled: to_pull_ids.len() as u64,
+                        pushed: to_push.len() as u64,
+                    });
+                }
+                // @TODO proper error
+                future::err(MiddlewareError::LibIdx)
+            })
+        });
 
         Box::new(sync_fut)
     }

@@ -51,8 +51,7 @@ pub enum APIRequest {
     DatastoreMeta {
         auth_key: AuthKey,
         collection: String,
-    }
-    // @TODO datastorePut
+    }, // @TODO datastorePut
 }
 impl APIRequest {
     pub fn method_name(&self) -> &str {

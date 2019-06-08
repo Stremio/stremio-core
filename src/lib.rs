@@ -9,7 +9,7 @@ mod tests {
     use crate::addon_transport::*;
     use crate::middlewares::*;
     use crate::state_types::*;
-    use crate::types::addons::{ResourceRef, ResourceRequest, ResourceResponse, Descriptor};
+    use crate::types::addons::{Descriptor, ResourceRef, ResourceRequest, ResourceResponse};
     use enclose::*;
     use futures::future::lazy;
     use futures::{future, Future};
@@ -170,16 +170,13 @@ mod tests {
         run(lazy(|| {
             let collection_url = "https://api.strem.io/addonscollection.json";
             let req = Request::get(collection_url).body(()).unwrap();
-            Env::fetch_serde::<_, Vec<Descriptor>>(req)
-                .then(|res| {
-                    match res {
-                        Err(e) => panic!("failed getting addon collection {:?}", e),
-                        Ok(collection) => {
-                            assert!(collection.len() > 0, "has addons")
-                        }
-                    };
-                    future::ok(())
-                })
+            Env::fetch_serde::<_, Vec<Descriptor>>(req).then(|res| {
+                match res {
+                    Err(e) => panic!("failed getting addon collection {:?}", e),
+                    Ok(collection) => assert!(collection.len() > 0, "has addons"),
+                };
+                future::ok(())
+            })
         }));
     }
 
