@@ -2,6 +2,8 @@ use futures::Future;
 use serde::de::DeserializeOwned;
 use serde::Serialize;
 use std::error::Error;
+use crate::types::addons::{ResourceRequest, ResourceResponse};
+use crate::addon_transport::{AddonHTTPTransport, AddonInterface};
 
 pub use http::Request;
 
@@ -15,4 +17,9 @@ pub trait Environment {
     fn exec(fut: Box<Future<Item = (), Error = ()>>);
     fn get_storage<T: 'static + DeserializeOwned>(key: &str) -> EnvFuture<Option<T>>;
     fn set_storage<T: 'static + Serialize>(key: &str, value: Option<&T>) -> EnvFuture<()>;
+    fn fetch_addon(req: &ResourceRequest) -> EnvFuture<ResourceResponse>
+        where Self: Sized
+    {
+        AddonHTTPTransport::<Self>::from_url(&req.transport_url).get(&req.resource_ref)
+    }
 }
