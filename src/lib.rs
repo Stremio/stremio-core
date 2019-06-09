@@ -214,10 +214,12 @@ mod tests {
     #[test]
     fn stremio_derive() {
         use stremio_derive::Model;
-        #[derive(Model)]
+        #[derive(Model, Debug)]
         struct Model {
             pub ctx: (),
         }
+        let m = Model { ctx: () };
+        dbg!(&m);
         // @TODO
     }
 
