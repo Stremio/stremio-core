@@ -221,12 +221,12 @@ mod tests {
             }
         }
         struct Content {};
-        impl UpdateWithCtx for Content {
+        /*impl UpdateWithCtx for Content {
             type Ctx = Ctx;
             fn update(&mut self, _: &Ctx, _: &Msg) -> Effects {
                 dummy_effect()
             }
-        }
+        }*/
 
         use stremio_derive::Model;
         #[derive(Model)]
