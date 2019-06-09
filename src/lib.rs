@@ -211,6 +211,18 @@ mod tests {
         );
     }
 
+    #[test]
+    fn stremio_derive() {
+        use stremio_derive::Model;
+        #[derive(Model)]
+        struct Model {
+            pub ctx: (),
+        }
+        // @TODO
+    }
+
+    // Storage implementation
+    // Uses reqwest (asynchronously) for fetch, and a BTreeMap storage
     use lazy_static::*;
     use std::collections::BTreeMap;
     use std::sync::RwLock;

@@ -19,6 +19,9 @@ semver = { version = "0.9.0", features = ["serde"] }
 base64 = "0.10.1"
 serde-hex = "0.1.0"
 either = "1.5"
+stremio-derive = { path = "stremio-derive", version = "0.1.0" }
+
+[workspace]
 
 [dev-dependencies]
 reqwest = "0.9.x"
