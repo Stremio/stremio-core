@@ -213,13 +213,31 @@ mod tests {
 
     #[test]
     fn stremio_derive() {
-        use stremio_derive::Model;
-        #[derive(Model, Debug)]
-        struct Model {
-            pub ctx: (),
+        // Implement some dummy Ctx and contents
+        impl Update for Context {
+            fn update(&mut self, _: &Msg) -> Effects {
+                dbg!(&self);
+                Effects::none()
+            }
         }
-        let m = Model { ctx: () };
-        dbg!(&m);
+        #[derive(Debug)]
+        struct Content {};
+        impl UpdateWithCtx for Content {
+            fn update(&mut self, _: &Context, _: &Msg) -> Effects {
+                dbg!(&self);
+                Effects::none()
+            }
+        }
+
+        use stremio_derive::Model;
+        #[derive(Model)]
+        struct Model {
+            pub ctx: Context,
+            pub one: Content,
+            pub two: Content,
+        }
+        let mut m = Model { ctx: Default::default(), one: Content{}, two: Content{} };
+        m.update(&Action::LibSync.into());
         // @TODO
     }
 
