@@ -33,9 +33,7 @@ impl<T: Environment> AddonInterface for AddonHTTPTransport<T> {
             return AddonLegacyTransport::<T>::from_url(&self.transport_url).get(&path);
         }
 
-        let url = self
-            .transport_url
-            .replace(MANIFEST_PATH, &path.to_string());
+        let url = self.transport_url.replace(MANIFEST_PATH, &path.to_string());
         match Request::get(&url).body(()) {
             Ok(r) => T::fetch_serde::<_, ResourceResponse>(r),
             Err(e) => Box::new(future::err(e.into())),

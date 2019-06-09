@@ -21,7 +21,7 @@ impl Default for Context {
     fn default() -> Self {
         Context {
             user: None,
-            addons: vec![]
+            addons: vec![],
         }
     }
 }

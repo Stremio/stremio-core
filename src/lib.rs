@@ -216,7 +216,6 @@ mod tests {
         // Implement some dummy Ctx and contents
         impl Update for Context {
             fn update(&mut self, _: &Msg) -> Effects {
-                dbg!(&self);
                 Effects::none()
             }
         }
@@ -224,7 +223,6 @@ mod tests {
         struct Content {};
         impl UpdateWithCtx for Content {
             fn update(&mut self, _: &Context, _: &Msg) -> Effects {
-                dbg!(&self);
                 Effects::none()
             }
         }
@@ -236,7 +234,11 @@ mod tests {
             pub one: Content,
             pub two: Content,
         }
-        let mut m = Model { ctx: Default::default(), one: Content{}, two: Content{} };
+        let mut m = Model {
+            ctx: Default::default(),
+            one: Content {},
+            two: Content {},
+        };
         m.update(&Action::LibSync.into());
         // @TODO
     }
