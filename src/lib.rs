@@ -213,19 +213,18 @@ mod tests {
 
     #[test]
     fn stremio_derive() {
-        // @TODO proper test
         // Implement some dummy Ctx and contents
         struct Ctx {};
         impl Update for Ctx {
             fn update(&mut self, _: &Msg) -> Effects {
-                Effects::none()
+                dummy_effect()
             }
         }
         struct Content {};
         impl UpdateWithCtx for Content {
             type Ctx = Ctx;
             fn update(&mut self, _: &Ctx, _: &Msg) -> Effects {
-                Effects::none()
+                dummy_effect()
             }
         }
 
@@ -241,8 +240,12 @@ mod tests {
             one: Content {},
             two: Content {},
         };
-        m.update(&Action::LibSync.into());
-        // @TODO
+        let fx = m.update(&Msg::Action(Action::LibSync));
+        assert!(fx.has_changed, "has changed");
+        assert_eq!(fx.effects.len(), 3, "proper number of effects");
+    }
+    fn dummy_effect() -> Effects {
+        Effects::one(Box::new(future::ok(Msg::Action(Action::LibSync))))
     }
 
     // Storage implementation
