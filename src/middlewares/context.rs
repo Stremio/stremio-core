@@ -15,6 +15,7 @@ use std::rc::Rc;
 
 // elmification:
 // AuthChanged/AddonsChangedFromPull -> CtxUpdated{ addons_changed, user_changed } OR drop it
+//   its only needed for reloading, which is fair; as for auth - it will be used to go to login
 // AddonsChanged is pointless!
 // all the errors (UserOpError, ContextMFatal) are easy to deal with
 // but ContextMFatal will turn the state of the model to "fatal"

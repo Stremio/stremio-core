@@ -7,14 +7,8 @@ pub use self::msg::*;
 mod effects;
 pub use self::effects::*;
 
-use crate::types::addons::Descriptor;
-use crate::types::api::User;
-#[derive(Debug)]
-pub struct Context {
-    pub user: Option<User>,
-    pub addons: Vec<Descriptor>,
-    // @TODO settings
-}
+mod models;
+pub use self::models::*;
 
 pub trait Update {
     fn update(&mut self, msg: &Msg) -> Effects;
@@ -25,7 +19,7 @@ pub trait UpdateWithCtx {
     fn update(&mut self, ctx: &Self::Ctx, msg: &Msg) -> Effects;
 }
 
-use crate::types::addons::{AggrRequest, ResourceRequest, ResourceResponse};
+use crate::types::addons::{AggrRequest, ResourceRequest, ResourceResponse, Descriptor};
 use futures::future;
 use futures::future::Future;
 use msg::Internal::*;
@@ -82,6 +76,17 @@ fn addon_get<Env: Environment + 'static>(req: &ResourceRequest) -> Effect {
 }
 
 // @TODO everything underneath will be dropped with the Elm architecture rewrite
+
+// temporary measure to get our codebase to compile
+use crate::types::api::User;
+#[derive(Debug)]
+pub struct Context {
+    pub user: Option<User>,
+    pub addons: Vec<Descriptor>,
+    // @TODO settings
+}
+
+
 mod container;
 pub use self::container::*;
 
