@@ -213,16 +213,18 @@ mod tests {
 
     #[test]
     fn stremio_derive() {
+        // @TODO proper test
         // Implement some dummy Ctx and contents
-        impl Update for Context {
+        struct Ctx {};
+        impl Update for Ctx {
             fn update(&mut self, _: &Msg) -> Effects {
                 Effects::none()
             }
         }
-        #[derive(Debug)]
         struct Content {};
         impl UpdateWithCtx for Content {
-            fn update(&mut self, _: &Context, _: &Msg) -> Effects {
+            type Ctx = Ctx;
+            fn update(&mut self, _: &Ctx, _: &Msg) -> Effects {
                 Effects::none()
             }
         }
@@ -230,12 +232,12 @@ mod tests {
         use stremio_derive::Model;
         #[derive(Model)]
         struct Model {
-            pub ctx: Context,
+            pub ctx: Ctx,
             pub one: Content,
             pub two: Content,
         }
         let mut m = Model {
-            ctx: Default::default(),
+            ctx: Ctx {},
             one: Content {},
             two: Content {},
         };

@@ -15,23 +15,14 @@ pub struct Context {
     pub addons: Vec<Descriptor>,
     // @TODO settings
 }
-// @TODO this needs to be way more sensible; default addons and such
-// @TODO this needs to carry full auth info
-impl Default for Context {
-    fn default() -> Self {
-        Context {
-            user: None,
-            addons: vec![],
-        }
-    }
-}
 
 pub trait Update {
     fn update(&mut self, msg: &Msg) -> Effects;
 }
 
 pub trait UpdateWithCtx {
-    fn update(&mut self, ctx: &Context, msg: &Msg) -> Effects;
+    type Ctx;
+    fn update(&mut self, ctx: &Self::Ctx, msg: &Msg) -> Effects;
 }
 
 use crate::types::addons::{AggrRequest, ResourceRequest, ResourceResponse};
