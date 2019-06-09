@@ -24,19 +24,22 @@ pub trait UpdateWithCtx {
     fn update(&mut self, ctx: &Context, msg: &Msg) -> Effects;
 }
 
-use crate::types::addons::{AggrRequest, ResourceRequest};
+use crate::types::addons::{AggrRequest, ResourceRequest, ResourceResponse};
 use futures::future;
 use futures::future::Future;
 use msg::Internal::*;
 // @TODO move loadable
-// @TODO type aliases like in catalogs (Group, etc.)
-// @TODO Arc
-type Group<Item> = (ResourceRequest, Loadable<Vec<Item>, String>);
-pub struct AddonAggr<Item> {
+// @TODO should this take &Descriptor too?
+pub trait Group {
+    fn new(req: ResourceRequest) -> Self;
     // @TODO generic err type
-    pub groups: Vec<Group<Item>>,
+    fn update(&mut self, resp: &Result<ResourceResponse, String>) -> Self;
+    fn addon_req(&self) -> &ResourceRequest;
 }
-impl<Item> AddonAggr<Item> {
+pub struct AddonAggr<G: Group> {
+    pub groups: Vec<G>,
+}
+impl<G: Group> AddonAggr<G> {
     pub fn new<Env: Environment + 'static>(
         addons: &[Descriptor],
         aggr_req: &AggrRequest,
@@ -44,19 +47,17 @@ impl<Item> AddonAggr<Item> {
         let (effects, groups): (Vec<_>, Vec<_>) = aggr_req
             .plan(&addons)
             .into_iter()
-            .map(|addon_req| (addon_get::<Env>(&addon_req), (addon_req, Loadable::Loading)))
+            .map(|addon_req| (addon_get::<Env>(&addon_req), G::new(addon_req)))
             .unzip();
         (AddonAggr { groups }, Effects::many(effects))
     }
 }
-impl<Item> Update for AddonAggr<Item> {
+impl<G: Group> Update for AddonAggr<G> {
     fn update(&mut self, msg: &Msg) -> Effects {
         match msg {
             Msg::Internal(AddonResponse(req, result)) => {
-                if let Some(idx) = self.groups.iter().position(|g| &g.0 == req) {
-                    // we may need try_into on ResourceResponse
-                    let group_content = Loadable::Loading; // @TODO
-                    self.groups[idx] = (req.to_owned(), group_content);
+                if let Some(idx) = self.groups.iter().position(|g| g.addon_req() == req) {
+                    self.groups[idx].update(&result);
                     Effects::none()
                 } else {
                     Effects::none().unchanged()
