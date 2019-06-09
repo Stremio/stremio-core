@@ -110,13 +110,13 @@ impl<Env: Environment + 'static> LibAddon<Env> {
                         .collect::<HashMap<String, DateTime<Utc>>>();
                     let to_pull_ids = map_remote
                         .iter()
-                        .filter(|(k, v)| idx.get(*k).map_or(true, |item| &item.mtime < v))
+                        .filter(|(k, v)| idx.get(*k).map_or(true, |item| item.mtime < **v))
                         .map(|(k, _)| k.to_owned())
                         .collect::<Vec<String>>();
                     let to_push = idx
                         .iter()
                         .filter(|(id, item)| {
-                            map_remote.get(*id).map_or(true, |date| date < &item.mtime)
+                            map_remote.get(*id).map_or(true, |date| *date < item.mtime)
                         })
                         .map(|(_, v)| v)
                         .collect::<Vec<&LibItem>>();
