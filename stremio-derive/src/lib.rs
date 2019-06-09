@@ -14,7 +14,6 @@ pub fn model_derive(input: TokenStream) -> TokenStream {
         ..
     }) = input.data
     {
-        // @TODO: add proper trait bounds for more sensible errors
         let name = &input.ident;
         let mut fields = named.iter();
         let first = fields.next().expect("at least one field required");
@@ -22,16 +21,17 @@ pub fn model_derive(input: TokenStream) -> TokenStream {
             first.ident.as_ref().map_or(false, |n| n == "ctx"),
             "first field must be named ctx"
         );
+        // Using the explicit trait syntax, for more clear err messages
         let container_updates = fields.map(|f| {
             let name = &f.ident;
             quote_spanned! {f.span() =>
-                .join(self.#name.update(&self.ctx, msg))
+                .join(crate::state_types::UpdateWithCtx::update(&mut self.#name, &self.ctx, msg))
             }
         });
         let expanded = quote! {
             impl crate::state_types::Update for #name {
                 fn update(&mut self, msg: &crate::state_types::Msg) -> crate::state_types::Effects {
-                    self.ctx.update(msg)
+                    crate::state_types::Update::update(&mut self.ctx, msg)
                         #(#container_updates)*
                 }
             }
