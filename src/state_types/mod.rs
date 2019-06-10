@@ -31,35 +31,28 @@ pub trait Group {
     fn update(&mut self, resp: &Result<ResourceResponse, EnvError>) -> Self;
     fn addon_req(&self) -> &ResourceRequest;
 }
-pub struct AddonAggr<G: Group> {
-    pub groups: Vec<G>,
+pub fn addon_aggr_new<Env: Environment + 'static, G: Group>(
+    addons: &[Descriptor],
+    aggr_req: &AggrRequest,
+) -> (Vec<G>, Effects) {
+    let (effects, groups): (Vec<_>, Vec<_>) = aggr_req
+        .plan(&addons)
+        .into_iter()
+        .map(|addon_req| (addon_get::<Env>(&addon_req), G::new(addon_req)))
+        .unzip();
+    (groups, Effects::many(effects))
 }
-impl<G: Group> AddonAggr<G> {
-    pub fn new<Env: Environment + 'static>(
-        addons: &[Descriptor],
-        aggr_req: &AggrRequest,
-    ) -> (Self, Effects) {
-        let (effects, groups): (Vec<_>, Vec<_>) = aggr_req
-            .plan(&addons)
-            .into_iter()
-            .map(|addon_req| (addon_get::<Env>(&addon_req), G::new(addon_req)))
-            .unzip();
-        (AddonAggr { groups }, Effects::many(effects))
-    }
-}
-impl<G: Group> Update for AddonAggr<G> {
-    fn update(&mut self, msg: &Msg) -> Effects {
-        match msg {
-            Msg::Internal(AddonResponse(req, result)) => {
-                if let Some(idx) = self.groups.iter().position(|g| g.addon_req() == req) {
-                    self.groups[idx].update(result);
-                    Effects::none()
-                } else {
-                    Effects::none().unchanged()
-                }
+pub fn addon_aggr_update<G: Group>(groups: &mut Vec<G>, msg: &Msg) -> Effects {
+    match msg {
+        Msg::Internal(AddonResponse(req, result)) => {
+            if let Some(idx) = groups.iter().position(|g| g.addon_req() == req) {
+                groups[idx].update(result);
+                Effects::none()
+            } else {
+                Effects::none().unchanged()
             }
-            _ => Effects::none().unchanged(),
         }
+        _ => Effects::none().unchanged(),
     }
 }
 fn addon_get<Env: Environment + 'static>(req: &ResourceRequest) -> Effect {
