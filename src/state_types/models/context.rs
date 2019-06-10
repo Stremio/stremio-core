@@ -84,10 +84,10 @@ impl<Env: Environment + 'static> Update for Ctx<Env> {
                     Some(Auth { key, .. }) => {
                         let auth_key = key.to_string();
                         let user_op = user_op.clone();
-                        // @TODO: unchanged?
-                        Effects::one(Box::new(api_fetch::<Env, SuccessResponse>("https://api.strem.io", APIRequest::Logout { auth_key })
+                        let effect = api_fetch::<Env, SuccessResponse>("https://api.strem.io", APIRequest::Logout { auth_key })
                             .map(|_| Msg::Internal(Internal::CtxUpdate(Box::new(CtxContent::default()))))
-                            .map_err(move |e| Msg::Event(Event::UserOpError(user_op, e.into())))))
+                            .map_err(move |e| Msg::Event(Event::UserOpError(user_op, e.into())));
+                        Effects::one(Box::new(effect)).unchanged()
                     },
                     None => {
                         let content = Box::new(CtxContent::default());
