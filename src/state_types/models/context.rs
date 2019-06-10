@@ -55,12 +55,12 @@ impl<Env: Environment> Update for Ctx<Env> {
                 Effects::none()
             }
             Msg::Action(Action::AddonOp(ActionAddon::Remove { transport_url })) => {
-                if let Some(idx) = self
+                let pos = self
                     .content
                     .addons
                     .iter()
-                    .position(|x| x.transport_url == *transport_url)
-                {
+                    .position(|x| x.transport_url == *transport_url);
+                if let Some(idx) = pos {
                     self.content.addons.remove(idx);
                     Effects::one(save_storage::<Env>(&self.content))
                 } else {
@@ -71,6 +71,22 @@ impl<Env: Environment> Update for Ctx<Env> {
                 // @TODO should we dedupe?
                 self.content.addons.push(*descriptor.to_owned());
                 Effects::one(save_storage::<Env>(&self.content))
+            }
+            // logout
+            // login/register -> Internal::CtxUpdate -> Event::CtxChanged
+            //   CtxUpdate - should call save_storage
+            // push addons - Event::CtxPushedAddons
+            // pull addons - the result of that, Internal::CtxPulledAddons, should be handled and produces Event::CtxPulledAddons(is_new)
+            Msg::Action(Action::UserOp(ActionUser::Logout)) => {
+                // @TODO consider resetting only after logout
+                // CtxUpdate(Default::default())
+                let auth = self.content.auth.to_owned();
+                self.content = Default::default();
+                match auth {
+                    // @TODO destroy session, emit after
+                    Some(x) => Effects::none(),
+                    None => Effects::none()
+                }
             }
             _ => Effects::none().unchanged(),
         }
@@ -87,11 +103,10 @@ fn load_storage<Env: Environment>() -> Effect {
     )
 }
 
-// @TODO CtxSaved should have fields for whether the addons/ser are updated
 fn save_storage<Env: Environment>(content: &CtxContent) -> Effect {
     Box::new(
         Env::set_storage(USER_DATA_KEY, Some(content))
-            .map(|_| Msg::Internal(Internal::CtxSaved))
+            .map(|_| Msg::Event(Event::CtxSaved))
             .map_err(|e| Msg::Event(Event::ContextMiddlewareFatal(e.into()))),
     )
 }

@@ -16,7 +16,7 @@ pub use actions::*;
 //
 pub enum Internal {
     CtxLoaded(Option<Box<CtxContent>>),
-    CtxSaved,
+    CtxUpdate(Box<CtxContent>),
     AddonResponse(ResourceRequest, Result<ResourceResponse, String>),
 
     // @TODO drop those
@@ -51,6 +51,7 @@ impl From<Box<dyn Error>> for MiddlewareError {
 #[derive(Debug, Clone, Serialize)]
 #[serde(tag = "event", content = "args")]
 pub enum Event {
+    CtxSaved,
     ContextMiddlewareFatal(MiddlewareError),
     UserOpError(ActionUser, MiddlewareError),
     AddonsChanged,
