@@ -106,7 +106,10 @@ pub struct CatalogGrouped<Env> {
 }
 impl<Env: Environment> CatalogGrouped<Env> {
     pub fn new() -> Self {
-        CatalogGrouped { groups: vec![], env: PhantomData }
+        CatalogGrouped {
+            groups: vec![],
+            env: PhantomData,
+        }
     }
 }
 impl<Env: Environment + 'static> UpdateWithCtx for CatalogGrouped<Env> {
@@ -116,13 +119,14 @@ impl<Env: Environment + 'static> UpdateWithCtx for CatalogGrouped<Env> {
             Msg::Action(Action::Load(ActionLoad::CatalogGrouped { extra })) => {
                 let (groups, effects) = addon_aggr_new::<Env, _>(
                     &ctx.content.addons,
-                    &AggrRequest::AllCatalogs { extra: extra.to_owned() }
+                    &AggrRequest::AllCatalogs {
+                        extra: extra.to_owned(),
+                    },
                 );
                 self.groups = groups;
                 effects
             }
-            _ => addon_aggr_update(&mut self.groups, msg)
+            _ => addon_aggr_update(&mut self.groups, msg),
         }
     }
 }
-
