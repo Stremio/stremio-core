@@ -1,5 +1,6 @@
 use crate::addon_transport::AddonInterface;
 use crate::state_types::Context;
+use crate::state_types::CtxContent;
 use crate::types::addons::*;
 use crate::types::api::*;
 use serde_derive::*;
@@ -14,9 +15,12 @@ pub use actions::*;
 // those are emitted by the middlewares and received by containers
 //
 pub enum Internal {
+    CtxLoaded(Option<Box<CtxContent>>),
+    AddonResponse(ResourceRequest, Result<ResourceResponse, String>),
+
+    // @TODO drop those
     LoadWithCtx(Context, ActionLoad),
     SetInternalAddon(String, Rc<dyn AddonInterface>),
-    AddonResponse(ResourceRequest, Result<ResourceResponse, String>),
 }
 
 //
