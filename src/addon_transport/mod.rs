@@ -41,7 +41,9 @@ impl<T: Environment> AddonInterface for AddonHTTPTransport<T> {
             return AddonLegacyTransport::<T>::from_url(&self.transport_url).manifest();
         }
 
-        let r = Request::get(&self.transport_url).body(()).expect("builder cannot fail");
+        let r = Request::get(&self.transport_url)
+            .body(())
+            .expect("builder cannot fail");
         T::fetch_serde::<_, Manifest>(r)
     }
 }

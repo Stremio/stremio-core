@@ -1,5 +1,5 @@
 use super::msg::Msg;
-use futures::{Future, future};
+use futures::{future, Future};
 
 pub type Effect = Box<dyn Future<Item = Msg, Error = Msg>>;
 

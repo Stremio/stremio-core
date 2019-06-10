@@ -1,3 +1,4 @@
+use crate::state_types::Event::*;
 use crate::state_types::*;
 use crate::types::addons::Descriptor;
 use crate::types::api::*;
@@ -45,12 +46,12 @@ impl<Env: Environment + 'static> Update for Ctx<Env> {
     fn update(&mut self, msg: &Msg) -> Effects {
         match msg {
             Msg::Action(Action::LoadCtx) => Effects::one(load_storage::<Env>()).unchanged(),
-            Msg::Internal(Internal::CtxLoaded(Some(content))) => {
+            Msg::Internal(CtxLoaded(Some(content))) => {
                 self.is_loaded = true;
                 self.content = *content.to_owned();
                 Effects::none()
             }
-            Msg::Internal(Internal::CtxLoaded(None)) => {
+            Msg::Internal(CtxLoaded(None)) => {
                 self.is_loaded = true;
                 Effects::none()
             }
@@ -78,27 +79,27 @@ impl<Env: Environment + 'static> Update for Ctx<Env> {
             // push addons - Event::CtxPushedAddons
             // pull addons - the result of that, Internal::CtxPulledAddons, should be handled and produces Event::CtxPulledAddons(is_new)
             Msg::Action(Action::UserOp(user_op @ ActionUser::Logout)) => {
-                // @TODO save to storage
-                // CtxUpdate(Default::default())
+                let new_content = Box::new(CtxContent::default());
                 match &self.content.auth {
                     Some(Auth { key, .. }) => {
                         let auth_key = key.to_string();
                         let user_op = user_op.clone();
-                        let effect = api_fetch::<Env, SuccessResponse>("https://api.strem.io", APIRequest::Logout { auth_key })
-                            .map(|_| Msg::Internal(Internal::CtxUpdate(Box::new(CtxContent::default()))))
-                            .map_err(move |e| Msg::Event(Event::UserOpError(user_op, e.into())));
+                        let effect = api_fetch::<Env, SuccessResponse>(
+                            "https://api.strem.io",
+                            APIRequest::Logout { auth_key },
+                        )
+                        .map(|_| CtxUpdate(new_content).into())
+                        .map_err(move |e| UserOpError(user_op, e.into()).into());
                         Effects::one(Box::new(effect)).unchanged()
-                    },
-                    None => {
-                        let content = Box::new(CtxContent::default());
-                        Effects::msg(Internal::CtxUpdate(content).into())
-                            .unchanged()
                     }
+                    None => Effects::msg(CtxUpdate(new_content).into()).unchanged(),
                 }
             }
-            Msg::Internal(Internal::CtxUpdate(new)) => {
+            Msg::Internal(CtxUpdate(new)) => {
+                // @TODO this is the place to check for changed add-ons/auth and emit the
+                // corresponding events
                 self.content = *new.to_owned();
-                Effects::msg(Event::CtxChanged.into())
+                Effects::msg(CtxChanged.into())
                     .join(Effects::one(save_storage::<Env>(&self.content)))
             }
             _ => Effects::none().unchanged(),
@@ -111,25 +112,30 @@ const USER_DATA_KEY: &str = "userData";
 fn load_storage<Env: Environment>() -> Effect {
     Box::new(
         Env::get_storage(USER_DATA_KEY)
-            .map(|x| Msg::Internal(Internal::CtxLoaded(x)))
-            .map_err(|e| Msg::Event(Event::ContextMiddlewareFatal(e.into()))),
+            .map(|x| Msg::Internal(CtxLoaded(x)))
+            .map_err(|e| Msg::Event(ContextMiddlewareFatal(e.into()))),
     )
 }
 
 fn save_storage<Env: Environment>(content: &CtxContent) -> Effect {
     Box::new(
         Env::set_storage(USER_DATA_KEY, Some(content))
-            .map(|_| Msg::Event(Event::CtxSaved))
-            .map_err(|e| Msg::Event(Event::ContextMiddlewareFatal(e.into()))),
+            .map(|_| Msg::Event(CtxSaved))
+            .map_err(|e| Msg::Event(ContextMiddlewareFatal(e.into()))),
     )
 }
 
-fn api_fetch<Env: Environment + 'static, OUT: 'static>(base_url: &str, api_req: APIRequest) -> impl Future<Item = OUT, Error = MiddlewareError>
+fn api_fetch<Env: Environment + 'static, OUT: 'static>(
+    base_url: &str,
+    api_req: APIRequest,
+) -> impl Future<Item = OUT, Error = MiddlewareError>
 where
     OUT: serde::de::DeserializeOwned,
 {
     let url = format!("{}/api/{}", base_url, api_req.method_name());
-    let req = Request::post(url).body(api_req).expect("builder cannot fail");
+    let req = Request::post(url)
+        .body(api_req)
+        .expect("builder cannot fail");
     Env::fetch_serde::<_, APIResult<OUT>>(req)
         .map_err(Into::into)
         .and_then(|res| match res {
