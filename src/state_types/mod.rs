@@ -80,7 +80,8 @@ pub enum Loadable<R, E> {
 }
 
 use std::sync::Arc;
-struct CatalogGroup(ResourceRequest, Loadable<Arc<Vec<MetaPreview>>, String>);
+#[derive(Debug, Serialize, Clone)]
+pub struct CatalogGroup(ResourceRequest, Loadable<Arc<Vec<MetaPreview>>, String>);
 impl Group for CatalogGroup {
     fn new(req: ResourceRequest) -> Self {
         CatalogGroup(req, Loadable::Loading)
@@ -97,4 +98,31 @@ impl Group for CatalogGroup {
     }
 }
 
+use std::marker::PhantomData;
+#[derive(Debug, Default, Clone, Serialize)]
+pub struct CatalogGrouped<Env> {
+    pub groups: Vec<CatalogGroup>,
+    env: PhantomData<Env>,
+}
+impl<Env: Environment> CatalogGrouped<Env> {
+    pub fn new() -> Self {
+        CatalogGrouped { groups: vec![], env: PhantomData }
+    }
+}
+impl<Env: Environment + 'static> UpdateWithCtx for CatalogGrouped<Env> {
+    type Ctx = Ctx<Env>;
+    fn update(&mut self, ctx: &Ctx<Env>, msg: &Msg) -> Effects {
+        match msg {
+            Msg::Action(Action::Load(ActionLoad::CatalogGrouped { extra })) => {
+                let (groups, effects) = addon_aggr_new::<Env, _>(
+                    &ctx.content.addons,
+                    &AggrRequest::AllCatalogs { extra: extra.to_owned() }
+                );
+                self.groups = groups;
+                effects
+            }
+            _ => addon_aggr_update(&mut self.groups, msg)
+        }
+    }
+}
 
