@@ -19,7 +19,7 @@ pub trait UpdateWithCtx {
     fn update(&mut self, ctx: &Self::Ctx, msg: &Msg) -> Effects;
 }
 
-use crate::types::addons::{AggrRequest, ResourceRequest, ResourceResponse, Descriptor};
+use crate::types::addons::{AggrRequest, Descriptor, ResourceRequest, ResourceResponse};
 use futures::future;
 use futures::future::Future;
 use msg::Internal::*;
@@ -85,7 +85,6 @@ pub struct Context {
     pub addons: Vec<Descriptor>,
     // @TODO settings
 }
-
 
 mod container;
 pub use self::container::*;

@@ -1,14 +1,15 @@
+use crate::state_types::*;
 use crate::types::addons::Descriptor;
 use crate::types::api::{AuthKey, User};
-use crate::state_types::*;
-use std::marker::PhantomData;
 use lazy_static::*;
 use serde_derive::*;
+use std::marker::PhantomData;
 
 lazy_static! {
-    static ref DEFAULT_ADDONS: Vec<Descriptor> =
-        serde_json::from_slice(include_bytes!("../../../stremio-official-addons/index.json"))
-            .expect("official addons JSON parse");
+    static ref DEFAULT_ADDONS: Vec<Descriptor> = serde_json::from_slice(include_bytes!(
+        "../../../stremio-official-addons/index.json"
+    ))
+    .expect("official addons JSON parse");
 }
 
 // These will be stored, so they need to implement both Serialize and Deserilaize
@@ -43,9 +44,7 @@ pub struct Ctx<Env: Environment> {
 impl<Env: Environment> Update for Ctx<Env> {
     fn update(&mut self, msg: &Msg) -> Effects {
         match msg {
-            Msg::Action(Action::LoadCtx) => {
-                Effects::one(load_storage::<Env>()).unchanged()
-            },
+            Msg::Action(Action::LoadCtx) => Effects::one(load_storage::<Env>()).unchanged(),
             Msg::Internal(Internal::CtxLoaded(Some(content))) => {
                 self.is_loaded = true;
                 self.content = *content.to_owned();
@@ -55,12 +54,17 @@ impl<Env: Environment> Update for Ctx<Env> {
                 self.is_loaded = true;
                 Effects::none()
             }
-            Msg::Action(Action::AddonOp(ActionAddon::Remove{ transport_url })) => {
-                if let Some(idx) = self.content.addons.iter().position(|x| x.transport_url == *transport_url) {
+            Msg::Action(Action::AddonOp(ActionAddon::Remove { transport_url })) => {
+                if let Some(idx) = self
+                    .content
+                    .addons
+                    .iter()
+                    .position(|x| x.transport_url == *transport_url)
+                {
                     self.content.addons.remove(idx);
                     Effects::one(save_storage::<Env>(&self.content))
                 } else {
-                    Effects::none()
+                    Effects::none().unchanged()
                 }
             }
             Msg::Action(Action::AddonOp(ActionAddon::Install(descriptor))) => {
@@ -68,7 +72,7 @@ impl<Env: Environment> Update for Ctx<Env> {
                 self.content.addons.push(*descriptor.to_owned());
                 Effects::one(save_storage::<Env>(&self.content))
             }
-            _ => Effects::none().unchanged()
+            _ => Effects::none().unchanged(),
         }
     }
 }
@@ -76,13 +80,18 @@ impl<Env: Environment> Update for Ctx<Env> {
 // @TODO move these load/save?
 const USER_DATA_KEY: &str = "userData";
 fn load_storage<Env: Environment>() -> Effect {
-    Box::new(Env::get_storage(USER_DATA_KEY)
-        .map(|x| Msg::Internal(Internal::CtxLoaded(x)))
-        .map_err(|e| Msg::Event(Event::ContextMiddlewareFatal(e.into()))))
+    Box::new(
+        Env::get_storage(USER_DATA_KEY)
+            .map(|x| Msg::Internal(Internal::CtxLoaded(x)))
+            .map_err(|e| Msg::Event(Event::ContextMiddlewareFatal(e.into()))),
+    )
 }
 
+// @TODO CtxSaved should have fields for whether the addons/ser are updated
 fn save_storage<Env: Environment>(content: &CtxContent) -> Effect {
-    Box::new(Env::set_storage(USER_DATA_KEY, Some(content))
+    Box::new(
+        Env::set_storage(USER_DATA_KEY, Some(content))
             .map(|_| Msg::Internal(Internal::CtxSaved))
-            .map_err(|e| Msg::Event(Event::ContextMiddlewareFatal(e.into()))))
+            .map_err(|e| Msg::Event(Event::ContextMiddlewareFatal(e.into()))),
+    )
 }
