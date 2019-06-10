@@ -15,26 +15,6 @@ pub enum ActionLoad {
     // @TODO most of these values need content
     AddonCatalog,
 }
-// @TODO: drop this from here
-impl ActionLoad {
-    pub fn addon_aggr_req(&self) -> Option<AggrRequest> {
-        match self {
-            ActionLoad::CatalogGrouped { extra } => Some(AggrRequest::AllCatalogs {
-                extra: extra.to_owned(),
-            }),
-            ActionLoad::CatalogFiltered { resource_req } => {
-                Some(AggrRequest::FromAddon(resource_req.to_owned()))
-            }
-            ActionLoad::Detail { type_name, id } => Some(AggrRequest::AllOfResource(
-                ResourceRef::without_extra("meta", type_name, id),
-            )),
-            ActionLoad::Streams { type_name, id } => Some(AggrRequest::AllOfResource(
-                ResourceRef::without_extra("stream", type_name, id),
-            )),
-            _ => None,
-        }
-    }
-}
 
 #[derive(Debug, Deserialize, Serialize, Clone)]
 #[serde(tag = "userOp", content = "args")]

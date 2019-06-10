@@ -90,7 +90,7 @@ impl<Env: Environment + 'static> Update for Ctx<Env> {
                                 APIRequest::Logout { auth_key },
                             )
                             .map(|_| CtxUpdate(new_content).into())
-                            .map_err(move |e| UserOpError(action, e.into()).into());
+                            .map_err(move |e| CtxActionErr(action, e.into()).into());
                             Effects::one(Box::new(effect)).unchanged()
                         }
                         None => Effects::msg(CtxUpdate(new_content).into()).unchanged(),
@@ -117,7 +117,7 @@ impl<Env: Environment + 'static> Update for Ctx<Env> {
                         // @TODO: respect last_modified
                         let ft = api_fetch::<Env, CollectionResponse>(API_URL, req)
                             .map(move |r| CtxAddonsPulled(key, r.addons).into())
-                            .map_err(move |e| UserOpError(action, e.into()).into());
+                            .map_err(move |e| CtxActionErr(action, e.into()).into());
                         Effects::one(Box::new(ft)).unchanged()
                     }
                     None => Effects::none().unchanged(),
@@ -131,7 +131,7 @@ impl<Env: Environment + 'static> Update for Ctx<Env> {
                         };
                         let ft = api_fetch::<Env, SuccessResponse>(API_URL, req)
                             .map(|_| CtxAddonsPushed.into())
-                            .map_err(move |e| UserOpError(action, e.into()).into());
+                            .map_err(move |e| CtxActionErr(action, e.into()).into());
                         Effects::one(Box::new(ft)).unchanged()
                     }
                     None => Effects::none().unchanged(),
@@ -160,7 +160,7 @@ fn load_storage<Env: Environment>() -> Effect {
     Box::new(
         Env::get_storage(USER_DATA_KEY)
             .map(|x| Msg::Internal(CtxLoaded(x)))
-            .map_err(|e| Msg::Event(ContextMiddlewareFatal(e.into()))),
+            .map_err(|e| Msg::Event(CtxFatal(e.into()))),
     )
 }
 
@@ -168,7 +168,7 @@ fn save_storage<Env: Environment>(content: &CtxContent) -> Effect {
     Box::new(
         Env::set_storage(USER_DATA_KEY, Some(content))
             .map(|_| Msg::Event(CtxSaved))
-            .map_err(|e| Msg::Event(ContextMiddlewareFatal(e.into()))),
+            .map_err(|e| Msg::Event(CtxFatal(e.into()))),
     )
 }
 
@@ -187,14 +187,11 @@ fn authenticate<Env: Environment + 'static>(action: ActionUser, req: APIRequest)
             )
         })
         .map(|c| Msg::Internal(CtxUpdate(Box::new(c))))
-        .map_err(move |e| Msg::Event(UserOpError(action, e.into())));
+        .map_err(move |e| Msg::Event(CtxActionErr(action, e.into())));
     Box::new(ft)
 }
 
-fn api_fetch<Env, OUT>(
-    url: &str,
-    req: APIRequest,
-) -> impl Future<Item = OUT, Error = MiddlewareError>
+fn api_fetch<Env, OUT>(url: &str, req: APIRequest) -> impl Future<Item = OUT, Error = CtxError>
 where
     Env: Environment,
     OUT: serde::de::DeserializeOwned + 'static,

@@ -1,11 +1,8 @@
-use crate::addon_transport::AddonInterface;
-use crate::state_types::Context;
 use crate::state_types::CtxContent;
 use crate::types::addons::*;
 use crate::types::api::*;
 use serde_derive::*;
 use std::error::Error;
-use std::rc::Rc;
 
 mod actions;
 pub use actions::*;
@@ -19,10 +16,6 @@ pub enum Internal {
     CtxUpdate(Box<CtxContent>),
     CtxAddonsPulled(AuthKey, Vec<Descriptor>),
     AddonResponse(ResourceRequest, Result<ResourceResponse, String>),
-
-    // @TODO drop those
-    LoadWithCtx(Context, ActionLoad),
-    SetInternalAddon(String, Rc<dyn AddonInterface>),
 }
 
 //
@@ -31,21 +24,18 @@ pub enum Internal {
 //
 #[derive(Debug, Serialize, Clone)]
 #[serde(tag = "err", content = "args")]
-pub enum MiddlewareError {
+pub enum CtxError {
     API(APIErr),
     Env(String),
-    AuthRequired,
-    AuthRace,
-    LibIdx,
 }
-impl From<APIErr> for MiddlewareError {
+impl From<APIErr> for CtxError {
     fn from(e: APIErr) -> Self {
-        MiddlewareError::API(e)
+        CtxError::API(e)
     }
 }
-impl From<Box<dyn Error>> for MiddlewareError {
+impl From<Box<dyn Error>> for CtxError {
     fn from(e: Box<dyn Error>) -> Self {
-        MiddlewareError::Env(e.to_string())
+        CtxError::Env(e.to_string())
     }
 }
 
@@ -56,14 +46,8 @@ pub enum Event {
     CtxChanged,
     CtxAddonsChangedFromPull,
     CtxAddonsPushed,
-    // @TODO: change ContextMiddlewareFatal to CtxFatal
-    ContextMiddlewareFatal(MiddlewareError),
-    UserOpError(ActionUser, MiddlewareError),
-    // @TODO drop those
-    AddonsChanged,
-    AddonsChangedFromPull,
-    AuthChanged(Option<User>),
-    LibSynced { pushed: u64, pulled: u64 },
+    CtxFatal(CtxError),
+    CtxActionErr(ActionUser, CtxError),
 }
 
 //

@@ -1,39 +1,31 @@
 pub mod addon_transport;
-pub mod libaddon;
-pub mod middlewares;
 pub mod state_types;
 pub mod types;
 
 #[cfg(test)]
 mod tests {
     use crate::addon_transport::*;
-    use crate::middlewares::*;
     use crate::state_types::*;
-    use crate::types::addons::{Descriptor, ResourceRef, ResourceRequest, ResourceResponse};
-    use enclose::*;
+    use crate::types::addons::{Descriptor, ResourceRef, ResourceResponse};
     use futures::future::lazy;
     use futures::{future, Future};
     use serde::de::DeserializeOwned;
     use serde::Serialize;
-    use std::rc::Rc;
     use tokio::executor::current_thread::spawn;
     use tokio::runtime::current_thread::run;
 
+    /*
     #[derive(Debug, Eq, Ord, PartialEq, PartialOrd, Clone)]
     enum ContainerId {
         Board,
         Discover,
     }
 
+    // @TODO
     #[test]
     fn middlewares() {
-        // to make sure we can't use 'static
-        inner_middlewares();
-    }
-    fn inner_middlewares() {
         // @TODO: Fix: the assumptions we are testing against are pretty much based on the current
         // official addons; e.g. assuming 6 groups, or 4 groups when searching
-        // @TODO test what happens with no handlers
         let container = Rc::new(ContainerHolder::new(CatalogGrouped::new()));
         let container_filtered = Rc::new(ContainerHolder::new(CatalogFiltered::new()));
         let muxer = Rc::new(ContainerMuxer::new(
@@ -110,15 +102,13 @@ mod tests {
         assert_eq!(state.item_pages.len(), 1, "item_pages is the right length");
         assert!(state.item_pages[0].is_ready(), "first page is ready");
 
-        /*
-        // @TODO
         run(lazy(enclose!((muxer, resource_req) move || {
             muxer.dispatch_load_to(&ContainerId::Streams, &ActionLoad::Streams { type_name: "channel", id: "some_id" });
             future::ok(())
         })));
         let state = container_streams.get_state_owned();
-        */
     }
+    */
 
     #[test]
     fn transport_manifests() {
@@ -182,6 +172,7 @@ mod tests {
         }));
     }
 
+    /*
     #[test]
     fn libitems() {
         use crate::libaddon::LibAddon;
@@ -196,6 +187,7 @@ mod tests {
             })
         }));
     }
+    */
 
     #[test]
     fn sample_storage() {

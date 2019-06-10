@@ -74,26 +74,3 @@ fn addon_get<Env: Environment + 'static>(req: &ResourceRequest) -> Effect {
             }),
     )
 }
-
-// @TODO everything underneath will be dropped with the Elm architecture rewrite
-
-// temporary measure to get our codebase to compile
-use crate::types::api::User;
-#[derive(Debug)]
-pub struct Context {
-    pub user: Option<User>,
-    pub addons: Vec<Descriptor>,
-    // @TODO settings
-}
-
-mod container;
-pub use self::container::*;
-
-mod catalogs;
-pub use self::catalogs::*;
-
-mod chain;
-pub use self::chain::*;
-
-mod container_muxer;
-pub use self::container_muxer::*;
