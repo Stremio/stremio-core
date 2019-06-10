@@ -42,7 +42,7 @@ impl SharedIndex {
 }
 
 // The same similar pattern is used in ContextM
-type MiddlewareFuture<T> = Box<Future<Item = T, Error = MiddlewareError>>;
+type MiddlewareFuture<T> = Box<dyn Future<Item = T, Error = MiddlewareError>>;
 
 // LibAddon: the struct that represents a LibAddon for a single session (auth_key)
 // can be safely cloned in order to attach to middlewares and etc.

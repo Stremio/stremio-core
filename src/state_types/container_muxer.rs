@@ -16,7 +16,7 @@ where
     NewState(&'a T),
 }
 
-type FinalFn<T> = Box<Fn(MuxerEvent<T>)>;
+type FinalFn<T> = Box<dyn Fn(MuxerEvent<T>)>;
 
 // ContainerMuxer: this allows you to manage multiple containers
 pub struct ContainerMuxer<U> {
@@ -27,8 +27,8 @@ impl<T> ContainerMuxer<T>
 where
     T: 'static + Clone + Ord,
 {
-    pub fn new<U: 'static + Deref<Target = ContainerInterface>>(
-        middlewares: Vec<Box<Handler>>,
+    pub fn new<U: 'static + Deref<Target = dyn ContainerInterface>>(
+        middlewares: Vec<Box<dyn Handler>>,
         containers: Vec<(T, U)>,
         cb: FinalFn<T>,
     ) -> Self {

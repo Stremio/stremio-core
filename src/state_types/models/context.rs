@@ -120,14 +120,14 @@ fn save_storage<Env: Environment>(content: &CtxContent) -> Effect {
     )
 }
 
-fn api_fetch<Env: Environment, OUT: 'static>(base_url: &str, api_req: APIRequest) -> Box<Future<Item = OUT, Error = MiddlewareError>>
+fn api_fetch<Env: Environment, OUT: 'static>(base_url: &str, api_req: APIRequest) -> Box<dyn Future<Item = OUT, Error = MiddlewareError>>
 where
     OUT: serde::de::DeserializeOwned,
 {
     let url = format!("{}/api/{}", base_url, api_req.method_name());
     let req = match Request::post(url).body(api_req) {
         Ok(req) => req,
-        Err(e) => return Box::new(future::err((&e).into())),
+        Err(e) => return Box::new(future::err(e.into())),
     };
 
     let fut = Env::fetch_serde::<_, APIResult<OUT>>(req)

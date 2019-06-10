@@ -42,13 +42,15 @@ impl From<APIErr> for MiddlewareError {
         MiddlewareError::API(e)
     }
 }
+// @TODO single impl for those
+// the problem is conflicting implementations: https://users.rust-lang.org/t/sized-error-with-box-error/22748
 impl From<Box<dyn Error>> for MiddlewareError {
     fn from(e: Box<dyn Error>) -> Self {
         MiddlewareError::Env(e.to_string())
     }
 }
-impl<T> From<&T> for MiddlewareError where T: Error + ?Sized {
-    fn from(e: &T) -> Self {
+impl From<http::Error> for MiddlewareError {
+    fn from(e: http::Error) -> Self {
         MiddlewareError::Env(e.to_string())
     }
 }

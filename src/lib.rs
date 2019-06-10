@@ -280,7 +280,7 @@ mod tests {
                 .map_err(|e| e.into());
             Box::new(fut)
         }
-        fn exec(fut: Box<Future<Item = (), Error = ()>>) {
+        fn exec(fut: Box<dyn Future<Item = (), Error = ()>>) {
             spawn(fut);
         }
         fn get_storage<T: 'static + DeserializeOwned>(key: &str) -> EnvFuture<Option<T>> {

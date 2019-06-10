@@ -6,7 +6,7 @@ use super::msg::Msg;
 // This is achieved by building a recursive chain of closures, each one invoking a handler, while using the previous closure (h_taken)
 // to pass the action along the chain and give the handler an ability to emit new actions from that point of the chain onward
 use std::rc::Rc;
-pub type DispatcherFn = Box<Fn(&Msg)>;
+pub type DispatcherFn = Box<dyn Fn(&Msg)>;
 
 pub trait Handler {
     fn handle(&self, msg: &Msg, emit: Rc<DispatcherFn>);
@@ -16,7 +16,7 @@ pub struct Chain {
     dispatcher: DispatcherFn,
 }
 impl Chain {
-    pub fn new(handlers: Vec<Box<Handler>>, cb: DispatcherFn) -> Chain {
+    pub fn new(handlers: Vec<Box<dyn Handler>>, cb: DispatcherFn) -> Chain {
         let dispatcher = handlers.into_iter().rev().fold(cb, |next, handler| {
             let next = Rc::new(next);
             Box::new(move |msg| {

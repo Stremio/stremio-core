@@ -79,7 +79,7 @@ impl UserStorage {
     }
 }
 
-type MiddlewareFuture<T> = Box<Future<Item = T, Error = MiddlewareError>>;
+type MiddlewareFuture<T> = Box<dyn Future<Item = T, Error = MiddlewareError>>;
 type UserStorageHolder = Rc<RefCell<Option<UserStorage>>>;
 
 #[derive(Default)]
