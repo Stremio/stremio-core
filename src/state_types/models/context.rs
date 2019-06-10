@@ -75,7 +75,6 @@ impl<Env: Environment + 'static> Update for Ctx<Env> {
                 self.content.addons.push(*descriptor.to_owned());
                 Effects::one(save_storage::<Env>(&self.content))
             }
-            // pull addons - the result of that, Internal::CtxPulledAddons, should be handled and produces Event::CtxPulledAddons(is_new)
             Msg::Action(Action::UserOp(action)) => match action.to_owned() {
                 ActionUser::Logout => {
                     let new_content = Box::new(CtxContent::default());
@@ -104,10 +103,25 @@ impl<Env: Environment + 'static> Update for Ctx<Env> {
                     APIRequest::Login { email, password },
                 ))
                 .unchanged(),
-                ActionUser::PullAddons => {
-                    // @TODO
-                    unimplemented!();
-                }
+                ActionUser::PullAddons => match &self.content.auth {
+                    Some(Auth { key, .. }) => {
+                        let action = action.to_owned();
+                        let auth = self.content.auth.to_owned();
+                        let req = APIRequest::AddonCollectionGet {
+                            auth_key: key.to_owned(),
+                            update: false,
+                        };
+                        // @TODO handle authRace here, in the ft
+                        // @TODO respect last_modified
+                        let ft = api_fetch::<Env, CollectionResponse>(API_URL, req)
+                            .map(move |CollectionResponse { addons, .. }| {
+                                CtxUpdate(Box::new(CtxContent { auth, addons })).into()
+                            })
+                            .map_err(move |e| UserOpError(action, e.into()).into());
+                        Effects::one(Box::new(ft)).unchanged()
+                    }
+                    None => Effects::none().unchanged(),
+                },
                 ActionUser::PushAddons => match &self.content.auth {
                     Some(Auth { key, .. }) => {
                         let action = action.to_owned();
@@ -124,8 +138,8 @@ impl<Env: Environment + 'static> Update for Ctx<Env> {
                 },
             },
             Msg::Internal(CtxUpdate(new)) => {
-                // @TODO this is the place to check for changed add-ons/auth and emit the
-                // corresponding events
+                // NOTE: this is the place to check for changed add-ons/auth,
+                // if we need to
                 self.content = *new.to_owned();
                 Effects::msg(CtxChanged.into())
                     .join(Effects::one(save_storage::<Env>(&self.content)))

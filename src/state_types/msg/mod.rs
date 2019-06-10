@@ -17,6 +17,7 @@ pub use actions::*;
 pub enum Internal {
     CtxLoaded(Option<Box<CtxContent>>),
     CtxUpdate(Box<CtxContent>),
+    //AddonsPulled(AuthKey, Vec<Descriptor>),
     AddonResponse(ResourceRequest, Result<ResourceResponse, String>),
 
     // @TODO drop those
