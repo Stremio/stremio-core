@@ -67,12 +67,7 @@ impl AggrRequest {
                             .filter(|cat| cat.is_extra_supported(&extra))
                             .map(move |cat| ResourceRequest {
                                 base: transport_url.to_owned(),
-                                path: ResourceRef {
-                                    resource: "catalog".to_owned(),
-                                    type_name: cat.type_name.to_owned(),
-                                    id: cat.id.to_owned(),
-                                    extra: extra.to_owned(),
-                                },
+                                path: ResourceRef::with_extra("catalog", &cat.type_name, &cat.id, extra),
                             })
                     })
                     .flatten()
