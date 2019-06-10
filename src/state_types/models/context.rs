@@ -2,7 +2,6 @@ use crate::types::addons::Descriptor;
 use crate::types::api::{AuthKey, User};
 use crate::state_types::*;
 use std::marker::PhantomData;
-use futures::future;
 use lazy_static::*;
 use serde_derive::*;
 
@@ -78,16 +77,12 @@ impl<Env: Environment> Update for Ctx<Env> {
 const USER_DATA_KEY: &str = "userData";
 fn load_storage<Env: Environment>() -> Effect {
     Box::new(Env::get_storage(USER_DATA_KEY)
-        .then(move |res: Result<Option<Box<CtxContent>>, _>| {
-            match res {
-                Ok(x) => future::ok(Msg::Internal(Internal::CtxLoaded(x))),
-                Err(e) => future::err(Msg::Event(Event::ContextMiddlewareFatal(e.into())))
-            }
-        }))
+        .map(|x| Msg::Internal(Internal::CtxLoaded(x)))
+        .map_err(|e| Msg::Event(Event::ContextMiddlewareFatal(e.into()))))
 }
 
 fn save_storage<Env: Environment>(content: &CtxContent) -> Effect {
     Box::new(Env::set_storage(USER_DATA_KEY, Some(content))
-            .map(|_| Internal::CtxSaved.into())
-            .map_err(|e| Event::ContextMiddlewareFatal(e.into()).into()))
+            .map(|_| Msg::Internal(Internal::CtxSaved))
+            .map_err(|e| Msg::Event(Event::ContextMiddlewareFatal(e.into()))))
 }
