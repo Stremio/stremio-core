@@ -80,23 +80,21 @@ pub enum Loadable<R, E> {
 }
 
 use std::sync::Arc;
-struct CatalogGroup(Arc<(ResourceRequest, Loadable<Vec<MetaPreview>, String>)>);
+struct CatalogGroup(ResourceRequest, Loadable<Arc<Vec<MetaPreview>>, String>);
 impl Group for CatalogGroup {
     fn new(req: ResourceRequest) -> Self {
-        CatalogGroup(Arc::new((req, Loadable::Loading)))
+        CatalogGroup(req, Loadable::Loading)
     }
     fn update(&mut self, res: &Result<ResourceResponse, EnvError>) {
-        let req = (self.0).0.to_owned();
-        self.0 = Arc::new((
-            req,
-            match res {
-                Ok(ResourceResponse::Metas { metas }) => Loadable::Ready(metas.to_owned()),
-                Ok(_) => Loadable::Err(UNEXPECTED_RESP_MSG.to_string()),
-                Err(e) => Loadable::Err(e.to_string()),
-            },
-        ));
+        self.1 = match res {
+            Ok(ResourceResponse::Metas { metas }) => Loadable::Ready(Arc::new(metas.to_owned())),
+            Ok(_) => Loadable::Err(UNEXPECTED_RESP_MSG.to_string()),
+            Err(e) => Loadable::Err(e.to_string()),
+        };
     }
     fn addon_req(&self) -> &ResourceRequest {
-        &(self.0).0
+        &self.0
     }
 }
+
+
