@@ -52,6 +52,8 @@ impl From<Box<dyn Error>> for MiddlewareError {
 #[serde(tag = "event", content = "args")]
 pub enum Event {
     CtxSaved,
+    CtxChanged,
+    // @TODO: change ContextMiddlewareFatal to CtxFatal
     ContextMiddlewareFatal(MiddlewareError),
     UserOpError(ActionUser, MiddlewareError),
     AddonsChanged,

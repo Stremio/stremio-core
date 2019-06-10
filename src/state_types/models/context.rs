@@ -72,21 +72,31 @@ impl<Env: Environment> Update for Ctx<Env> {
                 self.content.addons.push(*descriptor.to_owned());
                 Effects::one(save_storage::<Env>(&self.content))
             }
-            // logout
+            // logout -> either emit CtxUpdate immediately or first remove session, then do it
             // login/register -> Internal::CtxUpdate -> Event::CtxChanged
             //   CtxUpdate - should call save_storage
             // push addons - Event::CtxPushedAddons
             // pull addons - the result of that, Internal::CtxPulledAddons, should be handled and produces Event::CtxPulledAddons(is_new)
             Msg::Action(Action::UserOp(ActionUser::Logout)) => {
-                // @TODO consider resetting only after logout
+                // @TODO save to storage
                 // CtxUpdate(Default::default())
-                let auth = self.content.auth.to_owned();
-                self.content = Default::default();
-                match auth {
-                    // @TODO destroy session, emit after
-                    Some(x) => Effects::none(),
-                    None => Effects::none()
+                match &self.content.auth {
+                    Some(Auth { key, .. }) => {
+                        // @TODO remove session, and finish with CtxChanged and save_storage
+                        Effects::none()
+                    },
+                    None => {
+                        let content = Box::new(CtxContent::default());
+                        Effects::one(Box::new(future::ok(Internal::CtxUpdate(content).into())))
+                    }
                 }
+            }
+            Msg::Internal(Internal::CtxUpdate(new)) => {
+                self.content = *new.to_owned();
+                Effects::many(vec![
+                    Box::new(future::ok(Event::CtxChanged.into())),
+                    save_storage::<Env>(&self.content)
+                ])
             }
             _ => Effects::none().unchanged(),
         }
