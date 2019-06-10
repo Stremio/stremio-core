@@ -47,6 +47,11 @@ impl From<Box<dyn Error>> for MiddlewareError {
         MiddlewareError::Env(e.to_string())
     }
 }
+impl<T> From<&T> for MiddlewareError where T: Error + ?Sized {
+    fn from(e: &T) -> Self {
+        MiddlewareError::Env(e.to_string())
+    }
+}
 
 #[derive(Debug, Clone, Serialize)]
 #[serde(tag = "event", content = "args")]

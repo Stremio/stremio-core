@@ -1,6 +1,6 @@
 use crate::state_types::*;
 use crate::types::addons::Descriptor;
-use crate::types::api::{AuthKey, User};
+use crate::types::api::*;
 use lazy_static::*;
 use serde_derive::*;
 use std::marker::PhantomData;
@@ -88,6 +88,7 @@ impl<Env: Environment> Update for Ctx<Env> {
                     None => {
                         let content = Box::new(CtxContent::default());
                         Effects::msg(Internal::CtxUpdate(content).into())
+                            .unchanged()
                     }
                 }
             }
@@ -117,4 +118,23 @@ fn save_storage<Env: Environment>(content: &CtxContent) -> Effect {
             .map(|_| Msg::Event(Event::CtxSaved))
             .map_err(|e| Msg::Event(Event::ContextMiddlewareFatal(e.into()))),
     )
+}
+
+fn api_fetch<Env: Environment, OUT: 'static>(base_url: &str, api_req: APIRequest) -> Box<Future<Item = OUT, Error = MiddlewareError>>
+where
+    OUT: serde::de::DeserializeOwned,
+{
+    let url = format!("{}/api/{}", base_url, api_req.method_name());
+    let req = match Request::post(url).body(api_req) {
+        Ok(req) => req,
+        Err(e) => return Box::new(future::err((&e).into())),
+    };
+
+    let fut = Env::fetch_serde::<_, APIResult<OUT>>(req)
+        .map_err(Into::into)
+        .and_then(|res| match res {
+            APIResult::Err { error } => future::err(error.into()),
+            APIResult::Ok { result } => future::ok(result),
+        });
+    Box::new(fut)
 }
