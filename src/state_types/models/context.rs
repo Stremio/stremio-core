@@ -75,50 +75,49 @@ impl<Env: Environment + 'static> Update for Ctx<Env> {
                 self.content.addons.push(*descriptor.to_owned());
                 Effects::one(save_storage::<Env>(&self.content))
             }
-            // logout -> either emit CtxUpdate immediately or first remove session, then do it
-            // login/register -> Internal::CtxUpdate -> Event::CtxChanged
-            //   CtxUpdate - should call save_storage
-            // push addons - Event::CtxPushedAddons
             // pull addons - the result of that, Internal::CtxPulledAddons, should be handled and produces Event::CtxPulledAddons(is_new)
-            Msg::Action(Action::UserOp(user_op)) => match user_op.to_owned() {
+            Msg::Action(Action::UserOp(action)) => match action.to_owned() {
                 ActionUser::Logout => {
                     let new_content = Box::new(CtxContent::default());
                     match &self.content.auth {
                         Some(Auth { key, .. }) => {
                             let auth_key = key.to_owned();
-                            let user_op = user_op.clone();
+                            let action = action.clone();
                             let effect = api_fetch::<Env, SuccessResponse>(
                                 API_URL,
                                 APIRequest::Logout { auth_key },
                             )
                             .map(|_| CtxUpdate(new_content).into())
-                            .map_err(move |e| UserOpError(user_op, e.into()).into());
+                            .map_err(move |e| UserOpError(action, e.into()).into());
                             Effects::one(Box::new(effect)).unchanged()
                         }
                         None => Effects::msg(CtxUpdate(new_content).into()).unchanged(),
                     }
                 }
                 ActionUser::Register { email, password } => Effects::one(authenticate::<Env>(
-                    user_op.to_owned(),
+                    action.to_owned(),
                     APIRequest::Register { email, password },
                 ))
                 .unchanged(),
                 ActionUser::Login { email, password } => Effects::one(authenticate::<Env>(
-                    user_op.to_owned(),
+                    action.to_owned(),
                     APIRequest::Login { email, password },
                 ))
                 .unchanged(),
-                ActionUser::PullAddons => Effects::none().unchanged(),
+                ActionUser::PullAddons => {
+                    // @TODO
+                    unimplemented!();
+                }
                 ActionUser::PushAddons => match &self.content.auth {
                     Some(Auth { key, .. }) => {
-                        let user_op = user_op.to_owned();
+                        let action = action.to_owned();
                         let req = APIRequest::AddonCollectionSet {
                             auth_key: key.to_owned(),
                             addons: self.content.addons.to_owned(),
                         };
                         let ft = api_fetch::<Env, SuccessResponse>(API_URL, req)
                             .map(|_| AddonsPushed.into())
-                            .map_err(move |e| UserOpError(user_op, e.into()).into());
+                            .map_err(move |e| UserOpError(action, e.into()).into());
                         Effects::one(Box::new(ft)).unchanged()
                     }
                     None => Effects::none().unchanged(),
@@ -152,7 +151,7 @@ fn save_storage<Env: Environment>(content: &CtxContent) -> Effect {
     )
 }
 
-fn authenticate<Env: Environment + 'static>(user_op: ActionUser, req: APIRequest) -> Effect {
+fn authenticate<Env: Environment + 'static>(action: ActionUser, req: APIRequest) -> Effect {
     let ft = api_fetch::<Env, AuthResponse>(API_URL, req)
         .and_then(move |AuthResponse { key, user }| {
             let pull_req = APIRequest::AddonCollectionGet {
@@ -167,7 +166,7 @@ fn authenticate<Env: Environment + 'static>(user_op: ActionUser, req: APIRequest
             )
         })
         .map(|c| Msg::Internal(CtxUpdate(Box::new(c))))
-        .map_err(move |e| Msg::Event(UserOpError(user_op, e.into())));
+        .map_err(move |e| Msg::Event(UserOpError(action, e.into())));
     Box::new(ft)
 }
 
