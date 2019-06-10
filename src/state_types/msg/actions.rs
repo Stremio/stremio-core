@@ -57,6 +57,7 @@ pub enum ActionAddon {
 #[derive(Debug, Deserialize, Clone)]
 #[serde(tag = "action", content = "args")]
 pub enum Action {
+    LoadCtx,
     Load(ActionLoad),
     AddonOp(ActionAddon),
     UserOp(ActionUser),

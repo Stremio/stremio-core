@@ -1,6 +1,6 @@
 use crate::types::addons::Descriptor;
 use crate::types::api::{AuthKey, User};
-use crate::state_types::{Update, Effects, Msg};
+use crate::state_types::{Update, Effects, Effect, Msg, Action};
 use lazy_static::*;
 use serde_derive::*;
 
@@ -18,26 +18,39 @@ pub struct Auth {
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
-pub struct Ctx {
+pub struct CtxContent {
     pub auth: Option<Auth>,
     pub addons: Vec<Descriptor>,
-    // Whether it's loaded from storage
-    pub is_loaded: bool,
 }
-
-impl Default for Ctx {
+impl Default for CtxContent {
     fn default() -> Self {
-        Ctx {
+        CtxContent {
             auth: None,
             addons: DEFAULT_ADDONS.to_owned(),
-            is_loaded: false,
         }
     }
 }
 
+#[derive(Debug, Default)]
+pub struct Ctx {
+    pub content: CtxContent,
+    // Whether it's loaded from storage
+    pub is_loaded: bool,
+}
+
 impl Update for Ctx {
-    fn update(&mut self, _: &Msg) -> Effects {
-        // @TODO
-        Effects::none()
+    fn update(&mut self, msg: &Msg) -> Effects {
+        match msg {
+            Msg::Action(Action::LoadCtx) => {
+                Effects::one(load_storage_effect()).unchanged()
+            }
+            _ => Effects::none().unchanged()
+        }
     }
+}
+
+// @TODO move these load/save?
+const USER_DATA_KEY: &str = "userData";
+fn load_storage_effect() -> Effect {
+    unimplemented!()
 }

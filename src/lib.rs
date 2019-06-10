@@ -240,12 +240,12 @@ mod tests {
             one: Content {},
             two: Content {},
         };
-        let fx = m.update(&Msg::Action(Action::LibSync));
+        let fx = m.update(&Msg::Action(Action::LoadCtx));
         assert!(fx.has_changed, "has changed");
         assert_eq!(fx.effects.len(), 3, "proper number of effects");
     }
     fn dummy_effect() -> Effects {
-        Effects::one(Box::new(future::ok(Msg::Action(Action::LibSync))))
+        Effects::one(Box::new(future::ok(Msg::Action(Action::LoadCtx))))
     }
 
     // Storage implementation
