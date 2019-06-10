@@ -42,16 +42,16 @@ pub enum ResourceResponse {
 
 // This is going from the most general to the most concrete aggregation request
 #[derive(Debug, Clone)]
-pub enum AggrRequest {
+pub enum AggrRequest<'a> {
     // @TODO should AllCatalogs have optional resource and type_name?
-    AllCatalogs { extra: Vec<ExtraProp> },
+    AllCatalogs { extra: &'a Vec<ExtraProp> },
     AllOfResource(ResourceRef),
     FromAddon(ResourceRequest),
 }
 
 // Given an AggrRequest, which describes how to request data from *all* addons,
 // return a vector of individual addon requests
-impl AggrRequest {
+impl AggrRequest<'_> {
     pub fn plan(&self, addons: &[Descriptor]) -> Vec<ResourceRequest> {
         match &self {
             AggrRequest::AllCatalogs { extra } => {

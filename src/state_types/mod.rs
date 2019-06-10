@@ -67,7 +67,7 @@ fn addon_get<Env: Environment + 'static>(req: &ResourceRequest) -> Effect {
     )
 }
 
-// CatalogFiltered
+// CatalogGrouped
 use crate::types::MetaPreview;
 use serde_derive::*;
 const UNEXPECTED_RESP_MSG: &str = "unexpected ResourceResponse";
@@ -119,9 +119,7 @@ impl<Env: Environment + 'static> UpdateWithCtx for CatalogGrouped<Env> {
             Msg::Action(Action::Load(ActionLoad::CatalogGrouped { extra })) => {
                 let (groups, effects) = addon_aggr_new::<Env, _>(
                     &ctx.content.addons,
-                    &AggrRequest::AllCatalogs {
-                        extra: extra.to_owned(),
-                    },
+                    &AggrRequest::AllCatalogs { extra },
                 );
                 self.groups = groups;
                 effects
