@@ -7,6 +7,8 @@ use std::error::Error;
 
 pub use http::Request;
 
+const API_URL: &str = "https://api.strem.io";
+
 pub type EnvFuture<T> = Box<dyn Future<Item = T, Error = Box<dyn Error>>>;
 pub trait Environment {
     // https://serde.rs/lifetimes.html#trait-bounds
@@ -22,5 +24,8 @@ pub trait Environment {
         Self: Sized + 'static,
     {
         Box::new(AddonHTTPTransport::<Self>::from_url(url))
+    }
+    fn api_url() -> &'static str {
+        API_URL
     }
 }

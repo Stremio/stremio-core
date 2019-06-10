@@ -7,7 +7,6 @@ use serde_derive::*;
 use std::marker::PhantomData;
 
 const USER_DATA_KEY: &str = "userData";
-const API_URL: &str = "https://api.strem.io";
 lazy_static! {
     static ref DEFAULT_ADDONS: Vec<Descriptor> = serde_json::from_slice(include_bytes!(
         "../../../stremio-official-addons/index.json"
@@ -85,12 +84,10 @@ impl<Env: Environment + 'static> Update for Ctx<Env> {
                         Some(Auth { key, .. }) => {
                             let auth_key = key.to_owned();
                             let action = action.clone();
-                            let effect = api_fetch::<Env, SuccessResponse>(
-                                API_URL,
-                                APIRequest::Logout { auth_key },
-                            )
-                            .map(|_| CtxUpdate(new_content).into())
-                            .map_err(move |e| CtxActionErr(action, e.into()).into());
+                            let effect =
+                                api_fetch::<Env, SuccessResponse>(APIRequest::Logout { auth_key })
+                                    .map(|_| CtxUpdate(new_content).into())
+                                    .map_err(move |e| CtxActionErr(action, e.into()).into());
                             Effects::one(Box::new(effect)).unchanged()
                         }
                         None => Effects::msg(CtxUpdate(new_content).into()).unchanged(),
@@ -115,7 +112,7 @@ impl<Env: Environment + 'static> Update for Ctx<Env> {
                             update: false,
                         };
                         // @TODO: respect last_modified
-                        let ft = api_fetch::<Env, CollectionResponse>(API_URL, req)
+                        let ft = api_fetch::<Env, CollectionResponse>(req)
                             .map(move |r| CtxAddonsPulled(key, r.addons).into())
                             .map_err(move |e| CtxActionErr(action, e.into()).into());
                         Effects::one(Box::new(ft)).unchanged()
@@ -129,7 +126,7 @@ impl<Env: Environment + 'static> Update for Ctx<Env> {
                             auth_key: key.to_owned(),
                             addons: self.content.addons.to_owned(),
                         };
-                        let ft = api_fetch::<Env, SuccessResponse>(API_URL, req)
+                        let ft = api_fetch::<Env, SuccessResponse>(req)
                             .map(|_| CtxAddonsPushed.into())
                             .map_err(move |e| CtxActionErr(action, e.into()).into());
                         Effects::one(Box::new(ft)).unchanged()
@@ -173,13 +170,13 @@ fn save_storage<Env: Environment>(content: &CtxContent) -> Effect {
 }
 
 fn authenticate<Env: Environment + 'static>(action: ActionUser, req: APIRequest) -> Effect {
-    let ft = api_fetch::<Env, AuthResponse>(API_URL, req)
+    let ft = api_fetch::<Env, AuthResponse>(req)
         .and_then(move |AuthResponse { key, user }| {
             let pull_req = APIRequest::AddonCollectionGet {
                 auth_key: key.to_owned(),
                 update: true,
             };
-            api_fetch::<Env, CollectionResponse>(API_URL, pull_req).map(
+            api_fetch::<Env, CollectionResponse>(pull_req).map(
                 move |CollectionResponse { addons, .. }| CtxContent {
                     auth: Some(Auth { key, user }),
                     addons,
@@ -191,12 +188,12 @@ fn authenticate<Env: Environment + 'static>(action: ActionUser, req: APIRequest)
     Box::new(ft)
 }
 
-fn api_fetch<Env, OUT>(url: &str, req: APIRequest) -> impl Future<Item = OUT, Error = CtxError>
+fn api_fetch<Env, OUT>(req: APIRequest) -> impl Future<Item = OUT, Error = CtxError>
 where
     Env: Environment,
     OUT: serde::de::DeserializeOwned + 'static,
 {
-    let url = format!("{}/api/{}", url, req.method_name());
+    let url = format!("{}/api/{}", Env::api_url(), req.method_name());
     let req = Request::post(url).body(req).expect("builder cannot fail");
     Env::fetch_serde::<_, APIResult<OUT>>(req)
         .map_err(Into::into)
