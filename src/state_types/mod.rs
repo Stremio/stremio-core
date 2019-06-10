@@ -69,8 +69,8 @@ fn addon_get<Env: Environment + 'static>(req: &ResourceRequest) -> Effect {
         Env::addon_transport(&req.base)
             .get(&req.path)
             .then(move |res| match res {
-                Ok(resp) => future::ok(AddonResponse(req, Ok(resp)).into()),
-                Err(e) => future::err(AddonResponse(req, Err(e.to_string())).into()),
+                Ok(resp) => future::ok(AddonResponse(req, Box::new(Ok(resp))).into()),
+                Err(e) => future::err(AddonResponse(req, Box::new(Err(e.to_string()))).into()),
             }),
     )
 }
