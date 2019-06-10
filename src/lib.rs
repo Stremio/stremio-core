@@ -247,12 +247,12 @@ mod tests {
         use stremio_derive::Model;
         #[derive(Model)]
         struct Model {
-            pub ctx: Ctx<Env>,
-            pub catalogs: CatalogGrouped,
+            ctx: Ctx<Env>,
+            catalogs: CatalogGrouped,
         }
 
         let mut app = Model {
-            ctx: Ctx::new(),
+            ctx: Default::default(),
             catalogs: Default::default(),
         };
 

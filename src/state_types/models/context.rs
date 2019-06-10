@@ -35,15 +35,16 @@ impl Default for CtxContent {
     }
 }
 
-#[derive(Debug, Default)]
+#[derive(Debug)]
 pub struct Ctx<Env: Environment> {
     pub content: CtxContent,
     // Whether it's loaded from storage
     pub is_loaded: bool,
     env: PhantomData<Env>,
 }
-impl<Env: Environment> Ctx<Env> {
-    pub fn new() -> Self {
+// https://github.com/rust-lang/rust/issues/26925
+impl<Env: Environment> Default for Ctx<Env> {
+    fn default() -> Self {
         Ctx {
             content: CtxContent::default(),
             is_loaded: false,
