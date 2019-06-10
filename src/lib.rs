@@ -215,8 +215,7 @@ mod tests {
             }
         }
         struct Content {};
-        impl UpdateWithCtx for Content {
-            type Ctx = Ctx;
+        impl UpdateWithCtx<Ctx> for Content {
             fn update(&mut self, _: &Ctx, _: &Msg) -> Effects {
                 dummy_effect()
             }
@@ -240,6 +239,14 @@ mod tests {
     }
     fn dummy_effect() -> Effects {
         Effects::one(Box::new(future::ok(Msg::Action(Action::LoadCtx))))
+    }
+
+    // Testing the CatalogsGrouped model
+    #[test]
+    fn catalog_grouped() {
+        let catalogs: CatalogGrouped = Default::default();
+        let action = &Action::Load(ActionLoad::CatalogGrouped { extra: vec![] });
+        dbg!(&catalogs);
     }
 
     // Storage implementation

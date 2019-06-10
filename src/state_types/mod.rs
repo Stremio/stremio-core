@@ -14,9 +14,8 @@ pub trait Update {
     fn update(&mut self, msg: &Msg) -> Effects;
 }
 
-pub trait UpdateWithCtx {
-    type Ctx;
-    fn update(&mut self, ctx: &Self::Ctx, msg: &Msg) -> Effects;
+pub trait UpdateWithCtx<Ctx> {
+    fn update(&mut self, ctx: &Ctx, msg: &Msg) -> Effects;
 }
 
 use crate::types::addons::{AggrRequest, Descriptor, ResourceRequest, ResourceResponse};
@@ -98,22 +97,11 @@ impl Group for CatalogGroup {
     }
 }
 
-use std::marker::PhantomData;
-#[derive(Debug, Default, Clone, Serialize)]
-pub struct CatalogGrouped<Env> {
+#[derive(Debug, Clone, Default, Serialize)]
+pub struct CatalogGrouped {
     pub groups: Vec<CatalogGroup>,
-    env: PhantomData<Env>,
 }
-impl<Env: Environment> CatalogGrouped<Env> {
-    pub fn new() -> Self {
-        CatalogGrouped {
-            groups: vec![],
-            env: PhantomData,
-        }
-    }
-}
-impl<Env: Environment + 'static> UpdateWithCtx for CatalogGrouped<Env> {
-    type Ctx = Ctx<Env>;
+impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for CatalogGrouped {
     fn update(&mut self, ctx: &Ctx<Env>, msg: &Msg) -> Effects {
         match msg {
             Msg::Action(Action::Load(ActionLoad::CatalogGrouped { extra })) => {
