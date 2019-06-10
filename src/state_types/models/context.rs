@@ -41,7 +41,7 @@ pub struct Ctx<Env: Environment> {
     env: PhantomData<Env>,
 }
 
-impl<Env: Environment> Update for Ctx<Env> {
+impl<Env: Environment + 'static> Update for Ctx<Env> {
     fn update(&mut self, msg: &Msg) -> Effects {
         match msg {
             Msg::Action(Action::LoadCtx) => Effects::one(load_storage::<Env>()).unchanged(),
@@ -77,13 +77,17 @@ impl<Env: Environment> Update for Ctx<Env> {
             //   CtxUpdate - should call save_storage
             // push addons - Event::CtxPushedAddons
             // pull addons - the result of that, Internal::CtxPulledAddons, should be handled and produces Event::CtxPulledAddons(is_new)
-            Msg::Action(Action::UserOp(ActionUser::Logout)) => {
+            Msg::Action(Action::UserOp(user_op @ ActionUser::Logout)) => {
                 // @TODO save to storage
                 // CtxUpdate(Default::default())
                 match &self.content.auth {
                     Some(Auth { key, .. }) => {
-                        // @TODO remove session, and finish with CtxChanged and save_storage
-                        Effects::none()
+                        let auth_key = key.to_string();
+                        let user_op = user_op.clone();
+                        // @TODO: unchanged?
+                        Effects::one(Box::new(api_fetch::<Env, SuccessResponse>("https://api.strem.io", APIRequest::Logout { auth_key })
+                            .map(|_| Msg::Internal(Internal::CtxUpdate(Box::new(CtxContent::default()))))
+                            .map_err(move |e| Msg::Event(Event::UserOpError(user_op, e.into())))))
                     },
                     None => {
                         let content = Box::new(CtxContent::default());
@@ -120,7 +124,7 @@ fn save_storage<Env: Environment>(content: &CtxContent) -> Effect {
     )
 }
 
-fn api_fetch<Env: Environment, OUT: 'static>(base_url: &str, api_req: APIRequest) -> impl Future<Item = OUT, Error = MiddlewareError>
+fn api_fetch<Env: Environment + 'static, OUT: 'static>(base_url: &str, api_req: APIRequest) -> impl Future<Item = OUT, Error = MiddlewareError>
 where
     OUT: serde::de::DeserializeOwned,
 {
