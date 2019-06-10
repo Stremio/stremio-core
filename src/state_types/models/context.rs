@@ -45,7 +45,7 @@ impl<Env: Environment> Update for Ctx<Env> {
     fn update(&mut self, msg: &Msg) -> Effects {
         match msg {
             Msg::Action(Action::LoadCtx) => {
-                Effects::one(load_storage_effect::<Env>()).unchanged()
+                Effects::one(load_storage::<Env>()).unchanged()
             },
             Msg::Internal(Internal::CtxLoaded(Some(content))) => {
                 self.is_loaded = true;
@@ -59,8 +59,7 @@ impl<Env: Environment> Update for Ctx<Env> {
             Msg::Action(Action::AddonOp(ActionAddon::Remove{ transport_url })) => {
                 if let Some(idx) = self.content.addons.iter().position(|x| x.transport_url == *transport_url) {
                     self.content.addons.remove(idx);
-                    // @TODO save
-                    Effects::none()
+                    Effects::one(save_storage::<Env>(&self.content))
                 } else {
                     Effects::none()
                 }
@@ -68,8 +67,7 @@ impl<Env: Environment> Update for Ctx<Env> {
             Msg::Action(Action::AddonOp(ActionAddon::Install(descriptor))) => {
                 // @TODO should we dedupe?
                 self.content.addons.push(*descriptor.to_owned());
-                // @TODO save
-                Effects::none()
+                Effects::one(save_storage::<Env>(&self.content))
             }
             _ => Effects::none().unchanged()
         }
@@ -78,7 +76,7 @@ impl<Env: Environment> Update for Ctx<Env> {
 
 // @TODO move these load/save?
 const USER_DATA_KEY: &str = "userData";
-fn load_storage_effect<Env: Environment>() -> Effect {
+fn load_storage<Env: Environment>() -> Effect {
     Box::new(Env::get_storage(USER_DATA_KEY)
         .then(move |res: Result<Option<Box<CtxContent>>, _>| {
             match res {
@@ -86,4 +84,10 @@ fn load_storage_effect<Env: Environment>() -> Effect {
                 Err(e) => future::err(Msg::Event(Event::ContextMiddlewareFatal(e.into())))
             }
         }))
+}
+
+fn save_storage<Env: Environment>(content: &CtxContent) -> Effect {
+    Box::new(Env::set_storage(USER_DATA_KEY, Some(content))
+            .map(|_| Internal::CtxSaved.into())
+            .map_err(|e| Event::ContextMiddlewareFatal(e.into()).into()))
 }

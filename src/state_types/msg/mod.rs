@@ -16,6 +16,7 @@ pub use actions::*;
 //
 pub enum Internal {
     CtxLoaded(Option<Box<CtxContent>>),
+    CtxSaved,
     AddonResponse(ResourceRequest, Result<ResourceResponse, String>),
 
     // @TODO drop those
