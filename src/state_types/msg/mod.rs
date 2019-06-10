@@ -1,4 +1,4 @@
-use crate::state_types::CtxContent;
+use crate::state_types::{CtxContent, EnvError};
 use crate::types::addons::*;
 use crate::types::api::*;
 use serde_derive::*;
@@ -15,7 +15,7 @@ pub enum Internal {
     CtxLoaded(Option<Box<CtxContent>>),
     CtxUpdate(Box<CtxContent>),
     CtxAddonsPulled(AuthKey, Vec<Descriptor>),
-    AddonResponse(ResourceRequest, Box<Result<ResourceResponse, String>>),
+    AddonResponse(ResourceRequest, Box<Result<ResourceResponse, EnvError>>),
 }
 
 //

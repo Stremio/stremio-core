@@ -28,7 +28,7 @@ use msg::Internal::*;
 pub trait Group {
     fn new(req: ResourceRequest) -> Self;
     // @TODO generic err type
-    fn update(&mut self, resp: &Result<ResourceResponse, String>) -> Self;
+    fn update(&mut self, resp: &Result<ResourceResponse, EnvError>) -> Self;
     fn addon_req(&self) -> &ResourceRequest;
 }
 pub struct AddonAggr<G: Group> {
@@ -52,7 +52,7 @@ impl<G: Group> Update for AddonAggr<G> {
         match msg {
             Msg::Internal(AddonResponse(req, result)) => {
                 if let Some(idx) = self.groups.iter().position(|g| g.addon_req() == req) {
-                    self.groups[idx].update(&result);
+                    self.groups[idx].update(result);
                     Effects::none()
                 } else {
                     Effects::none().unchanged()
@@ -69,8 +69,8 @@ fn addon_get<Env: Environment + 'static>(req: &ResourceRequest) -> Effect {
         Env::addon_transport(&req.base)
             .get(&req.path)
             .then(move |res| match res {
-                Ok(resp) => future::ok(AddonResponse(req, Box::new(Ok(resp))).into()),
-                Err(e) => future::err(AddonResponse(req, Box::new(Err(e.to_string()))).into()),
+                Ok(_) => future::ok(AddonResponse(req, Box::new(res)).into()),
+                Err(_) => future::err(AddonResponse(req, Box::new(res)).into()),
             }),
     )
 }
