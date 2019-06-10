@@ -6,6 +6,8 @@ use lazy_static::*;
 use serde_derive::*;
 use std::marker::PhantomData;
 
+const USER_DATA_KEY: &str = "userData";
+const API_URL: &str = "https://api.strem.io";
 lazy_static! {
     static ref DEFAULT_ADDONS: Vec<Descriptor> = serde_json::from_slice(include_bytes!(
         "../../../stremio-official-addons/index.json"
@@ -78,21 +80,32 @@ impl<Env: Environment + 'static> Update for Ctx<Env> {
             //   CtxUpdate - should call save_storage
             // push addons - Event::CtxPushedAddons
             // pull addons - the result of that, Internal::CtxPulledAddons, should be handled and produces Event::CtxPulledAddons(is_new)
-            Msg::Action(Action::UserOp(user_op @ ActionUser::Logout)) => {
-                let new_content = Box::new(CtxContent::default());
-                match &self.content.auth {
-                    Some(Auth { key, .. }) => {
-                        let auth_key = key.to_string();
-                        let user_op = user_op.clone();
-                        let effect = api_fetch::<Env, SuccessResponse>(
-                            "https://api.strem.io",
-                            APIRequest::Logout { auth_key },
-                        )
-                        .map(|_| CtxUpdate(new_content).into())
-                        .map_err(move |e| UserOpError(user_op, e.into()).into());
-                        Effects::one(Box::new(effect)).unchanged()
+            Msg::Action(Action::UserOp(user_op)) => {
+                match user_op.to_owned() {
+                    ActionUser::Logout => {
+                        let new_content = Box::new(CtxContent::default());
+                        match &self.content.auth {
+                            Some(Auth { key, .. }) => {
+                                let auth_key = key.to_owned();
+                                let user_op = user_op.clone();
+                                let effect = api_fetch::<Env, SuccessResponse>(API_URL, APIRequest::Logout { auth_key })
+                                    .map(|_| CtxUpdate(new_content).into())
+                                    .map_err(move |e| UserOpError(user_op, e.into()).into());
+                                Effects::one(Box::new(effect)).unchanged()
+                            }
+                            None => Effects::msg(CtxUpdate(new_content).into()).unchanged(),
+                        }
                     }
-                    None => Effects::msg(CtxUpdate(new_content).into()).unchanged(),
+                    ActionUser::Register { email, password } => {
+                        Effects::one(login_or_reg::<Env>(user_op.to_owned(), APIRequest::Register { email, password }))
+                            .unchanged()
+                    }
+                    ActionUser::Login { email, password } => {
+                        Effects::one(login_or_reg::<Env>(user_op.to_owned(), APIRequest::Login { email, password }))
+                            .unchanged()
+                    }
+                    // @TODO
+                    _ => unimplemented!()
                 }
             }
             Msg::Internal(CtxUpdate(new)) => {
@@ -107,8 +120,6 @@ impl<Env: Environment + 'static> Update for Ctx<Env> {
     }
 }
 
-// @TODO move these load/save?
-const USER_DATA_KEY: &str = "userData";
 fn load_storage<Env: Environment>() -> Effect {
     Box::new(
         Env::get_storage(USER_DATA_KEY)
@@ -125,16 +136,36 @@ fn save_storage<Env: Environment>(content: &CtxContent) -> Effect {
     )
 }
 
-fn api_fetch<Env: Environment + 'static, OUT: 'static>(
-    base_url: &str,
-    api_req: APIRequest,
+fn login_or_reg<Env: Environment + 'static>(user_op: ActionUser, req: APIRequest) -> Effect {
+    let ft = api_fetch::<Env, AuthResponse>(API_URL, req)
+        .and_then(move |AuthResponse { key, user }| {
+            let pull_req = APIRequest::AddonCollectionGet {
+                auth_key: key.to_owned(),
+                update: true,
+            };
+            api_fetch::<Env, CollectionResponse>(API_URL, pull_req).map(
+                move |CollectionResponse { addons, .. }| CtxContent {
+                    auth: Some(Auth { key, user }),
+                    addons,
+                },
+            )
+        })
+        .map(|c| CtxUpdate(Box::new(c)).into())
+        .map_err(move |e| UserOpError(user_op, e.into()).into());
+    Box::new(ft)
+}
+
+fn api_fetch<Env, OUT>(
+    url: &str,
+    req: APIRequest,
 ) -> impl Future<Item = OUT, Error = MiddlewareError>
 where
-    OUT: serde::de::DeserializeOwned,
+    Env: Environment,
+    OUT: serde::de::DeserializeOwned + 'static,
 {
-    let url = format!("{}/api/{}", base_url, api_req.method_name());
+    let url = format!("{}/api/{}", url, req.method_name());
     let req = Request::post(url)
-        .body(api_req)
+        .body(req)
         .expect("builder cannot fail");
     Env::fetch_serde::<_, APIResult<OUT>>(req)
         .map_err(Into::into)
