@@ -1,5 +1,5 @@
 use super::msg::Msg;
-use futures::Future;
+use futures::{Future, future};
 
 pub type Effect = Box<dyn Future<Item = Msg, Error = Msg>>;
 
@@ -28,6 +28,10 @@ impl Effects {
             effects,
             has_changed: true,
         }
+    }
+
+    pub fn msg(x: Msg) -> Self {
+        Effects::one(Box::new(future::ok(x)))
     }
 
     pub fn unchanged(mut self) -> Self {

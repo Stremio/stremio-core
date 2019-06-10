@@ -87,16 +87,14 @@ impl<Env: Environment> Update for Ctx<Env> {
                     },
                     None => {
                         let content = Box::new(CtxContent::default());
-                        Effects::one(Box::new(future::ok(Internal::CtxUpdate(content).into())))
+                        Effects::msg(Internal::CtxUpdate(content).into())
                     }
                 }
             }
             Msg::Internal(Internal::CtxUpdate(new)) => {
                 self.content = *new.to_owned();
-                Effects::many(vec![
-                    Box::new(future::ok(Event::CtxChanged.into())),
-                    save_storage::<Env>(&self.content)
-                ])
+                Effects::msg(Event::CtxChanged.into())
+                    .join(Effects::one(save_storage::<Env>(&self.content)))
             }
             _ => Effects::none().unchanged(),
         }
