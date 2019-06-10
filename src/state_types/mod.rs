@@ -27,8 +27,7 @@ use msg::Internal::*;
 // @TODO should this take &Descriptor too?
 pub trait Group {
     fn new(req: ResourceRequest) -> Self;
-    // @TODO generic err type
-    fn update(&mut self, resp: &Result<ResourceResponse, EnvError>) -> Self;
+    fn update(&mut self, res: &Result<ResourceResponse, EnvError>);
     fn addon_req(&self) -> &ResourceRequest;
 }
 pub fn addon_aggr_new<Env: Environment + 'static, G: Group>(
@@ -66,4 +65,38 @@ fn addon_get<Env: Environment + 'static>(req: &ResourceRequest) -> Effect {
                 Err(_) => future::err(AddonResponse(req, Box::new(res)).into()),
             }),
     )
+}
+
+// CatalogFiltered
+use crate::types::MetaPreview;
+use serde_derive::*;
+const UNEXPECTED_RESP_MSG: &str = "unexpected ResourceResponse";
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
+#[serde(tag = "type", content = "content")]
+pub enum Loadable<R, E> {
+    Loading,
+    Ready(R),
+    Err(E),
+}
+
+use std::sync::Arc;
+struct CatalogGroup(Arc<(ResourceRequest, Loadable<Vec<MetaPreview>, String>)>);
+impl Group for CatalogGroup {
+    fn new(req: ResourceRequest) -> Self {
+        CatalogGroup(Arc::new((req, Loadable::Loading)))
+    }
+    fn update(&mut self, res: &Result<ResourceResponse, EnvError>) {
+        let req = (self.0).0.to_owned();
+        self.0 = Arc::new((
+            req,
+            match res {
+                Ok(ResourceResponse::Metas { metas }) => Loadable::Ready(metas.to_owned()),
+                Ok(_) => Loadable::Err(UNEXPECTED_RESP_MSG.to_string()),
+                Err(e) => Loadable::Err(e.to_string()),
+            },
+        ));
+    }
+    fn addon_req(&self) -> &ResourceRequest {
+        &(self.0).0
+    }
 }
