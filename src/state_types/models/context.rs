@@ -80,56 +80,50 @@ impl<Env: Environment + 'static> Update for Ctx<Env> {
             //   CtxUpdate - should call save_storage
             // push addons - Event::CtxPushedAddons
             // pull addons - the result of that, Internal::CtxPulledAddons, should be handled and produces Event::CtxPulledAddons(is_new)
-            Msg::Action(Action::UserOp(user_op)) => {
-                match user_op.to_owned() {
-                    ActionUser::Logout => {
-                        let new_content = Box::new(CtxContent::default());
-                        match &self.content.auth {
-                            Some(Auth { key, .. }) => {
-                                let auth_key = key.to_owned();
-                                let user_op = user_op.clone();
-                                let effect = api_fetch::<Env, SuccessResponse>(
-                                    API_URL,
-                                    APIRequest::Logout { auth_key },
-                                )
-                                .map(|_| CtxUpdate(new_content).into())
-                                .map_err(move |e| UserOpError(user_op, e.into()).into());
-                                Effects::one(Box::new(effect)).unchanged()
-                            }
-                            None => Effects::msg(CtxUpdate(new_content).into()).unchanged(),
+            Msg::Action(Action::UserOp(user_op)) => match user_op.to_owned() {
+                ActionUser::Logout => {
+                    let new_content = Box::new(CtxContent::default());
+                    match &self.content.auth {
+                        Some(Auth { key, .. }) => {
+                            let auth_key = key.to_owned();
+                            let user_op = user_op.clone();
+                            let effect = api_fetch::<Env, SuccessResponse>(
+                                API_URL,
+                                APIRequest::Logout { auth_key },
+                            )
+                            .map(|_| CtxUpdate(new_content).into())
+                            .map_err(move |e| UserOpError(user_op, e.into()).into());
+                            Effects::one(Box::new(effect)).unchanged()
                         }
-                    }
-                    ActionUser::Register { email, password } => Effects::one(authenticate::<Env>(
-                        user_op.to_owned(),
-                        APIRequest::Register { email, password },
-                    ))
-                    .unchanged(),
-                    ActionUser::Login { email, password } => Effects::one(authenticate::<Env>(
-                        user_op.to_owned(),
-                        APIRequest::Login { email, password },
-                    ))
-                    .unchanged(),
-                    ActionUser::PullAddons => {
-                        Effects::none().unchanged()
-                    },
-                    ActionUser::PushAddons => {
-                        match &self.content.auth {
-                            Some(Auth { key, .. }) => {
-                                let user_op = user_op.to_owned();
-                                let req = APIRequest::AddonCollectionSet {
-                                    auth_key: key.to_owned(),
-                                    addons: self.content.addons.to_owned(),
-                                };
-                                let ft = api_fetch::<Env, SuccessResponse>(API_URL, req)
-                                    .map(|_| AddonsPushed.into())
-                                    .map_err(move |e| UserOpError(user_op, e.into()).into());
-                                Effects::one(Box::new(ft)).unchanged()
-                            }
-                            None => Effects::none().unchanged()
-                        }
+                        None => Effects::msg(CtxUpdate(new_content).into()).unchanged(),
                     }
                 }
-            }
+                ActionUser::Register { email, password } => Effects::one(authenticate::<Env>(
+                    user_op.to_owned(),
+                    APIRequest::Register { email, password },
+                ))
+                .unchanged(),
+                ActionUser::Login { email, password } => Effects::one(authenticate::<Env>(
+                    user_op.to_owned(),
+                    APIRequest::Login { email, password },
+                ))
+                .unchanged(),
+                ActionUser::PullAddons => Effects::none().unchanged(),
+                ActionUser::PushAddons => match &self.content.auth {
+                    Some(Auth { key, .. }) => {
+                        let user_op = user_op.to_owned();
+                        let req = APIRequest::AddonCollectionSet {
+                            auth_key: key.to_owned(),
+                            addons: self.content.addons.to_owned(),
+                        };
+                        let ft = api_fetch::<Env, SuccessResponse>(API_URL, req)
+                            .map(|_| AddonsPushed.into())
+                            .map_err(move |e| UserOpError(user_op, e.into()).into());
+                        Effects::one(Box::new(ft)).unchanged()
+                    }
+                    None => Effects::none().unchanged(),
+                },
+            },
             Msg::Internal(CtxUpdate(new)) => {
                 // @TODO this is the place to check for changed add-ons/auth and emit the
                 // corresponding events
