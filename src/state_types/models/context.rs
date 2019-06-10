@@ -106,17 +106,14 @@ impl<Env: Environment + 'static> Update for Ctx<Env> {
                 ActionUser::PullAddons => match &self.content.auth {
                     Some(Auth { key, .. }) => {
                         let action = action.to_owned();
-                        let auth = self.content.auth.to_owned();
+                        let key = key.to_owned();
                         let req = APIRequest::AddonCollectionGet {
                             auth_key: key.to_owned(),
                             update: false,
                         };
-                        // @TODO handle authRace here, in the ft
-                        // @TODO respect last_modified
+                        // @TODO: respect last_modified
                         let ft = api_fetch::<Env, CollectionResponse>(API_URL, req)
-                            .map(move |CollectionResponse { addons, .. }| {
-                                CtxUpdate(Box::new(CtxContent { auth, addons })).into()
-                            })
+                            .map(move |r| CtxAddonsPulled(key, r.addons).into())
                             .map_err(move |e| UserOpError(action, e.into()).into());
                         Effects::one(Box::new(ft)).unchanged()
                     }
@@ -130,13 +127,20 @@ impl<Env: Environment + 'static> Update for Ctx<Env> {
                             addons: self.content.addons.to_owned(),
                         };
                         let ft = api_fetch::<Env, SuccessResponse>(API_URL, req)
-                            .map(|_| AddonsPushed.into())
+                            .map(|_| CtxAddonsPushed.into())
                             .map_err(move |e| UserOpError(action, e.into()).into());
                         Effects::one(Box::new(ft)).unchanged()
                     }
                     None => Effects::none().unchanged(),
                 },
             },
+            Msg::Internal(CtxAddonsPulled(key, addons))
+                if self.content.auth.as_ref().map_or(false, |a| &a.key == key)
+                    && &self.content.addons != addons =>
+            {
+                self.content.addons = addons.to_owned();
+                Effects::msg(CtxAddonsChangedFromPull.into())
+            }
             Msg::Internal(CtxUpdate(new)) => {
                 // NOTE: this is the place to check for changed add-ons/auth,
                 // if we need to

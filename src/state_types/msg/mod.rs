@@ -17,7 +17,7 @@ pub use actions::*;
 pub enum Internal {
     CtxLoaded(Option<Box<CtxContent>>),
     CtxUpdate(Box<CtxContent>),
-    //AddonsPulled(AuthKey, Vec<Descriptor>),
+    CtxAddonsPulled(AuthKey, Vec<Descriptor>),
     AddonResponse(ResourceRequest, Result<ResourceResponse, String>),
 
     // @TODO drop those
@@ -54,10 +54,12 @@ impl From<Box<dyn Error>> for MiddlewareError {
 pub enum Event {
     CtxSaved,
     CtxChanged,
-    AddonsPushed,
+    CtxAddonsChangedFromPull,
+    CtxAddonsPushed,
     // @TODO: change ContextMiddlewareFatal to CtxFatal
     ContextMiddlewareFatal(MiddlewareError),
     UserOpError(ActionUser, MiddlewareError),
+    // @TODO drop those
     AddonsChanged,
     AddonsChangedFromPull,
     AuthChanged(Option<User>),
