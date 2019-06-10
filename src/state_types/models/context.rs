@@ -88,24 +88,46 @@ impl<Env: Environment + 'static> Update for Ctx<Env> {
                             Some(Auth { key, .. }) => {
                                 let auth_key = key.to_owned();
                                 let user_op = user_op.clone();
-                                let effect = api_fetch::<Env, SuccessResponse>(API_URL, APIRequest::Logout { auth_key })
-                                    .map(|_| CtxUpdate(new_content).into())
-                                    .map_err(move |e| UserOpError(user_op, e.into()).into());
+                                let effect = api_fetch::<Env, SuccessResponse>(
+                                    API_URL,
+                                    APIRequest::Logout { auth_key },
+                                )
+                                .map(|_| CtxUpdate(new_content).into())
+                                .map_err(move |e| UserOpError(user_op, e.into()).into());
                                 Effects::one(Box::new(effect)).unchanged()
                             }
                             None => Effects::msg(CtxUpdate(new_content).into()).unchanged(),
                         }
                     }
-                    ActionUser::Register { email, password } => {
-                        Effects::one(login_or_reg::<Env>(user_op.to_owned(), APIRequest::Register { email, password }))
-                            .unchanged()
+                    ActionUser::Register { email, password } => Effects::one(authenticate::<Env>(
+                        user_op.to_owned(),
+                        APIRequest::Register { email, password },
+                    ))
+                    .unchanged(),
+                    ActionUser::Login { email, password } => Effects::one(authenticate::<Env>(
+                        user_op.to_owned(),
+                        APIRequest::Login { email, password },
+                    ))
+                    .unchanged(),
+                    ActionUser::PullAddons => {
+                        Effects::none().unchanged()
+                    },
+                    ActionUser::PushAddons => {
+                        match &self.content.auth {
+                            Some(Auth { key, .. }) => {
+                                let user_op = user_op.to_owned();
+                                let req = APIRequest::AddonCollectionSet {
+                                    auth_key: key.to_owned(),
+                                    addons: self.content.addons.to_owned(),
+                                };
+                                let ft = api_fetch::<Env, SuccessResponse>(API_URL, req)
+                                    .map(|_| AddonsPushed.into())
+                                    .map_err(move |e| UserOpError(user_op, e.into()).into());
+                                Effects::one(Box::new(ft)).unchanged()
+                            }
+                            None => Effects::none().unchanged()
+                        }
                     }
-                    ActionUser::Login { email, password } => {
-                        Effects::one(login_or_reg::<Env>(user_op.to_owned(), APIRequest::Login { email, password }))
-                            .unchanged()
-                    }
-                    // @TODO
-                    _ => unimplemented!()
                 }
             }
             Msg::Internal(CtxUpdate(new)) => {
@@ -136,7 +158,7 @@ fn save_storage<Env: Environment>(content: &CtxContent) -> Effect {
     )
 }
 
-fn login_or_reg<Env: Environment + 'static>(user_op: ActionUser, req: APIRequest) -> Effect {
+fn authenticate<Env: Environment + 'static>(user_op: ActionUser, req: APIRequest) -> Effect {
     let ft = api_fetch::<Env, AuthResponse>(API_URL, req)
         .and_then(move |AuthResponse { key, user }| {
             let pull_req = APIRequest::AddonCollectionGet {
@@ -150,8 +172,8 @@ fn login_or_reg<Env: Environment + 'static>(user_op: ActionUser, req: APIRequest
                 },
             )
         })
-        .map(|c| CtxUpdate(Box::new(c)).into())
-        .map_err(move |e| UserOpError(user_op, e.into()).into());
+        .map(|c| Msg::Internal(CtxUpdate(Box::new(c))))
+        .map_err(move |e| Msg::Event(UserOpError(user_op, e.into())));
     Box::new(ft)
 }
 
@@ -164,9 +186,7 @@ where
     OUT: serde::de::DeserializeOwned + 'static,
 {
     let url = format!("{}/api/{}", url, req.method_name());
-    let req = Request::post(url)
-        .body(req)
-        .expect("builder cannot fail");
+    let req = Request::post(url).body(req).expect("builder cannot fail");
     Env::fetch_serde::<_, APIResult<OUT>>(req)
         .map_err(Into::into)
         .and_then(|res| match res {

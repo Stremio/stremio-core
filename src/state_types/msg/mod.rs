@@ -53,6 +53,7 @@ impl From<Box<dyn Error>> for MiddlewareError {
 pub enum Event {
     CtxSaved,
     CtxChanged,
+    AddonsPushed,
     // @TODO: change ContextMiddlewareFatal to CtxFatal
     ContextMiddlewareFatal(MiddlewareError),
     UserOpError(ActionUser, MiddlewareError),
