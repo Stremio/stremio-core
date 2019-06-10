@@ -49,11 +49,6 @@ impl From<Box<dyn Error>> for MiddlewareError {
         MiddlewareError::Env(e.to_string())
     }
 }
-impl From<http::Error> for MiddlewareError {
-    fn from(e: http::Error) -> Self {
-        MiddlewareError::Env(e.to_string())
-    }
-}
 
 #[derive(Debug, Clone, Serialize)]
 #[serde(tag = "event", content = "args")]

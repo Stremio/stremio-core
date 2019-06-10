@@ -95,7 +95,7 @@ impl<Env: Environment + 'static> LibAddon<Env> {
             collection: "libraryItem".into(),
         };
         let url = format!("{}/api/{}", &base_url, api_req.method_name());
-        let req = Request::post(url).body(api_req).unwrap();
+        let req = Request::post(url).body(api_req).expect("builder cannot fail");
 
         // @TODO datastoreMeta first
         // then dispatch the datastorePut/datastoreGet simultaniously

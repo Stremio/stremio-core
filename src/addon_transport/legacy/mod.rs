@@ -130,14 +130,10 @@ impl<'a, T: Environment> AddonInterface for AddonLegacyTransport<'a, T> {
     }
     fn manifest(&self) -> EnvFuture<Manifest> {
         let url = format!("{}/q.json?b={}", self.transport_url, MANIFEST_REQUEST_PARAM);
-        match Request::get(url).body(()) {
-            Ok(r) => Box::new(
-                T::fetch_serde::<_, JsonRPCResp<LegacyManifestResp>>(r)
-                    .and_then(map_response)
-                    .map(Into::into),
-            ),
-            Err(e) => Box::new(future::err(e.into())),
-        }
+        let r = Request::get(url).body(()).expect("builder cannot fail");
+        Box::new(T::fetch_serde::<_, JsonRPCResp<LegacyManifestResp>>(r)
+            .and_then(map_response)
+            .map(Into::into))
     }
 }
 

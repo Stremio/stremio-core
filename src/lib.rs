@@ -169,7 +169,7 @@ mod tests {
     fn addon_collection() {
         run(lazy(|| {
             let collection_url = "https://api.strem.io/addonscollection.json";
-            let req = Request::get(collection_url).body(()).unwrap();
+            let req = Request::get(collection_url).body(()).expect("builder cannot fail");
             Env::fetch_serde::<_, Vec<Descriptor>>(req).then(|res| {
                 match res {
                     Err(e) => panic!("failed getting addon collection {:?}", e),

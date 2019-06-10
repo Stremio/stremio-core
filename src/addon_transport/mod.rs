@@ -1,6 +1,5 @@
 use crate::state_types::{EnvFuture, Environment, Request};
 use crate::types::addons::*;
-use futures::future;
 use std::marker::PhantomData;
 
 mod legacy;
@@ -34,19 +33,15 @@ impl<T: Environment> AddonInterface for AddonHTTPTransport<T> {
         }
 
         let url = self.transport_url.replace(MANIFEST_PATH, &path.to_string());
-        match Request::get(&url).body(()) {
-            Ok(r) => T::fetch_serde::<_, ResourceResponse>(r),
-            Err(e) => Box::new(future::err(e.into())),
-        }
+        let r = Request::get(&url).body(()).expect("builder cannot fail");
+        T::fetch_serde::<_, ResourceResponse>(r)
     }
     fn manifest(&self) -> EnvFuture<Manifest> {
         if self.transport_url.ends_with(LEGACY_PATH) {
             return AddonLegacyTransport::<T>::from_url(&self.transport_url).manifest();
         }
 
-        match Request::get(&self.transport_url).body(()) {
-            Ok(r) => T::fetch_serde::<_, Manifest>(r),
-            Err(e) => Box::new(future::err(e.into())),
-        }
+        let r = Request::get(&self.transport_url).body(()).expect("builder cannot fail");
+        T::fetch_serde::<_, Manifest>(r)
     }
 }
