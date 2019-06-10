@@ -47,6 +47,7 @@ pub struct Ctx<Env: Environment> {
 impl<Env: Environment + 'static> Update for Ctx<Env> {
     fn update(&mut self, msg: &Msg) -> Effects {
         match msg {
+            // Loading from storage
             Msg::Action(Action::LoadCtx) => Effects::one(load_storage::<Env>()).unchanged(),
             Msg::Internal(CtxLoaded(Some(content))) => {
                 self.is_loaded = true;
@@ -57,6 +58,7 @@ impl<Env: Environment + 'static> Update for Ctx<Env> {
                 self.is_loaded = true;
                 Effects::none()
             }
+            // Addon install/remove
             Msg::Action(Action::AddonOp(ActionAddon::Remove { transport_url })) => {
                 let pos = self
                     .content
@@ -75,6 +77,7 @@ impl<Env: Environment + 'static> Update for Ctx<Env> {
                 self.content.addons.push(*descriptor.to_owned());
                 Effects::one(save_storage::<Env>(&self.content))
             }
+            // Other user actions
             Msg::Action(Action::UserOp(action)) => match action.to_owned() {
                 ActionUser::Logout => {
                     let new_content = Box::new(CtxContent::default());
@@ -134,16 +137,16 @@ impl<Env: Environment + 'static> Update for Ctx<Env> {
                     None => Effects::none().unchanged(),
                 },
             },
+            // Handling msgs that result effects
             Msg::Internal(CtxAddonsPulled(key, addons))
                 if self.content.auth.as_ref().map_or(false, |a| &a.key == key)
                     && &self.content.addons != addons =>
             {
                 self.content.addons = addons.to_owned();
                 Effects::msg(CtxAddonsChangedFromPull.into())
+                    .join(Effects::one(save_storage::<Env>(&self.content)))
             }
             Msg::Internal(CtxUpdate(new)) => {
-                // NOTE: this is the place to check for changed add-ons/auth,
-                // if we need to
                 self.content = *new.to_owned();
                 Effects::msg(CtxChanged.into())
                     .join(Effects::one(save_storage::<Env>(&self.content)))
