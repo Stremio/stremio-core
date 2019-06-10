@@ -42,6 +42,15 @@ pub struct Ctx<Env: Environment> {
     pub is_loaded: bool,
     env: PhantomData<Env>,
 }
+impl<Env: Environment> Ctx<Env> {
+    pub fn new() -> Self {
+        Ctx {
+            content: CtxContent::default(),
+            is_loaded: false,
+            env: PhantomData
+        }
+    }
+}
 
 impl<Env: Environment + 'static> Update for Ctx<Env> {
     fn update(&mut self, msg: &Msg) -> Effects {

@@ -244,9 +244,23 @@ mod tests {
     // Testing the CatalogsGrouped model
     #[test]
     fn catalog_grouped() {
-        let catalogs: CatalogGrouped = Default::default();
-        let action = &Action::Load(ActionLoad::CatalogGrouped { extra: vec![] });
-        dbg!(&catalogs);
+        use stremio_derive::Model;
+        #[derive(Model)]
+        struct Model {
+            pub ctx: Ctx<Env>,
+            pub catalogs: CatalogGrouped,
+        }
+
+        let mut app = Model {
+            ctx: Ctx::new(),
+            catalogs: Default::default(),
+        };
+
+        // @TODO use the macro
+        dbg!(&app.catalogs);
+        let msg = Msg::Action(Action::Load(ActionLoad::CatalogGrouped { extra: vec![] }));
+        app.update(&msg);
+        dbg!(&app.catalogs);
     }
 
     // Storage implementation
