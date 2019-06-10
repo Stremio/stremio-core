@@ -56,6 +56,21 @@ impl<Env: Environment> Update for Ctx<Env> {
                 self.is_loaded = true;
                 Effects::none()
             }
+            Msg::Action(Action::AddonOp(ActionAddon::Remove{ transport_url })) => {
+                if let Some(idx) = self.content.addons.iter().position(|x| x.transport_url == *transport_url) {
+                    self.content.addons.remove(idx);
+                    // @TODO save
+                    Effects::none()
+                } else {
+                    Effects::none()
+                }
+            }
+            Msg::Action(Action::AddonOp(ActionAddon::Install(descriptor))) => {
+                // @TODO should we dedupe?
+                self.content.addons.push(*descriptor.to_owned());
+                // @TODO save
+                Effects::none()
+            }
             _ => Effects::none().unchanged()
         }
     }
