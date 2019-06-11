@@ -290,6 +290,7 @@ mod tests {
         use futures::sync::mpsc::{channel, Sender, Receiver};
         use std::cell::RefCell;
         use std::rc::Rc;
+        use futures::stream::Stream;
 
         #[derive(Debug)]
         enum Output { NewModel, Event(Event) };
@@ -310,6 +311,15 @@ mod tests {
             fn dispatch(&self, msg: &Msg) -> Box<dyn Future<Item = (), Error = ()>> {
                 let handle = self.clone();
                 let fx = self.app.borrow_mut().update(msg);
+                {
+                    let mut tx = self.tx.clone();
+                    if fx.has_changed {
+                        let _ = tx.try_send(Output::NewModel);
+                    }
+                    if let Msg::Event(ev) = msg {
+                        let _ = tx.try_send(Output::Event(ev.to_owned()));
+                    }
+                }
                 let all = fx
                     .effects
                     .into_iter()
@@ -328,9 +338,17 @@ mod tests {
             }
         }
         let app = Model::default();
-        let (runtime, _) = Runtime::<Env>::new(app, 1000);
+        let (runtime, rx) = Runtime::<Env>::new(app, 1000);
         let msg = Msg::Action(Action::Load(ActionLoad::CatalogGrouped { extra: vec![] }));
         run(runtime.dispatch(&msg));
+        /*run(lazy(enclose!((runtime) move || {
+            spawn(rx.for_each(|out| {
+                dbg!(&out);
+                future::ok(())
+            }));
+            runtime.dispatch(&msg);
+            future::ok(())
+        })));*/
         dbg!(runtime.app.borrow());
     }
 
