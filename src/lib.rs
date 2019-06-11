@@ -251,42 +251,72 @@ mod tests {
             catalogs: CatalogGrouped,
         }
 
+        /*
         let mut app = Model::default();
-        
         use futures::sync::mpsc::channel;
         use futures::stream::Stream;
         use std::rc::Rc;
         use enclose::*;
         let (tx, rx) = channel::<Msg>(1000);
-        let next = Rc::new(enclose!((mut tx) move |msg| tx.try_send(msg).expect("send failed"))); 
-        /*
-        let task = rx.for_each(enclose!((tx) move |msg| {
+        let next = Rc::new(enclose!((tx) move |msg| tx.clone().try_send(msg).expect("send failed")));
+        let dispatch = enclose!((next) move |msg| {
             let fx = app.update(&msg);
+            //let new_model = app.clone();
             let all = fx
                 .effects
                 .into_iter()
-                .map(enclose!((tx) move |ft| Box::new(ft
-                    .then(enclose!((tx) move |r| {
+                .map(enclose!((next) move |ft| Box::new(ft
+                    .then(enclose!((next) move |r| {
                         let msg = match r {
                             Ok(msg) => msg,
                             Err(msg) => msg,
                         };
-                        tx.clone().try_send(msg).expect("failed sending");
+                        next(msg);
                         future::ok(())
-                    })
-                ))));
+                    }))
+                )));
 
             futures::future::join_all(all)
                 .map(|_| ())
-        }));
-        */
-
-        // @TODO use the macro
+        });
+        let task = rx.for_each(dispatch);
         let msg = Msg::Action(Action::Load(ActionLoad::CatalogGrouped { extra: vec![] }));
-        app.update(&msg);
-        dbg!(&app);
-        //tx.clone().try_send(msg).expect("failed send");
-        //run(task);
+        next(msg);
+        run(task);
+        */
+        use std::cell::RefCell;
+        use std::rc::Rc;
+        use enclose::*;
+        #[derive(Clone)]
+        struct Runtime {
+            app: Rc<RefCell<Model>>,
+        }
+        impl Runtime {
+            fn dispatch(&self, msg: &Msg) -> Box<dyn Future<Item = (), Error = ()>> {
+                let handle = self.clone();
+                let fx = self.app.borrow_mut().update(msg);
+                let all = fx
+                    .effects
+                    .into_iter()
+                    .map(enclose!((handle) move |ft| ft
+                        .then(enclose!((handle) move |r| {
+                            let msg = match r {
+                                Ok(msg) => msg,
+                                Err(msg) => msg,
+                            };
+                            spawn(handle.dispatch(&msg));
+                            future::ok(())
+                        }))
+                    ));
+                Box::new(futures::future::join_all(all)
+                    .map(|_| ()))
+            }
+        }
+        let app = Model::default();
+        let runtime = Runtime { app: Rc::new(RefCell::new(app)) };
+        let msg = Msg::Action(Action::Load(ActionLoad::CatalogGrouped { extra: vec![] }));
+        run(runtime.dispatch(&msg));
+        dbg!(runtime.app.borrow());
     }
 
     // Storage implementation

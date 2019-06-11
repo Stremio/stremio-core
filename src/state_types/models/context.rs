@@ -37,7 +37,7 @@ impl Default for CtxContent {
 }
 
 #[derive(Derivative)]
-#[derivative(Debug, Default)]
+#[derivative(Debug, Default, Clone)]
 pub struct Ctx<Env: Environment> {
     pub content: CtxContent,
     // Whether it's loaded from storage
