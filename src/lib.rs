@@ -15,62 +15,8 @@ mod tests {
     use tokio::runtime::current_thread::run;
 
     /*
-    #[derive(Debug, Eq, Ord, PartialEq, PartialOrd, Clone)]
-    enum ContainerId {
-        Board,
-        Discover,
-    }
-
-    // @TODO
     #[test]
     fn middlewares() {
-        // @TODO: Fix: the assumptions we are testing against are pretty much based on the current
-        // official addons; e.g. assuming 6 groups, or 4 groups when searching
-        let container = Rc::new(ContainerHolder::new(CatalogGrouped::new()));
-        let container_filtered = Rc::new(ContainerHolder::new(CatalogFiltered::new()));
-        let muxer = Rc::new(ContainerMuxer::new(
-            vec![
-                Box::new(ContextMiddleware::<Env>::new()),
-                Box::new(AddonsMiddleware::<Env>::new()),
-            ],
-            vec![
-                (
-                    ContainerId::Board,
-                    container.clone() as Rc<dyn ContainerInterface>,
-                ),
-                (
-                    ContainerId::Discover,
-                    container_filtered.clone() as Rc<dyn ContainerInterface>,
-                ),
-            ],
-            Box::new(|_event| {
-                //if let Event::NewState(_) = _event {
-                //    dbg!(_event);
-                //}
-            }),
-        ));
-
-        run(lazy(enclose!((muxer) move || {
-            // this is the dispatch operation
-            let action = &Action::Load(ActionLoad::CatalogGrouped { extra: vec![] });
-            muxer.dispatch(action);
-            future::ok(())
-        })));
-
-        // Now try the same, but with Search
-        run(lazy(enclose!((muxer) move || {
-            let extra = vec![("search".to_owned(), "grand tour".to_owned())];
-            let action = &Action::Load(ActionLoad::CatalogGrouped { extra });
-            muxer.dispatch(action);
-            future::ok(())
-        })));
-        let state = container.get_state_owned();
-        assert_eq!(
-            state.groups.len(),
-            4,
-            "groups is the right length when searching"
-        );
-
         let resource_req = ResourceRequest {
             base: "https://v3-cinemeta.strem.io/manifest.json".to_owned(),
             path: ResourceRef::without_extra("catalog", "movie", "top"),
@@ -242,18 +188,30 @@ mod tests {
         run(runtime.dispatch(&msg));
         // since this is after the .run() has ended, this means all async effects
         // have processed
-        let state = &runtime.app.borrow().catalogs;
-        assert_eq!(state.groups.len(), 6, "groups is the right length");
-        for g in state.groups.iter() {
-            assert!(
-                match g.content {
-                    Loadable::Ready(_) => true,
-                    Loadable::Err(_) => true,
-                    _ => false,
-                },
-                "group is Ready or Error"
-            );
+        {
+            let state = &runtime.app.borrow().catalogs;
+            assert_eq!(state.groups.len(), 6, "groups is the right length");
+            for g in state.groups.iter() {
+                assert!(
+                    match g.content {
+                        Loadable::Ready(_) => true,
+                        Loadable::Err(_) => true,
+                        _ => false,
+                    },
+                    "group is Ready or Err"
+                );
+            }
         }
+
+        // Now try the same, but with Search
+        let extra = vec![("search".to_owned(), "grand tour".to_owned())];
+        let msg = Msg::Action(Action::Load(ActionLoad::CatalogGrouped { extra }));
+        run(runtime.dispatch(&msg));
+        assert_eq!(
+            runtime.app.borrow().catalogs.groups.len(),
+            4,
+            "groups is the right length when searching"
+        );
     }
 
     // Storage implementation
