@@ -252,11 +252,14 @@ mod tests {
         }
 
         let mut app = Model::default();
-        /*
+        
         use futures::sync::mpsc::channel;
         use futures::stream::Stream;
+        use std::rc::Rc;
         use enclose::*;
         let (tx, rx) = channel::<Msg>(1000);
+        let next = Rc::new(enclose!((mut tx) move |msg| tx.try_send(msg).expect("send failed"))); 
+        /*
         let task = rx.for_each(enclose!((tx) move |msg| {
             let fx = app.update(&msg);
             let all = fx
