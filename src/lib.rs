@@ -245,17 +245,13 @@ mod tests {
     #[test]
     fn catalog_grouped() {
         use stremio_derive::Model;
-        #[derive(Model)]
+        #[derive(Model, Debug, Default)]
         struct Model {
             ctx: Ctx<Env>,
             catalogs: CatalogGrouped,
         }
 
-        let mut app = Model {
-            ctx: Default::default(),
-            catalogs: Default::default(),
-        };
-
+        let mut app = Model::default();
         /*
         use futures::sync::mpsc::channel;
         use futures::stream::Stream;
