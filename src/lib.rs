@@ -256,11 +256,36 @@ mod tests {
             catalogs: Default::default(),
         };
 
+        /*
+        // @TODO fix this, it's very wrong
+        use futures::sync::mpsc::channel;
+        use futures::stream::Stream;
+        use enclose::*;
+        let (tx, rx) = channel::<Msg>(1000);
+        let task = rx.for_each(enclose!((tx) move |msg| {
+            let fx = app.update(&msg);
+            for ft in fx.effects.into_iter() {
+                // @TODO return a future rather than spawning
+                spawn(Box::new(ft.then(enclose!((tx) move |r| {
+                    let msg = match r {
+                        Ok(msg) => msg,
+                        Err(msg) => msg,
+                    };
+                    tx.clone().try_send(msg).expect("failed sending");
+                    future::ok(())
+                }))));
+            }
+            // Test code
+            dbg!(&app.catalogs);
+            // end test code
+            future::ok(())
+        }));
+        */
         // @TODO use the macro
-        dbg!(&app.catalogs);
         let msg = Msg::Action(Action::Load(ActionLoad::CatalogGrouped { extra: vec![] }));
         app.update(&msg);
-        dbg!(&app.catalogs);
+        //tx.clone().try_send(msg).expect("failed send");
+        //run(task);
     }
 
     // Storage implementation
