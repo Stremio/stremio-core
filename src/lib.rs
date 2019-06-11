@@ -57,24 +57,6 @@ mod tests {
             future::ok(())
         })));
 
-        // since this is after the .run() has ended, it will be OK
-        let state = container.get_state_owned();
-        assert_eq!(state.groups.len(), 6, "groups is the right length");
-        assert!(state.groups[0].1.is_ready());
-        for g in state.groups.iter() {
-            assert!(
-                match g.1 {
-                    Loadable::Ready(_) => true,
-                    Loadable::Message(_) => true,
-                    _ => false,
-                },
-                "group is Ready or Message"
-            );
-        }
-        if !state.groups.iter().any(|g| g.1.is_ready()) {
-            panic!("there are no items that are Ready {:?}", state);
-        }
-
         // Now try the same, but with Search
         run(lazy(enclose!((muxer) move || {
             let extra = vec![("search".to_owned(), "grand tour".to_owned())];
@@ -242,6 +224,7 @@ mod tests {
     }
 
     // Testing the CatalogsGrouped model
+    // and the Runtime type
     #[test]
     fn catalog_grouped() {
         use stremio_derive::Model;
@@ -251,76 +234,28 @@ mod tests {
             catalogs: CatalogGrouped,
         }
 
-        use enclose::*;
-        use derivative::*;
-        use std::marker::PhantomData;
-        use futures::sync::mpsc::{channel, Sender, Receiver};
-        use std::cell::RefCell;
-        use std::rc::Rc;
-
-        #[derive(Debug)]
-        enum Ev { NewModel, Event(Event) };
-
-        #[derive(Derivative)]
-        #[derivative(Debug, Clone(bound=""))]
-        struct Runtime<Env: Environment, M: Update> {
-            pub app: Rc<RefCell<M>>,
-            tx: Sender<Ev>,
-            env: PhantomData<Env>
-        }
-        impl<Env: Environment + 'static, M: Update + 'static> Runtime<Env, M> {
-            fn new(app: M, len: usize) -> (Self, Receiver<Ev>) {
-                let (tx, rx) = channel(len);
-                let app = Rc::new(RefCell::new(app));
-                (Runtime { app, tx, env: PhantomData }, rx)
-            }
-            fn dispatch(&self, msg: &Msg) -> Box<dyn Future<Item = (), Error = ()>> {
-                let handle = self.clone();
-                let fx = self.app.borrow_mut().update(msg);
-                // Send events
-                {
-                    let mut tx = self.tx.clone();
-                    if fx.has_changed {
-                        let _ = tx.try_send(Ev::NewModel);
-                    }
-                    if let Msg::Event(ev) = msg {
-                        let _ = tx.try_send(Ev::Event(ev.to_owned()));
-                    }
-                }
-                // Handle next effects
-                let all = fx
-                    .effects
-                    .into_iter()
-                    .map(enclose!((handle) move |ft| ft
-                        .then(enclose!((handle) move |r| {
-                            let msg = match r {
-                                Ok(msg) => msg,
-                                Err(msg) => msg,
-                            };
-                            Env::exec(handle.dispatch(&msg));
-                            future::ok(())
-                        }))
-                    ));
-                Box::new(futures::future::join_all(all)
-                    .map(|_| ()))
-            }
-        }
         let app = Model::default();
-        let (runtime, rx) = Runtime::<Env, Model>::new(app, 1000);
+        let (runtime, _) = Runtime::<Env, Model>::new(app, 1000);
+
+        // Run a single dispatch of a Load msg
         let msg = Msg::Action(Action::Load(ActionLoad::CatalogGrouped { extra: vec![] }));
         run(runtime.dispatch(&msg));
-        /*
-        // @TODO test events
-        run(lazy(enclose!((runtime) move || {
-            spawn(rx.for_each(|out| {
-                dbg!(&out);
-                future::ok(())
-            }));
-            runtime.dispatch(&msg)
-        })));
-        */
-        dbg!(runtime.app.borrow());
+        // since this is after the .run() has ended, this means all async effects
+        // have processed
+        let state = &runtime.app.borrow().catalogs;
+        assert_eq!(state.groups.len(), 6, "groups is the right length");
+        for g in state.groups.iter() {
+            assert!(
+                match g.content {
+                    Loadable::Ready(_) => true,
+                    Loadable::Err(_) => true,
+                    _ => false,
+                },
+                "group is Ready or Error"
+            );
+        }
     }
+
 
     // Storage implementation
     // Uses reqwest (asynchronously) for fetch, and a BTreeMap storage

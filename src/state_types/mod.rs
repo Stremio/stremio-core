@@ -10,6 +10,9 @@ pub use self::effects::*;
 mod models;
 pub use self::models::*;
 
+mod runtime;
+pub use self::runtime::*;
+
 pub trait Update {
     fn update(&mut self, msg: &Msg) -> Effects;
 }
@@ -80,20 +83,23 @@ pub enum Loadable<R, E> {
 
 use std::sync::Arc;
 #[derive(Debug, Serialize, Clone)]
-pub struct CatalogGroup(ResourceRequest, Loadable<Arc<Vec<MetaPreview>>, String>);
+pub struct CatalogGroup {
+    req: ResourceRequest,
+    pub content: Loadable<Arc<Vec<MetaPreview>>, String>,
+}
 impl Group for CatalogGroup {
     fn new(req: ResourceRequest) -> Self {
-        CatalogGroup(req, Loadable::Loading)
+        CatalogGroup { req, content: Loadable::Loading }
     }
     fn update(&mut self, res: &Result<ResourceResponse, EnvError>) {
-        self.1 = match res {
+        self.content = match res {
             Ok(ResourceResponse::Metas { metas }) => Loadable::Ready(Arc::new(metas.to_owned())),
             Ok(_) => Loadable::Err(UNEXPECTED_RESP_MSG.to_string()),
             Err(e) => Loadable::Err(e.to_string()),
         };
     }
     fn addon_req(&self) -> &ResourceRequest {
-        &self.0
+        &self.req
     }
 }
 
