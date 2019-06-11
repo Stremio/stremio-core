@@ -5,6 +5,7 @@ use crate::types::api::*;
 use lazy_static::*;
 use serde_derive::*;
 use std::marker::PhantomData;
+use derivative::*;
 
 const USER_DATA_KEY: &str = "userData";
 lazy_static! {
@@ -35,23 +36,16 @@ impl Default for CtxContent {
     }
 }
 
-#[derive(Debug)]
+#[derive(Derivative)]
+#[derivative(Debug, Default)]
 pub struct Ctx<Env: Environment> {
     pub content: CtxContent,
     // Whether it's loaded from storage
     pub is_loaded: bool,
+    #[derivative(Debug="ignore")]
     env: PhantomData<Env>,
 }
-// https://github.com/rust-lang/rust/issues/26925
-impl<Env: Environment> Default for Ctx<Env> {
-    fn default() -> Self {
-        Ctx {
-            content: CtxContent::default(),
-            is_loaded: false,
-            env: PhantomData
-        }
-    }
-}
+
 
 impl<Env: Environment + 'static> Update for Ctx<Env> {
     fn update(&mut self, msg: &Msg) -> Effects {

@@ -285,7 +285,7 @@ mod tests {
         // @TODO use the macro
         let msg = Msg::Action(Action::Load(ActionLoad::CatalogGrouped { extra: vec![] }));
         app.update(&msg);
-        dbg!(&app.catalogs);
+        dbg!(&app);
         //tx.clone().try_send(msg).expect("failed send");
         //run(task);
     }

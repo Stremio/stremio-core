@@ -20,6 +20,7 @@ base64 = "0.10.1"
 serde-hex = "0.1.0"
 either = "1.5"
 stremio-derive = { path = "stremio-derive", version = "0.1.0" }
+derivative = "1.0.2"
 
 [workspace]
 
