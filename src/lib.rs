@@ -256,7 +256,6 @@ mod tests {
         }
     }
 
-
     // Storage implementation
     // Uses reqwest (asynchronously) for fetch, and a BTreeMap storage
     use lazy_static::*;

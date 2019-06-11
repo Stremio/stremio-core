@@ -2,10 +2,10 @@ use crate::state_types::Event::*;
 use crate::state_types::*;
 use crate::types::addons::Descriptor;
 use crate::types::api::*;
+use derivative::*;
 use lazy_static::*;
 use serde_derive::*;
 use std::marker::PhantomData;
-use derivative::*;
 
 const USER_DATA_KEY: &str = "userData";
 lazy_static! {
@@ -42,10 +42,9 @@ pub struct Ctx<Env: Environment> {
     pub content: CtxContent,
     // Whether it's loaded from storage
     pub is_loaded: bool,
-    #[derivative(Debug="ignore")]
+    #[derivative(Debug = "ignore")]
     env: PhantomData<Env>,
 }
-
 
 impl<Env: Environment + 'static> Update for Ctx<Env> {
     fn update(&mut self, msg: &Msg) -> Effects {

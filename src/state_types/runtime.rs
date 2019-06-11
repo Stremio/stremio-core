@@ -1,27 +1,37 @@
-use enclose::*;
-use derivative::*;
-use std::marker::PhantomData;
-use futures::future;
-use futures::sync::mpsc::{channel, Sender, Receiver};
 use crate::state_types::*;
+use derivative::*;
+use enclose::*;
+use futures::future;
+use futures::sync::mpsc::{channel, Receiver, Sender};
 use std::cell::RefCell;
+use std::marker::PhantomData;
 use std::rc::Rc;
 
 #[derive(Debug)]
-pub enum RuntimeEv { NewModel, Event(Event) }
+pub enum RuntimeEv {
+    NewModel,
+    Event(Event),
+}
 
 #[derive(Derivative)]
-#[derivative(Debug, Clone(bound=""))]
+#[derivative(Debug, Clone(bound = ""))]
 pub struct Runtime<Env: Environment, M: Update> {
     pub app: Rc<RefCell<M>>,
     tx: Sender<RuntimeEv>,
-    env: PhantomData<Env>
+    env: PhantomData<Env>,
 }
 impl<Env: Environment + 'static, M: Update + 'static> Runtime<Env, M> {
     pub fn new(app: M, len: usize) -> (Self, Receiver<RuntimeEv>) {
         let (tx, rx) = channel(len);
         let app = Rc::new(RefCell::new(app));
-        (Runtime { app, tx, env: PhantomData }, rx)
+        (
+            Runtime {
+                app,
+                tx,
+                env: PhantomData,
+            },
+            rx,
+        )
     }
     pub fn dispatch(&self, msg: &Msg) -> Box<dyn Future<Item = (), Error = ()>> {
         let handle = self.clone();
@@ -37,20 +47,16 @@ impl<Env: Environment + 'static, M: Update + 'static> Runtime<Env, M> {
             }
         }
         // Handle next effects
-        let all = fx
-            .effects
-            .into_iter()
-            .map(enclose!((handle) move |ft| ft
-                .then(enclose!((handle) move |r| {
-                    let msg = match r {
-                        Ok(msg) => msg,
-                        Err(msg) => msg,
-                    };
-                    Env::exec(handle.dispatch(&msg));
-                    future::ok(())
-                }))
-            ));
-        Box::new(futures::future::join_all(all)
-            .map(|_| ()))
+        let all = fx.effects.into_iter().map(enclose!((handle) move |ft| ft
+            .then(enclose!((handle) move |r| {
+                let msg = match r {
+                    Ok(msg) => msg,
+                    Err(msg) => msg,
+                };
+                Env::exec(handle.dispatch(&msg));
+                future::ok(())
+            }))
+        ));
+        Box::new(futures::future::join_all(all).map(|_| ()))
     }
 }

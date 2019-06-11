@@ -89,7 +89,10 @@ pub struct CatalogGroup {
 }
 impl Group for CatalogGroup {
     fn new(req: ResourceRequest) -> Self {
-        CatalogGroup { req, content: Loadable::Loading }
+        CatalogGroup {
+            req,
+            content: Loadable::Loading,
+        }
     }
     fn update(&mut self, res: &Result<ResourceResponse, EnvError>) {
         self.content = match res {
