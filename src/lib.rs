@@ -257,20 +257,19 @@ mod tests {
         use futures::sync::mpsc::{channel, Sender, Receiver};
         use std::cell::RefCell;
         use std::rc::Rc;
-        use futures::stream::Stream;
 
         #[derive(Debug)]
         enum Ev { NewModel, Event(Event) };
 
         #[derive(Derivative)]
-        #[derivative(Debug, Clone)]
-        struct Runtime<Env: Environment> {
-            pub app: Rc<RefCell<Model>>,
+        #[derivative(Debug, Clone(bound=""))]
+        struct Runtime<Env: Environment, M: Update> {
+            pub app: Rc<RefCell<M>>,
             tx: Sender<Ev>,
             env: PhantomData<Env>
         }
-        impl<Env: Environment + 'static> Runtime<Env> {
-            fn new(app: Model, len: usize) -> (Self, Receiver<Ev>) {
+        impl<Env: Environment + 'static, M: Update + 'static> Runtime<Env, M> {
+            fn new(app: M, len: usize) -> (Self, Receiver<Ev>) {
                 let (tx, rx) = channel(len);
                 let app = Rc::new(RefCell::new(app));
                 (Runtime { app, tx, env: PhantomData }, rx)
@@ -307,9 +306,11 @@ mod tests {
             }
         }
         let app = Model::default();
-        let (runtime, rx) = Runtime::<Env>::new(app, 1000);
+        let (runtime, rx) = Runtime::<Env, Model>::new(app, 1000);
         let msg = Msg::Action(Action::Load(ActionLoad::CatalogGrouped { extra: vec![] }));
-        //run(runtime.dispatch(&msg));
+        run(runtime.dispatch(&msg));
+        /*
+        // @TODO test events
         run(lazy(enclose!((runtime) move || {
             spawn(rx.for_each(|out| {
                 dbg!(&out);
@@ -317,6 +318,7 @@ mod tests {
             }));
             runtime.dispatch(&msg)
         })));
+        */
         dbg!(runtime.app.borrow());
     }
 
