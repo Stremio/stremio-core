@@ -251,39 +251,6 @@ mod tests {
             catalogs: CatalogGrouped,
         }
 
-        /*
-        let mut app = Model::default();
-        use futures::sync::mpsc::channel;
-        use futures::stream::Stream;
-        use std::rc::Rc;
-        use enclose::*;
-        let (tx, rx) = channel::<Msg>(1000);
-        let next = Rc::new(enclose!((tx) move |msg| tx.clone().try_send(msg).expect("send failed")));
-        let dispatch = enclose!((next) move |msg| {
-            let fx = app.update(&msg);
-            //let new_model = app.clone();
-            let all = fx
-                .effects
-                .into_iter()
-                .map(enclose!((next) move |ft| Box::new(ft
-                    .then(enclose!((next) move |r| {
-                        let msg = match r {
-                            Ok(msg) => msg,
-                            Err(msg) => msg,
-                        };
-                        next(msg);
-                        future::ok(())
-                    }))
-                )));
-
-            futures::future::join_all(all)
-                .map(|_| ())
-        });
-        let task = rx.for_each(dispatch);
-        let msg = Msg::Action(Action::Load(ActionLoad::CatalogGrouped { extra: vec![] }));
-        next(msg);
-        run(task);
-        */
         use enclose::*;
         use derivative::*;
         use std::marker::PhantomData;
@@ -293,17 +260,17 @@ mod tests {
         use futures::stream::Stream;
 
         #[derive(Debug)]
-        enum Output { NewModel, Event(Event) };
+        enum Ev { NewModel, Event(Event) };
 
         #[derive(Derivative)]
         #[derivative(Debug, Clone)]
         struct Runtime<Env: Environment> {
             pub app: Rc<RefCell<Model>>,
-            tx: Sender<Output>,
+            tx: Sender<Ev>,
             env: PhantomData<Env>
         }
         impl<Env: Environment + 'static> Runtime<Env> {
-            fn new(app: Model, len: usize) -> (Self, Receiver<Output>) {
+            fn new(app: Model, len: usize) -> (Self, Receiver<Ev>) {
                 let (tx, rx) = channel(len);
                 let app = Rc::new(RefCell::new(app));
                 (Runtime { app, tx, env: PhantomData }, rx)
@@ -311,15 +278,17 @@ mod tests {
             fn dispatch(&self, msg: &Msg) -> Box<dyn Future<Item = (), Error = ()>> {
                 let handle = self.clone();
                 let fx = self.app.borrow_mut().update(msg);
+                // Send events
                 {
                     let mut tx = self.tx.clone();
                     if fx.has_changed {
-                        let _ = tx.try_send(Output::NewModel);
+                        let _ = tx.try_send(Ev::NewModel);
                     }
                     if let Msg::Event(ev) = msg {
-                        let _ = tx.try_send(Output::Event(ev.to_owned()));
+                        let _ = tx.try_send(Ev::Event(ev.to_owned()));
                     }
                 }
+                // Handle next effects
                 let all = fx
                     .effects
                     .into_iter()
@@ -340,15 +309,14 @@ mod tests {
         let app = Model::default();
         let (runtime, rx) = Runtime::<Env>::new(app, 1000);
         let msg = Msg::Action(Action::Load(ActionLoad::CatalogGrouped { extra: vec![] }));
-        run(runtime.dispatch(&msg));
-        /*run(lazy(enclose!((runtime) move || {
+        //run(runtime.dispatch(&msg));
+        run(lazy(enclose!((runtime) move || {
             spawn(rx.for_each(|out| {
                 dbg!(&out);
                 future::ok(())
             }));
-            runtime.dispatch(&msg);
-            future::ok(())
-        })));*/
+            runtime.dispatch(&msg)
+        })));
         dbg!(runtime.app.borrow());
     }
 
