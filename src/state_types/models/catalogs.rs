@@ -2,6 +2,7 @@ use crate::types::addons::{AggrRequest, ResourceRequest, ResourceResponse};
 use super::addons::*;
 use crate::state_types::msg::Internal::*;
 use crate::state_types::*;
+use std::convert::TryInto;
 
 use crate::types::MetaPreview;
 use serde_derive::*;
@@ -14,23 +15,26 @@ pub enum Loadable<R, E> {
     Err(E),
 }
 
-use std::sync::Arc;
 #[derive(Debug, Serialize, Clone)]
-pub struct CatalogGroup {
+pub struct ItemsGroup<T> {
     req: ResourceRequest,
-    pub content: Loadable<Arc<Vec<MetaPreview>>, String>,
+    pub content: Loadable<T, String>,
 }
-impl Group for CatalogGroup {
+impl<T> Group for ItemsGroup<T> where ResourceResponse: TryInto<T> {
     fn new(req: ResourceRequest) -> Self {
-        CatalogGroup {
+        ItemsGroup {
             req,
             content: Loadable::Loading,
         }
     }
     fn update(&mut self, res: &Result<ResourceResponse, EnvError>) {
         self.content = match res {
-            Ok(ResourceResponse::Metas { metas }) => Loadable::Ready(Arc::new(metas.to_owned())),
-            Ok(_) => Loadable::Err(UNEXPECTED_RESP_MSG.to_string()),
+            Ok(resp) => {
+                match resp.to_owned().try_into() {
+                    Ok(x) => Loadable::Ready(x),
+                    Err(_) => Loadable::Err(UNEXPECTED_RESP_MSG.to_string()),
+                }
+            },
             Err(e) => Loadable::Err(e.to_string()),
         };
     }
@@ -41,7 +45,7 @@ impl Group for CatalogGroup {
 
 #[derive(Debug, Clone, Default, Serialize)]
 pub struct CatalogGrouped {
-    pub groups: Vec<CatalogGroup>,
+    pub groups: Vec<ItemsGroup<Vec<MetaPreview>>>,
 }
 impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for CatalogGrouped {
     fn update(&mut self, ctx: &Ctx<Env>, msg: &Msg) -> Effects {
@@ -66,7 +70,7 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for CatalogGrouped {
 use crate::types::addons::ManifestCatalog;
 #[derive(Debug, Default, Clone, Serialize)]
 pub struct CatalogFiltered {
-    pub item_pages: Vec<CatalogGroup>,
+    pub item_pages: Vec<ItemsGroup<Vec<MetaPreview>>>,
     pub catalogs: Vec<ManifestCatalog>,
     pub selected: Option<ResourceRequest>,
     // @TODO catalogs to be { is_selected, path, name, type }
@@ -91,7 +95,7 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for CatalogFiltered {
                     .flatten()
                     .filter(|cat| cat.is_extra_supported(&[]))
                     .collect();
-                self.item_pages = vec![CatalogGroup::new(resource_req.to_owned())];
+                self.item_pages = vec![ItemsGroup::new(resource_req.to_owned())];
                 self.selected = Some(resource_req.to_owned());
                 Effects::one(addon_get::<Env>(&resource_req))
             }

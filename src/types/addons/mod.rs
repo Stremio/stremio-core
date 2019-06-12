@@ -1,4 +1,5 @@
 use serde_derive::*;
+use std::convert::TryInto;
 mod manifest;
 mod resource_ref;
 pub use self::manifest::*;
@@ -38,6 +39,15 @@ pub enum ResourceResponse {
         streams: Vec<Stream>,
     },
     // @TODO subtitles
+}
+impl TryInto<Vec<MetaPreview>> for ResourceResponse {
+    type Error = ();
+    fn try_into(self) -> Result<Vec<MetaPreview>, ()> {
+        match self {
+            ResourceResponse::Metas { metas } => Ok(metas),
+            _ => Err(())
+        }
+    }
 }
 
 // This is going from the most general to the most concrete aggregation request
