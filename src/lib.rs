@@ -1,124 +1,18 @@
 pub mod addon_transport;
-pub mod libaddon;
-pub mod middlewares;
 pub mod state_types;
 pub mod types;
 
 #[cfg(test)]
 mod tests {
     use crate::addon_transport::*;
-    use crate::middlewares::*;
     use crate::state_types::*;
-    use crate::types::addons::{ResourceRef, ResourceRequest, ResourceResponse, Descriptor};
-    use enclose::*;
+    use crate::types::addons::{Descriptor, ResourceRef, ResourceRequest, ResourceResponse};
     use futures::future::lazy;
     use futures::{future, Future};
     use serde::de::DeserializeOwned;
     use serde::Serialize;
-    use std::rc::Rc;
     use tokio::executor::current_thread::spawn;
     use tokio::runtime::current_thread::run;
-
-    #[derive(Debug, Eq, Ord, PartialEq, PartialOrd, Clone)]
-    enum ContainerId {
-        Board,
-        Discover,
-    }
-
-    #[test]
-    fn middlewares() {
-        // to make sure we can't use 'static
-        inner_middlewares();
-    }
-    fn inner_middlewares() {
-        // @TODO: Fix: the assumptions we are testing against are pretty much based on the current
-        // official addons; e.g. assuming 6 groups, or 4 groups when searching
-        // @TODO test what happens with no handlers
-        let container = Rc::new(ContainerHolder::new(CatalogGrouped::new()));
-        let container_filtered = Rc::new(ContainerHolder::new(CatalogFiltered::new()));
-        let muxer = Rc::new(ContainerMuxer::new(
-            vec![
-                Box::new(ContextMiddleware::<Env>::new()),
-                Box::new(AddonsMiddleware::<Env>::new()),
-            ],
-            vec![
-                (
-                    ContainerId::Board,
-                    container.clone() as Rc<dyn ContainerInterface>,
-                ),
-                (
-                    ContainerId::Discover,
-                    container_filtered.clone() as Rc<dyn ContainerInterface>,
-                ),
-            ],
-            Box::new(|_event| {
-                //if let Event::NewState(_) = _event {
-                //    dbg!(_event);
-                //}
-            }),
-        ));
-
-        run(lazy(enclose!((muxer) move || {
-            // this is the dispatch operation
-            let action = &Action::Load(ActionLoad::CatalogGrouped { extra: vec![] });
-            muxer.dispatch(action);
-            future::ok(())
-        })));
-
-        // since this is after the .run() has ended, it will be OK
-        let state = container.get_state_owned();
-        assert_eq!(state.groups.len(), 6, "groups is the right length");
-        assert!(state.groups[0].1.is_ready());
-        for g in state.groups.iter() {
-            assert!(
-                match g.1 {
-                    Loadable::Ready(_) => true,
-                    Loadable::Message(_) => true,
-                    _ => false,
-                },
-                "group is Ready or Message"
-            );
-        }
-        if !state.groups.iter().any(|g| g.1.is_ready()) {
-            panic!("there are no items that are Ready {:?}", state);
-        }
-
-        // Now try the same, but with Search
-        run(lazy(enclose!((muxer) move || {
-            let extra = vec![("search".to_owned(), "grand tour".to_owned())];
-            let action = &Action::Load(ActionLoad::CatalogGrouped { extra });
-            muxer.dispatch(action);
-            future::ok(())
-        })));
-        let state = container.get_state_owned();
-        assert_eq!(
-            state.groups.len(),
-            4,
-            "groups is the right length when searching"
-        );
-
-        let resource_req = ResourceRequest {
-            transport_url: "https://v3-cinemeta.strem.io/manifest.json".to_owned(),
-            resource_ref: ResourceRef::without_extra("catalog", "movie", "top"),
-        };
-        run(lazy(enclose!((muxer, resource_req) move || {
-            muxer.dispatch_load_to(&ContainerId::Discover, &ActionLoad::CatalogFiltered { resource_req });
-            future::ok(())
-        })));
-        let state = container_filtered.get_state_owned();
-        assert_eq!(state.selected, Some(resource_req), "selected is right");
-        assert_eq!(state.item_pages.len(), 1, "item_pages is the right length");
-        assert!(state.item_pages[0].is_ready(), "first page is ready");
-
-        /*
-        // @TODO
-        run(lazy(enclose!((muxer, resource_req) move || {
-            muxer.dispatch_load_to(&ContainerId::Streams, &ActionLoad::Streams { type_name: "channel", id: "some_id" });
-            future::ok(())
-        })));
-        let state = container_streams.get_state_owned();
-        */
-    }
 
     #[test]
     fn transport_manifests() {
@@ -133,7 +27,7 @@ mod tests {
                     }
                     future::ok(())
                 });
-            let fut2 = AddonLegacyTransport::<Env>::from_url(&legacy_url)
+            let fut2 = AddonHTTPTransport::<Env>::from_url(&legacy_url)
                 .manifest()
                 .then(|res| {
                     if let Err(e) = res {
@@ -169,20 +63,20 @@ mod tests {
     fn addon_collection() {
         run(lazy(|| {
             let collection_url = "https://api.strem.io/addonscollection.json";
-            let req = Request::get(collection_url).body(()).unwrap();
-            Env::fetch_serde::<_, Vec<Descriptor>>(req)
-                .then(|res| {
-                    match res {
-                        Err(e) => panic!("failed getting addon collection {:?}", e),
-                        Ok(collection) => {
-                            assert!(collection.len() > 0, "has addons")
-                        }
-                    };
-                    future::ok(())
-                })
+            let req = Request::get(collection_url)
+                .body(())
+                .expect("builder cannot fail");
+            Env::fetch_serde::<_, Vec<Descriptor>>(req).then(|res| {
+                match res {
+                    Err(e) => panic!("failed getting addon collection {:?}", e),
+                    Ok(collection) => assert!(collection.len() > 0, "has addons"),
+                };
+                future::ok(())
+            })
         }));
     }
 
+    /*
     #[test]
     fn libitems() {
         use crate::libaddon::LibAddon;
@@ -197,6 +91,7 @@ mod tests {
             })
         }));
     }
+    */
 
     #[test]
     fn sample_storage() {
@@ -214,6 +109,144 @@ mod tests {
         );
     }
 
+    #[test]
+    fn stremio_derive() {
+        // Implement some dummy Ctx and contents
+        struct Ctx {};
+        impl Update for Ctx {
+            fn update(&mut self, _: &Msg) -> Effects {
+                dummy_effect()
+            }
+        }
+        struct Content {};
+        impl UpdateWithCtx<Ctx> for Content {
+            fn update(&mut self, _: &Ctx, _: &Msg) -> Effects {
+                dummy_effect()
+            }
+        }
+
+        use stremio_derive::Model;
+        #[derive(Model)]
+        struct Model {
+            pub ctx: Ctx,
+            pub one: Content,
+            pub two: Content,
+        }
+        let mut m = Model {
+            ctx: Ctx {},
+            one: Content {},
+            two: Content {},
+        };
+        let fx = m.update(&Msg::Action(Action::LoadCtx));
+        assert!(fx.has_changed, "has changed");
+        assert_eq!(fx.effects.len(), 3, "proper number of effects");
+    }
+    fn dummy_effect() -> Effects {
+        Effects::one(Box::new(future::ok(Msg::Action(Action::LoadCtx))))
+    }
+
+    // Testing the CatalogsGrouped model
+    // and the Runtime type
+    #[test]
+    fn catalog_grouped() {
+        use stremio_derive::Model;
+        #[derive(Model, Debug, Default)]
+        struct Model {
+            ctx: Ctx<Env>,
+            catalogs: CatalogGrouped,
+        }
+
+        let app = Model::default();
+        let (runtime, _) = Runtime::<Env, Model>::new(app, 1000);
+
+        // Run a single dispatch of a Load msg
+        let msg = Msg::Action(Action::Load(ActionLoad::CatalogGrouped { extra: vec![] }));
+        run(runtime.dispatch(&msg));
+        // since this is after the .run() has ended, this means all async effects
+        // have processed
+        {
+            let state = &runtime.app.read().unwrap().catalogs;
+            assert_eq!(state.groups.len(), 6, "groups is the right length");
+            for g in state.groups.iter() {
+                assert!(
+                    match g.content {
+                        Loadable::Ready(_) => true,
+                        Loadable::Err(_) => true,
+                        _ => false,
+                    },
+                    "group is Ready or Err"
+                );
+            }
+        }
+
+        // Now try the same, but with Search
+        let extra = vec![("search".to_owned(), "grand tour".to_owned())];
+        let msg = Msg::Action(Action::Load(ActionLoad::CatalogGrouped { extra }));
+        run(runtime.dispatch(&msg));
+        assert_eq!(
+            runtime.app.read().unwrap().catalogs.groups.len(),
+            4,
+            "groups is the right length when searching"
+        );
+    }
+
+    #[test]
+    fn catalog_filtered() {
+        use stremio_derive::Model;
+        #[derive(Model, Debug, Default)]
+        struct Model {
+            ctx: Ctx<Env>,
+            catalogs: CatalogFiltered,
+        }
+
+        let app = Model::default();
+        let (runtime, _) = Runtime::<Env, Model>::new(app, 1000);
+
+        let req = ResourceRequest {
+            base: "https://v3-cinemeta.strem.io/manifest.json".to_owned(),
+            path: ResourceRef::without_extra("catalog", "movie", "top"),
+        };
+        let action = Action::Load(ActionLoad::CatalogFiltered {
+            resource_req: req.to_owned(),
+        });
+        run(runtime.dispatch(&action.into()));
+        let state = &runtime.app.read().unwrap().catalogs;
+        assert_eq!(state.selected, Some(req), "selected is right");
+        assert_eq!(state.item_pages.len(), 1, "item_pages is the right length");
+        match &state.item_pages[0] {
+            Loadable::Ready(x) => assert_eq!(x.len(), 100, "right length of items"),
+            _ => panic!("item_pages[0] is not Ready"),
+        }
+    }
+
+    #[test]
+    fn streams() {
+        use stremio_derive::Model;
+        #[derive(Model, Debug, Default)]
+        struct Model {
+            ctx: Ctx<Env>,
+            streams: Streams,
+        }
+
+        let app = Model::default();
+        let (runtime, _) = Runtime::<Env, Model>::new(app, 1000);
+
+        // If we login here with some dummy account, we can use this pretty nicely
+        //let action = Action::UserOp(ActionUser::Login { email, password });
+        //run(runtime.dispatch(&action.into()));
+
+        // @TODO install some addons that provide streams
+        let action = Action::Load(ActionLoad::Streams {
+            type_name: "series".to_string(),
+            id: "tt0773262:6:1".to_string(),
+        });
+        run(runtime.dispatch(&action.into()));
+        let state = &runtime.app.read().unwrap().streams;
+        assert_eq!(state.groups.len(), 2, "2 groups");
+    }
+
+    // Storage implementation
+    // Uses reqwest (asynchronously) for fetch, and a BTreeMap storage
     use lazy_static::*;
     use std::collections::BTreeMap;
     use std::sync::RwLock;
@@ -244,7 +277,7 @@ mod tests {
                 .map_err(|e| e.into());
             Box::new(fut)
         }
-        fn exec(fut: Box<Future<Item = (), Error = ()>>) {
+        fn exec(fut: Box<dyn Future<Item = (), Error = ()>>) {
             spawn(fut);
         }
         fn get_storage<T: 'static + DeserializeOwned>(key: &str) -> EnvFuture<Option<T>> {

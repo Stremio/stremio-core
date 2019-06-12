@@ -51,8 +51,7 @@ pub enum APIRequest {
     DatastoreMeta {
         auth_key: AuthKey,
         collection: String,
-    }
-    // @TODO datastoreMeta, datastorePut
+    }, // @TODO datastorePut
 }
 impl APIRequest {
     pub fn method_name(&self) -> &str {
@@ -93,7 +92,6 @@ pub struct AuthResponse {
 }
 
 // Sometimes, the API returns {success: true} as a result
-// @TODO find a way to enforce only being able to deserialize `true`
 #[derive(Serialize, Deserialize)]
 pub struct SuccessResponse {
     pub success: True,

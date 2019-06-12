@@ -125,7 +125,7 @@ pub struct Manifest {
     pub id_prefixes: Option<Vec<String>>,
     #[serde(default)]
     pub catalogs: Vec<ManifestCatalog>,
-    // @TODO: more efficient data structure?
+    // @TODO: implement that, consider a more efficient data structure
     //pub behavior_hints: Vec<String>,
 }
 

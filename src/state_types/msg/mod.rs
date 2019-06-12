@@ -1,9 +1,8 @@
-use crate::addon_transport::AddonInterface;
+use crate::state_types::{CtxContent, EnvError};
 use crate::types::addons::*;
 use crate::types::api::*;
 use serde_derive::*;
 use std::error::Error;
-use std::rc::Rc;
 
 mod actions;
 pub use actions::*;
@@ -12,16 +11,11 @@ pub use actions::*;
 // Intermediery messages
 // those are emitted by the middlewares and received by containers
 //
-#[derive(Debug)]
-pub struct Context {
-    pub user: Option<User>,
-    pub addons: Vec<Descriptor>,
-}
-
 pub enum Internal {
-    LoadWithCtx(Context, ActionLoad),
-    SetInternalAddon(String, Rc<dyn AddonInterface>),
-    AddonResponse(ResourceRequest, Result<ResourceResponse, String>),
+    CtxLoaded(Option<Box<CtxContent>>),
+    CtxUpdate(Box<CtxContent>),
+    CtxAddonsPulled(AuthKey, Vec<Descriptor>),
+    AddonResponse(ResourceRequest, Box<Result<ResourceResponse, EnvError>>),
 }
 
 //
@@ -30,33 +24,30 @@ pub enum Internal {
 //
 #[derive(Debug, Serialize, Clone)]
 #[serde(tag = "err", content = "args")]
-pub enum MiddlewareError {
+pub enum CtxError {
     API(APIErr),
     Env(String),
-    AuthRequired,
-    AuthRace,
-    LibIdx,
 }
-impl From<APIErr> for MiddlewareError {
+impl From<APIErr> for CtxError {
     fn from(e: APIErr) -> Self {
-        MiddlewareError::API(e)
+        CtxError::API(e)
     }
 }
-impl From<Box<dyn Error>> for MiddlewareError {
+impl From<Box<dyn Error>> for CtxError {
     fn from(e: Box<dyn Error>) -> Self {
-        MiddlewareError::Env(e.to_string())
+        CtxError::Env(e.to_string())
     }
 }
 
 #[derive(Debug, Clone, Serialize)]
 #[serde(tag = "event", content = "args")]
 pub enum Event {
-    ContextMiddlewareFatal(MiddlewareError),
-    UserOpError(ActionUser, MiddlewareError),
-    AddonsChanged,
-    AddonsChangedFromPull,
-    AuthChanged(Option<User>),
-    LibSynced { pushed: u64, pulled: u64 },
+    CtxSaved,
+    CtxChanged,
+    CtxAddonsChangedFromPull,
+    CtxAddonsPushed,
+    CtxFatal(CtxError),
+    CtxActionErr(ActionUser, CtxError),
 }
 
 //

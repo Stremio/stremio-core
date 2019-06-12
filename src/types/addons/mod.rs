@@ -3,8 +3,9 @@ mod manifest;
 mod resource_ref;
 pub use self::manifest::*;
 pub use self::resource_ref::*;
-use crate::types::{LibItem, MetaDetail, MetaPreview, Stream};
+use crate::types::{MetaDetail, MetaPreview, Stream};
 mod manifest_tests;
+use derive_more::*;
 
 pub type TransportUrl = String;
 
@@ -18,11 +19,17 @@ pub struct Descriptor {
 
 #[derive(Debug, Deserialize, Serialize, Clone, PartialEq, Eq)]
 pub struct ResourceRequest {
-    pub transport_url: TransportUrl,
-    pub resource_ref: ResourceRef,
+    pub base: TransportUrl,
+    pub path: ResourceRef,
+}
+impl ResourceRequest {
+    fn new(base: &str, path: ResourceRef) -> Self {
+        let base = base.to_owned();
+        ResourceRequest { base, path }
+    }
 }
 
-#[derive(Deserialize, Serialize, Clone, Debug)]
+#[derive(Deserialize, Serialize, Clone, Debug, TryInto)]
 #[serde(untagged)]
 pub enum ResourceResponse {
     Metas {
@@ -34,64 +41,66 @@ pub enum ResourceResponse {
         // To support other /meta/ responses (meta extensions), we should make a MetaExt variant
         meta: MetaDetail,
     },
-    LibItems {
-        libitems: Vec<LibItem>,
-    },
     Streams {
         streams: Vec<Stream>,
     },
+    // @TODO subtitles
 }
 
 // This is going from the most general to the most concrete aggregation request
 #[derive(Debug, Clone)]
-pub enum AggrRequest {
+pub enum AggrRequest<'a> {
     // @TODO should AllCatalogs have optional resource and type_name?
-    AllCatalogs { extra: Vec<ExtraProp> },
+    AllCatalogs { extra: &'a Vec<ExtraProp> },
     AllOfResource(ResourceRef),
-    FromAddon(ResourceRequest),
 }
 
 // Given an AggrRequest, which describes how to request data from *all* addons,
 // return a vector of individual addon requests
-impl AggrRequest {
-    pub fn plan(&self, addons: &[Descriptor]) -> Vec<ResourceRequest> {
+impl AggrRequest<'_> {
+    pub fn plan<'a>(&self, addons: &'a [Descriptor]) -> Vec<(&'a Descriptor, ResourceRequest)> {
         match &self {
             AggrRequest::AllCatalogs { extra } => {
                 // create a request for each catalog that matches the required extra properties
                 addons
                     .iter()
                     .map(|addon| {
-                        let transport_url = addon.transport_url.to_owned();
                         addon
                             .manifest
                             .catalogs
                             .iter()
                             .filter(|cat| cat.is_extra_supported(&extra))
-                            .map(move |cat| ResourceRequest {
-                                transport_url: transport_url.to_owned(),
-                                resource_ref: ResourceRef {
-                                    resource: "catalog".to_owned(),
-                                    type_name: cat.type_name.to_owned(),
-                                    id: cat.id.to_owned(),
-                                    extra: extra.to_owned(),
-                                },
+                            .map(move |cat| {
+                                (
+                                    addon,
+                                    ResourceRequest::new(
+                                        &addon.transport_url,
+                                        ResourceRef::with_extra(
+                                            "catalog",
+                                            &cat.type_name,
+                                            &cat.id,
+                                            extra,
+                                        ),
+                                    ),
+                                )
                             })
                     })
                     .flatten()
                     .collect()
             }
-            AggrRequest::AllOfResource(resource_ref) => {
-                // filter all addons that match the resource_ref
+            AggrRequest::AllOfResource(path) => {
+                // filter all addons that match the path
                 addons
                     .iter()
-                    .filter(|addon| addon.manifest.is_supported(&resource_ref))
-                    .map(|addon| ResourceRequest {
-                        transport_url: addon.transport_url.to_owned(),
-                        resource_ref: resource_ref.to_owned(),
+                    .filter(|addon| addon.manifest.is_supported(&path))
+                    .map(|addon| {
+                        (
+                            addon,
+                            ResourceRequest::new(&addon.transport_url, path.to_owned()),
+                        )
                     })
                     .collect()
             }
-            AggrRequest::FromAddon(req) => vec![req.to_owned()],
         }
     }
 }

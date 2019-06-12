@@ -1,17 +1,22 @@
-mod container;
-pub use self::container::*;
-
-mod catalogs;
-pub use self::catalogs::*;
+mod environment;
+pub use self::environment::*;
 
 mod msg;
 pub use self::msg::*;
 
-mod chain;
-pub use self::chain::*;
+mod effects;
+pub use self::effects::*;
 
-mod environment;
-pub use self::environment::*;
+mod models;
+pub use self::models::*;
 
-mod container_muxer;
-pub use self::container_muxer::*;
+mod runtime;
+pub use self::runtime::*;
+
+pub trait Update {
+    fn update(&mut self, msg: &Msg) -> Effects;
+}
+
+pub trait UpdateWithCtx<Ctx> {
+    fn update(&mut self, ctx: &Ctx, msg: &Msg) -> Effects;
+}
