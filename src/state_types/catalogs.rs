@@ -1,6 +1,6 @@
 use super::msg::Internal::*;
 use super::msg::*;
-use crate::state_types::{Container, Context};
+use crate::state_types::{Container, Context, Msg};
 use crate::types::addons::*;
 use crate::types::{MetaPreview, Stream};
 use serde_derive::*;
