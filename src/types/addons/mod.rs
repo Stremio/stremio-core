@@ -22,6 +22,12 @@ pub struct ResourceRequest {
     pub base: TransportUrl,
     pub path: ResourceRef,
 }
+impl ResourceRequest {
+    fn new(base: &str, path: ResourceRef) -> Self {
+        let base = base.to_owned();
+        ResourceRequest { base, path }
+    }
+}
 
 #[derive(Deserialize, Serialize, Clone, Debug, TryInto)]
 #[serde(untagged)]
@@ -59,7 +65,6 @@ impl AggrRequest<'_> {
                 addons
                     .iter()
                     .map(|addon| {
-                        let transport_url = addon.transport_url.to_owned();
                         addon
                             .manifest
                             .catalogs
@@ -68,15 +73,15 @@ impl AggrRequest<'_> {
                             .map(move |cat| {
                                 (
                                     addon,
-                                    ResourceRequest {
-                                        base: transport_url.to_owned(),
-                                        path: ResourceRef::with_extra(
+                                    ResourceRequest::new(
+                                        &addon.transport_url,
+                                        ResourceRef::with_extra(
                                             "catalog",
                                             &cat.type_name,
                                             &cat.id,
                                             extra,
                                         ),
-                                    },
+                                    ),
                                 )
                             })
                     })
@@ -91,10 +96,7 @@ impl AggrRequest<'_> {
                     .map(|addon| {
                         (
                             addon,
-                            ResourceRequest {
-                                base: addon.transport_url.to_owned(),
-                                path: path.to_owned(),
-                            },
+                            ResourceRequest::new(&addon.transport_url, path.to_owned()),
                         )
                     })
                     .collect()
