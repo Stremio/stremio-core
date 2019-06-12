@@ -38,13 +38,14 @@ impl Default for CtxContent {
     }
 }
 
-#[derive(Derivative)]
+#[derive(Derivative, Serialize)]
 #[derivative(Debug, Default, Clone)]
 pub struct Ctx<Env: Environment> {
     pub content: CtxContent,
     // Whether it's loaded from storage
     pub is_loaded: bool,
     #[derivative(Debug = "ignore")]
+    #[serde(skip)]
     env: PhantomData<Env>,
 }
 
