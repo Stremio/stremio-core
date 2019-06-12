@@ -3,9 +3,8 @@ use derivative::*;
 use enclose::*;
 use futures::sync::mpsc::{channel, Receiver, Sender};
 use futures::{future, Future};
-use std::cell::RefCell;
 use std::marker::PhantomData;
-use std::rc::Rc;
+use std::sync::{Arc, RwLock};
 
 #[derive(Debug)]
 pub enum RuntimeEv {
@@ -16,14 +15,14 @@ pub enum RuntimeEv {
 #[derive(Derivative)]
 #[derivative(Debug, Clone(bound = ""))]
 pub struct Runtime<Env: Environment, M: Update> {
-    pub app: Rc<RefCell<M>>,
+    pub app: Arc<RwLock<M>>,
     tx: Sender<RuntimeEv>,
     env: PhantomData<Env>,
 }
 impl<Env: Environment + 'static, M: Update + 'static> Runtime<Env, M> {
     pub fn new(app: M, len: usize) -> (Self, Receiver<RuntimeEv>) {
         let (tx, rx) = channel(len);
-        let app = Rc::new(RefCell::new(app));
+        let app = Arc::new(RwLock::new(app));
         (
             Runtime {
                 app,
@@ -35,7 +34,7 @@ impl<Env: Environment + 'static, M: Update + 'static> Runtime<Env, M> {
     }
     pub fn dispatch(&self, msg: &Msg) -> Box<dyn Future<Item = (), Error = ()>> {
         let handle = self.clone();
-        let fx = self.app.borrow_mut().update(msg);
+        let fx = self.app.write().expect("rwlock write failed").update(msg);
         // Send events
         {
             let mut tx = self.tx.clone();
