@@ -45,7 +45,7 @@ impl TryInto<Vec<MetaPreview>> for ResourceResponse {
     fn try_into(self) -> Result<Vec<MetaPreview>, ()> {
         match self {
             ResourceResponse::Metas { metas } => Ok(metas),
-            _ => Err(())
+            _ => Err(()),
         }
     }
 }
@@ -54,7 +54,7 @@ impl TryInto<Vec<Stream>> for ResourceResponse {
     fn try_into(self) -> Result<Vec<Stream>, ()> {
         match self {
             ResourceResponse::Streams { streams } => Ok(streams),
-            _ => Err(())
+            _ => Err(()),
         }
     }
 }
@@ -83,15 +83,20 @@ impl AggrRequest<'_> {
                             .catalogs
                             .iter()
                             .filter(|cat| cat.is_extra_supported(&extra))
-                            .map(move |cat| (addon, ResourceRequest {
-                                base: transport_url.to_owned(),
-                                path: ResourceRef::with_extra(
-                                    "catalog",
-                                    &cat.type_name,
-                                    &cat.id,
-                                    extra,
-                                ),
-                            }))
+                            .map(move |cat| {
+                                (
+                                    addon,
+                                    ResourceRequest {
+                                        base: transport_url.to_owned(),
+                                        path: ResourceRef::with_extra(
+                                            "catalog",
+                                            &cat.type_name,
+                                            &cat.id,
+                                            extra,
+                                        ),
+                                    },
+                                )
+                            })
                     })
                     .flatten()
                     .collect()
@@ -101,10 +106,15 @@ impl AggrRequest<'_> {
                 addons
                     .iter()
                     .filter(|addon| addon.manifest.is_supported(&path))
-                    .map(|addon| (addon, ResourceRequest {
-                        base: addon.transport_url.to_owned(),
-                        path: path.to_owned(),
-                    }))
+                    .map(|addon| {
+                        (
+                            addon,
+                            ResourceRequest {
+                                base: addon.transport_url.to_owned(),
+                                path: path.to_owned(),
+                            },
+                        )
+                    })
                     .collect()
             }
         }

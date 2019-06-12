@@ -1,8 +1,8 @@
 use crate::state_types::*;
 use derivative::*;
 use enclose::*;
-use futures::{future, Future};
 use futures::sync::mpsc::{channel, Receiver, Sender};
+use futures::{future, Future};
 use std::cell::RefCell;
 use std::marker::PhantomData;
 use std::rc::Rc;

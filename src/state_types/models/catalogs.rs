@@ -1,7 +1,7 @@
-use crate::types::addons::{AggrRequest, ResourceRequest, ResourceResponse};
 use super::addons::*;
 use crate::state_types::msg::Internal::*;
 use crate::state_types::*;
+use crate::types::addons::{AggrRequest, ResourceRequest, ResourceResponse};
 use crate::types::MetaPreview;
 use serde_derive::*;
 
@@ -65,10 +65,10 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for CatalogFiltered {
                 if Some(req) == self.selected.as_ref()
                     && self.item_pages.last() == Some(&Loadable::Loading) =>
             {
-                self.item_pages[0] = match &**result {
+                self.item_pages[0] = match result.as_ref() {
                     Ok(ResourceResponse::Metas { metas }) => Loadable::Ready(metas.to_owned()),
                     Ok(_) => Loadable::Err(UNEXPECTED_RESP_MSG.to_owned()),
-                    Err(e) => Loadable::Err(e.to_string())
+                    Err(e) => Loadable::Err(e.to_string()),
                 };
                 Effects::none()
             }

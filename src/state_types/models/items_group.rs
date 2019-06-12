@@ -1,7 +1,7 @@
-use std::convert::TryInto;
-use serde_derive::*;
 use crate::state_types::*;
-use crate::types::addons::{ResourceRequest, ResourceResponse, Descriptor};
+use crate::types::addons::{Descriptor, ResourceRequest, ResourceResponse};
+use serde_derive::*;
+use std::convert::TryInto;
 
 pub const UNEXPECTED_RESP_MSG: &str = "unexpected ResourceResponse";
 
@@ -18,7 +18,10 @@ pub struct ItemsGroup<T> {
     req: ResourceRequest,
     pub content: Loadable<T, String>,
 }
-impl<T> Group for ItemsGroup<T> where ResourceResponse: TryInto<T> {
+impl<T> Group for ItemsGroup<T>
+where
+    ResourceResponse: TryInto<T>,
+{
     fn new(_: &Descriptor, req: ResourceRequest) -> Self {
         ItemsGroup {
             req,
@@ -27,11 +30,9 @@ impl<T> Group for ItemsGroup<T> where ResourceResponse: TryInto<T> {
     }
     fn update(&mut self, res: &Result<ResourceResponse, EnvError>) {
         self.content = match res {
-            Ok(resp) => {
-                match resp.to_owned().try_into() {
-                    Ok(x) => Loadable::Ready(x),
-                    Err(_) => Loadable::Err(UNEXPECTED_RESP_MSG.to_string()),
-                }
+            Ok(resp) => match resp.to_owned().try_into() {
+                Ok(x) => Loadable::Ready(x),
+                Err(_) => Loadable::Err(UNEXPECTED_RESP_MSG.to_string()),
             },
             Err(e) => Loadable::Err(e.to_string()),
         };

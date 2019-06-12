@@ -1,6 +1,6 @@
-use crate::types::addons::{AggrRequest, ResourceRef};
 use super::addons::*;
 use crate::state_types::*;
+use crate::types::addons::{AggrRequest, ResourceRef};
 use crate::types::Stream;
 use serde_derive::*;
 
@@ -26,5 +26,3 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for Streams {
         }
     }
 }
-
-

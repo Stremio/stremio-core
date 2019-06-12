@@ -4,10 +4,10 @@ use crate::state_types::*;
 use crate::types::addons::Descriptor;
 use crate::types::api::*;
 use derivative::*;
+use futures::{future, Future};
 use lazy_static::*;
 use serde_derive::*;
 use std::marker::PhantomData;
-use futures::{Future, future};
 
 const USER_DATA_KEY: &str = "userData";
 lazy_static! {

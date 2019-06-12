@@ -6,7 +6,7 @@ pub mod types;
 mod tests {
     use crate::addon_transport::*;
     use crate::state_types::*;
-    use crate::types::addons::{Descriptor, ResourceRef, ResourceResponse, ResourceRequest};
+    use crate::types::addons::{Descriptor, ResourceRef, ResourceRequest, ResourceResponse};
     use futures::future::lazy;
     use futures::{future, Future};
     use serde::de::DeserializeOwned;
@@ -217,7 +217,9 @@ mod tests {
             base: "https://v3-cinemeta.strem.io/manifest.json".to_owned(),
             path: ResourceRef::without_extra("catalog", "movie", "top"),
         };
-        let action = Action::Load(ActionLoad::CatalogFiltered { resource_req: req.to_owned() });
+        let action = Action::Load(ActionLoad::CatalogFiltered {
+            resource_req: req.to_owned(),
+        });
         run(runtime.dispatch(&action.into()));
         let state = &runtime.app.borrow().catalogs;
         assert_eq!(state.selected, Some(req), "selected is right");
@@ -243,7 +245,7 @@ mod tests {
         // @TODO install some addons that provide streams
         let action = Action::Load(ActionLoad::Streams {
             type_name: "channel".to_string(),
-            id: "UCevVH-AyrGnTDMalq2x5fQQ:FTQbiNvZqaY".to_string()
+            id: "UCevVH-AyrGnTDMalq2x5fQQ:FTQbiNvZqaY".to_string(),
         });
         run(runtime.dispatch(&action.into()));
         let state = &runtime.app.borrow().streams;
