@@ -6,7 +6,7 @@ pub mod types;
 mod tests {
     use crate::addon_transport::*;
     use crate::state_types::*;
-    use crate::types::addons::{Descriptor, ResourceRef, ResourceResponse};
+    use crate::types::addons::{Descriptor, ResourceRef, ResourceResponse, ResourceRequest};
     use futures::future::lazy;
     use futures::{future, Future};
     use serde::de::DeserializeOwned;
@@ -17,19 +17,6 @@ mod tests {
     /*
     #[test]
     fn middlewares() {
-        let resource_req = ResourceRequest {
-            base: "https://v3-cinemeta.strem.io/manifest.json".to_owned(),
-            path: ResourceRef::without_extra("catalog", "movie", "top"),
-        };
-        run(lazy(enclose!((muxer, resource_req) move || {
-            muxer.dispatch_load_to(&ContainerId::Discover, &ActionLoad::CatalogFiltered { resource_req });
-            future::ok(())
-        })));
-        let state = container_filtered.get_state_owned();
-        assert_eq!(state.selected, Some(resource_req), "selected is right");
-        assert_eq!(state.item_pages.len(), 1, "item_pages is the right length");
-        assert!(state.item_pages[0].is_ready(), "first page is ready");
-
         run(lazy(enclose!((muxer, resource_req) move || {
             muxer.dispatch_load_to(&ContainerId::Streams, &ActionLoad::Streams { type_name: "channel", id: "some_id" });
             future::ok(())
@@ -212,6 +199,33 @@ mod tests {
             4,
             "groups is the right length when searching"
         );
+    }
+
+    #[test]
+    fn catalog_filtered() {
+        use stremio_derive::Model;
+        #[derive(Model, Debug, Default)]
+        struct Model {
+            ctx: Ctx<Env>,
+            catalogs: CatalogFiltered,
+        }
+
+        let app = Model::default();
+        let (runtime, _) = Runtime::<Env, Model>::new(app, 1000);
+
+        let req = ResourceRequest {
+            base: "https://v3-cinemeta.strem.io/manifest.json".to_owned(),
+            path: ResourceRef::without_extra("catalog", "movie", "top"),
+        };
+        let action = Action::Load(ActionLoad::CatalogFiltered { resource_req: req.to_owned() });
+        run(runtime.dispatch(&action.into()));
+        let state = &runtime.app.borrow().catalogs;
+        assert_eq!(state.selected, Some(req), "selected is right");
+        assert_eq!(state.item_pages.len(), 1, "item_pages is the right length");
+        match &state.item_pages[0].content {
+            Loadable::Ready(x) => assert_eq!(x.len(), 100, "right length of items"),
+            _ => panic!("item_pages[0] is not Ready"),
+        }
     }
 
     // Storage implementation
