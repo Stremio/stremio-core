@@ -1,9 +1,9 @@
 use std::convert::TryInto;
 use serde_derive::*;
 use crate::state_types::*;
-use crate::types::addons::{ResourceRequest, ResourceResponse};
+use crate::types::addons::{ResourceRequest, ResourceResponse, Descriptor};
 
-const UNEXPECTED_RESP_MSG: &str = "unexpected ResourceResponse";
+pub const UNEXPECTED_RESP_MSG: &str = "unexpected ResourceResponse";
 
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
 #[serde(tag = "type", content = "content")]
@@ -19,7 +19,7 @@ pub struct ItemsGroup<T> {
     pub content: Loadable<T, String>,
 }
 impl<T> Group for ItemsGroup<T> where ResourceResponse: TryInto<T> {
-    fn new(req: ResourceRequest) -> Self {
+    fn new(_: &Descriptor, req: ResourceRequest) -> Self {
         ItemsGroup {
             req,
             content: Loadable::Loading,

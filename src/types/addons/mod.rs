@@ -65,13 +65,12 @@ pub enum AggrRequest<'a> {
     // @TODO should AllCatalogs have optional resource and type_name?
     AllCatalogs { extra: &'a Vec<ExtraProp> },
     AllOfResource(ResourceRef),
-    FromAddon(ResourceRequest),
 }
 
 // Given an AggrRequest, which describes how to request data from *all* addons,
 // return a vector of individual addon requests
 impl AggrRequest<'_> {
-    pub fn plan(&self, addons: &[Descriptor]) -> Vec<ResourceRequest> {
+    pub fn plan<'a>(&self, addons: &'a [Descriptor]) -> Vec<(&'a Descriptor, ResourceRequest)> {
         match &self {
             AggrRequest::AllCatalogs { extra } => {
                 // create a request for each catalog that matches the required extra properties
@@ -84,7 +83,7 @@ impl AggrRequest<'_> {
                             .catalogs
                             .iter()
                             .filter(|cat| cat.is_extra_supported(&extra))
-                            .map(move |cat| ResourceRequest {
+                            .map(move |cat| (addon, ResourceRequest {
                                 base: transport_url.to_owned(),
                                 path: ResourceRef::with_extra(
                                     "catalog",
@@ -92,7 +91,7 @@ impl AggrRequest<'_> {
                                     &cat.id,
                                     extra,
                                 ),
-                            })
+                            }))
                     })
                     .flatten()
                     .collect()
@@ -102,13 +101,12 @@ impl AggrRequest<'_> {
                 addons
                     .iter()
                     .filter(|addon| addon.manifest.is_supported(&path))
-                    .map(|addon| ResourceRequest {
+                    .map(|addon| (addon, ResourceRequest {
                         base: addon.transport_url.to_owned(),
                         path: path.to_owned(),
-                    })
+                    }))
                     .collect()
             }
-            AggrRequest::FromAddon(req) => vec![req.to_owned()],
         }
     }
 }

@@ -1,4 +1,4 @@
-use crate::types::addons::{AggrRequest, ResourceRequest};
+use crate::types::addons::{AggrRequest, ResourceRequest, ResourceResponse};
 use super::addons::*;
 use crate::state_types::msg::Internal::*;
 use crate::state_types::*;
@@ -32,7 +32,7 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for CatalogGrouped {
 use crate::types::addons::ManifestCatalog;
 #[derive(Debug, Default, Clone, Serialize)]
 pub struct CatalogFiltered {
-    pub item_pages: Vec<ItemsGroup<Vec<MetaPreview>>>,
+    pub item_pages: Vec<Loadable<Vec<MetaPreview>, String>>,
     pub catalogs: Vec<ManifestCatalog>,
     pub selected: Option<ResourceRequest>,
     // @TODO catalogs to be { is_selected, path, name, type }
@@ -57,14 +57,19 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for CatalogFiltered {
                     .flatten()
                     .filter(|cat| cat.is_extra_supported(&[]))
                     .collect();
-                self.item_pages = vec![ItemsGroup::new(resource_req.to_owned())];
+                self.item_pages = vec![Loadable::Loading];
                 self.selected = Some(resource_req.to_owned());
                 Effects::one(addon_get::<Env>(&resource_req))
             }
             Msg::Internal(AddonResponse(req, result))
-                if Some(req) == self.selected.as_ref() =>
+                if Some(req) == self.selected.as_ref()
+                    && self.item_pages.last() == Some(&Loadable::Loading) =>
             {
-                self.item_pages[0].update(result);
+                self.item_pages[0] = match &**result {
+                    Ok(ResourceResponse::Metas { metas }) => Loadable::Ready(metas.to_owned()),
+                    Ok(_) => Loadable::Err(UNEXPECTED_RESP_MSG.to_owned()),
+                    Err(e) => Loadable::Err(e.to_string())
+                };
                 Effects::none()
             }
             _ => Effects::none().unchanged(),

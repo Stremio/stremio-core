@@ -222,7 +222,7 @@ mod tests {
         let state = &runtime.app.borrow().catalogs;
         assert_eq!(state.selected, Some(req), "selected is right");
         assert_eq!(state.item_pages.len(), 1, "item_pages is the right length");
-        match &state.item_pages[0].content {
+        match &state.item_pages[0] {
             Loadable::Ready(x) => assert_eq!(x.len(), 100, "right length of items"),
             _ => panic!("item_pages[0] is not Ready"),
         }

@@ -5,7 +5,7 @@ use crate::state_types::msg::Internal::*;
 use crate::state_types::*;
 
 pub trait Group {
-    fn new(req: ResourceRequest) -> Self;
+    fn new(addon: &Descriptor, req: ResourceRequest) -> Self;
     fn update(&mut self, res: &Result<ResourceResponse, EnvError>);
     fn addon_req(&self) -> &ResourceRequest;
 }
@@ -17,7 +17,7 @@ pub fn addon_aggr_new<Env: Environment + 'static, G: Group>(
     let (effects, groups): (Vec<_>, Vec<_>) = aggr_req
         .plan(&addons)
         .into_iter()
-        .map(|addon_req| (addon_get::<Env>(&addon_req), G::new(addon_req)))
+        .map(|(addon, addon_req)| (addon_get::<Env>(&addon_req), G::new(addon, addon_req)))
         .unzip();
     (groups, Effects::many(effects))
 }
