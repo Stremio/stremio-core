@@ -1,11 +1,11 @@
 use serde_derive::*;
-use std::convert::TryInto;
 mod manifest;
 mod resource_ref;
 pub use self::manifest::*;
 pub use self::resource_ref::*;
 use crate::types::{MetaDetail, MetaPreview, Stream};
 mod manifest_tests;
+use derive_more::*;
 
 pub type TransportUrl = String;
 
@@ -23,7 +23,7 @@ pub struct ResourceRequest {
     pub path: ResourceRef,
 }
 
-#[derive(Deserialize, Serialize, Clone, Debug)]
+#[derive(Deserialize, Serialize, Clone, Debug, TryInto)]
 #[serde(untagged)]
 pub enum ResourceResponse {
     Metas {
@@ -39,24 +39,6 @@ pub enum ResourceResponse {
         streams: Vec<Stream>,
     },
     // @TODO subtitles
-}
-impl TryInto<Vec<MetaPreview>> for ResourceResponse {
-    type Error = ();
-    fn try_into(self) -> Result<Vec<MetaPreview>, ()> {
-        match self {
-            ResourceResponse::Metas { metas } => Ok(metas),
-            _ => Err(()),
-        }
-    }
-}
-impl TryInto<Vec<Stream>> for ResourceResponse {
-    type Error = ();
-    fn try_into(self) -> Result<Vec<Stream>, ()> {
-        match self {
-            ResourceResponse::Streams { streams } => Ok(streams),
-            _ => Err(()),
-        }
-    }
 }
 
 // This is going from the most general to the most concrete aggregation request

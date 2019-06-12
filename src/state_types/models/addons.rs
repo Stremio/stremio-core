@@ -1,8 +1,7 @@
 use crate::state_types::msg::Internal::*;
 use crate::state_types::*;
 use crate::types::addons::{AggrRequest, Descriptor, ResourceRequest, ResourceResponse};
-use futures::future;
-use futures::future::Future;
+use futures::{future, Future};
 
 pub trait Group {
     fn new(addon: &Descriptor, req: ResourceRequest) -> Self;

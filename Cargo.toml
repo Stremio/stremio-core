@@ -21,6 +21,7 @@ serde-hex = "0.1.0"
 either = "1.5"
 stremio-derive = { path = "stremio-derive", version = "0.1.0" }
 derivative = "1.0.2"
+derive_more = "0.15.0"
 
 [workspace]
 
