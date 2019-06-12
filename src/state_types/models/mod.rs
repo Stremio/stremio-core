@@ -9,3 +9,6 @@ pub use addons::*;
 
 mod catalogs;
 pub use catalogs::*;
+
+mod streams;
+pub use streams::*;

@@ -228,6 +228,28 @@ mod tests {
         }
     }
 
+    #[test]
+    fn streams() {
+        use stremio_derive::Model;
+        #[derive(Model, Debug, Default)]
+        struct Model {
+            ctx: Ctx<Env>,
+            streams: Streams,
+        }
+
+        let app = Model::default();
+        let (runtime, _) = Runtime::<Env, Model>::new(app, 1000);
+
+        // @TODO install some addons that provide streams
+        let action = Action::Load(ActionLoad::Streams {
+            type_name: "channel".to_string(),
+            id: "UCevVH-AyrGnTDMalq2x5fQQ:FTQbiNvZqaY".to_string()
+        });
+        run(runtime.dispatch(&action.into()));
+        let state = &runtime.app.borrow().streams;
+        assert_eq!(state.groups.len(), 0, "no groups for now");
+    }
+
     // Storage implementation
     // Uses reqwest (asynchronously) for fetch, and a BTreeMap storage
     use lazy_static::*;
