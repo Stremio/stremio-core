@@ -165,7 +165,7 @@ mod tests {
         // since this is after the .run() has ended, this means all async effects
         // have processed
         {
-            let state = &runtime.app.borrow().catalogs;
+            let state = &runtime.app.read().unwrap().catalogs;
             assert_eq!(state.groups.len(), 6, "groups is the right length");
             for g in state.groups.iter() {
                 assert!(
@@ -184,7 +184,7 @@ mod tests {
         let msg = Msg::Action(Action::Load(ActionLoad::CatalogGrouped { extra }));
         run(runtime.dispatch(&msg));
         assert_eq!(
-            runtime.app.borrow().catalogs.groups.len(),
+            runtime.app.read().unwrap().catalogs.groups.len(),
             4,
             "groups is the right length when searching"
         );
@@ -210,7 +210,7 @@ mod tests {
             resource_req: req.to_owned(),
         });
         run(runtime.dispatch(&action.into()));
-        let state = &runtime.app.borrow().catalogs;
+        let state = &runtime.app.read().unwrap().catalogs;
         assert_eq!(state.selected, Some(req), "selected is right");
         assert_eq!(state.item_pages.len(), 1, "item_pages is the right length");
         match &state.item_pages[0] {
@@ -241,7 +241,7 @@ mod tests {
             id: "tt0773262:6:1".to_string(),
         });
         run(runtime.dispatch(&action.into()));
-        let state = &runtime.app.borrow().streams;
+        let state = &runtime.app.read().unwrap().streams;
         assert_eq!(state.groups.len(), 2, "2 groups");
     }
 
