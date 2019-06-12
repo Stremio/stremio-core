@@ -14,17 +14,6 @@ mod tests {
     use tokio::executor::current_thread::spawn;
     use tokio::runtime::current_thread::run;
 
-    /*
-    #[test]
-    fn middlewares() {
-        run(lazy(enclose!((muxer, resource_req) move || {
-            muxer.dispatch_load_to(&ContainerId::Streams, &ActionLoad::Streams { type_name: "channel", id: "some_id" });
-            future::ok(())
-        })));
-        let state = container_streams.get_state_owned();
-    }
-    */
-
     #[test]
     fn transport_manifests() {
         run(lazy(|| {
