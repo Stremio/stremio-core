@@ -217,6 +217,7 @@ mod tests {
             Loadable::Ready(x) => assert_eq!(x.len(), 100, "right length of items"),
             _ => panic!("item_pages[0] is not Ready"),
         }
+        //dbg!(serde_json::to_string(&state).unwrap());
     }
 
     #[test]
