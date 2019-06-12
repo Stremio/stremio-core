@@ -9,6 +9,7 @@ pub trait Group {
     fn update(&mut self, res: &Result<ResourceResponse, EnvError>);
     fn addon_req(&self) -> &ResourceRequest;
 }
+
 pub fn addon_aggr_new<Env: Environment + 'static, G: Group>(
     addons: &[Descriptor],
     aggr_req: &AggrRequest,
@@ -20,6 +21,7 @@ pub fn addon_aggr_new<Env: Environment + 'static, G: Group>(
         .unzip();
     (groups, Effects::many(effects))
 }
+
 pub fn addon_aggr_update<G: Group>(groups: &mut Vec<G>, msg: &Msg) -> Effects {
     match msg {
         Msg::Internal(AddonResponse(req, result)) => {
@@ -33,6 +35,7 @@ pub fn addon_aggr_update<G: Group>(groups: &mut Vec<G>, msg: &Msg) -> Effects {
         _ => Effects::none().unchanged(),
     }
 }
+
 pub fn addon_get<Env: Environment + 'static>(req: &ResourceRequest) -> Effect {
     // we will need that, cause we have to move it into the closure
     let req = req.clone();
@@ -45,5 +48,6 @@ pub fn addon_get<Env: Environment + 'static>(req: &ResourceRequest) -> Effect {
             }),
     )
 }
+
 
 

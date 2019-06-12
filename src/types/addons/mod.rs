@@ -49,6 +49,15 @@ impl TryInto<Vec<MetaPreview>> for ResourceResponse {
         }
     }
 }
+impl TryInto<Vec<Stream>> for ResourceResponse {
+    type Error = ();
+    fn try_into(self) -> Result<Vec<Stream>, ()> {
+        match self {
+            ResourceResponse::Streams { streams } => Ok(streams),
+            _ => Err(())
+        }
+    }
+}
 
 // This is going from the most general to the most concrete aggregation request
 #[derive(Debug, Clone)]
