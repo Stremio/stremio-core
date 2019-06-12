@@ -11,6 +11,7 @@ pub use actions::*;
 // Intermediery messages
 // those are emitted by the middlewares and received by containers
 //
+#[derive(Clone, Debug)]
 pub enum Internal {
     CtxLoaded(Option<Box<CtxContent>>),
     CtxUpdate(Box<CtxContent>),
@@ -54,6 +55,7 @@ pub enum Event {
 // Final enum Msg
 // sum type of actions, internals and outputs
 //
+#[derive(Clone, Debug)]
 pub enum Msg {
     Action(Action),
     Internal(Internal),
