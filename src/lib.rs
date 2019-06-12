@@ -242,14 +242,18 @@ mod tests {
         let app = Model::default();
         let (runtime, _) = Runtime::<Env, Model>::new(app, 1000);
 
+        // If we login here with some dummy account, we can use this pretty nicely
+        //let action = Action::UserOp(ActionUser::Login { email, password });
+        //run(runtime.dispatch(&action.into()));
+
         // @TODO install some addons that provide streams
         let action = Action::Load(ActionLoad::Streams {
-            type_name: "channel".to_string(),
-            id: "UCevVH-AyrGnTDMalq2x5fQQ:FTQbiNvZqaY".to_string(),
+            type_name: "series".to_string(),
+            id: "tt0773262:6:1".to_string(),
         });
         run(runtime.dispatch(&action.into()));
         let state = &runtime.app.borrow().streams;
-        assert_eq!(state.groups.len(), 0, "no groups for now");
+        assert_eq!(state.groups.len(), 2, "2 groups");
     }
 
     // Storage implementation
