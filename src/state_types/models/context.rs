@@ -21,6 +21,7 @@ lazy_static! {
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]
 pub struct Auth {
     key: AuthKey,
+    pub lib: LibraryIndex,
     pub user: User,
 }
 
@@ -184,7 +185,7 @@ fn authenticate<Env: Environment + 'static>(action: ActionUser, req: APIRequest)
             };
             api_fetch::<Env, CollectionResponse>(pull_req).map(
                 move |CollectionResponse { addons, .. }| CtxContent {
-                    auth: Some(Auth { key, user }),
+                    auth: Some(Auth { key, user, lib: LibraryIndex::new() }),
                     addons,
                 },
             )

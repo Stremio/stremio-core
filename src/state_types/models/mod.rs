@@ -1,6 +1,9 @@
 mod context;
 pub use context::*;
 
+mod library;
+pub use library::*;
+
 mod items_group;
 pub use items_group::*;
 
