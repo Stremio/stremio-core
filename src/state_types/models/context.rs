@@ -20,7 +20,7 @@ lazy_static! {
 // These will be stored, so they need to implement both Serialize and Deserilaize
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]
 pub struct Auth {
-    key: AuthKey,
+    pub key: AuthKey,
     pub lib: LibraryIndex,
     pub user: User,
 }
@@ -144,7 +144,7 @@ impl<Env: Environment + 'static> Update for Ctx<Env> {
                     Some(auth) => {
                         // @TODO add a key to CtxLibItemsUpdate, to protect against races
                         let action = action.to_owned();
-                        let ft = auth.lib_sync()
+                        let ft = auth.lib_sync::<Env>()
                             .map(|items| CtxLibItemsUpdate(items).into())
                             .map_err(move |e| CtxActionErr(action, e.into()).into());
                         Effects::one(Box::new(ft)).unchanged()
@@ -214,7 +214,8 @@ fn authenticate<Env: Environment + 'static>(action: ActionUser, req: APIRequest)
     Box::new(ft)
 }
 
-fn api_fetch<Env, OUT>(req: APIRequest) -> impl Future<Item = OUT, Error = CtxError>
+// @TODO this is pub, not ideal
+pub fn api_fetch<Env, OUT>(req: APIRequest) -> impl Future<Item = OUT, Error = CtxError>
 where
     Env: Environment,
     OUT: serde::de::DeserializeOwned + 'static,
