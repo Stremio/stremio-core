@@ -24,6 +24,7 @@ pub enum ActionUser {
     Logout,
     PullAddons,
     PushAddons,
+    LibSync,
     // @TODO consider PullUser, PushUser?
 }
 
@@ -41,6 +42,5 @@ pub enum Action {
     Load(ActionLoad),
     AddonOp(ActionAddon),
     UserOp(ActionUser),
-    LibSync,
     LibUpdate(LibItem),
 }

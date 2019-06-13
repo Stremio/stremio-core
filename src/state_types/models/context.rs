@@ -83,7 +83,7 @@ impl<Env: Environment + 'static> Update for Ctx<Env> {
                 self.content.addons.push(*descriptor.to_owned());
                 Effects::one(save_storage::<Env>(&self.content))
             }
-            // Other user actions
+            // User actions related to API primitives (authentication/addons)
             Msg::Action(Action::UserOp(action)) => match action.to_owned() {
                 ActionUser::Logout => {
                     let new_content = Box::new(CtxContent::default());
@@ -140,6 +140,17 @@ impl<Env: Environment + 'static> Update for Ctx<Env> {
                     }
                     None => Effects::none().unchanged(),
                 },
+                ActionUser::LibSync => match &self.content.auth {
+                    Some(auth) => {
+                        // @TODO add a key to CtxLibItemsUpdate, to protect against races
+                        let action = action.to_owned();
+                        let ft = auth.lib_sync()
+                            .map(|items| CtxLibItemsUpdate(items).into())
+                            .map_err(move |e| CtxActionErr(action, e.into()).into());
+                        Effects::one(Box::new(ft)).unchanged()
+                    }
+                    None => Effects::none().unchanged(),
+                },
             },
             // Handling msgs that result effects
             Msg::Internal(CtxAddonsPulled(key, addons))
@@ -149,6 +160,14 @@ impl<Env: Environment + 'static> Update for Ctx<Env> {
                 self.content.addons = addons.to_owned();
                 Effects::msg(CtxAddonsChangedFromPull.into())
                     .join(Effects::one(save_storage::<Env>(&self.content)))
+            }
+            // @TODO protect against races
+            Msg::Internal(CtxLibItemsUpdate(items)) => match &mut self.content.auth {
+                Some(auth) => {
+                    auth.lib_update(items);
+                    Effects::none()
+                }
+                _ => Effects::none().unchanged()
             }
             Msg::Internal(CtxUpdate(new)) => {
                 self.content = *new.to_owned();
@@ -190,10 +209,6 @@ fn authenticate<Env: Environment + 'static>(action: ActionUser, req: APIRequest)
                 },
             )
         })
-        /*.and_then(|mut c| c.auth.unwrap().lib_sync().and_then(move |items| {
-            c.auth.unwrap().lib_update(items);
-            future::ok(c)
-        }))*/
         .map(|c| Msg::Internal(CtxUpdate(Box::new(c))))
         .map_err(move |e| Msg::Event(CtxActionErr(action, e.into())));
     Box::new(ft)

@@ -12,7 +12,7 @@ pub type LibraryIndex = HashMap<String, LibItem>;
 // but rust allows multiple impl blocks precisely to allow
 // separation of concerns like this
 impl Auth {
-    pub fn lib_update(&mut self, items: Vec<LibItem>) {
+    pub fn lib_update(&mut self, items: &[LibItem]) {
         unimplemented!()
     }
     pub fn lib_sync(&self) -> EnvFuture<Vec<LibItem>> {

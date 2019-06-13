@@ -176,32 +176,3 @@ impl<Env: Environment + 'static> Handler for LibAddon<Env> {
     }
 }
 
-impl<Env: Environment + 'static> AddonInterface for LibAddon<Env> {
-    fn get(&self, _: &ResourceRef) -> EnvFuture<ResourceResponse> {
-        unimplemented!()
-    }
-    fn manifest(&self) -> EnvFuture<Manifest> {
-        Box::new(
-            self.with_idx()
-                // @TODO
-                //.map_err(Into::into)
-                .map_err(|_| "error loading library index".into())
-                .and_then(|idx| {
-                    future::ok(Manifest {
-                        id: "org.stremio.libitem".into(),
-                        name: "Library".into(),
-                        version: semver::Version::parse(env!("CARGO_PKG_VERSION")).unwrap(),
-                        // @TODO dynamic
-                        resources: vec![],
-                        types: idx.get_types(),
-                        catalogs: vec![],
-                        contact_email: None,
-                        background: None,
-                        logo: None,
-                        id_prefixes: None,
-                        description: None,
-                    })
-                }),
-        )
-    }
-}
