@@ -190,6 +190,10 @@ fn authenticate<Env: Environment + 'static>(action: ActionUser, req: APIRequest)
                 },
             )
         })
+        /*.and_then(|mut c| c.auth.unwrap().lib_sync().and_then(move |items| {
+            c.auth.unwrap().lib_update(items);
+            future::ok(c)
+        }))*/
         .map(|c| Msg::Internal(CtxUpdate(Box::new(c))))
         .map_err(move |e| Msg::Event(CtxActionErr(action, e.into())));
     Box::new(ft)
