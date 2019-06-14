@@ -4,7 +4,7 @@ use crate::types::api::*;
 use crate::types::LibItem;
 use chrono::serde::ts_milliseconds;
 use chrono::{DateTime, Utc};
-use futures::{Future};
+use futures::Future;
 use serde_derive::*;
 use std::collections::HashMap;
 
@@ -64,7 +64,10 @@ impl Auth {
             // Items to push
             let changes = local_lib
                 .iter()
-                .filter(|(id, item)| map_remote.get(*id).map_or(true, |date| *date < item.mtime))
+                .filter(|(id, item)| {
+                    map_remote.get(*id).map_or(true, |date| *date < item.mtime)
+                        && item.should_push()
+                })
                 .map(|(_, v)| v.clone())
                 .collect::<Vec<LibItem>>();
             let get_req = builder
