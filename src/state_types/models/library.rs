@@ -1,11 +1,12 @@
-use crate::state_types::Event::*;
-use crate::state_types::Internal::*;
 use crate::state_types::*;
 use crate::types::LibItem;
 use crate::types::api::*;
 use std::collections::HashMap;
 use futures::{Future, future};
 use super::{Auth, api_fetch};
+use serde_derive::*;
+use chrono::serde::ts_milliseconds;
+use chrono::{DateTime, Utc};
 
 const COLL_NAME: &str = "libraryItem";
 
@@ -22,6 +23,9 @@ pub struct Library {
 */
 pub type LibraryIndex = HashMap<String, LibItem>;
 
+#[derive(Debug, Deserialize)]
+struct LibMTime(String, #[serde(with = "ts_milliseconds")] DateTime<Utc>);
+
 // Implementing Auth here is a bit unconventional,
 // but rust allows multiple impl blocks precisely to allow
 // separation of concerns like this
@@ -33,39 +37,44 @@ impl Auth {
     }
     // @TODO rather than EnvFuture, use a Future that returns CtxError
     pub fn lib_sync<Env: Environment + 'static>(&self) -> impl Future<Item = Vec<LibItem>, Error = CtxError> {
-        /*
+        let local_lib = self.lib.clone();
+        let key = self.key.clone();
         let api_req = APIRequest::DatastoreMeta {
-            auth_key: self.key.clone(),
+            auth_key: key.clone(),
             collection: COLL_NAME.into(),
         };
-        // @TODO datastoreMeta first
-        // then dispatch the datastorePut/datastoreGet simultaniously
-        let ft = api_fetch::<Env, Vec<LibMTime>>(api_req).then(move |resp| {
-            let map_remote = result
+        let ft = api_fetch::<Env, Vec<LibMTime>>(api_req).and_then(move |remote_mtimes| {
+            let map_remote = remote_mtimes
                 .into_iter()
                 .map(|LibMTime(k, mtime)| (k, mtime))
-                .collect::<HashMap<String, DateTime<Utc>>>();
+                .collect::<HashMap<_, _>>();
             let to_pull_ids = map_remote
                 .iter()
-                .filter(|(k, v)| idx.get(*k).map_or(true, |item| item.mtime < **v))
+                .filter(|(k, v)| local_lib.get(*k).map_or(true, |item| item.mtime < **v))
                 .map(|(k, _)| k.to_owned())
                 .collect::<Vec<String>>();
-            let to_push = idx
+            let to_push = local_lib
                 .iter()
                 .filter(|(id, item)| {
                     map_remote.get(*id).map_or(true, |date| *date < item.mtime)
                 })
-                .map(|(_, v)| v)
-                .collect::<Vec<&LibItem>>();
+                .map(|(_, v)| v.to_owned())
+                .collect::<Vec<LibItem>>();
+            let push_req = APIRequest::DatastorePut {
+                auth_key: key.clone(),
+                collection: COLL_NAME.into(),
+                changes: to_push
+            };
+            let pull_req = APIRequest::DatastoreGet {
+                auth_key: key.clone(),
+                collection: COLL_NAME.into(),
+                all: false,
+                ids: to_pull_ids
+            };
+            api_fetch::<Env, Vec<LibItem>>(pull_req)
+                .join(api_fetch::<Env, SuccessResponse>(push_req))
+                .map(|(items, _)| items)
         });
-        */
-        let req = APIRequest::DatastoreGet {
-            auth_key: self.key.clone(),
-            collection: COLL_NAME.into(),
-            all: true,
-            ids: vec![],
-        };
-        let ft = api_fetch::<Env, Vec<LibItem>>(req);
         Box::new(ft)
     }
     fn lib_push(&self, item: &LibItem) -> impl Future<Item = (), Error = CtxError> {

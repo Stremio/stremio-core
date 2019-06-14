@@ -51,7 +51,17 @@ pub enum APIRequest {
     DatastoreMeta {
         auth_key: AuthKey,
         collection: String,
-    }, // @TODO datastorePut
+    },
+    #[serde(rename_all = "camelCase")]
+    DatastorePut {
+        auth_key: AuthKey,
+        collection: String,
+        #[serde(default)]
+        // NOTE: what if we need to be generic here?
+        // we can use separate structs rather than enums, and implement method_name on all of them
+        // via a trait; that way, the struct will be generic
+        changes: Vec<crate::types::LibItem>,
+    },
 }
 impl APIRequest {
     pub fn method_name(&self) -> &str {
@@ -63,6 +73,7 @@ impl APIRequest {
             APIRequest::AddonCollectionSet { .. } => "addonCollectionSet",
             APIRequest::DatastoreGet { .. } => "datastoreGet",
             APIRequest::DatastoreMeta { .. } => "datastoreMeta",
+            APIRequest::DatastorePut { .. } => "datastorePut",
         }
     }
 }
