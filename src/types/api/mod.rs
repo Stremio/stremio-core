@@ -2,12 +2,12 @@ mod user;
 pub use self::user::*;
 use crate::types::addons::*;
 use chrono::{DateTime, Utc};
+use derive_builder::*;
 use serde::de;
 use serde::de::{Unexpected, Visitor};
 use serde::ser::{Serialize, Serializer};
 use serde::{Deserialize, Deserializer};
 use serde_derive::*;
-use derive_builder::*;
 use std::fmt;
 
 //
@@ -73,16 +73,15 @@ pub enum DatastoreCmd {
         // via a trait; that way, the struct will be generic
         changes: Vec<crate::types::LibItem>,
     },
-
 }
 
 #[derive(Serialize, Clone, Builder)]
-#[serde(rename_all="camelCase")]
+#[serde(rename_all = "camelCase")]
 pub struct DatastoreReq {
     auth_key: AuthKey,
     collection: String,
     #[serde(flatten)]
-    cmd: DatastoreCmd
+    cmd: DatastoreCmd,
 }
 impl DatastoreReqBuilder {
     pub fn with_cmd(&mut self, cmd: DatastoreCmd) -> DatastoreReq {

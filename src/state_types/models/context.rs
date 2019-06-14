@@ -91,10 +91,11 @@ impl<Env: Environment + 'static> Update for Ctx<Env> {
                         Some(Auth { key, .. }) => {
                             let auth_key = key.to_owned();
                             let action = action.clone();
-                            let effect =
-                                api_fetch::<Env, SuccessResponse, _>(APIRequest::Logout { auth_key })
-                                    .map(|_| CtxUpdate(new_content).into())
-                                    .map_err(move |e| CtxActionErr(action, e.into()).into());
+                            let effect = api_fetch::<Env, SuccessResponse, _>(APIRequest::Logout {
+                                auth_key,
+                            })
+                            .map(|_| CtxUpdate(new_content).into())
+                            .map_err(move |e| CtxActionErr(action, e.into()).into());
                             Effects::one(Box::new(effect)).unchanged()
                         }
                         None => Effects::msg(CtxUpdate(new_content).into()).unchanged(),
@@ -144,7 +145,8 @@ impl<Env: Environment + 'static> Update for Ctx<Env> {
                     Some(auth) => {
                         // @TODO add a key to CtxLibItemsUpdate, to protect against races
                         let action = action.to_owned();
-                        let ft = auth.lib_sync::<Env>()
+                        let ft = auth
+                            .lib_sync::<Env>()
                             .map(|items| CtxLibItemsUpdate(items).into())
                             .map_err(move |e| CtxActionErr(action, e.into()).into());
                         Effects::one(Box::new(ft)).unchanged()
@@ -173,8 +175,8 @@ impl<Env: Environment + 'static> Update for Ctx<Env> {
                     auth.lib_update(items);
                     Effects::none()
                 }
-                _ => Effects::none().unchanged()
-            }
+                _ => Effects::none().unchanged(),
+            },
             _ => Effects::none().unchanged(),
         }
     }
@@ -205,7 +207,11 @@ fn authenticate<Env: Environment + 'static>(action: ActionUser, req: APIRequest)
             };
             api_fetch::<Env, CollectionResponse, _>(pull_req).map(
                 move |CollectionResponse { addons, .. }| CtxContent {
-                    auth: Some(Auth { key, user, lib: LibraryIndex::new() }),
+                    auth: Some(Auth {
+                        key,
+                        user,
+                        lib: LibraryIndex::new(),
+                    }),
                     addons,
                 },
             )
