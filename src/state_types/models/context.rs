@@ -21,8 +21,8 @@ lazy_static! {
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]
 pub struct Auth {
     pub key: AuthKey,
-    pub lib: LibraryIndex,
     pub user: User,
+    pub lib: LibraryIndex,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
@@ -161,18 +161,19 @@ impl<Env: Environment + 'static> Update for Ctx<Env> {
                 Effects::msg(CtxAddonsChangedFromPull.into())
                     .join(Effects::one(save_storage::<Env>(&self.content)))
             }
+            Msg::Internal(CtxUpdate(new)) => {
+                self.content = *new.to_owned();
+                Effects::msg(CtxChanged.into())
+                    .join(Effects::one(save_storage::<Env>(&self.content)))
+            }
             // @TODO protect against races
+            // @TODO we can unify all those as CtxMutation(key, CtxMutation enum)
             Msg::Internal(CtxLibItemsUpdate(items)) => match &mut self.content.auth {
                 Some(auth) => {
                     auth.lib_update(items);
                     Effects::none()
                 }
                 _ => Effects::none().unchanged()
-            }
-            Msg::Internal(CtxUpdate(new)) => {
-                self.content = *new.to_owned();
-                Effects::msg(CtxChanged.into())
-                    .join(Effects::one(save_storage::<Env>(&self.content)))
             }
             _ => Effects::none().unchanged(),
         }

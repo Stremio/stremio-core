@@ -4,11 +4,22 @@ use crate::state_types::*;
 use crate::types::LibItem;
 use crate::types::api::*;
 use std::collections::HashMap;
-use futures::future::Future;
+use futures::{Future, future};
 use super::{Auth, api_fetch};
 
 const COLL_NAME: &str = "libraryItem";
 
+/*
+pub struct Library {
+    // @TODO the state should be NotLoaded, Loading, Ready; so that when we dispatch LibSync we
+    // can ensure we've waited for storage load first
+    // perhaps wrap it on a Ctx level, and have an effect for loading from storage here; this
+    // effect can either fail massively (CtxFatal) or succeed
+    // when the user is logged out, we'll reset it to NotLoaded
+    pub items: HashMap<String, LibItem>,
+    pub last_videos: Vec<MetaDetail>,
+}
+*/
 pub type LibraryIndex = HashMap<String, LibItem>;
 
 // Implementing Auth here is a bit unconventional,
@@ -20,20 +31,16 @@ impl Auth {
             self.lib.insert(item.id.to_owned(), item.to_owned());
         }
     }
-    pub fn lib_sync<Env: Environment + 'static>(&self) -> EnvFuture<Vec<LibItem>> {
+    // @TODO rather than EnvFuture, use a Future that returns CtxError
+    pub fn lib_sync<Env: Environment + 'static>(&self) -> impl Future<Item = Vec<LibItem>, Error = CtxError> {
         /*
         let api_req = APIRequest::DatastoreMeta {
             auth_key: self.key.clone(),
             collection: COLL_NAME.into(),
         };
-        let url = format!("{}/api/{}", Env::api_url(), api_req.method_name());
-        let req = Request::post(url)
-            .body(api_req)
-            .expect("builder cannot fail");
-
         // @TODO datastoreMeta first
         // then dispatch the datastorePut/datastoreGet simultaniously
-        let ft = api_fetch::<Env, APIResult<Vec<LibMTime>>>(api_req).then(move |resp| {
+        let ft = api_fetch::<Env, Vec<LibMTime>>(api_req).then(move |resp| {
             let map_remote = result
                 .into_iter()
                 .map(|LibMTime(k, mtime)| (k, mtime))
@@ -58,15 +65,15 @@ impl Auth {
             all: true,
             ids: vec![],
         };
-        // @TODO better err handling
-        let ft = api_fetch::<Env, Vec<LibItem>>(req)
-            .map_err(|_| "oof".into());
+        let ft = api_fetch::<Env, Vec<LibItem>>(req);
         Box::new(ft)
     }
-    fn lib_push(&self, item: &LibItem) -> EnvFuture<()> {
-        unimplemented!()
+    fn lib_push(&self, item: &LibItem) -> impl Future<Item = (), Error = CtxError> {
+        unimplemented!();
+        future::ok(())
     }
-    fn lib_pull(&self, id: &str) -> EnvFuture<LibItem> {
-        unimplemented!()
+    fn lib_pull(&self, id: &str) -> impl Future<Item = Option<LibItem>, Error = CtxError> {
+        unimplemented!();
+        future::ok(None)
     }
 }
