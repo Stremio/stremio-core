@@ -53,20 +53,22 @@ impl Auth {
                 .into_iter()
                 .map(|LibMTime(k, mtime)| (k, mtime))
                 .collect::<HashMap<_, _>>();
-            let to_pull_ids = map_remote
+            // IDs to pull
+            let ids = map_remote
                 .iter()
                 .filter(|(k, v)| local_lib.get(*k).map_or(true, |item| item.mtime < **v))
                 .map(|(k, _)| k.clone())
                 .collect::<Vec<String>>();
-            let to_push = local_lib
+            // Items to push
+            let changes = local_lib
                 .iter()
                 .filter(|(id, item)| {
                     map_remote.get(*id).map_or(true, |date| *date < item.mtime)
                 })
                 .map(|(_, v)| v.clone())
                 .collect::<Vec<LibItem>>();
-            let get_req = builder.clone().with_cmd(DatastoreCmd::Get { ids: to_pull_ids, all: false });
-            let put_req = builder.clone().with_cmd(DatastoreCmd::Put { changes: to_push });
+            let get_req = builder.clone().with_cmd(DatastoreCmd::Get { ids, all: false });
+            let put_req = builder.clone().with_cmd(DatastoreCmd::Put { changes });
             api_fetch::<Env, Vec<LibItem>, _>(get_req)
                 .join(api_fetch::<Env, SuccessResponse, _>(put_req))
                 .map(|(items, _)| items)
