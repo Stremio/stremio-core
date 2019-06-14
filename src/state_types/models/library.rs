@@ -4,7 +4,7 @@ use crate::types::api::*;
 use crate::types::LibItem;
 use chrono::serde::ts_milliseconds;
 use chrono::{DateTime, Utc};
-use futures::{future, Future};
+use futures::{Future};
 use serde_derive::*;
 use std::collections::HashMap;
 
@@ -77,7 +77,7 @@ impl Auth {
         });
         Box::new(ft)
     }
-    fn lib_push<Env: Environment + 'static>(
+    pub fn lib_push<Env: Environment + 'static>(
         &self,
         item: &LibItem,
     ) -> impl Future<Item = (), Error = CtxError> {
@@ -89,7 +89,7 @@ impl Auth {
 
         api_fetch::<Env, SuccessResponse, _>(push_req).map(|_| ())
     }
-    fn lib_pull<Env: Environment + 'static>(
+    pub fn lib_pull<Env: Environment + 'static>(
         &self,
         id: &str,
     ) -> impl Future<Item = Option<LibItem>, Error = CtxError> {
