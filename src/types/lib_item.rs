@@ -57,11 +57,17 @@ pub struct LibItem {
 
 impl LibItem {
     pub fn should_persist(&self) -> bool {
-        true
+        !self.temp
     }
     // Must return a result that's in a logical conjunction (&&) with .should_persist()
     pub fn should_push(&self) -> bool {
-        self.should_persist() && self.type_name != "other"
+        self.should_persist()
+            && self.type_name != "other"
+            && if self.removed {
+                self.state.overall_time_watched > 60_000
+            } else {
+                true
+            }
     }
 }
 
