@@ -79,8 +79,13 @@ impl Auth {
         api_fetch::<Env, SuccessResponse, _>(push_req)
             .map(|_| ())
     }
-    fn lib_pull(&self, id: &str) -> impl Future<Item = Option<LibItem>, Error = CtxError> {
-        unimplemented!();
-        future::ok(None)
+    fn lib_pull<Env: Environment + 'static>(&self, id: &str) -> impl Future<Item = Option<LibItem>, Error = CtxError> {
+        let pull_req = DatastoreReqBuilder::default()
+            .auth_key(self.key.to_owned())
+            .collection(COLL_NAME.to_owned())
+            .with_cmd(DatastoreCmd::Get { all: false, ids: vec![id.to_owned()] });
+
+        api_fetch::<Env, Vec<LibItem>, _>(pull_req)
+            .map(|mut items| items.pop())
     }
 }
