@@ -84,6 +84,11 @@ pub struct DatastoreReq {
     #[serde(flatten)]
     cmd: DatastoreCmd
 }
+impl DatastoreReqBuilder {
+    pub fn with_cmd(&self, cmd: DatastoreCmd) -> DatastoreReq {
+        self.clone().cmd(cmd).build().expect("builder cannot fail")
+    }
+}
 impl APIMethodName for DatastoreReq {
     fn method_name(&self) -> &str {
         match &self.cmd {
