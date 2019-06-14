@@ -79,6 +79,48 @@ impl APIRequest {
 }
 
 //
+// Helps easier building of datastore requests
+//
+pub struct DatastoreReqBuilder {
+    auth_key: AuthKey,
+    collection: String,
+}
+impl DatastoreReqBuilder {
+    pub fn new(auth_key: AuthKey, collection: String) -> Self {
+        DatastoreReqBuilder { auth_key, collection }
+    }
+    pub fn get(&self, ids: Vec<String>) -> APIRequest {
+        APIRequest::DatastoreGet {
+            auth_key: self.auth_key.to_owned(),
+            collection: self.collection.to_owned(),
+            ids: ids,
+            all: false,
+        }
+    }
+    pub fn get_all(&self) -> APIRequest {
+        APIRequest::DatastoreGet {
+            auth_key: self.auth_key.to_owned(),
+            collection: self.collection.to_owned(),
+            ids: vec![],
+            all: true,
+        }
+    }
+    pub fn meta(&self) -> APIRequest {
+        APIRequest::DatastoreMeta {
+            auth_key: self.auth_key.to_owned(),
+            collection: self.collection.to_owned(),
+        }
+    }
+    pub fn put(&self, changes: Vec<crate::types::LibItem>) -> APIRequest {
+        APIRequest::DatastorePut {
+            auth_key: self.auth_key.to_owned(),
+            collection: self.collection.to_owned(),
+            changes,
+        }
+    }
+}
+
+//
 // Responses
 //
 // @TODO perhaps we can translate this u64 to an enum

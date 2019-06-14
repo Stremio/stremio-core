@@ -38,12 +38,11 @@ impl Auth {
     // @TODO rather than EnvFuture, use a Future that returns CtxError
     pub fn lib_sync<Env: Environment + 'static>(&self) -> impl Future<Item = Vec<LibItem>, Error = CtxError> {
         let local_lib = self.lib.clone();
-        let key = self.key.clone();
-        let api_req = APIRequest::DatastoreMeta {
-            auth_key: key.clone(),
-            collection: COLL_NAME.into(),
-        };
-        let ft = api_fetch::<Env, Vec<LibMTime>>(api_req).and_then(move |remote_mtimes| {
+        let builder = DatastoreReqBuilder::new(self.key.to_owned(), COLL_NAME.to_owned());
+        // @TODO: make the APIRequest type more ergonomic
+        // @TODO review existing sync logic and see how this differs
+        // @TODO respect .should_push()
+        let ft = api_fetch::<Env, Vec<LibMTime>>(builder.meta()).and_then(move |remote_mtimes| {
             let map_remote = remote_mtimes
                 .into_iter()
                 .map(|LibMTime(k, mtime)| (k, mtime))
@@ -60,19 +59,8 @@ impl Auth {
                 })
                 .map(|(_, v)| v.to_owned())
                 .collect::<Vec<LibItem>>();
-            let push_req = APIRequest::DatastorePut {
-                auth_key: key.clone(),
-                collection: COLL_NAME.into(),
-                changes: to_push
-            };
-            let pull_req = APIRequest::DatastoreGet {
-                auth_key: key.clone(),
-                collection: COLL_NAME.into(),
-                all: false,
-                ids: to_pull_ids
-            };
-            api_fetch::<Env, Vec<LibItem>>(pull_req)
-                .join(api_fetch::<Env, SuccessResponse>(push_req))
+            api_fetch::<Env, Vec<LibItem>>(builder.get(to_pull_ids))
+                .join(api_fetch::<Env, SuccessResponse>(builder.put(to_push)))
                 .map(|(items, _)| items)
         });
         Box::new(ft)
