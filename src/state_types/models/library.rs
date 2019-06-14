@@ -44,7 +44,7 @@ impl Auth {
             .clone();
         // @TODO review existing sync logic and see how this differs
         // @TODO respect .should_push()
-        let meta_req = builder.with_cmd(DatastoreCmd::Meta {});
+        let meta_req = builder.clone().with_cmd(DatastoreCmd::Meta {});
         let ft = api_fetch::<Env, Vec<LibMTime>, _>(meta_req).and_then(move |remote_mtimes| {
             let map_remote = remote_mtimes
                 .into_iter()
@@ -62,17 +62,22 @@ impl Auth {
                 })
                 .map(|(_, v)| v.to_owned())
                 .collect::<Vec<LibItem>>();
-            let get_req = builder.with_cmd(DatastoreCmd::Get { ids: to_pull_ids, all: false });
-            let put_req = builder.with_cmd(DatastoreCmd::Put { changes: to_push });
+            let get_req = builder.clone().with_cmd(DatastoreCmd::Get { ids: to_pull_ids, all: false });
+            let put_req = builder.clone().with_cmd(DatastoreCmd::Put { changes: to_push });
             api_fetch::<Env, Vec<LibItem>, _>(get_req)
                 .join(api_fetch::<Env, SuccessResponse, _>(put_req))
                 .map(|(items, _)| items)
         });
         Box::new(ft)
     }
-    fn lib_push(&self, item: &LibItem) -> impl Future<Item = (), Error = CtxError> {
-        unimplemented!();
-        future::ok(())
+    fn lib_push<Env: Environment + 'static>(&self, item: &LibItem) -> impl Future<Item = (), Error = CtxError> {
+        let push_req = DatastoreReqBuilder::default()
+            .auth_key(self.key.to_owned())
+            .collection(COLL_NAME.to_owned())
+            .with_cmd(DatastoreCmd::Put { changes: vec![item.to_owned()] });
+
+        api_fetch::<Env, SuccessResponse, _>(push_req)
+            .map(|_| ())
     }
     fn lib_pull(&self, id: &str) -> impl Future<Item = Option<LibItem>, Error = CtxError> {
         unimplemented!();

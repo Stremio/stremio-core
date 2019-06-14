@@ -85,8 +85,8 @@ pub struct DatastoreReq {
     cmd: DatastoreCmd
 }
 impl DatastoreReqBuilder {
-    pub fn with_cmd(&self, cmd: DatastoreCmd) -> DatastoreReq {
-        self.clone().cmd(cmd).build().expect("builder cannot fail")
+    pub fn with_cmd(&mut self, cmd: DatastoreCmd) -> DatastoreReq {
+        self.cmd(cmd).build().expect("builder cannot fail")
     }
 }
 impl APIMethodName for DatastoreReq {
