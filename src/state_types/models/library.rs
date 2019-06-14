@@ -32,16 +32,19 @@ struct LibMTime(String, #[serde(with = "ts_milliseconds")] DateTime<Utc>);
 impl Auth {
     pub fn lib_update(&mut self, items: &[LibItem]) {
         for item in items.iter() {
-            self.lib.insert(item.id.to_owned(), item.to_owned());
+            self.lib.insert(item.id.clone(), item.clone());
         }
+    }
+    fn lib_datastore_req_builder(&self) -> DatastoreReqBuilder {
+        DatastoreReqBuilder::default()
+            .auth_key(self.key.to_owned())
+            .collection(COLL_NAME.to_owned())
+            .clone()
     }
     // @TODO rather than EnvFuture, use a Future that returns CtxError
     pub fn lib_sync<Env: Environment + 'static>(&self) -> impl Future<Item = Vec<LibItem>, Error = CtxError> {
         let local_lib = self.lib.clone();
-        let builder = DatastoreReqBuilder::default()
-            .auth_key(self.key.to_owned())
-            .collection(COLL_NAME.to_owned())
-            .clone();
+        let builder = self.lib_datastore_req_builder();
         // @TODO review existing sync logic and see how this differs
         // @TODO respect .should_push()
         let meta_req = builder.clone().with_cmd(DatastoreCmd::Meta {});
@@ -53,14 +56,14 @@ impl Auth {
             let to_pull_ids = map_remote
                 .iter()
                 .filter(|(k, v)| local_lib.get(*k).map_or(true, |item| item.mtime < **v))
-                .map(|(k, _)| k.to_owned())
+                .map(|(k, _)| k.clone())
                 .collect::<Vec<String>>();
             let to_push = local_lib
                 .iter()
                 .filter(|(id, item)| {
                     map_remote.get(*id).map_or(true, |date| *date < item.mtime)
                 })
-                .map(|(_, v)| v.to_owned())
+                .map(|(_, v)| v.clone())
                 .collect::<Vec<LibItem>>();
             let get_req = builder.clone().with_cmd(DatastoreCmd::Get { ids: to_pull_ids, all: false });
             let put_req = builder.clone().with_cmd(DatastoreCmd::Put { changes: to_push });
@@ -71,18 +74,14 @@ impl Auth {
         Box::new(ft)
     }
     fn lib_push<Env: Environment + 'static>(&self, item: &LibItem) -> impl Future<Item = (), Error = CtxError> {
-        let push_req = DatastoreReqBuilder::default()
-            .auth_key(self.key.to_owned())
-            .collection(COLL_NAME.to_owned())
+        let push_req = self.lib_datastore_req_builder()
             .with_cmd(DatastoreCmd::Put { changes: vec![item.to_owned()] });
 
         api_fetch::<Env, SuccessResponse, _>(push_req)
             .map(|_| ())
     }
     fn lib_pull<Env: Environment + 'static>(&self, id: &str) -> impl Future<Item = Option<LibItem>, Error = CtxError> {
-        let pull_req = DatastoreReqBuilder::default()
-            .auth_key(self.key.to_owned())
-            .collection(COLL_NAME.to_owned())
+        let pull_req = self.lib_datastore_req_builder()
             .with_cmd(DatastoreCmd::Get { all: false, ids: vec![id.to_owned()] });
 
         api_fetch::<Env, Vec<LibItem>, _>(pull_req)
