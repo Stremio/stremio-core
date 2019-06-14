@@ -92,7 +92,7 @@ impl<Env: Environment + 'static> Update for Ctx<Env> {
                             let auth_key = key.to_owned();
                             let action = action.clone();
                             let effect =
-                                api_fetch::<Env, SuccessResponse>(APIRequest::Logout { auth_key })
+                                api_fetch::<Env, SuccessResponse, _>(APIRequest::Logout { auth_key })
                                     .map(|_| CtxUpdate(new_content).into())
                                     .map_err(move |e| CtxActionErr(action, e.into()).into());
                             Effects::one(Box::new(effect)).unchanged()
@@ -119,7 +119,7 @@ impl<Env: Environment + 'static> Update for Ctx<Env> {
                             update: false,
                         };
                         // @TODO: respect last_modified
-                        let ft = api_fetch::<Env, CollectionResponse>(req)
+                        let ft = api_fetch::<Env, CollectionResponse, _>(req)
                             .map(move |r| CtxAddonsPulled(key, r.addons).into())
                             .map_err(move |e| CtxActionErr(action, e.into()).into());
                         Effects::one(Box::new(ft)).unchanged()
@@ -133,7 +133,7 @@ impl<Env: Environment + 'static> Update for Ctx<Env> {
                             auth_key: key.to_owned(),
                             addons: self.content.addons.to_owned(),
                         };
-                        let ft = api_fetch::<Env, SuccessResponse>(req)
+                        let ft = api_fetch::<Env, SuccessResponse, _>(req)
                             .map(|_| CtxAddonsPushed.into())
                             .map_err(move |e| CtxActionErr(action, e.into()).into());
                         Effects::one(Box::new(ft)).unchanged()
@@ -197,13 +197,13 @@ fn save_storage<Env: Environment>(content: &CtxContent) -> Effect {
 }
 
 fn authenticate<Env: Environment + 'static>(action: ActionUser, req: APIRequest) -> Effect {
-    let ft = api_fetch::<Env, AuthResponse>(req)
+    let ft = api_fetch::<Env, AuthResponse, _>(req)
         .and_then(move |AuthResponse { key, user }| {
             let pull_req = APIRequest::AddonCollectionGet {
                 auth_key: key.to_owned(),
                 update: true,
             };
-            api_fetch::<Env, CollectionResponse>(pull_req).map(
+            api_fetch::<Env, CollectionResponse, _>(pull_req).map(
                 move |CollectionResponse { addons, .. }| CtxContent {
                     auth: Some(Auth { key, user, lib: LibraryIndex::new() }),
                     addons,
@@ -216,10 +216,11 @@ fn authenticate<Env: Environment + 'static>(action: ActionUser, req: APIRequest)
 }
 
 // @TODO this is pub, not ideal
-pub fn api_fetch<Env, OUT>(req: APIRequest) -> impl Future<Item = OUT, Error = CtxError>
+pub fn api_fetch<Env, OUT, REQ>(req: REQ) -> impl Future<Item = OUT, Error = CtxError>
 where
     Env: Environment,
     OUT: serde::de::DeserializeOwned + 'static,
+    REQ: APIMethodName + serde::Serialize + 'static,
 {
     let url = format!("{}/api/{}", Env::api_url(), req.method_name());
     let req = Request::post(url).body(req).expect("builder cannot fail");

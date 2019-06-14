@@ -7,12 +7,17 @@ use serde::de::{Unexpected, Visitor};
 use serde::ser::{Serialize, Serializer};
 use serde::{Deserialize, Deserializer};
 use serde_derive::*;
+use derive_builder::*;
 use std::fmt;
 
 //
 // Requests
 //
 pub type AuthKey = String;
+
+pub trait APIMethodName {
+    fn method_name(&self) -> &str;
+}
 
 #[derive(Serialize, Clone)]
 #[serde(untagged)]
@@ -39,83 +44,52 @@ pub enum APIRequest {
         auth_key: AuthKey,
         addons: Vec<Descriptor>,
     },
-    #[serde(rename_all = "camelCase")]
-    DatastoreGet {
-        auth_key: AuthKey,
-        collection: String,
-        #[serde(default)]
-        ids: Vec<String>,
-        all: bool,
-    },
-    #[serde(rename_all = "camelCase")]
-    DatastoreMeta {
-        auth_key: AuthKey,
-        collection: String,
-    },
-    #[serde(rename_all = "camelCase")]
-    DatastorePut {
-        auth_key: AuthKey,
-        collection: String,
-        #[serde(default)]
-        // NOTE: what if we need to be generic here?
-        // we can use separate structs rather than enums, and implement method_name on all of them
-        // via a trait; that way, the struct will be generic
-        changes: Vec<crate::types::LibItem>,
-    },
 }
-impl APIRequest {
-    pub fn method_name(&self) -> &str {
+impl APIMethodName for APIRequest {
+    fn method_name(&self) -> &str {
         match self {
             APIRequest::Login { .. } => "login",
             APIRequest::Register { .. } => "register",
             APIRequest::Logout { .. } => "logout",
             APIRequest::AddonCollectionGet { .. } => "addonCollectionGet",
             APIRequest::AddonCollectionSet { .. } => "addonCollectionSet",
-            APIRequest::DatastoreGet { .. } => "datastoreGet",
-            APIRequest::DatastoreMeta { .. } => "datastoreMeta",
-            APIRequest::DatastorePut { .. } => "datastorePut",
         }
     }
 }
 
-//
-// Helps easier building of datastore requests
-//
-pub struct DatastoreReqBuilder {
+#[derive(Serialize, Clone)]
+#[serde(untagged)]
+pub enum DatastoreCmd {
+    Get {
+        #[serde(default)]
+        ids: Vec<String>,
+        all: bool,
+    },
+    Meta {},
+    Put {
+        #[serde(default)]
+        // NOTE: what if we need to be generic here?
+        // we can use separate structs rather than enums, and implement method_name on all of them
+        // via a trait; that way, the struct will be generic
+        changes: Vec<crate::types::LibItem>,
+    },
+
+}
+
+#[derive(Serialize, Clone, Builder)]
+#[serde(rename_all="camelCase")]
+pub struct DatastoreReq {
     auth_key: AuthKey,
     collection: String,
+    #[serde(flatten)]
+    cmd: DatastoreCmd
 }
-impl DatastoreReqBuilder {
-    pub fn new(auth_key: AuthKey, collection: String) -> Self {
-        DatastoreReqBuilder { auth_key, collection }
-    }
-    pub fn get(&self, ids: Vec<String>) -> APIRequest {
-        APIRequest::DatastoreGet {
-            auth_key: self.auth_key.to_owned(),
-            collection: self.collection.to_owned(),
-            ids: ids,
-            all: false,
-        }
-    }
-    pub fn get_all(&self) -> APIRequest {
-        APIRequest::DatastoreGet {
-            auth_key: self.auth_key.to_owned(),
-            collection: self.collection.to_owned(),
-            ids: vec![],
-            all: true,
-        }
-    }
-    pub fn meta(&self) -> APIRequest {
-        APIRequest::DatastoreMeta {
-            auth_key: self.auth_key.to_owned(),
-            collection: self.collection.to_owned(),
-        }
-    }
-    pub fn put(&self, changes: Vec<crate::types::LibItem>) -> APIRequest {
-        APIRequest::DatastorePut {
-            auth_key: self.auth_key.to_owned(),
-            collection: self.collection.to_owned(),
-            changes,
+impl APIMethodName for DatastoreReq {
+    fn method_name(&self) -> &str {
+        match &self.cmd {
+            DatastoreCmd::Get { .. } => "datastoreGet",
+            DatastoreCmd::Meta {} => "datastoreMeta",
+            DatastoreCmd::Put { .. } => "datastorePut",
         }
     }
 }

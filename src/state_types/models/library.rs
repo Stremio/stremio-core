@@ -38,11 +38,14 @@ impl Auth {
     // @TODO rather than EnvFuture, use a Future that returns CtxError
     pub fn lib_sync<Env: Environment + 'static>(&self) -> impl Future<Item = Vec<LibItem>, Error = CtxError> {
         let local_lib = self.lib.clone();
-        let builder = DatastoreReqBuilder::new(self.key.to_owned(), COLL_NAME.to_owned());
-        // @TODO: make the APIRequest type more ergonomic
+        let builder = DatastoreReqBuilder::default()
+            .auth_key(self.key.to_owned())
+            .collection(COLL_NAME.to_owned())
+            .clone();
         // @TODO review existing sync logic and see how this differs
         // @TODO respect .should_push()
-        let ft = api_fetch::<Env, Vec<LibMTime>>(builder.meta()).and_then(move |remote_mtimes| {
+        let meta_req = builder.clone().cmd(DatastoreCmd::Meta {}).build().unwrap();
+        let ft = api_fetch::<Env, Vec<LibMTime>, _>(meta_req).and_then(move |remote_mtimes| {
             let map_remote = remote_mtimes
                 .into_iter()
                 .map(|LibMTime(k, mtime)| (k, mtime))
@@ -59,8 +62,10 @@ impl Auth {
                 })
                 .map(|(_, v)| v.to_owned())
                 .collect::<Vec<LibItem>>();
-            api_fetch::<Env, Vec<LibItem>>(builder.get(to_pull_ids))
-                .join(api_fetch::<Env, SuccessResponse>(builder.put(to_push)))
+            let get_req = builder.clone().cmd(DatastoreCmd::Get { ids: to_pull_ids, all: false }).build().unwrap();
+            let put_req = builder.clone().cmd(DatastoreCmd::Put { changes: to_push }).build().unwrap();
+            api_fetch::<Env, Vec<LibItem>, _>(get_req)
+                .join(api_fetch::<Env, SuccessResponse, _>(put_req))
                 .map(|(items, _)| items)
         });
         Box::new(ft)
