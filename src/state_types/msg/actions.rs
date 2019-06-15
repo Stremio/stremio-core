@@ -16,6 +16,13 @@ pub enum ActionLoad {
     AddonCatalog,
 }
 
+#[derive(Debug, Deserialize, Clone)]
+#[serde(tag = "addonOp", content = "args")]
+pub enum ActionAddon {
+    Remove { transport_url: TransportUrl },
+    Install(Box<Descriptor>),
+}
+
 #[derive(Debug, Deserialize, Serialize, Clone)]
 #[serde(tag = "userOp", content = "args")]
 pub enum ActionUser {
@@ -25,14 +32,8 @@ pub enum ActionUser {
     PullAddons,
     PushAddons,
     LibSync,
+    LibUpdate(LibItem),
     // @TODO consider PullUser, PushUser?
-}
-
-#[derive(Debug, Deserialize, Clone)]
-#[serde(tag = "addonOp", content = "args")]
-pub enum ActionAddon {
-    Remove { transport_url: TransportUrl },
-    Install(Box<Descriptor>),
 }
 
 #[derive(Debug, Deserialize, Clone)]
@@ -42,5 +43,4 @@ pub enum Action {
     Load(ActionLoad),
     AddonOp(ActionAddon),
     UserOp(ActionUser),
-    LibUpdate(LibItem),
 }

@@ -15,8 +15,14 @@ const COLL_NAME: &str = "libraryItem";
 pub enum LibraryLoadable {
     #[derivative(Default)]
     NotLoaded,
-    Loading(Library),
+    Loading(AuthKey),
     Ready(Library),
+}
+impl LibraryLoadable {
+    pub fn update(&mut self) -> Effects {
+        *self = LibraryLoadable::NotLoaded;
+        Effects::none()
+    }
 }
 
 #[derive(Default, Debug, Clone)]

@@ -30,3 +30,8 @@ pub trait Environment {
         API_URL
     }
 }
+
+//pub trait Player {
+//  fn dispatch(&self, msg: &PlayerMsg) -> Box<dyn Future<Item = (), Error = ()>>;
+//  fn observe(&self) -> Box<dyn Stream<Item = PlayerMsg>>;
+//}

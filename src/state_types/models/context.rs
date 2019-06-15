@@ -155,6 +155,13 @@ impl<Env: Environment + 'static> Update for Ctx<Env> {
                     }
                     _ => Effects::none().unchanged(),
                 },
+                ActionUser::LibUpdate(item) => match &self.library {
+                    LibraryLoadable::Ready(lib) => {
+                        // @TODO
+                        Effects::none()
+                    }
+                    _ => Effects::none().unchanged(),
+                }
             },
             // Handling msgs that result effects
             Msg::Internal(CtxAddonsPulled(key, addons))
@@ -174,6 +181,7 @@ impl<Env: Environment + 'static> Update for Ctx<Env> {
             Msg::Internal(LibSyncPulled(key, items)) => match &mut self.library {
                 LibraryLoadable::Ready(lib) if key == &lib.key => {
                     lib.update(items);
+                    // @TODO persist
                     Effects::none()
                 }
                 _ => Effects::none().unchanged(),
