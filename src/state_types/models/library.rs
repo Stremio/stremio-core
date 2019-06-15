@@ -1,4 +1,6 @@
 use crate::state_types::*;
+use crate::state_types::Internal::*;
+use crate::state_types::Event::*;
 use crate::types::api::*;
 use crate::types::LibItem;
 use chrono::serde::ts_milliseconds;
@@ -13,15 +15,98 @@ const COLL_NAME: &str = "libraryItem";
 #[derive(Derivative)]
 #[derivative(Debug, Default, Clone)]
 pub enum LibraryLoadable {
+    // NotLoaded: we've never attempted loading the library index
     #[derivative(Default)]
     NotLoaded,
+    // You can't have a library without being logged in
+    // OR CAN YOU??
+    // @TODO
+    NoUser,
+    // currently being loaded for this auth key, either cause a user just logged in,
+    // or cause we're loading from storage
+    // @TODO explain this better
+    // @TODO should this be uid? it probably should cause storage bucket will use UID
     Loading(AuthKey),
     Ready(Library),
 }
 impl LibraryLoadable {
-    pub fn update(&mut self) -> Effects {
+    pub fn load_from_storage<Env: Environment + 'static>(&mut self, content: &CtxContent) -> Effects {
         *self = LibraryLoadable::NotLoaded;
         Effects::none()
+    }
+    pub fn load_initial_api<Env: Environment + 'static>(&mut self, content: &CtxContent) -> Effects {
+        *self = match &content.auth {
+            Some(a) => LibraryLoadable::Loading(a.key.to_owned()),
+            None => LibraryLoadable::NoUser,
+        };
+        
+        match &content.auth {
+            None => Effects::none(),
+            Some(a) => {
+                let key = a.key.to_owned();
+                let get_req = DatastoreReqBuilder::default()
+                    .auth_key(key.to_owned())
+                    .collection(COLL_NAME.to_owned())
+                    .with_cmd(DatastoreCmd::Get { ids: vec![], all: true });
+
+                let ft = api_fetch::<Env, Vec<LibItem>, _>(get_req)
+                    .map(move |items| LibLoaded(key, items).into())
+                    .map_err(|e| CtxFatal(e.into()).into());
+
+                Effects::one(Box::new(ft))
+            }
+        }
+    }
+    pub fn update<Env: Environment + 'static>(&mut self, msg: &Msg) -> Effects {
+        // is not loaded, and content is_loaded
+        //*self = LibraryLoadable::NotLoaded;
+        // @TODO reorganize this to match on libraryindex state first
+        // and then apply everything else?
+        match &msg {
+            Msg::Action(Action::UserOp(action)) => match action.to_owned() {
+                ActionUser::LibSync => match self {
+                    LibraryLoadable::Ready(lib) => {
+                        let key = lib.key.to_owned();
+                        let action = action.to_owned();
+                        let ft = lib
+                            .sync::<Env>()
+                            .map(move |items| LibSyncPulled(key, items).into())
+                            .map_err(move |e| CtxActionErr(action, e.into()).into());
+                        Effects::one(Box::new(ft)).unchanged()
+                    }
+                    _ => Effects::none().unchanged(),
+                },
+                ActionUser::LibUpdate(item) => match self {
+                    LibraryLoadable::Ready(lib) => {
+                        // @TODO
+                        Effects::none()
+                    }
+                    _ => Effects::none().unchanged(),
+                }
+                _ => Effects::none().unchanged(),
+            }
+            Msg::Internal(LibLoaded(key, items)) => match self {
+                LibraryLoadable::Loading(loading_key) if key == loading_key => {
+                    let mut lib = Library {
+                        key: key.to_owned(),
+                        items: Default::default()
+                    };
+                    lib.update(items);
+                    *self = LibraryLoadable::Ready(lib);
+                    Effects::none()
+                },
+                _ => Effects::none().unchanged(),
+            }
+            Msg::Internal(LibSyncPulled(key, items)) => match self {
+                LibraryLoadable::Ready(lib) if key == &lib.key => {
+                    lib.update(items);
+                    // @TODO persist
+                    Effects::none()
+                }
+                _ => Effects::none().unchanged(),
+            }
+            _ => Effects::none().unchanged(),
+        }
     }
 }
 

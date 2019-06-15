@@ -53,7 +53,7 @@ pub struct Ctx<Env: Environment> {
 
 impl<Env: Environment + 'static> Update for Ctx<Env> {
     fn update(&mut self, msg: &Msg) -> Effects {
-        match msg {
+        let fx = match msg {
             // Loading from storage
             Msg::Action(Action::LoadCtx) => Effects::one(load_storage::<Env>()).unchanged(),
             Msg::Internal(CtxLoaded(opt_content)) => {
@@ -62,9 +62,7 @@ impl<Env: Environment + 'static> Update for Ctx<Env> {
                     .map(|x| *x.to_owned())
                     .unwrap_or(Default::default());
                 self.is_loaded = true;
-                // @TODO make this update library properly
-                self.library = LibraryLoadable::NotLoaded;
-                Effects::none()
+                self.library.load_from_storage::<Env>(&self.content)
             }
             // Addon install/remove
             Msg::Action(Action::AddonOp(ActionAddon::Remove { transport_url })) => {
@@ -143,25 +141,9 @@ impl<Env: Environment + 'static> Update for Ctx<Env> {
                     }
                     None => Effects::none().unchanged(),
                 },
-                ActionUser::LibSync => match &self.library {
-                    LibraryLoadable::Ready(lib) => {
-                        let key = lib.key.to_owned();
-                        let action = action.to_owned();
-                        let ft = lib
-                            .sync::<Env>()
-                            .map(move |items| LibSyncPulled(key, items).into())
-                            .map_err(move |e| CtxActionErr(action, e.into()).into());
-                        Effects::one(Box::new(ft)).unchanged()
-                    }
-                    _ => Effects::none().unchanged(),
-                },
-                ActionUser::LibUpdate(item) => match &self.library {
-                    LibraryLoadable::Ready(lib) => {
-                        // @TODO
-                        Effects::none()
-                    }
-                    _ => Effects::none().unchanged(),
-                }
+                // We let the LibraryLoadable model handle this
+                ActionUser::LibSync | ActionUser::LibUpdate(_) =>
+                    Effects::none().unchanged(),
             },
             // Handling msgs that result effects
             Msg::Internal(CtxAddonsPulled(key, addons))
@@ -174,20 +156,16 @@ impl<Env: Environment + 'static> Update for Ctx<Env> {
             }
             Msg::Internal(CtxUpdate(new)) => {
                 self.content = *new.to_owned();
-                // @TODO update .library
                 Effects::msg(CtxChanged.into())
                     .join(Effects::one(save_storage::<Env>(&self.content)))
+                    // When doing CtxUpdate, this means we've changed authentication,
+                    // so we re-load the library from the API
+                    .join(self.library.load_initial_api::<Env>(&self.content))
             }
-            Msg::Internal(LibSyncPulled(key, items)) => match &mut self.library {
-                LibraryLoadable::Ready(lib) if key == &lib.key => {
-                    lib.update(items);
-                    // @TODO persist
-                    Effects::none()
-                }
-                _ => Effects::none().unchanged(),
-            },
             _ => Effects::none().unchanged(),
-        }
+        };
+
+        fx.join(self.library.update::<Env>(msg))
     }
 }
 
