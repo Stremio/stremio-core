@@ -1,7 +1,7 @@
 use crate::state_types::{CtxContent, EnvError};
 use crate::types::addons::*;
-use crate::types::LibItem;
 use crate::types::api::*;
+use crate::types::LibItem;
 use serde_derive::*;
 use std::error::Error;
 
@@ -51,6 +51,9 @@ pub enum Event {
     CtxAddonsPushed,
     CtxFatal(CtxError),
     CtxActionErr(ActionUser, CtxError),
+    // This will be used by models which want to re-load the libitem when it may be updated
+    // will be emitted after persisting
+    LibUpdated,
 }
 
 //

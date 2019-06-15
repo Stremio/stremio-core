@@ -1,5 +1,7 @@
 mod user;
 pub use self::user::*;
+mod fetch;
+pub use self::fetch::*;
 use crate::types::addons::*;
 use chrono::{DateTime, Utc};
 use derive_builder::*;

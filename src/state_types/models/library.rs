@@ -1,17 +1,27 @@
-use super::{api_fetch, Auth};
 use crate::state_types::*;
 use crate::types::api::*;
-use crate::types::LibItem;
+use crate::types::{LibItem, MetaDetail};
 use chrono::serde::ts_milliseconds;
 use chrono::{DateTime, Utc};
 use futures::Future;
 use serde_derive::*;
+use derivative::*;
 use std::collections::HashMap;
 
 const COLL_NAME: &str = "libraryItem";
 
-/*
+#[derive(Derivative)]
+#[derivative(Debug, Default, Clone)]
+pub enum LibraryLoadable {
+    #[derivative(Default)]
+    NotLoaded,
+    Loading(Library),
+    Ready(Library),
+}
+
+#[derive(Default, Debug, Clone)]
 pub struct Library {
+    pub key: AuthKey,
     // @TODO the state should be NotLoaded, Loading, Ready; so that when we dispatch LibSync we
     // can ensure we've waited for storage load first
     // perhaps wrap it on a Ctx level, and have an effect for loading from storage here; this
@@ -20,8 +30,6 @@ pub struct Library {
     pub items: HashMap<String, LibItem>,
     pub last_videos: Vec<MetaDetail>,
 }
-*/
-pub type LibraryIndex = HashMap<String, LibItem>;
 
 #[derive(Debug, Deserialize)]
 struct LibMTime(String, #[serde(with = "ts_milliseconds")] DateTime<Utc>);
@@ -29,24 +37,23 @@ struct LibMTime(String, #[serde(with = "ts_milliseconds")] DateTime<Utc>);
 // Implementing Auth here is a bit unconventional,
 // but rust allows multiple impl blocks precisely to allow
 // separation of concerns like this
-impl Auth {
-    pub fn lib_update(&mut self, items: &[LibItem]) {
+impl Library {
+    pub fn update(&mut self, items: &[LibItem]) {
         for item in items.iter() {
-            self.lib.insert(item.id.clone(), item.clone());
+            self.items.insert(item.id.clone(), item.clone());
         }
     }
-    fn lib_datastore_req_builder(&self) -> DatastoreReqBuilder {
+    fn datastore_req_builder(&self) -> DatastoreReqBuilder {
         DatastoreReqBuilder::default()
             .auth_key(self.key.to_owned())
             .collection(COLL_NAME.to_owned())
             .clone()
     }
-    // @TODO rather than EnvFuture, use a Future that returns CtxError
-    pub fn lib_sync<Env: Environment + 'static>(
+    pub fn sync<Env: Environment + 'static>(
         &self,
     ) -> impl Future<Item = Vec<LibItem>, Error = CtxError> {
-        let local_lib = self.lib.clone();
-        let builder = self.lib_datastore_req_builder();
+        let local_lib = self.items.clone();
+        let builder = self.datastore_req_builder();
         // @TODO review existing sync logic and see how this differs
         // @TODO respect .should_push()
         let meta_req = builder.clone().with_cmd(DatastoreCmd::Meta {});
@@ -80,24 +87,24 @@ impl Auth {
         });
         Box::new(ft)
     }
-    pub fn lib_push<Env: Environment + 'static>(
+    pub fn push<Env: Environment + 'static>(
         &self,
         item: &LibItem,
     ) -> impl Future<Item = (), Error = CtxError> {
         let push_req = self
-            .lib_datastore_req_builder()
+            .datastore_req_builder()
             .with_cmd(DatastoreCmd::Put {
                 changes: vec![item.to_owned()],
             });
 
         api_fetch::<Env, SuccessResponse, _>(push_req).map(|_| ())
     }
-    pub fn lib_pull<Env: Environment + 'static>(
+    pub fn pull<Env: Environment + 'static>(
         &self,
         id: &str,
     ) -> impl Future<Item = Option<LibItem>, Error = CtxError> {
         let pull_req = self
-            .lib_datastore_req_builder()
+            .datastore_req_builder()
             .with_cmd(DatastoreCmd::Get {
                 all: false,
                 ids: vec![id.to_owned()],

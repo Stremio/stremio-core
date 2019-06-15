@@ -4,7 +4,7 @@ use crate::state_types::*;
 use crate::types::addons::Descriptor;
 use crate::types::api::*;
 use derivative::*;
-use futures::{future, Future};
+use futures::Future;
 use lazy_static::*;
 use serde_derive::*;
 use std::marker::PhantomData;
@@ -22,7 +22,6 @@ lazy_static! {
 pub struct Auth {
     pub key: AuthKey,
     pub user: User,
-    pub lib: LibraryIndex,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
@@ -45,6 +44,8 @@ pub struct Ctx<Env: Environment> {
     pub content: CtxContent,
     // Whether it's loaded from storage
     pub is_loaded: bool,
+    #[serde(skip)]
+    pub library: LibraryLoadable,
     #[derivative(Debug = "ignore")]
     #[serde(skip)]
     env: PhantomData<Env>,
@@ -58,10 +59,14 @@ impl<Env: Environment + 'static> Update for Ctx<Env> {
             Msg::Internal(CtxLoaded(Some(content))) => {
                 self.is_loaded = true;
                 self.content = *content.to_owned();
+                // @TODO make this work
+                self.library = LibraryLoadable::NotLoaded;
                 Effects::none()
             }
             Msg::Internal(CtxLoaded(None)) => {
                 self.is_loaded = true;
+                self.content = Default::default();
+                self.library = LibraryLoadable::NotLoaded;
                 Effects::none()
             }
             // Addon install/remove
@@ -141,17 +146,17 @@ impl<Env: Environment + 'static> Update for Ctx<Env> {
                     }
                     None => Effects::none().unchanged(),
                 },
-                ActionUser::LibSync => match &self.content.auth {
-                    Some(auth) => {
+                ActionUser::LibSync => match &self.library {
+                    LibraryLoadable::Ready(lib) => {
                         // @TODO add a key to CtxLibItemsUpdate, to protect against races
                         let action = action.to_owned();
-                        let ft = auth
-                            .lib_sync::<Env>()
+                        let ft = lib
+                            .sync::<Env>()
                             .map(|items| CtxLibItemsUpdate(items).into())
                             .map_err(move |e| CtxActionErr(action, e.into()).into());
                         Effects::one(Box::new(ft)).unchanged()
                     }
-                    None => Effects::none().unchanged(),
+                    _ => Effects::none().unchanged(),
                 },
             },
             // Handling msgs that result effects
@@ -170,9 +175,9 @@ impl<Env: Environment + 'static> Update for Ctx<Env> {
             }
             // @TODO protect against races
             // @TODO we can unify all those as CtxMutation(key, CtxMutation enum)
-            Msg::Internal(CtxLibItemsUpdate(items)) => match &mut self.content.auth {
-                Some(auth) => {
-                    auth.lib_update(items);
+            Msg::Internal(CtxLibItemsUpdate(items)) => match &mut self.library {
+                LibraryLoadable::Ready(lib) => {
+                    lib.update(items);
                     Effects::none()
                 }
                 _ => Effects::none().unchanged(),
@@ -207,11 +212,7 @@ fn authenticate<Env: Environment + 'static>(action: ActionUser, req: APIRequest)
             };
             api_fetch::<Env, CollectionResponse, _>(pull_req).map(
                 move |CollectionResponse { addons, .. }| CtxContent {
-                    auth: Some(Auth {
-                        key,
-                        user,
-                        lib: LibraryIndex::new(),
-                    }),
+                    auth: Some(Auth { key, user }),
                     addons,
                 },
             )
@@ -219,21 +220,4 @@ fn authenticate<Env: Environment + 'static>(action: ActionUser, req: APIRequest)
         .map(|c| Msg::Internal(CtxUpdate(Box::new(c))))
         .map_err(move |e| Msg::Event(CtxActionErr(action, e.into())));
     Box::new(ft)
-}
-
-// @TODO this is pub, not ideal
-pub fn api_fetch<Env, OUT, REQ>(req: REQ) -> impl Future<Item = OUT, Error = CtxError>
-where
-    Env: Environment,
-    OUT: serde::de::DeserializeOwned + 'static,
-    REQ: APIMethodName + serde::Serialize + 'static,
-{
-    let url = format!("{}/api/{}", Env::api_url(), req.method_name());
-    let req = Request::post(url).body(req).expect("builder cannot fail");
-    Env::fetch_serde::<_, APIResult<OUT>>(req)
-        .map_err(Into::into)
-        .and_then(|res| match res {
-            APIResult::Err { error } => future::err(error.into()),
-            APIResult::Ok { result } => future::ok(result),
-        })
 }
