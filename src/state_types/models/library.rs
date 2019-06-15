@@ -12,6 +12,9 @@ use std::collections::HashMap;
 
 const COLL_NAME: &str = "libraryItem";
 
+#[derive(Debug, Deserialize)]
+struct LibMTime(String, #[serde(with = "ts_milliseconds")] DateTime<Utc>);
+
 // @TODO
 // persist effect - triggered on LibUpdate/LibSyncPulled; will end in LibPersisted
 // load_initial_api - will do datastoreGet, persist in full, and end in LibLoaded
@@ -20,6 +23,12 @@ const COLL_NAME: &str = "libraryItem";
 // API if there is no user
 // update should be a match on LibraryLoadable first
 
+
+#[derive(Serialize, Deserialize, Default)]
+struct LibBucket {
+    key: AuthKey,
+    items: Vec<LibItem>,
+}
 
 #[derive(Derivative)]
 #[derivative(Debug, Default, Clone)]
@@ -40,8 +49,15 @@ pub enum LibraryLoadable {
 }
 impl LibraryLoadable {
     pub fn load_from_storage<Env: Environment + 'static>(&mut self, content: &CtxContent) -> Effects {
-        *self = LibraryLoadable::NotLoaded;
-        Effects::none()
+        *self = match &content.auth {
+            Some(a) => LibraryLoadable::Loading(a.key.to_owned()),
+            None => LibraryLoadable::NoUser,
+        };
+        let ft = Env::get_storage::<LibBucket>(COLL_NAME)
+            .map(|s| s.unwrap_or_default())
+            .map(|LibBucket { key, items }| LibLoaded(key, items).into())
+            .map_err(|e| LibFatal(e.into()).into());
+        Effects::one(Box::new(ft))
     }
     pub fn load_initial_api<Env: Environment + 'static>(&mut self, content: &CtxContent) -> Effects {
         *self = match &content.auth {
@@ -88,6 +104,7 @@ impl LibraryLoadable {
                 ActionUser::LibUpdate(item) => match self {
                     LibraryLoadable::Ready(lib) => {
                         // @TODO
+                        lib.items.insert(item.id.clone(), item.clone());
                         Effects::none()
                     }
                     _ => Effects::none().unchanged(),
@@ -130,12 +147,6 @@ pub struct Library {
     pub items: HashMap<String, LibItem>,
 }
 
-#[derive(Debug, Deserialize)]
-struct LibMTime(String, #[serde(with = "ts_milliseconds")] DateTime<Utc>);
-
-// Implementing Auth here is a bit unconventional,
-// but rust allows multiple impl blocks precisely to allow
-// separation of concerns like this
 impl Library {
     pub fn update(&mut self, items: &[LibItem]) {
         for item in items.iter() {
