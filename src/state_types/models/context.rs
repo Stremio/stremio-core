@@ -158,7 +158,7 @@ impl<Env: Environment + 'static> Update for Ctx<Env> {
             },
             // Handling msgs that result effects
             Msg::Internal(CtxAddonsPulled(key, addons))
-                if self.content.auth.as_ref().map_or(false, |a| &a.key == key)
+                if self.content.auth.as_ref().map(|a| &a.key) == Some(&key)
                     && &self.content.addons != addons =>
             {
                 self.content.addons = addons.to_owned();
