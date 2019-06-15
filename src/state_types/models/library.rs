@@ -1,6 +1,6 @@
 use crate::state_types::*;
 use crate::types::api::*;
-use crate::types::{LibItem, MetaDetail};
+use crate::types::LibItem;
 use chrono::serde::ts_milliseconds;
 use chrono::{DateTime, Utc};
 use futures::Future;
@@ -28,7 +28,6 @@ pub struct Library {
     // effect can either fail massively (CtxFatal) or succeed
     // when the user is logged out, we'll reset it to NotLoaded
     pub items: HashMap<String, LibItem>,
-    pub last_videos: Vec<MetaDetail>,
 }
 
 #[derive(Debug, Deserialize)]
