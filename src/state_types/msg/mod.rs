@@ -17,7 +17,7 @@ pub enum Internal {
     CtxLoaded(Option<Box<CtxContent>>),
     CtxUpdate(Box<CtxContent>),
     CtxAddonsPulled(AuthKey, Vec<Descriptor>),
-    CtxLibItemsUpdate(Vec<LibItem>),
+    LibSyncPulled(AuthKey, Vec<LibItem>),
     AddonResponse(ResourceRequest, Box<Result<ResourceResponse, EnvError>>),
 }
 

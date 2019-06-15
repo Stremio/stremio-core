@@ -56,16 +56,13 @@ impl<Env: Environment + 'static> Update for Ctx<Env> {
         match msg {
             // Loading from storage
             Msg::Action(Action::LoadCtx) => Effects::one(load_storage::<Env>()).unchanged(),
-            Msg::Internal(CtxLoaded(Some(content))) => {
+            Msg::Internal(CtxLoaded(opt_content)) => {
+                self.content = opt_content
+                    .as_ref()
+                    .map(|x| *x.to_owned())
+                    .unwrap_or(Default::default());
                 self.is_loaded = true;
-                self.content = *content.to_owned();
-                // @TODO make this work
-                self.library = LibraryLoadable::NotLoaded;
-                Effects::none()
-            }
-            Msg::Internal(CtxLoaded(None)) => {
-                self.is_loaded = true;
-                self.content = Default::default();
+                // @TODO make this update library properly
                 self.library = LibraryLoadable::NotLoaded;
                 Effects::none()
             }
@@ -148,11 +145,11 @@ impl<Env: Environment + 'static> Update for Ctx<Env> {
                 },
                 ActionUser::LibSync => match &self.library {
                     LibraryLoadable::Ready(lib) => {
-                        // @TODO add a key to CtxLibItemsUpdate, to protect against races
+                        let key = lib.key.to_owned();
                         let action = action.to_owned();
                         let ft = lib
                             .sync::<Env>()
-                            .map(|items| CtxLibItemsUpdate(items).into())
+                            .map(move |items| LibSyncPulled(key, items).into())
                             .map_err(move |e| CtxActionErr(action, e.into()).into());
                         Effects::one(Box::new(ft)).unchanged()
                     }
@@ -170,13 +167,12 @@ impl<Env: Environment + 'static> Update for Ctx<Env> {
             }
             Msg::Internal(CtxUpdate(new)) => {
                 self.content = *new.to_owned();
+                // @TODO update .library
                 Effects::msg(CtxChanged.into())
                     .join(Effects::one(save_storage::<Env>(&self.content)))
             }
-            // @TODO protect against races
-            // @TODO we can unify all those as CtxMutation(key, CtxMutation enum)
-            Msg::Internal(CtxLibItemsUpdate(items)) => match &mut self.library {
-                LibraryLoadable::Ready(lib) => {
+            Msg::Internal(LibSyncPulled(key, items)) => match &mut self.library {
+                LibraryLoadable::Ready(lib) if key == &lib.key => {
                     lib.update(items);
                     Effects::none()
                 }
