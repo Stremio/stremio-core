@@ -12,6 +12,15 @@ use std::collections::HashMap;
 
 const COLL_NAME: &str = "libraryItem";
 
+// @TODO
+// persist effect - triggered on LibUpdate/LibSyncPulled; will end in LibPersisted
+// load_initial_api - will do datastoreGet, persist in full, and end in LibLoaded
+// load_from_storage - will load storage buckets, and end in LibLoaded
+// userless lib: load_initial_api will just be renamed to load_initial and might skip loading from
+// API if there is no user
+// update should be a match on LibraryLoadable first
+
+
 #[derive(Derivative)]
 #[derivative(Debug, Default, Clone)]
 pub enum LibraryLoadable {
@@ -188,18 +197,5 @@ impl Library {
             });
 
         api_fetch::<Env, SuccessResponse, _>(push_req).map(|_| ())
-    }
-    pub fn pull<Env: Environment + 'static>(
-        &self,
-        id: &str,
-    ) -> impl Future<Item = Option<LibItem>, Error = CtxError> {
-        let pull_req = self
-            .datastore_req_builder()
-            .with_cmd(DatastoreCmd::Get {
-                all: false,
-                ids: vec![id.to_owned()],
-            });
-
-        api_fetch::<Env, Vec<LibItem>, _>(pull_req).map(|mut items| items.pop())
     }
 }
