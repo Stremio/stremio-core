@@ -54,7 +54,7 @@ pub struct Ctx<Env: Environment> {
 impl<Env: Environment + 'static> Update for Ctx<Env> {
     fn update(&mut self, msg: &Msg) -> Effects {
         let fx = match msg {
-            // Loading from storage
+            // Loading from storage: request it
             Msg::Action(Action::LoadCtx) => Effects::one(load_storage::<Env>()).unchanged(),
             Msg::Internal(CtxLoaded(opt_content)) => {
                 self.content = opt_content
@@ -89,11 +89,9 @@ impl<Env: Environment + 'static> Update for Ctx<Env> {
                     let new_content = Box::new(CtxContent::default());
                     match &self.content.auth {
                         Some(Auth { key, .. }) => {
-                            let auth_key = key.to_owned();
                             let action = action.clone();
-                            let effect = api_fetch::<Env, SuccessResponse, _>(APIRequest::Logout {
-                                auth_key,
-                            })
+                            let req = APIRequest::Logout { auth_key: key.to_owned() };
+                            let effect = api_fetch::<Env, SuccessResponse, _>(req)
                             .map(|_| CtxUpdate(new_content).into())
                             .map_err(move |e| CtxActionErr(action, e.into()).into());
                             Effects::one(Box::new(effect)).unchanged()
