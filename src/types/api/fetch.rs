@@ -1,6 +1,6 @@
+use super::{APIMethodName, APIResult};
 use crate::state_types::*;
 use futures::{future, Future};
-use super::{APIMethodName, APIResult};
 
 pub fn api_fetch<Env, OUT, REQ>(req: REQ) -> impl Future<Item = OUT, Error = CtxError>
 where
