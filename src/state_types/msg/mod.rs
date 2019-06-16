@@ -64,6 +64,7 @@ pub enum Event {
     // This will be used by models which want to re-load the libitem when it may be updated
     // will be emitted after persisting
     LibPersisted,
+    LibPushed,
     LibFatal(CtxError),
 }
 

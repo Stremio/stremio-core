@@ -9,6 +9,7 @@ use futures::Future;
 use serde_derive::*;
 use derivative::*;
 use std::collections::HashMap;
+use enclose::*;
 
 const COLL_NAME: &str = "libraryItem";
 
@@ -18,8 +19,8 @@ type UID = Option<String>;
 struct LibMTime(String, #[serde(with = "ts_milliseconds")] DateTime<Utc>);
 
 // @TODO
-// persist effect - triggered on LibUpdate/LibSyncPulled; will end in LibPersisted
 // userless lib: load_initial_api will just be renamed to load_initial and might skip loading from
+//   we may get rid of the Library type
 // update should be a match on LibraryLoadable first
 // API design when there is no user: we won't handle UserOp, so only way to modify lib items will
 // be through the methods on LibraryLoadable
@@ -71,19 +72,19 @@ impl LibraryLoadable {
         match &content.auth {
             None => Effects::none(),
             Some(a) => {
-                let key = a.key.to_owned();
+                let key = &a.key;
                 let get_req = DatastoreReqBuilder::default()
                     .auth_key(key.to_owned())
                     .collection(COLL_NAME.to_owned())
                     .with_cmd(DatastoreCmd::Get { ids: vec![], all: true });
 
                 let ft = api_fetch::<Env, Vec<LibItem>, _>(get_req)
-                    .and_then(move |items| {
-                        let bucket = LibBucket { key: key.clone(), items: items.clone() };
+                    .and_then(enclose!((key) move |items| {
+                        let bucket = LibBucket { key: key.to_owned(), items: items.clone() };
                         Env::set_storage(COLL_NAME, Some(&bucket))
                             .map(move |_| LibLoaded(key, items).into())
                             .map_err(Into::into)
-                    })
+                    }))
                     .map_err(|e| LibFatal(e).into());
 
                 Effects::one(Box::new(ft))
@@ -100,11 +101,11 @@ impl LibraryLoadable {
             Msg::Action(Action::UserOp(action)) => match action.to_owned() {
                 ActionUser::LibSync => match self {
                     LibraryLoadable::Ready(lib) => {
-                        let key = lib.key.to_owned();
+                        let key = &lib.key;
                         let action = action.to_owned();
                         let ft = lib
                             .sync::<Env>()
-                            .map(move |items| LibSyncPulled(key, items).into())
+                            .map(enclose!((key) move |items| LibSyncPulled(key, items).into()))
                             .map_err(move |e| CtxActionErr(action, e.into()).into());
                         Effects::one(Box::new(ft)).unchanged()
                     }
@@ -113,11 +114,16 @@ impl LibraryLoadable {
                 ActionUser::LibUpdate(item) => match self {
                     LibraryLoadable::Ready(lib) => {
                         lib.items.insert(item.id.clone(), item.clone());
-                        let action = action.to_owned();
-                        let ft = lib.persist::<Env>()
+                        let persist_ft = lib.persist::<Env>()
                             .map(|_| LibPersisted.into())
-                            .map_err(move |e| CtxActionErr(action, e).into());
-                        Effects::one(Box::new(ft))
+                            .map_err(enclose!((action) move |e| CtxActionErr(action, e).into()));
+                        let push_ft = lib.push::<Env>(&item)
+                            .map(|_| LibPushed.into())
+                            .map_err(enclose!((action) move |e| CtxActionErr(action, e).into()));
+                        Effects::many(vec![
+                            Box::new(persist_ft),
+                            Box::new(push_ft)
+                        ])
                     }
                     _ => Effects::none().unchanged(),
                 }
