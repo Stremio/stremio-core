@@ -59,15 +59,6 @@ impl LibBucket {
 
         self
     }
-    fn try_merge_opt(mut self, other: Option<LibBucket>) -> Self {
-        match other {
-            Some(other) => {
-                self.try_merge(other);
-                self
-            }
-            None => self,
-        }
-    }
 }
 
 #[derive(Derivative)]
@@ -85,12 +76,20 @@ impl LibraryLoadable {
         &mut self,
         content: &CtxContent,
     ) -> Effects {
+        // @TODO use From<> for UID
         let uid = content.auth.as_ref().map(|a| a.user.id.to_owned());
         *self = LibraryLoadable::Loading(uid.to_owned());
 
-        let initial_bucket = LibBucket::new_auth(&content.auth, vec![]);
-        let ft = Env::get_storage::<LibBucket>(COLL_NAME)
-            .map(move |b| LibLoaded(initial_bucket.try_merge_opt(b)).into())
+        let mut bucket = LibBucket::new(uid, vec![]);
+        let ft = Env::get_storage::<LibBucket>(STORAGE_SLOT)
+            .join(Env::get_storage::<LibBucket>(STORAGE_RECENT))
+            .map(move |(a, b)| {
+                for loaded_bucket in a.into_iter().chain(b.into_iter()) {
+                    bucket.try_merge(loaded_bucket);
+                }
+                bucket
+            })
+            .map(|bucket| LibLoaded(bucket).into())
             .map_err(|e| LibFatal(e.into()).into());
         Effects::one(Box::new(ft))
     }
