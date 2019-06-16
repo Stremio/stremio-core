@@ -271,21 +271,8 @@ fn update_and_persist<Env: Environment + 'static>(
     bucket: &mut LibBucket,
     new_bucket: LibBucket,
 ) -> impl Future<Item = (), Error = CtxError> {
-    // @TODO: use lazy sorting to make this faster
-    // or switch to a data structure that is already sorted
-    let pivot_elem = {
-        let mut recent = bucket.items.values().collect::<Vec<&_>>();
-        recent.sort_by(|a, b| b.cmp(a));
-        recent.get(RECENT_COUNT).map(|i| i.id.to_owned())
-    };
     bucket.try_merge(new_bucket);
-    let mut recent = bucket.items.values().collect::<Vec<&_>>();
-    let rest = recent.split_off(RECENT_COUNT);
-    // In a sorted set, every time the rest are different, it means
-    // that their first element is different too
-    let should_save_rest = rest.first().map(|i| &i.id) != pivot_elem.as_ref();
-    // @TODO no, not valid on lib sync
-    Env::set_storage(COLL_NAME, Some(bucket))
+    Env::set_storage(STORAGE_SLOT, Some(bucket))
         .map_err(Into::into)
 }
 
