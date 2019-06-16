@@ -27,7 +27,7 @@ pub struct LibItemState {
     pub no_notif: bool,
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq, Ord, PartialOrd)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq, Ord)]
 pub struct LibItem {
     #[serde(rename = "_id")]
     pub id: String,
@@ -68,6 +68,12 @@ impl LibItem {
             } else {
                 true
             }
+    }
+}
+
+impl PartialOrd for LibItem {
+    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+        Some(self.mtime.cmp(&other.mtime))
     }
 }
 
