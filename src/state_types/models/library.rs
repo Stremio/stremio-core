@@ -114,13 +114,9 @@ impl LibraryLoadable {
                     LibraryLoadable::Ready(lib) => {
                         lib.items.insert(item.id.clone(), item.clone());
                         let action = action.to_owned();
-                        let bucket = LibBucket {
-                            key: lib.key.clone(),
-                            items: lib.items.iter().map(|(_, v)| v).cloned().collect()
-                        };
-                        let ft = Env::set_storage(COLL_NAME, Some(&bucket))
+                        let ft = lib.persist::<Env>()
                             .map(|_| LibPersisted.into())
-                            .map_err(move |e| CtxActionErr(action, e.into()).into());
+                            .map_err(move |e| CtxActionErr(action, e).into());
                         Effects::one(Box::new(ft))
                     }
                     _ => Effects::none().unchanged(),
@@ -142,8 +138,10 @@ impl LibraryLoadable {
             Msg::Internal(LibSyncPulled(key, items)) => match self {
                 LibraryLoadable::Ready(lib) if key == &lib.key => {
                     lib.update(items);
-                    // @TODO persist
-                    Effects::none()
+                    let ft = lib.persist::<Env>()
+                        .map(|_| LibPersisted.into())
+                        .map_err(move |e| LibFatal(e).into());
+                    Effects::one(Box::new(ft))
                 }
                 _ => Effects::none().unchanged(),
             }
@@ -224,5 +222,13 @@ impl Library {
             });
 
         api_fetch::<Env, SuccessResponse, _>(push_req).map(|_| ())
+    }
+    pub fn persist<Env: Environment + 'static>(&self) -> impl Future<Item = (), Error = CtxError> {
+        let bucket = LibBucket {
+            key: self.key.clone(),
+            items: self.items.iter().map(|(_, v)| v).cloned().collect()
+        };
+        Env::set_storage(COLL_NAME, Some(&bucket))
+            .map_err(Into::into)
     }
 }
