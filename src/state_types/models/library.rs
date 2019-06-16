@@ -47,6 +47,7 @@ pub enum LibraryLoadable {
     Loading(AuthKey),
     Ready(Library),
 }
+
 impl LibraryLoadable {
     pub fn load_from_storage<Env: Environment + 'static>(&mut self, content: &CtxContent) -> Effects {
         *self = match &content.auth {
@@ -75,7 +76,12 @@ impl LibraryLoadable {
                     .with_cmd(DatastoreCmd::Get { ids: vec![], all: true });
 
                 let ft = api_fetch::<Env, Vec<LibItem>, _>(get_req)
-                    .map(move |items| LibLoaded(key, items).into())
+                    .and_then(move |items| {
+                        let bucket = LibBucket { key: key.clone(), items: items.clone() };
+                        Env::set_storage(COLL_NAME, Some(&bucket))
+                            .map(move |_| LibLoaded(key, items).into())
+                            .map_err(Into::into)
+                    })
                     .map_err(|e| CtxFatal(e.into()).into());
 
                 Effects::one(Box::new(ft))
@@ -87,6 +93,7 @@ impl LibraryLoadable {
         //*self = LibraryLoadable::NotLoaded;
         // @TODO reorganize this to match on libraryindex state first
         // and then apply everything else?
+        //let auth = 
         match &msg {
             Msg::Action(Action::UserOp(action)) => match action.to_owned() {
                 ActionUser::LibSync => match self {
