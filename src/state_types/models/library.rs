@@ -92,66 +92,63 @@ impl LibraryLoadable {
         }
     }
     pub fn update<Env: Environment + 'static>(&mut self, msg: &Msg) -> Effects {
-        // is not loaded, and content is_loaded
-        //*self = LibraryLoadable::NotLoaded;
-        // @TODO reorganize this to match on libraryindex state first
-        // and then apply everything else?
-        //let auth = 
-        match &msg {
-            Msg::Action(Action::UserOp(action)) => match action.to_owned() {
-                ActionUser::LibSync => match self {
-                    LibraryLoadable::Ready(lib) => {
-                        let key = &lib.key;
-                        let action = action.to_owned();
-                        let ft = lib
-                            .sync::<Env>()
-                            .map(enclose!((key) move |items| LibSyncPulled(key, items).into()))
-                            .map_err(move |e| CtxActionErr(action, e.into()).into());
-                        Effects::one(Box::new(ft)).unchanged()
+        match self {
+            LibraryLoadable::Loading(loading_key) => {
+                match msg {
+                    Msg::Internal(LibLoaded(key, items)) if key == loading_key => {
+                        let mut lib = Library {
+                            key: key.to_owned(),
+                            items: items.iter().map(|i| (i.id.clone(), i.clone())).collect()
+                        };
+                        *self = LibraryLoadable::Ready(lib);
+                        Effects::none()
                     }
-                    _ => Effects::none().unchanged(),
-                },
-                ActionUser::LibUpdate(item) => match self {
-                    LibraryLoadable::Ready(lib) => {
-                        lib.items.insert(item.id.clone(), item.clone());
-                        let persist_ft = lib.persist::<Env>()
+                    _ => Effects::none().unchanged()
+                }
+            }
+            LibraryLoadable::Ready(lib) => {
+                match msg {
+                    // User actions
+                    Msg::Action(Action::UserOp(action)) => match action.to_owned() {
+                        ActionUser::LibSync => {
+                            let key = &lib.key;
+                            let action = action.to_owned();
+                            let ft = lib
+                                .sync::<Env>()
+                                .map(enclose!((key) move |items| LibSyncPulled(key, items).into()))
+                                .map_err(move |e| CtxActionErr(action, e.into()).into());
+                            Effects::one(Box::new(ft)).unchanged()
+                        },
+                        ActionUser::LibUpdate(item) => {
+                            lib.items.insert(item.id.clone(), item.clone());
+                            let persist_ft = lib.persist::<Env>()
+                                .map(|_| LibPersisted.into())
+                                .map_err(enclose!((action) move |e| CtxActionErr(action, e).into()));
+                            let push_ft = lib.push::<Env>(&item)
+                                .map(|_| LibPushed.into())
+                                .map_err(enclose!((action) move |e| CtxActionErr(action, e).into()));
+                            Effects::many(vec![
+                                Box::new(persist_ft),
+                                Box::new(push_ft)
+                            ])
+                        }
+                        _ => Effects::none().unchanged()
+                    }
+                    Msg::Internal(LibSyncPulled(key, items)) if key == &lib.key => {
+                        for item in items.iter() {
+                            lib.items.insert(item.id.clone(), item.clone());
+                        }
+                        let ft = lib.persist::<Env>()
                             .map(|_| LibPersisted.into())
-                            .map_err(enclose!((action) move |e| CtxActionErr(action, e).into()));
-                        let push_ft = lib.push::<Env>(&item)
-                            .map(|_| LibPushed.into())
-                            .map_err(enclose!((action) move |e| CtxActionErr(action, e).into()));
-                        Effects::many(vec![
-                            Box::new(persist_ft),
-                            Box::new(push_ft)
-                        ])
+                            .map_err(move |e| LibFatal(e).into());
+                        Effects::one(Box::new(ft))
                     }
                     _ => Effects::none().unchanged(),
                 }
-                _ => Effects::none().unchanged(),
+
             }
-            Msg::Internal(LibLoaded(key, items)) => match self {
-                LibraryLoadable::Loading(loading_key) if key == loading_key => {
-                    let mut lib = Library {
-                        key: key.to_owned(),
-                        items: Default::default()
-                    };
-                    lib.update(items);
-                    *self = LibraryLoadable::Ready(lib);
-                    Effects::none()
-                },
-                _ => Effects::none().unchanged(),
-            }
-            Msg::Internal(LibSyncPulled(key, items)) => match self {
-                LibraryLoadable::Ready(lib) if key == &lib.key => {
-                    lib.update(items);
-                    let ft = lib.persist::<Env>()
-                        .map(|_| LibPersisted.into())
-                        .map_err(move |e| LibFatal(e).into());
-                    Effects::one(Box::new(ft))
-                }
-                _ => Effects::none().unchanged(),
-            }
-            _ => Effects::none().unchanged(),
+            // Ignore NotLoaded state: the load_* methods are supposed to take us out of it
+            _ => Effects::none().unchanged()
         }
     }
 }
@@ -159,20 +156,10 @@ impl LibraryLoadable {
 #[derive(Default, Debug, Clone)]
 pub struct Library {
     pub key: AuthKey,
-    // @TODO the state should be NotLoaded, Loading, Ready; so that when we dispatch LibSync we
-    // can ensure we've waited for storage load first
-    // perhaps wrap it on a Ctx level, and have an effect for loading from storage here; this
-    // effect can either fail massively (CtxFatal) or succeed
-    // when the user is logged out, we'll reset it to NotLoaded
     pub items: HashMap<String, LibItem>,
 }
 
 impl Library {
-    pub fn update(&mut self, items: &[LibItem]) {
-        for item in items.iter() {
-            self.items.insert(item.id.clone(), item.clone());
-        }
-    }
     fn datastore_req_builder(&self) -> DatastoreReqBuilder {
         DatastoreReqBuilder::default()
             .auth_key(self.key.to_owned())
@@ -184,8 +171,6 @@ impl Library {
     ) -> impl Future<Item = Vec<LibItem>, Error = CtxError> {
         let local_lib = self.items.clone();
         let builder = self.datastore_req_builder();
-        // @TODO review existing sync logic and see how this differs
-        // @TODO respect .should_push()
         let meta_req = builder.clone().with_cmd(DatastoreCmd::Meta {});
         let ft = api_fetch::<Env, Vec<LibMTime>, _>(meta_req).and_then(move |remote_mtimes| {
             let map_remote = remote_mtimes
