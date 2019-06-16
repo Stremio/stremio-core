@@ -1,8 +1,20 @@
 use chrono::{DateTime, Utc};
 use serde::de::IntoDeserializer;
 use serde::{Deserialize, Serialize};
+use std::cmp::Ordering;
+use chrono::serde::ts_milliseconds;
 
 // Reference: https://github.com/Stremio/stremio-api/blob/master/types/libraryItem.go
+
+#[derive(Debug, Deserialize, Eq, PartialEq, Ord)]
+pub struct LibItemModified(pub String, #[serde(with = "ts_milliseconds")] pub DateTime<Utc>);
+
+impl PartialOrd for LibItemModified {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        Some(self.1.cmp(&other.1))
+    }
+}
+
 
 // @TODO: u64 vs u32
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq, Ord, PartialOrd)]
@@ -72,7 +84,7 @@ impl LibItem {
 }
 
 impl PartialOrd for LibItem {
-    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
         Some(self.mtime.cmp(&other.mtime))
     }
 }

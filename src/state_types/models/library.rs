@@ -2,9 +2,7 @@ use crate::state_types::Event::*;
 use crate::state_types::Internal::*;
 use crate::state_types::*;
 use crate::types::api::*;
-use crate::types::LibItem;
-use chrono::serde::ts_milliseconds;
-use chrono::{DateTime, Utc};
+use crate::types::{LibItem, LibItemModified};
 use derivative::*;
 use enclose::*;
 use futures::future::Either;
@@ -19,9 +17,6 @@ const STORAGE_SLOT: &str = "library";
 const RECENT_COUNT: usize = 40;
 
 type UID = Option<String>;
-
-#[derive(Debug, Deserialize)]
-struct LibMTime(String, #[serde(with = "ts_milliseconds")] DateTime<Utc>);
 
 #[derive(Serialize, Deserialize, Default, Debug, Clone)]
 pub struct LibBucket {
@@ -208,10 +203,10 @@ fn lib_sync<Env: Environment + 'static>(
     let builder = datastore_req_builder(auth);
     let meta_req = builder.clone().with_cmd(DatastoreCmd::Meta {});
 
-    api_fetch::<Env, Vec<LibMTime>, _>(meta_req).and_then(move |remote_mtimes| {
+    api_fetch::<Env, Vec<LibItemModified>, _>(meta_req).and_then(move |remote_mtimes| {
         let map_remote = remote_mtimes
             .into_iter()
-            .map(|LibMTime(k, mtime)| (k, mtime))
+            .map(|LibItemModified(k, mtime)| (k, mtime))
             .collect::<HashMap<_, _>>();
         // IDs to pull
         let ids = map_remote
@@ -276,6 +271,21 @@ fn update_and_persist<Env: Environment + 'static>(
     bucket: &mut LibBucket,
     new_bucket: LibBucket,
 ) -> impl Future<Item = (), Error = CtxError> {
+    // @TODO: use lazy sorting to make this faster
+    // or switch to a data structure that is already sorted
+    let pivot_elem = {
+        let mut recent = bucket.items.values().collect::<Vec<&_>>();
+        recent.sort_by(|a, b| b.cmp(a));
+        recent.get(RECENT_COUNT).map(|i| i.id.to_owned())
+    };
     bucket.try_merge(new_bucket);
-    Env::set_storage(COLL_NAME, Some(bucket)).map_err(Into::into)
+    let mut recent = bucket.items.values().collect::<Vec<&_>>();
+    let rest = recent.split_off(RECENT_COUNT);
+    // In a sorted set, every time the rest are different, it means
+    // that their first element is different too
+    let should_save_rest = rest.first().map(|i| &i.id) != pivot_elem.as_ref();
+    // @TODO no, not valid on lib sync
+    Env::set_storage(COLL_NAME, Some(bucket))
+        .map_err(Into::into)
 }
+
