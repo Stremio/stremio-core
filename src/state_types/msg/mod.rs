@@ -63,7 +63,7 @@ pub enum Event {
     CtxActionErr(ActionUser, CtxError),
     // This will be used by models which want to re-load the libitem when it may be updated
     // will be emitted after persisting
-    LibUpdated,
+    LibPersisted,
     LibFatal(CtxError),
 }
 

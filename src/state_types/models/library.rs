@@ -12,16 +12,17 @@ use std::collections::HashMap;
 
 const COLL_NAME: &str = "libraryItem";
 
+type UID = Option<String>;
+
 #[derive(Debug, Deserialize)]
 struct LibMTime(String, #[serde(with = "ts_milliseconds")] DateTime<Utc>);
 
 // @TODO
 // persist effect - triggered on LibUpdate/LibSyncPulled; will end in LibPersisted
-// load_initial_api - will do datastoreGet, persist in full, and end in LibLoaded
-// load_from_storage - will load storage buckets, and end in LibLoaded
 // userless lib: load_initial_api will just be renamed to load_initial and might skip loading from
-// API if there is no user
 // update should be a match on LibraryLoadable first
+// API design when there is no user: we won't handle UserOp, so only way to modify lib items will
+// be through the methods on LibraryLoadable
 
 
 #[derive(Serialize, Deserialize, Default)]
@@ -54,6 +55,7 @@ impl LibraryLoadable {
             Some(a) => LibraryLoadable::Loading(a.key.to_owned()),
             None => LibraryLoadable::NoUser,
         };
+        // @TODO load recent bucket
         let ft = Env::get_storage::<LibBucket>(COLL_NAME)
             .map(|s| s.unwrap_or_default())
             .map(|LibBucket { key, items }| LibLoaded(key, items).into())
@@ -82,7 +84,7 @@ impl LibraryLoadable {
                             .map(move |_| LibLoaded(key, items).into())
                             .map_err(Into::into)
                     })
-                    .map_err(|e| CtxFatal(e.into()).into());
+                    .map_err(|e| LibFatal(e).into());
 
                 Effects::one(Box::new(ft))
             }
@@ -110,9 +112,16 @@ impl LibraryLoadable {
                 },
                 ActionUser::LibUpdate(item) => match self {
                     LibraryLoadable::Ready(lib) => {
-                        // @TODO
                         lib.items.insert(item.id.clone(), item.clone());
-                        Effects::none()
+                        let action = action.to_owned();
+                        let bucket = LibBucket {
+                            key: lib.key.clone(),
+                            items: lib.items.iter().map(|(_, v)| v).cloned().collect()
+                        };
+                        let ft = Env::set_storage(COLL_NAME, Some(&bucket))
+                            .map(|_| LibPersisted.into())
+                            .map_err(move |e| CtxActionErr(action, e.into()).into());
+                        Effects::one(Box::new(ft))
                     }
                     _ => Effects::none().unchanged(),
                 }
