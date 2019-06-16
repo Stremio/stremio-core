@@ -5,11 +5,12 @@ use crate::types::api::*;
 use crate::types::LibItem;
 use chrono::serde::ts_milliseconds;
 use chrono::{DateTime, Utc};
-use futures::Future;
+use futures::{Future, future};
 use serde_derive::*;
 use derivative::*;
 use std::collections::HashMap;
 use enclose::*;
+use futures::future::Either;
 
 const COLL_NAME: &str = "libraryItem";
 
@@ -96,7 +97,7 @@ impl LibraryLoadable {
             LibraryLoadable::Loading(loading_key) => {
                 match msg {
                     Msg::Internal(LibLoaded(key, items)) if key == loading_key => {
-                        let mut lib = Library {
+                        let lib = Library {
                             key: key.to_owned(),
                             items: items.iter().map(|i| (i.id.clone(), i.clone())).collect()
                         };
@@ -192,13 +193,22 @@ impl Library {
                 })
                 .map(|(_, v)| v.clone())
                 .collect::<Vec<LibItem>>();
-            let get_req = builder
-                .clone()
-                .with_cmd(DatastoreCmd::Get { ids, all: false });
-            let put_req = builder.clone().with_cmd(DatastoreCmd::Put { changes });
-            api_fetch::<Env, Vec<LibItem>, _>(get_req)
-                .join(api_fetch::<Env, SuccessResponse, _>(put_req))
-                .map(|(items, _)| items)
+            let get_fut = if ids.len() > 0 {
+                Either::A(api_fetch::<Env, Vec<LibItem>, _>(builder
+                    .clone()
+                    .with_cmd(DatastoreCmd::Get { ids, all: false })))
+            } else {
+                Either::B(future::ok(vec![]))
+            };
+            let put_fut = if changes.len() > 0 {
+                Either::A(api_fetch::<Env, SuccessResponse, _>(
+                    builder.clone().with_cmd(DatastoreCmd::Put { changes })
+                ).map(|_| ()))
+            } else {
+                Either::B(future::ok(()))
+            };
+            
+            get_fut.join(put_fut).map(|(items, _)| items)
         });
         Box::new(ft)
     }
