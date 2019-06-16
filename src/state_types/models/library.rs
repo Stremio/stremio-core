@@ -29,16 +29,17 @@ pub struct LibBucket {
     pub items: HashMap<String, LibItem>,
 }
 impl LibBucket {
-    fn new(auth: &Option<Auth>, items: Vec<LibItem>) -> Self {
+    fn new(uid: UID, items: Vec<LibItem>) -> Self {
         LibBucket {
-            uid: auth.as_ref().map(|a| a.user.id.to_owned()),
-            items: items
-                .iter()
-                .map(|i| (i.id.to_owned(), i.to_owned()))
-                .collect(),
+            uid,
+            items: items.into_iter().map(|i| (i.id.to_owned(), i)).collect(),
         }
     }
-    fn try_merge(mut self, other: LibBucket) -> Self {
+    fn new_auth(auth: &Option<Auth>, items: Vec<LibItem>) -> Self {
+        // @TODO use UID From<>
+        Self::new(auth.as_ref().map(|a| a.user.id.to_owned()), items)
+    }
+    fn try_merge(&mut self, other: LibBucket) -> &Self {
         if self.uid != other.uid {
             return self;
         }
@@ -53,7 +54,6 @@ impl LibBucket {
                         entry.insert(item);
                     }
                 }
-                _ => (),
             }
         }
 
@@ -61,7 +61,10 @@ impl LibBucket {
     }
     fn try_merge_opt(mut self, other: Option<LibBucket>) -> Self {
         match other {
-            Some(other) => self.try_merge(other),
+            Some(other) => {
+                self.try_merge(other);
+                self
+            }
             None => self,
         }
     }
@@ -85,19 +88,13 @@ impl LibraryLoadable {
         let uid = content.auth.as_ref().map(|a| a.user.id.to_owned());
         *self = LibraryLoadable::Loading(uid.to_owned());
 
-        let initial_bucket = LibBucket {
-            uid,
-            ..Default::default()
-        };
+        let initial_bucket = LibBucket::new_auth(&content.auth, vec![]);
         let ft = Env::get_storage::<LibBucket>(COLL_NAME)
             .map(move |b| LibLoaded(initial_bucket.try_merge_opt(b)).into())
             .map_err(|e| LibFatal(e.into()).into());
         Effects::one(Box::new(ft))
     }
-    pub fn load_initial_api<Env: Environment + 'static>(
-        &mut self,
-        content: &CtxContent,
-    ) -> Effects {
+    pub fn load_initial<Env: Environment + 'static>(&mut self, content: &CtxContent) -> Effects {
         *self = match &content.auth {
             None => LibraryLoadable::Ready(Default::default()),
             Some(a) => LibraryLoadable::Loading(Some(a.user.id.to_owned())),
@@ -106,29 +103,29 @@ impl LibraryLoadable {
         match &content.auth {
             None => Effects::none(),
             Some(a) => {
-                let key = &a.key;
                 let get_req = DatastoreReqBuilder::default()
-                    .auth_key(key.to_owned())
+                    .auth_key(a.key.to_owned())
                     .collection(COLL_NAME.to_owned())
                     .with_cmd(DatastoreCmd::Get {
                         ids: vec![],
                         all: true,
                     });
 
-                Effects::none()
-                /*
-                // @TODO
+                // @TODO let uid =
+                // move that binding up and rely on implicit Copy
+                let mut bucket = LibBucket::new_auth(&content.auth, vec![]);
                 let ft = api_fetch::<Env, Vec<LibItem>, _>(get_req)
-                    .and_then(enclose!((key) move |items| {
-                        let bucket = LibBucket { key: key.to_owned(), items: items.clone() };
-                        Env::set_storage(COLL_NAME, Some(&bucket))
-                            .map(move |_| LibLoaded(key, items).into())
+                    .and_then(move |items| {
+                        // Persist the bucket into a single storage slot
+                        // next time we do full update_and_persist, it will will use the recent bucket
+                        bucket.items = items.into_iter().map(|i| (i.id.to_owned(), i)).collect();
+                        Env::set_storage(STORAGE_SLOT, Some(&bucket))
+                            .map(move |_| LibLoaded(bucket).into())
                             .map_err(Into::into)
-                    }))
+                    })
                     .map_err(|e| LibFatal(e).into());
 
                 Effects::one(Box::new(ft))
-                */
             }
         }
     }
@@ -145,10 +142,9 @@ impl LibraryLoadable {
                 }
                 _ => Effects::none().unchanged(),
             },
-            LibraryLoadable::Ready(lib_bucket) => {
+            LibraryLoadable::Ready(ref mut lib_bucket) => {
                 match msg {
                     // User actions
-                    /*
                     Msg::Action(Action::UserOp(action)) => {
                         let auth = match &content.auth {
                             Some(auth) => auth,
@@ -157,7 +153,7 @@ impl LibraryLoadable {
                         match action {
                             ActionUser::LibSync => {
                                 // @TODO get rid of the repeated map_err closure
-                                let ft = lib_sync::<Env>(auth)
+                                let ft = lib_sync::<Env>(auth, lib_bucket.clone())
                                     .map(|bucket| LibSyncPulled(bucket).into())
                                     .map_err(
                                         enclose!((action) move |e| CtxActionErr(action, e).into()),
@@ -165,14 +161,16 @@ impl LibraryLoadable {
                                 Effects::one(Box::new(ft)).unchanged()
                             }
                             ActionUser::LibUpdate(item) => {
-                                let bucket = LibBucket::new(&content.auth, vec![item.clone()]);
-                                let ft = update_and_persist::<Env>(&mut lib_bucket, bucket)
+                                let new_bucket =
+                                    LibBucket::new_auth(&content.auth, vec![item.clone()]);
+                                let persist_ft = update_and_persist::<Env>(lib_bucket, new_bucket)
                                     .map(|_| LibPersisted.into())
                                     .map_err(
                                         enclose!((action) move |e| CtxActionErr(action, e).into()),
                                     );
-                                let push_ft =
-                                    lib_push::<Env>(&item).map(|_| LibPushed.into()).map_err(
+                                let push_ft = lib_push::<Env>(auth, &item)
+                                    .map(|_| LibPushed.into())
+                                    .map_err(
                                         enclose!((action) move |e| CtxActionErr(action, e).into()),
                                     );
                                 Effects::many(vec![Box::new(persist_ft), Box::new(push_ft)])
@@ -181,12 +179,12 @@ impl LibraryLoadable {
                         }
                     }
                     Msg::Internal(LibSyncPulled(new_bucket)) => {
-                        let ft = update_and_persist::<Env>(&mut lib_bucket, new_bucket)
+                        // @TODO: can we get rid of this clone?
+                        let ft = update_and_persist::<Env>(lib_bucket, new_bucket.clone())
                             .map(|_| LibPersisted.into())
                             .map_err(move |e| LibFatal(e).into());
                         Effects::one(Box::new(ft))
                     }
-                    */
                     _ => Effects::none().unchanged(),
                 }
             }
@@ -196,19 +194,19 @@ impl LibraryLoadable {
     }
 }
 
-/*
-fn datastore_req_builder() -> DatastoreReqBuilder {
+fn datastore_req_builder(auth: &Auth) -> DatastoreReqBuilder {
     DatastoreReqBuilder::default()
-        .auth_key(self.key.to_owned())
+        .auth_key(auth.key.to_owned())
         .collection(COLL_NAME.to_owned())
         .clone()
 }
 
 fn lib_sync<Env: Environment + 'static>(
     auth: &Auth,
+    local_lib: LibBucket,
 ) -> impl Future<Item = LibBucket, Error = CtxError> {
-    let local_lib = self.items.clone();
-    let builder = self.datastore_req_builder();
+    // @TODO consider asserting if uid matches auth
+    let builder = datastore_req_builder(auth);
     let meta_req = builder.clone().with_cmd(DatastoreCmd::Meta {});
 
     api_fetch::<Env, Vec<LibMTime>, _>(meta_req).and_then(move |remote_mtimes| {
@@ -219,16 +217,22 @@ fn lib_sync<Env: Environment + 'static>(
         // IDs to pull
         let ids = map_remote
             .iter()
-            .filter(|(k, v)| local_lib.get(*k).map_or(true, |item| item.mtime < **v))
+            .filter(|(k, v)| {
+                local_lib
+                    .items
+                    .get(*k)
+                    .map_or(true, |item| item.mtime < **v)
+            })
             .map(|(k, _)| k.clone())
             .collect::<Vec<String>>();
         // Items to push
-        let changes = local_lib
-            .iter()
+        let LibBucket { items, uid } = local_lib;
+        let changes = items
+            .into_iter()
             .filter(|(id, item)| {
-                map_remote.get(*id).map_or(true, |date| *date < item.mtime) && item.should_push()
+                map_remote.get(id).map_or(true, |date| *date < item.mtime) && item.should_push()
             })
-            .map(|(_, v)| v.clone())
+            .map(|(_, v)| v)
             .collect::<Vec<LibItem>>();
 
         let get_fut = if ids.len() > 0 {
@@ -252,7 +256,9 @@ fn lib_sync<Env: Environment + 'static>(
             Either::B(future::ok(()))
         };
 
-        get_fut.join(put_fut).map(|(items, _)| items)
+        get_fut
+            .join(put_fut)
+            .map(move |(items, _)| LibBucket::new(uid, items))
     })
 }
 
@@ -260,7 +266,7 @@ fn lib_push<Env: Environment + 'static>(
     auth: &Auth,
     item: &LibItem,
 ) -> impl Future<Item = (), Error = CtxError> {
-    let push_req = self.datastore_req_builder().with_cmd(DatastoreCmd::Put {
+    let push_req = datastore_req_builder(auth).with_cmd(DatastoreCmd::Put {
         changes: vec![item.to_owned()],
     });
 
@@ -269,8 +275,8 @@ fn lib_push<Env: Environment + 'static>(
 
 fn update_and_persist<Env: Environment + 'static>(
     bucket: &mut LibBucket,
-    new_bucket: &LibBucket,
+    new_bucket: LibBucket,
 ) -> impl Future<Item = (), Error = CtxError> {
-    Env::set_storage(COLL_NAME, Some(&bucket)).map_err(Into::into)
+    bucket.try_merge(new_bucket);
+    Env::set_storage(COLL_NAME, Some(bucket)).map_err(Into::into)
 }
-*/

@@ -159,7 +159,7 @@ impl<Env: Environment + 'static> Update for Ctx<Env> {
                     .join(Effects::one(save_storage::<Env>(&self.content)))
                     // When doing CtxUpdate, this means we've changed authentication,
                     // so we re-load the library from the API
-                    .join(self.library.load_initial_api::<Env>(&self.content))
+                    .join(self.library.load_initial::<Env>(&self.content))
             }
             _ => Effects::none().unchanged(),
         };
