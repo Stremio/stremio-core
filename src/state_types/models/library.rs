@@ -14,7 +14,10 @@ use std::collections::HashMap;
 const COLL_NAME: &str = "libraryItem";
 const STORAGE_RECENT: &str = "recent_library";
 const STORAGE_SLOT: &str = "library";
-const RECENT_COUNT: usize = 40;
+
+// According to a mid-2019 study, only 2.7% of users
+// have a library larger than that
+const RECENT_COUNT: usize = 200;
 
 type UID = Option<String>;
 
@@ -75,15 +78,16 @@ impl LibraryLoadable {
         let uid = content.auth.as_ref().map(|a| a.user.id.to_owned());
         *self = LibraryLoadable::Loading(uid.to_owned());
 
-        let mut bucket = LibBucket::new(uid, vec![]);
+        let default_bucket = LibBucket::new(uid, vec![]);
         let ft = Env::get_storage::<LibBucket>(STORAGE_SLOT)
-            .join(Env::get_storage::<LibBucket>(STORAGE_RECENT))
-            .map(move |(a, b)| {
-                for loaded_bucket in a.into_iter().chain(b.into_iter()) {
-                    bucket.try_merge(loaded_bucket);
-                }
-                bucket
-            })
+            //.join(Env::get_storage::<LibBucket>(STORAGE_RECENT))
+            //.map(move |(a, b)| {
+            //    for loaded_bucket in a.into_iter().chain(b.into_iter()) {
+            //        bucket.try_merge(loaded_bucket);
+            //    }
+            //    bucket
+            //})
+            .map(move |r| r.unwrap_or(default_bucket))
             .map(|bucket| LibLoaded(bucket).into())
             .map_err(|e| LibFatal(e.into()).into());
         Effects::one(Box::new(ft))
