@@ -3,7 +3,6 @@ use crate::state_types::Internal::*;
 use crate::state_types::*;
 use crate::types::api::*;
 use crate::types::{LibItem, LibItemModified};
-use chrono::{DateTime, Utc};
 use derivative::*;
 use enclose::*;
 use futures::future::Either;
@@ -11,6 +10,7 @@ use futures::{future, Future};
 use serde_derive::*;
 use std::collections::hash_map::Entry::{Occupied, Vacant};
 use std::collections::HashMap;
+use lazysort::SortedBy;
 
 const COLL_NAME: &str = "libraryItem";
 const STORAGE_RECENT: &str = "recent_library";
@@ -110,13 +110,11 @@ impl LibraryLoadable {
                         all: true,
                     });
 
-                let mut bucket = LibBucket::new(content.auth.as_ref().into(), vec![]);
+                let uid: UID = content.auth.as_ref().into();
+                let mut bucket = LibBucket::new(uid.clone(), vec![]);
                 let ft = api_fetch::<Env, Vec<LibItem>, _>(get_req)
                     .and_then(move |items| {
-                        // Persist the bucket into a single storage slot
-                        // next time we do full update_and_persist, it will will use the recent bucket
-                        bucket.items = items.into_iter().map(|i| (i.id.to_owned(), i)).collect();
-                        Env::set_storage(STORAGE_SLOT, Some(&bucket))
+                        update_and_persist::<Env>(&mut bucket, LibBucket::new(uid, items))
                             .map(move |_| LibLoaded(bucket).into())
                             .map_err(Into::into)
                     })
@@ -271,21 +269,35 @@ fn update_and_persist<Env: Environment + 'static>(
     bucket: &mut LibBucket,
     new_bucket: LibBucket,
 ) -> impl Future<Item = (), Error = CtxError> {
-    // let x = get current recent in LibraryModified
-    // merge
-    // if total number of items is less than threshold, just persist the recent
-    // else if all of the modified items are in x, just persist recent
-    // else save both
-    // @TODO to split in two, maybe we'll need a borrowed LibBucket
-    // problem with this is if items are not always with updated mtimes; however,
-    // we enforce this with the bucket merge
-    let current_recent: Vec<(&str, &DateTime<Utc>)> = bucket
+    // @TODO we should consider reading that from storage, it will have stronger consistency
+    // guarantees
+
+    // Determine whether all of the new items are in the current recent
+    let current_recent: Vec<&str> = bucket
         .items
         .values()
         .map(|item| (item.id.as_str(), &item.mtime))
-        // @TODO sort and then take
-        //.take(RECENT_COUNT)
+        .sorted_by(|a, b| b.1.cmp(&a.1))
+        .take(RECENT_COUNT)
+        .map(|(id, _)| id)
         .collect();
+    let all_in_recent = new_bucket
+        .items
+        .keys()
+        .all(move |id| current_recent.iter().any(|x| *x == id));
+
+    // Merge the buckets
     bucket.try_merge(new_bucket);
+
+    // @TODO explain this
+    if bucket.items.len() <= RECENT_COUNT {
+        // only save one bucket
+    } else if all_in_recent {
+        // save one bucket, but only the newest
+        // @TODO borrowed bucket or clone
+    } else {
+        // @TODO borrowed bucketS or clone
+    }
+
     Env::set_storage(STORAGE_SLOT, Some(bucket)).map_err(Into::into)
 }
