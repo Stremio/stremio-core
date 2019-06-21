@@ -2,6 +2,21 @@ use super::stream::*;
 use chrono::{DateTime, Utc};
 use serde_derive::*;
 
+#[derive(PartialEq, Eq, Clone, Debug, Deserialize, Serialize, PartialOrd, Ord)]
+#[serde(rename_all = "camelCase")]
+pub enum PosterShape {
+    Poster,
+    Square,
+    Landscape,
+    #[serde(other)]
+    Unspecified,
+}
+impl Default for PosterShape {
+    fn default() -> Self {
+        PosterShape::Unspecified
+    }
+}
+
 #[derive(PartialEq, Eq, Clone, Debug, Deserialize, Serialize, Default)]
 #[serde(rename_all = "camelCase")]
 pub struct MetaPreview {
@@ -11,8 +26,8 @@ pub struct MetaPreview {
     #[serde(default)]
     pub name: String,
     pub poster: Option<String>,
-    // @TODO maybe this should be an enum?
-    pub poster_shape: Option<String>,
+    #[serde(default)]
+    pub poster_shape: PosterShape,
 }
 
 // https://github.com/Stremio/stremio-addon-sdk/blob/master/docs/api/responses/meta.md#meta-object
@@ -32,7 +47,8 @@ pub struct MetaDetail {
     pub description: Option<String>,
     pub release_info: Option<String>,
     pub runtime: Option<String>,
-    pub poster_shape: Option<String>,
+    #[serde(default)]
+    pub poster_shape: PosterShape,
     // @TODO: default to one video
     #[serde(default)]
     pub videos: Vec<Video>,

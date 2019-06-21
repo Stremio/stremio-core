@@ -3,6 +3,7 @@ use serde::de::IntoDeserializer;
 use serde::{Deserialize, Serialize};
 use std::cmp::Ordering;
 use chrono::serde::ts_milliseconds;
+use super::PosterShape;
 
 // Reference: https://github.com/Stremio/stremio-api/blob/master/types/libraryItem.go
 
@@ -59,6 +60,8 @@ pub struct LibItem {
     pub type_name: String,
     #[serde(deserialize_with = "empty_string_as_none", default)]
     pub poster: Option<String>,
+    #[serde(default)]
+    pub poster_shape: PosterShape,
     #[serde(deserialize_with = "empty_string_as_none", default)]
     pub background: Option<String>,
     #[serde(deserialize_with = "empty_string_as_none", default)]
