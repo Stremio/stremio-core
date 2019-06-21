@@ -2,6 +2,20 @@ use super::stream::*;
 use chrono::{DateTime, Utc};
 use serde_derive::*;
 
+// Type can be represented as:
+//#[derive(Deserialize, Serialize, Debug)]
+//#[serde(rename_all = "camelCase")]
+//pub enum Preset { Movie, Series, Channel, Tv }
+//#[derive(Deserialize, Serialize, Debug)]
+//#[serde(untagged)]
+//pub enum ItemType {
+//    Preset(Preset),
+//    Other(String)
+//}
+// or, some day it may be done with 1 enum:
+// https://users.rust-lang.org/t/catchall-variant-in-serde/20748
+// https://github.com/serde-rs/serde/pull/1382
+
 #[derive(PartialEq, Eq, Clone, Debug, Deserialize, Serialize, PartialOrd, Ord)]
 #[serde(rename_all = "camelCase")]
 pub enum PosterShape {
