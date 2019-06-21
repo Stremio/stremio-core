@@ -20,7 +20,13 @@ const STORAGE_SLOT: &str = "library";
 // have a library larger than that
 const RECENT_COUNT: usize = 200;
 
-type UID = Option<String>;
+#[derive(Serialize, Deserialize, Default, Debug, Clone, PartialEq, Eq)]
+pub struct UID(Option<String>);
+impl From<Option<&Auth>> for UID {
+    fn from(a: Option<&Auth>) -> Self {
+        UID(a.map(|a| a.user.id.to_owned()))
+    }
+}
 
 #[derive(Serialize, Deserialize, Default, Debug, Clone)]
 pub struct LibBucket {
@@ -33,10 +39,6 @@ impl LibBucket {
             uid,
             items: items.into_iter().map(|i| (i.id.to_owned(), i)).collect(),
         }
-    }
-    fn new_auth(auth: &Option<Auth>, items: Vec<LibItem>) -> Self {
-        // @TODO use UID From<>
-        Self::new(auth.as_ref().map(|a| a.user.id.to_owned()), items)
     }
     fn try_merge(&mut self, other: LibBucket) -> &Self {
         if self.uid != other.uid {
@@ -75,8 +77,7 @@ impl LibraryLoadable {
         &mut self,
         content: &CtxContent,
     ) -> Effects {
-        // @TODO use From<> for UID
-        let uid = content.auth.as_ref().map(|a| a.user.id.to_owned());
+        let uid: UID = content.auth.as_ref().into();
         *self = LibraryLoadable::Loading(uid.to_owned());
 
         let default_bucket = LibBucket::new(uid, vec![]);
@@ -96,7 +97,7 @@ impl LibraryLoadable {
     pub fn load_initial<Env: Environment + 'static>(&mut self, content: &CtxContent) -> Effects {
         *self = match &content.auth {
             None => LibraryLoadable::Ready(Default::default()),
-            Some(a) => LibraryLoadable::Loading(Some(a.user.id.to_owned())),
+            Some(a) => LibraryLoadable::Loading(content.auth.as_ref().into()),
         };
 
         match &content.auth {
@@ -110,9 +111,7 @@ impl LibraryLoadable {
                         all: true,
                     });
 
-                // @TODO let uid =
-                // move that binding up and rely on implicit Copy
-                let mut bucket = LibBucket::new_auth(&content.auth, vec![]);
+                let mut bucket = LibBucket::new(content.auth.as_ref().into(), vec![]);
                 let ft = api_fetch::<Env, Vec<LibItem>, _>(get_req)
                     .and_then(move |items| {
                         // Persist the bucket into a single storage slot
@@ -160,8 +159,7 @@ impl LibraryLoadable {
                                 Effects::one(Box::new(ft)).unchanged()
                             }
                             ActionUser::LibUpdate(item) => {
-                                let new_bucket =
-                                    LibBucket::new_auth(&content.auth, vec![item.clone()]);
+                                let new_bucket = LibBucket::new(content.auth.as_ref().into(), vec![item.clone()]);
                                 let persist_ft = update_and_persist::<Env>(lib_bucket, new_bucket)
                                     .map(|_| LibPersisted.into())
                                     .map_err(
