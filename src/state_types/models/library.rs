@@ -3,6 +3,7 @@ use crate::state_types::Internal::*;
 use crate::state_types::*;
 use crate::types::api::*;
 use crate::types::{LibItem, LibItemModified};
+use chrono::{DateTime, Utc};
 use derivative::*;
 use enclose::*;
 use futures::future::Either;
@@ -275,6 +276,19 @@ fn update_and_persist<Env: Environment + 'static>(
     bucket: &mut LibBucket,
     new_bucket: LibBucket,
 ) -> impl Future<Item = (), Error = CtxError> {
+    // let x = get current recent in LibraryModified
+    // merge
+    // if total number of items is less than threshold, just persist the recent
+    // else if all of the modified items are in x, just persist recent
+    // else save both
+    // @TODO to split in two, maybe we'll need a borrowed LibBucket
+    // problem with this is if items are not always with updated mtimes; however,
+    // we enforce this with the bucket merge
+    let current_recent: Vec<(&str, &DateTime<Utc>)> = bucket
+        .items
+        .values()
+        .map(|item| (item.id.as_str(), &item.mtime))
+        .collect();
     bucket.try_merge(new_bucket);
     Env::set_storage(STORAGE_SLOT, Some(bucket))
         .map_err(Into::into)
