@@ -148,28 +148,22 @@ impl LibraryLoadable {
                             Some(auth) => auth,
                             None => return Effects::none().unchanged(),
                         };
+                        let err_mapper = enclose!((action) move |e| CtxActionErr(action, e).into());
                         match action {
                             ActionUser::LibSync => {
-                                // @TODO get rid of the repeated map_err closure
                                 let ft = lib_sync::<Env>(auth, lib_bucket.clone())
                                     .map(|bucket| LibSyncPulled(bucket).into())
-                                    .map_err(
-                                        enclose!((action) move |e| CtxActionErr(action, e).into()),
-                                    );
+                                    .map_err(err_mapper);
                                 Effects::one(Box::new(ft)).unchanged()
                             }
                             ActionUser::LibUpdate(item) => {
                                 let new_bucket = LibBucket::new(content.auth.as_ref().into(), vec![item.clone()]);
                                 let persist_ft = update_and_persist::<Env>(lib_bucket, new_bucket)
                                     .map(|_| LibPersisted.into())
-                                    .map_err(
-                                        enclose!((action) move |e| CtxActionErr(action, e).into()),
-                                    );
+                                    .map_err(err_mapper.clone());
                                 let push_ft = lib_push::<Env>(auth, &item)
                                     .map(|_| LibPushed.into())
-                                    .map_err(
-                                        enclose!((action) move |e| CtxActionErr(action, e).into()),
-                                    );
+                                    .map_err(err_mapper);
                                 Effects::many(vec![Box::new(persist_ft), Box::new(push_ft)])
                             }
                             _ => Effects::none().unchanged(),
