@@ -80,16 +80,15 @@ impl LibraryLoadable {
         let uid: UID = content.auth.as_ref().into();
         *self = LibraryLoadable::Loading(uid.to_owned());
 
-        let default_bucket = LibBucket::new(uid, vec![]);
+        let mut default_bucket = LibBucket::new(uid, vec![]);
         let ft = Env::get_storage::<LibBucket>(STORAGE_SLOT)
-            //.join(Env::get_storage::<LibBucket>(STORAGE_RECENT))
-            //.map(move |(a, b)| {
-            //    for loaded_bucket in a.into_iter().chain(b.into_iter()) {
-            //        bucket.try_merge(loaded_bucket);
-            //    }
-            //    bucket
-            //})
-            .map(move |r| r.unwrap_or(default_bucket))
+            .join(Env::get_storage::<LibBucket>(STORAGE_RECENT))
+            .map(move |(a, b)| {
+                for loaded_bucket in a.into_iter().chain(b.into_iter()) {
+                    default_bucket.try_merge(loaded_bucket);
+                }
+                default_bucket
+            })
             .map(|bucket| LibLoaded(bucket).into())
             .map_err(|e| LibFatal(e.into()).into());
         Effects::one(Box::new(ft))
@@ -97,7 +96,7 @@ impl LibraryLoadable {
     pub fn load_initial<Env: Environment + 'static>(&mut self, content: &CtxContent) -> Effects {
         *self = match &content.auth {
             None => LibraryLoadable::Ready(Default::default()),
-            Some(a) => LibraryLoadable::Loading(content.auth.as_ref().into()),
+            Some(a) => LibraryLoadable::Loading(Some(a).into()),
         };
 
         match &content.auth {
@@ -157,7 +156,11 @@ impl LibraryLoadable {
                                 Effects::one(Box::new(ft)).unchanged()
                             }
                             ActionUser::LibUpdate(item) => {
-                                let new_bucket = LibBucket::new(content.auth.as_ref().into(), vec![item.clone()]);
+                                // @TODO do we really need to use a bucket here?
+                                let new_bucket = LibBucket::new(
+                                    content.auth.as_ref().into(),
+                                    vec![item.clone()],
+                                );
                                 let persist_ft = update_and_persist::<Env>(lib_bucket, new_bucket)
                                     .map(|_| LibPersisted.into())
                                     .map_err(err_mapper.clone());
@@ -280,9 +283,9 @@ fn update_and_persist<Env: Environment + 'static>(
         .items
         .values()
         .map(|item| (item.id.as_str(), &item.mtime))
+        // @TODO sort and then take
+        //.take(RECENT_COUNT)
         .collect();
     bucket.try_merge(new_bucket);
-    Env::set_storage(STORAGE_SLOT, Some(bucket))
-        .map_err(Into::into)
+    Env::set_storage(STORAGE_SLOT, Some(bucket)).map_err(Into::into)
 }
-
