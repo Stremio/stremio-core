@@ -196,8 +196,7 @@ impl LibraryLoadable {
                             _ => Effects::none().unchanged(),
                         }
                     }
-                    Msg::Internal(LibSyncPulled(new_bucket)) => {
-                        // @TODO: can we get rid of this clone?
+                    Msg::Internal(LibSyncPulled(new_bucket)) if new_bucket.items.len() > 0 => {
                         let ft = update_and_persist::<Env>(lib_bucket, new_bucket.clone())
                             .map(|_| LibPersisted.into())
                             .map_err(move |e| LibFatal(e).into());
