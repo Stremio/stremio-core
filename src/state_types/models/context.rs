@@ -24,7 +24,7 @@ pub struct Auth {
     pub user: User,
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug)]
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]
 pub struct CtxContent {
     pub auth: Option<Auth>,
     pub addons: Vec<Descriptor>,
@@ -90,10 +90,12 @@ impl<Env: Environment + 'static> Update for Ctx<Env> {
                     match &self.content.auth {
                         Some(Auth { key, .. }) => {
                             let action = action.clone();
-                            let req = APIRequest::Logout { auth_key: key.to_owned() };
+                            let req = APIRequest::Logout {
+                                auth_key: key.to_owned(),
+                            };
                             let effect = api_fetch::<Env, SuccessResponse, _>(req)
-                            .map(|_| CtxUpdate(new_content).into())
-                            .map_err(move |e| CtxActionErr(action, e.into()).into());
+                                .map(|_| CtxUpdate(new_content).into())
+                                .map_err(move |e| CtxActionErr(action, e).into());
                             Effects::one(Box::new(effect)).unchanged()
                         }
                         None => Effects::msg(CtxUpdate(new_content).into()).unchanged(),
@@ -120,7 +122,7 @@ impl<Env: Environment + 'static> Update for Ctx<Env> {
                         // @TODO: respect last_modified
                         let ft = api_fetch::<Env, CollectionResponse, _>(req)
                             .map(move |r| CtxAddonsPulled(key, r.addons).into())
-                            .map_err(move |e| CtxActionErr(action, e.into()).into());
+                            .map_err(move |e| CtxActionErr(action, e).into());
                         Effects::one(Box::new(ft)).unchanged()
                     }
                     None => Effects::none().unchanged(),
@@ -134,14 +136,13 @@ impl<Env: Environment + 'static> Update for Ctx<Env> {
                         };
                         let ft = api_fetch::<Env, SuccessResponse, _>(req)
                             .map(|_| CtxAddonsPushed.into())
-                            .map_err(move |e| CtxActionErr(action, e.into()).into());
+                            .map_err(move |e| CtxActionErr(action, e).into());
                         Effects::one(Box::new(ft)).unchanged()
                     }
                     None => Effects::none().unchanged(),
                 },
                 // We let the LibraryLoadable model handle this
-                ActionUser::LibSync | ActionUser::LibUpdate(_) =>
-                    Effects::none().unchanged(),
+                ActionUser::LibSync | ActionUser::LibUpdate(_) => Effects::none().unchanged(),
             },
             // Handling msgs that result effects
             Msg::Internal(CtxAddonsPulled(key, addons))
@@ -158,12 +159,12 @@ impl<Env: Environment + 'static> Update for Ctx<Env> {
                     .join(Effects::one(save_storage::<Env>(&self.content)))
                     // When doing CtxUpdate, this means we've changed authentication,
                     // so we re-load the library from the API
-                    .join(self.library.load_initial_api::<Env>(&self.content))
+                    .join(self.library.load_initial::<Env>(&self.content))
             }
             _ => Effects::none().unchanged(),
         };
 
-        fx.join(self.library.update::<Env>(msg))
+        fx.join(self.library.update::<Env>(&self.content, msg))
     }
 }
 
@@ -198,6 +199,6 @@ fn authenticate<Env: Environment + 'static>(action: ActionUser, req: APIRequest)
             )
         })
         .map(|c| Msg::Internal(CtxUpdate(Box::new(c))))
-        .map_err(move |e| Msg::Event(CtxActionErr(action, e.into())));
+        .map_err(move |e| Msg::Event(CtxActionErr(action, e)));
     Box::new(ft)
 }

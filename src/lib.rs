@@ -246,6 +246,73 @@ mod tests {
         assert_eq!(state.groups.len(), 2, "2 groups");
     }
 
+    #[test]
+    fn ctx_and_lib() {
+        use stremio_derive::Model;
+        #[derive(Model, Debug, Default)]
+        struct Model {
+            ctx: Ctx<Env>,
+            lib_recent: LibRecent,
+        }
+        let app = Model::default();
+        let (runtime, _) = Runtime::<Env, Model>::new(app, 1000);
+
+        // Log into a user, check if library synced correctly
+        // We are always support to start with LoadCtx, even though it is not needed here
+        run(runtime.dispatch(&Msg::Action(Action::LoadCtx)));
+
+        // if this user gets deleted, the test will fail
+        // @TODO register a new user instead
+        let login_action = Action::UserOp(ActionUser::Login {
+            email: "ctxandlib@stremio.com".into(),
+            password: "ctxandlib".into()
+        });
+        run(runtime.dispatch(&login_action.into()));
+        // @TODO test if the addon collection is pulled
+        let model = &runtime.app.read().unwrap();
+        let first_content = model.ctx.content.clone();
+        let first_lib = if let LibraryLoadable::Ready(l) = &model.ctx.library {
+            assert!(l.items.len() > 0, "library has items");
+            // LibRecent is "continue watching"
+            assert!(model.lib_recent.recent.len() > 0, "has recent items");
+            l.clone()
+        } else {
+            panic!("library must be Ready")
+        };
+
+        // New runtime, just LoadCtx, to see if the ctx was persisted
+        let app = Model::default();
+        let (runtime, _) = Runtime::<Env, Model>::new(app, 1000);
+        assert_eq!(runtime.app.read().unwrap().ctx.is_loaded, false);
+        run(runtime.dispatch(&Msg::Action(Action::LoadCtx)));
+        {
+            let ctx = &runtime.app.read().unwrap().ctx;
+            assert_eq!(&first_content, &ctx.content, "content is the same");
+            if let LibraryLoadable::Ready(l) = &ctx.library {
+                assert_eq!(&first_lib, l, "loaded lib is same as synced");
+            } else {
+                panic!("library must be Ready")
+            }
+            assert_eq!(ctx.is_loaded, true);
+        }
+
+        // Logout and expect everything to be reset
+        let logout_action = Action::UserOp(ActionUser::Logout);
+        run(runtime.dispatch(&logout_action.into()));
+        {
+            let ctx = &runtime.app.read().unwrap().ctx;
+            assert!(ctx.content.auth.is_none(), "logged out");
+            assert!(ctx.content.addons.len() > 0, "has addons");
+            if let LibraryLoadable::Ready(l) = &ctx.library {
+                assert_eq!(l.items.len(), 0, "library must be empty");
+            } else {
+                panic!("library must be Ready")
+            }
+        }
+        // @TODO we will try to insert an item and see if it will be persisted
+        // currently, LibUpdate does not support this
+    }
+
     // Storage implementation
     // Uses reqwest (asynchronously) for fetch, and a BTreeMap storage
     use lazy_static::*;
@@ -290,7 +357,7 @@ mod tests {
                     .map(|v| serde_json::from_str(&v).unwrap()),
             ))
         }
-        fn set_storage<T: 'static + Serialize>(key: &str, value: Option<&T>) -> EnvFuture<()> {
+        fn set_storage<T: Serialize>(key: &str, value: Option<&T>) -> EnvFuture<()> {
             let mut storage = STORAGE.write().unwrap();
             match value {
                 Some(v) => storage.insert(key.to_string(), serde_json::to_string(v).unwrap()),

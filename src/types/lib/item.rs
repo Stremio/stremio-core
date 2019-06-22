@@ -1,10 +1,17 @@
+use crate::types::PosterShape;
+use chrono::serde::ts_milliseconds;
 use chrono::{DateTime, Utc};
 use serde::de::IntoDeserializer;
 use serde::{Deserialize, Serialize};
 
 // Reference: https://github.com/Stremio/stremio-api/blob/master/types/libraryItem.go
 
-// @TODO: u64 vs u32
+#[derive(Debug, Deserialize, Eq, PartialEq)]
+pub struct LibItemModified(
+    pub String,
+    #[serde(with = "ts_milliseconds")] pub DateTime<Utc>,
+);
+
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq, Ord, PartialOrd)]
 #[serde(rename_all = "camelCase")]
 pub struct LibItemState {
@@ -27,7 +34,7 @@ pub struct LibItemState {
     pub no_notif: bool,
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq, Ord, PartialOrd)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq)]
 pub struct LibItem {
     #[serde(rename = "_id")]
     pub id: String,
@@ -47,6 +54,8 @@ pub struct LibItem {
     pub type_name: String,
     #[serde(deserialize_with = "empty_string_as_none", default)]
     pub poster: Option<String>,
+    #[serde(default)]
+    pub poster_shape: PosterShape,
     #[serde(deserialize_with = "empty_string_as_none", default)]
     pub background: Option<String>,
     #[serde(deserialize_with = "empty_string_as_none", default)]
@@ -68,6 +77,16 @@ impl LibItem {
             } else {
                 true
             }
+    }
+    pub fn is_in_continue_watching(&self) -> bool {
+        let is_resumable = self.state.time_offset > 0;
+
+        // having a Some for video_id and time_offset == 0 means it's set to this video as "next"
+        let is_with_nextvid = self.state.time_watched == 0
+            && self.state.video_id.is_some()
+            && self.state.video_id.as_ref() != Some(&self.id);
+
+        !self.removed && (is_resumable || is_with_nextvid)
     }
 }
 

@@ -19,7 +19,7 @@ pub trait Environment {
         OUT: 'static + DeserializeOwned;
     fn exec(fut: Box<dyn Future<Item = (), Error = ()>>);
     fn get_storage<T: 'static + DeserializeOwned>(key: &str) -> EnvFuture<Option<T>>;
-    fn set_storage<T: 'static + Serialize>(key: &str, value: Option<&T>) -> EnvFuture<()>;
+    fn set_storage<'a, T: Serialize>(key: &str, value: Option<&T>) -> EnvFuture<()>;
     fn addon_transport(url: &TransportUrl) -> Box<dyn AddonInterface>
     where
         Self: Sized + 'static,

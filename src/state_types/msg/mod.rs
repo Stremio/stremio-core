@@ -1,7 +1,7 @@
 use crate::state_types::{CtxContent, EnvError};
 use crate::types::addons::*;
 use crate::types::api::*;
-use crate::types::LibItem;
+use crate::types::LibBucket;
 use serde_derive::*;
 use std::error::Error;
 
@@ -22,11 +22,11 @@ pub enum Internal {
     // this should replace ctx.content.addons entirely
     CtxAddonsPulled(AuthKey, Vec<Descriptor>),
     // Library is loaded, either from storage or from an initial API sync
-    // This will replace the whole library index, as long as AuthKey matches
-    LibLoaded(AuthKey, Vec<LibItem>),
+    // This will replace the whole library index, as long as bucket UID matches
+    LibLoaded(LibBucket),
     // Library: pulled some newer items from the API
     // this will extend the current index of libitems, it doesn't replace it
-    LibSyncPulled(AuthKey, Vec<LibItem>),
+    LibSyncPulled(LibBucket),
     // Response from an add-on
     AddonResponse(ResourceRequest, Box<Result<ResourceResponse, EnvError>>),
 }

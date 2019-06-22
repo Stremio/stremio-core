@@ -2,6 +2,35 @@ use super::stream::*;
 use chrono::{DateTime, Utc};
 use serde_derive::*;
 
+// Type can be represented as:
+//#[derive(Deserialize, Serialize, Debug)]
+//#[serde(rename_all = "camelCase")]
+//pub enum Preset { Movie, Series, Channel, Tv }
+//#[derive(Deserialize, Serialize, Debug)]
+//#[serde(untagged)]
+//pub enum ItemType {
+//    Preset(Preset),
+//    Other(String)
+//}
+// or, some day it may be done with 1 enum:
+// https://users.rust-lang.org/t/catchall-variant-in-serde/20748
+// https://github.com/serde-rs/serde/pull/1382
+
+#[derive(PartialEq, Eq, Clone, Debug, Deserialize, Serialize, PartialOrd, Ord)]
+#[serde(rename_all = "camelCase")]
+pub enum PosterShape {
+    Poster,
+    Square,
+    Landscape,
+    #[serde(other)]
+    Unspecified,
+}
+impl Default for PosterShape {
+    fn default() -> Self {
+        PosterShape::Unspecified
+    }
+}
+
 #[derive(PartialEq, Eq, Clone, Debug, Deserialize, Serialize, Default)]
 #[serde(rename_all = "camelCase")]
 pub struct MetaPreview {
@@ -11,8 +40,8 @@ pub struct MetaPreview {
     #[serde(default)]
     pub name: String,
     pub poster: Option<String>,
-    // @TODO maybe this should be an enum?
-    pub poster_shape: Option<String>,
+    #[serde(default)]
+    pub poster_shape: PosterShape,
 }
 
 // https://github.com/Stremio/stremio-addon-sdk/blob/master/docs/api/responses/meta.md#meta-object
@@ -32,7 +61,8 @@ pub struct MetaDetail {
     pub description: Option<String>,
     pub release_info: Option<String>,
     pub runtime: Option<String>,
-    pub poster_shape: Option<String>,
+    #[serde(default)]
+    pub poster_shape: PosterShape,
     // @TODO: default to one video
     #[serde(default)]
     pub videos: Vec<Video>,
