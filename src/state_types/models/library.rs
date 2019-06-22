@@ -60,31 +60,19 @@ impl LibBucket {
 
         self
     }
-    fn split_by_recent(&self) -> (LibBucketBorrowed, LibBucketBorrowed) {
+    fn split_by_recent(&self) -> (LibBucket, LibBucket) {
         let sorted = self
             .items
             .values()
             .sorted_by(|a, b| b.mtime.cmp(&a.mtime))
-            .collect::<Vec<&_>>();
+            .cloned()
+            .collect::<Vec<_>>();
         let (recent, other) = sorted.split_at(RECENT_COUNT);
 
         (
-            LibBucketBorrowed::new(&self.uid, recent),
-            LibBucketBorrowed::new(&self.uid, other),
+            LibBucket::new(self.uid.clone(), recent.to_vec()),
+            LibBucket::new(self.uid.clone(), other.to_vec()),
         )
-    }
-}
-#[derive(Serialize)]
-pub struct LibBucketBorrowed<'a> {
-    pub uid: &'a UID,
-    pub items: HashMap<&'a str, &'a LibItem>,
-}
-impl<'a> LibBucketBorrowed<'a> {
-    pub fn new(uid: &'a UID, items: &[&'a LibItem]) -> Self {
-        LibBucketBorrowed {
-            uid,
-            items: items.iter().map(|i| (i.id.as_str(), *i)).collect()
-        }
     }
 }
 
@@ -317,12 +305,12 @@ fn update_and_persist<Env: Environment + 'static>(
     // Merge the buckets
     bucket.try_merge(new_bucket);
 
-    // @TODO explain this
+    // If there are less items than the threshold, we can save everything in the recent slot
+    // otherwise, we will only save the recent bucket if all of the modified items were previously
+    // in the recent bucket;
     if bucket.items.len() <= RECENT_COUNT {
         Either::A(Env::set_storage(STORAGE_RECENT_SLOT, Some(bucket)).map_err(Into::into))
     } else {
-        Either::B(Env::set_storage(STORAGE_SLOT, Some(bucket)).map_err(Into::into))
-        /*
         let (recent, other) = bucket.split_by_recent();
         if new_were_in_recent {
             Either::A(Env::set_storage(STORAGE_RECENT_SLOT, Some(&recent)).map_err(Into::into))
@@ -333,6 +321,6 @@ fn update_and_persist<Env: Environment + 'static>(
                     .map(|(_, _)| ())
                     .map_err(Into::into)
             )
-        }*/
+        }
     }
 }
