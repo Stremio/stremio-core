@@ -78,6 +78,16 @@ impl LibItem {
                 true
             }
     }
+    pub fn is_in_continue_watching(&self) -> bool {
+        let is_resumable = self.state.time_offset > 0;
+
+        // having a Some for video_id and time_offset == 0 means it's set to this video as "next"
+        let is_with_nextvid = self.state.time_watched == 0
+            && self.state.video_id.is_some()
+            && self.state.video_id.as_ref() != Some(&self.id);
+
+        !self.removed && (is_resumable || is_with_nextvid)
+    }
 }
 
 fn empty_string_as_none<'de, D, T>(de: D) -> Result<Option<T>, D::Error>
