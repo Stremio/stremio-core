@@ -13,7 +13,7 @@ use std::collections::HashMap;
 use lazysort::SortedBy;
 
 const COLL_NAME: &str = "libraryItem";
-const STORAGE_RECENT: &str = "recent_library";
+const STORAGE_RECENT_SLOT: &str = "recent_library";
 const STORAGE_SLOT: &str = "library";
 
 // According to a mid-2019 study, only 2.7% of users
@@ -60,6 +60,32 @@ impl LibBucket {
 
         self
     }
+    fn split_by_recent(&self) -> (LibBucketBorrowed, LibBucketBorrowed) {
+        let sorted = self
+            .items
+            .values()
+            .sorted_by(|a, b| b.mtime.cmp(&a.mtime))
+            .collect::<Vec<&_>>();
+        let (recent, other) = sorted.split_at(RECENT_COUNT);
+
+        (
+            LibBucketBorrowed::new(&self.uid, recent),
+            LibBucketBorrowed::new(&self.uid, other),
+        )
+    }
+}
+#[derive(Serialize)]
+pub struct LibBucketBorrowed<'a> {
+    pub uid: &'a UID,
+    pub items: HashMap<&'a str, &'a LibItem>,
+}
+impl<'a> LibBucketBorrowed<'a> {
+    pub fn new(uid: &'a UID, items: &[&'a LibItem]) -> Self {
+        LibBucketBorrowed {
+            uid,
+            items: items.iter().map(|i| (i.id.as_str(), *i)).collect()
+        }
+    }
 }
 
 #[derive(Derivative)]
@@ -82,7 +108,7 @@ impl LibraryLoadable {
 
         let mut default_bucket = LibBucket::new(uid, vec![]);
         let ft = Env::get_storage::<LibBucket>(STORAGE_SLOT)
-            .join(Env::get_storage::<LibBucket>(STORAGE_RECENT))
+            .join(Env::get_storage::<LibBucket>(STORAGE_RECENT_SLOT))
             .map(move |(a, b)| {
                 for loaded_bucket in a.into_iter().chain(b.into_iter()) {
                     default_bucket.try_merge(loaded_bucket);
@@ -273,31 +299,40 @@ fn update_and_persist<Env: Environment + 'static>(
     // guarantees
 
     // Determine whether all of the new items are in the current recent
-    let current_recent: Vec<&str> = bucket
-        .items
-        .values()
-        .map(|item| (item.id.as_str(), &item.mtime))
-        .sorted_by(|a, b| b.1.cmp(&a.1))
-        .take(RECENT_COUNT)
-        .map(|(id, _)| id)
-        .collect();
-    let all_in_recent = new_bucket
-        .items
-        .keys()
-        .all(move |id| current_recent.iter().any(|x| *x == id));
+    let new_were_in_recent = new_bucket.items.len() <= bucket.items.len() && {
+        let current_recent: Vec<&str> = bucket
+            .items
+            .values()
+            .sorted_by(|a, b| b.mtime.cmp(&a.mtime))
+            .take(RECENT_COUNT)
+            .map(|item| item.id.as_str())
+            .collect();
+
+        new_bucket
+            .items
+            .keys()
+            .all(move |id| current_recent.iter().any(|x| *x == id))
+    };
 
     // Merge the buckets
     bucket.try_merge(new_bucket);
 
     // @TODO explain this
     if bucket.items.len() <= RECENT_COUNT {
-        // only save one bucket
-    } else if all_in_recent {
-        // save one bucket, but only the newest
-        // @TODO borrowed bucket or clone
+        Either::A(Env::set_storage(STORAGE_RECENT_SLOT, Some(bucket)).map_err(Into::into))
     } else {
-        // @TODO borrowed bucketS or clone
+        Either::B(Env::set_storage(STORAGE_SLOT, Some(bucket)).map_err(Into::into))
+        /*
+        let (recent, other) = bucket.split_by_recent();
+        if new_were_in_recent {
+            Either::A(Env::set_storage(STORAGE_RECENT_SLOT, Some(&recent)).map_err(Into::into))
+        } else {
+            Either::B(
+                Env::set_storage(STORAGE_RECENT_SLOT, Some(&recent))
+                    .join(Env::set_storage(STORAGE_SLOT, Some(&other)))
+                    .map(|(_, _)| ())
+                    .map_err(Into::into)
+            )
+        }*/
     }
-
-    Env::set_storage(STORAGE_SLOT, Some(bucket)).map_err(Into::into)
 }
