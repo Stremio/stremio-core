@@ -60,19 +60,31 @@ impl LibBucket {
 
         self
     }
-    fn split_by_recent(&self) -> (LibBucket, LibBucket) {
+    fn split_by_recent<'a>(&'a self) -> (LibBucketBorrowed<'a>, LibBucketBorrowed<'a>) {
         let sorted = self
             .items
             .values()
             .sorted_by(|a, b| b.mtime.cmp(&a.mtime))
-            .cloned()
-            .collect::<Vec<_>>();
+            .collect::<Vec<&_>>();
         let (recent, other) = sorted.split_at(RECENT_COUNT);
 
         (
-            LibBucket::new(self.uid.clone(), recent.to_vec()),
-            LibBucket::new(self.uid.clone(), other.to_vec()),
+            LibBucketBorrowed::new(&self.uid, recent),
+            LibBucketBorrowed::new(&self.uid, other),
         )
+    }
+}
+#[derive(Serialize)]
+pub struct LibBucketBorrowed<'a> {
+    pub uid: &'a UID,
+    pub items: HashMap<&'a str, &'a LibItem>,
+}
+impl<'a> LibBucketBorrowed<'a> {
+    pub fn new(uid: &'a UID, items: &[&'a LibItem]) -> Self {
+        LibBucketBorrowed {
+            uid,
+            items: items.iter().map(|i| (i.id.as_str(), *i)).collect()
+        }
     }
 }
 
@@ -291,6 +303,7 @@ fn update_and_persist<Env: Environment + 'static>(
         let current_recent: Vec<&str> = bucket
             .items
             .values()
+            // @TODO use LibItem Ord trait
             .sorted_by(|a, b| b.mtime.cmp(&a.mtime))
             .take(RECENT_COUNT)
             .map(|item| item.id.as_str())
