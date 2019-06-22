@@ -108,7 +108,7 @@ impl LibraryLoadable {
                                 // @TODO do we really need to use a bucket here?
                                 let new_bucket = LibBucket::new(
                                     content.auth.as_ref().into(),
-                                    vec![item.clone()],
+                                    vec![LibItem { mtime: chrono::Utc::now(), ..item.clone() }],
                                 );
                                 let persist_ft = update_and_persist::<Env>(lib_bucket, new_bucket)
                                     .map(|_| LibPersisted.into())
