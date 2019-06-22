@@ -1,6 +1,7 @@
-use crate::state_types::{CtxContent, EnvError, LibBucket};
+use crate::state_types::{CtxContent, EnvError};
 use crate::types::addons::*;
 use crate::types::api::*;
+use crate::types::LibBucket;
 use serde_derive::*;
 use std::error::Error;
 

@@ -2,91 +2,16 @@ use crate::state_types::Event::*;
 use crate::state_types::Internal::*;
 use crate::state_types::*;
 use crate::types::api::*;
-use crate::types::{LibItem, LibItemModified};
+use crate::types::{LibItem, LibItemModified, LibBucket, LIB_RECENT_COUNT, UID};
 use derivative::*;
 use enclose::*;
 use futures::future::Either;
 use futures::{future, Future};
-use serde_derive::*;
-use std::collections::hash_map::Entry::{Occupied, Vacant};
-use std::collections::HashMap;
 use lazysort::SortedBy;
 
 const COLL_NAME: &str = "libraryItem";
 const STORAGE_RECENT_SLOT: &str = "recent_library";
 const STORAGE_SLOT: &str = "library";
-
-// According to a mid-2019 study, only 2.7% of users
-// have a library larger than that
-const RECENT_COUNT: usize = 200;
-
-#[derive(Serialize, Deserialize, Default, Debug, Clone, PartialEq, Eq)]
-pub struct UID(Option<String>);
-impl From<Option<&Auth>> for UID {
-    fn from(a: Option<&Auth>) -> Self {
-        UID(a.map(|a| a.user.id.to_owned()))
-    }
-}
-
-#[derive(Serialize, Deserialize, Default, Debug, Clone)]
-pub struct LibBucket {
-    pub uid: UID,
-    pub items: HashMap<String, LibItem>,
-}
-impl LibBucket {
-    fn new(uid: UID, items: Vec<LibItem>) -> Self {
-        LibBucket {
-            uid,
-            items: items.into_iter().map(|i| (i.id.to_owned(), i)).collect(),
-        }
-    }
-    fn try_merge(&mut self, other: LibBucket) -> &Self {
-        if self.uid != other.uid {
-            return self;
-        }
-
-        for (k, item) in other.items.into_iter() {
-            match self.items.entry(k) {
-                Vacant(entry) => {
-                    entry.insert(item);
-                }
-                Occupied(mut entry) => {
-                    if item.mtime > entry.get().mtime {
-                        entry.insert(item);
-                    }
-                }
-            }
-        }
-
-        self
-    }
-    fn split_by_recent<'a>(&'a self) -> (LibBucketBorrowed<'a>, LibBucketBorrowed<'a>) {
-        let sorted = self
-            .items
-            .values()
-            .sorted_by(|a, b| b.mtime.cmp(&a.mtime))
-            .collect::<Vec<&_>>();
-        let (recent, other) = sorted.split_at(RECENT_COUNT);
-
-        (
-            LibBucketBorrowed::new(&self.uid, recent),
-            LibBucketBorrowed::new(&self.uid, other),
-        )
-    }
-}
-#[derive(Serialize)]
-pub struct LibBucketBorrowed<'a> {
-    pub uid: &'a UID,
-    pub items: HashMap<&'a str, &'a LibItem>,
-}
-impl<'a> LibBucketBorrowed<'a> {
-    pub fn new(uid: &'a UID, items: &[&'a LibItem]) -> Self {
-        LibBucketBorrowed {
-            uid,
-            items: items.iter().map(|i| (i.id.as_str(), *i)).collect()
-        }
-    }
-}
 
 #[derive(Derivative)]
 #[derivative(Debug, Default, Clone)]
@@ -230,7 +155,7 @@ fn lib_sync<Env: Environment + 'static>(
         let map_remote = remote_mtimes
             .into_iter()
             .map(|LibItemModified(k, mtime)| (k, mtime))
-            .collect::<HashMap<_, _>>();
+            .collect::<std::collections::HashMap<_, _>>();
         // IDs to pull
         let ids = map_remote
             .iter()
@@ -304,7 +229,7 @@ fn update_and_persist<Env: Environment + 'static>(
             .values()
             // @TODO use LibItem Ord trait
             .sorted_by(|a, b| b.mtime.cmp(&a.mtime))
-            .take(RECENT_COUNT)
+            .take(LIB_RECENT_COUNT)
             .map(|item| item.id.as_str())
             .collect();
 
@@ -320,7 +245,7 @@ fn update_and_persist<Env: Environment + 'static>(
     // If there are less items than the threshold, we can save everything in the recent slot
     // otherwise, we will only save the recent bucket if all of the modified items were previously
     // in the recent bucket;
-    if bucket.items.len() <= RECENT_COUNT {
+    if bucket.items.len() <= LIB_RECENT_COUNT {
         Either::A(Env::set_storage(STORAGE_RECENT_SLOT, Some(bucket)).map_err(Into::into))
     } else {
         let (recent, other) = bucket.split_by_recent();
