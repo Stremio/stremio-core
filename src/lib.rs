@@ -263,11 +263,11 @@ mod tests {
 
         // if this user gets deleted, the test will fail
         // @TODO register a new user instead
-        let login_action = Action::UserOp(ActionUser::Login {
+        let login_msg: Msg = Action::UserOp(ActionUser::Login {
             email: "ctxandlib@stremio.com".into(),
             password: "ctxandlib".into()
-        });
-        run(runtime.dispatch(&login_action.into()));
+        }).into();
+        run(runtime.dispatch(&login_msg));
         // @TODO test if the addon collection is pulled
         let model = &runtime.app.read().unwrap();
         let first_content = model.ctx.content.clone();
