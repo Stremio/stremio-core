@@ -1,9 +1,9 @@
+use super::LibItem;
+use crate::state_types::Auth;
+use lazysort::SortedBy;
 use serde_derive::*;
 use std::collections::hash_map::Entry::{Occupied, Vacant};
 use std::collections::HashMap;
-use super::{LibItem};
-use crate::state_types::Auth;
-use lazysort::SortedBy;
 
 // According to a mid-2019 study, only 2.7% of users
 // have a library larger than that
@@ -75,7 +75,7 @@ impl<'a> LibBucketBorrowed<'a> {
     pub fn new(uid: &'a UID, items: &[&'a LibItem]) -> Self {
         LibBucketBorrowed {
             uid,
-            items: items.iter().map(|i| (i.id.as_str(), *i)).collect()
+            items: items.iter().map(|i| (i.id.as_str(), *i)).collect(),
         }
     }
 }

@@ -2,7 +2,7 @@ use crate::state_types::Event::*;
 use crate::state_types::Internal::*;
 use crate::state_types::*;
 use crate::types::api::*;
-use crate::types::{LibItem, LibItemModified, LibBucket, LIB_RECENT_COUNT, UID};
+use crate::types::{LibBucket, LibItem, LibItemModified, LIB_RECENT_COUNT, UID};
 use derivative::*;
 use enclose::*;
 use futures::future::Either;
@@ -108,7 +108,10 @@ impl LibraryLoadable {
                                 // @TODO do we really need to use a bucket here?
                                 let new_bucket = LibBucket::new(
                                     content.auth.as_ref().into(),
-                                    vec![LibItem { mtime: chrono::Utc::now(), ..item.clone() }],
+                                    vec![LibItem {
+                                        mtime: chrono::Utc::now(),
+                                        ..item.clone()
+                                    }],
                                 );
                                 let persist_ft = update_and_persist::<Env>(lib_bucket, new_bucket)
                                     .map(|_| LibPersisted.into())
@@ -256,7 +259,7 @@ fn update_and_persist<Env: Environment + 'static>(
                 Env::set_storage(STORAGE_RECENT_SLOT, Some(&recent))
                     .join(Env::set_storage(STORAGE_SLOT, Some(&other)))
                     .map(|(_, _)| ())
-                    .map_err(Into::into)
+                    .map_err(Into::into),
             )
         }
     }
