@@ -15,3 +15,6 @@ pub use catalogs::*;
 
 mod streams;
 pub use streams::*;
+
+mod lib_recent;
+pub use lib_recent::*;

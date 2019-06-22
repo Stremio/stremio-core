@@ -252,6 +252,7 @@ mod tests {
         #[derive(Model, Debug, Default)]
         struct Model {
             ctx: Ctx<Env>,
+            lib_recent: LibRecent,
         }
         let app = Model::default();
         let (runtime, _) = Runtime::<Env, Model>::new(app, 1000);
@@ -268,10 +269,12 @@ mod tests {
         });
         run(runtime.dispatch(&login_action.into()));
         // @TODO test if the addon collection is pulled
-        let ctx = &runtime.app.read().unwrap().ctx;
-        let first_content = ctx.content.clone();
-        let first_lib = if let LibraryLoadable::Ready(l) = &ctx.library {
+        let model = &runtime.app.read().unwrap();
+        let first_content = model.ctx.content.clone();
+        let first_lib = if let LibraryLoadable::Ready(l) = &model.ctx.library {
             assert!(l.items.len() > 0, "library has items");
+            // LibRecent is "continue watching"
+            assert!(model.lib_recent.recent.len() > 0, "has recent items");
             l.clone()
         } else {
             panic!("library must be Ready")
