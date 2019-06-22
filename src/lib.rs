@@ -290,7 +290,7 @@ mod tests {
                     .map(|v| serde_json::from_str(&v).unwrap()),
             ))
         }
-        fn set_storage<T: 'static + Serialize>(key: &str, value: Option<&T>) -> EnvFuture<()> {
+        fn set_storage<T: Serialize>(key: &str, value: Option<&T>) -> EnvFuture<()> {
             let mut storage = STORAGE.write().unwrap();
             match value {
                 Some(v) => storage.insert(key.to_string(), serde_json::to_string(v).unwrap()),
