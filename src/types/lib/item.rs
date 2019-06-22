@@ -1,4 +1,4 @@
-use super::PosterShape;
+use crate::types::PosterShape;
 use chrono::serde::ts_milliseconds;
 use chrono::{DateTime, Utc};
 use serde::de::IntoDeserializer;
