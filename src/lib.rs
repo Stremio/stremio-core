@@ -274,7 +274,7 @@ mod tests {
             assert!(l.items.len() > 0, "library has items");
             l.clone()
         } else {
-            panic!("library must be ready")
+            panic!("library must be Ready")
         };
 
         // New runtime, just LoadCtx, to see if the ctx was persisted
@@ -288,13 +288,26 @@ mod tests {
             if let LibraryLoadable::Ready(l) = &ctx.library {
                 assert_eq!(&first_lib, l, "loaded lib is same as synced");
             } else {
-                panic!("library must be ready")
+                panic!("library must be Ready")
             }
             assert_eq!(ctx.is_loaded, true);
         }
 
         // Logout and expect everything to be reset
-        
+        let logout_action = Action::UserOp(ActionUser::Logout);
+        run(runtime.dispatch(&logout_action.into()));
+        {
+            let ctx = &runtime.app.read().unwrap().ctx;
+            assert!(ctx.content.auth.is_none(), "logged out");
+            assert!(ctx.content.addons.len() > 0, "has addons");
+            if let LibraryLoadable::Ready(l) = &ctx.library {
+                assert_eq!(l.items.len(), 0, "library must be empty");
+            } else {
+                panic!("library must be Ready")
+            }
+        }
+        // @TODO we will try to insert an item and see if it will be persisted
+        // currently, LibUpdate does not support this
     }
 
     // Storage implementation
