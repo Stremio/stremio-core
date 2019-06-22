@@ -20,7 +20,7 @@ impl From<Option<&Auth>> for UID {
 // The LibBucket is a representation of a "bucket" of LibItems for a particular user
 // It provides a "try_merge" method, which will only merge the second bucket, if it's for the same
 // UID, and it will only merge the newer items
-#[derive(Serialize, Deserialize, Default, Debug, Clone)]
+#[derive(Serialize, Deserialize, Default, Debug, Clone, PartialEq)]
 pub struct LibBucket {
     pub uid: UID,
     pub items: HashMap<String, LibItem>,

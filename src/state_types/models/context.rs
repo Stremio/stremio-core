@@ -24,7 +24,7 @@ pub struct Auth {
     pub user: User,
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug)]
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]
 pub struct CtxContent {
     pub auth: Option<Auth>,
     pub addons: Vec<Descriptor>,

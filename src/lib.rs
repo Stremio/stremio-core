@@ -246,6 +246,57 @@ mod tests {
         assert_eq!(state.groups.len(), 2, "2 groups");
     }
 
+    #[test]
+    fn ctx_and_lib() {
+        use stremio_derive::Model;
+        #[derive(Model, Debug, Default)]
+        struct Model {
+            ctx: Ctx<Env>,
+        }
+        let app = Model::default();
+        let (runtime, _) = Runtime::<Env, Model>::new(app, 1000);
+
+        // Log into a user, check if library synced correctly
+        // We are always support to start with LoadCtx, even though it is not needed here
+        run(runtime.dispatch(&Msg::Action(Action::LoadCtx)));
+
+        // if this user gets deleted, the test will fail
+        // @TODO register a new user instead
+        let login_action = Action::UserOp(ActionUser::Login {
+            email: "ctxandlib@stremio.com".into(),
+            password: "ctxandlib".into()
+        });
+        run(runtime.dispatch(&login_action.into()));
+        // @TODO test if the addon collection is pulled
+        let ctx = &runtime.app.read().unwrap().ctx;
+        let first_content = ctx.content.clone();
+        let first_lib = if let LibraryLoadable::Ready(l) = &ctx.library {
+            assert!(l.items.len() > 0, "library has items");
+            l.clone()
+        } else {
+            panic!("library must be ready")
+        };
+
+        // New runtime, just LoadCtx, to see if the ctx was persisted
+        let app = Model::default();
+        let (runtime, _) = Runtime::<Env, Model>::new(app, 1000);
+        assert_eq!(runtime.app.read().unwrap().ctx.is_loaded, false);
+        run(runtime.dispatch(&Msg::Action(Action::LoadCtx)));
+        {
+            let ctx = &runtime.app.read().unwrap().ctx;
+            assert_eq!(&first_content, &ctx.content, "content is the same");
+            if let LibraryLoadable::Ready(l) = &ctx.library {
+                assert_eq!(&first_lib, l, "loaded lib is same as synced");
+            } else {
+                panic!("library must be ready")
+            }
+            assert_eq!(ctx.is_loaded, true);
+        }
+
+        // Logout and expect everything to be reset
+        
+    }
+
     // Storage implementation
     // Uses reqwest (asynchronously) for fetch, and a BTreeMap storage
     use lazy_static::*;
