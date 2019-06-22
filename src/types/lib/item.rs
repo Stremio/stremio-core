@@ -35,6 +35,7 @@ pub struct LibItemState {
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq)]
+#[serde(rename_all = "camelCase")]
 pub struct LibItem {
     #[serde(rename = "_id")]
     pub id: String,
