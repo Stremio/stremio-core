@@ -105,7 +105,6 @@ impl LibraryLoadable {
                                 Effects::one(Box::new(ft)).unchanged()
                             }
                             ActionUser::LibUpdate(item) => {
-                                // @TODO do we really need to use a bucket here?
                                 let new_bucket = LibBucket::new(
                                     content.auth.as_ref().into(),
                                     vec![LibItem {
@@ -230,7 +229,6 @@ fn update_and_persist<Env: Environment + 'static>(
         let current_recent: Vec<&str> = bucket
             .items
             .values()
-            // @TODO use LibItem Ord trait
             .sorted_by(|a, b| b.mtime.cmp(&a.mtime))
             .take(LIB_RECENT_COUNT)
             .map(|item| item.id.as_str())
