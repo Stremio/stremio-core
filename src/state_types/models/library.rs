@@ -92,17 +92,17 @@ impl LibraryLoadable {
                 match msg {
                     // User actions
                     Msg::Action(Action::UserOp(action)) => {
-                        let auth = match &content.auth {
-                            Some(auth) => auth,
-                            None => return Effects::none().unchanged(),
-                        };
                         let err_mapper = enclose!((action) move |e| CtxActionErr(action, e).into());
                         match action {
                             ActionUser::LibSync => {
-                                let ft = lib_sync::<Env>(auth, lib_bucket.clone())
-                                    .map(|bucket| LibSyncPulled(bucket).into())
-                                    .map_err(err_mapper);
-                                Effects::one(Box::new(ft)).unchanged()
+                                if let Some(auth) = &content.auth {
+                                    let ft = lib_sync::<Env>(auth, lib_bucket.clone())
+                                        .map(|bucket| LibSyncPulled(bucket).into())
+                                        .map_err(err_mapper);
+                                    Effects::one(Box::new(ft)).unchanged()
+                                } else {
+                                    Effects::none().unchanged()
+                                }
                             }
                             ActionUser::LibUpdate(item) => {
                                 let new_bucket = LibBucket::new(
@@ -115,10 +115,16 @@ impl LibraryLoadable {
                                 let persist_ft = update_and_persist::<Env>(lib_bucket, new_bucket)
                                     .map(|_| LibPersisted.into())
                                     .map_err(err_mapper.clone());
-                                let push_ft = lib_push::<Env>(auth, &item)
-                                    .map(|_| LibPushed.into())
-                                    .map_err(err_mapper);
-                                Effects::many(vec![Box::new(persist_ft), Box::new(push_ft)])
+
+                                // If we're logged in, push to API
+                                if let Some(auth) = &content.auth {
+                                    let push_ft = lib_push::<Env>(auth, &item)
+                                        .map(|_| LibPushed.into())
+                                        .map_err(err_mapper);
+                                    Effects::many(vec![Box::new(persist_ft), Box::new(push_ft)])
+                                } else {
+                                    Effects::one(Box::new(persist_ft))
+                                }
                             }
                             _ => Effects::none().unchanged(),
                         }
