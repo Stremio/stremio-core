@@ -265,8 +265,9 @@ mod tests {
         // @TODO register a new user instead
         let login_msg: Msg = Action::UserOp(ActionUser::Login {
             email: "ctxandlib@stremio.com".into(),
-            password: "ctxandlib".into()
-        }).into();
+            password: "ctxandlib".into(),
+        })
+        .into();
         run(runtime.dispatch(&login_msg));
         // @TODO test if the addon collection is pulled
         let model = &runtime.app.read().unwrap();

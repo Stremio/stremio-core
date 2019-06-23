@@ -55,8 +55,9 @@ impl<Env: Environment + 'static> Update for Ctx<Env> {
     fn update(&mut self, msg: &Msg) -> Effects {
         let fx = match msg {
             // Loading from storage: request it
-            Msg::Action(Action::LoadCtx) if self.is_loaded == false =>
-                Effects::one(load_storage::<Env>()).unchanged(),
+            Msg::Action(Action::LoadCtx) if self.is_loaded == false => {
+                Effects::one(load_storage::<Env>()).unchanged()
+            }
             Msg::Internal(CtxLoaded(opt_content)) => {
                 self.content = opt_content
                     .as_ref()

@@ -1,8 +1,8 @@
-use crate::types::LibItem;
-use serde_derive::*;
-use crate::state_types::*;
 use super::{Ctx, LibraryLoadable};
+use crate::state_types::*;
+use crate::types::LibItem;
 use lazysort::SortedBy;
+use serde_derive::*;
 
 #[derive(Debug, Clone, Default, Serialize)]
 pub struct LibRecent {
@@ -26,7 +26,7 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for LibRecent {
                     Effects::none().unchanged()
                 }
             }
-            _ => Effects::none().unchanged()
+            _ => Effects::none().unchanged(),
         }
     }
 }
