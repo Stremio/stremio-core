@@ -13,7 +13,7 @@ const COLL_NAME: &str = "libraryItem";
 const STORAGE_RECENT_SLOT: &str = "recent_library";
 const STORAGE_SLOT: &str = "library";
 
-#[derive(Derivative)]
+#[derive(Derivative, PartialEq)]
 #[derivative(Debug, Default, Clone)]
 pub enum LibraryLoadable {
     // NotLoaded: we've never attempted loading the library index
