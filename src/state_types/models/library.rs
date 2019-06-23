@@ -123,7 +123,7 @@ impl LibraryLoadable {
                             _ => Effects::none().unchanged(),
                         }
                     }
-                    Msg::Internal(LibSyncPulled(new_bucket)) if new_bucket.items.len() > 0 => {
+                    Msg::Internal(LibSyncPulled(new_bucket)) if !new_bucket.items.is_empty() => {
                         let ft = update_and_persist::<Env>(lib_bucket, new_bucket.clone())
                             .map(|_| LibPersisted.into())
                             .map_err(move |e| LibFatal(e).into());
@@ -179,25 +179,25 @@ fn lib_sync<Env: Environment + 'static>(
             .map(|(_, v)| v)
             .collect::<Vec<LibItem>>();
 
-        let get_fut = if ids.len() > 0 {
-            Either::A(api_fetch::<Env, Vec<LibItem>, _>(
+        let get_fut = if ids.is_empty() {
+            Either::A(future::ok(vec![]))
+        } else {
+            Either::B(api_fetch::<Env, Vec<LibItem>, _>(
                 builder
                     .clone()
                     .with_cmd(DatastoreCmd::Get { ids, all: false }),
             ))
-        } else {
-            Either::B(future::ok(vec![]))
         };
 
-        let put_fut = if changes.len() > 0 {
-            Either::A(
+        let put_fut = if changes.is_empty() {
+            Either::A(future::ok(()))
+        } else {
+            Either::B(
                 api_fetch::<Env, SuccessResponse, _>(
                     builder.clone().with_cmd(DatastoreCmd::Put { changes }),
                 )
                 .map(|_| ()),
             )
-        } else {
-            Either::B(future::ok(()))
         };
 
         get_fut
