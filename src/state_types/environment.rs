@@ -1,5 +1,4 @@
 use crate::addon_transport::{AddonHTTPTransport, AddonInterface};
-use crate::types::addons::TransportUrl;
 use futures::Future;
 use serde::de::DeserializeOwned;
 use serde::Serialize;
@@ -19,8 +18,8 @@ pub trait Environment {
         OUT: 'static + DeserializeOwned;
     fn exec(fut: Box<dyn Future<Item = (), Error = ()>>);
     fn get_storage<T: 'static + DeserializeOwned>(key: &str) -> EnvFuture<Option<T>>;
-    fn set_storage<'a, T: Serialize>(key: &str, value: Option<&T>) -> EnvFuture<()>;
-    fn addon_transport(url: &TransportUrl) -> Box<dyn AddonInterface>
+    fn set_storage<T: Serialize>(key: &str, value: Option<&T>) -> EnvFuture<()>;
+    fn addon_transport(url: &str) -> Box<dyn AddonInterface>
     where
         Self: Sized + 'static,
     {

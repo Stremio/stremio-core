@@ -55,14 +55,14 @@ impl<Env: Environment + 'static> Update for Ctx<Env> {
     fn update(&mut self, msg: &Msg) -> Effects {
         let fx = match msg {
             // Loading from storage: request it
-            Msg::Action(Action::LoadCtx) if self.is_loaded == false => {
+            Msg::Action(Action::LoadCtx) if !self.is_loaded => {
                 Effects::one(load_storage::<Env>()).unchanged()
             }
             Msg::Internal(CtxLoaded(opt_content)) => {
                 self.content = opt_content
                     .as_ref()
                     .map(|x| *x.to_owned())
-                    .unwrap_or(Default::default());
+                    .unwrap_or_default();
                 self.is_loaded = true;
                 self.library.load_from_storage::<Env>(&self.content)
             }

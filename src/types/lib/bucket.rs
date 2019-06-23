@@ -52,7 +52,7 @@ impl LibBucket {
 
         self
     }
-    pub fn split_by_recent<'a>(&'a self) -> (LibBucketBorrowed<'a>, LibBucketBorrowed<'a>) {
+    pub fn split_by_recent(&self) -> (LibBucketBorrowed, LibBucketBorrowed) {
         let sorted = self
             .items
             .values()
