@@ -255,9 +255,9 @@ mod tests {
         let model = &runtime.app.read().unwrap();
         let first_content = model.ctx.content.to_owned();
         let first_lib = if let LibraryLoadable::Ready(l) = &model.ctx.library {
-            assert!(l.items.len() > 0, "library has items");
+            assert!(!l.items.is_empty(), "library has items");
             // LibRecent is "continue watching"
-            assert!(model.lib_recent.recent.len() > 0, "has recent items");
+            assert!(!model.lib_recent.recent.is_empty(), "has recent items");
             l.to_owned()
         } else {
             panic!("library must be Ready")
@@ -282,11 +282,12 @@ mod tests {
         let logout_action = Action::UserOp(ActionUser::Logout);
         run(runtime.dispatch(&logout_action.into()));
         {
-            let ctx = &runtime.app.read().unwrap().ctx;
-            assert!(ctx.content.auth.is_none(), "logged out");
-            assert!(ctx.content.addons.len() > 0, "has addons");
-            if let LibraryLoadable::Ready(l) = &ctx.library {
-                assert_eq!(l.items.len(), 0, "library must be empty");
+            let model = &runtime.app.read().unwrap();
+            assert!(model.ctx.content.auth.is_none(), "logged out");
+            assert!(model.ctx.content.addons.len() > 0, "has addons");
+            if let LibraryLoadable::Ready(l) = &model.ctx.library {
+                assert!(l.items.is_empty(), "library must be empty");
+                assert!(model.lib_recent.recent.is_empty(), "is empty");
             } else {
                 panic!("library must be Ready")
             }
