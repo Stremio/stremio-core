@@ -6,7 +6,7 @@ use futures::{future, Future};
 use std::marker::PhantomData;
 use std::sync::{Arc, RwLock};
 
-#[derive(Debug)]
+#[derive(Debug, Serialize)]
 pub enum RuntimeEv {
     NewModel,
     Event(Event),
