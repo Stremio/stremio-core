@@ -12,7 +12,7 @@ use web_sys::{RequestInit, Response};
 use std::error::Error;
 use std::fmt;
 #[derive(Debug)]
-enum EnvError {
+pub enum EnvError {
     Js(String),
     Serde(serde_json::error::Error),
     HTTPStatusCode(u16),
@@ -49,7 +49,7 @@ impl From<serde_json::error::Error> for EnvError {
 }
 
 // By creating an empty enum, we ensure that this type cannot be initialized
-enum Env {}
+pub enum Env {}
 impl Env {
     fn wrap_to_fut<T: 'static>(res: Result<T, EnvError>) -> EnvFuture<T> {
         Box::new(match res {
