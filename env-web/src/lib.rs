@@ -12,9 +12,10 @@ use web_sys::{RequestInit, Response};
 use std::error::Error;
 use std::fmt;
 #[derive(Debug)]
-pub enum EnvError {
+enum EnvError {
     Js(String),
     Serde(serde_json::error::Error),
+    HTTPStatusCode(u16),
     StorageMissing,
 }
 impl fmt::Display for EnvError {
@@ -27,6 +28,7 @@ impl Error for EnvError {
         match self {
             EnvError::Js(msg) => &msg,
             EnvError::Serde(e) => &e.description(),
+            EnvError::HTTPStatusCode(_) => "unexpected HTTP status code",
             EnvError::StorageMissing => "localStorage is missing",
         }
     }
@@ -47,7 +49,7 @@ impl From<serde_json::error::Error> for EnvError {
 }
 
 // By creating an empty enum, we ensure that this type cannot be initialized
-pub enum Env {}
+enum Env {}
 impl Env {
     fn wrap_to_fut<T: 'static>(res: Result<T, EnvError>) -> EnvFuture<T> {
         Box::new(match res {
@@ -71,7 +73,10 @@ impl Env {
             None => None,
         })
     }
-    fn set_storage_sync<T: Serialize>(key: &str, value: Option<&T>) -> Result<(), EnvError> {
+    fn set_storage_sync<T: Serialize>(
+        key: &str,
+        value: Option<&T>,
+    ) -> Result<(), EnvError> {
         let storage = Self::get_storage()?;
         Ok(match value {
             Some(v) => {
@@ -111,19 +116,25 @@ impl Environment for Env {
             .expect("failed building request");
         let pr = window.fetch_with_request(&req);
         let fut = JsFuture::from(pr)
+            .map_err(|e| EnvError::from(e))
             .and_then(|resp_value| {
-                // @TODO: if the response code is not 200, return an error related to that
-                // @TODO: optimize this, as this is basically deserializing in JS -> serializing in
-                // JS -> deserializing in rust
-                // NOTE: there's no realistic scenario those unwraps fail
                 let resp: Response = resp_value.dyn_into().unwrap();
-                JsFuture::from(resp.json().unwrap())
+                if resp.status() == 200 {
+                    // @TODO: optimize this, as this is basically deserializing in JS -> serializing in
+                    // JS -> deserializing in rust
+                    // NOTE: there's no realistic scenario those unwraps fail
+                    future::Either::A(
+                        JsFuture::from(resp.json().unwrap()).map_err(|e| EnvError::from(e)),
+                    )
+                } else {
+                    future::Either::B(future::err(EnvError::HTTPStatusCode(resp.status())))
+                }
             })
-            .or_else(|e| future::err(EnvError::from(e).into()))
             .and_then(|json| match json.into_serde() {
                 Ok(r) => future::ok(r),
                 Err(e) => future::err(EnvError::from(e).into()),
-            });
+            })
+            .map_err(Into::into);
         Box::new(fut)
     }
     fn exec(fut: Box<dyn Future<Item = (), Error = ()>>) {
