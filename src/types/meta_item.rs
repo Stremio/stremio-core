@@ -30,6 +30,17 @@ impl Default for PosterShape {
         PosterShape::Unspecified
     }
 }
+impl PosterShape {
+    // @TODO: auto-derive this?
+    pub fn to_str(&self) -> &'static str {
+        match self {
+            PosterShape::Poster => "poster",
+            PosterShape::Square => "square",
+            PosterShape::Landscape => "landscape",
+            PosterShape::Unspecified => "poster",
+        }
+    }
+}
 
 #[derive(PartialEq, Eq, Clone, Debug, Deserialize, Serialize, Default)]
 #[serde(rename_all = "camelCase")]
