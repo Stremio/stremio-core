@@ -1,0 +1,25 @@
+[package]
+name = "env-web"
+version = "0.1.0"
+edition = "2018"
+
+[dependencies]
+serde = { version = "^1.0.85", features = ["derive"] }
+wasm-bindgen = { version = "0.2.40", features = ["serde-serialize", "nightly"]  }
+futures = "0.1"
+serde_json = "1.0.16"
+wasm-bindgen-futures = "0.3"
+js-sys = "0.3"
+stremio-core = { path = "../" }
+
+[dependencies.web-sys]
+version = "0.3.19"
+features = [
+	'Window',
+	'Request',
+	'RequestInit',
+	'Response',
+	'Storage'
+]
+
+[workspace]
