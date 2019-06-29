@@ -1,7 +1,7 @@
 use crate::state_types::{CtxContent, EnvError};
 use crate::types::addons::*;
 use crate::types::api::*;
-use crate::types::LibBucket;
+use crate::types::{LibBucket, Stream};
 use serde_derive::*;
 use std::error::Error;
 
@@ -92,4 +92,26 @@ impl From<Event> for Msg {
     fn from(o: Event) -> Self {
         Msg::Event(o)
     }
+}
+
+// @TODO separate module
+pub enum PlayerProp {
+    Time(u64),
+    Volume(u8),
+    Paused(bool)
+}
+pub enum PlayerAction {
+    GetAllProps,
+    SetProp(PlayerProp),
+    // by default, all are observed
+    //ObserveProp()
+    // @TODO should this be PlayerCommand
+    Load(Stream)
+}
+
+pub enum PlayerEvent {
+    PropChanged(PlayerProp),
+    PropValue(PlayerProp),
+    Loaded, // @TODO: tracks and etc.
+    Error, // @TODO: error type
 }
