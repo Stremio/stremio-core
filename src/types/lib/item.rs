@@ -29,8 +29,9 @@ pub struct LibItemState {
     // @TODO bitfield, special type
     #[serde(deserialize_with = "empty_string_as_none")]
     pub watched: Option<String>,
+    // release date of last observed video
     #[serde(deserialize_with = "empty_string_as_none", default)]
-    pub last_seen_video: Option<DateTime<Utc>>,
+    pub last_video_released: Option<DateTime<Utc>>,
     pub no_notif: bool,
 }
 
