@@ -81,7 +81,6 @@ mod test {
     pub fn deserialize_no_fileidx() {
         let stream_json = "{\"infoHash\":\"07a9de9750158471c3302e4e95edb1107f980fa6\",\"title\":\"test stream\"}";
         let stream: Stream = serde_json::from_str(&stream_json).unwrap();
-        dbg!(&stream);
         assert_eq!(
             stream,
             Stream {
