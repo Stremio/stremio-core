@@ -7,18 +7,20 @@
 * Flexibility - can be integrated into existing code bases, across the entire stack, and in different paradigms
 	* use case: `types` can be used by add-ons
 	* use case: can be used with existing user authentication as an addition to an existing app
-	* use case: can use `ContextM` to manage the user authentication/addons, using it as a backbone to the entire Stremio app
+	* use case: can use the `Context` model to manage the user authentication/addons, using it as a backbone to the entire Stremio app
 * Emphasis on correctness
 * No cruft / legacy - not burdened by obsolete decisions & solutions
 
 ### Modules
 
 * `types`
-* `libaddon`
-* `addon_transport`
-* `state_types`
-* `middlewares`
-
+* `addon_transport` - handles communication with add-ons, implements legacy protocol adapter
+* `state_types`: types that describe application state; inspired by the Elm architecture
+	* Effects and Update traits
+	* `runtime`: helps using `stremio-core` in an application by handling the effects automatically
+	* `environment`: a trait describes the environment (fetch, storage)
+	* `msg`: messages: actions, events
+	* `models`: all stateful models, such as `Context` (handling user authentication, add-ons), `Library`, `CatalogFiltered`, etc.
 
 
 Also see:
