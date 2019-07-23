@@ -31,6 +31,9 @@ impl Default for PosterShape {
     }
 }
 impl PosterShape {
+    pub fn is_unspecified(&self) -> bool {
+        *self == PosterShape::Unspecified
+    }
     // @TODO: auto-derive this?
     pub fn to_str(&self) -> &'static str {
         match self {
@@ -51,7 +54,7 @@ pub struct MetaPreview {
     #[serde(default)]
     pub name: String,
     pub poster: Option<String>,
-    #[serde(default)]
+    #[serde(default, skip_serializing_if="PosterShape::is_unspecified")]
     pub poster_shape: PosterShape,
 }
 
@@ -72,7 +75,7 @@ pub struct MetaDetail {
     pub description: Option<String>,
     pub release_info: Option<String>,
     pub runtime: Option<String>,
-    #[serde(default)]
+    #[serde(default, skip_serializing_if="PosterShape::is_unspecified")]
     pub poster_shape: PosterShape,
     // @TODO: default to one video
     #[serde(default)]
