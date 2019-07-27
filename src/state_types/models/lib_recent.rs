@@ -32,7 +32,15 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for LibRecent {
 }
 
 use crate::types::Video;
+use crate::types::addons::ResourceRef;
 //use lazysort::SortedBy;
+
+// Cinemeta/Channels are curently limited to that many
+// but in general, it's healthy to have some sort of a limit
+const MAX_PER_REQUEST: usize = 50;
+// The name of the extra property
+const LAST_VID_IDS: &str = "lastVideoIds";
+
 #[derive(Debug, Clone, Default, Serialize)]
 pub struct Notifications {
     pub groups: Vec<ItemsGroup<Vec<Video>>>,
@@ -49,14 +57,39 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for Notifications {
                     }
                 };
 
-                // @TODO group into groups of 50, by type and maybe ID prefix?
-                let relevant_items = &lib
-                    .items
-                    .values()
-                    .filter(|item| item.type_name == "series" && !item.state.no_notif && !item.removed)
-                    .sorted_by(|a, b| b.mtime.cmp(&a.mtime))
-                    .take(50)
+                let groups = ctx
+                    .content
+                    .addons
+                    .iter()
+                    .flat_map(|addon| {
+                        addon
+                            .manifest
+                            .catalogs
+                            .iter()
+                            .filter(|cat| cat.extra_iter().any(|e| e.is_required && e.name == LAST_VID_IDS))
+                            .flat_map(move |cat| {
+                                let relevant_items = lib
+                                    .items
+                                    .values()
+                                    // The item must be eligible for notifications,
+                                    // but also meta about it must be provided by the given add-on
+                                    .filter(|item|
+                                            !item.state.no_notif && !item.removed
+                                            && addon.manifest.is_supported(&ResourceRef::without_extra("meta", &item.type_name, &item.id))
+                                    )
+                                    .sorted_by(|a, b| b.mtime.cmp(&a.mtime))
+                                    .collect::<Vec<_>>();
+                                relevant_items
+                                    .chunks(MAX_PER_REQUEST)
+                                    // @TODO
+                                    .map(|items_page| items_page.to_vec())
+                                    .collect::<Vec<_>>()
+                            })
+                    })
                     .collect::<Vec<_>>();
+
+                dbg!(&groups);
+                
                 /*
                 let (groups, effects) = addon_aggr_new::<Env, _>(
                     &ctx.content.addons,
@@ -65,13 +98,16 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for Notifications {
                 self.groups = groups;
                 effects
                 */
+                // every catalog which has lastVideoIDs
+                // expected response: MetaDetailed
+                // so, for every catalog that has lastVideoIds required, we will check if the
+                // manifest is_supports a ResourceRef to the meta
                 /*
                 let ids = vec!["tt7366338".to_string(), "tt2306299".to_string()];
                 let path = ResourceRef::with_extra("catalog", "series", "last-videos", &[( "lastVideosIds".into(), ids.join(",") )]);
                 dbg!(path.to_string());
                 */
     
-                dbg!(&relevant_items);
                 // @TODO fetch groups
                 Effects::none()
             },
