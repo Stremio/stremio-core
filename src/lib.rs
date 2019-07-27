@@ -258,18 +258,6 @@ mod tests {
             assert!(!l.items.is_empty(), "library has items");
             // LibRecent is "continue watching"
             assert!(!model.lib_recent.recent.is_empty(), "has recent items");
-            use lazysort::SortedBy;
-            dbg!(&l
-                .items
-                .values()
-                .filter(|item| item.type_name == "series" && !item.state.no_notif && !item.removed)
-                // WARNING: the hack on "year" may break, if a series ends and then resumes again
-                //.filter(|item| item.year.as_ref().map_or(true, |y| y.ends_with("–")))
-                .sorted_by(|a, b| b.mtime.cmp(&a.mtime))
-                //.take(50)
-                //.collect::<Vec<_>>()
-                .count()
-            );
             l.to_owned()
         } else {
             panic!("library must be Ready")
