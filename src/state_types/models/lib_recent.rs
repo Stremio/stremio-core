@@ -66,7 +66,8 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for Notifications {
                             .manifest
                             .catalogs
                             .iter()
-                            .filter(|cat| cat.extra_iter().any(|e| e.is_required && e.name == LAST_VID_IDS))
+                            // The catalog supports this property
+                            .filter(|cat| cat.extra_iter().any(|e| e.name == LAST_VID_IDS))
                             .flat_map(move |cat| {
                                 let relevant_items = lib
                                     .items
@@ -81,7 +82,7 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for Notifications {
                                     .collect::<Vec<_>>();
                                 relevant_items
                                     .chunks(MAX_PER_REQUEST)
-                                    // @TODO
+                                    // @TODO proper group and side effect; unzip at the end
                                     .map(|items_page| items_page.to_vec())
                                     .collect::<Vec<_>>()
                             })
