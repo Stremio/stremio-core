@@ -54,7 +54,7 @@ pub struct MetaPreview {
     #[serde(default)]
     pub name: String,
     pub poster: Option<String>,
-    #[serde(default, skip_serializing_if="PosterShape::is_unspecified")]
+    #[serde(default, skip_serializing_if = "PosterShape::is_unspecified")]
     pub poster_shape: PosterShape,
 }
 
@@ -75,7 +75,7 @@ pub struct MetaDetail {
     pub description: Option<String>,
     pub release_info: Option<String>,
     pub runtime: Option<String>,
-    #[serde(default, skip_serializing_if="PosterShape::is_unspecified")]
+    #[serde(default, skip_serializing_if = "PosterShape::is_unspecified")]
     pub poster_shape: PosterShape,
     // @TODO: default to one video
     #[serde(default)]

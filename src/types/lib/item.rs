@@ -56,7 +56,7 @@ pub struct LibItem {
     pub type_name: String,
     #[serde(deserialize_with = "empty_string_as_none", default)]
     pub poster: Option<String>,
-    #[serde(default, skip_serializing_if="PosterShape::is_unspecified")]
+    #[serde(default, skip_serializing_if = "PosterShape::is_unspecified")]
     pub poster_shape: PosterShape,
     #[serde(deserialize_with = "empty_string_as_none", default)]
     pub background: Option<String>,

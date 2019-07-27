@@ -3,9 +3,9 @@ use derivative::*;
 use enclose::*;
 use futures::sync::mpsc::{channel, Receiver, Sender};
 use futures::{future, Future};
+use serde::Serialize;
 use std::marker::PhantomData;
 use std::sync::{Arc, RwLock};
-use serde::Serialize;
 
 #[derive(Debug, Serialize)]
 pub enum RuntimeEv {
