@@ -11,7 +11,9 @@ pub struct LibRecent {
 impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for LibRecent {
     fn update(&mut self, ctx: &Ctx<Env>, msg: &Msg) -> Effects {
         match msg {
-            Msg::Event(Event::CtxChanged) | Msg::Internal(Internal::LibLoaded(_)) | Msg::Event(Event::LibPersisted) => {
+            Msg::Event(Event::CtxChanged)
+            | Msg::Internal(Internal::LibLoaded(_))
+            | Msg::Event(Event::LibPersisted) => {
                 if let LibraryLoadable::Ready(l) = &ctx.library {
                     self.recent = l
                         .items
@@ -31,9 +33,9 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for LibRecent {
     }
 }
 
-use crate::types::MetaDetail;
-use crate::types::addons::{ResourceRef, ResourceRequest};
 use crate::state_types::msg::Internal::*;
+use crate::types::addons::{ResourceRef, ResourceRequest};
+use crate::types::MetaDetail;
 //use lazysort::SortedBy;
 
 // Cinemeta/Channels are curently limited to that many
@@ -63,41 +65,58 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for Notifications {
                     .addons
                     .iter()
                     .flat_map(|addon| {
-                        addon
+                        // The catalog supports this property
+                        let viable_catalogs = addon
                             .manifest
                             .catalogs
                             .iter()
-                            // The catalog supports this property
-                            .filter(|cat| cat.extra_iter().any(|e| e.name == LAST_VID_IDS))
-                            .flat_map(move |cat| {
-                                let relevant_items = lib
-                                    .items
-                                    .values()
-                                    // The item must be eligible for notifications,
-                                    // but also meta about it must be provided by the given add-on
-                                    .filter(|item|
-                                            !item.state.no_notif && !item.removed
-                                            && addon.manifest.is_supported(&ResourceRef::without_extra("meta", &item.type_name, &item.id))
+                            .filter(|cat| cat.extra_iter().any(|e| e.name == LAST_VID_IDS));
+
+                        viable_catalogs.flat_map(move |cat| {
+                            let relevant_items = lib
+                                .items
+                                .values()
+                                // The item must be eligible for notifications,
+                                // but also meta about it must be provided by the given add-on
+                                .filter(|item| {
+                                    !item.state.no_notif
+                                        && !item.removed
+                                        && addon.manifest.is_supported(&ResourceRef::without_extra(
+                                            "meta",
+                                            &item.type_name,
+                                            &item.id,
+                                        ))
+                                })
+                                .sorted_by(|a, b| b.mtime.cmp(&a.mtime))
+                                .collect::<Vec<_>>();
+                            relevant_items
+                                .chunks(MAX_PER_REQUEST)
+                                .map(|items_page| {
+                                    let ids =
+                                        items_page.iter().map(|x| x.id.clone()).collect::<Vec<_>>();
+                                    let extra_props = [(LAST_VID_IDS.into(), ids.join(","))];
+                                    let path = ResourceRef::with_extra(
+                                        "catalog",
+                                        &cat.type_name,
+                                        &cat.id,
+                                        &extra_props,
+                                    );
+                                    let addon_req =
+                                        ResourceRequest::new(&addon.transport_url, path);
+
+                                    (
+                                        addon_get::<Env>(&addon_req),
+                                        ItemsGroup::new(addon, addon_req),
                                     )
-                                    .sorted_by(|a, b| b.mtime.cmp(&a.mtime))
-                                    .collect::<Vec<_>>();
-                                relevant_items
-                                    .chunks(MAX_PER_REQUEST)
-                                    .map(|items_page| {
-                                        let ids = items_page.iter().map(|x| x.id.clone()).collect::<Vec<_>>();
-                                        let extra_props = [( LAST_VID_IDS.into(), ids.join(",") )];
-                                        let path = ResourceRef::with_extra("catalog", &cat.type_name, &cat.id, &extra_props);
-                                        let addon_req = ResourceRequest::new(&addon.transport_url, path);
-                                        (addon_get::<Env>(&addon_req), ItemsGroup::new(addon, addon_req))
-                                    })
-                                    .collect::<Vec<_>>()
-                            })
+                                })
+                                .collect::<Vec<_>>()
+                        })
                     })
                     .unzip();
 
                 self.groups = groups;
                 Effects::many(effects)
-            },
+            }
             Msg::Internal(AddonResponse(req, result)) => {
                 if let Some(idx) = self.groups.iter().position(|g| g.addon_req() == req) {
                     self.groups[idx].update(result);
@@ -105,7 +124,7 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for Notifications {
                 } else {
                     Effects::none().unchanged()
                 }
-            },
+            }
             _ => Effects::none().unchanged(),
         }
     }
