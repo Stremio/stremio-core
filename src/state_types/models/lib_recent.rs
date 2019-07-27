@@ -81,6 +81,7 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for Notifications {
                                 .filter(|item| {
                                     !item.state.no_notif
                                         && !item.removed
+                                        && cat.type_name == item.type_name
                                         && addon.manifest.is_supported(&ResourceRef::without_extra(
                                             "meta",
                                             &item.type_name,
