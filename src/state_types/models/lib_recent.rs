@@ -31,8 +31,9 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for LibRecent {
     }
 }
 
-use crate::types::Video;
-use crate::types::addons::ResourceRef;
+use crate::types::MetaDetail;
+use crate::types::addons::{ResourceRef, ResourceRequest};
+use crate::state_types::msg::Internal::*;
 //use lazysort::SortedBy;
 
 // Cinemeta/Channels are curently limited to that many
@@ -43,7 +44,7 @@ const LAST_VID_IDS: &str = "lastVideoIds";
 
 #[derive(Debug, Clone, Default, Serialize)]
 pub struct Notifications {
-    pub groups: Vec<ItemsGroup<Vec<Video>>>,
+    pub groups: Vec<ItemsGroup<Vec<MetaDetail>>>,
 }
 impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for Notifications {
     fn update(&mut self, ctx: &Ctx<Env>, msg: &Msg) -> Effects {
@@ -57,7 +58,7 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for Notifications {
                     }
                 };
 
-                let groups = ctx
+                let (effects, groups): (Vec<_>, Vec<_>) = ctx
                     .content
                     .addons
                     .iter()
@@ -82,35 +83,28 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for Notifications {
                                     .collect::<Vec<_>>();
                                 relevant_items
                                     .chunks(MAX_PER_REQUEST)
-                                    // @TODO proper group and side effect; unzip at the end
-                                    .map(|items_page| items_page.to_vec())
+                                    .map(|items_page| {
+                                        let ids = items_page.iter().map(|x| x.id.clone()).collect::<Vec<_>>();
+                                        let extra_props = [( LAST_VID_IDS.into(), ids.join(",") )];
+                                        let path = ResourceRef::with_extra("catalog", &cat.type_name, &cat.id, &extra_props);
+                                        let addon_req = ResourceRequest::new(&addon.transport_url, path);
+                                        (addon_get::<Env>(&addon_req), ItemsGroup::new(addon, addon_req))
+                                    })
                                     .collect::<Vec<_>>()
                             })
                     })
-                    .collect::<Vec<_>>();
+                    .unzip();
 
-                dbg!(&groups);
-                
-                /*
-                let (groups, effects) = addon_aggr_new::<Env, _>(
-                    &ctx.content.addons,
-                    &AggrRequest::AllOfCatalog { extra },
-                );
                 self.groups = groups;
-                effects
-                */
-                // every catalog which has lastVideoIDs
-                // expected response: MetaDetailed
-                // so, for every catalog that has lastVideoIds required, we will check if the
-                // manifest is_supports a ResourceRef to the meta
-                /*
-                let ids = vec!["tt7366338".to_string(), "tt2306299".to_string()];
-                let path = ResourceRef::with_extra("catalog", "series", "last-videos", &[( "lastVideosIds".into(), ids.join(",") )]);
-                dbg!(path.to_string());
-                */
-    
-                // @TODO fetch groups
-                Effects::none()
+                Effects::many(effects)
+            },
+            Msg::Internal(AddonResponse(req, result)) => {
+                if let Some(idx) = self.groups.iter().position(|g| g.addon_req() == req) {
+                    self.groups[idx].update(result);
+                    Effects::none()
+                } else {
+                    Effects::none().unchanged()
+                }
             },
             _ => Effects::none().unchanged(),
         }

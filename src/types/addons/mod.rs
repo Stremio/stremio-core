@@ -23,7 +23,7 @@ pub struct ResourceRequest {
     pub path: ResourceRef,
 }
 impl ResourceRequest {
-    fn new(base: &str, path: ResourceRef) -> Self {
+    pub fn new(base: &str, path: ResourceRef) -> Self {
         let base = base.to_owned();
         ResourceRequest { base, path }
     }
@@ -34,6 +34,9 @@ impl ResourceRequest {
 pub enum ResourceResponse {
     Metas {
         metas: Vec<MetaPreview>,
+    },
+    MetasDetailed {
+        metas_detailed: Vec<MetaDetail>,
     },
     Meta {
         // NOTE: we are not putting this in Option<>, since that way it gives us a valid
