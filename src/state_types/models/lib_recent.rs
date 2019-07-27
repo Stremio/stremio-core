@@ -42,7 +42,7 @@ use crate::types::MetaDetail;
 // but in general, it's healthy to have some sort of a limit
 const MAX_PER_REQUEST: usize = 50;
 // The name of the extra property
-const LAST_VID_IDS: &str = "lastVideoIds";
+const LAST_VID_IDS: &str = "lastVideosIds";
 
 #[derive(Debug, Clone, Default, Serialize)]
 pub struct Notifications {
@@ -90,6 +90,9 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for Notifications {
                                 })
                                 .sorted_by(|a, b| b.mtime.cmp(&a.mtime))
                                 .collect::<Vec<_>>();
+
+                            // .chunks will also make sure that if relevant_items is empty,
+                            // we get no chunks (so no group)
                             relevant_items
                                 .chunks(MAX_PER_REQUEST)
                                 .map(|items_page| {

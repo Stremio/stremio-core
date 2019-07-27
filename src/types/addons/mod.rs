@@ -35,6 +35,7 @@ pub enum ResourceResponse {
     Metas {
         metas: Vec<MetaPreview>,
     },
+    #[serde(rename_all = "camelCase")]
     MetasDetailed {
         metas_detailed: Vec<MetaDetail>,
     },
