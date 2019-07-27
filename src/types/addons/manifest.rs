@@ -130,10 +130,6 @@ pub struct Manifest {
 }
 
 impl Manifest {
-    // @TODO: test
-    // assert_eq!(cinemeta_m.is_supported("meta", "movie", "tt0234"), true);
-    // assert_eq!(cinemeta_m.is_supported("meta", "movie", "somethingElse"), false));
-    // assert_eq!(cinemeta_m.is_supported("stream", "movie", "tt0234"), false);
     pub fn is_supported(
         &self,
         ResourceRef {
