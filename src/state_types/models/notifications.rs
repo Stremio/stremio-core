@@ -1,9 +1,9 @@
 use crate::state_types::msg::Internal::*;
-use crate::state_types::*;
 use crate::types::addons::{ResourceRef, ResourceRequest};
 use crate::types::MetaDetail;
 use lazysort::SortedBy;
 use serde_derive::*;
+use crate::state_types::*;
 
 // Cinemeta/Channels are curently limited to that many
 // but in general, it's healthy to have some sort of a limit
@@ -22,7 +22,7 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for Notifications {
                 let lib = match &ctx.library {
                     LibraryLoadable::Ready(l) => l,
                     _ => {
-                        self.groups = vec![];
+                        *self = Notifications::default();
                         return Effects::none();
                     }
                 };

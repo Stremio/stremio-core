@@ -48,6 +48,7 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for CatalogFiltered {
     fn update(&mut self, ctx: &Ctx<Env>, msg: &Msg) -> Effects {
         match msg {
             Msg::Action(Action::Load(ActionLoad::CatalogFiltered { resource_req })) => {
+                // @TODO catalog by types
                 // @TODO pagination
                 let addons = &ctx.content.addons;
                 self.catalogs = addons
