@@ -1,9 +1,9 @@
 use crate::state_types::msg::Internal::*;
+use crate::state_types::*;
 use crate::types::addons::{ResourceRef, ResourceRequest};
 use crate::types::MetaDetail;
 use lazysort::SortedBy;
 use serde_derive::*;
-use crate::state_types::*;
 
 // Cinemeta/Channels are curently limited to that many
 // but in general, it's healthy to have some sort of a limit
@@ -91,6 +91,22 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for Notifications {
             Msg::Internal(AddonResponse(req, result)) => {
                 if let Some(idx) = self.groups.iter().position(|g| g.addon_req() == req) {
                     self.groups[idx].update(result);
+                    // Modify all the items so that only the new videos are left
+                    if let Loadable::Ready(ref mut meta_items) = self.groups[idx].content {
+                        for item in meta_items {
+                            if let Some(lib_item) = ctx.library.get(&item.id) {
+                                item.videos
+                                    // It's not gonna be a notification if we don't have the
+                                    // released date of the last watched video
+                                    .retain(|v| {
+                                        lib_item
+                                            .state
+                                            .last_vid_released
+                                            .map_or(false, |lvr| v.released > lvr)
+                                    });
+                            }
+                        }
+                    }
                     Effects::none()
                 } else {
                     Effects::none().unchanged()

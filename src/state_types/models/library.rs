@@ -24,6 +24,12 @@ pub enum LibraryLoadable {
 }
 
 impl LibraryLoadable {
+    pub fn get(&self, id: &str) -> Option<&LibItem> {
+        match self {
+            LibraryLoadable::Ready(bucket) => bucket.items.get(id),
+            _ => None,
+        }
+    }
     pub fn load_from_storage<Env: Environment + 'static>(
         &mut self,
         content: &CtxContent,
