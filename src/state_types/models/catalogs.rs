@@ -33,6 +33,7 @@ use crate::types::addons::ManifestCatalog;
 #[derive(Debug, Default, Clone, Serialize)]
 pub struct CatalogFiltered {
     pub item_pages: Vec<Loadable<Vec<MetaPreview>, String>>,
+    pub types: Vec<String>,
     pub catalogs: Vec<ManifestCatalog>,
     pub selected: Option<ResourceRequest>,
     // @TODO catalogs to be { is_selected, path, name, type }
@@ -56,7 +57,17 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for CatalogFiltered {
                     .flat_map(|a| &a.manifest.catalogs)
                     // this will weed out catalogs that require extra props
                     .filter(|cat| cat.is_extra_supported(&[]))
+                    // @TODO another filter cause of `selected` with .map_or
                     .cloned()
+                    .collect();
+                // The alternative to the HashSet is to sort and dedup
+                // but we want to preserve the original order in which types appear in
+                self.types = self
+                    .catalogs
+                    .iter()
+                    .map(|x| x.type_name.clone())
+                    .collect::<std::collections::HashSet<_>>()
+                    .into_iter()
                     .collect();
                 self.item_pages = vec![Loadable::Loading];
                 self.selected = Some(resource_req.to_owned());
