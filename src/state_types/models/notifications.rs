@@ -98,6 +98,10 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for Notifications {
                                 item.videos
                                     // It's not gonna be a notification if we don't have the
                                     // released date of the last watched video
+                                    // NOTE: if we want to show the recent videos in the default
+                                    // case, we should unwrap_or(now - THRESHOLD)
+                                    // we have to get `now` somehow (environment or through a msg)
+                                    // Alternatively, just set that when we add lib items
                                     .retain(|v| {
                                         lib_item
                                             .state

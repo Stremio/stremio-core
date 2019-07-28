@@ -149,7 +149,7 @@ mod tests {
         // have processed
         {
             let state = &runtime.app.read().unwrap().catalogs;
-            assert_eq!(state.groups.len(), 6, "groups is the right length");
+            assert_eq!(state.groups.len(), 7, "groups is the right length");
             for g in state.groups.iter() {
                 assert!(
                     match g.content {
@@ -168,7 +168,7 @@ mod tests {
         run(runtime.dispatch(&msg));
         assert_eq!(
             runtime.app.read().unwrap().catalogs.groups.len(),
-            4,
+            5,
             "groups is the right length when searching"
         );
     }
@@ -236,6 +236,7 @@ mod tests {
         struct Model {
             ctx: Ctx<Env>,
             lib_recent: LibRecent,
+            notifs: Notifications,
         }
         let (runtime, _) = Runtime::<Env, Model>::new(Model::default(), 1000);
 
@@ -276,6 +277,23 @@ mod tests {
                 panic!("library must be Ready")
             }
             assert!(ctx.is_loaded);
+        }
+
+        // Update notifications
+        {
+            // ¯\_(ツ)_/¯
+            // temporary hack (really) until last-videos catalog lands in upstream cinemeta
+            // and gets updated for our user
+            let addons: Vec<Descriptor> =
+                serde_json::from_slice(include_bytes!("../stremio-official-addons/index.json"))
+                    .expect("official addons JSON parse");
+            runtime.app.write().unwrap().ctx.content.addons[0] = addons[0].clone();
+            // we did unspeakable things, now dispatch the load action
+            run(runtime.dispatch(&Action::Load(ActionLoad::Notifications).into()));
+            // ...
+            let model = &runtime.app.read().unwrap();
+            assert_eq!(model.notifs.groups.len(), 1);
+            // @TODO more assertions
         }
 
         // Logout and expect everything to be reset
