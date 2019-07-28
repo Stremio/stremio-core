@@ -11,7 +11,9 @@ pub struct LibRecent {
 impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for LibRecent {
     fn update(&mut self, ctx: &Ctx<Env>, msg: &Msg) -> Effects {
         match msg {
-            Msg::Event(Event::CtxChanged) | Msg::Internal(Internal::LibLoaded(_)) | Msg::Event(Event::LibPersisted) => {
+            Msg::Event(Event::CtxChanged)
+            | Msg::Internal(Internal::LibLoaded(_))
+            | Msg::Event(Event::LibPersisted) => {
                 if let LibraryLoadable::Ready(l) = &ctx.library {
                     self.recent = l
                         .items

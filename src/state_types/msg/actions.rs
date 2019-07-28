@@ -14,6 +14,7 @@ pub enum ActionLoad {
     Streams { type_name: String, id: String },
     // @TODO most of these values need content
     AddonCatalog,
+    Notifications,
 }
 
 #[derive(Debug, Deserialize, Clone)]

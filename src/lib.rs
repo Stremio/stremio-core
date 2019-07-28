@@ -149,7 +149,7 @@ mod tests {
         // have processed
         {
             let state = &runtime.app.read().unwrap().catalogs;
-            assert_eq!(state.groups.len(), 6, "groups is the right length");
+            assert_eq!(state.groups.len(), 7, "groups is the right length");
             for g in state.groups.iter() {
                 assert!(
                     match g.content {
@@ -168,7 +168,7 @@ mod tests {
         run(runtime.dispatch(&msg));
         assert_eq!(
             runtime.app.read().unwrap().catalogs.groups.len(),
-            4,
+            5,
             "groups is the right length when searching"
         );
     }
@@ -236,6 +236,7 @@ mod tests {
         struct Model {
             ctx: Ctx<Env>,
             lib_recent: LibRecent,
+            notifs: Notifications,
         }
         let (runtime, _) = Runtime::<Env, Model>::new(Model::default(), 1000);
 
@@ -258,18 +259,6 @@ mod tests {
             assert!(!l.items.is_empty(), "library has items");
             // LibRecent is "continue watching"
             assert!(!model.lib_recent.recent.is_empty(), "has recent items");
-            use lazysort::SortedBy;
-            dbg!(&l
-                .items
-                .values()
-                .filter(|item| item.type_name == "series" && !item.state.no_notif && !item.removed)
-                // WARNING: the hack on "year" may break, if a series ends and then resumes again
-                //.filter(|item| item.year.as_ref().map_or(true, |y| y.ends_with("–")))
-                .sorted_by(|a, b| b.mtime.cmp(&a.mtime))
-                //.take(50)
-                //.collect::<Vec<_>>()
-                .count()
-            );
             l.to_owned()
         } else {
             panic!("library must be Ready")
@@ -288,6 +277,29 @@ mod tests {
                 panic!("library must be Ready")
             }
             assert!(ctx.is_loaded);
+        }
+
+        // Update notifications
+        {
+            // ¯\_(ツ)_/¯
+            // temporary hack (really) until last-videos catalog lands in upstream cinemeta
+            // and gets updated for our user
+            let addons: Vec<Descriptor> =
+                serde_json::from_slice(include_bytes!("../stremio-official-addons/index.json"))
+                    .expect("official addons JSON parse");
+            runtime.app.write().unwrap().ctx.content.addons[0] = addons[0].clone();
+            // we did unspeakable things, now dispatch the load action
+            run(runtime.dispatch(&Action::Load(ActionLoad::Notifications).into()));
+            // ...
+            let model = &runtime.app.read().unwrap();
+            assert_eq!(model.notifs.groups.len(), 1);
+            let meta_items = match &model.notifs.groups[0].content {
+                Loadable::Ready(x) => x,
+                _ => panic!("notifs group not ready"),
+            };
+            assert!(meta_items.len() > 1, "should have loaded multiple items");
+            // No notifications, cause neither LibItem has .last_vid_released set
+            assert!(meta_items.iter().all(|x| x.videos.len() == 0));
         }
 
         // Logout and expect everything to be reset

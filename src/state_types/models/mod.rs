@@ -18,3 +18,6 @@ pub use streams::*;
 
 mod lib_recent;
 pub use lib_recent::*;
+
+mod notifications;
+pub use notifications::*;
