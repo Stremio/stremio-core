@@ -131,7 +131,7 @@ impl Environment for Env {
                 }
             })
             .and_then(|buf_val| {
-                assert!(buf_val.is_instance_of::<ArrayBuffer>());
+                assert!(buf_val.is_instance_of::<js_sys::ArrayBuffer>());
                 let typebuf = js_sys::Uint8Array::new(&buf_val);
                 let mut body = vec![0; typebuf.length() as usize];
                 typebuf.copy_to(&mut body[..]);
