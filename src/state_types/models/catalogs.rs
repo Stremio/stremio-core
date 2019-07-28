@@ -4,6 +4,7 @@ use crate::state_types::*;
 use crate::types::addons::{AggrRequest, ResourceRequest, ResourceResponse};
 use crate::types::MetaPreview;
 use serde_derive::*;
+use itertools::*;
 
 #[derive(Debug, Clone, Default, Serialize)]
 pub struct CatalogGrouped {
@@ -66,8 +67,7 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for CatalogFiltered {
                     .catalogs
                     .iter()
                     .map(|x| x.type_name.clone())
-                    .collect::<std::collections::HashSet<_>>()
-                    .into_iter()
+                    .unique()
                     .collect();
                 self.item_pages = vec![Loadable::Loading];
                 self.selected = Some(resource_req.to_owned());

@@ -24,6 +24,7 @@ derivative = "1.0.2"
 derive_more = "0.15.0"
 derive_builder = "0.7"
 lazysort = "0.2.1"
+itertools = "0.8"
 
 [workspace]
 
