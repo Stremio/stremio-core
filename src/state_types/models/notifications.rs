@@ -104,6 +104,8 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for Notifications {
                                             .last_vid_released
                                             .map_or(false, |lvr| v.released > lvr)
                                     });
+                            } else {
+                                item.videos = vec![];
                             }
                         }
                     }
