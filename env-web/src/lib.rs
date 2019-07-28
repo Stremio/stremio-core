@@ -130,9 +130,9 @@ impl Environment for Env {
                     future::Either::B(future::err(EnvError::HTTPStatusCode(resp.status())))
                 }
             })
-            // cpoy_to
-            .and_then(|resp_val| {
-                let typebuf = js_sys::Uint8Array::new(&resp_val);
+            .and_then(|buf_val| {
+                assert!(buf_val.is_instance_of::<ArrayBuffer>());
+                let typebuf = js_sys::Uint8Array::new(&buf_val);
                 let mut body = vec![0; typebuf.length() as usize];
                 typebuf.copy_to(&mut body[..]);
                 match serde_json::from_slice(&body) {
