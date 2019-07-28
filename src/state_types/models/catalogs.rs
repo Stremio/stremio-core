@@ -53,10 +53,10 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for CatalogFiltered {
                 let addons = &ctx.content.addons;
                 self.catalogs = addons
                     .iter()
-                    .map(|a| &a.manifest.catalogs)
-                    .cloned()
-                    .flatten()
+                    .flat_map(|a| &a.manifest.catalogs)
+                    // this will weed out catalogs that require extra props
                     .filter(|cat| cat.is_extra_supported(&[]))
+                    .cloned()
                     .collect();
                 self.item_pages = vec![Loadable::Loading];
                 self.selected = Some(resource_req.to_owned());
