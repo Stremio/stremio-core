@@ -124,15 +124,21 @@ impl Environment for Env {
                     // JS -> deserializing in rust
                     // NOTE: there's no realistic scenario those unwraps fail
                     future::Either::A(
-                        JsFuture::from(resp.json().unwrap()).map_err(|e| EnvError::from(e)),
+                        JsFuture::from(resp.array_buffer().unwrap()).map_err(|e| EnvError::from(e)),
                     )
                 } else {
                     future::Either::B(future::err(EnvError::HTTPStatusCode(resp.status())))
                 }
             })
-            .and_then(|json| match json.into_serde() {
-                Ok(r) => future::ok(r),
-                Err(e) => future::err(EnvError::from(e).into()),
+            // cpoy_to
+            .and_then(|resp_val| {
+                let typebuf = js_sys::Uint8Array::new(&resp_val);
+                let mut body = vec![0; typebuf.length() as usize];
+                typebuf.copy_to(&mut body[..]);
+                match serde_json::from_slice(&body) {
+                    Ok(r) => future::ok(r),
+                    Err(e) => future::err(EnvError::from(e).into()),
+                }
             })
             .map_err(Into::into);
         Box::new(fut)
