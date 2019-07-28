@@ -293,7 +293,13 @@ mod tests {
             // ...
             let model = &runtime.app.read().unwrap();
             assert_eq!(model.notifs.groups.len(), 1);
-            // @TODO more assertions
+            let meta_items = match &model.notifs.groups[0].content {
+                Loadable::Ready(x) => x,
+                _ => panic!("notifs group not ready"),
+            };
+            assert!(meta_items.len() > 1, "should have loaded multiple items");
+            // No notifications, cause neither LibItem has .last_vid_released set
+            assert!(meta_items.iter().all(|x| x.videos.len() == 0));
         }
 
         // Logout and expect everything to be reset
