@@ -27,6 +27,9 @@ impl ResourceRequest {
         let base = base.to_owned();
         ResourceRequest { base, path }
     }
+    pub fn eq_no_extra(&self, other: &ResourceRequest) -> bool {
+        self.base == other.base && self.path.eq_no_extra(&other.path)
+    }
 }
 
 #[derive(Deserialize, Serialize, Clone, Debug, TryInto)]

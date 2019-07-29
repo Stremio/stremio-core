@@ -28,8 +28,7 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for CatalogGrouped {
 
 //
 // Filtered catalogs
-// @TODO extra (filters)
-// @TODO pagination
+//
 use crate::types::addons::ManifestCatalog;
 #[derive(Debug, Default, Clone, Serialize)]
 pub struct CatalogFiltered {
@@ -37,14 +36,14 @@ pub struct CatalogFiltered {
     pub types: Vec<String>,
     pub catalogs: Vec<ManifestCatalog>,
     pub selected: Option<ResourceRequest>,
-    // @TODO catalogs to be { is_selected, path, name, type }
-    // is_selected will be whether the path matches selected, excluding the page
-    // @TODO: extra (filters)
-    // @TODO pagination; this can be done by incrementing skip in the ResourceRef when requesting
-    // the next page; in LoadWithCtx, when we see that the request is for the next page, we add
-    // another entry to item_pages
-    // @TODO consider having `types` as well, with `is_selected`; this will just be an aggregated
-    // view of `catalogs` for convenience
+    // @TODO types to be { load_msg, is_selected, type_name }
+    // @TODO catalogs to be { load_msg, is_selected, name, type }
+    // is_selected will be whether the path matches selected, excluding the `skip` (page)
+    // @TODO: extra (filters); there should be .extra, of all selectable extra props; consider that
+    // some can be defaulted
+    // @TODO pagination; this can be done by incrementing skip in the ResourceRequest when requesting
+    // the next page; we will have .load_next/.load_prev (Option<ActionLoad>) to go to next/prev
+    // page
 }
 impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for CatalogFiltered {
     fn update(&mut self, ctx: &Ctx<Env>, msg: &Msg) -> Effects {
