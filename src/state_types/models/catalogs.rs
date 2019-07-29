@@ -1,7 +1,7 @@
 use super::addons::*;
 use crate::state_types::msg::Internal::*;
 use crate::state_types::*;
-use crate::types::addons::{AggrRequest, ResourceRequest, ResourceRef, ResourceResponse};
+use crate::types::addons::{AggrRequest, ResourceRequest, ResourceRef, ExtraProp, ResourceResponse};
 use crate::types::MetaPreview;
 use itertools::*;
 use serde_derive::*;
@@ -45,15 +45,12 @@ pub struct CatalogEntry {
 
 #[derive(Debug, Default, Clone, Serialize)]
 pub struct CatalogFiltered {
-    // @TODO more sophisticated error, such as EmptyContent/UninstalledAddon/Offline
-    // see https://github.com/Stremio/stremio/issues/402
-    pub content: Loadable<Vec<MetaPreview>, String>,
     pub types: Vec<TypeEntry>,
     pub catalogs: Vec<CatalogEntry>,
     pub selected: Option<ResourceRequest>,
-    // @TODO types to be { load_msg, is_selected, type_name }
-    // @TODO catalogs to be { load_msg, is_selected, name, type }
-    // is_selected will be whether the path matches selected, excluding the `skip` (page)
+    // @TODO more sophisticated error, such as EmptyContent/UninstalledAddon/Offline
+    // see https://github.com/Stremio/stremio/issues/402
+    pub content: Loadable<Vec<MetaPreview>, String>,
     // @TODO: extra (filters); there should be .extra, of all selectable extra props; consider that
     // some can be defaulted
     // @TODO pagination; this can be done by incrementing skip in the ResourceRequest when requesting
@@ -65,23 +62,28 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for CatalogFiltered {
     fn update(&mut self, ctx: &Ctx<Env>, msg: &Msg) -> Effects {
         match msg {
             Msg::Action(Action::Load(ActionLoad::CatalogFiltered { resource_req })) => {
-                // @TODO catalog by types
                 // @TODO pagination
                 let addons = &ctx.content.addons;
+                // Catalogs are NOT filtered by type, cause the UI gets to decide whether to
+                // only show catalogs for the selected type, or all of them
                 self.catalogs = addons
                     .iter()
-                    // this will weed out catalogs that require extra props
-                    // @TODO this will be a filter_map when we generate the
-                    // { load, is_selected, .. } format
                     .flat_map(|a| a.manifest.catalogs.iter().filter_map(move |cat| {
-                        // Is not required, or has provided possible options (we can default to
-                        // the first one)
-                        let is_supported = cat.extra_iter().all(|e| {
-                            !e.is_required || e.options.as_ref().map_or(false, |o| !o.is_empty())
-                        });
+                        // Required properties are allowed, but only if there's .options
+                        // with at least one option inside (that we default to)
+                        // If there are no required properties at all, this will resolve to Some([])
+                        let props = cat
+                            .extra_iter()
+                            .filter(|e| e.is_required)
+                            .map(|e| e.options
+                                 .as_ref()
+                                 .and_then(|opts| opts.get(0))
+                                 .map(|first| (e.name.to_owned(), first.to_owned()))
+                            )
+                            .collect::<Option<Vec<ExtraProp>>>()?;
                         let load = ResourceRequest {
                             base: a.transport_url.to_owned(),
-                            path: ResourceRef::without_extra("catalog", &cat.type_name, &cat.id)
+                            path: ResourceRef::with_extra("catalog", &cat.type_name, &cat.id, &props)
                         };
                         Some(CatalogEntry {
                             name: cat.name.as_ref().unwrap_or(&a.manifest.name).to_owned(),
@@ -95,6 +97,7 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for CatalogFiltered {
                 self.types = self
                     .catalogs
                     .iter()
+                    // @TODO: map to TypeEntry first, then unique_by; so that we can set load
                     .map(|x| x.load.path.type_name.clone())
                     .unique()
                     .map(|type_name| TypeEntry {
