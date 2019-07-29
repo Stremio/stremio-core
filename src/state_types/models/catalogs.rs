@@ -33,7 +33,7 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for CatalogGrouped {
 pub struct TypeEntry {
     pub type_name: String,
     pub is_selected: bool,
-    //pub load: ResourceRequest,
+    pub load: ResourceRequest,
 }
 
 #[derive(Serialize, Clone, Debug)]
@@ -96,13 +96,11 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for CatalogFiltered {
                 self.types = self
                     .catalogs
                     .iter()
-                    // @TODO: map to TypeEntry first, then unique_by; so that we can set load
-                    // @TODO load
-                    .map(|x| x.load.path.type_name.clone())
-                    .unique()
-                    .map(|type_name| TypeEntry {
-                        is_selected: resource_req.path.type_name == type_name,
-                        type_name,
+                    .unique_by(|cat_entry| &cat_entry.load.path.type_name)
+                    .map(|cat_entry| TypeEntry {
+                        is_selected: resource_req.path.type_name == cat_entry.load.path.type_name,
+                        type_name: cat_entry.load.path.type_name.to_owned(),
+                        load: cat_entry.load.to_owned()
                     })
                     .collect();
                 self.content = Loadable::Loading;
