@@ -3,8 +3,8 @@ use crate::state_types::msg::Internal::*;
 use crate::state_types::*;
 use crate::types::addons::{AggrRequest, ResourceRequest, ResourceResponse};
 use crate::types::MetaPreview;
-use serde_derive::*;
 use itertools::*;
+use serde_derive::*;
 
 #[derive(Debug, Clone, Default, Serialize)]
 pub struct CatalogGrouped {
@@ -58,7 +58,13 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for CatalogFiltered {
                     .iter()
                     .flat_map(|a| &a.manifest.catalogs)
                     // this will weed out catalogs that require extra props
-                    .filter(|cat| cat.is_extra_supported(&[]))
+                    .filter(|cat| {
+                        // Is not required, or has provided possible options (we can default to
+                        // the first one)
+                        cat.extra_iter().all(|e| {
+                            !e.is_required || e.options.as_ref().map_or(false, |o| !o.is_empty())
+                        })
+                    })
                     .cloned()
                     .collect();
                 // The alternative to the HashSet is to sort and dedup
@@ -74,8 +80,7 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for CatalogFiltered {
                 Effects::one(addon_get::<Env>(&resource_req))
             }
             Msg::Internal(AddonResponse(req, result))
-                if Some(req) == self.selected.as_ref()
-                    && self.content == Loadable::Loading =>
+                if Some(req) == self.selected.as_ref() && self.content == Loadable::Loading =>
             {
                 self.content = match result.as_ref() {
                     Ok(ResourceResponse::Metas { metas }) => Loadable::Ready(metas.to_owned()),

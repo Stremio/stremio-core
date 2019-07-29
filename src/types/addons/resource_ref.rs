@@ -42,9 +42,7 @@ impl ResourceRef {
     }
     // Compare, but without considering extra
     pub fn eq_no_extra(&self, other: &ResourceRef) -> bool {
-        self.resource == other.resource
-            && self.type_name == other.type_name
-            && self.id == other.id
+        self.resource == other.resource && self.type_name == other.type_name && self.id == other.id
     }
 }
 
