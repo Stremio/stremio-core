@@ -29,7 +29,7 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for CatalogGrouped {
 //
 // Filtered catalogs
 //
-const PAGE_LEN: usize = 100;
+const PAGE_LEN: u32 = 100;
 const SKIP: &str = "skip";
 
 #[derive(Serialize, Clone, Debug)]
@@ -63,7 +63,6 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for CatalogFiltered {
     fn update(&mut self, ctx: &Ctx<Env>, msg: &Msg) -> Effects {
         match msg {
             Msg::Action(Action::Load(ActionLoad::CatalogFiltered { resource_req })) => {
-                // @TODO pagination
                 let addons = &ctx.content.addons;
                 // Catalogs are NOT filtered by type, cause the UI gets to decide whether to
                 // only show catalogs for the selected type, or all of them
@@ -110,11 +109,6 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for CatalogFiltered {
                     catalogs,
                     types,
                     selected: Some(resource_req.to_owned()),
-                    /*load_prev: match get_skip(resource_req.path) {
-                        0 | i if i % PAGE_LEN != 0 => None,
-                        i @ _ => Some()
-                    }*/
-                    // @TODO load_prev, if skip is a nonzero multiple of 100
                     ..Default::default()
                 };
                 Effects::one(addon_get::<Env>(&resource_req))
@@ -124,8 +118,17 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for CatalogFiltered {
             {
                 self.content = match result.as_ref() {
                     Ok(ResourceResponse::Metas { metas }) => {
-                        // @TODO if we return more, we still shouldn't allow a next page
-                        Loadable::Ready(metas.iter().take(PAGE_LEN).cloned().collect())
+                        let skip = get_skip(&req.path);
+                        self.load_prev = match skip {
+                            i if i >= PAGE_LEN && i % PAGE_LEN == 0 => Some(with_skip(req, i - PAGE_LEN)),
+                            _ => None
+                        };
+                        // If we return more, we still shouldn't allow a next page
+                        self.load_next = match metas.len() {
+                            100 => Some(with_skip(req, skip + PAGE_LEN)),
+                            _ => None,
+                        };
+                        Loadable::Ready(metas.iter().take(PAGE_LEN as usize).cloned().collect())
                     },
                     Ok(_) => Loadable::Err(UNEXPECTED_RESP_MSG.to_owned()),
                     Err(e) => Loadable::Err(e.to_string()),
