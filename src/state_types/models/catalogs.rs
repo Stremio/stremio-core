@@ -51,8 +51,7 @@ pub struct CatalogFiltered {
     // @TODO more sophisticated error, such as EmptyContent/UninstalledAddon/Offline
     // see https://github.com/Stremio/stremio/issues/402
     pub content: Loadable<Vec<MetaPreview>, String>,
-    // @TODO: extra (filters); there should be .extra, of all selectable extra props; consider that
-    // some can be defaulted
+    // @TODO: extra (filters); there should be .extra, of all selectable extra props
     // @TODO pagination; this can be done by incrementing skip in the ResourceRequest when requesting
     // the next page; we will have .load_next/.load_prev (Option<ResourceRequest>) to go to next/prev
     // page
@@ -77,7 +76,7 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for CatalogFiltered {
                             .filter(|e| e.is_required)
                             .map(|e| e.options
                                  .as_ref()
-                                 .and_then(|opts| opts.get(0))
+                                 .and_then(|opts| opts.first())
                                  .map(|first| (e.name.to_owned(), first.to_owned()))
                             )
                             .collect::<Option<Vec<ExtraProp>>>()?;
@@ -98,6 +97,7 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for CatalogFiltered {
                     .catalogs
                     .iter()
                     // @TODO: map to TypeEntry first, then unique_by; so that we can set load
+                    // @TODO load
                     .map(|x| x.load.path.type_name.clone())
                     .unique()
                     .map(|type_name| TypeEntry {
