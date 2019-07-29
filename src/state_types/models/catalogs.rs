@@ -32,7 +32,9 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for CatalogGrouped {
 use crate::types::addons::ManifestCatalog;
 #[derive(Debug, Default, Clone, Serialize)]
 pub struct CatalogFiltered {
-    pub item_pages: Vec<Loadable<Vec<MetaPreview>, String>>,
+    // @TODO more sophisticated error, such as EmptyContent/UninstalledAddon/Offline
+    // see https://github.com/Stremio/stremio/issues/402
+    pub content: Loadable<Vec<MetaPreview>, String>,
     pub types: Vec<String>,
     pub catalogs: Vec<ManifestCatalog>,
     pub selected: Option<ResourceRequest>,
@@ -57,7 +59,6 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for CatalogFiltered {
                     .flat_map(|a| &a.manifest.catalogs)
                     // this will weed out catalogs that require extra props
                     .filter(|cat| cat.is_extra_supported(&[]))
-                    // @TODO another filter cause of `selected` with .map_or
                     .cloned()
                     .collect();
                 // The alternative to the HashSet is to sort and dedup
@@ -68,15 +69,15 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for CatalogFiltered {
                     .map(|x| x.type_name.clone())
                     .unique()
                     .collect();
-                self.item_pages = vec![Loadable::Loading];
+                self.content = Loadable::Loading;
                 self.selected = Some(resource_req.to_owned());
                 Effects::one(addon_get::<Env>(&resource_req))
             }
             Msg::Internal(AddonResponse(req, result))
                 if Some(req) == self.selected.as_ref()
-                    && self.item_pages.last() == Some(&Loadable::Loading) =>
+                    && self.content == Loadable::Loading =>
             {
-                self.item_pages[0] = match result.as_ref() {
+                self.content = match result.as_ref() {
                     Ok(ResourceResponse::Metas { metas }) => Loadable::Ready(metas.to_owned()),
                     Ok(_) => Loadable::Err(UNEXPECTED_RESP_MSG.to_owned()),
                     Err(e) => Loadable::Err(e.to_string()),

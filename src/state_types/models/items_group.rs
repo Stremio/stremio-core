@@ -12,6 +12,11 @@ pub enum Loadable<R, E> {
     Ready(R),
     Err(E),
 }
+impl<R, E> Default for Loadable<R, E> {
+    fn default() -> Self {
+        Loadable::Loading
+    }
+}
 
 #[derive(Debug, Serialize, Clone)]
 pub struct ItemsGroup<T> {
