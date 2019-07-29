@@ -194,9 +194,12 @@ mod tests {
         });
         run(runtime.dispatch(&action.into()));
         let state = &runtime.app.read().unwrap().catalogs;
+        assert!(state.types[0].is_selected, "first type is selected");
+        assert_eq!(Some("movie"), state.types.get(0).map(|x| x.type_name.as_str()), "first type is movie");
+        assert_eq!(Some("series"), state.types.get(1).map(|x| x.type_name.as_str()), "second type is series");
+        assert!(state.catalogs.len() > 3, "has catalogs");
         assert_eq!(state.selected, Some(req), "selected is right");
-        assert_eq!(state.item_pages.len(), 1, "item_pages is the right length");
-        match &state.item_pages[0] {
+        match &state.content {
             Loadable::Ready(x) => assert_eq!(x.len(), 100, "right length of items"),
             _ => panic!("item_pages[0] is not Ready"),
         }
