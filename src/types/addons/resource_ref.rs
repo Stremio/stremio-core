@@ -41,12 +41,10 @@ impl ResourceRef {
             .map(|(_, v)| v as &str)
     }
     pub fn set_extra_unique(&mut self, key: &str, val: String) {
-        let entry = self.extra
-            .iter_mut()
-            .find(|(k, _)| k == key);
+        let entry = self.extra.iter_mut().find(|(k, _)| k == key);
         match entry {
             Some(entry) => entry.1 = val,
-            None => self.extra.push((key.to_owned(), val))
+            None => self.extra.push((key.to_owned(), val)),
         }
     }
     // Compare, but without considering extra

@@ -1,7 +1,9 @@
 use super::addons::*;
 use crate::state_types::msg::Internal::*;
 use crate::state_types::*;
-use crate::types::addons::{AggrRequest, ResourceRequest, ResourceRef, ExtraProp, ResourceResponse};
+use crate::types::addons::{
+    AggrRequest, ExtraProp, ResourceRef, ResourceRequest, ResourceResponse,
+};
 use crate::types::MetaPreview;
 use itertools::*;
 use serde_derive::*;
@@ -68,29 +70,37 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for CatalogFiltered {
                 // only show catalogs for the selected type, or all of them
                 let catalogs: Vec<CatalogEntry> = addons
                     .iter()
-                    .flat_map(|a| a.manifest.catalogs.iter().filter_map(move |cat| {
-                        // Required properties are allowed, but only if there's .options
-                        // with at least one option inside (that we default to)
-                        // If there are no required properties at all, this will resolve to Some([])
-                        let props = cat
-                            .extra_iter()
-                            .filter(|e| e.is_required)
-                            .map(|e| e.options
-                                 .as_ref()
-                                 .and_then(|opts| opts.first())
-                                 .map(|first| (e.name.to_owned(), first.to_owned()))
-                            )
-                            .collect::<Option<Vec<ExtraProp>>>()?;
-                        let load = ResourceRequest {
-                            base: a.transport_url.to_owned(),
-                            path: ResourceRef::with_extra("catalog", &cat.type_name, &cat.id, &props)
-                        };
-                        Some(CatalogEntry {
-                            name: cat.name.as_ref().unwrap_or(&a.manifest.name).to_owned(),
-                            is_selected: load.eq_no_extra(resource_req),
-                            load
+                    .flat_map(|a| {
+                        a.manifest.catalogs.iter().filter_map(move |cat| {
+                            // Required properties are allowed, but only if there's .options
+                            // with at least one option inside (that we default to)
+                            // If there are no required properties at all, this will resolve to Some([])
+                            let props = cat
+                                .extra_iter()
+                                .filter(|e| e.is_required)
+                                .map(|e| {
+                                    e.options
+                                        .as_ref()
+                                        .and_then(|opts| opts.first())
+                                        .map(|first| (e.name.to_owned(), first.to_owned()))
+                                })
+                                .collect::<Option<Vec<ExtraProp>>>()?;
+                            let load = ResourceRequest {
+                                base: a.transport_url.to_owned(),
+                                path: ResourceRef::with_extra(
+                                    "catalog",
+                                    &cat.type_name,
+                                    &cat.id,
+                                    &props,
+                                ),
+                            };
+                            Some(CatalogEntry {
+                                name: cat.name.as_ref().unwrap_or(&a.manifest.name).to_owned(),
+                                is_selected: load.eq_no_extra(resource_req),
+                                load,
+                            })
                         })
-                    }))
+                    })
                     .collect();
                 // The alternative to the HashSet is to sort and dedup
                 // but we want to preserve the original order in which types appear in
@@ -100,7 +110,7 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for CatalogFiltered {
                     .map(|cat_entry| TypeEntry {
                         is_selected: resource_req.path.type_name == cat_entry.load.path.type_name,
                         type_name: cat_entry.load.path.type_name.to_owned(),
-                        load: cat_entry.load.to_owned()
+                        load: cat_entry.load.to_owned(),
                     })
                     .collect();
                 // Reset the model state
@@ -120,8 +130,10 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for CatalogFiltered {
                     Ok(ResourceResponse::Metas { metas }) => {
                         let skip = get_skip(&req.path);
                         self.load_prev = match skip {
-                            i if i >= PAGE_LEN && i % PAGE_LEN == 0 => Some(with_skip(req, i - PAGE_LEN)),
-                            _ => None
+                            i if i >= PAGE_LEN && i % PAGE_LEN == 0 => {
+                                Some(with_skip(req, i - PAGE_LEN))
+                            }
+                            _ => None,
                         };
                         // If we return more, we still shouldn't allow a next page
                         self.load_next = match metas.len() {
@@ -129,7 +141,7 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for CatalogFiltered {
                             _ => None,
                         };
                         Loadable::Ready(metas.iter().take(PAGE_LEN as usize).cloned().collect())
-                    },
+                    }
                     Ok(_) => Loadable::Err(UNEXPECTED_RESP_MSG.to_owned()),
                     Err(e) => Loadable::Err(e.to_string()),
                 };
@@ -141,8 +153,7 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for CatalogFiltered {
 }
 
 fn get_skip(path: &ResourceRef) -> u32 {
-    path
-        .get_extra_first_val(SKIP)
+    path.get_extra_first_val(SKIP)
         .and_then(|v| v.parse::<u32>().ok())
         .unwrap_or(0)
 }
