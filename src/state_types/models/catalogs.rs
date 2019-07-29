@@ -29,6 +29,9 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for CatalogGrouped {
 //
 // Filtered catalogs
 //
+const PAGE_LEN: usize = 100;
+const SKIP: &str = "skip";
+
 #[derive(Serialize, Clone, Debug)]
 pub struct TypeEntry {
     pub type_name: String,
@@ -52,9 +55,8 @@ pub struct CatalogFiltered {
     // see https://github.com/Stremio/stremio/issues/402
     pub content: Loadable<Vec<MetaPreview>, String>,
     // @TODO: extra (filters); there should be .extra, of all selectable extra props
-    // @TODO pagination; this can be done by incrementing skip in the ResourceRequest when requesting
-    // the next page; we will have .load_next/.load_prev (Option<ResourceRequest>) to go to next/prev
-    // page
+    pub load_next: Option<ResourceRequest>,
+    pub load_prev: Option<ResourceRequest>,
 }
 
 impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for CatalogFiltered {
@@ -65,7 +67,7 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for CatalogFiltered {
                 let addons = &ctx.content.addons;
                 // Catalogs are NOT filtered by type, cause the UI gets to decide whether to
                 // only show catalogs for the selected type, or all of them
-                self.catalogs = addons
+                let catalogs: Vec<CatalogEntry> = addons
                     .iter()
                     .flat_map(|a| a.manifest.catalogs.iter().filter_map(move |cat| {
                         // Required properties are allowed, but only if there's .options
@@ -93,8 +95,7 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for CatalogFiltered {
                     .collect();
                 // The alternative to the HashSet is to sort and dedup
                 // but we want to preserve the original order in which types appear in
-                self.types = self
-                    .catalogs
+                let types = catalogs
                     .iter()
                     .unique_by(|cat_entry| &cat_entry.load.path.type_name)
                     .map(|cat_entry| TypeEntry {
@@ -103,15 +104,29 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for CatalogFiltered {
                         load: cat_entry.load.to_owned()
                     })
                     .collect();
-                self.content = Loadable::Loading;
-                self.selected = Some(resource_req.to_owned());
+                // Reset the model state
+                // content will be Loadable::Loading
+                *self = CatalogFiltered {
+                    catalogs,
+                    types,
+                    selected: Some(resource_req.to_owned()),
+                    /*load_prev: match get_skip(resource_req.path) {
+                        0 | i if i % PAGE_LEN != 0 => None,
+                        i @ _ => Some()
+                    }*/
+                    // @TODO load_prev, if skip is a nonzero multiple of 100
+                    ..Default::default()
+                };
                 Effects::one(addon_get::<Env>(&resource_req))
             }
             Msg::Internal(AddonResponse(req, result))
                 if Some(req) == self.selected.as_ref() && self.content == Loadable::Loading =>
             {
                 self.content = match result.as_ref() {
-                    Ok(ResourceResponse::Metas { metas }) => Loadable::Ready(metas.to_owned()),
+                    Ok(ResourceResponse::Metas { metas }) => {
+                        // @TODO if we return more, we still shouldn't allow a next page
+                        Loadable::Ready(metas.iter().take(PAGE_LEN).cloned().collect())
+                    },
                     Ok(_) => Loadable::Err(UNEXPECTED_RESP_MSG.to_owned()),
                     Err(e) => Loadable::Err(e.to_string()),
                 };
@@ -120,4 +135,17 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for CatalogFiltered {
             _ => Effects::none().unchanged(),
         }
     }
+}
+
+fn get_skip(path: &ResourceRef) -> u32 {
+    path
+        .get_extra_first_val(SKIP)
+        .and_then(|v| v.parse::<u32>().ok())
+        .unwrap_or(0)
+}
+
+fn with_skip(req: &ResourceRequest, skip: u32) -> ResourceRequest {
+    let mut req = req.to_owned();
+    req.path.set_extra_unique(SKIP, skip.to_string());
+    req
 }

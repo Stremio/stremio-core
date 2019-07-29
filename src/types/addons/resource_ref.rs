@@ -40,6 +40,15 @@ impl ResourceRef {
             .find(|(k, _)| k == key)
             .map(|(_, v)| v as &str)
     }
+    pub fn set_extra_unique(&mut self, key: &str, val: String) {
+        let entry = self.extra
+            .iter_mut()
+            .find(|(k, _)| k == key);
+        match entry {
+            Some(entry) => entry.1 = val,
+            None => self.extra.push((key.to_owned(), val))
+        }
+    }
     // Compare, but without considering extra
     pub fn eq_no_extra(&self, other: &ResourceRef) -> bool {
         self.resource == other.resource && self.type_name == other.type_name && self.id == other.id
