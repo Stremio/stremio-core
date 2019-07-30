@@ -46,24 +46,24 @@ pub struct CatalogEntry {
     pub load: ResourceRequest,
 }
 
-//#[derive(Serialize, Clone, Debug)]
-//pub struct SelectableExtra {
-//    pub name: String,
-//    pub selected: String,
-//}
-
 #[derive(Debug, Default, Clone, Serialize)]
 pub struct CatalogFiltered {
     pub types: Vec<TypeEntry>,
     pub catalogs: Vec<CatalogEntry>,
-    //pub selectable_extra: Vec<SelectableExtra>,
+    // selectable_extra are the extra props the user can select from (e.g. Genre, Year)
+    // selectable_extra does not have a .load property - cause to a large extent,
+    // the UI is responsible for that logic: whether it's gonna allow selecting multiple options of
+    // one prop, and/or allow combining extra props
+    pub selectable_extra: Vec<ManifestExtraProp>,
     pub selected: Option<ResourceRequest>,
     // @TODO more sophisticated error, such as EmptyContent/UninstalledAddon/Offline
     // see https://github.com/Stremio/stremio/issues/402
     pub content: Loadable<Vec<MetaPreview>, String>,
-    // @TODO: extra (filters); there should be .extra, of all selectable extra props
+    // Pagination: loading previous/next pages
     pub load_next: Option<ResourceRequest>,
     pub load_prev: Option<ResourceRequest>,
+    // NOTE: There's no currently selected preview item, cause some UIs may not have this
+    // so, it should be implemented in the UI
 }
 
 impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for CatalogFiltered {
@@ -107,8 +107,8 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for CatalogFiltered {
                         })
                     })
                     .collect();
-                // The alternative to the HashSet is to sort and dedup
-                // but we want to preserve the original order in which types appear in
+                // We are using unique_by in order to preserve the original order
+                // in which the types appear in
                 let types = catalogs
                     .iter()
                     .unique_by(|cat_entry| &cat_entry.load.path.type_name)
@@ -118,11 +118,21 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for CatalogFiltered {
                         load: cat_entry.load.to_owned(),
                     })
                     .collect();
+                // Find the selected catalog, and get it's extra_iter
+                let selectable_extra = addons 
+                    .iter()
+                    .find(|a| a.transport_url == resource_req.base)
+                    .iter()
+                    .flat_map(|a| &a.manifest.catalogs)
+                    .find(|cat| cat.type_name == resource_req.path.type_name && cat.id == resource_req.path.id)
+                    .map(|cat| cat.extra_iter().collect::<Vec<_>>())
+                    .unwrap_or_default();
                 // Reset the model state
                 // content will be Loadable::Loading
                 *self = CatalogFiltered {
                     catalogs,
                     types,
+                    selectable_extra,
                     selected: Some(resource_req.to_owned()),
                     ..Default::default()
                 };
