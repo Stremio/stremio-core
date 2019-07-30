@@ -131,7 +131,10 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for CatalogFiltered {
                     .find(|a| a.transport_url == selected_req.base)
                     .iter()
                     .flat_map(|a| &a.manifest.catalogs)
-                    .find(|cat| cat.type_name == selected_req.path.type_name && cat.id == selected_req.path.id)
+                    .find(|cat| {
+                        cat.type_name == selected_req.path.type_name
+                            && cat.id == selected_req.path.id
+                    })
                     .map(|cat| cat.extra_iter().map(|x| x.into_owned()).collect::<Vec<_>>())
                     .unwrap_or_default();
                 // Reset the model state
