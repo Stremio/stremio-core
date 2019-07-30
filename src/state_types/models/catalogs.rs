@@ -54,6 +54,13 @@ pub struct CatalogFiltered {
     // selectable_extra does not have a .load property - cause to a large extent,
     // the UI is responsible for that logic: whether it's gonna allow selecting multiple options of
     // one prop, and/or allow combining extra props
+    // Implementation guide:
+    // * Be careful whether the property `is_required`; if it's not, you can show a "None" option
+    // * the default `.load` for the given catalog will always pass a default for a given extra
+    // prop if it `is_required`
+    // * to check if it's selected, you just need to find a corresponding key/value pair in .selected.path.extra
+    // * keep in mind, many may be selected, if you want to allow that in the UI
+    // * in this case, you must comply to options_limit
     pub selectable_extra: Vec<ManifestExtraProp>,
     pub selected: Option<ResourceRequest>,
     // @TODO more sophisticated error, such as EmptyContent/UninstalledAddon/Offline
