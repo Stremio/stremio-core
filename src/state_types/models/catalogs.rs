@@ -69,7 +69,7 @@ pub struct CatalogFiltered {
 impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for CatalogFiltered {
     fn update(&mut self, ctx: &Ctx<Env>, msg: &Msg) -> Effects {
         match msg {
-            Msg::Action(Action::Load(ActionLoad::CatalogFiltered(resource_req))) => {
+            Msg::Action(Action::Load(ActionLoad::CatalogFiltered(selected_req))) => {
                 let addons = &ctx.content.addons;
                 // Catalogs are NOT filtered by type, cause the UI gets to decide whether to
                 // only show catalogs for the selected type, or all of them
@@ -101,7 +101,7 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for CatalogFiltered {
                             };
                             Some(CatalogEntry {
                                 name: cat.name.as_ref().unwrap_or(&a.manifest.name).to_owned(),
-                                is_selected: load.eq_no_extra(resource_req),
+                                is_selected: load.eq_no_extra(selected_req),
                                 load,
                             })
                         })
@@ -113,18 +113,18 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for CatalogFiltered {
                     .iter()
                     .unique_by(|cat_entry| &cat_entry.load.path.type_name)
                     .map(|cat_entry| TypeEntry {
-                        is_selected: resource_req.path.type_name == cat_entry.load.path.type_name,
+                        is_selected: selected_req.path.type_name == cat_entry.load.path.type_name,
                         type_name: cat_entry.load.path.type_name.to_owned(),
                         load: cat_entry.load.to_owned(),
                     })
                     .collect();
                 // Find the selected catalog, and get it's extra_iter
-                let selectable_extra = addons 
+                let selectable_extra = addons
                     .iter()
-                    .find(|a| a.transport_url == resource_req.base)
+                    .find(|a| a.transport_url == selected_req.base)
                     .iter()
                     .flat_map(|a| &a.manifest.catalogs)
-                    .find(|cat| cat.type_name == resource_req.path.type_name && cat.id == resource_req.path.id)
+                    .find(|cat| cat.type_name == selected_req.path.type_name && cat.id == selected_req.path.id)
                     .map(|cat| cat.extra_iter().map(|x| x.into_owned()).collect::<Vec<_>>())
                     .unwrap_or_default();
                 // Reset the model state
@@ -133,10 +133,10 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for CatalogFiltered {
                     catalogs,
                     types,
                     selectable_extra,
-                    selected: Some(resource_req.to_owned()),
+                    selected: Some(selected_req.to_owned()),
                     ..Default::default()
                 };
-                Effects::one(addon_get::<Env>(&resource_req))
+                Effects::one(addon_get::<Env>(&selected_req))
             }
             Msg::Internal(AddonResponse(req, result))
                 if Some(req) == self.selected.as_ref() && self.content == Loadable::Loading =>
