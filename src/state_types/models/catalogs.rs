@@ -1,9 +1,7 @@
 use super::addons::*;
 use crate::state_types::msg::Internal::*;
 use crate::state_types::*;
-use crate::types::addons::{
-    AggrRequest, ExtraProp, ResourceRef, ResourceRequest, ResourceResponse,
-};
+use crate::types::addons::*;
 use crate::types::MetaPreview;
 use itertools::*;
 use serde_derive::*;
@@ -36,22 +34,29 @@ const SKIP: &str = "skip";
 
 #[derive(Serialize, Clone, Debug)]
 pub struct TypeEntry {
-    pub type_name: String,
     pub is_selected: bool,
+    pub type_name: String,
     pub load: ResourceRequest,
 }
 
 #[derive(Serialize, Clone, Debug)]
 pub struct CatalogEntry {
-    pub name: String,
     pub is_selected: bool,
+    pub name: String,
     pub load: ResourceRequest,
 }
+
+//#[derive(Serialize, Clone, Debug)]
+//pub struct SelectableExtra {
+//    pub name: String,
+//    pub selected: String,
+//}
 
 #[derive(Debug, Default, Clone, Serialize)]
 pub struct CatalogFiltered {
     pub types: Vec<TypeEntry>,
     pub catalogs: Vec<CatalogEntry>,
+    //pub selectable_extra: Vec<SelectableExtra>,
     pub selected: Option<ResourceRequest>,
     // @TODO more sophisticated error, such as EmptyContent/UninstalledAddon/Offline
     // see https://github.com/Stremio/stremio/issues/402
@@ -64,7 +69,7 @@ pub struct CatalogFiltered {
 impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for CatalogFiltered {
     fn update(&mut self, ctx: &Ctx<Env>, msg: &Msg) -> Effects {
         match msg {
-            Msg::Action(Action::Load(ActionLoad::CatalogFiltered { resource_req })) => {
+            Msg::Action(Action::Load(ActionLoad::CatalogFiltered(resource_req))) => {
                 let addons = &ctx.content.addons;
                 // Catalogs are NOT filtered by type, cause the UI gets to decide whether to
                 // only show catalogs for the selected type, or all of them
@@ -135,7 +140,8 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for CatalogFiltered {
                             }
                             _ => None,
                         };
-                        // If we return more, we still shouldn't allow a next page
+                        // If we return more, we still shouldn't allow a next page,
+                        // because we're only ever rendering PAGE_LEN at a time
                         self.load_next = match metas.len() {
                             100 => Some(with_skip(req, skip + PAGE_LEN)),
                             _ => None,

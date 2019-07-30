@@ -189,9 +189,7 @@ mod tests {
             base: "https://v3-cinemeta.strem.io/manifest.json".to_owned(),
             path: ResourceRef::without_extra("catalog", "movie", "top"),
         };
-        let action = Action::Load(ActionLoad::CatalogFiltered {
-            resource_req: req.to_owned(),
-        });
+        let action = Action::Load(ActionLoad::CatalogFiltered(req.to_owned()));
         run(runtime.dispatch(&action.into()));
         // Clone the state so that we don't keep a lock on .app
         let state = runtime.app.read().unwrap().catalogs.to_owned();
@@ -220,9 +218,7 @@ mod tests {
             .as_ref()
             .expect("there should be a next page")
             .to_owned();
-        let action = Action::Load(ActionLoad::CatalogFiltered {
-            resource_req: load_next,
-        });
+        let action = Action::Load(ActionLoad::CatalogFiltered(load_next));
         run(runtime.dispatch(&action.into()));
         let state = &runtime.app.read().unwrap().catalogs;
         assert!(state.types[0].is_selected, "first type is selected");
