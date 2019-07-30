@@ -125,7 +125,7 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for CatalogFiltered {
                     .iter()
                     .flat_map(|a| &a.manifest.catalogs)
                     .find(|cat| cat.type_name == resource_req.path.type_name && cat.id == resource_req.path.id)
-                    .map(|cat| cat.extra_iter().collect::<Vec<_>>())
+                    .map(|cat| cat.extra_iter().map(|x| x.into_owned()).collect::<Vec<_>>())
                     .unwrap_or_default();
                 // Reset the model state
                 // content will be Loadable::Loading
@@ -152,8 +152,8 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for CatalogFiltered {
                         };
                         // If we return more, we still shouldn't allow a next page,
                         // because we're only ever rendering PAGE_LEN at a time
-                        self.load_next = match metas.len() {
-                            100 => Some(with_skip(req, skip + PAGE_LEN)),
+                        self.load_next = match metas.len() as u32 {
+                            PAGE_LEN => Some(with_skip(req, skip + PAGE_LEN)),
                             _ => None,
                         };
                         Loadable::Ready(metas.iter().take(PAGE_LEN as usize).cloned().collect())
