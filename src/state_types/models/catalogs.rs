@@ -157,21 +157,26 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for CatalogFiltered {
             Msg::Internal(AddonResponse(req, result))
                 if Some(req) == self.selected.as_ref() && self.content == Loadable::Loading =>
             {
+                let len = match result.as_ref() {
+                    Ok(ResourceResponse::Metas { metas }) => metas.len() as u32,
+                    _ => 0
+                };
+                let skip = get_skip(&req.path);
+                self.load_prev = match skip {
+                    i if i >= PAGE_LEN && i % PAGE_LEN == 0 => {
+                        Some(with_skip(req, i - PAGE_LEN))
+                    }
+                    _ => None,
+                };
+                // If we return more, we still shouldn't allow a next page,
+                // because we're only ever rendering PAGE_LEN at a time
+                self.load_next = match len {
+                    PAGE_LEN => Some(with_skip(req, skip + PAGE_LEN)),
+                    _ => None,
+                };
+
                 self.content = match result.as_ref() {
                     Ok(ResourceResponse::Metas { metas }) => {
-                        let skip = get_skip(&req.path);
-                        self.load_prev = match skip {
-                            i if i >= PAGE_LEN && i % PAGE_LEN == 0 => {
-                                Some(with_skip(req, i - PAGE_LEN))
-                            }
-                            _ => None,
-                        };
-                        // If we return more, we still shouldn't allow a next page,
-                        // because we're only ever rendering PAGE_LEN at a time
-                        self.load_next = match metas.len() as u32 {
-                            PAGE_LEN => Some(with_skip(req, skip + PAGE_LEN)),
-                            _ => None,
-                        };
                         Loadable::Ready(metas.iter().take(PAGE_LEN as usize).cloned().collect())
                     }
                     Ok(_) => Loadable::Err(UNEXPECTED_RESP_MSG.to_owned()),
