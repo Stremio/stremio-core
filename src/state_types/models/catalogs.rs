@@ -63,7 +63,8 @@ pub struct CatalogFiltered {
     // * in this case, you must comply to options_limit
     pub selectable_extra: Vec<ManifestExtraProp>,
     pub selected: Option<ResourceRequest>,
-    // @TODO more sophisticated error, such as EmptyContent/UninstalledAddon/Offline
+    // @TODO more sophisticated error, such as EmptyContent/UninstalledAddon/Offline, or
+    // UnsupportedExtra if a required extra prop is missing, or options_limit is violated
     // see https://github.com/Stremio/stremio/issues/402
     pub content: Loadable<Vec<MetaPreview>, String>,
     // Pagination: loading previous/next pages
@@ -135,7 +136,12 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for CatalogFiltered {
                         cat.type_name == selected_req.path.type_name
                             && cat.id == selected_req.path.id
                     })
-                    .map(|cat| cat.extra_iter().map(|x| x.into_owned()).collect::<Vec<_>>())
+                    .map(|cat| {
+                        cat.extra_iter()
+                            .filter(|x| x.options.as_ref().map_or(false, |o| o.first().is_some()))
+                            .map(|x| x.into_owned())
+                            .collect::<Vec<_>>()
+                    })
                     .unwrap_or_default();
                 // Reset the model state
                 // content will be Loadable::Loading
