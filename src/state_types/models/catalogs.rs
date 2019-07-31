@@ -138,7 +138,7 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for CatalogFiltered {
                     })
                     .map(|cat| {
                         cat.extra_iter()
-                            .filter(|x| x.options.as_ref().map_or(false, |o| o.first().is_some()))
+                            .filter(|x| x.options.iter().flatten().next().is_some())
                             .map(|x| x.into_owned())
                             .collect::<Vec<_>>()
                     })
