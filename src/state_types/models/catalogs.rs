@@ -76,9 +76,9 @@ pub struct CatalogFiltered {
 
 impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for CatalogFiltered {
     fn update(&mut self, ctx: &Ctx<Env>, msg: &Msg) -> Effects {
+        let addons = &ctx.content.addons;
         match msg {
             Msg::Action(Action::Load(ActionLoad::CatalogFiltered(selected_req))) => {
-                let addons = &ctx.content.addons;
                 // Catalogs are NOT filtered by type, cause the UI gets to decide whether to
                 // only show catalogs for the selected type, or all of them
                 let catalogs: Vec<CatalogEntry> = addons
@@ -127,15 +127,7 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for CatalogFiltered {
                     })
                     .collect();
                 // Find the selected catalog, and get it's extra_iter
-                let selectable_extra = addons
-                    .iter()
-                    .find(|a| a.transport_url == selected_req.base)
-                    .iter()
-                    .flat_map(|a| &a.manifest.catalogs)
-                    .find(|cat| {
-                        cat.type_name == selected_req.path.type_name
-                            && cat.id == selected_req.path.id
-                    })
+                let selectable_extra = get_catalog(addons, &selected_req)
                     .map(|cat| {
                         cat.extra_iter()
                             .filter(|x| x.options.iter().flatten().next().is_some())
@@ -157,22 +149,27 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for CatalogFiltered {
             Msg::Internal(AddonResponse(req, result))
                 if Some(req) == self.selected.as_ref() && self.content == Loadable::Loading =>
             {
+                let skippable = get_catalog(addons, &req)
+                    .map(|cat| cat.extra_iter().find(|e| e.name == SKIP).is_some())
+                    .unwrap_or(false);
                 let len = match result.as_ref() {
                     Ok(ResourceResponse::Metas { metas }) => metas.len() as u32,
                     _ => 0
                 };
                 let skip = get_skip(&req.path);
-                self.load_prev = match skip {
-                    i if i >= PAGE_LEN && i % PAGE_LEN == 0 => {
-                        Some(with_skip(req, i - PAGE_LEN))
-                    }
-                    _ => None,
+
+                // Set .load_prev/load_next, which are direct references to the prev/next page
+                self.load_prev = if skippable && skip >= PAGE_LEN && skip % PAGE_LEN == 0 {
+                    Some(with_skip(req, skip - PAGE_LEN))
+                } else {
+                    None
                 };
                 // If we return more, we still shouldn't allow a next page,
                 // because we're only ever rendering PAGE_LEN at a time
-                self.load_next = match len {
-                    PAGE_LEN => Some(with_skip(req, skip + PAGE_LEN)),
-                    _ => None,
+                self.load_next = if skippable && len == PAGE_LEN {
+                    Some(with_skip(req, skip + PAGE_LEN))
+                } else {
+                    None
                 };
 
                 self.content = match result.as_ref() {
@@ -187,6 +184,18 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for CatalogFiltered {
             _ => Effects::none().unchanged(),
         }
     }
+}
+
+fn get_catalog<'a>(addons: &'a [Descriptor], req: &ResourceRequest) -> Option<&'a ManifestCatalog> {
+    addons
+        .iter()
+        .find(|a| a.transport_url == req.base)
+        .iter()
+        .flat_map(|a| &a.manifest.catalogs)
+        .find(|cat| {
+            cat.type_name == req.path.type_name
+                && cat.id == req.path.id
+        })
 }
 
 fn get_skip(path: &ResourceRef) -> u32 {
