@@ -154,7 +154,7 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for CatalogFiltered {
                     .unwrap_or(false);
                 let len = match result.as_ref() {
                     Ok(ResourceResponse::Metas { metas }) => metas.len() as u32,
-                    _ => 0
+                    _ => 0,
                 };
                 let skip = get_skip(&req.path);
 
@@ -192,15 +192,12 @@ fn get_catalog<'a>(addons: &'a [Descriptor], req: &ResourceRequest) -> Option<&'
         .find(|a| a.transport_url == req.base)
         .iter()
         .flat_map(|a| &a.manifest.catalogs)
-        .find(|cat| {
-            cat.type_name == req.path.type_name
-                && cat.id == req.path.id
-        })
+        .find(|cat| cat.type_name == req.path.type_name && cat.id == req.path.id)
 }
 
 fn get_skip(path: &ResourceRef) -> u32 {
     path.get_extra_first_val(SKIP)
-        .and_then(|v| v.parse::<u32>().ok())
+        .and_then(|v| v.parse().ok())
         .unwrap_or(0)
 }
 
