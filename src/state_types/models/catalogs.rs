@@ -150,7 +150,7 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for CatalogFiltered {
                 if Some(req) == self.selected.as_ref() && self.content == Loadable::Loading =>
             {
                 let skippable = get_catalog(addons, &req)
-                    .map(|cat| cat.extra_iter().find(|e| e.name == SKIP).is_some())
+                    .map(|cat| cat.extra_iter().any(|e| e.name == SKIP))
                     .unwrap_or(false);
                 let len = match result.as_ref() {
                     Ok(ResourceResponse::Metas { metas }) => metas.len() as u32,
