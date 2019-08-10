@@ -189,19 +189,72 @@ mod tests {
             base: "https://v3-cinemeta.strem.io/manifest.json".to_owned(),
             path: ResourceRef::without_extra("catalog", "movie", "top"),
         };
-        let action = Action::Load(ActionLoad::CatalogFiltered {
-            resource_req: req.to_owned(),
-        });
+        let action = Action::Load(ActionLoad::CatalogFiltered(req.to_owned()));
         run(runtime.dispatch(&action.into()));
-        let state = &runtime.app.read().unwrap().catalogs;
+        // Clone the state so that we don't keep a lock on .app
+        let state = runtime.app.read().unwrap().catalogs.to_owned();
+        assert!(state.types[0].is_selected, "first type is selected");
+        assert!(state.catalogs[0].is_selected, "first catalog is selected");
+        assert_eq!(
+            Some("movie"),
+            state.types.get(0).map(|x| x.type_name.as_str()),
+            "first type is movie"
+        );
+        assert_eq!(
+            Some("series"),
+            state.types.get(1).map(|x| x.type_name.as_str()),
+            "second type is series"
+        );
+        assert!(state.catalogs.len() > 3, "has catalogs");
         assert_eq!(state.selected, Some(req), "selected is right");
-        assert_eq!(state.item_pages.len(), 1, "item_pages is the right length");
-        match &state.item_pages[0] {
+        match &state.content {
             Loadable::Ready(x) => assert_eq!(x.len(), 100, "right length of items"),
             _ => panic!("item_pages[0] is not Ready"),
         }
-        //dbg!(serde_json::to_string(&state).unwrap());
+
+        // Verify that pagination works
+        let load_next = state
+            .load_next
+            .as_ref()
+            .expect("there should be a next page")
+            .to_owned();
+        let action = Action::Load(ActionLoad::CatalogFiltered(load_next));
+        run(runtime.dispatch(&action.into()));
+        let state = &runtime.app.read().unwrap().catalogs;
+        assert!(state.types[0].is_selected, "first type is selected");
+        assert!(
+            state.catalogs[0].is_selected,
+            "first catalog is still selected"
+        );
+        assert_eq!(
+            state
+                .selected
+                .as_ref()
+                .expect("there must be .selected")
+                .path
+                .get_extra_first_val("skip"),
+            Some("100")
+        );
+        assert_eq!(
+            state
+                .load_next
+                .as_ref()
+                .expect("there must be .load_next")
+                .path
+                .get_extra_first_val("skip"),
+            Some("200")
+        );
+        assert_eq!(
+            state
+                .load_prev
+                .as_ref()
+                .expect("there must be .load_prev")
+                .path
+                .get_extra_first_val("skip"),
+            Some("0")
+        );
     }
+
 
     #[test]
     fn streams() {
