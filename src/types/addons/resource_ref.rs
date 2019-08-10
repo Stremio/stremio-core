@@ -99,7 +99,7 @@ impl FromStr for ResourceRef {
                 extra: components
                     .get(3)
                     .map(|e| form_urlencoded::parse(e.as_bytes()).into_owned().collect())
-                    .unwrap_or_else(|| vec![]),
+                    .unwrap_or_default(),
             }),
             i => Err(ParseResourceErr::InvalidLength(i)),
         }
