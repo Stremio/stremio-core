@@ -145,12 +145,14 @@ mod tests {
     fn compatible_with_js() {
         let extra = &[
             ("search".into(), "the office".into()),
-            ("foo".into(), "bar".into()),
+            ("some_other".into(), "+тест & z".into()),
         ];
-        assert_eq!(
-            "/catalog/series/top/search=the+office&foo=bar.json",
-            ResourceRef::with_extra("catalog", "series", "top", extra).to_string()
-        );
+        let r = ResourceRef::with_extra("catalog", "series", "top", extra);
+        let js_str = "/catalog/series/top/search=the%20office&some_other=%2B%D1%82%D0%B5%D1%81%D1%82%20%26%20z.json";
+        // the only difference is that stremio-core uses '+' rather than '%20'
+        assert_eq!(js_str.replace("%20", "+"), r.to_string());
+        // ...which we have to handle correctly
+        assert_eq!(ResourceRef::from_str(&js_str).unwrap(), r);
     }
 
     #[test]
