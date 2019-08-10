@@ -220,7 +220,7 @@ mod tests {
             .to_owned();
         let action = Action::Load(ActionLoad::CatalogFiltered(load_next));
         run(runtime.dispatch(&action.into()));
-        let state = &runtime.app.read().unwrap().catalogs;
+        let state = &runtime.app.read().unwrap().catalogs.to_owned();
         assert!(state.types[0].is_selected, "first type is selected");
         assert!(
             state.catalogs[0].is_selected,
@@ -253,8 +253,24 @@ mod tests {
                 .get_extra_first_val("skip"),
             Some("0")
         );
-    }
 
+        //dbg!(&state);
+
+        let year_catalog = state
+            .catalogs
+            .iter()
+            .find(|c| c.name == "By year")
+            .expect("could not find year catalog");
+        let action = Action::Load(ActionLoad::CatalogFiltered(year_catalog.load.to_owned()));
+        run(runtime.dispatch(&action.into()));
+        let state = &runtime.app.read().unwrap().catalogs;
+        let selected = state.selected.as_ref().expect("should have selected");
+        assert_eq!(selected.path.get_extra_first_val("skip"), None, "first page");
+        assert_eq!(selected.path.id, "year", "year catalog is loaded");
+        // The year catalog is not seekable
+        assert_eq!(state.load_prev, None);
+        assert_eq!(state.load_next, None);
+    }
 
     #[test]
     fn streams() {
