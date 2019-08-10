@@ -126,7 +126,7 @@ mod tests {
     #[test]
     fn with_extra() {
         let extra = &[
-            ("search".into(), "тест".into()),
+            ("search".into(), "тест & z".into()),
             ("another".into(), "/something/".into()),
         ];
         let r = ResourceRef::with_extra("catalog", "movie", "top/лол.f", extra);
