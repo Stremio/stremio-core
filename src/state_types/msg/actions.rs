@@ -30,7 +30,7 @@ pub enum ActionUser {
     Login { email: String, password: String },
     Register { email: String, password: String },
     Logout,
-    PullAddons,
+    PullAndUpdateAddons,
     PushAddons,
     LibSync,
     LibUpdate(LibItem),

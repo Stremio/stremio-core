@@ -113,13 +113,13 @@ impl<Env: Environment + 'static> Update for Ctx<Env> {
                     APIRequest::Login { email, password },
                 ))
                 .unchanged(),
-                ActionUser::PullAddons => match &self.content.auth {
+                ActionUser::PullAndUpdateAddons => match &self.content.auth {
                     Some(Auth { key, .. }) => {
                         let action = action.to_owned();
                         let key = key.to_owned();
                         let req = APIRequest::AddonCollectionGet {
                             auth_key: key.to_owned(),
-                            update: false,
+                            update: true,
                         };
                         // @TODO: respect last_modified
                         let ft = api_fetch::<Env, CollectionResponse, _>(req)
