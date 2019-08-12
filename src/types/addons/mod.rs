@@ -14,7 +14,8 @@ pub type TransportUrl = String;
 pub struct Descriptor {
     pub manifest: Manifest,
     pub transport_url: TransportUrl,
-    // @TODO flags
+    #[serde(default)]
+    pub flags: serde_json::Map<String, serde_json::Value>,
 }
 
 #[derive(Debug, Deserialize, Serialize, Clone, PartialEq, Eq)]

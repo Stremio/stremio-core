@@ -133,11 +133,13 @@ impl<Env: Environment + 'static> Update for Ctx<Env> {
                             .iter()
                             .map(|addon| {
                                 match DEFAULT_ADDONS.iter().find(|x| x.manifest.id == addon.manifest.id) {
-                                    Some(newer) if newer.manifest.version > addon.manifest.version => newer,
-                                    _ => addon
+                                    Some(newer) if newer.manifest.version > addon.manifest.version => Descriptor {
+                                        flags: addon.flags.clone(),
+                                        ..newer.clone()
+                                    },
+                                    _ => addon.clone()
                                 }
                             })
-                            .cloned()
                             .collect();
                         Effects::none()
                     }
