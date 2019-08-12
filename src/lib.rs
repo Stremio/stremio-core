@@ -390,6 +390,24 @@ mod tests {
             }
         }
 
+        // Addon updating in anon mode works
+        let zero_ver = semver::Version::new(0, 0, 0);
+        {
+            let addons = &mut runtime.app.write().unwrap().ctx.content.addons;
+            addons[0].manifest.version = zero_ver.clone();
+            addons[0].flags.insert("foo".into(), "bar".into());
+            assert_eq!(&addons[0].manifest.version, &zero_ver);
+        }
+        let update_action = Action::UserOp(ActionUser::PullAndUpdateAddons);
+        run(runtime.dispatch(&update_action.into()));
+        {
+            let model = &runtime.app.read().unwrap();
+            let first_addon = &model.ctx.content.addons[0];
+            let expected_val = serde_json::Value::String("bar".into());
+            assert_ne!(&first_addon.manifest.version, &zero_ver);
+            assert_eq!(first_addon.flags.get("foo"), Some(&expected_val));
+        }
+
         // we will now add an item for the anon user
         let item = first_lib.items.values().next().unwrap().to_owned();
         run(runtime.dispatch(&Msg::Action(Action::UserOp(ActionUser::LibUpdate(item)))));
