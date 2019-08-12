@@ -265,7 +265,11 @@ mod tests {
         run(runtime.dispatch(&action.into()));
         let state = &runtime.app.read().unwrap().catalogs;
         let selected = state.selected.as_ref().expect("should have selected");
-        assert_eq!(selected.path.get_extra_first_val("skip"), None, "first page");
+        assert_eq!(
+            selected.path.get_extra_first_val("skip"),
+            None,
+            "first page"
+        );
         assert_eq!(selected.path.id, "year", "year catalog is loaded");
         // The year catalog is not seekable
         assert_eq!(state.load_prev, None);

@@ -129,15 +129,24 @@ impl<Env: Environment + 'static> Update for Ctx<Env> {
                     }
                     None => {
                         // Local update based on the DEFAULT_ADDONS
-                        self.content.addons = self.content.addons
+                        self.content.addons = self
+                            .content
+                            .addons
                             .iter()
                             .map(|addon| {
-                                match DEFAULT_ADDONS.iter().find(|x| x.manifest.id == addon.manifest.id) {
-                                    Some(newer) if newer.manifest.version > addon.manifest.version => Descriptor {
-                                        flags: addon.flags.clone(),
-                                        ..newer.clone()
-                                    },
-                                    _ => addon.clone()
+                                let newer = DEFAULT_ADDONS
+                                    .iter()
+                                    .find(|x| x.manifest.id == addon.manifest.id);
+                                match newer {
+                                    Some(newer)
+                                        if newer.manifest.version > addon.manifest.version =>
+                                    {
+                                        Descriptor {
+                                            flags: addon.flags.clone(),
+                                            ..newer.clone()
+                                        }
+                                    }
+                                    _ => addon.clone(),
                                 }
                             })
                             .collect();
