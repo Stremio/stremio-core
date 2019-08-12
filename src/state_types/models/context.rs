@@ -127,7 +127,20 @@ impl<Env: Environment + 'static> Update for Ctx<Env> {
                             .map_err(move |e| CtxActionErr(action, e).into());
                         Effects::one(Box::new(ft)).unchanged()
                     }
-                    None => Effects::none().unchanged(),
+                    None => {
+                        // Local update based on the DEFAULT_ADDONS
+                        self.content.addons = self.content.addons
+                            .iter()
+                            .map(|addon| {
+                                match DEFAULT_ADDONS.iter().find(|x| x.manifest.id == addon.manifest.id) {
+                                    Some(newer) if newer.manifest.version > addon.manifest.version => newer,
+                                    _ => addon
+                                }
+                            })
+                            .cloned()
+                            .collect();
+                        Effects::none()
+                    }
                 },
                 ActionUser::PushAddons => match &self.content.auth {
                     Some(Auth { key, .. }) => {
