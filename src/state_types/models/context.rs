@@ -129,27 +129,8 @@ impl<Env: Environment + 'static> Update for Ctx<Env> {
                     }
                     None => {
                         // Local update based on the DEFAULT_ADDONS
-                        self.content.addons = self
-                            .content
-                            .addons
-                            .iter()
-                            .map(|addon| {
-                                let newer = DEFAULT_ADDONS
-                                    .iter()
-                                    .find(|x| x.manifest.id == addon.manifest.id);
-                                match newer {
-                                    Some(newer)
-                                        if newer.manifest.version > addon.manifest.version =>
-                                    {
-                                        Descriptor {
-                                            flags: addon.flags.clone(),
-                                            ..newer.clone()
-                                        }
-                                    }
-                                    _ => addon.clone(),
-                                }
-                            })
-                            .collect();
+                        self.content.addons =
+                            addons_upgrade_local(&DEFAULT_ADDONS, &self.content.addons);
                         Effects::none()
                     }
                 },
@@ -227,4 +208,20 @@ fn authenticate<Env: Environment + 'static>(action: ActionUser, req: APIRequest)
         .map(|c| Msg::Internal(CtxUpdate(Box::new(c))))
         .map_err(move |e| Msg::Event(CtxActionErr(action, e)));
     Box::new(ft)
+}
+
+fn addons_upgrade_local(defaults: &[Descriptor], addons: &[Descriptor]) -> Vec<Descriptor> {
+    addons
+        .iter()
+        .map(|addon| {
+            let newer = defaults.iter().find(|x| x.manifest.id == addon.manifest.id);
+            match newer {
+                Some(newer) if newer.manifest.version > addon.manifest.version => Descriptor {
+                    flags: addon.flags.clone(),
+                    ..newer.clone()
+                },
+                _ => addon.clone(),
+            }
+        })
+        .collect()
 }
