@@ -195,16 +195,8 @@ mod tests {
         let state = runtime.app.read().unwrap().catalogs.to_owned();
         assert!(state.types[0].is_selected, "first type is selected");
         assert!(state.catalogs[0].is_selected, "first catalog is selected");
-        assert_eq!(
-            Some("movie"),
-            state.types.get(0).map(|x| x.type_name.as_str()),
-            "first type is movie"
-        );
-        assert_eq!(
-            Some("series"),
-            state.types.get(1).map(|x| x.type_name.as_str()),
-            "second type is series"
-        );
+        assert_eq!(state.types[0].type_name, "movie", "first type is movie");
+        assert_eq!(state.types[1].type_name, "series", "second type is series");
         assert!(state.catalogs.len() > 3, "has catalogs");
         assert_eq!(state.selected, Some(req), "selected is right");
         match &state.content {
