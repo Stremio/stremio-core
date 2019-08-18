@@ -46,6 +46,13 @@ pub struct CatalogEntry {
     pub load: ResourceRequest,
 }
 
+#[derive(Serialize, Clone, Debug, PartialEq)]
+pub enum CatalogError {
+    EmptyContent,
+    UnexpectedResp,
+    Other(String),
+}
+
 #[derive(Debug, Default, Clone, Serialize)]
 pub struct CatalogFiltered {
     pub types: Vec<TypeEntry>,
@@ -63,10 +70,8 @@ pub struct CatalogFiltered {
     // * in this case, you must comply to options_limit
     pub selectable_extra: Vec<ManifestExtraProp>,
     pub selected: Option<ResourceRequest>,
-    // @TODO more sophisticated error, such as EmptyContent/UninstalledAddon/Offline, or
-    // UnsupportedExtra if a required extra prop is missing, or options_limit is violated
-    // see https://github.com/Stremio/stremio/issues/402
-    pub content: Loadable<Vec<MetaPreview>, String>,
+    // @TODO error UnsupportedExtra error if a required extra prop is missing, or options_limit is violated
+    pub content: Loadable<Vec<MetaPreview>, CatalogError>,
     // Pagination: loading previous/next pages
     pub load_next: Option<ResourceRequest>,
     pub load_prev: Option<ResourceRequest>,
@@ -173,11 +178,14 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for CatalogFiltered {
                 };
 
                 self.content = match result.as_ref() {
+                    Ok(ResourceResponse::Metas { metas }) if metas.len() == 0 => {
+                        Loadable::Err(CatalogError::EmptyContent)
+                    }
                     Ok(ResourceResponse::Metas { metas }) => {
                         Loadable::Ready(metas.iter().take(PAGE_LEN as usize).cloned().collect())
                     }
-                    Ok(_) => Loadable::Err(UNEXPECTED_RESP_MSG.to_owned()),
-                    Err(e) => Loadable::Err(e.to_string()),
+                    Ok(_) => Loadable::Err(CatalogError::UnexpectedResp),
+                    Err(e) => Loadable::Err(CatalogError::Other(e.to_string())),
                 };
                 Effects::none()
             }

@@ -1,5 +1,5 @@
 use super::AddonInterface;
-use crate::state_types::{EnvFuture, Environment, Request};
+use crate::state_types::{EnvError, EnvFuture, Environment, Request};
 use crate::types::addons::*;
 use crate::types::*;
 use futures::{future, Future};
@@ -139,10 +139,7 @@ impl<'a, T: Environment> AddonInterface for AddonLegacyTransport<'a, T> {
     }
 }
 
-fn build_legacy_req(
-    transport_url: &str,
-    path: &ResourceRef,
-) -> Result<Request<()>, Box<dyn Error>> {
+fn build_legacy_req(transport_url: &str, path: &ResourceRef) -> Result<Request<()>, EnvError> {
     // Limitations of this legacy adapter:
     // * does not support subtitles
     // * does not support searching (meta.search)
