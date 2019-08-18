@@ -70,7 +70,6 @@ pub struct CatalogFiltered {
     // * in this case, you must comply to options_limit
     pub selectable_extra: Vec<ManifestExtraProp>,
     pub selected: Option<ResourceRequest>,
-    // @TODO error UnsupportedExtra error if a required extra prop is missing, or options_limit is violated
     pub content: Loadable<Vec<MetaPreview>, CatalogError>,
     // Pagination: loading previous/next pages
     pub load_next: Option<ResourceRequest>,
