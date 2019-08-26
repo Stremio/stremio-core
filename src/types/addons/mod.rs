@@ -3,7 +3,7 @@ mod manifest;
 mod resource_ref;
 pub use self::manifest::*;
 pub use self::resource_ref::*;
-use crate::types::{MetaDetail, MetaPreview, Stream};
+use crate::types::{MetaDetail, MetaPreview, Stream, SubtitlesSource};
 mod manifest_tests;
 use derive_more::*;
 
@@ -52,7 +52,9 @@ pub enum ResourceResponse {
     Streams {
         streams: Vec<Stream>,
     },
-    // @TODO subtitles
+    Subtitles {
+        subtitles: Vec<SubtitlesSource>,
+    }
 }
 
 // This is going from the most general to the most concrete aggregation request
