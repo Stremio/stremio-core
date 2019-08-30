@@ -177,7 +177,7 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for CatalogFiltered {
                 };
 
                 self.content = match result.as_ref() {
-                    Ok(ResourceResponse::Metas { metas }) if metas.len() == 0 => {
+                    Ok(ResourceResponse::Metas { metas }) if metas.is_empty() => {
                         Loadable::Err(CatalogError::EmptyContent)
                     }
                     Ok(ResourceResponse::Metas { metas }) => {
