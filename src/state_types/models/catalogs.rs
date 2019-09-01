@@ -150,13 +150,13 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for CatalogFiltered {
                 };
                 Effects::one(addon_get::<Env>(&selected_req))
             }
-            Msg::Internal(AddonResponse(req, result))
+            Msg::Internal(AddonResponse(req, resp))
                 if Some(req) == self.selected.as_ref() && self.content == Loadable::Loading =>
             {
                 let skippable = get_catalog(addons, &req)
                     .map(|cat| cat.extra_iter().any(|e| e.name == SKIP))
                     .unwrap_or(false);
-                let len = match result.as_ref() {
+                let len = match resp.as_ref() {
                     Ok(ResourceResponse::Metas { metas }) => metas.len() as u32,
                     _ => 0,
                 };
@@ -176,7 +176,7 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for CatalogFiltered {
                     None
                 };
 
-                self.content = match result.as_ref() {
+                self.content = match resp.as_ref() {
                     Ok(ResourceResponse::Metas { metas }) if metas.is_empty() => {
                         Loadable::Err(CatalogError::EmptyContent)
                     }
