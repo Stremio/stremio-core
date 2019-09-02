@@ -6,6 +6,7 @@ use crate::types::MetaPreview;
 use itertools::*;
 use serde_derive::*;
 use std::convert::TryFrom;
+use derivative::*;
 
 #[derive(Debug, Clone, Default, Serialize)]
 pub struct CatalogGrouped {
@@ -54,7 +55,8 @@ pub enum CatalogError {
     Other(String),
 }
 
-#[derive(Debug, Default, Clone, Serialize)]
+#[derive(Debug, Clone, Serialize, Derivative)]
+#[derivative(Default(bound=""))]
 pub struct CatalogFiltered<T> {
     pub types: Vec<TypeEntry>,
     pub catalogs: Vec<CatalogEntry>,
@@ -82,7 +84,7 @@ pub struct CatalogFiltered<T> {
 impl<Env, T> UpdateWithCtx<Ctx<Env>> for CatalogFiltered<T>
 where
     Env: Environment + 'static,
-    T: Default + Eq,
+    T: PartialEq,
     Vec<T>: TryFrom<ResourceResponse>,
 {
     fn update(&mut self, ctx: &Ctx<Env>, msg: &Msg) -> Effects {

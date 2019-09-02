@@ -202,7 +202,7 @@ mod tests {
         assert_eq!(state.selected, Some(req), "selected is right");
         match &state.content {
             Loadable::Ready(x) => assert_eq!(x.len(), 100, "right length of items"),
-            _ => panic!("item_pages[0] is not Ready"),
+            x => panic!("item_pages[0] is not Ready, but instead: {:?}", x),
         }
 
         // Verify that pagination works
@@ -361,7 +361,7 @@ mod tests {
             assert_eq!(model.notifs.groups.len(), 1);
             let meta_items = match &model.notifs.groups[0].content {
                 Loadable::Ready(x) => x,
-                _ => panic!("notifs group not ready"),
+                x => panic!("notifs group not ready, but instead: {:?}", x),
             };
             assert!(meta_items.len() > 1, "should have loaded multiple items");
             // No notifications, cause neither LibItem has .last_vid_released set
