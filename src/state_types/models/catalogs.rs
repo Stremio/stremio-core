@@ -55,14 +55,14 @@ pub enum CatalogError {
 }
 
 #[derive(Debug, Default, Clone, Serialize)]
-pub struct CatalogFiltered {
+pub struct CatalogFiltered<T> {
     pub types: Vec<TypeEntry>,
     pub catalogs: Vec<CatalogEntry>,
     // selectable_extra are the extra props the user can select from (e.g. Genre, Year)
     // selectable_extra does not have a .load property - cause to a large extent,
     // the UI is responsible for that logic: whether it's gonna allow selecting multiple options of
     // one prop, and/or allow combining extra props
-    // Implementation guide:
+    // Usage (UI) guide:
     // * Be careful whether the property `is_required`; if it's not, you can show a "None" option
     // * the default `.load` for the given catalog will always pass a default for a given extra
     // prop if it `is_required`
@@ -71,7 +71,7 @@ pub struct CatalogFiltered {
     // * in this case, you must comply to options_limit
     pub selectable_extra: Vec<ManifestExtraProp>,
     pub selected: Option<ResourceRequest>,
-    pub content: Loadable<Vec<MetaPreview>, CatalogError>,
+    pub content: Loadable<Vec<T>, CatalogError>,
     // Pagination: loading previous/next pages
     pub load_next: Option<ResourceRequest>,
     pub load_prev: Option<ResourceRequest>,
@@ -79,7 +79,11 @@ pub struct CatalogFiltered {
     // so, it should be implemented in the UI
 }
 
-impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for CatalogFiltered {
+impl<Env: Environment + 'static, T> UpdateWithCtx<Ctx<Env>> for CatalogFiltered<T>
+where
+    T: Default + Eq,
+    Vec<T>: TryFrom<ResourceResponse>,
+{
     fn update(&mut self, ctx: &Ctx<Env>, msg: &Msg) -> Effects {
         let addons = &ctx.content.addons;
         match msg {
@@ -184,7 +188,7 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for CatalogFiltered {
                 };
 
                 self.content = match resp.as_ref() {
-                    Ok(resp) => match <Vec<MetaPreview>>::try_from(resp.to_owned()) {
+                    Ok(resp) => match <Vec<T>>::try_from(resp.to_owned()) {
                         Ok(ref x) if x.is_empty() => Loadable::Err(CatalogError::EmptyContent),
                         Ok(x) => Loadable::Ready(x.into_iter().take(PAGE_LEN as usize).collect()),
                         Err(_) => Loadable::Err(CatalogError::UnexpectedResp),

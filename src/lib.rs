@@ -7,6 +7,7 @@ mod tests {
     use crate::addon_transport::*;
     use crate::state_types::*;
     use crate::types::addons::{Descriptor, ResourceRef, ResourceRequest, ResourceResponse};
+    use crate::types::MetaPreview;
     use futures::future::lazy;
     use futures::{future, Future};
     use serde::de::DeserializeOwned;
@@ -179,7 +180,7 @@ mod tests {
         #[derive(Model, Debug, Default)]
         struct Model {
             ctx: Ctx<Env>,
-            catalogs: CatalogFiltered,
+            catalogs: CatalogFiltered<MetaPreview>,
         }
 
         let app = Model::default();
