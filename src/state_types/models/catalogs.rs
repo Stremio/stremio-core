@@ -79,8 +79,9 @@ pub struct CatalogFiltered<T> {
     // so, it should be implemented in the UI
 }
 
-impl<Env: Environment + 'static, T> UpdateWithCtx<Ctx<Env>> for CatalogFiltered<T>
+impl<Env, T> UpdateWithCtx<Ctx<Env>> for CatalogFiltered<T>
 where
+    Env: Environment + 'static,
     T: Default + Eq,
     Vec<T>: TryFrom<ResourceResponse>,
 {
