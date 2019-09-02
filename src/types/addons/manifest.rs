@@ -72,6 +72,8 @@ impl Default for ManifestExtra {
 #[derive(Debug, PartialEq, Clone, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ManifestCatalog {
+    // #[serde(rename = "resource", default = "String::new("catalog")")]
+    // pub resource_name: String,
     #[serde(rename = "type")]
     pub type_name: String,
     pub id: String,

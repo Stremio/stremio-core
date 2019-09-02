@@ -99,8 +99,14 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for CatalogFiltered {
                                     e.options
                                         .as_ref()
                                         .and_then(|opts| opts.first())
+                                        // @TODO .or_else to fill from defaults that the
+                                        // CatalogFiltered was constructed with
+                                        // although it won't work here, cause we need to filter
+                                        // such that every catalog has the prop
                                         .map(|first| (e.name.to_owned(), first.to_owned()))
                                 })
+                                // .collect will return None if at least one of the items in the
+                                // iterator is None
                                 .collect::<Option<Vec<ExtraProp>>>()?;
                             let load = ResourceRequest {
                                 base: a.transport_url.to_owned(),

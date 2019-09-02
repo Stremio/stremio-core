@@ -54,6 +54,9 @@ pub enum ResourceResponse {
     },
     Subtitles {
         subtitles: Vec<SubtitlesSource>,
+    },
+    Addons {
+        addons: Vec<Descriptor>
     }
 }
 
