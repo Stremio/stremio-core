@@ -21,6 +21,7 @@ impl<R, E> Default for Loadable<R, E> {
 #[derive(Debug, Serialize, Clone)]
 pub struct ItemsGroup<T> {
     req: ResourceRequest,
+    // @TODO: Use the CatalogError type
     pub content: Loadable<T, String>,
 }
 impl<T> Group for ItemsGroup<T>

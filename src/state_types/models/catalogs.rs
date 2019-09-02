@@ -5,6 +5,7 @@ use crate::types::addons::*;
 use crate::types::MetaPreview;
 use itertools::*;
 use serde_derive::*;
+use std::convert::TryFrom;
 
 #[derive(Debug, Clone, Default, Serialize)]
 pub struct CatalogGrouped {
@@ -156,6 +157,12 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for CatalogFiltered {
                 };
                 Effects::one(addon_get::<Env>(&selected_req))
             }
+            // can't use items_group here
+            // cause we 1) do other things (load_prev/load_next) after we've matched .selected
+            // (could be mitigated)
+            // 2) keep .selected in the model, not in the group (could just be moved tho)
+            // 3) hardest one to mitigate is that we .iter().take(PAGE_LEN as usize) ...
+            //   if we decide we don't need that, then we can reuse
             Msg::Internal(AddonResponse(req, resp))
                 if Some(req) == self.selected.as_ref() && self.content == Loadable::Loading =>
             {
@@ -183,13 +190,11 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for CatalogFiltered {
                 };
 
                 self.content = match resp.as_ref() {
-                    Ok(ResourceResponse::Metas { metas }) if metas.is_empty() => {
-                        Loadable::Err(CatalogError::EmptyContent)
-                    }
-                    Ok(ResourceResponse::Metas { metas }) => {
-                        Loadable::Ready(metas.iter().take(PAGE_LEN as usize).cloned().collect())
-                    }
-                    Ok(_) => Loadable::Err(CatalogError::UnexpectedResp),
+                    Ok(resp) => match <Vec<MetaPreview>>::try_from(resp.to_owned()) {
+                        Ok(ref x) if x.is_empty() => Loadable::Err(CatalogError::EmptyContent),
+                        Ok(x) => Loadable::Ready(x.into_iter().take(PAGE_LEN as usize).collect()),
+                        Err(_) => Loadable::Err(CatalogError::UnexpectedResp),
+                    },
                     Err(e) => Loadable::Err(CatalogError::Other(e.to_string())),
                 };
                 Effects::none()
