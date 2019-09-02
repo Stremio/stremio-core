@@ -20,7 +20,7 @@ mod tests {
             logo: None,
             id_prefixes,
             description: None,
-            behavior_hints: Default::default()
+            behavior_hints: Default::default(),
         }
     }
 

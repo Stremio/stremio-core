@@ -157,12 +157,6 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for CatalogFiltered {
                 };
                 Effects::one(addon_get::<Env>(&selected_req))
             }
-            // can't use items_group here
-            // cause we 1) do other things (load_prev/load_next) after we've matched .selected
-            // (could be mitigated)
-            // 2) keep .selected in the model, not in the group (could just be moved tho)
-            // 3) hardest one to mitigate is that we .iter().take(PAGE_LEN as usize) ...
-            //   if we decide we don't need that, then we can reuse
             Msg::Internal(AddonResponse(req, resp))
                 if Some(req) == self.selected.as_ref() && self.content == Loadable::Loading =>
             {

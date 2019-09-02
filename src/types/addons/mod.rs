@@ -56,8 +56,8 @@ pub enum ResourceResponse {
         subtitles: Vec<SubtitlesSource>,
     },
     Addons {
-        addons: Vec<Descriptor>
-    }
+        addons: Vec<Descriptor>,
+    },
 }
 
 // This is going from the most general to the most concrete aggregation request

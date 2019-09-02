@@ -1,8 +1,8 @@
+use super::CatalogError;
 use crate::state_types::*;
 use crate::types::addons::{Descriptor, ResourceRequest, ResourceResponse};
 use serde_derive::*;
 use std::convert::TryInto;
-use super::CatalogError;
 
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
 #[serde(tag = "type", content = "content")]
