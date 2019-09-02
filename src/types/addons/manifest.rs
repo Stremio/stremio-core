@@ -107,6 +107,18 @@ impl ManifestCatalog {
     }
 }
 
+#[derive(Debug, PartialEq, Clone, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ManifestPreview {
+    pub id: String,
+    pub version: Version,
+    pub name: String,
+    pub description: Option<String>,
+    pub logo: Option<String>,
+    pub background: Option<String>,
+    pub types: Vec<String>,
+}
+
 // The manifest itself
 // @TODO consider separating the meta in .meta (#[serde(flatten)]), in order to be able to
 // construct a manifest from meta + addon builder separately
@@ -120,8 +132,8 @@ pub struct Manifest {
     pub description: Option<String>,
     pub logo: Option<String>,
     pub background: Option<String>,
-    pub resources: Vec<ManifestResource>,
     pub types: Vec<String>,
+    pub resources: Vec<ManifestResource>,
     pub id_prefixes: Option<Vec<String>>,
     #[serde(default)]
     pub catalogs: Vec<ManifestCatalog>,
