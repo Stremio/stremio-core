@@ -3,10 +3,10 @@ use crate::state_types::msg::Internal::*;
 use crate::state_types::*;
 use crate::types::addons::*;
 use crate::types::MetaPreview;
+use derivative::*;
 use itertools::*;
 use serde_derive::*;
 use std::convert::TryFrom;
-use derivative::*;
 
 #[derive(Debug, Clone, Default, Serialize)]
 pub struct CatalogGrouped {
@@ -48,15 +48,8 @@ pub struct CatalogEntry {
     pub load: ResourceRequest,
 }
 
-#[derive(Serialize, Clone, Debug, PartialEq)]
-pub enum CatalogError {
-    EmptyContent,
-    UnexpectedResp,
-    Other(String),
-}
-
 #[derive(Debug, Clone, Serialize, Derivative)]
-#[derivative(Default(bound=""))]
+#[derivative(Default(bound = ""))]
 pub struct CatalogFiltered<T> {
     pub types: Vec<TypeEntry>,
     pub catalogs: Vec<CatalogEntry>,
