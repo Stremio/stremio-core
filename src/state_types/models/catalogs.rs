@@ -91,6 +91,7 @@ pub struct CatalogFiltered<T> {
     // Pagination: loading previous/next pages
     pub load_next: Option<ResourceRequest>,
     pub load_prev: Option<ResourceRequest>,
+    pub default_extras: Vec<ExtraProp>,
     // NOTE: There's no currently selected preview item, cause some UIs may not have this
     // so, it should be implemented in the UI
 }
@@ -110,6 +111,7 @@ where
                 let catalogs: Vec<CatalogEntry> = addons
                     .iter()
                     .flat_map(|a| {
+                        let defaults = self.default_extras.clone();
                         T::catalogs(&a.manifest).iter().filter_map(move |cat| {
                             // Required properties are allowed, but only if there's .options
                             // with at least one option inside (that we default to)
@@ -122,6 +124,9 @@ where
                                         .as_ref()
                                         .and_then(|opts| opts.first())
                                         .map(|first| (e.name.to_owned(), first.to_owned()))
+                                        .or_else(|| {
+                                            defaults.iter().find(|x| x.0 == e.name).cloned()
+                                        })
                                 })
                                 // .collect will return None if at least one of the items in the
                                 // iterator is None
