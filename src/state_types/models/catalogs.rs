@@ -72,7 +72,7 @@ pub struct CatalogFiltered<T> {
     pub load_prev: Option<ResourceRequest>,
     // If there are defaults, all of them need to be passed to and supported by all catalogs
     pub default_extras: Vec<ExtraProp>,
-    // 
+    //
     // NOTE: There's no currently selected preview item, cause some UIs may not have this
     // so, it should be implemented in the UI
 }
@@ -92,15 +92,15 @@ where
                 let catalogs: Vec<CatalogEntry> = addons
                     .iter()
                     .flat_map(|a| {
-                        let defaults = self.default_extras.clone();
-                        a.manifest.catalogs.iter().filter_map(move |cat| {
-                            // If there are defaults, all of them need to be supported
-                            if !defaults
+                        // If there are defaults, all of them need to be supported
+                        let catalogs = a.manifest.catalogs.iter().filter(|cat| {
+                            self.default_extras
                                 .iter()
-                                .all(|x| cat.extra_iter().find(|e| x.0 == e.name))
-                            {
-                                return None;
-                            }
+                                .all(|x| cat.extra_iter().any(|e| x.0 == e.name))
+                        });
+                        let defaults = self.default_extras.clone();
+
+                        catalogs.filter_map(move |cat| {
                             // Required properties are allowed, but only if there's .options
                             // with at least one option inside (that we default to)
                             // If there are no required properties at all, this will resolve to Some([])
