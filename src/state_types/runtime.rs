@@ -33,17 +33,14 @@ impl<Env: Environment + 'static, M: Update + 'static> Runtime<Env, M> {
             rx,
         )
     }
-    pub fn dispatch(&self, msg: &Msg) -> Box<dyn Future<Item = (), Error = ()>> {
+    pub fn dispatch_with<T: FnOnce(&mut M) -> Effects>(&self, with: T) -> Box<dyn Future<Item = (), Error = ()>> {
         let handle = self.clone();
-        let fx = self.app.write().expect("rwlock write failed").update(msg);
+        let fx = with(&mut *self.app.write().expect("rwlock write failed"));
         // Send events
         {
             let mut tx = self.tx.clone();
             if fx.has_changed {
                 let _ = tx.try_send(RuntimeEv::NewModel);
-            }
-            if let Msg::Event(ev) = msg {
-                let _ = tx.try_send(RuntimeEv::Event(ev.to_owned()));
             }
         }
         // Handle next effects
@@ -58,5 +55,14 @@ impl<Env: Environment + 'static, M: Update + 'static> Runtime<Env, M> {
             }))
         ));
         Box::new(futures::future::join_all(all).map(|_| ()))
+    }
+    pub fn dispatch(&self, msg: &Msg) -> Box<dyn Future<Item = (), Error = ()>> {
+        {
+            let mut tx = self.tx.clone();
+            if let Msg::Event(ev) = msg {
+                let _ = tx.try_send(RuntimeEv::Event(ev.to_owned()));
+            }
+        }
+        self.dispatch_with(|model| model.update(msg))
     }
 }
