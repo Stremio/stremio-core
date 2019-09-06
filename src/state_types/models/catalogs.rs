@@ -70,6 +70,8 @@ pub struct CatalogFiltered<T> {
     // Pagination: loading previous/next pages
     pub load_next: Option<ResourceRequest>,
     pub load_prev: Option<ResourceRequest>,
+    // If there are defaults, all of them need to be passed to and supported by all catalogs
+    pub default_extras: Vec<ExtraProp>
     // NOTE: There's no currently selected preview item, cause some UIs may not have this
     // so, it should be implemented in the UI
 }
@@ -89,7 +91,12 @@ where
                 let catalogs: Vec<CatalogEntry> = addons
                     .iter()
                     .flat_map(|a| {
+                        let defaults = self.default_extras.clone();
                         a.manifest.catalogs.iter().filter_map(move |cat| {
+                            // If there are defaults, all of them need to be supported
+                            if !defaults.iter().all(|x| cat.extra_iter().any(|e| x.0 == e.name)) {
+                                return None;
+                            }
                             // Required properties are allowed, but only if there's .options
                             // with at least one option inside (that we default to)
                             // If there are no required properties at all, this will resolve to Some([])
@@ -100,11 +107,8 @@ where
                                     e.options
                                         .as_ref()
                                         .and_then(|opts| opts.first())
-                                        // @TODO .or_else to fill from defaults that the
-                                        // CatalogFiltered was constructed with
-                                        // although it won't work here, cause we need to filter
-                                        // such that every catalog has the prop
                                         .map(|first| (e.name.to_owned(), first.to_owned()))
+                                        .or_else(|| defaults.iter().find(|x| x.0 == e.name).cloned())
                                 })
                                 // .collect will return None if at least one of the items in the
                                 // iterator is None

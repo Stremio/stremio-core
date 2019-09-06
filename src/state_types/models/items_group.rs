@@ -39,6 +39,8 @@ where
         }
     }
     fn update(&mut self, res: &Result<ResourceResponse, EnvError>) {
+        // NOTE: Not using CatalogError::EmptyContent here is intentional
+        // this is not an error for the ItemsGroup
         self.content = match res {
             Ok(resp) => match resp.to_owned().try_into() {
                 Ok(x) => Loadable::Ready(x),
