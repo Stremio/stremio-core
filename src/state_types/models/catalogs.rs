@@ -48,6 +48,27 @@ pub struct CatalogEntry {
     pub load: ResourceRequest,
 }
 
+pub trait CatalogAdapter {
+    fn resource() -> &'static str;
+    fn catalogs(m: &Manifest) -> &[ManifestCatalog];
+}
+impl CatalogAdapter for MetaPreview {
+    fn resource() -> &'static str {
+        "catalog"
+    }
+    fn catalogs(m: &Manifest) -> &[ManifestCatalog] {
+        &m.catalogs
+    }
+}
+impl CatalogAdapter for Descriptor {
+    fn resource() -> &'static str {
+        "addon_catalog"
+    }
+    fn catalogs(m: &Manifest) -> &[ManifestCatalog] {
+        &m.addon_catalogs
+    }
+}
+
 #[derive(Debug, Clone, Serialize, Derivative)]
 #[derivative(Default(bound = ""))]
 pub struct CatalogFiltered<T> {
@@ -70,9 +91,6 @@ pub struct CatalogFiltered<T> {
     // Pagination: loading previous/next pages
     pub load_next: Option<ResourceRequest>,
     pub load_prev: Option<ResourceRequest>,
-    // If there are defaults, all of them need to be passed to and supported by all catalogs
-    pub default_extras: Vec<ExtraProp>,
-    //
     // NOTE: There's no currently selected preview item, cause some UIs may not have this
     // so, it should be implemented in the UI
 }
@@ -80,7 +98,7 @@ pub struct CatalogFiltered<T> {
 impl<Env, T> UpdateWithCtx<Ctx<Env>> for CatalogFiltered<T>
 where
     Env: Environment + 'static,
-    T: PartialEq,
+    T: PartialEq + CatalogAdapter,
     Vec<T>: TryFrom<ResourceResponse>,
 {
     fn update(&mut self, ctx: &Ctx<Env>, msg: &Msg) -> Effects {
@@ -92,15 +110,7 @@ where
                 let catalogs: Vec<CatalogEntry> = addons
                     .iter()
                     .flat_map(|a| {
-                        // If there are defaults, all of them need to be supported
-                        let catalogs = a.manifest.catalogs.iter().filter(|cat| {
-                            self.default_extras
-                                .iter()
-                                .all(|x| cat.extra_iter().any(|e| x.0 == e.name))
-                        });
-                        let defaults = self.default_extras.clone();
-
-                        catalogs.filter_map(move |cat| {
+                        T::catalogs(&a.manifest).iter().filter_map(move |cat| {
                             // Required properties are allowed, but only if there's .options
                             // with at least one option inside (that we default to)
                             // If there are no required properties at all, this will resolve to Some([])
@@ -112,9 +122,6 @@ where
                                         .as_ref()
                                         .and_then(|opts| opts.first())
                                         .map(|first| (e.name.to_owned(), first.to_owned()))
-                                        .or_else(|| {
-                                            defaults.iter().find(|x| x.0 == e.name).cloned()
-                                        })
                                 })
                                 // .collect will return None if at least one of the items in the
                                 // iterator is None
@@ -122,7 +129,7 @@ where
                             let load = ResourceRequest {
                                 base: a.transport_url.to_owned(),
                                 path: ResourceRef::with_extra(
-                                    "catalog",
+                                    T::resource(),
                                     &cat.type_name,
                                     &cat.id,
                                     &props,

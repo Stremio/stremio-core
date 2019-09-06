@@ -114,6 +114,7 @@ impl From<LegacyManifest> for Manifest {
             resources,
             types: m.types,
             catalogs,
+            addon_catalogs: vec![],
             background: m.background,
             logo: m.logo,
             id_prefixes,

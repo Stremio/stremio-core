@@ -138,6 +138,8 @@ pub struct Manifest {
     #[serde(default)]
     pub catalogs: Vec<ManifestCatalog>,
     #[serde(default)]
+    pub addon_catalogs: Vec<ManifestCatalog>,
+    #[serde(default)]
     pub behavior_hints: serde_json::Map<String, serde_json::Value>,
 }
 
