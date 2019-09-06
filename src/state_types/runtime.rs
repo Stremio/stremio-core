@@ -33,7 +33,10 @@ impl<Env: Environment + 'static, M: Update + 'static> Runtime<Env, M> {
             rx,
         )
     }
-    pub fn dispatch_with<T: FnOnce(&mut M) -> Effects>(&self, with: T) -> Box<dyn Future<Item = (), Error = ()>> {
+    pub fn dispatch_with<T: FnOnce(&mut M) -> Effects>(
+        &self,
+        with: T,
+    ) -> Box<dyn Future<Item = (), Error = ()>> {
         let handle = self.clone();
         let fx = with(&mut *self.app.write().expect("rwlock write failed"));
         // Send events
