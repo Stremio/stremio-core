@@ -311,7 +311,7 @@ exports.ContainerService = ContainerService;
 
 function init(module) {
   if (typeof module === 'undefined') {
-    module = import.meta.url.replace(/\.js$/, '_bg.wasm');
+    module = "".replace(/\.js$/, '_bg.wasm');
   }
 
   var result;
