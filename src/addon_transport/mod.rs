@@ -1,7 +1,7 @@
 use crate::state_types::{EnvFuture, Environment, Request};
 use crate::types::addons::*;
-use std::marker::PhantomData;
 use futures::future::err;
+use std::marker::PhantomData;
 
 mod legacy;
 use self::legacy::AddonLegacyTransport;
@@ -34,7 +34,9 @@ impl<T: Environment> AddonInterface for AddonHTTPTransport<T> {
         }
 
         if !self.transport_url.ends_with(MANIFEST_PATH) {
-            return Box::new(err(format!("transport_url must end in {}", MANIFEST_PATH).into()));
+            return Box::new(err(
+                format!("transport_url must end in {}", MANIFEST_PATH).into()
+            ));
         }
 
         let url = self.transport_url.replace(MANIFEST_PATH, &path.to_string());

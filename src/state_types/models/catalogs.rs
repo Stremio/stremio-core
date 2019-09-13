@@ -3,8 +3,10 @@ use crate::state_types::msg::Internal::*;
 use crate::state_types::*;
 use crate::types::addons::*;
 use crate::types::MetaPreview;
+use derivative::*;
 use itertools::*;
 use serde_derive::*;
+use std::convert::TryFrom;
 
 #[derive(Debug, Clone, Default, Serialize)]
 pub struct CatalogGrouped {
@@ -46,22 +48,37 @@ pub struct CatalogEntry {
     pub load: ResourceRequest,
 }
 
-#[derive(Serialize, Clone, Debug, PartialEq)]
-pub enum CatalogError {
-    EmptyContent,
-    UnexpectedResp,
-    Other(String),
+pub trait CatalogAdapter {
+    fn resource() -> &'static str;
+    fn catalogs(m: &Manifest) -> &[ManifestCatalog];
+}
+impl CatalogAdapter for MetaPreview {
+    fn resource() -> &'static str {
+        "catalog"
+    }
+    fn catalogs(m: &Manifest) -> &[ManifestCatalog] {
+        &m.catalogs
+    }
+}
+impl CatalogAdapter for DescriptorPreview {
+    fn resource() -> &'static str {
+        "addon_catalog"
+    }
+    fn catalogs(m: &Manifest) -> &[ManifestCatalog] {
+        &m.addon_catalogs
+    }
 }
 
-#[derive(Debug, Default, Clone, Serialize)]
-pub struct CatalogFiltered {
+#[derive(Debug, Clone, Serialize, Derivative)]
+#[derivative(Default(bound = ""))]
+pub struct CatalogFiltered<T> {
     pub types: Vec<TypeEntry>,
     pub catalogs: Vec<CatalogEntry>,
     // selectable_extra are the extra props the user can select from (e.g. Genre, Year)
     // selectable_extra does not have a .load property - cause to a large extent,
     // the UI is responsible for that logic: whether it's gonna allow selecting multiple options of
     // one prop, and/or allow combining extra props
-    // Implementation guide:
+    // Usage (UI) guide:
     // * Be careful whether the property `is_required`; if it's not, you can show a "None" option
     // * the default `.load` for the given catalog will always pass a default for a given extra
     // prop if it `is_required`
@@ -70,7 +87,7 @@ pub struct CatalogFiltered {
     // * in this case, you must comply to options_limit
     pub selectable_extra: Vec<ManifestExtraProp>,
     pub selected: Option<ResourceRequest>,
-    pub content: Loadable<Vec<MetaPreview>, CatalogError>,
+    pub content: Loadable<Vec<T>, CatalogError>,
     // Pagination: loading previous/next pages
     pub load_next: Option<ResourceRequest>,
     pub load_prev: Option<ResourceRequest>,
@@ -78,7 +95,12 @@ pub struct CatalogFiltered {
     // so, it should be implemented in the UI
 }
 
-impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for CatalogFiltered {
+impl<Env, T> UpdateWithCtx<Ctx<Env>> for CatalogFiltered<T>
+where
+    Env: Environment + 'static,
+    T: PartialEq + CatalogAdapter,
+    Vec<T>: TryFrom<ResourceResponse>,
+{
     fn update(&mut self, ctx: &Ctx<Env>, msg: &Msg) -> Effects {
         let addons = &ctx.content.addons;
         match msg {
@@ -88,7 +110,7 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for CatalogFiltered {
                 let catalogs: Vec<CatalogEntry> = addons
                     .iter()
                     .flat_map(|a| {
-                        a.manifest.catalogs.iter().filter_map(move |cat| {
+                        T::catalogs(&a.manifest).iter().filter_map(move |cat| {
                             // Required properties are allowed, but only if there's .options
                             // with at least one option inside (that we default to)
                             // If there are no required properties at all, this will resolve to Some([])
@@ -101,11 +123,13 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for CatalogFiltered {
                                         .and_then(|opts| opts.first())
                                         .map(|first| (e.name.to_owned(), first.to_owned()))
                                 })
+                                // .collect will return None if at least one of the items in the
+                                // iterator is None
                                 .collect::<Option<Vec<ExtraProp>>>()?;
                             let load = ResourceRequest {
                                 base: a.transport_url.to_owned(),
                                 path: ResourceRef::with_extra(
-                                    "catalog",
+                                    T::resource(),
                                     &cat.type_name,
                                     &cat.id,
                                     &props,
@@ -177,13 +201,11 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for CatalogFiltered {
                 };
 
                 self.content = match resp.as_ref() {
-                    Ok(ResourceResponse::Metas { metas }) if metas.is_empty() => {
-                        Loadable::Err(CatalogError::EmptyContent)
-                    }
-                    Ok(ResourceResponse::Metas { metas }) => {
-                        Loadable::Ready(metas.iter().take(PAGE_LEN as usize).cloned().collect())
-                    }
-                    Ok(_) => Loadable::Err(CatalogError::UnexpectedResp),
+                    Ok(resp) => match <Vec<T>>::try_from(resp.to_owned()) {
+                        Ok(ref x) if x.is_empty() => Loadable::Err(CatalogError::EmptyContent),
+                        Ok(x) => Loadable::Ready(x.into_iter().take(PAGE_LEN as usize).collect()),
+                        Err(_) => Loadable::Err(CatalogError::UnexpectedResp),
+                    },
                     Err(e) => Loadable::Err(CatalogError::Other(e.to_string())),
                 };
                 Effects::none()

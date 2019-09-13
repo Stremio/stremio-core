@@ -114,11 +114,15 @@ impl From<LegacyManifest> for Manifest {
             resources,
             types: m.types,
             catalogs,
+            addon_catalogs: vec![],
             background: m.background,
             logo: m.logo,
             id_prefixes,
             description: m.description,
             contact_email: m.contact_email,
+            // The JS implementation infers `adult`, but it's such a rare case, it's not worth it:
+            // https://github.com/Stremio/stremio-addon-client/blob/4f4dbbf55498d7fdc6bd41bf49cb2f05915b3f8e/lib/transports/legacy/mapper.js#L70
+            behavior_hints: Default::default(),
         }
     }
 }

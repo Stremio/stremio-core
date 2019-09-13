@@ -3,7 +3,12 @@ use crate::types::addons::{Descriptor, ResourceRequest, ResourceResponse};
 use serde_derive::*;
 use std::convert::TryInto;
 
-pub const UNEXPECTED_RESP_MSG: &str = "unexpected ResourceResponse";
+#[derive(Serialize, Clone, Debug, PartialEq)]
+pub enum CatalogError {
+    EmptyContent,
+    UnexpectedResp,
+    Other(String),
+}
 
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
 #[serde(tag = "type", content = "content")]
@@ -21,7 +26,7 @@ impl<R, E> Default for Loadable<R, E> {
 #[derive(Debug, Serialize, Clone)]
 pub struct ItemsGroup<T> {
     req: ResourceRequest,
-    pub content: Loadable<T, String>,
+    pub content: Loadable<T, CatalogError>,
 }
 impl<T> Group for ItemsGroup<T>
 where
@@ -34,12 +39,14 @@ where
         }
     }
     fn update(&mut self, res: &Result<ResourceResponse, EnvError>) {
+        // NOTE: Not using CatalogError::EmptyContent here is intentional
+        // this is not an error for the ItemsGroup
         self.content = match res {
             Ok(resp) => match resp.to_owned().try_into() {
                 Ok(x) => Loadable::Ready(x),
-                Err(_) => Loadable::Err(UNEXPECTED_RESP_MSG.to_string()),
+                Err(_) => Loadable::Err(CatalogError::UnexpectedResp),
             },
-            Err(e) => Loadable::Err(e.to_string()),
+            Err(e) => Loadable::Err(CatalogError::Other(e.to_string())),
         };
     }
     fn addon_req(&self) -> &ResourceRequest {
