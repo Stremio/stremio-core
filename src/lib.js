@@ -3,27 +3,27 @@ import compileStateContainer, { ContainerService } from './stremio_core_web.js';
 export function load() {
     return compileStateContainer('stremio_core_web.wasm')
         .then(() => {
-            const events = {};
-            const containerService = new ContainerService(({ action, args }) => {
-                if (Array.isArray(events[action])) {
-                    events[action].forEach((listener) => {
-                        listener(args);
+            const listeners = {};
+            const containerService = new ContainerService((event) => {
+                if (Array.isArray(listeners[event.name])) {
+                    listeners[event.name].forEach((listener) => {
+                        listener(event.args);
                     });
                 }
             });
 
             window.stateContainer = Object.freeze({
                 on: function(eventName, listener) {
-                    events[eventName] = events[eventName] || [];
-                    if (events[eventName].indexOf(listener) === -1) {
-                        events[eventName].push(listener);
+                    listeners[eventName] = listeners[eventName] || [];
+                    if (listeners[eventName].indexOf(listener) === -1) {
+                        listeners[eventName].push(listener);
                     }
                 },
                 off: function(eventName, listener) {
-                    if (Array.isArray(events[eventName])) {
-                        var listenerIndex = events[eventName].indexOf(listener);
+                    if (Array.isArray(listeners[eventName])) {
+                        var listenerIndex = listeners[eventName].indexOf(listener);
                         if (listenerIndex !== -1) {
-                            events[eventName].splice(listenerIndex, 1);
+                            listeners[eventName].splice(listenerIndex, 1);
                         }
                     }
                 },

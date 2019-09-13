@@ -586,7 +586,7 @@ function init(module) {
     }
   };
 
-  imports.wbg.__wbindgen_closure_wrapper2858 = function (arg0, arg1, arg2) {
+  imports.wbg.__wbindgen_closure_wrapper2862 = function (arg0, arg1, arg2) {
     var state = {
       a: arg0,
       b: arg1,
