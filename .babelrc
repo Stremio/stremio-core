@@ -1,0 +1,16 @@
+{
+    "presets": [
+        "@babel/preset-env"
+    ],
+    "plugins": [
+        [
+            "babel-plugin-bundled-import-meta",
+            {
+                "mappings": {
+                    "/home/slim/stremio/core-web/wasm_build": ""
+                },
+                "importStyle": "baseURI"
+            }
+        ]
+    ]
+}

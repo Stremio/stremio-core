@@ -13,6 +13,9 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
 
 function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterator === "symbol") { _typeof = function _typeof(obj) { return typeof obj; }; } else { _typeof = function _typeof(obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }; } return _typeof(obj); }
 
+var importMeta = {
+  url: new URL('/stremio_core_web.js', document.baseURI).href
+};
 var wasm;
 var heap = new Array(32);
 heap.fill(undefined);
@@ -311,7 +314,7 @@ exports.ContainerService = ContainerService;
 
 function init(module) {
   if (typeof module === 'undefined') {
-    module = "".replace(/\.js$/, '_bg.wasm');
+    module = importMeta.url.replace(/\.js$/, '_bg.wasm');
   }
 
   var result;
