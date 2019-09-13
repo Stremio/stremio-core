@@ -4,6 +4,7 @@ use crate::types::api::*;
 use crate::types::{LibBucket, Stream};
 use serde_derive::*;
 use std::error::Error;
+use derive_more::*;
 
 mod actions;
 pub use actions::*;
@@ -72,26 +73,11 @@ pub enum Event {
 // Final enum Msg
 // sum type of actions, internals and outputs
 //
-#[derive(Debug)]
+#[derive(Debug, From)]
 pub enum Msg {
     Action(Action),
     Internal(Internal),
     Event(Event),
-}
-impl From<Action> for Msg {
-    fn from(a: Action) -> Self {
-        Msg::Action(a)
-    }
-}
-impl From<Internal> for Msg {
-    fn from(i: Internal) -> Self {
-        Msg::Internal(i)
-    }
-}
-impl From<Event> for Msg {
-    fn from(o: Event) -> Self {
-        Msg::Event(o)
-    }
 }
 
 // @TODO separate module
