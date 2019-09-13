@@ -8,6 +8,7 @@ use std::marker::PhantomData;
 use std::sync::{Arc, RwLock};
 
 #[derive(Debug, Serialize)]
+#[serde(tag = "name", content = "args")]
 pub enum RuntimeEv {
     NewModel,
     Event(Event),
