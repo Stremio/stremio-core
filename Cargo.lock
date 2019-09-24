@@ -516,7 +516,7 @@ dependencies = [
 
 [[package]]
 name = "stremio-core-web"
-version = "0.1.0"
+version = "0.6.0"
 dependencies = [
  "env-web 0.1.0 (git+ssh://git@github.com/Stremio/stremio-core.git)",
  "futures 0.1.29 (registry+https://github.com/rust-lang/crates.io-index)",
