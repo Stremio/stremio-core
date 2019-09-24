@@ -1,7 +1,7 @@
 {
     "name": "stremio-core-web",
     "version": "0.5.0",
-    "main": "build/lib.js",
+    "main": "build/stremio_core_web.js",
     "license": "MIT",
     "scripts": {
         "build": "./build.sh"
