@@ -1,6 +1,7 @@
 use crate::types::addons::*;
 use crate::types::LibItem;
 use serde_derive::*;
+use std::collections::HashMap;
 
 //
 // Input actions: those are triggered by users
@@ -24,6 +25,13 @@ pub enum ActionAddon {
     Install(Box<Descriptor>),
 }
 
+#[derive(Debug, Deserialize, Clone)]
+#[serde(tag = "settings", content = "args")]
+pub enum ActionSettings {
+    Load,
+    Store(Box<HashMap<String, String>>),
+}
+
 #[derive(Debug, Deserialize, Serialize, Clone)]
 #[serde(tag = "userOp", content = "args")]
 pub enum ActionUser {
@@ -42,6 +50,7 @@ pub enum ActionUser {
 pub enum Action {
     LoadCtx,
     Load(ActionLoad),
+    Settings(ActionSettings),
     AddonOp(ActionAddon),
     UserOp(ActionUser),
 }

@@ -8,6 +8,7 @@ use futures::Future;
 use lazy_static::*;
 use serde_derive::*;
 use std::marker::PhantomData;
+use std::collections::HashMap;
 
 const USER_DATA_KEY: &str = "userData";
 lazy_static! {
@@ -28,12 +29,26 @@ pub struct Auth {
 pub struct CtxContent {
     pub auth: Option<Auth>,
     pub addons: Vec<Descriptor>,
+    pub settings: HashMap<String, String>,
 }
 impl Default for CtxContent {
     fn default() -> Self {
+            let settings = HashMap::new();
+            // settings.insert("language".to_string(), "bul".to_string());
+            // settings.insert("subtitles_language".to_string(), "bul".to_string());
+            // settings.insert("subtitles_background".to_string(), "".to_string());
+            // settings.insert("subtitles_color".to_string(), "#fff".to_string());
+            // settings.insert("subtitles_outline_color".to_string(), "#000".to_string());
+            // settings.insert("autoplay_next_vid".to_string(), "true".to_string());
+            // settings.insert("server_url".to_string(), "http://127.0.0.1:11470/".to_string());
+            // settings.insert("use_external_player".to_string(), "".to_string());
+            // // settings.insert("player_esc_exits_fullscreen".to_string(), "".to_string());
+            // settings.insert("pause_on_lost_focus".to_string(), "".to_string());
+            // // settings.insert("show_vid_overview".to_string(), "".to_string());
         CtxContent {
             auth: None,
             addons: DEFAULT_ADDONS.to_owned(),
+            settings: settings,
         }
     }
 }
@@ -83,6 +98,12 @@ impl<Env: Environment + 'static> Update for Ctx<Env> {
             Msg::Action(Action::AddonOp(ActionAddon::Install(descriptor))) => {
                 // @TODO should we dedupe?
                 self.content.addons.push(*descriptor.to_owned());
+                Effects::one(save_storage::<Env>(&self.content))
+            }
+            Msg::Action(Action::Settings(ActionSettings::Store(settings))) => {
+                for (property, value) in &(*settings.to_owned()) {
+                    self.content.settings.insert(property.to_string(), value.to_string());
+                }
                 Effects::one(save_storage::<Env>(&self.content))
             }
             // User actions related to API primitives (authentication/addons)
@@ -198,10 +219,15 @@ fn authenticate<Env: Environment + 'static>(action: ActionUser, req: APIRequest)
                 auth_key: key.to_owned(),
                 update: true,
             };
+
+            // This is used only for authenticated users.
+            let settings = HashMap::new();
+
             api_fetch::<Env, CollectionResponse, _>(pull_req).map(
                 move |CollectionResponse { addons, .. }| CtxContent {
                     auth: Some(Auth { key, user }),
                     addons,
+                    settings,
                 },
             )
         })
