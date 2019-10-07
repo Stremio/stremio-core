@@ -28,7 +28,6 @@ pub enum ActionAddon {
 #[derive(Debug, Deserialize, Clone)]
 #[serde(tag = "settings", content = "args")]
 pub enum ActionSettings {
-    Load,
     Store(Box<HashMap<String, String>>),
 }
 
