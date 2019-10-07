@@ -7,8 +7,8 @@ use derivative::*;
 use futures::Future;
 use lazy_static::*;
 use serde_derive::*;
-use std::marker::PhantomData;
 use std::collections::HashMap;
+use std::marker::PhantomData;
 
 const USER_DATA_KEY: &str = "userData";
 lazy_static! {
@@ -33,20 +33,23 @@ pub struct CtxContent {
 }
 impl Default for CtxContent {
     fn default() -> Self {
-            let mut settings = HashMap::new();
-            settings.insert("language".to_string(), "eng".to_string());
-            settings.insert("subtitles_size".to_string(), "100%".to_string());
-            settings.insert("subtitles_language".to_string(), "eng".to_string());
-            settings.insert("subtitles_background".to_string(), "".to_string());
-            settings.insert("subtitles_color".to_string(), "#fff".to_string());
-            settings.insert("subtitles_outline_color".to_string(), "#000".to_string());
-            settings.insert("autoplay_next_vid".to_string(), "true".to_string());
-            settings.insert("server_url".to_string(), "http://127.0.0.1:11470/".to_string());
-            settings.insert("use_external_player".to_string(), "false".to_string());
-            // We can't override Esc in browser so this option is pointless here
-            // settings.insert("player_esc_exits_fullscreen".to_string(), "".to_string());
-            settings.insert("pause_on_lost_focus".to_string(), "false".to_string());
-            settings.insert("show_vid_overview".to_string(), "false".to_string());
+        let mut settings = HashMap::new();
+        settings.insert("language".to_string(), "eng".to_string());
+        settings.insert("subtitles_size".to_string(), "100%".to_string());
+        settings.insert("subtitles_language".to_string(), "eng".to_string());
+        settings.insert("subtitles_background".to_string(), "".to_string());
+        settings.insert("subtitles_color".to_string(), "#fff".to_string());
+        settings.insert("subtitles_outline_color".to_string(), "#000".to_string());
+        settings.insert("autoplay_next_vid".to_string(), "true".to_string());
+        settings.insert(
+            "server_url".to_string(),
+            "http://127.0.0.1:11470/".to_string(),
+        );
+        settings.insert("use_external_player".to_string(), "false".to_string());
+        // We can't override Esc in browser so this option is pointless here
+        // settings.insert("player_esc_exits_fullscreen".to_string(), "".to_string());
+        settings.insert("pause_on_lost_focus".to_string(), "false".to_string());
+        settings.insert("show_vid_overview".to_string(), "false".to_string());
         CtxContent {
             auth: None,
             addons: DEFAULT_ADDONS.to_owned(),
@@ -104,7 +107,9 @@ impl<Env: Environment + 'static> Update for Ctx<Env> {
             }
             Msg::Action(Action::Settings(ActionSettings::Store(settings))) => {
                 for (property, value) in &(*settings.to_owned()) {
-                    self.content.settings.insert(property.to_string(), value.to_string());
+                    self.content
+                        .settings
+                        .insert(property.to_string(), value.to_string());
                 }
                 Effects::one(save_storage::<Env>(&self.content))
             }
