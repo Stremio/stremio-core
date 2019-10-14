@@ -18,29 +18,6 @@ lazy_static! {
     .expect("official addons JSON parse");
 }
 
-///////////////////////////
-/// TODO Fix these
-/// and use snake_case and serde option to convert it to camelCase
-#[derive(Deserialize, Serialize, Clone, Debug)]
-pub struct SsOption {
-    pub id: String,
-    pub label: String,
-}
-
-#[derive(Deserialize, Serialize, Clone, Debug)]
-pub struct SsValues {
-        appPath: String,
-}
-
-#[derive(Deserialize, Serialize, Clone, Debug)]
-pub struct SsSettings {
-    options: Vec<SsOption>,
-    values: SsValues,
-    baseUrl: String
-}
-///////////////////////////
-
-
 // These will be stored, so they need to implement both Serialize and Deserilaize
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]
 pub struct Auth {
@@ -96,13 +73,6 @@ pub struct Ctx<Env: Environment> {
     env: PhantomData<Env>,
 }
 
-fn fetch_server_settings(local_settings: HashMap<String, String>) -> Option<Request<()>> {
-    match Request::get(local_settings.get("server_url")?).body(()) {
-        Ok(res) => Some(res),
-        Err(_) => None
-    }
-}
-
 impl<Env: Environment + 'static> Update for Ctx<Env> {
     fn update(&mut self, msg: &Msg) -> Effects {
         let fx = match msg {
@@ -116,20 +86,6 @@ impl<Env: Environment + 'static> Update for Ctx<Env> {
                     .map(|x| *x.to_owned())
                     .unwrap_or_default();
 
-                    let local_settings: HashMap<String, String> = self.content.settings.iter()
-                        .map(|opt| (opt.0.to_string(), opt.1.to_string()))
-                        .collect();
-                    match fetch_server_settings(local_settings) {
-                        Some(resp) => {
-                            self.content.settings.insert("fetched".to_string(), "yes".to_string());
-                            // Env::fetch_serde::<_, SsSettings>(resp).and_then(|settings: SsSettings| {
-                            //     self.content.settings.insert("fetched".to_string(), settings.baseUrl);
-                            // });
-                        },
-                        None => {
-                            self.content.settings.insert("fetched".to_string(), "no".to_string());
-                        }
-                    };
                 self.is_loaded = true;
                 self.library.load_from_storage::<Env>(&self.content)
             }
