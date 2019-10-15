@@ -7,7 +7,6 @@ use derivative::*;
 use futures::Future;
 use lazy_static::*;
 use serde_derive::*;
-use std::collections::HashMap;
 use std::marker::PhantomData;
 
 const USER_DATA_KEY: &str = "userData";
@@ -29,33 +28,14 @@ pub struct Auth {
 pub struct CtxContent {
     pub auth: Option<Auth>,
     pub addons: Vec<Descriptor>,
-    pub settings: HashMap<String, String>,
+    pub settings: Settings,
 }
 impl Default for CtxContent {
     fn default() -> Self {
-        let settings: HashMap<String, String> = [
-            ("language", "eng"),
-            ("subtitles_size", "100%"),
-            ("subtitles_language", "eng"),
-            ("subtitles_background", ""),
-            ("subtitles_color", "#fff"),
-            ("subtitles_outline_color", "#000"),
-            ("autoplay_next_vid", "true"),
-            ("server_url", "http://127.0.0.1:11470/"),
-            ("use_external_player", "false"),
-            // We can't override Esc in browser so this option is pointless here
-            // ("player_esc_exits_fullscreen", "false"),
-            ("pause_on_lost_focus", "false"),
-            ("show_vid_overview", "false"),
-        ]
-        .iter()
-        .map(|&opt| (opt.0.to_string(), opt.1.to_string()))
-        .collect();
-
         CtxContent {
             auth: None,
             addons: DEFAULT_ADDONS.to_owned(),
-            settings: settings,
+            settings: Settings::default(),
         }
     }
 }
@@ -81,10 +61,7 @@ impl<Env: Environment + 'static> Update for Ctx<Env> {
                 Effects::one(load_storage::<Env>()).unchanged()
             }
             Msg::Internal(CtxLoaded(opt_content)) => {
-                self.content = opt_content
-                    .as_ref()
-                    .map(|x| *x.to_owned())
-                    .unwrap_or_default();
+                self.content = *opt_content.to_owned().unwrap_or_default();
 
                 self.is_loaded = true;
                 self.library.load_from_storage::<Env>(&self.content)
@@ -109,11 +86,7 @@ impl<Env: Environment + 'static> Update for Ctx<Env> {
                 Effects::one(save_storage::<Env>(&self.content))
             }
             Msg::Action(Action::Settings(ActionSettings::Store(settings))) => {
-                for (property, value) in &(*settings.to_owned()) {
-                    self.content
-                        .settings
-                        .insert(property.to_string(), value.to_string());
-                }
+                self.content.settings = *settings.to_owned();
                 Effects::one(save_storage::<Env>(&self.content))
             }
             // User actions related to API primitives (authentication/addons)
@@ -231,7 +204,7 @@ fn authenticate<Env: Environment + 'static>(action: ActionUser, req: APIRequest)
             };
 
             // This is used only for authenticated users.
-            let settings = HashMap::new();
+            let settings = Settings::default();
 
             api_fetch::<Env, CollectionResponse, _>(pull_req).map(
                 move |CollectionResponse { addons, .. }| CtxContent {

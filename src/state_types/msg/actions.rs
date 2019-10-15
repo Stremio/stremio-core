@@ -1,7 +1,7 @@
 use crate::types::addons::*;
 use crate::types::LibItem;
+use crate::state_types::{Settings, StreamingServerSettings};
 use serde_derive::*;
-use std::collections::HashMap;
 
 //
 // Input actions: those are triggered by users
@@ -28,7 +28,10 @@ pub enum ActionAddon {
 #[derive(Debug, Deserialize, Clone)]
 #[serde(tag = "settings", content = "args")]
 pub enum ActionSettings {
-    Store(Box<HashMap<String, String>>),
+    // TODO: load streaming server settings with the context
+    LoadStreamingServer,
+    StoreStreamingServer(Box<StreamingServerSettings>),
+    Store(Box<Settings>),
 }
 
 #[derive(Debug, Deserialize, Serialize, Clone)]
