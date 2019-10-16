@@ -29,7 +29,6 @@ pub enum ActionAddon {
 #[serde(tag = "settings", content = "args")]
 pub enum ActionSettings {
     // TODO: load streaming server settings with the context
-    LoadStreamingServer,
     StoreStreamingServer(Box<StreamingServerSettings>),
     Store(Box<Settings>),
 }
