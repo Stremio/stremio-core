@@ -3,7 +3,6 @@ use crate::state_types::msg::Internal::*;
 use crate::state_types::*;
 use crate::types::addons::*;
 use crate::types::MetaPreview;
-use derivative::*;
 use itertools::*;
 use serde_derive::*;
 use std::convert::TryFrom;
@@ -69,8 +68,7 @@ impl CatalogAdapter for DescriptorPreview {
     }
 }
 
-#[derive(Debug, Clone, Serialize, Derivative)]
-#[derivative(Default(bound = ""))]
+#[derive(Debug, Clone, Serialize)]
 pub struct CatalogFiltered<T> {
     pub types: Vec<TypeEntry>,
     pub catalogs: Vec<CatalogEntry>,
@@ -95,6 +93,27 @@ pub struct CatalogFiltered<T> {
     // so, it should be implemented in the UI
 }
 
+impl<T> Default for CatalogFiltered<T>
+where
+    T: PartialEq + CatalogAdapter,
+{
+    #[inline]
+    fn default() -> Self {
+        let addons = &CtxContent::default().addons;
+        let catalogs: Vec<CatalogEntry> = get_catalogs_from_addons::<T>(addons);
+        let types: Vec<TypeEntry> = get_types_from_catalogs(&catalogs);
+        CatalogFiltered {
+            types,
+            catalogs,
+            selectable_extra: vec![],
+            selected: None,
+            content: Loadable::default(),
+            load_next: None,
+            load_prev: None,
+        }
+    }
+}
+
 impl<Env, T> UpdateWithCtx<Ctx<Env>> for CatalogFiltered<T>
 where
     Env: Environment + 'static,
@@ -105,53 +124,20 @@ where
         let addons = &ctx.content.addons;
         match msg {
             Msg::Action(Action::Load(ActionLoad::CatalogFiltered(selected_req))) => {
-                // Catalogs are NOT filtered by type, cause the UI gets to decide whether to
-                // only show catalogs for the selected type, or all of them
-                let catalogs: Vec<CatalogEntry> = addons
+                let catalogs: Vec<CatalogEntry> = get_catalogs_from_addons::<T>(addons)
                     .iter()
-                    .flat_map(|a| {
-                        T::catalogs(&a.manifest).iter().filter_map(move |cat| {
-                            // Required properties are allowed, but only if there's .options
-                            // with at least one option inside (that we default to)
-                            // If there are no required properties at all, this will resolve to Some([])
-                            let props = cat
-                                .extra_iter()
-                                .filter(|e| e.is_required)
-                                .map(|e| {
-                                    e.options
-                                        .as_ref()
-                                        .and_then(|opts| opts.first())
-                                        .map(|first| (e.name.to_owned(), first.to_owned()))
-                                })
-                                // .collect will return None if at least one of the items in the
-                                // iterator is None
-                                .collect::<Option<Vec<ExtraProp>>>()?;
-                            let load = ResourceRequest {
-                                base: a.transport_url.to_owned(),
-                                path: ResourceRef::with_extra(
-                                    T::resource(),
-                                    &cat.type_name,
-                                    &cat.id,
-                                    &props,
-                                ),
-                            };
-                            Some(CatalogEntry {
-                                name: cat.name.as_ref().unwrap_or(&a.manifest.name).to_owned(),
-                                is_selected: load.eq_no_extra(selected_req),
-                                load,
-                            })
-                        })
+                    .map(|catalog_entry| CatalogEntry {
+                        name: catalog_entry.name.to_owned(),
+                        load: catalog_entry.load.to_owned(),
+                        is_selected: catalog_entry.load.eq_no_extra(selected_req),
                     })
                     .collect();
-                // We are using unique_by in order to preserve the original order
-                // in which the types appear in
-                let types = catalogs
+                let types: Vec<TypeEntry> = get_types_from_catalogs(&catalogs)
                     .iter()
-                    .unique_by(|cat_entry| &cat_entry.load.path.type_name)
-                    .map(|cat_entry| TypeEntry {
-                        is_selected: selected_req.path.type_name == cat_entry.load.path.type_name,
-                        type_name: cat_entry.load.path.type_name.to_owned(),
-                        load: cat_entry.load.to_owned(),
+                    .map(|type_entry| TypeEntry {
+                        type_name: type_entry.type_name.to_owned(),
+                        load: type_entry.load.to_owned(),
+                        is_selected: selected_req.path.type_name == type_entry.load.path.type_name,
                     })
                     .collect();
                 // Find the selected catalog, and get it's extra_iter
@@ -213,6 +199,56 @@ where
             _ => Effects::none().unchanged(),
         }
     }
+}
+
+fn get_catalogs_from_addons<'a, T: CatalogAdapter>(addons: &'a [Descriptor]) -> Vec<CatalogEntry> {
+    // Catalogs are NOT filtered by type, cause the UI gets to decide whether to
+    // only show catalogs for the selected type, or all of them
+    return addons
+        .iter()
+        .flat_map(|a| {
+            T::catalogs(&a.manifest).iter().filter_map(move |cat| {
+                // Required properties are allowed, but only if there's .options
+                // with at least one option inside (that we default to)
+                // If there are no required properties at all, this will resolve to Some([])
+                let props = cat
+                    .extra_iter()
+                    .filter(|e| e.is_required)
+                    .map(|e| {
+                        e.options
+                            .as_ref()
+                            .and_then(|opts| opts.first())
+                            .map(|first| (e.name.to_owned(), first.to_owned()))
+                    })
+                    // .collect will return None if at least one of the items in the
+                    // iterator is None
+                    .collect::<Option<Vec<ExtraProp>>>()?;
+                let load = ResourceRequest {
+                    base: a.transport_url.to_owned(),
+                    path: ResourceRef::with_extra(T::resource(), &cat.type_name, &cat.id, &props),
+                };
+                Some(CatalogEntry {
+                    name: cat.name.as_ref().unwrap_or(&a.manifest.name).to_owned(),
+                    is_selected: false,
+                    load,
+                })
+            })
+        })
+        .collect();
+}
+
+fn get_types_from_catalogs<'a>(catalogs: &'a [CatalogEntry]) -> Vec<TypeEntry> {
+    // We are using unique_by in order to preserve the original order
+    // in which the types appear in
+    return catalogs
+        .iter()
+        .unique_by(|cat_entry| &cat_entry.load.path.type_name)
+        .map(|cat_entry| TypeEntry {
+            is_selected: false,
+            type_name: cat_entry.load.path.type_name.to_owned(),
+            load: cat_entry.load.to_owned(),
+        })
+        .collect();
 }
 
 fn get_catalog<'a>(addons: &'a [Descriptor], req: &ResourceRequest) -> Option<&'a ManifestCatalog> {
