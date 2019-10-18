@@ -1,5 +1,5 @@
-use crate::state_types::msg::{Action, ActionSettings, Event};
 use crate::state_types::msg::Internal::{CtxLoaded, StreamingServerSettingsLoaded};
+use crate::state_types::msg::{Action, ActionSettings, Event};
 use crate::state_types::{Ctx, Effects, Environment, Msg, Request, UpdateWithCtx};
 use futures::future::Future;
 use serde::{Deserialize, Serialize};
@@ -13,7 +13,8 @@ pub struct SsOption {
     pub label: String,
 }
 
-#[derive(Deserialize, Serialize, Clone, Debug)]
+#[derive(Deserialize, Serialize, Clone, Debug, PartialEq)]
+#[serde(rename_all = "camelCase")]
 pub enum SsProfile {
     Default,
     Soft,
@@ -34,18 +35,44 @@ impl fmt::Display for SsProfile {
 #[derive(Deserialize, Serialize, Clone, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct SsValues {
-    pub server_version: String,
-    pub app_path: String,
-    pub cache_root: String,
-    pub cache_size: f64,
-    pub bt_max_connections: u64,
-    pub bt_handshake_timeout: u64,
-    pub bt_request_timeout: u64,
-    pub bt_download_speed_soft_limit: f64,
-    pub bt_download_speed_hard_limit: f64,
-    pub bt_min_peers_for_stable: f64,
+    #[serde(skip_serializing)]
+    pub server_version: Option<String>,
+    #[serde(skip_serializing)]
+    pub app_path: Option<String>,
+    #[serde(skip_serializing)]
+    pub cache_root: Option<String>,
+    pub cache_size: Option<f64>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub bt_max_connections: Option<u64>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub bt_handshake_timeout: Option<u64>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub bt_request_timeout: Option<u64>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub bt_download_speed_soft_limit: Option<f64>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub bt_download_speed_hard_limit: Option<f64>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub bt_min_peers_for_stable: Option<f64>,
     #[serde(default = "SsProfile::default_profile")]
     pub bt_profile: SsProfile,
+}
+impl Default for SsValues {
+    fn default() -> Self {
+        SsValues {
+            server_version: None,
+            app_path: None,
+            cache_root: None,
+            cache_size: None,
+            bt_max_connections: None,
+            bt_handshake_timeout: None,
+            bt_request_timeout: None,
+            bt_download_speed_soft_limit: None,
+            bt_download_speed_hard_limit: None,
+            bt_min_peers_for_stable: None,
+            bt_profile: SsProfile::default_profile(),
+        }
+    }
 }
 
 #[derive(Deserialize, Serialize, Clone, Debug)]
@@ -92,72 +119,112 @@ impl Default for Settings {
     }
 }
 
-fn fetch_server_settings(local_settings: &Settings) -> Option<Request<()>> {
-    let url = format!("{}{}", local_settings.server_url, "settings");
-    match Request::get(url).body(()) {
-        Ok(res) => Some(res),
-        Err(_) => None,
-    }
-}
-
 #[derive(Deserialize, Serialize, Clone, Debug, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub struct StreamingServerSettings {
     pub is_loaded: bool,
     pub cache_size: String,
-    pub profile: String,
+    pub profile: SsProfile,
 }
 
 impl Default for StreamingServerSettings {
     fn default() -> Self {
         StreamingServerSettings {
             is_loaded: false,
-            cache_size: "2000".to_string(),
-            profile: SsProfile::default_profile()
-                .to_string()
-                .to_ascii_lowercase(),
+            cache_size: "2147483648".to_string(),
+            profile: SsProfile::Default,
         }
     }
 }
 
+fn get_settings_endpoint(server_url: &String) -> String {
+    format!("{}{}", server_url, "settings")
+}
+
+#[derive(Deserialize, Serialize, Clone, Debug, PartialEq)]
+struct SsResponse {
+    success: bool,
+}
+
 impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for StreamingServerSettings {
-    fn update(&mut self, _ctx: &Ctx<Env>, msg: &Msg) -> Effects {
+    fn update(&mut self, ctx: &Ctx<Env>, msg: &Msg) -> Effects {
         // web_sys::console::log_1(&format!("Update Settings!").into());
         match msg {
             // This is triggered after loading the settings from local storage
-            Msg::Internal(CtxLoaded(opt_content)) => {
+            Msg::Internal(CtxLoaded(_))
+            | Msg::Action(Action::Settings(ActionSettings::LoadStreamingServer)) => {
                 web_sys::console::log_1(&format!("Load Ss Settings!").into());
-                match fetch_server_settings(&opt_content.to_owned().unwrap_or_default().settings) {
-                    Some(resp) => {
-                        // web_sys::console::log_1(&format!("Something").into());
-                        Effects::one(Box::new(
-                            Env::fetch_serde::<_, SsSettings>(resp)
-                                .and_then(|settings: SsSettings| {
-                                    // web_sys::console::log_1(&format!("We have settings {}", settings.base_url ).into());
-                                    Ok(Msg::Internal(StreamingServerSettingsLoaded(settings)))
-                                })
-                                .or_else(|e| {
-                                    web_sys::console::log_1(&format!("Streaming server settings error: {}", e).into());
-                                    Err(Msg::Event(Event::CtxFatal(e.into())))
-                                }),
-                        ))
-                    }
+                let url = get_settings_endpoint(&ctx.content.settings.server_url);
+                match Request::get(url).body(()).ok() {
+                    Some(resp) => Effects::one(Box::new(
+                        Env::fetch_serde::<_, SsSettings>(resp)
+                            .and_then(|settings: SsSettings| {
+                                Ok(Msg::Internal(StreamingServerSettingsLoaded(settings)))
+                            })
+                            .or_else(|e| {
+                                web_sys::console::log_1(
+                                    &format!("Streaming server settings error: {}", e).into(),
+                                );
+                                Err(Msg::Event(Event::CtxFatal(e.into())))
+                            }),
+                    )),
                     None => {
-                        // web_sys::console::log_1(&format!("Nothing").into());
                         self.is_loaded = true;
                         Effects::none()
                     }
                 }
             }
             Msg::Internal(StreamingServerSettingsLoaded(settings)) => {
-                self.cache_size = settings.values.cache_size.to_string();
+                let settings = settings.to_owned();
+                self.cache_size = match settings.values.cache_size {
+                    Some(size) => size.to_string(),
+                    None => "Infinity".to_string(),
+                };
+                self.profile = settings.to_owned().values.bt_profile;
                 self.is_loaded = true;
                 // Perhaps dispatch custom event for streaming_server_settings_loaded
                 Effects::none()
             }
             Msg::Action(Action::Settings(ActionSettings::StoreStreamingServer(settings))) => {
-                web_sys::console::log_1(&format!("We have new settings {}", settings.cache_size ).into());
-                Effects::none()
+                // The format for the streaming server settings is basically SsValues,
+                // where the omitted values stay unchanged
+                let url = get_settings_endpoint(&ctx.content.settings.server_url);
+                let settings = settings.to_owned();
+
+                // TODO: set all bt_fields according to the selected profile
+                let values = SsValues {
+                    cache_size: settings.cache_size.parse::<f64>().ok(),
+                    bt_profile: settings.profile,
+                    ..Default::default()
+                };
+                match Request::post(url)
+                    .header("content-type", "application/json")
+                    .body(values)
+                    .ok()
+                {
+                    Some(resp) => Effects::one(Box::new(
+                        Env::fetch_serde::<_, SsResponse>(resp)
+                            .and_then(|s_resp: SsResponse| {
+                                web_sys::console::log_1(
+                                    &format!(
+                                        "Streaming server settings stored: {}",
+                                        s_resp.success
+                                    )
+                                    .into(),
+                                );
+                                Ok(Msg::Action(Action::Settings(
+                                    ActionSettings::LoadStreamingServer,
+                                )))
+                            })
+                            .or_else(|e| {
+                                web_sys::console::log_1(
+                                    &format!("Streaming server settings error: {}", e).into(),
+                                );
+                                Err(Msg::Event(Event::CtxFatal(e.into())))
+                            }),
+                    )),
+                    None => Effects::none().unchanged(),
+                }
             }
             _ => Effects::none().unchanged(),
         }
