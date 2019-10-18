@@ -136,7 +136,7 @@ where
                                 ),
                             };
                             Some(CatalogEntry {
-                                name: cat.name.as_ref().unwrap_or(&a.manifest.name).to_owned(),
+                                name: cat.name.as_ref().unwrap_or(&cat.id).to_owned(),
                                 is_selected: load.eq_no_extra(selected_req),
                                 load,
                             })
