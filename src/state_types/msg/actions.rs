@@ -28,7 +28,8 @@ pub enum ActionAddon {
 #[derive(Debug, Deserialize, Clone)]
 #[serde(tag = "settings", content = "args")]
 pub enum ActionSettings {
-    // TODO: load streaming server settings with the context
+    // Although we load the streaming server settings together with the context
+    // there is also a way to reload it separately in cases this is necessary.
     LoadStreamingServer,
     StoreStreamingServer(Box<StreamingServerSettings>),
     Store(Box<Settings>),
