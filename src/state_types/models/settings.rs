@@ -2,7 +2,9 @@ use crate::state_types::msg::Internal::{CtxLoaded, StreamingServerSettingsLoaded
 use crate::state_types::msg::{Action, ActionSettings, Event};
 use crate::state_types::{Ctx, Effects, Environment, Msg, Request, UpdateWithCtx};
 use futures::future::Future;
+use lazy_static::*;
 use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
 use std::fmt::{self, Debug};
 
 extern crate web_sys;
@@ -13,23 +15,34 @@ pub struct SsOption {
     pub label: String,
 }
 
-#[derive(Deserialize, Serialize, Clone, Debug, PartialEq)]
+#[derive(Deserialize, Serialize, Clone, Debug, PartialEq, Eq, Hash)]
 #[serde(rename_all = "camelCase")]
-pub enum SsProfile {
+pub enum SsProfileName {
     Default,
     Soft,
     Fast,
     Custom,
 }
-impl SsProfile {
+impl SsProfileName {
     fn default_profile() -> Self {
-        SsProfile::Default
+        SsProfileName::Default
     }
 }
-impl fmt::Display for SsProfile {
+impl fmt::Display for SsProfileName {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "{:?}", self)
     }
+}
+
+#[derive(Deserialize, Serialize, Clone, Copy, Debug)]
+#[serde(rename_all = "camelCase")]
+pub struct SsProfileParams {
+    pub bt_max_connections: u64,
+    pub bt_handshake_timeout: u64,
+    pub bt_request_timeout: u64,
+    pub bt_download_speed_soft_limit: f64,
+    pub bt_download_speed_hard_limit: f64,
+    pub bt_min_peers_for_stable: u64,
 }
 
 #[derive(Deserialize, Serialize, Clone, Debug)]
@@ -42,20 +55,10 @@ pub struct SsValues {
     #[serde(skip_serializing)]
     pub cache_root: Option<String>,
     pub cache_size: Option<f64>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub bt_max_connections: Option<u64>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub bt_handshake_timeout: Option<u64>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub bt_request_timeout: Option<u64>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub bt_download_speed_soft_limit: Option<f64>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub bt_download_speed_hard_limit: Option<f64>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub bt_min_peers_for_stable: Option<f64>,
-    #[serde(default = "SsProfile::default_profile")]
-    pub bt_profile: SsProfile,
+    #[serde(default = "SsProfileName::default_profile")]
+    pub bt_profile: SsProfileName,
+    #[serde(flatten)]
+    pub bt_params: Option<SsProfileParams>,
 }
 impl Default for SsValues {
     fn default() -> Self {
@@ -64,13 +67,8 @@ impl Default for SsValues {
             app_path: None,
             cache_root: None,
             cache_size: None,
-            bt_max_connections: None,
-            bt_handshake_timeout: None,
-            bt_request_timeout: None,
-            bt_download_speed_soft_limit: None,
-            bt_download_speed_hard_limit: None,
-            bt_min_peers_for_stable: None,
-            bt_profile: SsProfile::default_profile(),
+            bt_profile: SsProfileName::default_profile(),
+            bt_params: None,
         }
     }
 }
@@ -124,7 +122,7 @@ impl Default for Settings {
 pub struct StreamingServerSettings {
     pub is_loaded: bool,
     pub cache_size: String,
-    pub profile: SsProfile,
+    pub profile: SsProfileName,
 }
 
 impl Default for StreamingServerSettings {
@@ -132,9 +130,53 @@ impl Default for StreamingServerSettings {
         StreamingServerSettings {
             is_loaded: false,
             cache_size: "2147483648".to_string(),
-            profile: SsProfile::Default,
+            profile: SsProfileName::Default,
         }
     }
+}
+
+/*
+End of data structure defs
+*/
+
+lazy_static! {
+    static ref PROFILES: HashMap<SsProfileName, SsProfileParams> = {
+        let mut profiles = HashMap::new();
+        profiles.insert(
+            SsProfileName::Default,
+            SsProfileParams {
+                bt_max_connections: 35,
+                bt_handshake_timeout: 20000,
+                bt_request_timeout: 4000,
+                bt_download_speed_soft_limit: 1677721.6,
+                bt_download_speed_hard_limit: 2621440.0,
+                bt_min_peers_for_stable: 5,
+            },
+        );
+        profiles.insert(
+            SsProfileName::Soft,
+            SsProfileParams {
+                bt_max_connections: 35,
+                bt_handshake_timeout: 20000,
+                bt_request_timeout: 4000,
+                bt_download_speed_soft_limit: 1677721.6,
+                bt_download_speed_hard_limit: 1677721.6,
+                bt_min_peers_for_stable: 5,
+            },
+        );
+        profiles.insert(
+            SsProfileName::Fast,
+            SsProfileParams {
+                bt_max_connections: 200,
+                bt_handshake_timeout: 20000,
+                bt_request_timeout: 4000,
+                bt_download_speed_soft_limit: 4194304.0,
+                bt_download_speed_hard_limit: 39321600.0,
+                bt_min_peers_for_stable: 10,
+            },
+        );
+        profiles
+    };
 }
 
 fn get_settings_endpoint(server_url: &String) -> String {
@@ -190,11 +232,13 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for StreamingServerSett
                 // where the omitted values stay unchanged
                 let url = get_settings_endpoint(&ctx.content.settings.server_url);
                 let settings = settings.to_owned();
-
-                // TODO: set all bt_fields according to the selected profile
+                let bt_params = PROFILES
+                    .get(&settings.profile)
+                    .and_then(|params| Some(*params));
                 let values = SsValues {
                     cache_size: settings.cache_size.parse::<f64>().ok(),
                     bt_profile: settings.profile,
+                    bt_params,
                     ..Default::default()
                 };
                 match Request::post(url)
