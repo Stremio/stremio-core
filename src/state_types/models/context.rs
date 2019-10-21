@@ -204,13 +204,11 @@ fn authenticate<Env: Environment + 'static>(action: ActionUser, req: APIRequest)
             };
 
             // This is used only for authenticated users.
-            let settings = Settings::default();
-
             api_fetch::<Env, CollectionResponse, _>(pull_req).map(
                 move |CollectionResponse { addons, .. }| CtxContent {
                     auth: Some(Auth { key, user }),
                     addons,
-                    settings,
+                    settings: Settings::default(),
                 },
             )
         })
