@@ -35,7 +35,7 @@ function __wbg_elem_binding0(arg0, arg1, arg2) {
 }
 
 function __wbg_elem_binding1(arg0, arg1, arg2, arg3) {
-  wasm.__wbg_function_table.get(59)(arg0, arg1, addHeapObject(arg2), addHeapObject(arg3));
+  wasm.__wbg_function_table.get(58)(arg0, arg1, addHeapObject(arg2), addHeapObject(arg3));
 }
 
 var stack_pointer = 32;
@@ -586,7 +586,7 @@ function init(module) {
     }
   };
 
-  imports.wbg.__wbindgen_closure_wrapper2887 = function (arg0, arg1, arg2) {
+  imports.wbg.__wbindgen_closure_wrapper2913 = function (arg0, arg1, arg2) {
     var state = {
       a: arg0,
       b: arg1,

@@ -4,6 +4,7 @@ use stremio_core::state_types::*;
 // required to make stremio_derive work :(
 pub use stremio_core::state_types;
 use stremio_core::types::MetaPreview;
+use stremio_core::types::addons::DescriptorPreview;
 use stremio_derive::*;
 use wasm_bindgen::prelude::*;
 use futures::stream::Stream;
@@ -15,6 +16,7 @@ pub struct Model {
     recent: LibRecent,
     board: CatalogGrouped,
     discover: CatalogFiltered<MetaPreview>,
+    addons: CatalogFiltered<DescriptorPreview>,
 }
 
 #[wasm_bindgen]
