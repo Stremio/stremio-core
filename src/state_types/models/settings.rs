@@ -34,7 +34,7 @@ impl fmt::Display for SsProfileName {
     }
 }
 
-#[derive(Deserialize, Serialize, Clone, Copy, Debug)]
+#[derive(Deserialize, Serialize, Clone, Copy, Debug, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub struct SsProfileParams {
     pub bt_max_connections: u64,
@@ -55,8 +55,7 @@ pub struct SsValues {
     #[serde(skip_serializing)]
     pub cache_root: Option<String>,
     pub cache_size: Option<f64>,
-    #[serde(default = "SsProfileName::default_profile")]
-    pub bt_profile: SsProfileName,
+    pub bt_profile: Option<String>,
     #[serde(flatten)]
     pub bt_params: Option<SsProfileParams>,
 }
@@ -67,7 +66,7 @@ impl Default for SsValues {
             app_path: None,
             cache_root: None,
             cache_size: None,
-            bt_profile: SsProfileName::default_profile(),
+            bt_profile: Some(SsProfileName::default_profile().to_string()),
             bt_params: None,
         }
     }
@@ -135,6 +134,11 @@ impl Default for StreamingServerSettings {
     }
 }
 
+#[derive(Deserialize, Serialize, Clone, Debug, PartialEq)]
+struct SsResponse {
+    success: bool,
+}
+
 /*
 End of data structure defs
 */
@@ -183,9 +187,16 @@ fn get_settings_endpoint(server_url: &String) -> String {
     format!("{}{}", server_url, "settings")
 }
 
-#[derive(Deserialize, Serialize, Clone, Debug, PartialEq)]
-struct SsResponse {
-    success: bool,
+fn to_profile_enum(str_profile: &Option<String>) -> SsProfileName {
+    match str_profile {
+        Some(str_profile) => match &str_profile[..] {
+            "default" => SsProfileName::Default,
+            "soft" => SsProfileName::Soft,
+            "fast" => SsProfileName::Fast,
+            _ => SsProfileName::Custom,
+        },
+        None => SsProfileName::Custom,
+    }
 }
 
 impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for StreamingServerSettings {
@@ -201,6 +212,23 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for StreamingServerSett
                     Some(resp) => Effects::one(Box::new(
                         Env::fetch_serde::<_, SsSettings>(resp)
                             .and_then(|settings: SsSettings| {
+                                let is_custom_profile = match PROFILES
+                                    .get(&to_profile_enum(&settings.values.bt_profile))
+                                {
+                                    Some(bt_params) => match settings.values.bt_params {
+                                        Some(remote_bt_params) => remote_bt_params != *bt_params,
+                                        None => true,
+                                    },
+                                    None => true,
+                                };
+                                let settings = if is_custom_profile {
+                                    let mut settings = settings.to_owned();
+                                    settings.values.bt_profile =
+                                        Some(SsProfileName::Custom.to_string());
+                                    settings
+                                } else {
+                                    settings
+                                };
                                 Ok(Msg::Internal(StreamingServerSettingsLoaded(settings)))
                             })
                             .or_else(|e| {
@@ -222,7 +250,7 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for StreamingServerSett
                     Some(size) => size.to_string(),
                     None => "Infinity".to_string(),
                 };
-                self.profile = settings.to_owned().values.bt_profile;
+                self.profile = to_profile_enum(&settings.to_owned().values.bt_profile);
                 self.is_loaded = true;
                 // Perhaps dispatch custom event for streaming_server_settings_loaded
                 Effects::none()
@@ -237,7 +265,7 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for StreamingServerSett
                     .and_then(|params| Some(*params));
                 let values = SsValues {
                     cache_size: settings.cache_size.parse::<f64>().ok(),
-                    bt_profile: settings.profile,
+                    bt_profile: Some(settings.profile.to_string()),
                     bt_params,
                     ..Default::default()
                 };
