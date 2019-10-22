@@ -10,6 +10,9 @@ use wasm_bindgen::prelude::*;
 use futures::stream::Stream;
 use env_web::*;
 
+extern crate console_error_panic_hook;
+use std::panic;
+
 #[derive(Model, Default, Serialize)]
 pub struct Model {
     ctx: Ctx<Env>,
@@ -28,6 +31,7 @@ pub struct ContainerService {
 impl ContainerService {
     #[wasm_bindgen(constructor)]
     pub fn new(emit: js_sys::Function) -> ContainerService {
+        panic::set_hook(Box::new(console_error_panic_hook::hook));
         let app = Model::default();
         let (runtime, rx) = Runtime::<Env, Model>::new(app, 1000);
         Env::exec(Box::new(rx.for_each(move |msg| {
