@@ -110,6 +110,12 @@ pub struct Settings {
     pub show_vid_overview: String,
 }
 
+impl Settings {
+    fn get_endpoint(&self) -> String {
+        format!("{}{}", self.server_url, "settings")
+    }
+}
+
 impl Default for Settings {
     fn default() -> Self {
         Settings {
@@ -195,10 +201,6 @@ lazy_static! {
     };
 }
 
-fn get_settings_endpoint(server_url: &String) -> String {
-    format!("{}{}", server_url, "settings")
-}
-
 impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for StreamingServerSettings {
     fn update(&mut self, ctx: &Ctx<Env>, msg: &Msg) -> Effects {
         // web_sys::console::log_1(&format!("Update Settings!").into());
@@ -207,7 +209,7 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for StreamingServerSett
             Msg::Internal(CtxLoaded(_))
             | Msg::Action(Action::Settings(ActionSettings::LoadStreamingServer)) => {
                 web_sys::console::log_1(&format!("Load Ss Settings!").into());
-                let url = get_settings_endpoint(&ctx.content.settings.server_url);
+                let url = &ctx.content.settings.get_endpoint();
                 match Request::get(url).body(()).ok() {
                     Some(resp) => Effects::one(Box::new(
                         Env::fetch_serde::<_, SsSettings>(resp)
@@ -261,7 +263,7 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for StreamingServerSett
             Msg::Action(Action::Settings(ActionSettings::StoreStreamingServer(settings))) => {
                 // The format for the streaming server settings is basically SsValues,
                 // where the omitted values stay unchanged
-                let url = get_settings_endpoint(&ctx.content.settings.server_url);
+                let url = &ctx.content.settings.get_endpoint();
                 let settings = settings.to_owned();
                 let bt_params = PROFILES
                     .get(&settings.profile)
