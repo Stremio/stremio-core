@@ -30,7 +30,7 @@ impl SsProfileName {
     fn from_opt_string(str_profile: &Option<String>) -> SsProfileName {
         let str_profile = str_profile
             .to_owned()
-            .unwrap_or("custom".to_string())
+            .unwrap_or_else(|| "custom".to_string())
             .to_lowercase();
         match &str_profile[..] {
             "default" => SsProfileName::Default,
@@ -173,8 +173,8 @@ lazy_static! {
                 bt_max_connections: 35,
                 bt_handshake_timeout: 20000,
                 bt_request_timeout: 4000,
-                bt_download_speed_soft_limit: 1677721.6,
-                bt_download_speed_hard_limit: 2621440.0,
+                bt_download_speed_soft_limit: 1_677_721.6,
+                bt_download_speed_hard_limit: 2_621_440.0,
                 bt_min_peers_for_stable: 5,
             },
         );
@@ -184,8 +184,8 @@ lazy_static! {
                 bt_max_connections: 35,
                 bt_handshake_timeout: 20000,
                 bt_request_timeout: 4000,
-                bt_download_speed_soft_limit: 1677721.6,
-                bt_download_speed_hard_limit: 1677721.6,
+                bt_download_speed_soft_limit: 1_677_721.6,
+                bt_download_speed_hard_limit: 1_677_721.6,
                 bt_min_peers_for_stable: 5,
             },
         );
@@ -195,8 +195,8 @@ lazy_static! {
                 bt_max_connections: 200,
                 bt_handshake_timeout: 20000,
                 bt_request_timeout: 4000,
-                bt_download_speed_soft_limit: 4194304.0,
-                bt_download_speed_hard_limit: 39321600.0,
+                bt_download_speed_soft_limit: 4_194_304.0,
+                bt_download_speed_hard_limit: 39_321_600.0,
                 bt_min_peers_for_stable: 10,
             },
         );
@@ -211,7 +211,7 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for StreamingServerSett
             // This is triggered after loading the settings from local storage
             Msg::Internal(CtxLoaded(_))
             | Msg::Action(Action::Settings(ActionSettings::LoadStreamingServer)) => {
-                web_sys::console::log_1(&format!("Load Ss Settings!").into());
+                web_sys::console::log_1(&"Load Ss Settings!".to_string().into());
                 let url = &ctx.content.settings.get_endpoint();
                 match Request::get(url).body(()).ok() {
                     Some(resp) => Effects::one(Box::new(
@@ -221,7 +221,7 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for StreamingServerSett
                                     &SsProfileName::from_opt_string(&settings.values.bt_profile),
                                 ) != settings.values.bt_params.as_ref();
                                 let settings = if is_custom_profile {
-                                    let mut settings = settings.to_owned();
+                                    let mut settings = settings;
                                     settings.values.bt_profile =
                                         Some(SsProfileName::Custom.as_string());
                                     settings
@@ -250,7 +250,7 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for StreamingServerSett
                     None => "Infinity".to_string(),
                 };
                 self.profile =
-                    SsProfileName::from_opt_string(&settings.to_owned().values.bt_profile);
+                    SsProfileName::from_opt_string(&settings.values.bt_profile);
                 self.is_loaded = true;
                 // Perhaps dispatch custom event for streaming_server_settings_loaded
                 Effects::none()
