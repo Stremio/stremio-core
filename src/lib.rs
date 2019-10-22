@@ -191,7 +191,7 @@ mod tests {
             path: ResourceRef::without_extra("catalog", "movie", "top"),
         };
         let action = Action::Load(ActionLoad::CatalogFiltered(req.to_owned()));
-        run(runtime.dispatch(&action.into()));
+        run(runtime.dispatch_with(|model| model.catalogs.update(&model.ctx, &action.into())));
         // Clone the state so that we don't keep a lock on .app
         let state = runtime.app.read().unwrap().catalogs.to_owned();
         assert!(state.types[0].is_selected, "first type is selected");
