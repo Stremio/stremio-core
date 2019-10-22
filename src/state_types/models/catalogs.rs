@@ -61,7 +61,7 @@ impl CatalogAdapter for MetaPreview {
         &m.catalogs
     }
 }
-impl CatalogAdapter for DescriptorPreview {
+impl CatalogAdapter for Descriptor {
     fn resource() -> &'static str {
         "addon_catalog"
     }
