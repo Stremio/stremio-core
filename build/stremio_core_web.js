@@ -31,11 +31,11 @@ function addHeapObject(obj) {
 }
 
 function __wbg_elem_binding0(arg0, arg1, arg2) {
-  wasm.__wbg_function_table.get(103)(arg0, arg1, addHeapObject(arg2));
+  wasm.__wbg_function_table.get(101)(arg0, arg1, addHeapObject(arg2));
 }
 
 function __wbg_elem_binding1(arg0, arg1, arg2, arg3) {
-  wasm.__wbg_function_table.get(58)(arg0, arg1, addHeapObject(arg2), addHeapObject(arg3));
+  wasm.__wbg_function_table.get(57)(arg0, arg1, addHeapObject(arg2), addHeapObject(arg3));
 }
 
 var stack_pointer = 32;
@@ -321,10 +321,6 @@ function init(module) {
   var imports = {};
   imports.wbg = {};
 
-  imports.wbg.__wbindgen_object_drop_ref = function (arg0) {
-    takeObject(arg0);
-  };
-
   imports.wbg.__wbg_instanceof_Error_3c415a41cc2164b9 = function (arg0) {
     var ret = getObject(arg0) instanceof Error;
     return ret;
@@ -342,6 +338,10 @@ function init(module) {
     getUint32Memory()[arg1 / 4] = WASM_VECTOR_LEN;
     var ret = ptr;
     return ret;
+  };
+
+  imports.wbg.__wbindgen_object_drop_ref = function (arg0) {
+    takeObject(arg0);
   };
 
   imports.wbg.__widl_f_local_storage_Window = function (arg0) {
@@ -586,7 +586,7 @@ function init(module) {
     }
   };
 
-  imports.wbg.__wbindgen_closure_wrapper2913 = function (arg0, arg1, arg2) {
+  imports.wbg.__wbindgen_closure_wrapper2888 = function (arg0, arg1, arg2) {
     var state = {
       a: arg0,
       b: arg1,
@@ -601,7 +601,7 @@ function init(module) {
       try {
         return __wbg_elem_binding0(a, state.b, arg0);
       } finally {
-        if (--state.cnt === 0) wasm.__wbg_function_table.get(104)(a, state.b);else state.a = a;
+        if (--state.cnt === 0) wasm.__wbg_function_table.get(102)(a, state.b);else state.a = a;
       }
     };
 
