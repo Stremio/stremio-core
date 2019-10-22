@@ -1,5 +1,7 @@
-use crate::state_types::msg::Internal::{CtxLoaded, StreamingServerSettingsLoaded};
-use crate::state_types::msg::{Action, ActionSettings, Event};
+use crate::state_types::msg::Internal::{
+    CtxLoaded, StreamingServerSettingsErrored, StreamingServerSettingsLoaded,
+};
+use crate::state_types::msg::{Action, ActionSettings};
 use crate::state_types::{Ctx, Effects, Environment, Msg, Request, UpdateWithCtx};
 use futures::future::Future;
 use lazy_static::lazy_static;
@@ -140,7 +142,6 @@ impl Default for Settings {
 #[derive(Deserialize, Serialize, Clone, Debug, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub struct StreamingServerSettings {
-    pub is_loaded: bool,
     pub cache_size: String,
     pub profile: SsProfileName,
 }
@@ -148,7 +149,6 @@ pub struct StreamingServerSettings {
 impl Default for StreamingServerSettings {
     fn default() -> Self {
         StreamingServerSettings {
-            is_loaded: false,
             cache_size: "2147483648".to_string(),
             profile: SsProfileName::Default,
         }
@@ -207,7 +207,29 @@ lazy_static! {
     };
 }
 
-impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for StreamingServerSettings {
+// FIXME: As of now everything is CommError
+#[derive(Deserialize, Serialize, Clone, Debug, PartialEq)]
+#[serde(rename_all = "camelCase")]
+pub enum SsError {
+    DataError(String), // Received invalid data structure. Bad or invalid JSON
+    CommError(String), // Error in communication. No or erroneous response(Network)
+}
+
+#[derive(Deserialize, Serialize, Clone, Debug, PartialEq)]
+#[serde(rename_all = "camelCase")]
+pub enum StreamingServerSettingsModel {
+    NotLoaded,
+    Ready(StreamingServerSettings),
+    Error(SsError),
+}
+
+impl Default for StreamingServerSettingsModel {
+    fn default() -> Self {
+        StreamingServerSettingsModel::NotLoaded
+    }
+}
+
+impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for StreamingServerSettingsModel {
     fn update(&mut self, ctx: &Ctx<Env>, msg: &Msg) -> Effects {
         // web_sys::console::log_1(&format!("Update Settings!").into());
         match msg {
@@ -216,8 +238,8 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for StreamingServerSett
             | Msg::Action(Action::Settings(ActionSettings::LoadStreamingServer)) => {
                 web_sys::console::log_1(&"Load Ss Settings!".to_string().into());
                 let url = &ctx.content.settings.get_endpoint();
-                match Request::get(url).body(()).ok() {
-                    Some(resp) => Effects::one(Box::new(
+                match Request::get(url).body(()) {
+                    Ok(resp) => Effects::one(Box::new(
                         Env::fetch_serde::<_, SsSettings>(resp)
                             .and_then(|settings: SsSettings| {
                                 let is_custom_profile = PROFILES.get(
@@ -234,25 +256,32 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for StreamingServerSett
                                 Ok(Msg::Internal(StreamingServerSettingsLoaded(settings)))
                             })
                             .or_else(|e| {
+                                // TODO: Figure a way to detect if this is either fetch or serde error
                                 web_sys::console::log_1(
                                     &format!("Streaming server settings error: {}", e).into(),
                                 );
-                                Err(Msg::Event(Event::CtxFatal(e.into())))
+                                Ok(Msg::Internal(StreamingServerSettingsErrored(
+                                    SsError::CommError(format!("{}", e)),
+                                )))
                             }),
                     )),
-                    None => {
-                        self.is_loaded = true;
+                    Err(e) => {
+                        *self = StreamingServerSettingsModel::Error(SsError::CommError(format!(
+                            "{}",
+                            e
+                        )));
                         Effects::none()
                     }
                 }
             }
             Msg::Internal(StreamingServerSettingsLoaded(settings)) => {
-                self.cache_size = match settings.values.cache_size {
-                    Some(size) => size.to_string(),
-                    None => "Infinity".to_string(),
-                };
-                self.profile = SsProfileName::from_opt_string(&settings.values.bt_profile);
-                self.is_loaded = true;
+                *self = StreamingServerSettingsModel::Ready(StreamingServerSettings {
+                    cache_size: match settings.values.cache_size {
+                        Some(size) => size.to_string(),
+                        None => "Infinity".to_string(),
+                    },
+                    profile: SsProfileName::from_opt_string(&settings.values.bt_profile),
+                });
                 // Perhaps dispatch custom event for streaming_server_settings_loaded
                 Effects::none()
             }
@@ -281,19 +310,27 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for StreamingServerSett
                                     )
                                     .into(),
                                 );
+                                // TODO: handle the case when s_resp.success is false
                                 Ok(Msg::Action(Action::Settings(
                                     ActionSettings::LoadStreamingServer,
                                 )))
                             })
                             .or_else(|e| {
+                                // TODO: Figure a way to detect if this is either fetch or serde error
                                 web_sys::console::log_1(
                                     &format!("Streaming server settings error: {}", e).into(),
                                 );
-                                Err(Msg::Event(Event::CtxFatal(e.into())))
+                                Ok(Msg::Internal(StreamingServerSettingsErrored(
+                                    SsError::CommError(format!("{}", e)),
+                                )))
                             }),
                     )),
                     None => Effects::none().unchanged(),
                 }
+            }
+            Msg::Internal(StreamingServerSettingsErrored(error)) => {
+                *self = StreamingServerSettingsModel::Error(error.to_owned());
+                Effects::none()
             }
             _ => Effects::none().unchanged(),
         }
