@@ -166,41 +166,44 @@ End of data structure defs
 
 lazy_static! {
     static ref PROFILES: HashMap<SsProfileName, SsProfileParams> = {
-        let mut profiles = HashMap::new();
-        profiles.insert(
-            SsProfileName::Default,
-            SsProfileParams {
-                bt_max_connections: 35,
-                bt_handshake_timeout: 20000,
-                bt_request_timeout: 4000,
-                bt_download_speed_soft_limit: 1_677_721.6,
-                bt_download_speed_hard_limit: 2_621_440.0,
-                bt_min_peers_for_stable: 5,
-            },
-        );
-        profiles.insert(
-            SsProfileName::Soft,
-            SsProfileParams {
-                bt_max_connections: 35,
-                bt_handshake_timeout: 20000,
-                bt_request_timeout: 4000,
-                bt_download_speed_soft_limit: 1_677_721.6,
-                bt_download_speed_hard_limit: 1_677_721.6,
-                bt_min_peers_for_stable: 5,
-            },
-        );
-        profiles.insert(
-            SsProfileName::Fast,
-            SsProfileParams {
-                bt_max_connections: 200,
-                bt_handshake_timeout: 20000,
-                bt_request_timeout: 4000,
-                bt_download_speed_soft_limit: 4_194_304.0,
-                bt_download_speed_hard_limit: 39_321_600.0,
-                bt_min_peers_for_stable: 10,
-            },
-        );
-        profiles
+        [
+            (
+                SsProfileName::Default,
+                SsProfileParams {
+                    bt_max_connections: 35,
+                    bt_handshake_timeout: 20000,
+                    bt_request_timeout: 4000,
+                    bt_download_speed_soft_limit: 1_677_721.6,
+                    bt_download_speed_hard_limit: 2_621_440.0,
+                    bt_min_peers_for_stable: 5,
+                },
+            ),
+            (
+                SsProfileName::Soft,
+                SsProfileParams {
+                    bt_max_connections: 35,
+                    bt_handshake_timeout: 20000,
+                    bt_request_timeout: 4000,
+                    bt_download_speed_soft_limit: 1_677_721.6,
+                    bt_download_speed_hard_limit: 1_677_721.6,
+                    bt_min_peers_for_stable: 5,
+                },
+            ),
+            (
+                SsProfileName::Fast,
+                SsProfileParams {
+                    bt_max_connections: 200,
+                    bt_handshake_timeout: 20000,
+                    bt_request_timeout: 4000,
+                    bt_download_speed_soft_limit: 4_194_304.0,
+                    bt_download_speed_hard_limit: 39_321_600.0,
+                    bt_min_peers_for_stable: 10,
+                },
+            ),
+        ]
+        .iter()
+        .cloned()
+        .collect()
     };
 }
 
@@ -244,13 +247,11 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for StreamingServerSett
                 }
             }
             Msg::Internal(StreamingServerSettingsLoaded(settings)) => {
-                let settings = settings.to_owned();
                 self.cache_size = match settings.values.cache_size {
                     Some(size) => size.to_string(),
                     None => "Infinity".to_string(),
                 };
-                self.profile =
-                    SsProfileName::from_opt_string(&settings.values.bt_profile);
+                self.profile = SsProfileName::from_opt_string(&settings.values.bt_profile);
                 self.is_loaded = true;
                 // Perhaps dispatch custom event for streaming_server_settings_loaded
                 Effects::none()
