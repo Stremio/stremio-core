@@ -2,7 +2,7 @@ use crate::state_types::msg::Internal::{CtxLoaded, StreamingServerSettingsLoaded
 use crate::state_types::msg::{Action, ActionSettings, Event};
 use crate::state_types::{Ctx, Effects, Environment, Msg, Request, UpdateWithCtx};
 use futures::future::Future;
-use lazy_static::*;
+use lazy_static::lazy_static;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::fmt::{self, Debug};
