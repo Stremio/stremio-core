@@ -207,20 +207,12 @@ lazy_static! {
     };
 }
 
-// FIXME: As of now everything is CommError
-#[derive(Deserialize, Serialize, Clone, Debug, PartialEq)]
-#[serde(rename_all = "camelCase")]
-pub enum SsError {
-    DataError(String), // Received invalid data structure. Bad or invalid JSON
-    CommError(String), // Error in communication. No or erroneous response(Network)
-}
-
 #[derive(Deserialize, Serialize, Clone, Debug, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub enum StreamingServerSettingsModel {
     NotLoaded,
     Ready(StreamingServerSettings),
-    Error(SsError),
+    Error(String),
 }
 
 impl Default for StreamingServerSettingsModel {
@@ -256,20 +248,19 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for StreamingServerSett
                                 Ok(Msg::Internal(StreamingServerSettingsLoaded(settings)))
                             })
                             .or_else(|e| {
-                                // TODO: Figure a way to detect if this is either fetch or serde error
                                 web_sys::console::log_1(
                                     &format!("Streaming server settings error: {}", e).into(),
                                 );
                                 Ok(Msg::Internal(StreamingServerSettingsErrored(
-                                    SsError::CommError(format!("{}", e)),
+                                    format!("{}", e),
                                 )))
                             }),
                     )),
                     Err(e) => {
-                        *self = StreamingServerSettingsModel::Error(SsError::CommError(format!(
+                        *self = StreamingServerSettingsModel::Error(format!(
                             "{}",
                             e
-                        )));
+                        ));
                         Effects::none()
                     }
                 }
@@ -316,12 +307,11 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for StreamingServerSett
                                 )))
                             })
                             .or_else(|e| {
-                                // TODO: Figure a way to detect if this is either fetch or serde error
                                 web_sys::console::log_1(
                                     &format!("Streaming server settings error: {}", e).into(),
                                 );
                                 Ok(Msg::Internal(StreamingServerSettingsErrored(
-                                    SsError::CommError(format!("{}", e)),
+                                    format!("{}", e),
                                 )))
                             }),
                     )),

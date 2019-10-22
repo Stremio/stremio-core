@@ -1,4 +1,4 @@
-use crate::state_types::{CtxContent, EnvError, SsSettings, SsError};
+use crate::state_types::{CtxContent, EnvError, SsSettings};
 use crate::types::addons::*;
 use crate::types::api::*;
 use crate::types::{LibBucket, Stream};
@@ -31,7 +31,7 @@ pub enum Internal {
     // Response from an add-on
     AddonResponse(ResourceRequest, Box<Result<ResourceResponse, EnvError>>),
     StreamingServerSettingsLoaded(SsSettings),
-    StreamingServerSettingsErrored(SsError),
+    StreamingServerSettingsErrored(String),
 }
 
 //
