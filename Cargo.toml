@@ -16,6 +16,7 @@ serde_json = "1.0.40"
 futures = "0.1.29"
 js-sys = "0.3.27"
 wasm-bindgen = { version = "0.2.50", features = ["serde-serialize", "nightly"] }
+console_error_panic_hook = "0.1.6"
 
 [profile.release]
 lto = true
