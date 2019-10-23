@@ -69,6 +69,7 @@ pub enum Event {
     LibPersisted,
     LibPushed,
     LibFatal(CtxError),
+    SettingsStoreError(String),
 }
 
 //

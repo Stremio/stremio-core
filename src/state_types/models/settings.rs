@@ -2,7 +2,7 @@ use crate::state_types::msg::Internal::{
     CtxLoaded, StreamingServerSettingsErrored, StreamingServerSettingsLoaded,
 };
 use crate::state_types::msg::{Action, ActionSettings};
-use crate::state_types::{Ctx, Effects, Environment, Msg, Request, UpdateWithCtx};
+use crate::state_types::{Ctx, Effects, Environment, Event, Msg, Request, UpdateWithCtx};
 use futures::future::Future;
 use lazy_static::lazy_static;
 use serde::{Deserialize, Serialize};
@@ -251,16 +251,14 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for StreamingServerSett
                                 web_sys::console::log_1(
                                     &format!("Streaming server settings error: {}", e).into(),
                                 );
-                                Ok(Msg::Internal(StreamingServerSettingsErrored(
-                                    format!("{}", e),
-                                )))
+                                Ok(Msg::Internal(StreamingServerSettingsErrored(format!(
+                                    "{}",
+                                    e
+                                ))))
                             }),
                     )),
                     Err(e) => {
-                        *self = StreamingServerSettingsModel::Error(format!(
-                            "{}",
-                            e
-                        ));
+                        *self = StreamingServerSettingsModel::Error(format!("{}", e));
                         Effects::none()
                     }
                 }
@@ -302,17 +300,24 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for StreamingServerSett
                                     .into(),
                                 );
                                 // TODO: handle the case when s_resp.success is false
-                                Ok(Msg::Action(Action::Settings(
-                                    ActionSettings::LoadStreamingServer,
-                                )))
+                                Ok(if s_resp.success {
+                                    Msg::Action(Action::Settings(
+                                        ActionSettings::LoadStreamingServer,
+                                    ))
+                                } else {
+                                    Msg::Event(Event::SettingsStoreError(
+                                        "Couldn't store the settings".to_string(),
+                                    ))
+                                })
                             })
                             .or_else(|e| {
                                 web_sys::console::log_1(
                                     &format!("Streaming server settings error: {}", e).into(),
                                 );
-                                Ok(Msg::Internal(StreamingServerSettingsErrored(
-                                    format!("{}", e),
-                                )))
+                                Ok(Msg::Internal(StreamingServerSettingsErrored(format!(
+                                    "{}",
+                                    e
+                                ))))
                             }),
                     )),
                     None => Effects::none().unchanged(),
