@@ -49,21 +49,16 @@ impl ContainerService {
         let action: WebAction = action_js
             .into_serde()
             .expect("WebAction could not be deserialized");
-        match action {
-            WebAction::Discover(action) => {
-                Env::exec(self.runtime.dispatch_with(|model| {
-                    model.discover.update(&model.ctx, &Msg::Action(action))
-                }));
-            }
-            WebAction::Addons(action) => {
-                Env::exec(self.runtime.dispatch_with(|model| {
-                    model.addons.update(&model.ctx, &Msg::Action(action))
-                }));
-            }
-            WebAction::All(action) => {
-                Env::exec(self.runtime.dispatch(&Msg::Action(action)));
-            }
-        }
+        let effects = match action {
+            WebAction::Discover(action) => self
+                .runtime
+                .dispatch_with(|model| model.discover.update(&model.ctx, &Msg::Action(action))),
+            WebAction::Addons(action) => self
+                .runtime
+                .dispatch_with(|model| model.addons.update(&model.ctx, &Msg::Action(action))),
+            WebAction::All(action) => self.runtime.dispatch(&Msg::Action(action)),
+        };
+        Env::exec(effects);
     }
 
     pub fn get_state(&self) -> JsValue {
