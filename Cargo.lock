@@ -181,7 +181,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 [[package]]
 name = "env-web"
 version = "0.1.0"
-source = "git+ssh://git@github.com/Stremio/stremio-core.git#8fb4326d5825eaefd35282b8b234b8ab88230615"
+source = "git+ssh://git@github.com/Stremio/stremio-core.git#71c8542d2252bbc009fe6da2a26c8adc91d937ea"
 dependencies = [
  "futures 0.1.29 (registry+https://github.com/rust-lang/crates.io-index)",
  "js-sys 0.3.28 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -490,7 +490,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 [[package]]
 name = "stremio-core"
 version = "0.1.0"
-source = "git+ssh://git@github.com/Stremio/stremio-core.git#8fb4326d5825eaefd35282b8b234b8ab88230615"
+source = "git+ssh://git@github.com/Stremio/stremio-core.git#71c8542d2252bbc009fe6da2a26c8adc91d937ea"
 dependencies = [
  "base64 0.10.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "chrono 0.4.9 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -530,7 +530,7 @@ dependencies = [
 [[package]]
 name = "stremio-derive"
 version = "0.1.0"
-source = "git+ssh://git@github.com/Stremio/stremio-core.git#8fb4326d5825eaefd35282b8b234b8ab88230615"
+source = "git+ssh://git@github.com/Stremio/stremio-core.git#71c8542d2252bbc009fe6da2a26c8adc91d937ea"
 dependencies = [
  "quote 0.6.13 (registry+https://github.com/rust-lang/crates.io-index)",
  "syn 0.15.44 (registry+https://github.com/rust-lang/crates.io-index)",
