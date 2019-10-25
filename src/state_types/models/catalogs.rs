@@ -45,6 +45,7 @@ pub struct TypeEntry {
 pub struct CatalogEntry {
     pub is_selected: bool,
     pub name: String,
+    pub addon_name: String,
     pub load: ResourceRequest,
 }
 
@@ -60,7 +61,7 @@ impl CatalogAdapter for MetaPreview {
         &m.catalogs
     }
 }
-impl CatalogAdapter for DescriptorPreview {
+impl CatalogAdapter for Descriptor {
     fn resource() -> &'static str {
         "addon_catalog"
     }
@@ -137,6 +138,7 @@ where
                             };
                             Some(CatalogEntry {
                                 name: cat.name.as_ref().unwrap_or(&cat.id).to_owned(),
+                                addon_name: a.manifest.name.to_owned(),
                                 is_selected: load.eq_no_extra(selected_req),
                                 load,
                             })
