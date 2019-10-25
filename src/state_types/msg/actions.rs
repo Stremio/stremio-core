@@ -11,10 +11,8 @@ use serde_derive::*;
 pub enum ActionLoad {
     CatalogGrouped { extra: Vec<ExtraProp> },
     CatalogFiltered(ResourceRequest),
-    Detail { type_name: String, id: String },
+    Detail { type_name: String, id: String, video_id: Option<String> },
     Streams { type_name: String, id: String },
-    // @TODO most of these values need content
-    AddonCatalog,
     Notifications,
 }
 
