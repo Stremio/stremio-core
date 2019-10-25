@@ -20,6 +20,7 @@ pub struct Model {
     board: CatalogGrouped,
     discover: CatalogFiltered<MetaPreview>,
     addons: CatalogFiltered<Descriptor>,
+    streaming_server_settings: StreamingServerSettingsModel,
 }
 
 #[derive(Debug, Deserialize, Clone)]

@@ -190,13 +190,13 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 [[package]]
 name = "env-web"
 version = "0.1.0"
-source = "git+ssh://git@github.com/Stremio/stremio-core.git#71c8542d2252bbc009fe6da2a26c8adc91d937ea"
+source = "git+ssh://git@github.com/Stremio/stremio-core.git?rev=4c891b9#4c891b9ac866feda88bc5de69e1e7e6c1d376175"
 dependencies = [
  "futures 0.1.29 (registry+https://github.com/rust-lang/crates.io-index)",
  "js-sys 0.3.28 (registry+https://github.com/rust-lang/crates.io-index)",
  "serde 1.0.101 (registry+https://github.com/rust-lang/crates.io-index)",
  "serde_json 1.0.41 (registry+https://github.com/rust-lang/crates.io-index)",
- "stremio-core 0.1.0 (git+ssh://git@github.com/Stremio/stremio-core.git)",
+ "stremio-core 0.1.0 (git+ssh://git@github.com/Stremio/stremio-core.git?rev=4c891b9)",
  "wasm-bindgen 0.2.51 (registry+https://github.com/rust-lang/crates.io-index)",
  "wasm-bindgen-futures 0.3.27 (registry+https://github.com/rust-lang/crates.io-index)",
  "web-sys 0.3.28 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -499,7 +499,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 [[package]]
 name = "stremio-core"
 version = "0.1.0"
-source = "git+ssh://git@github.com/Stremio/stremio-core.git#71c8542d2252bbc009fe6da2a26c8adc91d937ea"
+source = "git+ssh://git@github.com/Stremio/stremio-core.git?rev=4c891b9#4c891b9ac866feda88bc5de69e1e7e6c1d376175"
 dependencies = [
  "base64 0.10.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "chrono 0.4.9 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -518,8 +518,9 @@ dependencies = [
  "serde-hex 0.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "serde_derive 1.0.101 (registry+https://github.com/rust-lang/crates.io-index)",
  "serde_json 1.0.41 (registry+https://github.com/rust-lang/crates.io-index)",
- "stremio-derive 0.1.0 (git+ssh://git@github.com/Stremio/stremio-core.git)",
+ "stremio-derive 0.1.0 (git+ssh://git@github.com/Stremio/stremio-core.git?rev=4c891b9)",
  "url 1.7.2 (registry+https://github.com/rust-lang/crates.io-index)",
+ "web-sys 0.3.28 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]
@@ -527,20 +528,20 @@ name = "stremio-core-web"
 version = "0.6.0"
 dependencies = [
  "console_error_panic_hook 0.1.6 (registry+https://github.com/rust-lang/crates.io-index)",
- "env-web 0.1.0 (git+ssh://git@github.com/Stremio/stremio-core.git)",
+ "env-web 0.1.0 (git+ssh://git@github.com/Stremio/stremio-core.git?rev=4c891b9)",
  "futures 0.1.29 (registry+https://github.com/rust-lang/crates.io-index)",
  "js-sys 0.3.28 (registry+https://github.com/rust-lang/crates.io-index)",
  "serde 1.0.101 (registry+https://github.com/rust-lang/crates.io-index)",
  "serde_json 1.0.41 (registry+https://github.com/rust-lang/crates.io-index)",
- "stremio-core 0.1.0 (git+ssh://git@github.com/Stremio/stremio-core.git)",
- "stremio-derive 0.1.0 (git+ssh://git@github.com/Stremio/stremio-core.git)",
+ "stremio-core 0.1.0 (git+ssh://git@github.com/Stremio/stremio-core.git?rev=4c891b9)",
+ "stremio-derive 0.1.0 (git+ssh://git@github.com/Stremio/stremio-core.git?rev=4c891b9)",
  "wasm-bindgen 0.2.51 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]
 name = "stremio-derive"
 version = "0.1.0"
-source = "git+ssh://git@github.com/Stremio/stremio-core.git#71c8542d2252bbc009fe6da2a26c8adc91d937ea"
+source = "git+ssh://git@github.com/Stremio/stremio-core.git?rev=4c891b9#4c891b9ac866feda88bc5de69e1e7e6c1d376175"
 dependencies = [
  "quote 0.6.13 (registry+https://github.com/rust-lang/crates.io-index)",
  "syn 0.15.44 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -786,7 +787,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 "checksum derive_more 0.15.0 (registry+https://github.com/rust-lang/crates.io-index)" = "7a141330240c921ec6d074a3e188a7c7ef95668bb95e7d44fa0e5778ec2a7afe"
 "checksum either 1.5.3 (registry+https://github.com/rust-lang/crates.io-index)" = "bb1f6b1ce1c140482ea30ddd3335fc0024ac7ee112895426e0a629a6c20adfe3"
 "checksum enclose 1.1.8 (registry+https://github.com/rust-lang/crates.io-index)" = "1056f553da426e9c025a662efa48b52e62e0a3a7648aa2d15aeaaf7f0d329357"
-"checksum env-web 0.1.0 (git+ssh://git@github.com/Stremio/stremio-core.git)" = "<none>"
+"checksum env-web 0.1.0 (git+ssh://git@github.com/Stremio/stremio-core.git?rev=4c891b9)" = "<none>"
 "checksum failure 0.1.6 (registry+https://github.com/rust-lang/crates.io-index)" = "f8273f13c977665c5db7eb2b99ae520952fe5ac831ae4cd09d80c4c7042b5ed9"
 "checksum failure_derive 0.1.6 (registry+https://github.com/rust-lang/crates.io-index)" = "0bc225b78e0391e4b8683440bf2e63c2deeeb2ce5189eab46e2b68c6d3725d08"
 "checksum fnv 1.0.6 (registry+https://github.com/rust-lang/crates.io-index)" = "2fad85553e09a6f881f739c29f0b00b0f01357c743266d478b68951ce23285f3"
@@ -828,8 +829,8 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 "checksum serde_json 1.0.41 (registry+https://github.com/rust-lang/crates.io-index)" = "2f72eb2a68a7dc3f9a691bfda9305a1c017a6215e5a4545c258500d2099a37c2"
 "checksum smallvec 0.6.10 (registry+https://github.com/rust-lang/crates.io-index)" = "ab606a9c5e214920bb66c458cd7be8ef094f813f20fe77a54cc7dbfff220d4b7"
 "checksum sourcefile 0.1.4 (registry+https://github.com/rust-lang/crates.io-index)" = "4bf77cb82ba8453b42b6ae1d692e4cdc92f9a47beaf89a847c8be83f4e328ad3"
-"checksum stremio-core 0.1.0 (git+ssh://git@github.com/Stremio/stremio-core.git)" = "<none>"
-"checksum stremio-derive 0.1.0 (git+ssh://git@github.com/Stremio/stremio-core.git)" = "<none>"
+"checksum stremio-core 0.1.0 (git+ssh://git@github.com/Stremio/stremio-core.git?rev=4c891b9)" = "<none>"
+"checksum stremio-derive 0.1.0 (git+ssh://git@github.com/Stremio/stremio-core.git?rev=4c891b9)" = "<none>"
 "checksum strsim 0.7.0 (registry+https://github.com/rust-lang/crates.io-index)" = "bb4f380125926a99e52bc279241539c018323fab05ad6368b56f93d9369ff550"
 "checksum syn 0.15.44 (registry+https://github.com/rust-lang/crates.io-index)" = "9ca4b3b69a77cbe1ffc9e198781b7acb0c7365a883670e8f1c1bc66fba79a5c5"
 "checksum syn 1.0.5 (registry+https://github.com/rust-lang/crates.io-index)" = "66850e97125af79138385e9b88339cbcd037e3f28ceab8c5ad98e64f0f1f80bf"
