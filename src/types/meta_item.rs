@@ -80,8 +80,7 @@ pub struct MetaDetail {
     pub poster: Option<String>,
     pub background: Option<String>,
     pub logo: Option<String>,
-    #[serde(default)]
-    pub popularity: f64,
+    pub popularity: Option<f64>,
     pub description: Option<String>,
     pub release_info: Option<String>,
     pub runtime: Option<String>,
