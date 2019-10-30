@@ -59,7 +59,9 @@ pub struct MetaPreview {
     pub release_info: Option<String>,
     pub runtime: Option<String>,
     pub released: Option<DateTime<Utc>>,
+    #[serde(default)]
     pub genres: Vec<String>,
+    #[serde(default)]
     pub directors: Vec<String>,
     #[serde(default, skip_serializing_if = "PosterShape::is_unspecified")]
     pub poster_shape: PosterShape,
@@ -84,9 +86,13 @@ pub struct MetaDetail {
     pub release_info: Option<String>,
     pub runtime: Option<String>,
     pub released: Option<DateTime<Utc>>,
+    #[serde(default)]
     pub genres: Vec<String>,
+    #[serde(default)]
     pub directors: Vec<String>,
+    #[serde(default)]
     pub writers: Vec<String>,
+    #[serde(default)]
     pub cast: Vec<String>,
     pub imdb_rating: Option<String>,
     #[serde(rename = "imdb_id")]
@@ -105,8 +111,6 @@ pub struct MetaDetail {
     pub external_urls: Vec<(String, String)>,
     // @TODO use some ISO language type
     //pub language: Option<String>,
-    // @TODO crew
-    // @TODO genres
     pub trailer: Option<Stream>,
 }
 
