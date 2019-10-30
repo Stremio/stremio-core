@@ -103,12 +103,10 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for Notifications {
                                     // we have to get `now` somehow (environment or through a msg)
                                     // Alternatively, just set that when we add lib items
                                     .retain(|v| {
-                                        v.released.map_or(false, |vr| {
-                                            lib_item
-                                                .state
-                                                .last_vid_released
-                                                .map_or(false, |lvr| vr > lvr)
-                                        })
+                                        lib_item
+                                            .state
+                                            .last_vid_released
+                                            .map_or(false, |lvr| v.released > lvr)
                                     });
                             } else {
                                 item.videos = vec![];
