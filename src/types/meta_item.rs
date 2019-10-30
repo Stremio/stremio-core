@@ -54,8 +54,16 @@ pub struct MetaPreview {
     #[serde(default)]
     pub name: String,
     pub poster: Option<String>,
+    pub logo: Option<String>,
+    pub description: Option<String>,
+    pub release_info: Option<String>,
+    pub runtime: Option<String>,
+    pub released: Option<DateTime<Utc>>,
+    pub genres: Vec<String>,
+    pub directors: Vec<String>,
     #[serde(default, skip_serializing_if = "PosterShape::is_unspecified")]
     pub poster_shape: PosterShape,
+    pub trailer: Option<Stream>,
 }
 
 // https://github.com/Stremio/stremio-addon-sdk/blob/master/docs/api/responses/meta.md#meta-object
@@ -75,6 +83,14 @@ pub struct MetaDetail {
     pub description: Option<String>,
     pub release_info: Option<String>,
     pub runtime: Option<String>,
+    pub released: Option<DateTime<Utc>>,
+    pub genres: Vec<String>,
+    pub directors: Vec<String>,
+    pub writers: Vec<String>,
+    pub cast: Vec<String>,
+    pub imdb_rating: Option<String>,
+    #[serde(rename = "imdb_id")]
+    pub imdb_id: Option<String>,
     #[serde(default, skip_serializing_if = "PosterShape::is_unspecified")]
     pub poster_shape: PosterShape,
     // @TODO: default to one video
@@ -91,6 +107,7 @@ pub struct MetaDetail {
     //pub language: Option<String>,
     // @TODO crew
     // @TODO genres
+    pub trailer: Option<Stream>,
 }
 
 // https://github.com/Stremio/stremio-addon-sdk/blob/master/docs/api/responses/meta.md#video-object
