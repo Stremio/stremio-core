@@ -124,7 +124,8 @@ pub struct Video {
     pub released: DateTime<Utc>,
     pub overview: Option<String>,
     pub thumbnail: Option<String>,
-    pub streams: Option<Vec<Stream>>,
+    #[serde(default)]
+    pub streams: Vec<Stream>,
     // @TODO: season AND episode (but they have to go together)
     #[serde(flatten)]
     pub series_info: Option<SeriesInfo>,
