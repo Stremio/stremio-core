@@ -59,8 +59,10 @@ pub struct MetaPreview {
     pub release_info: Option<String>,
     pub runtime: Option<String>,
     pub released: Option<DateTime<Utc>>,
+    #[deprecated]
     #[serde(default)]
     pub genres: Vec<String>,
+    #[deprecated]
     #[serde(default)]
     pub directors: Vec<String>,
     #[serde(default, skip_serializing_if = "PosterShape::is_unspecified")]
@@ -85,12 +87,16 @@ pub struct MetaDetail {
     pub release_info: Option<String>,
     pub runtime: Option<String>,
     pub released: Option<DateTime<Utc>>,
+    #[deprecated]
     #[serde(default)]
     pub genres: Vec<String>,
+    #[deprecated]
     #[serde(default)]
     pub directors: Vec<String>,
+    #[deprecated]
     #[serde(default)]
     pub writers: Vec<String>,
+    #[deprecated]
     #[serde(default)]
     pub cast: Vec<String>,
     pub imdb_rating: Option<String>,
