@@ -45,7 +45,7 @@ impl PosterShape {
     }
 }
 
-#[derive(PartialEq, Eq, Clone, Debug, Deserialize, Serialize, Default)]
+#[derive(PartialEq, Clone, Debug, Deserialize, Serialize, Default)]
 #[serde(rename_all = "camelCase")]
 pub struct MetaPreview {
     pub id: String,
