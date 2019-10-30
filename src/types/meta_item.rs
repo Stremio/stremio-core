@@ -120,7 +120,7 @@ pub struct Video {
     pub id: String,
     #[serde(alias = "name")]
     pub title: String,
-    pub released: Option<DateTime<Utc>>,
+    pub released: DateTime<Utc>,
     pub overview: Option<String>,
     pub thumbnail: Option<String>,
     #[serde(default)]
