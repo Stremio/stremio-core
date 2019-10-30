@@ -124,6 +124,7 @@ pub struct Video {
     // @TODO: season AND episode (but they have to go together)
     #[serde(flatten)]
     pub series_info: Option<SeriesInfo>,
+    pub trailer: Option<Stream>,
 }
 
 #[derive(PartialEq, Clone, Debug, Deserialize, Serialize)]
