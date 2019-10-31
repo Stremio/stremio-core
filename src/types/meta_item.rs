@@ -64,6 +64,7 @@ pub struct MetaPreview {
     pub genres: Vec<String>,
     #[deprecated]
     #[serde(default)]
+    #[serde(alias = "director")]
     pub directors: Vec<String>,
     #[serde(default, skip_serializing_if = "PosterShape::is_unspecified")]
     pub poster_shape: PosterShape,
@@ -92,9 +93,11 @@ pub struct MetaDetail {
     pub genres: Vec<String>,
     #[deprecated]
     #[serde(default)]
+    #[serde(alias = "director")]
     pub directors: Vec<String>,
     #[deprecated]
     #[serde(default)]
+    #[serde(alias = "writer")]
     pub writers: Vec<String>,
     #[deprecated]
     #[serde(default)]
