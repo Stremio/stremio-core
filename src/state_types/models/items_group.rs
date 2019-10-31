@@ -4,6 +4,7 @@ use serde_derive::*;
 use std::convert::TryInto;
 
 #[derive(Serialize, Clone, Debug, PartialEq)]
+#[serde(tag = "type", content = "content")]
 pub enum CatalogError {
     EmptyContent,
     UnexpectedResp,
