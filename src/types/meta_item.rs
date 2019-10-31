@@ -45,7 +45,7 @@ impl PosterShape {
     }
 }
 
-#[derive(PartialEq, Eq, Clone, Debug, Deserialize, Serialize, Default)]
+#[derive(PartialEq, Clone, Debug, Deserialize, Serialize, Default)]
 #[serde(rename_all = "camelCase")]
 pub struct MetaPreview {
     pub id: String,
@@ -54,8 +54,20 @@ pub struct MetaPreview {
     #[serde(default)]
     pub name: String,
     pub poster: Option<String>,
+    pub logo: Option<String>,
+    pub description: Option<String>,
+    pub release_info: Option<String>,
+    pub runtime: Option<String>,
+    pub released: Option<DateTime<Utc>>,
+    #[deprecated]
+    #[serde(default)]
+    pub genres: Vec<String>,
+    #[deprecated]
+    #[serde(default)]
+    pub directors: Vec<String>,
     #[serde(default, skip_serializing_if = "PosterShape::is_unspecified")]
     pub poster_shape: PosterShape,
+    pub trailer: Option<Stream>,
 }
 
 // https://github.com/Stremio/stremio-addon-sdk/blob/master/docs/api/responses/meta.md#meta-object
@@ -70,11 +82,26 @@ pub struct MetaDetail {
     pub poster: Option<String>,
     pub background: Option<String>,
     pub logo: Option<String>,
-    #[serde(default)]
-    pub popularity: f64,
+    pub popularity: Option<f64>,
     pub description: Option<String>,
     pub release_info: Option<String>,
     pub runtime: Option<String>,
+    pub released: Option<DateTime<Utc>>,
+    #[deprecated]
+    #[serde(default)]
+    pub genres: Vec<String>,
+    #[deprecated]
+    #[serde(default)]
+    pub directors: Vec<String>,
+    #[deprecated]
+    #[serde(default)]
+    pub writers: Vec<String>,
+    #[deprecated]
+    #[serde(default)]
+    pub cast: Vec<String>,
+    pub imdb_rating: Option<String>,
+    #[serde(rename = "imdb_id")]
+    pub imdb_id: Option<String>,
     #[serde(default, skip_serializing_if = "PosterShape::is_unspecified")]
     pub poster_shape: PosterShape,
     // @TODO: default to one video
@@ -89,8 +116,7 @@ pub struct MetaDetail {
     pub external_urls: Vec<(String, String)>,
     // @TODO use some ISO language type
     //pub language: Option<String>,
-    // @TODO crew
-    // @TODO genres
+    pub trailer: Option<Stream>,
 }
 
 // https://github.com/Stremio/stremio-addon-sdk/blob/master/docs/api/responses/meta.md#video-object
@@ -103,10 +129,12 @@ pub struct Video {
     pub released: DateTime<Utc>,
     pub overview: Option<String>,
     pub thumbnail: Option<String>,
-    pub streams: Option<Vec<Stream>>,
+    #[serde(default)]
+    pub streams: Vec<Stream>,
     // @TODO: season AND episode (but they have to go together)
     #[serde(flatten)]
     pub series_info: Option<SeriesInfo>,
+    pub trailer: Option<Stream>,
 }
 
 #[derive(PartialEq, Clone, Debug, Deserialize, Serialize)]
