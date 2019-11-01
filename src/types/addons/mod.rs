@@ -18,7 +18,7 @@ pub struct DescriptorFlags {
     pub protected: bool,
     #[serde(flatten)]
     #[serde(default)]
-    pub other: serde_json::Map<String, serde_json::Value>,
+    pub extra: serde_json::Map<String, serde_json::Value>,
 }
 
 #[derive(PartialEq, Clone, Debug, Deserialize, Serialize)]
