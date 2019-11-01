@@ -11,6 +11,13 @@ pub type TransportUrl = String;
 
 #[derive(PartialEq, Clone, Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
+pub struct DescriptorPreview {
+    pub manifest: ManifestPreview,
+    pub transport_url: TransportUrl,
+}
+
+#[derive(PartialEq, Clone, Debug, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct Descriptor {
     pub manifest: Manifest,
     pub transport_url: TransportUrl,
@@ -56,7 +63,7 @@ pub enum ResourceResponse {
         subtitles: Vec<SubtitlesSource>,
     },
     Addons {
-        addons: Vec<Descriptor>,
+        addons: Vec<DescriptorPreview>,
     },
 }
 
