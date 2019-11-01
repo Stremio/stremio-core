@@ -388,7 +388,7 @@ mod tests {
         {
             let addons = &mut runtime.app.write().unwrap().ctx.content.addons;
             addons[0].manifest.version = zero_ver.clone();
-            addons[0].flags.other.insert("foo".into(), "bar".into());
+            addons[0].flags.extra.insert("foo".into(), "bar".into());
             assert_eq!(&addons[0].manifest.version, &zero_ver);
         }
         let update_action = Action::UserOp(ActionUser::PullAndUpdateAddons);
@@ -398,7 +398,7 @@ mod tests {
             let first_addon = &model.ctx.content.addons[0];
             let expected_val = serde_json::Value::String("bar".into());
             assert_ne!(&first_addon.manifest.version, &zero_ver);
-            assert_eq!(first_addon.flags.other.get("foo"), Some(&expected_val));
+            assert_eq!(first_addon.flags.extra.get("foo"), Some(&expected_val));
         }
 
         // we will now add an item for the anon user
