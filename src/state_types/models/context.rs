@@ -73,9 +73,18 @@ impl<Env: Environment + 'static> Update for Ctx<Env> {
                     .addons
                     .iter()
                     .position(|x| x.transport_url == *transport_url);
+                let is_protected = pos
+                    .and_then(|index| self.content.addons.get(index))
+                    .and_then(|addon| addon.flags.get("protected"))
+                    .and_then(|protected| protected.as_bool())
+                    .unwrap_or(false);
                 if let Some(idx) = pos {
-                    self.content.addons.remove(idx);
-                    Effects::one(save_storage::<Env>(&self.content))
+                    if !is_protected {
+                        self.content.addons.remove(idx);
+                        Effects::one(save_storage::<Env>(&self.content))
+                    } else {
+                        Effects::none().unchanged()
+                    }
                 } else {
                     Effects::none().unchanged()
                 }
