@@ -68,23 +68,12 @@ impl<Env: Environment + 'static> Update for Ctx<Env> {
             }
             // Addon install/remove
             Msg::Action(Action::AddonOp(ActionAddon::Remove { transport_url })) => {
-                let pos = self
-                    .content
-                    .addons
-                    .iter()
-                    .position(|x| x.transport_url == *transport_url);
-                let is_protected = pos
-                    .and_then(|index| self.content.addons.get(index))
-                    .and_then(|addon| addon.flags.get("protected"))
-                    .and_then(|protected| protected.as_bool())
-                    .unwrap_or(false);
-                if let Some(idx) = pos {
-                    if !is_protected {
-                        self.content.addons.remove(idx);
-                        Effects::one(save_storage::<Env>(&self.content))
-                    } else {
-                        Effects::none().unchanged()
-                    }
+                let position = self.content.addons.iter().position(|addon| {
+                    !addon.flags.protected && addon.transport_url == *transport_url
+                });
+                if let Some(position) = position {
+                    self.content.addons.remove(position);
+                    Effects::one(save_storage::<Env>(&self.content))
                 } else {
                     Effects::none().unchanged()
                 }
