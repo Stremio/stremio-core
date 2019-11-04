@@ -73,10 +73,7 @@ impl Env {
             None => None,
         })
     }
-    fn set_storage_sync<T: Serialize>(
-        key: &str,
-        value: Option<&T>,
-    ) -> Result<(), EnvError> {
+    fn set_storage_sync<T: Serialize>(key: &str, value: Option<&T>) -> Result<(), EnvError> {
         let storage = Self::get_storage()?;
         match value {
             Some(v) => {
@@ -124,9 +121,7 @@ impl Environment for Env {
                     // @TODO: optimize this, as this is basically deserializing in JS -> serializing in
                     // JS -> deserializing in rust
                     // NOTE: there's no realistic scenario those unwraps fail
-                    future::Either::A(
-                        JsFuture::from(resp.json().unwrap()).map_err(EnvError::from),
-                    )
+                    future::Either::A(JsFuture::from(resp.json().unwrap()).map_err(EnvError::from))
                 } else {
                     future::Either::B(future::err(EnvError::HTTPStatusCode(resp.status())))
                 }
