@@ -275,7 +275,7 @@ mod tests {
         #[derive(Model, Debug, Default)]
         struct Model {
             ctx: Ctx<Env>,
-            streams: Streams,
+            meta_detail: MetaDetail,
         }
 
         let app = Model::default();
@@ -286,13 +286,14 @@ mod tests {
         //run(runtime.dispatch(&action.into()));
 
         // @TODO install some addons that provide streams
-        let action = Action::Load(ActionLoad::Streams {
+        let action = Action::Load(ActionLoad::MetaDetail {
             type_name: "series".to_string(),
-            id: "tt0773262:6:1".to_string(),
+            id: "tt0773262".to_string(),
+            video_id: Some("tt0773262:6:1".to_string()),
         });
         run(runtime.dispatch(&action.into()));
-        let state = &runtime.app.read().unwrap().streams;
-        assert_eq!(state.groups.len(), 2, "2 groups");
+        let state = &runtime.app.read().unwrap().meta_detail;
+        assert_eq!(state.streams.len(), 2, "2 groups");
     }
 
     #[test]
