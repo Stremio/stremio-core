@@ -275,7 +275,7 @@ mod tests {
         #[derive(Model, Debug, Default)]
         struct Model {
             ctx: Ctx<Env>,
-            meta_detail: MetaDetail,
+            meta_detail: MetaDetails,
         }
 
         let app = Model::default();
@@ -286,7 +286,7 @@ mod tests {
         //run(runtime.dispatch(&action.into()));
 
         // @TODO install some addons that provide streams
-        let action = Action::Load(ActionLoad::MetaDetail {
+        let action = Action::Load(ActionLoad::MetaDetails {
             type_name: "series".to_string(),
             id: "tt0773262".to_string(),
             video_id: Some("tt0773262:6:1".to_string()),

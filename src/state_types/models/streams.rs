@@ -1,19 +1,19 @@
 use super::addons::*;
 use crate::state_types::*;
 use crate::types::addons::{AggrRequest, ResourceRef};
-use crate::types::{MetaPreview, Stream};
+use crate::types::{MetaDetail, Stream};
 use serde_derive::*;
 
 #[derive(Debug, Clone, Default, Serialize)]
-pub struct MetaDetail {
-    pub metas: Vec<ItemsGroup<Vec<MetaPreview>>>,
+pub struct MetaDetails {
+    pub metas: Vec<ItemsGroup<Vec<MetaDetail>>>,
     pub streams: Vec<ItemsGroup<Vec<Stream>>>,
 }
 
-impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for MetaDetail {
+impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for MetaDetails {
     fn update(&mut self, ctx: &Ctx<Env>, msg: &Msg) -> Effects {
         match msg {
-            Msg::Action(Action::Load(ActionLoad::MetaDetail {
+            Msg::Action(Action::Load(ActionLoad::MetaDetails {
                 type_name,
                 id,
                 video_id,

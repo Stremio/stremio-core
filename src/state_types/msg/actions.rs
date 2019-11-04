@@ -10,7 +10,7 @@ use serde_derive::*;
 pub enum ActionLoad {
     CatalogGrouped { extra: Vec<ExtraProp> },
     CatalogFiltered(ResourceRequest),
-    MetaDetail { type_name: String, id: String, video_id: Option<String> },
+    MetaDetails { type_name: String, id: String, video_id: Option<String> },
     Notifications,
 }
 
