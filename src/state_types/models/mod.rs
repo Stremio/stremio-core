@@ -13,8 +13,8 @@ pub use addons::*;
 mod catalogs;
 pub use catalogs::*;
 
-mod streams;
-pub use streams::*;
+mod meta_details;
+pub use meta_details::*;
 
 mod lib_recent;
 pub use lib_recent::*;
