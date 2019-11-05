@@ -120,7 +120,17 @@ pub struct Settings {
 
 impl Settings {
     fn get_endpoint(&self) -> String {
-        format!("{}", Path::new(&self.server_url).join("settings").display())
+        Path::new(&self.server_url)
+            .join("settings")
+            .into_os_string()
+            .into_string()
+            .unwrap_or_else(|_| {
+                Path::new(&Settings::default().server_url)
+                    .join("settings")
+                    .into_os_string()
+                    .into_string()
+                    .expect("Default streaming server endpint is broken")
+            })
     }
 }
 
