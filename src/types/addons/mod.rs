@@ -9,13 +9,32 @@ use derive_more::*;
 
 pub type TransportUrl = String;
 
+#[derive(Default, PartialEq, Clone, Debug, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct DescriptorFlags {
+    #[serde(default)]
+    pub official: bool,
+    #[serde(default)]
+    pub protected: bool,
+    #[serde(flatten)]
+    #[serde(default)]
+    pub extra: serde_json::Map<String, serde_json::Value>,
+}
+
+#[derive(PartialEq, Clone, Debug, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct DescriptorPreview {
+    pub manifest: ManifestPreview,
+    pub transport_url: TransportUrl,
+}
+
 #[derive(PartialEq, Clone, Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Descriptor {
     pub manifest: Manifest,
     pub transport_url: TransportUrl,
     #[serde(default)]
-    pub flags: serde_json::Map<String, serde_json::Value>,
+    pub flags: DescriptorFlags,
 }
 
 #[derive(Debug, Deserialize, Serialize, Clone, PartialEq, Eq)]
@@ -56,7 +75,7 @@ pub enum ResourceResponse {
         subtitles: Vec<SubtitlesSource>,
     },
     Addons {
-        addons: Vec<Descriptor>,
+        addons: Vec<DescriptorPreview>,
     },
 }
 
