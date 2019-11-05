@@ -26,7 +26,7 @@ impl<R, E> Default for Loadable<R, E> {
 
 #[derive(Debug, Serialize, Clone)]
 pub struct ItemsGroup<T> {
-    req: ResourceRequest,
+    pub req: ResourceRequest,
     pub content: Loadable<T, CatalogError>,
 }
 impl<T> Group for ItemsGroup<T>
