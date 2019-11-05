@@ -18,14 +18,12 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for MetaDetails {
                 id,
                 video_id,
             })) => {
-                let mut detail_effects = Effects::none().unchanged();
                 let metas_resource_ref = ResourceRef::without_extra("meta", type_name, id);
                 let (metas, metas_effects) = addon_aggr_new::<Env, _>(
                     &ctx.content.addons,
                     &AggrRequest::AllOfResource(metas_resource_ref),
                 );
                 self.metas = metas;
-                detail_effects = detail_effects.join(metas_effects);
                 if let Some(video_id) = video_id {
                     let streams_resource_ref =
                         ResourceRef::without_extra("stream", type_name, video_id);
@@ -34,9 +32,9 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for MetaDetails {
                         &AggrRequest::AllOfResource(streams_resource_ref),
                     );
                     self.streams = streams;
-                    detail_effects = detail_effects.join(streams_effects);
+                    return metas_effects.join(streams_effects);
                 }
-                detail_effects
+                metas_effects
             }
             _ => addon_aggr_update(&mut self.metas, msg)
                 .join(addon_aggr_update(&mut self.streams, msg)),
