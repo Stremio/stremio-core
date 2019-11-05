@@ -224,6 +224,7 @@ lazy_static! {
 #[serde(rename_all = "camelCase")]
 pub enum StreamingServerSettingsModel {
     NotLoaded,
+    Loading,
     Ready(StreamingServerSettings),
     Error(String),
 }
@@ -241,6 +242,7 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for StreamingServerSett
             // This is triggered after loading the settings from local storage
             Msg::Internal(CtxLoaded(_))
             | Msg::Action(Action::Settings(ActionSettings::LoadStreamingServer)) => {
+                *self = StreamingServerSettingsModel::Loading;
                 web_sys::console::log_1(&"Load Ss Settings!".to_string().into());
                 let url = &ctx.content.settings.get_endpoint();
                 match Request::get(url).body(()) {
