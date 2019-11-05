@@ -246,8 +246,8 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for StreamingServerSett
                 web_sys::console::log_1(&"Load Ss Settings!".to_string().into());
                 let url = &ctx.content.settings.get_endpoint();
                 match Request::get(url).body(()) {
-                    Ok(resp) => Effects::one(Box::new(
-                        Env::fetch_serde::<_, SsSettings>(resp)
+                    Ok(req) => Effects::one(Box::new(
+                        Env::fetch_serde::<_, SsSettings>(req)
                             .and_then(|settings: SsSettings| {
                                 let is_custom_profile = PROFILES.get(
                                     &SsProfileName::from_opt_string(&settings.values.bt_profile),
@@ -304,8 +304,8 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for StreamingServerSett
                     .body(values)
                     .ok()
                 {
-                    Some(resp) => Effects::one(Box::new(
-                        Env::fetch_serde::<_, SsResponse>(resp)
+                    Some(req) => Effects::one(Box::new(
+                        Env::fetch_serde::<_, SsResponse>(req)
                             .and_then(|s_resp: SsResponse| {
                                 web_sys::console::log_1(
                                     &format!(
