@@ -26,9 +26,6 @@ pub enum SsProfileName {
     Custom,
 }
 impl SsProfileName {
-    fn default_profile() -> Self {
-        SsProfileName::Default
-    }
     fn from_opt_string(str_profile: &Option<String>) -> SsProfileName {
         let str_profile = str_profile
             .to_owned()
@@ -43,6 +40,11 @@ impl SsProfileName {
     }
     fn as_string(&self) -> String {
         self.to_string().to_lowercase()
+    }
+}
+impl Default for SsProfileName {
+    fn default() -> Self {
+        SsProfileName::Default
     }
 }
 impl fmt::Display for SsProfileName {
@@ -83,7 +85,7 @@ impl Default for SsValues {
             app_path: None,
             cache_root: None,
             cache_size: None,
-            bt_profile: Some(SsProfileName::default_profile().as_string()),
+            bt_profile: Some(SsProfileName::default().as_string()),
             bt_params: None,
         }
     }
