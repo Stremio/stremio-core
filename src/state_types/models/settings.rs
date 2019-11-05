@@ -8,6 +8,7 @@ use lazy_static::lazy_static;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::fmt::{self, Debug};
+use std::path::Path;
 
 extern crate web_sys;
 
@@ -119,7 +120,7 @@ pub struct Settings {
 
 impl Settings {
     fn get_endpoint(&self) -> String {
-        format!("{}{}", self.server_url, "settings")
+        format!("{}", Path::new(&self.server_url).join("settings").display())
     }
 }
 
