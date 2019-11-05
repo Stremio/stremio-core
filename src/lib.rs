@@ -5,7 +5,7 @@ use stremio_core::state_types::*;
 use env_web::*;
 use futures::stream::Stream;
 pub use stremio_core::state_types;
-use stremio_core::types::addons::Descriptor;
+use stremio_core::types::addons::DescriptorPreview;
 use stremio_core::types::MetaPreview;
 use stremio_derive::*;
 use wasm_bindgen::prelude::*;
@@ -19,7 +19,7 @@ pub struct Model {
     recent: LibRecent,
     board: CatalogGrouped,
     discover: CatalogFiltered<MetaPreview>,
-    addons: CatalogFiltered<Descriptor>,
+    addons: CatalogFiltered<DescriptorPreview>,
     streaming_server_settings: StreamingServerSettingsModel,
 }
 
