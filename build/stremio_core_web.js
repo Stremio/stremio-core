@@ -31,11 +31,11 @@ function addHeapObject(obj) {
 }
 
 function __wbg_elem_binding0(arg0, arg1, arg2) {
-  wasm.__wbg_function_table.get(105)(arg0, arg1, addHeapObject(arg2));
+  wasm.__wbg_function_table.get(113)(arg0, arg1, addHeapObject(arg2));
 }
 
 function __wbg_elem_binding1(arg0, arg1, arg2, arg3) {
-  wasm.__wbg_function_table.get(60)(arg0, arg1, addHeapObject(arg2), addHeapObject(arg3));
+  wasm.__wbg_function_table.get(58)(arg0, arg1, addHeapObject(arg2), addHeapObject(arg3));
 }
 
 var stack_pointer = 32;
@@ -456,20 +456,6 @@ function init(module) {
     }
   };
 
-  imports.wbg.__wbindgen_json_parse = function (arg0, arg1) {
-    var ret = JSON.parse(getStringFromWasm(arg0, arg1));
-    return addHeapObject(ret);
-  };
-
-  imports.wbg.__wbindgen_json_serialize = function (arg0, arg1) {
-    var obj = getObject(arg1);
-    var ret = JSON.stringify(obj === undefined ? null : obj);
-    var ret0 = passStringToWasm(ret);
-    var ret1 = WASM_VECTOR_LEN;
-    getInt32Memory()[arg0 / 4 + 0] = ret0;
-    getInt32Memory()[arg0 / 4 + 1] = ret1;
-  };
-
   imports.wbg.__wbg_new_eb0c1cd98131d6b3 = function () {
     var ret = new Object();
     return addHeapObject(ret);
@@ -485,12 +471,8 @@ function init(module) {
     return addHeapObject(ret);
   };
 
-  imports.wbg.__widl_f_remove_item_Storage = function (arg0, arg1, arg2) {
-    try {
-      getObject(arg0).removeItem(getStringFromWasm(arg1, arg2));
-    } catch (e) {
-      handleError(e);
-    }
+  imports.wbg.__widl_f_log_1_ = function (arg0) {
+    console.log(getObject(arg0));
   };
 
   imports.wbg.__widl_instanceof_Response = function (arg0) {
@@ -501,6 +483,20 @@ function init(module) {
   imports.wbg.__widl_f_status_Response = function (arg0) {
     var ret = getObject(arg0).status;
     return ret;
+  };
+
+  imports.wbg.__wbindgen_json_serialize = function (arg0, arg1) {
+    var obj = getObject(arg1);
+    var ret = JSON.stringify(obj === undefined ? null : obj);
+    var ret0 = passStringToWasm(ret);
+    var ret1 = WASM_VECTOR_LEN;
+    getInt32Memory()[arg0 / 4 + 0] = ret0;
+    getInt32Memory()[arg0 / 4 + 1] = ret1;
+  };
+
+  imports.wbg.__wbindgen_json_parse = function (arg0, arg1) {
+    var ret = JSON.parse(getStringFromWasm(arg0, arg1));
+    return addHeapObject(ret);
   };
 
   imports.wbg.__wbindgen_debug_string = function (arg0, arg1) {
@@ -584,6 +580,14 @@ function init(module) {
     }
   };
 
+  imports.wbg.__widl_f_remove_item_Storage = function (arg0, arg1, arg2) {
+    try {
+      getObject(arg0).removeItem(getStringFromWasm(arg1, arg2));
+    } catch (e) {
+      handleError(e);
+    }
+  };
+
   imports.wbg.__widl_f_set_item_Storage = function (arg0, arg1, arg2, arg3, arg4) {
     try {
       getObject(arg0).setItem(getStringFromWasm(arg1, arg2), getStringFromWasm(arg3, arg4));
@@ -592,7 +596,7 @@ function init(module) {
     }
   };
 
-  imports.wbg.__wbindgen_closure_wrapper3041 = function (arg0, arg1, arg2) {
+  imports.wbg.__wbindgen_closure_wrapper3204 = function (arg0, arg1, arg2) {
     var state = {
       a: arg0,
       b: arg1,
@@ -607,7 +611,7 @@ function init(module) {
       try {
         return __wbg_elem_binding0(a, state.b, arg0);
       } finally {
-        if (--state.cnt === 0) wasm.__wbg_function_table.get(106)(a, state.b);else state.a = a;
+        if (--state.cnt === 0) wasm.__wbg_function_table.get(114)(a, state.b);else state.a = a;
       }
     };
 
