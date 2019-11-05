@@ -19,10 +19,16 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for MetaDetails {
                 video_id,
             })) => {
                 let metas_resource_ref = ResourceRef::without_extra("meta", type_name, id);
-                let (metas, metas_effects) = addon_aggr_new::<Env, _>(
-                    &ctx.content.addons,
-                    &AggrRequest::AllOfResource(metas_resource_ref),
-                );
+                let (metas, metas_effects) = if self.metas.first().map_or(false, |metas_group| {
+                    metas_group.req.path == metas_resource_ref
+                }) {
+                    addon_aggr_new::<Env, _>(
+                        &ctx.content.addons,
+                        &AggrRequest::AllOfResource(metas_resource_ref),
+                    )
+                } else {
+                    (self.metas, Effects::none().unchanged())
+                };
                 self.metas = metas;
                 if let Some(video_id) = video_id {
                     let streams_resource_ref =
