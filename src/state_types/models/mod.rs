@@ -21,3 +21,6 @@ pub use lib_recent::*;
 
 mod notifications;
 pub use notifications::*;
+
+mod settings;
+pub use settings::*;

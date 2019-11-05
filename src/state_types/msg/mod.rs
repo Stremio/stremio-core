@@ -1,4 +1,4 @@
-use crate::state_types::{CtxContent, EnvError};
+use crate::state_types::{CtxContent, EnvError, SsSettings};
 use crate::types::addons::*;
 use crate::types::api::*;
 use crate::types::{LibBucket, Stream};
@@ -30,6 +30,8 @@ pub enum Internal {
     LibSyncPulled(LibBucket),
     // Response from an add-on
     AddonResponse(ResourceRequest, Box<Result<ResourceResponse, EnvError>>),
+    StreamingServerSettingsLoaded(SsSettings),
+    StreamingServerSettingsErrored(String),
 }
 
 //
@@ -67,6 +69,7 @@ pub enum Event {
     LibPersisted,
     LibPushed,
     LibFatal(CtxError),
+    SettingsStoreError(String),
 }
 
 //

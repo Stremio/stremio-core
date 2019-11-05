@@ -28,12 +28,14 @@ pub struct Auth {
 pub struct CtxContent {
     pub auth: Option<Auth>,
     pub addons: Vec<Descriptor>,
+    pub settings: Settings,
 }
 impl Default for CtxContent {
     fn default() -> Self {
         CtxContent {
             auth: None,
             addons: DEFAULT_ADDONS.to_owned(),
+            settings: Settings::default(),
         }
     }
 }
@@ -59,10 +61,8 @@ impl<Env: Environment + 'static> Update for Ctx<Env> {
                 Effects::one(load_storage::<Env>()).unchanged()
             }
             Msg::Internal(CtxLoaded(opt_content)) => {
-                self.content = opt_content
-                    .as_ref()
-                    .map(|x| *x.to_owned())
-                    .unwrap_or_default();
+                self.content = *opt_content.to_owned().unwrap_or_default();
+
                 self.is_loaded = true;
                 self.library.load_from_storage::<Env>(&self.content)
             }
@@ -81,6 +81,10 @@ impl<Env: Environment + 'static> Update for Ctx<Env> {
             Msg::Action(Action::AddonOp(ActionAddon::Install(descriptor))) => {
                 // @TODO should we dedupe?
                 self.content.addons.push(*descriptor.to_owned());
+                Effects::one(save_storage::<Env>(&self.content))
+            }
+            Msg::Action(Action::Settings(ActionSettings::Store(settings))) => {
+                self.content.settings = *settings.to_owned();
                 Effects::one(save_storage::<Env>(&self.content))
             }
             // User actions related to API primitives (authentication/addons)
@@ -196,10 +200,13 @@ fn authenticate<Env: Environment + 'static>(action: ActionUser, req: APIRequest)
                 auth_key: key.to_owned(),
                 update: true,
             };
+
+            // This is used only for authenticated users.
             api_fetch::<Env, CollectionResponse, _>(pull_req).map(
                 move |CollectionResponse { addons, .. }| CtxContent {
                     auth: Some(Auth { key, user }),
                     addons,
+                    settings: Settings::default(),
                 },
             )
         })
