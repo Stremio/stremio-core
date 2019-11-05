@@ -24,6 +24,7 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for MetaDetails {
                     &AggrRequest::AllOfResource(metas_resource_ref),
                 );
                 self.metas = metas;
+                self.streams = Vec::new();
                 if let Some(video_id) = video_id {
                     let streams_resource_ref =
                         ResourceRef::without_extra("stream", type_name, video_id);
