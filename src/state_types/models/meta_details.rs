@@ -7,7 +7,7 @@ use serde_derive::*;
 #[derive(Debug, Clone, Default, Serialize)]
 pub struct MetaDetails {
     pub selected: Option<(ResourceRef, Option<ResourceRef>)>,
-    pub metas: Vec<ItemsGroup<Vec<MetaDetail>>>,
+    pub metas: Vec<ItemsGroup<MetaDetail>>,
     pub streams: Vec<ItemsGroup<Vec<Stream>>>,
 }
 
