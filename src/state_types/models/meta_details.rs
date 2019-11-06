@@ -19,8 +19,8 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for MetaDetails {
                 video_id,
             })) => {
                 let metas_resource_ref = ResourceRef::without_extra("meta", type_name, id);
-                let metas_effects = if self.metas.first().map_or(false, |metas_group| {
-                    metas_group.req.path == metas_resource_ref
+                let metas_effects = if self.metas.first().map_or(true, |metas_group| {
+                    metas_group.req.path != metas_resource_ref
                 }) {
                     let (metas, metas_effects) = addon_aggr_new::<Env, _>(
                         &ctx.content.addons,
@@ -34,8 +34,8 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for MetaDetails {
                 if let Some(video_id) = video_id {
                     let streams_resource_ref =
                         ResourceRef::without_extra("stream", type_name, video_id);
-                    let streams_effects = if self.streams.first().map_or(false, |streams_group| {
-                        streams_group.req.path == streams_resource_ref
+                    let streams_effects = if self.streams.first().map_or(true, |streams_group| {
+                        streams_group.req.path != streams_resource_ref
                     }) {
                         let (streams, streams_effects) = addon_aggr_new::<Env, _>(
                             &ctx.content.addons,
