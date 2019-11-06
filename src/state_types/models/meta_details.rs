@@ -19,32 +19,33 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for MetaDetails {
                 video_id,
             })) => {
                 let metas_resource_ref = ResourceRef::without_extra("meta", type_name, id);
-                let (metas, metas_effects) = if self.metas.first().map_or(false, |metas_group| {
+                let metas_effects = if self.metas.first().map_or(false, |metas_group| {
                     metas_group.req.path == metas_resource_ref
                 }) {
-                    addon_aggr_new::<Env, _>(
+                    let (metas, metas_effects) = addon_aggr_new::<Env, _>(
                         &ctx.content.addons,
                         &AggrRequest::AllOfResource(metas_resource_ref),
-                    )
+                    );
+                    self.metas = metas;
+                    metas_effects
                 } else {
-                    (self.metas, Effects::none().unchanged())
+                    Effects::none().unchanged()
                 };
-                self.metas = metas;
                 if let Some(video_id) = video_id {
                     let streams_resource_ref =
                         ResourceRef::without_extra("stream", type_name, video_id);
-                    let (streams, streams_effects) =
-                        if self.streams.first().map_or(false, |streams_group| {
-                            streams_group.req.path == streams_resource_ref
-                        }) {
-                            addon_aggr_new::<Env, _>(
-                                &ctx.content.addons,
-                                &AggrRequest::AllOfResource(streams_resource_ref),
-                            )
-                        } else {
-                            (self.streams, Effects::none().unchanged())
-                        };
-                    self.streams = streams;
+                    let streams_effects = if self.streams.first().map_or(false, |streams_group| {
+                        streams_group.req.path == streams_resource_ref
+                    }) {
+                        let (streams, streams_effects) = addon_aggr_new::<Env, _>(
+                            &ctx.content.addons,
+                            &AggrRequest::AllOfResource(streams_resource_ref),
+                        );
+                        self.streams = streams;
+                        streams_effects
+                    } else {
+                        Effects::none().unchanged()
+                    };
                     metas_effects.join(streams_effects)
                 } else {
                     self.streams = Vec::new();
