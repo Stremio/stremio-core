@@ -6,6 +6,7 @@ use serde_derive::*;
 
 #[derive(Debug, Clone, Default, Serialize)]
 pub struct MetaDetails {
+    pub selected: Option<(ResourceRef, Option<ResourceRef>)>,
     pub metas: Vec<ItemsGroup<Vec<MetaDetail>>>,
     pub streams: Vec<ItemsGroup<Vec<Stream>>>,
 }
@@ -24,7 +25,7 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for MetaDetails {
                 }) {
                     let (metas, metas_effects) = addon_aggr_new::<Env, _>(
                         &ctx.content.addons,
-                        &AggrRequest::AllOfResource(metas_resource_ref),
+                        &AggrRequest::AllOfResource(metas_resource_ref.clone()),
                     );
                     self.metas = metas;
                     metas_effects
@@ -39,16 +40,18 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for MetaDetails {
                     }) {
                         let (streams, streams_effects) = addon_aggr_new::<Env, _>(
                             &ctx.content.addons,
-                            &AggrRequest::AllOfResource(streams_resource_ref),
+                            &AggrRequest::AllOfResource(streams_resource_ref.clone()),
                         );
                         self.streams = streams;
                         streams_effects
                     } else {
                         Effects::none().unchanged()
                     };
+                    self.selected = Some((metas_resource_ref, Some(streams_resource_ref)));
                     metas_effects.join(streams_effects)
                 } else {
                     self.streams = Vec::new();
+                    self.selected = Some((metas_resource_ref, None));
                     metas_effects
                 }
             }
