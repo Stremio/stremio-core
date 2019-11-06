@@ -275,7 +275,7 @@ mod tests {
         #[derive(Model, Debug, Default)]
         struct Model {
             ctx: Ctx<Env>,
-            meta_detail: MetaDetails,
+            meta_details: MetaDetails,
         }
 
         let app = Model::default();
@@ -292,7 +292,7 @@ mod tests {
             video_id: Some("tt0773262:6:1".to_string()),
         });
         run(runtime.dispatch(&action.into()));
-        let state = &runtime.app.read().unwrap().meta_detail;
+        let state = &runtime.app.read().unwrap().meta_details;
         assert_eq!(state.streams.len(), 2, "2 groups");
     }
 
