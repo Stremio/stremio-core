@@ -2,6 +2,7 @@ use crate::types::addons::*;
 use crate::types::LibItem;
 use crate::state_types::{Settings, StreamingServerSettings};
 use serde_derive::*;
+use crate::types::api::GDPRConsent;
 
 //
 // Input actions: those are triggered by users
@@ -33,11 +34,11 @@ pub enum ActionSettings {
     Store(Box<Settings>),
 }
 
-#[derive(Debug, Deserialize, Serialize, Clone)]
+#[derive(Deserialize, Serialize, Clone, Debug)]
 #[serde(tag = "userOp", content = "args")]
 pub enum ActionUser {
     Login { email: String, password: String },
-    Register { email: String, password: String },
+    Register { email: String, password: String, gdpr_consent: GDPRConsent },
     Logout,
     PullAndUpdateAddons,
     PushAddons,
