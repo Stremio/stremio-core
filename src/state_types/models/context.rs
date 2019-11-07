@@ -3,6 +3,7 @@ use crate::state_types::Internal::*;
 use crate::state_types::*;
 use crate::types::addons::Descriptor;
 use crate::types::api::*;
+use chrono::Utc;
 use derivative::*;
 use futures::Future;
 use lazy_static::*;
@@ -105,9 +106,15 @@ impl<Env: Environment + 'static> Update for Ctx<Env> {
                         None => Effects::msg(CtxUpdate(new_content).into()).unchanged(),
                     }
                 }
-                ActionUser::Register { email, password } => Effects::one(authenticate::<Env>(
+                ActionUser::Register { email, password, tos, privacy, marketing, from } => Effects::one(authenticate::<Env>(
                     action.to_owned(),
-                    APIRequest::Register { email, password },
+                    APIRequest::Register { email, password, gdpr_consent: GDPRConsent {
+                        tos: tos,
+                        privacy: privacy,
+                        marketing: marketing,
+                        from: from,
+                        time: Utc::now()
+                    } },
                 ))
                 .unchanged(),
                 ActionUser::Login { email, password } => Effects::one(authenticate::<Env>(

@@ -37,7 +37,7 @@ pub enum ActionSettings {
 #[serde(tag = "userOp", content = "args")]
 pub enum ActionUser {
     Login { email: String, password: String },
-    Register { email: String, password: String },
+    Register { email: String, password: String, tos: bool, privacy: bool, marketing: bool, from: String },
     Logout,
     PullAndUpdateAddons,
     PushAddons,
