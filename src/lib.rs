@@ -1,10 +1,8 @@
+use env_web::*;
 use futures::future;
+use futures::stream::Stream;
 use serde::{Deserialize, Serialize};
 use stremio_core::state_types::*;
-// required to make stremio_derive work :(
-use env_web::*;
-use futures::stream::Stream;
-pub use stremio_core::state_types;
 use stremio_core::types::addons::DescriptorPreview;
 use stremio_core::types::MetaPreview;
 use stremio_derive::*;
