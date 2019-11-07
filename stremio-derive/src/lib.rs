@@ -12,14 +12,8 @@ const CORE_CRATE_ORIGINAL_NAME: &str = "stremio-core";
 #[proc_macro_derive(Model)]
 pub fn model_derive(input: TokenStream) -> TokenStream {
     // `$crate` alternative for proc macros (https://github.com/rust-lang/rust/issues/54363)
-    let core_crate_name = crate_name(CORE_CRATE_ORIGINAL_NAME).unwrap_or_else(|_| {
-        panic!(
-            "crate `{}` has to be included in dependencies in `Cargo.toml`",
-            CORE_CRATE_ORIGINAL_NAME
-        )
-    });
+    let core_crate_name = crate_name(CORE_CRATE_ORIGINAL_NAME).unwrap_or("crate".to_owned());
     let core = Ident::new(&core_crate_name, Span::call_site());
-
     let input = parse_macro_input!(input as DeriveInput);
 
     if let Data::Struct(DataStruct {
