@@ -21,7 +21,7 @@ pub trait APIMethodName {
     fn method_name(&self) -> &str;
 }
 
-#[derive(Serialize, Clone)]
+#[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct GDPRConsent {
     pub tos: bool,
     pub privacy: bool,
