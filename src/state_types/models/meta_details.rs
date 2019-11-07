@@ -21,80 +21,81 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for MetaDetails {
                 video_id,
             })) => {
                 let metas_resource_ref = ResourceRef::without_extra("meta", type_name, id);
-                let metas_effects = if self.metas.first().map_or(true, |metas_group| {
-                    metas_group.req.path != metas_resource_ref
-                }) {
-                    let (metas, metas_effects) = addon_aggr_new::<Env, _>(
-                        &ctx.content.addons,
-                        &AggrRequest::AllOfResource(metas_resource_ref.clone()),
-                    );
+                let (metas, mut metas_effects) = addon_aggr_new::<Env, ItemsGroup<MetaDetail>>(
+                    &ctx.content.addons,
+                    &AggrRequest::AllOfResource(metas_resource_ref.to_owned()),
+                );
+                let metas_changed = !metas
+                    .iter()
+                    .map(|group| &group.req.path)
+                    .eq(self.metas.iter().map(|group| &group.req.path));
+                if metas_changed {
                     self.metas = metas;
-                    metas_effects
                 } else {
-                    Effects::none().unchanged()
+                    metas_effects = Effects::none().unchanged();
                 };
                 if let Some(video_id) = video_id {
                     let streams_resource_ref =
                         ResourceRef::without_extra("stream", type_name, video_id);
-                    let streams_effects = if self.streams.first().map_or(true, |streams_group| {
-                        streams_group.req.path != streams_resource_ref
-                    }) {
-                        let (streams, streams_effects) = addon_aggr_new::<Env, _>(
-                            &ctx.content.addons,
-                            &AggrRequest::AllOfResource(streams_resource_ref.clone()),
-                        );
-                        self.streams = streams;
-                        streams_effects
-                    } else {
-                        Effects::none().unchanged()
-                    };
+                    let (streams, streams_effects) = addon_aggr_new::<Env, ItemsGroup<Vec<Stream>>>(
+                        &ctx.content.addons,
+                        &AggrRequest::AllOfResource(streams_resource_ref.clone()),
+                    );
+                    let streams_changed = !streams
+                        .iter()
+                        .map(|group| &group.req.path)
+                        .eq(self.streams.iter().map(|group| &group.req.path));
                     self.selected = Some((metas_resource_ref, Some(streams_resource_ref)));
-                    metas_effects.join(streams_effects)
+                    if streams_changed {
+                        self.streams = streams;
+                        metas_effects.join(streams_effects)
+                    } else {
+                        metas_effects
+                    }
                 } else {
-                    self.streams = Vec::new();
                     self.selected = Some((metas_resource_ref, None));
+                    self.streams = Vec::new();
                     metas_effects
                 }
             }
             Msg::Internal(AddonResponse(_, _)) => {
                 let metas_effects = addon_aggr_update(&mut self.metas, msg);
-                let streams_effects: Effects =
-                    if let Some((_, Some(streams_resource_ref))) = &self.selected {
-                        if let Some((meta_transport_url, streams_from_meta)) = self
-                            .metas
-                            .iter()
-                            .find_map(|metas_group| match &metas_group.content {
-                                Loadable::Ready(meta_item) => {
-                                    meta_item.videos.iter().find_map(|video| {
-                                        if video.id == streams_resource_ref.id
-                                            && !video.streams.is_empty()
-                                        {
-                                            Some((
-                                                metas_group.req.base.to_owned(),
-                                                video.streams.to_owned(),
-                                            ))
-                                        } else {
-                                            None
-                                        }
-                                    })
-                                }
-                                _ => None,
-                            })
-                        {
-                            self.streams = vec![ItemsGroup {
+                let streams_effects = if let Some((_, Some(streams_resource_ref))) = &self.selected
+                {
+                    let streams_from_meta = self
+                        .metas
+                        .iter()
+                        .find_map(|group| match &group.content {
+                            Loadable::Ready(meta_item) => Some((&group.req, meta_item)),
+                            _ => None,
+                        })
+                        .map_or(None, |(req, meta_item)| {
+                            meta_item
+                                .videos
+                                .iter()
+                                .find(|video| {
+                                    video.id == streams_resource_ref.id && !video.streams.is_empty()
+                                })
+                                .map_or(None, |video| Some((req, &video.streams)))
+                        })
+                        .map_or(None, |(req, streams)| {
+                            Some(vec![ItemsGroup {
                                 req: ResourceRequest {
-                                    base: meta_transport_url,
+                                    base: req.base.to_owned(),
                                     path: streams_resource_ref.to_owned(),
                                 },
-                                content: Loadable::Ready(streams_from_meta),
-                            }];
-                            Effects::none()
-                        } else {
-                            addon_aggr_update(&mut self.streams, msg)
-                        }
+                                content: Loadable::Ready(streams.to_owned()),
+                            }])
+                        });
+                    if let Some(streams_from_meta) = streams_from_meta {
+                        self.streams = streams_from_meta;
+                        Effects::none()
                     } else {
-                        Effects::none().unchanged()
-                    };
+                        addon_aggr_update(&mut self.streams, msg)
+                    }
+                } else {
+                    Effects::none().unchanged()
+                };
 
                 metas_effects.join(streams_effects)
             }
