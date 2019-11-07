@@ -1,5 +1,6 @@
 use crate::types::addons::*;
 use crate::types::LibItem;
+use crate::state_types::{Settings, StreamingServerSettings};
 use serde_derive::*;
 
 //
@@ -21,6 +22,16 @@ pub enum ActionAddon {
     Install(Box<Descriptor>),
 }
 
+#[derive(Debug, Deserialize, Clone)]
+#[serde(tag = "settings", content = "args")]
+pub enum ActionSettings {
+    // Although we load the streaming server settings together with the context
+    // there is also a way to reload it separately in cases this is necessary.
+    LoadStreamingServer,
+    StoreStreamingServer(Box<StreamingServerSettings>),
+    Store(Box<Settings>),
+}
+
 #[derive(Debug, Deserialize, Serialize, Clone)]
 #[serde(tag = "userOp", content = "args")]
 pub enum ActionUser {
@@ -39,6 +50,7 @@ pub enum ActionUser {
 pub enum Action {
     LoadCtx,
     Load(ActionLoad),
+    Settings(ActionSettings),
     AddonOp(ActionAddon),
     UserOp(ActionUser),
 }

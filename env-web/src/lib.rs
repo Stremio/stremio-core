@@ -73,18 +73,16 @@ impl Env {
             None => None,
         })
     }
-    fn set_storage_sync<T: Serialize>(
-        key: &str,
-        value: Option<&T>,
-    ) -> Result<(), EnvError> {
+    fn set_storage_sync<T: Serialize>(key: &str, value: Option<&T>) -> Result<(), EnvError> {
         let storage = Self::get_storage()?;
-        Ok(match value {
+        match value {
             Some(v) => {
                 let serialized = serde_json::to_string(v)?;
                 storage.set_item(key, &serialized)?
             }
             None => storage.remove_item(key)?,
-        })
+        }
+        Ok(())
     }
 }
 impl Environment for Env {
@@ -116,23 +114,21 @@ impl Environment for Env {
             .expect("failed building request");
         let pr = window.fetch_with_request(&req);
         let fut = JsFuture::from(pr)
-            .map_err(|e| EnvError::from(e))
+            .map_err(EnvError::from)
             .and_then(|resp_value| {
                 let resp: Response = resp_value.dyn_into().unwrap();
                 if resp.status() == 200 {
                     // @TODO: optimize this, as this is basically deserializing in JS -> serializing in
                     // JS -> deserializing in rust
                     // NOTE: there's no realistic scenario those unwraps fail
-                    future::Either::A(
-                        JsFuture::from(resp.json().unwrap()).map_err(|e| EnvError::from(e)),
-                    )
+                    future::Either::A(JsFuture::from(resp.json().unwrap()).map_err(EnvError::from))
                 } else {
                     future::Either::B(future::err(EnvError::HTTPStatusCode(resp.status())))
                 }
             })
             .and_then(|json| match json.into_serde() {
                 Ok(r) => future::ok(r),
-                Err(e) => future::err(EnvError::from(e).into()),
+                Err(e) => future::err(EnvError::from(e)),
             })
             .map_err(Into::into);
         Box::new(fut)
