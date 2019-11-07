@@ -10,8 +10,6 @@ use std::collections::HashMap;
 use std::fmt::{self, Debug};
 use std::path::Path;
 
-extern crate web_sys;
-
 #[derive(Deserialize, Serialize, Clone, Debug)]
 pub struct SsOption {
     pub id: String,
@@ -237,13 +235,11 @@ impl Default for StreamingServerSettingsModel {
 
 impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for StreamingServerSettingsModel {
     fn update(&mut self, ctx: &Ctx<Env>, msg: &Msg) -> Effects {
-        // web_sys::console::log_1(&format!("Update Settings!").into());
         match msg {
             // This is triggered after loading the settings from local storage
             Msg::Internal(CtxLoaded(_))
             | Msg::Action(Action::Settings(ActionSettings::LoadStreamingServer)) => {
                 *self = StreamingServerSettingsModel::Loading;
-                web_sys::console::log_1(&"Load Ss Settings!".to_string().into());
                 let url = &ctx.content.settings.get_endpoint();
                 match Request::get(url).body(()) {
                     Ok(req) => Effects::one(Box::new(
@@ -263,9 +259,6 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for StreamingServerSett
                                 Ok(Msg::Internal(StreamingServerSettingsLoaded(settings)))
                             })
                             .or_else(|e| {
-                                web_sys::console::log_1(
-                                    &format!("Streaming server settings error: {}", e).into(),
-                                );
                                 Ok(Msg::Internal(StreamingServerSettingsErrored(format!(
                                     "{}",
                                     e
@@ -307,14 +300,6 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for StreamingServerSett
                     Some(req) => Effects::one(Box::new(
                         Env::fetch_serde::<_, SsResponse>(req)
                             .and_then(|s_resp: SsResponse| {
-                                web_sys::console::log_1(
-                                    &format!(
-                                        "Streaming server settings stored: {}",
-                                        s_resp.success
-                                    )
-                                    .into(),
-                                );
-                                // TODO: handle the case when s_resp.success is false
                                 Ok(if s_resp.success {
                                     Msg::Action(Action::Settings(
                                         ActionSettings::LoadStreamingServer,
@@ -326,9 +311,6 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for StreamingServerSett
                                 })
                             })
                             .or_else(|e| {
-                                web_sys::console::log_1(
-                                    &format!("Streaming server settings error: {}", e).into(),
-                                );
                                 Ok(Msg::Internal(StreamingServerSettingsErrored(format!(
                                     "{}",
                                     e
