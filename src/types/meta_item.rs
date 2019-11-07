@@ -62,10 +62,10 @@ pub struct MetaPreview {
     #[deprecated]
     #[serde(default)]
     pub genres: Vec<String>,
-    #[deprecated]
-    #[serde(default)]
-    #[serde(alias = "director")]
-    pub directors: Vec<String>,
+    //#[deprecated]
+    //#[serde(default)]
+    //#[serde(alias = "director")]
+    //pub directors: Vec<String>,
     #[serde(default, skip_serializing_if = "PosterShape::is_unspecified")]
     pub poster_shape: PosterShape,
     pub trailer: Option<Stream>,
@@ -91,20 +91,18 @@ pub struct MetaDetail {
     #[deprecated]
     #[serde(default)]
     pub genres: Vec<String>,
-    #[deprecated]
-    #[serde(default)]
-    #[serde(alias = "director")]
-    pub directors: Vec<String>,
-    #[deprecated]
-    #[serde(default)]
-    #[serde(alias = "writer")]
-    pub writers: Vec<String>,
+    //#[deprecated]
+    //#[serde(default)]
+    //#[serde(alias = "director")]
+    //pub directors: Vec<String>,
+    //#[deprecated]
+    //#[serde(default)]
+    //#[serde(alias = "writer")]
+    //pub writers: Vec<String>,
     #[deprecated]
     #[serde(default)]
     pub cast: Vec<String>,
     pub imdb_rating: Option<String>,
-    #[serde(rename = "imdb_id")]
-    pub imdb_id: Option<String>,
     #[serde(default, skip_serializing_if = "PosterShape::is_unspecified")]
     pub poster_shape: PosterShape,
     // @TODO: default to one video
