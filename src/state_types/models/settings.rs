@@ -22,30 +22,16 @@ pub enum SsProfileName {
     Default,
     Soft,
     Fast,
+    #[serde(other)]
     Custom,
 }
-impl SsProfileName {
-    fn from_opt_string(str_profile: &Option<String>) -> SsProfileName {
-        let str_profile = str_profile
-            .to_owned()
-            .unwrap_or_else(|| "custom".to_string())
-            .to_lowercase();
-        match &str_profile[..] {
-            "default" => SsProfileName::Default,
-            "soft" => SsProfileName::Soft,
-            "fast" => SsProfileName::Fast,
-            _ => SsProfileName::Custom,
-        }
-    }
-    fn as_string(&self) -> String {
-        self.to_string().to_lowercase()
-    }
-}
+
 impl Default for SsProfileName {
     fn default() -> Self {
         SsProfileName::Default
     }
 }
+
 impl fmt::Display for SsProfileName {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "{:?}", self)
@@ -73,7 +59,8 @@ pub struct SsValues {
     #[serde(skip_serializing)]
     pub cache_root: Option<String>,
     pub cache_size: Option<f64>,
-    pub bt_profile: Option<String>,
+    #[serde(default)]
+    pub bt_profile: SsProfileName,
     #[serde(flatten)]
     pub bt_params: Option<SsProfileParams>,
 }
@@ -84,7 +71,7 @@ impl Default for SsValues {
             app_path: None,
             cache_root: None,
             cache_size: None,
-            bt_profile: Some(SsProfileName::default().as_string()),
+            bt_profile: SsProfileName::default(),
             bt_params: None,
         }
     }
@@ -245,13 +232,11 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for StreamingServerSett
                     Ok(req) => Effects::one(Box::new(
                         Env::fetch_serde::<_, SsSettings>(req)
                             .and_then(|settings: SsSettings| {
-                                let is_custom_profile = PROFILES.get(
-                                    &SsProfileName::from_opt_string(&settings.values.bt_profile),
-                                ) != settings.values.bt_params.as_ref();
+                                let is_custom_profile = PROFILES.get(&settings.values.bt_profile)
+                                    != settings.values.bt_params.as_ref();
                                 let settings = if is_custom_profile {
                                     let mut settings = settings;
-                                    settings.values.bt_profile =
-                                        Some(SsProfileName::Custom.as_string());
+                                    settings.values.bt_profile = SsProfileName::Custom;
                                     settings
                                 } else {
                                     settings
@@ -277,7 +262,7 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for StreamingServerSett
                         Some(size) => size.to_string(),
                         None => "Infinity".to_string(),
                     },
-                    profile: SsProfileName::from_opt_string(&settings.values.bt_profile),
+                    profile: settings.values.bt_profile.clone(),
                 });
                 // Perhaps dispatch custom event for streaming_server_settings_loaded
                 Effects::none()
@@ -288,7 +273,7 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for StreamingServerSett
                 let url = &ctx.content.settings.get_endpoint();
                 let values = SsValues {
                     cache_size: settings.cache_size.parse::<f64>().ok(),
-                    bt_profile: Some(settings.profile.as_string()),
+                    bt_profile: settings.profile.clone(),
                     bt_params: PROFILES.get(&settings.profile).copied(),
                     ..Default::default()
                 };
