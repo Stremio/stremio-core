@@ -60,41 +60,42 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for MetaDetails {
             }
             Msg::Internal(AddonResponse(_, _)) => {
                 let metas_effects = addon_aggr_update(&mut self.metas, msg);
-                let streams_effects = if let Some((_, Some(streams_resource_ref))) = &self.selected
-                {
-                    let streams_from_meta = self
-                        .metas
-                        .iter()
-                        .find_map(|group| match &group.content {
-                            Loadable::Ready(meta_item) => Some((&group.req, meta_item)),
-                            _ => None,
-                        })
-                        .map_or(None, |(req, meta_item)| {
-                            meta_item
-                                .videos
-                                .iter()
-                                .find(|video| {
-                                    video.id == streams_resource_ref.id && !video.streams.is_empty()
-                                })
-                                .map_or(None, |video| Some((req, &video.streams)))
-                        })
-                        .map_or(None, |(req, streams)| {
-                            Some(vec![ItemsGroup {
-                                req: ResourceRequest {
-                                    base: req.base.to_owned(),
-                                    path: streams_resource_ref.to_owned(),
-                                },
-                                content: Loadable::Ready(streams.to_owned()),
-                            }])
-                        });
-                    if let Some(streams_from_meta) = streams_from_meta {
-                        self.streams = streams_from_meta;
-                        Effects::none()
-                    } else {
-                        addon_aggr_update(&mut self.streams, msg)
+                let streams_effects = match &self.selected {
+                    Some((_, Some(streams_resource_ref))) => {
+                        let streams_from_meta = self
+                            .metas
+                            .iter()
+                            .find_map(|group| match &group.content {
+                                Loadable::Ready(meta_item) => Some((&group.req, meta_item)),
+                                _ => None,
+                            })
+                            .map_or(None, |(req, meta_item)| {
+                                meta_item
+                                    .videos
+                                    .iter()
+                                    .find(|video| {
+                                        video.id == streams_resource_ref.id
+                                            && !video.streams.is_empty()
+                                    })
+                                    .map_or(None, |video| Some((req, &video.streams)))
+                            })
+                            .map_or(None, |(req, streams)| {
+                                Some(vec![ItemsGroup {
+                                    req: ResourceRequest {
+                                        base: req.base.to_owned(),
+                                        path: streams_resource_ref.to_owned(),
+                                    },
+                                    content: Loadable::Ready(streams.to_owned()),
+                                }])
+                            });
+                        if let Some(streams_from_meta) = streams_from_meta {
+                            self.streams = streams_from_meta;
+                            Effects::none()
+                        } else {
+                            addon_aggr_update(&mut self.streams, msg)
+                        }
                     }
-                } else {
-                    Effects::none().unchanged()
+                    _ => Effects::none().unchanged(),
                 };
 
                 metas_effects.join(streams_effects)
