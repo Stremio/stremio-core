@@ -37,6 +37,11 @@ pub enum APIRequest {
         email: String,
         password: String,
     },
+    #[serde(rename_all = "camelCase")]
+    FbLogin {
+        email: String,
+        fb_login_token: String,
+    },
     Register {
         email: String,
         password: String,
@@ -61,6 +66,7 @@ impl APIMethodName for APIRequest {
     fn method_name(&self) -> &str {
         match self {
             APIRequest::Login { .. } => "login",
+            APIRequest::FbLogin { .. } => "fbLogin",
             APIRequest::Register { .. } => "register",
             APIRequest::Logout { .. } => "logout",
             APIRequest::AddonCollectionGet { .. } => "addonCollectionGet",

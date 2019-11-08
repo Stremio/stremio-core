@@ -38,6 +38,7 @@ pub enum ActionSettings {
 #[serde(tag = "userOp", content = "args")]
 pub enum ActionUser {
     Login { email: String, password: String },
+    FbLogin { email: String, fb_login_token: String },
     Register { email: String, password: String, gdpr_consent: GDPRConsent },
     Logout,
     PullAndUpdateAddons,
