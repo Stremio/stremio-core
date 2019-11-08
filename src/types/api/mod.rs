@@ -66,6 +66,7 @@ impl APIMethodName for APIRequest {
     fn method_name(&self) -> &str {
         match self {
             APIRequest::Login { .. } => "login",
+            APIRequest::FbLogin { .. } => "fbLogin",
             APIRequest::Register { .. } => "register",
             APIRequest::Logout { .. } => "logout",
             APIRequest::AddonCollectionGet { .. } => "addonCollectionGet",
