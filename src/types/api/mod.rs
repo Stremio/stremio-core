@@ -37,6 +37,11 @@ pub enum APIRequest {
         email: String,
         password: String,
     },
+    #[serde(rename_all = "camelCase")]
+    FbLogin {
+        email: String,
+        fb_login_token: String,
+    },
     Register {
         email: String,
         password: String,
