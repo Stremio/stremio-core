@@ -115,11 +115,6 @@ impl<Env: Environment + 'static> Update for Ctx<Env> {
                     APIRequest::Login { email, password },
                 ))
                 .unchanged(),
-                ActionUser::FbLogin { email, fb_login_token } => Effects::one(authenticate::<Env>(
-                    action.to_owned(),
-                    APIRequest::FbLogin { email, fb_login_token },
-                ))
-                .unchanged(),
                 ActionUser::PullAndUpdateAddons => match &self.content.auth {
                     Some(Auth { key, .. }) => {
                         let action = action.to_owned();
