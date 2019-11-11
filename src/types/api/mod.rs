@@ -21,6 +21,15 @@ pub trait APIMethodName {
     fn method_name(&self) -> &str;
 }
 
+#[derive(Serialize, Deserialize, Clone, Debug)]
+pub struct GDPRConsent {
+    pub tos: bool,
+    pub privacy: bool,
+    pub marketing: bool,
+    pub time: DateTime<Utc>,
+    pub from: String
+}
+
 #[derive(Serialize, Clone)]
 #[serde(untagged)]
 pub enum APIRequest {
@@ -31,6 +40,7 @@ pub enum APIRequest {
     Register {
         email: String,
         password: String,
+        gdpr_consent: GDPRConsent,
     },
     #[serde(rename_all = "camelCase")]
     Logout {

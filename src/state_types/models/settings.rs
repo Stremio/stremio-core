@@ -10,8 +10,6 @@ use std::collections::HashMap;
 use std::fmt::{self, Debug};
 use std::path::Path;
 
-extern crate web_sys;
-
 #[derive(Deserialize, Serialize, Clone, Debug)]
 pub struct SsOption {
     pub id: String,
@@ -24,30 +22,16 @@ pub enum SsProfileName {
     Default,
     Soft,
     Fast,
+    #[serde(other)]
     Custom,
 }
-impl SsProfileName {
-    fn from_opt_string(str_profile: &Option<String>) -> SsProfileName {
-        let str_profile = str_profile
-            .to_owned()
-            .unwrap_or_else(|| "custom".to_string())
-            .to_lowercase();
-        match &str_profile[..] {
-            "default" => SsProfileName::Default,
-            "soft" => SsProfileName::Soft,
-            "fast" => SsProfileName::Fast,
-            _ => SsProfileName::Custom,
-        }
-    }
-    fn as_string(&self) -> String {
-        self.to_string().to_lowercase()
-    }
-}
+
 impl Default for SsProfileName {
     fn default() -> Self {
         SsProfileName::Default
     }
 }
+
 impl fmt::Display for SsProfileName {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "{:?}", self)
@@ -75,7 +59,8 @@ pub struct SsValues {
     #[serde(skip_serializing)]
     pub cache_root: Option<String>,
     pub cache_size: Option<f64>,
-    pub bt_profile: Option<String>,
+    #[serde(default)]
+    pub bt_profile: SsProfileName,
     #[serde(flatten)]
     pub bt_params: Option<SsProfileParams>,
 }
@@ -86,7 +71,7 @@ impl Default for SsValues {
             app_path: None,
             cache_root: None,
             cache_size: None,
-            bt_profile: Some(SsProfileName::default().as_string()),
+            bt_profile: SsProfileName::default(),
             bt_params: None,
         }
     }
@@ -237,25 +222,21 @@ impl Default for StreamingServerSettingsModel {
 
 impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for StreamingServerSettingsModel {
     fn update(&mut self, ctx: &Ctx<Env>, msg: &Msg) -> Effects {
-        // web_sys::console::log_1(&format!("Update Settings!").into());
         match msg {
             // This is triggered after loading the settings from local storage
             Msg::Internal(CtxLoaded(_))
             | Msg::Action(Action::Settings(ActionSettings::LoadStreamingServer)) => {
                 *self = StreamingServerSettingsModel::Loading;
-                web_sys::console::log_1(&"Load Ss Settings!".to_string().into());
                 let url = &ctx.content.settings.get_endpoint();
                 match Request::get(url).body(()) {
                     Ok(req) => Effects::one(Box::new(
                         Env::fetch_serde::<_, SsSettings>(req)
                             .and_then(|settings: SsSettings| {
-                                let is_custom_profile = PROFILES.get(
-                                    &SsProfileName::from_opt_string(&settings.values.bt_profile),
-                                ) != settings.values.bt_params.as_ref();
+                                let is_custom_profile = PROFILES.get(&settings.values.bt_profile)
+                                    != settings.values.bt_params.as_ref();
                                 let settings = if is_custom_profile {
                                     let mut settings = settings;
-                                    settings.values.bt_profile =
-                                        Some(SsProfileName::Custom.as_string());
+                                    settings.values.bt_profile = SsProfileName::Custom;
                                     settings
                                 } else {
                                     settings
@@ -263,9 +244,6 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for StreamingServerSett
                                 Ok(Msg::Internal(StreamingServerSettingsLoaded(settings)))
                             })
                             .or_else(|e| {
-                                web_sys::console::log_1(
-                                    &format!("Streaming server settings error: {}", e).into(),
-                                );
                                 Ok(Msg::Internal(StreamingServerSettingsErrored(format!(
                                     "{}",
                                     e
@@ -284,7 +262,7 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for StreamingServerSett
                         Some(size) => size.to_string(),
                         None => "Infinity".to_string(),
                     },
-                    profile: SsProfileName::from_opt_string(&settings.values.bt_profile),
+                    profile: settings.values.bt_profile.clone(),
                 });
                 // Perhaps dispatch custom event for streaming_server_settings_loaded
                 Effects::none()
@@ -295,7 +273,7 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for StreamingServerSett
                 let url = &ctx.content.settings.get_endpoint();
                 let values = SsValues {
                     cache_size: settings.cache_size.parse::<f64>().ok(),
-                    bt_profile: Some(settings.profile.as_string()),
+                    bt_profile: settings.profile.clone(),
                     bt_params: PROFILES.get(&settings.profile).copied(),
                     ..Default::default()
                 };
@@ -307,14 +285,6 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for StreamingServerSett
                     Some(req) => Effects::one(Box::new(
                         Env::fetch_serde::<_, SsResponse>(req)
                             .and_then(|s_resp: SsResponse| {
-                                web_sys::console::log_1(
-                                    &format!(
-                                        "Streaming server settings stored: {}",
-                                        s_resp.success
-                                    )
-                                    .into(),
-                                );
-                                // TODO: handle the case when s_resp.success is false
                                 Ok(if s_resp.success {
                                     Msg::Action(Action::Settings(
                                         ActionSettings::LoadStreamingServer,
@@ -326,9 +296,6 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for StreamingServerSett
                                 })
                             })
                             .or_else(|e| {
-                                web_sys::console::log_1(
-                                    &format!("Streaming server settings error: {}", e).into(),
-                                );
                                 Ok(Msg::Internal(StreamingServerSettingsErrored(format!(
                                     "{}",
                                     e
