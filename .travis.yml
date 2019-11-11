@@ -20,5 +20,5 @@ install:
 
 script:
   - cargo fmt --all -- --check
-  - cargo clippy --all
+  - cargo clippy --all -- -D warnings
   - cargo test --all
