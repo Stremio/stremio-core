@@ -4,10 +4,10 @@ use crate::proc_macro::TokenStream;
 use proc_macro2::Span;
 use proc_macro_crate::crate_name;
 use quote::{quote, quote_spanned};
+use std::borrow::Cow;
+use std::env;
 use syn::spanned::Spanned;
 use syn::{parse_macro_input, Data, DataStruct, DeriveInput, Fields, FieldsNamed, Ident};
-use std::env;
-use std::borrow::Cow;
 
 const CORE_CRATE_ORIGINAL_NAME: &str = "stremio-core";
 

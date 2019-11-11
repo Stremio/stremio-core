@@ -105,9 +105,17 @@ impl<Env: Environment + 'static> Update for Ctx<Env> {
                         None => Effects::msg(CtxUpdate(new_content).into()).unchanged(),
                     }
                 }
-                ActionUser::Register { email, password, gdpr_consent } => Effects::one(authenticate::<Env>(
+                ActionUser::Register {
+                    email,
+                    password,
+                    gdpr_consent,
+                } => Effects::one(authenticate::<Env>(
                     action.to_owned(),
-                    APIRequest::Register { email, password, gdpr_consent },
+                    APIRequest::Register {
+                        email,
+                        password,
+                        gdpr_consent,
+                    },
                 ))
                 .unchanged(),
                 ActionUser::Login { email, password } => Effects::one(authenticate::<Env>(
