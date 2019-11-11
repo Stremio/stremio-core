@@ -1,0 +1,24 @@
+language: rust
+rust:
+  - stable
+
+os:
+  - linux
+
+jobs:
+    fast_finish: true
+
+cache: cargo
+
+env:
+  global:
+    - RUST_BACKTRACE=1
+
+install:
+  - rustup component add rustfmt
+  - rustup component add clippy
+
+script:
+  - cargo fmt --all -- --check
+  - cargo clippy --all
+  - cargo test --all
