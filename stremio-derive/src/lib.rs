@@ -4,6 +4,8 @@ use crate::proc_macro::TokenStream;
 use proc_macro2::Span;
 use proc_macro_crate::crate_name;
 use quote::{quote, quote_spanned};
+use std::borrow::Cow;
+use std::env;
 use syn::spanned::Spanned;
 use syn::{parse_macro_input, Data, DataStruct, DeriveInput, Fields, FieldsNamed, Ident};
 
@@ -11,9 +13,7 @@ const CORE_CRATE_ORIGINAL_NAME: &str = "stremio-core";
 
 #[proc_macro_derive(Model)]
 pub fn model_derive(input: TokenStream) -> TokenStream {
-    // `$crate` alternative for proc macros (https://github.com/rust-lang/rust/issues/54363)
-    let core_crate_name = crate_name(CORE_CRATE_ORIGINAL_NAME).unwrap_or("crate".to_owned());
-    let core = Ident::new(&core_crate_name, Span::call_site());
+    let core = core_ident().unwrap();
     let input = parse_macro_input!(input as DeriveInput);
 
     if let Data::Struct(DataStruct {
@@ -48,4 +48,20 @@ pub fn model_derive(input: TokenStream) -> TokenStream {
     } else {
         panic!("#[derive(Model)] is only defined for structs with named fields");
     }
+}
+
+/// Get `stremio-core` crate alias to use in proc macro.
+/// # Errors
+/// ```text
+/// "Could not find `stremio-core` in `dependencies` or `dev-dependencies` in `stremio-seed-poc/Cargo.toml`!"
+/// ```
+fn core_ident() -> Result<Ident, String> {
+    let in_itself = env::var("CARGO_PKG_NAME").unwrap() == CORE_CRATE_ORIGINAL_NAME;
+    let core_crate_name = if in_itself {
+        Cow::Borrowed("crate")
+    } else {
+        // `crate_name` is a `$crate` alternative for proc macros (https://github.com/rust-lang/rust/issues/54363)
+        Cow::Owned(crate_name(CORE_CRATE_ORIGINAL_NAME)?)
+    };
+    Ok(Ident::new(&core_crate_name, Span::call_site()))
 }
