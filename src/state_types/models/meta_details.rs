@@ -7,7 +7,7 @@ use serde_derive::*;
 
 #[derive(Debug, Clone, Default, Serialize)]
 pub struct MetaDetails {
-    pub selected: Option<(ResourceRef, Option<ResourceRef>)>,
+    pub selected: (Option<ResourceRef>, Option<ResourceRef>),
     pub metas: Vec<ItemsGroup<MetaDetail>>,
     pub streams: Vec<ItemsGroup<Vec<Stream>>>,
 }
@@ -46,7 +46,7 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for MetaDetails {
                         .iter()
                         .map(|group| &group.req.path)
                         .eq(self.streams.iter().map(|group| &group.req.path));
-                    self.selected = Some((metas_resource_ref, Some(streams_resource_ref)));
+                    self.selected = (Some(metas_resource_ref), Some(streams_resource_ref));
                     if streams_changed {
                         self.streams = streams;
                         metas_effects.join(streams_effects)
@@ -54,7 +54,7 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for MetaDetails {
                         metas_effects
                     }
                 } else {
-                    self.selected = Some((metas_resource_ref, None));
+                    self.selected = (Some(metas_resource_ref), None);
                     self.streams = Vec::new();
                     metas_effects
                 }
@@ -62,7 +62,7 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for MetaDetails {
             Msg::Internal(AddonResponse(_, _)) => {
                 let metas_effects = addon_aggr_update(&mut self.metas, msg);
                 let streams_effects = match &self.selected {
-                    Some((_, Some(streams_resource_ref))) => {
+                    (_, Some(streams_resource_ref)) => {
                         let streams_from_meta = self
                             .metas
                             .iter()
