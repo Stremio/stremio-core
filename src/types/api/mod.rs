@@ -27,7 +27,7 @@ pub struct GDPRConsent {
     pub privacy: bool,
     pub marketing: bool,
     pub time: DateTime<Utc>,
-    pub from: String
+    pub from: String,
 }
 
 #[derive(Serialize, Clone)]

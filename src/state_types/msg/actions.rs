@@ -1,8 +1,8 @@
-use crate::types::addons::*;
-use crate::types::LibItem;
 use crate::state_types::{Settings, StreamingServerSettings};
-use serde_derive::*;
+use crate::types::addons::*;
 use crate::types::api::GDPRConsent;
+use crate::types::LibItem;
+use serde_derive::*;
 
 //
 // Input actions: those are triggered by users
@@ -10,9 +10,15 @@ use crate::types::api::GDPRConsent;
 #[derive(Debug, Deserialize, Clone, PartialEq)]
 #[serde(tag = "load", content = "args")]
 pub enum ActionLoad {
-    CatalogGrouped { extra: Vec<ExtraProp> },
+    CatalogGrouped {
+        extra: Vec<ExtraProp>,
+    },
     CatalogFiltered(ResourceRequest),
-    MetaDetails { type_name: String, id: String, video_id: Option<String> },
+    MetaDetails {
+        type_name: String,
+        id: String,
+        video_id: Option<String>,
+    },
     Notifications,
 }
 
@@ -36,8 +42,15 @@ pub enum ActionSettings {
 #[derive(Deserialize, Serialize, Clone, Debug)]
 #[serde(tag = "userOp", content = "args")]
 pub enum ActionUser {
-    Login { email: String, password: String },
-    Register { email: String, password: String, gdpr_consent: GDPRConsent },
+    Login {
+        email: String,
+        password: String,
+    },
+    Register {
+        email: String,
+        password: String,
+        gdpr_consent: GDPRConsent,
+    },
     Logout,
     PullAndUpdateAddons,
     PushAddons,
