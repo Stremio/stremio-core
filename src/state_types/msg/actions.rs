@@ -24,6 +24,7 @@ pub enum ActionLoad {
         id: String,
     },
     Notifications,
+    LibItemsByType(String),
 }
 
 #[derive(Debug, Deserialize, Clone)]
@@ -60,7 +61,6 @@ pub enum ActionUser {
     PushAddons,
     LibSync,
     LibUpdate(LibItem),
-    LibItemsByType(String),
     // @TODO consider PullUser, PushUser?
 }
 
