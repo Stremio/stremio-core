@@ -60,6 +60,7 @@ pub enum ActionUser {
     PushAddons,
     LibSync,
     LibUpdate(LibItem),
+    LibItemsByType(String),
     // @TODO consider PullUser, PushUser?
 }
 
