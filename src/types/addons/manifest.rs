@@ -31,7 +31,7 @@ impl ManifestResource {
 // Extra descriptors
 // those define the extra properties that may be passed for a catalog
 #[derive(Debug, Clone, PartialEq, Deserialize, Serialize)]
-pub struct OptionsLimit(u32);
+pub struct OptionsLimit(pub usize);
 impl Default for OptionsLimit {
     fn default() -> OptionsLimit {
         OptionsLimit(1)
