@@ -70,7 +70,7 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for MetaDetails {
                                 Loadable::Ready(meta_item) => Some((&group.req, meta_item)),
                                 _ => None,
                             })
-                            .map_or(None, |(req, meta_item)| {
+                            .and_then(|(req, meta_item)| {
                                 meta_item
                                     .videos
                                     .iter()
@@ -78,16 +78,16 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for MetaDetails {
                                         video.id == streams_resource_ref.id
                                             && !video.streams.is_empty()
                                     })
-                                    .map_or(None, |video| Some((req, &video.streams)))
+                                    .map(|video| (req, &video.streams))
                             })
-                            .map_or(None, |(req, streams)| {
-                                Some(vec![ItemsGroup {
+                            .map(|(req, streams)| {
+                                vec![ItemsGroup {
                                     req: ResourceRequest {
                                         base: req.base.to_owned(),
                                         path: streams_resource_ref.to_owned(),
                                     },
                                     content: Loadable::Ready(streams.to_owned()),
-                                }])
+                                }]
                             });
                         if let Some(streams_from_meta) = streams_from_meta {
                             self.streams = streams_from_meta;
