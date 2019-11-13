@@ -159,7 +159,9 @@ impl<Env: Environment + 'static> Update for Ctx<Env> {
                     None => Effects::none().unchanged(),
                 },
                 // We let the LibraryLoadable model handle this
-                ActionUser::LibSync | ActionUser::LibUpdate(_) | ActionUser::LibItemsByType(_) => Effects::none().unchanged(),
+                ActionUser::LibSync | ActionUser::LibUpdate(_) | ActionUser::LibItemsByType(_) => {
+                    Effects::none().unchanged()
+                }
             },
             // Handling msgs that result effects
             Msg::Internal(CtxAddonsPulled(key, addons))

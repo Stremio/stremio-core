@@ -26,7 +26,6 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for LibItems {
                         .values()
                         .filter(|x| !x.removed)
                         .map(|x| x.type_name.to_owned())
-                        .into_iter()
                         .unique()
                         .collect();
                     Effects::none()
