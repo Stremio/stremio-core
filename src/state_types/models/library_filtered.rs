@@ -5,14 +5,14 @@ use itertools::Itertools;
 use serde_derive::*;
 
 #[derive(Debug, Clone, Default, Serialize)]
-pub struct LibItems {
+pub struct LibraryFiltered {
     pub items: Vec<LibItem>,
     pub types: Vec<String>,
 }
-impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for LibItems {
+impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for LibraryFiltered {
     fn update(&mut self, ctx: &Ctx<Env>, msg: &Msg) -> Effects {
         match msg {
-            Msg::Action(Action::UserOp(ActionUser::LibItemsByType(item_type))) => {
+            Msg::Action(Action::Load(ActionLoad::LibItemsByType(item_type))) => {
                 if let LibraryLoadable::Ready(l) = &ctx.library {
                     self.items = l
                         .items
