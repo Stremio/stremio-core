@@ -56,7 +56,7 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for MetaDetails {
                 } else {
                     self.selected = (Some(metas_resource_ref), None);
                     self.streams = Vec::new();
-                    metas_effects
+                    metas_effects.join(Effects::none())
                 }
             }
             Msg::Internal(AddonResponse(_, _)) => {
