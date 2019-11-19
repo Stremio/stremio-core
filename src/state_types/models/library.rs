@@ -8,6 +8,7 @@ use enclose::*;
 use futures::future::Either;
 use futures::{future, Future};
 use lazysort::SortedBy;
+use serde::ser::{Serialize, SerializeStructVariant, Serializer};
 
 const COLL_NAME: &str = "libraryItem";
 const STORAGE_RECENT_SLOT: &str = "recent_library";
@@ -146,6 +147,37 @@ impl LibraryLoadable {
             }
             // Ignore NotLoaded state: the load_* methods are supposed to take us out of it
             _ => Effects::none().unchanged(),
+        }
+    }
+}
+
+impl Serialize for LibraryLoadable {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        match &self {
+            LibraryLoadable::NotLoaded => {
+                let mut sv =
+                    serializer.serialize_struct_variant("LibraryLoadable", 0, "NotLoaded", 2)?;
+                sv.serialize_field("type", "NotLoaded")?;
+                sv.serialize_field("uid", &Option::None::<String>)?;
+                sv.end()
+            }
+            LibraryLoadable::Loading(uid) => {
+                let mut sv =
+                    serializer.serialize_struct_variant("LibraryLoadable", 1, "Loading", 2)?;
+                sv.serialize_field("type", "Loading")?;
+                sv.serialize_field("uid", &uid.0)?;
+                sv.end()
+            }
+            LibraryLoadable::Ready(LibBucket { uid, .. }) => {
+                let mut sv =
+                    serializer.serialize_struct_variant("LibraryLoadable", 2, "Ready", 2)?;
+                sv.serialize_field("type", "Ready")?;
+                sv.serialize_field("uid", &uid.0)?;
+                sv.end()
+            }
         }
     }
 }

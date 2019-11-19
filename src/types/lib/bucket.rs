@@ -10,7 +10,7 @@ use std::collections::HashMap;
 pub const LIB_RECENT_COUNT: usize = 200;
 
 #[derive(Serialize, Deserialize, Default, Debug, Clone, PartialEq, Eq)]
-pub struct UID(Option<String>);
+pub struct UID(pub Option<String>);
 impl From<Option<&Auth>> for UID {
     fn from(a: Option<&Auth>) -> Self {
         UID(a.map(|a| a.user.id.to_owned()))
