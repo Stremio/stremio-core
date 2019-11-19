@@ -19,6 +19,9 @@ pub use streams::*;
 mod lib_recent;
 pub use lib_recent::*;
 
+mod library_filtered;
+pub use library_filtered::*;
+
 mod notifications;
 pub use notifications::*;
 
