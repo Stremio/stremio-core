@@ -6,9 +6,15 @@ use crate::types::{MetaDetail, Stream};
 use serde_derive::*;
 
 #[derive(Debug, Clone, Serialize)]
+#[serde(untagged)]
 pub enum MetaDetailsSelected {
-    Meta(ResourceRef),
-    MetaAndStreams((ResourceRef, ResourceRef)),
+    Meta {
+        meta_resource_ref: ResourceRef,
+    },
+    MetaAndStreams {
+        meta_resource_ref: ResourceRef,
+        streams_resource_ref: ResourceRef,
+    },
 }
 
 #[derive(Debug, Clone, Default, Serialize)]
@@ -58,12 +64,12 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for MetaDetails {
                     streams_effects,
                 );
                 self.selected = if let Some(streams_resource_ref) = streams_resource_ref {
-                    Some(MetaDetailsSelected::MetaAndStreams((
+                    Some(MetaDetailsSelected::MetaAndStreams {
                         meta_resource_ref,
                         streams_resource_ref,
-                    )))
+                    })
                 } else {
-                    Some(MetaDetailsSelected::Meta(meta_resource_ref))
+                    Some(MetaDetailsSelected::Meta { meta_resource_ref })
                 };
                 self.meta_groups = meta_groups;
                 self.streams_groups = streams_groups;
