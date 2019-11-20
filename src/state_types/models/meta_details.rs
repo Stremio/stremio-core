@@ -76,7 +76,25 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for MetaDetails {
                 meta_effects.join(streams_effects)
             }
             Msg::Internal(AddonResponse(request, _)) if request.path.resource.eq("meta") => {
-                addon_aggr_update(&mut self.meta_groups, msg)
+                let meta_effects = addon_aggr_update(&mut self.meta_groups, msg);
+                let streams_effects = match &self.selected {
+                    Some(MetaDetailsSelected::MetaAndStreams {
+                        streams_resource_ref,
+                        ..
+                    }) => {
+                        if let Some(streams_groups) = streams_groups_from_meta_groups(
+                            &self.meta_groups,
+                            &streams_resource_ref.id,
+                        ) {
+                            self.streams_groups = streams_groups;
+                            Effects::none()
+                        } else {
+                            Effects::none().unchanged()
+                        }
+                    }
+                    _ => Effects::none().unchanged(),
+                };
+                meta_effects.join(streams_effects)
             }
             Msg::Internal(AddonResponse(request, _)) if request.path.resource.eq("stream") => {
                 addon_aggr_update(&mut self.streams_groups, msg)
