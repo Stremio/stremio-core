@@ -46,6 +46,7 @@ pub struct Ctx<Env: Environment> {
     pub content: CtxContent,
     // Whether it's loaded from storage
     pub is_loaded: bool,
+    #[serde(skip)]
     pub library: LibraryLoadable,
     #[derivative(Debug = "ignore")]
     #[serde(skip)]
