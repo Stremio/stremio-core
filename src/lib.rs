@@ -473,5 +473,8 @@ mod tests {
             };
             Box::new(future::ok(()))
         }
+        fn log(args: &str) {
+            println!("{}", args);
+        }
     }
 }

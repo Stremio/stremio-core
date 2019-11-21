@@ -7,7 +7,7 @@ use wasm_bindgen::prelude::*;
 use wasm_bindgen::JsCast;
 use wasm_bindgen_futures::spawn_local;
 use wasm_bindgen_futures::JsFuture;
-use web_sys::{RequestInit, Response};
+use web_sys::{console, RequestInit, Response};
 
 use std::error::Error;
 use std::fmt;
@@ -141,5 +141,8 @@ impl Environment for Env {
     }
     fn set_storage<T: Serialize>(key: &str, value: Option<&T>) -> EnvFuture<()> {
         Self::wrap_to_fut(Self::set_storage_sync(key, value))
+    }
+    fn log(args: &str) {
+        console::log_1(&JsValue::from_str(args));
     }
 }

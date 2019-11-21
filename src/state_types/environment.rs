@@ -16,6 +16,7 @@ pub trait Environment {
     where
         IN: 'static + Serialize,
         OUT: 'static + DeserializeOwned;
+    fn log(args: &str);
     fn exec(fut: Box<dyn Future<Item = (), Error = ()>>);
     fn get_storage<T: 'static + DeserializeOwned>(key: &str) -> EnvFuture<Option<T>>;
     fn set_storage<T: Serialize>(key: &str, value: Option<&T>) -> EnvFuture<()>;
