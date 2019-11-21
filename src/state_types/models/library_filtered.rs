@@ -99,7 +99,7 @@ fn selected_reducer(
 }
 
 fn type_names_reducer(
-    prev_type_names: &Vec<String>,
+    prev_type_names: &[String],
     bucket: Option<&LibBucket>,
 ) -> (Vec<String>, Effects) {
     let next_type_names = match bucket {
@@ -120,7 +120,7 @@ fn type_names_reducer(
 }
 
 fn lib_items_reducer(
-    prev_lib_items: &Vec<LibItem>,
+    prev_lib_items: &[LibItem],
     bucket: Option<&LibBucket>,
     type_name: Option<&String>,
 ) -> (Vec<LibItem>, Effects) {
