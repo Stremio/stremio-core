@@ -24,7 +24,9 @@ pub enum ActionLoad {
         id: String,
     },
     Notifications,
-    LibItemsByType(String),
+    LibraryFiltered {
+        type_name: String,
+    },
 }
 
 #[derive(Debug, Deserialize, Clone)]
