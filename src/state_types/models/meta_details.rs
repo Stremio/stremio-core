@@ -87,16 +87,15 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for MetaDetails {
                 );
                 let streams_groups = match &self.selected {
                     (Some(_), Some(streams_resource_ref)) => {
-                        if let Some(streams_groups) = streams_groups_from_meta_groups(
-                            &self.meta_groups,
-                            &streams_resource_ref.id,
-                        ) {
+                        if let Some(streams_groups) =
+                            streams_groups_from_meta_groups(&meta_groups, &streams_resource_ref.id)
+                        {
                             streams_groups
                         } else {
-                            Vec::new()
+                            self.streams_groups.to_owned()
                         }
                     }
-                    _ => Vec::new(),
+                    _ => self.streams_groups.to_owned(),
                 };
                 let (streams_groups, streams_effects) = reduce(
                     &self.streams_groups,
@@ -196,17 +195,12 @@ fn items_groups_reducer<T: Clone + TryFrom<ResourceResponse>>(
                     },
                     Err(error) => Loadable::Err(CatalogError::Other(error.to_string())),
                 };
-                let next = prev
-                    .to_owned()
-                    .splice(
-                        group_index..group_index,
-                        vec![ItemsGroup {
-                            req: request.to_owned(),
-                            content: group_content,
-                        }],
-                    )
-                    .collect();
-                (next, true)
+                let next = &mut prev.clone();
+                next[group_index] = ItemsGroup {
+                    req: request.to_owned(),
+                    content: group_content,
+                };
+                (next.to_owned(), true)
             } else {
                 (prev.to_owned(), false)
             }
