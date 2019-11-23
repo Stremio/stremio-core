@@ -1,14 +1,14 @@
 use crate::state_types::Effects;
 
-pub type Reducer<T, Deps> = fn(prev: &T, deps: Deps) -> (T, bool);
+pub type Reducer<T, Action> = fn(prev: &T, action: Action) -> (T, bool);
 
-pub fn reduce<T, Deps>(
+pub fn reduce<T, Action>(
     prev: &T,
-    deps: Deps,
-    reducer: Reducer<T, Deps>,
+    action: Action,
+    reducer: Reducer<T, Action>,
     effects: Effects,
 ) -> (T, Effects) {
-    let (next, changed) = reducer(prev, deps);
+    let (next, changed) = reducer(prev, action);
     let effects = if changed {
         effects
     } else {
