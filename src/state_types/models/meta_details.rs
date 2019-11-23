@@ -53,10 +53,10 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for MetaDetails {
                     meta_effects,
                 );
                 let (streams_groups, streams_effects) = if let Some(video_id) = video_id {
-                    if let Some(streams_groups) =
-                        streams_groups_from_meta_groups(&meta_groups, video_id)
+                    if let Some(streams_group) =
+                        streams_group_from_meta_groups(&meta_groups, video_id)
                     {
-                        (streams_groups, Effects::none())
+                        (vec![streams_group], Effects::none())
                     } else {
                         let (streams_groups, streams_effects) = addon_aggr_new::<Env, _>(
                             &ctx.content.addons,
@@ -67,7 +67,7 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for MetaDetails {
                         (streams_groups, streams_effects)
                     }
                 } else {
-                    (Vec::new(), Effects::none())
+                    (vec![], Effects::none())
                 };
                 let (streams_groups, streams_effects) = reduce(
                     &self.streams_groups,
@@ -94,10 +94,10 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for MetaDetails {
                         streams_resource_ref: Some(streams_resource_ref),
                         ..
                     } => {
-                        if let Some(streams_groups) =
-                            streams_groups_from_meta_groups(&meta_groups, &streams_resource_ref.id)
+                        if let Some(streams_group) =
+                            streams_group_from_meta_groups(&meta_groups, &streams_resource_ref.id)
                         {
-                            streams_groups
+                            vec![streams_group]
                         } else {
                             self.streams_groups.to_owned()
                         }
@@ -213,10 +213,10 @@ fn items_groups_reducer<T: Clone + TryFrom<ResourceResponse>>(
     }
 }
 
-fn streams_groups_from_meta_groups(
+fn streams_group_from_meta_groups(
     meta_groups: &[ItemsGroup<MetaDetail>],
     video_id: &str,
-) -> Option<Vec<ItemsGroup<Vec<Stream>>>> {
+) -> Option<ItemsGroup<Vec<Stream>>> {
     meta_groups
         .iter()
         .find_map(|meta_group| match &meta_group.content {
@@ -230,10 +230,8 @@ fn streams_groups_from_meta_groups(
                 .find(|video| video.id.eq(video_id) && !video.streams.is_empty())
                 .map(|video| (req, &video.streams))
         })
-        .map(|(req, streams)| {
-            vec![ItemsGroup {
-                req: req.to_owned(),
-                content: Loadable::Ready(streams.to_owned()),
-            }]
+        .map(|(req, streams)| ItemsGroup {
+            req: req.to_owned(),
+            content: Loadable::Ready(streams.to_owned()),
         })
 }
