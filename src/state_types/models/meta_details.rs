@@ -58,13 +58,12 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for MetaDetails {
                     {
                         (vec![streams_group], Effects::none())
                     } else {
-                        let (streams_groups, streams_effects) = addon_aggr_new::<Env, _>(
+                        addon_aggr_new::<Env, _>(
                             &ctx.content.addons,
                             &AggrRequest::AllOfResource(ResourceRef::without_extra(
                                 "stream", type_name, video_id,
                             )),
-                        );
-                        (streams_groups, streams_effects)
+                        )
                     }
                 } else {
                     (vec![], Effects::none())
