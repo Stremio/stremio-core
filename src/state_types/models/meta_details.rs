@@ -145,18 +145,19 @@ fn selected_reducer(prev: &Selected, action: SelectedAction) -> (Selected, bool)
         SelectedAction::Load {
             type_name,
             id,
-            video_id,
-        } => {
-            let streams_resource_ref = if let Some(video_id) = video_id {
-                Some(ResourceRef::without_extra("stream", type_name, video_id))
-            } else {
-                None
-            };
-            Selected {
-                meta_resource_ref: Some(ResourceRef::without_extra("meta", type_name, id)),
-                streams_resource_ref,
-            }
-        }
+            video_id: Some(video_id),
+        } => Selected {
+            meta_resource_ref: Some(ResourceRef::without_extra("meta", type_name, id)),
+            streams_resource_ref: Some(ResourceRef::without_extra("stream", type_name, video_id)),
+        },
+        SelectedAction::Load {
+            type_name,
+            id,
+            video_id: None,
+        } => Selected {
+            meta_resource_ref: Some(ResourceRef::without_extra("meta", type_name, id)),
+            streams_resource_ref: None,
+        },
     };
     let changed = prev.eq(&next);
     (next, changed)
