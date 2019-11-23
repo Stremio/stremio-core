@@ -7,7 +7,11 @@ use crate::types::{MetaDetail, Stream};
 use serde_derive::*;
 use std::convert::TryFrom;
 
-type Selected = (Option<ResourceRef>, Option<ResourceRef>);
+#[derive(Debug, Clone, Default, PartialEq, Serialize)]
+struct Selected {
+    meta_resource_ref: Option<ResourceRef>,
+    streams_resource_ref: Option<ResourceRef>,
+}
 type MetaGroups = Vec<ItemsGroup<MetaDetail>>;
 type StreamsGroups = Vec<ItemsGroup<Vec<Stream>>>;
 
@@ -86,7 +90,10 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for MetaDetails {
                     Effects::none(),
                 );
                 let streams_groups = match &self.selected {
-                    (Some(_), Some(streams_resource_ref)) => {
+                    Selected {
+                        streams_resource_ref: Some(streams_resource_ref),
+                        ..
+                    } => {
                         if let Some(streams_groups) =
                             streams_groups_from_meta_groups(&meta_groups, &streams_resource_ref.id)
                         {
@@ -140,16 +147,14 @@ fn selected_reducer(prev: &Selected, action: SelectedAction) -> (Selected, bool)
             id,
             video_id,
         } => {
-            if let Some(video_id) = video_id {
-                (
-                    Some(ResourceRef::without_extra("meta", type_name, id)),
-                    Some(ResourceRef::without_extra("stream", type_name, video_id)),
-                )
+            let streams_resource_ref = if let Some(video_id) = video_id {
+                Some(ResourceRef::without_extra("stream", type_name, video_id))
             } else {
-                (
-                    Some(ResourceRef::without_extra("meta", type_name, id)),
-                    None,
-                )
+                None
+            };
+            Selected {
+                meta_resource_ref: Some(ResourceRef::without_extra("meta", type_name, id)),
+                streams_resource_ref,
             }
         }
     };
