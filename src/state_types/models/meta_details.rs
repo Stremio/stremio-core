@@ -1,27 +1,21 @@
 use super::addons::*;
+use crate::state_types::models::Loadable;
 use crate::state_types::msg::Internal::*;
 use crate::state_types::*;
-use crate::types::addons::{AggrRequest, ResourceRef};
+use crate::types::addons::{AggrRequest, ResourceRef, ResourceRequest, ResourceResponse};
 use crate::types::{MetaDetail, Stream};
 use serde_derive::*;
+use std::convert::TryFrom;
 
-#[derive(Debug, Clone, Serialize)]
-#[serde(untagged)]
-pub enum MetaDetailsSelected {
-    Meta {
-        meta_resource_ref: ResourceRef,
-    },
-    MetaAndStreams {
-        meta_resource_ref: ResourceRef,
-        streams_resource_ref: ResourceRef,
-    },
-}
+type Selected = (Option<ResourceRef>, Option<ResourceRef>);
+type MetaGroups = Vec<ItemsGroup<MetaDetail>>;
+type StreamsGroups = Vec<ItemsGroup<Vec<Stream>>>;
 
 #[derive(Debug, Clone, Default, Serialize)]
 pub struct MetaDetails {
-    pub selected: Option<MetaDetailsSelected>,
-    pub meta_groups: Vec<ItemsGroup<MetaDetail>>,
-    pub streams_groups: Vec<ItemsGroup<Vec<Stream>>>,
+    pub selected: Selected,
+    pub meta_groups: MetaGroups,
+    pub streams_groups: StreamsGroups,
 }
 
 impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for MetaDetails {
@@ -32,97 +26,198 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for MetaDetails {
                 id,
                 video_id,
             })) => {
-                let meta_resource_ref = ResourceRef::without_extra("meta", type_name, id);
-                let (meta_groups, meta_effects) = addon_aggr_new::<Env, ItemsGroup<MetaDetail>>(
-                    &ctx.content.addons,
-                    &AggrRequest::AllOfResource(meta_resource_ref.to_owned()),
+                let (selected, selected_effects) = reduce(
+                    &self.selected,
+                    SelectedAction::Load {
+                        type_name,
+                        id,
+                        video_id,
+                    },
+                    selected_reducer,
+                    Effects::none(),
                 );
-                let (meta_groups, meta_effects) =
-                    next_groups_with_effects(&self.meta_groups, &meta_groups, meta_effects);
-                let (streams_resource_ref, streams_groups, streams_effects) =
-                    if let Some(video_id) = video_id {
-                        let streams_resource_ref =
-                            ResourceRef::without_extra("stream", type_name, video_id);
-                        if let Some(streams_groups) =
-                            streams_groups_from_meta_groups(&meta_groups, &video_id)
-                        {
-                            (Some(streams_resource_ref), streams_groups, Effects::none())
-                        } else {
-                            let (streams_groups, streams_effects) =
-                                addon_aggr_new::<Env, ItemsGroup<Vec<Stream>>>(
-                                    &ctx.content.addons,
-                                    &AggrRequest::AllOfResource(streams_resource_ref.to_owned()),
-                                );
-                            (Some(streams_resource_ref), streams_groups, streams_effects)
-                        }
+                let (meta_groups, meta_effects) = addon_aggr_new::<Env, _>(
+                    &ctx.content.addons,
+                    &AggrRequest::AllOfResource(ResourceRef::without_extra("meta", type_name, id)),
+                );
+                let (meta_groups, meta_effects) = reduce(
+                    &self.meta_groups,
+                    ItemsGroupsAction::Load {
+                        items_groups: &meta_groups,
+                    },
+                    items_groups_reducer,
+                    meta_effects,
+                );
+                let (streams_groups, streams_effects) = if let Some(video_id) = video_id {
+                    if let Some(streams_groups) =
+                        streams_groups_from_meta_groups(&meta_groups, video_id)
+                    {
+                        (streams_groups, Effects::none())
                     } else {
-                        (Option::None, Vec::new(), Effects::none())
-                    };
-                let (streams_groups, streams_effects) = next_groups_with_effects(
+                        let (streams_groups, streams_effects) = addon_aggr_new::<Env, _>(
+                            &ctx.content.addons,
+                            &AggrRequest::AllOfResource(ResourceRef::without_extra(
+                                "stream", type_name, video_id,
+                            )),
+                        );
+                        (streams_groups, streams_effects)
+                    }
+                } else {
+                    (Vec::new(), Effects::none())
+                };
+                let (streams_groups, streams_effects) = reduce(
                     &self.streams_groups,
-                    &streams_groups,
+                    ItemsGroupsAction::Load {
+                        items_groups: &streams_groups,
+                    },
+                    items_groups_reducer,
                     streams_effects,
                 );
-                self.selected = if let Some(streams_resource_ref) = streams_resource_ref {
-                    Some(MetaDetailsSelected::MetaAndStreams {
-                        meta_resource_ref,
-                        streams_resource_ref,
-                    })
-                } else {
-                    Some(MetaDetailsSelected::Meta { meta_resource_ref })
-                };
+                self.selected = selected;
                 self.meta_groups = meta_groups;
                 self.streams_groups = streams_groups;
-                meta_effects.join(streams_effects)
+                selected_effects.join(meta_effects).join(streams_effects)
             }
-            Msg::Internal(AddonResponse(request, _)) if request.path.resource.eq("meta") => {
-                let meta_effects = addon_aggr_update(&mut self.meta_groups, msg);
-                let streams_effects = match &self.selected {
-                    Some(MetaDetailsSelected::MetaAndStreams {
-                        streams_resource_ref,
-                        ..
-                    }) => {
+            Msg::Internal(AddonResponse(request, response)) if request.path.resource.eq("meta") => {
+                let (meta_groups, meta_effects) = reduce(
+                    &self.meta_groups,
+                    ItemsGroupsAction::AddonResponse { request, response },
+                    items_groups_reducer,
+                    Effects::none(),
+                );
+                let streams_groups = match &self.selected {
+                    (Some(_), Some(streams_resource_ref)) => {
                         if let Some(streams_groups) = streams_groups_from_meta_groups(
                             &self.meta_groups,
                             &streams_resource_ref.id,
                         ) {
-                            self.streams_groups = streams_groups;
-                            Effects::none()
+                            streams_groups
                         } else {
-                            Effects::none().unchanged()
+                            Vec::new()
                         }
                     }
-                    _ => Effects::none().unchanged(),
+                    _ => Vec::new(),
                 };
+                let (streams_groups, streams_effects) = reduce(
+                    &self.streams_groups,
+                    ItemsGroupsAction::Load {
+                        items_groups: &streams_groups,
+                    },
+                    items_groups_reducer,
+                    Effects::none(),
+                );
+                self.meta_groups = meta_groups;
+                self.streams_groups = streams_groups;
                 meta_effects.join(streams_effects)
             }
-            Msg::Internal(AddonResponse(request, _)) if request.path.resource.eq("stream") => {
-                addon_aggr_update(&mut self.streams_groups, msg)
+            Msg::Internal(AddonResponse(request, response))
+                if request.path.resource.eq("stream") =>
+            {
+                let (streams_groups, streams_effects) = reduce(
+                    &self.streams_groups,
+                    ItemsGroupsAction::AddonResponse { request, response },
+                    items_groups_reducer,
+                    Effects::none(),
+                );
+                self.streams_groups = streams_groups;
+                streams_effects
             }
             _ => Effects::none().unchanged(),
         }
     }
 }
 
-fn next_groups_with_effects<T: Clone>(
-    prev_groups: &Vec<ItemsGroup<T>>,
-    next_groups: &Vec<ItemsGroup<T>>,
-    next_groups_effects: Effects,
-) -> (Vec<ItemsGroup<T>>, Effects) {
-    if prev_groups
-        .iter()
-        .map(|group| &group.req)
-        .eq(next_groups.iter().map(|group| &group.req))
-    {
-        (prev_groups.to_owned(), Effects::none().unchanged())
-    } else {
-        (next_groups.to_owned(), next_groups_effects)
+enum SelectedAction<'a> {
+    Load {
+        type_name: &'a String,
+        id: &'a String,
+        video_id: &'a Option<String>,
+    },
+}
+fn selected_reducer(prev: &Selected, action: SelectedAction) -> (Selected, bool) {
+    let next = match action {
+        SelectedAction::Load {
+            type_name,
+            id,
+            video_id,
+        } => {
+            if let Some(video_id) = video_id {
+                (
+                    Some(ResourceRef::without_extra("meta", type_name, id)),
+                    Some(ResourceRef::without_extra("stream", type_name, video_id)),
+                )
+            } else {
+                (
+                    Some(ResourceRef::without_extra("meta", type_name, id)),
+                    None,
+                )
+            }
+        }
+    };
+    let changed = prev.eq(&next);
+    (next, changed)
+}
+
+type ItemsGroups<T> = Vec<ItemsGroup<T>>;
+enum ItemsGroupsAction<'a, T> {
+    // TODO: rename GroupsLoaded, NewGroups
+    Load {
+        items_groups: &'a ItemsGroups<T>,
+    },
+    AddonResponse {
+        request: &'a ResourceRequest,
+        response: &'a Result<ResourceResponse, EnvError>,
+    },
+}
+#[allow(clippy::ptr_arg)]
+fn items_groups_reducer<T: Clone + TryFrom<ResourceResponse>>(
+    prev: &ItemsGroups<T>,
+    action: ItemsGroupsAction<T>,
+) -> (ItemsGroups<T>, bool) {
+    match action {
+        ItemsGroupsAction::Load { items_groups } => {
+            let changed = prev
+                .iter()
+                .map(|group| &group.req)
+                .ne(items_groups.iter().map(|group| &group.req));
+            let next = if changed {
+                items_groups.to_owned()
+            } else {
+                prev.to_owned()
+            };
+            (next, changed)
+        }
+        ItemsGroupsAction::AddonResponse { request, response } => {
+            let group_index = prev.iter().position(|group| group.req.eq(request));
+            if let Some(group_index) = group_index {
+                let group_content = match response {
+                    Ok(response) => match T::try_from(response.to_owned()) {
+                        Ok(items) => Loadable::Ready(items),
+                        Err(_) => Loadable::Err(CatalogError::UnexpectedResp),
+                    },
+                    Err(error) => Loadable::Err(CatalogError::Other(error.to_string())),
+                };
+                let next = prev
+                    .to_owned()
+                    .splice(
+                        group_index..group_index,
+                        vec![ItemsGroup {
+                            req: request.to_owned(),
+                            content: group_content,
+                        }],
+                    )
+                    .collect();
+                (next, true)
+            } else {
+                (prev.to_owned(), false)
+            }
+        }
     }
 }
 
 fn streams_groups_from_meta_groups(
-    meta_groups: &Vec<ItemsGroup<MetaDetail>>,
-    video_id: &String,
+    meta_groups: &[ItemsGroup<MetaDetail>],
+    video_id: &str,
 ) -> Option<Vec<ItemsGroup<Vec<Stream>>>> {
     meta_groups
         .iter()
