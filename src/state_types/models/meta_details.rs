@@ -8,12 +8,12 @@ use serde_derive::*;
 use std::convert::TryFrom;
 
 #[derive(Debug, Clone, Default, PartialEq, Serialize)]
-struct Selected {
+pub struct Selected {
     meta_resource_ref: Option<ResourceRef>,
     streams_resource_ref: Option<ResourceRef>,
 }
-type MetaGroups = Vec<ItemsGroup<MetaDetail>>;
-type StreamsGroups = Vec<ItemsGroup<Vec<Stream>>>;
+pub type MetaGroups = Vec<ItemsGroup<MetaDetail>>;
+pub type StreamsGroups = Vec<ItemsGroup<Vec<Stream>>>;
 
 #[derive(Debug, Clone, Default, Serialize)]
 pub struct MetaDetails {
