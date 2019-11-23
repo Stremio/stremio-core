@@ -32,7 +32,7 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for MetaDetails {
             })) => {
                 let (selected, selected_effects) = reduce(
                     &self.selected,
-                    SelectedAction::Load {
+                    SelectedAction::Select {
                         type_name,
                         id,
                         video_id,
@@ -134,7 +134,7 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for MetaDetails {
 }
 
 enum SelectedAction<'a> {
-    Load {
+    Select {
         type_name: &'a String,
         id: &'a String,
         video_id: &'a Option<String>,
@@ -142,7 +142,7 @@ enum SelectedAction<'a> {
 }
 fn selected_reducer(prev: &Selected, action: SelectedAction) -> (Selected, bool) {
     let next = match action {
-        SelectedAction::Load {
+        SelectedAction::Select {
             type_name,
             id,
             video_id: Some(video_id),
@@ -150,7 +150,7 @@ fn selected_reducer(prev: &Selected, action: SelectedAction) -> (Selected, bool)
             meta_resource_ref: Some(ResourceRef::without_extra("meta", type_name, id)),
             streams_resource_ref: Some(ResourceRef::without_extra("stream", type_name, video_id)),
         },
-        SelectedAction::Load {
+        SelectedAction::Select {
             type_name,
             id,
             video_id: None,
