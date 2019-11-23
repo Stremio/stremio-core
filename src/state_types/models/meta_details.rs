@@ -201,7 +201,7 @@ fn items_groups_reducer<T: Clone + TryFrom<ResourceResponse>>(
                     },
                     Err(error) => Loadable::Err(CatalogError::Other(error.to_string())),
                 };
-                let next = &mut prev.clone();
+                let next = &mut prev.to_owned();
                 next[group_index] = ItemsGroup {
                     req: request.to_owned(),
                     content: group_content,
