@@ -42,7 +42,7 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for MetaDetails {
                 );
                 let (meta_groups, meta_effects) = reduce(
                     &self.meta_groups,
-                    ItemsGroupsAction::Load {
+                    ItemsGroupsAction::GroupsChanged {
                         items_groups: &meta_groups,
                     },
                     items_groups_reducer,
@@ -67,7 +67,7 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for MetaDetails {
                 };
                 let (streams_groups, streams_effects) = reduce(
                     &self.streams_groups,
-                    ItemsGroupsAction::Load {
+                    ItemsGroupsAction::GroupsChanged {
                         items_groups: &streams_groups,
                     },
                     items_groups_reducer,
@@ -100,7 +100,7 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for MetaDetails {
                 };
                 let (streams_groups, streams_effects) = reduce(
                     &self.streams_groups,
-                    ItemsGroupsAction::Load {
+                    ItemsGroupsAction::GroupsChanged {
                         items_groups: &streams_groups,
                     },
                     items_groups_reducer,
@@ -160,8 +160,7 @@ fn selected_reducer(prev: &Selected, action: SelectedAction) -> (Selected, bool)
 
 type ItemsGroups<T> = Vec<ItemsGroup<T>>;
 enum ItemsGroupsAction<'a, T> {
-    // TODO: rename GroupsLoaded, NewGroups
-    Load {
+    GroupsChanged {
         items_groups: &'a ItemsGroups<T>,
     },
     AddonResponse {
@@ -175,7 +174,7 @@ fn items_groups_reducer<T: Clone + TryFrom<ResourceResponse>>(
     action: ItemsGroupsAction<T>,
 ) -> (ItemsGroups<T>, bool) {
     match action {
-        ItemsGroupsAction::Load { items_groups } => {
+        ItemsGroupsAction::GroupsChanged { items_groups } => {
             let changed = prev
                 .iter()
                 .map(|group| &group.req)
