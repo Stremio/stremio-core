@@ -7,7 +7,7 @@ use crate::types::{MetaDetail, Stream};
 use serde_derive::*;
 use std::convert::TryFrom;
 
-#[derive(Debug, Clone, Default, PartialEq, Serialize)]
+#[derive(Default, Debug, Clone, PartialEq, Serialize)]
 pub struct Selected {
     meta_resource_ref: Option<ResourceRef>,
     streams_resource_ref: Option<ResourceRef>,
@@ -15,7 +15,7 @@ pub struct Selected {
 pub type MetaGroups = Vec<ItemsGroup<MetaDetail>>;
 pub type StreamsGroups = Vec<ItemsGroup<Vec<Stream>>>;
 
-#[derive(Debug, Clone, Default, Serialize)]
+#[derive(Default, Debug, Clone, Serialize)]
 pub struct MetaDetails {
     pub selected: Selected,
     pub meta_groups: MetaGroups,
@@ -158,7 +158,7 @@ fn selected_reducer(prev: &Selected, action: SelectedAction) -> (Selected, bool)
             streams_resource_ref: None,
         },
     };
-    let changed = prev.eq(&next);
+    let changed = prev.ne(&next);
     (next, changed)
 }
 
