@@ -6,6 +6,7 @@ use crate::types::addons::{AggrRequest, ResourceRef, ResourceRequest, ResourceRe
 use crate::types::{MetaDetail, Stream};
 use serde_derive::*;
 use std::convert::TryFrom;
+use std::marker::PhantomData;
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize)]
 pub struct Selected {
@@ -48,8 +49,9 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for MetaDetails {
                     &mut self.meta_groups,
                     ItemsGroupsAction::GroupsChanged {
                         items_groups: &meta_groups,
+                        env: PhantomData,
                     },
-                    items_groups_reducer,
+                    items_groups_reducer::<_, Env>,
                     meta_effects,
                 );
                 let (streams_groups, streams_effects) = if let Some(video_id) = video_id {
@@ -72,8 +74,9 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for MetaDetails {
                     &mut self.streams_groups,
                     ItemsGroupsAction::GroupsChanged {
                         items_groups: &streams_groups,
+                        env: PhantomData,
                     },
-                    items_groups_reducer,
+                    items_groups_reducer::<_, Env>,
                     streams_effects,
                 );
                 selected_effects.join(meta_effects).join(streams_effects)
@@ -82,7 +85,7 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for MetaDetails {
                 let meta_effects = update(
                     &mut self.meta_groups,
                     ItemsGroupsAction::AddonResponse { request, response },
-                    items_groups_reducer,
+                    items_groups_reducer::<_, Env>,
                     Effects::none(),
                 );
                 let streams_groups = match &self.selected {
@@ -105,8 +108,9 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for MetaDetails {
                     &mut self.streams_groups,
                     ItemsGroupsAction::GroupsChanged {
                         items_groups: &streams_groups,
+                        env: PhantomData,
                     },
-                    items_groups_reducer,
+                    items_groups_reducer::<_, Env>,
                     Effects::none(),
                 );
                 meta_effects.join(streams_effects)
@@ -117,7 +121,7 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for MetaDetails {
                 let streams_effects = update(
                     &mut self.streams_groups,
                     ItemsGroupsAction::AddonResponse { request, response },
-                    items_groups_reducer,
+                    items_groups_reducer::<_, Env>,
                     Effects::none(),
                 );
                 streams_effects
@@ -158,9 +162,10 @@ fn selected_reducer(prev: &Selected, action: SelectedAction) -> (Selected, bool)
 }
 
 type ItemsGroups<T> = Vec<ItemsGroup<T>>;
-enum ItemsGroupsAction<'a, T> {
+enum ItemsGroupsAction<'a, T, Env: Environment + 'static> {
     GroupsChanged {
         items_groups: &'a ItemsGroups<T>,
+        env: PhantomData<Env>,
     },
     AddonResponse {
         request: &'a ResourceRequest,
@@ -168,12 +173,12 @@ enum ItemsGroupsAction<'a, T> {
     },
 }
 #[allow(clippy::ptr_arg)]
-fn items_groups_reducer<T: Clone + TryFrom<ResourceResponse>>(
+fn items_groups_reducer<T: Clone + TryFrom<ResourceResponse>, Env: Environment + 'static>(
     prev: &ItemsGroups<T>,
-    action: ItemsGroupsAction<T>,
+    action: ItemsGroupsAction<T, Env>,
 ) -> (ItemsGroups<T>, bool) {
     match action {
-        ItemsGroupsAction::GroupsChanged { items_groups } => {
+        ItemsGroupsAction::GroupsChanged { items_groups, .. } => {
             let changed = prev
                 .iter()
                 .map(|group| &group.req)
