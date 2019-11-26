@@ -30,8 +30,8 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for MetaDetails {
                 id,
                 video_id,
             })) => {
-                let (selected, selected_effects) = reduce(
-                    &self.selected,
+                let selected_effects = update(
+                    &mut self.selected,
                     SelectedAction::Select {
                         type_name,
                         id,
@@ -44,8 +44,8 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for MetaDetails {
                     &ctx.content.addons,
                     &AggrRequest::AllOfResource(ResourceRef::without_extra("meta", type_name, id)),
                 );
-                let (meta_groups, meta_effects) = reduce(
-                    &self.meta_groups,
+                let meta_effects = update(
+                    &mut self.meta_groups,
                     ItemsGroupsAction::GroupsChanged {
                         items_groups: &meta_groups,
                     },
@@ -68,22 +68,19 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for MetaDetails {
                 } else {
                     (vec![], Effects::none())
                 };
-                let (streams_groups, streams_effects) = reduce(
-                    &self.streams_groups,
+                let streams_effects = update(
+                    &mut self.streams_groups,
                     ItemsGroupsAction::GroupsChanged {
                         items_groups: &streams_groups,
                     },
                     items_groups_reducer,
                     streams_effects,
                 );
-                self.selected = selected;
-                self.meta_groups = meta_groups;
-                self.streams_groups = streams_groups;
                 selected_effects.join(meta_effects).join(streams_effects)
             }
             Msg::Internal(AddonResponse(request, response)) if request.path.resource.eq("meta") => {
-                let (meta_groups, meta_effects) = reduce(
-                    &self.meta_groups,
+                let meta_effects = update(
+                    &mut self.meta_groups,
                     ItemsGroupsAction::AddonResponse { request, response },
                     items_groups_reducer,
                     Effects::none(),
@@ -93,9 +90,10 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for MetaDetails {
                         streams_resource_ref: Some(streams_resource_ref),
                         ..
                     } => {
-                        if let Some(streams_group) =
-                            streams_group_from_meta_groups(&meta_groups, &streams_resource_ref.id)
-                        {
+                        if let Some(streams_group) = streams_group_from_meta_groups(
+                            &self.meta_groups,
+                            &streams_resource_ref.id,
+                        ) {
                             vec![streams_group]
                         } else {
                             self.streams_groups.to_owned()
@@ -103,28 +101,25 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for MetaDetails {
                     }
                     _ => self.streams_groups.to_owned(),
                 };
-                let (streams_groups, streams_effects) = reduce(
-                    &self.streams_groups,
+                let streams_effects = update(
+                    &mut self.streams_groups,
                     ItemsGroupsAction::GroupsChanged {
                         items_groups: &streams_groups,
                     },
                     items_groups_reducer,
                     Effects::none(),
                 );
-                self.meta_groups = meta_groups;
-                self.streams_groups = streams_groups;
                 meta_effects.join(streams_effects)
             }
             Msg::Internal(AddonResponse(request, response))
                 if request.path.resource.eq("stream") =>
             {
-                let (streams_groups, streams_effects) = reduce(
-                    &self.streams_groups,
+                let streams_effects = update(
+                    &mut self.streams_groups,
                     ItemsGroupsAction::AddonResponse { request, response },
                     items_groups_reducer,
                     Effects::none(),
                 );
-                self.streams_groups = streams_groups;
                 streams_effects
             }
             _ => Effects::none().unchanged(),

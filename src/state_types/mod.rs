@@ -10,8 +10,8 @@ pub use self::effects::*;
 mod models;
 pub use self::models::*;
 
-mod reduce;
-pub use self::reduce::*;
+mod update;
+pub use self::update::*;
 
 mod runtime;
 pub use self::runtime::*;
