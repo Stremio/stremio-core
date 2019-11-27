@@ -1,13 +1,10 @@
 use crate::state_types::{Settings, StreamingServerSettings};
-use crate::types::addons::*;
+use crate::types::addons::{Descriptor, ExtraProp, ResourceRequest, TransportUrl};
 use crate::types::api::GDPRConsent;
 use crate::types::LibItem;
-use serde_derive::*;
+use serde_derive::{Deserialize, Serialize};
 
-//
-// Input actions: those are triggered by users
-//
-#[derive(Debug, Deserialize, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Deserialize)]
 #[serde(tag = "load", content = "args")]
 pub enum ActionLoad {
     CatalogGrouped {
@@ -22,14 +19,7 @@ pub enum ActionLoad {
     Notifications,
 }
 
-#[derive(Debug, Deserialize, Clone)]
-#[serde(tag = "addonOp", content = "args")]
-pub enum ActionAddon {
-    Remove { transport_url: TransportUrl },
-    Install(Box<Descriptor>),
-}
-
-#[derive(Debug, Deserialize, Clone)]
+#[derive(Debug, Clone, Deserialize)]
 #[serde(tag = "settings", content = "args")]
 pub enum ActionSettings {
     // Although we load the streaming server settings together with the context
@@ -39,7 +29,14 @@ pub enum ActionSettings {
     Store(Box<Settings>),
 }
 
-#[derive(Deserialize, Serialize, Clone, Debug)]
+#[derive(Debug, Clone, Deserialize)]
+#[serde(tag = "addonOp", content = "args")]
+pub enum ActionAddon {
+    Remove { transport_url: TransportUrl },
+    Install(Box<Descriptor>),
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(tag = "userOp", content = "args")]
 pub enum ActionUser {
     Login {
@@ -59,7 +56,7 @@ pub enum ActionUser {
     // @TODO consider PullUser, PushUser?
 }
 
-#[derive(Debug, Deserialize, Clone)]
+#[derive(Debug, Clone, Deserialize)]
 #[serde(tag = "action", content = "args")]
 pub enum Action {
     LoadCtx,

@@ -1,5 +1,5 @@
-pub mod actions;
-pub use actions::*;
+pub mod action;
+pub use action::*;
 
 //
 // Intermediery messages

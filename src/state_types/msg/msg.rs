@@ -1,4 +1,4 @@
-use crate::state_types::msg::actions::Action;
+use crate::state_types::msg::action::Action;
 use crate::state_types::msg::event::Event;
 use crate::state_types::msg::internal::Internal;
 use derive_more::From;

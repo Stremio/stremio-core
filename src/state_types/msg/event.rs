@@ -1,4 +1,4 @@
-use crate::state_types::msg::actions::ActionUser;
+use crate::state_types::msg::action::ActionUser;
 use crate::types::api::APIErr;
 use serde_derive::Serialize;
 use std::error::Error;
