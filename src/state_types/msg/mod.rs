@@ -1,10 +1,3 @@
-use crate::state_types::{CtxContent, EnvError, SsSettings};
-use crate::types::addons::*;
-use crate::types::api::*;
-use crate::types::{LibBucket, Stream};
-use derive_more::*;
-use serde_derive::*;
-
 pub mod actions;
 pub use actions::*;
 
@@ -31,9 +24,5 @@ pub use event::*;
 // Final enum Msg
 // sum type of actions, internals and outputs
 //
-#[derive(Debug, From)]
-pub enum Msg {
-    Action(Action),
-    Internal(Internal),
-    Event(Event),
-}
+mod msg;
+pub use msg::*;
