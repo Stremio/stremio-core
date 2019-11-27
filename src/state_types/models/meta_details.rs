@@ -2,8 +2,7 @@ use crate::state_types::models::common::{
     items_groups_update, ItemsGroup, ItemsGroupsAction, Loadable,
 };
 use crate::state_types::models::Ctx;
-use crate::state_types::msg::Internal::AddonResponse;
-use crate::state_types::msg::{Action, ActionLoad, Msg};
+use crate::state_types::msg::{Action, ActionLoad, Internal, Msg};
 use crate::state_types::{Effects, Environment, UpdateWithCtx};
 use crate::types::addons::{AggrRequest, ResourceRef};
 use crate::types::{MetaDetail, Stream};
@@ -93,7 +92,7 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for MetaDetails {
                 };
                 selected_effects.join(meta_effects).join(streams_effects)
             }
-            Msg::Internal(AddonResponse(request, response))
+            Msg::Internal(Internal::AddonResponse(request, response))
                 if request.path.resource.eq(META_RESOURCE_NAME) =>
             {
                 let meta_effects = items_groups_update::<_, Env>(
@@ -123,7 +122,7 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for MetaDetails {
                 };
                 meta_effects.join(streams_effects)
             }
-            Msg::Internal(AddonResponse(request, response))
+            Msg::Internal(Internal::AddonResponse(request, response))
                 if request.path.resource.eq(STREAM_RESOURCE_NAME) =>
             {
                 let streams_effects = items_groups_update::<_, Env>(

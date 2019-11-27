@@ -37,7 +37,7 @@ pub fn model_derive(input: TokenStream) -> TokenStream {
         });
         let expanded = quote! {
             impl #core::state_types::Update for #name {
-                fn update(&mut self, msg: &#core::state_types::Msg) -> #core::state_types::Effects {
+                fn update(&mut self, msg: &#core::state_types::msg::Msg) -> #core::state_types::Effects {
                     #core::state_types::Update::update(&mut self.ctx, msg)
                         #(#container_updates)*
                 }
