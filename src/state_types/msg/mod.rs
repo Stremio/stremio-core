@@ -5,7 +5,7 @@ use crate::types::{LibBucket, Stream};
 use derive_more::*;
 use serde_derive::*;
 
-mod actions;
+pub mod actions;
 pub use actions::*;
 
 //
@@ -38,25 +38,11 @@ pub enum Internal {
 // Those are meant to be user directly by users of the stremio-core crate
 //
 
-mod ctx_error;
+pub mod ctx_error;
 pub use ctx_error::*;
 
-#[derive(Debug, Clone, Serialize)]
-#[serde(tag = "event", content = "args")]
-pub enum Event {
-    CtxSaved,
-    CtxChanged,
-    CtxAddonsChangedFromPull,
-    CtxAddonsPushed,
-    CtxFatal(CtxError),
-    CtxActionErr(ActionUser, CtxError),
-    // This will be used by models which want to re-load the libitem when it may be updated
-    // will be emitted after persisting
-    LibPersisted,
-    LibPushed,
-    LibFatal(CtxError),
-    SettingsStoreError(String),
-}
+pub mod event;
+pub use event::*;
 
 //
 // Final enum Msg
