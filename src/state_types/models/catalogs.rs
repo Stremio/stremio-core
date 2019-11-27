@@ -1,4 +1,6 @@
-use super::addons::*;
+use super::common::{
+    addon_get, items_groups_update, CatalogError, ItemsGroup, ItemsGroupsAction, Loadable,
+};
 use crate::state_types::msg::Internal::*;
 use crate::state_types::*;
 use crate::types::addons::*;
@@ -7,6 +9,7 @@ use derivative::*;
 use itertools::*;
 use serde_derive::*;
 use std::convert::TryFrom;
+use std::marker::PhantomData;
 
 #[derive(Debug, Clone, Default, Serialize)]
 pub struct CatalogGrouped {
@@ -16,14 +19,20 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for CatalogGrouped {
     fn update(&mut self, ctx: &Ctx<Env>, msg: &Msg) -> Effects {
         match msg {
             Msg::Action(Action::Load(ActionLoad::CatalogGrouped { extra })) => {
-                let (groups, effects) = addon_aggr_new::<Env, _>(
-                    &ctx.content.addons,
-                    &AggrRequest::AllCatalogs { extra },
-                );
-                self.groups = groups;
-                effects
+                items_groups_update::<_, Env>(
+                    &mut self.groups,
+                    ItemsGroupsAction::GroupsRequested {
+                        addons: &ctx.content.addons,
+                        request: &AggrRequest::AllCatalogs { extra },
+                        env: PhantomData,
+                    },
+                )
             }
-            _ => addon_aggr_update(&mut self.groups, msg),
+            Msg::Internal(AddonResponse(request, response)) => items_groups_update::<_, Env>(
+                &mut self.groups,
+                ItemsGroupsAction::AddonResponse { request, response },
+            ),
+            _ => Effects::none().unchanged(),
         }
     }
 }
@@ -174,7 +183,7 @@ where
                     selected: Some(selected_req.to_owned()),
                     ..Default::default()
                 };
-                Effects::one(addon_get::<Env>(&selected_req))
+                Effects::one(addon_get::<Env>(selected_req.to_owned()))
             }
             Msg::Internal(AddonResponse(req, resp))
                 if Some(req) == self.selected.as_ref() && self.content == Loadable::Loading =>

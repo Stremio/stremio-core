@@ -1,18 +1,10 @@
+use crate::state_types::msg::Msg;
 use crate::state_types::Effects;
 
-pub type Reducer<Value, Action> = fn(prev: &Value, action: Action) -> (Value, bool);
+pub trait Update {
+    fn update(&mut self, msg: &Msg) -> Effects;
+}
 
-pub fn update<Value, Action>(
-    value: &mut Value,
-    action: Action,
-    reducer: Reducer<Value, Action>,
-    effects: Effects,
-) -> (Effects) {
-    let (next, changed) = reducer(value, action);
-    if changed {
-        *value = next;
-        effects
-    } else {
-        Effects::none().unchanged()
-    }
+pub trait UpdateWithCtx<Ctx> {
+    fn update(&mut self, ctx: &Ctx, msg: &Msg) -> Effects;
 }

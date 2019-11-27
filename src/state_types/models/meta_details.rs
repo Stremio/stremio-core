@@ -1,12 +1,17 @@
-use super::addons::*;
-use crate::state_types::models::Loadable;
-use crate::state_types::msg::Internal::*;
-use crate::state_types::*;
-use crate::types::addons::{AggrRequest, ResourceRef, ResourceRequest, ResourceResponse};
+use crate::state_types::models::common::{
+    items_groups_update, ItemsGroup, ItemsGroupsAction, Loadable,
+};
+use crate::state_types::models::Ctx;
+use crate::state_types::msg::Internal::AddonResponse;
+use crate::state_types::msg::{Action, ActionLoad, Msg};
+use crate::state_types::{Effects, Environment, UpdateWithCtx};
+use crate::types::addons::{AggrRequest, ResourceRef};
 use crate::types::{MetaDetail, Stream};
-use serde_derive::*;
-use std::convert::TryFrom;
+use serde_derive::Serialize;
 use std::marker::PhantomData;
+
+const META_RESOURCE_NAME: &str = "meta";
+const STREAM_RESOURCE_NAME: &str = "stream";
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize)]
 pub struct Selected {
@@ -31,64 +36,71 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for MetaDetails {
                 id,
                 video_id,
             })) => {
-                let selected_effects = update(
+                let selected_effects = selected_update(
                     &mut self.selected,
                     SelectedAction::Select {
                         type_name,
                         id,
                         video_id,
                     },
-                    selected_reducer,
-                    Effects::none(),
                 );
-                let (meta_groups, meta_effects) = addon_aggr_new::<Env, _>(
-                    &ctx.content.addons,
-                    &AggrRequest::AllOfResource(ResourceRef::without_extra("meta", type_name, id)),
-                );
-                let meta_effects = update(
+                let meta_effects = items_groups_update::<_, Env>(
                     &mut self.meta_groups,
-                    ItemsGroupsAction::GroupsChanged {
-                        items_groups: &meta_groups,
+                    ItemsGroupsAction::GroupsRequested {
+                        addons: &ctx.content.addons,
+                        request: &AggrRequest::AllOfResource(ResourceRef::without_extra(
+                            META_RESOURCE_NAME,
+                            type_name,
+                            id,
+                        )),
                         env: PhantomData,
                     },
-                    items_groups_reducer::<_, Env>,
-                    meta_effects,
                 );
-                let (streams_groups, streams_effects) = if let Some(video_id) = video_id {
-                    if let Some(streams_group) =
-                        streams_group_from_meta_groups(&meta_groups, video_id)
-                    {
-                        (vec![streams_group], Effects::none())
-                    } else {
-                        addon_aggr_new::<Env, _>(
-                            &ctx.content.addons,
-                            &AggrRequest::AllOfResource(ResourceRef::without_extra(
-                                "stream", type_name, video_id,
-                            )),
-                        )
+                let streams_effects = match video_id {
+                    Some(video_id) => {
+                        if let Some(streams_group) =
+                            streams_group_from_meta_groups(&self.meta_groups, video_id)
+                        {
+                            items_groups_update::<_, Env>(
+                                &mut self.streams_groups,
+                                ItemsGroupsAction::GroupsReplaced {
+                                    items_groups: vec![streams_group],
+                                },
+                            )
+                        } else {
+                            items_groups_update::<_, Env>(
+                                &mut self.streams_groups,
+                                ItemsGroupsAction::GroupsRequested {
+                                    addons: &ctx.content.addons,
+                                    request: &AggrRequest::AllOfResource(
+                                        ResourceRef::without_extra(
+                                            STREAM_RESOURCE_NAME,
+                                            type_name,
+                                            video_id,
+                                        ),
+                                    ),
+                                    env: PhantomData,
+                                },
+                            )
+                        }
                     }
-                } else {
-                    (vec![], Effects::none())
+                    None => items_groups_update::<_, Env>(
+                        &mut self.streams_groups,
+                        ItemsGroupsAction::GroupsReplaced {
+                            items_groups: vec![],
+                        },
+                    ),
                 };
-                let streams_effects = update(
-                    &mut self.streams_groups,
-                    ItemsGroupsAction::GroupsChanged {
-                        items_groups: &streams_groups,
-                        env: PhantomData,
-                    },
-                    items_groups_reducer::<_, Env>,
-                    streams_effects,
-                );
                 selected_effects.join(meta_effects).join(streams_effects)
             }
-            Msg::Internal(AddonResponse(request, response)) if request.path.resource.eq("meta") => {
-                let meta_effects = update(
+            Msg::Internal(AddonResponse(request, response))
+                if request.path.resource.eq(META_RESOURCE_NAME) =>
+            {
+                let meta_effects = items_groups_update::<_, Env>(
                     &mut self.meta_groups,
                     ItemsGroupsAction::AddonResponse { request, response },
-                    items_groups_reducer::<_, Env>,
-                    Effects::none(),
                 );
-                let streams_groups = match &self.selected {
+                let streams_effects = match &self.selected {
                     Selected {
                         streams_resource_ref: Some(streams_resource_ref),
                         ..
@@ -97,32 +109,26 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for MetaDetails {
                             &self.meta_groups,
                             &streams_resource_ref.id,
                         ) {
-                            vec![streams_group]
+                            items_groups_update::<_, Env>(
+                                &mut self.streams_groups,
+                                ItemsGroupsAction::GroupsReplaced {
+                                    items_groups: vec![streams_group],
+                                },
+                            )
                         } else {
-                            self.streams_groups.to_owned()
+                            Effects::none().unchanged()
                         }
                     }
-                    _ => self.streams_groups.to_owned(),
+                    _ => Effects::none().unchanged(),
                 };
-                let streams_effects = update(
-                    &mut self.streams_groups,
-                    ItemsGroupsAction::GroupsChanged {
-                        items_groups: &streams_groups,
-                        env: PhantomData,
-                    },
-                    items_groups_reducer::<_, Env>,
-                    Effects::none(),
-                );
                 meta_effects.join(streams_effects)
             }
             Msg::Internal(AddonResponse(request, response))
-                if request.path.resource.eq("stream") =>
+                if request.path.resource.eq(STREAM_RESOURCE_NAME) =>
             {
-                let streams_effects = update(
+                let streams_effects = items_groups_update::<_, Env>(
                     &mut self.streams_groups,
                     ItemsGroupsAction::AddonResponse { request, response },
-                    items_groups_reducer::<_, Env>,
-                    Effects::none(),
                 );
                 streams_effects
             }
@@ -138,78 +144,43 @@ enum SelectedAction<'a> {
         video_id: &'a Option<String>,
     },
 }
-fn selected_reducer(prev: &Selected, action: SelectedAction) -> (Selected, bool) {
-    let next = match action {
+
+fn selected_update(selected: &mut Selected, action: SelectedAction) -> Effects {
+    let next_selected = match action {
         SelectedAction::Select {
             type_name,
             id,
             video_id: Some(video_id),
         } => Selected {
-            meta_resource_ref: Some(ResourceRef::without_extra("meta", type_name, id)),
-            streams_resource_ref: Some(ResourceRef::without_extra("stream", type_name, video_id)),
+            meta_resource_ref: Some(ResourceRef::without_extra(
+                META_RESOURCE_NAME,
+                type_name,
+                id,
+            )),
+            streams_resource_ref: Some(ResourceRef::without_extra(
+                STREAM_RESOURCE_NAME,
+                type_name,
+                video_id,
+            )),
         },
         SelectedAction::Select {
             type_name,
             id,
             video_id: None,
         } => Selected {
-            meta_resource_ref: Some(ResourceRef::without_extra("meta", type_name, id)),
+            meta_resource_ref: Some(ResourceRef::without_extra(
+                META_RESOURCE_NAME,
+                type_name,
+                id,
+            )),
             streams_resource_ref: None,
         },
     };
-    let changed = prev.ne(&next);
-    (next, changed)
-}
-
-type ItemsGroups<T> = Vec<ItemsGroup<T>>;
-enum ItemsGroupsAction<'a, T, Env: Environment + 'static> {
-    GroupsChanged {
-        items_groups: &'a ItemsGroups<T>,
-        env: PhantomData<Env>,
-    },
-    AddonResponse {
-        request: &'a ResourceRequest,
-        response: &'a Result<ResourceResponse, EnvError>,
-    },
-}
-#[allow(clippy::ptr_arg)]
-fn items_groups_reducer<T: Clone + TryFrom<ResourceResponse>, Env: Environment + 'static>(
-    prev: &ItemsGroups<T>,
-    action: ItemsGroupsAction<T, Env>,
-) -> (ItemsGroups<T>, bool) {
-    match action {
-        ItemsGroupsAction::GroupsChanged { items_groups, .. } => {
-            let changed = prev
-                .iter()
-                .map(|group| &group.req)
-                .ne(items_groups.iter().map(|group| &group.req));
-            let next = if changed {
-                items_groups.to_owned()
-            } else {
-                prev.to_owned()
-            };
-            (next, changed)
-        }
-        ItemsGroupsAction::AddonResponse { request, response } => {
-            let group_index = prev.iter().position(|group| group.req.eq(request));
-            if let Some(group_index) = group_index {
-                let group_content = match response {
-                    Ok(response) => match T::try_from(response.to_owned()) {
-                        Ok(items) => Loadable::Ready(items),
-                        Err(_) => Loadable::Err(CatalogError::UnexpectedResp),
-                    },
-                    Err(error) => Loadable::Err(CatalogError::Other(error.to_string())),
-                };
-                let next = &mut prev.to_owned();
-                next[group_index] = ItemsGroup {
-                    req: request.to_owned(),
-                    content: group_content,
-                };
-                (next.to_owned(), true)
-            } else {
-                (prev.to_owned(), false)
-            }
-        }
+    if next_selected.ne(selected) {
+        *selected = next_selected;
+        Effects::none()
+    } else {
+        Effects::none().unchanged()
     }
 }
 
@@ -220,18 +191,18 @@ fn streams_group_from_meta_groups(
     meta_groups
         .iter()
         .find_map(|meta_group| match &meta_group.content {
-            Loadable::Ready(meta_detail) => Some((&meta_group.req, meta_detail)),
+            Loadable::Ready(meta_detail) => Some((&meta_group.request, meta_detail)),
             _ => None,
         })
-        .and_then(|(req, meta_detail)| {
+        .and_then(|(request, meta_detail)| {
             meta_detail
                 .videos
                 .iter()
                 .find(|video| video.id.eq(video_id) && !video.streams.is_empty())
-                .map(|video| (req, &video.streams))
+                .map(|video| (request, &video.streams))
         })
-        .map(|(req, streams)| ItemsGroup {
-            req: req.to_owned(),
+        .map(|(request, streams)| ItemsGroup {
+            request: request.to_owned(),
             content: Loadable::Ready(streams.to_owned()),
         })
 }

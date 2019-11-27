@@ -1,3 +1,4 @@
+use super::common::{addon_get, items_groups_update, ItemsGroup, ItemsGroupsAction, Loadable};
 use crate::state_types::msg::Internal::*;
 use crate::state_types::*;
 use crate::types::addons::{ResourceRef, ResourceRequest};
@@ -76,8 +77,11 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for Notifications {
                                         ResourceRequest::new(&addon.transport_url, path);
 
                                     (
-                                        addon_get::<Env>(&addon_req),
-                                        ItemsGroup::new(addon, addon_req),
+                                        addon_get::<Env>(addon_req.to_owned()),
+                                        ItemsGroup {
+                                            request: addon_req,
+                                            content: Loadable::Loading,
+                                        },
                                     )
                                 })
                                 .collect::<Vec<_>>()
@@ -89,8 +93,14 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for Notifications {
                 Effects::many(effects)
             }
             Msg::Internal(AddonResponse(req, result)) => {
-                if let Some(idx) = self.groups.iter().position(|g| g.addon_req() == req) {
-                    self.groups[idx].update(result);
+                if let Some(idx) = self.groups.iter().position(|g| g.request.eq(req)) {
+                    items_groups_update::<_, Env>(
+                        &mut self.groups,
+                        ItemsGroupsAction::AddonResponse {
+                            request: req,
+                            response: result,
+                        },
+                    );
                     // Modify all the items so that only the new videos are left
                     if let Loadable::Ready(ref mut meta_items) = self.groups[idx].content {
                         for item in meta_items {
