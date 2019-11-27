@@ -123,11 +123,10 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for MetaDetails {
             Msg::Internal(Internal::AddonResponse(request, response))
                 if request.path.resource.eq(STREAM_RESOURCE_NAME) =>
             {
-                let streams_effects = items_groups_update::<_, Env>(
+                items_groups_update::<_, Env>(
                     &mut self.streams_groups,
                     ItemsGroupsAction::AddonResponse { request, response },
-                );
-                streams_effects
+                )
             }
             _ => Effects::none().unchanged(),
         }
