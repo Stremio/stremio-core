@@ -14,9 +14,6 @@ pub use internal::*;
 // Those are meant to be user directly by users of the stremio-core crate
 //
 
-pub mod ctx_error;
-pub use ctx_error::*;
-
 pub mod event;
 pub use event::*;
 
