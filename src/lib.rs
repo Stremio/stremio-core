@@ -7,7 +7,7 @@ mod tests {
     use crate::addon_transport::*;
     use crate::state_types::models::common::Loadable;
     use crate::state_types::models::*;
-    use crate::state_types::msg::*;
+    use crate::state_types::messages::*;
     use crate::state_types::*;
     use crate::types::addons::{Descriptor, ResourceRef, ResourceRequest, ResourceResponse};
     use crate::types::MetaPreview;

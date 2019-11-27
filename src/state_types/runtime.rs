@@ -1,4 +1,4 @@
-use crate::state_types::msg::{Event, Msg};
+use crate::state_types::messages::{Event, Msg};
 use crate::state_types::{Effects, Environment, Update};
 use derivative::*;
 use enclose::*;

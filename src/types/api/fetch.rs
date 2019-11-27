@@ -1,5 +1,5 @@
 use super::{APIMethodName, APIResult};
-use crate::state_types::msg::CtxError;
+use crate::state_types::messages::CtxError;
 use crate::state_types::{Environment, Request};
 use futures::{future, Future};
 

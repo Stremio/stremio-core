@@ -2,7 +2,7 @@ use crate::state_types::models::common::{
     items_groups_update, ItemsGroup, ItemsGroupsAction, Loadable,
 };
 use crate::state_types::models::Ctx;
-use crate::state_types::msg::{Action, ActionLoad, Internal, Msg};
+use crate::state_types::messages::{Action, ActionLoad, Internal, Msg};
 use crate::state_types::{Effects, Environment, UpdateWithCtx};
 use crate::types::addons::{AggrRequest, ResourceRef};
 use crate::types::{MetaDetail, Stream};

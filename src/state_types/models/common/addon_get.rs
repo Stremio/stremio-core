@@ -1,4 +1,4 @@
-use crate::state_types::msg::Internal;
+use crate::state_types::messages::Internal;
 use crate::state_types::{Effect, Environment};
 use crate::types::addons::ResourceRequest;
 use futures::{future, Future};
