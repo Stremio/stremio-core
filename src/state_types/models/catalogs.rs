@@ -1,9 +1,9 @@
 use super::common::{
     addon_get, items_groups_update, CatalogError, ItemsGroup, ItemsGroupsAction, Loadable,
 };
-use crate::state_types::models::*;
 use crate::state_types::messages::Internal::*;
 use crate::state_types::messages::*;
+use crate::state_types::models::*;
 use crate::state_types::*;
 use crate::types::addons::*;
 use crate::types::MetaPreview;
