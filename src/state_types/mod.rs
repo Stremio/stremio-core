@@ -1,17 +1,17 @@
-mod environment;
-pub use self::environment::*;
-
+pub mod models;
 pub mod msg;
-pub use self::msg::*;
 
 mod effects;
-pub use self::effects::*;
+pub use effects::*;
 
-pub mod models;
-pub use self::models::*;
+mod environment;
+pub use environment::*;
 
 mod runtime;
-pub use self::runtime::*;
+pub use runtime::*;
 
 mod update;
-pub use self::update::*;
+pub use update::*;
+
+pub use models::*;
+pub use msg::*;

@@ -4,7 +4,6 @@ use crate::types::api::*;
 use crate::types::{LibBucket, Stream};
 use derive_more::*;
 use serde_derive::*;
-use std::error::Error;
 
 mod actions;
 pub use actions::*;
@@ -38,22 +37,9 @@ pub enum Internal {
 // Event
 // Those are meant to be user directly by users of the stremio-core crate
 //
-#[derive(Debug, Serialize, Clone)]
-#[serde(tag = "err", content = "args")]
-pub enum CtxError {
-    API(APIErr),
-    Env(String),
-}
-impl From<APIErr> for CtxError {
-    fn from(e: APIErr) -> Self {
-        CtxError::API(e)
-    }
-}
-impl From<Box<dyn Error>> for CtxError {
-    fn from(e: Box<dyn Error>) -> Self {
-        CtxError::Env(e.to_string())
-    }
-}
+
+mod ctx_error;
+pub use ctx_error::*;
 
 #[derive(Debug, Clone, Serialize)]
 #[serde(tag = "event", content = "args")]
