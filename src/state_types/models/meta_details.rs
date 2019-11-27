@@ -17,14 +17,12 @@ pub struct Selected {
     meta_resource_ref: Option<ResourceRef>,
     streams_resource_ref: Option<ResourceRef>,
 }
-pub type MetaGroups = Vec<ItemsGroup<MetaDetail>>;
-pub type StreamsGroups = Vec<ItemsGroup<Vec<Stream>>>;
 
 #[derive(Default, Debug, Clone, Serialize)]
 pub struct MetaDetails {
     pub selected: Selected,
-    pub meta_groups: MetaGroups,
-    pub streams_groups: StreamsGroups,
+    pub meta_groups: Vec<ItemsGroup<MetaDetail>>,
+    pub streams_groups: Vec<ItemsGroup<Vec<Stream>>>,
 }
 
 impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for MetaDetails {
