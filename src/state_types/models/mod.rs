@@ -1,10 +1,10 @@
 pub mod common;
 
+mod catalogs_filtered;
+pub use catalogs_filtered::*;
+
 mod catalogs_grouped;
 pub use catalogs_grouped::*;
-
-mod catalogs;
-pub use catalogs::*;
 
 mod ctx;
 pub use ctx::*;
