@@ -153,8 +153,8 @@ mod tests {
         // have processed
         {
             let state = &runtime.app.read().unwrap().catalogs;
-            assert_eq!(state.items_groups.len(), 7, "groups is the right length");
-            for g in state.items_groups.iter() {
+            assert_eq!(state.groups.len(), 7, "groups is the right length");
+            for g in state.groups.iter() {
                 assert!(
                     match g.content {
                         Loadable::Ready(_) => true,
@@ -171,7 +171,7 @@ mod tests {
         let msg = Msg::Action(Action::Load(ActionLoad::CatalogsGrouped { extra }));
         run(runtime.dispatch(&msg));
         assert_eq!(
-            runtime.app.read().unwrap().catalogs.items_groups.len(),
+            runtime.app.read().unwrap().catalogs.groups.len(),
             5,
             "groups is the right length when searching"
         );

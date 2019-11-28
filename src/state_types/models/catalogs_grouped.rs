@@ -1,4 +1,4 @@
-use super::common::{items_groups_update, ItemsGroup, ItemsGroupsAction};
+use super::common::{groups_update, Group, GroupsAction};
 use crate::state_types::messages::{Action, ActionLoad, Internal, Msg};
 use crate::state_types::models::Ctx;
 use crate::state_types::{Effects, Environment, UpdateWithCtx};
@@ -10,7 +10,7 @@ use std::marker::PhantomData;
 #[derive(Default, Debug, Clone, Serialize)]
 pub struct CatalogsGrouped {
     pub selected: Vec<ExtraProp>,
-    pub items_groups: Vec<ItemsGroup<Vec<MetaPreview>>>,
+    pub groups: Vec<Group<Vec<MetaPreview>>>,
 }
 
 impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for CatalogsGrouped {
@@ -19,22 +19,20 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for CatalogsGrouped {
             Msg::Action(Action::Load(ActionLoad::CatalogsGrouped { extra })) => {
                 let selected_effects =
                     selected_update(&mut self.selected, SelectedAction::Select { extra });
-                let items_groups_effects = items_groups_update::<_, Env>(
-                    &mut self.items_groups,
-                    ItemsGroupsAction::GroupsRequested {
+                let groups_effects = groups_update::<_, Env>(
+                    &mut self.groups,
+                    GroupsAction::GroupsRequested {
                         addons: &ctx.content.addons,
                         request: &AggrRequest::AllCatalogs { extra },
                         env: PhantomData,
                     },
                 );
-                selected_effects.join(items_groups_effects)
+                selected_effects.join(groups_effects)
             }
-            Msg::Internal(Internal::AddonResponse(request, response)) => {
-                items_groups_update::<_, Env>(
-                    &mut self.items_groups,
-                    ItemsGroupsAction::AddonResponse { request, response },
-                )
-            }
+            Msg::Internal(Internal::AddonResponse(request, response)) => groups_update::<_, Env>(
+                &mut self.groups,
+                GroupsAction::AddonResponse { request, response },
+            ),
             _ => Effects::none().unchanged(),
         }
     }

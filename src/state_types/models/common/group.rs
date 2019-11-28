@@ -7,28 +7,28 @@ use std::marker::PhantomData;
 
 #[derive(Debug, Clone, PartialEq, Serialize)]
 #[serde(tag = "type", content = "content")]
-pub enum ItemsGroupError {
+pub enum GroupError {
     EmptyContent,
     UnexpectedResp,
     Other(String),
 }
 
-pub type ItemsGroupContent<T> = Loadable<T, ItemsGroupError>;
+pub type GroupContent<T> = Loadable<T, GroupError>;
 
 #[derive(Debug, Clone, Serialize)]
-pub struct ItemsGroup<T> {
+pub struct Group<T> {
     pub request: ResourceRequest,
-    pub content: ItemsGroupContent<T>,
+    pub content: GroupContent<T>,
 }
 
-pub enum ItemsGroupsAction<'a, T, Env: Environment + 'static> {
+pub enum GroupsAction<'a, T, Env: Environment + 'static> {
     GroupsRequested {
         addons: &'a [Descriptor],
         request: &'a AggrRequest<'a>,
         env: PhantomData<Env>,
     },
     GroupsReplaced {
-        items_groups: Vec<ItemsGroup<T>>,
+        groups: Vec<Group<T>>,
     },
     AddonResponse {
         request: &'a ResourceRequest,
@@ -36,61 +36,56 @@ pub enum ItemsGroupsAction<'a, T, Env: Environment + 'static> {
     },
 }
 
-pub fn items_groups_update<T, Env>(
-    items_groups: &mut Vec<ItemsGroup<T>>,
-    action: ItemsGroupsAction<T, Env>,
-) -> Effects
+pub fn groups_update<T, Env>(groups: &mut Vec<Group<T>>, action: GroupsAction<T, Env>) -> Effects
 where
     T: Clone + TryFrom<ResourceResponse>,
     Env: Environment + 'static,
 {
     match action {
-        ItemsGroupsAction::GroupsRequested {
+        GroupsAction::GroupsRequested {
             addons, request, ..
         } => {
-            let (next_item_groups, effects) = request
+            let (next_groups, effects) = request
                 .plan(&addons)
                 .into_iter()
                 .map(|(_, request)| {
                     (
-                        ItemsGroup {
+                        Group {
                             request: request.to_owned(),
-                            content: ItemsGroupContent::Loading,
+                            content: GroupContent::Loading,
                         },
                         addon_get::<Env>(request),
                     )
                 })
                 .unzip::<_, _, Vec<_>, Vec<_>>();
-            if groups_requests_changed(items_groups, &next_item_groups) {
-                *items_groups = next_item_groups;
+            if groups_requests_changed(groups, &next_groups) {
+                *groups = next_groups;
                 Effects::many(effects)
             } else {
                 Effects::none().unchanged()
             }
         }
-        ItemsGroupsAction::GroupsReplaced {
-            items_groups: next_item_groups,
+        GroupsAction::GroupsReplaced {
+            groups: next_groups,
         } => {
-            if groups_requests_changed(items_groups, &next_item_groups) {
-                *items_groups = next_item_groups;
+            if groups_requests_changed(groups, &next_groups) {
+                *groups = next_groups;
                 Effects::none()
             } else {
                 Effects::none().unchanged()
             }
         }
-        ItemsGroupsAction::AddonResponse { request, response } => {
-            let group_index = items_groups
-                .iter()
-                .position(|group| group.request.eq(request));
+        GroupsAction::AddonResponse { request, response } => {
+            let group_index = groups.iter().position(|group| group.request.eq(request));
             if let Some(group_index) = group_index {
                 let group_content = match response {
                     Ok(response) => match T::try_from(response.to_owned()) {
-                        Ok(items) => ItemsGroupContent::Ready(items),
-                        Err(_) => ItemsGroupContent::Err(ItemsGroupError::UnexpectedResp),
+                        Ok(content) => GroupContent::Ready(content),
+                        Err(_) => GroupContent::Err(GroupError::UnexpectedResp),
                     },
-                    Err(error) => ItemsGroupContent::Err(ItemsGroupError::Other(error.to_string())),
+                    Err(error) => GroupContent::Err(GroupError::Other(error.to_string())),
                 };
-                items_groups[group_index] = ItemsGroup {
+                groups[group_index] = Group {
                     request: request.to_owned(),
                     content: group_content,
                 };
@@ -102,7 +97,7 @@ where
     }
 }
 
-fn groups_requests_changed<T>(g1: &[ItemsGroup<T>], g2: &[ItemsGroup<T>]) -> bool {
+fn groups_requests_changed<T>(g1: &[Group<T>], g2: &[Group<T>]) -> bool {
     g1.iter()
         .map(|group| &group.request)
         .ne(g2.iter().map(|group| &group.request))

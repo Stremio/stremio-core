@@ -1,7 +1,5 @@
 use crate::state_types::messages::{Action, ActionLoad, Internal, Msg};
-use crate::state_types::models::common::{
-    items_groups_update, ItemsGroup, ItemsGroupsAction, Loadable,
-};
+use crate::state_types::models::common::{groups_update, Group, GroupContent, GroupsAction};
 use crate::state_types::models::Ctx;
 use crate::state_types::{Effects, Environment, UpdateWithCtx};
 use crate::types::addons::{AggrRequest, ResourceRef};
@@ -21,8 +19,8 @@ pub struct Selected {
 #[derive(Default, Debug, Clone, Serialize)]
 pub struct MetaDetails {
     pub selected: Selected,
-    pub meta_groups: Vec<ItemsGroup<MetaDetail>>,
-    pub streams_groups: Vec<ItemsGroup<Vec<Stream>>>,
+    pub meta_groups: Vec<Group<MetaDetail>>,
+    pub streams_groups: Vec<Group<Vec<Stream>>>,
 }
 
 impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for MetaDetails {
@@ -41,9 +39,9 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for MetaDetails {
                         video_id,
                     },
                 );
-                let meta_effects = items_groups_update::<_, Env>(
+                let meta_effects = groups_update::<_, Env>(
                     &mut self.meta_groups,
-                    ItemsGroupsAction::GroupsRequested {
+                    GroupsAction::GroupsRequested {
                         addons: &ctx.content.addons,
                         request: &AggrRequest::AllOfResource(ResourceRef::without_extra(
                             META_RESOURCE_NAME,
@@ -58,16 +56,16 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for MetaDetails {
                         if let Some(streams_group) =
                             streams_group_from_meta_groups(&self.meta_groups, video_id)
                         {
-                            items_groups_update::<_, Env>(
+                            groups_update::<_, Env>(
                                 &mut self.streams_groups,
-                                ItemsGroupsAction::GroupsReplaced {
-                                    items_groups: vec![streams_group],
+                                GroupsAction::GroupsReplaced {
+                                    groups: vec![streams_group],
                                 },
                             )
                         } else {
-                            items_groups_update::<_, Env>(
+                            groups_update::<_, Env>(
                                 &mut self.streams_groups,
-                                ItemsGroupsAction::GroupsRequested {
+                                GroupsAction::GroupsRequested {
                                     addons: &ctx.content.addons,
                                     request: &AggrRequest::AllOfResource(
                                         ResourceRef::without_extra(
@@ -81,11 +79,9 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for MetaDetails {
                             )
                         }
                     }
-                    None => items_groups_update::<_, Env>(
+                    None => groups_update::<_, Env>(
                         &mut self.streams_groups,
-                        ItemsGroupsAction::GroupsReplaced {
-                            items_groups: vec![],
-                        },
+                        GroupsAction::GroupsReplaced { groups: vec![] },
                     ),
                 };
                 selected_effects.join(meta_effects).join(streams_effects)
@@ -93,9 +89,9 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for MetaDetails {
             Msg::Internal(Internal::AddonResponse(request, response))
                 if request.path.resource.eq(META_RESOURCE_NAME) =>
             {
-                let meta_effects = items_groups_update::<_, Env>(
+                let meta_effects = groups_update::<_, Env>(
                     &mut self.meta_groups,
-                    ItemsGroupsAction::AddonResponse { request, response },
+                    GroupsAction::AddonResponse { request, response },
                 );
                 let streams_effects = match &self.selected {
                     Selected {
@@ -106,10 +102,10 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for MetaDetails {
                             &self.meta_groups,
                             &streams_resource_ref.id,
                         ) {
-                            items_groups_update::<_, Env>(
+                            groups_update::<_, Env>(
                                 &mut self.streams_groups,
-                                ItemsGroupsAction::GroupsReplaced {
-                                    items_groups: vec![streams_group],
+                                GroupsAction::GroupsReplaced {
+                                    groups: vec![streams_group],
                                 },
                             )
                         } else {
@@ -123,9 +119,9 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for MetaDetails {
             Msg::Internal(Internal::AddonResponse(request, response))
                 if request.path.resource.eq(STREAM_RESOURCE_NAME) =>
             {
-                items_groups_update::<_, Env>(
+                groups_update::<_, Env>(
                     &mut self.streams_groups,
-                    ItemsGroupsAction::AddonResponse { request, response },
+                    GroupsAction::AddonResponse { request, response },
                 )
             }
             _ => Effects::none().unchanged(),
@@ -181,13 +177,13 @@ fn selected_update(selected: &mut Selected, action: SelectedAction) -> Effects {
 }
 
 fn streams_group_from_meta_groups(
-    meta_groups: &[ItemsGroup<MetaDetail>],
+    meta_groups: &[Group<MetaDetail>],
     video_id: &str,
-) -> Option<ItemsGroup<Vec<Stream>>> {
+) -> Option<Group<Vec<Stream>>> {
     meta_groups
         .iter()
         .find_map(|meta_group| match &meta_group.content {
-            Loadable::Ready(meta_detail) => Some((&meta_group.request, meta_detail)),
+            GroupContent::Ready(meta_detail) => Some((&meta_group.request, meta_detail)),
             _ => None,
         })
         .and_then(|(request, meta_detail)| {
@@ -197,8 +193,8 @@ fn streams_group_from_meta_groups(
                 .find(|video| video.id.eq(video_id) && !video.streams.is_empty())
                 .map(|video| (request, &video.streams))
         })
-        .map(|(request, streams)| ItemsGroup {
+        .map(|(request, streams)| Group {
             request: request.to_owned(),
-            content: Loadable::Ready(streams.to_owned()),
+            content: GroupContent::Ready(streams.to_owned()),
         })
 }
