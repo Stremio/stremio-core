@@ -13,10 +13,12 @@ pub enum ItemsGroupError {
     Other(String),
 }
 
+pub type ItemsGroupContent<T> = Loadable<T, ItemsGroupError>;
+
 #[derive(Debug, Clone, Serialize)]
 pub struct ItemsGroup<T> {
     pub request: ResourceRequest,
-    pub content: Loadable<T, ItemsGroupError>,
+    pub content: ItemsGroupContent<T>,
 }
 
 pub enum ItemsGroupsAction<'a, T, Env: Environment + 'static> {
@@ -53,7 +55,7 @@ where
                     (
                         ItemsGroup {
                             request: request.to_owned(),
-                            content: Loadable::Loading,
+                            content: ItemsGroupContent::Loading,
                         },
                         addon_get::<Env>(request),
                     )
@@ -83,10 +85,10 @@ where
             if let Some(group_index) = group_index {
                 let group_content = match response {
                     Ok(response) => match T::try_from(response.to_owned()) {
-                        Ok(items) => Loadable::Ready(items),
-                        Err(_) => Loadable::Err(ItemsGroupError::UnexpectedResp),
+                        Ok(items) => ItemsGroupContent::Ready(items),
+                        Err(_) => ItemsGroupContent::Err(ItemsGroupError::UnexpectedResp),
                     },
-                    Err(error) => Loadable::Err(ItemsGroupError::Other(error.to_string())),
+                    Err(error) => ItemsGroupContent::Err(ItemsGroupError::Other(error.to_string())),
                 };
                 items_groups[group_index] = ItemsGroup {
                     request: request.to_owned(),
