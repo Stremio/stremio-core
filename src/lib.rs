@@ -140,21 +140,21 @@ mod tests {
         #[derive(Model, Debug, Default)]
         struct Model {
             ctx: Ctx<Env>,
-            catalogs: CatalogGrouped,
+            catalogs: CatalogsGrouped,
         }
 
         let app = Model::default();
         let (runtime, _) = Runtime::<Env, Model>::new(app, 1000);
 
         // Run a single dispatch of a Load msg
-        let msg = Msg::Action(Action::Load(ActionLoad::CatalogGrouped { extra: vec![] }));
+        let msg = Msg::Action(Action::Load(ActionLoad::CatalogsGrouped { extra: vec![] }));
         run(runtime.dispatch(&msg));
         // since this is after the .run() has ended, this means all async effects
         // have processed
         {
             let state = &runtime.app.read().unwrap().catalogs;
-            assert_eq!(state.groups.len(), 7, "groups is the right length");
-            for g in state.groups.iter() {
+            assert_eq!(state.items_groups.len(), 7, "groups is the right length");
+            for g in state.items_groups.iter() {
                 assert!(
                     match g.content {
                         Loadable::Ready(_) => true,
@@ -168,10 +168,10 @@ mod tests {
 
         // Now try the same, but with Search
         let extra = vec![("search".to_owned(), "grand tour".to_owned())];
-        let msg = Msg::Action(Action::Load(ActionLoad::CatalogGrouped { extra }));
+        let msg = Msg::Action(Action::Load(ActionLoad::CatalogsGrouped { extra }));
         run(runtime.dispatch(&msg));
         assert_eq!(
-            runtime.app.read().unwrap().catalogs.groups.len(),
+            runtime.app.read().unwrap().catalogs.items_groups.len(),
             5,
             "groups is the right length when searching"
         );
