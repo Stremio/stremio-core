@@ -9,6 +9,9 @@ pub use ctx::*;
 mod lib_recent;
 pub use lib_recent::*;
 
+mod library_filtered;
+pub use library_filtered::*;
+
 mod library;
 pub use library::*;
 
