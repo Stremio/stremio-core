@@ -7,7 +7,7 @@ use serde_derive::{Deserialize, Serialize};
 #[derive(Debug, Clone, PartialEq, Deserialize)]
 #[serde(tag = "load", content = "args")]
 pub enum ActionLoad {
-    CatalogGrouped {
+    CatalogsGrouped {
         extra: Vec<ExtraProp>,
     },
     CatalogFiltered(ResourceRequest),
