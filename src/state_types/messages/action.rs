@@ -11,6 +11,9 @@ pub enum ActionLoad {
         extra: Vec<ExtraProp>,
     },
     CatalogFiltered(ResourceRequest),
+    LibraryFiltered {
+        type_name: String,
+    },
     MetaDetails {
         type_name: String,
         id: String,
