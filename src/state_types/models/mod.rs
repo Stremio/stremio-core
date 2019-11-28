@@ -1,5 +1,8 @@
 pub mod common;
 
+mod catalogs_grouped;
+pub use catalogs_grouped::*;
+
 mod catalogs;
 pub use catalogs::*;
 
