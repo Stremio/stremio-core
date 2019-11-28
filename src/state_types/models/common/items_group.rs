@@ -1,14 +1,22 @@
-use crate::state_types::models::common::{addon_get, CatalogError, Loadable};
+use crate::state_types::models::common::{addon_get, Loadable};
 use crate::state_types::{Effects, EnvError, Environment};
 use crate::types::addons::{AggrRequest, Descriptor, ResourceRequest, ResourceResponse};
 use serde_derive::Serialize;
 use std::convert::TryFrom;
 use std::marker::PhantomData;
 
+#[derive(Debug, Clone, PartialEq, Serialize)]
+#[serde(tag = "type", content = "content")]
+pub enum ItemsGroupError {
+    EmptyContent,
+    UnexpectedResp,
+    Other(String),
+}
+
 #[derive(Debug, Clone, Serialize)]
 pub struct ItemsGroup<T> {
     pub request: ResourceRequest,
-    pub content: Loadable<T, CatalogError>,
+    pub content: Loadable<T, ItemsGroupError>,
 }
 
 pub enum ItemsGroupsAction<'a, T, Env: Environment + 'static> {
@@ -76,9 +84,9 @@ where
                 let group_content = match response {
                     Ok(response) => match T::try_from(response.to_owned()) {
                         Ok(items) => Loadable::Ready(items),
-                        Err(_) => Loadable::Err(CatalogError::UnexpectedResp),
+                        Err(_) => Loadable::Err(ItemsGroupError::UnexpectedResp),
                     },
-                    Err(error) => Loadable::Err(CatalogError::Other(error.to_string())),
+                    Err(error) => Loadable::Err(ItemsGroupError::Other(error.to_string())),
                 };
                 items_groups[group_index] = ItemsGroup {
                     request: request.to_owned(),

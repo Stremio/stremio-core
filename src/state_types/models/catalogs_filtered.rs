@@ -1,4 +1,4 @@
-use super::common::{addon_get, CatalogError, Loadable};
+use super::common::{addon_get, ItemsGroupError, Loadable};
 use crate::state_types::messages::Internal::*;
 use crate::state_types::messages::*;
 use crate::state_types::models::*;
@@ -70,7 +70,7 @@ pub struct CatalogFiltered<T> {
     // * in this case, you must comply to options_limit
     pub selectable_extra: Vec<ManifestExtraProp>,
     pub selected: Option<ResourceRequest>,
-    pub content: Loadable<Vec<T>, CatalogError>,
+    pub content: Loadable<Vec<T>, ItemsGroupError>,
     // Pagination: loading previous/next pages
     pub load_next: Option<ResourceRequest>,
     pub load_prev: Option<ResourceRequest>,
@@ -186,11 +186,11 @@ where
 
                 self.content = match resp.as_ref() {
                     Ok(resp) => match <Vec<T>>::try_from(resp.to_owned()) {
-                        Ok(ref x) if x.is_empty() => Loadable::Err(CatalogError::EmptyContent),
+                        Ok(ref x) if x.is_empty() => Loadable::Err(ItemsGroupError::EmptyContent),
                         Ok(x) => Loadable::Ready(x.into_iter().take(PAGE_LEN as usize).collect()),
-                        Err(_) => Loadable::Err(CatalogError::UnexpectedResp),
+                        Err(_) => Loadable::Err(ItemsGroupError::UnexpectedResp),
                     },
-                    Err(e) => Loadable::Err(CatalogError::Other(e.to_string())),
+                    Err(e) => Loadable::Err(ItemsGroupError::Other(e.to_string())),
                 };
                 Effects::none()
             }
