@@ -298,7 +298,7 @@ mod tests {
         });
         run(runtime.dispatch(&action.into()));
         let state = &runtime.app.read().unwrap().meta_details;
-        assert_eq!(state.streams_groups.len(), 2, "2 groups");
+        assert_eq!(state.streams_catalogs.len(), 2, "2 groups");
     }
 
     #[test]

@@ -21,8 +21,8 @@ pub struct Selected {
 #[derive(Default, Debug, Clone, Serialize)]
 pub struct MetaDetails {
     pub selected: Selected,
-    pub meta_groups: Vec<Catalog<MetaDetail>>,
-    pub streams_groups: Vec<Catalog<Vec<Stream>>>,
+    pub meta_catalogs: Vec<Catalog<MetaDetail>>,
+    pub streams_catalogs: Vec<Catalog<Vec<Stream>>>,
 }
 
 impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for MetaDetails {
@@ -42,7 +42,7 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for MetaDetails {
                     },
                 );
                 let meta_effects = catalogs_update::<_, Env>(
-                    &mut self.meta_groups,
+                    &mut self.meta_catalogs,
                     CatalogsAction::CatalogsRequested {
                         addons: &ctx.content.addons,
                         request: &AggrRequest::AllOfResource(ResourceRef::without_extra(
@@ -55,18 +55,18 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for MetaDetails {
                 );
                 let streams_effects = match video_id {
                     Some(video_id) => {
-                        if let Some(streams_group) =
-                            streams_group_from_meta_groups(&self.meta_groups, video_id)
+                        if let Some(streams_catalog) =
+                            streams_catalog_from_meta_catalogs(&self.meta_catalogs, video_id)
                         {
                             catalogs_update_with_vector_content::<_, Env>(
-                                &mut self.streams_groups,
+                                &mut self.streams_catalogs,
                                 CatalogsAction::CatalogsReplaced {
-                                    catalogs: vec![streams_group],
+                                    catalogs: vec![streams_catalog],
                                 },
                             )
                         } else {
                             catalogs_update_with_vector_content::<_, Env>(
-                                &mut self.streams_groups,
+                                &mut self.streams_catalogs,
                                 CatalogsAction::CatalogsRequested {
                                     addons: &ctx.content.addons,
                                     request: &AggrRequest::AllOfResource(
@@ -82,7 +82,7 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for MetaDetails {
                         }
                     }
                     None => catalogs_update_with_vector_content::<_, Env>(
-                        &mut self.streams_groups,
+                        &mut self.streams_catalogs,
                         CatalogsAction::CatalogsReplaced { catalogs: vec![] },
                     ),
                 };
@@ -92,7 +92,7 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for MetaDetails {
                 if request.path.resource.eq(META_RESOURCE_NAME) =>
             {
                 let meta_effects = catalogs_update::<_, Env>(
-                    &mut self.meta_groups,
+                    &mut self.meta_catalogs,
                     CatalogsAction::CatalogResponseReceived {
                         request,
                         response,
@@ -104,14 +104,14 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for MetaDetails {
                         streams_resource_ref: Some(streams_resource_ref),
                         ..
                     } => {
-                        if let Some(streams_group) = streams_group_from_meta_groups(
-                            &self.meta_groups,
+                        if let Some(streams_catalog) = streams_catalog_from_meta_catalogs(
+                            &self.meta_catalogs,
                             &streams_resource_ref.id,
                         ) {
                             catalogs_update_with_vector_content::<_, Env>(
-                                &mut self.streams_groups,
+                                &mut self.streams_catalogs,
                                 CatalogsAction::CatalogsReplaced {
-                                    catalogs: vec![streams_group],
+                                    catalogs: vec![streams_catalog],
                                 },
                             )
                         } else {
@@ -126,7 +126,7 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for MetaDetails {
                 if request.path.resource.eq(STREAM_RESOURCE_NAME) =>
             {
                 catalogs_update_with_vector_content::<_, Env>(
-                    &mut self.streams_groups,
+                    &mut self.streams_catalogs,
                     CatalogsAction::CatalogResponseReceived {
                         request,
                         response,
@@ -186,25 +186,25 @@ fn selected_update(selected: &mut Selected, action: SelectedAction) -> Effects {
     }
 }
 
-fn streams_group_from_meta_groups(
-    meta_groups: &[Catalog<MetaDetail>],
+fn streams_catalog_from_meta_catalogs(
+    meta_catalogs: &[Catalog<MetaDetail>],
     video_id: &str,
 ) -> Option<Catalog<Vec<Stream>>> {
-    meta_groups
+    meta_catalogs
         .iter()
-        .find_map(|meta_catalog| match &meta_catalog.content {
-            CatalogContent::Ready(meta_detail) => Some((&meta_catalog.request, meta_detail)),
+        .find_map(|catalog| match &catalog.content {
+            CatalogContent::Ready(meta_detail) => Some((&catalog.request, meta_detail)),
             _ => None,
         })
-        .and_then(|(request, meta_detail)| {
+        .and_then(|(meta_request, meta_detail)| {
             meta_detail
                 .videos
                 .iter()
                 .find(|video| video.id.eq(video_id) && !video.streams.is_empty())
-                .map(|video| (request, &video.streams))
+                .map(|video| (meta_request, &video.streams))
         })
-        .map(|(request, streams)| Catalog {
-            request: request.to_owned(),
+        .map(|(meta_request, streams)| Catalog {
+            request: meta_request.to_owned(),
             content: CatalogContent::Ready(streams.to_owned()),
         })
 }
