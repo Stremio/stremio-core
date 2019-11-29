@@ -51,14 +51,13 @@ enum SelectedAction<'a> {
 }
 
 fn selected_update(selected: &mut Vec<ExtraProp>, action: SelectedAction) -> Effects {
-    match action {
-        SelectedAction::Select { extra } => {
-            if selected.iter().ne(extra.iter()) {
-                *selected = extra.to_owned();
-                Effects::none()
-            } else {
-                Effects::none().unchanged()
-            }
-        }
+    let next_selected = match action {
+        SelectedAction::Select { extra } => extra.to_owned(),
+    };
+    if selected.iter().ne(next_selected.iter()) {
+        *selected = next_selected.to_owned();
+        Effects::none()
+    } else {
+        Effects::none().unchanged()
     }
 }
