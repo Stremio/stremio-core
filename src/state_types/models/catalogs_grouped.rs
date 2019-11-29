@@ -1,4 +1,4 @@
-use super::common::{groups_update, Group, GroupsAction};
+use super::common::{catalogs_update, Catalog, CatalogsAction};
 use crate::state_types::messages::{Action, ActionLoad, Internal, Msg};
 use crate::state_types::models::Ctx;
 use crate::state_types::{Effects, Environment, UpdateWithCtx};
@@ -10,7 +10,7 @@ use std::marker::PhantomData;
 #[derive(Default, Debug, Clone, Serialize)]
 pub struct CatalogsGrouped {
     pub selected: Vec<ExtraProp>,
-    pub groups: Vec<Group<Vec<MetaPreview>>>,
+    pub groups: Vec<Catalog<Vec<MetaPreview>>>,
 }
 
 impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for CatalogsGrouped {
@@ -19,9 +19,9 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for CatalogsGrouped {
             Msg::Action(Action::Load(ActionLoad::CatalogsGrouped { extra })) => {
                 let selected_effects =
                     selected_update(&mut self.selected, SelectedAction::Select { extra });
-                let groups_effects = groups_update::<_, Env>(
+                let groups_effects = catalogs_update::<_, Env>(
                     &mut self.groups,
-                    GroupsAction::GroupsRequested {
+                    CatalogsAction::CatalogsRequested {
                         addons: &ctx.content.addons,
                         request: &AggrRequest::AllCatalogs { extra },
                         env: PhantomData,
@@ -29,9 +29,9 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for CatalogsGrouped {
                 );
                 selected_effects.join(groups_effects)
             }
-            Msg::Internal(Internal::AddonResponse(request, response)) => groups_update::<_, Env>(
+            Msg::Internal(Internal::AddonResponse(request, response)) => catalogs_update::<_, Env>(
                 &mut self.groups,
-                GroupsAction::GroupResponseReceived {
+                CatalogsAction::CatalogResponseReceived {
                     request,
                     response,
                     limit: Some(100),

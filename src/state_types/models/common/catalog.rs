@@ -7,70 +7,72 @@ use std::marker::PhantomData;
 
 #[derive(Debug, Clone, PartialEq, Serialize)]
 #[serde(tag = "type", content = "content")]
-pub enum GroupError {
+pub enum CatalogError {
     EmptyContent,
     UnexpectedResp,
     Other(String),
 }
 
-pub type GroupContent<T> = Loadable<T, GroupError>;
+pub type CatalogContent<T> = Loadable<T, CatalogError>;
 
 #[derive(Debug, Clone, Serialize)]
-pub struct Group<T> {
+pub struct Catalog<T> {
     pub request: ResourceRequest,
-    pub content: GroupContent<T>,
+    pub content: CatalogContent<T>,
 }
 
-pub enum GroupAction<'a, T, Env: Environment + 'static> {
-    GroupRequested {
+pub enum CatalogAction<'a, T, Env: Environment + 'static> {
+    CatalogRequested {
         request: &'a ResourceRequest,
         env: PhantomData<Env>,
     },
-    GroupReplaced {
-        group: Group<T>,
+    CatalogReplaced {
+        catalog: Catalog<T>,
     },
-    GroupResponseReceived {
+    CatalogResponseReceived {
         request: &'a ResourceRequest,
         response: &'a Result<ResourceResponse, EnvError>,
         limit: Option<usize>,
     },
 }
 
-pub fn group_update<T, Env>(group: &mut Group<T>, action: GroupAction<T, Env>) -> Effects
+pub fn catalog_update<T, Env>(catalog: &mut Catalog<T>, action: CatalogAction<T, Env>) -> Effects
 where
     T: Clone + TryFrom<ResourceResponse>,
     Env: Environment + 'static,
 {
     match action {
-        GroupAction::GroupRequested { request, .. } => {
-            if request.ne(&group.request) {
-                *group = Group {
+        CatalogAction::CatalogRequested { request, .. } => {
+            if request.ne(&catalog.request) {
+                *catalog = Catalog {
                     request: request.to_owned(),
-                    content: GroupContent::Loading,
+                    content: CatalogContent::Loading,
                 };
                 Effects::one(addon_get::<Env>(request.to_owned()))
             } else {
                 Effects::none().unchanged()
             }
         }
-        GroupAction::GroupReplaced { group: next_group } => {
-            if next_group.request.ne(&group.request) {
-                *group = next_group;
+        CatalogAction::CatalogReplaced {
+            catalog: next_catalog,
+        } => {
+            if next_catalog.request.ne(&catalog.request) {
+                *catalog = next_catalog;
                 Effects::none()
             } else {
                 Effects::none().unchanged()
             }
         }
-        GroupAction::GroupResponseReceived {
+        CatalogAction::CatalogResponseReceived {
             request, response, ..
         } => {
-            if request.eq(&group.request) {
-                group.content = match response {
+            if request.eq(&catalog.request) {
+                catalog.content = match response {
                     Ok(response) => match T::try_from(response.to_owned()) {
-                        Ok(content) => GroupContent::Ready(content),
-                        Err(_) => GroupContent::Err(GroupError::UnexpectedResp),
+                        Ok(content) => CatalogContent::Ready(content),
+                        Err(_) => CatalogContent::Err(CatalogError::UnexpectedResp),
                     },
-                    Err(error) => GroupContent::Err(GroupError::Other(error.to_string())),
+                    Err(error) => CatalogContent::Err(CatalogError::Other(error.to_string())),
                 };
                 Effects::none()
             } else {
@@ -80,9 +82,9 @@ where
     }
 }
 
-pub fn group_update_with_vector_content<T, Env>(
-    group: &mut Group<Vec<T>>,
-    action: GroupAction<Vec<T>, Env>,
+pub fn catalog_update_with_vector_content<T, Env>(
+    catalog: &mut Catalog<Vec<T>>,
+    action: CatalogAction<Vec<T>, Env>,
 ) -> Effects
 where
     T: Clone,
@@ -90,60 +92,63 @@ where
     Env: Environment + 'static,
 {
     match action {
-        GroupAction::GroupResponseReceived {
+        CatalogAction::CatalogResponseReceived {
             request,
             response,
             limit,
         } => {
-            if request.eq(&group.request) {
-                group.content = match response {
+            if request.eq(&catalog.request) {
+                catalog.content = match response {
                     Ok(response) => match <Vec<T>>::try_from(response.to_owned()) {
                         Ok(ref content) if content.is_empty() => {
-                            GroupContent::Err(GroupError::EmptyContent)
+                            CatalogContent::Err(CatalogError::EmptyContent)
                         }
                         Ok(content) => {
                             if let Some(limit) = limit {
-                                GroupContent::Ready(content.into_iter().take(limit).collect())
+                                CatalogContent::Ready(content.into_iter().take(limit).collect())
                             } else {
-                                GroupContent::Ready(content)
+                                CatalogContent::Ready(content)
                             }
                         }
-                        Err(_) => GroupContent::Err(GroupError::UnexpectedResp),
+                        Err(_) => CatalogContent::Err(CatalogError::UnexpectedResp),
                     },
-                    Err(error) => GroupContent::Err(GroupError::Other(error.to_string())),
+                    Err(error) => CatalogContent::Err(CatalogError::Other(error.to_string())),
                 };
                 Effects::none()
             } else {
                 Effects::none().unchanged()
             }
         }
-        _ => group_update::<_, Env>(group, action),
+        _ => catalog_update::<_, Env>(catalog, action),
     }
 }
 
-pub enum GroupsAction<'a, T, Env: Environment + 'static> {
-    GroupsRequested {
+pub enum CatalogsAction<'a, T, Env: Environment + 'static> {
+    CatalogsRequested {
         addons: &'a [Descriptor],
         request: &'a AggrRequest<'a>,
         env: PhantomData<Env>,
     },
-    GroupsReplaced {
-        groups: Vec<Group<T>>,
+    CatalogsReplaced {
+        catalogs: Vec<Catalog<T>>,
     },
-    GroupResponseReceived {
+    CatalogResponseReceived {
         request: &'a ResourceRequest,
         response: &'a Result<ResourceResponse, EnvError>,
         limit: Option<usize>,
     },
 }
 
-pub fn groups_update<T, Env>(groups: &mut Vec<Group<T>>, action: GroupsAction<T, Env>) -> Effects
+pub fn catalogs_update<T, Env>(
+    catalogs: &mut Vec<Catalog<T>>,
+    action: CatalogsAction<T, Env>,
+) -> Effects
 where
     T: Clone + TryFrom<ResourceResponse>,
     Env: Environment + 'static,
 {
     match action {
-        GroupsAction::GroupsRequested {
+        CatalogsAction::CatalogsRequested {
             addons, request, ..
         } => {
             let requests = request
@@ -153,50 +158,52 @@ where
                 .collect::<Vec<ResourceRequest>>();
             if requests
                 .iter()
-                .ne(groups.iter().map(|group| &group.request))
+                .ne(catalogs.iter().map(|catalog| &catalog.request))
             {
-                let (next_groups, effects) = requests
+                let (next_catalogs, effects) = requests
                     .iter()
                     .map(|request| {
                         (
-                            Group {
+                            Catalog {
                                 request: request.to_owned(),
-                                content: GroupContent::Loading,
+                                content: CatalogContent::Loading,
                             },
                             addon_get::<Env>(request.to_owned()),
                         )
                     })
                     .unzip::<_, _, Vec<_>, Vec<_>>();
-                *groups = next_groups;
+                *catalogs = next_catalogs;
                 Effects::many(effects)
             } else {
                 Effects::none().unchanged()
             }
         }
-        GroupsAction::GroupsReplaced {
-            groups: next_groups,
+        CatalogsAction::CatalogsReplaced {
+            catalogs: next_catalogs,
         } => {
-            if next_groups
+            if next_catalogs
                 .iter()
-                .map(|group| &group.request)
-                .ne(groups.iter().map(|group| &group.request))
+                .map(|catalog| &catalog.request)
+                .ne(catalogs.iter().map(|catalog| &catalog.request))
             {
-                *groups = next_groups;
+                *catalogs = next_catalogs;
                 Effects::none()
             } else {
                 Effects::none().unchanged()
             }
         }
-        GroupsAction::GroupResponseReceived {
+        CatalogsAction::CatalogResponseReceived {
             request,
             response,
             limit,
         } => {
-            let group_index = groups.iter().position(|group| group.request.eq(request));
-            if let Some(group_index) = group_index {
-                group_update::<_, Env>(
-                    &mut groups[group_index],
-                    GroupAction::GroupResponseReceived {
+            let catalog_index = catalogs
+                .iter()
+                .position(|catalog| catalog.request.eq(request));
+            if let Some(catalog_index) = catalog_index {
+                catalog_update::<_, Env>(
+                    &mut catalogs[catalog_index],
+                    CatalogAction::CatalogResponseReceived {
                         request,
                         response,
                         limit,
@@ -209,9 +216,9 @@ where
     }
 }
 
-pub fn groups_update_with_vector_content<T, Env>(
-    groups: &mut Vec<Group<Vec<T>>>,
-    action: GroupsAction<Vec<T>, Env>,
+pub fn catalogs_update_with_vector_content<T, Env>(
+    catalogs: &mut Vec<Catalog<Vec<T>>>,
+    action: CatalogsAction<Vec<T>, Env>,
 ) -> Effects
 where
     T: Clone,
@@ -219,16 +226,18 @@ where
     Env: Environment + 'static,
 {
     match action {
-        GroupsAction::GroupResponseReceived {
+        CatalogsAction::CatalogResponseReceived {
             request,
             response,
             limit,
         } => {
-            let group_index = groups.iter().position(|group| group.request.eq(request));
-            if let Some(group_index) = group_index {
-                group_update_with_vector_content::<_, Env>(
-                    &mut groups[group_index],
-                    GroupAction::GroupResponseReceived {
+            let catalog_index = catalogs
+                .iter()
+                .position(|catalog| catalog.request.eq(request));
+            if let Some(catalog_index) = catalog_index {
+                catalog_update_with_vector_content::<_, Env>(
+                    &mut catalogs[catalog_index],
+                    CatalogAction::CatalogResponseReceived {
                         request,
                         response,
                         limit,
@@ -238,6 +247,6 @@ where
                 Effects::none().unchanged()
             }
         }
-        _ => groups_update::<_, Env>(groups, action),
+        _ => catalogs_update::<_, Env>(catalogs, action),
     }
 }

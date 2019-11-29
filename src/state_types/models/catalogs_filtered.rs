@@ -1,4 +1,4 @@
-use super::common::{addon_get, GroupContent, GroupError};
+use super::common::{addon_get, CatalogContent, CatalogError};
 use crate::state_types::messages::Internal::*;
 use crate::state_types::messages::*;
 use crate::state_types::models::*;
@@ -70,7 +70,7 @@ pub struct CatalogFiltered<T> {
     // * in this case, you must comply to options_limit
     pub selectable_extra: Vec<ManifestExtraProp>,
     pub selected: Option<ResourceRequest>,
-    pub content: GroupContent<Vec<T>>,
+    pub content: CatalogContent<Vec<T>>,
     // Pagination: loading previous/next pages
     pub load_next: Option<ResourceRequest>,
     pub load_prev: Option<ResourceRequest>,
@@ -159,7 +159,7 @@ where
                 Effects::one(addon_get::<Env>(selected_req.to_owned()))
             }
             Msg::Internal(AddonResponse(req, resp))
-                if Some(req) == self.selected.as_ref() && self.content == GroupContent::Loading =>
+                if Some(req) == self.selected.as_ref() && self.content == CatalogContent::Loading =>
             {
                 let skippable = get_catalog(addons, &req)
                     .map(|cat| cat.extra_iter().any(|e| e.name == SKIP))
@@ -186,13 +186,13 @@ where
 
                 self.content = match resp.as_ref() {
                     Ok(resp) => match <Vec<T>>::try_from(resp.to_owned()) {
-                        Ok(ref x) if x.is_empty() => GroupContent::Err(GroupError::EmptyContent),
+                        Ok(ref x) if x.is_empty() => CatalogContent::Err(CatalogError::EmptyContent),
                         Ok(x) => {
-                            GroupContent::Ready(x.into_iter().take(PAGE_LEN as usize).collect())
+                            CatalogContent::Ready(x.into_iter().take(PAGE_LEN as usize).collect())
                         }
-                        Err(_) => GroupContent::Err(GroupError::UnexpectedResp),
+                        Err(_) => CatalogContent::Err(CatalogError::UnexpectedResp),
                     },
-                    Err(e) => GroupContent::Err(GroupError::Other(e.to_string())),
+                    Err(e) => CatalogContent::Err(CatalogError::Other(e.to_string())),
                 };
                 Effects::none()
             }
