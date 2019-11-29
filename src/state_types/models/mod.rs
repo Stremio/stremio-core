@@ -3,8 +3,8 @@ pub mod common;
 mod catalogs_filtered;
 pub use catalogs_filtered::*;
 
-mod catalogs_grouped;
-pub use catalogs_grouped::*;
+mod catalogs_with_extra;
+pub use catalogs_with_extra::*;
 
 mod ctx;
 pub use ctx::*;
