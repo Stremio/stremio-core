@@ -1,5 +1,7 @@
 use crate::state_types::messages::{Action, ActionLoad, Internal, Msg};
-use crate::state_types::models::common::{groups_update, Group, GroupContent, GroupsAction};
+use crate::state_types::models::common::{
+    groups_update, groups_update_with_vector_content, Group, GroupContent, GroupsAction,
+};
 use crate::state_types::models::Ctx;
 use crate::state_types::{Effects, Environment, UpdateWithCtx};
 use crate::types::addons::{AggrRequest, ResourceRef};
@@ -56,14 +58,14 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for MetaDetails {
                         if let Some(streams_group) =
                             streams_group_from_meta_groups(&self.meta_groups, video_id)
                         {
-                            groups_update::<_, Env>(
+                            groups_update_with_vector_content::<_, Env>(
                                 &mut self.streams_groups,
                                 GroupsAction::GroupsReplaced {
                                     groups: vec![streams_group],
                                 },
                             )
                         } else {
-                            groups_update::<_, Env>(
+                            groups_update_with_vector_content::<_, Env>(
                                 &mut self.streams_groups,
                                 GroupsAction::GroupsRequested {
                                     addons: &ctx.content.addons,
@@ -79,7 +81,7 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for MetaDetails {
                             )
                         }
                     }
-                    None => groups_update::<_, Env>(
+                    None => groups_update_with_vector_content::<_, Env>(
                         &mut self.streams_groups,
                         GroupsAction::GroupsReplaced { groups: vec![] },
                     ),
@@ -91,7 +93,11 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for MetaDetails {
             {
                 let meta_effects = groups_update::<_, Env>(
                     &mut self.meta_groups,
-                    GroupsAction::AddonResponse { request, response },
+                    GroupsAction::GroupResponseReceived {
+                        request,
+                        response,
+                        limit: None,
+                    },
                 );
                 let streams_effects = match &self.selected {
                     Selected {
@@ -102,7 +108,7 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for MetaDetails {
                             &self.meta_groups,
                             &streams_resource_ref.id,
                         ) {
-                            groups_update::<_, Env>(
+                            groups_update_with_vector_content::<_, Env>(
                                 &mut self.streams_groups,
                                 GroupsAction::GroupsReplaced {
                                     groups: vec![streams_group],
@@ -119,9 +125,13 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for MetaDetails {
             Msg::Internal(Internal::AddonResponse(request, response))
                 if request.path.resource.eq(STREAM_RESOURCE_NAME) =>
             {
-                groups_update::<_, Env>(
+                groups_update_with_vector_content::<_, Env>(
                     &mut self.streams_groups,
-                    GroupsAction::AddonResponse { request, response },
+                    GroupsAction::GroupResponseReceived {
+                        request,
+                        response,
+                        limit: None,
+                    },
                 )
             }
             _ => Effects::none().unchanged(),

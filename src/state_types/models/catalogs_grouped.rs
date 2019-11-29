@@ -31,7 +31,11 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for CatalogsGrouped {
             }
             Msg::Internal(Internal::AddonResponse(request, response)) => groups_update::<_, Env>(
                 &mut self.groups,
-                GroupsAction::AddonResponse { request, response },
+                GroupsAction::GroupResponseReceived {
+                    request,
+                    response,
+                    limit: Some(100),
+                },
             ),
             _ => Effects::none().unchanged(),
         }

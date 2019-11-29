@@ -98,9 +98,10 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for Notifications {
                 if let Some(idx) = self.groups.iter().position(|g| g.request.eq(req)) {
                     groups_update::<_, Env>(
                         &mut self.groups,
-                        GroupsAction::AddonResponse {
+                        GroupsAction::GroupResponseReceived {
                             request: req,
                             response: result,
+                            limit: None,
                         },
                     );
                     // Modify all the items so that only the new videos are left
