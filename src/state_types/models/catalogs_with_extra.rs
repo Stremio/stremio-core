@@ -9,9 +9,14 @@ use std::marker::PhantomData;
 
 const CATALOG_CONTENT_LIMIT: usize = 10;
 
+#[derive(Default, Debug, Clone, PartialEq, Serialize)]
+pub struct Selected {
+    extra: Vec<ExtraProp>,
+}
+
 #[derive(Default, Debug, Clone, Serialize)]
 pub struct CatalogsWithExtra {
-    pub selected: Vec<ExtraProp>,
+    pub selected: Selected,
     pub catalogs: Vec<Catalog<Vec<MetaPreview>>>,
 }
 
@@ -50,12 +55,14 @@ enum SelectedAction<'a> {
     Select { extra: &'a [ExtraProp] },
 }
 
-fn selected_update(selected: &mut Vec<ExtraProp>, action: SelectedAction) -> Effects {
+fn selected_update(selected: &mut Selected, action: SelectedAction) -> Effects {
     let next_selected = match action {
-        SelectedAction::Select { extra } => extra.to_owned(),
+        SelectedAction::Select { extra } => Selected {
+            extra: extra.to_owned(),
+        },
     };
-    if selected.iter().ne(next_selected.iter()) {
-        *selected = next_selected.to_owned();
+    if next_selected.ne(selected) {
+        *selected = next_selected;
         Effects::none()
     } else {
         Effects::none().unchanged()
