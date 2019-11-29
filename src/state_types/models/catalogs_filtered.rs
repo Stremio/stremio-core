@@ -159,7 +159,8 @@ where
                 Effects::one(addon_get::<Env>(selected_req.to_owned()))
             }
             Msg::Internal(AddonResponse(req, resp))
-                if Some(req) == self.selected.as_ref() && self.content == CatalogContent::Loading =>
+                if Some(req) == self.selected.as_ref()
+                    && self.content == CatalogContent::Loading =>
             {
                 let skippable = get_catalog(addons, &req)
                     .map(|cat| cat.extra_iter().any(|e| e.name == SKIP))
@@ -186,7 +187,9 @@ where
 
                 self.content = match resp.as_ref() {
                     Ok(resp) => match <Vec<T>>::try_from(resp.to_owned()) {
-                        Ok(ref x) if x.is_empty() => CatalogContent::Err(CatalogError::EmptyContent),
+                        Ok(ref x) if x.is_empty() => {
+                            CatalogContent::Err(CatalogError::EmptyContent)
+                        }
                         Ok(x) => {
                             CatalogContent::Ready(x.into_iter().take(PAGE_LEN as usize).collect())
                         }
