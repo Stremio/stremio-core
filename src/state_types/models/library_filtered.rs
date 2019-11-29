@@ -138,7 +138,7 @@ fn type_names_update(type_names: &mut Vec<String>, action: TypeNamesAction) -> E
             .collect(),
         _ => vec![],
     };
-    if next_type_names.iter().ne(type_names.iter()) {
+    if next_type_names.ne(type_names) {
         *type_names = next_type_names;
         Effects::none()
     } else {
@@ -174,7 +174,7 @@ fn lib_items_update(lib_items: &mut Vec<LibItem>, action: LibItemsAction) -> Eff
             .collect(),
         _ => vec![],
     };
-    if next_lib_items.iter().ne(lib_items.iter()) {
+    if next_lib_items.ne(lib_items) {
         *lib_items = next_lib_items;
         Effects::none()
     } else {
