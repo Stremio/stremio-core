@@ -7,72 +7,75 @@ use std::marker::PhantomData;
 
 #[derive(Debug, Clone, PartialEq, Serialize)]
 #[serde(tag = "type", content = "content")]
-pub enum CatalogError {
+pub enum ResourceError {
     EmptyContent,
     UnexpectedResp,
     Other(String),
 }
 
-pub type CatalogContent<T> = Loadable<T, CatalogError>;
+pub type ResourceContent<T> = Loadable<T, ResourceError>;
 
 #[derive(Debug, Clone, Serialize)]
-pub struct Catalog<T> {
+pub struct ResourceLoadable<T> {
     pub request: ResourceRequest,
-    pub content: CatalogContent<T>,
+    pub content: ResourceContent<T>,
 }
 
-pub enum CatalogAction<'a, T, Env: Environment + 'static> {
-    CatalogRequested {
+pub enum ResourceAction<'a, T, Env: Environment + 'static> {
+    ResourceRequested {
         request: &'a ResourceRequest,
         env: PhantomData<Env>,
     },
-    CatalogReplaced {
-        catalog: Catalog<T>,
+    ResourceReplaced {
+        resource: ResourceLoadable<T>,
     },
-    CatalogResponseReceived {
+    ResourceResponseReceived {
         request: &'a ResourceRequest,
         response: &'a Result<ResourceResponse, EnvError>,
         limit: Option<usize>,
     },
 }
 
-pub fn catalog_update<T, Env>(catalog: &mut Catalog<T>, action: CatalogAction<T, Env>) -> Effects
+pub fn resource_update<T, Env>(
+    resource: &mut ResourceLoadable<T>,
+    action: ResourceAction<T, Env>,
+) -> Effects
 where
     T: Clone + TryFrom<ResourceResponse>,
     Env: Environment + 'static,
 {
     match action {
-        CatalogAction::CatalogRequested { request, .. } => {
-            if request.ne(&catalog.request) {
-                *catalog = Catalog {
+        ResourceAction::ResourceRequested { request, .. } => {
+            if request.ne(&resource.request) {
+                *resource = ResourceLoadable {
                     request: request.to_owned(),
-                    content: CatalogContent::Loading,
+                    content: ResourceContent::Loading,
                 };
                 Effects::one(addon_get::<Env>(request.to_owned()))
             } else {
                 Effects::none().unchanged()
             }
         }
-        CatalogAction::CatalogReplaced {
-            catalog: next_catalog,
+        ResourceAction::ResourceReplaced {
+            resource: next_resource,
         } => {
-            if next_catalog.request.ne(&catalog.request) {
-                *catalog = next_catalog;
+            if next_resource.request.ne(&resource.request) {
+                *resource = next_resource;
                 Effects::none()
             } else {
                 Effects::none().unchanged()
             }
         }
-        CatalogAction::CatalogResponseReceived {
+        ResourceAction::ResourceResponseReceived {
             request, response, ..
         } => {
-            if request.eq(&catalog.request) {
-                catalog.content = match response {
+            if request.eq(&resource.request) {
+                resource.content = match response {
                     Ok(response) => match T::try_from(response.to_owned()) {
-                        Ok(content) => CatalogContent::Ready(content),
-                        Err(_) => CatalogContent::Err(CatalogError::UnexpectedResp),
+                        Ok(content) => ResourceContent::Ready(content),
+                        Err(_) => ResourceContent::Err(ResourceError::UnexpectedResp),
                     },
-                    Err(error) => CatalogContent::Err(CatalogError::Other(error.to_string())),
+                    Err(error) => ResourceContent::Err(ResourceError::Other(error.to_string())),
                 };
                 Effects::none()
             } else {
@@ -82,9 +85,9 @@ where
     }
 }
 
-pub fn catalog_update_with_vector_content<T, Env>(
-    catalog: &mut Catalog<Vec<T>>,
-    action: CatalogAction<Vec<T>, Env>,
+pub fn resource_update_with_vector_content<T, Env>(
+    resource: &mut ResourceLoadable<Vec<T>>,
+    action: ResourceAction<Vec<T>, Env>,
 ) -> Effects
 where
     T: Clone,
@@ -92,63 +95,63 @@ where
     Env: Environment + 'static,
 {
     match action {
-        CatalogAction::CatalogResponseReceived {
+        ResourceAction::ResourceResponseReceived {
             request,
             response,
             limit,
         } => {
-            if request.eq(&catalog.request) {
-                catalog.content = match response {
+            if request.eq(&resource.request) {
+                resource.content = match response {
                     Ok(response) => match <Vec<T>>::try_from(response.to_owned()) {
                         Ok(ref content) if content.is_empty() => {
-                            CatalogContent::Err(CatalogError::EmptyContent)
+                            ResourceContent::Err(ResourceError::EmptyContent)
                         }
                         Ok(content) => {
                             if let Some(limit) = limit {
-                                CatalogContent::Ready(content.into_iter().take(limit).collect())
+                                ResourceContent::Ready(content.into_iter().take(limit).collect())
                             } else {
-                                CatalogContent::Ready(content)
+                                ResourceContent::Ready(content)
                             }
                         }
-                        Err(_) => CatalogContent::Err(CatalogError::UnexpectedResp),
+                        Err(_) => ResourceContent::Err(ResourceError::UnexpectedResp),
                     },
-                    Err(error) => CatalogContent::Err(CatalogError::Other(error.to_string())),
+                    Err(error) => ResourceContent::Err(ResourceError::Other(error.to_string())),
                 };
                 Effects::none()
             } else {
                 Effects::none().unchanged()
             }
         }
-        _ => catalog_update::<_, Env>(catalog, action),
+        _ => resource_update::<_, Env>(resource, action),
     }
 }
 
-pub enum CatalogsAction<'a, T, Env: Environment + 'static> {
-    CatalogsRequested {
+pub enum ResourcesAction<'a, T, Env: Environment + 'static> {
+    ResourcesRequested {
         addons: &'a [Descriptor],
         request: &'a AggrRequest<'a>,
         env: PhantomData<Env>,
     },
-    CatalogsReplaced {
-        catalogs: Vec<Catalog<T>>,
+    ResourcesReplaced {
+        resources: Vec<ResourceLoadable<T>>,
     },
-    CatalogResponseReceived {
+    ResourceResponseReceived {
         request: &'a ResourceRequest,
         response: &'a Result<ResourceResponse, EnvError>,
         limit: Option<usize>,
     },
 }
 
-pub fn catalogs_update<T, Env>(
-    catalogs: &mut Vec<Catalog<T>>,
-    action: CatalogsAction<T, Env>,
+pub fn resources_update<T, Env>(
+    resources: &mut Vec<ResourceLoadable<T>>,
+    action: ResourcesAction<T, Env>,
 ) -> Effects
 where
     T: Clone + TryFrom<ResourceResponse>,
     Env: Environment + 'static,
 {
     match action {
-        CatalogsAction::CatalogsRequested {
+        ResourcesAction::ResourcesRequested {
             addons, request, ..
         } => {
             let requests = request
@@ -158,52 +161,52 @@ where
                 .collect::<Vec<ResourceRequest>>();
             if requests
                 .iter()
-                .ne(catalogs.iter().map(|catalog| &catalog.request))
+                .ne(resources.iter().map(|resource| &resource.request))
             {
-                let (next_catalogs, effects) = requests
+                let (next_resources, effects) = requests
                     .iter()
                     .map(|request| {
                         (
-                            Catalog {
+                            ResourceLoadable {
                                 request: request.to_owned(),
-                                content: CatalogContent::Loading,
+                                content: ResourceContent::Loading,
                             },
                             addon_get::<Env>(request.to_owned()),
                         )
                     })
                     .unzip::<_, _, Vec<_>, Vec<_>>();
-                *catalogs = next_catalogs;
+                *resources = next_resources;
                 Effects::many(effects)
             } else {
                 Effects::none().unchanged()
             }
         }
-        CatalogsAction::CatalogsReplaced {
-            catalogs: next_catalogs,
+        ResourcesAction::ResourcesReplaced {
+            resources: next_resources,
         } => {
-            if next_catalogs
+            if next_resources
                 .iter()
-                .map(|catalog| &catalog.request)
-                .ne(catalogs.iter().map(|catalog| &catalog.request))
+                .map(|resource| &resource.request)
+                .ne(resources.iter().map(|resource| &resource.request))
             {
-                *catalogs = next_catalogs;
+                *resources = next_resources;
                 Effects::none()
             } else {
                 Effects::none().unchanged()
             }
         }
-        CatalogsAction::CatalogResponseReceived {
+        ResourcesAction::ResourceResponseReceived {
             request,
             response,
             limit,
         } => {
-            let catalog_index = catalogs
+            let resource_index = resources
                 .iter()
-                .position(|catalog| catalog.request.eq(request));
-            if let Some(catalog_index) = catalog_index {
-                catalog_update::<_, Env>(
-                    &mut catalogs[catalog_index],
-                    CatalogAction::CatalogResponseReceived {
+                .position(|resource| resource.request.eq(request));
+            if let Some(resource_index) = resource_index {
+                resource_update::<_, Env>(
+                    &mut resources[resource_index],
+                    ResourceAction::ResourceResponseReceived {
                         request,
                         response,
                         limit,
@@ -216,9 +219,9 @@ where
     }
 }
 
-pub fn catalogs_update_with_vector_content<T, Env>(
-    catalogs: &mut Vec<Catalog<Vec<T>>>,
-    action: CatalogsAction<Vec<T>, Env>,
+pub fn resources_update_with_vector_content<T, Env>(
+    resources: &mut Vec<ResourceLoadable<Vec<T>>>,
+    action: ResourcesAction<Vec<T>, Env>,
 ) -> Effects
 where
     T: Clone,
@@ -226,18 +229,18 @@ where
     Env: Environment + 'static,
 {
     match action {
-        CatalogsAction::CatalogResponseReceived {
+        ResourcesAction::ResourceResponseReceived {
             request,
             response,
             limit,
         } => {
-            let catalog_index = catalogs
+            let resource_index = resources
                 .iter()
-                .position(|catalog| catalog.request.eq(request));
-            if let Some(catalog_index) = catalog_index {
-                catalog_update_with_vector_content::<_, Env>(
-                    &mut catalogs[catalog_index],
-                    CatalogAction::CatalogResponseReceived {
+                .position(|resource| resource.request.eq(request));
+            if let Some(resource_index) = resource_index {
+                resource_update_with_vector_content::<_, Env>(
+                    &mut resources[resource_index],
+                    ResourceAction::ResourceResponseReceived {
                         request,
                         response,
                         limit,
@@ -247,6 +250,6 @@ where
                 Effects::none().unchanged()
             }
         }
-        _ => catalogs_update::<_, Env>(catalogs, action),
+        _ => resources_update::<_, Env>(resources, action),
     }
 }

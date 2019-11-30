@@ -1,4 +1,4 @@
-use super::common::{catalogs_update_with_vector_content, Catalog, CatalogsAction};
+use super::common::{resources_update_with_vector_content, ResourceLoadable, ResourcesAction};
 use crate::state_types::messages::{Action, ActionLoad, Internal, Msg};
 use crate::state_types::models::Ctx;
 use crate::state_types::{Effects, Environment, UpdateWithCtx};
@@ -17,7 +17,7 @@ pub struct Selected {
 #[derive(Default, Debug, Clone, Serialize)]
 pub struct CatalogsWithExtra {
     pub selected: Selected,
-    pub catalogs: Vec<Catalog<Vec<MetaPreview>>>,
+    pub catalog_resources: Vec<ResourceLoadable<Vec<MetaPreview>>>,
 }
 
 impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for CatalogsWithExtra {
@@ -26,9 +26,9 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for CatalogsWithExtra {
             Msg::Action(Action::Load(ActionLoad::CatalogsWithExtra { extra })) => {
                 let selected_effects =
                     selected_update(&mut self.selected, SelectedAction::Select { extra });
-                let catalogs_effects = catalogs_update_with_vector_content::<_, Env>(
-                    &mut self.catalogs,
-                    CatalogsAction::CatalogsRequested {
+                let catalogs_effects = resources_update_with_vector_content::<_, Env>(
+                    &mut self.catalog_resources,
+                    ResourcesAction::ResourcesRequested {
                         addons: &ctx.content.addons,
                         request: &AggrRequest::AllCatalogs { extra },
                         env: PhantomData,
@@ -37,9 +37,9 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for CatalogsWithExtra {
                 selected_effects.join(catalogs_effects)
             }
             Msg::Internal(Internal::AddonResponse(request, response)) => {
-                catalogs_update_with_vector_content::<_, Env>(
-                    &mut self.catalogs,
-                    CatalogsAction::CatalogResponseReceived {
+                resources_update_with_vector_content::<_, Env>(
+                    &mut self.catalog_resources,
+                    ResourcesAction::ResourceResponseReceived {
                         request,
                         response,
                         limit: Some(CATALOG_CONTENT_LIMIT),

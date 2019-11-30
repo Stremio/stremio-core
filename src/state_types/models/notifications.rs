@@ -1,4 +1,6 @@
-use super::common::{addon_get, catalogs_update, Catalog, CatalogContent, CatalogsAction};
+use super::common::{
+    addon_get, resources_update, ResourceContent, ResourceLoadable, ResourcesAction,
+};
 use crate::state_types::messages::Internal::*;
 use crate::state_types::messages::*;
 use crate::state_types::models::*;
@@ -16,7 +18,7 @@ const LAST_VID_IDS: &str = "lastVideosIds";
 
 #[derive(Debug, Clone, Default, Serialize)]
 pub struct Notifications {
-    pub groups: Vec<Catalog<Vec<MetaDetail>>>,
+    pub groups: Vec<ResourceLoadable<Vec<MetaDetail>>>,
 }
 impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for Notifications {
     fn update(&mut self, ctx: &Ctx<Env>, msg: &Msg) -> Effects {
@@ -80,9 +82,9 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for Notifications {
 
                                     (
                                         addon_get::<Env>(addon_req.to_owned()),
-                                        Catalog {
+                                        ResourceLoadable {
                                             request: addon_req,
-                                            content: CatalogContent::Loading,
+                                            content: ResourceContent::Loading,
                                         },
                                     )
                                 })
@@ -96,16 +98,16 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for Notifications {
             }
             Msg::Internal(AddonResponse(req, result)) => {
                 if let Some(idx) = self.groups.iter().position(|g| g.request.eq(req)) {
-                    catalogs_update::<_, Env>(
+                    resources_update::<_, Env>(
                         &mut self.groups,
-                        CatalogsAction::CatalogResponseReceived {
+                        ResourcesAction::ResourceResponseReceived {
                             request: req,
                             response: result,
                             limit: None,
                         },
                     );
                     // Modify all the items so that only the new videos are left
-                    if let CatalogContent::Ready(ref mut meta_items) = self.groups[idx].content {
+                    if let ResourceContent::Ready(ref mut meta_items) = self.groups[idx].content {
                         for item in meta_items {
                             if let Some(lib_item) = ctx.library.get(&item.id) {
                                 item.videos

@@ -1,4 +1,4 @@
-use super::common::{addon_get, CatalogContent, CatalogError};
+use super::common::{addon_get, ResourceContent, ResourceError};
 use crate::state_types::messages::Internal::*;
 use crate::state_types::messages::*;
 use crate::state_types::models::*;
@@ -70,7 +70,7 @@ pub struct CatalogFiltered<T> {
     // * in this case, you must comply to options_limit
     pub selectable_extra: Vec<ManifestExtraProp>,
     pub selected: Option<ResourceRequest>,
-    pub content: CatalogContent<Vec<T>>,
+    pub content: ResourceContent<Vec<T>>,
     // Pagination: loading previous/next pages
     pub load_next: Option<ResourceRequest>,
     pub load_prev: Option<ResourceRequest>,
@@ -160,7 +160,7 @@ where
             }
             Msg::Internal(AddonResponse(req, resp))
                 if Some(req) == self.selected.as_ref()
-                    && self.content == CatalogContent::Loading =>
+                    && self.content == ResourceContent::Loading =>
             {
                 let skippable = get_catalog(addons, &req)
                     .map(|cat| cat.extra_iter().any(|e| e.name == SKIP))
@@ -188,14 +188,14 @@ where
                 self.content = match resp.as_ref() {
                     Ok(resp) => match <Vec<T>>::try_from(resp.to_owned()) {
                         Ok(ref x) if x.is_empty() => {
-                            CatalogContent::Err(CatalogError::EmptyContent)
+                            ResourceContent::Err(ResourceError::EmptyContent)
                         }
                         Ok(x) => {
-                            CatalogContent::Ready(x.into_iter().take(PAGE_LEN as usize).collect())
+                            ResourceContent::Ready(x.into_iter().take(PAGE_LEN as usize).collect())
                         }
-                        Err(_) => CatalogContent::Err(CatalogError::UnexpectedResp),
+                        Err(_) => ResourceContent::Err(ResourceError::UnexpectedResp),
                     },
-                    Err(e) => CatalogContent::Err(CatalogError::Other(e.to_string())),
+                    Err(e) => ResourceContent::Err(ResourceError::Other(e.to_string())),
                 };
                 Effects::none()
             }

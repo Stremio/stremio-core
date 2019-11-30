@@ -1,6 +1,7 @@
 use crate::state_types::messages::{Action, ActionLoad, Internal, Msg};
 use crate::state_types::models::common::{
-    catalogs_update, catalogs_update_with_vector_content, Catalog, CatalogContent, CatalogsAction,
+    resources_update, resources_update_with_vector_content, ResourceContent, ResourceLoadable,
+    ResourcesAction,
 };
 use crate::state_types::models::Ctx;
 use crate::state_types::{Effects, Environment, UpdateWithCtx};
@@ -21,8 +22,8 @@ pub struct Selected {
 #[derive(Default, Debug, Clone, Serialize)]
 pub struct MetaDetails {
     pub selected: Selected,
-    pub meta_catalogs: Vec<Catalog<MetaDetail>>,
-    pub streams_catalogs: Vec<Catalog<Vec<Stream>>>,
+    pub meta_resources: Vec<ResourceLoadable<MetaDetail>>,
+    pub streams_resources: Vec<ResourceLoadable<Vec<Stream>>>,
 }
 
 impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for MetaDetails {
@@ -41,9 +42,9 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for MetaDetails {
                         video_id,
                     },
                 );
-                let meta_effects = catalogs_update::<_, Env>(
-                    &mut self.meta_catalogs,
-                    CatalogsAction::CatalogsRequested {
+                let meta_effects = resources_update::<_, Env>(
+                    &mut self.meta_resources,
+                    ResourcesAction::ResourcesRequested {
                         addons: &ctx.content.addons,
                         request: &AggrRequest::AllOfResource(ResourceRef::without_extra(
                             META_RESOURCE_NAME,
@@ -55,19 +56,19 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for MetaDetails {
                 );
                 let streams_effects = match video_id {
                     Some(video_id) => {
-                        if let Some(streams_catalog) =
-                            streams_catalog_from_meta_catalogs(&self.meta_catalogs, video_id)
+                        if let Some(streams_resource) =
+                            streams_resource_from_meta_resources(&self.meta_resources, video_id)
                         {
-                            catalogs_update_with_vector_content::<_, Env>(
-                                &mut self.streams_catalogs,
-                                CatalogsAction::CatalogsReplaced {
-                                    catalogs: vec![streams_catalog],
+                            resources_update_with_vector_content::<_, Env>(
+                                &mut self.streams_resources,
+                                ResourcesAction::ResourcesReplaced {
+                                    resources: vec![streams_resource],
                                 },
                             )
                         } else {
-                            catalogs_update_with_vector_content::<_, Env>(
-                                &mut self.streams_catalogs,
-                                CatalogsAction::CatalogsRequested {
+                            resources_update_with_vector_content::<_, Env>(
+                                &mut self.streams_resources,
+                                ResourcesAction::ResourcesRequested {
                                     addons: &ctx.content.addons,
                                     request: &AggrRequest::AllOfResource(
                                         ResourceRef::without_extra(
@@ -81,9 +82,9 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for MetaDetails {
                             )
                         }
                     }
-                    None => catalogs_update_with_vector_content::<_, Env>(
-                        &mut self.streams_catalogs,
-                        CatalogsAction::CatalogsReplaced { catalogs: vec![] },
+                    None => resources_update_with_vector_content::<_, Env>(
+                        &mut self.streams_resources,
+                        ResourcesAction::ResourcesReplaced { resources: vec![] },
                     ),
                 };
                 selected_effects.join(meta_effects).join(streams_effects)
@@ -91,9 +92,9 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for MetaDetails {
             Msg::Internal(Internal::AddonResponse(request, response))
                 if request.path.resource.eq(META_RESOURCE_NAME) =>
             {
-                let meta_effects = catalogs_update::<_, Env>(
-                    &mut self.meta_catalogs,
-                    CatalogsAction::CatalogResponseReceived {
+                let meta_effects = resources_update::<_, Env>(
+                    &mut self.meta_resources,
+                    ResourcesAction::ResourceResponseReceived {
                         request,
                         response,
                         limit: None,
@@ -104,14 +105,14 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for MetaDetails {
                         streams_resource_ref: Some(streams_resource_ref),
                         ..
                     } => {
-                        if let Some(streams_catalog) = streams_catalog_from_meta_catalogs(
-                            &self.meta_catalogs,
+                        if let Some(streams_resource) = streams_resource_from_meta_resources(
+                            &self.meta_resources,
                             &streams_resource_ref.id,
                         ) {
-                            catalogs_update_with_vector_content::<_, Env>(
-                                &mut self.streams_catalogs,
-                                CatalogsAction::CatalogsReplaced {
-                                    catalogs: vec![streams_catalog],
+                            resources_update_with_vector_content::<_, Env>(
+                                &mut self.streams_resources,
+                                ResourcesAction::ResourcesReplaced {
+                                    resources: vec![streams_resource],
                                 },
                             )
                         } else {
@@ -125,9 +126,9 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for MetaDetails {
             Msg::Internal(Internal::AddonResponse(request, response))
                 if request.path.resource.eq(STREAM_RESOURCE_NAME) =>
             {
-                catalogs_update_with_vector_content::<_, Env>(
-                    &mut self.streams_catalogs,
-                    CatalogsAction::CatalogResponseReceived {
+                resources_update_with_vector_content::<_, Env>(
+                    &mut self.streams_resources,
+                    ResourcesAction::ResourceResponseReceived {
                         request,
                         response,
                         limit: None,
@@ -186,14 +187,14 @@ fn selected_update(selected: &mut Selected, action: SelectedAction) -> Effects {
     }
 }
 
-fn streams_catalog_from_meta_catalogs(
-    meta_catalogs: &[Catalog<MetaDetail>],
+fn streams_resource_from_meta_resources(
+    meta_resources: &[ResourceLoadable<MetaDetail>],
     video_id: &str,
-) -> Option<Catalog<Vec<Stream>>> {
-    meta_catalogs
+) -> Option<ResourceLoadable<Vec<Stream>>> {
+    meta_resources
         .iter()
-        .find_map(|catalog| match &catalog.content {
-            CatalogContent::Ready(meta_detail) => Some((&catalog.request, meta_detail)),
+        .find_map(|resource| match &resource.content {
+            ResourceContent::Ready(meta_detail) => Some((&resource.request, meta_detail)),
             _ => None,
         })
         .and_then(|(meta_request, meta_detail)| {
@@ -203,8 +204,8 @@ fn streams_catalog_from_meta_catalogs(
                 .find(|video| video.id.eq(video_id) && !video.streams.is_empty())
                 .map(|video| (meta_request, &video.streams))
         })
-        .map(|(meta_request, streams)| Catalog {
+        .map(|(meta_request, streams)| ResourceLoadable {
             request: meta_request.to_owned(),
-            content: CatalogContent::Ready(streams.to_owned()),
+            content: ResourceContent::Ready(streams.to_owned()),
         })
 }
