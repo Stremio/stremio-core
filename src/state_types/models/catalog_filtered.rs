@@ -197,9 +197,16 @@ fn selectable_update_with_type_priority<T: ResourceAdapter>(
                 })
                 .cloned()
                 .collect::<Vec<_>>();
-            let selectable_extra = extra_from_requested_catalog(addons, &resource.request);
-            let (has_prev_page, has_next_page) =
-                pagination_from_resource(&selectable_extra, resource);
+            let requested_catalog = requested_catalog_from_addons(addons, &resource.request);
+            let (selectable_extra, has_prev_page, has_next_page) = match &requested_catalog {
+                Some(requested_catalog) => {
+                    let selectable_extra = extra_from_requested_catalog(&requested_catalog);
+                    let (has_prev_page, has_next_page) =
+                        pagination_from_requested_catalog(&requested_catalog, resource);
+                    (selectable_extra, has_prev_page, has_next_page)
+                }
+                None => Default::default(),
+            };
             Selectable {
                 catalogs: selectable_catalogs,
                 types: selectable_types,
@@ -315,10 +322,10 @@ fn types_from_catalogs(selectable_catalogs: &[SelectableCatalog]) -> Vec<Selecta
         .collect()
 }
 
-fn extra_from_requested_catalog<'a>(
-    addons: &'a [Descriptor],
+fn requested_catalog_from_addons(
+    addons: &[Descriptor],
     request: &ResourceRequest,
-) -> Vec<ManifestExtraProp> {
+) -> Option<ManifestCatalog> {
     addons
         .iter()
         .find(|addon| addon.transport_url.eq(&request.base))
@@ -327,21 +334,22 @@ fn extra_from_requested_catalog<'a>(
         .find(|catalog| {
             catalog.type_name.eq(&request.path.type_name) && catalog.id.eq(&request.path.id)
         })
-        .map(|catalog| {
-            catalog
-                .extra_iter()
-                .filter(|extra| extra.options.iter().flatten().next().is_some())
-                .map(|extra| extra.into_owned())
-                .collect()
-        })
-        .unwrap_or_default()
+        .cloned()
 }
 
-fn pagination_from_resource<T>(
-    selectable_extra: &[ManifestExtraProp],
+fn extra_from_requested_catalog(catalog: &ManifestCatalog) -> Vec<ManifestExtraProp> {
+    catalog
+        .extra_iter()
+        .filter(|extra| extra.options.iter().flatten().next().is_some())
+        .map(|extra| extra.into_owned())
+        .collect()
+}
+
+fn pagination_from_requested_catalog<T>(
+    catalog: &ManifestCatalog,
     resource: &ResourceLoadable<Vec<T>>,
 ) -> (bool, bool) {
-    let skip_supported = selectable_extra.iter().any(|extra| extra.name.eq(SKIP));
+    let skip_supported = catalog.extra_iter().any(|extra| extra.name.eq(SKIP));
     let skip_requested = resource
         .request
         .path
