@@ -27,7 +27,7 @@ pub enum ResourceAction<'a, T, Env: Environment + 'static> {
         env: PhantomData<Env>,
     },
     ResourceReplaced {
-        resource: ResourceLoadable<T>,
+        resource: Option<ResourceLoadable<T>>,
     },
     ResourceResponseReceived {
         request: &'a ResourceRequest,
@@ -37,7 +37,7 @@ pub enum ResourceAction<'a, T, Env: Environment + 'static> {
 }
 
 pub fn resource_update<T, Env>(
-    resource: &mut ResourceLoadable<T>,
+    resource: &mut Option<ResourceLoadable<T>>,
     action: ResourceAction<T, Env>,
 ) -> Effects
 where
@@ -46,11 +46,11 @@ where
 {
     match action {
         ResourceAction::ResourceRequested { request, .. } => {
-            if request.ne(&resource.request) {
-                *resource = ResourceLoadable {
+            if Some(request).ne(&resource.as_ref().map(|resource| &resource.request)) {
+                *resource = Some(ResourceLoadable {
                     request: request.to_owned(),
                     content: ResourceContent::Loading,
-                };
+                });
                 Effects::one(addon_get::<Env>(request.to_owned()))
             } else {
                 Effects::none().unchanged()
@@ -59,7 +59,11 @@ where
         ResourceAction::ResourceReplaced {
             resource: next_resource,
         } => {
-            if next_resource.request.ne(&resource.request) {
+            if next_resource
+                .as_ref()
+                .map(|resource| &resource.request)
+                .ne(&resource.as_ref().map(|resource| &resource.request))
+            {
                 *resource = next_resource;
                 Effects::none()
             } else {
@@ -69,14 +73,12 @@ where
         ResourceAction::ResourceResponseReceived {
             request, response, ..
         } => {
-            if request.eq(&resource.request) {
-                resource.content = match response {
-                    Ok(response) => match T::try_from(response.to_owned()) {
-                        Ok(content) => ResourceContent::Ready(content),
-                        Err(_) => ResourceContent::Err(ResourceError::UnexpectedResp),
-                    },
-                    Err(error) => ResourceContent::Err(ResourceError::Other(error.to_string())),
-                };
+            if Some(request).eq(&resource.as_ref().map(|resource| &resource.request)) {
+                let resource_content = resource_content_from_response(response);
+                *resource = Some(ResourceLoadable {
+                    request: request.to_owned(),
+                    content: resource_content,
+                });
                 Effects::none()
             } else {
                 Effects::none().unchanged()
@@ -86,7 +88,7 @@ where
 }
 
 pub fn resource_update_with_vector_content<T, Env>(
-    resource: &mut ResourceLoadable<Vec<T>>,
+    resource: &mut Option<ResourceLoadable<Vec<T>>>,
     action: ResourceAction<Vec<T>, Env>,
 ) -> Effects
 where
@@ -100,23 +102,12 @@ where
             response,
             limit,
         } => {
-            if request.eq(&resource.request) {
-                resource.content = match response {
-                    Ok(response) => match <Vec<T>>::try_from(response.to_owned()) {
-                        Ok(ref content) if content.is_empty() => {
-                            ResourceContent::Err(ResourceError::EmptyContent)
-                        }
-                        Ok(content) => {
-                            if let Some(limit) = limit {
-                                ResourceContent::Ready(content.into_iter().take(limit).collect())
-                            } else {
-                                ResourceContent::Ready(content)
-                            }
-                        }
-                        Err(_) => ResourceContent::Err(ResourceError::UnexpectedResp),
-                    },
-                    Err(error) => ResourceContent::Err(ResourceError::Other(error.to_string())),
-                };
+            if Some(request).eq(&resource.as_ref().map(|resource| &resource.request)) {
+                let resource_content = resource_vector_content_from_response(response, limit);
+                *resource = Some(ResourceLoadable {
+                    request: request.to_owned(),
+                    content: resource_content,
+                });
                 Effects::none()
             } else {
                 Effects::none().unchanged()
@@ -196,22 +187,14 @@ where
             }
         }
         ResourcesAction::ResourceResponseReceived {
-            request,
-            response,
-            limit,
+            request, response, ..
         } => {
             let resource_index = resources
                 .iter()
                 .position(|resource| resource.request.eq(request));
             if let Some(resource_index) = resource_index {
-                resource_update::<_, Env>(
-                    &mut resources[resource_index],
-                    ResourceAction::ResourceResponseReceived {
-                        request,
-                        response,
-                        limit,
-                    },
-                )
+                resources[resource_index].content = resource_content_from_response(response);
+                Effects::none()
             } else {
                 Effects::none().unchanged()
             }
@@ -238,18 +221,54 @@ where
                 .iter()
                 .position(|resource| resource.request.eq(request));
             if let Some(resource_index) = resource_index {
-                resource_update_with_vector_content::<_, Env>(
-                    &mut resources[resource_index],
-                    ResourceAction::ResourceResponseReceived {
-                        request,
-                        response,
-                        limit,
-                    },
-                )
+                resources[resource_index].content =
+                    resource_vector_content_from_response(response, limit);
+                Effects::none()
             } else {
                 Effects::none().unchanged()
             }
         }
         _ => resources_update::<_, Env>(resources, action),
+    }
+}
+
+fn resource_content_from_response<'a, T>(
+    response: &'a Result<ResourceResponse, EnvError>,
+) -> ResourceContent<T>
+where
+    T: Clone + TryFrom<ResourceResponse>,
+{
+    match response {
+        Ok(response) => match T::try_from(response.to_owned()) {
+            Ok(content) => ResourceContent::Ready(content),
+            Err(_) => ResourceContent::Err(ResourceError::UnexpectedResp),
+        },
+        Err(error) => ResourceContent::Err(ResourceError::Other(error.to_string())),
+    }
+}
+
+fn resource_vector_content_from_response<'a, T>(
+    response: &'a Result<ResourceResponse, EnvError>,
+    limit: Option<usize>,
+) -> ResourceContent<Vec<T>>
+where
+    T: Clone,
+    Vec<T>: TryFrom<ResourceResponse>,
+{
+    match response {
+        Ok(response) => match <Vec<T>>::try_from(response.to_owned()) {
+            Ok(ref content) if content.is_empty() => {
+                ResourceContent::Err(ResourceError::EmptyContent)
+            }
+            Ok(content) => {
+                if let Some(limit) = limit {
+                    ResourceContent::Ready(content.into_iter().take(limit).collect())
+                } else {
+                    ResourceContent::Ready(content)
+                }
+            }
+            Err(_) => ResourceContent::Err(ResourceError::UnexpectedResp),
+        },
+        Err(error) => ResourceContent::Err(ResourceError::Other(error.to_string())),
     }
 }

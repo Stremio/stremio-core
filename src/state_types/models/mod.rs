@@ -1,7 +1,7 @@
 pub mod common;
 
-mod catalogs_filtered;
-pub use catalogs_filtered::*;
+mod catalog_filtered;
+pub use catalog_filtered::*;
 
 mod catalogs_with_extra;
 pub use catalogs_with_extra::*;
