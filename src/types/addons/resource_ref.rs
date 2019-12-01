@@ -1,5 +1,6 @@
 use serde_derive::*;
 use std::fmt;
+use std::hash::{Hash, Hasher};
 use std::str::FromStr;
 use url::form_urlencoded;
 use url::percent_encoding::{percent_decode, utf8_percent_encode, PATH_SEGMENT_ENCODE_SET};
@@ -50,6 +51,15 @@ impl ResourceRef {
     // Compare, but without considering extra
     pub fn eq_no_extra(&self, other: &ResourceRef) -> bool {
         self.resource == other.resource && self.type_name == other.type_name && self.id == other.id
+    }
+}
+
+impl Hash for ResourceRef {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        self.resource.hash(state);
+        self.type_name.hash(state);
+        self.id.hash(state);
+        self.extra.hash(state);
     }
 }
 

@@ -297,6 +297,10 @@ fn catalogs_from_addons<T: ResourceAdapter>(addons: &[Descriptor]) -> Vec<Select
                     }
                 })
         })
+        .collect::<Vec<SelectableCatalog>>()
+        .iter()
+        .unique_by(|selectable_catalog| &selectable_catalog.load_request)
+        .cloned()
         .collect()
 }
 
