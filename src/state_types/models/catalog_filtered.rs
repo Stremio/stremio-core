@@ -1,13 +1,16 @@
-use super::common::{
+use crate::state_types::messages::{Action, ActionLoad, Event, Internal, Msg};
+use crate::state_types::models::common::{
     resource_update_with_vector_content, ResourceAction, ResourceContent, ResourceLoadable,
 };
-use crate::state_types::messages::*;
-use crate::state_types::models::*;
-use crate::state_types::*;
-use crate::types::addons::*;
+use crate::state_types::models::Ctx;
+use crate::state_types::{Effects, Environment, UpdateWithCtx};
+use crate::types::addons::{
+    Descriptor, DescriptorPreview, ExtraProp, Manifest, ManifestCatalog, ManifestExtraProp,
+    ResourceRef, ResourceRequest, ResourceResponse,
+};
 use crate::types::MetaPreview;
-use itertools::*;
-use serde_derive::*;
+use itertools::Itertools;
+use serde_derive::Serialize;
 use std::convert::TryFrom;
 use std::marker::PhantomData;
 
