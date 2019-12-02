@@ -350,18 +350,19 @@ fn pagination_from_requested_catalog<T>(
     resource: &ResourceLoadable<Vec<T>>,
 ) -> (bool, bool) {
     let skip_supported = catalog.extra_iter().any(|extra| extra.name.eq(SKIP));
-    let skip_requested = resource
+    let first_page_requested = resource
         .request
         .path
         .get_extra_first_val(SKIP)
         .and_then(|value| value.parse::<u32>().ok())
-        .is_some();
+        .map(|skip| skip.eq(&0))
+        .unwrap_or(true);
     let last_page_requested = match &resource.content {
         ResourceContent::Ready(content) => content.len() < CATALOG_PAGE_SIZE,
         ResourceContent::Err(_) => true,
         ResourceContent::Loading => false,
     };
-    let has_prev_page = skip_supported && skip_requested;
+    let has_prev_page = skip_supported && !first_page_requested;
     let has_next_page = skip_supported && !last_page_requested;
     (has_prev_page, has_next_page)
 }
