@@ -245,10 +245,12 @@ fn request_with_valid_extra(request: &ResourceRequest) -> ResourceRequest {
         .iter()
         .cloned()
         .fold::<Vec<ExtraProp>, _>(vec![], |mut extra, (key, value)| {
-            if key.eq(SKIP) && extra.iter().all(|(key, _)| key.ne(SKIP)) {
-                if let Ok(value) = value.parse::<u32>() {
-                    let value = (value / CATALOG_PAGE_SIZE as u32) * CATALOG_PAGE_SIZE as u32;
-                    extra.push((key, value.to_string()));
+            if key.eq(SKIP) {
+                if extra.iter().all(|(key, _)| key.ne(SKIP)) {
+                    if let Ok(value) = value.parse::<u32>() {
+                        let value = (value / CATALOG_PAGE_SIZE as u32) * CATALOG_PAGE_SIZE as u32;
+                        extra.push((key, value.to_string()));
+                    };
                 };
             } else {
                 extra.push((key, value));
