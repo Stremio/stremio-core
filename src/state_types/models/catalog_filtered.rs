@@ -164,8 +164,8 @@ enum SelectableAction<'a, T> {
 }
 
 fn selectable_update_with_catalog_priority<T: ResourceAdapter>(
-    selectable: &mut Selectable,
-    action: SelectableAction<T>,
+    _selectable: &mut Selectable,
+    _action: SelectableAction<T>,
 ) -> Effects {
     // match action {
     //     SelectableAction::Select {
