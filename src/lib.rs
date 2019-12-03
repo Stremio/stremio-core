@@ -7,11 +7,11 @@ pub mod types;
 mod tests {
     use crate::addon_transport::*;
     use crate::state_types::messages::*;
-    use crate::state_types::models::common::Loadable;
+    use crate::state_types::models::common::*;
     use crate::state_types::models::*;
     use crate::state_types::*;
-    use crate::types::addons::{Descriptor, ResourceRef, ResourceRequest, ResourceResponse};
-    use crate::types::MetaPreview;
+    use crate::types::addons::*;
+    use crate::types::*;
     use futures::future::lazy;
     use futures::{future, Future};
     use serde::de::DeserializeOwned;
@@ -187,13 +187,20 @@ mod tests {
     #[test]
     fn catalog_filtered() {
         use stremio_derive::Model;
-        #[derive(Model, Debug, Default)]
+        #[derive(Model, Debug)]
         struct Model {
             ctx: Ctx<Env>,
             catalogs: CatalogFiltered<MetaPreview>,
         }
 
-        let app = Model::default();
+        let app = Model {
+            ctx: Default::default(),
+            catalogs: CatalogFiltered {
+                selectable: Default::default(),
+                catalog_resource: Default::default(),
+                selectable_priority: SelectablePriority::Type,
+            },
+        };
         let (runtime, _) = Runtime::<Env, Model>::new(app, 1000);
 
         let req = ResourceRequest {
@@ -204,79 +211,139 @@ mod tests {
         run(runtime.dispatch_with(|model| model.catalogs.update(&model.ctx, &action.into())));
         // Clone the state so that we don't keep a lock on .app
         let state = runtime.app.read().unwrap().catalogs.to_owned();
-        assert!(state.types[0].is_selected, "first type is selected");
-        assert!(state.catalogs[0].is_selected, "first catalog is selected");
-        assert_eq!(state.types[0].type_name, "movie", "first type is movie");
-        assert_eq!(state.types[1].type_name, "series", "second type is series");
-        assert!(state.catalogs.len() > 3, "has catalogs");
-        assert_eq!(state.selected, Some(req), "selected is right");
-        match &state.content {
-            Loadable::Ready(x) => assert_eq!(x.len(), 100, "right length of items"),
+        assert!(state.catalog_resource.is_some(), "selected is right");
+        assert!(
+            state
+                .catalog_resource
+                .as_ref()
+                .unwrap()
+                .request
+                .path
+                .type_name
+                .eq(&state.selectable.types[0].load_request.path.type_name),
+            "first type is selected"
+        );
+        assert!(
+            state
+                .catalog_resource
+                .as_ref()
+                .unwrap()
+                .request
+                .path
+                .type_name
+                .eq(&state.selectable.catalogs[0].load_request.path.type_name),
+            "first catalog is selected"
+        );
+        assert_eq!(
+            state.selectable.types[0].load_request.path.type_name, "movie",
+            "first type is movie"
+        );
+        assert_eq!(
+            state.selectable.types[1].load_request.path.type_name, "series",
+            "second type is series"
+        );
+        assert!(state.selectable.catalogs.len() > 3, "has catalogs");
+        match &state.catalog_resource {
+            Some(ResourceLoadable {
+                content: Loadable::Ready(x),
+                ..
+            }) => assert_eq!(x.len(), 100, "right length of items"),
             x => panic!("item_pages[0] is not Ready, but instead: {:?}", x),
-        }
+        };
 
         // Verify that pagination works
-        let load_next = state
-            .load_next
-            .as_ref()
-            .expect("there should be a next page")
-            .to_owned();
+
+        assert!(
+            state.selectable.has_next_page,
+            "there should be a next page"
+        );
+        let load_next = ResourceRequest {
+            base: "https://v3-cinemeta.strem.io/manifest.json".to_owned(),
+            path: ResourceRef::with_extra(
+                "catalog",
+                "movie",
+                "top",
+                &[("skip".to_owned(), "100".to_owned())],
+            ),
+        };
         let action = Action::Load(ActionLoad::CatalogFiltered(load_next));
         run(runtime.dispatch(&action.into()));
-        let state = &runtime.app.read().unwrap().catalogs.to_owned();
-        assert!(state.types[0].is_selected, "first type is selected");
+        let state = runtime.app.read().unwrap().catalogs.to_owned();
         assert!(
-            state.catalogs[0].is_selected,
+            state
+                .catalog_resource
+                .as_ref()
+                .unwrap()
+                .request
+                .path
+                .type_name
+                .eq(&state.selectable.types[0].load_request.path.type_name),
+            "first type is still selected"
+        );
+        assert!(
+            state
+                .catalog_resource
+                .as_ref()
+                .unwrap()
+                .request
+                .eq_no_extra(&state.selectable.catalogs[0].load_request),
             "first catalog is still selected"
         );
         assert_eq!(
             state
-                .selected
+                .catalog_resource
                 .as_ref()
-                .expect("there must be .selected")
+                .expect("there must be .catalog_resource")
+                .request
                 .path
                 .get_extra_first_val("skip"),
-            Some("100")
+            Some("100"),
+            "skip extra is correct"
         );
-        assert_eq!(
-            state
-                .load_next
-                .as_ref()
-                .expect("there must be .load_next")
-                .path
-                .get_extra_first_val("skip"),
-            Some("200")
+        assert!(
+            state.selectable.has_next_page,
+            "there should be a next page"
         );
-        assert_eq!(
-            state
-                .load_prev
-                .as_ref()
-                .expect("there must be .load_prev")
-                .path
-                .get_extra_first_val("skip"),
-            Some("0")
+        assert!(
+            state.selectable.has_prev_page,
+            "there should be a prev page"
         );
 
         //dbg!(&state);
 
         let year_catalog = state
+            .selectable
             .catalogs
             .iter()
             .find(|c| c.name == "By year")
             .expect("could not find year catalog");
-        let action = Action::Load(ActionLoad::CatalogFiltered(year_catalog.load.to_owned()));
+        let action = Action::Load(ActionLoad::CatalogFiltered(
+            year_catalog.load_request.to_owned(),
+        ));
         run(runtime.dispatch(&action.into()));
         let state = &runtime.app.read().unwrap().catalogs;
-        let selected = state.selected.as_ref().expect("should have selected");
+        let catalog_resource = state
+            .catalog_resource
+            .as_ref()
+            .expect("should have catalog_resource");
         assert_eq!(
-            selected.path.get_extra_first_val("skip"),
+            catalog_resource.request.path.get_extra_first_val("skip"),
             None,
             "first page"
         );
-        assert_eq!(selected.path.id, "year", "year catalog is loaded");
+        assert_eq!(
+            catalog_resource.request.path.id, "year",
+            "year catalog is loaded"
+        );
         // The year catalog is not seekable
-        assert_eq!(state.load_prev, None);
-        assert_eq!(state.load_next, None);
+        assert!(
+            !state.selectable.has_next_page,
+            "there shouldn't be a next page"
+        );
+        assert!(
+            !state.selectable.has_prev_page,
+            "there shouldn't be a prev page"
+        );
     }
 
     #[test]
