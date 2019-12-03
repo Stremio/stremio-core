@@ -17,7 +17,7 @@ pub fn validate_extra(extra: &[ExtraProp]) -> Vec<ExtraProp> {
                     };
                 }
                 SEARCH => {
-                    if extra.iter().all(|(key, _)| key.ne(SEARCH)) && value.is_empty() {
+                    if extra.iter().all(|(key, _)| key.ne(SEARCH)) && !value.is_empty() {
                         extra.push((key, value));
                     };
                 }
