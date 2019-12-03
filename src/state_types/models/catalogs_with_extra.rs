@@ -1,13 +1,14 @@
-use super::common::{resources_update_with_vector_content, ResourceLoadable, ResourcesAction};
+use crate::constants::CATALOG_PREVIEW_SIZE;
 use crate::state_types::messages::{Action, ActionLoad, Event, Internal, Msg};
+use crate::state_types::models::common::{
+    resources_update_with_vector_content, ResourceLoadable, ResourcesAction,
+};
 use crate::state_types::models::Ctx;
 use crate::state_types::{Effects, Environment, UpdateWithCtx};
 use crate::types::addons::{AggrRequest, ExtraProp};
 use crate::types::MetaPreview;
 use serde_derive::Serialize;
 use std::marker::PhantomData;
-
-const CATALOG_CONTENT_LIMIT: usize = 10;
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize)]
 pub struct Selected {
@@ -42,7 +43,7 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for CatalogsWithExtra {
                     ResourcesAction::ResourceResponseReceived {
                         request,
                         response,
-                        limit: Some(CATALOG_CONTENT_LIMIT),
+                        limit: Some(CATALOG_PREVIEW_SIZE),
                     },
                 )
             }
