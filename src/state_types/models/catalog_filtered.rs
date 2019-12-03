@@ -1,6 +1,7 @@
 use crate::state_types::messages::{Action, ActionLoad, Event, Internal, Msg};
 use crate::state_types::models::common::{
-    resource_update_with_vector_content, ResourceAction, ResourceContent, ResourceLoadable,
+    request_with_valid_extra, resource_update_with_vector_content, ResourceAction, ResourceContent,
+    ResourceLoadable,
 };
 use crate::state_types::models::Ctx;
 use crate::state_types::{Effects, Environment, UpdateWithCtx};
@@ -89,7 +90,7 @@ where
         };
         match msg {
             Msg::Action(Action::Load(ActionLoad::CatalogFiltered(request))) => {
-                let request = request_with_valid_extra(request);
+                let request = request_with_valid_extra(request, CATALOG_PAGE_SIZE);
                 let catalog_effects = resource_update_with_vector_content::<_, Env>(
                     &mut self.catalog_resource,
                     ResourceAction::ResourceRequested {
@@ -235,37 +236,6 @@ fn selectable_update_with_type_priority<T: ResourceAdapter>(
         Effects::none()
     } else {
         Effects::none().unchanged()
-    }
-}
-
-fn request_with_valid_extra(request: &ResourceRequest) -> ResourceRequest {
-    let extra = request
-        .path
-        .extra
-        .iter()
-        .cloned()
-        .fold::<Vec<ExtraProp>, _>(vec![], |mut extra, (key, value)| {
-            if key.eq(SKIP) {
-                if extra.iter().all(|(key, _)| key.ne(SKIP)) {
-                    if let Ok(value) = value.parse::<u32>() {
-                        let value = (value / CATALOG_PAGE_SIZE as u32) * CATALOG_PAGE_SIZE as u32;
-                        extra.push((key, value.to_string()));
-                    };
-                };
-            } else {
-                extra.push((key, value));
-            };
-
-            extra
-        });
-    ResourceRequest {
-        base: request.base.to_owned(),
-        path: ResourceRef {
-            resource: request.path.resource.to_owned(),
-            type_name: request.path.type_name.to_owned(),
-            id: request.path.id.to_owned(),
-            extra,
-        },
     }
 }
 
