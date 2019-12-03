@@ -1,3 +1,4 @@
+use crate::constants::{CATALOG_PAGE_SIZE, SKIP};
 use crate::state_types::messages::{Action, ActionLoad, Event, Internal, Msg};
 use crate::state_types::models::common::{
     request_with_valid_extra, resource_update_with_vector_content, ResourceAction, ResourceContent,
@@ -14,9 +15,6 @@ use itertools::Itertools;
 use serde_derive::Serialize;
 use std::convert::TryFrom;
 use std::marker::PhantomData;
-
-const CATALOG_PAGE_SIZE: usize = 100;
-const SKIP: &str = "skip";
 
 pub trait ResourceAdapter {
     fn resource() -> &'static str;
@@ -90,7 +88,7 @@ where
         };
         match msg {
             Msg::Action(Action::Load(ActionLoad::CatalogFiltered(request))) => {
-                let request = request_with_valid_extra(request, CATALOG_PAGE_SIZE);
+                let request = request_with_valid_extra(request);
                 let catalog_effects = resource_update_with_vector_content::<_, Env>(
                     &mut self.catalog_resource,
                     ResourceAction::ResourceRequested {
