@@ -4,7 +4,7 @@ mod resource_ref;
 pub use self::manifest::*;
 pub use self::resource_ref::*;
 use crate::types::{MetaDetail, MetaPreview, Stream, SubtitlesSource};
-use std::hash::{Hash, Hasher};
+use std::hash::Hash;
 mod manifest_tests;
 use derive_more::*;
 
@@ -38,7 +38,7 @@ pub struct Descriptor {
     pub flags: DescriptorFlags,
 }
 
-#[derive(Debug, Deserialize, Serialize, Clone, PartialEq, Eq)]
+#[derive(Debug, Deserialize, Serialize, Clone, PartialEq, Eq, Hash)]
 pub struct ResourceRequest {
     pub base: TransportUrl,
     pub path: ResourceRef,
@@ -50,13 +50,6 @@ impl ResourceRequest {
     }
     pub fn eq_no_extra(&self, other: &ResourceRequest) -> bool {
         self.base == other.base && self.path.eq_no_extra(&other.path)
-    }
-}
-
-impl Hash for ResourceRequest {
-    fn hash<H: Hasher>(&self, state: &mut H) {
-        self.base.hash(state);
-        self.path.hash(state);
     }
 }
 
