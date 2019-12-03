@@ -1,6 +1,7 @@
+use crate::constants::{CATALOG_PAGE_SIZE, SEARCH, SKIP};
 use crate::types::addons::{ExtraProp, ResourceRef, ResourceRequest};
 
-pub fn request_with_valid_extra(request: &ResourceRequest, page_size: usize) -> ResourceRequest {
+pub fn request_with_valid_extra(request: &ResourceRequest) -> ResourceRequest {
     let extra = request
         .path
         .extra
@@ -8,16 +9,17 @@ pub fn request_with_valid_extra(request: &ResourceRequest, page_size: usize) -> 
         .cloned()
         .fold::<Vec<ExtraProp>, _>(vec![], |mut extra, (key, value)| {
             match key.as_ref() {
-                "skip" => {
-                    if extra.iter().all(|(key, _)| key.ne("skip")) {
+                SKIP => {
+                    if extra.iter().all(|(key, _)| key.ne(SKIP)) {
                         if let Ok(value) = value.parse::<u32>() {
-                            let value = (value / page_size as u32) * page_size as u32;
+                            let value =
+                                (value / CATALOG_PAGE_SIZE as u32) * CATALOG_PAGE_SIZE as u32;
                             extra.push((key, value.to_string()));
                         };
                     };
                 }
-                "search" => {
-                    if extra.iter().all(|(key, _)| key.ne("search")) && value.len() > 0 {
+                SEARCH => {
+                    if extra.iter().all(|(key, _)| key.ne(SEARCH)) && value.len() > 0 {
                         extra.push((key, value));
                     };
                 }
