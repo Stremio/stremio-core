@@ -1,7 +1,7 @@
 use crate::constants::{CATALOG_PAGE_SIZE, SEARCH, SKIP};
 use crate::types::addons::ExtraProp;
 
-pub fn validate_extra(extra: &Vec<ExtraProp>) -> Vec<ExtraProp> {
+pub fn validate_extra(extra: &[ExtraProp]) -> Vec<ExtraProp> {
     extra
         .iter()
         .cloned()

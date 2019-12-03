@@ -232,8 +232,8 @@ where
     }
 }
 
-fn resource_content_from_response<'a, T>(
-    response: &'a Result<ResourceResponse, EnvError>,
+fn resource_content_from_response<T>(
+    response: &Result<ResourceResponse, EnvError>,
 ) -> ResourceContent<T>
 where
     T: Clone + TryFrom<ResourceResponse>,
@@ -247,8 +247,8 @@ where
     }
 }
 
-fn resource_vector_content_from_response<'a, T>(
-    response: &'a Result<ResourceResponse, EnvError>,
+fn resource_vector_content_from_response<T>(
+    response: &Result<ResourceResponse, EnvError>,
     limit: Option<usize>,
 ) -> ResourceContent<Vec<T>>
 where
