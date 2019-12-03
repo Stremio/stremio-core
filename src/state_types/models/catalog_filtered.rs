@@ -1,7 +1,7 @@
 use crate::constants::{CATALOG_PAGE_SIZE, SKIP};
 use crate::state_types::messages::{Action, ActionLoad, Event, Internal, Msg};
 use crate::state_types::models::common::{
-    request_with_valid_extra, resource_update_with_vector_content, ResourceAction, ResourceContent,
+    resource_update_with_vector_content, validate_extra, ResourceAction, ResourceContent,
     ResourceLoadable,
 };
 use crate::state_types::models::Ctx;
@@ -88,7 +88,16 @@ where
         };
         match msg {
             Msg::Action(Action::Load(ActionLoad::CatalogFiltered(request))) => {
-                let request = request_with_valid_extra(request);
+                let extra = validate_extra(&request.path.extra);
+                let request = ResourceRequest {
+                    base: request.base.to_owned(),
+                    path: ResourceRef {
+                        resource: request.path.resource.to_owned(),
+                        type_name: request.path.type_name.to_owned(),
+                        id: request.path.id.to_owned(),
+                        extra,
+                    },
+                };
                 let catalog_effects = resource_update_with_vector_content::<_, Env>(
                     &mut self.catalog_resource,
                     ResourceAction::ResourceRequested {

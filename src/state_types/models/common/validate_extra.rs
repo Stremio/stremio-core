@@ -1,10 +1,8 @@
 use crate::constants::{CATALOG_PAGE_SIZE, SEARCH, SKIP};
-use crate::types::addons::{ExtraProp, ResourceRef, ResourceRequest};
+use crate::types::addons::ExtraProp;
 
-pub fn request_with_valid_extra(request: &ResourceRequest) -> ResourceRequest {
-    let extra = request
-        .path
-        .extra
+pub fn validate_extra(extra: &Vec<ExtraProp>) -> Vec<ExtraProp> {
+    extra
         .iter()
         .cloned()
         .fold::<Vec<ExtraProp>, _>(vec![], |mut extra, (key, value)| {
@@ -19,7 +17,7 @@ pub fn request_with_valid_extra(request: &ResourceRequest) -> ResourceRequest {
                     };
                 }
                 SEARCH => {
-                    if extra.iter().all(|(key, _)| key.ne(SEARCH)) && value.len() > 0 {
+                    if extra.iter().all(|(key, _)| key.ne(SEARCH)) && value.is_empty() {
                         extra.push((key, value));
                     };
                 }
@@ -29,14 +27,5 @@ pub fn request_with_valid_extra(request: &ResourceRequest) -> ResourceRequest {
             };
 
             extra
-        });
-    ResourceRequest {
-        base: request.base.to_owned(),
-        path: ResourceRef {
-            resource: request.path.resource.to_owned(),
-            type_name: request.path.type_name.to_owned(),
-            id: request.path.id.to_owned(),
-            extra,
-        },
-    }
+        })
 }
