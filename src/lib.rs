@@ -1,7 +1,7 @@
 pub mod addon_transport;
+pub mod constants;
 pub mod state_types;
 pub mod types;
-pub mod constants;
 
 #[cfg(test)]
 mod tests {
