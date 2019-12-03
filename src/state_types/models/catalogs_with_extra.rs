@@ -46,6 +46,22 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for CatalogsWithExtra {
                     },
                 )
             }
+            Msg::Internal(Internal::CtxLoaded(_)) | Msg::Event(Event::CtxChanged) => {
+                if let Some(selected) = &self.selected {
+                    resources_update_with_vector_content::<_, Env>(
+                        &mut self.catalog_resources,
+                        ResourcesAction::ResourcesRequested {
+                            addons: &ctx.content.addons,
+                            request: &AggrRequest::AllCatalogs {
+                                extra: &selected.extra,
+                            },
+                            env: PhantomData,
+                        },
+                    )
+                } else {
+                    Effects::none().unchanged()
+                }
+            }
             _ => Effects::none().unchanged(),
         }
     }
