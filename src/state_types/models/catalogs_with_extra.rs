@@ -1,5 +1,5 @@
 use super::common::{resources_update_with_vector_content, ResourceLoadable, ResourcesAction};
-use crate::state_types::messages::{Action, ActionLoad, Internal, Msg};
+use crate::state_types::messages::{Action, ActionLoad, Event, Internal, Msg};
 use crate::state_types::models::Ctx;
 use crate::state_types::{Effects, Environment, UpdateWithCtx};
 use crate::types::addons::{AggrRequest, ExtraProp};
@@ -16,7 +16,7 @@ pub struct Selected {
 
 #[derive(Default, Debug, Clone, Serialize)]
 pub struct CatalogsWithExtra {
-    pub selected: Selected,
+    pub selected: Option<Selected>,
     pub catalog_resources: Vec<ResourceLoadable<Vec<MetaPreview>>>,
 }
 
@@ -55,11 +55,11 @@ enum SelectedAction<'a> {
     Select { extra: &'a [ExtraProp] },
 }
 
-fn selected_update(selected: &mut Selected, action: SelectedAction) -> Effects {
+fn selected_update(selected: &mut Option<Selected>, action: SelectedAction) -> Effects {
     let next_selected = match action {
-        SelectedAction::Select { extra } => Selected {
+        SelectedAction::Select { extra } => Some(Selected {
             extra: extra.to_owned(),
-        },
+        }),
     };
     if next_selected.ne(selected) {
         *selected = next_selected;
