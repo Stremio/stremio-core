@@ -1,31 +1,39 @@
-use env_web::*;
+use env_web::Env;
 use futures::future;
 use futures::stream::Stream;
 use serde::{Deserialize, Serialize};
-use stremio_core::state_types::*;
+use std::panic;
+use stremio_core::state_types::messages::{Action, Msg};
+use stremio_core::state_types::models::{
+    CatalogFiltered, CatalogsWithExtra, Ctx, LibRecent, LibraryFiltered, MetaDetails,
+    SelectablePriority, StreamingServerSettingsModel,
+};
+use stremio_core::state_types::{Environment, Runtime, UpdateWithCtx};
 use stremio_core::types::addons::DescriptorPreview;
 use stremio_core::types::MetaPreview;
-use stremio_derive::*;
-use wasm_bindgen::prelude::*;
-
+use stremio_derive::Model;
+use wasm_bindgen::prelude::{wasm_bindgen, JsValue};
 extern crate console_error_panic_hook;
-use std::panic;
 
-#[derive(Model, Default, Serialize)]
+#[derive(Model, Serialize)]
 pub struct Model {
     ctx: Ctx<Env>,
     recent: LibRecent,
-    board: CatalogGrouped,
+    board: CatalogsWithExtra,
     discover: CatalogFiltered<MetaPreview>,
+    library: LibraryFiltered,
+    search: CatalogsWithExtra,
+    meta_details: MetaDetails,
     addons: CatalogFiltered<DescriptorPreview>,
     streaming_server_settings: StreamingServerSettingsModel,
-    meta_details: MetaDetails,
 }
 
-#[derive(Debug, Deserialize, Clone)]
+#[derive(Deserialize)]
 #[serde(tag = "model", content = "args")]
 pub enum WebAction {
+    Board(Action),
     Discover(Action),
+    Search(Action),
     Addons(Action),
     All(Action),
 }
@@ -40,7 +48,25 @@ impl ContainerService {
     #[wasm_bindgen(constructor)]
     pub fn new(emit: js_sys::Function) -> ContainerService {
         panic::set_hook(Box::new(console_error_panic_hook::hook));
-        let app = Model::default();
+        let app = Model {
+            ctx: Default::default(),
+            recent: Default::default(),
+            board: Default::default(),
+            discover: CatalogFiltered {
+                selectable: Default::default(),
+                catalog_resource: Default::default(),
+                selectable_priority: SelectablePriority::Type,
+            },
+            library: Default::default(),
+            search: Default::default(),
+            meta_details: Default::default(),
+            addons: CatalogFiltered {
+                selectable: Default::default(),
+                catalog_resource: Default::default(),
+                selectable_priority: SelectablePriority::Catalog,
+            },
+            streaming_server_settings: Default::default(),
+        };
         let (runtime, rx) = Runtime::<Env, Model>::new(app, 1000);
         Env::exec(Box::new(rx.for_each(move |msg| {
             let _ = emit.call1(&JsValue::NULL, &JsValue::from_serde(&msg).unwrap());
@@ -54,9 +80,15 @@ impl ContainerService {
             .into_serde()
             .expect("WebAction could not be deserialized");
         let effects = match action {
+            WebAction::Board(action) => self
+                .runtime
+                .dispatch_with(|model| model.board.update(&model.ctx, &Msg::Action(action))),
             WebAction::Discover(action) => self
                 .runtime
                 .dispatch_with(|model| model.discover.update(&model.ctx, &Msg::Action(action))),
+            WebAction::Search(action) => self
+                .runtime
+                .dispatch_with(|model| model.search.update(&model.ctx, &Msg::Action(action))),
             WebAction::Addons(action) => self
                 .runtime
                 .dispatch_with(|model| model.addons.update(&model.ctx, &Msg::Action(action))),
