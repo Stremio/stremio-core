@@ -14,9 +14,10 @@ pub struct ContinueWatching {
 impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for ContinueWatching {
     fn update(&mut self, ctx: &Ctx<Env>, msg: &Msg) -> Effects {
         match msg {
-            Msg::Event(Event::CtxChanged)
-            | Msg::Event(Event::LibPersisted)
-            | Msg::Internal(Internal::LibLoaded(_)) => {
+            Msg::Internal(Internal::CtxLoaded(_))
+            | Msg::Internal(Internal::LibLoaded(_))
+            | Msg::Event(Event::CtxChanged)
+            | Msg::Event(Event::LibPersisted) => {
                 lib_items_update(&mut self.lib_items, &ctx.library)
             }
             _ => Effects::none().unchanged(),
