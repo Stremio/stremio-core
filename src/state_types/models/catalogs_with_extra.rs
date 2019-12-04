@@ -8,7 +8,6 @@ use crate::state_types::{Effects, Environment, UpdateWithCtx};
 use crate::types::addons::{AggrRequest, ExtraProp};
 use crate::types::MetaPreview;
 use serde_derive::Serialize;
-use std::marker::PhantomData;
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize)]
 pub struct Selected {
@@ -25,15 +24,14 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for CatalogsWithExtra {
     fn update(&mut self, ctx: &Ctx<Env>, msg: &Msg) -> Effects {
         match msg {
             Msg::Action(Action::Load(ActionLoad::CatalogsWithExtra { extra })) => {
-                let extra = validate_extra(extra);
+                let extra = &validate_extra(extra);
                 let selected_effects =
-                    selected_update(&mut self.selected, SelectedAction::Select { extra: &extra });
+                    selected_update(&mut self.selected, SelectedAction::Select { extra });
                 let catalogs_effects = resources_update_with_vector_content::<_, Env>(
                     &mut self.catalog_resources,
                     ResourcesAction::ResourcesRequested {
+                        aggr_request: &AggrRequest::AllCatalogs { extra },
                         addons: &ctx.content.addons,
-                        request: &AggrRequest::AllCatalogs { extra: &extra },
-                        env: PhantomData,
                     },
                 );
                 selected_effects.join(catalogs_effects)
@@ -53,11 +51,10 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for CatalogsWithExtra {
                     resources_update_with_vector_content::<_, Env>(
                         &mut self.catalog_resources,
                         ResourcesAction::ResourcesRequested {
-                            addons: &ctx.content.addons,
-                            request: &AggrRequest::AllCatalogs {
+                            aggr_request: &AggrRequest::AllCatalogs {
                                 extra: &selected.extra,
                             },
-                            env: PhantomData,
+                            addons: &ctx.content.addons,
                         },
                     )
                 } else {
