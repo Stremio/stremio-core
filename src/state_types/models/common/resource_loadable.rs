@@ -3,7 +3,6 @@ use crate::state_types::{Effects, EnvError, Environment};
 use crate::types::addons::{AggrRequest, Descriptor, ResourceRequest, ResourceResponse};
 use serde_derive::Serialize;
 use std::convert::TryFrom;
-use std::marker::PhantomData;
 
 #[derive(Debug, Clone, PartialEq, Serialize)]
 #[serde(tag = "type", content = "content")]
@@ -21,10 +20,9 @@ pub struct ResourceLoadable<T> {
     pub content: ResourceContent<T>,
 }
 
-pub enum ResourceAction<'a, T, Env: Environment + 'static> {
+pub enum ResourceAction<'a, T> {
     ResourceRequested {
         request: &'a ResourceRequest,
-        env: PhantomData<Env>,
     },
     ResourceReplaced {
         resource: Option<ResourceLoadable<T>>,
@@ -38,7 +36,7 @@ pub enum ResourceAction<'a, T, Env: Environment + 'static> {
 
 pub fn resource_update<T, Env>(
     resource: &mut Option<ResourceLoadable<T>>,
-    action: ResourceAction<T, Env>,
+    action: ResourceAction<T>,
 ) -> Effects
 where
     T: Clone + TryFrom<ResourceResponse>,
@@ -89,7 +87,7 @@ where
 
 pub fn resource_update_with_vector_content<T, Env>(
     resource: &mut Option<ResourceLoadable<Vec<T>>>,
-    action: ResourceAction<Vec<T>, Env>,
+    action: ResourceAction<Vec<T>>,
 ) -> Effects
 where
     T: Clone,
@@ -117,11 +115,10 @@ where
     }
 }
 
-pub enum ResourcesAction<'a, T, Env: Environment + 'static> {
+pub enum ResourcesAction<'a, T> {
     ResourcesRequested {
         addons: &'a [Descriptor],
         request: &'a AggrRequest<'a>,
-        env: PhantomData<Env>,
     },
     ResourcesReplaced {
         resources: Vec<ResourceLoadable<T>>,
@@ -135,7 +132,7 @@ pub enum ResourcesAction<'a, T, Env: Environment + 'static> {
 
 pub fn resources_update<T, Env>(
     resources: &mut Vec<ResourceLoadable<T>>,
-    action: ResourcesAction<T, Env>,
+    action: ResourcesAction<T>,
 ) -> Effects
 where
     T: Clone + TryFrom<ResourceResponse>,
@@ -204,7 +201,7 @@ where
 
 pub fn resources_update_with_vector_content<T, Env>(
     resources: &mut Vec<ResourceLoadable<Vec<T>>>,
-    action: ResourcesAction<Vec<T>, Env>,
+    action: ResourcesAction<Vec<T>>,
 ) -> Effects
 where
     T: Clone,
