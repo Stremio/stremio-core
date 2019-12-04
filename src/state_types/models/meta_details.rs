@@ -1,3 +1,4 @@
+use crate::constants::{META_RESOURCE_NAME, STREAM_RESOURCE_NAME};
 use crate::state_types::messages::{Action, ActionLoad, Internal, Msg};
 use crate::state_types::models::common::{
     resources_update, resources_update_with_vector_content, ResourceContent, ResourceLoadable,
@@ -8,9 +9,6 @@ use crate::state_types::{Effects, Environment, UpdateWithCtx};
 use crate::types::addons::{AggrRequest, ResourceRef};
 use crate::types::{MetaDetail, Stream};
 use serde_derive::Serialize;
-
-const META_RESOURCE_NAME: &str = "meta";
-const STREAM_RESOURCE_NAME: &str = "stream";
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize)]
 pub struct Selected {
