@@ -8,7 +8,7 @@ use std::convert::TryFrom;
 #[serde(tag = "type", content = "content")]
 pub enum ResourceError {
     EmptyContent,
-    UnexpectedResp,
+    UnexpectedResp(String),
     Other(String),
 }
 
@@ -41,7 +41,7 @@ pub fn resource_update<T, Env>(
     action: ResourceAction<T>,
 ) -> Effects
 where
-    T: TryFrom<ResourceResponse>,
+    T: TryFrom<ResourceResponse, Error = &'static str>,
     Env: Environment + 'static,
 {
     match action {
@@ -88,7 +88,7 @@ pub fn resource_update_with_vector_content<T, Env>(
     action: ResourceAction<Vec<T>>,
 ) -> Effects
 where
-    Vec<T>: TryFrom<ResourceResponse>,
+    Vec<T>: TryFrom<ResourceResponse, Error = &'static str>,
     Env: Environment + 'static,
 {
     match action {
@@ -127,7 +127,7 @@ pub fn resources_update<T, Env>(
     action: ResourcesAction<T>,
 ) -> Effects
 where
-    T: TryFrom<ResourceResponse>,
+    T: TryFrom<ResourceResponse, Error = &'static str>,
     Env: Environment + 'static,
 {
     match action {
@@ -199,7 +199,7 @@ pub fn resources_update_with_vector_content<T, Env>(
     action: ResourcesAction<Vec<T>>,
 ) -> Effects
 where
-    Vec<T>: TryFrom<ResourceResponse>,
+    Vec<T>: TryFrom<ResourceResponse, Error = &'static str>,
     Env: Environment + 'static,
 {
     match action {
@@ -235,12 +235,12 @@ fn resource_content_from_response<T>(
     response: &Result<ResourceResponse, EnvError>,
 ) -> ResourceContent<T>
 where
-    T: TryFrom<ResourceResponse>,
+    T: TryFrom<ResourceResponse, Error = &'static str>,
 {
     match response {
         Ok(response) => match T::try_from(response.to_owned()) {
             Ok(content) => ResourceContent::Ready(content),
-            Err(_) => ResourceContent::Err(ResourceError::UnexpectedResp),
+            Err(error) => ResourceContent::Err(ResourceError::UnexpectedResp(error.to_owned())),
         },
         Err(error) => ResourceContent::Err(ResourceError::Other(error.to_string())),
     }
@@ -251,7 +251,7 @@ fn resource_vector_content_from_response<T>(
     limit: Option<usize>,
 ) -> ResourceContent<Vec<T>>
 where
-    Vec<T>: TryFrom<ResourceResponse>,
+    Vec<T>: TryFrom<ResourceResponse, Error = &'static str>,
 {
     match response {
         Ok(response) => match <Vec<T>>::try_from(response.to_owned()) {
@@ -264,7 +264,7 @@ where
                     ResourceContent::Ready(content)
                 }
             }
-            Err(_) => ResourceContent::Err(ResourceError::UnexpectedResp),
+            Err(error) => ResourceContent::Err(ResourceError::UnexpectedResp(error.to_owned())),
         },
         Err(error) => ResourceContent::Err(ResourceError::Other(error.to_string())),
     }
