@@ -117,8 +117,8 @@ where
 
 pub enum ResourcesAction<'a, T> {
     ResourcesRequested {
+        aggr_request: &'a AggrRequest<'a>,
         addons: &'a [Descriptor],
-        request: &'a AggrRequest<'a>,
     },
     ResourcesReplaced {
         resources: Vec<ResourceLoadable<T>>,
@@ -140,9 +140,10 @@ where
 {
     match action {
         ResourcesAction::ResourcesRequested {
-            addons, request, ..
+            aggr_request,
+            addons,
         } => {
-            let requests = request
+            let requests = aggr_request
                 .plan(&addons)
                 .into_iter()
                 .map(|(_, request)| request)
