@@ -5,7 +5,7 @@ use serde::{Deserialize, Serialize};
 use std::panic;
 use stremio_core::state_types::messages::{Action, Msg};
 use stremio_core::state_types::models::{
-    CatalogFiltered, CatalogsWithExtra, Ctx, LibRecent, LibraryFiltered, MetaDetails,
+    CatalogFiltered, CatalogsWithExtra, ContinueWatching, Ctx, LibraryFiltered, MetaDetails,
     SelectablePriority, StreamingServerSettingsModel,
 };
 use stremio_core::state_types::{Environment, Runtime, UpdateWithCtx};
@@ -18,7 +18,7 @@ extern crate console_error_panic_hook;
 #[derive(Model, Serialize)]
 pub struct Model {
     ctx: Ctx<Env>,
-    recent: LibRecent,
+    continue_watching: ContinueWatching,
     board: CatalogsWithExtra,
     discover: CatalogFiltered<MetaPreview>,
     library: LibraryFiltered,
@@ -50,7 +50,7 @@ impl ContainerService {
         panic::set_hook(Box::new(console_error_panic_hook::hook));
         let app = Model {
             ctx: Default::default(),
-            recent: Default::default(),
+            continue_watching: Default::default(),
             board: Default::default(),
             discover: CatalogFiltered {
                 selectable: Default::default(),
