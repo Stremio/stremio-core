@@ -8,7 +8,7 @@ use std::convert::TryFrom;
 #[serde(tag = "type", content = "content")]
 pub enum ResourceError {
     EmptyContent,
-    UnexpectedResp(String),
+    UnexpectedResponse(String),
     Other(String),
 }
 
@@ -240,7 +240,7 @@ where
     match response {
         Ok(response) => match T::try_from(response.to_owned()) {
             Ok(content) => ResourceContent::Ready(content),
-            Err(error) => ResourceContent::Err(ResourceError::UnexpectedResp(error.to_owned())),
+            Err(error) => ResourceContent::Err(ResourceError::UnexpectedResponse(error.to_owned())),
         },
         Err(error) => ResourceContent::Err(ResourceError::Other(error.to_string())),
     }
@@ -264,7 +264,7 @@ where
                     ResourceContent::Ready(content)
                 }
             }
-            Err(error) => ResourceContent::Err(ResourceError::UnexpectedResp(error.to_owned())),
+            Err(error) => ResourceContent::Err(ResourceError::UnexpectedResponse(error.to_owned())),
         },
         Err(error) => ResourceContent::Err(ResourceError::Other(error.to_string())),
     }
