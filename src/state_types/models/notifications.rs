@@ -83,6 +83,7 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for Notifications {
                                     (
                                         addon_get::<Env>(addon_req.to_owned()),
                                         ResourceLoadable {
+                                            addon_name: Some(addon.manifest.name.to_owned()),
                                             request: addon_req,
                                             content: ResourceContent::Loading,
                                         },
