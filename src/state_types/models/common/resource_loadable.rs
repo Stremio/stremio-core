@@ -39,7 +39,7 @@ pub fn resource_update<T, Env>(
     action: ResourceAction<T>,
 ) -> Effects
 where
-    T: Clone + TryFrom<ResourceResponse>,
+    T: TryFrom<ResourceResponse>,
     Env: Environment + 'static,
 {
     match action {
@@ -90,7 +90,6 @@ pub fn resource_update_with_vector_content<T, Env>(
     action: ResourceAction<Vec<T>>,
 ) -> Effects
 where
-    T: Clone,
     Vec<T>: TryFrom<ResourceResponse>,
     Env: Environment + 'static,
 {
@@ -135,7 +134,7 @@ pub fn resources_update<T, Env>(
     action: ResourcesAction<T>,
 ) -> Effects
 where
-    T: Clone + TryFrom<ResourceResponse>,
+    T: TryFrom<ResourceResponse>,
     Env: Environment + 'static,
 {
     match action {
@@ -205,7 +204,6 @@ pub fn resources_update_with_vector_content<T, Env>(
     action: ResourcesAction<Vec<T>>,
 ) -> Effects
 where
-    T: Clone,
     Vec<T>: TryFrom<ResourceResponse>,
     Env: Environment + 'static,
 {
@@ -234,7 +232,7 @@ fn resource_content_from_response<T>(
     response: &Result<ResourceResponse, EnvError>,
 ) -> ResourceContent<T>
 where
-    T: Clone + TryFrom<ResourceResponse>,
+    T: TryFrom<ResourceResponse>,
 {
     match response {
         Ok(response) => match T::try_from(response.to_owned()) {
@@ -250,7 +248,6 @@ fn resource_vector_content_from_response<T>(
     limit: Option<usize>,
 ) -> ResourceContent<Vec<T>>
 where
-    T: Clone,
     Vec<T>: TryFrom<ResourceResponse>,
 {
     match response {
