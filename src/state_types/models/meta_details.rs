@@ -8,7 +8,6 @@ use crate::state_types::{Effects, Environment, UpdateWithCtx};
 use crate::types::addons::{AggrRequest, ResourceRef};
 use crate::types::{MetaDetail, Stream};
 use serde_derive::Serialize;
-use std::marker::PhantomData;
 
 const META_RESOURCE_NAME: &str = "meta";
 const STREAM_RESOURCE_NAME: &str = "stream";
@@ -45,13 +44,12 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for MetaDetails {
                 let meta_effects = resources_update::<_, Env>(
                     &mut self.meta_resources,
                     ResourcesAction::ResourcesRequested {
-                        addons: &ctx.content.addons,
-                        request: &AggrRequest::AllOfResource(ResourceRef::without_extra(
+                        aggr_request: &AggrRequest::AllOfResource(ResourceRef::without_extra(
                             META_RESOURCE_NAME,
                             type_name,
                             id,
                         )),
-                        env: PhantomData,
+                        addons: &ctx.content.addons,
                     },
                 );
                 let streams_effects = match video_id {
@@ -69,15 +67,14 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for MetaDetails {
                             resources_update_with_vector_content::<_, Env>(
                                 &mut self.streams_resources,
                                 ResourcesAction::ResourcesRequested {
-                                    addons: &ctx.content.addons,
-                                    request: &AggrRequest::AllOfResource(
+                                    aggr_request: &AggrRequest::AllOfResource(
                                         ResourceRef::without_extra(
                                             STREAM_RESOURCE_NAME,
                                             type_name,
                                             video_id,
                                         ),
                                     ),
-                                    env: PhantomData,
+                                    addons: &ctx.content.addons,
                                 },
                             )
                         }
@@ -194,17 +191,20 @@ fn streams_resource_from_meta_resources(
     meta_resources
         .iter()
         .find_map(|resource| match &resource.content {
-            ResourceContent::Ready(meta_detail) => Some((&resource.request, meta_detail)),
+            ResourceContent::Ready(meta_detail) => {
+                Some((&resource.request, &resource.addon_name, meta_detail))
+            }
             _ => None,
         })
-        .and_then(|(meta_request, meta_detail)| {
+        .and_then(|(meta_request, addon_name, meta_detail)| {
             meta_detail
                 .videos
                 .iter()
                 .find(|video| video.id.eq(video_id) && !video.streams.is_empty())
-                .map(|video| (meta_request, &video.streams))
+                .map(|video| (meta_request, addon_name, &video.streams))
         })
-        .map(|(meta_request, streams)| ResourceLoadable {
+        .map(|(meta_request, addon_name, streams)| ResourceLoadable {
+            addon_name: addon_name.to_owned(),
             request: meta_request.to_owned(),
             content: ResourceContent::Ready(streams.to_owned()),
         })
