@@ -379,7 +379,7 @@ mod tests {
         #[derive(Model, Debug, Default)]
         struct Model {
             ctx: Ctx<Env>,
-            lib_recent: LibRecent,
+            lib_recent: ContinueWatching,
             notifs: Notifications,
         }
         let (runtime, _) = Runtime::<Env, Model>::new(Model::default(), 1000);
@@ -402,7 +402,7 @@ mod tests {
         let first_lib = if let LibraryLoadable::Ready(l) = &model.ctx.library {
             assert!(!l.items.is_empty(), "library has items");
             // LibRecent is "continue watching"
-            assert!(!model.lib_recent.recent.is_empty(), "has recent items");
+            assert!(!model.lib_recent.lib_items.is_empty(), "has recent items");
             l.to_owned()
         } else {
             panic!("library must be Ready")
@@ -455,7 +455,7 @@ mod tests {
             assert!(model.ctx.content.addons.len() > 0, "has addons");
             if let LibraryLoadable::Ready(l) = &model.ctx.library {
                 assert!(l.items.is_empty(), "library must be empty");
-                assert!(model.lib_recent.recent.is_empty(), "is empty");
+                assert!(model.lib_recent.lib_items.is_empty(), "is empty");
             } else {
                 panic!("library must be Ready")
             }

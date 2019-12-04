@@ -6,11 +6,11 @@ pub use catalog_filtered::*;
 mod catalogs_with_extra;
 pub use catalogs_with_extra::*;
 
+mod continue_watching;
+pub use continue_watching::*;
+
 mod ctx;
 pub use ctx::*;
-
-mod lib_recent;
-pub use lib_recent::*;
 
 mod library_filtered;
 pub use library_filtered::*;
