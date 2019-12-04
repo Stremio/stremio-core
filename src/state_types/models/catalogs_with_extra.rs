@@ -24,13 +24,13 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for CatalogsWithExtra {
     fn update(&mut self, ctx: &Ctx<Env>, msg: &Msg) -> Effects {
         match msg {
             Msg::Action(Action::Load(ActionLoad::CatalogsWithExtra { extra })) => {
-                let extra = &validate_extra(extra);
+                let extra = validate_extra(extra);
                 let selected_effects =
-                    selected_update(&mut self.selected, SelectedAction::Select { extra });
+                    selected_update(&mut self.selected, SelectedAction::Select { extra: &extra });
                 let catalogs_effects = resources_update_with_vector_content::<_, Env>(
                     &mut self.catalog_resources,
                     ResourcesAction::ResourcesRequested {
-                        aggr_request: &AggrRequest::AllCatalogs { extra },
+                        aggr_request: &AggrRequest::AllCatalogs { extra: &extra },
                         addons: &ctx.content.addons,
                     },
                 );
