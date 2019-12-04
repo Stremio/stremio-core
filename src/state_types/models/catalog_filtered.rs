@@ -14,15 +14,14 @@ use crate::types::MetaPreview;
 use itertools::Itertools;
 use serde_derive::Serialize;
 use std::convert::TryFrom;
-use std::marker::PhantomData;
 
-pub trait ResourceAdapter {
-    fn resource() -> &'static str;
+pub trait CatalogResourceAdapter {
+    fn catalog_resource() -> &'static str;
     fn catalogs_from_manifest(manifest: &Manifest) -> &[ManifestCatalog];
 }
 
-impl ResourceAdapter for MetaPreview {
-    fn resource() -> &'static str {
+impl CatalogResourceAdapter for MetaPreview {
+    fn catalog_resource() -> &'static str {
         "catalog"
     }
     fn catalogs_from_manifest(manifest: &Manifest) -> &[ManifestCatalog] {
@@ -30,8 +29,8 @@ impl ResourceAdapter for MetaPreview {
     }
 }
 
-impl ResourceAdapter for DescriptorPreview {
-    fn resource() -> &'static str {
+impl CatalogResourceAdapter for DescriptorPreview {
+    fn catalog_resource() -> &'static str {
         "addon_catalog"
     }
     fn catalogs_from_manifest(manifest: &Manifest) -> &[ManifestCatalog] {
@@ -78,8 +77,8 @@ pub struct CatalogFiltered<T> {
 impl<Env, T> UpdateWithCtx<Ctx<Env>> for CatalogFiltered<T>
 where
     Env: Environment + 'static,
-    T: Clone + ResourceAdapter,
-    Vec<T>: TryFrom<ResourceResponse>,
+    T: CatalogResourceAdapter,
+    Vec<T>: TryFrom<ResourceResponse, Error = &'static str>,
 {
     fn update(&mut self, ctx: &Ctx<Env>, msg: &Msg) -> Effects {
         let selectable_update = match &self.selectable_priority {
@@ -102,7 +101,7 @@ where
                     &mut self.catalog_resource,
                     ResourceAction::ResourceRequested {
                         request: &request,
-                        env: PhantomData,
+                        addons: &ctx.content.addons,
                     },
                 );
                 let selectable_effects = match &self.catalog_resource {
@@ -113,7 +112,7 @@ where
                             addons: &ctx.content.addons,
                         },
                     ),
-                    None => Effects::none().unchanged(),
+                    _ => Effects::none().unchanged(),
                 };
                 selectable_effects.join(catalog_effects)
             }
@@ -134,7 +133,7 @@ where
                             addons: &ctx.content.addons,
                         },
                     ),
-                    None => Effects::none().unchanged(),
+                    _ => Effects::none().unchanged(),
                 };
                 catalog_effects.join(selectable_effects)
             }
@@ -163,7 +162,7 @@ enum SelectableAction<'a, T> {
     },
 }
 
-fn selectable_update_with_catalog_priority<T: ResourceAdapter>(
+fn selectable_update_with_catalog_priority<T: CatalogResourceAdapter>(
     _selectable: &mut Selectable,
     _action: SelectableAction<T>,
 ) -> Effects {
@@ -182,7 +181,7 @@ fn selectable_update_with_catalog_priority<T: ResourceAdapter>(
     Effects::none().unchanged()
 }
 
-fn selectable_update_with_type_priority<T: ResourceAdapter>(
+fn selectable_update_with_type_priority<T: CatalogResourceAdapter>(
     selectable: &mut Selectable,
     action: SelectableAction<T>,
 ) -> Effects {
@@ -213,7 +212,7 @@ fn selectable_update_with_type_priority<T: ResourceAdapter>(
                         pagination_from_requested_catalog(&requested_catalog, resource);
                     (selectable_extra, has_prev_page, has_next_page)
                 }
-                None => Default::default(),
+                _ => (vec![], false, false),
             };
             Selectable {
                 catalogs: selectable_catalogs,
@@ -246,7 +245,9 @@ fn selectable_update_with_type_priority<T: ResourceAdapter>(
     }
 }
 
-fn catalogs_from_addons<T: ResourceAdapter>(addons: &[Descriptor]) -> Vec<SelectableCatalog> {
+fn catalogs_from_addons<T: CatalogResourceAdapter>(
+    addons: &[Descriptor],
+) -> Vec<SelectableCatalog> {
     addons
         .iter()
         .flat_map(|addon| {
@@ -270,7 +271,7 @@ fn catalogs_from_addons<T: ResourceAdapter>(addons: &[Descriptor]) -> Vec<Select
                     let load_request = ResourceRequest {
                         base: addon.transport_url.to_owned(),
                         path: ResourceRef::with_extra(
-                            T::resource(),
+                            T::catalog_resource(),
                             &catalog.type_name,
                             &catalog.id,
                             &default_required_extra,
