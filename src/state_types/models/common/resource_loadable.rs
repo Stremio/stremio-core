@@ -14,7 +14,7 @@ pub enum ResourceError {
 
 pub type ResourceContent<T> = Loadable<T, ResourceError>;
 
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone, PartialEq, Serialize)]
 pub struct ResourceLoadable<T> {
     pub addon_name: Option<String>,
     pub request: ResourceRequest,
