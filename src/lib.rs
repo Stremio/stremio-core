@@ -97,7 +97,36 @@ impl ContainerService {
         Env::exec(effects);
     }
 
-    pub fn get_state(&self) -> JsValue {
-        JsValue::from_serde(&*self.runtime.app.read().unwrap()).unwrap()
+    pub fn get_state(&self, model_name: &JsValue) -> JsValue {
+        let model_name = model_name.as_string();
+        match model_name.as_ref().map(String::as_str) {
+            Some("ctx") => JsValue::from_serde(&(*self.runtime.app.read().unwrap()).ctx).unwrap(),
+            Some("continue_watching") => {
+                JsValue::from_serde(&(*self.runtime.app.read().unwrap()).continue_watching).unwrap()
+            }
+            Some("board") => {
+                JsValue::from_serde(&(*self.runtime.app.read().unwrap()).board).unwrap()
+            }
+            Some("discover") => {
+                JsValue::from_serde(&(*self.runtime.app.read().unwrap()).discover).unwrap()
+            }
+            Some("library") => {
+                JsValue::from_serde(&(*self.runtime.app.read().unwrap()).library).unwrap()
+            }
+            Some("search") => {
+                JsValue::from_serde(&(*self.runtime.app.read().unwrap()).search).unwrap()
+            }
+            Some("meta_details") => {
+                JsValue::from_serde(&(*self.runtime.app.read().unwrap()).meta_details).unwrap()
+            }
+            Some("addons") => {
+                JsValue::from_serde(&(*self.runtime.app.read().unwrap()).addons).unwrap()
+            }
+            Some("streaming_server_settings") => {
+                JsValue::from_serde(&(*self.runtime.app.read().unwrap()).streaming_server_settings)
+                    .unwrap()
+            }
+            _ => JsValue::from_serde(&*self.runtime.app.read().unwrap()).unwrap(),
+        }
     }
 }
