@@ -67,4 +67,5 @@ pub enum Action {
     Settings(ActionSettings),
     AddonOp(ActionAddon),
     UserOp(ActionUser),
+    Unload,
 }
