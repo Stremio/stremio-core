@@ -14,7 +14,7 @@ pub struct Selected {
     extra: Vec<ExtraProp>,
 }
 
-#[derive(Default, Debug, Clone, Serialize)]
+#[derive(Default, Debug, Clone, PartialEq, Serialize)]
 pub struct CatalogsWithExtra {
     pub selected: Option<Selected>,
     pub catalog_resources: Vec<ResourceLoadable<Vec<MetaPreview>>>,
@@ -35,6 +35,15 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for CatalogsWithExtra {
                     },
                 );
                 selected_effects.join(catalogs_effects)
+            }
+            Msg::Action(Action::Unload) => {
+                let next = CatalogsWithExtra::default();
+                if next.ne(&self) {
+                    *self = next;
+                    Effects::none()
+                } else {
+                    Effects::none().unchanged()
+                }
             }
             Msg::Internal(Internal::AddonResponse(request, response)) => {
                 resources_update_with_vector_content::<_, Env>(
