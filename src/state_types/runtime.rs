@@ -11,7 +11,7 @@ use std::sync::{Arc, RwLock};
 #[derive(Debug, Serialize)]
 #[serde(tag = "name", content = "args")]
 pub enum RuntimeEv {
-    NewModel,
+    NewState,
     Event(Event),
 }
 
@@ -45,7 +45,7 @@ impl<Env: Environment + 'static, M: Update + 'static> Runtime<Env, M> {
         {
             let mut tx = self.tx.clone();
             if fx.has_changed {
-                let _ = tx.try_send(RuntimeEv::NewModel);
+                let _ = tx.try_send(RuntimeEv::NewState);
             }
         }
         // Handle next effects
