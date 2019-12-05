@@ -8,7 +8,7 @@ use stremio_core::state_types::models::{
     CatalogFiltered, CatalogsWithExtra, ContinueWatching, Ctx, LibraryFiltered, MetaDetails,
     SelectablePriority, StreamingServerSettingsModel,
 };
-use stremio_core::state_types::{Environment, Runtime, UpdateWithCtx};
+use stremio_core::state_types::{Environment, Runtime, Update, UpdateWithCtx};
 use stremio_core::types::addons::DescriptorPreview;
 use stremio_core::types::MetaPreview;
 use stremio_derive::Model;
@@ -29,13 +29,17 @@ pub struct Model {
 }
 
 #[derive(Deserialize)]
-#[serde(tag = "model", content = "args")]
-pub enum WebAction {
-    Board(Action),
-    Discover(Action),
-    Search(Action),
-    Addons(Action),
-    All(Action),
+#[serde(rename_all = "snake_case")]
+pub enum ModelField {
+    Ctx,
+    ContinueWatching,
+    Board,
+    Discover,
+    Library,
+    Search,
+    MetaDetails,
+    Addons,
+    StreamingServerSettings,
 }
 
 #[wasm_bindgen]
@@ -75,58 +79,52 @@ impl StremioCoreWeb {
         StremioCoreWeb { runtime }
     }
 
-    pub fn dispatch(&self, action_js: &JsValue) {
-        let action: WebAction = action_js
-            .into_serde()
-            .expect("WebAction could not be deserialized");
-        let effects = match action {
-            WebAction::Board(action) => self
-                .runtime
-                .dispatch_with(|model| model.board.update(&model.ctx, &Msg::Action(action))),
-            WebAction::Discover(action) => self
-                .runtime
-                .dispatch_with(|model| model.discover.update(&model.ctx, &Msg::Action(action))),
-            WebAction::Search(action) => self
-                .runtime
-                .dispatch_with(|model| model.search.update(&model.ctx, &Msg::Action(action))),
-            WebAction::Addons(action) => self
-                .runtime
-                .dispatch_with(|model| model.addons.update(&model.ctx, &Msg::Action(action))),
-            WebAction::All(action) => self.runtime.dispatch(&Msg::Action(action)),
+    pub fn dispatch(&self, action: &JsValue, model_field: &JsValue) {
+        if let Ok(action) = action.into_serde::<Action>() {
+            let message = Msg::Action(action);
+            let effects = if let Ok(model_field) = model_field.into_serde::<ModelField>() {
+                self.runtime.dispatch_with(|model| match model_field {
+                    ModelField::Ctx => model.ctx.update(&message),
+                    ModelField::ContinueWatching => {
+                        model.continue_watching.update(&model.ctx, &message)
+                    }
+                    ModelField::Board => model.board.update(&model.ctx, &message),
+                    ModelField::Discover => model.discover.update(&model.ctx, &message),
+                    ModelField::Library => model.library.update(&model.ctx, &message),
+                    ModelField::Search => model.search.update(&model.ctx, &message),
+                    ModelField::MetaDetails => model.meta_details.update(&model.ctx, &message),
+                    ModelField::Addons => model.addons.update(&model.ctx, &message),
+                    ModelField::StreamingServerSettings => {
+                        model.streaming_server_settings.update(&model.ctx, &message)
+                    }
+                })
+            } else {
+                self.runtime.dispatch(&message)
+            };
+            Env::exec(effects);
         };
-        Env::exec(effects);
     }
 
-    pub fn get_state(&self, model_name: &JsValue) -> JsValue {
-        let model_name = model_name.as_string();
-        match model_name.as_ref().map(String::as_str) {
-            Some("ctx") => JsValue::from_serde(&(*self.runtime.app.read().unwrap()).ctx).unwrap(),
-            Some("continue_watching") => {
-                JsValue::from_serde(&(*self.runtime.app.read().unwrap()).continue_watching).unwrap()
+    pub fn get_state(&self, model_field: &JsValue) -> JsValue {
+        let model = &*self.runtime.app.read().unwrap();
+        if let Ok(model_field) = model_field.into_serde::<ModelField>() {
+            match model_field {
+                ModelField::Ctx => JsValue::from_serde(&model.ctx).unwrap(),
+                ModelField::ContinueWatching => {
+                    JsValue::from_serde(&model.continue_watching).unwrap()
+                }
+                ModelField::Board => JsValue::from_serde(&model.board).unwrap(),
+                ModelField::Discover => JsValue::from_serde(&model.discover).unwrap(),
+                ModelField::Library => JsValue::from_serde(&model.library).unwrap(),
+                ModelField::Search => JsValue::from_serde(&model.search).unwrap(),
+                ModelField::MetaDetails => JsValue::from_serde(&model.meta_details).unwrap(),
+                ModelField::Addons => JsValue::from_serde(&model.addons).unwrap(),
+                ModelField::StreamingServerSettings => {
+                    JsValue::from_serde(&model.streaming_server_settings).unwrap()
+                }
             }
-            Some("board") => {
-                JsValue::from_serde(&(*self.runtime.app.read().unwrap()).board).unwrap()
-            }
-            Some("discover") => {
-                JsValue::from_serde(&(*self.runtime.app.read().unwrap()).discover).unwrap()
-            }
-            Some("library") => {
-                JsValue::from_serde(&(*self.runtime.app.read().unwrap()).library).unwrap()
-            }
-            Some("search") => {
-                JsValue::from_serde(&(*self.runtime.app.read().unwrap()).search).unwrap()
-            }
-            Some("meta_details") => {
-                JsValue::from_serde(&(*self.runtime.app.read().unwrap()).meta_details).unwrap()
-            }
-            Some("addons") => {
-                JsValue::from_serde(&(*self.runtime.app.read().unwrap()).addons).unwrap()
-            }
-            Some("streaming_server_settings") => {
-                JsValue::from_serde(&(*self.runtime.app.read().unwrap()).streaming_server_settings)
-                    .unwrap()
-            }
-            _ => JsValue::from_serde(&*self.runtime.app.read().unwrap()).unwrap(),
+        } else {
+            JsValue::from_serde(model).unwrap()
         }
     }
 }
