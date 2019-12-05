@@ -1,13 +1,13 @@
 use crate::state_types::messages::action::ActionUser;
+use crate::state_types::EnvError;
 use crate::types::api::APIErr;
 use serde_derive::Serialize;
-use std::error::Error;
 
 #[derive(Debug, Clone, Serialize)]
 #[serde(tag = "err", content = "args")]
 pub enum CtxError {
     API(APIErr),
-    Env(String),
+    Env { message: String },
 }
 
 impl From<APIErr> for CtxError {
@@ -16,9 +16,11 @@ impl From<APIErr> for CtxError {
     }
 }
 
-impl From<Box<dyn Error>> for CtxError {
-    fn from(e: Box<dyn Error>) -> Self {
-        CtxError::Env(e.to_string())
+impl From<EnvError> for CtxError {
+    fn from(e: EnvError) -> Self {
+        CtxError::Env {
+            message: e.to_string(),
+        }
     }
 }
 
