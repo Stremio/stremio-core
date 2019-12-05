@@ -39,14 +39,14 @@ pub enum WebAction {
 }
 
 #[wasm_bindgen]
-pub struct ContainerService {
+pub struct StremioCoreWeb {
     runtime: Runtime<Env, Model>,
 }
 
 #[wasm_bindgen]
-impl ContainerService {
+impl StremioCoreWeb {
     #[wasm_bindgen(constructor)]
-    pub fn new(emit: js_sys::Function) -> ContainerService {
+    pub fn new(emit: js_sys::Function) -> StremioCoreWeb {
         panic::set_hook(Box::new(console_error_panic_hook::hook));
         let app = Model {
             ctx: Default::default(),
@@ -72,7 +72,7 @@ impl ContainerService {
             let _ = emit.call1(&JsValue::NULL, &JsValue::from_serde(&msg).unwrap());
             future::ok(())
         })));
-        ContainerService { runtime }
+        StremioCoreWeb { runtime }
     }
 
     pub fn dispatch(&self, action_js: &JsValue) {
