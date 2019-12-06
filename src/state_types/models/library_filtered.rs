@@ -42,15 +42,16 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for LibraryFiltered {
                 let lib_items_effects = lib_items_update(
                     &mut self.lib_items,
                     LibItemsAction::Select {
-                        library: &ctx.library,
                         type_name,
+                        library: &ctx.library,
                     },
                 );
                 selected_effects.join(lib_items_effects)
             }
-            Msg::Event(Event::CtxChanged)
-            | Msg::Event(Event::LibPersisted)
-            | Msg::Internal(Internal::LibLoaded(_)) => {
+            Msg::Internal(Internal::CtxLoaded(_))
+            | Msg::Event(Event::CtxChanged)
+            | Msg::Internal(Internal::LibLoaded(_))
+            | Msg::Event(Event::LibPersisted) => {
                 let library_state_effects = library_state_update(
                     &mut self.library_state,
                     LibraryStateAction::LibraryChanged {
@@ -152,8 +153,8 @@ enum LibItemsAction<'a> {
         type_name: &'a Option<String>,
     },
     Select {
-        library: &'a LibraryLoadable,
         type_name: &'a String,
+        library: &'a LibraryLoadable,
     },
 }
 
