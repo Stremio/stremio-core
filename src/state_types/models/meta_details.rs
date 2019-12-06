@@ -189,20 +189,17 @@ fn streams_resource_from_meta_resources(
     meta_resources
         .iter()
         .find_map(|resource| match &resource.content {
-            ResourceContent::Ready(meta_detail) => {
-                Some((&resource.addon_name, &resource.request, meta_detail))
-            }
+            ResourceContent::Ready(meta_detail) => Some((&resource.request, meta_detail)),
             _ => None,
         })
-        .and_then(|(addon_name, meta_request, meta_detail)| {
+        .and_then(|(meta_request, meta_detail)| {
             meta_detail
                 .videos
                 .iter()
                 .find(|video| video.id.eq(video_id) && !video.streams.is_empty())
-                .map(|video| (addon_name, meta_request, &video.streams))
+                .map(|video| (meta_request, &video.streams))
         })
-        .map(|(addon_name, meta_request, streams)| ResourceLoadable {
-            addon_name: addon_name.to_owned(),
+        .map(|(meta_request, streams)| ResourceLoadable {
             request: meta_request.to_owned(),
             content: ResourceContent::Ready(streams.to_owned()),
         })

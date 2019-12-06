@@ -99,10 +99,7 @@ where
                 };
                 let catalog_effects = resource_update_with_vector_content::<_, Env>(
                     &mut self.catalog_resource,
-                    ResourceAction::ResourceRequested {
-                        request: &request,
-                        addons: &ctx.content.addons,
-                    },
+                    ResourceAction::ResourceRequested { request: &request },
                 );
                 let selectable_effects = match &self.catalog_resource {
                     Some(catalog_resource) => selectable_update(

@@ -16,7 +16,6 @@ pub type ResourceContent<T> = Loadable<T, ResourceError>;
 
 #[derive(Debug, Clone, PartialEq, Serialize)]
 pub struct ResourceLoadable<T> {
-    pub addon_name: Option<String>,
     pub request: ResourceRequest,
     pub content: ResourceContent<T>,
 }
@@ -24,7 +23,6 @@ pub struct ResourceLoadable<T> {
 pub enum ResourceAction<'a, T> {
     ResourceRequested {
         request: &'a ResourceRequest,
-        addons: &'a [Descriptor],
     },
     ResourceReplaced {
         resource: Option<ResourceLoadable<T>>,
@@ -45,10 +43,9 @@ where
     Env: Environment + 'static,
 {
     match action {
-        ResourceAction::ResourceRequested { request, addons } => {
+        ResourceAction::ResourceRequested { request } => {
             if Some(request).ne(&resource.as_ref().map(|resource| &resource.request)) {
                 *resource = Some(ResourceLoadable {
-                    addon_name: addon_name_for_transport_url(addons, &request.base),
                     request: request.to_owned(),
                     content: ResourceContent::Loading,
                 });
@@ -149,7 +146,6 @@ where
                     .map(|request| {
                         (
                             ResourceLoadable {
-                                addon_name: addon_name_for_transport_url(addons, &request.base),
                                 request: request.to_owned(),
                                 content: ResourceContent::Loading,
                             },
@@ -222,13 +218,6 @@ where
         }
         _ => resources_update::<_, Env>(resources, action),
     }
-}
-
-fn addon_name_for_transport_url(addons: &[Descriptor], transport_url: &str) -> Option<String> {
-    addons
-        .iter()
-        .find(|addon| addon.transport_url.eq(transport_url))
-        .map(|addon| addon.manifest.name.to_owned())
 }
 
 fn resource_content_from_response<T>(
