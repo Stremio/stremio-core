@@ -79,7 +79,7 @@ impl StremioCoreWeb {
         StremioCoreWeb { runtime }
     }
 
-    pub fn dispatch(&self, action: &JsValue, model_field: &JsValue) {
+    pub fn dispatch(&self, action: &JsValue, model_field: &JsValue) -> JsValue {
         if let Ok(action) = action.into_serde::<Action>() {
             let message = Msg::Action(action);
             let effects = if let Ok(model_field) = model_field.into_serde::<ModelField>() {
@@ -102,7 +102,10 @@ impl StremioCoreWeb {
                 self.runtime.dispatch(&message)
             };
             Env::exec(effects);
-        };
+            JsValue::from(true)
+        } else {
+            JsValue::from(false)
+        }
     }
 
     pub fn get_state(&self, model_field: &JsValue) -> JsValue {
