@@ -337,7 +337,7 @@ fn pagination_from_requested_catalog<T>(
     let last_page_requested = match &resource.content {
         ResourceContent::Ready(content) => content.len() < CATALOG_PAGE_SIZE,
         ResourceContent::Err(_) => true,
-        ResourceContent::Loading => false,
+        ResourceContent::Loading => true,
     };
     let has_prev_page = skip_supported && !first_page_requested;
     let has_next_page = skip_supported && !last_page_requested;
