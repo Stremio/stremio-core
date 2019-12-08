@@ -38,8 +38,8 @@ pub struct Selected {
 #[derive(Default, Debug, Clone, Serialize)]
 pub struct LibraryFiltered {
     pub library_state: LibraryState,
-    pub selected: Option<Selected>,
     pub type_names: Vec<String>,
+    pub selected: Option<Selected>,
     pub lib_items: Vec<LibItem>,
 }
 
@@ -64,6 +64,12 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for LibraryFiltered {
                         library: &ctx.library,
                     },
                 );
+                selected_effects.join(lib_items_effects)
+            }
+            Msg::Action(Action::Unload) => {
+                let selected_effects = selected_update(&mut self.selected, SelectedAction::Clear);
+                let lib_items_effects =
+                    lib_items_update(&mut self.lib_items, LibItemsAction::Clear);
                 selected_effects.join(lib_items_effects)
             }
             Msg::Internal(Internal::CtxLoaded(_))
@@ -122,43 +128,6 @@ fn library_state_update(library_state: &mut LibraryState, action: LibraryStateAc
     }
 }
 
-enum SelectedAction<'a> {
-    Select {
-        type_name: &'a String,
-        sort_prop: &'a Option<String>,
-    },
-}
-
-fn selected_update(selected: &mut Option<Selected>, action: SelectedAction) -> Effects {
-    let next_selected = match action {
-        SelectedAction::Select {
-            type_name,
-            sort_prop,
-        } => {
-            let type_name = type_name.to_owned();
-            let sort_prop = match sort_prop {
-                Some(sort_prop) => {
-                    match serde_json::from_str(format!("\"{}\"", sort_prop).as_ref()) {
-                        Ok(sort_prop) => sort_prop,
-                        _ => SortProp::CTime,
-                    }
-                }
-                _ => SortProp::CTime,
-            };
-            Some(Selected {
-                type_name,
-                sort_prop,
-            })
-        }
-    };
-    if next_selected.ne(selected) {
-        *selected = next_selected;
-        Effects::none()
-    } else {
-        Effects::none().unchanged()
-    }
-}
-
 enum TypeNamesAction<'a> {
     LibraryChanged { library: &'a LibraryLoadable },
 }
@@ -184,11 +153,51 @@ fn type_names_update(type_names: &mut Vec<String>, action: TypeNamesAction) -> E
     }
 }
 
+enum SelectedAction<'a> {
+    Select {
+        type_name: &'a String,
+        sort_prop: &'a Option<String>,
+    },
+    Clear,
+}
+
+fn selected_update(selected: &mut Option<Selected>, action: SelectedAction) -> Effects {
+    let next_selected = match action {
+        SelectedAction::Select {
+            type_name,
+            sort_prop,
+        } => {
+            let type_name = type_name.to_owned();
+            let sort_prop = match sort_prop {
+                Some(sort_prop) => {
+                    match serde_json::from_str(format!("\"{}\"", sort_prop).as_ref()) {
+                        Ok(sort_prop) => sort_prop,
+                        _ => SortProp::CTime,
+                    }
+                }
+                _ => SortProp::CTime,
+            };
+            Some(Selected {
+                type_name,
+                sort_prop,
+            })
+        }
+        SelectedAction::Clear => None,
+    };
+    if next_selected.ne(selected) {
+        *selected = next_selected;
+        Effects::none()
+    } else {
+        Effects::none().unchanged()
+    }
+}
+
 enum LibItemsAction<'a> {
     Select {
         selected: &'a Option<Selected>,
         library: &'a LibraryLoadable,
     },
+    Clear,
     LibraryChanged {
         library: &'a LibraryLoadable,
         selected: &'a Option<Selected>,
