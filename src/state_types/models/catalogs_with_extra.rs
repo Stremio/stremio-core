@@ -37,13 +37,12 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for CatalogsWithExtra {
                 selected_effects.join(catalogs_effects)
             }
             Msg::Action(Action::Unload) => {
-                let next = CatalogsWithExtra::default();
-                if next.ne(&self) {
-                    *self = next;
-                    Effects::none()
-                } else {
-                    Effects::none().unchanged()
-                }
+                let selected_effects = selected_update(&mut self.selected, SelectedAction::Clear);
+                let catalogs_effects = resources_update_with_vector_content::<_, Env>(
+                    &mut self.catalog_resources,
+                    ResourcesAction::ResourcesReplaced { resources: vec![] },
+                );
+                selected_effects.join(catalogs_effects)
             }
             Msg::Internal(Internal::AddonResponse(request, response)) => {
                 resources_update_with_vector_content::<_, Env>(
@@ -77,6 +76,7 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for CatalogsWithExtra {
 
 enum SelectedAction<'a> {
     Select { extra: &'a [ExtraProp] },
+    Clear,
 }
 
 fn selected_update(selected: &mut Option<Selected>, action: SelectedAction) -> Effects {
@@ -84,6 +84,7 @@ fn selected_update(selected: &mut Option<Selected>, action: SelectedAction) -> E
         SelectedAction::Select { extra } => Some(Selected {
             extra: extra.to_owned(),
         }),
+        SelectedAction::Clear => None,
     };
     if next_selected.ne(selected) {
         *selected = next_selected;
