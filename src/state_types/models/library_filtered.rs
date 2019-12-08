@@ -137,10 +137,12 @@ fn selected_update(selected: &mut Option<Selected>, action: SelectedAction) -> E
         } => {
             let type_name = type_name.to_owned();
             let sort_prop = match sort_prop {
-                Some(sort_prop) => match serde_json::from_str(sort_prop) {
-                    Ok(sort_prop) => sort_prop,
-                    _ => SortProp::CTime,
-                },
+                Some(sort_prop) => {
+                    match serde_json::from_str(format!("\"{}\"", sort_prop).as_ref()) {
+                        Ok(sort_prop) => sort_prop,
+                        _ => SortProp::CTime,
+                    }
+                }
                 _ => SortProp::CTime,
             };
             Some(Selected {
