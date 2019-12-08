@@ -210,7 +210,7 @@ fn lib_items_update(lib_items: &mut Vec<LibItem>, action: LibItemsAction) -> Eff
             .filter(|lib_item| !lib_item.removed && lib_item.type_name.eq(&selected.type_name))
             .sorted_by(|a, b| match &selected.sort_prop {
                 SortProp::Year => b.year.cmp(&a.year),
-                SortProp::Name => b.name.cmp(&a.name),
+                SortProp::Name => a.name.cmp(&b.name),
                 SortProp::CTime => b.ctime.cmp(&a.ctime),
             })
             .cloned()
