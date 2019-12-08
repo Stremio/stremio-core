@@ -168,8 +168,8 @@ fn type_names_update(type_names: &mut Vec<String>, action: TypeNamesAction) -> E
         } => bucket
             .items
             .values()
-            .filter(|x| !x.removed)
-            .map(|x| x.type_name.to_owned())
+            .filter(|lib_item| !lib_item.removed)
+            .map(|lib_item| lib_item.type_name.to_owned())
             .unique()
             .collect(),
         _ => vec![],
@@ -205,7 +205,7 @@ fn lib_items_update(lib_items: &mut Vec<LibItem>, action: LibItemsAction) -> Eff
         } => bucket
             .items
             .values()
-            .filter(|item| !item.removed && item.type_name.eq(&selected.type_name))
+            .filter(|lib_item| !lib_item.removed && lib_item.type_name.eq(&selected.type_name))
             .sorted_by(|a, b| match &selected.sort_prop {
                 SortProp::Year => b.year.cmp(&a.year),
                 SortProp::Name => b.name.cmp(&a.name),
