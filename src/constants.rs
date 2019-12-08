@@ -1,5 +1,5 @@
-pub const SKIP: &str = "skip";
-pub const SEARCH: &str = "search";
+pub const SKIP_EXTRA_NAME: &str = "skip";
+pub const SEARCH_EXTRA_NAME: &str = "search";
 pub const META_RESOURCE_NAME: &str = "meta";
 pub const STREAM_RESOURCE_NAME: &str = "stream";
 pub const CATALOG_PAGE_SIZE: usize = 100;

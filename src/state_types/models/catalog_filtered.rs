@@ -1,4 +1,4 @@
-use crate::constants::{CATALOG_PAGE_SIZE, SKIP};
+use crate::constants::{CATALOG_PAGE_SIZE, SKIP_EXTRA_NAME};
 use crate::state_types::messages::{Action, ActionLoad, Event, Internal, Msg};
 use crate::state_types::models::common::{
     resource_update_with_vector_content, validate_extra, ResourceAction, ResourceContent,
@@ -326,11 +326,11 @@ fn pagination_from_requested_catalog<T>(
     catalog: &ManifestCatalog,
     resource: &ResourceLoadable<Vec<T>>,
 ) -> (bool, bool) {
-    let skip_supported = catalog.extra_iter().any(|extra| extra.name.eq(SKIP));
+    let skip_supported = catalog.extra_iter().any(|extra| extra.name.eq(SKIP_EXTRA_NAME));
     let first_page_requested = resource
         .request
         .path
-        .get_extra_first_val(SKIP)
+        .get_extra_first_val(SKIP_EXTRA_NAME)
         .and_then(|value| value.parse::<u32>().ok())
         .map(|skip| skip.eq(&0))
         .unwrap_or(true);
