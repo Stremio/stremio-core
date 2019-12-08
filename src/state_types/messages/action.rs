@@ -13,6 +13,7 @@ pub enum ActionLoad {
     CatalogFiltered(ResourceRequest),
     LibraryFiltered {
         type_name: String,
+        sort_prop: Option<String>,
     },
     MetaDetails {
         type_name: String,
