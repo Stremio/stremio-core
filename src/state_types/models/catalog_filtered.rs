@@ -113,6 +113,10 @@ where
                 };
                 selectable_effects.join(catalog_effects)
             }
+            Msg::Action(Action::Unload) => resource_update_with_vector_content::<_, Env>(
+                &mut self.catalog_resource,
+                ResourceAction::ResourceReplaced { resource: None },
+            ),
             Msg::Internal(Internal::AddonResponse(request, response)) => {
                 let catalog_effects = resource_update_with_vector_content::<_, Env>(
                     &mut self.catalog_resource,
@@ -326,7 +330,9 @@ fn pagination_from_requested_catalog<T>(
     catalog: &ManifestCatalog,
     resource: &ResourceLoadable<Vec<T>>,
 ) -> (bool, bool) {
-    let skip_supported = catalog.extra_iter().any(|extra| extra.name.eq(SKIP_EXTRA_NAME));
+    let skip_supported = catalog
+        .extra_iter()
+        .any(|extra| extra.name.eq(SKIP_EXTRA_NAME));
     let first_page_requested = resource
         .request
         .path
