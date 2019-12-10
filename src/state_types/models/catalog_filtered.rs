@@ -1,4 +1,4 @@
-use crate::constants::{CATALOG_PAGE_SIZE, SKIP_EXTRA_NAME};
+use crate::constants::{META_CATALOG_PAGE_SIZE, SKIP_EXTRA_NAME};
 use crate::state_types::messages::{Action, ActionLoad, Event, Internal, Msg};
 use crate::state_types::models::common::{
     resource_update_with_vector_content, validate_extra, ResourceAction, ResourceContent,
@@ -18,7 +18,7 @@ use std::convert::TryFrom;
 pub trait CatalogResourceAdapter {
     fn catalog_resource() -> &'static str;
     fn catalogs_from_manifest(manifest: &Manifest) -> &[ManifestCatalog];
-    fn catalog_limit() -> Option<usize>;
+    fn catalog_page_size() -> Option<usize>;
 }
 
 impl CatalogResourceAdapter for MetaPreview {
@@ -28,8 +28,8 @@ impl CatalogResourceAdapter for MetaPreview {
     fn catalogs_from_manifest(manifest: &Manifest) -> &[ManifestCatalog] {
         &manifest.catalogs
     }
-    fn catalog_limit() -> Option<usize> {
-        Some(CATALOG_PAGE_SIZE)
+    fn catalog_page_size() -> Option<usize> {
+        Some(META_CATALOG_PAGE_SIZE)
     }
 }
 
@@ -40,7 +40,7 @@ impl CatalogResourceAdapter for DescriptorPreview {
     fn catalogs_from_manifest(manifest: &Manifest) -> &[ManifestCatalog] {
         &manifest.addon_catalogs
     }
-    fn catalog_limit() -> Option<usize> {
+    fn catalog_page_size() -> Option<usize> {
         None
     }
 }
@@ -90,7 +90,7 @@ where
     fn update(&mut self, ctx: &Ctx<Env>, msg: &Msg) -> Effects {
         match msg {
             Msg::Action(Action::Load(ActionLoad::CatalogFiltered(request))) => {
-                let extra = validate_extra(&request.path.extra);
+                let extra = validate_extra(&request.path.extra, T::catalog_page_size());
                 let request = ResourceRequest {
                     base: request.base.to_owned(),
                     path: ResourceRef {
@@ -127,7 +127,7 @@ where
                     ResourceAction::ResourceResponseReceived {
                         request,
                         response,
-                        limit: T::catalog_limit(),
+                        limit: T::catalog_page_size(),
                     },
                 );
                 let selectable_effects = match &self.catalog_resource {
@@ -315,8 +315,8 @@ fn selectable_update<T: CatalogResourceAdapter>(
                         .map(|skip| skip.eq(&0))
                         .unwrap_or(true);
                     let last_page_requested = match &resource.content {
-                        ResourceContent::Ready(content) => match T::catalog_limit() {
-                            Some(catalog_limit) => content.len() < catalog_limit,
+                        ResourceContent::Ready(content) => match T::catalog_page_size() {
+                            Some(catalog_page_size) => content.len() < catalog_page_size,
                             None => true,
                         },
                         ResourceContent::Err(_) => true,
