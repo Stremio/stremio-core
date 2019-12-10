@@ -1,4 +1,4 @@
-use crate::model::{Model, ModelFieldName};
+use crate::app_model::{AppModel, ModelFieldName};
 use env_web::Env;
 use futures::future;
 use futures::stream::Stream;
@@ -11,7 +11,7 @@ extern crate console_error_panic_hook;
 
 #[wasm_bindgen]
 pub struct StremioCoreWeb {
-    runtime: Runtime<Env, Model>,
+    runtime: Runtime<Env, AppModel>,
 }
 
 #[wasm_bindgen]
@@ -19,7 +19,7 @@ impl StremioCoreWeb {
     #[wasm_bindgen(constructor)]
     pub fn new(emit: js_sys::Function) -> StremioCoreWeb {
         panic::set_hook(Box::new(console_error_panic_hook::hook));
-        let app = Model {
+        let app = AppModel {
             ctx: Default::default(),
             continue_watching: Default::default(),
             board: Default::default(),
@@ -38,7 +38,7 @@ impl StremioCoreWeb {
             },
             streaming_server_settings: Default::default(),
         };
-        let (runtime, rx) = Runtime::<Env, Model>::new(app, 1000);
+        let (runtime, rx) = Runtime::<Env, AppModel>::new(app, 1000);
         Env::exec(Box::new(rx.for_each(move |msg| {
             let _ = emit.call1(&JsValue::NULL, &JsValue::from_serde(&msg).unwrap());
             future::ok(())

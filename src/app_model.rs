@@ -1,3 +1,4 @@
+use crate::models::InstalledAddons;
 use env_web::Env;
 use serde::{Deserialize, Serialize};
 use stremio_core::state_types::models::{
@@ -9,7 +10,7 @@ use stremio_core::types::MetaPreview;
 use stremio_derive::Model;
 
 #[derive(Model, Serialize)]
-pub struct Model {
+pub struct AppModel {
     pub ctx: Ctx<Env>,
     pub continue_watching: ContinueWatching,
     pub board: CatalogsWithExtra,
@@ -19,6 +20,7 @@ pub struct Model {
     pub meta_details: MetaDetails,
     pub addons: CatalogFiltered<DescriptorPreview>,
     pub streaming_server_settings: StreamingServerSettingsModel,
+    pub installed_addons: InstalledAddons,
 }
 
 #[derive(Deserialize)]
