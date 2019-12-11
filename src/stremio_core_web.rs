@@ -37,6 +37,8 @@ impl StremioCoreWeb {
                 selectable_priority: SelectablePriority::Catalog,
             },
             streaming_server_settings: Default::default(),
+            installed_addons: Default::default(),
+            library_items: Default::default(),
         };
         let (runtime, rx) = Runtime::<Env, AppModel>::new(app, 1000);
         Env::exec(Box::new(rx.for_each(move |msg| {

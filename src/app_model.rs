@@ -1,4 +1,4 @@
-use crate::models::InstalledAddons;
+use crate::models::{InstalledAddons, LibraryItems};
 use env_web::Env;
 use serde::{Deserialize, Serialize};
 use stremio_core::state_types::models::{
@@ -21,6 +21,7 @@ pub struct AppModel {
     pub addons: CatalogFiltered<DescriptorPreview>,
     pub streaming_server_settings: StreamingServerSettingsModel,
     pub installed_addons: InstalledAddons,
+    pub library_items: LibraryItems,
 }
 
 #[derive(Deserialize)]
