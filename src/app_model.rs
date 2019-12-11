@@ -36,4 +36,6 @@ pub enum ModelFieldName {
     MetaDetails,
     Addons,
     StreamingServerSettings,
+    InstalledAddons,
+    LibraryItems,
 }

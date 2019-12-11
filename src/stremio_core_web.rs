@@ -66,6 +66,12 @@ impl StremioCoreWeb {
                     ModelFieldName::StreamingServerSettings => {
                         model.streaming_server_settings.update(&model.ctx, &message)
                     }
+                    ModelFieldName::InstalledAddons => {
+                        model.installed_addons.update(&model.ctx, &message)
+                    }
+                    ModelFieldName::LibraryItems => {
+                        model.library_items.update(&model.ctx, &message)
+                    }
                 })
             } else {
                 self.runtime.dispatch(&message)
@@ -94,6 +100,10 @@ impl StremioCoreWeb {
                 ModelFieldName::StreamingServerSettings => {
                     JsValue::from_serde(&model.streaming_server_settings).unwrap()
                 }
+                ModelFieldName::InstalledAddons => {
+                    JsValue::from_serde(&model.installed_addons).unwrap()
+                }
+                ModelFieldName::LibraryItems => JsValue::from_serde(&model.library_items).unwrap(),
             }
         } else {
             JsValue::from_serde(model).unwrap()
