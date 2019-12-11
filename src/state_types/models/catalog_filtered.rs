@@ -16,13 +16,13 @@ use serde_derive::Serialize;
 use std::convert::TryFrom;
 
 pub trait CatalogResourceAdapter {
-    fn catalog_resource() -> &'static str;
+    fn resource_name() -> &'static str;
     fn catalogs_from_manifest(manifest: &Manifest) -> &[ManifestCatalog];
     fn catalog_page_size() -> Option<usize>;
 }
 
 impl CatalogResourceAdapter for MetaPreview {
-    fn catalog_resource() -> &'static str {
+    fn resource_name() -> &'static str {
         "catalog"
     }
     fn catalogs_from_manifest(manifest: &Manifest) -> &[ManifestCatalog] {
@@ -34,7 +34,7 @@ impl CatalogResourceAdapter for MetaPreview {
 }
 
 impl CatalogResourceAdapter for DescriptorPreview {
-    fn catalog_resource() -> &'static str {
+    fn resource_name() -> &'static str {
         "addon_catalog"
     }
     fn catalogs_from_manifest(manifest: &Manifest) -> &[ManifestCatalog] {
@@ -217,7 +217,7 @@ fn selectable_update<T: CatalogResourceAdapter>(
                     load_request: ResourceRequest {
                         base: addon.transport_url.to_owned(),
                         path: ResourceRef::with_extra(
-                            T::catalog_resource(),
+                            T::resource_name(),
                             &catalog.type_name,
                             &catalog.id,
                             &default_required_extra,
