@@ -114,14 +114,7 @@ impl LibraryLoadable {
                                 }
                             }
                             ActionUser::AddToLibrary { meta_item, now } => {
-                                let ctime = match lib_bucket.items.get(&meta_item.id) {
-                                    Some(lib_item) => match &lib_item.ctime {
-                                        Some(ctime) => ctime,
-                                        _ => now,
-                                    },
-                                    _ => now,
-                                };
-                                let lib_item = LibItem {
+                                let mut next_lib_item = LibItem {
                                     id: meta_item.id.to_owned(),
                                     type_name: meta_item.type_name.to_owned(),
                                     name: meta_item.name.to_owned(),
@@ -136,15 +129,23 @@ impl LibraryLoadable {
                                     } else {
                                         None
                                     },
-                                    ctime: Some(ctime.to_owned()),
+                                    ctime: Some(now.to_owned()),
                                     mtime: now.to_owned(),
                                     removed: false,
                                     temp: false,
                                     state: LibItemState::default(),
                                 };
+                                if let Some(lib_item) = lib_bucket.items.get(&meta_item.id) {
+                                    next_lib_item.state = lib_item.state.to_owned();
+                                    if let Some(ctime) = lib_item.ctime {
+                                        next_lib_item.ctime = Some(ctime);
+                                    };
+                                };
                                 self.update::<Env>(
                                     &content,
-                                    &Msg::Action(Action::UserOp(ActionUser::LibUpdate(lib_item))),
+                                    &Msg::Action(Action::UserOp(ActionUser::LibUpdate(
+                                        next_lib_item,
+                                    ))),
                                 )
                             }
                             ActionUser::RemoveFromLibrary { id, now } => {
