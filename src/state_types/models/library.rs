@@ -114,32 +114,34 @@ impl LibraryLoadable {
                                 }
                             }
                             ActionUser::AddToLibrary { meta_item, now } => {
-                                let mut lib_item = match lib_bucket.items.get(&meta_item.id) {
-                                    Some(lib_item) => lib_item.to_owned(),
-                                    None => LibItem {
-                                        id: meta_item.id.to_owned(),
-                                        type_name: meta_item.type_name.to_owned(),
-                                        name: meta_item.name.to_owned(),
-                                        poster: meta_item.poster.to_owned(),
-                                        poster_shape: meta_item.poster_shape.to_owned(),
-                                        logo: meta_item.logo.to_owned(),
-                                        background: None,
-                                        year: if let Some(released) = &meta_item.released {
-                                            Some(released.year().to_string())
-                                        } else if let Some(release_info) = &meta_item.release_info {
-                                            Some(release_info.to_owned())
-                                        } else {
-                                            None
-                                        },
-                                        ctime: Some(now.to_owned()),
-                                        mtime: now.to_owned(),
-                                        removed: false,
-                                        temp: false,
-                                        state: LibItemState::default(),
+                                let ctime = match lib_bucket.items.get(&meta_item.id) {
+                                    Some(lib_item) => match &lib_item.ctime {
+                                        Some(ctime) => ctime,
+                                        _ => now,
                                     },
+                                    _ => now,
                                 };
-                                lib_item.removed = false;
-                                lib_item.mtime = now.to_owned();
+                                let lib_item = LibItem {
+                                    id: meta_item.id.to_owned(),
+                                    type_name: meta_item.type_name.to_owned(),
+                                    name: meta_item.name.to_owned(),
+                                    poster: meta_item.poster.to_owned(),
+                                    poster_shape: meta_item.poster_shape.to_owned(),
+                                    logo: meta_item.logo.to_owned(),
+                                    background: None,
+                                    year: if let Some(released) = &meta_item.released {
+                                        Some(released.year().to_string())
+                                    } else if let Some(release_info) = &meta_item.release_info {
+                                        Some(release_info.to_owned())
+                                    } else {
+                                        None
+                                    },
+                                    ctime: Some(ctime.to_owned()),
+                                    mtime: now.to_owned(),
+                                    removed: false,
+                                    temp: false,
+                                    state: LibItemState::default(),
+                                };
                                 self.update::<Env>(
                                     &content,
                                     &Msg::Action(Action::UserOp(ActionUser::LibUpdate(lib_item))),
