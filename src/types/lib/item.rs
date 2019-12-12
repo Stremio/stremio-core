@@ -12,7 +12,7 @@ pub struct LibItemModified(
     #[serde(with = "ts_milliseconds")] pub DateTime<Utc>,
 );
 
-#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq, Ord, PartialOrd)]
+#[derive(Serialize, Deserialize, Debug, Default, Clone, PartialEq, Eq, Ord, PartialOrd)]
 #[serde(rename_all = "camelCase")]
 pub struct LibItemState {
     #[serde(deserialize_with = "empty_string_as_none")]

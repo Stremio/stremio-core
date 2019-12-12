@@ -1,7 +1,8 @@
 use crate::state_types::models::{Settings, StreamingServerSettings};
 use crate::types::addons::{Descriptor, ExtraProp, ResourceRequest, TransportUrl};
 use crate::types::api::GDPRConsent;
-use crate::types::LibItem;
+use crate::types::{LibItem, MetaPreview};
+use chrono::{DateTime, Utc};
 use serde_derive::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, PartialEq, Deserialize)]
@@ -57,6 +58,14 @@ pub enum ActionUser {
     PushAddons,
     LibSync,
     LibUpdate(LibItem),
+    AddToLibrary {
+        meta_item: MetaPreview,
+        now: DateTime<Utc>,
+    },
+    RemoveFromLibrary {
+        id: String,
+        now: DateTime<Utc>,
+    },
     // @TODO consider PullUser, PushUser?
 }
 
