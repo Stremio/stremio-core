@@ -84,6 +84,18 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for MetaDetails {
                 };
                 selected_effects.join(meta_effects).join(streams_effects)
             }
+            Msg::Action(Action::Unload) => {
+                let selected_effects = selected_update(&mut self.selected, SelectedAction::Clear);
+                let meta_effects = resources_update::<_, Env>(
+                    &mut self.meta_resources,
+                    ResourcesAction::ResourcesReplaced { resources: vec![] },
+                );
+                let streams_effects = resources_update::<_, Env>(
+                    &mut self.streams_resources,
+                    ResourcesAction::ResourcesReplaced { resources: vec![] },
+                );
+                selected_effects.join(meta_effects).join(streams_effects)
+            }
             Msg::Internal(Internal::AddonResponse(request, response))
                 if request.path.resource.eq(META_RESOURCE_NAME) =>
             {
@@ -141,6 +153,7 @@ enum SelectedAction<'a> {
         id: &'a String,
         video_id: &'a Option<String>,
     },
+    Clear,
 }
 
 fn selected_update(selected: &mut Selected, action: SelectedAction) -> Effects {
@@ -171,6 +184,10 @@ fn selected_update(selected: &mut Selected, action: SelectedAction) -> Effects {
                 type_name,
                 id,
             )),
+            streams_resource_ref: None,
+        },
+        SelectedAction::Clear => Selected {
+            meta_resource_ref: None,
             streams_resource_ref: None,
         },
     };
