@@ -164,10 +164,7 @@ impl LibraryLoadable {
                             ActionUser::LibUpdate(item) => {
                                 let new_bucket = LibBucket::new(
                                     content.auth.as_ref().into(),
-                                    vec![LibItem {
-                                        mtime: chrono::Utc::now(),
-                                        ..item.clone()
-                                    }],
+                                    vec![item.to_owned()],
                                 );
                                 let persist_ft = update_and_persist::<Env>(lib_bucket, new_bucket)
                                     .map(|_| LibPersisted.into())
