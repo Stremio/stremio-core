@@ -33,6 +33,8 @@ pub enum StreamSource {
         info_hash: [u8; 20],
         file_idx: Option<u16>,
     },
+    // This can also be used to point to internal pages,
+    // using stremio:// URLs
     #[serde(rename_all = "camelCase")]
     External {
         external_url: String,
