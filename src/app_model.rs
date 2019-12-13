@@ -2,8 +2,8 @@ use crate::models::LibraryItems;
 use env_web::Env;
 use serde::{Deserialize, Serialize};
 use stremio_core::state_types::models::{
-    CatalogFiltered, CatalogsWithExtra, ContinueWatching, Ctx, LibraryFiltered, MetaDetails,
-    StreamingServerSettingsModel,
+    AddonDetails, CatalogFiltered, CatalogsWithExtra, ContinueWatching, Ctx, LibraryFiltered,
+    MetaDetails, StreamingServerSettingsModel,
 };
 use stremio_core::types::addons::DescriptorPreview;
 use stremio_core::types::MetaPreview;
@@ -18,6 +18,7 @@ pub struct AppModel {
     pub library: LibraryFiltered,
     pub search: CatalogsWithExtra,
     pub meta_details: MetaDetails,
+    pub addon_details: AddonDetails,
     pub addons: CatalogFiltered<DescriptorPreview>,
     pub streaming_server_settings: StreamingServerSettingsModel,
     pub library_items: LibraryItems,
@@ -33,6 +34,7 @@ pub enum ModelFieldName {
     Library,
     Search,
     MetaDetails,
+    AddonDetails,
     Addons,
     StreamingServerSettings,
     LibraryItems,

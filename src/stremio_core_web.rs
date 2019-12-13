@@ -31,6 +31,7 @@ impl StremioCoreWeb {
             library: Default::default(),
             search: Default::default(),
             meta_details: Default::default(),
+            addon_details: Default::default(),
             addons: CatalogFiltered {
                 selectable: Default::default(),
                 catalog_resource: Default::default(),
@@ -61,6 +62,9 @@ impl StremioCoreWeb {
                     ModelFieldName::Library => model.library.update(&model.ctx, &message),
                     ModelFieldName::Search => model.search.update(&model.ctx, &message),
                     ModelFieldName::MetaDetails => model.meta_details.update(&model.ctx, &message),
+                    ModelFieldName::AddonDetails => {
+                        model.addon_details.update(&model.ctx, &message)
+                    }
                     ModelFieldName::Addons => model.addons.update(&model.ctx, &message),
                     ModelFieldName::StreamingServerSettings => {
                         model.streaming_server_settings.update(&model.ctx, &message)
@@ -92,6 +96,7 @@ impl StremioCoreWeb {
                 ModelFieldName::Library => JsValue::from_serde(&model.library).unwrap(),
                 ModelFieldName::Search => JsValue::from_serde(&model.search).unwrap(),
                 ModelFieldName::MetaDetails => JsValue::from_serde(&model.meta_details).unwrap(),
+                ModelFieldName::AddonDetails => JsValue::from_serde(&model.meta_details).unwrap(),
                 ModelFieldName::Addons => JsValue::from_serde(&model.addons).unwrap(),
                 ModelFieldName::StreamingServerSettings => {
                     JsValue::from_serde(&model.streaming_server_settings).unwrap()
