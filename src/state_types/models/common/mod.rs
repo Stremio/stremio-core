@@ -1,11 +1,11 @@
 mod addon_get;
 pub use addon_get::*;
 
-mod addon_manifest;
-pub use addon_manifest::*;
-
 mod loadable;
 pub use loadable::*;
+
+mod manifest_loadable;
+pub use manifest_loadable::*;
 
 mod resource_loadable;
 pub use resource_loadable::*;
