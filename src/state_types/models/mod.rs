@@ -1,5 +1,8 @@
 pub mod common;
 
+mod addon_details;
+pub use addon_details::*;
+
 mod catalog_filtered;
 pub use catalog_filtered::*;
 
