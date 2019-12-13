@@ -111,12 +111,11 @@ impl LibraryLoadable {
                                 }
                             }
                             ActionUser::LibUpdate(item) => {
+                                // The item needs to have a newer mtime than the item with the same
+                                // ID (if any), otherwise it won't be merged in the lib_bucket
                                 let new_bucket = LibBucket::new(
                                     content.auth.as_ref().into(),
-                                    vec![LibItem {
-                                        mtime: chrono::Utc::now(),
-                                        ..item.clone()
-                                    }],
+                                    vec![item.clone()],
                                 );
                                 let persist_ft = update_and_persist::<Env>(lib_bucket, new_bucket)
                                     .map(|_| LibPersisted.into())
