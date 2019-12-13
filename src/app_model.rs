@@ -1,4 +1,4 @@
-use crate::models::{InstalledAddons, LibraryItems};
+use crate::models::LibraryItems;
 use env_web::Env;
 use serde::{Deserialize, Serialize};
 use stremio_core::state_types::models::{
@@ -20,7 +20,6 @@ pub struct AppModel {
     pub meta_details: MetaDetails,
     pub addons: CatalogFiltered<DescriptorPreview>,
     pub streaming_server_settings: StreamingServerSettingsModel,
-    pub installed_addons: InstalledAddons,
     pub library_items: LibraryItems,
 }
 
@@ -36,6 +35,5 @@ pub enum ModelFieldName {
     MetaDetails,
     Addons,
     StreamingServerSettings,
-    InstalledAddons,
     LibraryItems,
 }

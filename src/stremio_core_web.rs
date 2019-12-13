@@ -37,7 +37,6 @@ impl StremioCoreWeb {
                 selectable_priority: SelectablePriority::Catalog,
             },
             streaming_server_settings: Default::default(),
-            installed_addons: Default::default(),
             library_items: Default::default(),
         };
         let (runtime, rx) = Runtime::<Env, AppModel>::new(app, 1000);
@@ -65,9 +64,6 @@ impl StremioCoreWeb {
                     ModelFieldName::Addons => model.addons.update(&model.ctx, &message),
                     ModelFieldName::StreamingServerSettings => {
                         model.streaming_server_settings.update(&model.ctx, &message)
-                    }
-                    ModelFieldName::InstalledAddons => {
-                        model.installed_addons.update(&model.ctx, &message)
                     }
                     ModelFieldName::LibraryItems => {
                         model.library_items.update(&model.ctx, &message)
@@ -99,9 +95,6 @@ impl StremioCoreWeb {
                 ModelFieldName::Addons => JsValue::from_serde(&model.addons).unwrap(),
                 ModelFieldName::StreamingServerSettings => {
                     JsValue::from_serde(&model.streaming_server_settings).unwrap()
-                }
-                ModelFieldName::InstalledAddons => {
-                    JsValue::from_serde(&model.installed_addons).unwrap()
                 }
                 ModelFieldName::LibraryItems => JsValue::from_serde(&model.library_items).unwrap(),
             }
