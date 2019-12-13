@@ -1,6 +1,6 @@
 use crate::state_types::models::{CtxContent, SsSettings};
 use crate::state_types::EnvError;
-use crate::types::addons::{Descriptor, ResourceRequest, ResourceResponse};
+use crate::types::addons::{Descriptor, Manifest, ResourceRequest, ResourceResponse, TransportUrl};
 use crate::types::api::AuthKey;
 use crate::types::LibBucket;
 
@@ -21,6 +21,7 @@ pub enum Internal {
     LibSyncPulled(LibBucket),
     // Response from an add-on
     AddonResponse(ResourceRequest, Box<Result<ResourceResponse, EnvError>>),
+    ManifestResponse(TransportUrl, Box<Result<Manifest, EnvError>>),
     StreamingServerSettingsLoaded(SsSettings),
     StreamingServerSettingsErrored(String),
 }

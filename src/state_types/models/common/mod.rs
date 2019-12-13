@@ -1,6 +1,9 @@
 mod addon_get;
 pub use addon_get::*;
 
+mod addon_manifest;
+pub use addon_manifest::*;
+
 mod loadable;
 pub use loadable::*;
 
