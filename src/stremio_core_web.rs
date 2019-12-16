@@ -96,7 +96,7 @@ impl StremioCoreWeb {
                 ModelFieldName::Library => JsValue::from_serde(&model.library).unwrap(),
                 ModelFieldName::Search => JsValue::from_serde(&model.search).unwrap(),
                 ModelFieldName::MetaDetails => JsValue::from_serde(&model.meta_details).unwrap(),
-                ModelFieldName::AddonDetails => JsValue::from_serde(&model.meta_details).unwrap(),
+                ModelFieldName::AddonDetails => JsValue::from_serde(&model.addon_details).unwrap(),
                 ModelFieldName::Addons => JsValue::from_serde(&model.addons).unwrap(),
                 ModelFieldName::StreamingServerSettings => {
                     JsValue::from_serde(&model.streaming_server_settings).unwrap()
