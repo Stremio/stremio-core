@@ -9,6 +9,7 @@ use serde::Serialize;
 pub type DescriptorContent = Loadable<Descriptor, String>;
 
 #[derive(Debug, Clone, PartialEq, Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct DescriptorLoadable {
     pub transport_url: TransportUrl,
     pub content: DescriptorContent,
