@@ -63,7 +63,7 @@ impl<Env: Environment + 'static> Update for Ctx<Env> {
                 self.library.load_from_storage::<Env>(&self.content)
             }
             // Addon install/remove
-            Msg::Action(Action::AddonOp(ActionAddon::Remove { transport_url })) => {
+            Msg::Action(Action::AddonOp(ActionAddon::Uninstall { transport_url })) => {
                 let position = self.content.addons.iter().position(|addon| {
                     !addon.flags.protected && addon.transport_url == *transport_url
                 });

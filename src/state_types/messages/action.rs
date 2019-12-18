@@ -40,7 +40,7 @@ pub enum ActionSettings {
 #[derive(Debug, Clone, Deserialize)]
 #[serde(tag = "addonOp", content = "args")]
 pub enum ActionAddon {
-    Remove { transport_url: TransportUrl },
+    Uninstall { transport_url: TransportUrl },
     Install(Box<Descriptor>),
 }
 
