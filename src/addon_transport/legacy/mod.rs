@@ -76,6 +76,11 @@ impl From<Vec<Stream>> for ResourceResponse {
         ResourceResponse::Streams { streams }
     }
 }
+impl From<Vec<SubtitlesSource>> for ResourceResponse {
+    fn from(subtitles: Vec<SubtitlesSource>) -> Self {
+        ResourceResponse::Subtitles { subtitles }
+    }
+}
 
 #[allow(clippy::boxed_local)]
 fn map_response<T: 'static + Sized>(resp: JsonRPCResp<T>) -> EnvFuture<T> {
