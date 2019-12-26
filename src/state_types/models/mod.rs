@@ -27,5 +27,8 @@ pub use meta_details::*;
 mod notifications;
 pub use notifications::*;
 
+mod player;
+pub use player::*;
+
 mod settings;
 pub use settings::*;

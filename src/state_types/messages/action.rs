@@ -1,5 +1,5 @@
 use crate::state_types::models::{Settings, StreamingServerSettings};
-use crate::types::addons::{Descriptor, ExtraProp, ResourceRequest, TransportUrl};
+use crate::types::addons::{Descriptor, ExtraProp, ResourceRef, ResourceRequest, TransportUrl};
 use crate::types::api::GDPRConsent;
 use crate::types::{LibItem, MetaPreview};
 use chrono::{DateTime, Utc};
@@ -25,6 +25,12 @@ pub enum ActionLoad {
         transport_url: String,
     },
     Notifications,
+    Player {
+        transport_url: String,
+        type_name: String,
+        id: String,
+        video_id: String,
+    },
 }
 
 #[derive(Debug, Clone, Deserialize)]
@@ -72,6 +78,16 @@ pub enum ActionUser {
     // @TODO consider PullUser, PushUser?
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(tag = "playerOp", content = "args")]
+pub enum ActionPlayer {
+    TimeChanged {
+        time: u64,
+        duration: u64
+    },
+    Ended
+}
+
 #[derive(Debug, Clone, Deserialize)]
 #[serde(tag = "action", content = "args")]
 pub enum Action {
@@ -80,5 +96,6 @@ pub enum Action {
     Settings(ActionSettings),
     AddonOp(ActionAddon),
     UserOp(ActionUser),
+    PlayerOp(ActionPlayer),
     Unload,
 }
