@@ -1,5 +1,5 @@
 use crate::constants::{META_RESOURCE_NAME, SUBTITLES_RESOURCE_NAME};
-use crate::state_types::messages::{Action, ActionLoad, ActionPlayer, Internal, Msg};
+use crate::state_types::messages::{Action, ActionLoad, ActionPlayer, ActionUser, Internal, Msg};
 use crate::state_types::models::common::{
     resource_update, resources_update_with_vector_content, ResourceAction, ResourceContent,
     ResourceLoadable, ResourcesAction,
@@ -100,12 +100,23 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for Player {
                     .join(subtitles_effects)
                     .join(next_video_effects)
             }
-            Msg::Action(Action::PlayerOp(ActionPlayer::TimeChanged {
-                time: _,
-                duration: _,
-            })) => {
-                // TODO update time_offset and others
-                Effects::none().unchanged()
+            Msg::Action(Action::PlayerOp(ActionPlayer::TimeChanged { time, duration })) => {
+                match &self.selected {
+                    Some(Selected { id, video_id, .. }) => match ctx.library.get(id) {
+                        Some(lib_item) => {
+                            let mut lib_item = lib_item.to_owned();
+                            lib_item.mtime = Env::now();
+                            lib_item.state.time_offset = time.to_owned();
+                            lib_item.state.duration = duration.to_owned();
+                            lib_item.state.video_id = Some(video_id.to_owned());
+                            Effects::msg(Msg::Action(Action::UserOp(ActionUser::LibUpdate(
+                                lib_item.to_owned(),
+                            ))))
+                        }
+                        _ => Effects::none().unchanged(),
+                    },
+                    _ => Effects::none().unchanged(),
+                }
             }
             Msg::Action(Action::PlayerOp(ActionPlayer::Ended)) => {
                 // TODO update times_watched
