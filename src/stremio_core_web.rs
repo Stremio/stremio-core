@@ -39,6 +39,7 @@ impl StremioCoreWeb {
             },
             streaming_server_settings: Default::default(),
             library_items: Default::default(),
+            player: Default::default()
         };
         let (runtime, rx) = Runtime::<Env, AppModel>::new(app, 1000);
         Env::exec(Box::new(rx.for_each(move |msg| {
@@ -72,6 +73,7 @@ impl StremioCoreWeb {
                     ModelFieldName::LibraryItems => {
                         model.library_items.update(&model.ctx, &message)
                     }
+                    ModelFieldName::Player => model.player.update(&model.ctx, &message),
                 })
             } else {
                 self.runtime.dispatch(&message)
@@ -102,6 +104,7 @@ impl StremioCoreWeb {
                     JsValue::from_serde(&model.streaming_server_settings).unwrap()
                 }
                 ModelFieldName::LibraryItems => JsValue::from_serde(&model.library_items).unwrap(),
+                ModelFieldName::Player => JsValue::from_serde(&model.player).unwrap(),
             }
         } else {
             JsValue::from_serde(model).unwrap()

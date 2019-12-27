@@ -3,7 +3,7 @@ use env_web::Env;
 use serde::{Deserialize, Serialize};
 use stremio_core::state_types::models::{
     AddonDetails, CatalogFiltered, CatalogsWithExtra, ContinueWatching, Ctx, LibraryFiltered,
-    MetaDetails, StreamingServerSettingsModel,
+    MetaDetails, Player, StreamingServerSettingsModel,
 };
 use stremio_core::types::addons::DescriptorPreview;
 use stremio_core::types::MetaPreview;
@@ -22,6 +22,7 @@ pub struct AppModel {
     pub addons: CatalogFiltered<DescriptorPreview>,
     pub streaming_server_settings: StreamingServerSettingsModel,
     pub library_items: LibraryItems,
+    pub player: Player,
 }
 
 #[derive(Deserialize)]
@@ -38,4 +39,5 @@ pub enum ModelFieldName {
     Addons,
     StreamingServerSettings,
     LibraryItems,
+    Player,
 }
