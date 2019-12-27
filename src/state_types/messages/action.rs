@@ -1,5 +1,5 @@
 use crate::state_types::models::{Settings, StreamingServerSettings};
-use crate::types::addons::{Descriptor, ExtraProp, ResourceRef, ResourceRequest, TransportUrl};
+use crate::types::addons::{Descriptor, ExtraProp, ResourceRequest, TransportUrl};
 use crate::types::api::GDPRConsent;
 use crate::types::{LibItem, MetaPreview};
 use chrono::{DateTime, Utc};
