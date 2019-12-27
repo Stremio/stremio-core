@@ -61,6 +61,12 @@ pub enum JsonRPCResp<T> {
     Error { error: JsonRPCErr },
 }
 
+#[derive(Deserialize)]
+pub struct SubtitlesResult {
+    pub id: String,
+    pub all: Vec<SubtitlesSource>,
+}
+
 impl From<Vec<MetaPreview>> for ResourceResponse {
     fn from(metas: Vec<MetaPreview>) -> Self {
         ResourceResponse::Metas { metas }
@@ -76,9 +82,11 @@ impl From<Vec<Stream>> for ResourceResponse {
         ResourceResponse::Streams { streams }
     }
 }
-impl From<Vec<SubtitlesSource>> for ResourceResponse {
-    fn from(subtitles: Vec<SubtitlesSource>) -> Self {
-        ResourceResponse::Subtitles { subtitles }
+impl From<SubtitlesResult> for ResourceResponse {
+    fn from(subtitles_result: SubtitlesResult) -> Self {
+        ResourceResponse::Subtitles {
+            subtitles: subtitles_result.all,
+        }
     }
 }
 
@@ -127,6 +135,11 @@ impl<'a, T: Environment> AddonInterface for AddonLegacyTransport<'a, T> {
             ),
             "stream" => Box::new(
                 T::fetch_serde::<_, JsonRPCResp<Vec<Stream>>>(fetch_req)
+                    .and_then(map_response)
+                    .map(Into::into),
+            ),
+            "subtitles" => Box::new(
+                T::fetch_serde::<_, JsonRPCResp<SubtitlesResult>>(fetch_req)
                     .and_then(map_response)
                     .map(Into::into),
             ),
@@ -191,6 +204,10 @@ fn build_legacy_req(transport_url: &str, path: &ResourceRef) -> Result<Request<(
             query.insert("type".into(), Value::String(type_name.to_owned()));
             build_jsonrpc("stream.find", json!({ "query": query }))
         }
+        "subtitles" => build_jsonrpc(
+            "subtitles.find",
+            json!({ "query": json!({ "itemHash": id }) }),
+        ),
         _ => return Err(LegacyErr::UnsupportedRequest.into()),
     };
     // NOTE: this is not using a URL safe base64 standard, which means that technically this is
