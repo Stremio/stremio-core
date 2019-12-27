@@ -1,4 +1,5 @@
 use crate::addon_transport::{AddonHTTPTransport, AddonInterface};
+use chrono::{DateTime, Utc};
 use futures::Future;
 use serde::de::DeserializeOwned;
 use serde::Serialize;
@@ -17,6 +18,7 @@ pub trait Environment {
         IN: 'static + Serialize,
         OUT: 'static + DeserializeOwned;
     fn exec(fut: Box<dyn Future<Item = (), Error = ()>>);
+    fn now() -> DateTime<Utc>;
     fn get_storage<T: 'static + DeserializeOwned>(key: &str) -> EnvFuture<Option<T>>;
     fn set_storage<T: Serialize>(key: &str, value: Option<&T>) -> EnvFuture<()>;
     fn addon_transport(url: &str) -> Box<dyn AddonInterface>

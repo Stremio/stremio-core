@@ -1,3 +1,5 @@
+use chrono::offset::TimeZone;
+use chrono::{DateTime, Utc};
 use futures::{future, Future};
 use serde::de::DeserializeOwned;
 use serde::Serialize;
@@ -135,6 +137,11 @@ impl Environment for Env {
     }
     fn exec(fut: Box<dyn Future<Item = (), Error = ()>>) {
         spawn_local(fut)
+    }
+    fn now() -> DateTime<Utc> {
+        let millis = js_sys::Date::now() as i64;
+        let (secs, millis) = (millis / 1000, millis % 1000);
+        Utc.timestamp(secs, millis as u32 * 1_000_000)
     }
     fn get_storage<T: 'static + DeserializeOwned>(key: &str) -> EnvFuture<Option<T>> {
         Self::wrap_to_fut(Self::get_storage_sync(key))
