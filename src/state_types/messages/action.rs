@@ -1,7 +1,7 @@
 use crate::state_types::models::{Settings, StreamingServerSettings};
 use crate::types::addons::{Descriptor, ExtraProp, ResourceRequest, TransportUrl};
 use crate::types::api::GDPRConsent;
-use crate::types::{LibItem, MetaPreview};
+use crate::types::{LibItem, MetaPreview, Stream};
 use chrono::{DateTime, Utc};
 use serde_derive::{Deserialize, Serialize};
 
@@ -30,6 +30,7 @@ pub enum ActionLoad {
         type_name: String,
         id: String,
         video_id: String,
+        stream: Stream,
     },
 }
 
@@ -81,11 +82,8 @@ pub enum ActionUser {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(tag = "playerOp", content = "args")]
 pub enum ActionPlayer {
-    TimeChanged {
-        time: u64,
-        duration: u64
-    },
-    Ended
+    TimeChanged { time: u64, duration: u64 },
+    Ended,
 }
 
 #[derive(Debug, Clone, Deserialize)]

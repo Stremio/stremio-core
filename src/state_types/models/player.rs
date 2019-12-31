@@ -7,15 +7,16 @@ use crate::state_types::models::common::{
 use crate::state_types::models::{Ctx, Settings};
 use crate::state_types::{Effects, Environment, UpdateWithCtx};
 use crate::types::addons::{AggrRequest, ResourceRef, ResourceRequest};
-use crate::types::{MetaDetail, SubtitlesSource, Video};
+use crate::types::{MetaDetail, Stream, SubtitlesSource, Video};
 use serde_derive::Serialize;
 
-#[derive(Default, Debug, Clone, PartialEq, Serialize)]
+#[derive(Debug, Clone, PartialEq, Serialize)]
 pub struct Selected {
     transport_url: String,
     type_name: String,
     id: String,
     video_id: String,
+    stream: Stream,
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize)]
@@ -34,6 +35,7 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for Player {
                 type_name,
                 id,
                 video_id,
+                stream,
             })) => {
                 let selected_effects = selected_update(
                     &mut self.selected,
@@ -42,6 +44,7 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for Player {
                         type_name,
                         id,
                         video_id,
+                        stream,
                     },
                 );
                 let meta_effects = resource_update::<_, Env>(
@@ -165,6 +168,7 @@ enum SelectedAction<'a> {
         type_name: &'a String,
         id: &'a String,
         video_id: &'a String,
+        stream: &'a Stream,
     },
     Clear,
 }
@@ -176,11 +180,13 @@ fn selected_update(selected: &mut Option<Selected>, action: SelectedAction) -> E
             type_name,
             id,
             video_id,
+            stream,
         } => Some(Selected {
             transport_url: transport_url.to_owned(),
             type_name: type_name.to_owned(),
             id: id.to_owned(),
             video_id: video_id.to_owned(),
+            stream: stream.to_owned(),
         }),
         SelectedAction::Clear => None,
     };
