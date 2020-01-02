@@ -216,7 +216,7 @@ fn next_video_update(video: &mut Option<Video>, action: NextVideoAction) -> Effe
                 }),
             video_id: Some(video_id),
             settings,
-        } if settings.autoplay_next_vid.eq("true") => meta_detail
+        } if settings.binge_watching => meta_detail
             .videos
             .iter()
             .enumerate()
