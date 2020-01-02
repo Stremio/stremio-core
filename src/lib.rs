@@ -12,6 +12,7 @@ mod tests {
     use crate::state_types::*;
     use crate::types::addons::*;
     use crate::types::*;
+    use chrono::{DateTime, Utc};
     use futures::future::lazy;
     use futures::{future, Future};
     use serde::de::DeserializeOwned;
@@ -550,6 +551,9 @@ mod tests {
                 None => storage.remove(key),
             };
             Box::new(future::ok(()))
+        }
+        fn now() -> DateTime<Utc> {
+            Utc::now()
         }
     }
 }
