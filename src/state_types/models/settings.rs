@@ -2,6 +2,7 @@ use crate::state_types::messages::Internal::{
     CtxLoaded, StreamingServerSettingsErrored, StreamingServerSettingsLoaded,
 };
 use crate::state_types::messages::{Action, ActionSettings, Event, Msg};
+use crate::state_types::models::common::RGBA;
 use crate::state_types::models::Ctx;
 use crate::state_types::{Effects, Environment, Request, UpdateWithCtx};
 use futures::future::Future;
@@ -86,32 +87,28 @@ pub struct SsSettings {
     pub base_url: String,
 }
 
-// These are the user settings from local storage.
 #[derive(Deserialize, Serialize, Clone, Debug, PartialEq)]
 pub struct Settings {
-    pub language: String,
-    pub subtitles_size: String,
+    pub interface_language: String,
+    pub binge_watching: bool,
+    pub play_in_background: bool,
+    pub play_in_external_player: bool,
+    pub streaming_server_url: String,
     pub subtitles_language: String,
-    pub subtitles_background: String,
-    pub subtitles_color: String,
-    pub subtitles_outline_color: String,
-    pub autoplay_next_vid: String,
-    pub server_url: String,
-    pub use_external_player: String,
-    // We can't override Esc in browser so this option is pointless here
-    // pub player_esc_exits_fullscreen:  String,
-    pub pause_on_lost_focus: String,
-    pub show_vid_overview: String,
+    pub subtitles_size: u8,
+    pub subtitles_background_color: RGBA,
+    pub subtitles_text_color: RGBA,
+    pub subtitles_outline_color: RGBA,
 }
 
 impl Settings {
     fn get_endpoint(&self) -> String {
-        Path::new(&self.server_url)
+        Path::new(&self.streaming_server_url)
             .join("settings")
             .into_os_string()
             .into_string()
             .unwrap_or_else(|_| {
-                Path::new(&Settings::default().server_url)
+                Path::new(&Settings::default().streaming_server_url)
                     .join("settings")
                     .into_os_string()
                     .into_string()
@@ -123,17 +120,16 @@ impl Settings {
 impl Default for Settings {
     fn default() -> Self {
         Settings {
-            language: "eng".to_string(),
-            subtitles_size: "100%".to_string(),
-            subtitles_language: "eng".to_string(),
-            subtitles_background: "".to_string(),
-            subtitles_color: "#fff".to_string(),
-            subtitles_outline_color: "#000".to_string(),
-            autoplay_next_vid: "false".to_string(),
-            server_url: "http://127.0.0.1:11470/".to_string(),
-            use_external_player: "false".to_string(),
-            pause_on_lost_focus: "false".to_string(),
-            show_vid_overview: "false".to_string(),
+            interface_language: "eng".to_owned(),
+            binge_watching: false,
+            play_in_background: true,
+            play_in_external_player: false,
+            streaming_server_url: "http://127.0.0.1:11470/".to_owned(),
+            subtitles_language: "eng".to_owned(),
+            subtitles_size: 2,
+            subtitles_background_color: RGBA::transparent(),
+            subtitles_text_color: RGBA::new(255, 255, 255, 0),
+            subtitles_outline_color: RGBA::transparent(),
         }
     }
 }
