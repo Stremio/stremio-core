@@ -10,6 +10,7 @@ use lazy_static::lazy_static;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::fmt::{self, Debug};
+use serde_repr::{Serialize_repr, Deserialize_repr};
 use std::path::Path;
 
 #[derive(Deserialize, Serialize, Clone, Debug)]
@@ -87,7 +88,17 @@ pub struct SsSettings {
     pub base_url: String,
 }
 
-#[derive(Deserialize, Serialize, Clone, Debug, PartialEq)]
+#[derive(Serialize_repr, Deserialize_repr, Clone, Debug, PartialEq)]
+#[repr(u8)]
+pub enum SubtitlesSize {
+    S = 1,
+    M = 2,
+    L = 3,
+    XL = 4,
+    XXL = 5,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]
 pub struct Settings {
     pub interface_language: String,
     pub binge_watching: bool,
@@ -95,7 +106,7 @@ pub struct Settings {
     pub play_in_external_player: bool,
     pub streaming_server_url: String,
     pub subtitles_language: String,
-    pub subtitles_size: u8,
+    pub subtitles_size: SubtitlesSize,
     pub subtitles_background_color: RGBA,
     pub subtitles_text_color: RGBA,
     pub subtitles_outline_color: RGBA,
@@ -126,7 +137,7 @@ impl Default for Settings {
             play_in_external_player: false,
             streaming_server_url: "http://127.0.0.1:11470/".to_owned(),
             subtitles_language: "eng".to_owned(),
-            subtitles_size: 2,
+            subtitles_size: SubtitlesSize::M,
             subtitles_background_color: RGBA::transparent(),
             subtitles_text_color: RGBA::new(255, 255, 255, 0),
             subtitles_outline_color: RGBA::transparent(),
