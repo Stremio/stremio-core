@@ -220,9 +220,9 @@ fn next_video_update(video: &mut Option<Video>, action: NextVideoAction) -> Effe
         } if settings.binge_watching => meta_detail
             .videos
             .iter()
-            .enumerate()
-            .find(|(index, video)| video.id.eq(video_id) && index + 1 < meta_detail.videos.len())
-            .map(|(.., video)| video.to_owned()),
+            .position(|video| video.id.eq(video_id))
+            .and_then(|position| meta_detail.videos.get(position + 1))
+            .cloned(),
         _ => None,
     };
     if next_video.ne(video) {
