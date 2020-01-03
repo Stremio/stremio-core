@@ -10,18 +10,18 @@ use crate::types::addons::{AggrRequest, ResourceRef, ResourceRequest};
 use crate::types::{MetaDetail, Stream, SubtitlesSource, Video};
 use serde_derive::Serialize;
 
-#[derive(Debug, Clone, PartialEq, Serialize)]
+#[derive(Default, Debug, Clone, PartialEq, Serialize)]
 pub struct Selected {
-    transport_url: String,
-    type_name: String,
-    id: String,
-    video_id: String,
-    stream: Stream,
+    transport_url: Option<String>,
+    type_name: Option<String>,
+    id: Option<String>,
+    video_id: Option<String>,
+    stream: Option<Stream>,
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize)]
 pub struct Player {
-    pub selected: Option<Selected>,
+    pub selected: Selected,
     pub meta_resource: Option<ResourceLoadable<MetaDetail>>,
     pub subtitles_resources: Vec<ResourceLoadable<Vec<SubtitlesSource>>>,
     pub next_video: Option<Video>,
@@ -105,7 +105,11 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for Player {
             }
             Msg::Action(Action::PlayerOp(ActionPlayer::TimeChanged { time, duration })) => {
                 match &self.selected {
-                    Some(Selected { id, video_id, .. }) => match ctx.library.get(id) {
+                    Selected {
+                        id: Some(id),
+                        video_id: Some(video_id),
+                        ..
+                    } => match ctx.library.get(id) {
                         Some(lib_item) => {
                             let mut lib_item = lib_item.to_owned();
                             lib_item.mtime = Env::now();
@@ -146,10 +150,7 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for Player {
                     &mut self.next_video,
                     NextVideoAction::MetaChanged {
                         meta_resource: &self.meta_resource,
-                        video_id: &self
-                            .selected
-                            .as_ref()
-                            .map(|selected| selected.video_id.to_owned()),
+                        video_id: &self.selected.video_id,
                         settings: &ctx.content.settings,
                     },
                 );
@@ -173,7 +174,7 @@ enum SelectedAction<'a> {
     Clear,
 }
 
-fn selected_update(selected: &mut Option<Selected>, action: SelectedAction) -> Effects {
+fn selected_update(selected: &mut Selected, action: SelectedAction) -> Effects {
     let next_selected = match action {
         SelectedAction::Select {
             transport_url,
@@ -181,14 +182,14 @@ fn selected_update(selected: &mut Option<Selected>, action: SelectedAction) -> E
             id,
             video_id,
             stream,
-        } => Some(Selected {
-            transport_url: transport_url.to_owned(),
-            type_name: type_name.to_owned(),
-            id: id.to_owned(),
-            video_id: video_id.to_owned(),
-            stream: stream.to_owned(),
-        }),
-        SelectedAction::Clear => None,
+        } => Selected {
+            transport_url: Some(transport_url.to_owned()),
+            type_name: Some(type_name.to_owned()),
+            id: Some(id.to_owned()),
+            video_id: Some(video_id.to_owned()),
+            stream: Some(stream.to_owned()),
+        },
+        SelectedAction::Clear => Selected::default(),
     };
     if next_selected.ne(selected) {
         *selected = next_selected;
