@@ -12,6 +12,3 @@ pub use resource_loadable::*;
 
 mod validate_extra;
 pub use validate_extra::*;
-
-mod rgba;
-pub use rgba::*;
