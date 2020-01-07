@@ -9,6 +9,7 @@ serde = { version = "1.0", features = ["derive", "rc"] }
 serde_derive = "1.0"
 serde_repr = "0.1"
 serde_json = "1.0"
+url_serde = "0.2"
 #vtt = { git = "https://github.com/Ivshti/vtt.git" }
 futures = "0.1.x"
 http = "0.1"
