@@ -18,8 +18,7 @@ pub use ctx::*;
 mod library_filtered;
 pub use library_filtered::*;
 
-mod library;
-pub use library::*;
+pub use ctx::library::*;
 
 mod meta_details;
 pub use meta_details::*;

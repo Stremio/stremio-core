@@ -1,4 +1,6 @@
-use crate::constants::OFFICIAL_ADDONS;
+use super::auth::Auth;
+use super::library::LibraryLoadable;
+use crate::constants::{OFFICIAL_ADDONS, USER_DATA_KEY};
 use crate::state_types::messages::Event::*;
 use crate::state_types::messages::Internal::*;
 use crate::state_types::messages::*;
@@ -10,15 +12,6 @@ use derivative::*;
 use futures::Future;
 use serde_derive::*;
 use std::marker::PhantomData;
-
-const USER_DATA_KEY: &str = "userData";
-
-// These will be stored, so they need to implement both Serialize and Deserilaize
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]
-pub struct Auth {
-    pub key: AuthKey,
-    pub user: User,
-}
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]
 pub struct CtxContent {

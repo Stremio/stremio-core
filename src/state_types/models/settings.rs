@@ -2,13 +2,11 @@ use crate::state_types::messages::Internal::{
     CtxLoaded, StreamingServerSettingsErrored, StreamingServerSettingsLoaded,
 };
 use crate::state_types::messages::{Action, ActionSettings, Event, Msg};
-use crate::state_types::models::common::RGBA;
 use crate::state_types::models::Ctx;
 use crate::state_types::{Effects, Environment, Request, UpdateWithCtx};
 use futures::future::Future;
 use lazy_static::lazy_static;
 use serde::{Deserialize, Serialize};
-use serde_repr::{Deserialize_repr, Serialize_repr};
 use std::collections::HashMap;
 use std::fmt::{self, Debug};
 use std::path::Path;
@@ -88,28 +86,18 @@ pub struct SsSettings {
     pub base_url: String,
 }
 
-#[derive(Serialize_repr, Deserialize_repr, Clone, Debug, PartialEq)]
-#[repr(u8)]
-pub enum SubtitlesSize {
-    S = 1,
-    M = 2,
-    L = 3,
-    XL = 4,
-    XXL = 5,
-}
-
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]
 pub struct Settings {
-    pub interface_language: String,
     pub binge_watching: bool,
     pub play_in_background: bool,
     pub play_in_external_player: bool,
     pub streaming_server_url: String,
+    pub interface_language: String,
     pub subtitles_language: String,
-    pub subtitles_size: SubtitlesSize,
-    pub subtitles_background_color: RGBA,
-    pub subtitles_text_color: RGBA,
-    pub subtitles_outline_color: RGBA,
+    pub subtitles_size: u8,
+    pub subtitles_text_color: String,
+    pub subtitles_background_color: String,
+    pub subtitles_outline_color: String,
 }
 
 impl Settings {
@@ -137,10 +125,10 @@ impl Default for Settings {
             play_in_external_player: false,
             streaming_server_url: "http://127.0.0.1:11470/".to_owned(),
             subtitles_language: "eng".to_owned(),
-            subtitles_size: SubtitlesSize::M,
-            subtitles_background_color: RGBA::transparent(),
-            subtitles_text_color: RGBA::new(255, 255, 255, 0),
-            subtitles_outline_color: RGBA::transparent(),
+            subtitles_size: 2,
+            subtitles_text_color: "#FFFFFF00".to_owned(),
+            subtitles_background_color: "#00000000".to_owned(),
+            subtitles_outline_color: "#00000000".to_owned(),
         }
     }
 }
