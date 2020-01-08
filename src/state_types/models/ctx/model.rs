@@ -1,4 +1,3 @@
-use super::auth::Auth;
 use super::library::LibraryLoadable;
 use crate::constants::{OFFICIAL_ADDONS, USER_DATA_KEY};
 use crate::state_types::messages::Event::*;

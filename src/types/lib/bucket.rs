@@ -1,5 +1,5 @@
 use super::LibItem;
-use crate::state_types::models::Auth;
+use crate::types::api::Auth;
 use lazysort::SortedBy;
 use serde_derive::*;
 use std::collections::hash_map::Entry::{Occupied, Vacant};
