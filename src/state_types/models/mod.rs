@@ -12,13 +12,11 @@ pub use catalogs_with_extra::*;
 mod continue_watching;
 pub use continue_watching::*;
 
-mod ctx;
+pub mod ctx;
 pub use ctx::*;
 
 mod library_filtered;
 pub use library_filtered::*;
-
-pub use ctx::library::*;
 
 mod meta_details;
 pub use meta_details::*;

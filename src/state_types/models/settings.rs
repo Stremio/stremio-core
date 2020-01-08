@@ -9,7 +9,6 @@ use lazy_static::lazy_static;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::fmt::{self, Debug};
-use std::path::Path;
 
 #[derive(Deserialize, Serialize, Clone, Debug)]
 pub struct SsOption {
@@ -84,53 +83,6 @@ pub struct SsSettings {
     pub options: Vec<SsOption>,
     pub values: SsValues,
     pub base_url: String,
-}
-
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]
-pub struct Settings {
-    pub binge_watching: bool,
-    pub play_in_background: bool,
-    pub play_in_external_player: bool,
-    pub streaming_server_url: String,
-    pub interface_language: String,
-    pub subtitles_language: String,
-    pub subtitles_size: u8,
-    pub subtitles_text_color: String,
-    pub subtitles_background_color: String,
-    pub subtitles_outline_color: String,
-}
-
-impl Settings {
-    fn get_endpoint(&self) -> String {
-        Path::new(&self.streaming_server_url)
-            .join("settings")
-            .into_os_string()
-            .into_string()
-            .unwrap_or_else(|_| {
-                Path::new(&Settings::default().streaming_server_url)
-                    .join("settings")
-                    .into_os_string()
-                    .into_string()
-                    .expect("Default streaming server endpint is broken")
-            })
-    }
-}
-
-impl Default for Settings {
-    fn default() -> Self {
-        Settings {
-            interface_language: "eng".to_owned(),
-            binge_watching: false,
-            play_in_background: true,
-            play_in_external_player: false,
-            streaming_server_url: "http://127.0.0.1:11470/".to_owned(),
-            subtitles_language: "eng".to_owned(),
-            subtitles_size: 2,
-            subtitles_text_color: "#FFFFFF00".to_owned(),
-            subtitles_background_color: "#00000000".to_owned(),
-            subtitles_outline_color: "#00000000".to_owned(),
-        }
-    }
 }
 
 #[derive(Deserialize, Serialize, Clone, Debug, PartialEq)]
@@ -223,7 +175,13 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for StreamingServerSett
             Msg::Internal(CtxLoaded(_))
             | Msg::Action(Action::Settings(ActionSettings::LoadStreamingServer)) => {
                 *self = StreamingServerSettingsModel::Loading;
-                let url = &ctx.content.settings.get_endpoint();
+                let url = &ctx
+                    .content
+                    .settings
+                    .streaming_server_url
+                    .join("settings")
+                    .unwrap()
+                    .to_string();
                 match Request::get(url).body(()) {
                     Ok(req) => Effects::one(Box::new(
                         Env::fetch_serde::<_, SsSettings>(req)
@@ -266,7 +224,13 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for StreamingServerSett
             Msg::Action(Action::Settings(ActionSettings::StoreStreamingServer(settings))) => {
                 // The format for the streaming server settings is basically SsValues,
                 // where the omitted values stay unchanged
-                let url = &ctx.content.settings.get_endpoint();
+                let url = &ctx
+                    .content
+                    .settings
+                    .streaming_server_url
+                    .join("settings")
+                    .unwrap()
+                    .to_string();
                 let values = SsValues {
                     cache_size: settings.cache_size.parse::<f64>().ok(),
                     bt_profile: settings.profile.clone(),

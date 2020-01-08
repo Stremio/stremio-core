@@ -1,4 +1,5 @@
-use crate::state_types::models::{Settings, StreamingServerSettings};
+use crate::state_types::models::ctx::Settings;
+use crate::state_types::models::StreamingServerSettings;
 use crate::types::addons::{Descriptor, ExtraProp, ResourceRequest, TransportUrl};
 use crate::types::api::GDPRConsent;
 use crate::types::{LibItem, MetaPreview, Stream};

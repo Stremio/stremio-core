@@ -1,9 +1,9 @@
 use super::library::LibraryLoadable;
+use super::settings::Settings;
 use crate::constants::{OFFICIAL_ADDONS, USER_DATA_KEY};
 use crate::state_types::messages::Event::*;
 use crate::state_types::messages::Internal::*;
 use crate::state_types::messages::*;
-use crate::state_types::models::*;
 use crate::state_types::*;
 use crate::types::addons::Descriptor;
 use crate::types::api::*;

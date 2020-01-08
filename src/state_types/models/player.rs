@@ -4,7 +4,7 @@ use crate::state_types::models::common::{
     resource_update, resources_update_with_vector_content, ResourceAction, ResourceContent,
     ResourceLoadable, ResourcesAction,
 };
-use crate::state_types::models::{Ctx, Settings};
+use crate::state_types::models::ctx::{Ctx, Settings};
 use crate::state_types::{Effects, Environment, UpdateWithCtx};
 use crate::types::addons::{AggrRequest, ResourceRef, ResourceRequest};
 use crate::types::{MetaDetail, Stream, SubtitlesSource, Video};
