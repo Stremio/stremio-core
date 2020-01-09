@@ -1,6 +1,7 @@
 use crate::types::addons::Descriptor;
 use lazy_static::lazy_static;
 
+pub const API_URL: &str = "https://api.strem.io";
 pub const USER_DATA_KEY: &str = "userData";
 pub const SKIP_EXTRA_NAME: &str = "skip";
 pub const SEARCH_EXTRA_NAME: &str = "search";
