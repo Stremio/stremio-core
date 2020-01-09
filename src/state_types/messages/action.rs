@@ -55,7 +55,7 @@ pub enum ActionUser {
 #[derive(Debug, Clone, Deserialize)]
 #[serde(tag = "action", content = "args")]
 pub enum ActionAddon {
-    Install(Descriptor),
+    Install(Box<Descriptor>),
     Uninstall { transport_url: TransportUrl },
     PullAndUpdateAddons,
     PushAddons,
@@ -66,16 +66,16 @@ pub enum ActionAddon {
 pub enum ActionSettings {
     LoadStreamingServer,
     StoreStreamingServer(Box<StreamingServerSettings>),
-    UpdateSettings(Settings),
+    UpdateSettings(Box<Settings>),
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(tag = "action", content = "args")]
 pub enum ActionLibrary {
     LibSync,
-    LibUpdate(LibItem),
+    LibUpdate(Box<LibItem>),
     AddToLibrary {
-        meta_item: MetaPreview,
+        meta_item: Box<MetaPreview>,
         now: DateTime<Utc>,
     },
     RemoveFromLibrary {

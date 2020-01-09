@@ -6,10 +6,10 @@ use crate::types::LibBucket;
 
 #[derive(Debug)]
 pub enum Internal {
-    UserDataLoaded(Option<UserData>),
-    UserDataResponse(APIRequest, UserData),
-    AddonResponse(ResourceRequest, Result<ResourceResponse, MsgError>),
-    ManifestResponse(TransportUrl, Result<Manifest, MsgError>),
+    UserDataLoaded(Option<Box<UserData>>),
+    UserDataResponse(APIRequest, Box<UserData>),
+    AddonResponse(ResourceRequest, Box<Result<ResourceResponse, MsgError>>),
+    ManifestResponse(TransportUrl, Box<Result<Manifest, MsgError>>),
     // Context addons pulled
     // this should replace ctx.content.addons entirely
     CtxAddonsPulled(AuthKey, Vec<Descriptor>),
