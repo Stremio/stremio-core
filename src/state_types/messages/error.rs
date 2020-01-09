@@ -1,6 +1,6 @@
 use crate::state_types::EnvError;
 use crate::types::api::APIErr;
-use serde_derive::Serialize;
+use serde::Serialize;
 
 #[derive(Debug, Clone, Serialize)]
 #[serde(tag = "type", content = "args")]

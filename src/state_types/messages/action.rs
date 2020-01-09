@@ -4,7 +4,7 @@ use crate::types::addons::{Descriptor, ExtraProp, ResourceRequest, TransportUrl}
 use crate::types::api::GDPRConsent;
 use crate::types::{LibItem, MetaPreview, Stream};
 use chrono::{DateTime, Utc};
-use serde_derive::{Deserialize, Serialize};
+use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, PartialEq, Deserialize)]
 #[serde(tag = "action", content = "args")]
