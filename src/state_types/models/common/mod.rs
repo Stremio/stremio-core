@@ -1,6 +1,9 @@
 mod addon_get;
 pub use addon_get::*;
 
+mod api_fetch;
+pub use api_fetch::*;
+
 mod descriptor_loadable;
 pub use descriptor_loadable::*;
 
