@@ -1,6 +1,4 @@
-use crate::state_types::messages::action::Action;
-use crate::state_types::messages::event::Event;
-use crate::state_types::messages::internal::Internal;
+use super::{Action, Event, Internal};
 use derive_more::From;
 
 #[derive(Debug, From)]

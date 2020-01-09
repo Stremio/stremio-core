@@ -7,8 +7,9 @@ use chrono::{DateTime, Utc};
 use serde_derive::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, PartialEq, Deserialize)]
-#[serde(tag = "load", content = "args")]
+#[serde(tag = "action", content = "args")]
 pub enum ActionLoad {
+    UserData,
     CatalogsWithExtra {
         extra: Vec<ExtraProp>,
     },
@@ -35,25 +36,8 @@ pub enum ActionLoad {
     },
 }
 
-#[derive(Debug, Clone, Deserialize)]
-#[serde(tag = "settings", content = "args")]
-pub enum ActionSettings {
-    // Although we load the streaming server settings together with the context
-    // there is also a way to reload it separately in cases this is necessary.
-    LoadStreamingServer,
-    StoreStreamingServer(Box<StreamingServerSettings>),
-    Store(Box<Settings>),
-}
-
-#[derive(Debug, Clone, Deserialize)]
-#[serde(tag = "addonOp", content = "args")]
-pub enum ActionAddon {
-    Uninstall { transport_url: TransportUrl },
-    Install(Box<Descriptor>),
-}
-
 #[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(tag = "userOp", content = "args")]
+#[serde(tag = "action", content = "args")]
 pub enum ActionUser {
     Login {
         email: String,
@@ -65,8 +49,29 @@ pub enum ActionUser {
         gdpr_consent: GDPRConsent,
     },
     Logout,
+    // TODO consider PullUser, PushUser?
+}
+
+#[derive(Debug, Clone, Deserialize)]
+#[serde(tag = "action", content = "args")]
+pub enum ActionAddon {
+    Install(Descriptor),
+    Uninstall { transport_url: TransportUrl },
     PullAndUpdateAddons,
     PushAddons,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+#[serde(tag = "action", content = "args")]
+pub enum ActionSettings {
+    LoadStreamingServer,
+    StoreStreamingServer(Box<StreamingServerSettings>),
+    UpdateSettings(Settings),
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(tag = "action", content = "args")]
+pub enum ActionLibrary {
     LibSync,
     LibUpdate(LibItem),
     AddToLibrary {
@@ -77,11 +82,10 @@ pub enum ActionUser {
         id: String,
         now: DateTime<Utc>,
     },
-    // @TODO consider PullUser, PushUser?
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(tag = "playerOp", content = "args")]
+#[derive(Debug, Clone, Deserialize)]
+#[serde(tag = "action", content = "args")]
 pub enum ActionPlayer {
     TimeChanged { time: u64, duration: u64 },
     Ended,
@@ -90,11 +94,11 @@ pub enum ActionPlayer {
 #[derive(Debug, Clone, Deserialize)]
 #[serde(tag = "action", content = "args")]
 pub enum Action {
-    LoadCtx,
     Load(ActionLoad),
+    User(ActionUser),
+    Addon(ActionAddon),
     Settings(ActionSettings),
-    AddonOp(ActionAddon),
-    UserOp(ActionUser),
-    PlayerOp(ActionPlayer),
+    Library(ActionLibrary),
+    Player(ActionPlayer),
     Unload,
 }
