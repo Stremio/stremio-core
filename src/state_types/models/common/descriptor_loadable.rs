@@ -1,7 +1,7 @@
 use super::{get_manifest, Loadable};
 use crate::constants::OFFICIAL_ADDONS;
-use crate::state_types::messages::{Internal, Msg};
-use crate::state_types::{Effects, EnvError, Environment};
+use crate::state_types::messages::{Internal, Msg, MsgError};
+use crate::state_types::{Effects, Environment};
 use crate::types::addons::{Descriptor, Manifest, TransportUrl};
 use futures::{future, Future};
 use serde::Serialize;
@@ -24,7 +24,7 @@ pub enum DescriptorAction<'a> {
     },
     ManifestResponseReceived {
         transport_url: &'a TransportUrl,
-        response: &'a Result<Manifest, EnvError>,
+        response: &'a Result<Manifest, MsgError>,
     },
 }
 
@@ -48,7 +48,10 @@ where
                 let transport_url = transport_url.to_owned();
                 Effects::one(Box::new(get_manifest::<Env>(&transport_url).then(
                     move |result| {
-                        let msg = Msg::Internal(Internal::ManifestResponse(transport_url, result));
+                        let msg = Msg::Internal(Internal::ManifestResponse(
+                            transport_url,
+                            Box::new(result),
+                        ));
                         match result {
                             Ok(_) => future::ok(msg),
                             Err(_) => future::err(msg),
