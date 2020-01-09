@@ -1,9 +1,7 @@
+use super::{get_manifest, Loadable};
 use crate::constants::OFFICIAL_ADDONS;
-use crate::state_types::messages::Internal;
-use crate::state_types::models::common::Loadable;
-use crate::state_types::{Effect, Effects, EnvError, Environment};
+use crate::state_types::{Effects, EnvError, Environment};
 use crate::types::addons::{Descriptor, Manifest, TransportUrl};
-use futures::{future, Future};
 use serde::Serialize;
 
 pub type DescriptorContent = Loadable<Descriptor, String>;
@@ -82,20 +80,4 @@ where
             _ => Effects::none().unchanged(),
         },
     }
-}
-
-fn get_manifest<Env: Environment + 'static>(transport_url: &str) -> Effect {
-    let transport_url = transport_url.to_owned();
-    Box::new(
-        Env::addon_transport(&transport_url)
-            .manifest()
-            .then(move |result| match result {
-                Ok(_) => {
-                    future::ok(Internal::ManifestResponse(transport_url, Box::new(result)).into())
-                }
-                Err(_) => {
-                    future::err(Internal::ManifestResponse(transport_url, Box::new(result)).into())
-                }
-            }),
-    )
 }

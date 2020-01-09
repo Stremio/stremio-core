@@ -1,7 +1,7 @@
-use crate::state_types::models::common::{addon_get, Loadable};
+use super::{addon_get, Loadable};
 use crate::state_types::{Effects, EnvError, Environment};
 use crate::types::addons::{AggrRequest, Descriptor, ResourceRequest, ResourceResponse};
-use serde_derive::Serialize;
+use serde::Serialize;
 use std::convert::TryFrom;
 
 #[derive(Debug, Clone, PartialEq, Serialize)]

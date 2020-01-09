@@ -7,6 +7,9 @@ pub use api_fetch::*;
 mod descriptor_loadable;
 pub use descriptor_loadable::*;
 
+mod get_manifest;
+pub use get_manifest::*;
+
 mod loadable;
 pub use loadable::*;
 
