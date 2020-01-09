@@ -1,14 +1,14 @@
-mod addon_get;
-pub use addon_get::*;
-
-mod api_fetch;
-pub use api_fetch::*;
-
 mod descriptor_loadable;
 pub use descriptor_loadable::*;
 
+mod fetch_api;
+pub use fetch_api::*;
+
 mod get_manifest;
 pub use get_manifest::*;
+
+mod get_resource;
+pub use get_resource::*;
 
 mod loadable;
 pub use loadable::*;

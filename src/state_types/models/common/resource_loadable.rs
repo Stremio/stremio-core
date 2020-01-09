@@ -1,6 +1,9 @@
-use super::{addon_get, Loadable};
-use crate::state_types::{Effects, EnvError, Environment};
+use super::{get_resource, Loadable};
+use crate::state_types::messages::{Internal, Msg};
+use crate::state_types::{Effect, Effects, EnvError, Environment};
 use crate::types::addons::{AggrRequest, Descriptor, ResourceRequest, ResourceResponse};
+use futures::future::Either;
+use futures::{future, Future};
 use serde::Serialize;
 use std::convert::TryFrom;
 
@@ -49,7 +52,16 @@ where
                     request: request.to_owned(),
                     content: ResourceContent::Loading,
                 });
-                Effects::one(addon_get::<Env>(request.to_owned()))
+                let request = request.to_owned();
+                Effects::one(Box::new(get_resource::<Env>(&request).then(
+                    move |result| {
+                        let msg = Msg::Internal(Internal::AddonResponse(request, result));
+                        match result {
+                            Ok(_) => future::ok(msg),
+                            Err(_) => future::err(msg),
+                        }
+                    },
+                )))
             } else {
                 Effects::none().unchanged()
             }
@@ -143,13 +155,20 @@ where
             {
                 let (next_resources, effects) = requests
                     .iter()
+                    .cloned()
                     .map(|request| {
                         (
                             ResourceLoadable {
                                 request: request.to_owned(),
                                 content: ResourceContent::Loading,
                             },
-                            addon_get::<Env>(request.to_owned()),
+                            Box::new(get_resource::<Env>(&request).then(move |result| {
+                                let msg = Msg::Internal(Internal::AddonResponse(request, result));
+                                match result {
+                                    Ok(_) => future::ok(msg),
+                                    Err(_) => future::err(msg),
+                                }
+                            })) as Effect,
                         )
                     })
                     .unzip::<_, _, Vec<_>, Vec<_>>();

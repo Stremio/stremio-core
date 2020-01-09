@@ -1,21 +1,12 @@
-use crate::state_types::messages::{Internal, Msg};
-use crate::state_types::{Effect, Environment};
-use futures::{future, Future};
+use crate::state_types::messages::MsgError;
+use crate::state_types::Environment;
+use crate::types::addons::Manifest;
+use futures::Future;
 
-pub fn get_manifest<Env: Environment + 'static>(transport_url: &str) -> Effect {
-    let transport_url = transport_url.to_owned();
-    Box::new(
-        Env::addon_transport(&transport_url)
-            .manifest()
-            .then(move |result| match result {
-                Ok(_) => future::ok(Msg::Internal(Internal::ManifestResponse(
-                    transport_url,
-                    Box::new(result),
-                ))),
-                Err(_) => future::err(Msg::Internal(Internal::ManifestResponse(
-                    transport_url,
-                    Box::new(result),
-                ))),
-            }),
-    )
+pub fn get_manifest<Env: Environment + 'static>(
+    transport_url: &str,
+) -> impl Future<Item = Manifest, Error = MsgError> {
+    Env::addon_transport(transport_url)
+        .manifest()
+        .map_err(|error| MsgError::from(error))
 }

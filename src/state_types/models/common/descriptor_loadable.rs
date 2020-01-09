@@ -1,7 +1,9 @@
 use super::{get_manifest, Loadable};
 use crate::constants::OFFICIAL_ADDONS;
+use crate::state_types::messages::{Internal, Msg};
 use crate::state_types::{Effects, EnvError, Environment};
 use crate::types::addons::{Descriptor, Manifest, TransportUrl};
+use futures::{future, Future};
 use serde::Serialize;
 
 pub type DescriptorContent = Loadable<Descriptor, String>;
@@ -43,7 +45,16 @@ where
                     transport_url: transport_url.to_owned(),
                     content: DescriptorContent::Loading,
                 });
-                Effects::one(get_manifest::<Env>(transport_url))
+                let transport_url = transport_url.to_owned();
+                Effects::one(Box::new(get_manifest::<Env>(&transport_url).then(
+                    move |result| {
+                        let msg = Msg::Internal(Internal::ManifestResponse(transport_url, result));
+                        match result {
+                            Ok(_) => future::ok(msg),
+                            Err(_) => future::err(msg),
+                        }
+                    },
+                )))
             } else {
                 Effects::none().unchanged()
             }

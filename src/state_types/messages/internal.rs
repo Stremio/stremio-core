@@ -1,5 +1,5 @@
+use super::MsgError;
 use crate::state_types::models::{SsSettings, UserData};
-use crate::state_types::EnvError;
 use crate::types::addons::{Descriptor, Manifest, ResourceRequest, ResourceResponse, TransportUrl};
 use crate::types::api::{APIRequest, AuthKey};
 use crate::types::LibBucket;
@@ -8,6 +8,8 @@ use crate::types::LibBucket;
 pub enum Internal {
     UserDataLoaded(Option<UserData>),
     UserDataResponse(APIRequest, UserData),
+    AddonResponse(ResourceRequest, Result<ResourceResponse, MsgError>),
+    ManifestResponse(TransportUrl, Result<Manifest, MsgError>),
     // Context addons pulled
     // this should replace ctx.content.addons entirely
     CtxAddonsPulled(AuthKey, Vec<Descriptor>),
@@ -17,8 +19,6 @@ pub enum Internal {
     // Library: pulled some newer items from the API
     // this will extend the current index of libitems, it doesn't replace it
     LibSyncPulled(LibBucket),
-    AddonResponse(ResourceRequest, Box<Result<ResourceResponse, EnvError>>),
-    ManifestResponse(TransportUrl, Box<Result<Manifest, EnvError>>),
     StreamingServerSettingsLoaded(SsSettings),
     StreamingServerSettingsErrored(String),
 }
