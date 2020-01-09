@@ -1,7 +1,5 @@
 mod user;
 pub use self::user::*;
-mod fetch;
-pub use self::fetch::*;
 mod auth;
 pub use self::auth::*;
 use crate::types::addons::*;
@@ -23,7 +21,7 @@ pub trait APIMethodName {
     fn method_name(&self) -> &str;
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct GDPRConsent {
     pub tos: bool,
     pub privacy: bool,
@@ -32,8 +30,8 @@ pub struct GDPRConsent {
     pub from: String,
 }
 
-#[derive(Serialize, Clone)]
-#[serde(untagged)]
+#[derive(Clone, Debug, PartialEq, Serialize)]
+#[serde(tag = "type")]
 pub enum APIRequest {
     Login {
         email: String,
