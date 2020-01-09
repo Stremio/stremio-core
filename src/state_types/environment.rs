@@ -1,4 +1,5 @@
 use crate::addon_transport::{AddonHTTPTransport, AddonInterface};
+use crate::constants::API_URL;
 use chrono::{DateTime, Utc};
 use futures::Future;
 use serde::de::DeserializeOwned;
@@ -7,12 +8,11 @@ use std::error::Error;
 
 pub use http::Request;
 
-const API_URL: &str = "https://api.strem.io";
-
 pub type EnvError = Box<dyn Error>;
+
 pub type EnvFuture<T> = Box<dyn Future<Item = T, Error = EnvError>>;
+
 pub trait Environment {
-    // https://serde.rs/lifetimes.html#trait-bounds
     fn fetch_serde<IN, OUT>(request: Request<IN>) -> EnvFuture<OUT>
     where
         IN: 'static + Serialize,

@@ -1,4 +1,4 @@
-use crate::state_types::messages::Msg;
+use super::messages::Msg;
 use futures::{future, Future};
 
 pub type Effect = Box<dyn Future<Item = Msg, Error = Msg>>;

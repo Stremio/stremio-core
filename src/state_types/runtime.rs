@@ -1,7 +1,7 @@
-use crate::state_types::messages::{Event, Msg};
-use crate::state_types::{Effects, Environment, Update};
-use derivative::*;
-use enclose::*;
+use super::messages::{Event, Msg};
+use super::{Effects, Environment, Update};
+use derivative::Derivative;
+use enclose::enclose;
 use futures::sync::mpsc::{channel, Receiver, Sender};
 use futures::{future, Future};
 use serde::Serialize;
@@ -22,6 +22,7 @@ pub struct Runtime<Env: Environment, M: Update> {
     tx: Sender<RuntimeEv>,
     env: PhantomData<Env>,
 }
+
 impl<Env: Environment + 'static, M: Update + 'static> Runtime<Env, M> {
     pub fn new(app: M, len: usize) -> (Self, Receiver<RuntimeEv>) {
         let (tx, rx) = channel(len);
