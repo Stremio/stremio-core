@@ -44,8 +44,8 @@ pub enum ActionLibrary {
 #[serde(tag = "action", content = "args")]
 pub enum ActionCtx {
     SyncWithAPI,
-    PersistToStorage,
     RetrieveFromStorage,
+    PersistToStorage,
     User(ActionUser),
     Addons(ActionAddons),
     Settings(ActionSettings),

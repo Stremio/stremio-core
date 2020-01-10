@@ -6,6 +6,10 @@ use serde::Serialize;
 pub enum Event {
     UserAuthenticated,
     UserLoggedOut,
+    AddonInstalled,
+    AddonUninstalled,
+    SettingsUpdated,
+    UserDataRetrivedFromStorage,
     UserDataPersisted,
     LibraryPersisted,
     ActionError(Action, MsgError),
