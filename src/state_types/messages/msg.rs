@@ -1,7 +1,6 @@
 use super::{Action, Event, Internal};
-use derive_more::From;
 
-#[derive(Debug, From)]
+#[derive(Debug)]
 pub enum Msg {
     Action(Action),
     Internal(Internal),

@@ -1,5 +1,5 @@
-use super::messages::{Event, Msg};
 use super::{Effects, Environment, Update};
+use crate::state_types::messages::{Event, Msg};
 use derivative::Derivative;
 use enclose::enclose;
 use futures::sync::mpsc::{channel, Receiver, Sender};

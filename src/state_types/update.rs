@@ -1,5 +1,5 @@
-use super::messages::Msg;
 use super::Effects;
+use crate::state_types::messages::Msg;
 
 pub trait Update {
     fn update(&mut self, msg: &Msg) -> Effects;

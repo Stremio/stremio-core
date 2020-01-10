@@ -1,6 +1,6 @@
 use super::{get_resource, Loadable};
-use crate::state_types::messages::{Internal, Msg};
-use crate::state_types::{Effect, Effects, EnvError, Environment};
+use crate::state_types::messages::{Internal, Msg, MsgError};
+use crate::state_types::{Effect, Effects, Environment};
 use crate::types::addons::{AggrRequest, Descriptor, ResourceRequest, ResourceResponse};
 use futures::{future, Future};
 use serde::Serialize;
@@ -29,20 +29,35 @@ pub enum ResourceAction<'a, T> {
     ResourceReplaced {
         resource: Option<ResourceLoadable<T>>,
     },
-    ResourceResponseReceived {
+    ResourceResultReceived {
         request: &'a ResourceRequest,
-        response: &'a Result<ResourceResponse, EnvError>,
+        result: &'a Result<ResourceResponse, MsgError>,
         limit: Option<usize>,
     },
 }
 
-pub fn resource_update<T, Env>(
+pub enum ResourcesAction<'a, T> {
+    ResourcesRequested {
+        aggr_request: &'a AggrRequest<'a>,
+        addons: &'a [Descriptor],
+    },
+    ResourcesReplaced {
+        resources: Vec<ResourceLoadable<T>>,
+    },
+    ResourceResultReceived {
+        request: &'a ResourceRequest,
+        result: &'a Result<ResourceResponse, MsgError>,
+        limit: Option<usize>,
+    },
+}
+
+pub fn resource_update<Env, T>(
     resource: &mut Option<ResourceLoadable<T>>,
     action: ResourceAction<T>,
 ) -> Effects
 where
-    T: TryFrom<ResourceResponse, Error = &'static str>,
     Env: Environment + 'static,
+    T: TryFrom<ResourceResponse, Error = &'static str>,
 {
     match action {
         ResourceAction::ResourceRequested { request } => {
@@ -54,7 +69,10 @@ where
                 let request = request.to_owned();
                 Effects::one(Box::new(get_resource::<Env>(&request).then(
                     move |result| {
-                        let msg = Msg::Internal(Internal::AddonResponse(request, Box::new(result)));
+                        let msg = Msg::Internal(Internal::ResourceRequestResult(
+                            request,
+                            Box::new(result),
+                        ));
                         match result {
                             Ok(_) => future::ok(msg),
                             Err(_) => future::err(msg),
@@ -79,11 +97,11 @@ where
                 Effects::none().unchanged()
             }
         }
-        ResourceAction::ResourceResponseReceived {
-            request, response, ..
+        ResourceAction::ResourceResultReceived {
+            request, result, ..
         } => match resource {
             Some(resource) if request.eq(&resource.request) => {
-                resource.content = resource_content_from_response(response);
+                resource.content = resource_content_from_result(result);
                 Effects::none()
             }
             _ => Effects::none().unchanged(),
@@ -91,52 +109,37 @@ where
     }
 }
 
-pub fn resource_update_with_vector_content<T, Env>(
+pub fn resource_update_with_vector_content<Env, T>(
     resource: &mut Option<ResourceLoadable<Vec<T>>>,
     action: ResourceAction<Vec<T>>,
 ) -> Effects
 where
-    Vec<T>: TryFrom<ResourceResponse, Error = &'static str>,
     Env: Environment + 'static,
+    Vec<T>: TryFrom<ResourceResponse, Error = &'static str>,
 {
     match action {
-        ResourceAction::ResourceResponseReceived {
+        ResourceAction::ResourceResultReceived {
             request,
-            response,
+            result,
             limit,
         } => match resource {
             Some(resource) if request.eq(&resource.request) => {
-                resource.content = resource_vector_content_from_response(response, limit);
+                resource.content = resource_vector_content_from_result(result, limit);
                 Effects::none()
             }
             _ => Effects::none().unchanged(),
         },
-        _ => resource_update::<_, Env>(resource, action),
+        _ => resource_update::<Env, _>(resource, action),
     }
 }
 
-pub enum ResourcesAction<'a, T> {
-    ResourcesRequested {
-        aggr_request: &'a AggrRequest<'a>,
-        addons: &'a [Descriptor],
-    },
-    ResourcesReplaced {
-        resources: Vec<ResourceLoadable<T>>,
-    },
-    ResourceResponseReceived {
-        request: &'a ResourceRequest,
-        response: &'a Result<ResourceResponse, EnvError>,
-        limit: Option<usize>,
-    },
-}
-
-pub fn resources_update<T, Env>(
+pub fn resources_update<Env, T>(
     resources: &mut Vec<ResourceLoadable<T>>,
     action: ResourcesAction<T>,
 ) -> Effects
 where
-    T: TryFrom<ResourceResponse, Error = &'static str>,
     Env: Environment + 'static,
+    T: TryFrom<ResourceResponse, Error = &'static str>,
 {
     match action {
         ResourcesAction::ResourcesRequested {
@@ -147,7 +150,7 @@ where
                 .plan(&addons)
                 .into_iter()
                 .map(|(_, request)| request)
-                .collect::<Vec<ResourceRequest>>();
+                .collect::<Vec<_>>();
             if requests
                 .iter()
                 .ne(resources.iter().map(|resource| &resource.request))
@@ -155,14 +158,14 @@ where
                 let (next_resources, effects) = requests
                     .iter()
                     .cloned()
-                    .map(|request| -> (ResourceLoadable<T>, Effect) {
+                    .map(|request| -> (_, Effect) {
                         (
                             ResourceLoadable {
                                 request: request.to_owned(),
                                 content: ResourceContent::Loading,
                             },
                             Box::new(get_resource::<Env>(&request).then(move |result| {
-                                let msg = Msg::Internal(Internal::AddonResponse(
+                                let msg = Msg::Internal(Internal::ResourceRequestResult(
                                     request,
                                     Box::new(result),
                                 ));
@@ -194,15 +197,15 @@ where
                 Effects::none().unchanged()
             }
         }
-        ResourcesAction::ResourceResponseReceived {
-            request, response, ..
+        ResourcesAction::ResourceResultReceived {
+            request, result, ..
         } => {
             match resources
                 .iter()
                 .position(|resource| resource.request.eq(request))
             {
-                Some(resource_index) => {
-                    resources[resource_index].content = resource_content_from_response(response);
+                Some(position) => {
+                    resources[position].content = resource_content_from_result(result);
                     Effects::none()
                 }
                 _ => Effects::none().unchanged(),
@@ -211,44 +214,44 @@ where
     }
 }
 
-pub fn resources_update_with_vector_content<T, Env>(
+pub fn resources_update_with_vector_content<Env, T>(
     resources: &mut Vec<ResourceLoadable<Vec<T>>>,
     action: ResourcesAction<Vec<T>>,
 ) -> Effects
 where
-    Vec<T>: TryFrom<ResourceResponse, Error = &'static str>,
     Env: Environment + 'static,
+    Vec<T>: TryFrom<ResourceResponse, Error = &'static str>,
 {
     match action {
-        ResourcesAction::ResourceResponseReceived {
+        ResourcesAction::ResourceResultReceived {
             request,
-            response,
+            result,
             limit,
         } => {
             match resources
                 .iter()
                 .position(|resource| resource.request.eq(request))
             {
-                Some(resource_index) => {
-                    resources[resource_index].content =
-                        resource_vector_content_from_response(response, limit);
+                Some(position) => {
+                    resources[position].content =
+                        resource_vector_content_from_result(result, limit);
                     Effects::none()
                 }
                 _ => Effects::none().unchanged(),
             }
         }
-        _ => resources_update::<_, Env>(resources, action),
+        _ => resources_update::<Env, _>(resources, action),
     }
 }
 
-fn resource_content_from_response<T>(
-    response: &Result<ResourceResponse, EnvError>,
+fn resource_content_from_result<T>(
+    result: &Result<ResourceResponse, MsgError>,
 ) -> ResourceContent<T>
 where
     T: TryFrom<ResourceResponse, Error = &'static str>,
 {
-    match response {
-        Ok(response) => match T::try_from(response.to_owned()) {
+    match result {
+        Ok(result) => match T::try_from(result.to_owned()) {
             Ok(content) => ResourceContent::Ready(content),
             Err(error) => ResourceContent::Err(ResourceError::UnexpectedResponse(error.to_owned())),
         },
@@ -256,15 +259,15 @@ where
     }
 }
 
-fn resource_vector_content_from_response<T>(
-    response: &Result<ResourceResponse, EnvError>,
+fn resource_vector_content_from_result<T>(
+    result: &Result<ResourceResponse, MsgError>,
     limit: Option<usize>,
 ) -> ResourceContent<Vec<T>>
 where
     Vec<T>: TryFrom<ResourceResponse, Error = &'static str>,
 {
-    match response {
-        Ok(response) => match <Vec<T>>::try_from(response.to_owned()) {
+    match result {
+        Ok(result) => match <Vec<T>>::try_from(result.to_owned()) {
             Ok(content) => {
                 if content.is_empty() {
                     ResourceContent::Err(ResourceError::EmptyContent)

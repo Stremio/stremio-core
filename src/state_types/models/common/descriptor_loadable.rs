@@ -22,9 +22,9 @@ pub enum DescriptorAction<'a> {
     DescriptorReplaced {
         descriptor: Option<DescriptorLoadable>,
     },
-    ManifestResponseReceived {
+    ManifestResultReceived {
         transport_url: &'a TransportUrl,
-        response: &'a Result<Manifest, MsgError>,
+        result: &'a Result<Manifest, MsgError>,
     },
 }
 
@@ -48,7 +48,7 @@ where
                 let transport_url = transport_url.to_owned();
                 Effects::one(Box::new(get_manifest::<Env>(&transport_url).then(
                     move |result| {
-                        let msg = Msg::Internal(Internal::ManifestResponse(
+                        let msg = Msg::Internal(Internal::ManifestRequestResult(
                             transport_url,
                             Box::new(result),
                         ));
@@ -72,12 +72,12 @@ where
                 Effects::none().unchanged()
             }
         }
-        DescriptorAction::ManifestResponseReceived {
+        DescriptorAction::ManifestResultReceived {
             transport_url,
-            response,
+            result,
         } => match descriptor {
             Some(descriptor) if transport_url.eq(&descriptor.transport_url) => {
-                descriptor.content = match response {
+                descriptor.content = match result {
                     Ok(manifest) => DescriptorContent::Ready(Descriptor {
                         transport_url: transport_url.to_owned(),
                         manifest: manifest.to_owned(),

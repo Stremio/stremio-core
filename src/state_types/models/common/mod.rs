@@ -1,8 +1,14 @@
+mod authenticate;
+pub use authenticate::*;
+
 mod descriptor_loadable;
 pub use descriptor_loadable::*;
 
 mod fetch_api;
 pub use fetch_api::*;
+
+mod get_addons;
+pub use get_addons::*;
 
 mod get_manifest;
 pub use get_manifest::*;
