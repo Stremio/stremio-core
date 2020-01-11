@@ -32,7 +32,7 @@ pub enum ResourceAction<'a, T> {
     ResourceResultReceived {
         request: &'a ResourceRequest,
         result: &'a Result<ResourceResponse, MsgError>,
-        limit: Option<usize>,
+        limit: &'a Option<usize>,
     },
 }
 
@@ -47,7 +47,7 @@ pub enum ResourcesAction<'a, T> {
     ResourceResultReceived {
         request: &'a ResourceRequest,
         result: &'a Result<ResourceResponse, MsgError>,
-        limit: Option<usize>,
+        limit: &'a Option<usize>,
     },
 }
 
@@ -261,7 +261,7 @@ where
 
 fn resource_vector_content_from_result<T>(
     result: &Result<ResourceResponse, MsgError>,
-    limit: Option<usize>,
+    limit: &Option<usize>,
 ) -> ResourceContent<Vec<T>>
 where
     Vec<T>: TryFrom<ResourceResponse, Error = &'static str>,
@@ -272,7 +272,7 @@ where
                 if content.is_empty() {
                     ResourceContent::Err(ResourceError::EmptyContent)
                 } else if let Some(limit) = limit {
-                    ResourceContent::Ready(content.into_iter().take(limit).collect())
+                    ResourceContent::Ready(content.into_iter().take(limit.to_owned()).collect())
                 } else {
                     ResourceContent::Ready(content)
                 }
