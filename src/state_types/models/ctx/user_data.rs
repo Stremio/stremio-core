@@ -89,7 +89,7 @@ impl UserDataLoadable {
                 content
             }
         };
-        match msg {
+        let user_data_effects = match msg {
             Msg::Action(Action::Ctx(ActionCtx::SyncWithAPI)) => {
                 // TODO
                 Effects::none().unchanged()
@@ -121,7 +121,8 @@ impl UserDataLoadable {
                             MsgError::from(error),
                         ))
                     }),
-            )),
+            ))
+            .unchanged(),
             Msg::Action(Action::Ctx(ActionCtx::User(action_user))) => {
                 let action_user = action_user.to_owned();
                 match action_user {
@@ -277,27 +278,11 @@ impl UserDataLoadable {
                 _ => Effects::none().unchanged(),
             },
             _ => Effects::none().unchanged(),
-        }
-    }
-    pub fn auth<'a>(&'a self) -> &'a Option<Auth> {
-        match &self {
-            UserDataLoadable::Loading { content, .. } | UserDataLoadable::Ready { content } => {
-                &content.auth
-            }
-        }
-    }
-    pub fn addons<'a>(&'a self) -> &'a Vec<Descriptor> {
-        match &self {
-            UserDataLoadable::Loading { content, .. } | UserDataLoadable::Ready { content } => {
-                &content.addons
-            }
-        }
-    }
-    pub fn settings<'a>(&'a self) -> &'a Settings {
-        match &self {
-            UserDataLoadable::Loading { content, .. } | UserDataLoadable::Ready { content } => {
-                &content.settings
-            }
+        };
+        if user_data_effects.has_changed {
+            Effects::msg(Msg::Internal(Internal::UserDataChanged)).join(user_data_effects)
+        } else {
+            user_data_effects
         }
     }
 }

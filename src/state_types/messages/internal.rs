@@ -7,6 +7,7 @@ use crate::types::LibBucket;
 #[derive(Debug)]
 pub enum Internal {
     NOOP,
+    UserDataChanged,
     UserDataStorageResult(Box<Option<UserData>>),
     UserDataRequestResponse(APIRequest, Box<UserData>),
     ResourceRequestResult(ResourceRequest, Box<Result<ResourceResponse, MsgError>>),
