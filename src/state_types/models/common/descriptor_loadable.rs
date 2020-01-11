@@ -6,10 +6,11 @@ use crate::types::addons::{Descriptor, Manifest, TransportUrl};
 use futures::{future, Future};
 use serde::Serialize;
 
-pub type DescriptorContent = Loadable<Descriptor, String>;
+pub type DescriptorError = String;
+
+pub type DescriptorContent = Loadable<Descriptor, DescriptorError>;
 
 #[derive(Debug, Clone, PartialEq, Serialize)]
-#[serde(rename_all = "camelCase")]
 pub struct DescriptorLoadable {
     pub transport_url: TransportUrl,
     pub content: DescriptorContent,
@@ -28,13 +29,10 @@ pub enum DescriptorAction<'a> {
     },
 }
 
-pub fn descriptor_update<Env>(
+pub fn descriptor_update<Env: Environment + 'static>(
     descriptor: &mut Option<DescriptorLoadable>,
     action: DescriptorAction,
-) -> Effects
-where
-    Env: Environment + 'static,
-{
+) -> Effects {
     match action {
         DescriptorAction::DescriptorRequested { transport_url } => {
             if Some(transport_url).ne(&descriptor
