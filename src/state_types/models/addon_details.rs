@@ -5,7 +5,6 @@ use crate::state_types::models::common::{
 use crate::state_types::models::ctx::Ctx;
 use crate::state_types::{Effects, Environment, UpdateWithCtx};
 use serde::Serialize;
-use std::ops::Deref;
 
 #[derive(Default, Debug, Clone, Serialize)]
 pub struct AddonDetails {
@@ -46,7 +45,7 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for AddonDetails {
                     &mut self.addon,
                     DescriptorAction::ManifestResultReceived {
                         transport_url,
-                        result: result.deref(),
+                        result,
                     },
                 )
             }
