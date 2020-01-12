@@ -67,7 +67,8 @@ impl Default for UserData {
 #[serde(tag = "type", content = "content")]
 pub enum UserDataRequest {
     Storage,
-    API(APIRequest),
+    Login(APIRequest),
+    Register(APIRequest),
 }
 
 #[derive(Derivative, Clone, Debug, PartialEq, Serialize)]
@@ -126,14 +127,35 @@ impl UserDataLoadable {
             Msg::Action(Action::Ctx(ActionCtx::User(action_user))) => {
                 let action_user = action_user.to_owned();
                 match action_user {
-                    ActionUser::Login { email, password } => {
-                        let login_request = APIRequest::Login { email, password };
+                    ActionUser::Login { .. } | ActionUser::Register { .. } => {
+                        let (auth_request, user_data_request) = match action_user {
+                            ActionUser::Login { email, password } => {
+                                let auth_request = APIRequest::Login { email, password };
+                                let user_data_request =
+                                    UserDataRequest::Login(auth_request.to_owned());
+                                (auth_request, user_data_request)
+                            }
+                            ActionUser::Register {
+                                email,
+                                password,
+                                gdpr_consent,
+                            } => {
+                                let auth_request = APIRequest::Register {
+                                    email,
+                                    password,
+                                    gdpr_consent,
+                                };
+                                let user_data_request =
+                                    UserDataRequest::Register(auth_request.to_owned());
+                                (auth_request, user_data_request)
+                            }
+                        };
                         *self = UserDataLoadable::Loading {
-                            request: UserDataRequest::API(login_request.to_owned()),
+                            request: user_data_request,
                             content: UserData::default(),
                         };
                         Effects::one(Box::new(
-                            authenticate::<Env>(&login_request)
+                            authenticate::<Env>(&auth_request)
                                 .and_then(|auth| {
                                     get_addons::<Env>(&auth.key).map(move |addons| UserData {
                                         auth: Some(auth),
@@ -143,44 +165,7 @@ impl UserDataLoadable {
                                 })
                                 .map(move |user_data| {
                                     Msg::Internal(Internal::UserDataRequestResponse(
-                                        login_request,
-                                        Box::new(user_data),
-                                    ))
-                                })
-                                .map_err(move |error| {
-                                    Msg::Event(Event::ActionError(
-                                        Action::Ctx(ActionCtx::User(action_user)),
-                                        error,
-                                    ))
-                                }),
-                        ))
-                    }
-                    ActionUser::Register {
-                        email,
-                        password,
-                        gdpr_consent,
-                    } => {
-                        let register_request = APIRequest::Register {
-                            email,
-                            password,
-                            gdpr_consent,
-                        };
-                        *self = UserDataLoadable::Loading {
-                            request: UserDataRequest::API(register_request.to_owned()),
-                            content: UserData::default(),
-                        };
-                        Effects::one(Box::new(
-                            authenticate::<Env>(&register_request)
-                                .and_then(|auth| {
-                                    get_addons::<Env>(&auth.key).map(move |addons| UserData {
-                                        auth: Some(auth),
-                                        addons,
-                                        settings: Settings::default(),
-                                    })
-                                })
-                                .map(move |user_data| {
-                                    Msg::Internal(Internal::UserDataRequestResponse(
-                                        register_request,
+                                        auth_request,
                                         Box::new(user_data),
                                     ))
                                 })
@@ -194,11 +179,11 @@ impl UserDataLoadable {
                     }
                     ActionUser::Logout => match &user_data.auth {
                         Some(auth) => {
-                            *self = UserDataLoadable::Ready {
-                                content: UserData::default(),
-                            };
                             let logout_request = APIRequest::Logout {
                                 auth_key: auth.key.to_owned(),
+                            };
+                            *self = UserDataLoadable::Ready {
+                                content: UserData::default(),
                             };
                             Effects::msg(Msg::Event(Event::UserLoggedOut)).join(Effects::one(
                                 Box::new(
@@ -267,14 +252,21 @@ impl UserDataLoadable {
             },
             Msg::Internal(Internal::UserDataRequestResponse(api_request, user_data)) => match &self
             {
-                UserDataLoadable::Loading { request, .. }
-                    if request.eq(&UserDataRequest::API(api_request.to_owned())) =>
-                {
-                    *self = UserDataLoadable::Ready {
-                        content: user_data.deref().to_owned(),
-                    };
-                    Effects::msg(Msg::Event(Event::UserAuthenticated))
-                }
+                UserDataLoadable::Loading { request, .. } => match request {
+                    UserDataRequest::Login(auth_request) if auth_request.eq(api_request) => {
+                        *self = UserDataLoadable::Ready {
+                            content: user_data.deref().to_owned(),
+                        };
+                        Effects::msg(Msg::Event(Event::UserLoggedIn))
+                    }
+                    UserDataRequest::Register(auth_request) if auth_request.eq(api_request) => {
+                        *self = UserDataLoadable::Ready {
+                            content: user_data.deref().to_owned(),
+                        };
+                        Effects::msg(Msg::Event(Event::UserRegistered))
+                    }
+                    _ => Effects::none().unchanged(),
+                },
                 _ => Effects::none().unchanged(),
             },
             _ => Effects::none().unchanged(),
