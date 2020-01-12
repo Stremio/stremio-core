@@ -277,4 +277,25 @@ impl UserDataLoadable {
             user_data_effects
         }
     }
+    pub fn auth<'a>(&'a self) -> &'a Option<Auth> {
+        match &self {
+            UserDataLoadable::Loading { content, .. } | UserDataLoadable::Ready { content } => {
+                &content.auth
+            }
+        }
+    }
+    pub fn addons<'a>(&'a self) -> &'a Vec<Descriptor> {
+        match &self {
+            UserDataLoadable::Loading { content, .. } | UserDataLoadable::Ready { content } => {
+                &content.addons
+            }
+        }
+    }
+    pub fn settings<'a>(&'a self) -> &'a Settings {
+        match &self {
+            UserDataLoadable::Loading { content, .. } | UserDataLoadable::Ready { content } => {
+                &content.settings
+            }
+        }
+    }
 }
