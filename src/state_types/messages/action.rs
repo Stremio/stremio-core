@@ -69,9 +69,7 @@ pub enum ActionLoad {
         id: String,
         video_id: Option<String>,
     },
-    AddonDetails {
-        transport_url: String,
-    },
+    AddonDetails(TransportUrl),
     Player {
         transport_url: String,
         type_name: String,
