@@ -59,7 +59,7 @@ impl CatalogResourceAdapter for DescriptorPreview {
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct Selected {
-    request: ResourceRequest,
+    pub request: ResourceRequest,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize)]

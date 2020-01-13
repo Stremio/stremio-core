@@ -12,7 +12,7 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct Selected {
-    extra: Vec<ExtraProp>,
+    pub extra: Vec<ExtraProp>,
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize)]
