@@ -1,3 +1,4 @@
+use crate::state_types::models::addon_details::Selected as AddonDetailsSelected;
 use crate::state_types::models::catalog_filtered::Selected as CatalogFilteredSelected;
 use crate::state_types::models::catalogs_with_extra::Selected as CatalogsWithExtraSelected;
 use crate::state_types::models::ctx::Settings;
@@ -57,9 +58,10 @@ pub enum ActionCtx {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(tag = "action", content = "args")]
 pub enum ActionLoad {
-    Notifications,
-    CatalogsWithExtra(CatalogsWithExtraSelected),
+    AddonDetails(AddonDetailsSelected),
     CatalogFiltered(CatalogFilteredSelected),
+    CatalogsWithExtra(CatalogsWithExtraSelected),
+    Notifications,
     LibraryFiltered {
         type_name: String,
         sort_prop: Option<String>,
@@ -69,7 +71,6 @@ pub enum ActionLoad {
         id: String,
         video_id: Option<String>,
     },
-    AddonDetails(TransportUrl),
     Player {
         transport_url: String,
         type_name: String,
