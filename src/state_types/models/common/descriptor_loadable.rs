@@ -20,9 +20,6 @@ pub enum DescriptorAction<'a> {
     DescriptorRequested {
         transport_url: &'a TransportUrl,
     },
-    DescriptorReplaced {
-        descriptor: Option<DescriptorLoadable>,
-    },
     ManifestResultReceived {
         transport_url: &'a TransportUrl,
         result: &'a Result<Manifest, MsgError>,
@@ -56,16 +53,6 @@ pub fn descriptor_update<Env: Environment + 'static>(
                         }
                     },
                 )))
-            } else {
-                Effects::none().unchanged()
-            }
-        }
-        DescriptorAction::DescriptorReplaced {
-            descriptor: next_descriptor,
-        } => {
-            if next_descriptor.ne(descriptor) {
-                *descriptor = next_descriptor;
-                Effects::none()
             } else {
                 Effects::none().unchanged()
             }
