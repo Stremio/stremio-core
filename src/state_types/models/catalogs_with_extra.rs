@@ -25,9 +25,10 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for CatalogsWithExtra {
     fn update(&mut self, ctx: &Ctx<Env>, msg: &Msg) -> Effects {
         match msg {
             Msg::Action(Action::Load(ActionLoad::CatalogsWithExtra(selected))) => {
-                let extra = validate_extra(&selected.extra, &None);
-                let selected = Selected { extra };
-                let selected_effects = eq_update(&mut self.selected, &Some(selected.to_owned()));
+                let selected = Selected {
+                    extra: validate_extra(&selected.extra, &None),
+                };
+                let selected_effects = eq_update(&mut self.selected, Some(selected.to_owned()));
                 let catalogs_effects = resources_update_with_vector_content::<Env, _>(
                     &mut self.catalog_resources,
                     ResourcesAction::ResourcesRequested {
@@ -40,11 +41,8 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for CatalogsWithExtra {
                 selected_effects.join(catalogs_effects)
             }
             Msg::Action(Action::Unload) => {
-                let selected_effects = eq_update(&mut self.selected, &None);
-                let catalogs_effects = resources_update_with_vector_content::<Env, _>(
-                    &mut self.catalog_resources,
-                    ResourcesAction::ResourcesReplaced { resources: vec![] },
-                );
+                let selected_effects = eq_update(&mut self.selected, None);
+                let catalogs_effects = eq_update(&mut self.catalog_resources, vec![]);
                 selected_effects.join(catalogs_effects)
             }
             Msg::Internal(Internal::ResourceRequestResult(request, result)) => {
