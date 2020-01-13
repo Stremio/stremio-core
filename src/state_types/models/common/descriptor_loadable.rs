@@ -10,10 +10,16 @@ pub type DescriptorError = String;
 
 pub type DescriptorContent = Loadable<Descriptor, DescriptorError>;
 
-#[derive(Debug, Clone, PartialEq, Serialize)]
+#[derive(Debug, Clone, Serialize)]
 pub struct DescriptorLoadable {
     pub transport_url: TransportUrl,
     pub content: DescriptorContent,
+}
+
+impl PartialEq for DescriptorLoadable {
+    fn eq(&self, other: &Self) -> bool {
+        self.transport_url.eq(&other.transport_url)
+    }
 }
 
 pub enum DescriptorAction<'a> {

@@ -16,10 +16,16 @@ pub enum ResourceError {
 
 pub type ResourceContent<T> = Loadable<T, ResourceError>;
 
-#[derive(Debug, Clone, PartialEq, Serialize)]
+#[derive(Debug, Clone, Serialize)]
 pub struct ResourceLoadable<T> {
     pub request: ResourceRequest,
     pub content: ResourceContent<T>,
+}
+
+impl<T> PartialEq for ResourceLoadable<T> {
+    fn eq(&self, other: &Self) -> bool {
+        self.request.eq(&other.request)
+    }
 }
 
 pub enum ResourceAction<'a> {
