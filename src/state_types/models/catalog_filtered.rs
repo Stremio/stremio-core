@@ -114,7 +114,7 @@ where
                         },
                     },
                 };
-                let selected_effects = eq_update(&mut self.selected, &Some(selected));
+                let selected_effects = eq_update(&mut self.selected, Some(selected));
                 let catalog_effects = resource_update_with_vector_content::<Env, _>(
                     &mut self.catalog_resource,
                     ResourceAction::ResourceRequested {
@@ -131,11 +131,8 @@ where
                     .join(selectable_effects)
             }
             Msg::Action(Action::Unload) => {
-                let selected_effects = eq_update(&mut self.selected, &None);
-                let catalog_effects = resource_update_with_vector_content::<Env, _>(
-                    &mut self.catalog_resource,
-                    ResourceAction::ResourceReplaced { resource: None },
-                );
+                let selected_effects = eq_update(&mut self.selected, None);
+                let catalog_effects = eq_update(&mut self.catalog_resource, None);
                 let selectable_effects = selectable_update(
                     &mut self.selectable,
                     &self.catalog_resource,
