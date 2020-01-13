@@ -22,21 +22,19 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for AddonDetails {
     fn update(&mut self, ctx: &Ctx<Env>, msg: &Msg) -> Effects {
         match msg {
             Msg::Action(Action::Load(ActionLoad::AddonDetails(selected))) => {
-                let selected_effects = eq_update(&mut self.selected, &Some(selected.to_owned()));
+                let selected_effects = eq_update(&mut self.selected, Some(selected.to_owned()));
                 let addon_effects = match ctx
                     .user_data
                     .addons()
                     .iter()
                     .find(|addon| addon.transport_url.eq(&selected.transport_url))
                 {
-                    Some(addon) => descriptor_update::<Env>(
+                    Some(addon) => eq_update(
                         &mut self.addon,
-                        DescriptorAction::DescriptorReplaced {
-                            descriptor: Some(DescriptorLoadable {
-                                transport_url: selected.transport_url.to_owned(),
-                                content: DescriptorContent::Ready(addon.to_owned()),
-                            }),
-                        },
+                        Some(DescriptorLoadable {
+                            transport_url: selected.transport_url.to_owned(),
+                            content: DescriptorContent::Ready(addon.to_owned()),
+                        }),
                     ),
                     None => descriptor_update::<Env>(
                         &mut self.addon,
@@ -48,11 +46,8 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for AddonDetails {
                 selected_effects.join(addon_effects)
             }
             Msg::Action(Action::Unload) => {
-                let selected_effects = eq_update(&mut self.selected, &None);
-                let addon_effects = descriptor_update::<Env>(
-                    &mut self.addon,
-                    DescriptorAction::DescriptorReplaced { descriptor: None },
-                );
+                let selected_effects = eq_update(&mut self.selected, None);
+                let addon_effects = eq_update(&mut self.addon, None);
                 selected_effects.join(addon_effects)
             }
             Msg::Internal(Internal::ManifestRequestResult(transport_url, result)) => {
