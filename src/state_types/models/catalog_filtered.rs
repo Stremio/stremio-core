@@ -115,10 +115,18 @@ where
                 );
                 catalog_effects.join(selectable_effects)
             }
-            Msg::Action(Action::Unload) => resource_update_with_vector_content::<Env, _>(
-                &mut self.catalog_resource,
-                ResourceAction::ResourceReplaced { resource: None },
-            ),
+            Msg::Action(Action::Unload) => {
+                let catalog_effects = resource_update_with_vector_content::<Env, _>(
+                    &mut self.catalog_resource,
+                    ResourceAction::ResourceReplaced { resource: None },
+                );
+                let selectable_effects = selectable_update(
+                    &mut self.selectable,
+                    &self.catalog_resource,
+                    ctx.user_data.addons(),
+                );
+                catalog_effects.join(selectable_effects)
+            }
             Msg::Internal(Internal::ResourceRequestResult(request, result)) => {
                 let catalog_effects = resource_update_with_vector_content::<Env, _>(
                     &mut self.catalog_resource,
