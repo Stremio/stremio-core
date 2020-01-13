@@ -1,6 +1,7 @@
+use crate::state_types::models::catalog_filtered::Selected as CatalogFilteredSelected;
 use crate::state_types::models::catalogs_with_extra::Selected as CatalogsWithExtraSelected;
 use crate::state_types::models::ctx::Settings;
-use crate::types::addons::{Descriptor, ResourceRequest, TransportUrl};
+use crate::types::addons::{Descriptor, TransportUrl};
 use crate::types::api::GDPRConsent;
 use crate::types::{LibItem, MetaPreview, Stream};
 use serde::{Deserialize, Serialize};
@@ -58,7 +59,7 @@ pub enum ActionCtx {
 pub enum ActionLoad {
     Notifications,
     CatalogsWithExtra(CatalogsWithExtraSelected),
-    CatalogFiltered(ResourceRequest),
+    CatalogFiltered(CatalogFilteredSelected),
     LibraryFiltered {
         type_name: String,
         sort_prop: Option<String>,

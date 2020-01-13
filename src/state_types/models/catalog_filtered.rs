@@ -1,8 +1,8 @@
 use crate::constants::{META_CATALOG_PAGE_SIZE, SKIP_EXTRA_NAME};
 use crate::state_types::messages::{Action, ActionLoad, Internal, Msg};
 use crate::state_types::models::common::{
-    resource_update_with_vector_content, validate_extra, ResourceAction, ResourceContent,
-    ResourceLoadable,
+    eq_update, resource_update_with_vector_content, validate_extra, ResourceAction,
+    ResourceContent, ResourceLoadable,
 };
 use crate::state_types::models::ctx::Ctx;
 use crate::state_types::{Effects, Environment, UpdateWithCtx};
@@ -12,7 +12,7 @@ use crate::types::addons::{
 };
 use crate::types::MetaPreview;
 use itertools::Itertools;
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use std::convert::TryFrom;
 
 pub enum SelectablePriority {
@@ -57,6 +57,11 @@ impl CatalogResourceAdapter for DescriptorPreview {
     }
 }
 
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct Selected {
+    request: ResourceRequest,
+}
+
 #[derive(Debug, Clone, PartialEq, Serialize)]
 pub struct SelectableCatalog {
     pub name: String,
@@ -81,6 +86,7 @@ pub struct Selectable {
 
 #[derive(Default, Debug, Clone, Serialize)]
 pub struct CatalogFiltered<T> {
+    pub selected: Option<Selected>,
     pub selectable: Selectable,
     pub catalog_resource: Option<ResourceLoadable<Vec<T>>>,
 }
@@ -93,29 +99,39 @@ where
 {
     fn update(&mut self, ctx: &Ctx<Env>, msg: &Msg) -> Effects {
         match msg {
-            Msg::Action(Action::Load(ActionLoad::CatalogFiltered(request))) => {
-                let extra = validate_extra(&request.path.extra, &T::catalog_page_size());
-                let request = ResourceRequest {
-                    base: request.base.to_owned(),
-                    path: ResourceRef {
-                        resource: request.path.resource.to_owned(),
-                        type_name: request.path.type_name.to_owned(),
-                        id: request.path.id.to_owned(),
-                        extra,
+            Msg::Action(Action::Load(ActionLoad::CatalogFiltered(selected))) => {
+                let selected = Selected {
+                    request: ResourceRequest {
+                        base: selected.request.base.to_owned(),
+                        path: ResourceRef {
+                            resource: selected.request.path.resource.to_owned(),
+                            type_name: selected.request.path.type_name.to_owned(),
+                            id: selected.request.path.id.to_owned(),
+                            extra: validate_extra(
+                                &selected.request.path.extra,
+                                &T::catalog_page_size(),
+                            ),
+                        },
                     },
                 };
+                let selected_effects = eq_update(&mut self.selected, &Some(selected));
                 let catalog_effects = resource_update_with_vector_content::<Env, _>(
                     &mut self.catalog_resource,
-                    ResourceAction::ResourceRequested { request: &request },
+                    ResourceAction::ResourceRequested {
+                        request: &selected.request,
+                    },
                 );
                 let selectable_effects = selectable_update(
                     &mut self.selectable,
                     &self.catalog_resource,
                     ctx.user_data.addons(),
                 );
-                catalog_effects.join(selectable_effects)
+                selected_effects
+                    .join(catalog_effects)
+                    .join(selectable_effects)
             }
             Msg::Action(Action::Unload) => {
+                let selected_effects = eq_update(&mut self.selected, &None);
                 let catalog_effects = resource_update_with_vector_content::<Env, _>(
                     &mut self.catalog_resource,
                     ResourceAction::ResourceReplaced { resource: None },
@@ -125,7 +141,9 @@ where
                     &self.catalog_resource,
                     ctx.user_data.addons(),
                 );
-                catalog_effects.join(selectable_effects)
+                selected_effects
+                    .join(catalog_effects)
+                    .join(selectable_effects)
             }
             Msg::Internal(Internal::ResourceRequestResult(request, result)) => {
                 let catalog_effects = resource_update_with_vector_content::<Env, _>(
