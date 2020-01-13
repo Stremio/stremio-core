@@ -72,8 +72,8 @@ pub struct SelectableType {
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize)]
 pub struct Selectable {
-    pub catalogs: Vec<SelectableCatalog>,
     pub types: Vec<SelectableType>,
+    pub catalogs: Vec<SelectableCatalog>,
     pub extra: Vec<ManifestExtraProp>,
     pub has_prev_page: bool,
     pub has_next_page: bool,
@@ -189,7 +189,7 @@ fn selectable_update<T: CatalogResourceAdapter>(
         })
         .unique_by(|&selectable_catalog| &selectable_catalog.request)
         .collect::<Vec<_>>();
-    let (selectable_catalogs, selectable_types) = match T::selectable_priority() {
+    let (selectable_types, selectable_catalogs) = match T::selectable_priority() {
         SelectablePriority::Type => {
             let selectable_types = selectable_catalogs
                 .iter()
@@ -211,7 +211,7 @@ fn selectable_update<T: CatalogResourceAdapter>(
                 })
                 .cloned()
                 .collect::<Vec<_>>();
-            (selectable_catalogs, selectable_types)
+            (selectable_types, selectable_catalogs)
         }
         SelectablePriority::Catalog => {
             let selectable_types = selectable_catalogs
@@ -235,7 +235,7 @@ fn selectable_update<T: CatalogResourceAdapter>(
                 .unique_by(|selectable_catalog| &selectable_catalog.request.path.id)
                 .cloned()
                 .collect::<Vec<_>>();
-            (selectable_catalogs, selectable_types)
+            (selectable_types, selectable_catalogs)
         }
     };
     let (selectable_extra, has_prev_page, has_next_page) = match catalog_resource {
@@ -280,8 +280,8 @@ fn selectable_update<T: CatalogResourceAdapter>(
         _ => Default::default(),
     };
     let next_selectable = Selectable {
-        catalogs: selectable_catalogs,
         types: selectable_types,
+        catalogs: selectable_catalogs,
         extra: selectable_extra,
         has_prev_page,
         has_next_page,
