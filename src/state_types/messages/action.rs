@@ -1,5 +1,6 @@
+use crate::state_types::models::catalogs_with_extra::Selected as CatalogsWithExtraSelected;
 use crate::state_types::models::ctx::Settings;
-use crate::types::addons::{Descriptor, ExtraProp, ResourceRequest, TransportUrl};
+use crate::types::addons::{Descriptor, ResourceRequest, TransportUrl};
 use crate::types::api::GDPRConsent;
 use crate::types::{LibItem, MetaPreview, Stream};
 use serde::{Deserialize, Serialize};
@@ -56,9 +57,7 @@ pub enum ActionCtx {
 #[serde(tag = "action", content = "args")]
 pub enum ActionLoad {
     Notifications,
-    CatalogsWithExtra {
-        extra: Vec<ExtraProp>,
-    },
+    CatalogsWithExtra(CatalogsWithExtraSelected),
     CatalogFiltered(ResourceRequest),
     LibraryFiltered {
         type_name: String,
