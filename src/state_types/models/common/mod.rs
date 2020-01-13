@@ -4,6 +4,9 @@ pub use authenticate::*;
 mod descriptor_loadable;
 pub use descriptor_loadable::*;
 
+mod eq_update;
+pub use eq_update::*;
+
 mod fetch_api;
 pub use fetch_api::*;
 
