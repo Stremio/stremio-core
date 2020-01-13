@@ -10,4 +10,7 @@ jobs:
     steps:
     - uses: actions/checkout@v1
     - name: Build
-      run: ssh-add && cargo install wasm-pack && yarn build
+      run: |
+        eval $(ssh-agent -s)
+        ssh-add
+        cargo install wasm-pack && yarn build
