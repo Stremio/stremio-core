@@ -22,12 +22,9 @@ pub struct ResourceLoadable<T> {
     pub content: ResourceContent<T>,
 }
 
-pub enum ResourceAction<'a, T> {
+pub enum ResourceAction<'a> {
     ResourceRequested {
         request: &'a ResourceRequest,
-    },
-    ResourceReplaced {
-        resource: Option<ResourceLoadable<T>>,
     },
     ResourceResultReceived {
         request: &'a ResourceRequest,
@@ -36,13 +33,10 @@ pub enum ResourceAction<'a, T> {
     },
 }
 
-pub enum ResourcesAction<'a, T> {
+pub enum ResourcesAction<'a> {
     ResourcesRequested {
         aggr_request: &'a AggrRequest<'a>,
         addons: &'a [Descriptor],
-    },
-    ResourcesReplaced {
-        resources: Vec<ResourceLoadable<T>>,
     },
     ResourceResultReceived {
         request: &'a ResourceRequest,
@@ -53,7 +47,7 @@ pub enum ResourcesAction<'a, T> {
 
 pub fn resource_update<Env, T>(
     resource: &mut Option<ResourceLoadable<T>>,
-    action: ResourceAction<T>,
+    action: ResourceAction,
 ) -> Effects
 where
     Env: Environment + 'static,
@@ -83,20 +77,6 @@ where
                 Effects::none().unchanged()
             }
         }
-        ResourceAction::ResourceReplaced {
-            resource: next_resource,
-        } => {
-            if next_resource
-                .as_ref()
-                .map(|resource| &resource.request)
-                .ne(&resource.as_ref().map(|resource| &resource.request))
-            {
-                *resource = next_resource;
-                Effects::none()
-            } else {
-                Effects::none().unchanged()
-            }
-        }
         ResourceAction::ResourceResultReceived {
             request, result, ..
         } => match resource {
@@ -111,7 +91,7 @@ where
 
 pub fn resource_update_with_vector_content<Env, T>(
     resource: &mut Option<ResourceLoadable<Vec<T>>>,
-    action: ResourceAction<Vec<T>>,
+    action: ResourceAction,
 ) -> Effects
 where
     Env: Environment + 'static,
@@ -135,7 +115,7 @@ where
 
 pub fn resources_update<Env, T>(
     resources: &mut Vec<ResourceLoadable<T>>,
-    action: ResourcesAction<T>,
+    action: ResourcesAction,
 ) -> Effects
 where
     Env: Environment + 'static,
@@ -183,20 +163,6 @@ where
                 Effects::none().unchanged()
             }
         }
-        ResourcesAction::ResourcesReplaced {
-            resources: next_resources,
-        } => {
-            if next_resources
-                .iter()
-                .map(|resource| &resource.request)
-                .ne(resources.iter().map(|resource| &resource.request))
-            {
-                *resources = next_resources;
-                Effects::none()
-            } else {
-                Effects::none().unchanged()
-            }
-        }
         ResourcesAction::ResourceResultReceived {
             request, result, ..
         } => {
@@ -216,7 +182,7 @@ where
 
 pub fn resources_update_with_vector_content<Env, T>(
     resources: &mut Vec<ResourceLoadable<Vec<T>>>,
-    action: ResourcesAction<Vec<T>>,
+    action: ResourcesAction,
 ) -> Effects
 where
     Env: Environment + 'static,
