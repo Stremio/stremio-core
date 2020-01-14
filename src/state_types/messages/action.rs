@@ -9,7 +9,7 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(tag = "action", content = "args")]
-pub enum ActionUser {
+pub enum ActionAuth {
     Login {
         email: String,
         password: String,
@@ -25,6 +25,8 @@ pub enum ActionUser {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(tag = "action", content = "args")]
 pub enum ActionAddons {
+    PushToAPI,
+    PullFromAPI,
     Install(Box<Descriptor>),
     Uninstall { transport_url: TransportUrl },
 }
@@ -38,6 +40,7 @@ pub enum ActionSettings {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(tag = "action", content = "args")]
 pub enum ActionLibrary {
+    SyncWithAPI,
     Add(Box<MetaPreview>),
     Remove { id: String },
     Update(Box<LibItem>),
@@ -46,10 +49,8 @@ pub enum ActionLibrary {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(tag = "action", content = "args")]
 pub enum ActionCtx {
-    SyncWithAPI,
     RetrieveFromStorage,
-    PersistToStorage,
-    User(ActionUser),
+    Auth(ActionAuth),
     Addons(ActionAddons),
     Settings(ActionSettings),
     Library(ActionLibrary),
