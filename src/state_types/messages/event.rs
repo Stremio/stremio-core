@@ -10,6 +10,7 @@ pub enum Event {
     UserLoggedIn,
     UserRegistered,
     UserLoggedOut,
+    UserSessionDeleted,
     AddonsPushedToAPI,
     AddonsPulledFromAPI,
     AddonInstalled,
@@ -17,6 +18,6 @@ pub enum Event {
     SettingsUpdated,
     UserDataPersisted,
     LibraryPersisted,
-    StorageError(MsgError),
+    PersistError(MsgError),
     ActionError(Action, MsgError),
 }
