@@ -10,6 +10,7 @@ pub const STREAM_RESOURCE_NAME: &str = "stream";
 pub const SUBTITLES_RESOURCE_NAME: &str = "subtitles";
 pub const META_CATALOG_PAGE_SIZE: usize = 100;
 pub const META_CATALOG_PREVIEW_SIZE: usize = 10;
+pub const LIB_RECENT_COUNT: usize = 200;
 
 lazy_static! {
     pub static ref OFFICIAL_ADDONS: Vec<Descriptor> =
