@@ -321,21 +321,21 @@ impl UserDataLoadable {
             }
         }
     }
-    pub fn auth<'a>(&'a self) -> &'a Option<Auth> {
+    pub fn auth(&self) -> &Option<Auth> {
         match &self {
             UserDataLoadable::Loading { content, .. } | UserDataLoadable::Ready { content } => {
                 &content.auth
             }
         }
     }
-    pub fn addons<'a>(&'a self) -> &'a Vec<Descriptor> {
+    pub fn addons(&self) -> &Vec<Descriptor> {
         match &self {
             UserDataLoadable::Loading { content, .. } | UserDataLoadable::Ready { content } => {
                 &content.addons
             }
         }
     }
-    pub fn settings<'a>(&'a self) -> &'a Settings {
+    pub fn settings(&self) -> &Settings {
         match &self {
             UserDataLoadable::Loading { content, .. } | UserDataLoadable::Ready { content } => {
                 &content.settings
