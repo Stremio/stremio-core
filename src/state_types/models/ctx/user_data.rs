@@ -1,4 +1,4 @@
-use crate::constants::{OFFICIAL_ADDONS, USER_DATA_KEY};
+use crate::constants::{OFFICIAL_ADDONS, USER_DATA_STORAGE_KEY};
 use crate::state_types::messages::{
     Action, ActionAddons, ActionAuth, ActionCtx, ActionSettings, Event, Internal, Msg, MsgError,
 };
@@ -92,7 +92,7 @@ impl UserDataLoadable {
                     content: self.user_data().to_owned(),
                 };
                 Effects::one(Box::new(
-                    Env::get_storage(USER_DATA_KEY)
+                    Env::get_storage(USER_DATA_STORAGE_KEY)
                         .map(|user_data| {
                             Msg::Internal(Internal::UserDataStorageResult(Box::new(user_data)))
                         })
@@ -331,7 +331,7 @@ impl UserDataLoadable {
         };
         let changed_effects = if user_data_effects.has_changed {
             Effects::msg(Msg::Internal(Internal::UserDataChanged)).join(Effects::one(Box::new(
-                Env::set_storage(USER_DATA_KEY, Some(self.user_data()))
+                Env::set_storage(USER_DATA_STORAGE_KEY, Some(self.user_data()))
                     .map(|_| Msg::Event(Event::UserDataPersisted))
                     .map_err(|error| Msg::Event(Event::PersistError(MsgError::from(error)))),
             )))
