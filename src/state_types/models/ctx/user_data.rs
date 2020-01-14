@@ -226,7 +226,33 @@ impl UserDataLoadable {
                             ))
                             .unchanged()
                         }
-                        _ => Effects::none().unchanged(),
+                        _ => {
+                            let next_addons = self
+                                .addons()
+                                .iter()
+                                .map(|user_addon| {
+                                    OFFICIAL_ADDONS
+                                        .iter()
+                                        .find(|Descriptor { manifest, .. }| {
+                                            manifest.id.eq(&user_addon.manifest.id)
+                                                && manifest.version.gt(&user_addon.manifest.version)
+                                        })
+                                        .map(|official_addon| Descriptor {
+                                            transport_url: official_addon.transport_url.to_owned(),
+                                            manifest: official_addon.manifest.to_owned(),
+                                            flags: user_addon.flags.to_owned(),
+                                        })
+                                        .unwrap_or(user_addon.to_owned())
+                                })
+                                .collect();
+                            let mut user_data = self.user_data();
+                            if user_data.addons.ne(&next_addons) {
+                                user_data.addons = next_addons;
+                                Effects::none()
+                            } else {
+                                Effects::none().unchanged()
+                            }
+                        }
                     },
                     ActionAddons::Install(descriptor) => {
                         let mut user_data = self.user_data();
