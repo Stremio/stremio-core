@@ -8,9 +8,9 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-        - uses: actions/checkout@v2
-        - uses: webfactory/ssh-agent@v0.1.1
-          with:
-              ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+        - uses: actions/checkout@v1
         - name: Build
-          run: cargo install wasm-pack && yarn build
+          run: |
+            echo -e "[url \"https://github.com/\"]\n\tinsteadOf = ssh://git@github.com/" > ~/.gitconfig
+            rustup default nightly && cargo install wasm-pack && yarn install && yarn build
+            
