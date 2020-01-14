@@ -1,8 +1,8 @@
 use crate::constants::{OFFICIAL_ADDONS, USER_DATA_KEY};
 use crate::state_types::messages::{
-    Action, ActionAddons, ActionCtx, ActionSettings, ActionUser, Event, Internal, Msg, MsgError,
+    Action, ActionAddons, ActionAuth, ActionCtx, ActionSettings, Event, Internal, Msg, MsgError,
 };
-use crate::state_types::models::common::{authenticate, fetch_api, get_addons};
+use crate::state_types::models::common::{authenticate, fetch_api, get_addons, set_addons};
 use crate::state_types::{Effects, Environment};
 use crate::types::addons::Descriptor;
 use crate::types::api::{APIRequest, Auth};
@@ -85,20 +85,11 @@ pub enum UserDataLoadable {
 
 impl UserDataLoadable {
     pub fn update<Env: Environment + 'static>(&mut self, msg: &Msg) -> Effects {
-        let user_data = match &mut self {
-            UserDataLoadable::Loading { content, .. } | UserDataLoadable::Ready { content } => {
-                content
-            }
-        };
         let user_data_effects = match msg {
-            Msg::Action(Action::Ctx(ActionCtx::SyncWithAPI)) => {
-                // TODO
-                Effects::none().unchanged()
-            }
             Msg::Action(Action::Ctx(ActionCtx::RetrieveFromStorage)) => {
                 *self = UserDataLoadable::Loading {
                     request: UserDataRequest::Storage,
-                    content: UserData::default(),
+                    content: self.user_data().to_owned(),
                 };
                 Effects::one(Box::new(
                     Env::get_storage(USER_DATA_KEY)
@@ -112,30 +103,20 @@ impl UserDataLoadable {
                             ))
                         }),
                 ))
+                .unchanged()
             }
-            Msg::Action(Action::Ctx(ActionCtx::PersistToStorage)) => Effects::one(Box::new(
-                Env::set_storage(USER_DATA_KEY, Some(user_data))
-                    .map(|_| Msg::Event(Event::UserDataPersisted))
-                    .map_err(|error| {
-                        Msg::Event(Event::ActionError(
-                            Action::Ctx(ActionCtx::PersistToStorage),
-                            MsgError::from(error),
-                        ))
-                    }),
-            ))
-            .unchanged(),
-            Msg::Action(Action::Ctx(ActionCtx::User(action_user))) => {
-                let action_user = action_user.to_owned();
-                match action_user {
-                    ActionUser::Login { .. } | ActionUser::Register { .. } => {
-                        let (auth_request, user_data_request) = match action_user {
-                            ActionUser::Login { email, password } => {
+            Msg::Action(Action::Ctx(ActionCtx::Auth(action_auth))) => {
+                let action_auth = action_auth.to_owned();
+                match action_auth {
+                    ActionAuth::Login { .. } | ActionAuth::Register { .. } => {
+                        let (auth_request, user_data_request) = match action_auth {
+                            ActionAuth::Login { email, password } => {
                                 let auth_request = APIRequest::Login { email, password };
                                 let user_data_request =
                                     UserDataRequest::Login(auth_request.to_owned());
                                 (auth_request, user_data_request)
                             }
-                            ActionUser::Register {
+                            ActionAuth::Register {
                                 email,
                                 password,
                                 gdpr_consent,
@@ -152,7 +133,7 @@ impl UserDataLoadable {
                         };
                         *self = UserDataLoadable::Loading {
                             request: user_data_request,
-                            content: UserData::default(),
+                            content: self.user_data().to_owned(),
                         };
                         Effects::one(Box::new(
                             authenticate::<Env>(&auth_request)
@@ -171,13 +152,14 @@ impl UserDataLoadable {
                                 })
                                 .map_err(move |error| {
                                     Msg::Event(Event::ActionError(
-                                        Action::Ctx(ActionCtx::User(action_user)),
+                                        Action::Ctx(ActionCtx::Auth(action_auth)),
                                         error,
                                     ))
                                 }),
                         ))
+                        .unchanged()
                     }
-                    ActionUser::Logout => match &user_data.auth {
+                    ActionAuth::Logout => match self.auth() {
                         Some(auth) => {
                             let logout_request = APIRequest::Logout {
                                 auth_key: auth.key.to_owned(),
@@ -188,10 +170,10 @@ impl UserDataLoadable {
                             Effects::msg(Msg::Event(Event::UserLoggedOut)).join(Effects::one(
                                 Box::new(
                                     fetch_api::<Env, _>(&logout_request)
-                                        .map(|_| Msg::Internal(Internal::NOOP))
+                                        .map(|_| Msg::Event(Event::UserSessionDeleted))
                                         .map_err(move |error| {
                                             Msg::Event(Event::ActionError(
-                                                Action::Ctx(ActionCtx::User(action_user)),
+                                                Action::Ctx(ActionCtx::Auth(action_auth)),
                                                 error,
                                             ))
                                         }),
@@ -207,38 +189,77 @@ impl UserDataLoadable {
                     },
                 }
             }
-            Msg::Action(Action::Ctx(ActionCtx::Addons(action_addon))) => match action_addon {
-                ActionAddons::Install(descriptor) => {
-                    let position = user_data
-                        .addons
-                        .iter()
-                        .position(|addon| addon.transport_url.eq(&descriptor.transport_url));
-                    if let Some(position) = position {
-                        user_data.addons.remove(position);
-                    };
-                    user_data.addons.push(descriptor.deref().to_owned());
-                    Effects::msg(Msg::Event(Event::AddonInstalled))
-                }
-                ActionAddons::Uninstall { transport_url } => {
-                    let position = user_data.addons.iter().position(|addon| {
-                        addon.transport_url.eq(transport_url) && !addon.flags.protected
-                    });
-                    match position {
-                        Some(position) => {
-                            user_data.addons.remove(position);
-                            Effects::msg(Msg::Event(Event::AddonUninstalled))
+            Msg::Action(Action::Ctx(ActionCtx::Addons(action_addons))) => {
+                let action_addons = action_addons.to_owned();
+                match action_addons {
+                    ActionAddons::PushToAPI => match self.auth() {
+                        Some(auth) => Effects::one(Box::new(
+                            set_addons::<Env>(&auth.key, self.addons())
+                                .map(|_| Msg::Event(Event::AddonsPushedToAPI))
+                                .map_err(move |error| {
+                                    Msg::Event(Event::ActionError(
+                                        Action::Ctx(ActionCtx::Addons(action_addons)),
+                                        error,
+                                    ))
+                                }),
+                        ))
+                        .unchanged(),
+                        _ => Effects::none().unchanged(),
+                    },
+                    ActionAddons::PullFromAPI => match self.auth() {
+                        Some(auth) => {
+                            let auth_key = auth.key.to_owned();
+                            Effects::one(Box::new(
+                                get_addons::<Env>(&auth_key)
+                                    .map(move |addons| {
+                                        Msg::Internal(Internal::AddonsRequestResponse(
+                                            auth_key,
+                                            Box::new(addons),
+                                        ))
+                                    })
+                                    .map_err(move |error| {
+                                        Msg::Event(Event::ActionError(
+                                            Action::Ctx(ActionCtx::Addons(action_addons)),
+                                            error,
+                                        ))
+                                    }),
+                            ))
+                            .unchanged()
                         }
                         _ => Effects::none().unchanged(),
+                    },
+                    ActionAddons::Install(descriptor) => {
+                        let mut user_data = self.user_data();
+                        let addon_position = user_data
+                            .addons
+                            .iter()
+                            .position(|addon| addon.transport_url.eq(&descriptor.transport_url));
+                        if let Some(addon_position) = addon_position {
+                            user_data.addons.remove(addon_position);
+                        };
+                        user_data.addons.push(descriptor.deref().to_owned());
+                        Effects::msg(Msg::Event(Event::AddonInstalled))
+                    }
+                    ActionAddons::Uninstall { transport_url } => {
+                        let mut user_data = self.user_data();
+                        let addon_position = user_data.addons.iter().position(|addon| {
+                            addon.transport_url.eq(&transport_url) && !addon.flags.protected
+                        });
+                        match addon_position {
+                            Some(addon_position) => {
+                                user_data.addons.remove(addon_position);
+                                Effects::msg(Msg::Event(Event::AddonUninstalled))
+                            }
+                            _ => Effects::none().unchanged(),
+                        }
                     }
                 }
-            },
-            Msg::Action(Action::Ctx(ActionCtx::Settings(action_settings))) => match action_settings
-            {
-                ActionSettings::Update(settings) => {
-                    user_data.settings = settings.deref().to_owned();
-                    Effects::msg(Msg::Event(Event::SettingsUpdated))
-                }
-            },
+            }
+            Msg::Action(Action::Ctx(ActionCtx::Settings(ActionSettings::Update(settings)))) => {
+                let mut user_data = self.user_data();
+                user_data.settings = settings.deref().to_owned();
+                Effects::msg(Msg::Event(Event::SettingsUpdated))
+            }
             Msg::Internal(Internal::UserDataStorageResult(user_data)) => match &self {
                 UserDataLoadable::Loading { request, .. }
                     if request.eq(&UserDataRequest::Storage) =>
@@ -269,12 +290,35 @@ impl UserDataLoadable {
                 },
                 _ => Effects::none().unchanged(),
             },
+            Msg::Internal(Internal::AddonsRequestResponse(auth_key, addons))
+                if self.auth().map(|auth| &auth.key).eq(&Some(auth_key)) =>
+            {
+                let mut user_data = self.user_data();
+                if user_data.addons.ne(addons.deref()) {
+                    user_data.addons = addons.deref().to_owned();
+                    Effects::msg(Msg::Event(Event::AddonsPulledFromAPI))
+                } else {
+                    Effects::msg(Msg::Event(Event::AddonsPulledFromAPI)).unchanged()
+                }
+            }
             _ => Effects::none().unchanged(),
         };
-        if user_data_effects.has_changed {
-            Effects::msg(Msg::Internal(Internal::UserDataChanged)).join(user_data_effects)
+        let changed_effects = if user_data_effects.has_changed {
+            Effects::msg(Msg::Internal(Internal::UserDataChanged)).join(Effects::one(Box::new(
+                Env::set_storage(USER_DATA_KEY, Some(self.user_data()))
+                    .map(|_| Msg::Event(Event::UserDataPersisted))
+                    .map_err(|error| Msg::Event(Event::PersistError(MsgError::from(error)))),
+            )))
         } else {
-            user_data_effects
+            Effects::none().unchanged()
+        };
+        changed_effects.join(user_data_effects)
+    }
+    pub fn user_data(&mut self) -> &mut UserData {
+        match &mut self {
+            UserDataLoadable::Loading { content, .. } | UserDataLoadable::Ready { content } => {
+                content
+            }
         }
     }
     pub fn auth<'a>(&'a self) -> &'a Option<Auth> {
