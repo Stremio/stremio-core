@@ -25,5 +25,8 @@ pub use loadable::*;
 mod resource_loadable;
 pub use resource_loadable::*;
 
+mod set_addons;
+pub use set_addons::*;
+
 mod validate_extra;
 pub use validate_extra::*;
