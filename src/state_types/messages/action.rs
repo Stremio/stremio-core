@@ -10,8 +10,8 @@ use serde::{Deserialize, Serialize};
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(tag = "action", content = "args")]
 pub enum ActionAuth {
-    // PushToAPI,
-    // PullFromAPI,
+    PushToAPI,
+    PullFromAPI,
     Login {
         email: String,
         password: String,

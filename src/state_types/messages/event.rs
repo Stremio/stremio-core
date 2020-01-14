@@ -5,6 +5,8 @@ use serde::Serialize;
 #[serde(tag = "event", content = "args")]
 pub enum Event {
     UserDataRetrivedFromStorage,
+    UserPushedToAPI,
+    UserPulledFromAPI,
     UserLoggedIn,
     UserRegistered,
     UserLoggedOut,
