@@ -170,7 +170,7 @@ impl UserDataLoadable {
                             };
                             Effects::msg(Msg::Event(Event::UserLoggedOut)).join(Effects::one(
                                 Box::new(
-                                    fetch_api::<Env, _>(&logout_request)
+                                    fetch_api::<Env, _, _>(&logout_request)
                                         .map(|_| Msg::Event(Event::UserSessionDeleted))
                                         .map_err(move |error| {
                                             Msg::Event(Event::ActionError(
