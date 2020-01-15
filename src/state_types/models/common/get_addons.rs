@@ -8,7 +8,7 @@ use futures::Future;
 pub fn get_addons<Env: Environment + 'static>(
     auth_key: &AuthKey,
 ) -> impl Future<Item = Vec<Descriptor>, Error = MsgError> {
-    fetch_api::<Env, _>(&APIRequest::AddonCollectionGet {
+    fetch_api::<Env, _, _>(&APIRequest::AddonCollectionGet {
         auth_key: auth_key.to_owned(),
         update: true,
     })

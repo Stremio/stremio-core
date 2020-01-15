@@ -9,7 +9,7 @@ pub fn set_addons<Env: Environment + 'static>(
     auth_key: &AuthKey,
     addons: &[Descriptor],
 ) -> impl Future<Item = (), Error = MsgError> {
-    fetch_api::<Env, _>(&APIRequest::AddonCollectionSet {
+    fetch_api::<Env, _, _>(&APIRequest::AddonCollectionSet {
         auth_key: auth_key.to_owned(),
         addons: addons.to_owned(),
     })
