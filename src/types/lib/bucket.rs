@@ -1,5 +1,5 @@
 use super::LibItem;
-use crate::constants::LIB_RECENT_COUNT;
+use crate::constants::LIBRARY_RECENT_COUNT;
 use lazysort::SortedBy;
 use serde::{Deserialize, Serialize};
 use std::collections::hash_map::Entry::{Occupied, Vacant};
@@ -48,7 +48,7 @@ impl LibBucket {
             .values()
             .sorted_by(|a, b| b.mtime.cmp(&a.mtime))
             .collect::<Vec<_>>()
-            .split_at(LIB_RECENT_COUNT);
+            .split_at(LIBRARY_RECENT_COUNT);
         (
             LibBucketBorrowed::new(&self.uid, recent),
             LibBucketBorrowed::new(&self.uid, other),
