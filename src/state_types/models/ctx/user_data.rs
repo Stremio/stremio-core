@@ -341,7 +341,7 @@ impl UserDataLoadable {
         };
         changed_effects.join(user_data_effects)
     }
-    pub fn user_data(&mut self) -> &mut UserData {
+    fn user_data(&mut self) -> &mut UserData {
         match &mut self {
             UserDataLoadable::Loading { content, .. } | UserDataLoadable::Ready { content } => {
                 content
