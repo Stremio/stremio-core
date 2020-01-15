@@ -69,7 +69,7 @@ impl APIMethodName for APIRequest {
     }
 }
 
-#[derive(Serialize, Clone)]
+#[derive(Debug, Clone, PartialEq, Serialize)]
 #[serde(untagged)]
 pub enum DatastoreCmd {
     Get {
@@ -87,7 +87,7 @@ pub enum DatastoreCmd {
     },
 }
 
-#[derive(Serialize, Clone, Builder)]
+#[derive(Debug, Clone, PartialEq, Builder, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct DatastoreReq {
     auth_key: AuthKey,
