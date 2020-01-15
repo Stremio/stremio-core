@@ -1,12 +1,16 @@
 use crate::state_types::messages::MsgError;
 use crate::state_types::{Environment, Request};
-use crate::types::api::{APIMethodName, APIRequest, APIResult};
+use crate::types::api::{APIMethodName, APIResult};
 use futures::{future, Future};
 use serde::de::DeserializeOwned;
+use serde::Serialize;
 
-pub fn fetch_api<Env: Environment + 'static, T: DeserializeOwned + 'static>(
-    api_request: &APIRequest,
-) -> impl Future<Item = T, Error = MsgError> {
+pub fn fetch_api<Env, OUT, REQ>(api_request: &REQ) -> impl Future<Item = OUT, Error = MsgError>
+where
+    Env: Environment + 'static,
+    OUT: DeserializeOwned + 'static,
+    REQ: APIMethodName + Clone + Serialize + 'static,
+{
     let url = format!("{}/api/{}", Env::api_url(), api_request.method_name());
     let request = Request::post(url)
         .body(api_request.to_owned())
