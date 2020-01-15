@@ -1,6 +1,5 @@
 use super::LibItem;
 use crate::constants::LIB_RECENT_COUNT;
-use crate::types::api::User;
 use lazysort::SortedBy;
 use serde::{Deserialize, Serialize};
 use std::collections::hash_map::Entry::{Occupied, Vacant};
@@ -8,12 +7,6 @@ use std::collections::HashMap;
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct UID(pub Option<String>);
-
-impl From<&Option<User>> for UID {
-    fn from(user: &Option<User>) -> Self {
-        UID(user.map(|user| user.id.to_owned()))
-    }
-}
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct LibBucket {
