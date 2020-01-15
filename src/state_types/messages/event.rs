@@ -18,6 +18,6 @@ pub enum Event {
     SettingsUpdated,
     UserDataPersisted,
     LibraryPersisted,
-    PersistError(MsgError),
+    StorageError(MsgError),
     ActionError(Action, MsgError),
 }

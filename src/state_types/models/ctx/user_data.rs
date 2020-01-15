@@ -334,7 +334,7 @@ impl UserDataLoadable {
             Effects::msg(Msg::Internal(Internal::UserDataChanged)).join(Effects::one(Box::new(
                 Env::set_storage(USER_DATA_STORAGE_KEY, Some(self.user_data()))
                     .map(|_| Msg::Event(Event::UserDataPersisted))
-                    .map_err(|error| Msg::Event(Event::PersistError(MsgError::from(error)))),
+                    .map_err(|error| Msg::Event(Event::StorageError(MsgError::from(error)))),
             )))
         } else {
             Effects::none().unchanged()
