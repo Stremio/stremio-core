@@ -19,5 +19,5 @@ pub enum Event {
     UserDataPersisted,
     LibraryPersisted,
     ActionError(Action, MsgError),
-    OtherError(MsgError),
+    Error(MsgError),
 }
