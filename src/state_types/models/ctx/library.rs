@@ -1,202 +1,242 @@
-use crate::state_types::messages::Event::*;
-use crate::state_types::messages::Internal::*;
-use crate::state_types::messages::*;
-use crate::state_types::models::*;
-use crate::state_types::*;
-use crate::types::api::*;
-use crate::types::{LibBucket, LibItem, LibItemModified, LibItemState, LIB_RECENT_COUNT, UID};
+use super::UserDataLoadable;
+use crate::constants::{
+    LIBRARY_COLLECTION_NAME, LIBRARY_RECENT_COUNT, LIBRARY_RECENT_STORAGE_KEY, LIBRARY_STORAGE_KEY,
+};
+use crate::state_types::messages::{
+    Action, ActionCtx, ActionLibrary, Event, Internal, Msg, MsgError,
+};
+use crate::state_types::models::common::fetch_api;
+use crate::state_types::{Effects, Environment};
+use crate::types::api::{Auth, DatastoreCmd, DatastoreReq, DatastoreReqBuilder, SuccessResponse};
+use crate::types::{LibBucket, LibItem, LibItemModified, LibItemState, UID};
 use chrono::Datelike;
-use derivative::*;
-use enclose::*;
+use derivative::Derivative;
 use futures::future::Either;
 use futures::{future, Future};
 use lazysort::SortedBy;
+use std::ops::Deref;
 
-const COLL_NAME: &str = "libraryItem";
-const STORAGE_RECENT_SLOT: &str = "recent_library";
-const STORAGE_SLOT: &str = "library";
+#[derive(Clone, Debug, PartialEq)]
+pub enum LibraryRequest {
+    Storage,
+    API,
+}
 
-#[derive(Derivative, PartialEq)]
-#[derivative(Debug, Default, Clone)]
+#[derive(Derivative, Debug, Clone, PartialEq)]
+#[derivative(Default)]
 pub enum LibraryLoadable {
-    // NotLoaded: we've never attempted loading the library index
     #[derivative(Default)]
     NotLoaded,
-    Loading(UID),
+    Loading(UID, LibraryRequest),
     Ready(LibBucket),
 }
 
 impl LibraryLoadable {
-    pub fn get(&self, id: &str) -> Option<&LibItem> {
-        match self {
-            LibraryLoadable::Ready(bucket) => bucket.items.get(id),
-            _ => None,
-        }
-    }
-    pub fn load_from_storage<Env: Environment + 'static>(
-        &mut self,
-        content: &CtxContent,
-    ) -> Effects {
-        let uid: UID = content.auth.as_ref().into();
-        *self = LibraryLoadable::Loading(uid.to_owned());
-
-        let mut default_bucket = LibBucket::new(uid, vec![]);
-        let ft = Env::get_storage::<LibBucket>(STORAGE_SLOT)
-            .join(Env::get_storage::<LibBucket>(STORAGE_RECENT_SLOT))
-            .map(move |(a, b)| {
-                for loaded_bucket in a.into_iter().chain(b.into_iter()) {
-                    default_bucket.try_merge(loaded_bucket);
-                }
-                default_bucket
-            })
-            .map(|bucket| LibLoaded(bucket).into())
-            .map_err(|e| LibFatal(e.into()).into());
-        Effects::one(Box::new(ft))
-    }
-    pub fn load_initial<Env: Environment + 'static>(&mut self, content: &CtxContent) -> Effects {
-        *self = match &content.auth {
-            None => LibraryLoadable::Ready(Default::default()),
-            Some(a) => LibraryLoadable::Loading(Some(a).into()),
-        };
-
-        match &content.auth {
-            None => Effects::none(),
-            Some(a) => {
-                let get_req = DatastoreReqBuilder::default()
-                    .auth_key(a.key.to_owned())
-                    .collection(COLL_NAME.to_owned())
-                    .with_cmd(DatastoreCmd::Get {
-                        ids: vec![],
-                        all: true,
-                    });
-
-                let uid: UID = content.auth.as_ref().into();
-                let mut bucket = LibBucket::new(uid.clone(), vec![]);
-                let ft = api_fetch::<Env, Vec<LibItem>, _>(get_req)
-                    .and_then(move |items| {
-                        update_and_persist::<Env>(&mut bucket, LibBucket::new(uid, items))
-                            .map(move |_| LibLoaded(bucket).into())
-                            .map_err(Into::into)
-                    })
-                    .map_err(|e| LibFatal(e).into());
-
-                Effects::one(Box::new(ft))
-            }
-        }
-    }
     pub fn update<Env: Environment + 'static>(
         &mut self,
-        content: &CtxContent,
+        user_data: &UserDataLoadable,
         msg: &Msg,
     ) -> Effects {
-        match self {
-            LibraryLoadable::Loading(uid) => match msg {
-                Msg::Internal(LibLoaded(bucket)) if &bucket.uid == uid => {
-                    *self = LibraryLoadable::Ready(bucket.clone());
+        let uid_changed = match (user_data.auth(), &self) {
+            (None, LibraryLoadable::Loading(_, _))
+            | (None, LibraryLoadable::Ready(_))
+            | (Some(_), LibraryLoadable::NotLoaded) => true,
+            (Some(auth), LibraryLoadable::Loading(uid, _))
+            | (Some(auth), LibraryLoadable::Ready(LibBucket { uid, .. })) => {
+                uid.ne(&UID(Some(auth.user.id.to_owned())))
+            }
+            _ => false,
+        };
+        if uid_changed {
+            *self = LibraryLoadable::NotLoaded;
+        };
+        let library_effects = match msg {
+            Msg::Event(Event::UserDataRetrivedFromStorage) => {
+                let uid = UID(user_data.auth().map(|auth| auth.user.id));
+                *self = LibraryLoadable::Loading(uid.to_owned(), LibraryRequest::Storage);
+                Effects::one(Box::new(
+                    Env::get_storage(LIBRARY_RECENT_STORAGE_KEY)
+                        .join(Env::get_storage(LIBRARY_STORAGE_KEY))
+                        .map(move |(recent_bucket, other_bucket)| {
+                            Msg::Internal(Internal::LibraryStorageResponse(
+                                uid,
+                                Box::new(recent_bucket),
+                                Box::new(other_bucket),
+                            ))
+                        })
+                        .map_err(|error| Msg::Event(Event::Error(MsgError::from(error)))),
+                ))
+            }
+            Msg::Event(Event::UserLoggedIn)
+            | Msg::Event(Event::UserRegistered)
+            | Msg::Event(Event::UserLoggedOut) => match user_data.auth() {
+                Some(auth) => {
+                    let uid = UID(Some(auth.user.id.to_owned()));
+                    *self = LibraryLoadable::Loading(uid.to_owned(), LibraryRequest::API);
+                    let library_request = DatastoreReq {
+                        auth_key: auth.key.to_owned(),
+                        collection: LIBRARY_COLLECTION_NAME.to_owned(),
+                        cmd: DatastoreCmd::Get {
+                            ids: vec![],
+                            all: true,
+                        },
+                    };
+                    Effects::one(Box::new(
+                        fetch_api::<Env, _, _>(&library_request)
+                            .map(move |items| {
+                                Msg::Internal(Internal::LibraryAPIResponse(Box::new(
+                                    LibBucket::new(uid, items),
+                                )))
+                            })
+                            .map_err(|error| Msg::Event(Event::Error(error))),
+                    ))
+                }
+                _ => {
+                    *self = LibraryLoadable::Ready(LibBucket::default());
                     Effects::none()
                 }
-                _ => Effects::none().unchanged(),
             },
-            LibraryLoadable::Ready(ref mut lib_bucket) => {
-                match msg {
-                    // User actions
-                    Msg::Action(Action::UserOp(action)) => {
-                        let err_mapper = enclose!((action) move |e| CtxActionErr(action, e).into());
-                        match action {
-                            ActionUser::LibSync => {
-                                if let Some(auth) = &content.auth {
-                                    let ft = lib_sync::<Env>(auth, lib_bucket.clone())
-                                        .map(|bucket| LibSyncPulled(bucket).into())
-                                        .map_err(err_mapper);
-                                    Effects::one(Box::new(ft)).unchanged()
-                                } else {
-                                    Effects::none().unchanged()
-                                }
-                            }
-                            ActionUser::AddToLibrary { meta_item, now } => {
-                                let mut next_lib_item = LibItem {
-                                    id: meta_item.id.to_owned(),
-                                    type_name: meta_item.type_name.to_owned(),
-                                    name: meta_item.name.to_owned(),
-                                    poster: meta_item.poster.to_owned(),
-                                    poster_shape: meta_item.poster_shape.to_owned(),
-                                    logo: meta_item.logo.to_owned(),
-                                    background: None,
-                                    year: if let Some(released) = &meta_item.released {
-                                        Some(released.year().to_string())
-                                    } else if let Some(release_info) = &meta_item.release_info {
-                                        Some(release_info.to_owned())
-                                    } else {
-                                        None
-                                    },
-                                    ctime: Some(now.to_owned()),
-                                    mtime: now.to_owned(),
-                                    removed: false,
-                                    temp: false,
-                                    state: LibItemState::default(),
-                                };
-                                if let Some(lib_item) = lib_bucket.items.get(&meta_item.id) {
-                                    next_lib_item.state = lib_item.state.to_owned();
-                                    if let Some(ctime) = lib_item.ctime {
-                                        next_lib_item.ctime = Some(ctime);
-                                    };
-                                };
-                                self.update::<Env>(
-                                    &content,
-                                    &Msg::Action(Action::UserOp(ActionUser::LibUpdate(
-                                        next_lib_item,
-                                    ))),
-                                )
-                            }
-                            ActionUser::RemoveFromLibrary { id, now } => {
-                                match lib_bucket.items.get(id) {
-                                    Some(lib_item) => {
-                                        let mut lib_item = lib_item.to_owned();
-                                        lib_item.removed = true;
-                                        lib_item.mtime = now.to_owned();
-                                        self.update::<Env>(
-                                            &content,
-                                            &Msg::Action(Action::UserOp(ActionUser::LibUpdate(
-                                                lib_item,
-                                            ))),
-                                        )
-                                    }
-                                    None => Effects::none().unchanged(),
-                                }
-                            }
-                            ActionUser::LibUpdate(item) => {
-                                let new_bucket = LibBucket::new(
-                                    content.auth.as_ref().into(),
-                                    vec![item.to_owned()],
-                                );
-                                let persist_ft = update_and_persist::<Env>(lib_bucket, new_bucket)
-                                    .map(|_| LibPersisted.into())
-                                    .map_err(err_mapper.clone());
-
-                                // If we're logged in, push to API
-                                if let Some(auth) = &content.auth {
-                                    let push_ft = lib_push::<Env>(auth, &item)
-                                        .map(|_| LibPushed.into())
-                                        .map_err(err_mapper);
-                                    Effects::many(vec![Box::new(persist_ft), Box::new(push_ft)])
-                                } else {
-                                    Effects::one(Box::new(persist_ft))
-                                }
-                            }
-                            _ => Effects::none().unchanged(),
-                        }
-                    }
-                    Msg::Internal(LibSyncPulled(new_bucket)) if !new_bucket.items.is_empty() => {
-                        let ft = update_and_persist::<Env>(lib_bucket, new_bucket.clone())
-                            .map(|_| LibPersisted.into())
-                            .map_err(move |e| LibFatal(e).into());
-                        Effects::one(Box::new(ft))
+            Msg::Action(Action::Ctx(ActionCtx::Library(ActionLibrary::SyncWithAPI))) => {
+                match (user_data.auth(), &self) {
+                    (Some(auth), LibraryLoadable::Ready(bucket))
+                        if bucket.uid.eq(&UID(Some(auth.user.id.to_owned()))) =>
+                    {
+                        Effects::one(Box::new(
+                            lib_sync::<Env>(auth, bucket.to_owned())
+                                .map(|bucket| {
+                                    Msg::Internal(Internal::LibrarySyncResponse(Box::new(bucket)))
+                                })
+                                .map_err(|error| Msg::Event(Event::Error(error))),
+                        ))
+                        .unchanged()
                     }
                     _ => Effects::none().unchanged(),
                 }
             }
-            // Ignore NotLoaded state: the load_* methods are supposed to take us out of it
+            Msg::Action(Action::Ctx(ActionCtx::Library(ActionLibrary::Add { meta_item, now }))) => {
+                let mut lib_item = LibItem {
+                    id: meta_item.id.to_owned(),
+                    type_name: meta_item.type_name.to_owned(),
+                    name: meta_item.name.to_owned(),
+                    poster: meta_item.poster.to_owned(),
+                    poster_shape: meta_item.poster_shape.to_owned(),
+                    logo: meta_item.logo.to_owned(),
+                    background: None,
+                    year: if let Some(released) = &meta_item.released {
+                        Some(released.year().to_string())
+                    } else if let Some(release_info) = &meta_item.release_info {
+                        Some(release_info.to_owned())
+                    } else {
+                        None
+                    },
+                    ctime: Some(now.to_owned()),
+                    mtime: now.to_owned(),
+                    removed: false,
+                    temp: false,
+                    state: LibItemState::default(),
+                };
+                if let Some(LibItem { ctime, state, .. }) = self.get_item(&meta_item.id) {
+                    lib_item.state = state.to_owned();
+                    if let Some(ctime) = ctime {
+                        lib_item.ctime = Some(ctime.to_owned());
+                    };
+                };
+                Effects::msg(Msg::Action(Action::Ctx(ActionCtx::Library(
+                    ActionLibrary::Update(Box::new(lib_item)),
+                ))))
+                .unchanged()
+            }
+            Msg::Action(Action::Ctx(ActionCtx::Library(ActionLibrary::Remove { id, now }))) => {
+                match &mut self {
+                    LibraryLoadable::Ready(bucket) => {
+                        if let Some(mut lib_item) = bucket.items.get(id).cloned() {
+                            lib_item.mtime = now.to_owned();
+                            lib_item.removed = true;
+                            Effects::msg(Msg::Action(Action::Ctx(ActionCtx::Library(
+                                ActionLibrary::Update(Box::new(lib_item)),
+                            ))))
+                            .unchanged()
+                        } else {
+                            Effects::none().unchanged()
+                        }
+                    }
+                    _ => Effects::none().unchanged(),
+                }
+            }
+            Msg::Action(Action::Ctx(ActionCtx::Library(ActionLibrary::Update(lib_item)))) => {
+                match &mut self {
+                    LibraryLoadable::Ready(bucket) => {
+                        let uid = UID(user_data.auth().map(|auth| auth.user.id));
+                        let persist_library_effects = Effects::one(Box::new(
+                            update_and_persist::<Env>(
+                                bucket,
+                                LibBucket::new(uid, vec![lib_item.deref().to_owned()]),
+                            )
+                            .map(move |_| Msg::Event(Event::LibraryPersisted))
+                            .map_err(|error| Msg::Event(Event::Error(error))),
+                        ));
+                        if let Some(auth) = user_data.auth() {
+                            persist_library_effects.join(Effects::one(Box::new(
+                                lib_push::<Env>(auth, &lib_item)
+                                    .map(|_| Msg::Event(Event::LibraryPushed))
+                                    .map_err(|error| Msg::Event(Event::Error(error))),
+                            )))
+                        } else {
+                            persist_library_effects
+                        }
+                    }
+                    _ => Effects::none().unchanged(),
+                }
+            }
+            Msg::Internal(Internal::LibraryStorageResponse(uid, recent_bucket, other_bucket)) => {
+                match &self {
+                    LibraryLoadable::Loading(loading_uid, LibraryRequest::Storage)
+                        if loading_uid.eq(uid) =>
+                    {
+                        let mut bucket = LibBucket::new(uid.to_owned(), vec![]);
+                        if let Some(recent_bucket) = recent_bucket.deref().to_owned() {
+                            bucket.merge(recent_bucket)
+                        };
+                        if let Some(other_bucket) = other_bucket.deref().to_owned() {
+                            bucket.merge(other_bucket);
+                        };
+                        *self = LibraryLoadable::Ready(bucket);
+                        Effects::none()
+                    }
+                    _ => Effects::none().unchanged(),
+                }
+            }
+            Msg::Internal(Internal::LibraryAPIResponse(bucket)) => match &self {
+                LibraryLoadable::Loading(loading_uid, LibraryRequest::API)
+                    if loading_uid.eq(&bucket.uid) =>
+                {
+                    *self = LibraryLoadable::Ready(bucket.deref().to_owned());
+                    Effects::none()
+                }
+                _ => Effects::none().unchanged(),
+            },
+            Msg::Internal(Internal::LibrarySyncResponse(sync_bucket)) => match &mut self {
+                LibraryLoadable::Ready(bucket) if bucket.uid.eq(&sync_bucket.uid) => {
+                    Effects::msg(Msg::Event(Event::LibrarySynced)).join(Effects::one(Box::new(
+                        update_and_persist::<Env>(&mut bucket, sync_bucket.deref().to_owned())
+                            .map(move |_| Msg::Event(Event::LibraryPersisted))
+                            .map_err(|error| Msg::Event(Event::Error(error))),
+                    )))
+                }
+                _ => Effects::none().unchanged(),
+            },
             _ => Effects::none().unchanged(),
+        };
+        if uid_changed || library_effects.has_changed {
+            Effects::msg(Msg::Internal(Internal::LibraryChanged)).join(library_effects)
+        } else {
+            library_effects
+        }
+    }
+    pub fn get_item(&self, id: &str) -> Option<&LibItem> {
+        match self {
+            LibraryLoadable::Ready(bucket) => bucket.items.get(id),
+            _ => None,
         }
     }
 }
@@ -204,19 +244,19 @@ impl LibraryLoadable {
 fn datastore_req_builder(auth: &Auth) -> DatastoreReqBuilder {
     DatastoreReqBuilder::default()
         .auth_key(auth.key.to_owned())
-        .collection(COLL_NAME.to_owned())
+        .collection(LIBRARY_COLLECTION_NAME.to_owned())
         .clone()
 }
 
 fn lib_sync<Env: Environment + 'static>(
     auth: &Auth,
     local_lib: LibBucket,
-) -> impl Future<Item = LibBucket, Error = CtxError> {
+) -> impl Future<Item = LibBucket, Error = MsgError> {
     // @TODO consider asserting if uid matches auth
     let builder = datastore_req_builder(auth);
     let meta_req = builder.clone().with_cmd(DatastoreCmd::Meta {});
 
-    api_fetch::<Env, Vec<LibItemModified>, _>(meta_req).and_then(move |remote_mtimes| {
+    fetch_api::<Env, Vec<LibItemModified>, _>(&meta_req).and_then(move |remote_mtimes| {
         let map_remote = remote_mtimes
             .into_iter()
             .map(|LibItemModified(k, mtime)| (k, mtime))
@@ -245,8 +285,8 @@ fn lib_sync<Env: Environment + 'static>(
         let get_fut = if ids.is_empty() {
             Either::A(future::ok(vec![]))
         } else {
-            Either::B(api_fetch::<Env, Vec<LibItem>, _>(
-                builder
+            Either::B(fetch_api::<Env, Vec<LibItem>, _>(
+                &builder
                     .clone()
                     .with_cmd(DatastoreCmd::Get { ids, all: false }),
             ))
@@ -256,8 +296,8 @@ fn lib_sync<Env: Environment + 'static>(
             Either::A(future::ok(()))
         } else {
             Either::B(
-                api_fetch::<Env, SuccessResponse, _>(
-                    builder.clone().with_cmd(DatastoreCmd::Put { changes }),
+                fetch_api::<Env, SuccessResponse, _>(
+                    &builder.clone().with_cmd(DatastoreCmd::Put { changes }),
                 )
                 .map(|_| ()),
             )
@@ -272,56 +312,49 @@ fn lib_sync<Env: Environment + 'static>(
 fn lib_push<Env: Environment + 'static>(
     auth: &Auth,
     item: &LibItem,
-) -> impl Future<Item = (), Error = CtxError> {
+) -> impl Future<Item = (), Error = MsgError> {
     let push_req = datastore_req_builder(auth).with_cmd(DatastoreCmd::Put {
         changes: vec![item.to_owned()],
     });
 
-    api_fetch::<Env, SuccessResponse, _>(push_req).map(|_| ())
+    fetch_api::<Env, SuccessResponse, _>(&push_req).map(|_| ())
 }
 
 fn update_and_persist<Env: Environment + 'static>(
     bucket: &mut LibBucket,
     new_bucket: LibBucket,
-) -> impl Future<Item = (), Error = CtxError> {
-    // @TODO we should consider reading that from storage, it will have stronger consistency
-    // guarantees
-
-    // Determine whether all of the new items are in the current recent
-    let new_were_in_recent = new_bucket.items.len() <= bucket.items.len() && {
-        let current_recent: Vec<&str> = bucket
-            .items
-            .values()
-            .sorted_by(|a, b| b.mtime.cmp(&a.mtime))
-            .take(LIB_RECENT_COUNT)
-            .map(|item| item.id.as_str())
-            .collect();
-
-        new_bucket
-            .items
-            .keys()
-            .all(move |id| current_recent.iter().any(|x| *x == id))
-    };
-
-    // Merge the buckets
-    bucket.try_merge(new_bucket);
-
-    // If there are less items than the threshold, we can save everything in the recent slot
-    // otherwise, we will only save the recent bucket if all of the modified items were previously
-    // in the recent bucket;
-    if bucket.items.len() <= LIB_RECENT_COUNT {
-        Either::A(Env::set_storage(STORAGE_RECENT_SLOT, Some(bucket)).map_err(Into::into))
+) -> impl Future<Item = (), Error = MsgError> {
+    let recent_iter = bucket
+        .items
+        .values()
+        .sorted_by(|a, b| b.mtime.cmp(&a.mtime))
+        .take(LIBRARY_RECENT_COUNT);
+    let are_new_items_in_recent = new_bucket
+        .items
+        .keys()
+        .all(move |id| recent_iter.any(|item| item.id.eq(id)));
+    bucket.merge(new_bucket);
+    if bucket.items.len() <= LIBRARY_RECENT_COUNT {
+        Either::A(
+            Env::set_storage(LIBRARY_RECENT_STORAGE_KEY, Some(bucket))
+                .join(Env::set_storage(LIBRARY_STORAGE_KEY, None))
+                .map(|(_, _)| ())
+                .map_err(|error| MsgError::from(error)),
+        )
     } else {
-        let (recent, other) = bucket.split_by_recent();
-        if new_were_in_recent {
-            Either::A(Env::set_storage(STORAGE_RECENT_SLOT, Some(&recent)).map_err(Into::into))
+        let (recent_bucket, other_bucket) = bucket.split_by_recent();
+        if are_new_items_in_recent {
+            Either::B(Either::A(
+                Env::set_storage(LIBRARY_RECENT_STORAGE_KEY, Some(&recent_bucket))
+                    .map_err(|error| MsgError::from(error)),
+            ))
         } else {
-            Either::B(
-                Env::set_storage(STORAGE_RECENT_SLOT, Some(&recent))
-                    .join(Env::set_storage(STORAGE_SLOT, Some(&other)))
+            Either::B(Either::B(
+                Env::set_storage(LIBRARY_RECENT_STORAGE_KEY, Some(&recent_bucket))
+                    .join(Env::set_storage(LIBRARY_STORAGE_KEY, Some(&other_bucket)))
                     .map(|(_, _)| ())
-                    .map_err(Into::into),
-            )
+                    .map_err(|error| MsgError::from(error)),
+            ))
         }
     }
 }
