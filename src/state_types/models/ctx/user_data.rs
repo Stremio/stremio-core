@@ -298,16 +298,18 @@ impl UserDataLoadable {
                 }
                 _ => Effects::none().unchanged(),
             },
-            Msg::Internal(Internal::UserDataRequestResponse(api_request, user_data)) => match &self
-            {
-                UserDataLoadable::Loading { request, .. } => match request {
-                    UserDataRequest::Login(auth_request) if auth_request.eq(api_request) => {
+            Msg::Internal(Internal::UserDataRequestResponse(request, user_data)) => match &self {
+                UserDataLoadable::Loading {
+                    request: loading_request,
+                    ..
+                } => match loading_request {
+                    UserDataRequest::Login(loading_request) if loading_request.eq(request) => {
                         *self = UserDataLoadable::Ready {
                             content: user_data.deref().to_owned(),
                         };
                         Effects::msg(Msg::Event(Event::UserLoggedIn))
                     }
-                    UserDataRequest::Register(auth_request) if auth_request.eq(api_request) => {
+                    UserDataRequest::Register(loading_request) if loading_request.eq(request) => {
                         *self = UserDataLoadable::Ready {
                             content: user_data.deref().to_owned(),
                         };
@@ -320,9 +322,10 @@ impl UserDataLoadable {
             Msg::Internal(Internal::AddonsRequestResponse(auth_key, addons))
                 if self.auth().map(|auth| &auth.key).eq(&Some(auth_key)) =>
             {
+                let addons = addons.deref();
                 let mut user_data = self.user_data();
-                if user_data.addons.ne(addons.deref()) {
-                    user_data.addons = addons.deref().to_owned();
+                if user_data.addons.ne(addons) {
+                    user_data.addons = addons.to_owned();
                     Effects::msg(Msg::Event(Event::AddonsPulledFromAPI))
                 } else {
                     Effects::msg(Msg::Event(Event::AddonsPulledFromAPI)).unchanged()
@@ -330,16 +333,17 @@ impl UserDataLoadable {
             }
             _ => Effects::none().unchanged(),
         };
-        let changed_effects = if user_data_effects.has_changed {
-            Effects::msg(Msg::Internal(Internal::UserDataChanged)).join(Effects::one(Box::new(
-                Env::set_storage(USER_DATA_STORAGE_KEY, Some(self.user_data()))
-                    .map(|_| Msg::Event(Event::UserDataPersisted))
-                    .map_err(|error| Msg::Event(Event::Error(MsgError::from(error)))),
-            )))
+        if user_data_effects.has_changed {
+            Effects::msg(Msg::Internal(Internal::UserDataChanged))
+                .join(Effects::one(Box::new(
+                    Env::set_storage(USER_DATA_STORAGE_KEY, Some(self.user_data()))
+                        .map(|_| Msg::Event(Event::UserDataPersisted))
+                        .map_err(|error| Msg::Event(Event::Error(MsgError::from(error)))),
+                )))
+                .join(user_data_effects)
         } else {
-            Effects::none().unchanged()
-        };
-        changed_effects.join(user_data_effects)
+            user_data_effects
+        }
     }
     fn user_data(&mut self) -> &mut UserData {
         match &mut self {
