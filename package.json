@@ -1,12 +1,12 @@
 {
-    "name": "@Stremio/stremio-core-web",
+    "name": "@stremio/stremio-core-web",
     "version": "0.6.0",
     "main": "build/stremio_core_web.js",
     "license": "MIT",
     "scripts": {
         "build": "./build.sh"
     },
-    "repository": "git://github.com/Stremio/stremio-core-web.git",
+    "repository": "git://github.com/stremio/stremio-core-web.git",
     "devDependencies": {
         "@babel/cli": "7.6.0",
         "@babel/core": "7.6.0",
