@@ -1,16 +1,19 @@
-name: Rust
+name: Rust build
 
-on: [push]
+on:
+  push:
+    branches:
+      - '*'
+    tags-ignore:
+      - '*'
 
 jobs:
   build:
-
     runs-on: ubuntu-latest
-
     steps:
         - uses: actions/checkout@v1
         - name: Build
           run: |
             echo -e "[url \"https://github.com/\"]\n\tinsteadOf = ssh://git@github.com/" > ~/.gitconfig
-            rustup default nightly && cargo install wasm-pack && yarn install && yarn build
-            
+            mkdir -p build
+            rustup default nightly && cargo install wasm-pack && yarn install
