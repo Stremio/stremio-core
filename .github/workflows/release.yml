@@ -21,7 +21,7 @@ jobs:
             registry-url: 'https://npm.pkg.github.com'
             scope: '@Stremio'
         - name: Publish
-          run: npm publish
+          run:  npm whoami && npm publish
           env:
             NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
             
