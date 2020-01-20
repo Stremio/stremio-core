@@ -19,7 +19,7 @@ jobs:
           with:
             node-version: 10
             registry-url: 'https://npm.pkg.github.com'
-            scope: '@Stremio'
+            scope: '@stremio'
         - name: Publish
           run: npm publish
           env:
