@@ -5,11 +5,11 @@ use futures::{future, Future};
 use serde::de::DeserializeOwned;
 use serde::Serialize;
 
-pub fn fetch_api<Env, OUT, REQ>(api_request: &REQ) -> impl Future<Item = OUT, Error = MsgError>
+pub fn fetch_api<Env, REQ, RESP>(api_request: &REQ) -> impl Future<Item = RESP, Error = MsgError>
 where
     Env: Environment + 'static,
-    OUT: DeserializeOwned + 'static,
     REQ: APIMethodName + Clone + Serialize + 'static,
+    RESP: DeserializeOwned + 'static,
 {
     let url = format!("{}/api/{}", Env::api_url(), api_request.method_name());
     let request = Request::post(url)

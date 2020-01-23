@@ -5,7 +5,7 @@ pub fn validate_extra(extra: &[ExtraProp], page_size: &Option<usize>) -> Vec<Ext
     extra
         .iter()
         .cloned()
-        .fold::<Vec<ExtraProp>, _>(vec![], |mut extra, (key, value)| {
+        .fold::<Vec<ExtraProp>, _>(vec![], |extra, (key, value)| {
             match key.as_ref() {
                 SKIP_EXTRA_NAME => {
                     if let Some(page_size) = page_size.to_owned() {
@@ -13,14 +13,14 @@ pub fn validate_extra(extra: &[ExtraProp], page_size: &Option<usize>) -> Vec<Ext
                             if let Ok(value) = value.parse::<u32>() {
                                 let value = (value / page_size as u32) * page_size as u32;
                                 extra.push((key, value.to_string()));
-                            };
-                        };
-                    };
+                            }
+                        }
+                    }
                 }
                 SEARCH_EXTRA_NAME => {
                     if extra.iter().all(|(key, _)| key.ne(SEARCH_EXTRA_NAME)) && !value.is_empty() {
                         extra.push((key, value));
-                    };
+                    }
                 }
                 _ => {
                     extra.push((key, value));

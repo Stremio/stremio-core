@@ -26,7 +26,7 @@ pub enum DescriptorAction<'a> {
     DescriptorRequested {
         transport_url: &'a TransportUrl,
     },
-    ManifestResultReceived {
+    ManifestRequestResult {
         transport_url: &'a TransportUrl,
         result: &'a Result<Manifest, MsgError>,
     },
@@ -42,11 +42,11 @@ pub fn descriptor_update<Env: Environment + 'static>(
                 .as_ref()
                 .map(|descriptor| &descriptor.transport_url))
             {
+                let transport_url = transport_url.to_owned();
                 *descriptor = Some(DescriptorLoadable {
                     transport_url: transport_url.to_owned(),
                     content: DescriptorContent::Loading,
                 });
-                let transport_url = transport_url.to_owned();
                 Effects::one(Box::new(get_manifest::<Env>(&transport_url).then(
                     move |result| {
                         let msg = Msg::Internal(Internal::ManifestRequestResult(
@@ -63,7 +63,7 @@ pub fn descriptor_update<Env: Environment + 'static>(
                 Effects::none().unchanged()
             }
         }
-        DescriptorAction::ManifestResultReceived {
+        DescriptorAction::ManifestRequestResult {
             transport_url,
             result,
         } => match descriptor {

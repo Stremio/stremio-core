@@ -1,21 +1,23 @@
 use super::MsgError;
-use crate::state_types::models::{SsSettings, UserData};
+use crate::state_types::models::ctx::UserData;
+// use crate::state_types::models::settings::SsSettings;
 use crate::types::addons::{Descriptor, Manifest, ResourceRequest, ResourceResponse, TransportUrl};
-use crate::types::api::{APIRequest, AuthKey, DatastoreReq};
-use crate::types::{LibBucket, UID};
+use crate::types::api::{APIRequest, Auth, AuthKey};
+use crate::types::{LibBucket, LibItem, UID};
 
 #[derive(Debug)]
 pub enum Internal {
     UserDataChanged,
-    UserDataStorageResult(Box<Option<UserData>>),
-    UserDataRequestResponse(APIRequest, Box<UserData>),
+    UserDataStorageResponse(Box<Option<UserData>>),
+    UserAuthResponse(APIRequest, Box<Auth>),
+    UserAddonsResponse(AuthKey, Box<Vec<Descriptor>>),
     LibraryChanged,
     LibraryStorageResponse(UID, Box<Option<LibBucket>>, Box<Option<LibBucket>>),
-    LibraryAPIResponse(Box<LibBucket>),
+    LibraryAPIResponse(UID, Box<Vec<LibItem>>),
     LibrarySyncResponse(Box<LibBucket>),
+    UpdateLibraryItem(Box<LibItem>),
     ResourceRequestResult(ResourceRequest, Box<Result<ResourceResponse, MsgError>>),
     ManifestRequestResult(TransportUrl, Box<Result<Manifest, MsgError>>),
-    AddonsRequestResponse(AuthKey, Box<Vec<Descriptor>>),
-    StreamingServerSettingsLoaded(SsSettings),
-    StreamingServerSettingsErrored(String),
+    // StreamingServerSettingsLoaded(SsSettings),
+    // StreamingServerSettingsErrored(String),
 }

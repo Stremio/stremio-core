@@ -4,11 +4,10 @@ use serde::Serialize;
 #[derive(Debug, Clone, Serialize)]
 #[serde(tag = "event", content = "args")]
 pub enum Event {
-    UserDataRetrivedFromStorage,
+    UserDataRetrievedFromStorage,
     UserPushedToAPI,
     UserPulledFromAPI,
-    UserLoggedIn,
-    UserRegistered,
+    UserAuthenticated,
     UserLoggedOut,
     UserSessionDeleted,
     AddonsPushedToAPI,

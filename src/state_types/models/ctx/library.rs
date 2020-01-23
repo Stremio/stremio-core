@@ -6,7 +6,7 @@ use crate::state_types::messages::{
     Action, ActionCtx, ActionLibrary, Event, Internal, Msg, MsgError,
 };
 use crate::state_types::models::common::fetch_api;
-use crate::state_types::{Effects, Environment};
+use crate::state_types::{Effect, Effects, Environment};
 use crate::types::api::{Auth, DatastoreCmd, DatastoreReq, DatastoreReqBuilder, SuccessResponse};
 use crate::types::{LibBucket, LibItem, LibItemModified, LibItemState, UID};
 use chrono::Datelike;
@@ -51,7 +51,7 @@ impl LibraryLoadable {
             *self = LibraryLoadable::NotLoaded;
         };
         let library_effects = match msg {
-            Msg::Event(Event::UserDataRetrivedFromStorage) => {
+            Msg::Event(Event::UserDataRetrievedFromStorage) => {
                 let uid = UID(user_data.auth().map(|auth| auth.user.id));
                 *self = LibraryLoadable::Loading(uid.to_owned(), LibraryRequest::Storage);
                 Effects::one(Box::new(
@@ -67,35 +67,36 @@ impl LibraryLoadable {
                         .map_err(|error| Msg::Event(Event::Error(MsgError::from(error)))),
                 ))
             }
-            Msg::Event(Event::UserLoggedIn)
-            | Msg::Event(Event::UserRegistered)
-            | Msg::Event(Event::UserLoggedOut) => match user_data.auth() {
-                Some(auth) => {
-                    let uid = UID(Some(auth.user.id.to_owned()));
-                    *self = LibraryLoadable::Loading(uid.to_owned(), LibraryRequest::API);
-                    let library_request = DatastoreReq {
-                        auth_key: auth.key.to_owned(),
-                        collection: LIBRARY_COLLECTION_NAME.to_owned(),
-                        cmd: DatastoreCmd::Get {
-                            ids: vec![],
-                            all: true,
-                        },
-                    };
-                    Effects::one(Box::new(
-                        fetch_api::<Env, _, _>(&library_request)
-                            .map(move |items| {
-                                Msg::Internal(Internal::LibraryAPIResponse(Box::new(
-                                    LibBucket::new(uid, items),
-                                )))
-                            })
-                            .map_err(|error| Msg::Event(Event::Error(error))),
-                    ))
+            Msg::Event(Event::UserAuthenticated) | Msg::Event(Event::UserLoggedOut) => {
+                match user_data.auth() {
+                    Some(auth) => {
+                        let uid = UID(Some(auth.user.id.to_owned()));
+                        *self = LibraryLoadable::Loading(uid.to_owned(), LibraryRequest::API);
+                        let request = DatastoreReq {
+                            auth_key: auth.key.to_owned(),
+                            collection: LIBRARY_COLLECTION_NAME.to_owned(),
+                            cmd: DatastoreCmd::Get {
+                                ids: vec![],
+                                all: true,
+                            },
+                        };
+                        Effects::one(Box::new(
+                            fetch_api::<Env, _, _>(&request)
+                                .map(move |items| {
+                                    Msg::Internal(Internal::LibraryAPIResponse(
+                                        uid,
+                                        Box::new(items),
+                                    ))
+                                })
+                                .map_err(|error| Msg::Event(Event::Error(error))),
+                        ))
+                    }
+                    _ => {
+                        *self = LibraryLoadable::Ready(LibBucket::default());
+                        Effects::none()
+                    }
                 }
-                _ => {
-                    *self = LibraryLoadable::Ready(LibBucket::default());
-                    Effects::none()
-                }
-            },
+            }
             Msg::Action(Action::Ctx(ActionCtx::Library(ActionLibrary::SyncWithAPI))) => {
                 match (user_data.auth(), &self) {
                     (Some(auth), LibraryLoadable::Ready(bucket))
@@ -141,10 +142,7 @@ impl LibraryLoadable {
                         lib_item.ctime = Some(ctime.to_owned());
                     };
                 };
-                Effects::msg(Msg::Action(Action::Ctx(ActionCtx::Library(
-                    ActionLibrary::Update(Box::new(lib_item)),
-                ))))
-                .unchanged()
+                self.set_item::<Env>(lib_item, user_data.auth())
             }
             Msg::Action(Action::Ctx(ActionCtx::Library(ActionLibrary::Remove { id, now }))) => {
                 match &mut self {
@@ -152,10 +150,7 @@ impl LibraryLoadable {
                         if let Some(mut lib_item) = bucket.items.get(id).cloned() {
                             lib_item.mtime = now.to_owned();
                             lib_item.removed = true;
-                            Effects::msg(Msg::Action(Action::Ctx(ActionCtx::Library(
-                                ActionLibrary::Update(Box::new(lib_item)),
-                            ))))
-                            .unchanged()
+                            self.set_item::<Env>(lib_item, user_data.auth())
                         } else {
                             Effects::none().unchanged()
                         }
@@ -163,30 +158,8 @@ impl LibraryLoadable {
                     _ => Effects::none().unchanged(),
                 }
             }
-            Msg::Action(Action::Ctx(ActionCtx::Library(ActionLibrary::Update(lib_item)))) => {
-                match &mut self {
-                    LibraryLoadable::Ready(bucket) => {
-                        let uid = UID(user_data.auth().map(|auth| auth.user.id));
-                        let persist_library_effects = Effects::one(Box::new(
-                            update_and_persist::<Env>(
-                                bucket,
-                                LibBucket::new(uid, vec![lib_item.deref().to_owned()]),
-                            )
-                            .map(move |_| Msg::Event(Event::LibraryPersisted))
-                            .map_err(|error| Msg::Event(Event::Error(error))),
-                        ));
-                        if let Some(auth) = user_data.auth() {
-                            persist_library_effects.join(Effects::one(Box::new(
-                                lib_push::<Env>(auth, &lib_item)
-                                    .map(|_| Msg::Event(Event::LibraryPushed))
-                                    .map_err(|error| Msg::Event(Event::Error(error))),
-                            )))
-                        } else {
-                            persist_library_effects
-                        }
-                    }
-                    _ => Effects::none().unchanged(),
-                }
+            Msg::Internal(Internal::UpdateLibraryItem(lib_item)) => {
+                self.set_item::<Env>(lib_item.deref().to_owned(), user_data.auth())
             }
             Msg::Internal(Internal::LibraryStorageResponse(uid, recent_bucket, other_bucket)) => {
                 match &self {
@@ -206,22 +179,26 @@ impl LibraryLoadable {
                     _ => Effects::none().unchanged(),
                 }
             }
-            Msg::Internal(Internal::LibraryAPIResponse(bucket)) => match &self {
+            Msg::Internal(Internal::LibraryAPIResponse(uid, items)) => match &self {
                 LibraryLoadable::Loading(loading_uid, LibraryRequest::API)
-                    if loading_uid.eq(&bucket.uid) =>
+                    if loading_uid.eq(&uid) =>
                 {
-                    *self = LibraryLoadable::Ready(bucket.deref().to_owned());
+                    *self = LibraryLoadable::Ready(LibBucket::new(
+                        uid.to_owned(),
+                        items.deref().to_owned(),
+                    ));
                     Effects::none()
                 }
                 _ => Effects::none().unchanged(),
             },
             Msg::Internal(Internal::LibrarySyncResponse(sync_bucket)) => match &mut self {
                 LibraryLoadable::Ready(bucket) if bucket.uid.eq(&sync_bucket.uid) => {
-                    Effects::msg(Msg::Event(Event::LibrarySynced)).join(Effects::one(Box::new(
+                    Effects::one(Box::new(
                         update_and_persist::<Env>(&mut bucket, sync_bucket.deref().to_owned())
                             .map(move |_| Msg::Event(Event::LibraryPersisted))
                             .map_err(|error| Msg::Event(Event::Error(error))),
-                    )))
+                    ))
+                    .join(Effects::msg(Msg::Event(Event::LibrarySynced)))
                 }
                 _ => Effects::none().unchanged(),
             },
@@ -234,9 +211,40 @@ impl LibraryLoadable {
         }
     }
     pub fn get_item(&self, id: &str) -> Option<&LibItem> {
-        match self {
+        match &self {
             LibraryLoadable::Ready(bucket) => bucket.items.get(id),
             _ => None,
+        }
+    }
+    fn set_item<Env: Environment + 'static>(
+        &mut self,
+        lib_item: LibItem,
+        auth: &Option<Auth>,
+    ) -> Effects {
+        match &mut self {
+            LibraryLoadable::Ready(bucket) => {
+                let push_effect = auth.as_ref().map(|auth| -> Effect {
+                    Box::new(
+                        lib_push::<Env>(auth, &lib_item)
+                            .map(|_| Msg::Event(Event::LibraryPushed))
+                            .map_err(|error| Msg::Event(Event::Error(error))),
+                    )
+                });
+                let persist_effect: Effect = Box::new(
+                    update_and_persist::<Env>(
+                        bucket,
+                        LibBucket::new(bucket.uid.to_owned(), vec![lib_item]),
+                    )
+                    .map(|_| Msg::Event(Event::LibraryPersisted))
+                    .map_err(|error| Msg::Event(Event::Error(error))),
+                );
+                if let Some(push_effect) = push_effect {
+                    Effects::many(vec![persist_effect, push_effect])
+                } else {
+                    Effects::one(persist_effect)
+                }
+            }
+            _ => Effects::none().unchanged(),
         }
     }
 }
@@ -256,7 +264,7 @@ fn lib_sync<Env: Environment + 'static>(
     let builder = datastore_req_builder(auth);
     let meta_req = builder.clone().with_cmd(DatastoreCmd::Meta {});
 
-    fetch_api::<Env, Vec<LibItemModified>, _>(&meta_req).and_then(move |remote_mtimes| {
+    fetch_api::<Env, _, Vec<LibItemModified>>(&meta_req).and_then(move |remote_mtimes| {
         let map_remote = remote_mtimes
             .into_iter()
             .map(|LibItemModified(k, mtime)| (k, mtime))
@@ -285,7 +293,7 @@ fn lib_sync<Env: Environment + 'static>(
         let get_fut = if ids.is_empty() {
             Either::A(future::ok(vec![]))
         } else {
-            Either::B(fetch_api::<Env, Vec<LibItem>, _>(
+            Either::B(fetch_api::<Env, _, Vec<LibItem>>(
                 &builder
                     .clone()
                     .with_cmd(DatastoreCmd::Get { ids, all: false }),
@@ -296,7 +304,7 @@ fn lib_sync<Env: Environment + 'static>(
             Either::A(future::ok(()))
         } else {
             Either::B(
-                fetch_api::<Env, SuccessResponse, _>(
+                fetch_api::<Env, _, SuccessResponse>(
                     &builder.clone().with_cmd(DatastoreCmd::Put { changes }),
                 )
                 .map(|_| ()),
@@ -317,7 +325,7 @@ fn lib_push<Env: Environment + 'static>(
         changes: vec![item.to_owned()],
     });
 
-    fetch_api::<Env, SuccessResponse, _>(&push_req).map(|_| ())
+    fetch_api::<Env, _, SuccessResponse>(&push_req).map(|_| ())
 }
 
 fn update_and_persist<Env: Environment + 'static>(
@@ -337,7 +345,7 @@ fn update_and_persist<Env: Environment + 'static>(
     if bucket.items.len() <= LIBRARY_RECENT_COUNT {
         Either::A(
             Env::set_storage(LIBRARY_RECENT_STORAGE_KEY, Some(bucket))
-                .join(Env::set_storage(LIBRARY_STORAGE_KEY, None))
+                .join(Env::set_storage::<LibBucket>(LIBRARY_STORAGE_KEY, None))
                 .map(|(_, _)| ())
                 .map_err(|error| MsgError::from(error)),
         )

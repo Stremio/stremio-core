@@ -4,7 +4,7 @@ use crate::state_types::models::catalogs_with_extra::Selected as CatalogsWithExt
 use crate::state_types::models::ctx::Settings;
 use crate::types::addons::{Descriptor, TransportUrl};
 use crate::types::api::GDPRConsent;
-use crate::types::{LibItem, MetaPreview, Stream};
+use crate::types::{MetaPreview, Stream};
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 
@@ -52,7 +52,6 @@ pub enum ActionLibrary {
         id: String,
         now: DateTime<Utc>,
     },
-    Update(Box<LibItem>),
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

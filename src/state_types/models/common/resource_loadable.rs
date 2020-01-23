@@ -32,7 +32,7 @@ pub enum ResourceAction<'a> {
     ResourceRequested {
         request: &'a ResourceRequest,
     },
-    ResourceResultReceived {
+    ResourceRequestResult {
         request: &'a ResourceRequest,
         result: &'a Result<ResourceResponse, MsgError>,
         limit: &'a Option<usize>,
@@ -41,10 +41,10 @@ pub enum ResourceAction<'a> {
 
 pub enum ResourcesAction<'a> {
     ResourcesRequested {
-        aggr_request: &'a AggrRequest<'a>,
+        request: &'a AggrRequest<'a>,
         addons: &'a [Descriptor],
     },
-    ResourceResultReceived {
+    ResourceRequestResult {
         request: &'a ResourceRequest,
         result: &'a Result<ResourceResponse, MsgError>,
         limit: &'a Option<usize>,
@@ -62,11 +62,11 @@ where
     match action {
         ResourceAction::ResourceRequested { request } => {
             if Some(request).ne(&resource.as_ref().map(|resource| &resource.request)) {
+                let request = request.to_owned();
                 *resource = Some(ResourceLoadable {
                     request: request.to_owned(),
                     content: ResourceContent::Loading,
                 });
-                let request = request.to_owned();
                 Effects::one(Box::new(get_resource::<Env>(&request).then(
                     move |result| {
                         let msg = Msg::Internal(Internal::ResourceRequestResult(
@@ -83,10 +83,10 @@ where
                 Effects::none().unchanged()
             }
         }
-        ResourceAction::ResourceResultReceived {
+        ResourceAction::ResourceRequestResult {
             request, result, ..
         } => match resource {
-            Some(resource) if request.eq(&resource.request) => {
+            Some(resource) if resource.request.eq(request) => {
                 resource.content = resource_content_from_result(result);
                 Effects::none()
             }
@@ -104,12 +104,12 @@ where
     Vec<T>: TryFrom<ResourceResponse, Error = &'static str>,
 {
     match action {
-        ResourceAction::ResourceResultReceived {
+        ResourceAction::ResourceRequestResult {
             request,
             result,
             limit,
         } => match resource {
-            Some(resource) if request.eq(&resource.request) => {
+            Some(resource) if resource.request.eq(request) => {
                 resource.content = resource_vector_content_from_result(result, limit);
                 Effects::none()
             }
@@ -128,11 +128,8 @@ where
     T: TryFrom<ResourceResponse, Error = &'static str>,
 {
     match action {
-        ResourcesAction::ResourcesRequested {
-            aggr_request,
-            addons,
-        } => {
-            let requests = aggr_request
+        ResourcesAction::ResourcesRequested { request, addons } => {
+            let requests = request
                 .plan(&addons)
                 .into_iter()
                 .map(|(_, request)| request)
@@ -169,7 +166,7 @@ where
                 Effects::none().unchanged()
             }
         }
-        ResourcesAction::ResourceResultReceived {
+        ResourcesAction::ResourceRequestResult {
             request, result, ..
         } => {
             match resources
@@ -195,7 +192,7 @@ where
     Vec<T>: TryFrom<ResourceResponse, Error = &'static str>,
 {
     match action {
-        ResourcesAction::ResourceResultReceived {
+        ResourcesAction::ResourceRequestResult {
             request,
             result,
             limit,
