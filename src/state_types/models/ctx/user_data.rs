@@ -12,7 +12,6 @@ use derivative::Derivative;
 use enclose::enclose;
 use futures::Future;
 use serde::{Deserialize, Serialize};
-use std::ops::Deref;
 use url::Url;
 use url_serde;
 
@@ -104,9 +103,7 @@ impl UserDataLoadable {
                         Effects::one(Box::new(
                             Env::get_storage(USER_DATA_STORAGE_KEY)
                                 .map(|user_data| {
-                                    Msg::Internal(Internal::UserDataStorageResponse(Box::new(
-                                        user_data,
-                                    )))
+                                    Msg::Internal(Internal::UserDataStorageResponse(user_data))
                                 })
                                 .map_err(|error| action_error_msg(MsgError::from(error))),
                         ))
@@ -122,10 +119,7 @@ impl UserDataLoadable {
                             Effects::one(Box::new(
                                 authenticate::<Env>(&request)
                                     .map(move |auth| {
-                                        Msg::Internal(Internal::UserAuthResponse(
-                                            request,
-                                            Box::new(auth),
-                                        ))
+                                        Msg::Internal(Internal::UserAuthResponse(request, auth))
                                     })
                                     .map_err(action_error_msg),
                             ))
@@ -148,10 +142,7 @@ impl UserDataLoadable {
                             Effects::one(Box::new(
                                 authenticate::<Env>(&request)
                                     .map(move |auth| {
-                                        Msg::Internal(Internal::UserAuthResponse(
-                                            request,
-                                            Box::new(auth),
-                                        ))
+                                        Msg::Internal(Internal::UserAuthResponse(request, auth))
                                     })
                                     .map_err(action_error_msg),
                             ))
@@ -240,7 +231,7 @@ impl UserDataLoadable {
                             if let Some(addon_position) = addon_position {
                                 user_data.addons.remove(addon_position);
                             };
-                            user_data.addons.push(descriptor.deref().to_owned());
+                            user_data.addons.push(descriptor);
                             Effects::msg(Msg::Event(Event::AddonInstalled))
                         }
                         ActionAddons::Uninstall { transport_url } => {
@@ -259,7 +250,7 @@ impl UserDataLoadable {
                     },
                     ActionCtx::Settings(ActionSettings::Update(settings)) => {
                         let mut user_data = self.user_data();
-                        user_data.settings = settings.deref().to_owned();
+                        user_data.settings = settings;
                         Effects::msg(Msg::Event(Event::SettingsUpdated))
                     }
                     _ => Effects::none().unchanged(),
@@ -271,7 +262,7 @@ impl UserDataLoadable {
                     ..
                 } => {
                     *self = UserDataLoadable::Ready {
-                        content: user_data.deref().to_owned().unwrap_or_default(),
+                        content: user_data.to_owned().unwrap_or_default(),
                     };
                     Effects::msg(Msg::Event(Event::UserDataRetrievedFromStorage))
                 }
@@ -284,7 +275,7 @@ impl UserDataLoadable {
                 } if loading_api_request.eq(api_request) => {
                     *self = UserDataLoadable::Ready {
                         content: UserData {
-                            auth: Some(auth.deref().to_owned()),
+                            auth: Some(auth.to_owned()),
                             ..Default::default()
                         },
                     };

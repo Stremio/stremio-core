@@ -51,7 +51,7 @@ pub fn descriptor_update<Env: Environment + 'static>(
                     move |result| {
                         future::ok(Msg::Internal(Internal::ManifestRequestResult(
                             transport_url,
-                            Box::new(result),
+                            result,
                         )))
                     },
                 )))

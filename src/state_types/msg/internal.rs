@@ -8,16 +8,16 @@ use crate::types::{LibBucket, LibItem, UID};
 #[derive(Debug)]
 pub enum Internal {
     UserDataChanged,
-    UserDataStorageResponse(Box<Option<UserData>>),
-    UserAuthResponse(APIRequest, Box<Auth>),
+    UserDataStorageResponse(Option<UserData>),
+    UserAuthResponse(APIRequest, Auth),
     UserAddonsResponse(AuthKey, Vec<Descriptor>),
     LibraryChanged,
-    LibraryStorageResponse(UID, Box<Option<LibBucket>>, Box<Option<LibBucket>>),
+    LibraryStorageResponse(UID, Option<LibBucket>, Option<LibBucket>),
     LibraryAPIResponse(UID, Vec<LibItem>),
-    LibrarySyncResponse(Box<LibBucket>),
-    UpdateLibraryItem(Box<LibItem>),
+    LibrarySyncResponse(LibBucket),
+    UpdateLibraryItem(LibItem),
     ResourceRequestResult(ResourceRequest, Box<Result<ResourceResponse, MsgError>>),
-    ManifestRequestResult(TransportUrl, Box<Result<Manifest, MsgError>>),
+    ManifestRequestResult(TransportUrl, Result<Manifest, MsgError>),
     // StreamingServerSettingsLoaded(SsSettings),
     // StreamingServerSettingsErrored(String),
 }

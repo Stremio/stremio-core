@@ -12,7 +12,6 @@ use derivative::Derivative;
 use futures::future::Either;
 use futures::{future, Future};
 use lazysort::SortedBy;
-use std::ops::Deref;
 
 #[derive(Clone, Debug, PartialEq)]
 pub enum LibraryRequest {
@@ -61,8 +60,8 @@ impl LibraryLoadable {
                         .map(move |(recent_bucket, other_bucket)| {
                             Msg::Internal(Internal::LibraryStorageResponse(
                                 uid,
-                                Box::new(recent_bucket),
-                                Box::new(other_bucket),
+                                recent_bucket,
+                                other_bucket,
                             ))
                         })
                         .map_err(|error| {
@@ -102,9 +101,7 @@ impl LibraryLoadable {
                     {
                         Effects::one(Box::new(
                             lib_sync::<Env>(auth, bucket.to_owned())
-                                .map(|bucket| {
-                                    Msg::Internal(Internal::LibrarySyncResponse(Box::new(bucket)))
-                                })
+                                .map(|bucket| Msg::Internal(Internal::LibrarySyncResponse(bucket)))
                                 .map_err(|error| Msg::Event(Event::Error { error })),
                         ))
                         .unchanged()
@@ -158,7 +155,7 @@ impl LibraryLoadable {
                 }
             }
             Msg::Internal(Internal::UpdateLibraryItem(lib_item)) => {
-                let mut lib_item = lib_item.deref().to_owned();
+                let mut lib_item = lib_item.to_owned();
                 lib_item.mtime = Env::now();
                 self.set_item::<Env>(lib_item, user_data.auth())
             }
@@ -168,11 +165,11 @@ impl LibraryLoadable {
                         if loading_uid.eq(uid) =>
                     {
                         let mut bucket = LibBucket::new(uid.to_owned(), vec![]);
-                        if let Some(recent_bucket) = recent_bucket.deref().to_owned() {
-                            bucket.merge(recent_bucket)
+                        if let Some(recent_bucket) = recent_bucket {
+                            bucket.merge(recent_bucket.to_owned())
                         };
-                        if let Some(other_bucket) = other_bucket.deref().to_owned() {
-                            bucket.merge(other_bucket);
+                        if let Some(other_bucket) = other_bucket {
+                            bucket.merge(other_bucket.to_owned())
                         };
                         *self = LibraryLoadable::Ready(bucket);
                         Effects::none()
@@ -193,7 +190,7 @@ impl LibraryLoadable {
             Msg::Internal(Internal::LibrarySyncResponse(sync_bucket)) => match self {
                 LibraryLoadable::Ready(ref mut bucket) if bucket.uid.eq(&sync_bucket.uid) => {
                     Effects::one(Box::new(
-                        update_and_persist::<Env>(bucket, sync_bucket.deref().to_owned())
+                        update_and_persist::<Env>(bucket, sync_bucket.to_owned())
                             .map(move |_| Msg::Event(Event::LibraryPersisted))
                             .map_err(|error| Msg::Event(Event::Error { error })),
                     ))

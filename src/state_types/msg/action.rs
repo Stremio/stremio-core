@@ -32,21 +32,21 @@ pub enum ActionAuth {
 pub enum ActionAddons {
     PushToAPI,
     PullFromAPI,
-    Install(Box<Descriptor>),
+    Install(Descriptor),
     Uninstall { transport_url: TransportUrl },
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(tag = "action", content = "args")]
 pub enum ActionSettings {
-    Update(Box<Settings>),
+    Update(Settings),
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(tag = "action", content = "args")]
 pub enum ActionLibrary {
     SyncWithAPI,
-    Add(Box<MetaPreview>),
+    Add(MetaPreview),
     Remove(String),
 }
 
