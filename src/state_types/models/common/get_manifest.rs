@@ -1,4 +1,4 @@
-use crate::state_types::messages::MsgError;
+use crate::state_types::msg::MsgError;
 use crate::state_types::Environment;
 use crate::types::addons::Manifest;
 use futures::Future;

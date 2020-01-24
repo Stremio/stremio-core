@@ -1,4 +1,4 @@
-use crate::state_types::messages::{Action, ActionLoad, ActionPlayer, Internal, Msg};
+use crate::state_types::msg::{Action, ActionLoad, ActionPlayer, Internal, Msg};
 use crate::state_types::models::common::{
     eq_update, resource_update, resources_update_with_vector_content, ResourceAction,
     ResourceContent, ResourceLoadable, ResourcesAction,

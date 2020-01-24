@@ -1,5 +1,5 @@
 use crate::constants::{OFFICIAL_ADDONS, USER_DATA_STORAGE_KEY};
-use crate::state_types::messages::{
+use crate::state_types::msg::{
     Action, ActionAddons, ActionAuth, ActionCtx, ActionSettings, Event, Internal, Msg, MsgError,
 };
 use crate::state_types::models::common::{

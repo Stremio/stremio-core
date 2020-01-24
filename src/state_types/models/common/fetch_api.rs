@@ -1,4 +1,4 @@
-use crate::state_types::messages::MsgError;
+use crate::state_types::msg::MsgError;
 use crate::state_types::{Environment, Request};
 use crate::types::api::{APIMethodName, APIResult};
 use futures::{future, Future};

@@ -1,7 +1,7 @@
-use crate::state_types::messages::Internal::{
+use crate::state_types::msg::Internal::{
     CtxLoaded, StreamingServerSettingsErrored, StreamingServerSettingsLoaded,
 };
-use crate::state_types::messages::{Action, ActionSettings, Event, Msg};
+use crate::state_types::msg::{Action, ActionSettings, Event, Msg};
 use crate::state_types::models::Ctx;
 use crate::state_types::{Effects, Environment, Request, UpdateWithCtx};
 use futures::future::Future;

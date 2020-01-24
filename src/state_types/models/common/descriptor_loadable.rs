@@ -1,6 +1,6 @@
 use super::{get_manifest, Loadable};
 use crate::constants::OFFICIAL_ADDONS;
-use crate::state_types::messages::{Internal, Msg, MsgError};
+use crate::state_types::msg::{Internal, Msg, MsgError};
 use crate::state_types::{Effects, Environment};
 use crate::types::addons::{Descriptor, Manifest, TransportUrl};
 use futures::{future, Future};

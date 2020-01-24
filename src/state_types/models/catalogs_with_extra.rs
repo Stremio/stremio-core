@@ -1,5 +1,5 @@
 use crate::constants::CATALOG_PREVIEW_SIZE;
-use crate::state_types::messages::{Action, ActionLoad, Internal, Msg};
+use crate::state_types::msg::{Action, ActionLoad, Internal, Msg};
 use crate::state_types::models::common::{
     eq_update, resources_update_with_vector_content, validate_extra, ResourceLoadable,
     ResourcesAction,

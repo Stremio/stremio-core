@@ -1,5 +1,5 @@
 use super::{get_resource, Loadable};
-use crate::state_types::messages::{Internal, Msg, MsgError};
+use crate::state_types::msg::{Internal, Msg, MsgError};
 use crate::state_types::{Effect, Effects, Environment};
 use crate::types::addons::{AggrRequest, Descriptor, ResourceRequest, ResourceResponse};
 use futures::{future, Future};

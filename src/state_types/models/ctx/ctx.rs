@@ -1,6 +1,6 @@
 use super::library::LibraryLoadable;
 use super::user_data::UserDataLoadable;
-use crate::state_types::messages::Msg;
+use crate::state_types::msg::Msg;
 use crate::state_types::{Effects, Environment, Update};
 use serde::Serialize;
 use std::marker::PhantomData;

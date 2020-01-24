@@ -1,5 +1,5 @@
 use crate::constants::{META_RESOURCE_NAME, STREAM_RESOURCE_NAME};
-use crate::state_types::messages::{Action, ActionLoad, Internal, Msg};
+use crate::state_types::msg::{Action, ActionLoad, Internal, Msg};
 use crate::state_types::models::common::{
     eq_update, resources_update, resources_update_with_vector_content, ResourceContent,
     ResourceLoadable, ResourcesAction,

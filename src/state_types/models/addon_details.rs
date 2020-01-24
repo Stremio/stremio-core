@@ -1,4 +1,4 @@
-use crate::state_types::messages::{Action, ActionLoad, Internal, Msg};
+use crate::state_types::msg::{Action, ActionLoad, Internal, Msg};
 use crate::state_types::models::common::{
     descriptor_update, eq_update, DescriptorAction, DescriptorContent, DescriptorLoadable,
 };
