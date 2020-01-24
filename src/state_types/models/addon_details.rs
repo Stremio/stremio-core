@@ -1,8 +1,8 @@
-use crate::state_types::msg::{Action, ActionLoad, Internal, Msg};
 use crate::state_types::models::common::{
     descriptor_update, eq_update, DescriptorAction, DescriptorContent, DescriptorLoadable,
 };
 use crate::state_types::models::ctx::Ctx;
+use crate::state_types::msg::{Action, ActionLoad, Internal, Msg};
 use crate::state_types::{Effects, Environment, UpdateWithCtx};
 use crate::types::addons::TransportUrl;
 use serde::{Deserialize, Serialize};

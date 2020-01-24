@@ -1,9 +1,9 @@
 use crate::constants::{OFFICIAL_ADDONS, USER_DATA_STORAGE_KEY};
-use crate::state_types::msg::{
-    Action, ActionAddons, ActionAuth, ActionCtx, ActionSettings, Event, Internal, Msg, MsgError,
-};
 use crate::state_types::models::common::{
     authenticate, delete_user_session, get_user_addons, set_user_addons,
+};
+use crate::state_types::msg::{
+    Action, ActionAddons, ActionAuth, ActionCtx, ActionSettings, Event, Internal, Msg, MsgError,
 };
 use crate::state_types::{Effects, Environment};
 use crate::types::addons::Descriptor;
