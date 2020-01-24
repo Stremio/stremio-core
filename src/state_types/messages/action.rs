@@ -67,7 +67,7 @@ pub enum ActionCtx {
     Library(ActionLibrary),
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Deserialize)]
 #[serde(tag = "action", content = "args")]
 pub enum ActionLoad {
     AddonDetails(AddonDetailsSelected),
@@ -79,14 +79,14 @@ pub enum ActionLoad {
     Notifications,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Deserialize)]
 #[serde(tag = "action", content = "args")]
 pub enum ActionPlayer {
     TimeChanged { time: u64, duration: u64 },
     Ended,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Deserialize)]
 #[serde(tag = "action", content = "args")]
 pub enum Action {
     Ctx(ActionCtx),

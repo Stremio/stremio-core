@@ -7,20 +7,6 @@ use derivative::Derivative;
 use itertools::Itertools;
 use serde::{Deserialize, Serialize};
 
-#[derive(Derivative, Debug, Clone, PartialEq, Serialize)]
-#[derivative(Default)]
-#[serde(tag = "type")]
-pub enum LibraryState {
-    #[derivative(Default)]
-    NotLoaded,
-    Loading {
-        uid: UID,
-    },
-    Ready {
-        uid: UID,
-    },
-}
-
 #[derive(Derivative, Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[derivative(Default)]
 #[serde(rename_all = "lowercase")]
@@ -36,6 +22,20 @@ pub struct Selected {
     type_name: String,
     #[serde(default)]
     sort_prop: SortProp,
+}
+
+#[derive(Derivative, Debug, Clone, PartialEq, Serialize)]
+#[derivative(Default)]
+#[serde(tag = "type")]
+pub enum LibraryState {
+    #[derivative(Default)]
+    NotLoaded,
+    Loading {
+        uid: UID,
+    },
+    Ready {
+        uid: UID,
+    },
 }
 
 #[derive(Default, Debug, Clone, Serialize)]
