@@ -84,10 +84,7 @@ impl LibraryLoadable {
                         Effects::one(Box::new(
                             fetch_api::<Env, _, _>(&request)
                                 .map(move |items| {
-                                    Msg::Internal(Internal::LibraryAPIResponse(
-                                        uid,
-                                        Box::new(items),
-                                    ))
+                                    Msg::Internal(Internal::LibraryAPIResponse(uid, items))
                                 })
                                 .map_err(|error| Msg::Event(Event::Error { error })),
                         ))
@@ -187,10 +184,8 @@ impl LibraryLoadable {
                 LibraryLoadable::Loading(loading_uid, LibraryRequest::API)
                     if loading_uid.eq(&uid) =>
                 {
-                    *self = LibraryLoadable::Ready(LibBucket::new(
-                        uid.to_owned(),
-                        items.deref().to_owned(),
-                    ));
+                    *self =
+                        LibraryLoadable::Ready(LibBucket::new(uid.to_owned(), items.to_owned()));
                     Effects::none()
                 }
                 _ => Effects::none().unchanged(),
@@ -352,21 +347,21 @@ fn update_and_persist<Env: Environment + 'static>(
             Env::set_storage(LIBRARY_RECENT_STORAGE_KEY, Some(bucket))
                 .join(Env::set_storage::<LibBucket>(LIBRARY_STORAGE_KEY, None))
                 .map(|(_, _)| ())
-                .map_err(|error| MsgError::from(error)),
+                .map_err(MsgError::from),
         )
     } else {
         let (recent_bucket, other_bucket) = bucket.split_by_recent();
         if are_new_items_in_recent {
             Either::B(Either::A(
                 Env::set_storage(LIBRARY_RECENT_STORAGE_KEY, Some(&recent_bucket))
-                    .map_err(|error| MsgError::from(error)),
+                    .map_err(MsgError::from),
             ))
         } else {
             Either::B(Either::B(
                 Env::set_storage(LIBRARY_RECENT_STORAGE_KEY, Some(&recent_bucket))
                     .join(Env::set_storage(LIBRARY_STORAGE_KEY, Some(&other_bucket)))
                     .map(|(_, _)| ())
-                    .map_err(|error| MsgError::from(error)),
+                    .map_err(MsgError::from),
             ))
         }
     }

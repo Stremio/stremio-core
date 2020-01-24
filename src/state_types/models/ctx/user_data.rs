@@ -193,8 +193,7 @@ impl UserDataLoadable {
                                     get_user_addons::<Env>(&auth_key)
                                         .map(move |addons| {
                                             Msg::Internal(Internal::UserAddonsResponse(
-                                                auth_key,
-                                                Box::new(addons),
+                                                auth_key, addons,
                                             ))
                                         })
                                         .map_err(action_error_msg),
@@ -221,7 +220,7 @@ impl UserDataLoadable {
                                                 manifest: official_addon.manifest.to_owned(),
                                                 flags: user_addon.flags.to_owned(),
                                             })
-                                            .unwrap_or(user_addon.to_owned())
+                                            .unwrap_or_else(|| user_addon.to_owned())
                                     })
                                     .collect();
                                 let mut user_data = self.user_data();
@@ -302,7 +301,6 @@ impl UserDataLoadable {
                     .map(|auth| &auth.key)
                     .eq(&Some(auth_key)) =>
             {
-                let addons = addons.deref();
                 let mut user_data = self.user_data();
                 if user_data.addons.ne(addons) {
                     user_data.addons = addons.to_owned();

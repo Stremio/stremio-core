@@ -98,7 +98,7 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for Player {
                             lib_item.state.duration = duration.to_owned();
                             lib_item.state.video_id = Some(video_id.to_owned());
                             Effects::msg(Msg::Internal(Internal::UpdateLibraryItem(Box::new(
-                                lib_item.to_owned(),
+                                lib_item,
                             ))))
                         }
                         _ => Effects::none().unchanged(),

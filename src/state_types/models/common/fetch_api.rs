@@ -16,7 +16,7 @@ where
         .body(api_request.to_owned())
         .expect("builder cannot fail");
     Env::fetch_serde::<_, _>(request)
-        .map_err(|error| MsgError::from(error))
+        .map_err(MsgError::from)
         .and_then(|result| match result {
             APIResult::Ok { result } => future::ok(result),
             APIResult::Err { error } => future::err(MsgError::from(error)),

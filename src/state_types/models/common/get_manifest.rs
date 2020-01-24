@@ -8,5 +8,5 @@ pub fn get_manifest<Env: Environment + 'static>(
 ) -> impl Future<Item = Manifest, Error = MsgError> {
     Env::addon_transport(transport_url)
         .manifest()
-        .map_err(|error| MsgError::from(error))
+        .map_err(MsgError::from)
 }

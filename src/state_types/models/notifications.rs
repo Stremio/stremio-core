@@ -112,7 +112,7 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for Notifications {
                         &mut self.groups,
                         ResourcesAction::ResourceRequestResult {
                             request: req,
-                            result: result,
+                            result,
                             limit: &None,
                         },
                     );

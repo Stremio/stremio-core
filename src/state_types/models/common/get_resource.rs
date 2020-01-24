@@ -8,5 +8,5 @@ pub fn get_resource<Env: Environment + 'static>(
 ) -> impl Future<Item = ResourceResponse, Error = MsgError> {
     Env::addon_transport(&request.base)
         .get(&request.path)
-        .map_err(|error| MsgError::from(error))
+        .map_err(MsgError::from)
 }
