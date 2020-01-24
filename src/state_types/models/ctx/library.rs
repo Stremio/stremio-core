@@ -2,10 +2,8 @@ use super::UserDataLoadable;
 use crate::constants::{
     LIBRARY_COLLECTION_NAME, LIBRARY_RECENT_COUNT, LIBRARY_RECENT_STORAGE_KEY, LIBRARY_STORAGE_KEY,
 };
-use crate::state_types::msg::{
-    Action, ActionCtx, ActionLibrary, Event, Internal, Msg, MsgError,
-};
 use crate::state_types::models::common::fetch_api;
+use crate::state_types::msg::{Action, ActionCtx, ActionLibrary, Event, Internal, Msg, MsgError};
 use crate::state_types::{Effect, Effects, Environment};
 use crate::types::api::{Auth, DatastoreCmd, DatastoreReqBuilder, SuccessResponse};
 use crate::types::{LibBucket, LibItem, LibItemModified, LibItemState, UID};
@@ -117,7 +115,7 @@ impl LibraryLoadable {
                     _ => Effects::none().unchanged(),
                 }
             }
-            Msg::Action(Action::Ctx(ActionCtx::Library(ActionLibrary::Add { meta_item, now }))) => {
+            Msg::Action(Action::Ctx(ActionCtx::Library(ActionLibrary::Add(meta_item)))) => {
                 let mut lib_item = LibItem {
                     id: meta_item.id.to_owned(),
                     type_name: meta_item.type_name.to_owned(),
@@ -133,8 +131,8 @@ impl LibraryLoadable {
                     } else {
                         None
                     },
-                    ctime: Some(now.to_owned()),
-                    mtime: now.to_owned(),
+                    ctime: Some(Env::now()),
+                    mtime: Env::now(),
                     removed: false,
                     temp: false,
                     state: LibItemState::default(),
@@ -147,11 +145,12 @@ impl LibraryLoadable {
                 };
                 self.set_item::<Env>(lib_item, user_data.auth())
             }
-            Msg::Action(Action::Ctx(ActionCtx::Library(ActionLibrary::Remove { id, now }))) => {
+            Msg::Action(Action::Ctx(ActionCtx::Library(ActionLibrary::Remove(id)))) => {
                 match &self {
                     LibraryLoadable::Ready(bucket) => {
-                        if let Some(mut lib_item) = bucket.items.get(id).cloned() {
-                            lib_item.mtime = now.to_owned();
+                        if let Some(lib_item) = bucket.items.get(id) {
+                            let mut lib_item = lib_item.to_owned();
+                            lib_item.mtime = Env::now();
                             lib_item.removed = true;
                             self.set_item::<Env>(lib_item, user_data.auth())
                         } else {

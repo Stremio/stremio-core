@@ -8,7 +8,6 @@ use crate::state_types::models::player::Selected as PlayerSelected;
 use crate::types::addons::{Descriptor, TransportUrl};
 use crate::types::api::GDPRConsent;
 use crate::types::MetaPreview;
-use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -47,14 +46,8 @@ pub enum ActionSettings {
 #[serde(tag = "action", content = "args")]
 pub enum ActionLibrary {
     SyncWithAPI,
-    Add {
-        meta_item: Box<MetaPreview>,
-        now: DateTime<Utc>,
-    },
-    Remove {
-        id: String,
-        now: DateTime<Utc>,
-    },
+    Add(Box<MetaPreview>),
+    Remove(String),
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
