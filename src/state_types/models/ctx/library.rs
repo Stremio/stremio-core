@@ -161,7 +161,9 @@ impl LibraryLoadable {
                 }
             }
             Msg::Internal(Internal::UpdateLibraryItem(lib_item)) => {
-                self.set_item::<Env>(lib_item.deref().to_owned(), user_data.auth())
+                let mut lib_item = lib_item.deref().to_owned();
+                lib_item.mtime = Env::now();
+                self.set_item::<Env>(lib_item, user_data.auth())
             }
             Msg::Internal(Internal::LibraryStorageResponse(uid, recent_bucket, other_bucket)) => {
                 match &self {
