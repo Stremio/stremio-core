@@ -89,14 +89,14 @@ pub enum UserDataLoadable {
 impl UserDataLoadable {
     pub fn update<Env: Environment + 'static>(&mut self, msg: &Msg) -> Effects {
         let user_data_effects = match msg {
-            Msg::Action(action) => {
-                let action = action.to_owned();
-                let action_error_msg = enclose!((action) move |error| Msg::Event(Event::ActionError(
-                    action,
-                    error,
-                )));
-                match action {
-                    Action::Ctx(ActionCtx::RetrieveFromStorage) => {
+            Msg::Action(Action::Ctx(action_ctx)) => {
+                let action_ctx = action_ctx.to_owned();
+                let action_error_msg = enclose!((action_ctx) move |error| Msg::Event(Event::CtxError {
+                    action_ctx,
+                    error
+                }));
+                match action_ctx {
+                    ActionCtx::RetrieveFromStorage => {
                         *self = UserDataLoadable::Loading {
                             request: UserDataRequest::Storage,
                             content: self.user_data().to_owned(),
@@ -112,21 +112,34 @@ impl UserDataLoadable {
                         ))
                         .unchanged()
                     }
-                    Action::Ctx(ActionCtx::Auth(action_auth)) => match action_auth {
-                        ActionAuth::Login { .. } | ActionAuth::Register { .. } => {
-                            let request = match action_auth {
-                                ActionAuth::Login { email, password } => {
-                                    APIRequest::Login { email, password }
-                                }
-                                ActionAuth::Register {
-                                    email,
-                                    password,
-                                    gdpr_consent,
-                                } => APIRequest::Register {
-                                    email,
-                                    password,
-                                    gdpr_consent,
-                                },
+                    ActionCtx::Auth(action_auth) => match action_auth {
+                        ActionAuth::Login { email, password } => {
+                            let request = APIRequest::Login { email, password };
+                            *self = UserDataLoadable::Loading {
+                                request: UserDataRequest::API(request.to_owned()),
+                                content: self.user_data().to_owned(),
+                            };
+                            Effects::one(Box::new(
+                                authenticate::<Env>(&request)
+                                    .map(move |auth| {
+                                        Msg::Internal(Internal::UserAuthResponse(
+                                            request,
+                                            Box::new(auth),
+                                        ))
+                                    })
+                                    .map_err(action_error_msg),
+                            ))
+                            .unchanged()
+                        }
+                        ActionAuth::Register {
+                            email,
+                            password,
+                            gdpr_consent,
+                        } => {
+                            let request = APIRequest::Register {
+                                email,
+                                password,
+                                gdpr_consent,
                             };
                             *self = UserDataLoadable::Loading {
                                 request: UserDataRequest::API(request.to_owned()),
@@ -160,8 +173,10 @@ impl UserDataLoadable {
                             Effects::msg(Msg::Event(Event::UserLoggedOut))
                                 .join(delete_user_session_effects)
                         }
+                        ActionAuth::PushToAPI => Effects::none().unchanged(),
+                        ActionAuth::PullFromAPI => Effects::none().unchanged(),
                     },
-                    Action::Ctx(ActionCtx::Addons(action_addons)) => match action_addons {
+                    ActionCtx::Addons(action_addons) => match action_addons {
                         ActionAddons::PushToAPI => match self.auth() {
                             Some(auth) => Effects::one(Box::new(
                                 set_user_addons::<Env>(&auth.key, self.addons())
@@ -219,7 +234,7 @@ impl UserDataLoadable {
                             }
                         },
                         ActionAddons::Install(descriptor) => {
-                            let mut user_data = self.user_data();
+                            let user_data = self.user_data();
                             let addon_position = user_data.addons.iter().position(|addon| {
                                 addon.transport_url.eq(&descriptor.transport_url)
                             });
@@ -230,7 +245,7 @@ impl UserDataLoadable {
                             Effects::msg(Msg::Event(Event::AddonInstalled))
                         }
                         ActionAddons::Uninstall { transport_url } => {
-                            let mut user_data = self.user_data();
+                            let user_data = self.user_data();
                             let addon_position = user_data.addons.iter().position(|addon| {
                                 addon.transport_url.eq(&transport_url) && !addon.flags.protected
                             });
@@ -243,11 +258,12 @@ impl UserDataLoadable {
                             }
                         }
                     },
-                    Action::Ctx(ActionCtx::Settings(ActionSettings::Update(settings))) => {
+                    ActionCtx::Settings(ActionSettings::Update(settings)) => {
                         let mut user_data = self.user_data();
                         user_data.settings = settings.deref().to_owned();
                         Effects::msg(Msg::Event(Event::SettingsUpdated))
                     }
+                    _ => Effects::none().unchanged(),
                 }
             }
             Msg::Internal(Internal::UserDataStorageResponse(user_data)) => match &self {
@@ -265,7 +281,7 @@ impl UserDataLoadable {
             Msg::Internal(Internal::UserAuthResponse(api_request, auth)) => match &self {
                 UserDataLoadable::Loading {
                     request: UserDataRequest::API(loading_api_request),
-                    content: user_data,
+                    ..
                 } if loading_api_request.eq(api_request) => {
                     *self = UserDataLoadable::Ready {
                         content: UserData {
@@ -280,7 +296,11 @@ impl UserDataLoadable {
                 _ => Effects::none().unchanged(),
             },
             Msg::Internal(Internal::UserAddonsResponse(auth_key, addons))
-                if self.auth().map(|auth| &auth.key).eq(&Some(auth_key)) =>
+                if self
+                    .auth()
+                    .as_ref()
+                    .map(|auth| &auth.key)
+                    .eq(&Some(auth_key)) =>
             {
                 let addons = addons.deref();
                 let mut user_data = self.user_data();
@@ -298,7 +318,11 @@ impl UserDataLoadable {
                 .join(Effects::one(Box::new(
                     Env::set_storage(USER_DATA_STORAGE_KEY, Some(self.user_data()))
                         .map(|_| Msg::Event(Event::UserDataPersisted))
-                        .map_err(|error| Msg::Event(Event::Error(MsgError::from(error)))),
+                        .map_err(|error| {
+                            Msg::Event(Event::Error {
+                                error: MsgError::from(error),
+                            })
+                        }),
                 )))
                 .join(user_data_effects)
         } else {
@@ -327,7 +351,7 @@ impl UserDataLoadable {
         }
     }
     fn user_data(&mut self) -> &mut UserData {
-        match &mut self {
+        match self {
             UserDataLoadable::Loading { content, .. } | UserDataLoadable::Ready { content } => {
                 content
             }

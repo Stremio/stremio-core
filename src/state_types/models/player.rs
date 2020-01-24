@@ -1,27 +1,28 @@
-use crate::constants::{META_RESOURCE_NAME, SUBTITLES_RESOURCE_NAME};
-use crate::state_types::messages::{Action, ActionLoad, ActionPlayer, ActionUser, Internal, Msg};
+use crate::state_types::messages::{Action, ActionLoad, ActionPlayer, Internal, Msg};
 use crate::state_types::models::common::{
-    resource_update, resources_update_with_vector_content, ResourceAction, ResourceContent,
-    ResourceLoadable, ResourcesAction,
+    eq_update, resource_update, resources_update_with_vector_content, ResourceAction,
+    ResourceContent, ResourceLoadable, ResourcesAction,
 };
 use crate::state_types::models::ctx::{Ctx, Settings};
 use crate::state_types::{Effects, Environment, UpdateWithCtx};
 use crate::types::addons::{AggrRequest, ResourceRef, ResourceRequest};
 use crate::types::{MetaDetail, Stream, SubtitlesSource, Video};
-use serde_derive::Serialize;
+use serde::{Deserialize, Serialize};
 
-#[derive(Default, Debug, Clone, PartialEq, Serialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct Selected {
-    transport_url: Option<String>,
-    type_name: Option<String>,
-    id: Option<String>,
+    stream: Stream,
+    #[serde(default)]
+    meta_resource_request: Option<ResourceRequest>,
+    #[serde(default)]
+    subtitles_resource_ref: Option<ResourceRef>,
+    #[serde(default)]
     video_id: Option<String>,
-    stream: Option<Stream>,
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize)]
 pub struct Player {
-    pub selected: Selected,
+    pub selected: Option<Selected>,
     pub meta_resource: Option<ResourceLoadable<MetaDetail>>,
     pub subtitles_resources: Vec<ResourceLoadable<Vec<SubtitlesSource>>>,
     pub next_video: Option<Video>,
@@ -30,50 +31,35 @@ pub struct Player {
 impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for Player {
     fn update(&mut self, ctx: &Ctx<Env>, msg: &Msg) -> Effects {
         match msg {
-            Msg::Action(Action::Load(ActionLoad::Player {
-                transport_url,
-                type_name,
-                id,
-                video_id,
-                stream,
-            })) => {
-                let selected_effects = selected_update(
-                    &mut self.selected,
-                    SelectedAction::Select {
-                        transport_url,
-                        type_name,
-                        id,
-                        video_id,
-                        stream,
-                    },
-                );
-                let meta_effects = resource_update::<_, Env>(
-                    &mut self.meta_resource,
-                    ResourceAction::ResourceRequested {
-                        request: &ResourceRequest {
-                            base: transport_url.to_owned(),
-                            path: ResourceRef::without_extra(META_RESOURCE_NAME, type_name, id),
+            Msg::Action(Action::Load(ActionLoad::Player(selected))) => {
+                let selected_effects = eq_update(&mut self.selected, Some(selected.to_owned()));
+                let meta_effects = match &selected.meta_resource_request {
+                    Some(meta_resource_request) => resource_update::<Env, _>(
+                        &mut self.meta_resource,
+                        ResourceAction::ResourceRequested {
+                            request: meta_resource_request,
                         },
-                    },
-                );
-                let subtitles_effects = resources_update_with_vector_content::<_, Env>(
-                    &mut self.subtitles_resources,
-                    ResourcesAction::ResourcesRequested {
-                        aggr_request: &AggrRequest::AllOfResource(ResourceRef::without_extra(
-                            SUBTITLES_RESOURCE_NAME,
-                            type_name,
-                            id,
-                        )),
-                        addons: &ctx.content.addons,
-                    },
-                );
+                    ),
+                    _ => eq_update(&mut self.meta_resource, None),
+                };
+                let subtitles_effects = match &selected.subtitles_resource_ref {
+                    Some(subtitles_resource_ref) => resources_update_with_vector_content::<Env, _>(
+                        &mut self.subtitles_resources,
+                        ResourcesAction::ResourcesRequested {
+                            request: &AggrRequest::AllOfResource(subtitles_resource_ref.to_owned()),
+                            addons: ctx.user_data.addons(),
+                        },
+                    ),
+                    _ => eq_update(&mut self.subtitles_resources, vec![]),
+                };
                 let next_video_effects = next_video_update(
                     &mut self.next_video,
-                    NextVideoAction::MetaChanged {
-                        meta_resource: &self.meta_resource,
-                        video_id: &Some(video_id.to_owned()),
-                        settings: &ctx.content.settings,
-                    },
+                    &self.meta_resource,
+                    &self
+                        .selected
+                        .as_ref()
+                        .and_then(|selected| selected.video_id.to_owned()),
+                    ctx.user_data.settings(),
                 );
                 selected_effects
                     .join(meta_effects)
@@ -81,42 +67,37 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for Player {
                     .join(next_video_effects)
             }
             Msg::Action(Action::Unload) => {
-                let selected_effects = selected_update(&mut self.selected, SelectedAction::Clear);
-                let meta_effects = resource_update::<_, Env>(
-                    &mut self.meta_resource,
-                    ResourceAction::ResourceReplaced { resource: None },
-                );
-                let subtitles_effects = resources_update_with_vector_content::<_, Env>(
-                    &mut self.subtitles_resources,
-                    ResourcesAction::ResourcesReplaced { resources: vec![] },
-                );
+                let selected_effects = eq_update(&mut self.selected, None);
+                let meta_effects = eq_update(&mut self.meta_resource, None);
+                let subtitles_effects = eq_update(&mut self.subtitles_resources, vec![]);
                 let next_video_effects = next_video_update(
                     &mut self.next_video,
-                    NextVideoAction::MetaChanged {
-                        meta_resource: &None,
-                        video_id: &None,
-                        settings: &ctx.content.settings,
-                    },
+                    &self.meta_resource,
+                    &self
+                        .selected
+                        .as_ref()
+                        .and_then(|selected| selected.video_id.to_owned()),
+                    ctx.user_data.settings(),
                 );
                 selected_effects
                     .join(meta_effects)
                     .join(subtitles_effects)
                     .join(next_video_effects)
             }
-            Msg::Action(Action::PlayerOp(ActionPlayer::TimeChanged { time, duration })) => {
+            Msg::Action(Action::Player(ActionPlayer::TimeChanged { time, duration })) => {
                 match &self.selected {
-                    Selected {
-                        id: Some(id),
+                    Some(Selected {
+                        meta_resource_request: Some(meta_resource_request),
                         video_id: Some(video_id),
                         ..
-                    } => match ctx.library.get(id) {
+                    }) => match ctx.library.get_item(&meta_resource_request.path.id) {
                         Some(lib_item) => {
                             let mut lib_item = lib_item.to_owned();
                             lib_item.mtime = Env::now();
                             lib_item.state.time_offset = time.to_owned();
                             lib_item.state.duration = duration.to_owned();
                             lib_item.state.video_id = Some(video_id.to_owned());
-                            Effects::msg(Msg::Action(Action::UserOp(ActionUser::LibUpdate(
+                            Effects::msg(Msg::Internal(Internal::UpdateLibraryItem(Box::new(
                                 lib_item.to_owned(),
                             ))))
                         }
@@ -125,34 +106,35 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for Player {
                     _ => Effects::none().unchanged(),
                 }
             }
-            Msg::Action(Action::PlayerOp(ActionPlayer::Ended)) => {
+            Msg::Action(Action::Player(ActionPlayer::Ended)) => {
                 // TODO update times_watched
                 Effects::none().unchanged()
             }
-            Msg::Internal(Internal::AddonResponse(request, response)) => {
-                let meta_effects = resource_update::<_, Env>(
+            Msg::Internal(Internal::ResourceRequestResult(request, result)) => {
+                let meta_effects = resource_update::<Env, _>(
                     &mut self.meta_resource,
-                    ResourceAction::ResourceResponseReceived {
+                    ResourceAction::ResourceRequestResult {
                         request,
-                        response,
-                        limit: None,
+                        result,
+                        limit: &None,
                     },
                 );
-                let subtitles_effects = resources_update_with_vector_content::<_, Env>(
+                let subtitles_effects = resources_update_with_vector_content::<Env, _>(
                     &mut self.subtitles_resources,
-                    ResourcesAction::ResourceResponseReceived {
+                    ResourcesAction::ResourceRequestResult {
                         request,
-                        response,
-                        limit: None,
+                        result,
+                        limit: &None,
                     },
                 );
                 let next_video_effects = next_video_update(
                     &mut self.next_video,
-                    NextVideoAction::MetaChanged {
-                        meta_resource: &self.meta_resource,
-                        video_id: &self.selected.video_id,
-                        settings: &ctx.content.settings,
-                    },
+                    &self.meta_resource,
+                    &self
+                        .selected
+                        .as_ref()
+                        .and_then(|selected| selected.video_id.to_owned()),
+                    ctx.user_data.settings(),
                 );
                 meta_effects
                     .join(subtitles_effects)
@@ -163,61 +145,20 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for Player {
     }
 }
 
-enum SelectedAction<'a> {
-    Select {
-        transport_url: &'a String,
-        type_name: &'a String,
-        id: &'a String,
-        video_id: &'a String,
-        stream: &'a Stream,
-    },
-    Clear,
-}
-
-fn selected_update(selected: &mut Selected, action: SelectedAction) -> Effects {
-    let next_selected = match action {
-        SelectedAction::Select {
-            transport_url,
-            type_name,
-            id,
-            video_id,
-            stream,
-        } => Selected {
-            transport_url: Some(transport_url.to_owned()),
-            type_name: Some(type_name.to_owned()),
-            id: Some(id.to_owned()),
-            video_id: Some(video_id.to_owned()),
-            stream: Some(stream.to_owned()),
-        },
-        SelectedAction::Clear => Selected::default(),
-    };
-    if next_selected.ne(selected) {
-        *selected = next_selected;
-        Effects::none()
-    } else {
-        Effects::none().unchanged()
-    }
-}
-
-enum NextVideoAction<'a> {
-    MetaChanged {
-        meta_resource: &'a Option<ResourceLoadable<MetaDetail>>,
-        video_id: &'a Option<String>,
-        settings: &'a Settings,
-    },
-}
-
-fn next_video_update(video: &mut Option<Video>, action: NextVideoAction) -> Effects {
-    let next_video = match action {
-        NextVideoAction::MetaChanged {
-            meta_resource:
-                Some(ResourceLoadable {
-                    content: ResourceContent::Ready(meta_detail),
-                    ..
-                }),
-            video_id: Some(video_id),
-            settings,
-        } if settings.binge_watching => meta_detail
+fn next_video_update(
+    video: &mut Option<Video>,
+    meta_resource: &Option<ResourceLoadable<MetaDetail>>,
+    video_id: &Option<String>,
+    settings: &Settings,
+) -> Effects {
+    let next_video = match (meta_resource, video_id) {
+        (
+            Some(ResourceLoadable {
+                content: ResourceContent::Ready(meta_detail),
+                ..
+            }),
+            Some(video_id),
+        ) if settings.binge_watching => meta_detail
             .videos
             .iter()
             .position(|video| video.id.eq(video_id))

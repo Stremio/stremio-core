@@ -34,7 +34,7 @@ impl LibBucket {
                 Vacant(entry) => {
                     entry.insert(item);
                 }
-                Occupied(entry) => {
+                Occupied(mut entry) => {
                     if item.mtime > entry.get().mtime {
                         entry.insert(item);
                     }
@@ -43,15 +43,15 @@ impl LibBucket {
         }
     }
     pub fn split_by_recent(&self) -> (LibBucketBorrowed, LibBucketBorrowed) {
-        let (recent, other) = self
+        let sorted_items = self
             .items
             .values()
             .sorted_by(|a, b| b.mtime.cmp(&a.mtime))
-            .collect::<Vec<_>>()
-            .split_at(LIBRARY_RECENT_COUNT);
+            .collect::<Vec<_>>();
+        let (recent_items, other_items) = sorted_items.split_at(LIBRARY_RECENT_COUNT);
         (
-            LibBucketBorrowed::new(&self.uid, recent),
-            LibBucketBorrowed::new(&self.uid, other),
+            LibBucketBorrowed::new(&self.uid, recent_items),
+            LibBucketBorrowed::new(&self.uid, other_items),
         )
     }
 }

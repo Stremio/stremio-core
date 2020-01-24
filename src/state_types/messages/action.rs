@@ -2,9 +2,12 @@ use crate::state_types::models::addon_details::Selected as AddonDetailsSelected;
 use crate::state_types::models::catalog_filtered::Selected as CatalogFilteredSelected;
 use crate::state_types::models::catalogs_with_extra::Selected as CatalogsWithExtraSelected;
 use crate::state_types::models::ctx::Settings;
+use crate::state_types::models::library_filtered::Selected as LibraryFilteredSelected;
+use crate::state_types::models::meta_details::Selected as MetaDetailsSelected;
+use crate::state_types::models::player::Selected as PlayerSelected;
 use crate::types::addons::{Descriptor, TransportUrl};
 use crate::types::api::GDPRConsent;
-use crate::types::{MetaPreview, Stream};
+use crate::types::MetaPreview;
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 
@@ -70,23 +73,10 @@ pub enum ActionLoad {
     AddonDetails(AddonDetailsSelected),
     CatalogFiltered(CatalogFilteredSelected),
     CatalogsWithExtra(CatalogsWithExtraSelected),
+    LibraryFiltered(LibraryFilteredSelected),
+    MetaDetails(MetaDetailsSelected),
+    Player(PlayerSelected),
     Notifications,
-    LibraryFiltered {
-        type_name: String,
-        sort_prop: Option<String>,
-    },
-    MetaDetails {
-        type_name: String,
-        id: String,
-        video_id: Option<String>,
-    },
-    Player {
-        transport_url: String,
-        type_name: String,
-        id: String,
-        video_id: String,
-        stream: Stream,
-    },
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

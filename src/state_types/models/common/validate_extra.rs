@@ -5,7 +5,7 @@ pub fn validate_extra(extra: &[ExtraProp], page_size: &Option<usize>) -> Vec<Ext
     extra
         .iter()
         .cloned()
-        .fold::<Vec<ExtraProp>, _>(vec![], |extra, (key, value)| {
+        .fold::<Vec<ExtraProp>, _>(vec![], |mut extra, (key, value)| {
             match key.as_ref() {
                 SKIP_EXTRA_NAME => {
                     if let Some(page_size) = page_size.to_owned() {

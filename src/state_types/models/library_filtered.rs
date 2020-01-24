@@ -1,14 +1,15 @@
-use crate::state_types::messages::{Action, ActionLoad, Event, Internal, Msg};
-use crate::state_types::models::{Ctx, LibraryLoadable};
+use crate::state_types::messages::{Action, ActionLoad, Internal, Msg};
+use crate::state_types::models::common::eq_update;
+use crate::state_types::models::ctx::{Ctx, LibraryLoadable};
 use crate::state_types::{Effects, Environment, UpdateWithCtx};
 use crate::types::{LibItem, UID};
 use derivative::Derivative;
 use itertools::Itertools;
-use serde_derive::{Deserialize, Serialize};
+use serde::{Deserialize, Serialize};
 
 #[derive(Derivative, Debug, Clone, PartialEq, Serialize)]
 #[derivative(Default)]
-#[serde(tag = "type", content = "content")]
+#[serde(tag = "type")]
 pub enum LibraryState {
     #[derivative(Default)]
     NotLoaded,
@@ -20,81 +21,52 @@ pub enum LibraryState {
     },
 }
 
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
+#[derive(Derivative, Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derivative(Default)]
+#[serde(rename_all = "lowercase")]
 pub enum SortProp {
+    #[derivative(Default)]
+    CTime,
     Year,
     Name,
-    #[serde(rename = "_ctime")]
-    CTime,
 }
 
-#[derive(Debug, Clone, PartialEq, Serialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct Selected {
     type_name: String,
+    #[serde(default)]
     sort_prop: SortProp,
 }
 
 #[derive(Default, Debug, Clone, Serialize)]
 pub struct LibraryFiltered {
+    pub selected: Option<Selected>,
     pub library_state: LibraryState,
     pub type_names: Vec<String>,
-    pub selected: Option<Selected>,
     pub lib_items: Vec<LibItem>,
 }
 
 impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for LibraryFiltered {
     fn update(&mut self, ctx: &Ctx<Env>, msg: &Msg) -> Effects {
         match msg {
-            Msg::Action(Action::Load(ActionLoad::LibraryFiltered {
-                type_name,
-                sort_prop,
-            })) => {
-                let selected_effects = selected_update(
-                    &mut self.selected,
-                    SelectedAction::Select {
-                        type_name,
-                        sort_prop,
-                    },
-                );
-                let lib_items_effects = lib_items_update(
-                    &mut self.lib_items,
-                    LibItemsAction::Select {
-                        selected: &self.selected,
-                        library: &ctx.library,
-                    },
-                );
+            Msg::Action(Action::Load(ActionLoad::LibraryFiltered(selected))) => {
+                let selected_effects = eq_update(&mut self.selected, Some(selected.to_owned()));
+                let lib_items_effects =
+                    lib_items_update(&mut self.lib_items, &self.selected, &ctx.library);
                 selected_effects.join(lib_items_effects)
             }
             Msg::Action(Action::Unload) => {
-                let selected_effects = selected_update(&mut self.selected, SelectedAction::Clear);
+                let selected_effects = eq_update(&mut self.selected, None);
                 let lib_items_effects =
-                    lib_items_update(&mut self.lib_items, LibItemsAction::Clear);
+                    lib_items_update(&mut self.lib_items, &self.selected, &ctx.library);
                 selected_effects.join(lib_items_effects)
             }
-            Msg::Internal(Internal::CtxLoaded(_))
-            | Msg::Event(Event::CtxChanged)
-            | Msg::Internal(Internal::LibLoaded(_))
-            | Msg::Event(Event::LibPersisted) => {
-                let library_state_effects = library_state_update(
-                    &mut self.library_state,
-                    LibraryStateAction::LibraryChanged {
-                        library: &ctx.library,
-                    },
-                );
-                let type_names_effects = type_names_update(
-                    &mut self.type_names,
-                    TypeNamesAction::LibraryChanged {
-                        library: &ctx.library,
-                    },
-                );
-                let lib_items_effects = lib_items_update(
-                    &mut self.lib_items,
-                    LibItemsAction::LibraryChanged {
-                        library: &ctx.library,
-                        selected: &self.selected,
-                    },
-                );
+            Msg::Internal(Internal::LibraryChanged) => {
+                let library_state_effects =
+                    library_state_update(&mut self.library_state, &ctx.library);
+                let type_names_effects = type_names_update(&mut self.type_names, &ctx.library);
+                let lib_items_effects =
+                    lib_items_update(&mut self.lib_items, &self.selected, &ctx.library);
                 library_state_effects
                     .join(type_names_effects)
                     .join(lib_items_effects)
@@ -104,20 +76,14 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for LibraryFiltered {
     }
 }
 
-enum LibraryStateAction<'a> {
-    LibraryChanged { library: &'a LibraryLoadable },
-}
-
-fn library_state_update(library_state: &mut LibraryState, action: LibraryStateAction) -> Effects {
-    let next_library_state = match action {
-        LibraryStateAction::LibraryChanged { library } => match library {
-            LibraryLoadable::Ready(bucket) => LibraryState::Ready {
-                uid: bucket.uid.to_owned(),
-            },
-            LibraryLoadable::Loading(uid) => LibraryState::Loading {
-                uid: uid.to_owned(),
-            },
-            LibraryLoadable::NotLoaded => LibraryState::NotLoaded,
+fn library_state_update(library_state: &mut LibraryState, library: &LibraryLoadable) -> Effects {
+    let next_library_state = match library {
+        LibraryLoadable::NotLoaded => LibraryState::NotLoaded,
+        LibraryLoadable::Loading(uid, _) => LibraryState::Loading {
+            uid: uid.to_owned(),
+        },
+        LibraryLoadable::Ready(bucket) => LibraryState::Ready {
+            uid: bucket.uid.to_owned(),
         },
     };
     if next_library_state.ne(library_state) {
@@ -128,15 +94,9 @@ fn library_state_update(library_state: &mut LibraryState, action: LibraryStateAc
     }
 }
 
-enum TypeNamesAction<'a> {
-    LibraryChanged { library: &'a LibraryLoadable },
-}
-
-fn type_names_update(type_names: &mut Vec<String>, action: TypeNamesAction) -> Effects {
-    let next_type_names = match action {
-        TypeNamesAction::LibraryChanged {
-            library: LibraryLoadable::Ready(bucket),
-        } => bucket
+fn type_names_update(type_names: &mut Vec<String>, library: &LibraryLoadable) -> Effects {
+    let next_type_names = match library {
+        LibraryLoadable::Ready(bucket) => bucket
             .items
             .values()
             .filter(|lib_item| !lib_item.removed)
@@ -153,67 +113,13 @@ fn type_names_update(type_names: &mut Vec<String>, action: TypeNamesAction) -> E
     }
 }
 
-enum SelectedAction<'a> {
-    Select {
-        type_name: &'a String,
-        sort_prop: &'a Option<String>,
-    },
-    Clear,
-}
-
-fn selected_update(selected: &mut Option<Selected>, action: SelectedAction) -> Effects {
-    let next_selected = match action {
-        SelectedAction::Select {
-            type_name,
-            sort_prop,
-        } => {
-            let type_name = type_name.to_owned();
-            let sort_prop = match sort_prop {
-                Some(sort_prop) => {
-                    match serde_json::from_str(format!("\"{}\"", sort_prop).as_ref()) {
-                        Ok(sort_prop) => sort_prop,
-                        _ => SortProp::CTime,
-                    }
-                }
-                _ => SortProp::CTime,
-            };
-            Some(Selected {
-                type_name,
-                sort_prop,
-            })
-        }
-        SelectedAction::Clear => None,
-    };
-    if next_selected.ne(selected) {
-        *selected = next_selected;
-        Effects::none()
-    } else {
-        Effects::none().unchanged()
-    }
-}
-
-enum LibItemsAction<'a> {
-    Select {
-        selected: &'a Option<Selected>,
-        library: &'a LibraryLoadable,
-    },
-    Clear,
-    LibraryChanged {
-        library: &'a LibraryLoadable,
-        selected: &'a Option<Selected>,
-    },
-}
-
-fn lib_items_update(lib_items: &mut Vec<LibItem>, action: LibItemsAction) -> Effects {
-    let next_lib_items = match action {
-        LibItemsAction::Select {
-            selected: Some(selected),
-            library: LibraryLoadable::Ready(bucket),
-        }
-        | LibItemsAction::LibraryChanged {
-            library: LibraryLoadable::Ready(bucket),
-            selected: Some(selected),
-        } => bucket
+fn lib_items_update(
+    lib_items: &mut Vec<LibItem>,
+    selected: &Option<Selected>,
+    library: &LibraryLoadable,
+) -> Effects {
+    let next_lib_items = match (selected, library) {
+        (Some(selected), LibraryLoadable::Ready(bucket)) => bucket
             .items
             .values()
             .filter(|lib_item| !lib_item.removed && lib_item.type_name.eq(&selected.type_name))

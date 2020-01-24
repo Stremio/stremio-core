@@ -53,7 +53,7 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for AddonDetails {
             Msg::Internal(Internal::ManifestRequestResult(transport_url, result)) => {
                 descriptor_update::<Env>(
                     &mut self.addon,
-                    DescriptorAction::ManifestResultReceived {
+                    DescriptorAction::ManifestRequestResult {
                         transport_url,
                         result,
                     },

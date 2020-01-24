@@ -1,4 +1,4 @@
-use crate::constants::{META_CATALOG_PAGE_SIZE, SKIP_EXTRA_NAME};
+use crate::constants::{CATALOG_PAGE_SIZE, SKIP_EXTRA_NAME};
 use crate::state_types::messages::{Action, ActionLoad, Internal, Msg};
 use crate::state_types::models::common::{
     eq_update, resource_update_with_vector_content, validate_extra, ResourceAction,
@@ -38,7 +38,7 @@ impl CatalogResourceAdapter for MetaPreview {
         SelectablePriority::Type
     }
     fn catalog_page_size() -> Option<usize> {
-        Some(META_CATALOG_PAGE_SIZE)
+        Some(CATALOG_PAGE_SIZE)
     }
 }
 
@@ -114,7 +114,7 @@ where
                         },
                     },
                 };
-                let selected_effects = eq_update(&mut self.selected, Some(selected));
+                let selected_effects = eq_update(&mut self.selected, Some(selected.to_owned()));
                 let catalog_effects = resource_update_with_vector_content::<Env, _>(
                     &mut self.catalog_resource,
                     ResourceAction::ResourceRequested {
@@ -145,7 +145,7 @@ where
             Msg::Internal(Internal::ResourceRequestResult(request, result)) => {
                 let catalog_effects = resource_update_with_vector_content::<Env, _>(
                     &mut self.catalog_resource,
-                    ResourceAction::ResourceResultReceived {
+                    ResourceAction::ResourceRequestResult {
                         request,
                         result,
                         limit: &T::catalog_page_size(),
@@ -209,9 +209,10 @@ fn selectable_update<T: CatalogResourceAdapter>(
                         ),
                     },
                 })
-        })
-        .unique_by(|&selectable_catalog| &selectable_catalog.request)
-        .collect::<Vec<_>>();
+        }) // TODO this .collect.iter should be removed
+        // .cloned()
+        // .unique_by(|selectable_catalog| &selectable_catalog.request)
+        .collect::<Vec<SelectableCatalog>>();
     let (selectable_types, selectable_catalogs) = match T::selectable_priority() {
         SelectablePriority::Type => {
             let selectable_types = selectable_catalogs

@@ -1,24 +1,24 @@
 use crate::constants::{META_RESOURCE_NAME, STREAM_RESOURCE_NAME};
 use crate::state_types::messages::{Action, ActionLoad, Internal, Msg};
 use crate::state_types::models::common::{
-    resources_update, resources_update_with_vector_content, ResourceContent, ResourceLoadable,
-    ResourcesAction,
+    eq_update, resources_update, resources_update_with_vector_content, ResourceContent,
+    ResourceLoadable, ResourcesAction,
 };
-use crate::state_types::models::Ctx;
+use crate::state_types::models::ctx::Ctx;
 use crate::state_types::{Effects, Environment, UpdateWithCtx};
 use crate::types::addons::{AggrRequest, ResourceRef};
 use crate::types::{MetaDetail, Stream};
-use serde_derive::Serialize;
+use serde::{Deserialize, Serialize};
 
-#[derive(Default, Debug, Clone, PartialEq, Serialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct Selected {
-    meta_resource_ref: Option<ResourceRef>,
+    meta_resource_ref: ResourceRef,
     streams_resource_ref: Option<ResourceRef>,
 }
 
 #[derive(Default, Debug, Clone, Serialize)]
 pub struct MetaDetails {
-    pub selected: Selected,
+    pub selected: Option<Selected>,
     pub meta_resources: Vec<ResourceLoadable<MetaDetail>>,
     pub streams_resources: Vec<ResourceLoadable<Vec<Stream>>>,
 }
@@ -26,102 +26,65 @@ pub struct MetaDetails {
 impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for MetaDetails {
     fn update(&mut self, ctx: &Ctx<Env>, msg: &Msg) -> Effects {
         match msg {
-            Msg::Action(Action::Load(ActionLoad::MetaDetails {
-                type_name,
-                id,
-                video_id,
-            })) => {
-                let selected_effects = selected_update(
-                    &mut self.selected,
-                    SelectedAction::Select {
-                        type_name,
-                        id,
-                        video_id,
-                    },
-                );
-                let meta_effects = resources_update::<_, Env>(
+            Msg::Action(Action::Load(ActionLoad::MetaDetails(selected))) => {
+                let selected_effects = eq_update(&mut self.selected, Some(selected.to_owned()));
+                let meta_effects = resources_update::<Env, _>(
                     &mut self.meta_resources,
                     ResourcesAction::ResourcesRequested {
-                        aggr_request: &AggrRequest::AllOfResource(ResourceRef::without_extra(
-                            META_RESOURCE_NAME,
-                            type_name,
-                            id,
-                        )),
-                        addons: &ctx.content.addons,
+                        request: &AggrRequest::AllOfResource(selected.meta_resource_ref.to_owned()),
+                        addons: ctx.user_data.addons(),
                     },
                 );
-                let streams_effects = match video_id {
-                    Some(video_id) => {
-                        if let Some(streams_resource) =
-                            streams_resource_from_meta_resources(&self.meta_resources, video_id)
-                        {
-                            resources_update_with_vector_content::<_, Env>(
-                                &mut self.streams_resources,
-                                ResourcesAction::ResourcesReplaced {
-                                    resources: vec![streams_resource],
-                                },
-                            )
-                        } else {
-                            resources_update_with_vector_content::<_, Env>(
-                                &mut self.streams_resources,
-                                ResourcesAction::ResourcesRequested {
-                                    aggr_request: &AggrRequest::AllOfResource(
-                                        ResourceRef::without_extra(
-                                            STREAM_RESOURCE_NAME,
-                                            type_name,
-                                            video_id,
-                                        ),
-                                    ),
-                                    addons: &ctx.content.addons,
-                                },
-                            )
-                        }
-                    }
-                    None => resources_update_with_vector_content::<_, Env>(
-                        &mut self.streams_resources,
-                        ResourcesAction::ResourcesReplaced { resources: vec![] },
-                    ),
-                };
-                selected_effects.join(meta_effects).join(streams_effects)
-            }
-            Msg::Action(Action::Unload) => {
-                let selected_effects = selected_update(&mut self.selected, SelectedAction::Clear);
-                let meta_effects = resources_update::<_, Env>(
-                    &mut self.meta_resources,
-                    ResourcesAction::ResourcesReplaced { resources: vec![] },
-                );
-                let streams_effects = resources_update::<_, Env>(
-                    &mut self.streams_resources,
-                    ResourcesAction::ResourcesReplaced { resources: vec![] },
-                );
-                selected_effects.join(meta_effects).join(streams_effects)
-            }
-            Msg::Internal(Internal::AddonResponse(request, response))
-                if request.path.resource.eq(META_RESOURCE_NAME) =>
-            {
-                let meta_effects = resources_update::<_, Env>(
-                    &mut self.meta_resources,
-                    ResourcesAction::ResourceResponseReceived {
-                        request,
-                        response,
-                        limit: None,
-                    },
-                );
-                let streams_effects = match &self.selected {
-                    Selected {
-                        streams_resource_ref: Some(streams_resource_ref),
-                        ..
-                    } => {
+                let streams_effects = match &selected.streams_resource_ref {
+                    Some(streams_resource_ref) => {
                         if let Some(streams_resource) = streams_resource_from_meta_resources(
                             &self.meta_resources,
                             &streams_resource_ref.id,
                         ) {
-                            resources_update_with_vector_content::<_, Env>(
+                            eq_update(&mut self.streams_resources, vec![streams_resource])
+                        } else {
+                            resources_update_with_vector_content::<Env, _>(
                                 &mut self.streams_resources,
-                                ResourcesAction::ResourcesReplaced {
-                                    resources: vec![streams_resource],
+                                ResourcesAction::ResourcesRequested {
+                                    request: &AggrRequest::AllOfResource(
+                                        streams_resource_ref.to_owned(),
+                                    ),
+                                    addons: ctx.user_data.addons(),
                                 },
                             )
+                        }
+                    }
+                    None => eq_update(&mut self.streams_resources, vec![]),
+                };
+                selected_effects.join(meta_effects).join(streams_effects)
+            }
+            Msg::Action(Action::Unload) => {
+                let selected_effects = eq_update(&mut self.selected, None);
+                let meta_effects = eq_update(&mut self.meta_resources, vec![]);
+                let streams_effects = eq_update(&mut self.streams_resources, vec![]);
+                selected_effects.join(meta_effects).join(streams_effects)
+            }
+            Msg::Internal(Internal::ResourceRequestResult(request, result))
+                if request.path.resource.eq(META_RESOURCE_NAME) =>
+            {
+                let meta_effects = resources_update::<Env, _>(
+                    &mut self.meta_resources,
+                    ResourcesAction::ResourceRequestResult {
+                        request,
+                        result,
+                        limit: &None,
+                    },
+                );
+                let streams_effects = match &self.selected {
+                    Some(Selected {
+                        streams_resource_ref: Some(streams_resource_ref),
+                        ..
+                    }) => {
+                        if let Some(streams_resource) = streams_resource_from_meta_resources(
+                            &self.meta_resources,
+                            &streams_resource_ref.id,
+                        ) {
+                            eq_update(&mut self.streams_resources, vec![streams_resource])
                         } else {
                             Effects::none().unchanged()
                         }
@@ -130,72 +93,20 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for MetaDetails {
                 };
                 meta_effects.join(streams_effects)
             }
-            Msg::Internal(Internal::AddonResponse(request, response))
+            Msg::Internal(Internal::ResourceRequestResult(request, result))
                 if request.path.resource.eq(STREAM_RESOURCE_NAME) =>
             {
-                resources_update_with_vector_content::<_, Env>(
+                resources_update_with_vector_content::<Env, _>(
                     &mut self.streams_resources,
-                    ResourcesAction::ResourceResponseReceived {
+                    ResourcesAction::ResourceRequestResult {
                         request,
-                        response,
-                        limit: None,
+                        result,
+                        limit: &None,
                     },
                 )
             }
             _ => Effects::none().unchanged(),
         }
-    }
-}
-
-enum SelectedAction<'a> {
-    Select {
-        type_name: &'a String,
-        id: &'a String,
-        video_id: &'a Option<String>,
-    },
-    Clear,
-}
-
-fn selected_update(selected: &mut Selected, action: SelectedAction) -> Effects {
-    let next_selected = match action {
-        SelectedAction::Select {
-            type_name,
-            id,
-            video_id: Some(video_id),
-        } => Selected {
-            meta_resource_ref: Some(ResourceRef::without_extra(
-                META_RESOURCE_NAME,
-                type_name,
-                id,
-            )),
-            streams_resource_ref: Some(ResourceRef::without_extra(
-                STREAM_RESOURCE_NAME,
-                type_name,
-                video_id,
-            )),
-        },
-        SelectedAction::Select {
-            type_name,
-            id,
-            video_id: None,
-        } => Selected {
-            meta_resource_ref: Some(ResourceRef::without_extra(
-                META_RESOURCE_NAME,
-                type_name,
-                id,
-            )),
-            streams_resource_ref: None,
-        },
-        SelectedAction::Clear => Selected {
-            meta_resource_ref: None,
-            streams_resource_ref: None,
-        },
-    };
-    if next_selected.ne(selected) {
-        *selected = next_selected;
-        Effects::none()
-    } else {
-        Effects::none().unchanged()
     }
 }
 

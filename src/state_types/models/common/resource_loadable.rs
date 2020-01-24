@@ -69,14 +69,10 @@ where
                 });
                 Effects::one(Box::new(get_resource::<Env>(&request).then(
                     move |result| {
-                        let msg = Msg::Internal(Internal::ResourceRequestResult(
+                        future::ok(Msg::Internal(Internal::ResourceRequestResult(
                             request,
                             Box::new(result),
-                        ));
-                        match result {
-                            Ok(_) => future::ok(msg),
-                            Err(_) => future::err(msg),
-                        }
+                        )))
                     },
                 )))
             } else {
@@ -148,14 +144,10 @@ where
                                 content: ResourceContent::Loading,
                             },
                             Box::new(get_resource::<Env>(&request).then(move |result| {
-                                let msg = Msg::Internal(Internal::ResourceRequestResult(
+                                future::ok(Msg::Internal(Internal::ResourceRequestResult(
                                     request,
                                     Box::new(result),
-                                ));
-                                match result {
-                                    Ok(_) => future::ok(msg),
-                                    Err(_) => future::err(msg),
-                                }
+                                )))
                             })),
                         )
                     })

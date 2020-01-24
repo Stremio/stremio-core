@@ -1,12 +1,13 @@
 use super::common::{
-    addon_get, resources_update, ResourceContent, ResourceLoadable, ResourcesAction,
+    get_resource, resources_update, ResourceContent, ResourceLoadable, ResourcesAction,
 };
 use crate::state_types::messages::Internal::*;
 use crate::state_types::messages::*;
-use crate::state_types::models::*;
+use crate::state_types::models::ctx::{Ctx, LibraryLoadable};
 use crate::state_types::*;
 use crate::types::addons::{ResourceRef, ResourceRequest};
 use crate::types::MetaDetail;
+use futures::{future, Future};
 use lazysort::SortedBy;
 use serde_derive::*;
 
@@ -32,9 +33,9 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for Notifications {
                     }
                 };
 
-                let (effects, groups): (Vec<_>, Vec<_>) = ctx
-                    .content
-                    .addons
+                let (groups, effects): (Vec<_>, Vec<_>) = ctx
+                    .user_data
+                    .addons()
                     .iter()
                     .flat_map(|addon| {
                         // The catalog supports this property
@@ -67,7 +68,7 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for Notifications {
                             // we get no chunks (so no group)
                             relevant_items
                                 .chunks(MAX_PER_REQUEST)
-                                .map(|items_page| {
+                                .map(|items_page| -> (_, Effect) {
                                     let ids =
                                         items_page.iter().map(|x| x.id.clone()).collect::<Vec<_>>();
                                     let extra_props = [(LAST_VID_IDS.into(), ids.join(","))];
@@ -81,11 +82,20 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for Notifications {
                                         ResourceRequest::new(&addon.transport_url, path);
 
                                     (
-                                        addon_get::<Env>(addon_req.to_owned()),
                                         ResourceLoadable {
-                                            request: addon_req,
+                                            request: addon_req.to_owned(),
                                             content: ResourceContent::Loading,
                                         },
+                                        Box::new(get_resource::<Env>(&addon_req).then(
+                                            move |result| {
+                                                future::ok(Msg::Internal(
+                                                    Internal::ResourceRequestResult(
+                                                        addon_req,
+                                                        Box::new(result),
+                                                    ),
+                                                ))
+                                            },
+                                        )),
                                     )
                                 })
                                 .collect::<Vec<_>>()
@@ -96,20 +106,20 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for Notifications {
                 self.groups = groups;
                 Effects::many(effects)
             }
-            Msg::Internal(AddonResponse(req, result)) => {
+            Msg::Internal(ResourceRequestResult(req, result)) => {
                 if let Some(idx) = self.groups.iter().position(|g| g.request.eq(req)) {
-                    resources_update::<_, Env>(
+                    resources_update::<Env, _>(
                         &mut self.groups,
-                        ResourcesAction::ResourceResponseReceived {
+                        ResourcesAction::ResourceRequestResult {
                             request: req,
-                            response: result,
-                            limit: None,
+                            result: result,
+                            limit: &None,
                         },
                     );
                     // Modify all the items so that only the new videos are left
                     if let ResourceContent::Ready(ref mut meta_items) = self.groups[idx].content {
                         for item in meta_items {
-                            if let Some(lib_item) = ctx.library.get(&item.id) {
+                            if let Some(lib_item) = ctx.library.get_item(&item.id) {
                                 item.videos
                                     // It's not gonna be a notification if we don't have the
                                     // released date of the last watched video

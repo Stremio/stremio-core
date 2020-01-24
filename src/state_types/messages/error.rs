@@ -5,7 +5,7 @@ use std::error::Error;
 use std::fmt;
 
 #[derive(Debug, Clone, Serialize)]
-#[serde(tag = "type", content = "args")]
+#[serde(tag = "type")]
 pub enum MsgError {
     API { message: String, code: u64 },
     Env { message: String },
@@ -13,17 +13,18 @@ pub enum MsgError {
 
 impl fmt::Display for MsgError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let message = match &self {
-            MsgError::API { message, .. } => message.to_owned(),
-            MsgError::Env { message } => message.to_owned(),
-        };
-        write!(f, "{}", message)
+        match &self {
+            MsgError::API { message, code } => write!(f, "{} {}", message, code),
+            MsgError::Env { message } => write!(f, "{}", message),
+        }
     }
 }
 
 impl Error for MsgError {
     fn description(&self) -> &str {
-        format!("{}", &self).as_str()
+        match &self {
+            MsgError::API { message, .. } | MsgError::Env { message } => message,
+        }
     }
 }
 

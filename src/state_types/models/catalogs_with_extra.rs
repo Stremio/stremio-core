@@ -1,10 +1,10 @@
-use crate::constants::META_CATALOG_PREVIEW_SIZE;
+use crate::constants::CATALOG_PREVIEW_SIZE;
 use crate::state_types::messages::{Action, ActionLoad, Internal, Msg};
 use crate::state_types::models::common::{
     eq_update, resources_update_with_vector_content, validate_extra, ResourceLoadable,
     ResourcesAction,
 };
-use crate::state_types::models::Ctx;
+use crate::state_types::models::ctx::Ctx;
 use crate::state_types::{Effects, Environment, UpdateWithCtx};
 use crate::types::addons::{AggrRequest, ExtraProp};
 use crate::types::MetaPreview;
@@ -32,7 +32,7 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for CatalogsWithExtra {
                 let catalogs_effects = resources_update_with_vector_content::<Env, _>(
                     &mut self.catalog_resources,
                     ResourcesAction::ResourcesRequested {
-                        aggr_request: &AggrRequest::AllCatalogs {
+                        request: &AggrRequest::AllCatalogs {
                             extra: &selected.extra,
                         },
                         addons: ctx.user_data.addons(),
@@ -48,10 +48,10 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for CatalogsWithExtra {
             Msg::Internal(Internal::ResourceRequestResult(request, result)) => {
                 resources_update_with_vector_content::<Env, _>(
                     &mut self.catalog_resources,
-                    ResourcesAction::ResourceResultReceived {
+                    ResourcesAction::ResourceRequestResult {
                         request,
                         result,
-                        limit: &Some(META_CATALOG_PREVIEW_SIZE),
+                        limit: &Some(CATALOG_PREVIEW_SIZE),
                     },
                 )
             }
@@ -59,7 +59,7 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for CatalogsWithExtra {
                 Some(selected) => resources_update_with_vector_content::<Env, _>(
                     &mut self.catalog_resources,
                     ResourcesAction::ResourcesRequested {
-                        aggr_request: &AggrRequest::AllCatalogs {
+                        request: &AggrRequest::AllCatalogs {
                             extra: &selected.extra,
                         },
                         addons: ctx.user_data.addons(),

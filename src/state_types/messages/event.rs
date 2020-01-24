@@ -1,8 +1,8 @@
-use super::{Action, MsgError};
+use super::{ActionCtx, MsgError};
 use serde::Serialize;
 
 #[derive(Debug, Clone, Serialize)]
-#[serde(tag = "event", content = "args")]
+#[serde(tag = "type")]
 pub enum Event {
     UserDataRetrievedFromStorage,
     UserPushedToAPI,
@@ -19,6 +19,11 @@ pub enum Event {
     LibraryPersisted,
     LibraryPushed,
     LibrarySynced,
-    ActionError(Action, MsgError),
-    Error(MsgError),
+    CtxError {
+        action_ctx: ActionCtx,
+        error: MsgError,
+    },
+    Error {
+        error: MsgError,
+    },
 }
