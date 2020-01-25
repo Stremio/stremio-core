@@ -79,6 +79,9 @@ pub enum ActionPlayer {
     Ended,
 }
 
+//
+// Those messages are meant to be dispatched only by the users of the stremio-core crate
+//
 #[derive(Debug, Clone, Deserialize)]
 #[serde(tag = "action", content = "args")]
 pub enum Action {

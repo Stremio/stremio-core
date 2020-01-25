@@ -5,6 +5,9 @@ use crate::types::addons::{Descriptor, Manifest, ResourceRequest, ResourceRespon
 use crate::types::api::{APIRequest, Auth, AuthKey};
 use crate::types::{LibBucket, LibItem, UID};
 
+//
+// Those messages are meant to be dispatched and hanled only inside stremio-core crate
+//
 #[derive(Debug)]
 pub enum Internal {
     UserDataChanged,
