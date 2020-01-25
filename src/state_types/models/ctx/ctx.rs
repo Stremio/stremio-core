@@ -2,15 +2,18 @@ use super::library::LibraryLoadable;
 use super::user_data::UserDataLoadable;
 use crate::state_types::msg::Msg;
 use crate::state_types::{Effects, Environment, Update};
+use derivative::Derivative;
 use serde::Serialize;
 use std::marker::PhantomData;
 
-#[derive(Default, Debug, Clone, Serialize)]
+#[derive(Derivative, Clone, Serialize)]
+#[derivative(Default, Debug)]
 pub struct Ctx<Env: Environment> {
     #[serde(flatten)]
     pub user_data: UserDataLoadable,
     #[serde(skip)]
     pub library: LibraryLoadable,
+    #[derivative(Debug = "ignore")]
     #[serde(skip)]
     env: PhantomData<Env>,
 }

@@ -11,6 +11,7 @@ use crate::types::addons::{
     ResourceRequest, ResourceResponse,
 };
 use crate::types::MetaPreview;
+use derivative::Derivative;
 use itertools::Itertools;
 use serde::{Deserialize, Serialize};
 use std::convert::TryFrom;
@@ -84,7 +85,8 @@ pub struct Selectable {
     pub has_next_page: bool,
 }
 
-#[derive(Default, Debug, Clone, Serialize)]
+#[derive(Derivative, Debug, Clone, Serialize)]
+#[derivative(Default(bound = ""))]
 pub struct CatalogFiltered<T> {
     pub selected: Option<Selected>,
     pub selectable: Selectable,
