@@ -2,7 +2,7 @@ use super::{get_resource, Loadable};
 use crate::state_types::msg::{Internal, Msg, MsgError};
 use crate::state_types::{Effect, Effects, Environment};
 use crate::types::addons::{AggrRequest, Descriptor, ResourceRequest, ResourceResponse};
-use futures::{future, Future};
+use futures::Future;
 use serde::Serialize;
 use std::convert::TryFrom;
 
@@ -69,7 +69,7 @@ where
                 });
                 Effects::one(Box::new(get_resource::<Env>(&request).then(
                     move |result| {
-                        future::ok(Msg::Internal(Internal::ResourceRequestResult(
+                        Ok(Msg::Internal(Internal::ResourceRequestResult(
                             request,
                             Box::new(result),
                         )))
@@ -144,7 +144,7 @@ where
                                 content: ResourceContent::Loading,
                             },
                             Box::new(get_resource::<Env>(&request).then(move |result| {
-                                future::ok(Msg::Internal(Internal::ResourceRequestResult(
+                                Ok(Msg::Internal(Internal::ResourceRequestResult(
                                     request,
                                     Box::new(result),
                                 )))

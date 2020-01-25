@@ -1,7 +1,7 @@
 use crate::state_types::msg::MsgError;
 use crate::state_types::{Environment, Request};
 use crate::types::api::{APIMethodName, APIResult};
-use futures::{future, Future};
+use futures::Future;
 use serde::de::DeserializeOwned;
 use serde::Serialize;
 
@@ -18,7 +18,7 @@ where
     Env::fetch_serde::<_, _>(request)
         .map_err(MsgError::from)
         .and_then(|result| match result {
-            APIResult::Ok { result } => future::ok(result),
-            APIResult::Err { error } => future::err(MsgError::from(error)),
+            APIResult::Ok { result } => Ok(result),
+            APIResult::Err { error } => Err(MsgError::from(error)),
         })
 }

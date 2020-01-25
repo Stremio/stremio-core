@@ -3,7 +3,7 @@ use crate::constants::OFFICIAL_ADDONS;
 use crate::state_types::msg::{Internal, Msg, MsgError};
 use crate::state_types::{Effects, Environment};
 use crate::types::addons::{Descriptor, Manifest, TransportUrl};
-use futures::{future, Future};
+use futures::Future;
 use serde::Serialize;
 
 pub type DescriptorError = String;
@@ -49,7 +49,7 @@ pub fn descriptor_update<Env: Environment + 'static>(
                 });
                 Effects::one(Box::new(get_manifest::<Env>(&transport_url).then(
                     move |result| {
-                        future::ok(Msg::Internal(Internal::ManifestRequestResult(
+                        Ok(Msg::Internal(Internal::ManifestRequestResult(
                             transport_url,
                             result,
                         )))
