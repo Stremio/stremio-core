@@ -4,15 +4,15 @@ use futures::{future, Future};
 use serde::de::DeserializeOwned;
 use serde::Serialize;
 use std::collections::HashMap;
-use stremio_core::state_types::*;
-use wasm_bindgen::prelude::*;
+use std::error::Error;
+use std::fmt;
+use stremio_core::state_types::{EnvFuture, Environment, Request};
+use wasm_bindgen::prelude::JsValue;
 use wasm_bindgen::JsCast;
 use wasm_bindgen_futures::spawn_local;
 use wasm_bindgen_futures::JsFuture;
 use web_sys::{RequestInit, Response};
 
-use std::error::Error;
-use std::fmt;
 #[derive(Debug)]
 pub enum EnvError {
     Js(String),
@@ -20,11 +20,13 @@ pub enum EnvError {
     HTTPStatusCode(u16),
     StorageMissing,
 }
+
 impl fmt::Display for EnvError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "{:?}", self)
     }
 }
+
 impl Error for EnvError {
     fn description(&self) -> &str {
         match self {
@@ -35,6 +37,7 @@ impl Error for EnvError {
         }
     }
 }
+
 impl From<JsValue> for EnvError {
     fn from(e: JsValue) -> EnvError {
         let err_str: String = e
@@ -44,6 +47,7 @@ impl From<JsValue> for EnvError {
         EnvError::Js(err_str)
     }
 }
+
 impl From<serde_json::error::Error> for EnvError {
     fn from(e: serde_json::error::Error) -> EnvError {
         EnvError::Serde(e)
@@ -87,6 +91,7 @@ impl Env {
         Ok(())
     }
 }
+
 impl Environment for Env {
     fn fetch_serde<IN, OUT>(in_request: Request<IN>) -> EnvFuture<OUT>
     where
