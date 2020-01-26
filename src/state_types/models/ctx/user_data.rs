@@ -149,7 +149,7 @@ impl UserDataLoadable {
                     Some(auth) => Effects::one(Box::new(
                         delete_user_session::<Env>(&auth.key)
                             .map(|_| Msg::Event(Event::UserSessionDeleted))
-                            .map_err(|error| Msg::Event(Event::Error(ModelError::from(error)))),
+                            .map_err(|error| Msg::Event(Event::Error(error))),
                     ))
                     .unchanged(),
                     _ => Effects::none().unchanged(),
@@ -170,7 +170,7 @@ impl UserDataLoadable {
                     Some(auth) => Effects::one(Box::new(
                         set_user_addons::<Env>(&auth.key, self.addons())
                             .map(|_| Msg::Event(Event::AddonsPushedToAPI))
-                            .map_err(|error| Msg::Event(Event::Error(ModelError::from(error)))),
+                            .map_err(|error| Msg::Event(Event::Error(error))),
                     ))
                     .unchanged(),
                     _ => Effects::none().unchanged(),
