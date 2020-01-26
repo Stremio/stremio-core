@@ -15,11 +15,7 @@ pub enum Internal {
     UserAuthResult(APIRequest, Result<Auth, ModelError>),
     UserAddonsResult(AuthKey, Result<Vec<Descriptor>, ModelError>),
     LibraryChanged,
-    LibraryStorageResult(
-        // todo remove uid
-        UID,
-        Result<(Option<LibBucket>, Option<LibBucket>), ModelError>,
-    ),
+    LibraryStorageResult(Result<(Option<LibBucket>, Option<LibBucket>), ModelError>),
     LibraryAPIResult(UID, Result<Vec<LibItem>, ModelError>),
     LibrarySyncResponse(LibBucket),
     UpdateLibraryItem(LibItem),

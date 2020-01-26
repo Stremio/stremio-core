@@ -57,9 +57,8 @@ impl LibraryLoadable {
                 Effects::one(Box::new(
                     Env::get_storage(LIBRARY_RECENT_STORAGE_KEY)
                         .join(Env::get_storage(LIBRARY_STORAGE_KEY))
-                        .then(move |result| {
+                        .then(|result| {
                             Ok(Msg::Internal(Internal::LibraryStorageResult(
-                                uid,
                                 result.map_err(ModelError::from),
                             )))
                         }),
@@ -151,28 +150,23 @@ impl LibraryLoadable {
                 lib_item.mtime = Env::now();
                 self.set_item::<Env>(lib_item, user_data.auth())
             }
-            Msg::Internal(Internal::LibraryStorageResult(uid, result)) => match &self {
-                LibraryLoadable::Loading(loading_uid, LibraryRequest::Storage)
-                    if loading_uid.eq(uid) =>
-                {
-                    let (next_library, library_effects) = match result {
+            Msg::Internal(Internal::LibraryStorageResult(result)) => match &self {
+                LibraryLoadable::Loading(uid, LibraryRequest::Storage) => {
+                    let mut bucket = LibBucket::new(uid.to_owned(), vec![]);
+                    let bucket_effects = match result {
                         Ok((recent_bucket, other_bucket)) => {
-                            let mut bucket = LibBucket::new(uid.to_owned(), vec![]);
                             if let Some(recent_bucket) = recent_bucket {
                                 bucket.merge(recent_bucket.to_owned())
                             };
                             if let Some(other_bucket) = other_bucket {
                                 bucket.merge(other_bucket.to_owned())
                             };
-                            (LibraryLoadable::Ready(bucket), Effects::none())
+                            Effects::none()
                         }
-                        Err(error) => (
-                            LibraryLoadable::Ready(LibBucket::new(uid.to_owned(), vec![])),
-                            Effects::msg(Msg::Event(Event::Error(error.to_owned()))),
-                        ),
+                        Err(error) => Effects::msg(Msg::Event(Event::Error(error.to_owned()))),
                     };
-                    *self = next_library;
-                    library_effects
+                    *self = LibraryLoadable::Ready(bucket);
+                    bucket_effects
                 }
                 _ => Effects::none().unchanged(),
             },
