@@ -53,7 +53,7 @@ impl LibraryLoadable {
                     .auth()
                     .as_ref()
                     .map(|auth| auth.user.id.to_owned()));
-                *self = LibraryLoadable::Loading(uid.to_owned(), LibraryRequest::Storage);
+                *self = LibraryLoadable::Loading(uid, LibraryRequest::Storage);
                 Effects::one(Box::new(
                     Env::get_storage(LIBRARY_RECENT_STORAGE_KEY)
                         .join(Env::get_storage(LIBRARY_STORAGE_KEY))
@@ -90,11 +90,15 @@ impl LibraryLoadable {
                     (Some(auth), LibraryLoadable::Ready(bucket))
                         if bucket.uid.eq(&UID(Some(auth.user.id.to_owned()))) =>
                     {
-                        Effects::one(Box::new(
-                            lib_sync::<Env>(auth, bucket.to_owned())
-                                .map(|bucket| Msg::Internal(Internal::LibrarySyncResponse(bucket)))
-                                .map_err(|error| Msg::Event(Event::Error(error))),
-                        ))
+                        let uid = bucket.uid.to_owned();
+                        Effects::one(Box::new(lib_sync::<Env>(auth, bucket.to_owned()).then(
+                            move |result| {
+                                Ok(Msg::Internal(Internal::LibrarySyncResult(
+                                    uid,
+                                    result.map_err(ModelError::from),
+                                )))
+                            },
+                        )))
                         .unchanged()
                     }
                     _ => Effects::none().unchanged(),
@@ -187,15 +191,21 @@ impl LibraryLoadable {
                 }
                 _ => Effects::none().unchanged(),
             },
-            Msg::Internal(Internal::LibrarySyncResponse(sync_bucket)) => match self {
-                LibraryLoadable::Ready(ref mut bucket) if bucket.uid.eq(&sync_bucket.uid) => {
-                    Effects::one(Box::new(
-                        update_and_persist::<Env>(bucket, sync_bucket.to_owned())
-                            .map(move |_| Msg::Event(Event::LibraryPersisted))
-                            .map_err(|error| Msg::Event(Event::Error(error))),
+            Msg::Internal(Internal::LibrarySyncResult(uid, result)) => match self {
+                LibraryLoadable::Ready(ref mut bucket) if bucket.uid.eq(uid) => match result {
+                    Ok(newer_items) => Effects::one(Box::new(
+                        update_and_persist::<Env>(
+                            bucket,
+                            LibBucket::new(uid.to_owned(), newer_items.to_owned()),
+                        )
+                        .map(|_| Msg::Event(Event::LibraryPersisted))
+                        .map_err(|error| Msg::Event(Event::Error(error))),
                     ))
-                    .join(Effects::msg(Msg::Event(Event::LibrarySynced)))
-                }
+                    .join(Effects::msg(Msg::Event(Event::LibrarySynced))),
+                    Err(error) => {
+                        Effects::msg(Msg::Event(Event::Error(error.to_owned()))).unchanged()
+                    }
+                },
                 _ => Effects::none().unchanged(),
             },
             _ => Effects::none().unchanged(),
@@ -255,7 +265,7 @@ fn datastore_req_builder(auth: &Auth) -> DatastoreReqBuilder {
 fn lib_sync<Env: Environment + 'static>(
     auth: &Auth,
     local_lib: LibBucket,
-) -> impl Future<Item = LibBucket, Error = ModelError> {
+) -> impl Future<Item = Vec<LibItem>, Error = ModelError> {
     // @TODO consider asserting if uid matches auth
     let builder = datastore_req_builder(auth);
     let meta_req = builder.clone().with_cmd(DatastoreCmd::Meta {});
@@ -277,7 +287,7 @@ fn lib_sync<Env: Environment + 'static>(
             .map(|(k, _)| k.clone())
             .collect::<Vec<String>>();
         // Items to push
-        let LibBucket { items, uid } = local_lib;
+        let LibBucket { items, .. } = local_lib;
         let changes = items
             .into_iter()
             .filter(|(id, item)| {
@@ -307,9 +317,7 @@ fn lib_sync<Env: Environment + 'static>(
             )
         };
 
-        get_fut
-            .join(put_fut)
-            .map(move |(items, _)| LibBucket::new(uid, items))
+        get_fut.join(put_fut).map(move |(items, _)| items)
     })
 }
 

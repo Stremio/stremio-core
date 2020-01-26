@@ -17,7 +17,7 @@ pub enum Internal {
     LibraryChanged,
     LibraryStorageResult(Result<(Option<LibBucket>, Option<LibBucket>), ModelError>),
     LibraryAPIResult(UID, Result<Vec<LibItem>, ModelError>),
-    LibrarySyncResponse(LibBucket),
+    LibrarySyncResult(UID, Result<Vec<LibItem>, ModelError>),
     UpdateLibraryItem(LibItem),
     ResourceRequestResult(ResourceRequest, Box<Result<ResourceResponse, ModelError>>),
     ManifestRequestResult(TransportUrl, Result<Manifest, ModelError>),
