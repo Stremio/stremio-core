@@ -92,77 +92,81 @@ impl UserDataLoadable {
                     request: UserDataRequest::Storage,
                     content: self.user_data().to_owned(),
                 };
-                Effects::one(Box::new(
-                    Env::get_storage(USER_DATA_STORAGE_KEY)
-                        .map(|user_data| {
-                            Msg::Internal(Internal::UserDataStorageResponse(user_data))
-                        })
-                        .map_err(|error| Msg::Event(Event::Error(ModelError::from(error)))),
-                ))
+                Effects::one(Box::new(Env::get_storage(USER_DATA_STORAGE_KEY).then(
+                    |result| {
+                        Ok(Msg::Internal(Internal::UserDataStorageResult(
+                            result.map_err(ModelError::from),
+                        )))
+                    },
+                )))
                 .unchanged()
             }
-            Msg::Action(Action::Ctx(ActionCtx::Auth(action_auth))) => match action_auth {
-                ActionAuth::Login { email, password } => {
-                    let request = APIRequest::Login {
-                        email: email.to_owned(),
-                        password: password.to_owned(),
-                    };
-                    *self = UserDataLoadable::Loading {
-                        request: UserDataRequest::API(request.to_owned()),
-                        content: self.user_data().to_owned(),
-                    };
-                    Effects::one(Box::new(
-                        authenticate::<Env>(&request)
-                            .map(move |auth| {
-                                Msg::Internal(Internal::UserAuthResponse(request, auth))
-                            })
+            Msg::Action(Action::Ctx(ActionCtx::Auth(ActionAuth::Login { email, password }))) => {
+                let request = APIRequest::Login {
+                    email: email.to_owned(),
+                    password: password.to_owned(),
+                };
+                *self = UserDataLoadable::Loading {
+                    request: UserDataRequest::API(request.to_owned()),
+                    content: self.user_data().to_owned(),
+                };
+                Effects::one(Box::new(authenticate::<Env>(&request).then(
+                    move |result| {
+                        Ok(Msg::Internal(Internal::UserAuthResult(
+                            request,
+                            result.map_err(ModelError::from),
+                        )))
+                    },
+                )))
+                .unchanged()
+            }
+            Msg::Action(Action::Ctx(ActionCtx::Auth(ActionAuth::Register {
+                email,
+                password,
+                gdpr_consent,
+            }))) => {
+                let request = APIRequest::Register {
+                    email: email.to_owned(),
+                    password: password.to_owned(),
+                    gdpr_consent: gdpr_consent.to_owned(),
+                };
+                *self = UserDataLoadable::Loading {
+                    request: UserDataRequest::API(request.to_owned()),
+                    content: self.user_data().to_owned(),
+                };
+                Effects::one(Box::new(authenticate::<Env>(&request).then(
+                    move |result| {
+                        Ok(Msg::Internal(Internal::UserAuthResult(
+                            request,
+                            result.map_err(ModelError::from),
+                        )))
+                    },
+                )))
+                .unchanged()
+            }
+            Msg::Action(Action::Ctx(ActionCtx::Auth(ActionAuth::Logout))) => {
+                let logout_effects = match self.auth() {
+                    Some(auth) => Effects::one(Box::new(
+                        delete_user_session::<Env>(&auth.key)
+                            .map(|_| Msg::Event(Event::UserSessionDeleted))
                             .map_err(|error| Msg::Event(Event::Error(ModelError::from(error)))),
                     ))
-                    .unchanged()
-                }
-                ActionAuth::Register {
-                    email,
-                    password,
-                    gdpr_consent,
-                } => {
-                    let request = APIRequest::Register {
-                        email: email.to_owned(),
-                        password: password.to_owned(),
-                        gdpr_consent: gdpr_consent.to_owned(),
-                    };
-                    *self = UserDataLoadable::Loading {
-                        request: UserDataRequest::API(request.to_owned()),
-                        content: self.user_data().to_owned(),
-                    };
-                    Effects::one(Box::new(
-                        authenticate::<Env>(&request)
-                            .map(move |auth| {
-                                Msg::Internal(Internal::UserAuthResponse(request, auth))
-                            })
-                            .map_err(|error| Msg::Event(Event::Error(ModelError::from(error)))),
-                    ))
-                    .unchanged()
-                }
-                ActionAuth::Logout => {
-                    let delete_user_session_effects = match self.auth() {
-                        Some(auth) => Effects::one(Box::new(
-                            delete_user_session::<Env>(&auth.key)
-                                .map(|_| Msg::Event(Event::UserSessionDeleted))
-                                .map_err(|error| Msg::Event(Event::Error(ModelError::from(error)))),
-                        ))
-                        .unchanged(),
-                        _ => Effects::none().unchanged(),
-                    };
-                    *self = UserDataLoadable::Ready {
-                        content: UserData::default(),
-                    };
-                    Effects::msg(Msg::Event(Event::UserLoggedOut)).join(delete_user_session_effects)
-                }
-                ActionAuth::PushToAPI => Effects::none().unchanged(),
-                ActionAuth::PullFromAPI => Effects::none().unchanged(),
-            },
-            Msg::Action(Action::Ctx(ActionCtx::Addons(action_addons))) => match action_addons {
-                ActionAddons::PushToAPI => match self.auth() {
+                    .unchanged(),
+                    _ => Effects::none().unchanged(),
+                };
+                *self = UserDataLoadable::Ready {
+                    content: UserData::default(),
+                };
+                Effects::msg(Msg::Event(Event::UserLoggedOut)).join(logout_effects)
+            }
+            Msg::Action(Action::Ctx(ActionCtx::Auth(ActionAuth::PushToAPI))) => {
+                Effects::none().unchanged()
+            }
+            Msg::Action(Action::Ctx(ActionCtx::Auth(ActionAuth::PullFromAPI))) => {
+                Effects::none().unchanged()
+            }
+            Msg::Action(Action::Ctx(ActionCtx::Addons(ActionAddons::PushToAPI))) => {
+                match self.auth() {
                     Some(auth) => Effects::one(Box::new(
                         set_user_addons::<Env>(&auth.key, self.addons())
                             .map(|_| Msg::Event(Event::AddonsPushedToAPI))
@@ -170,20 +174,24 @@ impl UserDataLoadable {
                     ))
                     .unchanged(),
                     _ => Effects::none().unchanged(),
-                },
-                ActionAddons::PullFromAPI => match self.auth() {
+                }
+            }
+            Msg::Action(Action::Ctx(ActionCtx::Addons(ActionAddons::PullFromAPI))) => {
+                match self.auth() {
                     Some(auth) => {
                         let auth_key = auth.key.to_owned();
-                        Effects::one(Box::new(
-                            get_user_addons::<Env>(&auth_key)
-                                .map(move |addons| {
-                                    Msg::Internal(Internal::UserAddonsResponse(auth_key, addons))
-                                })
-                                .map_err(|error| Msg::Event(Event::Error(ModelError::from(error)))),
-                        ))
+                        Effects::one(Box::new(get_user_addons::<Env>(&auth_key).then(
+                            move |result| {
+                                Ok(Msg::Internal(Internal::UserAddonsResult(
+                                    auth_key,
+                                    result.map_err(ModelError::from),
+                                )))
+                            },
+                        )))
                         .unchanged()
                     }
                     _ => {
+                        // TODO is there a better place for this peace of code ?
                         let next_addons = self
                             .addons()
                             .iter()
@@ -210,80 +218,111 @@ impl UserDataLoadable {
                             Effects::none().unchanged()
                         }
                     }
-                },
-                ActionAddons::Install(descriptor) => {
-                    let user_data = self.user_data();
-                    let addon_position = user_data
-                        .addons
-                        .iter()
-                        .position(|addon| addon.transport_url.eq(&descriptor.transport_url));
-                    if let Some(addon_position) = addon_position {
+                }
+            }
+            Msg::Action(Action::Ctx(ActionCtx::Addons(ActionAddons::Install(descriptor)))) => {
+                let user_data = self.user_data();
+                let addon_position = user_data
+                    .addons
+                    .iter()
+                    .position(|addon| addon.transport_url.eq(&descriptor.transport_url));
+                if let Some(addon_position) = addon_position {
+                    user_data.addons.remove(addon_position);
+                };
+                user_data.addons.push(descriptor.to_owned());
+                Effects::msg(Msg::Event(Event::AddonInstalled))
+            }
+            Msg::Action(Action::Ctx(ActionCtx::Addons(ActionAddons::Uninstall {
+                transport_url,
+            }))) => {
+                let user_data = self.user_data();
+                let addon_position = user_data.addons.iter().position(|addon| {
+                    addon.transport_url.eq(transport_url) && !addon.flags.protected
+                });
+                match addon_position {
+                    Some(addon_position) => {
                         user_data.addons.remove(addon_position);
-                    };
-                    user_data.addons.push(descriptor.to_owned());
-                    Effects::msg(Msg::Event(Event::AddonInstalled))
-                }
-                ActionAddons::Uninstall { transport_url } => {
-                    let user_data = self.user_data();
-                    let addon_position = user_data.addons.iter().position(|addon| {
-                        addon.transport_url.eq(transport_url) && !addon.flags.protected
-                    });
-                    match addon_position {
-                        Some(addon_position) => {
-                            user_data.addons.remove(addon_position);
-                            Effects::msg(Msg::Event(Event::AddonUninstalled))
-                        }
-                        _ => Effects::none().unchanged(),
+                        Effects::msg(Msg::Event(Event::AddonUninstalled))
                     }
+                    _ => Effects::none().unchanged(),
                 }
-            },
+            }
             Msg::Action(Action::Ctx(ActionCtx::Settings(ActionSettings::Update(settings)))) => {
                 let mut user_data = self.user_data();
                 user_data.settings = settings.to_owned();
                 Effects::msg(Msg::Event(Event::SettingsUpdated))
             }
-            Msg::Internal(Internal::UserDataStorageResponse(user_data)) => match &self {
+            Msg::Internal(Internal::UserDataStorageResult(result)) => match &self {
                 UserDataLoadable::Loading {
                     request: UserDataRequest::Storage,
                     ..
                 } => {
-                    *self = UserDataLoadable::Ready {
-                        content: user_data.to_owned().unwrap_or_default(),
+                    let (next_user_data, user_data_effects) = match result {
+                        Ok(user_data) => (
+                            user_data.to_owned().unwrap_or_default(),
+                            Effects::msg(Msg::Event(Event::UserDataRetrievedFromStorage)),
+                        ),
+                        Err(error) => (
+                            UserData::default(),
+                            Effects::msg(Msg::Event(Event::Error(error.to_owned()))),
+                        ),
                     };
-                    Effects::msg(Msg::Event(Event::UserDataRetrievedFromStorage))
+                    *self = UserDataLoadable::Ready {
+                        content: next_user_data,
+                    };
+                    user_data_effects
                 }
                 _ => Effects::none().unchanged(),
             },
-            Msg::Internal(Internal::UserAuthResponse(api_request, auth)) => match &self {
+            Msg::Internal(Internal::UserAuthResult(api_request, result)) => match &self {
                 UserDataLoadable::Loading {
                     request: UserDataRequest::API(loading_api_request),
                     ..
                 } if loading_api_request.eq(api_request) => {
+                    let (next_auth, auth_effects) = match result {
+                        Ok(auth) => (
+                            Some(auth.to_owned()),
+                            Effects::msg(Msg::Event(Event::UserAuthenticated)).join(Effects::msg(
+                                Msg::Action(Action::Ctx(ActionCtx::Addons(
+                                    ActionAddons::PullFromAPI,
+                                ))),
+                            )),
+                        ),
+                        Err(error) => (
+                            None,
+                            Effects::msg(Msg::Event(Event::Error(error.to_owned()))),
+                        ),
+                    };
                     *self = UserDataLoadable::Ready {
                         content: UserData {
-                            auth: Some(auth.to_owned()),
-                            ..Default::default()
+                            auth: next_auth,
+                            ..UserData::default()
                         },
                     };
-                    Effects::msg(Msg::Event(Event::UserAuthenticated)).join(Effects::msg(
-                        Msg::Action(Action::Ctx(ActionCtx::Addons(ActionAddons::PullFromAPI))),
-                    ))
+                    auth_effects
                 }
                 _ => Effects::none().unchanged(),
             },
-            Msg::Internal(Internal::UserAddonsResponse(auth_key, addons))
+            Msg::Internal(Internal::UserAddonsResult(auth_key, result))
                 if self
                     .auth()
                     .as_ref()
                     .map(|auth| &auth.key)
                     .eq(&Some(auth_key)) =>
             {
-                let mut user_data = self.user_data();
-                if user_data.addons.ne(addons) {
-                    user_data.addons = addons.to_owned();
-                    Effects::msg(Msg::Event(Event::AddonsPulledFromAPI))
-                } else {
-                    Effects::msg(Msg::Event(Event::AddonsPulledFromAPI)).unchanged()
+                match result {
+                    Ok(addons) => {
+                        let mut user_data = self.user_data();
+                        if user_data.addons.ne(addons) {
+                            user_data.addons = addons.to_owned();
+                            Effects::msg(Msg::Event(Event::AddonsPulledFromAPI))
+                        } else {
+                            Effects::msg(Msg::Event(Event::AddonsPulledFromAPI)).unchanged()
+                        }
+                    }
+                    Err(error) => {
+                        Effects::msg(Msg::Event(Event::Error(error.to_owned()))).unchanged()
+                    }
                 }
             }
             _ => Effects::none().unchanged(),
