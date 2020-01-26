@@ -174,21 +174,16 @@ impl LibraryLoadable {
                 LibraryLoadable::Loading(loading_uid, LibraryRequest::API)
                     if loading_uid.eq(&uid) =>
                 {
-                    let (next_library, library_effects) = match result {
-                        Ok(items) => (
-                            LibraryLoadable::Ready(LibBucket::new(
-                                uid.to_owned(),
-                                items.to_owned(),
-                            )),
-                            Effects::none(),
-                        ),
-                        Err(error) => (
-                            LibraryLoadable::Ready(LibBucket::new(uid.to_owned(), vec![])),
-                            Effects::msg(Msg::Event(Event::Error(error.to_owned()))),
-                        ),
+                    let mut bucket = LibBucket::new(uid.to_owned(), vec![]);
+                    let bucket_effects = match result {
+                        Ok(items) => {
+                            bucket.merge(LibBucket::new(uid.to_owned(), items.to_owned()));
+                            Effects::none()
+                        }
+                        Err(error) => Effects::msg(Msg::Event(Event::Error(error.to_owned()))),
                     };
-                    *self = next_library;
-                    library_effects
+                    *self = LibraryLoadable::Ready(bucket);
+                    bucket_effects
                 }
                 _ => Effects::none().unchanged(),
             },
