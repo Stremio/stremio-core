@@ -15,8 +15,11 @@ pub enum Internal {
     UserAuthResponse(APIRequest, Auth),
     UserAddonsResponse(AuthKey, Vec<Descriptor>),
     LibraryChanged,
-    LibraryStorageResult(UID, Result<(Option<LibBucket>, Option<LibBucket>), MsgError>),
-    LibraryAPIResponse(UID, Vec<LibItem>),
+    LibraryStorageResult(
+        UID,
+        Result<(Option<LibBucket>, Option<LibBucket>), MsgError>,
+    ),
+    LibraryAPIResult(UID, Result<Vec<LibItem>, MsgError>),
     LibrarySyncResponse(LibBucket),
     UpdateLibraryItem(LibItem),
     ResourceRequestResult(ResourceRequest, Box<Result<ResourceResponse, MsgError>>),

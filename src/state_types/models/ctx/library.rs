@@ -74,13 +74,11 @@ impl LibraryLoadable {
                             ids: vec![],
                             all: true,
                         });
-                        Effects::one(Box::new(
-                            fetch_api::<Env, _, _>(&request)
-                                .map(move |items| {
-                                    Msg::Internal(Internal::LibraryAPIResponse(uid, items))
-                                })
-                                .map_err(|error| Msg::Event(Event::Error { error })),
-                        ))
+                        Effects::one(Box::new(fetch_api::<Env, _, _>(&request).then(
+                            move |result| {
+                                Ok(Msg::Internal(Internal::LibraryAPIResult(uid, result)))
+                            },
+                        )))
                     }
                     _ => {
                         *self = LibraryLoadable::Ready(LibBucket::default());
@@ -180,13 +178,27 @@ impl LibraryLoadable {
                 }
                 _ => Effects::none().unchanged(),
             },
-            Msg::Internal(Internal::LibraryAPIResponse(uid, items)) => match &self {
+            Msg::Internal(Internal::LibraryAPIResult(uid, result)) => match &self {
                 LibraryLoadable::Loading(loading_uid, LibraryRequest::API)
                     if loading_uid.eq(&uid) =>
                 {
-                    *self =
-                        LibraryLoadable::Ready(LibBucket::new(uid.to_owned(), items.to_owned()));
-                    Effects::none()
+                    let (next_library, library_effects) = match result {
+                        Ok(items) => (
+                            LibraryLoadable::Ready(LibBucket::new(
+                                uid.to_owned(),
+                                items.to_owned(),
+                            )),
+                            Effects::none(),
+                        ),
+                        Err(error) => (
+                            LibraryLoadable::Ready(LibBucket::new(uid.to_owned(), vec![])),
+                            Effects::msg(Msg::Event(Event::Error {
+                                error: error.to_owned(),
+                            })),
+                        ),
+                    };
+                    *self = next_library;
+                    library_effects
                 }
                 _ => Effects::none().unchanged(),
             },
