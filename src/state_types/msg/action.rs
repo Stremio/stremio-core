@@ -8,9 +8,9 @@ use crate::state_types::models::player::Selected as PlayerSelected;
 use crate::types::addons::{Descriptor, TransportUrl};
 use crate::types::api::GDPRConsent;
 use crate::types::MetaPreview;
-use serde::{Deserialize, Serialize};
+use serde::Deserialize;
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Deserialize)]
 #[serde(tag = "action", content = "args")]
 pub enum ActionAuth {
     PushToAPI,
@@ -27,7 +27,7 @@ pub enum ActionAuth {
     Logout,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Deserialize)]
 #[serde(tag = "action", content = "args")]
 pub enum ActionAddons {
     PushToAPI,
@@ -36,13 +36,13 @@ pub enum ActionAddons {
     Uninstall { transport_url: TransportUrl },
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Deserialize)]
 #[serde(tag = "action", content = "args")]
 pub enum ActionSettings {
     Update(Settings),
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Deserialize)]
 #[serde(tag = "action", content = "args")]
 pub enum ActionLibrary {
     SyncWithAPI,
@@ -50,7 +50,7 @@ pub enum ActionLibrary {
     Remove(String),
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Deserialize)]
 #[serde(tag = "action", content = "args")]
 pub enum ActionCtx {
     RetrieveFromStorage,
@@ -80,7 +80,7 @@ pub enum ActionPlayer {
 }
 
 //
-// Those messages are meant to be dispatched only by the users of the stremio-core crate
+// Those messages are meant to be dispatched only by the users of the stremio-core crate and handled by the stremio-core crate
 //
 #[derive(Debug, Clone, Deserialize)]
 #[serde(tag = "action", content = "args")]

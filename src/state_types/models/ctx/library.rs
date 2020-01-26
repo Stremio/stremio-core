@@ -94,7 +94,7 @@ impl LibraryLoadable {
                         Effects::one(Box::new(
                             lib_sync::<Env>(auth, bucket.to_owned())
                                 .map(|bucket| Msg::Internal(Internal::LibrarySyncResponse(bucket)))
-                                .map_err(|error| Msg::Event(Event::Error { error })),
+                                .map_err(|error| Msg::Event(Event::Error(error))),
                         ))
                         .unchanged()
                     }
@@ -168,9 +168,7 @@ impl LibraryLoadable {
                         }
                         Err(error) => (
                             LibraryLoadable::Ready(LibBucket::new(uid.to_owned(), vec![])),
-                            Effects::msg(Msg::Event(Event::Error {
-                                error: error.to_owned(),
-                            })),
+                            Effects::msg(Msg::Event(Event::Error(error.to_owned()))),
                         ),
                     };
                     *self = next_library;
@@ -192,9 +190,7 @@ impl LibraryLoadable {
                         ),
                         Err(error) => (
                             LibraryLoadable::Ready(LibBucket::new(uid.to_owned(), vec![])),
-                            Effects::msg(Msg::Event(Event::Error {
-                                error: error.to_owned(),
-                            })),
+                            Effects::msg(Msg::Event(Event::Error(error.to_owned()))),
                         ),
                     };
                     *self = next_library;
@@ -207,7 +203,7 @@ impl LibraryLoadable {
                     Effects::one(Box::new(
                         update_and_persist::<Env>(bucket, sync_bucket.to_owned())
                             .map(move |_| Msg::Event(Event::LibraryPersisted))
-                            .map_err(|error| Msg::Event(Event::Error { error })),
+                            .map_err(|error| Msg::Event(Event::Error(error))),
                     ))
                     .join(Effects::msg(Msg::Event(Event::LibrarySynced)))
                 }
@@ -238,7 +234,7 @@ impl LibraryLoadable {
                     Box::new(
                         lib_push::<Env>(auth, &lib_item)
                             .map(|_| Msg::Event(Event::LibraryPushed))
-                            .map_err(|error| Msg::Event(Event::Error { error })),
+                            .map_err(|error| Msg::Event(Event::Error(error))),
                     )
                 });
                 let persist_effect: Effect = Box::new(
@@ -247,7 +243,7 @@ impl LibraryLoadable {
                         LibBucket::new(bucket.uid.to_owned(), vec![lib_item]),
                     )
                     .map(|_| Msg::Event(Event::LibraryPersisted))
-                    .map_err(|error| Msg::Event(Event::Error { error })),
+                    .map_err(|error| Msg::Event(Event::Error(error))),
                 );
                 if let Some(push_effect) = push_effect {
                     Effects::many(vec![persist_effect, push_effect])
