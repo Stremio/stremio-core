@@ -1,5 +1,5 @@
-use super::{get_resource, Loadable};
-use crate::state_types::msg::{Internal, Msg, MsgError};
+use super::{get_resource, Loadable, ModelError};
+use crate::state_types::msg::{Internal, Msg};
 use crate::state_types::{Effect, Effects, Environment};
 use crate::types::addons::{AggrRequest, Descriptor, ResourceRequest, ResourceResponse};
 use futures::Future;
@@ -34,7 +34,7 @@ pub enum ResourceAction<'a> {
     },
     ResourceRequestResult {
         request: &'a ResourceRequest,
-        result: &'a Result<ResourceResponse, MsgError>,
+        result: &'a Result<ResourceResponse, ModelError>,
         limit: &'a Option<usize>,
     },
 }
@@ -46,7 +46,7 @@ pub enum ResourcesAction<'a> {
     },
     ResourceRequestResult {
         request: &'a ResourceRequest,
-        result: &'a Result<ResourceResponse, MsgError>,
+        result: &'a Result<ResourceResponse, ModelError>,
         limit: &'a Option<usize>,
     },
 }
@@ -206,7 +206,7 @@ where
 }
 
 fn resource_content_from_result<T>(
-    result: &Result<ResourceResponse, MsgError>,
+    result: &Result<ResourceResponse, ModelError>,
 ) -> ResourceContent<T>
 where
     T: TryFrom<ResourceResponse, Error = &'static str>,
@@ -221,7 +221,7 @@ where
 }
 
 fn resource_vector_content_from_result<T>(
-    result: &Result<ResourceResponse, MsgError>,
+    result: &Result<ResourceResponse, ModelError>,
     limit: &Option<usize>,
 ) -> ResourceContent<Vec<T>>
 where

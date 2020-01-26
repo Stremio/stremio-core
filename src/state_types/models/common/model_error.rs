@@ -4,42 +4,43 @@ use serde::Serialize;
 use std::error::Error;
 use std::fmt;
 
+// TODO find a better name for this
 #[derive(Debug, Clone, Serialize)]
 #[serde(tag = "type")]
-pub enum MsgError {
+pub enum ModelError {
     API { message: String, code: u64 },
     Env { message: String },
 }
 
-impl fmt::Display for MsgError {
+impl fmt::Display for ModelError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match &self {
-            MsgError::API { message, code } => write!(f, "{} {}", message, code),
-            MsgError::Env { message } => write!(f, "{}", message),
+            ModelError::API { message, code } => write!(f, "{} {}", message, code),
+            ModelError::Env { message } => write!(f, "{}", message),
         }
     }
 }
 
-impl Error for MsgError {
+impl Error for ModelError {
     fn description(&self) -> &str {
         match &self {
-            MsgError::API { message, .. } | MsgError::Env { message } => message,
+            ModelError::API { message, .. } | ModelError::Env { message } => message,
         }
     }
 }
 
-impl From<APIErr> for MsgError {
+impl From<APIErr> for ModelError {
     fn from(error: APIErr) -> Self {
-        MsgError::API {
+        ModelError::API {
             message: error.message.to_owned(),
             code: error.code.to_owned(),
         }
     }
 }
 
-impl From<EnvError> for MsgError {
+impl From<EnvError> for ModelError {
     fn from(error: EnvError) -> Self {
-        MsgError::Env {
+        ModelError::Env {
             message: error.to_string(),
         }
     }

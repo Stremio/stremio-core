@@ -2,8 +2,8 @@ use super::UserDataLoadable;
 use crate::constants::{
     LIBRARY_COLLECTION_NAME, LIBRARY_RECENT_COUNT, LIBRARY_RECENT_STORAGE_KEY, LIBRARY_STORAGE_KEY,
 };
-use crate::state_types::models::common::fetch_api;
-use crate::state_types::msg::{Action, ActionCtx, ActionLibrary, Event, Internal, Msg, MsgError};
+use crate::state_types::models::common::{fetch_api, ModelError};
+use crate::state_types::msg::{Action, ActionCtx, ActionLibrary, Event, Internal, Msg};
 use crate::state_types::{Effect, Effects, Environment};
 use crate::types::api::{Auth, DatastoreCmd, DatastoreReqBuilder, SuccessResponse};
 use crate::types::{LibBucket, LibItem, LibItemModified, LibItemState, UID};
@@ -60,7 +60,7 @@ impl LibraryLoadable {
                         .then(move |result| {
                             Ok(Msg::Internal(Internal::LibraryStorageResult(
                                 uid,
-                                result.map_err(MsgError::from),
+                                result.map_err(ModelError::from),
                             )))
                         }),
                 ))
@@ -270,7 +270,7 @@ fn datastore_req_builder(auth: &Auth) -> DatastoreReqBuilder {
 fn lib_sync<Env: Environment + 'static>(
     auth: &Auth,
     local_lib: LibBucket,
-) -> impl Future<Item = LibBucket, Error = MsgError> {
+) -> impl Future<Item = LibBucket, Error = ModelError> {
     // @TODO consider asserting if uid matches auth
     let builder = datastore_req_builder(auth);
     let meta_req = builder.clone().with_cmd(DatastoreCmd::Meta {});
@@ -331,7 +331,7 @@ fn lib_sync<Env: Environment + 'static>(
 fn lib_push<Env: Environment + 'static>(
     auth: &Auth,
     item: &LibItem,
-) -> impl Future<Item = (), Error = MsgError> {
+) -> impl Future<Item = (), Error = ModelError> {
     let push_req = datastore_req_builder(auth).with_cmd(DatastoreCmd::Put {
         changes: vec![item.to_owned()],
     });
@@ -342,7 +342,7 @@ fn lib_push<Env: Environment + 'static>(
 fn update_and_persist<Env: Environment + 'static>(
     bucket: &mut LibBucket,
     new_bucket: LibBucket,
-) -> impl Future<Item = (), Error = MsgError> {
+) -> impl Future<Item = (), Error = ModelError> {
     let recent_items = bucket
         .items
         .values()
@@ -359,21 +359,21 @@ fn update_and_persist<Env: Environment + 'static>(
             Env::set_storage(LIBRARY_RECENT_STORAGE_KEY, Some(bucket))
                 .join(Env::set_storage::<LibBucket>(LIBRARY_STORAGE_KEY, None))
                 .map(|(_, _)| ())
-                .map_err(MsgError::from),
+                .map_err(ModelError::from),
         )
     } else {
         let (recent_bucket, other_bucket) = bucket.split_by_recent();
         if are_new_items_in_recent {
             Either::B(Either::A(
                 Env::set_storage(LIBRARY_RECENT_STORAGE_KEY, Some(&recent_bucket))
-                    .map_err(MsgError::from),
+                    .map_err(ModelError::from),
             ))
         } else {
             Either::B(Either::B(
                 Env::set_storage(LIBRARY_RECENT_STORAGE_KEY, Some(&recent_bucket))
                     .join(Env::set_storage(LIBRARY_STORAGE_KEY, Some(&other_bucket)))
                     .map(|(_, _)| ())
-                    .map_err(MsgError::from),
+                    .map_err(ModelError::from),
             ))
         }
     }

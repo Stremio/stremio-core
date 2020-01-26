@@ -1,11 +1,11 @@
-use crate::state_types::msg::MsgError;
+use super::ModelError;
 use crate::state_types::{Environment, Request};
 use crate::types::api::{APIMethodName, APIResult};
 use futures::Future;
 use serde::de::DeserializeOwned;
 use serde::Serialize;
 
-pub fn fetch_api<Env, REQ, RESP>(api_request: &REQ) -> impl Future<Item = RESP, Error = MsgError>
+pub fn fetch_api<Env, REQ, RESP>(api_request: &REQ) -> impl Future<Item = RESP, Error = ModelError>
 where
     Env: Environment + 'static,
     REQ: APIMethodName + Clone + Serialize + 'static,
@@ -16,9 +16,9 @@ where
         .body(api_request.to_owned())
         .expect("builder cannot fail");
     Env::fetch_serde::<_, _>(request)
-        .map_err(MsgError::from)
+        .map_err(ModelError::from)
         .and_then(|result| match result {
             APIResult::Ok { result } => Ok(result),
-            APIResult::Err { error } => Err(MsgError::from(error)),
+            APIResult::Err { error } => Err(ModelError::from(error)),
         })
 }

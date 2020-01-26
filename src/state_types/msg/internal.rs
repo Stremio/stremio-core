@@ -1,4 +1,4 @@
-use super::MsgError;
+use crate::state_types::models::common::ModelError;
 use crate::state_types::models::ctx::UserData;
 // use crate::state_types::models::settings::SsSettings;
 use crate::types::addons::{Descriptor, Manifest, ResourceRequest, ResourceResponse, TransportUrl};
@@ -17,13 +17,13 @@ pub enum Internal {
     LibraryChanged,
     LibraryStorageResult(
         UID,
-        Result<(Option<LibBucket>, Option<LibBucket>), MsgError>,
+        Result<(Option<LibBucket>, Option<LibBucket>), ModelError>,
     ),
-    LibraryAPIResult(UID, Result<Vec<LibItem>, MsgError>),
+    LibraryAPIResult(UID, Result<Vec<LibItem>, ModelError>),
     LibrarySyncResponse(LibBucket),
     UpdateLibraryItem(LibItem),
-    ResourceRequestResult(ResourceRequest, Box<Result<ResourceResponse, MsgError>>),
-    ManifestRequestResult(TransportUrl, Result<Manifest, MsgError>),
+    ResourceRequestResult(ResourceRequest, Box<Result<ResourceResponse, ModelError>>),
+    ManifestRequestResult(TransportUrl, Result<Manifest, ModelError>),
     // StreamingServerSettingsLoaded(SsSettings),
     // StreamingServerSettingsErrored(String),
 }

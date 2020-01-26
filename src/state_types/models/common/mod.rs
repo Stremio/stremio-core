@@ -25,6 +25,9 @@ pub use get_user_addons::*;
 mod loadable;
 pub use loadable::*;
 
+mod model_error;
+pub use model_error::*;
+
 mod resource_loadable;
 pub use resource_loadable::*;
 

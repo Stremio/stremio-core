@@ -1,9 +1,9 @@
 use crate::constants::{OFFICIAL_ADDONS, USER_DATA_STORAGE_KEY};
 use crate::state_types::models::common::{
-    authenticate, delete_user_session, get_user_addons, set_user_addons,
+    authenticate, delete_user_session, get_user_addons, set_user_addons, ModelError,
 };
 use crate::state_types::msg::{
-    Action, ActionAddons, ActionAuth, ActionCtx, ActionSettings, Event, Internal, Msg, MsgError,
+    Action, ActionAddons, ActionAuth, ActionCtx, ActionSettings, Event, Internal, Msg,
 };
 use crate::state_types::{Effects, Environment};
 use crate::types::addons::Descriptor;
@@ -105,7 +105,7 @@ impl UserDataLoadable {
                                 .map(|user_data| {
                                     Msg::Internal(Internal::UserDataStorageResponse(user_data))
                                 })
-                                .map_err(|error| action_error_msg(MsgError::from(error))),
+                                .map_err(|error| action_error_msg(ModelError::from(error))),
                         ))
                         .unchanged()
                     }
@@ -309,7 +309,7 @@ impl UserDataLoadable {
                         .map(|_| Msg::Event(Event::UserDataPersisted))
                         .map_err(|error| {
                             Msg::Event(Event::Error {
-                                error: MsgError::from(error),
+                                error: ModelError::from(error),
                             })
                         }),
                 )))

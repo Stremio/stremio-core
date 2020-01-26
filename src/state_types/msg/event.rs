@@ -1,4 +1,5 @@
-use super::{ActionCtx, MsgError};
+use super::ActionCtx;
+use crate::state_types::models::common::ModelError;
 use serde::Serialize;
 
 #[derive(Debug, Clone, Serialize)]
@@ -21,9 +22,9 @@ pub enum Event {
     LibrarySynced,
     CtxError {
         action_ctx: ActionCtx,
-        error: MsgError,
+        error: ModelError,
     },
     Error {
-        error: MsgError,
+        error: ModelError,
     },
 }
