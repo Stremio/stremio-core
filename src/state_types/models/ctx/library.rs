@@ -13,13 +13,13 @@ use futures::future::Either;
 use futures::{future, Future};
 use lazysort::SortedBy;
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug)]
 pub enum LibraryRequest {
     Storage,
     API,
 }
 
-#[derive(Derivative, Debug, Clone, PartialEq)]
+#[derive(Derivative, Debug, Clone)]
 #[derivative(Default)]
 pub enum LibraryLoadable {
     NotLoaded,
