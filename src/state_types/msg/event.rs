@@ -20,7 +20,7 @@ pub enum Event {
     SettingsUpdated,
     UserDataPersisted,
     LibraryPersisted,
-    LibraryPushed,
-    LibrarySynced,
+    LibraryPushedToAPI,
+    LibrarySyncedWithAPI,
     Error(ModelError),
 }

@@ -201,7 +201,7 @@ impl LibraryLoadable {
                         .map(|_| Msg::Event(Event::LibraryPersisted))
                         .map_err(|error| Msg::Event(Event::Error(error))),
                     ))
-                    .join(Effects::msg(Msg::Event(Event::LibrarySynced))),
+                    .join(Effects::msg(Msg::Event(Event::LibrarySyncedWithAPI))),
                     Err(error) => {
                         Effects::msg(Msg::Event(Event::Error(error.to_owned()))).unchanged()
                     }
@@ -228,11 +228,11 @@ impl LibraryLoadable {
         auth: &Option<Auth>,
     ) -> Effects {
         match self {
-            LibraryLoadable::Ready(ref mut bucket) => {
+            LibraryLoadable::Ready(bucket) => {
                 let push_effect = auth.as_ref().map(|auth| -> Effect {
                     Box::new(
                         lib_push::<Env>(auth, &lib_item)
-                            .map(|_| Msg::Event(Event::LibraryPushed))
+                            .map(|_| Msg::Event(Event::LibraryPushedToAPI))
                             .map_err(|error| Msg::Event(Event::Error(error))),
                     )
                 });
