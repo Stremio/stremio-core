@@ -255,51 +255,45 @@ impl UserDataLoadable {
                 UserDataLoadable::Loading {
                     request: UserDataRequest::Storage,
                     ..
-                } => {
-                    let (next_user_data, user_data_effects) = match result {
-                        Ok(user_data) => (
-                            user_data.to_owned().unwrap_or_default(),
-                            Effects::msg(Msg::Event(Event::UserDataRetrievedFromStorage)),
-                        ),
-                        Err(error) => (
-                            UserData::default(),
-                            Effects::msg(Msg::Event(Event::Error(error.to_owned()))),
-                        ),
-                    };
-                    *self = UserDataLoadable::Ready {
-                        content: next_user_data,
-                    };
-                    user_data_effects
-                }
+                } => match result {
+                    Ok(user_data) => {
+                        *self = UserDataLoadable::Ready {
+                            content: user_data.to_owned().unwrap_or_default(),
+                        };
+                        Effects::msg(Msg::Event(Event::UserDataRetrievedFromStorage))
+                    }
+                    Err(error) => {
+                        *self = UserDataLoadable::Ready {
+                            content: self.user_data().to_owned(),
+                        };
+                        Effects::msg(Msg::Event(Event::Error(error.to_owned()))).unchanged()
+                    }
+                },
                 _ => Effects::none().unchanged(),
             },
             Msg::Internal(Internal::UserAuthResult(api_request, result)) => match &self {
                 UserDataLoadable::Loading {
                     request: UserDataRequest::API(loading_api_request),
                     ..
-                } if loading_api_request.eq(api_request) => {
-                    let (next_auth, auth_effects) = match result {
-                        Ok(auth) => (
-                            Some(auth.to_owned()),
-                            Effects::msg(Msg::Event(Event::UserAuthenticated)).join(Effects::msg(
-                                Msg::Action(Action::Ctx(ActionCtx::Addons(
-                                    ActionAddons::PullFromAPI,
-                                ))),
-                            )),
-                        ),
-                        Err(error) => (
-                            None,
-                            Effects::msg(Msg::Event(Event::Error(error.to_owned()))),
-                        ),
-                    };
-                    *self = UserDataLoadable::Ready {
-                        content: UserData {
-                            auth: next_auth,
-                            ..UserData::default()
-                        },
-                    };
-                    auth_effects
-                }
+                } if loading_api_request.eq(api_request) => match result {
+                    Ok(auth) => {
+                        *self = UserDataLoadable::Ready {
+                            content: UserData {
+                                auth: Some(auth.to_owned()),
+                                ..UserData::default()
+                            },
+                        };
+                        Effects::msg(Msg::Event(Event::UserAuthenticated)).join(Effects::msg(
+                            Msg::Action(Action::Ctx(ActionCtx::Addons(ActionAddons::PullFromAPI))),
+                        ))
+                    }
+                    Err(error) => {
+                        *self = UserDataLoadable::Ready {
+                            content: self.user_data().to_owned(),
+                        };
+                        Effects::msg(Msg::Event(Event::Error(error.to_owned()))).unchanged()
+                    }
+                },
                 _ => Effects::none().unchanged(),
             },
             Msg::Internal(Internal::UserAddonsResult(auth_key, result))
