@@ -277,14 +277,20 @@ impl UserDataLoadable {
                     ..
                 } if loading_api_request.eq(api_request) => match result {
                     Ok(auth) => {
+                        let auth = auth.to_owned();
                         *self = UserDataLoadable::Ready {
                             content: UserData {
                                 auth: Some(auth.to_owned()),
                                 ..UserData::default()
                             },
                         };
-                        Effects::msg(Msg::Event(Event::UserAuthenticated)).join(Effects::msg(
-                            Msg::Action(Action::Ctx(ActionCtx::Addons(ActionAddons::PullFromAPI))),
+                        Effects::msg(Msg::Event(Event::UserAuthenticated)).join(Effects::one(
+                            Box::new(get_user_addons::<Env>(&auth.key).then(move |result| {
+                                Ok(Msg::Internal(Internal::UserAddonsResult(
+                                    auth.key.to_owned(),
+                                    result.map_err(ModelError::from),
+                                )))
+                            })),
                         ))
                     }
                     Err(error) => {
