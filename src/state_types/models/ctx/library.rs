@@ -132,7 +132,7 @@ impl LibraryLoadable {
                         lib_item.ctime = Some(ctime.to_owned());
                     };
                 };
-                self.set_item::<Env>(lib_item, user_data.auth())
+                self.set_item::<Env>(user_data.auth(), lib_item)
             }
             Msg::Action(Action::Ctx(ActionCtx::Library(ActionLibrary::Remove(id)))) => {
                 match &self {
@@ -141,7 +141,7 @@ impl LibraryLoadable {
                             let mut lib_item = lib_item.to_owned();
                             lib_item.mtime = Env::now();
                             lib_item.removed = true;
-                            self.set_item::<Env>(lib_item, user_data.auth())
+                            self.set_item::<Env>(user_data.auth(), lib_item)
                         } else {
                             Effects::none().unchanged()
                         }
@@ -152,7 +152,7 @@ impl LibraryLoadable {
             Msg::Internal(Internal::UpdateLibraryItem(lib_item)) => {
                 let mut lib_item = lib_item.to_owned();
                 lib_item.mtime = Env::now();
-                self.set_item::<Env>(lib_item, user_data.auth())
+                self.set_item::<Env>(user_data.auth(), lib_item)
             }
             Msg::Internal(Internal::LibraryStorageResult(result)) => match &self {
                 LibraryLoadable::Loading(uid, LibraryRequest::Storage) => {
@@ -224,8 +224,8 @@ impl LibraryLoadable {
     }
     fn set_item<Env: Environment + 'static>(
         &mut self,
-        lib_item: LibItem,
         auth: &Option<Auth>,
+        lib_item: LibItem,
     ) -> Effects {
         match self {
             LibraryLoadable::Ready(bucket) => {
