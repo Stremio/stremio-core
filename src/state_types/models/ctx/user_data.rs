@@ -73,10 +73,9 @@ pub enum UserDataRequest {
 
 #[derive(Derivative, Clone, Debug, PartialEq, Serialize)]
 #[derivative(Default)]
-#[serde(untagged)]
+#[serde(tag = "type")]
 pub enum UserDataLoadable {
     Loading {
-        #[serde(skip)]
         request: UserDataRequest,
         content: UserData,
     },
