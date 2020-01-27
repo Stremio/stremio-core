@@ -19,6 +19,7 @@ pub enum Event {
     AddonUninstalled,
     SettingsUpdated,
     UserDataPersisted,
+    LibraryRetrievedFromStorage,
     LibraryPersisted,
     LibraryPushedToAPI,
     LibrarySyncedWithAPI,

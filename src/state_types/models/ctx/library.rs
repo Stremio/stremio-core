@@ -165,7 +165,7 @@ impl LibraryLoadable {
                             if let Some(other_bucket) = other_bucket {
                                 bucket.merge(other_bucket.to_owned())
                             };
-                            Effects::none()
+                            Effects::msg(Msg::Event(Event::LibraryRetrievedFromStorage))
                         }
                         Err(error) => Effects::msg(Msg::Event(Event::Error(error.to_owned()))),
                     };
@@ -182,7 +182,7 @@ impl LibraryLoadable {
                     let bucket_effects = match result {
                         Ok(items) => {
                             bucket.merge(LibBucket::new(uid.to_owned(), items.to_owned()));
-                            Effects::none()
+                            Effects::msg(Msg::Event(Event::LibrarySyncedWithAPI))
                         }
                         Err(error) => Effects::msg(Msg::Event(Event::Error(error.to_owned()))),
                     };
