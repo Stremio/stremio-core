@@ -22,9 +22,9 @@ pub enum LibraryRequest {
 #[derive(Derivative, Debug, Clone, PartialEq)]
 #[derivative(Default)]
 pub enum LibraryLoadable {
-    #[derivative(Default)]
     NotLoaded,
     Loading(UID, LibraryRequest),
+    #[derivative(Default)]
     Ready(LibBucket),
 }
 
