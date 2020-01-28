@@ -9,7 +9,6 @@ use std::marker::PhantomData;
 #[derive(Derivative, Clone, Serialize)]
 #[derivative(Default, Debug)]
 pub struct Ctx<Env: Environment> {
-    #[serde(flatten)]
     pub user_data: UserDataLoadable,
     #[serde(skip)]
     pub library: LibraryLoadable,
