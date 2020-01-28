@@ -1,7 +1,6 @@
 use super::{lib_pull, LibraryLoadable, LibraryRequest};
 use crate::constants::{
-    LIBRARY_COLLECTION_NAME, LIBRARY_RECENT_COUNT, LIBRARY_RECENT_STORAGE_KEY, LIBRARY_STORAGE_KEY,
-    OFFICIAL_ADDONS, USER_DATA_STORAGE_KEY,
+    LIBRARY_RECENT_STORAGE_KEY, LIBRARY_STORAGE_KEY, OFFICIAL_ADDONS, USER_DATA_STORAGE_KEY,
 };
 use crate::state_types::models::common::{
     authenticate, delete_user_session, get_user_addons, set_user_addons, ModelError,
