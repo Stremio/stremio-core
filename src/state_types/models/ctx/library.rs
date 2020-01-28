@@ -2,8 +2,10 @@ use crate::constants::{
     LIBRARY_COLLECTION_NAME, LIBRARY_RECENT_COUNT, LIBRARY_RECENT_STORAGE_KEY, LIBRARY_STORAGE_KEY,
 };
 use crate::state_types::models::common::{fetch_api, ModelError};
-use crate::state_types::models::ctx::user_data::UserDataLoadable;
-use crate::state_types::msg::{Action, ActionCtx, ActionLibrary, Event, Internal, Msg};
+use crate::state_types::models::ctx::user_data::{UserDataLoadable, UserDataRequest};
+use crate::state_types::msg::{
+    Action, ActionAuth, ActionCtx, ActionLibrary, ActionUser, Event, Internal, Msg,
+};
 use crate::state_types::{Effect, Effects, Environment};
 use crate::types::api::{Auth, DatastoreCmd, DatastoreReqBuilder, SuccessResponse};
 use crate::types::{LibBucket, LibItem, LibItemModified, LibItemState, UID};
@@ -34,6 +36,60 @@ impl LibraryLoadable {
         msg: &Msg,
     ) -> Effects {
         let library_effects = match msg {
+            Msg::Action(Action::Ctx(ActionCtx::User(ActionUser::Auth(ActionAuth::Logout)))) => {
+                *self = LibraryLoadable::Ready(LibBucket::default());
+                Effects::one(Box::new(
+                    Env::set_storage::<LibBucket>(LIBRARY_RECENT_STORAGE_KEY, None)
+                        .join(Env::set_storage::<LibBucket>(LIBRARY_STORAGE_KEY, None))
+                        .map(|_| Msg::Event(Event::LibraryPersisted))
+                        .map_err(|error| Msg::Event(Event::Error(ModelError::from(error)))),
+                ))
+            }
+            Msg::Internal(Internal::UserDataStorageResult(result)) => match (result, user_data) {
+                (
+                    Ok(_),
+                    UserDataLoadable::Loading {
+                        request: UserDataRequest::Storage,
+                        ..
+                    },
+                ) => {
+                    *self = LibraryLoadable::Loading(
+                        UID(user_data
+                            .auth()
+                            .as_ref()
+                            .map(|auth| auth.user.id.to_owned())),
+                        LibraryRequest::Storage,
+                    );
+                    Effects::one(Box::new(
+                        Env::get_storage(LIBRARY_RECENT_STORAGE_KEY)
+                            .join(Env::get_storage(LIBRARY_STORAGE_KEY))
+                            .then(|result| {
+                                Ok(Msg::Internal(Internal::LibraryStorageResult(
+                                    result.map_err(ModelError::from),
+                                )))
+                            }),
+                    ))
+                }
+                _ => Effects::none().unchanged(),
+            },
+            Msg::Internal(Internal::UserAuthResult(api_request, result)) => {
+                match (result, user_data) {
+                    (
+                        Ok((auth, _)),
+                        UserDataLoadable::Loading {
+                            request: UserDataRequest::API(loading_api_request),
+                            ..
+                        },
+                    ) if loading_api_request.eq(api_request) => {
+                        let uid = UID(Some(auth.user.id.to_owned()));
+                        *self = LibraryLoadable::Loading(uid.to_owned(), LibraryRequest::API);
+                        Effects::one(Box::new(lib_pull::<Env>(&auth).then(move |result| {
+                            Ok(Msg::Internal(Internal::LibraryAPIResult(uid, result)))
+                        })))
+                    }
+                    _ => Effects::none().unchanged(),
+                }
+            }
             Msg::Action(Action::Ctx(ActionCtx::Library(ActionLibrary::Add(meta_item)))) => {
                 let mut lib_item = LibItem {
                     id: meta_item.id.to_owned(),
@@ -279,7 +335,7 @@ fn lib_push<Env: Environment + 'static>(
     fetch_api::<Env, _, SuccessResponse>(&push_req).map(|_| ())
 }
 
-pub fn lib_pull<Env: Environment + 'static>(
+fn lib_pull<Env: Environment + 'static>(
     auth: &Auth,
 ) -> impl Future<Item = Vec<LibItem>, Error = ModelError> {
     let request = datastore_req_builder(auth).with_cmd(DatastoreCmd::Get {
