@@ -246,11 +246,12 @@ impl UserDataLoadable {
                 transport_url,
             }))) => {
                 let user_data = self.user_data();
-                let addon_position = user_data.addons.iter().position(|addon| {
-                    addon.transport_url.eq(transport_url) && !addon.flags.protected
-                });
+                let addon_position = user_data
+                    .addons
+                    .iter()
+                    .position(|addon| addon.transport_url.eq(transport_url));
                 match addon_position {
-                    Some(addon_position) => {
+                    Some(addon_position) if !user_data.addons[addon_position].flags.protected => {
                         user_data.addons.remove(addon_position);
                         Effects::msg(Msg::Event(Event::AddonUninstalled))
                     }
