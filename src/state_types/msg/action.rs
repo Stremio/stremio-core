@@ -1,7 +1,7 @@
 use crate::state_types::models::addon_details::Selected as AddonDetailsSelected;
 use crate::state_types::models::catalog_filtered::Selected as CatalogFilteredSelected;
 use crate::state_types::models::catalogs_with_extra::Selected as CatalogsWithExtraSelected;
-use crate::state_types::models::ctx::Settings;
+use crate::state_types::models::ctx::user_data::Settings as UserSettings;
 use crate::state_types::models::library_filtered::Selected as LibraryFilteredSelected;
 use crate::state_types::models::meta_details::Selected as MetaDetailsSelected;
 use crate::state_types::models::player::Selected as PlayerSelected;
@@ -39,7 +39,15 @@ pub enum ActionAddons {
 #[derive(Debug, Clone, Deserialize)]
 #[serde(tag = "action", content = "args")]
 pub enum ActionSettings {
-    Update(Settings),
+    Update(UserSettings),
+}
+
+#[derive(Debug, Clone, Deserialize)]
+#[serde(tag = "action", content = "args")]
+pub enum ActionUser {
+    Auth(ActionAuth),
+    Addons(ActionAddons),
+    Settings(ActionSettings),
 }
 
 #[derive(Debug, Clone, Deserialize)]
@@ -53,9 +61,7 @@ pub enum ActionLibrary {
 #[derive(Debug, Clone, Deserialize)]
 #[serde(tag = "action", content = "args")]
 pub enum ActionCtx {
-    Auth(ActionAuth),
-    Addons(ActionAddons),
-    Settings(ActionSettings),
+    User(ActionUser),
     Library(ActionLibrary),
 }
 

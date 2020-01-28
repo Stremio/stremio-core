@@ -1,5 +1,5 @@
 use crate::state_types::models::common::ModelError;
-use crate::state_types::models::ctx::UserData;
+use crate::state_types::models::ctx::user_data::UserData;
 // use crate::state_types::models::settings::SsSettings;
 use crate::types::addons::{Descriptor, Manifest, ResourceRequest, ResourceResponse, TransportUrl};
 use crate::types::api::{APIRequest, Auth, AuthKey};

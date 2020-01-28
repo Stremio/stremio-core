@@ -1,5 +1,6 @@
 use crate::constants::CATALOG_PREVIEW_SIZE;
-use crate::state_types::models::ctx::{Ctx, LibraryLoadable};
+use crate::state_types::models::ctx::library::LibraryLoadable;
+use crate::state_types::models::ctx::Ctx;
 use crate::state_types::msg::{Internal, Msg};
 use crate::state_types::{Effects, Environment, UpdateWithCtx};
 use crate::types::LibItem;
