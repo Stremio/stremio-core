@@ -75,6 +75,8 @@ pub enum UserDataRequest {
     API(APIRequest),
 }
 
+// TODO: find a better name for this that does not contains "Data".
+// Simply User is maybe not good too because there is another struct called User
 #[derive(Derivative, Clone, Debug, PartialEq, Serialize)]
 #[derivative(Default)]
 #[serde(tag = "type")]
