@@ -4,13 +4,15 @@ use crate::types::api::APIErr;
 use serde::Serialize;
 use std::error::Error;
 use std::fmt;
+use url::ParseError;
 
-// TODO find a better name for this
+// TODO find a better name for this maybe just Error or StremioError
 #[derive(Debug, Clone, Serialize)]
 #[serde(tag = "type")]
 pub enum ModelError {
     API { message: String, code: u64 },
     Env { message: String },
+    UrlParse { message: String },
     RequestBuilder { message: String },
 }
 
@@ -18,9 +20,9 @@ impl fmt::Display for ModelError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match &self {
             ModelError::API { message, code } => write!(f, "{} {}", message, code),
-            ModelError::Env { message } | ModelError::RequestBuilder { message } => {
-                write!(f, "{}", message)
-            }
+            ModelError::Env { message }
+            | ModelError::RequestBuilder { message }
+            | ModelError::UrlParse { message } => write!(f, "{}", message),
         }
     }
 }
@@ -30,7 +32,8 @@ impl Error for ModelError {
         match &self {
             ModelError::API { message, .. }
             | ModelError::Env { message }
-            | ModelError::RequestBuilder { message } => message,
+            | ModelError::RequestBuilder { message }
+            | ModelError::UrlParse { message } => message,
         }
     }
 }
@@ -55,6 +58,14 @@ impl From<EnvError> for ModelError {
 impl From<RequestBuilderError> for ModelError {
     fn from(error: RequestBuilderError) -> Self {
         ModelError::RequestBuilder {
+            message: error.to_string(),
+        }
+    }
+}
+
+impl From<ParseError> for ModelError {
+    fn from(error: ParseError) -> Self {
+        ModelError::UrlParse {
             message: error.to_string(),
         }
     }
