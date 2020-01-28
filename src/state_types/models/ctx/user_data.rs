@@ -313,19 +313,19 @@ impl UserDataLoadable {
                         *library = LibraryLoadable::Loading(uid.to_owned(), LibraryRequest::API);
                         Effects::msg(Msg::Event(Event::UserAuthenticated))
                             .join(Effects::msg(Msg::Internal(Internal::LibraryChanged)))
-                            .join(Effects::one(Box::new(
-                                get_user_addons::<Env>(&auth.key).then(move |result| {
-                                    Ok(Msg::Internal(Internal::UserAddonsResult(
-                                        auth.key.to_owned(),
-                                        result.map_err(ModelError::from),
-                                    )))
-                                }),
-                            )))
                             .join(Effects::one(Box::new(lib_pull::<Env>(&auth).then(
                                 move |result| {
                                     Ok(Msg::Internal(Internal::LibraryAPIResult(uid, result)))
                                 },
                             ))))
+                            .join(Effects::one(Box::new(
+                                get_user_addons::<Env>(&auth.key).then(move |result| {
+                                    Ok(Msg::Internal(Internal::UserAddonsResult(
+                                        auth.key,
+                                        result.map_err(ModelError::from),
+                                    )))
+                                }),
+                            )))
                     }
                     Err(error) => {
                         *self = UserDataLoadable::Ready {
