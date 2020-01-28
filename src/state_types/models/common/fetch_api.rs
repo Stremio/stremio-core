@@ -14,7 +14,7 @@ where
     let url = format!("{}/api/{}", Env::api_url(), api_request.method_name());
     let request = Request::post(url)
         .body(api_request.to_owned())
-        .expect("builder cannot fail");
+        .expect("fetch_api request builder cannot fail");
     Env::fetch_serde::<_, _>(request)
         .map_err(ModelError::from)
         .and_then(|result| match result {
