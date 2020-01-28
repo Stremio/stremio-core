@@ -260,8 +260,12 @@ impl UserDataLoadable {
             }
             Msg::Action(Action::Ctx(ActionCtx::Settings(ActionSettings::Update(settings)))) => {
                 let mut user_data = self.user_data();
-                user_data.settings = settings.to_owned();
-                Effects::msg(Msg::Event(Event::SettingsUpdated))
+                if user_data.settings.ne(settings) {
+                    user_data.settings = settings.to_owned();
+                    Effects::msg(Msg::Event(Event::SettingsUpdated))
+                } else {
+                    Effects::none().unchanged()
+                }
             }
             Msg::Internal(Internal::UserDataStorageResult(result)) => match &self {
                 UserDataLoadable::Loading {
