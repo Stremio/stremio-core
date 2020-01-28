@@ -1,5 +1,6 @@
 use crate::constants::{
-    LIBRARY_RECENT_STORAGE_KEY, LIBRARY_STORAGE_KEY, OFFICIAL_ADDONS, USER_DATA_STORAGE_KEY,
+    LIBRARY_RECENT_STORAGE_KEY, LIBRARY_STORAGE_KEY, OFFICIAL_ADDONS, STREAMING_SERVER_URL,
+    USER_DATA_STORAGE_KEY,
 };
 use crate::state_types::models::common::{
     authenticate, delete_user_session, get_user_addons, set_user_addons, ModelError,
@@ -40,8 +41,8 @@ impl Default for Settings {
             binge_watching: false,
             play_in_background: true,
             play_in_external_player: false,
-            streaming_server_url: Url::parse("http://127.0.0.1:11470")
-                .expect("builder cannot fail"),
+            streaming_server_url: Url::parse(STREAMING_SERVER_URL)
+                .expect("streaming_server_url builder cannot fail"),
             interface_language: "eng".to_owned(),
             subtitles_language: "eng".to_owned(),
             subtitles_size: 2,

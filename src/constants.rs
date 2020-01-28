@@ -2,6 +2,7 @@ use crate::types::addons::Descriptor;
 use lazy_static::lazy_static;
 
 pub const API_URL: &str = "https://api.strem.io";
+pub const STREAMING_SERVER_URL: &str = "http://127.0.0.1:11470";
 pub const USER_DATA_STORAGE_KEY: &str = "userData";
 pub const LIBRARY_STORAGE_KEY: &str = "library";
 pub const LIBRARY_RECENT_STORAGE_KEY: &str = "recent_library";
