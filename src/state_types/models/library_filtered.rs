@@ -28,11 +28,10 @@ pub struct Selected {
 #[derivative(Default)]
 #[serde(tag = "type")]
 pub enum LibraryState {
-    #[derivative(Default)]
-    NotLoaded,
     Loading {
         uid: UID,
     },
+    #[derivative(Default)]
     Ready {
         uid: UID,
     },
@@ -78,7 +77,6 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for LibraryFiltered {
 
 fn library_state_update(library_state: &mut LibraryState, library: &LibraryLoadable) -> Effects {
     let next_library_state = match library {
-        LibraryLoadable::NotLoaded => LibraryState::NotLoaded,
         LibraryLoadable::Loading(uid, _) => LibraryState::Loading {
             uid: uid.to_owned(),
         },
