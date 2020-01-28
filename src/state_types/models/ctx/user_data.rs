@@ -1,4 +1,8 @@
-use crate::constants::{OFFICIAL_ADDONS, USER_DATA_STORAGE_KEY};
+use super::{lib_pull, LibraryLoadable, LibraryRequest};
+use crate::constants::{
+    LIBRARY_COLLECTION_NAME, LIBRARY_RECENT_COUNT, LIBRARY_RECENT_STORAGE_KEY, LIBRARY_STORAGE_KEY,
+    OFFICIAL_ADDONS, USER_DATA_STORAGE_KEY,
+};
 use crate::state_types::models::common::{
     authenticate, delete_user_session, get_user_addons, set_user_addons, ModelError,
 };
@@ -8,6 +12,7 @@ use crate::state_types::msg::{
 use crate::state_types::{Effects, Environment};
 use crate::types::addons::Descriptor;
 use crate::types::api::{APIRequest, Auth};
+use crate::types::{LibBucket, UID};
 use derivative::Derivative;
 use futures::Future;
 use serde::{Deserialize, Serialize};
@@ -84,7 +89,11 @@ pub enum UserDataLoadable {
 }
 
 impl UserDataLoadable {
-    pub fn update<Env: Environment + 'static>(&mut self, msg: &Msg) -> Effects {
+    pub fn update<Env: Environment + 'static>(
+        &mut self,
+        library: &mut LibraryLoadable,
+        msg: &Msg,
+    ) -> Effects {
         let user_data_effects = match msg {
             Msg::Action(Action::Ctx(ActionCtx::RetrieveFromStorage)) => {
                 *self = UserDataLoadable::Loading {
@@ -156,7 +165,10 @@ impl UserDataLoadable {
                 *self = UserDataLoadable::Ready {
                     content: UserData::default(),
                 };
-                Effects::msg(Msg::Event(Event::UserLoggedOut)).join(logout_effects)
+                *library = LibraryLoadable::Ready(LibBucket::default());
+                Effects::msg(Msg::Event(Event::UserLoggedOut))
+                    .join(Effects::msg(Msg::Internal(Internal::LibraryChanged)))
+                    .join(logout_effects)
             }
             Msg::Action(Action::Ctx(ActionCtx::Auth(ActionAuth::PushToAPI))) => {
                 Effects::none().unchanged()
@@ -260,7 +272,21 @@ impl UserDataLoadable {
                         *self = UserDataLoadable::Ready {
                             content: user_data.to_owned().unwrap_or_default(),
                         };
+                        *library = LibraryLoadable::Loading(
+                            UID(self.auth().as_ref().map(|auth| auth.user.id.to_owned())),
+                            LibraryRequest::Storage,
+                        );
                         Effects::msg(Msg::Event(Event::UserDataRetrievedFromStorage))
+                            .join(Effects::msg(Msg::Internal(Internal::LibraryChanged)))
+                            .join(Effects::one(Box::new(
+                                Env::get_storage(LIBRARY_RECENT_STORAGE_KEY)
+                                    .join(Env::get_storage(LIBRARY_STORAGE_KEY))
+                                    .then(|result| {
+                                        Ok(Msg::Internal(Internal::LibraryStorageResult(
+                                            result.map_err(ModelError::from),
+                                        )))
+                                    }),
+                            )))
                     }
                     Err(error) => {
                         *self = UserDataLoadable::Ready {
@@ -278,20 +304,29 @@ impl UserDataLoadable {
                 } if loading_api_request.eq(api_request) => match result {
                     Ok(auth) => {
                         let auth = auth.to_owned();
+                        let uid = UID(Some(auth.user.id.to_owned()));
                         *self = UserDataLoadable::Ready {
                             content: UserData {
                                 auth: Some(auth.to_owned()),
                                 ..UserData::default()
                             },
                         };
-                        Effects::msg(Msg::Event(Event::UserAuthenticated)).join(Effects::one(
-                            Box::new(get_user_addons::<Env>(&auth.key).then(move |result| {
-                                Ok(Msg::Internal(Internal::UserAddonsResult(
-                                    auth.key.to_owned(),
-                                    result.map_err(ModelError::from),
-                                )))
-                            })),
-                        ))
+                        *library = LibraryLoadable::Loading(uid.to_owned(), LibraryRequest::API);
+                        Effects::msg(Msg::Event(Event::UserAuthenticated))
+                            .join(Effects::msg(Msg::Internal(Internal::LibraryChanged)))
+                            .join(Effects::one(Box::new(
+                                get_user_addons::<Env>(&auth.key).then(move |result| {
+                                    Ok(Msg::Internal(Internal::UserAddonsResult(
+                                        auth.key.to_owned(),
+                                        result.map_err(ModelError::from),
+                                    )))
+                                }),
+                            )))
+                            .join(Effects::one(Box::new(lib_pull::<Env>(&auth).then(
+                                move |result| {
+                                    Ok(Msg::Internal(Internal::LibraryAPIResult(uid, result)))
+                                },
+                            ))))
                     }
                     Err(error) => {
                         *self = UserDataLoadable::Ready {

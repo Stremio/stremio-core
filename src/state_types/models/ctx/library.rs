@@ -13,7 +13,7 @@ use futures::future::Either;
 use futures::{future, Future};
 use lazysort::SortedBy;
 
-#[derive(Clone, Debug)]
+#[derive(Debug, Clone)]
 pub enum LibraryRequest {
     Storage,
     API,
@@ -22,7 +22,6 @@ pub enum LibraryRequest {
 #[derive(Derivative, Debug, Clone)]
 #[derivative(Default)]
 pub enum LibraryLoadable {
-    NotLoaded,
     Loading(UID, LibraryRequest),
     #[derivative(Default)]
     Ready(LibBucket),
@@ -34,57 +33,7 @@ impl LibraryLoadable {
         user_data: &UserDataLoadable,
         msg: &Msg,
     ) -> Effects {
-        let uid_changed = match (user_data.auth(), &self) {
-            (None, LibraryLoadable::Loading(_, _))
-            | (None, LibraryLoadable::Ready(_))
-            | (Some(_), LibraryLoadable::NotLoaded) => true,
-            (Some(auth), LibraryLoadable::Loading(uid, _))
-            | (Some(auth), LibraryLoadable::Ready(LibBucket { uid, .. })) => {
-                uid.ne(&UID(Some(auth.user.id.to_owned())))
-            }
-            _ => false,
-        };
-        if uid_changed {
-            *self = LibraryLoadable::NotLoaded;
-        };
         let library_effects = match msg {
-            Msg::Event(Event::UserDataRetrievedFromStorage) => {
-                let uid = UID(user_data
-                    .auth()
-                    .as_ref()
-                    .map(|auth| auth.user.id.to_owned()));
-                *self = LibraryLoadable::Loading(uid, LibraryRequest::Storage);
-                Effects::one(Box::new(
-                    Env::get_storage(LIBRARY_RECENT_STORAGE_KEY)
-                        .join(Env::get_storage(LIBRARY_STORAGE_KEY))
-                        .then(|result| {
-                            Ok(Msg::Internal(Internal::LibraryStorageResult(
-                                result.map_err(ModelError::from),
-                            )))
-                        }),
-                ))
-            }
-            Msg::Event(Event::UserAuthenticated) | Msg::Event(Event::UserLoggedOut) => {
-                match user_data.auth() {
-                    Some(auth) => {
-                        let uid = UID(Some(auth.user.id.to_owned()));
-                        *self = LibraryLoadable::Loading(uid.to_owned(), LibraryRequest::API);
-                        let request = datastore_req_builder(auth).with_cmd(DatastoreCmd::Get {
-                            ids: vec![],
-                            all: true,
-                        });
-                        Effects::one(Box::new(fetch_api::<Env, _, _>(&request).then(
-                            move |result| {
-                                Ok(Msg::Internal(Internal::LibraryAPIResult(uid, result)))
-                            },
-                        )))
-                    }
-                    _ => {
-                        *self = LibraryLoadable::Ready(LibBucket::default());
-                        Effects::none()
-                    }
-                }
-            }
             Msg::Action(Action::Ctx(ActionCtx::Library(ActionLibrary::SyncWithAPI))) => {
                 match (user_data.auth(), &self) {
                     (Some(auth), LibraryLoadable::Ready(bucket))
@@ -210,7 +159,7 @@ impl LibraryLoadable {
             },
             _ => Effects::none().unchanged(),
         };
-        if uid_changed || library_effects.has_changed {
+        if library_effects.has_changed {
             Effects::msg(Msg::Internal(Internal::LibraryChanged)).join(library_effects)
         } else {
             library_effects
@@ -261,6 +210,8 @@ fn datastore_req_builder(auth: &Auth) -> DatastoreReqBuilder {
         .collection(LIBRARY_COLLECTION_NAME.to_owned())
         .clone()
 }
+
+// TODO: refactor move lib_sync/lib_pull/lib_push to common crate
 
 fn lib_sync<Env: Environment + 'static>(
     auth: &Auth,
@@ -330,6 +281,16 @@ fn lib_push<Env: Environment + 'static>(
     });
 
     fetch_api::<Env, _, SuccessResponse>(&push_req).map(|_| ())
+}
+
+pub fn lib_pull<Env: Environment + 'static>(
+    auth: &Auth,
+) -> impl Future<Item = Vec<LibItem>, Error = ModelError> {
+    let request = datastore_req_builder(auth).with_cmd(DatastoreCmd::Get {
+        ids: vec![],
+        all: true,
+    });
+    fetch_api::<Env, _, _>(&request)
 }
 
 fn update_and_persist<Env: Environment + 'static>(
