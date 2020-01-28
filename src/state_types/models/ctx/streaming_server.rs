@@ -12,7 +12,19 @@ use url::Url;
 use url_serde;
 
 #[derive(Debug, Clone, PartialEq, Serialize)]
-pub struct Settings {}
+#[serde(rename_all = "camelCase")]
+pub struct Settings {
+    pub app_path: String,
+    pub cache_root: String,
+    pub cache_size: f64,
+    pub bt_max_connections: u64,
+    pub bt_handshake_timeout: u64,
+    pub bt_request_timeout: u64,
+    pub bt_download_speed_soft_limit: f64,
+    pub bt_download_speed_hard_limit: f64,
+    pub bt_min_peers_for_stable: u64,
+    pub server_version: String,
+}
 
 #[derive(Debug, Clone, PartialEq, Serialize)]
 #[serde(tag = "type")]
