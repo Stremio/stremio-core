@@ -372,6 +372,13 @@ impl UserDataLoadable {
             user_data_effects
         }
     }
+    pub fn user_data(&mut self) -> &mut UserData {
+        match self {
+            UserDataLoadable::Loading { content, .. } | UserDataLoadable::Ready { content } => {
+                content
+            }
+        }
+    }
     pub fn auth(&self) -> &Option<Auth> {
         match &self {
             UserDataLoadable::Loading { content, .. } | UserDataLoadable::Ready { content } => {
@@ -390,13 +397,6 @@ impl UserDataLoadable {
         match &self {
             UserDataLoadable::Loading { content, .. } | UserDataLoadable::Ready { content } => {
                 &content.settings
-            }
-        }
-    }
-    fn user_data(&mut self) -> &mut UserData {
-        match self {
-            UserDataLoadable::Loading { content, .. } | UserDataLoadable::Ready { content } => {
-                content
             }
         }
     }
