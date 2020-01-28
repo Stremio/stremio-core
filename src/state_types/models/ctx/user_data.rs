@@ -6,7 +6,7 @@ use crate::state_types::models::common::{
     authenticate, delete_user_session, get_user_addons, set_user_addons, ModelError,
 };
 use crate::state_types::msg::{
-    Action, ActionAddons, ActionAuth, ActionCtx, ActionSettings, Event, Internal, Msg,
+    Action, ActionAddons, ActionAuth, ActionCtx, ActionLoad, ActionSettings, Event, Internal, Msg,
 };
 use crate::state_types::{Effects, Environment};
 use crate::types::addons::Descriptor;
@@ -94,7 +94,7 @@ impl UserDataLoadable {
         msg: &Msg,
     ) -> Effects {
         let user_data_effects = match msg {
-            Msg::Action(Action::Ctx(ActionCtx::RetrieveFromStorage)) => {
+            Msg::Action(Action::Load(ActionLoad::Ctx)) => {
                 *self = UserDataLoadable::Loading {
                     request: UserDataRequest::Storage,
                     content: self.user_data().to_owned(),

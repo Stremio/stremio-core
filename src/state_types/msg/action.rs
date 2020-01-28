@@ -53,7 +53,6 @@ pub enum ActionLibrary {
 #[derive(Debug, Clone, Deserialize)]
 #[serde(tag = "action", content = "args")]
 pub enum ActionCtx {
-    RetrieveFromStorage,
     Auth(ActionAuth),
     Addons(ActionAddons),
     Settings(ActionSettings),
@@ -63,6 +62,7 @@ pub enum ActionCtx {
 #[derive(Debug, Clone, Deserialize)]
 #[serde(tag = "action", content = "args")]
 pub enum ActionLoad {
+    Ctx,
     AddonDetails(AddonDetailsSelected),
     CatalogFiltered(CatalogFilteredSelected),
     CatalogsWithExtra(CatalogsWithExtraSelected),
