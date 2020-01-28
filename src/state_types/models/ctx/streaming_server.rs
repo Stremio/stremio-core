@@ -34,6 +34,15 @@ pub enum StreamingServerLoadable {
     },
 }
 
+impl Default for StreamingServerLoadable {
+    fn default() -> Self {
+        StreamingServerLoadable::Offline {
+            url: Url::parse(STREAMING_SERVER_URL)
+                .expect("StreamingServerLoadable url builder cannot fail"),
+        }
+    }
+}
+
 impl StreamingServerLoadable {
     pub fn update<Env: Environment + 'static>(
         &mut self,
