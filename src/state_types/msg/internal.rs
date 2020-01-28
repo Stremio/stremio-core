@@ -12,7 +12,7 @@ use crate::types::{LibBucket, LibItem, UID};
 pub enum Internal {
     UserDataChanged,
     UserDataStorageResult(Result<Option<UserData>, ModelError>),
-    UserAuthResult(APIRequest, Result<Auth, ModelError>),
+    UserAuthResult(APIRequest, Result<(Auth, Vec<Descriptor>), ModelError>),
     UserAddonsResult(AuthKey, Result<Vec<Descriptor>, ModelError>),
     LibraryChanged,
     LibraryStorageResult(Result<(Option<LibBucket>, Option<LibBucket>), ModelError>),

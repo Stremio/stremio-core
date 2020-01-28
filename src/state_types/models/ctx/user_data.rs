@@ -117,14 +117,15 @@ impl UserDataLoadable {
                     request: UserDataRequest::API(request.to_owned()),
                     content: self.user_data().to_owned(),
                 };
-                Effects::one(Box::new(authenticate::<Env>(&request).then(
-                    move |result| {
-                        Ok(Msg::Internal(Internal::UserAuthResult(
-                            request,
-                            result.map_err(ModelError::from),
-                        )))
-                    },
-                )))
+                Effects::one(Box::new(
+                    authenticate::<Env>(&request)
+                        .and_then(|auth| {
+                            get_user_addons::<Env>(&auth.key).map(move |addons| (auth, addons))
+                        })
+                        .then(move |result| {
+                            Ok(Msg::Internal(Internal::UserAuthResult(request, result)))
+                        }),
+                ))
                 .unchanged()
             }
             Msg::Action(Action::Ctx(ActionCtx::Auth(ActionAuth::Register {
@@ -141,14 +142,15 @@ impl UserDataLoadable {
                     request: UserDataRequest::API(request.to_owned()),
                     content: self.user_data().to_owned(),
                 };
-                Effects::one(Box::new(authenticate::<Env>(&request).then(
-                    move |result| {
-                        Ok(Msg::Internal(Internal::UserAuthResult(
-                            request,
-                            result.map_err(ModelError::from),
-                        )))
-                    },
-                )))
+                Effects::one(Box::new(
+                    authenticate::<Env>(&request)
+                        .and_then(|auth| {
+                            get_user_addons::<Env>(&auth.key).map(move |addons| (auth, addons))
+                        })
+                        .then(move |result| {
+                            Ok(Msg::Internal(Internal::UserAuthResult(request, result)))
+                        }),
+                ))
                 .unchanged()
             }
             Msg::Action(Action::Ctx(ActionCtx::Auth(ActionAuth::Logout))) => {
@@ -306,12 +308,13 @@ impl UserDataLoadable {
                     request: UserDataRequest::API(loading_api_request),
                     ..
                 } if loading_api_request.eq(api_request) => match result {
-                    Ok(auth) => {
+                    Ok((auth, addons)) => {
                         let auth = auth.to_owned();
                         let uid = UID(Some(auth.user.id.to_owned()));
                         *self = UserDataLoadable::Ready {
                             content: UserData {
                                 auth: Some(auth.to_owned()),
+                                addons: addons.to_owned(),
                                 ..UserData::default()
                             },
                         };
@@ -323,14 +326,6 @@ impl UserDataLoadable {
                                     Ok(Msg::Internal(Internal::LibraryAPIResult(uid, result)))
                                 },
                             ))))
-                            .join(Effects::one(Box::new(
-                                get_user_addons::<Env>(&auth.key).then(move |result| {
-                                    Ok(Msg::Internal(Internal::UserAddonsResult(
-                                        auth.key,
-                                        result.map_err(ModelError::from),
-                                    )))
-                                }),
-                            )))
                     }
                     Err(error) => {
                         *self = UserDataLoadable::Ready {
