@@ -34,25 +34,6 @@ impl LibraryLoadable {
         msg: &Msg,
     ) -> Effects {
         let library_effects = match msg {
-            Msg::Action(Action::Ctx(ActionCtx::Library(ActionLibrary::SyncWithAPI))) => {
-                match (user_data.auth(), &self) {
-                    (Some(auth), LibraryLoadable::Ready(bucket))
-                        if bucket.uid.eq(&UID(Some(auth.user.id.to_owned()))) =>
-                    {
-                        let uid = bucket.uid.to_owned();
-                        Effects::one(Box::new(lib_sync::<Env>(auth, bucket.to_owned()).then(
-                            move |result| {
-                                Ok(Msg::Internal(Internal::LibrarySyncResult(
-                                    uid,
-                                    result.map_err(ModelError::from),
-                                )))
-                            },
-                        )))
-                        .unchanged()
-                    }
-                    _ => Effects::none().unchanged(),
-                }
-            }
             Msg::Action(Action::Ctx(ActionCtx::Library(ActionLibrary::Add(meta_item)))) => {
                 let mut lib_item = LibItem {
                     id: meta_item.id.to_owned(),
@@ -94,6 +75,20 @@ impl LibraryLoadable {
                         } else {
                             Effects::none().unchanged()
                         }
+                    }
+                    _ => Effects::none().unchanged(),
+                }
+            }
+            Msg::Action(Action::Ctx(ActionCtx::Library(ActionLibrary::SyncWithAPI))) => {
+                match (user_data.auth(), &self) {
+                    (Some(auth), LibraryLoadable::Ready(bucket)) => {
+                        let uid = bucket.uid.to_owned();
+                        Effects::one(Box::new(lib_sync::<Env>(auth, bucket.to_owned()).then(
+                            move |result| {
+                                Ok(Msg::Internal(Internal::LibrarySyncResult(uid, result)))
+                            },
+                        )))
+                        .unchanged()
                     }
                     _ => Effects::none().unchanged(),
                 }
@@ -142,15 +137,16 @@ impl LibraryLoadable {
             },
             Msg::Internal(Internal::LibrarySyncResult(uid, result)) => match self {
                 LibraryLoadable::Ready(ref mut bucket) if bucket.uid.eq(uid) => match result {
-                    Ok(newer_items) => Effects::one(Box::new(
-                        update_and_persist::<Env>(
-                            bucket,
-                            LibBucket::new(uid.to_owned(), newer_items.to_owned()),
-                        )
-                        .map(|_| Msg::Event(Event::LibraryPersisted))
-                        .map_err(|error| Msg::Event(Event::Error(error))),
-                    ))
-                    .join(Effects::msg(Msg::Event(Event::LibrarySyncedWithAPI))),
+                    Ok(items) => Effects::msg(Msg::Event(Event::LibrarySyncedWithAPI)).join(
+                        Effects::one(Box::new(
+                            update_and_persist::<Env>(
+                                bucket,
+                                LibBucket::new(uid.to_owned(), items.to_owned()),
+                            )
+                            .map(|_| Msg::Event(Event::LibraryPersisted))
+                            .map_err(|error| Msg::Event(Event::Error(error))),
+                        )),
+                    ),
                     Err(error) => {
                         Effects::msg(Msg::Event(Event::Error(error.to_owned()))).unchanged()
                     }
@@ -204,14 +200,14 @@ impl LibraryLoadable {
     }
 }
 
+// TODO: refactor move lib_sync/lib_pull/lib_push to common crate
+
 fn datastore_req_builder(auth: &Auth) -> DatastoreReqBuilder {
     DatastoreReqBuilder::default()
         .auth_key(auth.key.to_owned())
         .collection(LIBRARY_COLLECTION_NAME.to_owned())
         .clone()
 }
-
-// TODO: refactor move lib_sync/lib_pull/lib_push to common crate
 
 fn lib_sync<Env: Environment + 'static>(
     auth: &Auth,

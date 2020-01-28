@@ -177,6 +177,32 @@ impl UserDataLoadable {
             Msg::Action(Action::Ctx(ActionCtx::Auth(ActionAuth::PullFromAPI))) => {
                 Effects::none().unchanged()
             }
+            Msg::Action(Action::Ctx(ActionCtx::Addons(ActionAddons::Install(descriptor)))) => {
+                let user_data = self.user_data();
+                let addon_position = user_data
+                    .addons
+                    .iter()
+                    .position(|addon| addon.transport_url.eq(&descriptor.transport_url));
+                if let Some(addon_position) = addon_position {
+                    user_data.addons.remove(addon_position);
+                };
+                user_data.addons.push(descriptor.to_owned());
+                Effects::msg(Msg::Event(Event::AddonInstalled))
+            }
+            Msg::Action(Action::Ctx(ActionCtx::Addons(ActionAddons::Uninstall(transport_url)))) => {
+                let user_data = self.user_data();
+                let addon_position = user_data
+                    .addons
+                    .iter()
+                    .position(|addon| addon.transport_url.eq(transport_url));
+                match addon_position {
+                    Some(addon_position) if !user_data.addons[addon_position].flags.protected => {
+                        user_data.addons.remove(addon_position);
+                        Effects::msg(Msg::Event(Event::AddonUninstalled))
+                    }
+                    _ => Effects::none().unchanged(),
+                }
+            }
             Msg::Action(Action::Ctx(ActionCtx::Addons(ActionAddons::PushToAPI))) => {
                 match self.auth() {
                     Some(auth) => Effects::one(Box::new(
@@ -194,10 +220,7 @@ impl UserDataLoadable {
                         let auth_key = auth.key.to_owned();
                         Effects::one(Box::new(get_user_addons::<Env>(&auth_key).then(
                             move |result| {
-                                Ok(Msg::Internal(Internal::UserAddonsResult(
-                                    auth_key,
-                                    result.map_err(ModelError::from),
-                                )))
+                                Ok(Msg::Internal(Internal::UserAddonsResult(auth_key, result)))
                             },
                         )))
                         .unchanged()
@@ -230,34 +253,6 @@ impl UserDataLoadable {
                             Effects::none().unchanged()
                         }
                     }
-                }
-            }
-            Msg::Action(Action::Ctx(ActionCtx::Addons(ActionAddons::Install(descriptor)))) => {
-                let user_data = self.user_data();
-                let addon_position = user_data
-                    .addons
-                    .iter()
-                    .position(|addon| addon.transport_url.eq(&descriptor.transport_url));
-                if let Some(addon_position) = addon_position {
-                    user_data.addons.remove(addon_position);
-                };
-                user_data.addons.push(descriptor.to_owned());
-                Effects::msg(Msg::Event(Event::AddonInstalled))
-            }
-            Msg::Action(Action::Ctx(ActionCtx::Addons(ActionAddons::Uninstall {
-                transport_url,
-            }))) => {
-                let user_data = self.user_data();
-                let addon_position = user_data
-                    .addons
-                    .iter()
-                    .position(|addon| addon.transport_url.eq(transport_url));
-                match addon_position {
-                    Some(addon_position) if !user_data.addons[addon_position].flags.protected => {
-                        user_data.addons.remove(addon_position);
-                        Effects::msg(Msg::Event(Event::AddonUninstalled))
-                    }
-                    _ => Effects::none().unchanged(),
                 }
             }
             Msg::Action(Action::Ctx(ActionCtx::Settings(ActionSettings::Update(settings)))) => {

@@ -13,8 +13,6 @@ use serde::Deserialize;
 #[derive(Debug, Clone, Deserialize)]
 #[serde(tag = "action", content = "args")]
 pub enum ActionAuth {
-    PushToAPI,
-    PullFromAPI,
     Login {
         email: String,
         password: String,
@@ -25,15 +23,17 @@ pub enum ActionAuth {
         gdpr_consent: GDPRConsent,
     },
     Logout,
+    PushToAPI,
+    PullFromAPI,
 }
 
 #[derive(Debug, Clone, Deserialize)]
 #[serde(tag = "action", content = "args")]
 pub enum ActionAddons {
+    Install(Descriptor),
+    Uninstall(TransportUrl),
     PushToAPI,
     PullFromAPI,
-    Install(Descriptor),
-    Uninstall { transport_url: TransportUrl },
 }
 
 #[derive(Debug, Clone, Deserialize)]
@@ -45,9 +45,9 @@ pub enum ActionSettings {
 #[derive(Debug, Clone, Deserialize)]
 #[serde(tag = "action", content = "args")]
 pub enum ActionLibrary {
-    SyncWithAPI,
     Add(MetaPreview),
     Remove(String),
+    SyncWithAPI,
 }
 
 #[derive(Debug, Clone, Deserialize)]
