@@ -201,7 +201,7 @@ impl UserDataLoadable {
                         .unchanged()
                     }
                     _ => {
-                        // TODO is there a better place for this peace of code ?
+                        // TODO is there a better place for this piece of code ?
                         let next_addons = self
                             .addons()
                             .iter()
