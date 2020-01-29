@@ -161,10 +161,16 @@ impl UserLoadable {
                     .unchanged(),
                     _ => Effects::none().unchanged(),
                 };
-                *self = UserLoadable::Ready {
-                    content: User::default(),
-                };
-                Effects::msg(Msg::Event(Event::UserLoggedOut)).join(session_effects)
+                let next_user = User::default();
+                let user_changed = next_user.ne(self.content());
+                *self = UserLoadable::Ready { content: next_user };
+                if user_changed {
+                    Effects::msg(Msg::Event(Event::UserLoggedOut)).join(session_effects)
+                } else {
+                    Effects::msg(Msg::Event(Event::UserLoggedOut))
+                        .join(session_effects)
+                        .unchanged()
+                }
             }
             Msg::Action(Action::Ctx(ActionCtx::InstallAddon(descriptor))) => {
                 let user = self.content();
@@ -259,10 +265,14 @@ impl UserLoadable {
                     ..
                 } => match result {
                     Ok(user) => {
-                        *self = UserLoadable::Ready {
-                            content: user.to_owned().unwrap_or_default(),
-                        };
-                        Effects::msg(Msg::Event(Event::UserRetrievedFromStorage))
+                        let next_user = user.to_owned().unwrap_or_default();
+                        let user_changed = next_user.ne(self.content());
+                        *self = UserLoadable::Ready { content: next_user };
+                        if user_changed {
+                            Effects::msg(Msg::Event(Event::UserRetrievedFromStorage))
+                        } else {
+                            Effects::msg(Msg::Event(Event::UserRetrievedFromStorage)).unchanged()
+                        }
                     }
                     Err(error) => {
                         *self = UserLoadable::Ready {
