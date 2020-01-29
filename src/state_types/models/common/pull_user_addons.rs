@@ -4,7 +4,7 @@ use crate::types::addons::Descriptor;
 use crate::types::api::{APIRequest, CollectionResponse};
 use futures::Future;
 
-pub fn get_user_addons<Env: Environment + 'static>(
+pub fn pull_user_addons<Env: Environment + 'static>(
     auth_key: &str,
 ) -> impl Future<Item = Vec<Descriptor>, Error = ModelError> {
     fetch_api::<Env, _, _>(&APIRequest::AddonCollectionGet {

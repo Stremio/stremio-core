@@ -4,7 +4,7 @@ use crate::types::addons::Descriptor;
 use crate::types::api::{APIRequest, SuccessResponse};
 use futures::Future;
 
-pub fn set_user_addons<Env: Environment + 'static>(
+pub fn push_user_addons<Env: Environment + 'static>(
     auth_key: &str,
     addons: &[Descriptor],
 ) -> impl Future<Item = (), Error = ModelError> {

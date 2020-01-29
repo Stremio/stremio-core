@@ -1,6 +1,6 @@
 use crate::constants::{OFFICIAL_ADDONS, STREAMING_SERVER_URL, USER_STORAGE_KEY};
 use crate::state_types::models::common::{
-    authenticate, delete_user_session, get_user_addons, set_user_addons, ModelError,
+    authenticate, delete_user_session, pull_user_addons, push_user_addons, ModelError,
 };
 use crate::state_types::msg::{Action, ActionCtx, ActionLoad, Event, Internal, Msg};
 use crate::state_types::{Effects, Environment};
@@ -114,7 +114,7 @@ impl UserLoadable {
                 Effects::one(Box::new(
                     authenticate::<Env>(&request)
                         .and_then(|auth| {
-                            get_user_addons::<Env>(&auth.key).map(move |addons| (auth, addons))
+                            pull_user_addons::<Env>(&auth.key).map(move |addons| (auth, addons))
                         })
                         .then(move |result| {
                             Ok(Msg::Internal(Internal::UserAuthenticateResult(
@@ -141,7 +141,7 @@ impl UserLoadable {
                 Effects::one(Box::new(
                     authenticate::<Env>(&request)
                         .and_then(|auth| {
-                            get_user_addons::<Env>(&auth.key).map(move |addons| (auth, addons))
+                            pull_user_addons::<Env>(&auth.key).map(move |addons| (auth, addons))
                         })
                         .then(move |result| {
                             Ok(Msg::Internal(Internal::UserAuthenticateResult(
@@ -205,7 +205,7 @@ impl UserLoadable {
             Msg::Action(Action::Ctx(ActionCtx::PullUserFromAPI)) => Effects::none().unchanged(),
             Msg::Action(Action::Ctx(ActionCtx::PushAddonsToAPI)) => match self.auth() {
                 Some(auth) => Effects::one(Box::new(
-                    set_user_addons::<Env>(&auth.key, self.addons())
+                    push_user_addons::<Env>(&auth.key, self.addons())
                         .map(|_| Msg::Event(Event::AddonsPushedToAPI))
                         .map_err(|error| Msg::Event(Event::Error(error))),
                 ))
@@ -215,7 +215,7 @@ impl UserLoadable {
             Msg::Action(Action::Ctx(ActionCtx::PullAddonsFromAPI)) => match self.auth() {
                 Some(auth) => {
                     let auth_key = auth.key.to_owned();
-                    Effects::one(Box::new(get_user_addons::<Env>(&auth_key).then(
+                    Effects::one(Box::new(pull_user_addons::<Env>(&auth_key).then(
                         move |result| {
                             Ok(Msg::Internal(Internal::UserPullAddonsResult(
                                 auth_key, result,

@@ -19,20 +19,20 @@ pub use get_manifest::*;
 mod get_resource;
 pub use get_resource::*;
 
-mod get_user_addons;
-pub use get_user_addons::*;
-
 mod loadable;
 pub use loadable::*;
 
 mod model_error;
 pub use model_error::*;
 
+mod pull_user_addons;
+pub use pull_user_addons::*;
+
+mod push_user_addons;
+pub use push_user_addons::*;
+
 mod resource_loadable;
 pub use resource_loadable::*;
-
-mod set_user_addons;
-pub use set_user_addons::*;
 
 mod validate_extra;
 pub use validate_extra::*;
