@@ -66,7 +66,7 @@ impl StreamingServerLoadable {
             ))))
             | Msg::Action(Action::Ctx(ActionCtx::User(ActionUser::Auth(ActionAuth::Logout))))
             | Msg::Internal(Internal::UserStorageResult(_))
-            | Msg::Internal(Internal::UserAuthResult(_, _))
+            | Msg::Internal(Internal::UserAuthenticateResult(_, _))
                 if Some(&user.settings().streaming_server_url).ne(&self.url()) =>
             {
                 let url = user.settings().streaming_server_url.to_owned();

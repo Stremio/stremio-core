@@ -121,7 +121,9 @@ impl UserLoadable {
                                         .map(move |addons| (auth, addons))
                                 })
                                 .then(move |result| {
-                                    Ok(Msg::Internal(Internal::UserAuthResult(request, result)))
+                                    Ok(Msg::Internal(Internal::UserAuthenticateResult(
+                                        request, result,
+                                    )))
                                 }),
                         ))
                         .unchanged()
@@ -147,7 +149,9 @@ impl UserLoadable {
                                         .map(move |addons| (auth, addons))
                                 })
                                 .then(move |result| {
-                                    Ok(Msg::Internal(Internal::UserAuthResult(request, result)))
+                                    Ok(Msg::Internal(Internal::UserAuthenticateResult(
+                                        request, result,
+                                    )))
                                 }),
                         ))
                         .unchanged()
@@ -215,7 +219,9 @@ impl UserLoadable {
                             let auth_key = auth.key.to_owned();
                             Effects::one(Box::new(get_user_addons::<Env>(&auth_key).then(
                                 move |result| {
-                                    Ok(Msg::Internal(Internal::UserAddonsResult(auth_key, result)))
+                                    Ok(Msg::Internal(Internal::UserPullAddonsResult(
+                                        auth_key, result,
+                                    )))
                                 },
                             )))
                             .unchanged()
@@ -284,7 +290,7 @@ impl UserLoadable {
                 },
                 _ => Effects::none().unchanged(),
             },
-            Msg::Internal(Internal::UserAuthResult(api_request, result)) => match &self {
+            Msg::Internal(Internal::UserAuthenticateResult(api_request, result)) => match &self {
                 UserLoadable::Loading {
                     request: UserRequest::API(loading_api_request),
                     ..
@@ -308,7 +314,7 @@ impl UserLoadable {
                 },
                 _ => Effects::none().unchanged(),
             },
-            Msg::Internal(Internal::UserAddonsResult(auth_key, result))
+            Msg::Internal(Internal::UserPullAddonsResult(auth_key, result))
                 if self
                     .auth()
                     .as_ref()

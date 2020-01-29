@@ -69,7 +69,7 @@ impl LibraryLoadable {
                 }
                 _ => Effects::none().unchanged(),
             },
-            Msg::Internal(Internal::UserAuthResult(api_request, result)) => match (result, user) {
+            Msg::Internal(Internal::UserAuthenticateResult(api_request, result)) => match (result, user) {
                 (
                     Ok((auth, _)),
                     UserLoadable::Loading {

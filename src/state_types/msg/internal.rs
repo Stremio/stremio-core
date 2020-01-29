@@ -11,10 +11,14 @@ use url::Url;
 //
 #[derive(Debug)]
 pub enum Internal {
+    // Dispatched when some of the user data changed.
     UserChanged,
+    // Dispatched when user is pulled from storage.
     UserStorageResult(Result<Option<User>, ModelError>),
-    UserAuthResult(APIRequest, Result<(Auth, Vec<Descriptor>), ModelError>),
-    UserAddonsResult(AuthKey, Result<Vec<Descriptor>, ModelError>),
+    // Dispatched when user is authenticated.
+    UserAuthenticateResult(APIRequest, Result<(Auth, Vec<Descriptor>), ModelError>),
+    // Dispatched when addons are pulled from API.
+    UserPullAddonsResult(AuthKey, Result<Vec<Descriptor>, ModelError>),
     LibraryChanged,
     LibraryStorageResult(Result<(Option<LibBucket>, Option<LibBucket>), ModelError>),
     LibraryAPIResult(UID, Result<Vec<LibItem>, ModelError>),
