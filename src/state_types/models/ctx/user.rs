@@ -65,8 +65,7 @@ impl Default for User {
     }
 }
 
-#[derive(Clone, Debug, PartialEq, Serialize)]
-#[serde(tag = "type", content = "content")]
+#[derive(Clone, Debug, PartialEq)]
 pub enum UserRequest {
     Storage,
     API(APIRequest),
@@ -74,9 +73,10 @@ pub enum UserRequest {
 
 #[derive(Derivative, Clone, Debug, PartialEq, Serialize)]
 #[derivative(Default)]
-#[serde(tag = "type")]
+#[serde(untagged)]
 pub enum UserLoadable {
     Loading {
+        #[serde(skip)]
         request: UserRequest,
         #[serde(flatten)]
         content: User,
