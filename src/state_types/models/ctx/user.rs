@@ -78,10 +78,12 @@ pub enum UserRequest {
 pub enum UserLoadable {
     Loading {
         request: UserRequest,
+        #[serde(flatten)]
         content: User,
     },
     #[derivative(Default)]
     Ready {
+        #[serde(flatten)]
         content: User,
     },
 }
