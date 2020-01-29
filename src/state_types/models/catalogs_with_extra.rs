@@ -35,7 +35,7 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for CatalogsWithExtra {
                         request: &AggrRequest::AllCatalogs {
                             extra: &selected.extra,
                         },
-                        addons: ctx.user_data.addons(),
+                        addons: ctx.user.addons(),
                     },
                 );
                 selected_effects.join(catalogs_effects)
@@ -55,14 +55,14 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for CatalogsWithExtra {
                     },
                 )
             }
-            Msg::Internal(Internal::UserDataChanged) => match &self.selected {
+            Msg::Internal(Internal::UserChanged) => match &self.selected {
                 Some(selected) => resources_update_with_vector_content::<Env, _>(
                     &mut self.catalog_resources,
                     ResourcesAction::ResourcesRequested {
                         request: &AggrRequest::AllCatalogs {
                             extra: &selected.extra,
                         },
-                        addons: ctx.user_data.addons(),
+                        addons: ctx.user.addons(),
                     },
                 ),
                 _ => Effects::none().unchanged(),

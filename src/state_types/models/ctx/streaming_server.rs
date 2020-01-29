@@ -1,5 +1,5 @@
 use crate::state_types::models::common::ModelError;
-use crate::state_types::models::ctx::user_data::UserDataLoadable;
+use crate::state_types::models::ctx::user::UserLoadable;
 use crate::state_types::msg::{
     Action, ActionAuth, ActionCtx, ActionSettings, ActionStreamingServer, ActionUser, Event,
     Internal, Msg,
@@ -57,7 +57,7 @@ pub enum StreamingServerLoadable {
 impl StreamingServerLoadable {
     pub fn update<Env: Environment + 'static>(
         &mut self,
-        user_data: &UserDataLoadable,
+        user: &UserLoadable,
         msg: &Msg,
     ) -> Effects {
         let streaming_server_effects = match msg {
@@ -65,11 +65,11 @@ impl StreamingServerLoadable {
                 ActionSettings::Update(_),
             ))))
             | Msg::Action(Action::Ctx(ActionCtx::User(ActionUser::Auth(ActionAuth::Logout))))
-            | Msg::Internal(Internal::UserDataStorageResult(_))
+            | Msg::Internal(Internal::UserStorageResult(_))
             | Msg::Internal(Internal::UserAuthResult(_, _))
-                if Some(&user_data.settings().streaming_server_url).ne(&self.url()) =>
+                if Some(&user.settings().streaming_server_url).ne(&self.url()) =>
             {
-                let url = user_data.settings().streaming_server_url.to_owned();
+                let url = user.settings().streaming_server_url.to_owned();
                 *self = StreamingServerLoadable::Loading {
                     url: url.to_owned(),
                 };

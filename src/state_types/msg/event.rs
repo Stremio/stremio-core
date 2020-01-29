@@ -7,7 +7,7 @@ use serde::Serialize;
 #[derive(Debug, Clone, Serialize)]
 #[serde(tag = "event", content = "args")]
 pub enum Event {
-    UserDataRetrievedFromStorage,
+    UserRetrievedFromStorage,
     UserPushedToAPI,
     UserPulledFromAPI,
     UserAuthenticated,
@@ -18,7 +18,7 @@ pub enum Event {
     AddonInstalled,
     AddonUninstalled,
     SettingsUpdated,
-    UserDataPersisted,
+    UserPersisted,
     LibraryRetrievedFromStorage,
     LibraryPersisted,
     LibraryPushedToAPI,

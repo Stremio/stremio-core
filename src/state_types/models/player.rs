@@ -2,7 +2,7 @@ use crate::state_types::models::common::{
     eq_update, resource_update, resources_update_with_vector_content, ResourceAction,
     ResourceContent, ResourceLoadable, ResourcesAction,
 };
-use crate::state_types::models::ctx::user_data::Settings as UserSettings;
+use crate::state_types::models::ctx::user::Settings as UserSettings;
 use crate::state_types::models::ctx::Ctx;
 use crate::state_types::msg::{Action, ActionLoad, ActionPlayer, Internal, Msg};
 use crate::state_types::{Effects, Environment, UpdateWithCtx};
@@ -48,7 +48,7 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for Player {
                         &mut self.subtitles_resources,
                         ResourcesAction::ResourcesRequested {
                             request: &AggrRequest::AllOfResource(subtitles_resource_ref.to_owned()),
-                            addons: ctx.user_data.addons(),
+                            addons: ctx.user.addons(),
                         },
                     ),
                     _ => eq_update(&mut self.subtitles_resources, vec![]),
@@ -60,7 +60,7 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for Player {
                         .selected
                         .as_ref()
                         .and_then(|selected| selected.video_id.to_owned()),
-                    ctx.user_data.settings(),
+                    ctx.user.settings(),
                 );
                 selected_effects
                     .join(meta_effects)
@@ -78,7 +78,7 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for Player {
                         .selected
                         .as_ref()
                         .and_then(|selected| selected.video_id.to_owned()),
-                    ctx.user_data.settings(),
+                    ctx.user.settings(),
                 );
                 selected_effects
                     .join(meta_effects)
@@ -133,7 +133,7 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for Player {
                         .selected
                         .as_ref()
                         .and_then(|selected| selected.video_id.to_owned()),
-                    ctx.user_data.settings(),
+                    ctx.user.settings(),
                 );
                 meta_effects
                     .join(subtitles_effects)

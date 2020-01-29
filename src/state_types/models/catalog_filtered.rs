@@ -126,7 +126,7 @@ where
                 let selectable_effects = selectable_update(
                     &mut self.selectable,
                     &self.catalog_resource,
-                    ctx.user_data.addons(),
+                    ctx.user.addons(),
                 );
                 selected_effects
                     .join(catalog_effects)
@@ -138,7 +138,7 @@ where
                 let selectable_effects = selectable_update(
                     &mut self.selectable,
                     &self.catalog_resource,
-                    ctx.user_data.addons(),
+                    ctx.user.addons(),
                 );
                 selected_effects
                     .join(catalog_effects)
@@ -156,14 +156,14 @@ where
                 let selectable_effects = selectable_update(
                     &mut self.selectable,
                     &self.catalog_resource,
-                    ctx.user_data.addons(),
+                    ctx.user.addons(),
                 );
                 catalog_effects.join(selectable_effects)
             }
-            Msg::Internal(Internal::UserDataChanged) => selectable_update(
+            Msg::Internal(Internal::UserChanged) => selectable_update(
                 &mut self.selectable,
                 &self.catalog_resource,
-                ctx.user_data.addons(),
+                ctx.user.addons(),
             ),
             _ => Effects::none().unchanged(),
         }

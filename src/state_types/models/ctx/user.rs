@@ -1,4 +1,4 @@
-use crate::constants::{OFFICIAL_ADDONS, STREAMING_SERVER_URL, USER_DATA_STORAGE_KEY};
+use crate::constants::{OFFICIAL_ADDONS, STREAMING_SERVER_URL, USER_STORAGE_KEY};
 use crate::state_types::models::common::{
     authenticate, delete_user_session, get_user_addons, set_user_addons, ModelError,
 };
@@ -49,15 +49,15 @@ impl Default for Settings {
 }
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct UserData {
+pub struct User {
     pub auth: Option<Auth>,
     pub addons: Vec<Descriptor>,
     pub settings: Settings,
 }
 
-impl Default for UserData {
+impl Default for User {
     fn default() -> Self {
-        UserData {
+        User {
             auth: None,
             addons: OFFICIAL_ADDONS.to_owned(),
             settings: Settings::default(),
@@ -67,36 +67,36 @@ impl Default for UserData {
 
 #[derive(Clone, Debug, PartialEq, Serialize)]
 #[serde(tag = "type", content = "content")]
-pub enum UserDataRequest {
+pub enum UserRequest {
     Storage,
     API(APIRequest),
 }
 
-// TODO: find a better name for this that does not contains "Data".
-// Simply User is maybe not good too because there is another struct called User
 #[derive(Derivative, Clone, Debug, PartialEq, Serialize)]
 #[derivative(Default)]
 #[serde(tag = "type")]
-pub enum UserDataLoadable {
+pub enum UserLoadable {
     Loading {
-        request: UserDataRequest,
-        content: UserData,
+        request: UserRequest,
+        content: User,
     },
     #[derivative(Default)]
-    Ready { content: UserData },
+    Ready {
+        content: User,
+    },
 }
 
-impl UserDataLoadable {
+impl UserLoadable {
     pub fn update<Env: Environment + 'static>(&mut self, msg: &Msg) -> Effects {
-        let user_data_effects = match msg {
+        let user_effects = match msg {
             Msg::Action(Action::Load(ActionLoad::Ctx)) => {
-                *self = UserDataLoadable::Loading {
-                    request: UserDataRequest::Storage,
-                    content: self.user_data().to_owned(),
+                *self = UserLoadable::Loading {
+                    request: UserRequest::Storage,
+                    content: self.content().to_owned(),
                 };
-                Effects::one(Box::new(Env::get_storage(USER_DATA_STORAGE_KEY).then(
+                Effects::one(Box::new(Env::get_storage(USER_STORAGE_KEY).then(
                     |result| {
-                        Ok(Msg::Internal(Internal::UserDataStorageResult(
+                        Ok(Msg::Internal(Internal::UserStorageResult(
                             result.map_err(ModelError::from),
                         )))
                     },
@@ -110,9 +110,9 @@ impl UserDataLoadable {
                             email: email.to_owned(),
                             password: password.to_owned(),
                         };
-                        *self = UserDataLoadable::Loading {
-                            request: UserDataRequest::API(request.to_owned()),
-                            content: self.user_data().to_owned(),
+                        *self = UserLoadable::Loading {
+                            request: UserRequest::API(request.to_owned()),
+                            content: self.content().to_owned(),
                         };
                         Effects::one(Box::new(
                             authenticate::<Env>(&request)
@@ -136,9 +136,9 @@ impl UserDataLoadable {
                             password: password.to_owned(),
                             gdpr_consent: gdpr_consent.to_owned(),
                         };
-                        *self = UserDataLoadable::Loading {
-                            request: UserDataRequest::API(request.to_owned()),
-                            content: self.user_data().to_owned(),
+                        *self = UserLoadable::Loading {
+                            request: UserRequest::API(request.to_owned()),
+                            content: self.content().to_owned(),
                         };
                         Effects::one(Box::new(
                             authenticate::<Env>(&request)
@@ -162,8 +162,8 @@ impl UserDataLoadable {
                             .unchanged(),
                             _ => Effects::none().unchanged(),
                         };
-                        *self = UserDataLoadable::Ready {
-                            content: UserData::default(),
+                        *self = UserLoadable::Ready {
+                            content: User::default(),
                         };
                         Effects::msg(Msg::Event(Event::UserLoggedOut)).join(session_effects)
                     }
@@ -174,28 +174,28 @@ impl UserDataLoadable {
             Msg::Action(Action::Ctx(ActionCtx::User(ActionUser::Addons(action_addons)))) => {
                 match action_addons {
                     ActionAddons::Install(descriptor) => {
-                        let user_data = self.user_data();
-                        let addon_position = user_data
+                        let user = self.content();
+                        let addon_position = user
                             .addons
                             .iter()
                             .position(|addon| addon.transport_url.eq(&descriptor.transport_url));
                         if let Some(addon_position) = addon_position {
-                            user_data.addons.remove(addon_position);
+                            user.addons.remove(addon_position);
                         };
-                        user_data.addons.push(descriptor.to_owned());
+                        user.addons.push(descriptor.to_owned());
                         Effects::msg(Msg::Event(Event::AddonInstalled))
                     }
                     ActionAddons::Uninstall(transport_url) => {
-                        let user_data = self.user_data();
-                        let addon_position = user_data
+                        let user = self.content();
+                        let addon_position = user
                             .addons
                             .iter()
                             .position(|addon| addon.transport_url.eq(transport_url));
                         match addon_position {
                             Some(addon_position)
-                                if !user_data.addons[addon_position].flags.protected =>
+                                if !user.addons[addon_position].flags.protected =>
                             {
-                                user_data.addons.remove(addon_position);
+                                user.addons.remove(addon_position);
                                 Effects::msg(Msg::Event(Event::AddonUninstalled))
                             }
                             _ => Effects::none().unchanged(),
@@ -240,9 +240,9 @@ impl UserDataLoadable {
                                         .unwrap_or_else(|| user_addon.to_owned())
                                 })
                                 .collect();
-                            let mut user_data = self.user_data();
-                            if user_data.addons.ne(&next_addons) {
-                                user_data.addons = next_addons;
+                            let mut user = self.content();
+                            if user.addons.ne(&next_addons) {
+                                user.addons = next_addons;
                                 Effects::none()
                             } else {
                                 Effects::none().unchanged()
@@ -254,9 +254,9 @@ impl UserDataLoadable {
             Msg::Action(Action::Ctx(ActionCtx::User(ActionUser::Settings(action_settings)))) => {
                 match action_settings {
                     ActionSettings::Update(settings) => {
-                        let mut user_data = self.user_data();
-                        if user_data.settings.ne(settings) {
-                            user_data.settings = settings.to_owned();
+                        let mut user = self.content();
+                        if user.settings.ne(settings) {
+                            user.settings = settings.to_owned();
                             Effects::msg(Msg::Event(Event::SettingsUpdated))
                         } else {
                             Effects::none().unchanged()
@@ -264,20 +264,20 @@ impl UserDataLoadable {
                     }
                 }
             }
-            Msg::Internal(Internal::UserDataStorageResult(result)) => match &self {
-                UserDataLoadable::Loading {
-                    request: UserDataRequest::Storage,
+            Msg::Internal(Internal::UserStorageResult(result)) => match &self {
+                UserLoadable::Loading {
+                    request: UserRequest::Storage,
                     ..
                 } => match result {
-                    Ok(user_data) => {
-                        *self = UserDataLoadable::Ready {
-                            content: user_data.to_owned().unwrap_or_default(),
+                    Ok(user) => {
+                        *self = UserLoadable::Ready {
+                            content: user.to_owned().unwrap_or_default(),
                         };
-                        Effects::msg(Msg::Event(Event::UserDataRetrievedFromStorage))
+                        Effects::msg(Msg::Event(Event::UserRetrievedFromStorage))
                     }
                     Err(error) => {
-                        *self = UserDataLoadable::Ready {
-                            content: self.user_data().to_owned(),
+                        *self = UserLoadable::Ready {
+                            content: self.content().to_owned(),
                         };
                         Effects::msg(Msg::Event(Event::Error(error.to_owned()))).unchanged()
                     }
@@ -285,23 +285,23 @@ impl UserDataLoadable {
                 _ => Effects::none().unchanged(),
             },
             Msg::Internal(Internal::UserAuthResult(api_request, result)) => match &self {
-                UserDataLoadable::Loading {
-                    request: UserDataRequest::API(loading_api_request),
+                UserLoadable::Loading {
+                    request: UserRequest::API(loading_api_request),
                     ..
                 } if loading_api_request.eq(api_request) => match result {
                     Ok((auth, addons)) => {
-                        *self = UserDataLoadable::Ready {
-                            content: UserData {
+                        *self = UserLoadable::Ready {
+                            content: User {
                                 auth: Some(auth.to_owned()),
                                 addons: addons.to_owned(),
-                                ..UserData::default()
+                                ..User::default()
                             },
                         };
                         Effects::msg(Msg::Event(Event::UserAuthenticated))
                     }
                     Err(error) => {
-                        *self = UserDataLoadable::Ready {
-                            content: self.user_data().to_owned(),
+                        *self = UserLoadable::Ready {
+                            content: self.content().to_owned(),
                         };
                         Effects::msg(Msg::Event(Event::Error(error.to_owned()))).unchanged()
                     }
@@ -317,9 +317,9 @@ impl UserDataLoadable {
             {
                 match result {
                     Ok(addons) => {
-                        let mut user_data = self.user_data();
-                        if user_data.addons.ne(addons) {
-                            user_data.addons = addons.to_owned();
+                        let mut user = self.content();
+                        if user.addons.ne(addons) {
+                            user.addons = addons.to_owned();
                             Effects::msg(Msg::Event(Event::AddonsPulledFromAPI))
                         } else {
                             Effects::msg(Msg::Event(Event::AddonsPulledFromAPI)).unchanged()
@@ -332,42 +332,40 @@ impl UserDataLoadable {
             }
             _ => Effects::none().unchanged(),
         };
-        if user_data_effects.has_changed {
-            Effects::msg(Msg::Internal(Internal::UserDataChanged))
+        if user_effects.has_changed {
+            Effects::msg(Msg::Internal(Internal::UserChanged))
                 .join(Effects::one(Box::new(
-                    Env::set_storage(USER_DATA_STORAGE_KEY, Some(self.user_data()))
-                        .map(|_| Msg::Event(Event::UserDataPersisted))
+                    Env::set_storage(USER_STORAGE_KEY, Some(self.content()))
+                        .map(|_| Msg::Event(Event::UserPersisted))
                         .map_err(|error| Msg::Event(Event::Error(ModelError::from(error)))),
                 )))
-                .join(user_data_effects)
+                .join(user_effects)
         } else {
-            user_data_effects
+            user_effects
         }
     }
-    pub fn user_data(&mut self) -> &mut UserData {
+    pub fn content(&mut self) -> &mut User {
         match self {
-            UserDataLoadable::Loading { content, .. } | UserDataLoadable::Ready { content } => {
-                content
-            }
+            UserLoadable::Loading { content, .. } | UserLoadable::Ready { content } => content,
         }
     }
     pub fn auth(&self) -> &Option<Auth> {
         match &self {
-            UserDataLoadable::Loading { content, .. } | UserDataLoadable::Ready { content } => {
+            UserLoadable::Loading { content, .. } | UserLoadable::Ready { content } => {
                 &content.auth
             }
         }
     }
     pub fn addons(&self) -> &Vec<Descriptor> {
         match &self {
-            UserDataLoadable::Loading { content, .. } | UserDataLoadable::Ready { content } => {
+            UserLoadable::Loading { content, .. } | UserLoadable::Ready { content } => {
                 &content.addons
             }
         }
     }
     pub fn settings(&self) -> &Settings {
         match &self {
-            UserDataLoadable::Loading { content, .. } | UserDataLoadable::Ready { content } => {
+            UserLoadable::Loading { content, .. } | UserLoadable::Ready { content } => {
                 &content.settings
             }
         }

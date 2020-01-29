@@ -2,7 +2,7 @@ use crate::constants::{
     LIBRARY_COLLECTION_NAME, LIBRARY_RECENT_COUNT, LIBRARY_RECENT_STORAGE_KEY, LIBRARY_STORAGE_KEY,
 };
 use crate::state_types::models::common::{fetch_api, ModelError};
-use crate::state_types::models::ctx::user_data::{UserDataLoadable, UserDataRequest};
+use crate::state_types::models::ctx::user::{UserLoadable, UserRequest};
 use crate::state_types::msg::{
     Action, ActionAuth, ActionCtx, ActionLibrary, ActionUser, Event, Internal, Msg,
 };
@@ -32,7 +32,7 @@ pub enum LibraryLoadable {
 impl LibraryLoadable {
     pub fn update<Env: Environment + 'static>(
         &mut self,
-        user_data: &UserDataLoadable,
+        user: &UserLoadable,
         msg: &Msg,
     ) -> Effects {
         let library_effects = match msg {
@@ -45,19 +45,16 @@ impl LibraryLoadable {
                         .map_err(|error| Msg::Event(Event::Error(ModelError::from(error)))),
                 ))
             }
-            Msg::Internal(Internal::UserDataStorageResult(result)) => match (result, user_data) {
+            Msg::Internal(Internal::UserStorageResult(result)) => match (result, user) {
                 (
                     Ok(_),
-                    UserDataLoadable::Loading {
-                        request: UserDataRequest::Storage,
+                    UserLoadable::Loading {
+                        request: UserRequest::Storage,
                         ..
                     },
                 ) => {
                     *self = LibraryLoadable::Loading(
-                        UID(user_data
-                            .auth()
-                            .as_ref()
-                            .map(|auth| auth.user.id.to_owned())),
+                        UID(user.auth().as_ref().map(|auth| auth.user.id.to_owned())),
                         LibraryRequest::Storage,
                     );
                     Effects::one(Box::new(
@@ -72,24 +69,22 @@ impl LibraryLoadable {
                 }
                 _ => Effects::none().unchanged(),
             },
-            Msg::Internal(Internal::UserAuthResult(api_request, result)) => {
-                match (result, user_data) {
-                    (
-                        Ok((auth, _)),
-                        UserDataLoadable::Loading {
-                            request: UserDataRequest::API(loading_api_request),
-                            ..
-                        },
-                    ) if loading_api_request.eq(api_request) => {
-                        let uid = UID(Some(auth.user.id.to_owned()));
-                        *self = LibraryLoadable::Loading(uid.to_owned(), LibraryRequest::API);
-                        Effects::one(Box::new(lib_pull::<Env>(&auth).then(move |result| {
-                            Ok(Msg::Internal(Internal::LibraryAPIResult(uid, result)))
-                        })))
-                    }
-                    _ => Effects::none().unchanged(),
+            Msg::Internal(Internal::UserAuthResult(api_request, result)) => match (result, user) {
+                (
+                    Ok((auth, _)),
+                    UserLoadable::Loading {
+                        request: UserRequest::API(loading_api_request),
+                        ..
+                    },
+                ) if loading_api_request.eq(api_request) => {
+                    let uid = UID(Some(auth.user.id.to_owned()));
+                    *self = LibraryLoadable::Loading(uid.to_owned(), LibraryRequest::API);
+                    Effects::one(Box::new(lib_pull::<Env>(&auth).then(move |result| {
+                        Ok(Msg::Internal(Internal::LibraryAPIResult(uid, result)))
+                    })))
                 }
-            }
+                _ => Effects::none().unchanged(),
+            },
             Msg::Action(Action::Ctx(ActionCtx::Library(ActionLibrary::Add(meta_item)))) => {
                 let mut lib_item = LibItem {
                     id: meta_item.id.to_owned(),
@@ -118,7 +113,7 @@ impl LibraryLoadable {
                         lib_item.ctime = Some(ctime.to_owned());
                     };
                 };
-                self.set_item::<Env>(user_data.auth(), lib_item)
+                self.set_item::<Env>(user.auth(), lib_item)
             }
             Msg::Action(Action::Ctx(ActionCtx::Library(ActionLibrary::Remove(id)))) => {
                 match &self {
@@ -127,7 +122,7 @@ impl LibraryLoadable {
                             let mut lib_item = lib_item.to_owned();
                             lib_item.mtime = Env::now();
                             lib_item.removed = true;
-                            self.set_item::<Env>(user_data.auth(), lib_item)
+                            self.set_item::<Env>(user.auth(), lib_item)
                         } else {
                             Effects::none().unchanged()
                         }
@@ -136,7 +131,7 @@ impl LibraryLoadable {
                 }
             }
             Msg::Action(Action::Ctx(ActionCtx::Library(ActionLibrary::SyncWithAPI))) => {
-                match (user_data.auth(), &self) {
+                match (user.auth(), &self) {
                     (Some(auth), LibraryLoadable::Ready(bucket)) => {
                         let uid = bucket.uid.to_owned();
                         Effects::one(Box::new(lib_sync::<Env>(auth, bucket.to_owned()).then(
@@ -152,7 +147,7 @@ impl LibraryLoadable {
             Msg::Internal(Internal::UpdateLibraryItem(lib_item)) => {
                 let mut lib_item = lib_item.to_owned();
                 lib_item.mtime = Env::now();
-                self.set_item::<Env>(user_data.auth(), lib_item)
+                self.set_item::<Env>(user.auth(), lib_item)
             }
             Msg::Internal(Internal::LibraryStorageResult(result)) => match &self {
                 LibraryLoadable::Loading(uid, LibraryRequest::Storage) => {
