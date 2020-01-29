@@ -6,7 +6,7 @@ use serde::de::DeserializeOwned;
 use serde::Serialize;
 use std::error::Error;
 
-pub use http::{Error as RequestBuilderError, Request};
+pub use http::Request;
 
 pub type EnvError = Box<dyn Error>;
 

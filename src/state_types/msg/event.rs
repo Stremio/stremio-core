@@ -23,5 +23,6 @@ pub enum Event {
     LibraryPersisted,
     LibraryPushedToAPI,
     LibrarySyncedWithAPI,
+    StreamingServerLoaded,
     Error(ModelError),
 }

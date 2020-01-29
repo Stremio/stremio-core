@@ -1,6 +1,7 @@
 use crate::state_types::models::addon_details::Selected as AddonDetailsSelected;
 use crate::state_types::models::catalog_filtered::Selected as CatalogFilteredSelected;
 use crate::state_types::models::catalogs_with_extra::Selected as CatalogsWithExtraSelected;
+use crate::state_types::models::ctx::streaming_server::Settings as StreamingServerSettings;
 use crate::state_types::models::ctx::user_data::Settings as UserSettings;
 use crate::state_types::models::library_filtered::Selected as LibraryFilteredSelected;
 use crate::state_types::models::meta_details::Selected as MetaDetailsSelected;
@@ -60,9 +61,17 @@ pub enum ActionLibrary {
 
 #[derive(Debug, Clone, Deserialize)]
 #[serde(tag = "action", content = "args")]
+pub enum ActionStreamingServer {
+    Reload,
+    UpdateSettings(StreamingServerSettings),
+}
+
+#[derive(Debug, Clone, Deserialize)]
+#[serde(tag = "action", content = "args")]
 pub enum ActionCtx {
     User(ActionUser),
     Library(ActionLibrary),
+    StreamingServer(ActionStreamingServer),
 }
 
 #[derive(Debug, Clone, Deserialize)]

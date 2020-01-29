@@ -1,6 +1,6 @@
 use crate::state_types::EnvError;
-use crate::state_types::RequestBuilderError;
 use crate::types::api::APIErr;
+use http::Error as RequestBuilderError;
 use serde::Serialize;
 use std::error::Error;
 use std::fmt;
