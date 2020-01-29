@@ -4,14 +4,13 @@ use crate::state_types::msg::{
     Action, ActionAuth, ActionCtx, ActionSettings, ActionStreamingServer, ActionUser, Event,
     Internal, Msg,
 };
-use crate::state_types::{Effects, EnvError, Environment, UpdateWithCtx};
-use crate::types::api::{APIRequest, SuccessResponse};
+use crate::state_types::{Effects, Environment};
+use crate::types::api::SuccessResponse;
 use derivative::Derivative;
 use futures::future::Either;
 use futures::{future, Future};
-use http::request::{Builder, Request};
+use http::request::Request;
 use http::Method;
-use lazy_static::lazy_static;
 use serde::de::DeserializeOwned;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
