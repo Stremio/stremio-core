@@ -1,9 +1,6 @@
 use crate::state_types::models::common::ModelError;
 use crate::state_types::models::ctx::user::UserLoadable;
-use crate::state_types::msg::{
-    Action, ActionAuth, ActionCtx, ActionSettings, ActionStreamingServer, ActionUser, Event,
-    Internal, Msg,
-};
+use crate::state_types::msg::{Action, ActionCtx, ActionStreamingServer, Event, Internal, Msg};
 use crate::state_types::{Effects, Environment};
 use crate::types::api::SuccessResponse;
 use derivative::Derivative;
@@ -54,6 +51,7 @@ pub enum StreamingServerLoadable {
     },
 }
 
+// move to models
 impl StreamingServerLoadable {
     pub fn update<Env: Environment + 'static>(
         &mut self,
@@ -61,10 +59,8 @@ impl StreamingServerLoadable {
         msg: &Msg,
     ) -> Effects {
         let streaming_server_effects = match msg {
-            Msg::Action(Action::Ctx(ActionCtx::User(ActionUser::Settings(
-                ActionSettings::Update(_),
-            ))))
-            | Msg::Action(Action::Ctx(ActionCtx::User(ActionUser::Auth(ActionAuth::Logout))))
+            Msg::Action(Action::Ctx(ActionCtx::UpdateSettings(_)))
+            | Msg::Action(Action::Ctx(ActionCtx::Logout))
             | Msg::Internal(Internal::UserStorageResult(_))
             | Msg::Internal(Internal::UserAuthenticateResult(_, _))
                 if Some(&user.settings().streaming_server_url).ne(&self.url()) =>

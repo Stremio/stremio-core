@@ -3,9 +3,7 @@ use crate::constants::{
 };
 use crate::state_types::models::common::{fetch_api, ModelError};
 use crate::state_types::models::ctx::user::{UserLoadable, UserRequest};
-use crate::state_types::msg::{
-    Action, ActionAuth, ActionCtx, ActionLibrary, ActionUser, Event, Internal, Msg,
-};
+use crate::state_types::msg::{Action, ActionCtx, Event, Internal, Msg};
 use crate::state_types::{Effect, Effects, Environment};
 use crate::types::api::{Auth, DatastoreCmd, DatastoreReqBuilder, SuccessResponse};
 use crate::types::{LibBucket, LibItem, LibItemModified, LibItemState, UID};
@@ -36,7 +34,7 @@ impl LibraryLoadable {
         msg: &Msg,
     ) -> Effects {
         let library_effects = match msg {
-            Msg::Action(Action::Ctx(ActionCtx::User(ActionUser::Auth(ActionAuth::Logout)))) => {
+            Msg::Action(Action::Ctx(ActionCtx::Logout)) => {
                 *self = LibraryLoadable::Ready(LibBucket::default());
                 Effects::one(Box::new(
                     Env::set_storage::<LibBucket>(LIBRARY_RECENT_STORAGE_KEY, None)
@@ -69,23 +67,25 @@ impl LibraryLoadable {
                 }
                 _ => Effects::none().unchanged(),
             },
-            Msg::Internal(Internal::UserAuthenticateResult(api_request, result)) => match (result, user) {
-                (
-                    Ok((auth, _)),
-                    UserLoadable::Loading {
-                        request: UserRequest::API(loading_api_request),
-                        ..
-                    },
-                ) if loading_api_request.eq(api_request) => {
-                    let uid = UID(Some(auth.user.id.to_owned()));
-                    *self = LibraryLoadable::Loading(uid.to_owned(), LibraryRequest::API);
-                    Effects::one(Box::new(lib_pull::<Env>(&auth).then(move |result| {
-                        Ok(Msg::Internal(Internal::LibraryAPIResult(uid, result)))
-                    })))
+            Msg::Internal(Internal::UserAuthenticateResult(api_request, result)) => {
+                match (result, user) {
+                    (
+                        Ok((auth, _)),
+                        UserLoadable::Loading {
+                            request: UserRequest::API(loading_api_request),
+                            ..
+                        },
+                    ) if loading_api_request.eq(api_request) => {
+                        let uid = UID(Some(auth.user.id.to_owned()));
+                        *self = LibraryLoadable::Loading(uid.to_owned(), LibraryRequest::API);
+                        Effects::one(Box::new(lib_pull::<Env>(&auth).then(move |result| {
+                            Ok(Msg::Internal(Internal::LibraryAPIResult(uid, result)))
+                        })))
+                    }
+                    _ => Effects::none().unchanged(),
                 }
-                _ => Effects::none().unchanged(),
-            },
-            Msg::Action(Action::Ctx(ActionCtx::Library(ActionLibrary::Add(meta_item)))) => {
+            }
+            Msg::Action(Action::Ctx(ActionCtx::AddToLibrary(meta_item))) => {
                 let mut lib_item = LibItem {
                     id: meta_item.id.to_owned(),
                     type_name: meta_item.type_name.to_owned(),
@@ -115,35 +115,29 @@ impl LibraryLoadable {
                 };
                 self.set_item::<Env>(user.auth(), lib_item)
             }
-            Msg::Action(Action::Ctx(ActionCtx::Library(ActionLibrary::Remove(id)))) => {
-                match &self {
-                    LibraryLoadable::Ready(bucket) => {
-                        if let Some(lib_item) = bucket.items.get(id) {
-                            let mut lib_item = lib_item.to_owned();
-                            lib_item.mtime = Env::now();
-                            lib_item.removed = true;
-                            self.set_item::<Env>(user.auth(), lib_item)
-                        } else {
-                            Effects::none().unchanged()
-                        }
+            Msg::Action(Action::Ctx(ActionCtx::RemoveFromLibrary(id))) => match &self {
+                LibraryLoadable::Ready(bucket) => {
+                    if let Some(lib_item) = bucket.items.get(id) {
+                        let mut lib_item = lib_item.to_owned();
+                        lib_item.mtime = Env::now();
+                        lib_item.removed = true;
+                        self.set_item::<Env>(user.auth(), lib_item)
+                    } else {
+                        Effects::none().unchanged()
                     }
-                    _ => Effects::none().unchanged(),
                 }
-            }
-            Msg::Action(Action::Ctx(ActionCtx::Library(ActionLibrary::SyncWithAPI))) => {
-                match (user.auth(), &self) {
-                    (Some(auth), LibraryLoadable::Ready(bucket)) => {
-                        let uid = bucket.uid.to_owned();
-                        Effects::one(Box::new(lib_sync::<Env>(auth, bucket.to_owned()).then(
-                            move |result| {
-                                Ok(Msg::Internal(Internal::LibrarySyncResult(uid, result)))
-                            },
-                        )))
-                        .unchanged()
-                    }
-                    _ => Effects::none().unchanged(),
+                _ => Effects::none().unchanged(),
+            },
+            Msg::Action(Action::Ctx(ActionCtx::SyncLibraryWithAPI)) => match (user.auth(), &self) {
+                (Some(auth), LibraryLoadable::Ready(bucket)) => {
+                    let uid = bucket.uid.to_owned();
+                    Effects::one(Box::new(lib_sync::<Env>(auth, bucket.to_owned()).then(
+                        move |result| Ok(Msg::Internal(Internal::LibrarySyncResult(uid, result))),
+                    )))
+                    .unchanged()
                 }
-            }
+                _ => Effects::none().unchanged(),
+            },
             Msg::Internal(Internal::UpdateLibraryItem(lib_item)) => {
                 let mut lib_item = lib_item.to_owned();
                 lib_item.mtime = Env::now();

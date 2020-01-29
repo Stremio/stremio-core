@@ -13,7 +13,14 @@ use serde::Deserialize;
 
 #[derive(Debug, Clone, Deserialize)]
 #[serde(tag = "action", content = "args")]
-pub enum ActionAuth {
+pub enum ActionStreamingServer {
+    Reload,
+    UpdateSettings(StreamingServerSettings),
+}
+
+#[derive(Debug, Clone, Deserialize)]
+#[serde(tag = "action", content = "args")]
+pub enum ActionCtx {
     Login {
         email: String,
         password: String,
@@ -24,53 +31,16 @@ pub enum ActionAuth {
         gdpr_consent: GDPRConsent,
     },
     Logout,
-    PushToAPI,
-    PullFromAPI,
-}
-
-#[derive(Debug, Clone, Deserialize)]
-#[serde(tag = "action", content = "args")]
-pub enum ActionAddons {
-    Install(Descriptor),
-    Uninstall(TransportUrl),
-    PushToAPI,
-    PullFromAPI,
-}
-
-#[derive(Debug, Clone, Deserialize)]
-#[serde(tag = "action", content = "args")]
-pub enum ActionSettings {
-    Update(UserSettings),
-}
-
-#[derive(Debug, Clone, Deserialize)]
-#[serde(tag = "action", content = "args")]
-pub enum ActionUser {
-    Auth(ActionAuth),
-    Addons(ActionAddons),
-    Settings(ActionSettings),
-}
-
-#[derive(Debug, Clone, Deserialize)]
-#[serde(tag = "action", content = "args")]
-pub enum ActionLibrary {
-    Add(MetaPreview),
-    Remove(String),
-    SyncWithAPI,
-}
-
-#[derive(Debug, Clone, Deserialize)]
-#[serde(tag = "action", content = "args")]
-pub enum ActionStreamingServer {
-    Reload,
-    UpdateSettings(StreamingServerSettings),
-}
-
-#[derive(Debug, Clone, Deserialize)]
-#[serde(tag = "action", content = "args")]
-pub enum ActionCtx {
-    User(ActionUser),
-    Library(ActionLibrary),
+    InstallAddon(Descriptor),
+    UninstallAddon(TransportUrl),
+    UpdateSettings(UserSettings),
+    AddToLibrary(MetaPreview),
+    RemoveFromLibrary(String),
+    PushUserToAPI,
+    PullUserFromAPI,
+    PushAddonsToAPI,
+    PullAddonsFromAPI,
+    SyncLibraryWithAPI,
     StreamingServer(ActionStreamingServer),
 }
 

@@ -2,10 +2,7 @@ use crate::constants::{OFFICIAL_ADDONS, STREAMING_SERVER_URL, USER_STORAGE_KEY};
 use crate::state_types::models::common::{
     authenticate, delete_user_session, get_user_addons, set_user_addons, ModelError,
 };
-use crate::state_types::msg::{
-    Action, ActionAddons, ActionAuth, ActionCtx, ActionLoad, ActionSettings, ActionUser, Event,
-    Internal, Msg,
-};
+use crate::state_types::msg::{Action, ActionCtx, ActionLoad, Event, Internal, Msg};
 use crate::state_types::{Effects, Environment};
 use crate::types::addons::Descriptor;
 use crate::types::api::{APIRequest, Auth};
@@ -105,173 +102,157 @@ impl UserLoadable {
                 )))
                 .unchanged()
             }
-            Msg::Action(Action::Ctx(ActionCtx::User(ActionUser::Auth(action_auth)))) => {
-                match action_auth {
-                    ActionAuth::Login { email, password } => {
-                        let request = APIRequest::Login {
-                            email: email.to_owned(),
-                            password: password.to_owned(),
-                        };
-                        *self = UserLoadable::Loading {
-                            request: UserRequest::API(request.to_owned()),
-                            content: self.content().to_owned(),
-                        };
-                        Effects::one(Box::new(
-                            authenticate::<Env>(&request)
-                                .and_then(|auth| {
-                                    get_user_addons::<Env>(&auth.key)
-                                        .map(move |addons| (auth, addons))
-                                })
-                                .then(move |result| {
-                                    Ok(Msg::Internal(Internal::UserAuthenticateResult(
-                                        request, result,
-                                    )))
-                                }),
-                        ))
-                        .unchanged()
-                    }
-                    ActionAuth::Register {
-                        email,
-                        password,
-                        gdpr_consent,
-                    } => {
-                        let request = APIRequest::Register {
-                            email: email.to_owned(),
-                            password: password.to_owned(),
-                            gdpr_consent: gdpr_consent.to_owned(),
-                        };
-                        *self = UserLoadable::Loading {
-                            request: UserRequest::API(request.to_owned()),
-                            content: self.content().to_owned(),
-                        };
-                        Effects::one(Box::new(
-                            authenticate::<Env>(&request)
-                                .and_then(|auth| {
-                                    get_user_addons::<Env>(&auth.key)
-                                        .map(move |addons| (auth, addons))
-                                })
-                                .then(move |result| {
-                                    Ok(Msg::Internal(Internal::UserAuthenticateResult(
-                                        request, result,
-                                    )))
-                                }),
-                        ))
-                        .unchanged()
-                    }
-                    ActionAuth::Logout => {
-                        let session_effects = match self.auth() {
-                            Some(auth) => Effects::one(Box::new(
-                                delete_user_session::<Env>(&auth.key)
-                                    .map(|_| Msg::Event(Event::UserSessionDeleted))
-                                    .map_err(|error| Msg::Event(Event::Error(error))),
-                            ))
-                            .unchanged(),
-                            _ => Effects::none().unchanged(),
-                        };
-                        *self = UserLoadable::Ready {
-                            content: User::default(),
-                        };
-                        Effects::msg(Msg::Event(Event::UserLoggedOut)).join(session_effects)
-                    }
-                    ActionAuth::PushToAPI => Effects::none().unchanged(),
-                    ActionAuth::PullFromAPI => Effects::none().unchanged(),
-                }
-            }
-            Msg::Action(Action::Ctx(ActionCtx::User(ActionUser::Addons(action_addons)))) => {
-                match action_addons {
-                    ActionAddons::Install(descriptor) => {
-                        let user = self.content();
-                        let addon_position = user
-                            .addons
-                            .iter()
-                            .position(|addon| addon.transport_url.eq(&descriptor.transport_url));
-                        if let Some(addon_position) = addon_position {
-                            user.addons.remove(addon_position);
-                        };
-                        user.addons.push(descriptor.to_owned());
-                        Effects::msg(Msg::Event(Event::AddonInstalled))
-                    }
-                    ActionAddons::Uninstall(transport_url) => {
-                        let user = self.content();
-                        let addon_position = user
-                            .addons
-                            .iter()
-                            .position(|addon| addon.transport_url.eq(transport_url));
-                        match addon_position {
-                            Some(addon_position)
-                                if !user.addons[addon_position].flags.protected =>
-                            {
-                                user.addons.remove(addon_position);
-                                Effects::msg(Msg::Event(Event::AddonUninstalled))
-                            }
-                            _ => Effects::none().unchanged(),
-                        }
-                    }
-                    ActionAddons::PushToAPI => match self.auth() {
-                        Some(auth) => Effects::one(Box::new(
-                            set_user_addons::<Env>(&auth.key, self.addons())
-                                .map(|_| Msg::Event(Event::AddonsPushedToAPI))
-                                .map_err(|error| Msg::Event(Event::Error(error))),
-                        ))
-                        .unchanged(),
-                        _ => Effects::none().unchanged(),
-                    },
-                    ActionAddons::PullFromAPI => match self.auth() {
-                        Some(auth) => {
-                            let auth_key = auth.key.to_owned();
-                            Effects::one(Box::new(get_user_addons::<Env>(&auth_key).then(
-                                move |result| {
-                                    Ok(Msg::Internal(Internal::UserPullAddonsResult(
-                                        auth_key, result,
-                                    )))
-                                },
+            Msg::Action(Action::Ctx(ActionCtx::Login { email, password })) => {
+                let request = APIRequest::Login {
+                    email: email.to_owned(),
+                    password: password.to_owned(),
+                };
+                *self = UserLoadable::Loading {
+                    request: UserRequest::API(request.to_owned()),
+                    content: self.content().to_owned(),
+                };
+                Effects::one(Box::new(
+                    authenticate::<Env>(&request)
+                        .and_then(|auth| {
+                            get_user_addons::<Env>(&auth.key).map(move |addons| (auth, addons))
+                        })
+                        .then(move |result| {
+                            Ok(Msg::Internal(Internal::UserAuthenticateResult(
+                                request, result,
                             )))
-                            .unchanged()
-                        }
-                        _ => {
-                            // TODO is there a better place for this piece of code ?
-                            let next_addons = self
-                                .addons()
-                                .iter()
-                                .map(|user_addon| {
-                                    OFFICIAL_ADDONS
-                                        .iter()
-                                        .find(|Descriptor { manifest, .. }| {
-                                            manifest.id.eq(&user_addon.manifest.id)
-                                                && manifest.version.gt(&user_addon.manifest.version)
-                                        })
-                                        .map(|official_addon| Descriptor {
-                                            transport_url: official_addon.transport_url.to_owned(),
-                                            manifest: official_addon.manifest.to_owned(),
-                                            flags: user_addon.flags.to_owned(),
-                                        })
-                                        .unwrap_or_else(|| user_addon.to_owned())
-                                })
-                                .collect();
-                            let mut user = self.content();
-                            if user.addons.ne(&next_addons) {
-                                user.addons = next_addons;
-                                Effects::none()
-                            } else {
-                                Effects::none().unchanged()
-                            }
-                        }
-                    },
+                        }),
+                ))
+                .unchanged()
+            }
+            Msg::Action(Action::Ctx(ActionCtx::Register {
+                email,
+                password,
+                gdpr_consent,
+            })) => {
+                let request = APIRequest::Register {
+                    email: email.to_owned(),
+                    password: password.to_owned(),
+                    gdpr_consent: gdpr_consent.to_owned(),
+                };
+                *self = UserLoadable::Loading {
+                    request: UserRequest::API(request.to_owned()),
+                    content: self.content().to_owned(),
+                };
+                Effects::one(Box::new(
+                    authenticate::<Env>(&request)
+                        .and_then(|auth| {
+                            get_user_addons::<Env>(&auth.key).map(move |addons| (auth, addons))
+                        })
+                        .then(move |result| {
+                            Ok(Msg::Internal(Internal::UserAuthenticateResult(
+                                request, result,
+                            )))
+                        }),
+                ))
+                .unchanged()
+            }
+            Msg::Action(Action::Ctx(ActionCtx::Logout)) => {
+                let session_effects = match self.auth() {
+                    Some(auth) => Effects::one(Box::new(
+                        delete_user_session::<Env>(&auth.key)
+                            .map(|_| Msg::Event(Event::UserSessionDeleted))
+                            .map_err(|error| Msg::Event(Event::Error(error))),
+                    ))
+                    .unchanged(),
+                    _ => Effects::none().unchanged(),
+                };
+                *self = UserLoadable::Ready {
+                    content: User::default(),
+                };
+                Effects::msg(Msg::Event(Event::UserLoggedOut)).join(session_effects)
+            }
+            Msg::Action(Action::Ctx(ActionCtx::InstallAddon(descriptor))) => {
+                let user = self.content();
+                let addon_position = user
+                    .addons
+                    .iter()
+                    .position(|addon| addon.transport_url.eq(&descriptor.transport_url));
+                if let Some(addon_position) = addon_position {
+                    user.addons.remove(addon_position);
+                };
+                user.addons.push(descriptor.to_owned());
+                Effects::msg(Msg::Event(Event::AddonInstalled))
+            }
+            Msg::Action(Action::Ctx(ActionCtx::UninstallAddon(transport_url))) => {
+                let user = self.content();
+                let addon_position = user
+                    .addons
+                    .iter()
+                    .position(|addon| addon.transport_url.eq(transport_url));
+                match addon_position {
+                    Some(addon_position) if !user.addons[addon_position].flags.protected => {
+                        user.addons.remove(addon_position);
+                        Effects::msg(Msg::Event(Event::AddonUninstalled))
+                    }
+                    _ => Effects::none().unchanged(),
                 }
             }
-            Msg::Action(Action::Ctx(ActionCtx::User(ActionUser::Settings(action_settings)))) => {
-                match action_settings {
-                    ActionSettings::Update(settings) => {
-                        let mut user = self.content();
-                        if user.settings.ne(settings) {
-                            user.settings = settings.to_owned();
-                            Effects::msg(Msg::Event(Event::SettingsUpdated))
-                        } else {
-                            Effects::none().unchanged()
-                        }
+            Msg::Action(Action::Ctx(ActionCtx::UpdateSettings(settings))) => {
+                let mut user = self.content();
+                if user.settings.ne(settings) {
+                    user.settings = settings.to_owned();
+                    Effects::msg(Msg::Event(Event::SettingsUpdated))
+                } else {
+                    Effects::none().unchanged()
+                }
+            }
+            Msg::Action(Action::Ctx(ActionCtx::PushUserToAPI)) => Effects::none().unchanged(),
+            Msg::Action(Action::Ctx(ActionCtx::PullUserFromAPI)) => Effects::none().unchanged(),
+            Msg::Action(Action::Ctx(ActionCtx::PushAddonsToAPI)) => match self.auth() {
+                Some(auth) => Effects::one(Box::new(
+                    set_user_addons::<Env>(&auth.key, self.addons())
+                        .map(|_| Msg::Event(Event::AddonsPushedToAPI))
+                        .map_err(|error| Msg::Event(Event::Error(error))),
+                ))
+                .unchanged(),
+                _ => Effects::none().unchanged(),
+            },
+            Msg::Action(Action::Ctx(ActionCtx::PullAddonsFromAPI)) => match self.auth() {
+                Some(auth) => {
+                    let auth_key = auth.key.to_owned();
+                    Effects::one(Box::new(get_user_addons::<Env>(&auth_key).then(
+                        move |result| {
+                            Ok(Msg::Internal(Internal::UserPullAddonsResult(
+                                auth_key, result,
+                            )))
+                        },
+                    )))
+                    .unchanged()
+                }
+                _ => {
+                    // TODO is there a better place for this piece of code ?
+                    let next_addons = self
+                        .addons()
+                        .iter()
+                        .map(|user_addon| {
+                            OFFICIAL_ADDONS
+                                .iter()
+                                .find(|Descriptor { manifest, .. }| {
+                                    manifest.id.eq(&user_addon.manifest.id)
+                                        && manifest.version.gt(&user_addon.manifest.version)
+                                })
+                                .map(|official_addon| Descriptor {
+                                    transport_url: official_addon.transport_url.to_owned(),
+                                    manifest: official_addon.manifest.to_owned(),
+                                    flags: user_addon.flags.to_owned(),
+                                })
+                                .unwrap_or_else(|| user_addon.to_owned())
+                        })
+                        .collect();
+                    let mut user = self.content();
+                    if user.addons.ne(&next_addons) {
+                        user.addons = next_addons;
+                        Effects::none()
+                    } else {
+                        Effects::none().unchanged()
                     }
                 }
-            }
+            },
             Msg::Internal(Internal::UserStorageResult(result)) => match &self {
                 UserLoadable::Loading {
                     request: UserRequest::Storage,
