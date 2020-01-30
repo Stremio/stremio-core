@@ -1,0 +1,5 @@
+/src
+/target
+/node_modules
+/wasm_build
+yarn.lock
