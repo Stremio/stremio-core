@@ -1,13 +1,11 @@
-use crate::state_types::models::common::ModelError;
 use crate::state_types::models::ctx::Ctx;
 use crate::state_types::msg::{
     Action, ActionCtx, ActionLoad, ActionStreamingServer, Event, Internal, Msg,
 };
-use crate::state_types::{Effects, Environment, UpdateWithCtx};
+use crate::state_types::{Effects, EnvError, Environment, UpdateWithCtx};
 use crate::types::api::SuccessResponse;
 use derivative::Derivative;
-use futures::future::Either;
-use futures::{future, Future};
+use futures::Future;
 use http::request::Request;
 use http::Method;
 use serde::de::DeserializeOwned;
@@ -43,6 +41,7 @@ pub enum StreamingServerLoadable {
     Error {
         #[serde(with = "url_serde")]
         url: Url,
+        error: String,
     },
     Ready {
         settings: Settings,
@@ -57,7 +56,7 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for StreamingServerLoad
     fn update(&mut self, ctx: &Ctx<Env>, msg: &Msg) -> Effects {
         let url = match &self {
             StreamingServerLoadable::NotLoaded => None,
-            StreamingServerLoadable::Error { url }
+            StreamingServerLoadable::Error { url, .. }
             | StreamingServerLoadable::Loading { url }
             | StreamingServerLoadable::Ready { url, .. } => Some(url),
         };
@@ -79,7 +78,7 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for StreamingServerLoad
                 })))
             }
             Msg::Action(Action::Load(ActionLoad::StreamingServer)) => match &self {
-                StreamingServerLoadable::Error { url }
+                StreamingServerLoadable::Error { url, .. }
                 | StreamingServerLoadable::Loading { url }
                 | StreamingServerLoadable::Ready { url, .. } => {
                     let url = url.to_owned();
@@ -131,8 +130,9 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for StreamingServerLoad
                         Err(error) => {
                             *self = StreamingServerLoadable::Error {
                                 url: url.to_owned(),
+                                error: error.to_string(),
                             };
-                            Effects::msg(Msg::Event(Event::Error(error.to_owned())))
+                            Effects::none()
                         }
                     }
                 }
@@ -146,7 +146,7 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for StreamingServerLoad
 fn update_settings<Env: Environment + 'static>(
     url: &Url,
     settings: &Settings,
-) -> impl Future<Item = (), Error = ModelError> {
+) -> impl Future<Item = (), Error = EnvError> {
     request::<Env, _, SuccessResponse>(
         &url,
         "settings",
@@ -162,7 +162,7 @@ fn update_settings<Env: Environment + 'static>(
 
 fn load<Env: Environment + 'static>(
     url: &Url,
-) -> impl Future<Item = (Url, Settings), Error = ModelError> {
+) -> impl Future<Item = (Url, Settings), Error = EnvError> {
     #[derive(Deserialize)]
     #[serde(rename_all = "camelCase")]
     struct Resp {
@@ -180,29 +180,20 @@ fn request<Env, Body, Resp>(
     method: Method,
     headers: HashMap<&str, &str>,
     body: Body,
-) -> impl Future<Item = Resp, Error = ModelError>
+) -> impl Future<Item = Resp, Error = EnvError>
 where
     Env: Environment + 'static,
     Body: Serialize + 'static,
     Resp: DeserializeOwned + 'static,
 {
-    match url.join(route) {
-        Ok(endpoint) => {
-            // TODO refactor this code! it looks ugly because of http::request::Builder
-            let mut request_builder = Request::builder();
-            let request_builder = request_builder.method(method);
-            let mut request_builder = request_builder.uri(endpoint.as_str());
-            for (name, value) in headers.into_iter() {
-                request_builder = request_builder.header(name, value);
-            }
-            let request = request_builder.body(body);
-            match request {
-                Ok(request) => {
-                    Either::A(Env::fetch_serde::<_, _>(request).map_err(ModelError::from))
-                }
-                Err(error) => Either::B(future::err(ModelError::from(error))),
-            }
-        }
-        Err(error) => Either::B(future::err(ModelError::from(error))),
+    // TODO refactor this code! it looks ugly because of http::request::Builder
+    let endpoint = url.join(route).unwrap();
+    let mut request_builder = Request::builder();
+    let request_builder = request_builder.method(method);
+    let mut request_builder = request_builder.uri(endpoint.as_str());
+    for (name, value) in headers.into_iter() {
+        request_builder = request_builder.header(name, value);
     }
+    let request = request_builder.body(body).unwrap();
+    Env::fetch_serde::<_, _>(request)
 }

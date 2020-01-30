@@ -1,6 +1,7 @@
 use crate::state_types::models::common::ModelError;
 use crate::state_types::models::ctx::user::User;
 use crate::state_types::models::streaming_server::Settings as StreamingServerSettings;
+use crate::state_types::EnvError;
 use crate::types::addons::{Descriptor, Manifest, ResourceRequest, ResourceResponse, TransportUrl};
 use crate::types::api::{APIRequest, Auth, AuthKey};
 use crate::types::{LibBucket, LibItem, UID};
@@ -24,7 +25,7 @@ pub enum Internal {
     LibraryAPIResult(UID, Result<Vec<LibItem>, ModelError>),
     LibrarySyncResult(UID, Result<Vec<LibItem>, ModelError>),
     UpdateLibraryItem(LibItem),
-    StreamingServerReloadResult(Url, Result<(Url, StreamingServerSettings), ModelError>),
+    StreamingServerReloadResult(Url, Result<(Url, StreamingServerSettings), EnvError>),
     ResourceRequestResult(ResourceRequest, Box<Result<ResourceResponse, ModelError>>),
     ManifestRequestResult(TransportUrl, Result<Manifest, ModelError>),
 }
