@@ -1,6 +1,6 @@
 use crate::state_types::models::common::ModelError;
-use crate::state_types::models::ctx::streaming_server::Settings as StreamingServerSettings;
 use crate::state_types::models::ctx::user::User;
+use crate::state_types::models::streaming_server::Settings as StreamingServerSettings;
 use crate::types::addons::{Descriptor, Manifest, ResourceRequest, ResourceResponse, TransportUrl};
 use crate::types::api::{APIRequest, Auth, AuthKey};
 use crate::types::{LibBucket, LibItem, UID};

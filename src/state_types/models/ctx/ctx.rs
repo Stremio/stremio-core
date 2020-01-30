@@ -1,5 +1,4 @@
 use super::library::LibraryLoadable;
-use super::streaming_server::StreamingServerLoadable;
 use super::user::UserLoadable;
 use crate::state_types::msg::Msg;
 use crate::state_types::{Effects, Environment, Update};
@@ -11,7 +10,6 @@ use std::marker::PhantomData;
 #[derivative(Default, Debug)]
 pub struct Ctx<Env: Environment> {
     pub user: UserLoadable,
-    pub streaming_server: StreamingServerLoadable,
     #[serde(skip)]
     pub library: LibraryLoadable,
     #[derivative(Debug = "ignore")]
@@ -23,9 +21,6 @@ impl<Env: Environment + 'static> Update for Ctx<Env> {
     fn update(&mut self, msg: &Msg) -> Effects {
         let library_effects = self.library.update::<Env>(&self.user, msg);
         let user_effects = self.user.update::<Env>(msg);
-        let streaming_server_effects = self.streaming_server.update::<Env>(&self.user, msg);
-        library_effects
-            .join(user_effects)
-            .join(streaming_server_effects)
+        library_effects.join(user_effects)
     }
 }

@@ -9,3 +9,4 @@ pub mod library_filtered;
 pub mod meta_details;
 pub mod notifications;
 pub mod player;
+pub mod streaming_server;

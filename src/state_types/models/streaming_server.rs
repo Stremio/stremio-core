@@ -1,6 +1,8 @@
 use crate::state_types::models::common::ModelError;
 use crate::state_types::models::ctx::user::UserLoadable;
-use crate::state_types::msg::{Action, ActionCtx, ActionStreamingServer, Event, Internal, Msg};
+use crate::state_types::msg::{
+    Action, ActionCtx, ActionLoad, ActionStreamingServer, Event, Internal, Msg,
+};
 use crate::state_types::{Effects, Environment};
 use crate::types::api::SuccessResponse;
 use derivative::Derivative;
@@ -75,26 +77,24 @@ impl StreamingServerLoadable {
                     )))
                 })))
             }
-            Msg::Action(Action::Ctx(ActionCtx::StreamingServer(ActionStreamingServer::Reload))) => {
-                match &self {
-                    StreamingServerLoadable::Error { url }
-                    | StreamingServerLoadable::Loading { url }
-                    | StreamingServerLoadable::Ready { url, .. } => {
-                        let url = url.to_owned();
-                        *self = StreamingServerLoadable::Loading {
-                            url: url.to_owned(),
-                        };
-                        Effects::one(Box::new(load::<Env>(&url).then(move |result| {
-                            Ok(Msg::Internal(Internal::StreamingServerReloadResult(
-                                url, result,
-                            )))
-                        })))
-                    }
-                    _ => Effects::none().unchanged(),
+            Msg::Action(Action::Load(ActionLoad::StreamingServer)) => match &self {
+                StreamingServerLoadable::Error { url }
+                | StreamingServerLoadable::Loading { url }
+                | StreamingServerLoadable::Ready { url, .. } => {
+                    let url = url.to_owned();
+                    *self = StreamingServerLoadable::Loading {
+                        url: url.to_owned(),
+                    };
+                    Effects::one(Box::new(load::<Env>(&url).then(move |result| {
+                        Ok(Msg::Internal(Internal::StreamingServerReloadResult(
+                            url, result,
+                        )))
+                    })))
                 }
-            }
-            Msg::Action(Action::Ctx(ActionCtx::StreamingServer(
-                ActionStreamingServer::UpdateSettings(settings),
+                _ => Effects::none().unchanged(),
+            },
+            Msg::Action(Action::StreamingServer(ActionStreamingServer::UpdateSettings(
+                settings,
             ))) => match self {
                 StreamingServerLoadable::Ready {
                     url,
