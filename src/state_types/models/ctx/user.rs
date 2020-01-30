@@ -1,6 +1,7 @@
+use super::error::CtxError;
 use crate::constants::{OFFICIAL_ADDONS, STREAMING_SERVER_URL, USER_STORAGE_KEY};
 use crate::state_types::models::common::{
-    authenticate, delete_user_session, pull_user_addons, push_user_addons, ModelError,
+    authenticate, delete_user_session, pull_user_addons, push_user_addons,
 };
 use crate::state_types::msg::{Action, ActionCtx, ActionLoad, Event, Internal, Msg};
 use crate::state_types::{Effects, Environment};
@@ -96,7 +97,7 @@ impl UserLoadable {
                 Effects::one(Box::new(Env::get_storage(USER_STORAGE_KEY).then(
                     |result| {
                         Ok(Msg::Internal(Internal::UserStorageResult(
-                            result.map_err(ModelError::from),
+                            result.map_err(CtxError::from),
                         )))
                     },
                 )))
@@ -336,7 +337,7 @@ impl UserLoadable {
                 .join(Effects::one(Box::new(
                     Env::set_storage(USER_STORAGE_KEY, Some(self.content()))
                         .map(|_| Msg::Event(Event::UserPersisted))
-                        .map_err(|error| Msg::Event(Event::Error(ModelError::from(error)))),
+                        .map_err(|error| Msg::Event(Event::Error(CtxError::from(error)))),
                 )))
                 .join(user_effects)
         } else {

@@ -1,7 +1,8 @@
+use super::error::CtxError;
 use crate::constants::{
     LIBRARY_COLLECTION_NAME, LIBRARY_RECENT_COUNT, LIBRARY_RECENT_STORAGE_KEY, LIBRARY_STORAGE_KEY,
 };
-use crate::state_types::models::common::{fetch_api, ModelError};
+use crate::state_types::models::common::fetch_api;
 use crate::state_types::models::ctx::user::{UserLoadable, UserRequest};
 use crate::state_types::msg::{Action, ActionCtx, Event, Internal, Msg};
 use crate::state_types::{Effect, Effects, Environment};
@@ -40,7 +41,7 @@ impl LibraryLoadable {
                     Env::set_storage::<LibBucket>(LIBRARY_RECENT_STORAGE_KEY, None)
                         .join(Env::set_storage::<LibBucket>(LIBRARY_STORAGE_KEY, None))
                         .map(|_| Msg::Event(Event::LibraryPersisted))
-                        .map_err(|error| Msg::Event(Event::Error(ModelError::from(error)))),
+                        .map_err(|error| Msg::Event(Event::Error(CtxError::from(error)))),
                 ))
             }
             Msg::Internal(Internal::UserStorageResult(result)) => match (result, user) {
@@ -60,7 +61,7 @@ impl LibraryLoadable {
                             .join(Env::get_storage(LIBRARY_STORAGE_KEY))
                             .then(|result| {
                                 Ok(Msg::Internal(Internal::LibraryStorageResult(
-                                    result.map_err(ModelError::from),
+                                    result.map_err(CtxError::from),
                                 )))
                             }),
                     ))
@@ -257,7 +258,7 @@ fn datastore_req_builder(auth: &Auth) -> DatastoreReqBuilder {
 fn lib_sync<Env: Environment + 'static>(
     auth: &Auth,
     local_lib: LibBucket,
-) -> impl Future<Item = Vec<LibItem>, Error = ModelError> {
+) -> impl Future<Item = Vec<LibItem>, Error = CtxError> {
     // @TODO consider asserting if uid matches auth
     let builder = datastore_req_builder(auth);
     let meta_req = builder.clone().with_cmd(DatastoreCmd::Meta {});
@@ -316,7 +317,7 @@ fn lib_sync<Env: Environment + 'static>(
 fn lib_push<Env: Environment + 'static>(
     auth: &Auth,
     item: &LibItem,
-) -> impl Future<Item = (), Error = ModelError> {
+) -> impl Future<Item = (), Error = CtxError> {
     let push_req = datastore_req_builder(auth).with_cmd(DatastoreCmd::Put {
         changes: vec![item.to_owned()],
     });
@@ -326,7 +327,7 @@ fn lib_push<Env: Environment + 'static>(
 
 fn lib_pull<Env: Environment + 'static>(
     auth: &Auth,
-) -> impl Future<Item = Vec<LibItem>, Error = ModelError> {
+) -> impl Future<Item = Vec<LibItem>, Error = CtxError> {
     let request = datastore_req_builder(auth).with_cmd(DatastoreCmd::Get {
         ids: vec![],
         all: true,
@@ -337,7 +338,7 @@ fn lib_pull<Env: Environment + 'static>(
 fn update_and_persist<Env: Environment + 'static>(
     bucket: &mut LibBucket,
     new_bucket: LibBucket,
-) -> impl Future<Item = (), Error = ModelError> {
+) -> impl Future<Item = (), Error = CtxError> {
     let recent_items = bucket
         .items
         .values()
@@ -354,21 +355,21 @@ fn update_and_persist<Env: Environment + 'static>(
             Env::set_storage(LIBRARY_RECENT_STORAGE_KEY, Some(bucket))
                 .join(Env::set_storage::<LibBucket>(LIBRARY_STORAGE_KEY, None))
                 .map(|(_, _)| ())
-                .map_err(ModelError::from),
+                .map_err(CtxError::from),
         )
     } else {
         let (recent_bucket, other_bucket) = bucket.split_by_recent();
         if are_new_items_in_recent {
             Either::B(Either::A(
                 Env::set_storage(LIBRARY_RECENT_STORAGE_KEY, Some(&recent_bucket))
-                    .map_err(ModelError::from),
+                    .map_err(CtxError::from),
             ))
         } else {
             Either::B(Either::B(
                 Env::set_storage(LIBRARY_RECENT_STORAGE_KEY, Some(&recent_bucket))
                     .join(Env::set_storage(LIBRARY_STORAGE_KEY, Some(&other_bucket)))
                     .map(|(_, _)| ())
-                    .map_err(ModelError::from),
+                    .map_err(CtxError::from),
             ))
         }
     }

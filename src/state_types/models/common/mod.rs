@@ -22,9 +22,6 @@ pub use get_resource::*;
 mod loadable;
 pub use loadable::*;
 
-mod model_error;
-pub use model_error::*;
-
 mod pull_user_addons;
 pub use pull_user_addons::*;
 

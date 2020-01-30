@@ -1,4 +1,4 @@
-use crate::state_types::models::common::ModelError;
+use crate::state_types::models::ctx::error::CtxError;
 use serde::Serialize;
 
 //
@@ -24,5 +24,5 @@ pub enum Event {
     LibraryPushedToAPI,
     LibrarySyncedWithAPI,
     StreamingServerLoaded,
-    Error(ModelError),
+    Error(CtxError),
 }
