@@ -1,15 +1,20 @@
-use crate::models::LibraryItems;
+use crate::models::library_items::LibraryItems;
 use env_web::Env;
 use serde::{Deserialize, Serialize};
-use stremio_core::state_types::models::{
-    AddonDetails, CatalogFiltered, CatalogsWithExtra, ContinueWatching, Ctx, LibraryFiltered,
-    MetaDetails, Player, StreamingServerSettingsModel,
-};
+use stremio_core::state_types::models::addon_details::AddonDetails;
+use stremio_core::state_types::models::catalog_filtered::CatalogFiltered;
+use stremio_core::state_types::models::catalogs_with_extra::CatalogsWithExtra;
+use stremio_core::state_types::models::continue_watching::ContinueWatching;
+use stremio_core::state_types::models::ctx::Ctx;
+use stremio_core::state_types::models::library_filtered::LibraryFiltered;
+use stremio_core::state_types::models::meta_details::MetaDetails;
+use stremio_core::state_types::models::player::Player;
+use stremio_core::state_types::models::streaming_server::StreamingServerLoadable;
 use stremio_core::types::addons::DescriptorPreview;
 use stremio_core::types::MetaPreview;
 use stremio_derive::Model;
 
-#[derive(Model, Serialize)]
+#[derive(Model, Default, Serialize)]
 pub struct AppModel {
     pub ctx: Ctx<Env>,
     pub continue_watching: ContinueWatching,
@@ -20,7 +25,7 @@ pub struct AppModel {
     pub meta_details: MetaDetails,
     pub addon_details: AddonDetails,
     pub addons: CatalogFiltered<DescriptorPreview>,
-    pub streaming_server_settings: StreamingServerSettingsModel,
+    pub streaming_server: StreamingServerLoadable,
     pub library_items: LibraryItems,
     pub player: Player,
 }
@@ -37,7 +42,7 @@ pub enum ModelFieldName {
     MetaDetails,
     AddonDetails,
     Addons,
-    StreamingServerSettings,
+    StreamingServer,
     LibraryItems,
     Player,
 }

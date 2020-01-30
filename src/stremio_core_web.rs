@@ -3,8 +3,7 @@ use env_web::Env;
 use futures::future;
 use futures::stream::Stream;
 use std::panic;
-use stremio_core::state_types::messages::{Action, Msg};
-use stremio_core::state_types::models::{CatalogFiltered, SelectablePriority};
+use stremio_core::state_types::msg::{Action, Msg};
 use stremio_core::state_types::{Environment, Runtime, Update, UpdateWithCtx};
 use wasm_bindgen::prelude::{wasm_bindgen, JsValue};
 extern crate console_error_panic_hook;
@@ -19,28 +18,7 @@ impl StremioCoreWeb {
     #[wasm_bindgen(constructor)]
     pub fn new(emit: js_sys::Function) -> StremioCoreWeb {
         panic::set_hook(Box::new(console_error_panic_hook::hook));
-        let app = AppModel {
-            ctx: Default::default(),
-            continue_watching: Default::default(),
-            board: Default::default(),
-            discover: CatalogFiltered {
-                selectable: Default::default(),
-                catalog_resource: Default::default(),
-                selectable_priority: SelectablePriority::Type,
-            },
-            library: Default::default(),
-            search: Default::default(),
-            meta_details: Default::default(),
-            addon_details: Default::default(),
-            addons: CatalogFiltered {
-                selectable: Default::default(),
-                catalog_resource: Default::default(),
-                selectable_priority: SelectablePriority::Catalog,
-            },
-            streaming_server_settings: Default::default(),
-            library_items: Default::default(),
-            player: Default::default()
-        };
+        let app = AppModel::default();
         let (runtime, rx) = Runtime::<Env, AppModel>::new(app, 1000);
         Env::exec(Box::new(rx.for_each(move |msg| {
             let _ = emit.call1(&JsValue::NULL, &JsValue::from_serde(&msg).unwrap());
@@ -67,8 +45,8 @@ impl StremioCoreWeb {
                         model.addon_details.update(&model.ctx, &message)
                     }
                     ModelFieldName::Addons => model.addons.update(&model.ctx, &message),
-                    ModelFieldName::StreamingServerSettings => {
-                        model.streaming_server_settings.update(&model.ctx, &message)
+                    ModelFieldName::StreamingServer => {
+                        model.streaming_server.update(&model.ctx, &message)
                     }
                     ModelFieldName::LibraryItems => {
                         model.library_items.update(&model.ctx, &message)
@@ -100,8 +78,8 @@ impl StremioCoreWeb {
                 ModelFieldName::MetaDetails => JsValue::from_serde(&model.meta_details).unwrap(),
                 ModelFieldName::AddonDetails => JsValue::from_serde(&model.addon_details).unwrap(),
                 ModelFieldName::Addons => JsValue::from_serde(&model.addons).unwrap(),
-                ModelFieldName::StreamingServerSettings => {
-                    JsValue::from_serde(&model.streaming_server_settings).unwrap()
+                ModelFieldName::StreamingServer => {
+                    JsValue::from_serde(&model.streaming_server).unwrap()
                 }
                 ModelFieldName::LibraryItems => JsValue::from_serde(&model.library_items).unwrap(),
                 ModelFieldName::Player => JsValue::from_serde(&model.player).unwrap(),
