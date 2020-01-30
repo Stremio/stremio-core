@@ -1,7 +1,7 @@
-use super::{get_manifest, Loadable, ModelError};
+use super::{get_manifest, Loadable};
 use crate::constants::OFFICIAL_ADDONS;
 use crate::state_types::msg::{Internal, Msg};
-use crate::state_types::{Effects, Environment};
+use crate::state_types::{Effects, EnvError, Environment};
 use crate::types::addons::{Descriptor, Manifest, TransportUrl};
 use futures::Future;
 use serde::Serialize;
@@ -28,7 +28,7 @@ pub enum DescriptorAction<'a> {
     },
     ManifestRequestResult {
         transport_url: &'a TransportUrl,
-        result: &'a Result<Manifest, ModelError>,
+        result: &'a Result<Manifest, EnvError>,
     },
 }
 
