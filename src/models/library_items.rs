@@ -20,7 +20,7 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for LibraryItems {
 }
 
 fn ids_update(ids: &mut Vec<String>, library: &LibraryLoadable) -> Effects {
-    let next_ids = match &library {
+    let next_ids = match library {
         LibraryLoadable::Ready(bucket) => bucket
             .items
             .values()

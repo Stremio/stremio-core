@@ -1,4 +1,5 @@
-use crate::app_model::{AppModel, ModelFieldName};
+use super::app_model::{AppModel, ModelFieldName};
+use console_error_panic_hook;
 use env_web::Env;
 use futures::future;
 use futures::stream::Stream;
@@ -6,7 +7,6 @@ use std::panic;
 use stremio_core::state_types::msg::{Action, Msg};
 use stremio_core::state_types::{Environment, Runtime, Update, UpdateWithCtx};
 use wasm_bindgen::prelude::{wasm_bindgen, JsValue};
-extern crate console_error_panic_hook;
 
 #[wasm_bindgen]
 pub struct StremioCoreWeb {
