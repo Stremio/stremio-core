@@ -24,7 +24,6 @@ pub enum Internal {
     LibraryAPIResult(UID, Result<Vec<LibItem>, ModelError>),
     LibrarySyncResult(UID, Result<Vec<LibItem>, ModelError>),
     UpdateLibraryItem(LibItem),
-    StreamingServerChanged,
     StreamingServerReloadResult(Url, Result<(Url, StreamingServerSettings), ModelError>),
     ResourceRequestResult(ResourceRequest, Box<Result<ResourceResponse, ModelError>>),
     ManifestRequestResult(TransportUrl, Result<Manifest, ModelError>),

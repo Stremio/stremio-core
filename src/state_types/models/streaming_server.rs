@@ -1,9 +1,9 @@
 use crate::state_types::models::common::ModelError;
-use crate::state_types::models::ctx::user::UserLoadable;
+use crate::state_types::models::ctx::Ctx;
 use crate::state_types::msg::{
     Action, ActionCtx, ActionLoad, ActionStreamingServer, Event, Internal, Msg,
 };
-use crate::state_types::{Effects, Environment};
+use crate::state_types::{Effects, Environment, UpdateWithCtx};
 use crate::types::api::SuccessResponse;
 use derivative::Derivative;
 use futures::future::Either;
@@ -53,21 +53,22 @@ pub enum StreamingServerLoadable {
     },
 }
 
-// move to models
-impl StreamingServerLoadable {
-    pub fn update<Env: Environment + 'static>(
-        &mut self,
-        user: &UserLoadable,
-        msg: &Msg,
-    ) -> Effects {
-        let streaming_server_effects = match msg {
+impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for StreamingServerLoadable {
+    fn update(&mut self, ctx: &Ctx<Env>, msg: &Msg) -> Effects {
+        let url = match &self {
+            StreamingServerLoadable::NotLoaded => None,
+            StreamingServerLoadable::Error { url }
+            | StreamingServerLoadable::Loading { url }
+            | StreamingServerLoadable::Ready { url, .. } => Some(url),
+        };
+        match msg {
             Msg::Action(Action::Ctx(ActionCtx::UpdateSettings(_)))
             | Msg::Action(Action::Ctx(ActionCtx::Logout))
             | Msg::Internal(Internal::UserStorageResult(_))
             | Msg::Internal(Internal::UserAuthenticateResult(_, _))
-                if Some(&user.settings().streaming_server_url).ne(&self.url()) =>
+                if Some(&ctx.user.settings().streaming_server_url).ne(&url) =>
             {
-                let url = user.settings().streaming_server_url.to_owned();
+                let url = ctx.user.settings().streaming_server_url.to_owned();
                 *self = StreamingServerLoadable::Loading {
                     url: url.to_owned(),
                 };
@@ -138,20 +139,6 @@ impl StreamingServerLoadable {
                 _ => Effects::none().unchanged(),
             },
             _ => Effects::none().unchanged(),
-        };
-        if streaming_server_effects.has_changed {
-            Effects::msg(Msg::Internal(Internal::StreamingServerChanged))
-                .join(streaming_server_effects)
-        } else {
-            streaming_server_effects
-        }
-    }
-    pub fn url(&self) -> Option<&Url> {
-        match &self {
-            StreamingServerLoadable::NotLoaded => None,
-            StreamingServerLoadable::Error { url }
-            | StreamingServerLoadable::Loading { url }
-            | StreamingServerLoadable::Ready { url, .. } => Some(url),
         }
     }
 }
