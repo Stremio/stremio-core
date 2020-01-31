@@ -37,7 +37,7 @@ pub enum ActionCtx {
 }
 
 #[derive(Debug, Clone, Deserialize)]
-#[serde(tag = "action", content = "args")]
+#[serde(tag = "model", content = "args")]
 pub enum ActionLoad {
     Ctx,
     AddonDetails(AddonDetailsSelected),
