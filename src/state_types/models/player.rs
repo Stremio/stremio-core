@@ -48,7 +48,7 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for Player {
                         &mut self.subtitles_resources,
                         ResourcesAction::ResourcesRequested {
                             request: &AggrRequest::AllOfResource(subtitles_resource_ref.to_owned()),
-                            addons: ctx.user.addons(),
+                            addons: &ctx.user.content().addons,
                         },
                     ),
                     _ => eq_update(&mut self.subtitles_resources, vec![]),
@@ -60,7 +60,7 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for Player {
                         .selected
                         .as_ref()
                         .and_then(|selected| selected.video_id.to_owned()),
-                    ctx.user.settings(),
+                    &ctx.user.content().settings,
                 );
                 selected_effects
                     .join(meta_effects)
@@ -78,7 +78,7 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for Player {
                         .selected
                         .as_ref()
                         .and_then(|selected| selected.video_id.to_owned()),
-                    ctx.user.settings(),
+                    &ctx.user.content().settings,
                 );
                 selected_effects
                     .join(meta_effects)
@@ -133,7 +133,7 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for Player {
                         .selected
                         .as_ref()
                         .and_then(|selected| selected.video_id.to_owned()),
-                    ctx.user.settings(),
+                    &ctx.user.content().settings,
                 );
                 meta_effects
                     .join(subtitles_effects)

@@ -25,7 +25,8 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for AddonDetails {
                 let selected_effects = eq_update(&mut self.selected, Some(selected.to_owned()));
                 let addon_effects = match ctx
                     .user
-                    .addons()
+                    .content()
+                    .addons
                     .iter()
                     .find(|addon| addon.transport_url.eq(&selected.transport_url))
                 {

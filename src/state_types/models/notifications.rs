@@ -36,7 +36,8 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for Notifications {
 
                 let (groups, effects): (Vec<_>, Vec<_>) = ctx
                     .user
-                    .addons()
+                    .content()
+                    .addons
                     .iter()
                     .flat_map(|addon| {
                         // The catalog supports this property

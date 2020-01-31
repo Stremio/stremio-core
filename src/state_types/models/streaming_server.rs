@@ -64,10 +64,10 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for StreamingServerLoad
             Msg::Action(Action::Ctx(ActionCtx::UpdateSettings(_)))
             | Msg::Action(Action::Ctx(ActionCtx::Logout))
             | Msg::Internal(Internal::UserStorageResult(_))
-            | Msg::Internal(Internal::UserAuthenticateResult(_, _))
-                if Some(&ctx.user.settings().streaming_server_url).ne(&url) =>
+            | Msg::Internal(Internal::UserAuthResult(_, _))
+                if Some(&ctx.user.content().settings.streaming_server_url).ne(&url) =>
             {
-                let url = ctx.user.settings().streaming_server_url.to_owned();
+                let url = ctx.user.content().settings.streaming_server_url.to_owned();
                 *self = StreamingServerLoadable::Loading {
                     url: url.to_owned(),
                 };
@@ -125,7 +125,7 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for StreamingServerLoad
                                 base_url: base_url.to_owned(),
                                 settings: settings.to_owned(),
                             };
-                            Effects::msg(Msg::Event(Event::StreamingServerLoaded))
+                            Effects::none()
                         }
                         Err(error) => {
                             *self = StreamingServerLoadable::Error {

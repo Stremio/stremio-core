@@ -12,19 +12,24 @@ use url::Url;
 //
 #[derive(Debug)]
 pub enum Internal {
-    // Dispatched when some of the user data changed.
+    // Dispatched when some of auth, addons or settings changed.
     UserChanged,
-    // Dispatched when user is pulled from storage.
+    // Result for pull user from storage.
     UserStorageResult(Result<Option<User>, CtxError>),
-    // Dispatched when user is authenticated.
-    UserAuthenticateResult(APIRequest, Result<(Auth, Vec<Descriptor>), CtxError>),
-    // Dispatched when addons are pulled from API.
-    UserPullAddonsResult(AuthKey, Result<Vec<Descriptor>, CtxError>),
+    // Result for login/register.
+    UserAuthResult(APIRequest, Result<(Auth, Vec<Descriptor>), CtxError>),
+    // Result for pull user addons from API.
+    UserAddonsAPIResult(AuthKey, Result<Vec<Descriptor>, CtxError>),
+    // Dispatched when some of loading status or bucket changed.
     LibraryChanged,
-    LibraryStorageResult(Result<(Option<LibBucket>, Option<LibBucket>), CtxError>),
-    LibraryAPIResult(UID, Result<Vec<LibItem>, CtxError>),
-    LibrarySyncResult(UID, Result<Vec<LibItem>, CtxError>),
+    // Dispatched when library item needs to be updated in the bucket, storage and API.
     UpdateLibraryItem(LibItem),
+    // Result for pull library buckets from storage.
+    LibraryStorageResult(Result<(Option<LibBucket>, Option<LibBucket>), CtxError>),
+    // Result for pull library items from API.
+    LibraryAPIResult(UID, Result<Vec<LibItem>, CtxError>),
+    // Result for sync library items with API. Returns newer items that needs to be updated.
+    LibrarySyncResult(UID, Result<Vec<LibItem>, CtxError>),
     StreamingServerReloadResult(Url, Result<(Url, StreamingServerSettings), EnvError>),
     ResourceRequestResult(ResourceRequest, Box<Result<ResourceResponse, EnvError>>),
     ManifestRequestResult(TransportUrl, Result<Manifest, EnvError>),
