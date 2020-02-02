@@ -4,7 +4,6 @@ use crate::constants::OFFICIAL_ADDONS;
 use crate::state_types::msg::{Action, ActionCtx, ActionLoad, Event, Internal, Msg};
 use crate::state_types::{Effect, Effects, Environment, Update};
 use crate::types::addons::Descriptor;
-use crate::types::api::APIRequest;
 use crate::types::{LibBucket, LibItem, LibItemState, UID};
 use chrono::Datelike;
 use derivative::Derivative;
@@ -36,39 +35,15 @@ impl<Env: Environment + 'static> Update for Ctx<Env> {
                 )))
                 .unchanged()
             }
-            Msg::Action(Action::Ctx(ActionCtx::Login { email, password })) => {
-                let request = APIRequest::Login {
-                    email: email.to_owned(),
-                    password: password.to_owned(),
-                };
+            Msg::Action(Action::Ctx(ActionCtx::Authenticate(auth_request))) => {
+                let auth_request = auth_request.to_owned();
                 self.profile = ProfileLoadable::Loading {
-                    request: ProfileRequest::API(request.to_owned()),
+                    request: ProfileRequest::API(auth_request.to_owned()),
                     content: self.profile.content().to_owned(),
                 };
                 Effects::one(Box::new(
-                    ProfileLoadable::authenticate::<Env>(&request).then(move |result| {
-                        Ok(Msg::Internal(Internal::AuthResult(request, result)))
-                    }),
-                ))
-                .unchanged()
-            }
-            Msg::Action(Action::Ctx(ActionCtx::Register {
-                email,
-                password,
-                gdpr_consent,
-            })) => {
-                let request = APIRequest::Register {
-                    email: email.to_owned(),
-                    password: password.to_owned(),
-                    gdpr_consent: gdpr_consent.to_owned(),
-                };
-                self.profile = ProfileLoadable::Loading {
-                    request: ProfileRequest::API(request.to_owned()),
-                    content: self.profile.content().to_owned(),
-                };
-                Effects::one(Box::new(
-                    ProfileLoadable::authenticate::<Env>(&request).then(move |result| {
-                        Ok(Msg::Internal(Internal::AuthResult(request, result)))
+                    ProfileLoadable::authenticate::<Env>(&auth_request).then(move |result| {
+                        Ok(Msg::Internal(Internal::AuthResult(auth_request, result)))
                     }),
                 ))
                 .unchanged()

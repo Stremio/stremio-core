@@ -7,22 +7,14 @@ use crate::state_types::models::meta_details::Selected as MetaDetailsSelected;
 use crate::state_types::models::player::Selected as PlayerSelected;
 use crate::state_types::models::streaming_server::Settings as StreamingServerSettings;
 use crate::types::addons::{Descriptor, TransportUrl};
-use crate::types::api::GDPRConsent;
+use crate::types::api::AuthRequest;
 use crate::types::MetaPreview;
 use serde::Deserialize;
 
 #[derive(Debug, Clone, Deserialize)]
 #[serde(tag = "action", content = "args")]
 pub enum ActionCtx {
-    Login {
-        email: String,
-        password: String,
-    },
-    Register {
-        email: String,
-        password: String,
-        gdpr_consent: GDPRConsent,
-    },
+    Authenticate(AuthRequest),
     Logout,
     InstallAddon(Descriptor),
     UninstallAddon(TransportUrl),

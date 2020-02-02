@@ -30,9 +30,9 @@ pub struct GDPRConsent {
     pub from: String,
 }
 
-#[derive(Clone, Debug, PartialEq, Serialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "type")]
-pub enum APIRequest {
+pub enum AuthRequest {
     Login {
         email: String,
         password: String,
@@ -42,6 +42,12 @@ pub enum APIRequest {
         password: String,
         gdpr_consent: GDPRConsent,
     },
+}
+
+#[derive(Clone, Debug, PartialEq, Serialize)]
+#[serde(tag = "type")]
+pub enum APIRequest {
+    Auth(AuthRequest),
     #[serde(rename_all = "camelCase")]
     Logout {
         auth_key: AuthKey,
@@ -60,8 +66,10 @@ pub enum APIRequest {
 impl APIMethodName for APIRequest {
     fn method_name(&self) -> &str {
         match self {
-            APIRequest::Login { .. } => "login",
-            APIRequest::Register { .. } => "register",
+            APIRequest::Auth(auth_request) => match auth_request {
+                AuthRequest::Login { .. } => "login",
+                AuthRequest::Register { .. } => "register",
+            },
             APIRequest::Logout { .. } => "logout",
             APIRequest::AddonCollectionGet { .. } => "addonCollectionGet",
             APIRequest::AddonCollectionSet { .. } => "addonCollectionSet",

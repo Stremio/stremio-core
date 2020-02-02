@@ -4,7 +4,7 @@ use crate::constants::{OFFICIAL_ADDONS, PROFILE_STORAGE_KEY, STREAMING_SERVER_UR
 use crate::state_types::Environment;
 use crate::types::addons::Descriptor;
 use crate::types::api::{
-    APIRequest, Auth, AuthKey, AuthResponse, CollectionResponse, SuccessResponse,
+    APIRequest, Auth, AuthKey, AuthRequest, AuthResponse, CollectionResponse, SuccessResponse,
 };
 use derivative::Derivative;
 use futures::Future;
@@ -65,7 +65,7 @@ impl Default for Profile {
 #[derive(Clone, Debug, PartialEq)]
 pub enum ProfileRequest {
     Storage,
-    API(APIRequest),
+    API(AuthRequest),
 }
 
 #[derive(Derivative, Clone, Debug, PartialEq, Serialize)]
@@ -110,9 +110,9 @@ impl ProfileLoadable {
         Env::set_storage(PROFILE_STORAGE_KEY, profile).map_err(CtxError::from)
     }
     pub fn authenticate<Env: Environment + 'static>(
-        request: &APIRequest,
+        request: &AuthRequest,
     ) -> impl Future<Item = (Auth, Vec<Descriptor>), Error = CtxError> {
-        fetch_api::<Env, _, _>(request)
+        fetch_api::<Env, _, _>(&APIRequest::Auth(request.to_owned()))
             .map(|AuthResponse { key, user }| Auth { key, user })
             .and_then(|auth| {
                 fetch_api::<Env, _, _>(&APIRequest::AddonCollectionGet {

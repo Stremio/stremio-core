@@ -3,7 +3,7 @@ use crate::state_types::models::ctx::profile::Profile;
 use crate::state_types::models::streaming_server::Settings as StreamingServerSettings;
 use crate::state_types::EnvError;
 use crate::types::addons::{Descriptor, Manifest, ResourceRequest, ResourceResponse, TransportUrl};
-use crate::types::api::{APIRequest, Auth, AuthKey};
+use crate::types::api::{Auth, AuthKey, AuthRequest};
 use crate::types::{LibBucket, LibItem, UID};
 use url::Url;
 
@@ -19,7 +19,7 @@ pub enum Internal {
     // Result for pull addons from API.
     AddonsAPIResult(AuthKey, Result<Vec<Descriptor>, CtxError>),
     // Result for login/register.
-    AuthResult(APIRequest, Result<(Auth, Vec<Descriptor>), CtxError>),
+    AuthResult(AuthRequest, Result<(Auth, Vec<Descriptor>), CtxError>),
     // Dispatched when some of loading status or bucket changed.
     LibraryChanged,
     // Dispatched when library item needs to be updated in the bucket, storage and API.
