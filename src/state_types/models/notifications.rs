@@ -35,7 +35,7 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for Notifications {
                 };
 
                 let (groups, effects): (Vec<_>, Vec<_>) = ctx
-                    .user
+                    .profile
                     .content()
                     .addons
                     .iter()

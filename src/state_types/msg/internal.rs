@@ -1,5 +1,5 @@
 use crate::state_types::models::ctx::error::CtxError;
-use crate::state_types::models::ctx::user::User;
+use crate::state_types::models::ctx::profile::Profile;
 use crate::state_types::models::streaming_server::Settings as StreamingServerSettings;
 use crate::state_types::EnvError;
 use crate::types::addons::{Descriptor, Manifest, ResourceRequest, ResourceResponse, TransportUrl};
@@ -13,13 +13,13 @@ use url::Url;
 #[derive(Debug)]
 pub enum Internal {
     // Dispatched when some of auth, addons or settings changed.
-    UserChanged,
-    // Result for pull user from storage.
-    UserStorageResult(Result<Option<User>, CtxError>),
+    ProfileChanged,
+    // Result for pull profile from storage.
+    ProfileStorageResult(Result<Option<Profile>, CtxError>),
+    // Result for pull addons from API.
+    AddonsAPIResult(AuthKey, Result<Vec<Descriptor>, CtxError>),
     // Result for login/register.
-    UserAuthResult(APIRequest, Result<(Auth, Vec<Descriptor>), CtxError>),
-    // Result for pull user addons from API.
-    UserAddonsAPIResult(AuthKey, Result<Vec<Descriptor>, CtxError>),
+    AuthResult(APIRequest, Result<(Auth, Vec<Descriptor>), CtxError>),
     // Dispatched when some of loading status or bucket changed.
     LibraryChanged,
     // Dispatched when library item needs to be updated in the bucket, storage and API.

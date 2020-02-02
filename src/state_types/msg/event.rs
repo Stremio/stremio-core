@@ -7,21 +7,21 @@ use serde::Serialize;
 #[derive(Debug, Clone, Serialize)]
 #[serde(tag = "event", content = "args")]
 pub enum Event {
-    UserPulledFromStorage,
-    UserPushedToStorage,
+    ProfilePulledFromStorage,
+    ProfilePushedToStorage,
     UserPulledFromAPI,
     UserPushedToAPI,
-    AddonsPushedToAPI,
     AddonsPulledFromAPI,
+    AddonsPushedToAPI,
     UserAuthenticated,
-    UserSessionDeleted,
     UserLoggedOut,
+    SessionDeleted,
     AddonInstalled,
     AddonUninstalled,
     SettingsUpdated,
     LibraryPulledFromStorage,
     LibraryPushedToStorage,
-    LibraryPushedToAPI,
     LibrarySyncedWithAPI,
+    LibraryPushedToAPI,
     Error(CtxError),
 }

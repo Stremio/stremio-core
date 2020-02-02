@@ -32,7 +32,7 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for MetaDetails {
                     &mut self.meta_resources,
                     ResourcesAction::ResourcesRequested {
                         request: &AggrRequest::AllOfResource(selected.meta_resource_ref.to_owned()),
-                        addons: &ctx.user.content().addons,
+                        addons: &ctx.profile.content().addons,
                     },
                 );
                 let streams_effects = match &selected.streams_resource_ref {
@@ -49,7 +49,7 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for MetaDetails {
                                     request: &AggrRequest::AllOfResource(
                                         streams_resource_ref.to_owned(),
                                     ),
-                                    addons: &ctx.user.content().addons,
+                                    addons: &ctx.profile.content().addons,
                                 },
                             )
                         }

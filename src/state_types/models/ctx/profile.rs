@@ -1,6 +1,6 @@
 use super::error::CtxError;
 use super::fetch_api;
-use crate::constants::{OFFICIAL_ADDONS, STREAMING_SERVER_URL, USER_STORAGE_KEY};
+use crate::constants::{OFFICIAL_ADDONS, PROFILE_STORAGE_KEY, STREAMING_SERVER_URL};
 use crate::state_types::Environment;
 use crate::types::addons::Descriptor;
 use crate::types::api::{
@@ -46,15 +46,15 @@ impl Default for Settings {
 }
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct User {
+pub struct Profile {
     pub auth: Option<Auth>,
     pub addons: Vec<Descriptor>,
     pub settings: Settings,
 }
 
-impl Default for User {
+impl Default for Profile {
     fn default() -> Self {
-        User {
+        Profile {
             auth: None,
             addons: OFFICIAL_ADDONS.to_owned(),
             settings: Settings::default(),
@@ -63,48 +63,51 @@ impl Default for User {
 }
 
 #[derive(Clone, Debug, PartialEq)]
-pub enum UserRequest {
+pub enum ProfileRequest {
     Storage,
     API(APIRequest),
 }
 
-// TODO Consider rename this to Profile or Account
 #[derive(Derivative, Clone, Debug, PartialEq, Serialize)]
 #[derivative(Default)]
 #[serde(untagged)]
-pub enum UserLoadable {
+pub enum ProfileLoadable {
     Loading {
         #[serde(skip)]
-        request: UserRequest,
+        request: ProfileRequest,
         #[serde(flatten)]
-        content: User,
+        content: Profile,
     },
     #[derivative(Default)]
     Ready {
         #[serde(flatten)]
-        content: User,
+        content: Profile,
     },
 }
 
-impl UserLoadable {
-    pub fn content(&self) -> &User {
+impl ProfileLoadable {
+    pub fn content(&self) -> &Profile {
         match &self {
-            UserLoadable::Loading { content, .. } | UserLoadable::Ready { content } => content,
+            ProfileLoadable::Loading { content, .. } | ProfileLoadable::Ready { content } => {
+                content
+            }
         }
     }
-    pub fn content_mut(&mut self) -> &mut User {
+    pub fn content_mut(&mut self) -> &mut Profile {
         match self {
-            UserLoadable::Loading { content, .. } | UserLoadable::Ready { content } => content,
+            ProfileLoadable::Loading { content, .. } | ProfileLoadable::Ready { content } => {
+                content
+            }
         }
     }
     pub fn pull_from_storage<Env: Environment + 'static>(
-    ) -> impl Future<Item = Option<User>, Error = CtxError> {
-        Env::get_storage(USER_STORAGE_KEY).map_err(CtxError::from)
+    ) -> impl Future<Item = Option<Profile>, Error = CtxError> {
+        Env::get_storage(PROFILE_STORAGE_KEY).map_err(CtxError::from)
     }
     pub fn push_to_storage<Env: Environment + 'static>(
-        user: Option<&User>,
+        profile: Option<&Profile>,
     ) -> impl Future<Item = (), Error = CtxError> {
-        Env::set_storage(USER_STORAGE_KEY, user).map_err(CtxError::from)
+        Env::set_storage(PROFILE_STORAGE_KEY, profile).map_err(CtxError::from)
     }
     pub fn authenticate<Env: Environment + 'static>(
         request: &APIRequest,
@@ -135,10 +138,11 @@ impl UserLoadable {
     }
     pub fn pull_addons_from_api<Env: Environment + 'static>(
         auth_key: &AuthKey,
+        update: bool,
     ) -> impl Future<Item = Vec<Descriptor>, Error = CtxError> {
         fetch_api::<Env, _, _>(&APIRequest::AddonCollectionGet {
             auth_key: auth_key.to_owned(),
-            update: true,
+            update,
         })
         .map(|CollectionResponse { addons, .. }| addons)
     }

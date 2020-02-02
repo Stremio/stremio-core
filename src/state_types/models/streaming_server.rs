@@ -61,13 +61,15 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for StreamingServerLoad
             | StreamingServerLoadable::Ready { url, .. } => Some(url),
         };
         match msg {
-            Msg::Action(Action::Ctx(ActionCtx::UpdateSettings(_)))
-            | Msg::Action(Action::Ctx(ActionCtx::Logout))
-            | Msg::Internal(Internal::UserStorageResult(_))
-            | Msg::Internal(Internal::UserAuthResult(_, _))
-                if Some(&ctx.user.content().settings.streaming_server_url).ne(&url) =>
+            Msg::Internal(Internal::ProfileChanged)
+                if Some(&ctx.profile.content().settings.streaming_server_url).ne(&url) =>
             {
-                let url = ctx.user.content().settings.streaming_server_url.to_owned();
+                let url = ctx
+                    .profile
+                    .content()
+                    .settings
+                    .streaming_server_url
+                    .to_owned();
                 *self = StreamingServerLoadable::Loading {
                     url: url.to_owned(),
                 };

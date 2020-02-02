@@ -1,7 +1,7 @@
 use crate::state_types::models::addon_details::Selected as AddonDetailsSelected;
 use crate::state_types::models::catalog_filtered::Selected as CatalogFilteredSelected;
 use crate::state_types::models::catalogs_with_extra::Selected as CatalogsWithExtraSelected;
-use crate::state_types::models::ctx::user::Settings as UserSettings;
+use crate::state_types::models::ctx::profile::Settings as ProfileSettings;
 use crate::state_types::models::library_filtered::Selected as LibraryFilteredSelected;
 use crate::state_types::models::meta_details::Selected as MetaDetailsSelected;
 use crate::state_types::models::player::Selected as PlayerSelected;
@@ -26,7 +26,7 @@ pub enum ActionCtx {
     Logout,
     InstallAddon(Descriptor),
     UninstallAddon(TransportUrl),
-    UpdateSettings(UserSettings),
+    UpdateSettings(ProfileSettings),
     AddToLibrary(MetaPreview),
     RemoveFromLibrary(String),
     PushUserToAPI,

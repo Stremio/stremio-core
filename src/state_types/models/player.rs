@@ -2,7 +2,7 @@ use crate::state_types::models::common::{
     eq_update, resource_update, resources_update_with_vector_content, ResourceAction,
     ResourceContent, ResourceLoadable, ResourcesAction,
 };
-use crate::state_types::models::ctx::user::Settings as UserSettings;
+use crate::state_types::models::ctx::profile::Settings as ProfileSettings;
 use crate::state_types::models::ctx::Ctx;
 use crate::state_types::msg::{Action, ActionLoad, ActionPlayer, Internal, Msg};
 use crate::state_types::{Effects, Environment, UpdateWithCtx};
@@ -48,7 +48,7 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for Player {
                         &mut self.subtitles_resources,
                         ResourcesAction::ResourcesRequested {
                             request: &AggrRequest::AllOfResource(subtitles_resource_ref.to_owned()),
-                            addons: &ctx.user.content().addons,
+                            addons: &ctx.profile.content().addons,
                         },
                     ),
                     _ => eq_update(&mut self.subtitles_resources, vec![]),
@@ -60,7 +60,7 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for Player {
                         .selected
                         .as_ref()
                         .and_then(|selected| selected.video_id.to_owned()),
-                    &ctx.user.content().settings,
+                    &ctx.profile.content().settings,
                 );
                 selected_effects
                     .join(meta_effects)
@@ -78,7 +78,7 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for Player {
                         .selected
                         .as_ref()
                         .and_then(|selected| selected.video_id.to_owned()),
-                    &ctx.user.content().settings,
+                    &ctx.profile.content().settings,
                 );
                 selected_effects
                     .join(meta_effects)
@@ -133,7 +133,7 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for Player {
                         .selected
                         .as_ref()
                         .and_then(|selected| selected.video_id.to_owned()),
-                    &ctx.user.content().settings,
+                    &ctx.profile.content().settings,
                 );
                 meta_effects
                     .join(subtitles_effects)
@@ -148,7 +148,7 @@ fn next_video_update(
     video: &mut Option<Video>,
     meta_resource: &Option<ResourceLoadable<MetaDetail>>,
     video_id: &Option<String>,
-    settings: &UserSettings,
+    settings: &ProfileSettings,
 ) -> Effects {
     let next_video = match (meta_resource, video_id) {
         (
