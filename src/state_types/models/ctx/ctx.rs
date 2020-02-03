@@ -260,11 +260,10 @@ impl<Env: Environment + 'static> Update for Ctx<Env> {
                     (Some(auth), LibraryLoadable::Ready(bucket)) => {
                         let uid = bucket.uid.to_owned();
                         Effects::one(Box::new(
-                            LibraryLoadable::sync_with_api::<Env>(&auth.key, bucket.to_owned()).then(
-                                move |result| {
+                            LibraryLoadable::sync_with_api::<Env>(&auth.key, bucket.to_owned())
+                                .then(move |result| {
                                     Ok(Msg::Internal(Internal::LibrarySyncResult(uid, result)))
-                                },
-                            ),
+                                }),
                         ))
                         .unchanged()
                     }
