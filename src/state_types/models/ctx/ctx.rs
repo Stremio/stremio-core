@@ -283,6 +283,20 @@ impl<Env: Environment + 'static> Update for Ctx<Env> {
                     _ => Effects::none().unchanged(),
                 }
             }
+            Msg::Internal(Internal::ProfileChanged) => {
+                let uid = self.profile.uid();
+                Effects::one(Box::new(
+                    ProfileLoadable::push_to_storage::<Env>(Some(self.profile.content())).then(
+                        move |result| match result {
+                            Ok(_) => Ok(Msg::Event(Event::ProfilePushedToStorage { uid })),
+                            Err(error) => Err(Msg::Event(Event::Error {
+                                error,
+                                event: Box::new(Event::ProfilePushedToStorage { uid }),
+                            })),
+                        },
+                    ),
+                ))
+            }
             Msg::Internal(Internal::UpdateLibraryItem(lib_item)) => match &mut self.library {
                 LibraryLoadable::Ready(ref mut bucket) => {
                     let mut lib_item = lib_item.to_owned();
