@@ -488,19 +488,15 @@ impl<Env: Environment + 'static> Update for Ctx<Env> {
                                 bucket.merge(other_bucket.to_owned())
                             };
                             self.library = LibraryLoadable::Ready(bucket);
-                            Effects::msg(Msg::Event(Event::LibraryPulledFromStorage {
-                                uid: uid.to_owned(),
-                            }))
-                            .join(Effects::msg(Msg::Internal(Internal::LibraryChanged)))
+                            Effects::msg(Msg::Event(Event::LibraryPulledFromStorage { uid }))
+                                .join(Effects::msg(Msg::Internal(Internal::LibraryChanged)))
                         }
                         Err(error) => {
                             self.library =
                                 LibraryLoadable::Ready(LibBucket::new(uid.to_owned(), vec![]));
                             Effects::msg(Msg::Event(Event::Error {
                                 error: error.to_owned(),
-                                event: Box::new(Event::LibraryPulledFromStorage {
-                                    uid: uid.to_owned(),
-                                }),
+                                event: Box::new(Event::LibraryPulledFromStorage { uid }),
                             }))
                             .join(Effects::msg(Msg::Internal(Internal::LibraryChanged)))
                         }

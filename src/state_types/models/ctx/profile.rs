@@ -4,7 +4,7 @@ use crate::constants::{OFFICIAL_ADDONS, PROFILE_STORAGE_KEY, STREAMING_SERVER_UR
 use crate::state_types::Environment;
 use crate::types::addons::Descriptor;
 use crate::types::api::{
-    APIRequest, Auth, AuthKey, AuthRequest, AuthResponse, CollectionResponse, SuccessResponse,
+    APIRequest, Auth, AuthRequest, AuthResponse, CollectionResponse, SuccessResponse,
 };
 use crate::types::UID;
 use derivative::Derivative;
@@ -131,21 +131,21 @@ impl ProfileLoadable {
             })
     }
     pub fn delete_session<Env: Environment + 'static>(
-        auth_key: &AuthKey,
+        auth_key: &str,
     ) -> impl Future<Item = (), Error = CtxError> {
         fetch_api::<Env, _, SuccessResponse>(&APIRequest::Logout {
             auth_key: auth_key.to_owned(),
         })
         .map(|_| ())
     }
-    pub fn pull_user_from_api<Env: Environment + 'static>(auth_key: &AuthKey) {
+    pub fn pull_user_from_api<Env: Environment + 'static>(_auth_key: &str) {
         unimplemented!();
     }
-    pub fn push_user_to_api<Env: Environment + 'static>(auth_key: &AuthKey) {
+    pub fn push_user_to_api<Env: Environment + 'static>(_auth_key: &str) {
         unimplemented!();
     }
     pub fn pull_addons_from_api<Env: Environment + 'static>(
-        auth_key: &AuthKey,
+        auth_key: &str,
         update: bool,
     ) -> impl Future<Item = Vec<Descriptor>, Error = CtxError> {
         fetch_api::<Env, _, _>(&APIRequest::AddonCollectionGet {
@@ -155,7 +155,7 @@ impl ProfileLoadable {
         .map(|CollectionResponse { addons, .. }| addons)
     }
     pub fn push_addons_to_api<Env: Environment + 'static>(
-        auth_key: &AuthKey,
+        auth_key: &str,
         addons: &[Descriptor],
     ) -> impl Future<Item = (), Error = CtxError> {
         fetch_api::<Env, _, SuccessResponse>(&APIRequest::AddonCollectionSet {

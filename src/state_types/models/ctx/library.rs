@@ -4,7 +4,7 @@ use crate::constants::{
     LIBRARY_COLLECTION_NAME, LIBRARY_RECENT_COUNT, LIBRARY_RECENT_STORAGE_KEY, LIBRARY_STORAGE_KEY,
 };
 use crate::state_types::Environment;
-use crate::types::api::{Auth, AuthKey, DatastoreCmd, DatastoreReqBuilder, SuccessResponse};
+use crate::types::api::{DatastoreCmd, DatastoreReqBuilder, SuccessResponse};
 use crate::types::{LibBucket, LibItem, LibItemModified, UID};
 use derivative::Derivative;
 use futures::future::Either;
@@ -47,7 +47,7 @@ impl LibraryLoadable {
             .map_err(CtxError::from)
     }
     pub fn pull_from_api<Env: Environment + 'static>(
-        auth_key: &AuthKey,
+        auth_key: &str,
         ids: Vec<String>,
         all: bool,
     ) -> impl Future<Item = Vec<LibItem>, Error = CtxError> {
@@ -58,7 +58,7 @@ impl LibraryLoadable {
         fetch_api::<Env, _, _>(&request)
     }
     pub fn push_to_api<Env: Environment + 'static>(
-        auth_key: &AuthKey,
+        auth_key: &str,
         lib_items: Vec<LibItem>,
     ) -> impl Future<Item = (), Error = CtxError> {
         let request = DatastoreReqBuilder::default()
@@ -68,7 +68,7 @@ impl LibraryLoadable {
         fetch_api::<Env, _, SuccessResponse>(&request).map(|_| ())
     }
     pub fn sync_with_api<Env: Environment + 'static>(
-        auth_key: &AuthKey,
+        auth_key: &str,
         local_lib: LibBucket,
     ) -> impl Future<Item = Vec<LibItem>, Error = CtxError> {
         // @TODO consider asserting if uid matches auth
