@@ -78,7 +78,20 @@ impl<Env: Environment + 'static> Update for Ctx<Env> {
                 let next_library = LibraryLoadable::default();
                 let library_effects = if next_library.ne(&self.library) {
                     self.library = next_library;
-                    Effects::msg(Msg::Internal(Internal::LibraryChanged))
+                    Effects::one(Box::new(
+                        LibraryLoadable::push_to_storage::<Env>(None, None).then(
+                            enclose!((uid) move |result| {
+                                match result {
+                                    Ok(_) => Ok(Msg::Event(Event::LibraryPushedToStorage { uid })),
+                                    Err(error) => Err(Msg::Event(Event::Error {
+                                        error,
+                                        event: Box::new(Event::LibraryPushedToStorage { uid }),
+                                    })),
+                                }
+                            }),
+                        ),
+                    ))
+                    .join(Effects::msg(Msg::Internal(Internal::LibraryChanged)))
                 } else {
                     Effects::none().unchanged()
                 };
