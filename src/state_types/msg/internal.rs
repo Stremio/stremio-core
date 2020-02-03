@@ -1,5 +1,5 @@
 use crate::state_types::models::ctx::error::CtxError;
-use crate::state_types::models::ctx::profile::Profile;
+use crate::state_types::models::ctx::profile_loadable::Profile;
 use crate::state_types::models::streaming_server::Settings as StreamingServerSettings;
 use crate::state_types::EnvError;
 use crate::types::addons::{Descriptor, Manifest, ResourceRequest, ResourceResponse, TransportUrl};

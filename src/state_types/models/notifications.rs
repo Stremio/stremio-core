@@ -1,7 +1,7 @@
 use super::common::{
     get_resource, resources_update, ResourceContent, ResourceLoadable, ResourcesAction,
 };
-use crate::state_types::models::ctx::library::LibraryLoadable;
+use crate::state_types::models::ctx::library_loadable::LibraryLoadable;
 use crate::state_types::models::ctx::Ctx;
 use crate::state_types::msg::Internal::*;
 use crate::state_types::msg::*;

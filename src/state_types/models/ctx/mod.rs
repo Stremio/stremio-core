@@ -2,8 +2,8 @@ mod fetch_api;
 use fetch_api::*;
 
 pub mod error;
-pub mod library;
-pub mod profile;
+pub mod library_loadable;
+pub mod profile_loadable;
 
 mod ctx;
 pub use ctx::*;

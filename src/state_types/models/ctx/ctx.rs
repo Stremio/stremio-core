@@ -1,5 +1,5 @@
-use super::library::{LibraryLoadable, LibraryRequest};
-use super::profile::{Profile, ProfileLoadable, ProfileRequest};
+use super::library_loadable::{LibraryLoadable, LibraryRequest};
+use super::profile_loadable::{Profile, ProfileLoadable, ProfileRequest};
 use crate::constants::OFFICIAL_ADDONS;
 use crate::state_types::msg::{Action, ActionCtx, ActionLoad, Event, Internal, Msg};
 use crate::state_types::{Effect, Effects, Environment, Update};
