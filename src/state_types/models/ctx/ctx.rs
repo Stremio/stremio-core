@@ -23,8 +23,8 @@ pub struct Ctx<Env: Environment> {
     env: PhantomData<Env>,
 }
 
-impl<Env: Environment + 'static> Update for Ctx<Env> {
-    fn update(&mut self, msg: &Msg) -> Effects {
+impl<Env: Environment + 'static> Ctx<Env> {
+    fn profile_update(&mut self, msg: &Msg) -> Effects {
         match msg {
             Msg::Action(Action::Load(ActionLoad::Ctx)) => {
                 self.profile = ProfileLoadable::Loading {
@@ -147,45 +147,6 @@ impl<Env: Environment + 'static> Update for Ctx<Env> {
                     Effects::none().unchanged()
                 }
             }
-            Msg::Action(Action::Ctx(ActionCtx::AddToLibrary(meta_item))) => {
-                let mut lib_item = LibItem {
-                    id: meta_item.id.to_owned(),
-                    type_name: meta_item.type_name.to_owned(),
-                    name: meta_item.name.to_owned(),
-                    poster: meta_item.poster.to_owned(),
-                    background: None,
-                    logo: meta_item.logo.to_owned(),
-                    poster_shape: meta_item.poster_shape.to_owned(),
-                    year: if let Some(released) = &meta_item.released {
-                        Some(released.year().to_string())
-                    } else if let Some(release_info) = &meta_item.release_info {
-                        Some(release_info.to_owned())
-                    } else {
-                        None
-                    },
-                    removed: false,
-                    temp: false,
-                    ctime: Some(Env::now()),
-                    mtime: Env::now(),
-                    state: LibItemState::default(),
-                };
-                if let Some(LibItem { ctime, state, .. }) = self.library.get_item(&meta_item.id) {
-                    lib_item.state = state.to_owned();
-                    if let Some(ctime) = ctime {
-                        lib_item.ctime = Some(ctime.to_owned());
-                    };
-                };
-                Effects::msg(Msg::Internal(Internal::UpdateLibraryItem(lib_item))).unchanged()
-            }
-            Msg::Action(Action::Ctx(ActionCtx::RemoveFromLibrary(id))) => {
-                if let Some(lib_item) = self.library.get_item(id) {
-                    let mut lib_item = lib_item.to_owned();
-                    lib_item.removed = true;
-                    Effects::msg(Msg::Internal(Internal::UpdateLibraryItem(lib_item))).unchanged()
-                } else {
-                    Effects::none().unchanged()
-                }
-            }
             Msg::Action(Action::Ctx(ActionCtx::PushUserToAPI)) => {
                 // TODO implement
                 Effects::msg(Msg::Event(Event::UserPushedToAPI {
@@ -268,21 +229,6 @@ impl<Env: Environment + 'static> Update for Ctx<Env> {
                     }
                 }
             }
-            Msg::Action(Action::Ctx(ActionCtx::SyncLibraryWithAPI)) => {
-                match (&self.profile.content().auth, &self.library) {
-                    (Some(auth), LibraryLoadable::Ready(bucket)) => {
-                        let uid = bucket.uid.to_owned();
-                        Effects::one(Box::new(
-                            LibraryLoadable::sync_with_api::<Env>(&auth.key, bucket.to_owned())
-                                .then(move |result| {
-                                    Ok(Msg::Internal(Internal::LibrarySyncResult(uid, result)))
-                                }),
-                        ))
-                        .unchanged()
-                    }
-                    _ => Effects::none().unchanged(),
-                }
-            }
             Msg::Internal(Internal::ProfileChanged) => {
                 let uid = self.profile.uid();
                 Effects::one(Box::new(
@@ -297,52 +243,6 @@ impl<Env: Environment + 'static> Update for Ctx<Env> {
                     ),
                 ))
             }
-            Msg::Internal(Internal::UpdateLibraryItem(lib_item)) => match &mut self.library {
-                LibraryLoadable::Ready(ref mut bucket) => {
-                    let mut lib_item = lib_item.to_owned();
-                    lib_item.mtime = Env::now();
-                    let uid = bucket.uid.to_owned();
-                    let persist_effect: Effect = Box::new(
-                        LibraryLoadable::update_and_persist::<Env>(
-                            bucket,
-                            LibBucket::new(uid.to_owned(), vec![lib_item.to_owned()]),
-                        )
-                        .then(enclose!((uid) move |result| match result {
-                            Ok(_) => Ok(Msg::Event(Event::LibraryPushedToStorage { uid })),
-                            Err(error) => Err(Msg::Event(Event::Error {
-                                error,
-                                event: Box::new(Event::LibraryPushedToStorage { uid }),
-                            })),
-                        })),
-                    );
-                    let push_effect =
-                        self.profile
-                            .content()
-                            .auth
-                            .as_ref()
-                            .map(move |auth| -> Effect {
-                                Box::new(
-                                    LibraryLoadable::push_to_api::<Env>(&auth.key, vec![lib_item])
-                                        .then(move |result| match result {
-                                            Ok(_) => {
-                                                Ok(Msg::Event(Event::LibraryPushedToAPI { uid }))
-                                            }
-                                            Err(error) => Err(Msg::Event(Event::Error {
-                                                error,
-                                                event: Box::new(Event::LibraryPushedToAPI { uid }),
-                                            })),
-                                        }),
-                                )
-                            });
-                    let library_effects = if let Some(push_effect) = push_effect {
-                        Effects::many(vec![persist_effect, push_effect])
-                    } else {
-                        Effects::one(persist_effect)
-                    };
-                    library_effects.join(Effects::msg(Msg::Internal(Internal::LibraryChanged)))
-                }
-                _ => Effects::none().unchanged(),
-            },
             Msg::Internal(Internal::ProfileStorageResult(result)) => match &self.profile {
                 ProfileLoadable::Loading {
                     request: ProfileRequest::Storage,
@@ -475,6 +375,111 @@ impl<Env: Environment + 'static> Update for Ctx<Env> {
                     .unchanged(),
                 }
             }
+            _ => Effects::none().unchanged(),
+        }
+    }
+    fn library_update(&mut self, msg: &Msg) -> Effects {
+        match msg {
+            Msg::Action(Action::Ctx(ActionCtx::AddToLibrary(meta_item))) => {
+                let mut lib_item = LibItem {
+                    id: meta_item.id.to_owned(),
+                    type_name: meta_item.type_name.to_owned(),
+                    name: meta_item.name.to_owned(),
+                    poster: meta_item.poster.to_owned(),
+                    background: None,
+                    logo: meta_item.logo.to_owned(),
+                    poster_shape: meta_item.poster_shape.to_owned(),
+                    year: if let Some(released) = &meta_item.released {
+                        Some(released.year().to_string())
+                    } else if let Some(release_info) = &meta_item.release_info {
+                        Some(release_info.to_owned())
+                    } else {
+                        None
+                    },
+                    removed: false,
+                    temp: false,
+                    ctime: Some(Env::now()),
+                    mtime: Env::now(),
+                    state: LibItemState::default(),
+                };
+                if let Some(LibItem { ctime, state, .. }) = self.library.get_item(&meta_item.id) {
+                    lib_item.state = state.to_owned();
+                    if let Some(ctime) = ctime {
+                        lib_item.ctime = Some(ctime.to_owned());
+                    };
+                };
+                Effects::msg(Msg::Internal(Internal::UpdateLibraryItem(lib_item))).unchanged()
+            }
+            Msg::Action(Action::Ctx(ActionCtx::RemoveFromLibrary(id))) => {
+                if let Some(lib_item) = self.library.get_item(id) {
+                    let mut lib_item = lib_item.to_owned();
+                    lib_item.removed = true;
+                    Effects::msg(Msg::Internal(Internal::UpdateLibraryItem(lib_item))).unchanged()
+                } else {
+                    Effects::none().unchanged()
+                }
+            }
+            Msg::Action(Action::Ctx(ActionCtx::SyncLibraryWithAPI)) => {
+                match (&self.profile.content().auth, &self.library) {
+                    (Some(auth), LibraryLoadable::Ready(bucket)) => {
+                        let uid = bucket.uid.to_owned();
+                        Effects::one(Box::new(
+                            LibraryLoadable::sync_with_api::<Env>(&auth.key, bucket.to_owned())
+                                .then(move |result| {
+                                    Ok(Msg::Internal(Internal::LibrarySyncResult(uid, result)))
+                                }),
+                        ))
+                        .unchanged()
+                    }
+                    _ => Effects::none().unchanged(),
+                }
+            }
+            Msg::Internal(Internal::UpdateLibraryItem(lib_item)) => match &mut self.library {
+                LibraryLoadable::Ready(ref mut bucket) => {
+                    let mut lib_item = lib_item.to_owned();
+                    lib_item.mtime = Env::now();
+                    let uid = bucket.uid.to_owned();
+                    let persist_effect: Effect = Box::new(
+                        LibraryLoadable::update_and_persist::<Env>(
+                            bucket,
+                            LibBucket::new(uid.to_owned(), vec![lib_item.to_owned()]),
+                        )
+                        .then(enclose!((uid) move |result| match result {
+                            Ok(_) => Ok(Msg::Event(Event::LibraryPushedToStorage { uid })),
+                            Err(error) => Err(Msg::Event(Event::Error {
+                                error,
+                                event: Box::new(Event::LibraryPushedToStorage { uid }),
+                            })),
+                        })),
+                    );
+                    let push_effect =
+                        self.profile
+                            .content()
+                            .auth
+                            .as_ref()
+                            .map(move |auth| -> Effect {
+                                Box::new(
+                                    LibraryLoadable::push_to_api::<Env>(&auth.key, vec![lib_item])
+                                        .then(move |result| match result {
+                                            Ok(_) => {
+                                                Ok(Msg::Event(Event::LibraryPushedToAPI { uid }))
+                                            }
+                                            Err(error) => Err(Msg::Event(Event::Error {
+                                                error,
+                                                event: Box::new(Event::LibraryPushedToAPI { uid }),
+                                            })),
+                                        }),
+                                )
+                            });
+                    let library_effects = if let Some(push_effect) = push_effect {
+                        Effects::many(vec![persist_effect, push_effect])
+                    } else {
+                        Effects::one(persist_effect)
+                    };
+                    library_effects.join(Effects::msg(Msg::Internal(Internal::LibraryChanged)))
+                }
+                _ => Effects::none().unchanged(),
+            },
             Msg::Internal(Internal::LibraryStorageResult(result)) => match &self.library {
                 LibraryLoadable::Loading(uid, LibraryRequest::Storage) => {
                     let uid = uid.to_owned();
@@ -566,5 +571,13 @@ impl<Env: Environment + 'static> Update for Ctx<Env> {
             },
             _ => Effects::none().unchanged(),
         }
+    }
+}
+
+impl<Env: Environment + 'static> Update for Ctx<Env> {
+    fn update(&mut self, msg: &Msg) -> Effects {
+        let profile_effects = self.profile_update(msg);
+        let library_effects = self.library_update(msg);
+        profile_effects.join(library_effects)
     }
 }
