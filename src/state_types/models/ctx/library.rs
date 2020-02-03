@@ -68,12 +68,12 @@ impl LibraryLoadable {
         fetch_api::<Env, _, SuccessResponse>(&request).map(|_| ())
     }
     pub fn sync_with_api<Env: Environment + 'static>(
-        auth: &Auth,
+        auth_key: &AuthKey,
         local_lib: LibBucket,
     ) -> impl Future<Item = Vec<LibItem>, Error = CtxError> {
         // @TODO consider asserting if uid matches auth
         let builder = DatastoreReqBuilder::default()
-            .auth_key(auth.key.to_owned())
+            .auth_key(auth_key.to_owned())
             .collection(LIBRARY_COLLECTION_NAME.to_owned())
             .clone();
         let meta_req = builder.clone().with_cmd(DatastoreCmd::Meta {});
