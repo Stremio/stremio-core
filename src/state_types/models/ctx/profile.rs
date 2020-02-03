@@ -6,6 +6,7 @@ use crate::types::addons::Descriptor;
 use crate::types::api::{
     APIRequest, Auth, AuthKey, AuthRequest, AuthResponse, CollectionResponse, SuccessResponse,
 };
+use crate::types::UID;
 use derivative::Derivative;
 use futures::Future;
 use serde::{Deserialize, Serialize};
@@ -92,6 +93,13 @@ impl ProfileLoadable {
                 content
             }
         }
+    }
+    pub fn uid(&self) -> UID {
+        UID(self
+            .content()
+            .auth
+            .as_ref()
+            .map(|auth| auth.user.id.to_owned()))
     }
     pub fn content_mut(&mut self) -> &mut Profile {
         match self {

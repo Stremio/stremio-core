@@ -1,4 +1,7 @@
 use crate::state_types::models::ctx::error::CtxError;
+use crate::types::addons::Descriptor;
+use crate::types::api::AuthRequest;
+use crate::types::UID;
 use serde::Serialize;
 
 //
@@ -7,21 +10,21 @@ use serde::Serialize;
 #[derive(Debug, Clone, Serialize)]
 #[serde(tag = "event", content = "args")]
 pub enum Event {
-    ProfilePulledFromStorage,
-    ProfilePushedToStorage,
-    UserPulledFromAPI,
-    UserPushedToAPI,
-    AddonsPulledFromAPI,
-    AddonsPushedToAPI,
-    UserAuthenticated,
-    UserLoggedOut,
-    SessionDeleted,
-    AddonInstalled,
-    AddonUninstalled,
-    SettingsUpdated,
-    LibraryPulledFromStorage,
-    LibraryPushedToStorage,
-    LibrarySyncedWithAPI,
-    LibraryPushedToAPI,
-    Error(CtxError),
+    ProfilePulledFromStorage { uid: UID },
+    ProfilePushedToStorage { uid: UID },
+    UserPulledFromAPI { uid: UID },
+    UserPushedToAPI { uid: UID },
+    AddonsPulledFromAPI { uid: UID },
+    AddonsPushedToAPI { uid: UID },
+    UserAuthenticated { uid: UID, auth_request: AuthRequest },
+    UserLoggedOut { uid: UID },
+    SessionDeleted { uid: UID },
+    AddonInstalled { uid: UID, addon: Descriptor },
+    AddonUninstalled { uid: UID, addon: Descriptor },
+    SettingsUpdated { uid: UID },
+    LibraryPulledFromStorage { uid: UID },
+    LibraryPushedToStorage { uid: UID },
+    LibrarySyncedWithAPI { uid: UID },
+    LibraryPushedToAPI { uid: UID },
+    Error { error: CtxError, event: Box<Event> },
 }
