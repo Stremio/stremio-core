@@ -1,6 +1,6 @@
 use itertools::Itertools;
 use serde::Serialize;
-use stremio_core::state_types::models::ctx::library::LibraryLoadable;
+use stremio_core::state_types::models::ctx::library_loadable::LibraryLoadable;
 use stremio_core::state_types::models::ctx::Ctx;
 use stremio_core::state_types::msg::{Internal, Msg};
 use stremio_core::state_types::{Effects, Environment, UpdateWithCtx};
