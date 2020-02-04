@@ -26,5 +26,5 @@ pub enum Event {
     LibraryPushedToStorage { uid: UID },
     LibrarySyncedWithAPI { uid: UID },
     LibraryPushedToAPI { uid: UID },
-    Error { error: CtxError, event: Box<Event> },
+    Error { error: CtxError, source: Box<Event> },
 }

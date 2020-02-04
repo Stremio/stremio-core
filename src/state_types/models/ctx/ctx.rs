@@ -59,7 +59,7 @@ impl<Env: Environment + 'static> Ctx<Env> {
                                     Ok(_) => Ok(Msg::Event(Event::SessionDeleted { uid })),
                                     Err(error) => Err(Msg::Event(Event::Error {
                                         error,
-                                        event: Box::new(Event::SessionDeleted { uid }),
+                                        source: Box::new(Event::SessionDeleted { uid }),
                                     })),
                                 }
                             }),
@@ -85,7 +85,7 @@ impl<Env: Environment + 'static> Ctx<Env> {
                                     Ok(_) => Ok(Msg::Event(Event::LibraryPushedToStorage { uid })),
                                     Err(error) => Err(Msg::Event(Event::Error {
                                         error,
-                                        event: Box::new(Event::LibraryPushedToStorage { uid }),
+                                        source: Box::new(Event::LibraryPushedToStorage { uid }),
                                     })),
                                 }
                             }),
@@ -174,7 +174,7 @@ impl<Env: Environment + 'static> Ctx<Env> {
                                 Ok(_) => Ok(Msg::Event(Event::AddonsPushedToAPI { uid })),
                                 Err(error) => Ok(Msg::Event(Event::Error {
                                     error,
-                                    event: Box::new(Event::AddonsPushedToAPI { uid }),
+                                    source: Box::new(Event::AddonsPushedToAPI { uid }),
                                 })),
                             }),
                         ))
@@ -237,7 +237,7 @@ impl<Env: Environment + 'static> Ctx<Env> {
                             Ok(_) => Ok(Msg::Event(Event::ProfilePushedToStorage { uid })),
                             Err(error) => Err(Msg::Event(Event::Error {
                                 error,
-                                event: Box::new(Event::ProfilePushedToStorage { uid }),
+                                source: Box::new(Event::ProfilePushedToStorage { uid }),
                             })),
                         },
                     ),
@@ -283,7 +283,7 @@ impl<Env: Environment + 'static> Ctx<Env> {
                         };
                         Effects::msg(Msg::Event(Event::Error {
                             error: error.to_owned(),
-                            event: Box::new(Event::ProfilePulledFromStorage {
+                            source: Box::new(Event::ProfilePulledFromStorage {
                                 uid: self.profile.uid(),
                             }),
                         }))
@@ -332,7 +332,7 @@ impl<Env: Environment + 'static> Ctx<Env> {
                         };
                         Effects::msg(Msg::Event(Event::Error {
                             error: error.to_owned(),
-                            event: Box::new(Event::UserAuthenticated {
+                            source: Box::new(Event::UserAuthenticated {
                                 uid: self.profile.uid(),
                                 auth_request: auth_request.to_owned(),
                             }),
@@ -368,7 +368,7 @@ impl<Env: Environment + 'static> Ctx<Env> {
                     }
                     Err(error) => Effects::msg(Msg::Event(Event::Error {
                         error: error.to_owned(),
-                        event: Box::new(Event::AddonsPulledFromAPI {
+                        source: Box::new(Event::AddonsPulledFromAPI {
                             uid: self.profile.uid(),
                         }),
                     }))
@@ -448,7 +448,7 @@ impl<Env: Environment + 'static> Ctx<Env> {
                             Ok(_) => Ok(Msg::Event(Event::LibraryPushedToStorage { uid })),
                             Err(error) => Err(Msg::Event(Event::Error {
                                 error,
-                                event: Box::new(Event::LibraryPushedToStorage { uid }),
+                                source: Box::new(Event::LibraryPushedToStorage { uid }),
                             })),
                         })),
                     );
@@ -466,7 +466,7 @@ impl<Env: Environment + 'static> Ctx<Env> {
                                             }
                                             Err(error) => Err(Msg::Event(Event::Error {
                                                 error,
-                                                event: Box::new(Event::LibraryPushedToAPI { uid }),
+                                                source: Box::new(Event::LibraryPushedToAPI { uid }),
                                             })),
                                         }),
                                 )
@@ -501,7 +501,7 @@ impl<Env: Environment + 'static> Ctx<Env> {
                                 LibraryLoadable::Ready(LibBucket::new(uid.to_owned(), vec![]));
                             Effects::msg(Msg::Event(Event::Error {
                                 error: error.to_owned(),
-                                event: Box::new(Event::LibraryPulledFromStorage { uid }),
+                                source: Box::new(Event::LibraryPulledFromStorage { uid }),
                             }))
                             .join(Effects::msg(Msg::Internal(Internal::LibraryChanged)))
                         }
@@ -529,7 +529,7 @@ impl<Env: Environment + 'static> Ctx<Env> {
                                 LibraryLoadable::Ready(LibBucket::new(uid.to_owned(), vec![]));
                             Effects::msg(Msg::Event(Event::Error {
                                 error: error.to_owned(),
-                                event: Box::new(Event::LibrarySyncedWithAPI {
+                                source: Box::new(Event::LibrarySyncedWithAPI {
                                     uid: uid.to_owned(),
                                 }),
                             }))
@@ -555,14 +555,14 @@ impl<Env: Environment + 'static> Ctx<Env> {
                                 Ok(_) => Ok(Msg::Event(Event::LibraryPushedToStorage { uid })),
                                 Err(error) => Err(Msg::Event(Event::Error {
                                     error,
-                                    event: Box::new(Event::LibraryPushedToStorage { uid }),
+                                    source: Box::new(Event::LibraryPushedToStorage { uid }),
                                 })),
                             }),
                         )))
                         .join(Effects::msg(Msg::Internal(Internal::LibraryChanged))),
                         Err(error) => Effects::msg(Msg::Event(Event::Error {
                             error: error.to_owned(),
-                            event: Box::new(Event::LibrarySyncedWithAPI { uid }),
+                            source: Box::new(Event::LibrarySyncedWithAPI { uid }),
                         }))
                         .unchanged(),
                     }
