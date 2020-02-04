@@ -31,6 +31,7 @@ impl Error for EnvError {
     fn description(&self) -> &str {
         match self {
             EnvError::Js(msg) => &msg,
+            #[allow(deprecated)]
             EnvError::Serde(e) => &e.description(),
             EnvError::HTTPStatusCode(_) => "unexpected HTTP status code",
             EnvError::StorageMissing => "localStorage is missing",
