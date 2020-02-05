@@ -2,7 +2,7 @@ use crate::models::library_items::LibraryItems;
 use env_web::Env;
 use serde::{Deserialize, Serialize};
 use stremio_core::state_types::models::addon_details::AddonDetails;
-use stremio_core::state_types::models::catalog_filtered::CatalogFiltered;
+use stremio_core::state_types::models::catalog_with_filters::CatalogWithFilters;
 use stremio_core::state_types::models::catalogs_with_extra::CatalogsWithExtra;
 use stremio_core::state_types::models::continue_watching::ContinueWatching;
 use stremio_core::state_types::models::ctx::Ctx;
@@ -19,12 +19,12 @@ pub struct AppModel {
     pub ctx: Ctx<Env>,
     pub continue_watching: ContinueWatching,
     pub board: CatalogsWithExtra,
-    pub discover: CatalogFiltered<MetaPreview>,
+    pub discover: CatalogWithFilters<MetaPreview>,
     pub library: LibraryFiltered,
     pub search: CatalogsWithExtra,
     pub meta_details: MetaDetails,
     pub addon_details: AddonDetails,
-    pub addons: CatalogFiltered<DescriptorPreview>,
+    pub addons: CatalogWithFilters<DescriptorPreview>,
     pub streaming_server: StreamingServerLoadable,
     pub library_items: LibraryItems,
     pub player: Player,
