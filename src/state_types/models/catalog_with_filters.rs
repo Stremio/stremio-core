@@ -87,13 +87,13 @@ pub struct Selectable {
 
 #[derive(Derivative, Debug, Clone, Serialize)]
 #[derivative(Default(bound = ""))]
-pub struct CatalogFiltered<T> {
+pub struct CatalogWithFilters<T> {
     pub selected: Option<Selected>,
     pub selectable: Selectable,
     pub catalog_resource: Option<ResourceLoadable<Vec<T>>>,
 }
 
-impl<Env, T> UpdateWithCtx<Ctx<Env>> for CatalogFiltered<T>
+impl<Env, T> UpdateWithCtx<Ctx<Env>> for CatalogWithFilters<T>
 where
     Env: Environment + 'static,
     T: CatalogResourceAdapter,
@@ -101,7 +101,7 @@ where
 {
     fn update(&mut self, ctx: &Ctx<Env>, msg: &Msg) -> Effects {
         match msg {
-            Msg::Action(Action::Load(ActionLoad::CatalogFiltered(selected))) => {
+            Msg::Action(Action::Load(ActionLoad::CatalogWithFilters(selected))) => {
                 let selected = Selected {
                     request: ResourceRequest {
                         base: selected.request.base.to_owned(),

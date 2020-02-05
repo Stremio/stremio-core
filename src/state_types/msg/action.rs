@@ -1,5 +1,5 @@
 use crate::state_types::models::addon_details::Selected as AddonDetailsSelected;
-use crate::state_types::models::catalog_filtered::Selected as CatalogFilteredSelected;
+use crate::state_types::models::catalog_with_filters::Selected as CatalogWithFiltersSelected;
 use crate::state_types::models::catalogs_with_extra::Selected as CatalogsWithExtraSelected;
 use crate::state_types::models::ctx::profile_loadable::Settings as ProfileSettings;
 use crate::state_types::models::library_filtered::Selected as LibraryFilteredSelected;
@@ -33,7 +33,7 @@ pub enum ActionCtx {
 pub enum ActionLoad {
     Ctx,
     AddonDetails(AddonDetailsSelected),
-    CatalogFiltered(CatalogFilteredSelected),
+    CatalogWithFilters(CatalogWithFiltersSelected),
     CatalogsWithExtra(CatalogsWithExtraSelected),
     LibraryFiltered(LibraryFilteredSelected),
     MetaDetails(MetaDetailsSelected),
