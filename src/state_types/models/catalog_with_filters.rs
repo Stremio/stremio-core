@@ -211,9 +211,8 @@ fn selectable_update<T: CatalogResourceAdapter>(
                         ),
                     },
                 })
-        }) // TODO this .collect.iter should be removed
-        // .cloned()
-        // .unique_by(|selectable_catalog| &selectable_catalog.request)
+        })
+        .unique_by(|selectable_catalog| selectable_catalog.request.to_owned())
         .collect::<Vec<SelectableCatalog>>();
     let (selectable_types, selectable_catalogs) = match T::selectable_priority() {
         SelectablePriority::Type => {
