@@ -227,11 +227,10 @@ fn selectable_update<T: CatalogResourceAdapter>(
             let selectable_catalogs = selectable_catalogs
                 .iter()
                 .filter(|selectable_catalog| match catalog_resource {
-                    Some(catalog_resource) => selectable_catalog
-                        .request
-                        .path
-                        .type_name
-                        .eq(&catalog_resource.request.path.type_name),
+                    Some(catalog_resource) => {
+                        selectable_catalog.request.path.type_name
+                            == catalog_resource.request.path.type_name
+                    }
                     None => true,
                 })
                 .cloned()
@@ -242,12 +241,11 @@ fn selectable_update<T: CatalogResourceAdapter>(
             let selectable_types = selectable_catalogs
                 .iter()
                 .filter(|selectable_catalog| match catalog_resource {
-                    Some(catalog_resource) => selectable_catalog
-                        .request
-                        .path
-                        .id
-                        .eq(&catalog_resource.request.path.id),
-                    None => true,
+                    Some(catalog_resource) => {
+                        selectable_catalog.request.path.id == catalog_resource.request.path.id
+                            && selectable_catalog.request.base == catalog_resource.request.base
+                    }
+                    _ => true,
                 })
                 .unique_by(|selectable_catalog| &selectable_catalog.request.path.type_name)
                 .map(|selectable_catalog| SelectableType {
@@ -257,7 +255,12 @@ fn selectable_update<T: CatalogResourceAdapter>(
                 .collect::<Vec<_>>();
             let selectable_catalogs = selectable_catalogs
                 .iter()
-                .unique_by(|selectable_catalog| &selectable_catalog.request.path.id)
+                .unique_by(|selectable_catalog| {
+                    (
+                        &selectable_catalog.request.base,
+                        &selectable_catalog.request.path.id,
+                    )
+                })
                 .cloned()
                 .collect::<Vec<_>>();
             (selectable_types, selectable_catalogs)
