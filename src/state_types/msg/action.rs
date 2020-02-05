@@ -2,14 +2,21 @@ use crate::state_types::models::addon_details::Selected as AddonDetailsSelected;
 use crate::state_types::models::catalog_with_filters::Selected as CatalogWithFiltersSelected;
 use crate::state_types::models::catalogs_with_extra::Selected as CatalogsWithExtraSelected;
 use crate::state_types::models::ctx::profile_loadable::Settings as ProfileSettings;
+use crate::state_types::models::ctx::streaming_server_loadable::Settings as StreamingServerSettings;
 use crate::state_types::models::library_filtered::Selected as LibraryFilteredSelected;
 use crate::state_types::models::meta_details::Selected as MetaDetailsSelected;
 use crate::state_types::models::player::Selected as PlayerSelected;
-use crate::state_types::models::streaming_server::Settings as StreamingServerSettings;
 use crate::types::addons::{Descriptor, TransportUrl};
 use crate::types::api::AuthRequest;
 use crate::types::MetaPreview;
 use serde::Deserialize;
+
+#[derive(Debug, Clone, Deserialize)]
+#[serde(untagged)]
+pub enum CtxSettings {
+    Profile(ProfileSettings),
+    StreamingServer(StreamingServerSettings),
+}
 
 #[derive(Debug, Clone, Deserialize)]
 #[serde(tag = "action", content = "args")]
@@ -18,7 +25,7 @@ pub enum ActionCtx {
     Logout,
     InstallAddon(Descriptor),
     UninstallAddon(TransportUrl),
-    UpdateSettings(ProfileSettings),
+    UpdateSettings(CtxSettings),
     AddToLibrary(MetaPreview),
     RemoveFromLibrary(String),
     PushUserToAPI,
@@ -26,6 +33,7 @@ pub enum ActionCtx {
     PushAddonsToAPI,
     PullAddonsFromAPI,
     SyncLibraryWithAPI,
+    ReloadStreamingServer,
 }
 
 #[derive(Debug, Clone, Deserialize)]
@@ -38,7 +46,6 @@ pub enum ActionLoad {
     LibraryFiltered(LibraryFilteredSelected),
     MetaDetails(MetaDetailsSelected),
     Player(PlayerSelected),
-    StreamingServer,
     Notifications,
 }
 
@@ -47,12 +54,6 @@ pub enum ActionLoad {
 pub enum ActionPlayer {
     TimeChanged { time: u64, duration: u64 },
     Ended,
-}
-
-#[derive(Debug, Clone, Deserialize)]
-#[serde(tag = "action", content = "args")]
-pub enum ActionStreamingServer {
-    UpdateSettings(StreamingServerSettings),
 }
 
 //
@@ -64,6 +65,5 @@ pub enum Action {
     Ctx(ActionCtx),
     Load(ActionLoad),
     Player(ActionPlayer),
-    StreamingServer(ActionStreamingServer),
     Unload,
 }

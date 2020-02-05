@@ -62,6 +62,10 @@ pub enum Event {
     LibraryPushedToAPI {
         uid: UID,
     },
+    StreamingServerLoaded {
+        #[serde(with = "url_serde")]
+        url: Url,
+    },
     StreamingServerSettingsUpdated {
         #[serde(with = "url_serde")]
         url: Url,

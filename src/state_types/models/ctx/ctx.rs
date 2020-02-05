@@ -1,7 +1,8 @@
 use super::library_loadable::{LibraryLoadable, LibraryRequest};
 use super::profile_loadable::{Profile, ProfileLoadable, ProfileRequest};
+use super::streaming_server_loadable::StreamingServerLoadable;
 use crate::constants::OFFICIAL_ADDONS;
-use crate::state_types::msg::{Action, ActionCtx, ActionLoad, Event, Internal, Msg};
+use crate::state_types::msg::{Action, ActionCtx, ActionLoad, CtxSettings, Event, Internal, Msg};
 use crate::state_types::{Effect, Effects, Environment, Update};
 use crate::types::addons::Descriptor;
 use crate::types::{LibBucket, LibItem, LibItemState};
@@ -16,6 +17,7 @@ use std::marker::PhantomData;
 #[derivative(Default, Debug)]
 pub struct Ctx<Env: Environment> {
     pub profile: ProfileLoadable,
+    pub streaming_server: StreamingServerLoadable,
     #[serde(skip)]
     pub library: LibraryLoadable,
     #[derivative(Debug = "ignore")]
@@ -135,7 +137,7 @@ impl<Env: Environment + 'static> Ctx<Env> {
                     Effects::none().unchanged()
                 }
             }
-            Msg::Action(Action::Ctx(ActionCtx::UpdateSettings(settings))) => {
+            Msg::Action(Action::Ctx(ActionCtx::UpdateSettings(CtxSettings::Profile(settings)))) => {
                 let mut profile_content = self.profile.content_mut();
                 if profile_content.settings.ne(settings) {
                     profile_content.settings = settings.to_owned();
@@ -572,12 +574,147 @@ impl<Env: Environment + 'static> Ctx<Env> {
             _ => Effects::none().unchanged(),
         }
     }
+    fn streaming_server_update(&mut self, msg: &Msg) -> Effects {
+        match msg {
+            Msg::Action(Action::Load(ActionLoad::Ctx))
+            | Msg::Action(Action::Ctx(ActionCtx::ReloadStreamingServer)) => {
+                let url = self
+                    .profile
+                    .content()
+                    .settings
+                    .streaming_server_url
+                    .to_owned();
+                let next_streaming_server = StreamingServerLoadable::Loading {
+                    url: url.to_owned(),
+                };
+                if next_streaming_server.ne(&self.streaming_server) {
+                    self.streaming_server = next_streaming_server;
+                    Effects::one(Box::new(StreamingServerLoadable::load::<Env>(&url).then(
+                        move |result| {
+                            Ok(Msg::Internal(Internal::StreamingServerLoadResult(
+                                url, result,
+                            )))
+                        },
+                    )))
+                } else {
+                    Effects::none().unchanged()
+                }
+            }
+            Msg::Action(Action::Ctx(ActionCtx::UpdateSettings(CtxSettings::StreamingServer(
+                settings,
+            )))) => match &mut self.streaming_server {
+                StreamingServerLoadable::Ready {
+                    url,
+                    settings: ready_settings,
+                    ..
+                } if settings.ne(ready_settings) => {
+                    *ready_settings = settings.to_owned();
+                    let url = url.to_owned();
+                    Effects::one(Box::new(
+                        StreamingServerLoadable::update_settings::<Env>(&url, settings).then(
+                            move |result| {
+                                Ok(Msg::Internal(
+                                    Internal::StreamingServerUpdateSettingsResult(url, result),
+                                ))
+                            },
+                        ),
+                    ))
+                }
+                _ => Effects::none().unchanged(),
+            },
+            Msg::Internal(Internal::ProfileChanged)
+                if Some(&self.profile.content().settings.streaming_server_url)
+                    .ne(&self.streaming_server.url()) =>
+            {
+                let url = self
+                    .profile
+                    .content()
+                    .settings
+                    .streaming_server_url
+                    .to_owned();
+                self.streaming_server = StreamingServerLoadable::Loading {
+                    url: url.to_owned(),
+                };
+                Effects::one(Box::new(StreamingServerLoadable::load::<Env>(&url).then(
+                    move |result| {
+                        Ok(Msg::Internal(Internal::StreamingServerLoadResult(
+                            url, result,
+                        )))
+                    },
+                )))
+            }
+            Msg::Internal(Internal::StreamingServerLoadResult(url, result)) => {
+                match &self.streaming_server {
+                    StreamingServerLoadable::Loading { url: loading_url }
+                        if loading_url.eq(url) =>
+                    {
+                        match result {
+                            Ok((base_url, settings)) => {
+                                self.streaming_server = StreamingServerLoadable::Ready {
+                                    url: url.to_owned(),
+                                    base_url: base_url.to_owned(),
+                                    settings: settings.to_owned(),
+                                };
+                                Effects::msg(Msg::Event(Event::StreamingServerLoaded {
+                                    url: url.to_owned(),
+                                }))
+                            }
+                            Err(error) => {
+                                self.streaming_server = StreamingServerLoadable::Error {
+                                    url: url.to_owned(),
+                                    error: error.to_string(),
+                                };
+                                Effects::msg(Msg::Event(Event::Error {
+                                    error: error.to_owned(),
+                                    source: Box::new(Event::StreamingServerLoaded {
+                                        url: url.to_owned(),
+                                    }),
+                                }))
+                            }
+                        }
+                    }
+                    _ => Effects::none().unchanged(),
+                }
+            }
+            Msg::Internal(Internal::StreamingServerUpdateSettingsResult(url, result)) => {
+                match &self.streaming_server {
+                    StreamingServerLoadable::Ready { url: ready_url, .. } if ready_url.eq(url) => {
+                        match result {
+                            Ok(_) => {
+                                Effects::msg(Msg::Event(Event::StreamingServerSettingsUpdated {
+                                    url: url.to_owned(),
+                                }))
+                                .unchanged()
+                            }
+                            Err(error) => {
+                                self.streaming_server = StreamingServerLoadable::Error {
+                                    url: url.to_owned(),
+                                    error: error.to_string(),
+                                };
+                                Effects::msg(Msg::Event(Event::Error {
+                                    error: error.to_owned(),
+                                    source: Box::new(Event::StreamingServerSettingsUpdated {
+                                        url: url.to_owned(),
+                                    }),
+                                }))
+                            }
+                        }
+                    }
+                    _ => Effects::none().unchanged(),
+                }
+            }
+            _ => Effects::none().unchanged(),
+        }
+    }
 }
 
 impl<Env: Environment + 'static> Update for Ctx<Env> {
     fn update(&mut self, msg: &Msg) -> Effects {
         let profile_effects = self.profile_update(msg);
         let library_effects = self.library_update(msg);
-        profile_effects.join(library_effects)
+        let streaming_server_effects = self.streaming_server_update(msg);
+        profile_effects
+            .join(library_effects)
+            .join(streaming_server_effects)
     }
 }
