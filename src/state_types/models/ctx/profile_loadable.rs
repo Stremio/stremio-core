@@ -39,7 +39,7 @@ impl Default for Settings {
             interface_language: "eng".to_owned(),
             subtitles_language: "eng".to_owned(),
             subtitles_size: 100,
-            subtitles_text_color: "#FFFFFF00".to_owned(),
+            subtitles_text_color: "#FFFFFFFF".to_owned(),
             subtitles_background_color: "#00000000".to_owned(),
             subtitles_outline_color: "#00000000".to_owned(),
         }
