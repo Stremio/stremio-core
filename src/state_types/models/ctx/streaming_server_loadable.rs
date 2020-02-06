@@ -12,6 +12,7 @@ use url::Url;
 use url_serde;
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct Settings {
     pub app_path: String,
     pub cache_root: String,
