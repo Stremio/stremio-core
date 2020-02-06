@@ -38,7 +38,7 @@ impl Default for Settings {
                 .expect("streaming_server_url builder cannot fail"),
             interface_language: "eng".to_owned(),
             subtitles_language: "eng".to_owned(),
-            subtitles_size: 2,
+            subtitles_size: 100,
             subtitles_text_color: "#FFFFFF00".to_owned(),
             subtitles_background_color: "#00000000".to_owned(),
             subtitles_outline_color: "#00000000".to_owned(),
