@@ -63,6 +63,26 @@ impl StreamingServerLoadable {
         url: &Url,
         settings: &Settings,
     ) -> impl Future<Item = (), Error = CtxError> {
+        #[derive(Serialize)]
+        #[serde(rename_all = "camelCase")]
+        struct Body {
+            pub cache_size: Option<f64>,
+            pub bt_max_connections: u64,
+            pub bt_handshake_timeout: u64,
+            pub bt_request_timeout: u64,
+            pub bt_download_speed_soft_limit: f64,
+            pub bt_download_speed_hard_limit: f64,
+            pub bt_min_peers_for_stable: u64,
+        }
+        let body = Body {
+            cache_size: settings.cache_size.to_owned(),
+            bt_max_connections: settings.bt_max_connections.to_owned(),
+            bt_handshake_timeout: settings.bt_handshake_timeout.to_owned(),
+            bt_request_timeout: settings.bt_request_timeout.to_owned(),
+            bt_download_speed_soft_limit: settings.bt_download_speed_soft_limit.to_owned(),
+            bt_download_speed_hard_limit: settings.bt_download_speed_hard_limit.to_owned(),
+            bt_min_peers_for_stable: settings.bt_min_peers_for_stable.to_owned(),
+        };
         request::<Env, _, SuccessResponse>(
             &url,
             "settings",
@@ -71,7 +91,7 @@ impl StreamingServerLoadable {
                 .iter()
                 .cloned()
                 .collect(),
-            settings.to_owned(),
+            body,
         )
         .then(|result| result.map(|_| ()))
         .map_err(CtxError::from)
