@@ -21,6 +21,7 @@ pub struct Settings {
     pub binge_watching: bool,
     pub play_in_background: bool,
     pub play_in_external_player: bool,
+    pub hardware_decoding: bool,
     pub subtitles_language: String,
     pub subtitles_size: u8,
     pub subtitles_text_color: String,
@@ -34,6 +35,7 @@ impl Default for Settings {
             binge_watching: false,
             play_in_background: true,
             play_in_external_player: false,
+            hardware_decoding: false,
             streaming_server_url: Url::parse(STREAMING_SERVER_URL)
                 .expect("streaming_server_url builder cannot fail"),
             interface_language: "eng".to_owned(),
