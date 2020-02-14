@@ -105,20 +105,28 @@ impl<Env: Environment + 'static> Ctx<Env> {
             }
             Msg::Action(Action::Ctx(ActionCtx::InstallAddon(addon))) => {
                 let profile_content = self.profile.content_mut();
-                let addon_position = profile_content
-                    .addons
-                    .iter()
-                    .map(|addon| &addon.transport_url)
-                    .position(|transport_url| transport_url.eq(&addon.transport_url));
-                if let Some(addon_position) = addon_position {
-                    profile_content.addons.remove(addon_position);
-                };
-                profile_content.addons.push(addon.to_owned());
-                Effects::msg(Msg::Event(Event::AddonInstalled {
-                    uid: self.profile.uid(),
-                    addon: addon.to_owned(),
-                }))
-                .join(Effects::msg(Msg::Internal(Internal::ProfileChanged)))
+                // Check if addons collection contains the exact same version of the descriptor
+                // if not its added/updated
+                if !profile_content.addons.contains(addon) {
+                    let addon_position = profile_content
+                        .addons
+                        .iter()
+                        .map(|addon| &addon.transport_url)
+                        .position(|transport_url| transport_url.eq(&addon.transport_url));
+                    if let Some(addon_position) = addon_position {
+                        profile_content.addons[addon_position] = addon.to_owned();
+                    } else {
+                        profile_content.addons.push(addon.to_owned());
+                    }
+                    Effects::msg(Msg::Event(Event::AddonInstalled {
+                        uid: self.profile.uid(),
+                        addon: addon.to_owned(),
+                    }))
+                    .join(Effects::msg(Msg::Internal(Internal::ProfileChanged)))
+                } else {
+                    // TODO Consider return error event if exact same version of addon is installed
+                    Effects::none().unchanged()
+                }
             }
             Msg::Action(Action::Ctx(ActionCtx::UninstallAddon(transport_url))) => {
                 let profile_content = self.profile.content_mut();
