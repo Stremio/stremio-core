@@ -381,6 +381,7 @@ impl<Env: Environment + 'static> Ctx<Env> {
                             Effects::msg(Msg::Event(Event::AddonsPulledFromAPI {
                                 uid: self.profile.uid(),
                             }))
+                            .join(Effects::msg(Msg::Internal(Internal::ProfileChanged)))
                         } else {
                             Effects::msg(Msg::Event(Event::AddonsPulledFromAPI {
                                 uid: self.profile.uid(),
