@@ -156,7 +156,10 @@ impl<Env: Environment + 'static> Ctx<Env> {
                     }))
                     .join(Effects::msg(Msg::Internal(Internal::ProfileChanged)))
                 } else {
-                    Effects::none().unchanged()
+                    Effects::msg(Msg::Event(Event::SettingsUpdated {
+                        uid: self.profile.uid(),
+                    }))
+                    .unchanged()
                 }
             }
             Msg::Action(Action::Ctx(ActionCtx::PushUserToAPI)) => {
