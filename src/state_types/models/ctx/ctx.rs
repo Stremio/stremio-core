@@ -142,6 +142,8 @@ impl<Env: Environment + 'static> Ctx<Env> {
                     }))
                     .join(Effects::msg(Msg::Internal(Internal::ProfileChanged)))
                 } else {
+                    // TODO Consider return error event if addon is not installed
+                    // TODO Consider return error event if addon is protected
                     Effects::none().unchanged()
                 }
             }
