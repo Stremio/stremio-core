@@ -330,6 +330,7 @@ impl<Env: Environment + 'static> Ctx<Env> {
                         let next_library =
                             LibraryLoadable::Loading(uid.to_owned(), LibraryRequest::API);
                         let library_effects = if next_library.ne(&self.library) {
+                            self.library = next_library;
                             Effects::one(Box::new(
                                 LibraryLoadable::pull_from_api::<Env>(&auth.key, vec![], true)
                                     .then(enclose!((uid) move |result| {
