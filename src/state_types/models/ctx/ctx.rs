@@ -215,6 +215,7 @@ impl<Env: Environment + 'static> Ctx<Env> {
                         .unchanged()
                     }
                     _ => {
+                        // Does this code need to be moved ?
                         let next_addons = self
                             .profile
                             .content()
@@ -316,6 +317,7 @@ impl<Env: Environment + 'static> Ctx<Env> {
                     ..
                 } if loading_auth_request.eq(auth_request) => match result {
                     Ok((auth, addons)) => {
+                        // no need to check if profile actually changed, because auth key will allways be different
                         self.profile = ProfileLoadable::Ready {
                             content: Profile {
                                 auth: Some(auth.to_owned()),
@@ -434,6 +436,7 @@ impl<Env: Environment + 'static> Ctx<Env> {
                     lib_item.removed = true;
                     Effects::msg(Msg::Internal(Internal::UpdateLibraryItem(lib_item))).unchanged()
                 } else {
+                    // TODO Consider return error event for item not in lib
                     Effects::none().unchanged()
                 }
             }
@@ -449,7 +452,10 @@ impl<Env: Environment + 'static> Ctx<Env> {
                         ))
                         .unchanged()
                     }
-                    _ => Effects::none().unchanged(),
+                    _ => {
+                        // TODO Consider return error event for user not logged in or library still loading
+                        Effects::none().unchanged()
+                    }
                 }
             }
             Msg::Internal(Internal::UpdateLibraryItem(lib_item)) => match &mut self.library {
