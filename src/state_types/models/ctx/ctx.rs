@@ -539,14 +539,25 @@ impl<Env: Environment + 'static> Ctx<Env> {
                 {
                     match result {
                         Ok(items) => {
-                            self.library = LibraryLoadable::Ready(LibBucket::new(
-                                uid.to_owned(),
-                                items.to_owned(),
-                            ));
-                            Effects::msg(Msg::Event(Event::LibrarySyncedWithAPI {
-                                uid: uid.to_owned(),
-                            }))
-                            .join(Effects::msg(Msg::Internal(Internal::LibraryChanged)))
+                            let uid = uid.to_owned();
+                            let mut next_bucket = LibBucket::new(uid.to_owned(), vec![]);
+                            let persist_effect = Box::new(
+                                LibraryLoadable::update_and_persist::<Env>(
+                                    &mut next_bucket,
+                                    LibBucket::new(uid.to_owned(), items.to_owned()),
+                                )
+                                .then(enclose!((uid) move |result| match result {
+                                    Ok(_) => Ok(Msg::Event(Event::LibraryPushedToStorage { uid })),
+                                    Err(error) => Err(Msg::Event(Event::Error {
+                                        error,
+                                        source: Box::new(Event::LibraryPushedToStorage { uid }),
+                                    })),
+                                })),
+                            );
+                            self.library = LibraryLoadable::Ready(next_bucket);
+                            Effects::msg(Msg::Event(Event::LibrarySyncedWithAPI { uid }))
+                                .join(Effects::one(persist_effect))
+                                .join(Effects::msg(Msg::Internal(Internal::LibraryChanged)))
                         }
                         Err(error) => {
                             self.library =
