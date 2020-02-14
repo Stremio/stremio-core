@@ -195,7 +195,10 @@ impl<Env: Environment + 'static> Ctx<Env> {
                         ))
                         .unchanged()
                     }
-                    _ => Effects::none().unchanged(),
+                    _ => {
+                        // TODO Consider return error event for user not logged in
+                        Effects::none().unchanged()
+                    }
                 }
             }
             Msg::Action(Action::Ctx(ActionCtx::PullAddonsFromAPI)) => {
