@@ -261,6 +261,7 @@ impl<Env: Environment + 'static> Ctx<Env> {
                         },
                     ),
                 ))
+                .unchanged()
             }
             Msg::Internal(Internal::ProfileStorageResult(result)) => match &self.profile {
                 ProfileLoadable::Loading {
