@@ -1,6 +1,6 @@
 use crate::state_types::models::ctx::error::CtxError;
 use crate::state_types::models::ctx::profile_loadable::Profile;
-use crate::state_types::models::ctx::streaming_server_loadable::Settings as StreamingServerSettings;
+use crate::state_types::models::streaming_server::Settings as StreamingServerSettings;
 use crate::state_types::EnvError;
 use crate::types::addons::{Descriptor, Manifest, ResourceRequest, ResourceResponse, TransportUrl};
 use crate::types::api::{Auth, AuthKey, AuthRequest};
@@ -31,9 +31,9 @@ pub enum Internal {
     // Result for sync library items with API. Returns newer items that needs to be updated.
     LibrarySyncResult(UID, Result<Vec<LibItem>, CtxError>),
     // Result for loading streaming server
-    StreamingServerLoadResult(Url, Result<(Url, StreamingServerSettings), CtxError>),
+    StreamingServerSettingsResult(Url, Result<StreamingServerSettings, EnvError>),
     // Result for updating streaming server
-    StreamingServerUpdateSettingsResult(Url, Result<(), CtxError>),
+    StreamingServerUpdateSettingsResult(Url, Result<(), EnvError>),
     ResourceRequestResult(ResourceRequest, Box<Result<ResourceResponse, EnvError>>),
     ManifestRequestResult(TransportUrl, Result<Manifest, EnvError>),
 }
