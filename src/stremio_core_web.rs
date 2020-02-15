@@ -47,6 +47,9 @@ impl StremioCoreWeb {
                     ModelFieldName::AddonDetails => {
                         model.addon_details.update(&model.ctx, &message)
                     }
+                    ModelFieldName::StreamingServer => {
+                        model.streaming_server.update(&model.ctx, &message)
+                    }
                     ModelFieldName::Player => model.player.update(&model.ctx, &message),
                 })
             } else {
@@ -74,6 +77,9 @@ impl StremioCoreWeb {
                 ModelFieldName::MetaDetails => JsValue::from_serde(&model.meta_details).unwrap(),
                 ModelFieldName::Addons => JsValue::from_serde(&model.addons).unwrap(),
                 ModelFieldName::AddonDetails => JsValue::from_serde(&model.addon_details).unwrap(),
+                ModelFieldName::StreamingServer => {
+                    JsValue::from_serde(&model.streaming_server).unwrap()
+                }
                 ModelFieldName::Player => JsValue::from_serde(&model.player).unwrap(),
             }
         } else {

@@ -9,6 +9,7 @@ use stremio_core::state_types::models::ctx::Ctx;
 use stremio_core::state_types::models::library_filtered::LibraryFiltered;
 use stremio_core::state_types::models::meta_details::MetaDetails;
 use stremio_core::state_types::models::player::Player;
+use stremio_core::state_types::models::streaming_server::StreamingServer;
 use stremio_core::types::addons::DescriptorPreview;
 use stremio_core::types::MetaPreview;
 use stremio_derive::Model;
@@ -25,6 +26,7 @@ pub struct AppModel {
     pub meta_details: MetaDetails,
     pub addons: CatalogWithFilters<DescriptorPreview>,
     pub addon_details: AddonDetails,
+    pub streaming_server: StreamingServer,
     pub player: Player,
 }
 
@@ -41,5 +43,6 @@ pub enum ModelFieldName {
     MetaDetails,
     Addons,
     AddonDetails,
+    StreamingServer,
     Player,
 }
