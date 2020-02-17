@@ -37,12 +37,7 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for StreamingServer {
     fn update(&mut self, ctx: &Ctx<Env>, msg: &Msg) -> Effects {
         match msg {
             Msg::Action(Action::StreamingServer(ActionStreamingServer::Reload)) => {
-                let url = ctx
-                    .profile
-                    .content()
-                    .settings
-                    .streaming_server_url
-                    .to_owned();
+                let url = ctx.profile().settings.streaming_server_url.to_owned();
                 let next_selected = Some(url.to_owned());
                 let next_settings = Some(Loadable::Loading);
                 if next_selected.ne(&self.selected) || next_settings.ne(&self.settings) {
@@ -76,15 +71,10 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for StreamingServer {
                 _ => Effects::none().unchanged(),
             },
             Msg::Internal(Internal::ProfileChanged)
-                if Some(&ctx.profile.content().settings.streaming_server_url)
+                if Some(&ctx.profile().settings.streaming_server_url)
                     .ne(&self.selected.as_ref()) =>
             {
-                let url = ctx
-                    .profile
-                    .content()
-                    .settings
-                    .streaming_server_url
-                    .to_owned();
+                let url = ctx.profile().settings.streaming_server_url.to_owned();
                 self.selected = Some(url.to_owned());
                 self.settings = Some(Loadable::Loading);
                 Effects::one(Box::new(get_settings::<Env>(&url).then(move |result| {

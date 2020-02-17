@@ -1,7 +1,6 @@
 use super::common::{
     get_resource, resources_update, ResourceContent, ResourceLoadable, ResourcesAction,
 };
-use crate::state_types::models::ctx::library_loadable::LibraryLoadable;
 use crate::state_types::models::ctx::Ctx;
 use crate::state_types::msg::Internal::*;
 use crate::state_types::msg::*;
@@ -26,17 +25,10 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for Notifications {
     fn update(&mut self, ctx: &Ctx<Env>, msg: &Msg) -> Effects {
         match msg {
             Msg::Action(Action::Load(ActionLoad::Notifications)) => {
-                let lib = match &ctx.library {
-                    LibraryLoadable::Ready(l) => l,
-                    _ => {
-                        *self = Notifications::default();
-                        return Effects::none();
-                    }
-                };
+                let lib = ctx.library();
 
                 let (groups, effects): (Vec<_>, Vec<_>) = ctx
-                    .profile
-                    .content()
+                    .profile()
                     .addons
                     .iter()
                     .flat_map(|addon| {
@@ -121,7 +113,7 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for Notifications {
                     // Modify all the items so that only the new videos are left
                     if let ResourceContent::Ready(ref mut meta_items) = self.groups[idx].content {
                         for item in meta_items {
-                            if let Some(lib_item) = ctx.library.get_item(&item.id) {
+                            if let Some(lib_item) = ctx.library().items.get(&item.id) {
                                 item.videos
                                     // It's not gonna be a notification if we don't have the
                                     // released date of the last watched video

@@ -2,11 +2,11 @@ use crate::state_types::models::common::{
     eq_update, resource_update, resources_update_with_vector_content, ResourceAction,
     ResourceContent, ResourceLoadable, ResourcesAction,
 };
-use crate::state_types::models::ctx::profile_loadable::Settings as ProfileSettings;
 use crate::state_types::models::ctx::Ctx;
 use crate::state_types::msg::{Action, ActionLoad, ActionPlayer, Internal, Msg};
 use crate::state_types::{Effects, Environment, UpdateWithCtx};
 use crate::types::addons::{AggrRequest, ResourceRef, ResourceRequest};
+use crate::types::profile::Settings as ProfileSettings;
 use crate::types::{MetaDetail, Stream, SubtitlesSource, Video};
 use serde::{Deserialize, Serialize};
 
@@ -48,7 +48,7 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for Player {
                         &mut self.subtitles_resources,
                         ResourcesAction::ResourcesRequested {
                             request: &AggrRequest::AllOfResource(subtitles_resource_ref.to_owned()),
-                            addons: &ctx.profile.content().addons,
+                            addons: &ctx.profile().addons,
                         },
                     ),
                     _ => eq_update(&mut self.subtitles_resources, vec![]),
@@ -60,7 +60,7 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for Player {
                         .selected
                         .as_ref()
                         .and_then(|selected| selected.video_id.to_owned()),
-                    &ctx.profile.content().settings,
+                    &ctx.profile().settings,
                 );
                 selected_effects
                     .join(meta_effects)
@@ -78,7 +78,7 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for Player {
                         .selected
                         .as_ref()
                         .and_then(|selected| selected.video_id.to_owned()),
-                    &ctx.profile.content().settings,
+                    &ctx.profile().settings,
                 );
                 selected_effects
                     .join(meta_effects)
@@ -91,7 +91,7 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for Player {
                         meta_resource_request: Some(meta_resource_request),
                         video_id: Some(video_id),
                         ..
-                    }) => match ctx.library.get_item(&meta_resource_request.path.id) {
+                    }) => match ctx.library().items.get(&meta_resource_request.path.id) {
                         Some(lib_item) => {
                             let mut lib_item = lib_item.to_owned();
                             lib_item.mtime = Env::now();
@@ -133,7 +133,7 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for Player {
                         .selected
                         .as_ref()
                         .and_then(|selected| selected.video_id.to_owned()),
-                    &ctx.profile.content().settings,
+                    &ctx.profile().settings,
                 );
                 meta_effects
                     .join(subtitles_effects)

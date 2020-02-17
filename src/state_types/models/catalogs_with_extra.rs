@@ -35,7 +35,7 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for CatalogsWithExtra {
                         request: &AggrRequest::AllCatalogs {
                             extra: &selected.extra,
                         },
-                        addons: &ctx.profile.content().addons,
+                        addons: &ctx.profile().addons,
                     },
                 );
                 selected_effects.join(catalogs_effects)
@@ -62,7 +62,7 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for CatalogsWithExtra {
                         request: &AggrRequest::AllCatalogs {
                             extra: &selected.extra,
                         },
-                        addons: &ctx.profile.content().addons,
+                        addons: &ctx.profile().addons,
                     },
                 ),
                 _ => Effects::none().unchanged(),
