@@ -32,7 +32,6 @@ pub enum Ctx<Env: Environment> {
     Loading {
         #[serde(skip)]
         request: CtxRequest,
-        #[serde(flatten)]
         profile: Profile,
         #[serde(skip)]
         library: LibBucket,
@@ -41,7 +40,6 @@ pub enum Ctx<Env: Environment> {
         env: PhantomData<Env>,
     },
     Ready {
-        #[serde(flatten)]
         profile: Profile,
         #[serde(skip)]
         library: LibBucket,
