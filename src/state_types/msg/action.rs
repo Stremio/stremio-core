@@ -1,13 +1,13 @@
 use crate::state_types::models::addon_details::Selected as AddonDetailsSelected;
 use crate::state_types::models::catalog_with_filters::Selected as CatalogWithFiltersSelected;
 use crate::state_types::models::catalogs_with_extra::Selected as CatalogsWithExtraSelected;
-use crate::state_types::models::ctx::profile_loadable::Settings as ProfileSettings;
 use crate::state_types::models::library_filtered::Selected as LibraryFilteredSelected;
 use crate::state_types::models::meta_details::Selected as MetaDetailsSelected;
 use crate::state_types::models::player::Selected as PlayerSelected;
 use crate::state_types::models::streaming_server::Settings as StreamingServerSettings;
 use crate::types::addons::{Descriptor, TransportUrl};
 use crate::types::api::AuthRequest;
+use crate::types::profile::Settings as ProfileSettings;
 use crate::types::MetaPreview;
 use serde::Deserialize;
 

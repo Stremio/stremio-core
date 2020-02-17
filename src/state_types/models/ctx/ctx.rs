@@ -1,100 +1,179 @@
-use super::library_loadable::{LibraryLoadable, LibraryRequest};
-use super::profile_loadable::{Profile, ProfileLoadable, ProfileRequest};
+use super::{
+    authenticate, delete_session, pull_addons_from_api, pull_library_from_api,
+    pull_library_from_storage, pull_profile_from_storage, push_addons_to_api,
+    push_library_borrowed_to_storage, push_library_to_api, push_profile_to_storage,
+    sync_library_with_api, update_and_persist_library,
+};
 use crate::constants::OFFICIAL_ADDONS;
 use crate::state_types::msg::{Action, ActionCtx, ActionLoad, Event, Internal, Msg};
 use crate::state_types::{Effect, Effects, Environment, Update};
 use crate::types::addons::Descriptor;
+use crate::types::api::AuthRequest;
+use crate::types::profile::{Profile, Settings};
 use crate::types::{LibBucket, LibItem, LibItemState};
 use chrono::Datelike;
 use derivative::Derivative;
 use enclose::enclose;
-use futures::future::Future;
+use futures::Future;
 use serde::Serialize;
 use std::marker::PhantomData;
+use std::ops::Deref;
 
-#[derive(Derivative, Clone, Serialize)]
-#[derivative(Default, Debug)]
-pub struct Ctx<Env: Environment> {
-    pub profile: ProfileLoadable,
-    #[serde(skip)]
-    pub library: LibraryLoadable,
-    #[derivative(Debug = "ignore")]
-    #[serde(skip)]
-    env: PhantomData<Env>,
+#[derive(Clone, Debug, PartialEq)]
+pub enum CtxRequest {
+    Storage,
+    API(AuthRequest),
+}
+
+#[derive(Derivative, Clone, PartialEq, Serialize)]
+#[derivative(Debug)]
+#[serde(untagged)]
+pub enum Ctx<Env: Environment> {
+    Loading {
+        #[serde(skip)]
+        request: CtxRequest,
+        #[serde(flatten)]
+        profile: Profile,
+        #[serde(skip)]
+        library: LibBucket,
+        #[serde(skip)]
+        #[derivative(Debug = "ignore")]
+        env: PhantomData<Env>,
+    },
+    Ready {
+        #[serde(flatten)]
+        profile: Profile,
+        #[serde(skip)]
+        library: LibBucket,
+        #[serde(skip)]
+        #[derivative(Debug = "ignore")]
+        env: PhantomData<Env>,
+    },
 }
 
 impl<Env: Environment + 'static> Ctx<Env> {
-    fn profile_update(&mut self, msg: &Msg) -> Effects {
+    pub fn profile(&self) -> &Profile {
+        match &self {
+            Ctx::Loading { profile, .. } | Ctx::Ready { profile, .. } => &profile,
+        }
+    }
+    pub fn library(&self) -> &LibBucket {
+        match &self {
+            Ctx::Loading { library, .. } | Ctx::Ready { library, .. } => &library,
+        }
+    }
+    fn profile_mut(&mut self) -> &mut Profile {
+        match self {
+            Ctx::Loading { profile, .. } | Ctx::Ready { profile, .. } => profile,
+        }
+    }
+    fn library_mut(&mut self) -> &mut LibBucket {
+        match self {
+            Ctx::Loading { library, .. } | Ctx::Ready { library, .. } => library,
+        }
+    }
+    fn loading(&self, request: CtxRequest) -> Self {
+        let (profile, library) = match &self {
+            Ctx::Loading {
+                profile, library, ..
+            }
+            | Ctx::Ready {
+                profile, library, ..
+            } => (profile, library),
+        };
+        Ctx::Loading {
+            request,
+            profile: profile.to_owned(),
+            library: library.to_owned(),
+            env: PhantomData,
+        }
+    }
+    fn ready(&self) -> Self {
+        let (profile, library) = match &self {
+            Ctx::Loading {
+                profile, library, ..
+            }
+            | Ctx::Ready {
+                profile, library, ..
+            } => (profile, library),
+        };
+        Ctx::Ready {
+            profile: profile.to_owned(),
+            library: library.to_owned(),
+            env: PhantomData,
+        }
+    }
+}
+
+impl<Env: Environment + 'static> Default for Ctx<Env> {
+    fn default() -> Self {
+        Ctx::Ready {
+            profile: Profile::default(),
+            library: LibBucket::default(),
+            env: PhantomData,
+        }
+    }
+}
+
+impl<Env: Environment + 'static> Update for Ctx<Env> {
+    fn update(&mut self, msg: &Msg) -> Effects {
         match msg {
             Msg::Action(Action::Load(ActionLoad::Ctx)) => {
-                self.profile = ProfileLoadable::Loading {
-                    request: ProfileRequest::Storage,
-                    content: self.profile.content().to_owned(),
-                };
-                Effects::one(Box::new(ProfileLoadable::pull_from_storage::<Env>().then(
-                    |result| Ok(Msg::Internal(Internal::ProfileStorageResult(result))),
-                )))
+                *self = self.loading(CtxRequest::Storage);
+                Effects::one(Box::new(
+                    pull_profile_from_storage::<Env>()
+                        .join(pull_library_from_storage::<Env>())
+                        .map(|(profile, (recent_bucket, other_bucket))| {
+                            (profile, recent_bucket, other_bucket)
+                        })
+                        .then(|result| {
+                            Ok(Msg::Internal(Internal::CtxStorageResult(Box::new(result))))
+                        }),
+                ))
                 .unchanged()
             }
             Msg::Action(Action::Ctx(ActionCtx::Authenticate(auth_request))) => {
-                let auth_request = auth_request.to_owned();
-                self.profile = ProfileLoadable::Loading {
-                    request: ProfileRequest::API(auth_request.to_owned()),
-                    content: self.profile.content().to_owned(),
-                };
+                *self = self.loading(CtxRequest::API(auth_request.to_owned()));
                 Effects::one(Box::new(
-                    ProfileLoadable::authenticate::<Env>(&auth_request).then(move |result| {
-                        Ok(Msg::Internal(Internal::AuthResult(auth_request, result)))
-                    }),
+                    authenticate::<Env>(&auth_request)
+                        .and_then(|auth| {
+                            pull_addons_from_api::<Env>(&auth.key, true)
+                                .join(pull_library_from_api::<Env>(&auth.key, vec![], true))
+                                .map(move |(addons, lib_items)| (auth, addons, lib_items))
+                        })
+                        .then(enclose!((auth_request) move |result| {
+                            Ok(Msg::Internal(Internal::CtxAuthResult(auth_request, result)))
+                        })),
                 ))
                 .unchanged()
             }
             Msg::Action(Action::Ctx(ActionCtx::Logout)) => {
-                let uid = self.profile.uid();
-                let session_effects = match &self.profile.content().auth {
-                    Some(auth) => Effects::one(Box::new(
-                        ProfileLoadable::delete_session::<Env>(&auth.key).then(
-                            enclose!((uid) move |result| {
-                                match result {
-                                    Ok(_) => Ok(Msg::Event(Event::SessionDeleted { uid })),
-                                    Err(error) => Err(Msg::Event(Event::Error {
-                                        error,
-                                        source: Box::new(Event::SessionDeleted { uid }),
-                                    })),
-                                }
-                            }),
-                        ),
-                    ))
+                let uid = self.profile().uid();
+                let session_effects = match &self.profile().auth {
+                    Some(auth) => Effects::one(Box::new(delete_session::<Env>(&auth.key).then(
+                        enclose!((uid) move |result| match result {
+                            Ok(_) => Ok(Msg::Event(Event::SessionDeleted { uid })),
+                            Err(error) => Err(Msg::Event(Event::Error {
+                                error,
+                                source: Box::new(Event::SessionDeleted { uid }),
+                            })),
+                        }),
+                    )))
                     .unchanged(),
                     _ => Effects::none().unchanged(),
                 };
-                let next_proifle = ProfileLoadable::default();
-                let profile_effects = if next_proifle.ne(&self.profile) {
-                    self.profile = next_proifle;
+                let next_ctx = Ctx::<Env>::default();
+                let profile_effects = if next_ctx.profile().ne(self.profile()) {
                     Effects::msg(Msg::Internal(Internal::ProfileChanged))
                 } else {
                     Effects::none().unchanged()
                 };
-                let next_library = LibraryLoadable::default();
-                let library_effects = if next_library.ne(&self.library) {
-                    self.library = next_library;
-                    Effects::one(Box::new(
-                        LibraryLoadable::push_to_storage::<Env>(None, None).then(
-                            enclose!((uid) move |result| {
-                                match result {
-                                    Ok(_) => Ok(Msg::Event(Event::LibraryPushedToStorage { uid })),
-                                    Err(error) => Err(Msg::Event(Event::Error {
-                                        error,
-                                        source: Box::new(Event::LibraryPushedToStorage { uid }),
-                                    })),
-                                }
-                            }),
-                        ),
-                    ))
-                    .join(Effects::msg(Msg::Internal(Internal::LibraryChanged)))
+                let library_effects = if next_ctx.library().ne(self.library()) {
+                    Effects::msg(Msg::Internal(Internal::LibraryChanged(false)))
                 } else {
                     Effects::none().unchanged()
                 };
+                *self = next_ctx;
                 Effects::msg(Msg::Event(Event::UserLoggedOut { uid }))
                     .unchanged()
                     .join(session_effects)
@@ -102,40 +181,40 @@ impl<Env: Environment + 'static> Ctx<Env> {
                     .join(library_effects)
             }
             Msg::Action(Action::Ctx(ActionCtx::InstallAddon(addon))) => {
-                let profile_content = self.profile.content_mut();
+                let profile = self.profile_mut();
                 // Check if addons collection contains the exact same version of the descriptor
                 // if not its added/updated
-                if !profile_content.addons.contains(addon) {
-                    let addon_position = profile_content
+                if !profile.addons.contains(addon) {
+                    let addon_position = profile
                         .addons
                         .iter()
                         .map(|addon| &addon.transport_url)
                         .position(|transport_url| transport_url.eq(&addon.transport_url));
                     if let Some(addon_position) = addon_position {
-                        profile_content.addons[addon_position] = addon.to_owned();
+                        profile.addons[addon_position] = addon.to_owned();
                     } else {
-                        profile_content.addons.push(addon.to_owned());
-                    }
+                        profile.addons.push(addon.to_owned());
+                    };
                     Effects::msg(Msg::Event(Event::AddonInstalled {
-                        uid: self.profile.uid(),
+                        uid: profile.uid(),
                         addon: addon.to_owned(),
                     }))
                     .join(Effects::msg(Msg::Internal(Internal::ProfileChanged)))
                 } else {
-                    // TODO Consider return error event if exact same version of addon is installed
+                    // TODO Consider return error event if exact same version of addon is already installed
                     Effects::none().unchanged()
                 }
             }
             Msg::Action(Action::Ctx(ActionCtx::UninstallAddon(transport_url))) => {
-                let profile_content = self.profile.content_mut();
-                let addon_position = profile_content.addons.iter().position(|addon| {
+                let profile = self.profile_mut();
+                let addon_position = profile.addons.iter().position(|addon| {
                     addon.transport_url.eq(transport_url) && !addon.flags.protected
                 });
                 if let Some(addon_position) = addon_position {
-                    let addon = profile_content.addons[addon_position].to_owned();
-                    profile_content.addons.remove(addon_position);
+                    let addon = profile.addons[addon_position].to_owned();
+                    profile.addons.remove(addon_position);
                     Effects::msg(Msg::Event(Event::AddonUninstalled {
-                        uid: self.profile.uid(),
+                        uid: profile.uid(),
                         addon,
                     }))
                     .join(Effects::msg(Msg::Internal(Internal::ProfileChanged)))
@@ -146,53 +225,46 @@ impl<Env: Environment + 'static> Ctx<Env> {
                 }
             }
             Msg::Action(Action::Ctx(ActionCtx::UpdateSettings(settings))) => {
-                let mut profile_content = self.profile.content_mut();
-                if profile_content.settings.ne(settings) {
-                    profile_content.settings = settings.to_owned();
-                    Effects::msg(Msg::Event(Event::SettingsUpdated {
-                        uid: self.profile.uid(),
-                    }))
-                    .join(Effects::msg(Msg::Internal(Internal::ProfileChanged)))
+                let profile = self.profile_mut();
+                if profile.settings.ne(settings) {
+                    profile.settings = settings.to_owned();
+                    Effects::msg(Msg::Event(Event::SettingsUpdated { uid: profile.uid() }))
+                        .join(Effects::msg(Msg::Internal(Internal::ProfileChanged)))
                 } else {
-                    Effects::msg(Msg::Event(Event::SettingsUpdated {
-                        uid: self.profile.uid(),
-                    }))
-                    .unchanged()
+                    Effects::msg(Msg::Event(Event::SettingsUpdated { uid: profile.uid() }))
+                        .unchanged()
                 }
             }
             Msg::Action(Action::Ctx(ActionCtx::PushUserToAPI)) => {
                 // TODO implement
                 Effects::msg(Msg::Event(Event::UserPushedToAPI {
-                    uid: self.profile.uid(),
+                    uid: self.profile().uid(),
                 }))
                 .unchanged()
             }
             Msg::Action(Action::Ctx(ActionCtx::PullUserFromAPI)) => {
                 // TODO implement
                 Effects::msg(Msg::Event(Event::UserPulledFromAPI {
-                    uid: self.profile.uid(),
+                    uid: self.profile().uid(),
                 }))
                 .unchanged()
             }
             Msg::Action(Action::Ctx(ActionCtx::PushAddonsToAPI)) => {
-                match &self.profile.content().auth {
-                    Some(auth) => {
-                        let uid = self.profile.uid();
-                        Effects::one(Box::new(
-                            ProfileLoadable::push_addons_to_api::<Env>(
-                                &auth.key,
-                                &self.profile.content().addons,
-                            )
-                            .then(move |result| match result {
-                                Ok(_) => Ok(Msg::Event(Event::AddonsPushedToAPI { uid })),
-                                Err(error) => Ok(Msg::Event(Event::Error {
-                                    error,
-                                    source: Box::new(Event::AddonsPushedToAPI { uid }),
-                                })),
-                            }),
-                        ))
-                        .unchanged()
-                    }
+                match &self.profile().auth {
+                    Some(auth) => Effects::one(Box::new(
+                        push_addons_to_api::<Env>(&auth.key, &self.profile().addons).then(
+                            enclose!((self.profile().uid() => uid)
+                                move |result| match result {
+                                    Ok(_) => Ok(Msg::Event(Event::AddonsPushedToAPI { uid })),
+                                    Err(error) => Ok(Msg::Event(Event::Error {
+                                        error,
+                                        source: Box::new(Event::AddonsPushedToAPI { uid }),
+                                    })),
+                                }
+                            ),
+                        ),
+                    ))
+                    .unchanged(),
                     _ => {
                         // TODO Consider return error event for user not logged in
                         Effects::none().unchanged()
@@ -200,23 +272,21 @@ impl<Env: Environment + 'static> Ctx<Env> {
                 }
             }
             Msg::Action(Action::Ctx(ActionCtx::PullAddonsFromAPI)) => {
-                match &self.profile.content().auth {
+                match &self.profile().auth {
                     Some(auth) => {
-                        let auth_key = auth.key.to_owned();
-                        Effects::one(Box::new(
-                            ProfileLoadable::pull_addons_from_api::<Env>(&auth_key, true).then(
+                        Effects::one(Box::new(pull_addons_from_api::<Env>(&auth.key, true).then(
+                            enclose!((auth.key.to_owned() => auth_key)
                                 move |result| {
                                     Ok(Msg::Internal(Internal::AddonsAPIResult(auth_key, result)))
-                                },
+                                }
                             ),
-                        ))
+                        )))
                         .unchanged()
                     }
                     _ => {
                         // Does this code need to be moved ?
                         let next_addons = self
-                            .profile
-                            .content()
+                            .profile()
                             .addons
                             .iter()
                             .map(|profile_addon| {
@@ -234,173 +304,22 @@ impl<Env: Environment + 'static> Ctx<Env> {
                                     .unwrap_or_else(|| profile_addon.to_owned())
                             })
                             .collect();
-                        let uid = self.profile.uid();
-                        let mut profile_content = self.profile.content_mut();
-                        if profile_content.addons.ne(&next_addons) {
-                            profile_content.addons = next_addons;
-                            Effects::msg(Msg::Event(Event::AddonsPulledFromAPI { uid }))
-                                .join(Effects::msg(Msg::Internal(Internal::ProfileChanged)))
-                        } else {
-                            Effects::msg(Msg::Event(Event::AddonsPulledFromAPI { uid })).unchanged()
-                        }
-                    }
-                }
-            }
-            Msg::Internal(Internal::ProfileChanged) => {
-                let uid = self.profile.uid();
-                Effects::one(Box::new(
-                    ProfileLoadable::push_to_storage::<Env>(Some(self.profile.content())).then(
-                        move |result| match result {
-                            Ok(_) => Ok(Msg::Event(Event::ProfilePushedToStorage { uid })),
-                            Err(error) => Err(Msg::Event(Event::Error {
-                                error,
-                                source: Box::new(Event::ProfilePushedToStorage { uid }),
-                            })),
-                        },
-                    ),
-                ))
-                .unchanged()
-            }
-            Msg::Internal(Internal::ProfileStorageResult(result)) => match &self.profile {
-                ProfileLoadable::Loading {
-                    request: ProfileRequest::Storage,
-                    ..
-                } => match result {
-                    Ok(profile) => {
-                        let next_proifle = ProfileLoadable::Ready {
-                            content: profile.to_owned().unwrap_or_default(),
-                        };
-                        let profile_effects = if next_proifle.ne(&self.profile) {
-                            self.profile = next_proifle;
-                            Effects::msg(Msg::Internal(Internal::ProfileChanged))
-                        } else {
-                            Effects::none().unchanged()
-                        };
-                        let uid = self.profile.uid();
-                        let next_library =
-                            LibraryLoadable::Loading(uid.to_owned(), LibraryRequest::Storage);
-                        let library_effects = if next_library.ne(&self.library) {
-                            self.library = next_library;
-                            Effects::one(Box::new(
-                                LibraryLoadable::pull_from_storage::<Env>().then(|result| {
-                                    Ok(Msg::Internal(Internal::LibraryStorageResult(result)))
-                                }),
-                            ))
-                            .join(Effects::msg(Msg::Internal(Internal::LibraryChanged)))
-                        } else {
-                            Effects::none().unchanged()
-                        };
-                        Effects::msg(Msg::Event(Event::ProfilePulledFromStorage { uid }))
-                            .unchanged()
-                            .join(profile_effects)
-                            .join(library_effects)
-                    }
-                    Err(error) => {
-                        self.profile = ProfileLoadable::Ready {
-                            content: self.profile.content().to_owned(),
-                        };
-                        Effects::msg(Msg::Event(Event::Error {
-                            error: error.to_owned(),
-                            source: Box::new(Event::ProfilePulledFromStorage {
-                                uid: self.profile.uid(),
-                            }),
-                        }))
-                        .unchanged()
-                    }
-                },
-                _ => Effects::none().unchanged(),
-            },
-            Msg::Internal(Internal::AuthResult(auth_request, result)) => match &self.profile {
-                ProfileLoadable::Loading {
-                    request: ProfileRequest::API(loading_auth_request),
-                    ..
-                } if loading_auth_request.eq(auth_request) => match result {
-                    Ok((auth, addons)) => {
-                        // no need to check if profile actually changed, because auth key will allways be different
-                        self.profile = ProfileLoadable::Ready {
-                            content: Profile {
-                                auth: Some(auth.to_owned()),
-                                addons: addons.to_owned(),
-                                ..Profile::default()
-                            },
-                        };
-                        let uid = self.profile.uid();
-                        let next_library =
-                            LibraryLoadable::Loading(uid.to_owned(), LibraryRequest::API);
-                        let library_effects = if next_library.ne(&self.library) {
-                            self.library = next_library;
-                            Effects::one(Box::new(
-                                LibraryLoadable::pull_from_api::<Env>(&auth.key, vec![], true)
-                                    .then(enclose!((uid) move |result| {
-                                        Ok(Msg::Internal(Internal::LibraryAPIResult(uid, result)))
-                                    })),
-                            ))
-                            .join(Effects::msg(Msg::Internal(Internal::LibraryChanged)))
-                        } else {
-                            Effects::none().unchanged()
-                        };
-                        Effects::msg(Msg::Event(Event::UserAuthenticated {
-                            uid,
-                            auth_request: auth_request.to_owned(),
-                        }))
-                        .join(Effects::msg(Msg::Internal(Internal::ProfileChanged)))
-                        .join(library_effects)
-                    }
-                    Err(error) => {
-                        self.profile = ProfileLoadable::Ready {
-                            content: self.profile.content().to_owned(),
-                        };
-                        Effects::msg(Msg::Event(Event::Error {
-                            error: error.to_owned(),
-                            source: Box::new(Event::UserAuthenticated {
-                                uid: self.profile.uid(),
-                                auth_request: auth_request.to_owned(),
-                            }),
-                        }))
-                        .unchanged()
-                    }
-                },
-                _ => Effects::none().unchanged(),
-            },
-            Msg::Internal(Internal::AddonsAPIResult(auth_key, result))
-                if self
-                    .profile
-                    .content()
-                    .auth
-                    .as_ref()
-                    .map(|auth| &auth.key)
-                    .eq(&Some(auth_key)) =>
-            {
-                match result {
-                    Ok(addons) => {
-                        let mut profile_content = self.profile.content_mut();
-                        if profile_content.addons.ne(addons) {
-                            profile_content.addons = addons.to_owned();
+                        let profile = self.profile_mut();
+                        if profile.addons.ne(&next_addons) {
+                            profile.addons = next_addons;
                             Effects::msg(Msg::Event(Event::AddonsPulledFromAPI {
-                                uid: self.profile.uid(),
+                                uid: profile.uid(),
                             }))
                             .join(Effects::msg(Msg::Internal(Internal::ProfileChanged)))
                         } else {
                             Effects::msg(Msg::Event(Event::AddonsPulledFromAPI {
-                                uid: self.profile.uid(),
+                                uid: profile.uid(),
                             }))
                             .unchanged()
                         }
                     }
-                    Err(error) => Effects::msg(Msg::Event(Event::Error {
-                        error: error.to_owned(),
-                        source: Box::new(Event::AddonsPulledFromAPI {
-                            uid: self.profile.uid(),
-                        }),
-                    }))
-                    .unchanged(),
                 }
             }
-            _ => Effects::none().unchanged(),
-        }
-    }
-    fn library_update(&mut self, msg: &Msg) -> Effects {
-        match msg {
             Msg::Action(Action::Ctx(ActionCtx::AddToLibrary(meta_item))) => {
                 let mut lib_item = LibItem {
                     id: meta_item.id.to_owned(),
@@ -423,7 +342,8 @@ impl<Env: Environment + 'static> Ctx<Env> {
                     mtime: Env::now(),
                     state: LibItemState::default(),
                 };
-                if let Some(LibItem { ctime, state, .. }) = self.library.get_item(&meta_item.id) {
+                if let Some(LibItem { ctime, state, .. }) = self.library().items.get(&meta_item.id)
+                {
                     lib_item.state = state.to_owned();
                     if let Some(ctime) = ctime {
                         lib_item.ctime = Some(ctime.to_owned());
@@ -432,7 +352,7 @@ impl<Env: Environment + 'static> Ctx<Env> {
                 Effects::msg(Msg::Internal(Internal::UpdateLibraryItem(lib_item))).unchanged()
             }
             Msg::Action(Action::Ctx(ActionCtx::RemoveFromLibrary(id))) => {
-                if let Some(lib_item) = self.library.get_item(id) {
+                if let Some(lib_item) = self.library().items.get(id) {
                     let mut lib_item = lib_item.to_owned();
                     lib_item.removed = true;
                     Effects::msg(Msg::Internal(Internal::UpdateLibraryItem(lib_item))).unchanged()
@@ -442,178 +362,257 @@ impl<Env: Environment + 'static> Ctx<Env> {
                 }
             }
             Msg::Action(Action::Ctx(ActionCtx::SyncLibraryWithAPI)) => {
-                match (&self.profile.content().auth, &self.library) {
-                    (Some(auth), LibraryLoadable::Ready(bucket)) => {
-                        let uid = bucket.uid.to_owned();
-                        Effects::one(Box::new(
-                            LibraryLoadable::sync_with_api::<Env>(&auth.key, bucket.to_owned())
-                                .then(move |result| {
-                                    Ok(Msg::Internal(Internal::LibrarySyncResult(uid, result)))
-                                }),
-                        ))
-                        .unchanged()
-                    }
+                match &self.profile().auth {
+                    Some(auth) => Effects::one(Box::new(
+                        sync_library_with_api::<Env>(&auth.key, self.library().to_owned()).then(
+                            enclose!((auth.key.to_owned() => auth_key) move |result| {
+                                Ok(Msg::Internal(Internal::LibrarySyncResult(auth_key, result)))
+                            }),
+                        ),
+                    ))
+                    .unchanged(),
                     _ => {
                         // TODO Consider return error event for user not logged in or library still loading
                         Effects::none().unchanged()
                     }
                 }
             }
-            Msg::Internal(Internal::UpdateLibraryItem(lib_item)) => match &mut self.library {
-                LibraryLoadable::Ready(ref mut bucket) => {
-                    let mut lib_item = lib_item.to_owned();
-                    lib_item.mtime = Env::now();
-                    let uid = bucket.uid.to_owned();
-                    let persist_effect: Effect = Box::new(
-                        LibraryLoadable::update_and_persist::<Env>(
-                            bucket,
-                            LibBucket::new(uid.to_owned(), vec![lib_item.to_owned()]),
-                        )
-                        .then(enclose!((uid) move |result| match result {
+            Msg::Internal(Internal::UpdateLibraryItem(lib_item)) => {
+                let mut lib_item = lib_item.to_owned();
+                lib_item.mtime = Env::now();
+                let uid = self.profile().uid();
+                let persist_effect: Effect = Box::new(
+                    update_and_persist_library::<Env>(
+                        self.library_mut(),
+                        LibBucket::new(uid.to_owned(), vec![lib_item.to_owned()]),
+                    )
+                    .then(enclose!((uid) move |result| match result {
+                        Ok(_) => Ok(Msg::Event(Event::LibraryPushedToStorage { uid })),
+                        Err(error) => Err(Msg::Event(Event::Error {
+                            error,
+                            source: Box::new(Event::LibraryPushedToStorage { uid }),
+                        })),
+                    })),
+                );
+                let push_effect = self.profile().auth.as_ref().map(move |auth| -> Effect {
+                    Box::new(push_library_to_api::<Env>(&auth.key, vec![lib_item]).then(
+                        move |result| match result {
+                            Ok(_) => Ok(Msg::Event(Event::LibraryPushedToAPI { uid })),
+                            Err(error) => Err(Msg::Event(Event::Error {
+                                error,
+                                source: Box::new(Event::LibraryPushedToAPI { uid }),
+                            })),
+                        },
+                    ))
+                });
+                let library_effects = if let Some(push_effect) = push_effect {
+                    Effects::many(vec![persist_effect, push_effect])
+                } else {
+                    Effects::one(persist_effect)
+                };
+                library_effects.join(Effects::msg(Msg::Internal(Internal::LibraryChanged(true))))
+            }
+            Msg::Internal(Internal::ProfileChanged) => Effects::one(Box::new(
+                push_profile_to_storage::<Env>(Some(self.profile())).then(
+                    enclose!((self.profile().uid() => uid) move |result| {
+                        match result {
+                            Ok(_) => Ok(Msg::Event(Event::ProfilePushedToStorage { uid })),
+                            Err(error) => Err(Msg::Event(Event::Error {
+                                error,
+                                source: Box::new(Event::ProfilePushedToStorage { uid }),
+                            })),
+                        }
+                    }),
+                ),
+            ))
+            .unchanged(),
+            Msg::Internal(Internal::LibraryChanged(persisted)) if !persisted => {
+                let (recent_bucket, other_bucket) = self.library().split_by_recent();
+                Effects::one(Box::new(
+                    push_library_borrowed_to_storage::<Env>(
+                        Some(&recent_bucket),
+                        Some(&other_bucket),
+                    )
+                    .then(
+                        enclose!((self.profile().uid() => uid) move |result| match result {
                             Ok(_) => Ok(Msg::Event(Event::LibraryPushedToStorage { uid })),
                             Err(error) => Err(Msg::Event(Event::Error {
                                 error,
                                 source: Box::new(Event::LibraryPushedToStorage { uid }),
                             })),
-                        })),
-                    );
-                    let push_effect =
-                        self.profile
-                            .content()
-                            .auth
-                            .as_ref()
-                            .map(move |auth| -> Effect {
-                                Box::new(
-                                    LibraryLoadable::push_to_api::<Env>(&auth.key, vec![lib_item])
-                                        .then(move |result| match result {
-                                            Ok(_) => {
-                                                Ok(Msg::Event(Event::LibraryPushedToAPI { uid }))
-                                            }
-                                            Err(error) => Err(Msg::Event(Event::Error {
-                                                error,
-                                                source: Box::new(Event::LibraryPushedToAPI { uid }),
-                                            })),
-                                        }),
-                                )
-                            });
-                    let library_effects = if let Some(push_effect) = push_effect {
-                        Effects::many(vec![persist_effect, push_effect])
-                    } else {
-                        Effects::one(persist_effect)
-                    };
-                    library_effects.join(Effects::msg(Msg::Internal(Internal::LibraryChanged)))
-                }
-                _ => Effects::none().unchanged(),
-            },
-            Msg::Internal(Internal::LibraryStorageResult(result)) => match &self.library {
-                LibraryLoadable::Loading(uid, LibraryRequest::Storage) => {
-                    let uid = uid.to_owned();
-                    match result {
-                        Ok((recent_bucket, other_bucket)) => {
-                            let mut bucket = LibBucket::new(uid.to_owned(), vec![]);
-                            if let Some(recent_bucket) = recent_bucket {
-                                bucket.merge(recent_bucket.to_owned())
-                            };
-                            if let Some(other_bucket) = other_bucket {
-                                bucket.merge(other_bucket.to_owned())
-                            };
-                            self.library = LibraryLoadable::Ready(bucket);
-                            Effects::msg(Msg::Event(Event::LibraryPulledFromStorage { uid }))
-                                .join(Effects::msg(Msg::Internal(Internal::LibraryChanged)))
-                        }
-                        Err(error) => {
-                            self.library =
-                                LibraryLoadable::Ready(LibBucket::new(uid.to_owned(), vec![]));
-                            Effects::msg(Msg::Event(Event::Error {
-                                error: error.to_owned(),
-                                source: Box::new(Event::LibraryPulledFromStorage { uid }),
-                            }))
-                            .join(Effects::msg(Msg::Internal(Internal::LibraryChanged)))
-                        }
-                    }
-                }
-                _ => Effects::none().unchanged(),
-            },
-            Msg::Internal(Internal::LibraryAPIResult(uid, result)) => match &self.library {
-                LibraryLoadable::Loading(loading_uid, LibraryRequest::API)
-                    if loading_uid.eq(&uid) =>
-                {
-                    match result {
-                        Ok(items) => {
-                            let uid = uid.to_owned();
-                            let mut next_bucket = LibBucket::new(uid.to_owned(), vec![]);
-                            let persist_effect = Box::new(
-                                LibraryLoadable::update_and_persist::<Env>(
-                                    &mut next_bucket,
-                                    LibBucket::new(uid.to_owned(), items.to_owned()),
-                                )
-                                .then(enclose!((uid) move |result| match result {
-                                    Ok(_) => Ok(Msg::Event(Event::LibraryPushedToStorage { uid })),
-                                    Err(error) => Err(Msg::Event(Event::Error {
-                                        error,
-                                        source: Box::new(Event::LibraryPushedToStorage { uid }),
-                                    })),
-                                })),
-                            );
-                            self.library = LibraryLoadable::Ready(next_bucket);
-                            Effects::msg(Msg::Event(Event::LibrarySyncedWithAPI { uid }))
-                                .join(Effects::one(persist_effect))
-                                .join(Effects::msg(Msg::Internal(Internal::LibraryChanged)))
-                        }
-                        Err(error) => {
-                            self.library =
-                                LibraryLoadable::Ready(LibBucket::new(uid.to_owned(), vec![]));
-                            Effects::msg(Msg::Event(Event::Error {
-                                error: error.to_owned(),
-                                source: Box::new(Event::LibrarySyncedWithAPI {
-                                    uid: uid.to_owned(),
-                                }),
-                            }))
-                            .join(Effects::msg(Msg::Internal(Internal::LibraryChanged)))
-                        }
-                    }
-                }
-                _ => Effects::none().unchanged(),
-            },
-            Msg::Internal(Internal::LibrarySyncResult(uid, result)) => match &mut self.library {
-                LibraryLoadable::Ready(ref mut bucket) if bucket.uid.eq(uid) => {
-                    let uid = uid.to_owned();
-                    match result {
-                        Ok(items) => Effects::msg(Msg::Event(Event::LibrarySyncedWithAPI {
-                            uid: uid.to_owned(),
+                        }),
+                    ),
+                ))
+                .unchanged()
+            }
+            Msg::Internal(Internal::CtxStorageResult(result)) => match &self {
+                Ctx::Loading {
+                    request: CtxRequest::Storage,
+                    ..
+                } => match result.deref() {
+                    Ok((profile, recent_bucket, other_bucket)) => {
+                        let next_proifle = profile.to_owned().unwrap_or_default();
+                        let mut next_library = LibBucket::new(next_proifle.uid(), vec![]);
+                        if let Some(recent_bucket) = recent_bucket {
+                            next_library.merge(recent_bucket.to_owned())
+                        };
+                        if let Some(other_bucket) = other_bucket {
+                            next_library.merge(other_bucket.to_owned())
+                        };
+                        let next_ctx = Ctx::Ready {
+                            profile: next_proifle,
+                            library: next_library,
+                            env: PhantomData,
+                        };
+                        let profile_effects = if next_ctx.profile().ne(self.profile()) {
+                            Effects::msg(Msg::Internal(Internal::ProfileChanged))
+                        } else {
+                            Effects::none().unchanged()
+                        };
+                        let library_effects = if next_ctx.library().ne(self.library()) {
+                            Effects::msg(Msg::Internal(Internal::LibraryChanged(false)))
+                        } else {
+                            Effects::none().unchanged()
+                        };
+                        *self = next_ctx;
+                        Effects::msg(Msg::Event(Event::CtxPulledFromStorage {
+                            uid: self.profile().uid(),
                         }))
-                        .join(Effects::one(Box::new(
-                            LibraryLoadable::update_and_persist::<Env>(
-                                bucket,
-                                LibBucket::new(uid.to_owned(), items.to_owned()),
-                            )
-                            .then(move |result| match result {
-                                Ok(_) => Ok(Msg::Event(Event::LibraryPushedToStorage { uid })),
-                                Err(error) => Err(Msg::Event(Event::Error {
-                                    error,
-                                    source: Box::new(Event::LibraryPushedToStorage { uid }),
-                                })),
-                            }),
-                        )))
-                        .join(Effects::msg(Msg::Internal(Internal::LibraryChanged))),
-                        Err(error) => Effects::msg(Msg::Event(Event::Error {
+                        .unchanged()
+                        .join(profile_effects)
+                        .join(library_effects)
+                    }
+                    Err(error) => {
+                        *self = self.ready();
+                        Effects::msg(Msg::Event(Event::Error {
                             error: error.to_owned(),
-                            source: Box::new(Event::LibrarySyncedWithAPI { uid }),
+                            source: Box::new(Event::CtxPulledFromStorage {
+                                uid: self.profile().uid(),
+                            }),
                         }))
-                        .unchanged(),
+                        .unchanged()
                     }
-                }
+                },
                 _ => Effects::none().unchanged(),
             },
+            Msg::Internal(Internal::CtxAuthResult(auth_request, result)) => match &self {
+                Ctx::Loading {
+                    request: CtxRequest::API(loading_auth_request),
+                    ..
+                } if loading_auth_request.eq(auth_request) => match result {
+                    Ok((auth, addons, lib_items)) => {
+                        let next_proifle = Profile {
+                            auth: Some(auth.to_owned()),
+                            addons: addons.to_owned(),
+                            settings: Settings::default(),
+                        };
+                        let next_library = LibBucket::new(next_proifle.uid(), lib_items.to_owned());
+                        let next_ctx = Ctx::Ready {
+                            profile: next_proifle,
+                            library: next_library,
+                            env: PhantomData,
+                        };
+                        let profile_effects = if next_ctx.profile().ne(self.profile()) {
+                            Effects::msg(Msg::Internal(Internal::ProfileChanged))
+                        } else {
+                            Effects::none().unchanged()
+                        };
+                        let library_effects = if next_ctx.library().ne(self.library()) {
+                            Effects::msg(Msg::Internal(Internal::LibraryChanged(false)))
+                        } else {
+                            Effects::none().unchanged()
+                        };
+                        *self = next_ctx;
+                        Effects::msg(Msg::Event(Event::UserAuthenticated {
+                            uid: self.profile().uid(),
+                            auth_request: auth_request.to_owned(),
+                        }))
+                        .unchanged()
+                        .join(profile_effects)
+                        .join(library_effects)
+                    }
+                    Err(error) => {
+                        *self = self.ready();
+                        Effects::msg(Msg::Event(Event::Error {
+                            error: error.to_owned(),
+                            source: Box::new(Event::UserAuthenticated {
+                                uid: self.profile().uid(),
+                                auth_request: auth_request.to_owned(),
+                            }),
+                        }))
+                        .unchanged()
+                    }
+                },
+                _ => Effects::none().unchanged(),
+            },
+            Msg::Internal(Internal::AddonsAPIResult(auth_key, result))
+                if self
+                    .profile()
+                    .auth
+                    .as_ref()
+                    .map(|auth| &auth.key)
+                    .eq(&Some(auth_key)) =>
+            {
+                match result {
+                    Ok(addons) => {
+                        let profile = self.profile_mut();
+                        if profile.addons.ne(addons) {
+                            profile.addons = addons.to_owned();
+                            Effects::msg(Msg::Event(Event::AddonsPulledFromAPI {
+                                uid: profile.uid(),
+                            }))
+                            .join(Effects::msg(Msg::Internal(Internal::ProfileChanged)))
+                        } else {
+                            Effects::msg(Msg::Event(Event::AddonsPulledFromAPI {
+                                uid: profile.uid(),
+                            }))
+                            .unchanged()
+                        }
+                    }
+                    Err(error) => Effects::msg(Msg::Event(Event::Error {
+                        error: error.to_owned(),
+                        source: Box::new(Event::AddonsPulledFromAPI {
+                            uid: self.profile().uid(),
+                        }),
+                    }))
+                    .unchanged(),
+                }
+            }
+            Msg::Internal(Internal::LibrarySyncResult(auth_key, result))
+                if self
+                    .profile()
+                    .auth
+                    .as_ref()
+                    .map(|auth| &auth.key)
+                    .eq(&Some(auth_key)) =>
+            {
+                let uid = self.profile().uid();
+                match result {
+                    Ok(items) => Effects::msg(Msg::Event(Event::LibrarySyncedWithAPI {
+                        uid: uid.to_owned(),
+                    }))
+                    .join(Effects::one(Box::new(
+                        update_and_persist_library::<Env>(
+                            self.library_mut(),
+                            LibBucket::new(uid.to_owned(), items.to_owned()),
+                        )
+                        .then(move |result| match result {
+                            Ok(_) => Ok(Msg::Event(Event::LibraryPushedToStorage { uid })),
+                            Err(error) => Err(Msg::Event(Event::Error {
+                                error,
+                                source: Box::new(Event::LibraryPushedToStorage { uid }),
+                            })),
+                        }),
+                    )))
+                    .join(Effects::msg(Msg::Internal(Internal::LibraryChanged(true)))),
+                    Err(error) => Effects::msg(Msg::Event(Event::Error {
+                        error: error.to_owned(),
+                        source: Box::new(Event::LibrarySyncedWithAPI { uid }),
+                    }))
+                    .unchanged(),
+                }
+            }
             _ => Effects::none().unchanged(),
         }
-    }
-}
-
-impl<Env: Environment + 'static> Update for Ctx<Env> {
-    fn update(&mut self, msg: &Msg) -> Effects {
-        let profile_effects = self.profile_update(msg);
-        let library_effects = self.library_update(msg);
-        profile_effects.join(library_effects)
     }
 }
