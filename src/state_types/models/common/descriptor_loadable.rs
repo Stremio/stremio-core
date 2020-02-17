@@ -1,4 +1,4 @@
-use super::{get_manifest, Loadable};
+use super::Loadable;
 use crate::constants::OFFICIAL_ADDONS;
 use crate::state_types::msg::{Internal, Msg};
 use crate::state_types::{Effects, EnvError, Environment};
@@ -81,4 +81,10 @@ pub fn descriptor_update<Env: Environment + 'static>(
             _ => Effects::none().unchanged(),
         },
     }
+}
+
+fn get_manifest<Env: Environment + 'static>(
+    transport_url: &str,
+) -> impl Future<Item = Manifest, Error = EnvError> {
+    Env::addon_transport(transport_url).manifest()
 }

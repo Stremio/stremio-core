@@ -4,9 +4,6 @@ pub use descriptor_loadable::*;
 mod eq_update;
 pub use eq_update::*;
 
-mod get_manifest;
-pub use get_manifest::*;
-
 mod get_resource;
 pub use get_resource::*;
 
