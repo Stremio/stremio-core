@@ -2,6 +2,7 @@ use super::LibItem;
 use crate::constants::LIBRARY_RECENT_COUNT;
 use lazysort::SortedBy;
 use serde::{Deserialize, Serialize};
+use std::cmp;
 use std::collections::hash_map::Entry::{Occupied, Vacant};
 use std::collections::HashMap;
 
@@ -48,7 +49,8 @@ impl LibBucket {
             .values()
             .sorted_by(|a, b| b.mtime.cmp(&a.mtime))
             .collect::<Vec<_>>();
-        let (recent_items, other_items) = sorted_items.split_at(LIBRARY_RECENT_COUNT);
+        let recent_count = cmp::min(LIBRARY_RECENT_COUNT, sorted_items.len());
+        let (recent_items, other_items) = sorted_items.split_at(recent_count);
         (
             LibBucketBorrowed::new(&self.uid, recent_items),
             LibBucketBorrowed::new(&self.uid, other_items),
