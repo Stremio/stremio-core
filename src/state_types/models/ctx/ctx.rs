@@ -2,7 +2,7 @@ use super::{
     authenticate, delete_session, pull_addons_from_api, pull_library_from_api,
     pull_library_from_storage, pull_profile_from_storage, push_addons_to_api,
     push_library_borrowed_to_storage, push_library_to_api, push_profile_to_storage,
-    sync_library_with_api, update_and_persist_library,
+    sync_library_with_api, update_and_persist_library, CtxError,
 };
 use crate::constants::OFFICIAL_ADDONS;
 use crate::state_types::msg::{Action, ActionCtx, ActionLoad, Event, Internal, Msg};
@@ -180,8 +180,6 @@ impl<Env: Environment + 'static> Update for Ctx<Env> {
             }
             Msg::Action(Action::Ctx(ActionCtx::InstallAddon(addon))) => {
                 let profile = self.profile_mut();
-                // Check if addons collection contains the exact same version of the descriptor
-                // if not its added/updated
                 if !profile.addons.contains(addon) {
                     let addon_position = profile
                         .addons
@@ -199,8 +197,13 @@ impl<Env: Environment + 'static> Update for Ctx<Env> {
                     }))
                     .join(Effects::msg(Msg::Internal(Internal::ProfileChanged)))
                 } else {
-                    // TODO Consider return error event if exact same version of addon is already installed
-                    Effects::none().unchanged()
+                    Effects::msg(Msg::Event(Event::Error {
+                        error: CtxError::from("Addon already installed"),
+                        source: Box::new(Event::AddonInstalled {
+                            uid: profile.uid(),
+                            addon: addon.to_owned(),
+                        }),
+                    }))
                 }
             }
             Msg::Action(Action::Ctx(ActionCtx::UninstallAddon(transport_url))) => {

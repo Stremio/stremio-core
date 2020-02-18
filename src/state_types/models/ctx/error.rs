@@ -9,13 +9,14 @@ use std::fmt;
 pub enum CtxError {
     API { message: String, code: u64 },
     Env { message: String },
+    Other { message: String },
 }
 
 impl fmt::Display for CtxError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match &self {
             CtxError::API { message, code } => write!(f, "{} {}", message, code),
-            CtxError::Env { message } => write!(f, "{}", message),
+            CtxError::Env { message } | CtxError::Other { message } => write!(f, "{}", message),
         }
     }
 }
@@ -23,7 +24,9 @@ impl fmt::Display for CtxError {
 impl Error for CtxError {
     fn description(&self) -> &str {
         match &self {
-            CtxError::API { message, .. } | CtxError::Env { message } => message,
+            CtxError::API { message, .. }
+            | CtxError::Env { message }
+            | CtxError::Other { message } => message,
         }
     }
 }
@@ -41,6 +44,14 @@ impl From<EnvError> for CtxError {
     fn from(error: EnvError) -> Self {
         CtxError::Env {
             message: error.to_string(),
+        }
+    }
+}
+
+impl From<&str> for CtxError {
+    fn from(message: &str) -> Self {
+        CtxError::Other {
+            message: message.to_string(),
         }
     }
 }
