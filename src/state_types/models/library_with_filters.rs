@@ -25,16 +25,16 @@ pub struct Selected {
 }
 
 #[derive(Default, Debug, Clone, Serialize)]
-pub struct LibraryFiltered {
+pub struct LibraryWithFilters {
     pub selected: Option<Selected>,
     pub type_names: Vec<String>,
     pub lib_items: Vec<LibItem>,
 }
 
-impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for LibraryFiltered {
+impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for LibraryWithFilters {
     fn update(&mut self, ctx: &Ctx<Env>, msg: &Msg) -> Effects {
         match msg {
-            Msg::Action(Action::Load(ActionLoad::LibraryFiltered(selected))) => {
+            Msg::Action(Action::Load(ActionLoad::LibraryWithFilters(selected))) => {
                 let selected_effects = eq_update(&mut self.selected, Some(selected.to_owned()));
                 let lib_items_effects =
                     lib_items_update(&mut self.lib_items, &self.selected, ctx.library());
