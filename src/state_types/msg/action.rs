@@ -21,6 +21,7 @@ pub enum ActionCtx {
     UpdateSettings(ProfileSettings),
     AddToLibrary(MetaPreview),
     RemoveFromLibrary(String),
+    RewindLibraryItem(String),
     PushUserToAPI,
     PullUserFromAPI,
     PushAddonsToAPI,

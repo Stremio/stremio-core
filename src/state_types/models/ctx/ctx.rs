@@ -362,6 +362,16 @@ impl<Env: Environment + 'static> Update for Ctx<Env> {
                     Effects::none().unchanged()
                 }
             }
+            Msg::Action(Action::Ctx(ActionCtx::RewindLibraryItem(id))) => {
+                if let Some(lib_item) = self.library().items.get(id) {
+                    let mut lib_item = lib_item.to_owned();
+                    lib_item.state.time_offset = 0;
+                    Effects::msg(Msg::Internal(Internal::UpdateLibraryItem(lib_item))).unchanged()
+                } else {
+                    // TODO Consider return error event for item not in lib
+                    Effects::none().unchanged()
+                }
+            }
             Msg::Action(Action::Ctx(ActionCtx::SyncLibraryWithAPI)) => {
                 match &self.profile().auth {
                     Some(auth) => Effects::one(Box::new(
