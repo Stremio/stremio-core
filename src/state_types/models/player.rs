@@ -14,6 +14,8 @@ use serde::{Deserialize, Serialize};
 pub struct Selected {
     stream: Stream,
     #[serde(default)]
+    stream_resource_request: Option<ResourceRequest>,
+    #[serde(default)]
     meta_resource_request: Option<ResourceRequest>,
     #[serde(default)]
     subtitles_resource_ref: Option<ResourceRef>,
