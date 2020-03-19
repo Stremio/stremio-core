@@ -23,11 +23,14 @@ pub struct Stream {
 
 #[derive(Eq, PartialEq, Clone, Debug, Deserialize, Serialize)]
 #[serde(untagged)]
+#[serde(rename_all = "camelCase")]
 pub enum StreamSource {
     Url {
         url: String,
     },
-    #[serde(rename_all = "camelCase")]
+    YouTube {
+        yt_id: String,
+    },
     Torrent {
         #[serde(with = "SerHex::<Strict>")]
         info_hash: [u8; 20],
@@ -35,11 +38,9 @@ pub enum StreamSource {
     },
     // This can also be used to point to internal pages,
     // using stremio:// URLs
-    #[serde(rename_all = "camelCase")]
     External {
         external_url: String,
     },
-    #[serde(rename_all = "camelCase")]
     PlayerFrame {
         player_frame_url: String,
     },
