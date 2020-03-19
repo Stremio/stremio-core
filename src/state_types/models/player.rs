@@ -97,22 +97,22 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for Player {
                     .join(lib_item_effects)
             }
             Msg::Action(Action::Player(ActionPlayer::TimeChanged { time, duration })) => {
-                match &self.selected {
-                    Some(Selected {
-                        meta_resource_request: Some(meta_resource_request),
-                        video_id: Some(video_id),
-                        ..
-                    }) => match ctx.library().items.get(&meta_resource_request.path.id) {
-                        Some(lib_item) => {
-                            let mut lib_item = lib_item.to_owned();
-                            lib_item.mtime = Env::now();
-                            lib_item.state.time_offset = time.to_owned();
-                            lib_item.state.duration = duration.to_owned();
-                            lib_item.state.video_id = Some(video_id.to_owned());
-                            Effects::msg(Msg::Internal(Internal::UpdateLibraryItem(lib_item)))
-                        }
-                        _ => Effects::none().unchanged(),
-                    },
+                match (&self.selected, &mut self.lib_item) {
+                    (
+                        Some(Selected {
+                            video_id: Some(video_id),
+                            ..
+                        }),
+                        Some(lib_item),
+                    ) => {
+                        lib_item.state.time_offset = time.to_owned();
+                        lib_item.state.duration = duration.to_owned();
+                        lib_item.state.video_id = Some(video_id.to_owned());
+                        Effects::msg(Msg::Internal(Internal::UpdateLibraryItem(
+                            lib_item.to_owned(),
+                        )))
+                        .unchanged()
+                    }
                     _ => Effects::none().unchanged(),
                 }
             }
