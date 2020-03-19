@@ -174,12 +174,12 @@ fn next_video_update(
         ) if settings.binge_watching => meta_detail
             .videos
             .iter()
-            .position(|video| video.id.eq(video_id))
+            .position(|video| video_id == &video.id)
             .and_then(|position| meta_detail.videos.get(position + 1))
             .cloned(),
         _ => None,
     };
-    if next_video.ne(video) {
+    if video != &next_video {
         *video = next_video;
         Effects::none()
     } else {
@@ -194,7 +194,7 @@ fn lib_item_update<Env: Environment>(
 ) -> Effects {
     let next_lib_item = match meta_resource {
         Some(meta_resource) => match lib_item {
-            Some(LibItem { id, .. }) if id == meta_resource.request.path.id => lib_item.to_owned(),
+            Some(LibItem { id, .. }) if id == &meta_resource.request.path.id => lib_item.to_owned(),
             _ => library
                 .items
                 .get(&meta_resource.request.path.id)
@@ -229,7 +229,7 @@ fn lib_item_update<Env: Environment>(
         },
         _ => None,
     };
-    if next_lib_item.ne(lib_item) {
+    if lib_item != &next_lib_item {
         *lib_item = next_lib_item;
         Effects::none()
     } else {
