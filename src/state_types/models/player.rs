@@ -30,8 +30,7 @@ pub struct Player {
     pub meta_resource: Option<ResourceLoadable<MetaDetail>>,
     pub subtitles_resources: Vec<ResourceLoadable<Vec<SubtitlesSource>>>,
     pub next_video: Option<Video>,
-    #[serde(skip)]
-    lib_item: Option<LibItem>,
+    pub lib_item: Option<LibItem>,
 }
 
 impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for Player {
