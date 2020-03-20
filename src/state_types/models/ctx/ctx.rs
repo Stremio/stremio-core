@@ -327,8 +327,6 @@ impl<Env: Environment + 'static> Update for Ctx<Env> {
                     type_name: meta_item.type_name.to_owned(),
                     name: meta_item.name.to_owned(),
                     poster: meta_item.poster.to_owned(),
-                    background: None,
-                    logo: meta_item.logo.to_owned(),
                     poster_shape: meta_item.poster_shape.to_owned(),
                     year: if let Some(released) = &meta_item.released {
                         Some(released.year().to_string())

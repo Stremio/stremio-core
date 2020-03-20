@@ -208,8 +208,6 @@ fn lib_item_update<Env: Environment>(
                         type_name: meta_detail.type_name.to_owned(),
                         name: meta_detail.name.to_owned(),
                         poster: meta_detail.poster.to_owned(),
-                        background: None,
-                        logo: meta_detail.logo.to_owned(),
                         poster_shape: meta_detail.poster_shape.to_owned(),
                         year: if let Some(released) = &meta_detail.released {
                             Some(released.year().to_string())
