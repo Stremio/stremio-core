@@ -257,8 +257,15 @@ fn lib_item_update<Env: Environment>(
         _ => None,
     };
     if lib_item != &next_lib_item {
+        let update_library_item_effects = match lib_item {
+            Some(lib_item) => Effects::msg(Msg::Internal(Internal::UpdateLibraryItem(
+                lib_item.to_owned(),
+            )))
+            .unchanged(),
+            _ => Effects::none().unchanged(),
+        };
         *lib_item = next_lib_item;
-        Effects::none()
+        Effects::none().join(update_library_item_effects)
     } else {
         Effects::none().unchanged()
     }
