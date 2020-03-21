@@ -1,3 +1,4 @@
+use crate::constants::WATCHED_THRESHOLD_COEF;
 use crate::state_types::models::common::{
     eq_update, resource_update, resources_update_with_vector_content, ResourceAction,
     ResourceContent, ResourceLoadable, ResourcesAction,
@@ -10,6 +11,7 @@ use crate::types::profile::Settings as ProfileSettings;
 use crate::types::{LibBucket, LibItem, LibItemState, MetaDetail, Stream, SubtitlesSource, Video};
 use chrono::Datelike;
 use serde::{Deserialize, Serialize};
+use std::cmp;
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct Selected {
@@ -95,30 +97,58 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for Player {
                     .join(next_video_effects)
                     .join(lib_item_effects)
             }
-            Msg::Action(Action::Player(ActionPlayer::TimeChanged { time, duration })) => {
-                match (&self.selected, &mut self.lib_item) {
-                    (
-                        Some(Selected {
-                            video_id: Some(video_id),
-                            ..
-                        }),
-                        Some(lib_item),
-                    ) => {
-                        lib_item.state.time_offset = time.to_owned();
-                        lib_item.state.duration = duration.to_owned();
+            Msg::Action(Action::Player(ActionPlayer::UpdateLibraryItemState {
+                time,
+                duration,
+            })) => {
+                if let (
+                    Some(Selected {
+                        video_id: Some(video_id),
+                        ..
+                    }),
+                    Some(lib_item),
+                ) = (&self.selected, &mut self.lib_item)
+                {
+                    lib_item.state.last_watched = Some(Env::now());
+                    lib_item.state.time_offset = time.to_owned();
+                    lib_item.state.duration = duration.to_owned();
+                    if lib_item.state.video_id != Some(video_id.to_owned()) {
                         lib_item.state.video_id = Some(video_id.to_owned());
-                        Effects::msg(Msg::Internal(Internal::UpdateLibraryItem(
-                            lib_item.to_owned(),
-                        )))
-                        .unchanged()
-                    }
-                    _ => Effects::none().unchanged(),
-                }
+                        lib_item.state.overall_time_watched = lib_item
+                            .state
+                            .overall_time_watched
+                            .saturating_add(lib_item.state.time_watched);
+                        lib_item.state.time_watched = 0;
+                        lib_item.state.flagged_watched = 0;
+                    } else {
+                        lib_item.state.time_watched = lib_item.state.time_watched.saturating_add(
+                            cmp::min(1000, cmp::max(0, time - lib_item.state.time_offset)),
+                        );
+                    };
+                    if lib_item.state.flagged_watched == 0
+                        && lib_item.state.time_watched as f64
+                            > lib_item.state.duration as f64 * WATCHED_THRESHOLD_COEF
+                    {
+                        lib_item.state.flagged_watched = 1;
+                        lib_item.state.times_watched =
+                            lib_item.state.times_watched.saturating_add(1);
+                    };
+                    if lib_item.temp && lib_item.state.times_watched == 0 {
+                        lib_item.removed = true;
+                    };
+                    if lib_item.removed {
+                        lib_item.temp = true;
+                    };
+                };
+                Effects::none()
             }
-            Msg::Action(Action::Player(ActionPlayer::Ended)) => {
-                // TODO update times_watched
-                Effects::none().unchanged()
-            }
+            Msg::Action(Action::Player(ActionPlayer::PushToLibrary)) => match &self.lib_item {
+                Some(lib_item) => Effects::msg(Msg::Internal(Internal::UpdateLibraryItem(
+                    lib_item.to_owned(),
+                )))
+                .unchanged(),
+                _ => Effects::none().unchanged(),
+            },
             Msg::Internal(Internal::ResourceRequestResult(request, result)) => {
                 let meta_effects = resource_update::<Env, _>(
                     &mut self.meta_resource,

@@ -52,8 +52,8 @@ pub enum ActionStreamingServer {
 #[derive(Debug, Clone, Deserialize)]
 #[serde(tag = "action", content = "args")]
 pub enum ActionPlayer {
-    TimeChanged { time: u64, duration: u64 },
-    Ended,
+    UpdateLibraryItemState { time: u64, duration: u64 },
+    PushToLibrary,
 }
 
 //
