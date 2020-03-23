@@ -84,7 +84,7 @@ impl LibItem {
             && self.state.video_id.is_some()
             && self.state.video_id.as_ref() != Some(&self.id);
 
-        !self.removed && (is_resumable || is_with_nextvid)
+        (!self.removed || self.temp) && (is_resumable || is_with_nextvid)
     }
 }
 
