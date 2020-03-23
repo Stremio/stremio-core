@@ -110,8 +110,6 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for Player {
                 ) = (&self.selected, &mut self.lib_item)
                 {
                     lib_item.state.last_watched = Some(Env::now());
-                    lib_item.state.time_offset = time.to_owned();
-                    lib_item.state.duration = duration.to_owned();
                     if lib_item.state.video_id != Some(video_id.to_owned()) {
                         lib_item.state.video_id = Some(video_id.to_owned());
                         lib_item.state.overall_time_watched = lib_item
@@ -125,6 +123,8 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for Player {
                             cmp::min(1000, cmp::max(0, time - lib_item.state.time_offset)),
                         );
                     };
+                    lib_item.state.time_offset = time.to_owned();
+                    lib_item.state.duration = duration.to_owned();
                     if lib_item.state.flagged_watched == 0
                         && lib_item.state.time_watched as f64
                             > lib_item.state.duration as f64 * WATCHED_THRESHOLD_COEF
