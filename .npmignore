@@ -1,5 +1,11 @@
+/.github
 /src
 /target
 /node_modules
 /wasm_build
 yarn.lock
+.babelrc
+build.sh
+Cargo.lock
+Cargo.toml
+README.MD
