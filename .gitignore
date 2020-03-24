@@ -1,3 +1,5 @@
 /target
 /node_modules
 /wasm_build
+/build
+/static
