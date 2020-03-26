@@ -19,7 +19,7 @@ use serde_derive::*;
 #[derive(Default, Clone, Debug, PartialEq, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct BehaviorHints {
-    default_video_id: Option<String>,
+    pub default_video_id: Option<String>,
 }
 
 #[derive(PartialEq, Eq, Clone, Debug, Deserialize, Serialize, PartialOrd, Ord)]
