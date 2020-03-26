@@ -16,6 +16,12 @@ use serde_derive::*;
 // https://users.rust-lang.org/t/catchall-variant-in-serde/20748
 // https://github.com/serde-rs/serde/pull/1382
 
+#[derive(Default, Clone, Debug, PartialEq, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct BehaviorHints {
+    default_video_id: Option<String>,
+}
+
 #[derive(PartialEq, Eq, Clone, Debug, Deserialize, Serialize, PartialOrd, Ord)]
 #[serde(rename_all = "camelCase")]
 pub enum PosterShape {
@@ -93,6 +99,8 @@ pub struct MetaPreview {
     #[serde(default, skip_serializing_if = "PosterShape::is_unspecified")]
     pub poster_shape: PosterShape,
     pub trailer: Option<Stream>,
+    #[serde(default)]
+    pub behavior_hints: BehaviorHints,
 }
 
 #[derive(PartialEq, Clone, Default, Debug, Deserialize, Serialize)]
@@ -123,4 +131,6 @@ pub struct MetaDetail {
     // @TODO use some ISO language type
     // pub language: Option<String>,
     pub trailer: Option<Stream>,
+    #[serde(default)]
+    pub behavior_hints: BehaviorHints,
 }
