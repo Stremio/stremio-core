@@ -7,11 +7,11 @@ use lazysort::SortedBy;
 use serde::Serialize;
 
 #[derive(Default, Debug, Clone, Serialize)]
-pub struct ContinueWatching {
+pub struct ContinueWatchingRecent {
     pub lib_items: Vec<LibItem>,
 }
 
-impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for ContinueWatching {
+impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for ContinueWatchingRecent {
     fn update(&mut self, ctx: &Ctx<Env>, msg: &Msg) -> Effects {
         match msg {
             Msg::Internal(Internal::LibraryChanged(_)) => {

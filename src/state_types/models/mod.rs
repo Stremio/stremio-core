@@ -4,7 +4,7 @@ pub mod ctx;
 pub mod addon_details;
 pub mod catalog_with_filters;
 pub mod catalogs_with_extra;
-pub mod continue_watching;
+pub mod continue_watching_recent;
 pub mod library_with_filters;
 pub mod meta_details;
 pub mod notifications;
