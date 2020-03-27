@@ -20,7 +20,7 @@ pub enum SortProp {
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct Selected {
-    type_name: String,
+    type_name: Option<String>,
     #[serde(default)]
     sort_prop: SortProp,
 }
@@ -83,7 +83,11 @@ fn lib_items_update(
         Some(selected) => library
             .items
             .values()
-            .filter(|lib_item| !lib_item.removed && lib_item.type_name.eq(&selected.type_name))
+            .filter(|lib_item| !lib_item.removed)
+            .filter(|lib_item| match &selected.type_name {
+                Some(type_name) => lib_item.type_name.eq(type_name),
+                None => true,
+            })
             .sorted_by(|a, b| match &selected.sort_prop {
                 SortProp::LastWatched => a.state.last_watched.cmp(&b.state.last_watched),
                 SortProp::TimesWatched => a.state.times_watched.cmp(&b.state.times_watched),
