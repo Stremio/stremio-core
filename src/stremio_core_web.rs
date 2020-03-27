@@ -35,8 +35,8 @@ impl StremioCoreWeb {
                     ModelFieldName::LibraryItems => {
                         model.library_items.update(&model.ctx, &message)
                     }
-                    ModelFieldName::ContinueWatchingRecent => {
-                        model.continue_watching_recent.update(&model.ctx, &message)
+                    ModelFieldName::ContinueWatchingPreview => {
+                        model.continue_watching_preview.update(&model.ctx, &message)
                     }
                     ModelFieldName::Board => model.board.update(&model.ctx, &message),
                     ModelFieldName::Discover => model.discover.update(&model.ctx, &message),
@@ -70,8 +70,8 @@ impl StremioCoreWeb {
             match model_field {
                 ModelFieldName::Ctx => JsValue::from_serde(&model.ctx).unwrap(),
                 ModelFieldName::LibraryItems => JsValue::from_serde(&model.library_items).unwrap(),
-                ModelFieldName::ContinueWatchingRecent => {
-                    JsValue::from_serde(&model.continue_watching_recent).unwrap()
+                ModelFieldName::ContinueWatchingPreview => {
+                    JsValue::from_serde(&model.continue_watching_preview).unwrap()
                 }
                 ModelFieldName::Board => JsValue::from_serde(&model.board).unwrap(),
                 ModelFieldName::Discover => JsValue::from_serde(&model.discover).unwrap(),

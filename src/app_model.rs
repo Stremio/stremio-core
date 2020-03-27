@@ -4,7 +4,7 @@ use serde::{Deserialize, Serialize};
 use stremio_core::state_types::models::addon_details::AddonDetails;
 use stremio_core::state_types::models::catalog_with_filters::CatalogWithFilters;
 use stremio_core::state_types::models::catalogs_with_extra::CatalogsWithExtra;
-use stremio_core::state_types::models::continue_watching_recent::ContinueWatchingRecent;
+use stremio_core::state_types::models::continue_watching_preview::ContinueWatchingPreview;
 use stremio_core::state_types::models::ctx::Ctx;
 use stremio_core::state_types::models::library_with_filters::{
     ContinueWatchingFilter, LibraryWithFilters, NotRemovedFilter,
@@ -20,7 +20,7 @@ use stremio_derive::Model;
 pub struct AppModel {
     pub ctx: Ctx<Env>,
     pub library_items: LibraryItems,
-    pub continue_watching_recent: ContinueWatchingRecent,
+    pub continue_watching_preview: ContinueWatchingPreview,
     pub board: CatalogsWithExtra,
     pub discover: CatalogWithFilters<MetaPreview>,
     pub library: LibraryWithFilters<NotRemovedFilter>,
@@ -38,7 +38,7 @@ pub struct AppModel {
 pub enum ModelFieldName {
     Ctx,
     LibraryItems,
-    ContinueWatchingRecent,
+    ContinueWatchingPreview,
     Board,
     Discover,
     Library,
