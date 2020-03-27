@@ -80,7 +80,7 @@ fn lib_items_update(
             .items
             .values()
             .filter(|lib_item| {
-                if (selected.continue_watching) {
+                if selected.continue_watching {
                     (!lib_item.removed || lib_item.temp) && lib_item.state.time_offset > 0
                 } else {
                     !lib_item.removed
