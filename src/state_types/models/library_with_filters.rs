@@ -128,7 +128,7 @@ fn lib_items_update(
                 None => true,
             })
             .sorted_by(|a, b| match &selected.sort {
-                Sort::LastWatched => a.state.last_watched.cmp(&b.state.last_watched),
+                Sort::LastWatched => b.state.last_watched.cmp(&a.state.last_watched),
                 Sort::TimesWatched => a.state.times_watched.cmp(&b.state.times_watched),
                 Sort::Name => a.name.to_lowercase().cmp(&b.name.to_lowercase()),
             })
