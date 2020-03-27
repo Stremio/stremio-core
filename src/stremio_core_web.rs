@@ -35,12 +35,15 @@ impl StremioCoreWeb {
                     ModelFieldName::LibraryItems => {
                         model.library_items.update(&model.ctx, &message)
                     }
-                    ModelFieldName::ContinueWatching => {
-                        model.continue_watching.update(&model.ctx, &message)
+                    ModelFieldName::ContinueWatchingRecent => {
+                        model.continue_watching_recent.update(&model.ctx, &message)
                     }
                     ModelFieldName::Board => model.board.update(&model.ctx, &message),
                     ModelFieldName::Discover => model.discover.update(&model.ctx, &message),
                     ModelFieldName::Library => model.library.update(&model.ctx, &message),
+                    ModelFieldName::ContinueWatching => {
+                        model.continue_watching.update(&model.ctx, &message)
+                    }
                     ModelFieldName::Search => model.search.update(&model.ctx, &message),
                     ModelFieldName::MetaDetails => model.meta_details.update(&model.ctx, &message),
                     ModelFieldName::Addons => model.addons.update(&model.ctx, &message),
@@ -67,12 +70,15 @@ impl StremioCoreWeb {
             match model_field {
                 ModelFieldName::Ctx => JsValue::from_serde(&model.ctx).unwrap(),
                 ModelFieldName::LibraryItems => JsValue::from_serde(&model.library_items).unwrap(),
-                ModelFieldName::ContinueWatching => {
-                    JsValue::from_serde(&model.continue_watching).unwrap()
+                ModelFieldName::ContinueWatchingRecent => {
+                    JsValue::from_serde(&model.continue_watching_recent).unwrap()
                 }
                 ModelFieldName::Board => JsValue::from_serde(&model.board).unwrap(),
                 ModelFieldName::Discover => JsValue::from_serde(&model.discover).unwrap(),
                 ModelFieldName::Library => JsValue::from_serde(&model.library).unwrap(),
+                ModelFieldName::ContinueWatching => {
+                    JsValue::from_serde(&model.continue_watching).unwrap()
+                }
                 ModelFieldName::Search => JsValue::from_serde(&model.search).unwrap(),
                 ModelFieldName::MetaDetails => JsValue::from_serde(&model.meta_details).unwrap(),
                 ModelFieldName::Addons => JsValue::from_serde(&model.addons).unwrap(),
