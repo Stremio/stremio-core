@@ -79,12 +79,17 @@ fn lib_items_update(
         Some(selected) => library
             .items
             .values()
-            .filter(|lib_item| !lib_item.removed)
+            .filter(|lib_item| {
+                if (selected.continue_watching) {
+                    (!lib_item.removed || lib_item.temp) && lib_item.state.time_offset > 0
+                } else {
+                    !lib_item.removed
+                }
+            })
             .filter(|lib_item| match &selected.type_name {
                 Some(type_name) => lib_item.type_name.eq(type_name),
                 None => true,
             })
-            .filter(|lib_item| !selected.continue_watching || lib_item.state.time_offset > 0)
             .sorted_by(|a, b| match &selected.sort {
                 Sort::LastWatched => a.state.last_watched.cmp(&b.state.last_watched),
                 Sort::TimesWatched => a.state.times_watched.cmp(&b.state.times_watched),
