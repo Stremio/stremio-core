@@ -7,7 +7,6 @@ use futures::Future;
 use http::request::Request;
 use serde::{Deserialize, Serialize};
 use url::Url;
-use url_serde;
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
