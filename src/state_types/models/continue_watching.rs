@@ -26,7 +26,7 @@ fn lib_items_update(lib_items: &mut Vec<LibItem>, library: &LibBucket) -> Effect
     let next_lib_items = library
         .items
         .values()
-        .filter(|lib_item| (!lib_item.removed || lib_item.temp) && lib_item.state.time_offset > 0)
+        .filter(|lib_item| lib_item.is_in_continue_watching())
         .sorted_by(|a, b| b.mtime.cmp(&a.mtime))
         .take(CATALOG_PREVIEW_SIZE)
         .cloned()
