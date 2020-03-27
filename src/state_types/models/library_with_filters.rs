@@ -3,13 +3,12 @@ use crate::state_types::models::ctx::Ctx;
 use crate::state_types::msg::{Action, ActionLoad, Internal, Msg};
 use crate::state_types::{Effects, Environment, UpdateWithCtx};
 use crate::types::{LibBucket, LibItem};
-use derivative::Derivative;
 use itertools::Itertools;
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "lowercase")]
-pub enum SortProp {
+pub enum Sort {
     LastWatched,
     TimesWatched,
     Name,
@@ -18,7 +17,7 @@ pub enum SortProp {
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct Selected {
     type_name: Option<String>,
-    sort_prop: SortProp,
+    sort: Sort,
     continue_watching: bool,
 }
 
@@ -86,10 +85,10 @@ fn lib_items_update(
                 None => true,
             })
             .filter(|lib_item| !selected.continue_watching || lib_item.state.time_offset > 0)
-            .sorted_by(|a, b| match &selected.sort_prop {
-                SortProp::LastWatched => a.state.last_watched.cmp(&b.state.last_watched),
-                SortProp::TimesWatched => a.state.times_watched.cmp(&b.state.times_watched),
-                SortProp::Name => a.name.cmp(&b.name),
+            .sorted_by(|a, b| match &selected.sort {
+                Sort::LastWatched => a.state.last_watched.cmp(&b.state.last_watched),
+                Sort::TimesWatched => a.state.times_watched.cmp(&b.state.times_watched),
+                Sort::Name => a.name.cmp(&b.name),
             })
             .cloned()
             .collect(),
