@@ -7,11 +7,9 @@ use derivative::Derivative;
 use itertools::Itertools;
 use serde::{Deserialize, Serialize};
 
-#[derive(Derivative, Debug, Clone, PartialEq, Serialize, Deserialize)]
-#[derivative(Default)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "lowercase")]
 pub enum SortProp {
-    #[derivative(Default)]
     LastWatched,
     TimesWatched,
     Name,
@@ -21,7 +19,6 @@ pub enum SortProp {
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct Selected {
     type_name: Option<String>,
-    #[serde(default)]
     sort_prop: SortProp,
     continue_watching: bool,
 }
