@@ -13,7 +13,6 @@ pub enum SortProp {
     LastWatched,
     TimesWatched,
     Name,
-    CTime,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -91,7 +90,6 @@ fn lib_items_update(
                 SortProp::LastWatched => a.state.last_watched.cmp(&b.state.last_watched),
                 SortProp::TimesWatched => a.state.times_watched.cmp(&b.state.times_watched),
                 SortProp::Name => a.name.cmp(&b.name),
-                SortProp::CTime => b.ctime.cmp(&a.ctime),
             })
             .cloned()
             .collect(),
