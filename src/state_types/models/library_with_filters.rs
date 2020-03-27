@@ -12,8 +12,10 @@ use serde::{Deserialize, Serialize};
 #[serde(rename_all = "lowercase")]
 pub enum SortProp {
     #[derivative(Default)]
-    CTime,
+    LastWatched,
+    TimesWatched,
     Name,
+    CTime,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -83,6 +85,8 @@ fn lib_items_update(
             .values()
             .filter(|lib_item| !lib_item.removed && lib_item.type_name.eq(&selected.type_name))
             .sorted_by(|a, b| match &selected.sort_prop {
+                SortProp::LastWatched => a.state.last_watched.cmp(&b.state.last_watched),
+                SortProp::TimesWatched => a.state.times_watched.cmp(&b.state.times_watched),
                 SortProp::Name => a.name.cmp(&b.name),
                 SortProp::CTime => b.ctime.cmp(&a.ctime),
             })
