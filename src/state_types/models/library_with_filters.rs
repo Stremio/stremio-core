@@ -23,6 +23,7 @@ pub struct Selected {
     type_name: Option<String>,
     #[serde(default)]
     sort_prop: SortProp,
+    continue_watching: bool,
 }
 
 #[derive(Default, Debug, Clone, Serialize)]
@@ -88,6 +89,7 @@ fn lib_items_update(
                 Some(type_name) => lib_item.type_name.eq(type_name),
                 None => true,
             })
+            .filter(|lib_item| !selected.continue_watching || lib_item.state.time_offset > 0)
             .sorted_by(|a, b| match &selected.sort_prop {
                 SortProp::LastWatched => a.state.last_watched.cmp(&b.state.last_watched),
                 SortProp::TimesWatched => a.state.times_watched.cmp(&b.state.times_watched),
