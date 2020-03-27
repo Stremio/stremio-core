@@ -3,8 +3,10 @@ use crate::state_types::models::ctx::Ctx;
 use crate::state_types::msg::{Action, ActionLoad, Internal, Msg};
 use crate::state_types::{Effects, Environment, UpdateWithCtx};
 use crate::types::{LibBucket, LibItem};
+use derivative::Derivative;
 use itertools::Itertools;
 use serde::{Deserialize, Serialize};
+use std::marker::PhantomData;
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "lowercase")]
@@ -16,37 +18,73 @@ pub enum Sort {
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct Selected {
-    type_name: Option<String>,
-    sort: Sort,
-    continue_watching: bool,
+    pub type_name: Option<String>,
+    pub sort: Sort,
 }
 
-#[derive(Default, Debug, Clone, Serialize)]
-pub struct LibraryWithFilters {
+pub trait LibraryFilter {
+    fn predicate(lib_item: &LibItem) -> bool;
+}
+
+pub struct ContinueWatchingFilter {}
+impl LibraryFilter for ContinueWatchingFilter {
+    fn predicate(lib_item: &LibItem) -> bool {
+        lib_item.is_in_continue_watching()
+    }
+}
+
+pub struct NotRemovedFilter {}
+impl LibraryFilter for NotRemovedFilter {
+    fn predicate(lib_item: &LibItem) -> bool {
+        !lib_item.removed
+    }
+}
+
+#[derive(Derivative, Debug, Clone, Serialize)]
+#[derivative(Default(bound = ""))]
+pub struct LibraryWithFilters<F> {
     pub selected: Option<Selected>,
     pub type_names: Vec<String>,
     pub lib_items: Vec<LibItem>,
+    pub filter: PhantomData<F>,
 }
 
-impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for LibraryWithFilters {
+impl<Env, F> UpdateWithCtx<Ctx<Env>> for LibraryWithFilters<F>
+where
+    Env: Environment + 'static,
+    F: LibraryFilter,
+{
     fn update(&mut self, ctx: &Ctx<Env>, msg: &Msg) -> Effects {
         match msg {
             Msg::Action(Action::Load(ActionLoad::LibraryWithFilters(selected))) => {
                 let selected_effects = eq_update(&mut self.selected, Some(selected.to_owned()));
-                let lib_items_effects =
-                    lib_items_update(&mut self.lib_items, &self.selected, ctx.library());
+                let lib_items_effects = lib_items_update(
+                    &mut self.lib_items,
+                    &self.selected,
+                    F::predicate,
+                    ctx.library(),
+                );
                 selected_effects.join(lib_items_effects)
             }
             Msg::Action(Action::Unload) => {
                 let selected_effects = eq_update(&mut self.selected, None);
-                let lib_items_effects =
-                    lib_items_update(&mut self.lib_items, &self.selected, ctx.library());
+                let lib_items_effects = lib_items_update(
+                    &mut self.lib_items,
+                    &self.selected,
+                    F::predicate,
+                    ctx.library(),
+                );
                 selected_effects.join(lib_items_effects)
             }
             Msg::Internal(Internal::LibraryChanged(_)) => {
-                let type_names_effects = type_names_update(&mut self.type_names, ctx.library());
-                let lib_items_effects =
-                    lib_items_update(&mut self.lib_items, &self.selected, ctx.library());
+                let type_names_effects =
+                    type_names_update(&mut self.type_names, F::predicate, ctx.library());
+                let lib_items_effects = lib_items_update(
+                    &mut self.lib_items,
+                    &self.selected,
+                    F::predicate,
+                    ctx.library(),
+                );
                 type_names_effects.join(lib_items_effects)
             }
             _ => Effects::none().unchanged(),
@@ -54,11 +92,15 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for LibraryWithFilters 
     }
 }
 
-fn type_names_update(type_names: &mut Vec<String>, library: &LibBucket) -> Effects {
+fn type_names_update(
+    type_names: &mut Vec<String>,
+    filter_predicate: impl Fn(&LibItem) -> bool,
+    library: &LibBucket,
+) -> Effects {
     let next_type_names = library
         .items
         .values()
-        .filter(|lib_item| !lib_item.removed)
+        .filter(|lib_item| filter_predicate(lib_item))
         .map(|lib_item| lib_item.type_name.to_owned())
         .unique()
         .collect::<Vec<_>>();
@@ -73,19 +115,14 @@ fn type_names_update(type_names: &mut Vec<String>, library: &LibBucket) -> Effec
 fn lib_items_update(
     lib_items: &mut Vec<LibItem>,
     selected: &Option<Selected>,
+    filter_predicate: impl Fn(&LibItem) -> bool,
     library: &LibBucket,
 ) -> Effects {
     let next_lib_items = match selected {
         Some(selected) => library
             .items
             .values()
-            .filter(|lib_item| {
-                if selected.continue_watching {
-                    (!lib_item.removed || lib_item.temp) && lib_item.state.time_offset > 0
-                } else {
-                    !lib_item.removed
-                }
-            })
+            .filter(|lib_item| filter_predicate(lib_item))
             .filter(|lib_item| match &selected.type_name {
                 Some(type_name) => lib_item.type_name.eq(type_name),
                 None => true,
