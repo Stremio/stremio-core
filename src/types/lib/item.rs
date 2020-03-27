@@ -58,8 +58,6 @@ pub struct LibItem {
     pub poster: Option<String>,
     #[serde(default, skip_serializing_if = "PosterShape::is_unspecified")]
     pub poster_shape: PosterShape,
-    #[serde(deserialize_with = "empty_string_as_none", default)]
-    pub year: Option<String>,
 }
 
 impl LibItem {

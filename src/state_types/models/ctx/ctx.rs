@@ -11,7 +11,6 @@ use crate::types::addons::Descriptor;
 use crate::types::api::AuthRequest;
 use crate::types::profile::{Profile, Settings};
 use crate::types::{LibBucket, LibItem, LibItemState};
-use chrono::Datelike;
 use derivative::Derivative;
 use enclose::enclose;
 use futures::Future;
@@ -328,13 +327,6 @@ impl<Env: Environment + 'static> Update for Ctx<Env> {
                     name: meta_item.name.to_owned(),
                     poster: meta_item.poster.to_owned(),
                     poster_shape: meta_item.poster_shape.to_owned(),
-                    year: if let Some(released) = &meta_item.released {
-                        Some(released.year().to_string())
-                    } else if let Some(release_info) = &meta_item.release_info {
-                        Some(release_info.to_owned())
-                    } else {
-                        None
-                    },
                     removed: false,
                     temp: false,
                     ctime: Some(Env::now()),

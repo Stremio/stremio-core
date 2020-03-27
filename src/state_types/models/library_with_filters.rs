@@ -13,7 +13,6 @@ use serde::{Deserialize, Serialize};
 pub enum SortProp {
     #[derivative(Default)]
     CTime,
-    Year,
     Name,
 }
 
@@ -84,7 +83,6 @@ fn lib_items_update(
             .values()
             .filter(|lib_item| !lib_item.removed && lib_item.type_name.eq(&selected.type_name))
             .sorted_by(|a, b| match &selected.sort_prop {
-                SortProp::Year => b.year.cmp(&a.year),
                 SortProp::Name => a.name.cmp(&b.name),
                 SortProp::CTime => b.ctime.cmp(&a.ctime),
             })

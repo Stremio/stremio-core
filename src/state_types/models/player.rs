@@ -9,7 +9,6 @@ use crate::state_types::{Effects, Environment, UpdateWithCtx};
 use crate::types::addons::{AggrRequest, ResourceRef, ResourceRequest};
 use crate::types::profile::Settings as ProfileSettings;
 use crate::types::{LibBucket, LibItem, LibItemState, MetaDetail, Stream, SubtitlesSource, Video};
-use chrono::Datelike;
 use serde::{Deserialize, Serialize};
 use std::cmp;
 
@@ -238,13 +237,6 @@ fn lib_item_update<Env: Environment>(
                         name: meta_detail.name.to_owned(),
                         poster: meta_detail.poster.to_owned(),
                         poster_shape: meta_detail.poster_shape.to_owned(),
-                        year: if let Some(released) = &meta_detail.released {
-                            Some(released.year().to_string())
-                        } else if let Some(release_info) = &meta_detail.release_info {
-                            Some(release_info.to_owned())
-                        } else {
-                            None
-                        },
                         removed: true,
                         temp: true,
                         ctime: Some(Env::now()),
