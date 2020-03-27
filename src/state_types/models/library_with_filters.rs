@@ -129,7 +129,7 @@ fn lib_items_update(
             })
             .sorted_by(|a, b| match &selected.sort {
                 Sort::LastWatched => b.state.last_watched.cmp(&a.state.last_watched),
-                Sort::TimesWatched => a.state.times_watched.cmp(&b.state.times_watched),
+                Sort::TimesWatched => b.state.times_watched.cmp(&a.state.times_watched),
                 Sort::Name => a.name.to_lowercase().cmp(&b.name.to_lowercase()),
             })
             .cloned()
