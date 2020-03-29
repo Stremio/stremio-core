@@ -21,6 +21,16 @@ pub struct Stream {
     pub behavior_hints: serde_json::Map<String, serde_json::Value>,
 }
 
+impl Stream {
+    pub fn is_p2p(&self) -> bool {
+        match &self.source {
+            StreamSource::Torrent { .. } => true,
+            StreamSource::Url { url } if url.starts_with("magnet:") => true,
+            _ => false
+        }
+    }
+}
+
 #[derive(Eq, PartialEq, Clone, Debug, Deserialize, Serialize)]
 #[serde(untagged)]
 pub enum StreamSource {
