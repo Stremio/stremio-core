@@ -22,6 +22,15 @@ pub struct Stream {
 }
 
 impl Stream {
+    pub fn is_web_ready(&self) -> bool {
+        if self.behavior_hints.get("notWebReady") == Some(&serde_json::Value::Bool(true)) {
+            return false
+        }
+        match &self.source {
+            StreamSource::Url { url } if url.starts_with("https:") => true,
+            _ => false
+        }
+    }
     pub fn is_p2p(&self) -> bool {
         match &self.source {
             StreamSource::Torrent { .. } => true,
