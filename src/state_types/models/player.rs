@@ -221,31 +221,49 @@ fn lib_item_update<Env: Environment>(
     library: &LibBucket,
 ) -> Effects {
     let next_lib_item = match meta_resource {
-        Some(meta_resource) => match lib_item {
-            Some(LibItem { id, .. }) if id == &meta_resource.request.path.id => lib_item.to_owned(),
-            _ => library
-                .items
-                .get(&meta_resource.request.path.id)
-                .cloned()
-                .or_else(|| match meta_resource {
-                    ResourceLoadable {
-                        content: ResourceContent::Ready(meta_detail),
-                        ..
-                    } => Some(LibItem {
-                        id: meta_detail.id.to_owned(),
-                        type_name: meta_detail.type_name.to_owned(),
-                        name: meta_detail.name.to_owned(),
-                        poster: meta_detail.poster.to_owned(),
-                        poster_shape: meta_detail.poster_shape.to_owned(),
-                        removed: true,
-                        temp: true,
-                        ctime: Some(Env::now()),
-                        mtime: Env::now(),
-                        state: LibItemState::default(),
-                    }),
-                    _ => None,
+        Some(meta_resource) => {
+            let meta_item = match meta_resource {
+                ResourceLoadable {
+                    content: ResourceContent::Ready(meta_item),
+                    ..
+                } => Some(meta_item.to_owned()),
+                _ => None,
+            };
+            let lib_item = match lib_item {
+                Some(LibItem { id, .. }) if id == &meta_resource.request.path.id => {
+                    lib_item.to_owned()
+                }
+                _ => library.items.get(&meta_resource.request.path.id).cloned(),
+            };
+            match (meta_item, lib_item) {
+                (Some(meta_item), Some(lib_item)) => Some(LibItem {
+                    id: lib_item.id.to_owned(),
+                    removed: lib_item.removed.to_owned(),
+                    temp: lib_item.temp.to_owned(),
+                    ctime: lib_item.ctime.to_owned(),
+                    mtime: lib_item.mtime.to_owned(),
+                    state: lib_item.state.to_owned(),
+                    name: meta_item.name.to_owned(),
+                    type_name: meta_item.type_name.to_owned(),
+                    poster: meta_item.poster.to_owned(),
+                    poster_shape: meta_item.poster_shape.to_owned(),
                 }),
-        },
+                (Some(meta_item), None) => Some(LibItem {
+                    id: meta_item.id.to_owned(),
+                    removed: true,
+                    temp: true,
+                    ctime: Some(Env::now()),
+                    mtime: Env::now(),
+                    state: LibItemState::default(),
+                    name: meta_item.name.to_owned(),
+                    type_name: meta_item.type_name.to_owned(),
+                    poster: meta_item.poster.to_owned(),
+                    poster_shape: meta_item.poster_shape.to_owned(),
+                }),
+                (None, Some(lib_item)) => Some(lib_item.to_owned()),
+                _ => None,
+            }
+        }
         _ => None,
     };
     if lib_item != &next_lib_item {
