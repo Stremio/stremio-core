@@ -327,6 +327,7 @@ impl<Env: Environment + 'static> Update for Ctx<Env> {
                     name: meta_item.name.to_owned(),
                     poster: meta_item.poster.to_owned(),
                     poster_shape: meta_item.poster_shape.to_owned(),
+                    behavior_hints: meta_item.behavior_hints.to_owned(),
                     removed: false,
                     temp: false,
                     ctime: Some(Env::now()),

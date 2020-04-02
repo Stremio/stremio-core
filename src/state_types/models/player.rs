@@ -247,6 +247,7 @@ fn lib_item_update<Env: Environment>(
                     type_name: meta_item.type_name.to_owned(),
                     poster: meta_item.poster.to_owned(),
                     poster_shape: meta_item.poster_shape.to_owned(),
+                    behavior_hints: meta_item.behavior_hints.to_owned(),
                 }),
                 (Some(meta_item), None) => Some(LibItem {
                     id: meta_item.id.to_owned(),
@@ -259,6 +260,7 @@ fn lib_item_update<Env: Environment>(
                     type_name: meta_item.type_name.to_owned(),
                     poster: meta_item.poster.to_owned(),
                     poster_shape: meta_item.poster_shape.to_owned(),
+                    behavior_hints: meta_item.behavior_hints.to_owned(),
                 }),
                 (None, Some(lib_item)) => Some(lib_item.to_owned()),
                 _ => None,

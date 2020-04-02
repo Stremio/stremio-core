@@ -1,4 +1,4 @@
-use crate::types::PosterShape;
+use crate::types::{BehaviorHints, PosterShape};
 use chrono::serde::ts_milliseconds;
 use chrono::{DateTime, Utc};
 use serde::de::IntoDeserializer;
@@ -58,6 +58,8 @@ pub struct LibItem {
     pub poster: Option<String>,
     #[serde(default, skip_serializing_if = "PosterShape::is_unspecified")]
     pub poster_shape: PosterShape,
+    #[serde(default)]
+    pub behavior_hints: BehaviorHints,
 }
 
 impl LibItem {

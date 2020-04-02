@@ -16,7 +16,7 @@ use serde_derive::*;
 // https://users.rust-lang.org/t/catchall-variant-in-serde/20748
 // https://github.com/serde-rs/serde/pull/1382
 
-#[derive(Default, Clone, Debug, PartialEq, Deserialize, Serialize)]
+#[derive(Default, Clone, Debug, PartialEq, Eq, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct BehaviorHints {
     pub default_video_id: Option<String>,
