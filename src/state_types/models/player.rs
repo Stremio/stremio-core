@@ -242,12 +242,12 @@ fn lib_item_update<Env: Environment>(
                     temp: lib_item.temp.to_owned(),
                     ctime: lib_item.ctime.to_owned(),
                     mtime: lib_item.mtime.to_owned(),
-                    state: lib_item.state.to_owned(),
+                    state: lib_item.state,
                     name: meta_item.name.to_owned(),
                     type_name: meta_item.type_name.to_owned(),
                     poster: meta_item.poster.to_owned(),
                     poster_shape: meta_item.poster_shape.to_owned(),
-                    behavior_hints: meta_item.behavior_hints.to_owned(),
+                    behavior_hints: meta_item.behavior_hints,
                 }),
                 (Some(meta_item), None) => Some(LibItem {
                     id: meta_item.id.to_owned(),
@@ -260,9 +260,9 @@ fn lib_item_update<Env: Environment>(
                     type_name: meta_item.type_name.to_owned(),
                     poster: meta_item.poster.to_owned(),
                     poster_shape: meta_item.poster_shape.to_owned(),
-                    behavior_hints: meta_item.behavior_hints.to_owned(),
+                    behavior_hints: meta_item.behavior_hints,
                 }),
-                (None, Some(lib_item)) => Some(lib_item.to_owned()),
+                (None, Some(lib_item)) => Some(lib_item),
                 _ => None,
             }
         }
