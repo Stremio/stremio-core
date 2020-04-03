@@ -5,7 +5,6 @@ use url::Url;
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Settings {
     pub interface_language: String,
-    #[serde(with = "url_serde")]
     pub streaming_server_url: Url,
     pub binge_watching: bool,
     pub play_in_background: bool,

@@ -27,7 +27,6 @@ pub type Selected = Url;
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize)]
 pub struct StreamingServer {
-    #[serde(with = "url_serde")]
     pub selected: Option<Selected>,
     pub settings: Option<Loadable<Settings, String>>,
 }

@@ -1,9 +1,9 @@
+use percent_encoding::{percent_decode, utf8_percent_encode, NON_ALPHANUMERIC};
 use serde_derive::*;
 use std::fmt;
 use std::hash::Hash;
 use std::str::FromStr;
 use url::form_urlencoded;
-use url::percent_encoding::{percent_decode, utf8_percent_encode, PATH_SEGMENT_ENCODE_SET};
 pub type ExtraProp = (String, String);
 
 // ResourceRef is the type that represents a reference to a specific resource path
@@ -59,9 +59,9 @@ impl fmt::Display for ResourceRef {
         write!(
             f,
             "/{}/{}/{}",
-            &utf8_percent_encode(&self.resource, PATH_SEGMENT_ENCODE_SET),
-            &utf8_percent_encode(&self.type_name, PATH_SEGMENT_ENCODE_SET),
-            &utf8_percent_encode(&self.id, PATH_SEGMENT_ENCODE_SET)
+            &utf8_percent_encode(&self.resource, NON_ALPHANUMERIC),
+            &utf8_percent_encode(&self.type_name, NON_ALPHANUMERIC),
+            &utf8_percent_encode(&self.id, NON_ALPHANUMERIC)
         )?;
         if !self.extra.is_empty() {
             let mut extra_encoded = form_urlencoded::Serializer::new(String::new());
