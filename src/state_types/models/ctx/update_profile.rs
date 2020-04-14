@@ -78,8 +78,8 @@ pub fn update_profile<Env: Environment + 'static>(
                             OFFICIAL_ADDONS
                                 .iter()
                                 .find(|Descriptor { manifest, .. }| {
-                                    manifest.id.eq(&profile_addon.manifest.id)
-                                        && manifest.version.gt(&profile_addon.manifest.version)
+                                    manifest.id == profile_addon.manifest.id
+                                        && manifest.version > profile_addon.manifest.version
                                 })
                                 .map(|official_addon| Descriptor {
                                     transport_url: official_addon.transport_url.to_owned(),
@@ -110,7 +110,7 @@ pub fn update_profile<Env: Environment + 'static>(
                     .addons
                     .iter()
                     .map(|addon| &addon.transport_url)
-                    .position(|transport_url| transport_url.eq(&addon.transport_url));
+                    .position(|transport_url| *transport_url == addon.transport_url);
                 if let Some(addon_position) = addon_position {
                     profile.addons[addon_position] = addon.to_owned();
                 } else {
@@ -136,7 +136,7 @@ pub fn update_profile<Env: Environment + 'static>(
             let addon_position = profile
                 .addons
                 .iter()
-                .position(|addon| addon.transport_url.eq(transport_url) && !addon.flags.protected);
+                .position(|addon| addon.transport_url == *transport_url && !addon.flags.protected);
             if let Some(addon_position) = addon_position {
                 let addon = profile.addons[addon_position].to_owned();
                 profile.addons.remove(addon_position);
@@ -191,11 +191,7 @@ pub fn update_profile<Env: Environment + 'static>(
             _ => Effects::none().unchanged(),
         },
         Msg::Internal(Internal::AddonsAPIResult(auth_key, result))
-            if profile
-                .auth
-                .as_ref()
-                .map(|auth| &auth.key)
-                .eq(&Some(auth_key)) =>
+            if profile.auth.as_ref().map(|auth| &auth.key) == Some(auth_key) =>
         {
             match result {
                 Ok(addons) => {

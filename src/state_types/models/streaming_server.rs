@@ -82,7 +82,7 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for StreamingServer {
             }
             Msg::Internal(Internal::StreamingServerSettingsResult(url, result)) => {
                 match (&self.selected, &self.settings) {
-                    (Some(loading_url), Some(Loadable::Loading)) if loading_url.eq(url) => {
+                    (Some(loading_url), Some(Loadable::Loading)) if loading_url == url => {
                         self.settings = match result {
                             Ok(settings) => Some(Loadable::Ready(settings.to_owned())),
                             Err(error) => Some(Loadable::Err(error.to_string())),
@@ -94,7 +94,7 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for StreamingServer {
             }
             Msg::Internal(Internal::StreamingServerUpdateSettingsResult(url, result)) => {
                 match &self.selected {
-                    Some(server_url) if server_url.eq(url) => match result {
+                    Some(server_url) if server_url == url => match result {
                         Ok(_) => Effects::none().unchanged(),
                         Err(error) => {
                             self.settings = Some(Loadable::Err(error.to_string()));

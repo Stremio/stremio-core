@@ -124,7 +124,7 @@ fn lib_items_update(
             .values()
             .filter(|lib_item| filter_predicate(lib_item))
             .filter(|lib_item| match &selected.type_name {
-                Some(type_name) => lib_item.type_name.eq(type_name),
+                Some(type_name) => *type_name == lib_item.type_name,
                 None => true,
             })
             .sorted_by(|a, b| match &selected.sort {

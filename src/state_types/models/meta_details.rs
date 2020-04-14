@@ -65,7 +65,7 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for MetaDetails {
                 selected_effects.join(meta_effects).join(streams_effects)
             }
             Msg::Internal(Internal::ResourceRequestResult(request, result))
-                if request.path.resource.eq(META_RESOURCE_NAME) =>
+                if request.path.resource == META_RESOURCE_NAME =>
             {
                 let meta_effects = resources_update::<Env, _>(
                     &mut self.meta_resources,
@@ -94,7 +94,7 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for MetaDetails {
                 meta_effects.join(streams_effects)
             }
             Msg::Internal(Internal::ResourceRequestResult(request, result))
-                if request.path.resource.eq(STREAM_RESOURCE_NAME) =>
+                if request.path.resource == STREAM_RESOURCE_NAME =>
             {
                 resources_update_with_vector_content::<Env, _>(
                     &mut self.streams_resources,
@@ -124,7 +124,7 @@ fn streams_resource_from_meta_resources(
             meta_detail
                 .videos
                 .iter()
-                .find(|video| video.id.eq(video_id) && !video.streams.is_empty())
+                .find(|video| video.id == video_id && !video.streams.is_empty())
                 .map(|video| (meta_request, &video.streams))
         })
         .map(|(meta_request, streams)| ResourceLoadable {

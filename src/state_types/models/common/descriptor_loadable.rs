@@ -18,7 +18,7 @@ pub struct DescriptorLoadable {
 
 impl PartialEq for DescriptorLoadable {
     fn eq(&self, other: &Self) -> bool {
-        self.transport_url.eq(&other.transport_url)
+        self.transport_url == other.transport_url
     }
 }
 
@@ -63,14 +63,14 @@ pub fn descriptor_update<Env: Environment + 'static>(
             transport_url,
             result,
         } => match descriptor {
-            Some(descriptor) if transport_url.eq(&descriptor.transport_url) => {
+            Some(descriptor) if descriptor.transport_url == *transport_url => {
                 descriptor.content = match result {
                     Ok(manifest) => DescriptorContent::Ready(Descriptor {
                         transport_url: transport_url.to_owned(),
                         manifest: manifest.to_owned(),
                         flags: OFFICIAL_ADDONS
                             .iter()
-                            .find(|descriptor| descriptor.transport_url.eq(transport_url))
+                            .find(|descriptor| descriptor.transport_url == *transport_url)
                             .map(|descriptor| descriptor.flags.to_owned())
                             .unwrap_or_default(),
                     }),

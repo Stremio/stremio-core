@@ -101,7 +101,7 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for Notifications {
                 Effects::many(effects)
             }
             Msg::Internal(ResourceRequestResult(req, result)) => {
-                if let Some(idx) = self.groups.iter().position(|g| g.request.eq(req)) {
+                if let Some(idx) = self.groups.iter().position(|g| g.request == *req) {
                     resources_update::<Env, _>(
                         &mut self.groups,
                         ResourcesAction::ResourceRequestResult {

@@ -24,7 +24,7 @@ pub struct ResourceLoadable<T> {
 
 impl<T> PartialEq for ResourceLoadable<T> {
     fn eq(&self, other: &Self) -> bool {
-        self.request.eq(&other.request)
+        self.request == other.request
     }
 }
 
@@ -84,7 +84,7 @@ where
         ResourceAction::ResourceRequestResult {
             request, result, ..
         } => match resource {
-            Some(resource) if resource.request.eq(request) => {
+            Some(resource) if resource.request == *request => {
                 resource.content = resource_content_from_result(result);
                 Effects::none()
             }
@@ -107,7 +107,7 @@ where
             result,
             limit,
         } => match resource {
-            Some(resource) if resource.request.eq(request) => {
+            Some(resource) if resource.request == *request => {
                 resource.content = resource_vector_content_from_result(result, limit);
                 Effects::none()
             }
@@ -167,7 +167,7 @@ where
         } => {
             match resources
                 .iter()
-                .position(|resource| resource.request.eq(request))
+                .position(|resource| resource.request == *request)
             {
                 Some(position) => {
                     resources[position].content = resource_content_from_result(result);
@@ -195,7 +195,7 @@ where
         } => {
             match resources
                 .iter()
-                .position(|resource| resource.request.eq(request))
+                .position(|resource| resource.request == *request)
             {
                 Some(position) => {
                     resources[position].content =

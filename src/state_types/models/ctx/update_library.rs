@@ -185,11 +185,7 @@ pub fn update_library<Env: Environment + 'static>(
             _ => Effects::none().unchanged(),
         },
         Msg::Internal(Internal::LibrarySyncResult(auth_key, result))
-            if profile
-                .auth
-                .as_ref()
-                .map(|auth| &auth.key)
-                .eq(&Some(auth_key)) =>
+            if profile.auth.as_ref().map(|auth| &auth.key) == Some(auth_key) =>
         {
             match result {
                 Ok(items) => Effects::msg(Msg::Event(Event::LibrarySyncedWithAPI {
@@ -298,7 +294,7 @@ fn update_and_persist<Env: Environment + 'static>(
     let are_new_items_in_recent = new_bucket
         .items
         .keys()
-        .all(move |id| recent_items.iter().any(|item| item.id.eq(id)));
+        .all(move |id| recent_items.iter().any(|item| item.id == *id));
     bucket.merge(new_bucket);
     if bucket.items.len() <= LIBRARY_RECENT_COUNT {
         Either::A(

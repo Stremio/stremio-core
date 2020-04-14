@@ -27,7 +27,7 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for AddonDetails {
                     .profile
                     .addons
                     .iter()
-                    .find(|addon| addon.transport_url.eq(&selected.transport_url))
+                    .find(|addon| addon.transport_url == selected.transport_url)
                 {
                     Some(addon) => eq_update(
                         &mut self.addon,
