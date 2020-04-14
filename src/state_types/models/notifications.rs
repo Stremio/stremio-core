@@ -1,6 +1,4 @@
-use super::common::{
-    get_resource, resources_update, ResourceContent, ResourceLoadable, ResourcesAction,
-};
+use super::common::{resources_update, ResourceContent, ResourceLoadable, ResourcesAction};
 use crate::state_types::models::ctx::Ctx;
 use crate::state_types::msg::Internal::*;
 use crate::state_types::msg::*;
@@ -80,16 +78,18 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for Notifications {
                                             request: addon_req.to_owned(),
                                             content: ResourceContent::Loading,
                                         },
-                                        Box::new(get_resource::<Env>(&addon_req).then(
-                                            move |result| {
-                                                future::ok(Msg::Internal(
-                                                    Internal::ResourceRequestResult(
-                                                        addon_req,
-                                                        Box::new(result),
-                                                    ),
-                                                ))
-                                            },
-                                        )),
+                                        Box::new(
+                                            Env::addon_transport(&addon_req.base)
+                                                .get(&addon_req.path)
+                                                .then(move |result| {
+                                                    future::ok(Msg::Internal(
+                                                        Internal::ResourceRequestResult(
+                                                            addon_req,
+                                                            Box::new(result),
+                                                        ),
+                                                    ))
+                                                }),
+                                        ),
                                     )
                                 })
                                 .collect::<Vec<_>>()

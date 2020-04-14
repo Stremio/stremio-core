@@ -1,4 +1,4 @@
-use super::{get_resource, Loadable};
+use super::Loadable;
 use crate::state_types::msg::{Internal, Msg};
 use crate::state_types::{Effect, Effects, EnvError, Environment};
 use crate::types::addons::{AggrRequest, Descriptor, ResourceRequest, ResourceResponse};
@@ -67,14 +67,16 @@ where
                     request: request.to_owned(),
                     content: ResourceContent::Loading,
                 });
-                Effects::one(Box::new(get_resource::<Env>(&request).then(
-                    move |result| {
-                        Ok(Msg::Internal(Internal::ResourceRequestResult(
-                            request,
-                            Box::new(result),
-                        )))
-                    },
-                )))
+                Effects::one(Box::new(
+                    Env::addon_transport(&request.base)
+                        .get(&request.path)
+                        .then(move |result| {
+                            Ok(Msg::Internal(Internal::ResourceRequestResult(
+                                request,
+                                Box::new(result),
+                            )))
+                        }),
+                ))
             } else {
                 Effects::none().unchanged()
             }
@@ -143,12 +145,14 @@ where
                                 request: request.to_owned(),
                                 content: ResourceContent::Loading,
                             },
-                            Box::new(get_resource::<Env>(&request).then(move |result| {
-                                Ok(Msg::Internal(Internal::ResourceRequestResult(
-                                    request,
-                                    Box::new(result),
-                                )))
-                            })),
+                            Box::new(Env::addon_transport(&request.base).get(&request.path).then(
+                                move |result| {
+                                    Ok(Msg::Internal(Internal::ResourceRequestResult(
+                                        request,
+                                        Box::new(result),
+                                    )))
+                                },
+                            )),
                         )
                     })
                     .unzip::<_, _, Vec<_>, Vec<_>>();
