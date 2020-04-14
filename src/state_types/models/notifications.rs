@@ -25,10 +25,10 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for Notifications {
     fn update(&mut self, ctx: &Ctx<Env>, msg: &Msg) -> Effects {
         match msg {
             Msg::Action(Action::Load(ActionLoad::Notifications)) => {
-                let lib = ctx.library();
+                let lib = &ctx.library;
 
                 let (groups, effects): (Vec<_>, Vec<_>) = ctx
-                    .profile()
+                    .profile
                     .addons
                     .iter()
                     .flat_map(|addon| {
@@ -113,7 +113,7 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for Notifications {
                     // Modify all the items so that only the new videos are left
                     if let ResourceContent::Ready(ref mut meta_items) = self.groups[idx].content {
                         for item in meta_items {
-                            if let Some(lib_item) = ctx.library().items.get(&item.id) {
+                            if let Some(lib_item) = ctx.library.items.get(&item.id) {
                                 item.videos
                                     // It's not gonna be a notification if we don't have the
                                     // released date of the last watched video

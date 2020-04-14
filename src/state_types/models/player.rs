@@ -53,7 +53,7 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for Player {
                         &mut self.subtitles_resources,
                         ResourcesAction::ResourcesRequested {
                             request: &AggrRequest::AllOfResource(subtitles_resource_ref.to_owned()),
-                            addons: &ctx.profile().addons,
+                            addons: &ctx.profile.addons,
                         },
                     ),
                     _ => eq_update(&mut self.subtitles_resources, vec![]),
@@ -65,10 +65,10 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for Player {
                         .selected
                         .as_ref()
                         .and_then(|selected| selected.video_id.to_owned()),
-                    &ctx.profile().settings,
+                    &ctx.profile.settings,
                 );
                 let lib_item_effects =
-                    lib_item_update::<Env>(&mut self.lib_item, &self.meta_resource, &ctx.library());
+                    lib_item_update::<Env>(&mut self.lib_item, &self.meta_resource, &ctx.library);
                 selected_effects
                     .join(meta_effects)
                     .join(subtitles_effects)
@@ -86,10 +86,10 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for Player {
                         .selected
                         .as_ref()
                         .and_then(|selected| selected.video_id.to_owned()),
-                    &ctx.profile().settings,
+                    &ctx.profile.settings,
                 );
                 let lib_item_effects =
-                    lib_item_update::<Env>(&mut self.lib_item, &self.meta_resource, &ctx.library());
+                    lib_item_update::<Env>(&mut self.lib_item, &self.meta_resource, &ctx.library);
                 selected_effects
                     .join(meta_effects)
                     .join(subtitles_effects)
@@ -172,10 +172,10 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for Player {
                         .selected
                         .as_ref()
                         .and_then(|selected| selected.video_id.to_owned()),
-                    &ctx.profile().settings,
+                    &ctx.profile.settings,
                 );
                 let lib_item_effects =
-                    lib_item_update::<Env>(&mut self.lib_item, &self.meta_resource, &ctx.library());
+                    lib_item_update::<Env>(&mut self.lib_item, &self.meta_resource, &ctx.library);
                 meta_effects
                     .join(subtitles_effects)
                     .join(next_video_effects)

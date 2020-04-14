@@ -62,7 +62,7 @@ where
                     &mut self.lib_items,
                     &self.selected,
                     F::predicate,
-                    ctx.library(),
+                    &ctx.library,
                 );
                 selected_effects.join(lib_items_effects)
             }
@@ -72,18 +72,18 @@ where
                     &mut self.lib_items,
                     &self.selected,
                     F::predicate,
-                    ctx.library(),
+                    &ctx.library,
                 );
                 selected_effects.join(lib_items_effects)
             }
             Msg::Internal(Internal::LibraryChanged(_)) => {
                 let type_names_effects =
-                    type_names_update(&mut self.type_names, F::predicate, ctx.library());
+                    type_names_update(&mut self.type_names, F::predicate, &ctx.library);
                 let lib_items_effects = lib_items_update(
                     &mut self.lib_items,
                     &self.selected,
                     F::predicate,
-                    ctx.library(),
+                    &ctx.library,
                 );
                 type_names_effects.join(lib_items_effects)
             }

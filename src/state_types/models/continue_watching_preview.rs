@@ -15,7 +15,7 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for ContinueWatchingPre
     fn update(&mut self, ctx: &Ctx<Env>, msg: &Msg) -> Effects {
         match msg {
             Msg::Internal(Internal::LibraryChanged(_)) => {
-                lib_items_update(&mut self.lib_items, ctx.library())
+                lib_items_update(&mut self.lib_items, &ctx.library)
             }
             _ => Effects::none().unchanged(),
         }

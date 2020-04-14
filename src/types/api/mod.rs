@@ -98,10 +98,10 @@ pub enum DatastoreCmd {
 #[derive(Debug, Clone, PartialEq, Builder, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct DatastoreReq {
-    auth_key: AuthKey,
-    collection: String,
+    pub auth_key: AuthKey,
+    pub collection: String,
     #[serde(flatten)]
-    cmd: DatastoreCmd,
+    pub cmd: DatastoreCmd,
 }
 impl DatastoreReqBuilder {
     pub fn with_cmd(&mut self, cmd: DatastoreCmd) -> DatastoreReq {
