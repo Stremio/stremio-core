@@ -1,7 +1,6 @@
 use crate::constants::CATALOG_PREVIEW_SIZE;
 use crate::state_types::models::common::{
-    eq_update, resources_update_with_vector_content, validate_extra, ResourceLoadable,
-    ResourcesAction,
+    eq_update, resources_update_with_vector_content, ResourceLoadable, ResourcesAction,
 };
 use crate::state_types::models::ctx::Ctx;
 use crate::state_types::msg::{Action, ActionLoad, Internal, Msg};
@@ -25,9 +24,6 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for CatalogsWithExtra {
     fn update(&mut self, ctx: &Ctx<Env>, msg: &Msg) -> Effects {
         match msg {
             Msg::Action(Action::Load(ActionLoad::CatalogsWithExtra(selected))) => {
-                let selected = Selected {
-                    extra: validate_extra(&selected.extra, &None),
-                };
                 let selected_effects = eq_update(&mut self.selected, Some(selected.to_owned()));
                 let catalogs_effects = resources_update_with_vector_content::<Env, _>(
                     &mut self.catalog_resources,

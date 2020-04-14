@@ -9,6 +9,3 @@ pub use loadable::*;
 
 mod resource_loadable;
 pub use resource_loadable::*;
-
-mod validate_extra;
-pub use validate_extra::*;

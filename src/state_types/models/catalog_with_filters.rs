@@ -1,7 +1,7 @@
 use crate::constants::{CATALOG_PAGE_SIZE, SKIP_EXTRA_NAME};
 use crate::state_types::models::common::{
-    eq_update, resource_update_with_vector_content, validate_extra, ResourceAction,
-    ResourceContent, ResourceLoadable,
+    eq_update, resource_update_with_vector_content, ResourceAction, ResourceContent,
+    ResourceLoadable,
 };
 use crate::state_types::models::ctx::Ctx;
 use crate::state_types::msg::{Action, ActionLoad, Internal, Msg};
@@ -102,20 +102,6 @@ where
     fn update(&mut self, ctx: &Ctx<Env>, msg: &Msg) -> Effects {
         match msg {
             Msg::Action(Action::Load(ActionLoad::CatalogWithFilters(selected))) => {
-                let selected = Selected {
-                    request: ResourceRequest {
-                        base: selected.request.base.to_owned(),
-                        path: ResourceRef {
-                            resource: selected.request.path.resource.to_owned(),
-                            type_name: selected.request.path.type_name.to_owned(),
-                            id: selected.request.path.id.to_owned(),
-                            extra: validate_extra(
-                                &selected.request.path.extra,
-                                &T::catalog_page_size(),
-                            ),
-                        },
-                    },
-                };
                 let selected_effects = eq_update(&mut self.selected, Some(selected.to_owned()));
                 let catalog_effects = resource_update_with_vector_content::<Env, _>(
                     &mut self.catalog_resource,
