@@ -164,6 +164,7 @@ pub fn update_library<Env: Environment + 'static>(
                     next_library.merge(other_bucket.to_owned())
                 };
                 if *library != next_library {
+                    *library = next_library;
                     Effects::msg(Msg::Internal(Internal::LibraryChanged(false)))
                 } else {
                     Effects::none().unchanged()
@@ -177,6 +178,7 @@ pub fn update_library<Env: Environment + 'static>(
             {
                 let next_library = LibBucket::new(profile.uid(), lib_items.to_owned());
                 if *library != next_library {
+                    *library = next_library;
                     Effects::msg(Msg::Internal(Internal::LibraryChanged(false)))
                 } else {
                     Effects::none().unchanged()
