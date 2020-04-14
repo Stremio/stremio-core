@@ -300,7 +300,7 @@ fn selectable_update<T: CatalogResourceAdapter>(
         has_prev_page,
         has_next_page,
     };
-    if next_selectable.ne(selectable) {
+    if *selectable != next_selectable {
         *selectable = next_selectable;
         Effects::none()
     } else {

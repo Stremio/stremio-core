@@ -61,7 +61,7 @@ where
 {
     match action {
         ResourceAction::ResourceRequested { request } => {
-            if Some(request).ne(&resource.as_ref().map(|resource| &resource.request)) {
+            if resource.as_ref().map(|resource| &resource.request) != Some(request) {
                 let request = request.to_owned();
                 *resource = Some(ResourceLoadable {
                     request: request.to_owned(),

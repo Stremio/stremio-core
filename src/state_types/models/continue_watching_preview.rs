@@ -31,7 +31,7 @@ fn lib_items_update(lib_items: &mut Vec<LibItem>, library: &LibBucket) -> Effect
         .take(CATALOG_PREVIEW_SIZE)
         .cloned()
         .collect::<Vec<_>>();
-    if next_lib_items.ne(lib_items) {
+    if *lib_items != next_lib_items {
         *lib_items = next_lib_items;
         Effects::none()
     } else {

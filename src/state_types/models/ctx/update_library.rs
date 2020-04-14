@@ -22,7 +22,7 @@ pub fn update_library<Env: Environment + 'static>(
     match msg {
         Msg::Action(Action::Ctx(ActionCtx::Logout)) => {
             let next_library = LibBucket::default();
-            if next_library.ne(library) {
+            if *library != next_library {
                 *library = next_library;
                 Effects::msg(Msg::Internal(Internal::LibraryChanged(false)))
             } else {
@@ -163,7 +163,7 @@ pub fn update_library<Env: Environment + 'static>(
                 if let Some(other_bucket) = other_bucket {
                     next_library.merge(other_bucket.to_owned())
                 };
-                if next_library.ne(library) {
+                if *library != next_library {
                     Effects::msg(Msg::Internal(Internal::LibraryChanged(false)))
                 } else {
                     Effects::none().unchanged()
@@ -176,7 +176,7 @@ pub fn update_library<Env: Environment + 'static>(
                 if loading_auth_request == auth_request =>
             {
                 let next_library = LibBucket::new(profile.uid(), lib_items.to_owned());
-                if next_library.ne(library) {
+                if *library != next_library {
                     Effects::msg(Msg::Internal(Internal::LibraryChanged(false)))
                 } else {
                     Effects::none().unchanged()

@@ -104,7 +104,7 @@ fn type_names_update(
         .map(|lib_item| lib_item.type_name.to_owned())
         .unique()
         .collect::<Vec<_>>();
-    if next_type_names.ne(type_names) {
+    if *type_names != next_type_names {
         *type_names = next_type_names;
         Effects::none()
     } else {
@@ -136,7 +136,7 @@ fn lib_items_update(
             .collect(),
         _ => vec![],
     };
-    if next_lib_items.ne(lib_items) {
+    if *lib_items != next_lib_items {
         *lib_items = next_lib_items;
         Effects::none()
     } else {

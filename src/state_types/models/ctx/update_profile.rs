@@ -17,7 +17,7 @@ pub fn update_profile<Env: Environment + 'static>(
     match msg {
         Msg::Action(Action::Ctx(ActionCtx::Logout)) => {
             let next_profile = Profile::default();
-            if next_profile.ne(profile) {
+            if *profile != next_profile {
                 *profile = next_profile;
                 Effects::msg(Msg::Internal(Internal::ProfileChanged(false)))
             } else {
@@ -89,7 +89,7 @@ pub fn update_profile<Env: Environment + 'static>(
                                 .unwrap_or_else(|| profile_addon.to_owned())
                         })
                         .collect();
-                    if profile.addons.ne(&next_addons) {
+                    if profile.addons != next_addons {
                         profile.addons = next_addons;
                         Effects::msg(Msg::Event(Event::AddonsPulledFromAPI {
                             uid: profile.uid(),
@@ -152,7 +152,7 @@ pub fn update_profile<Env: Environment + 'static>(
             }
         }
         Msg::Action(Action::Ctx(ActionCtx::UpdateSettings(settings))) => {
-            if profile.settings.ne(settings) {
+            if profile.settings != *settings {
                 profile.settings = settings.to_owned();
                 Effects::msg(Msg::Event(Event::SettingsUpdated { uid: profile.uid() }))
                     .join(Effects::msg(Msg::Internal(Internal::ProfileChanged(false))))
@@ -163,7 +163,7 @@ pub fn update_profile<Env: Environment + 'static>(
         Msg::Internal(Internal::CtxStorageResult(result)) => match (status, result.deref()) {
             (CtxStatus::Loading(CtxRequest::Storage), Ok((result_profile, _, _))) => {
                 let next_proifle = result_profile.to_owned().unwrap_or_default();
-                if next_proifle.ne(profile) {
+                if *profile != next_proifle {
                     *profile = next_proifle;
                     Effects::msg(Msg::Internal(Internal::ProfileChanged(true)))
                 } else {
@@ -181,7 +181,7 @@ pub fn update_profile<Env: Environment + 'static>(
                     addons: addons.to_owned(),
                     settings: Settings::default(),
                 };
-                if next_proifle.ne(profile) {
+                if *profile != next_proifle {
                     *profile = next_proifle;
                     Effects::msg(Msg::Internal(Internal::ProfileChanged(false)))
                 } else {
@@ -195,7 +195,7 @@ pub fn update_profile<Env: Environment + 'static>(
         {
             match result {
                 Ok(addons) => {
-                    if profile.addons.ne(addons) {
+                    if profile.addons != *addons {
                         profile.addons = addons.to_owned();
                         Effects::msg(Msg::Event(Event::AddonsPulledFromAPI {
                             uid: profile.uid(),
