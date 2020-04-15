@@ -63,18 +63,9 @@ pub struct LibItem {
 }
 
 impl LibItem {
-    pub fn should_persist(&self) -> bool {
-        !self.temp
-    }
-    // Must return a result that's in a logical conjunction (&&) with .should_persist()
-    pub fn should_push(&self) -> bool {
-        self.should_persist()
-            && self.type_name != "other"
-            && if self.removed {
-                self.state.overall_time_watched > 60_000
-            } else {
-                true
-            }
+    // The purpose of this function is to ease the load on the sync system
+    pub fn should_sync(&self) -> bool {
+        !self.removed || self.state.overall_time_watched > 60_000
     }
     pub fn is_in_continue_watching(&self) -> bool {
         (!self.removed || self.temp) && self.state.time_offset > 0
