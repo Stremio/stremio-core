@@ -1,7 +1,7 @@
 use super::Settings;
 use crate::constants::OFFICIAL_ADDONS;
 use crate::types::addons::Descriptor;
-use crate::types::api::Auth;
+use crate::types::api::{Auth, AuthKey};
 use serde::{Deserialize, Serialize};
 
 pub type UID = Option<String>;
@@ -26,5 +26,8 @@ impl Default for Profile {
 impl Profile {
     pub fn uid(&self) -> UID {
         self.auth.as_ref().map(|auth| auth.user.id.to_owned())
+    }
+    pub fn auth_key(&self) -> Option<AuthKey> {
+        self.auth.as_ref().map(|auth| auth.key.to_owned())
     }
 }
