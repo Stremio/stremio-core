@@ -68,7 +68,7 @@ impl LibItem {
         !self.removed || self.state.overall_time_watched > 60_000
     }
     pub fn is_in_continue_watching(&self) -> bool {
-        (!self.removed || self.temp) && self.state.time_offset > 0
+        self.should_sync() && (!self.removed || self.temp) && self.state.time_offset > 0
     }
 }
 
