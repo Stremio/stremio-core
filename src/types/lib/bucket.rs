@@ -1,13 +1,11 @@
 use super::LibItem;
 use crate::constants::LIBRARY_RECENT_COUNT;
+use crate::types::profile::UID;
 use lazysort::SortedBy;
 use serde::{Deserialize, Serialize};
 use std::cmp;
 use std::collections::hash_map::Entry::{Occupied, Vacant};
 use std::collections::HashMap;
-
-#[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
-pub struct UID(pub Option<String>);
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct LibBucket {
