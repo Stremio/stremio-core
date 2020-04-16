@@ -23,13 +23,13 @@ pub enum Internal {
     LibraryPullResult(DatastoreReq, Result<Vec<LibItem>, CtxError>),
     // Dispatched when library item needs to be updated in the memory, storage and API.
     UpdateLibraryItem(LibItem),
-    // Dispatched when some of auth, addons or settings changed.
+    // Dispatched when some of auth, addons or settings changed with a flag if its already persisted.
     ProfileChanged(bool),
     // Dispatched when library changes with a flag if its already persisted.
     LibraryChanged(bool),
-    // Result for loading streaming server
+    // Result for loading streaming server settings.
     StreamingServerSettingsResult(Url, Result<StreamingServerSettings, EnvError>),
-    // Result for updating streaming server
+    // Result for updating streaming server settings.
     StreamingServerUpdateSettingsResult(Url, Result<(), EnvError>),
     ResourceRequestResult(ResourceRequest, Box<Result<ResourceResponse, EnvError>>),
     ManifestRequestResult(TransportUrl, Result<Manifest, EnvError>),
