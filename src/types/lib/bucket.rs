@@ -41,7 +41,7 @@ impl LibBucket {
             }
         }
     }
-    pub fn split_by_recent(&self) -> (LibBucketBorrowed, LibBucketBorrowed) {
+    pub fn split_items_by_recent(&self) -> (Vec<&LibItem>, Vec<&LibItem>) {
         let sorted_items = self
             .items
             .values()
@@ -50,23 +50,8 @@ impl LibBucket {
         let recent_count = cmp::min(LIBRARY_RECENT_COUNT, sorted_items.len());
         let (recent_items, other_items) = sorted_items.split_at(recent_count);
         (
-            LibBucketBorrowed::new(&self.uid, recent_items),
-            LibBucketBorrowed::new(&self.uid, other_items),
+            recent_items.iter().map(|item| *item).collect(),
+            other_items.iter().map(|item| *item).collect(),
         )
-    }
-}
-
-#[derive(Serialize)]
-pub struct LibBucketBorrowed<'a> {
-    pub uid: &'a UID,
-    pub items: HashMap<&'a str, &'a LibItem>,
-}
-
-impl<'a> LibBucketBorrowed<'a> {
-    pub fn new(uid: &'a UID, items: &[&'a LibItem]) -> Self {
-        LibBucketBorrowed {
-            uid,
-            items: items.iter().map(|&item| (item.id.as_str(), item)).collect(),
-        }
     }
 }
