@@ -1,7 +1,7 @@
 use crate::state_types::models::ctx::CtxError;
-use crate::types::addons::Descriptor;
-use crate::types::api::AuthRequest;
-use crate::types::profile::UID;
+use crate::types::addons::TransportUrl;
+use crate::types::api::{AuthKey, AuthRequest};
+use crate::types::profile::{Settings, UID};
 use serde::Serialize;
 
 //
@@ -12,18 +12,22 @@ use serde::Serialize;
 pub enum Event {
     CtxPulledFromStorage { uid: UID },
     ProfilePushedToStorage { uid: UID },
-    LibraryPushedToStorage { uid: UID },
+    LibraryItemsPushedToStorage { ids: Vec<String> },
     UserPulledFromAPI { uid: UID },
     UserPushedToAPI { uid: UID },
-    AddonsPulledFromAPI { uid: UID },
-    AddonsPushedToAPI { uid: UID },
-    LibrarySyncedWithAPI { uid: UID },
-    LibraryPushedToAPI { uid: UID },
-    UserAuthenticated { uid: UID, auth_request: AuthRequest },
+    AddonsPulledFromAPI { transport_urls: Vec<TransportUrl> },
+    AddonsPushedToAPI { transport_urls: Vec<TransportUrl> },
+    LibrarySyncWithAPIPlanned { plan: (Vec<String>, Vec<String>) },
+    LibraryItemsPushedToAPI { ids: Vec<String> },
+    LibraryItemsPulledFromAPI { ids: Vec<String> },
+    UserAuthenticated { auth_request: AuthRequest },
     UserLoggedOut { uid: UID },
-    SessionDeleted { uid: UID },
-    AddonInstalled { uid: UID, addon: Descriptor },
-    AddonUninstalled { uid: UID, addon: Descriptor },
-    SettingsUpdated { uid: UID },
+    SessionDeleted { auth_key: AuthKey },
+    AddonInstalled { transport_url: TransportUrl },
+    AddonUninstalled { transport_url: TransportUrl },
+    SettingsUpdated { settings: Settings },
+    LibraryItemAdded { id: String },
+    LibraryItemRemoved { id: String },
+    LibraryItemRewided { id: String },
     Error { error: CtxError, source: Box<Event> },
 }
