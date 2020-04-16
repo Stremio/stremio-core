@@ -2,12 +2,10 @@ use super::LibItem;
 use crate::constants::LIBRARY_RECENT_COUNT;
 use crate::types::profile::UID;
 use lazysort::SortedBy;
-use serde::{Deserialize, Serialize};
 use std::cmp;
-use std::collections::hash_map::Entry::{Occupied, Vacant};
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 
-#[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Default, Debug, Clone, PartialEq)]
 pub struct LibBucket {
     pub uid: UID,
     pub items: HashMap<String, LibItem>,
@@ -23,20 +21,16 @@ impl LibBucket {
                 .collect(),
         }
     }
-    pub fn merge(&mut self, other: LibBucket) {
-        if self.uid != other.uid {
-            return;
-        }
-
-        for (id, item) in other.items.into_iter() {
-            match self.items.entry(id) {
-                Vacant(entry) => {
-                    entry.insert(item);
-                }
-                Occupied(mut entry) => {
-                    if item.mtime > entry.get().mtime {
-                        entry.insert(item);
+    pub fn merge(&mut self, items: Vec<LibItem>) {
+        for new_item in items.into_iter() {
+            match self.items.get_mut(&new_item.id) {
+                Some(item) => {
+                    if new_item.mtime > item.mtime {
+                        *item = new_item;
                     }
+                }
+                None => {
+                    self.items.insert(new_item.id.to_owned(), new_item);
                 }
             }
         }
