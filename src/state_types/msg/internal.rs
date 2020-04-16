@@ -2,7 +2,7 @@ use crate::state_types::models::ctx::{CtxAuthResponse, CtxError, CtxStorageRespo
 use crate::state_types::models::streaming_server::Settings as StreamingServerSettings;
 use crate::state_types::EnvError;
 use crate::types::addons::{Descriptor, Manifest, ResourceRequest, ResourceResponse, TransportUrl};
-use crate::types::api::{AuthKey, AuthRequest};
+use crate::types::api::{AuthRequest, DatastoreReq};
 use crate::types::LibItem;
 use url::Url;
 
@@ -16,9 +16,11 @@ pub enum Internal {
     // Result for authenticate to API.
     CtxAuthResult(AuthRequest, Result<CtxAuthResponse, CtxError>),
     // Result for pull addons from API.
-    AddonsAPIResult(AuthKey, Result<Vec<Descriptor>, CtxError>),
-    // Result for sync library items with API. Returns newer items that needs to be updated.
-    LibrarySyncResult(AuthKey, Result<Vec<LibItem>, CtxError>),
+    AddonsAPIResult(DatastoreReq, Result<Vec<Descriptor>, CtxError>),
+    // Result for library sync plan with API.
+    LibrarySyncPlanResult(DatastoreReq, Result<(Vec<String>, Vec<String>), CtxError>),
+    // Result for pull library items from API.
+    LibraryPullResult(DatastoreReq, Result<Vec<LibItem>, CtxError>),
     // Dispatched when library item needs to be updated in the memory, storage and API.
     UpdateLibraryItem(LibItem),
     // Dispatched when some of auth, addons or settings changed.
