@@ -35,6 +35,16 @@ impl LibBucket {
             }
         }
     }
+    pub fn are_ids_in_recent(&self, ids: &[String]) -> bool {
+        let recent_item_ids = self
+            .items
+            .iter()
+            .sorted_by(|(_, a), (_, b)| b.mtime.cmp(&a.mtime))
+            .map(|(id, _)| id)
+            .take(LIBRARY_RECENT_COUNT)
+            .collect::<HashSet<_>>();
+        ids.iter().all(move |id| recent_item_ids.contains(id))
+    }
     pub fn split_items_by_recent(&self) -> (Vec<&LibItem>, Vec<&LibItem>) {
         let sorted_items = self
             .items
