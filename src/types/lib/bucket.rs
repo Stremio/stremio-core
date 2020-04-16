@@ -53,9 +53,6 @@ impl LibBucket {
             .collect::<Vec<_>>();
         let recent_count = cmp::min(LIBRARY_RECENT_COUNT, sorted_items.len());
         let (recent_items, other_items) = sorted_items.split_at(recent_count);
-        (
-            recent_items.iter().map(|item| *item).collect(),
-            other_items.iter().map(|item| *item).collect(),
-        )
+        (recent_items.to_vec(), other_items.to_vec())
     }
 }
