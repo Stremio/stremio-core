@@ -9,6 +9,8 @@ pub enum OtherError {
     UserNotLoggedIn,
     LibraryItemNotFound,
     AddonAlreadyInstalled,
+    AddonNotInstalled,
+    AddonIsProtected,
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -64,11 +66,15 @@ impl From<OtherError> for CtxError {
                 OtherError::UserNotLoggedIn => 800,
                 OtherError::LibraryItemNotFound => 801,
                 OtherError::AddonAlreadyInstalled => 802,
+                OtherError::AddonNotInstalled => 803,
+                OtherError::AddonIsProtected => 804,
             },
             message: match &error {
                 OtherError::UserNotLoggedIn => "User is not logged in".to_owned(),
                 OtherError::LibraryItemNotFound => "Item is not found in library".to_owned(),
                 OtherError::AddonAlreadyInstalled => "Addon is already installed".to_owned(),
+                OtherError::AddonNotInstalled => "Addon is not installed".to_owned(),
+                OtherError::AddonIsProtected => "Addon is protected".to_owned(),
             },
         }
     }
