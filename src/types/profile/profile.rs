@@ -1,7 +1,7 @@
 use super::Settings;
 use crate::constants::OFFICIAL_ADDONS;
 use crate::types::addons::Descriptor;
-use crate::types::api::{Auth, AuthKey};
+use crate::types::api::Auth;
 use serde::{Deserialize, Serialize};
 
 pub type UID = Option<String>;
