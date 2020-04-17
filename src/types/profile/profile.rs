@@ -27,7 +27,4 @@ impl Profile {
     pub fn uid(&self) -> UID {
         self.auth.as_ref().map(|auth| auth.user.id.to_owned())
     }
-    pub fn auth_key(&self) -> Option<AuthKey> {
-        self.auth.as_ref().map(|auth| auth.key.to_owned())
-    }
 }
