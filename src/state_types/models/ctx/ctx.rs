@@ -15,7 +15,6 @@ use enclose::enclose;
 use futures::Future;
 use serde::Serialize;
 use std::marker::PhantomData;
-use std::ops::Deref;
 
 #[derive(Clone, Debug, PartialEq)]
 pub enum CtxRequest {
@@ -88,7 +87,7 @@ impl<Env: Environment + 'static> Update for Ctx<Env> {
                 let ctx_effects = match &self.status {
                     CtxStatus::Loading(CtxRequest::Storage) => {
                         self.status = CtxStatus::Ready;
-                        match result.deref() {
+                        match result {
                             Ok(_) => Effects::msg(Msg::Event(Event::CtxPulledFromStorage {
                                 uid: self.profile.uid(),
                             }))
@@ -159,7 +158,7 @@ fn pull_ctx_from_storage<Env: Environment + 'static>() -> Effect {
                 Env::get_storage(LIBRARY_STORAGE_KEY),
             )
             .map_err(CtxError::from)
-            .then(|result| Ok(Msg::Internal(Internal::CtxStorageResult(Box::new(result))))),
+            .then(|result| Ok(Msg::Internal(Internal::CtxStorageResult(result)))),
     )
 }
 

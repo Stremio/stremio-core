@@ -10,7 +10,6 @@ use crate::types::{LibBucket, LibItem, LibItemModified, LibItemState};
 use futures::future::Either;
 use futures::Future;
 use std::collections::HashMap;
-use std::ops::Deref;
 
 pub fn update_library<Env: Environment + 'static>(
     library: &mut LibBucket,
@@ -120,7 +119,7 @@ pub fn update_library<Env: Environment + 'static>(
         Msg::Internal(Internal::LibraryChanged(persisted)) if !persisted => {
             Effects::one(push_library_to_storage::<Env>(library)).unchanged()
         }
-        Msg::Internal(Internal::CtxStorageResult(result)) => match (status, result.deref()) {
+        Msg::Internal(Internal::CtxStorageResult(result)) => match (status, result) {
             (
                 CtxStatus::Loading(CtxRequest::Storage),
                 Ok((profile, recent_bucket, other_bucket)),

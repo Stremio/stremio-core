@@ -21,7 +21,7 @@ pub type CtxAuthResponse = (Auth, Vec<Descriptor>, Vec<LibItem>);
 #[derive(Debug)]
 pub enum Internal {
     // Result for pull profile and library from storage.
-    CtxStorageResult(Box<Result<CtxStorageResponse, CtxError>>),
+    CtxStorageResult(Result<CtxStorageResponse, CtxError>),
     // Result for authenticate to API.
     CtxAuthResult(AuthRequest, Result<CtxAuthResponse, CtxError>),
     // Result for pull addons from API.

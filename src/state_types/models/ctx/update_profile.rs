@@ -7,7 +7,6 @@ use crate::types::api::{APIRequest, CollectionResponse, SuccessResponse};
 use crate::types::profile::{Profile, Settings};
 use enclose::enclose;
 use futures::Future;
-use std::ops::Deref;
 
 pub fn update_profile<Env: Environment + 'static>(
     profile: &mut Profile,
@@ -164,7 +163,7 @@ pub fn update_profile<Env: Environment + 'static>(
         Msg::Internal(Internal::ProfileChanged(persisted)) if !persisted => {
             Effects::one(push_profile_to_storage::<Env>(profile)).unchanged()
         }
-        Msg::Internal(Internal::CtxStorageResult(result)) => match (status, result.deref()) {
+        Msg::Internal(Internal::CtxStorageResult(result)) => match (status, result) {
             (CtxStatus::Loading(CtxRequest::Storage), Ok((result_profile, _, _))) => {
                 let next_proifle = result_profile.to_owned().unwrap_or_default();
                 if *profile != next_proifle {
