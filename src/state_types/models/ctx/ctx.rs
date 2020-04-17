@@ -3,13 +3,13 @@ use crate::constants::{
     LIBRARY_COLLECTION_NAME, LIBRARY_RECENT_STORAGE_KEY, LIBRARY_STORAGE_KEY, PROFILE_STORAGE_KEY,
 };
 use crate::state_types::msg::{Action, ActionCtx, ActionLoad, Event, Internal, Msg};
-use crate::state_types::{Effects, Environment, Update};
+use crate::state_types::{Effect, Effects, Environment, Update};
 use crate::types::addons::Descriptor;
 use crate::types::api::{
     APIRequest, Auth, AuthRequest, AuthResponse, CollectionResponse, DatastoreCmd, DatastoreReq,
     SuccessResponse,
 };
-use crate::types::profile::Profile;
+use crate::types::profile::{Profile, UID};
 use crate::types::{LibBucket, LibItem};
 use derivative::Derivative;
 use enclose::enclose;
@@ -18,7 +18,12 @@ use serde::Serialize;
 use std::marker::PhantomData;
 use std::ops::Deref;
 
-pub type CtxStorageResponse = (Option<Profile>, Option<LibBucket>, Option<LibBucket>);
+pub type CtxStorageResponse = (
+    Option<Profile>,
+    Option<(UID, Vec<LibItem>)>,
+    Option<(UID, Vec<LibItem>)>,
+);
+
 pub type CtxAuthResponse = (Auth, Vec<Descriptor>, Vec<LibItem>);
 
 #[derive(Clone, Debug, PartialEq)]
@@ -55,81 +60,40 @@ impl<Env: Environment + 'static> Update for Ctx<Env> {
         match msg {
             Msg::Action(Action::Load(ActionLoad::Ctx)) => {
                 self.status = CtxStatus::Loading(CtxRequest::Storage);
-                Effects::one(Box::new(
-                    Env::get_storage(PROFILE_STORAGE_KEY)
-                        .join3(
-                            Env::get_storage(LIBRARY_RECENT_STORAGE_KEY),
-                            Env::get_storage(LIBRARY_STORAGE_KEY),
-                        )
-                        .map_err(CtxError::from)
-                        .then(|result| {
-                            Ok(Msg::Internal(Internal::CtxStorageResult(Box::new(result))))
-                        }),
-                ))
-                .unchanged()
+                Effects::one(pull_ctx_from_storage::<Env>()).unchanged()
             }
             Msg::Action(Action::Ctx(ActionCtx::Authenticate(auth_request))) => {
                 self.status = CtxStatus::Loading(CtxRequest::API(auth_request.to_owned()));
-                Effects::one(Box::new(
-                    fetch_api::<Env, _, _>(&APIRequest::Auth(auth_request.to_owned()))
-                        .map(|AuthResponse { key, user }| Auth { key, user })
-                        .and_then(|auth| {
-                            fetch_api::<Env, _, _>(&APIRequest::AddonCollectionGet {
-                                auth_key: auth.key.to_owned(),
-                                update: true,
-                            })
-                            .map(|CollectionResponse { addons, .. }| addons)
-                            .join(fetch_api::<Env, _, _>(&DatastoreReq {
-                                auth_key: auth.key.to_owned(),
-                                collection: LIBRARY_COLLECTION_NAME.to_owned(),
-                                cmd: DatastoreCmd::Get {
-                                    ids: vec![],
-                                    all: true,
-                                },
-                            }))
-                            .map(move |(addons, lib_items)| (auth, addons, lib_items))
-                        })
-                        .then(enclose!((auth_request) move |result| {
-                            Ok(Msg::Internal(Internal::CtxAuthResult(auth_request, result)))
-                        })),
-                ))
-                .unchanged()
+                Effects::one(authenticate::<Env>(auth_request)).unchanged()
             }
             Msg::Action(Action::Ctx(ActionCtx::Logout)) => {
-                let ctx_effects = {
-                    let uid = self.profile.uid();
-                    let session_effects = match &self.profile.auth {
-                        Some(auth) => Effects::one(Box::new(
-                            fetch_api::<Env, _, SuccessResponse>(&APIRequest::Logout {
-                                auth_key: auth.key.to_owned(),
-                            })
-                            .map(enclose!((uid) move |_| {
-                                Msg::Event(Event::SessionDeleted { uid })
-                            }))
-                            .map_err(enclose!((uid) move |error| {
-                                Msg::Event(Event::Error {
-                                    error,
-                                    source: Box::new(Event::SessionDeleted { uid }),
-                                })
-                            })),
-                        ))
-                        .unchanged(),
-                        _ => Effects::none().unchanged(),
-                    };
-                    Effects::msg(Msg::Event(Event::UserLoggedOut { uid }))
-                        .unchanged()
-                        .join(session_effects)
+                let uid = self.profile.uid();
+                let session_effects = match &self.profile.auth {
+                    Some(auth) => Effects::one(delete_session::<Env>(&auth.key)).unchanged(),
+                    _ => Effects::none().unchanged(),
                 };
-                let profile_effects = update_profile::<Env>(&mut self.profile, &self.status, &msg);
-                let library_effects =
-                    update_library::<Env>(&mut self.library, &self.profile, &self.status, &msg);
+                let profile_effects = update_profile::<Env>(&mut self.profile, &self.status, msg);
+                let library_effects = update_library::<Env>(
+                    &mut self.library,
+                    self.profile.auth.as_ref().map(|auth| &auth.key),
+                    &self.status,
+                    &msg,
+                );
                 self.status = CtxStatus::Ready;
-                ctx_effects.join(profile_effects).join(library_effects)
+                Effects::msg(Msg::Event(Event::UserLoggedOut { uid }))
+                    .unchanged()
+                    .join(session_effects)
+                    .join(profile_effects)
+                    .join(library_effects)
             }
             Msg::Internal(Internal::CtxStorageResult(result)) => {
                 let profile_effects = update_profile::<Env>(&mut self.profile, &self.status, msg);
-                let library_effects =
-                    update_library::<Env>(&mut self.library, &self.profile, &self.status, msg);
+                let library_effects = update_library::<Env>(
+                    &mut self.library,
+                    self.profile.auth.as_ref().map(|auth| &auth.key),
+                    &self.status,
+                    msg,
+                );
                 let ctx_effects = match &self.status {
                     CtxStatus::Loading(CtxRequest::Storage) => {
                         self.status = CtxStatus::Ready;
@@ -141,7 +105,7 @@ impl<Env: Environment + 'static> Update for Ctx<Env> {
                             Err(error) => Effects::msg(Msg::Event(Event::Error {
                                 error: error.to_owned(),
                                 source: Box::new(Event::CtxPulledFromStorage {
-                                    uid: self.profile.uid(),
+                                    uid: Default::default(),
                                 }),
                             }))
                             .unchanged(),
@@ -149,12 +113,16 @@ impl<Env: Environment + 'static> Update for Ctx<Env> {
                     }
                     _ => Effects::none().unchanged(),
                 };
-                ctx_effects.join(profile_effects).join(library_effects)
+                profile_effects.join(library_effects).join(ctx_effects)
             }
             Msg::Internal(Internal::CtxAuthResult(auth_request, result)) => {
                 let profile_effects = update_profile::<Env>(&mut self.profile, &self.status, msg);
-                let library_effects =
-                    update_library::<Env>(&mut self.library, &self.profile, &self.status, msg);
+                let library_effects = update_library::<Env>(
+                    &mut self.library,
+                    self.profile.auth.as_ref().map(|auth| &auth.key),
+                    &self.status,
+                    msg,
+                );
                 let ctx_effects = match &self.status {
                     CtxStatus::Loading(CtxRequest::API(loading_auth_request))
                         if loading_auth_request == auth_request =>
@@ -162,14 +130,12 @@ impl<Env: Environment + 'static> Update for Ctx<Env> {
                         self.status = CtxStatus::Ready;
                         match result {
                             Ok(_) => Effects::msg(Msg::Event(Event::UserAuthenticated {
-                                uid: self.profile.uid(),
                                 auth_request: auth_request.to_owned(),
                             }))
                             .unchanged(),
                             Err(error) => Effects::msg(Msg::Event(Event::Error {
                                 error: error.to_owned(),
                                 source: Box::new(Event::UserAuthenticated {
-                                    uid: self.profile.uid(),
                                     auth_request: auth_request.to_owned(),
                                 }),
                             }))
@@ -178,14 +144,73 @@ impl<Env: Environment + 'static> Update for Ctx<Env> {
                     }
                     _ => Effects::none().unchanged(),
                 };
-                ctx_effects.join(profile_effects).join(library_effects)
+                profile_effects.join(library_effects).join(ctx_effects)
             }
             _ => {
                 let profile_effects = update_profile::<Env>(&mut self.profile, &self.status, &msg);
-                let library_effects =
-                    update_library::<Env>(&mut self.library, &self.profile, &self.status, &msg);
+                let library_effects = update_library::<Env>(
+                    &mut self.library,
+                    self.profile.auth.as_ref().map(|auth| &auth.key),
+                    &self.status,
+                    &msg,
+                );
                 profile_effects.join(library_effects)
             }
         }
     }
+}
+
+fn pull_ctx_from_storage<Env: Environment + 'static>() -> Effect {
+    Box::new(
+        Env::get_storage(PROFILE_STORAGE_KEY)
+            .join3(
+                Env::get_storage(LIBRARY_RECENT_STORAGE_KEY),
+                Env::get_storage(LIBRARY_STORAGE_KEY),
+            )
+            .map_err(CtxError::from)
+            .then(|result| Ok(Msg::Internal(Internal::CtxStorageResult(Box::new(result))))),
+    )
+}
+
+fn authenticate<Env: Environment + 'static>(auth_request: &AuthRequest) -> Effect {
+    Box::new(
+        fetch_api::<Env, _, _>(&APIRequest::Auth(auth_request.to_owned()))
+            .map(|AuthResponse { key, user }| Auth { key, user })
+            .and_then(|auth| {
+                fetch_api::<Env, _, _>(&APIRequest::AddonCollectionGet {
+                    auth_key: auth.key.to_owned(),
+                    update: true,
+                })
+                .map(|CollectionResponse { addons, .. }| addons)
+                .join(fetch_api::<Env, _, _>(&DatastoreReq {
+                    auth_key: auth.key.to_owned(),
+                    collection: LIBRARY_COLLECTION_NAME.to_owned(),
+                    cmd: DatastoreCmd::Get {
+                        ids: vec![],
+                        all: true,
+                    },
+                }))
+                .map(move |(addons, lib_items)| (auth, addons, lib_items))
+            })
+            .then(enclose!((auth_request) move |result| {
+                Ok(Msg::Internal(Internal::CtxAuthResult(auth_request, result)))
+            })),
+    )
+}
+
+fn delete_session<Env: Environment + 'static>(auth_key: &str) -> Effect {
+    Box::new(
+        fetch_api::<Env, _, SuccessResponse>(&APIRequest::Logout {
+            auth_key: auth_key.to_owned(),
+        })
+        .then(enclose!((auth_key.to_owned() => auth_key) move |result|
+            match result {
+                Ok(_) => Ok(Msg::Event(Event::SessionDeleted { auth_key })),
+                Err(error) => Err(Msg::Event(Event::Error {
+                    error,
+                    source: Box::new(Event::SessionDeleted { auth_key }),
+                })),
+            }
+        )),
+    )
 }

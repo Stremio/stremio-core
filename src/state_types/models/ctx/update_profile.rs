@@ -1,7 +1,7 @@
-use super::{fetch_api, CtxError, CtxRequest, CtxStatus};
+use super::{fetch_api, CtxError, CtxRequest, CtxStatus, OtherError};
 use crate::constants::{OFFICIAL_ADDONS, PROFILE_STORAGE_KEY};
 use crate::state_types::msg::{Action, ActionCtx, Event, Internal, Msg};
-use crate::state_types::{Effects, Environment};
+use crate::state_types::{Effect, Effects, Environment};
 use crate::types::addons::Descriptor;
 use crate::types::api::{APIRequest, CollectionResponse, SuccessResponse};
 use crate::types::profile::{Profile, Settings};
@@ -32,45 +32,30 @@ pub fn update_profile<Env: Environment + 'static>(
             // TODO implement
             Effects::msg(Msg::Event(Event::UserPulledFromAPI { uid: profile.uid() })).unchanged()
         }
-        Msg::Action(Action::Ctx(ActionCtx::PushAddonsToAPI)) => {
-            match &profile.auth {
-                Some(auth) => Effects::one(Box::new(
-                    fetch_api::<Env, _, SuccessResponse>(&APIRequest::AddonCollectionSet {
-                        auth_key: auth.key.to_owned(),
-                        addons: profile.addons.to_owned(),
-                    })
-                    .map(enclose!((profile.uid() => uid) move |_| {
-                        Msg::Event(Event::AddonsPushedToAPI { uid })
-                    }))
-                    .map_err(enclose!((profile.uid() => uid) move |error| {
-                        Msg::Event(Event::Error {
-                            error,
-                            source: Box::new(Event::AddonsPushedToAPI { uid }),
-                        })
-                    })),
-                ))
-                .unchanged(),
-                _ => {
-                    // TODO Consider return error event for user not logged in
-                    Effects::none().unchanged()
-                }
-            }
-        }
+        Msg::Action(Action::Ctx(ActionCtx::PushAddonsToAPI)) => match &profile.auth {
+            Some(auth) => Effects::one(push_addons_to_api::<Env>(
+                profile.addons.to_owned(),
+                &auth.key,
+            ))
+            .unchanged(),
+            _ => Effects::msg(Msg::Event(Event::Error {
+                error: CtxError::from(OtherError::UserNotLoggedIn),
+                source: Box::new(Event::AddonsPushedToAPI {
+                    transport_urls: profile
+                        .addons
+                        .iter()
+                        .map(|addon| &addon.transport_url)
+                        .cloned()
+                        .collect(),
+                }),
+            }))
+            .unchanged(),
+        },
         Msg::Action(Action::Ctx(ActionCtx::PullAddonsFromAPI)) => {
             match &profile.auth {
-                Some(auth) => Effects::one(Box::new(
-                    fetch_api::<Env, _, _>(&APIRequest::AddonCollectionGet {
-                        auth_key: auth.key.to_owned(),
-                        update: true,
-                    })
-                    .map(|CollectionResponse { addons, .. }| addons)
-                    .then(enclose!((auth.key.to_owned() => auth_key)
-                        move |result| Ok(Msg::Internal(Internal::AddonsAPIResult(auth_key, result)))
-                    )),
-                ))
-                .unchanged(),
+                Some(auth) => Effects::one(pull_addons_from_api::<Env>(&auth.key)).unchanged(),
                 _ => {
-                    // TODO Does this code need to be moved ?
+                    // TODO Does this code needs to be moved ?
                     let next_addons = profile
                         .addons
                         .iter()
@@ -88,18 +73,19 @@ pub fn update_profile<Env: Environment + 'static>(
                                 })
                                 .unwrap_or_else(|| profile_addon.to_owned())
                         })
+                        .collect::<Vec<_>>();
+                    let transport_urls = next_addons
+                        .iter()
+                        .map(|addon| &addon.transport_url)
+                        .cloned()
                         .collect();
                     if profile.addons != next_addons {
                         profile.addons = next_addons;
-                        Effects::msg(Msg::Event(Event::AddonsPulledFromAPI {
-                            uid: profile.uid(),
-                        }))
-                        .join(Effects::msg(Msg::Internal(Internal::ProfileChanged(false))))
+                        Effects::msg(Msg::Event(Event::AddonsPulledFromAPI { transport_urls }))
+                            .join(Effects::msg(Msg::Internal(Internal::ProfileChanged(false))))
                     } else {
-                        Effects::msg(Msg::Event(Event::AddonsPulledFromAPI {
-                            uid: profile.uid(),
-                        }))
-                        .unchanged()
+                        Effects::msg(Msg::Event(Event::AddonsPulledFromAPI { transport_urls }))
+                            .unchanged()
                     }
                 }
             }
@@ -117,16 +103,14 @@ pub fn update_profile<Env: Environment + 'static>(
                     profile.addons.push(addon.to_owned());
                 };
                 Effects::msg(Msg::Event(Event::AddonInstalled {
-                    uid: profile.uid(),
-                    addon: addon.to_owned(),
+                    transport_url: addon.transport_url.to_owned(),
                 }))
                 .join(Effects::msg(Msg::Internal(Internal::ProfileChanged(false))))
             } else {
                 Effects::msg(Msg::Event(Event::Error {
-                    error: CtxError::from("Addon already installed"),
+                    error: CtxError::from(OtherError::AddonAlreadyInstalled),
                     source: Box::new(Event::AddonInstalled {
-                        uid: profile.uid(),
-                        addon: addon.to_owned(),
+                        transport_url: addon.transport_url.to_owned(),
                     }),
                 }))
                 .unchanged()
@@ -136,29 +120,49 @@ pub fn update_profile<Env: Environment + 'static>(
             let addon_position = profile
                 .addons
                 .iter()
-                .position(|addon| addon.transport_url == *transport_url && !addon.flags.protected);
+                .position(|addon| addon.transport_url == *transport_url);
             if let Some(addon_position) = addon_position {
-                let addon = profile.addons[addon_position].to_owned();
-                profile.addons.remove(addon_position);
-                Effects::msg(Msg::Event(Event::AddonUninstalled {
-                    uid: profile.uid(),
-                    addon,
-                }))
-                .join(Effects::msg(Msg::Internal(Internal::ProfileChanged(false))))
+                if profile.addons[addon_position].flags.protected {
+                    Effects::msg(Msg::Event(Event::Error {
+                        error: CtxError::from(OtherError::AddonIsProtected),
+                        source: Box::new(Event::AddonUninstalled {
+                            transport_url: transport_url.to_owned(),
+                        }),
+                    }))
+                    .unchanged()
+                } else {
+                    profile.addons.remove(addon_position);
+                    Effects::msg(Msg::Event(Event::AddonUninstalled {
+                        transport_url: transport_url.to_owned(),
+                    }))
+                    .join(Effects::msg(Msg::Internal(Internal::ProfileChanged(false))))
+                }
             } else {
-                // TODO Consider return error event if addon is not installed
-                // TODO Consider return error event if addon is protected
-                Effects::none().unchanged()
+                Effects::msg(Msg::Event(Event::Error {
+                    error: CtxError::from(OtherError::AddonNotInstalled),
+                    source: Box::new(Event::AddonUninstalled {
+                        transport_url: transport_url.to_owned(),
+                    }),
+                }))
+                .unchanged()
             }
         }
         Msg::Action(Action::Ctx(ActionCtx::UpdateSettings(settings))) => {
             if profile.settings != *settings {
                 profile.settings = settings.to_owned();
-                Effects::msg(Msg::Event(Event::SettingsUpdated { uid: profile.uid() }))
-                    .join(Effects::msg(Msg::Internal(Internal::ProfileChanged(false))))
+                Effects::msg(Msg::Event(Event::SettingsUpdated {
+                    settings: settings.to_owned(),
+                }))
+                .join(Effects::msg(Msg::Internal(Internal::ProfileChanged(false))))
             } else {
-                Effects::msg(Msg::Event(Event::SettingsUpdated { uid: profile.uid() })).unchanged()
+                Effects::msg(Msg::Event(Event::SettingsUpdated {
+                    settings: settings.to_owned(),
+                }))
+                .unchanged()
             }
+        }
+        Msg::Internal(Internal::ProfileChanged(persisted)) if !persisted => {
+            Effects::one(push_profile_to_storage::<Env>(profile)).unchanged()
         }
         Msg::Internal(Internal::CtxStorageResult(result)) => match (status, result.deref()) {
             (CtxStatus::Loading(CtxRequest::Storage), Ok((result_profile, _, _))) => {
@@ -190,45 +194,81 @@ pub fn update_profile<Env: Environment + 'static>(
             }
             _ => Effects::none().unchanged(),
         },
-        Msg::Internal(Internal::AddonsAPIResult(auth_key, result))
-            if profile.auth.as_ref().map(|auth| &auth.key) == Some(auth_key) =>
-        {
-            match result {
-                Ok(addons) => {
-                    if profile.addons != *addons {
-                        profile.addons = addons.to_owned();
-                        Effects::msg(Msg::Event(Event::AddonsPulledFromAPI {
-                            uid: profile.uid(),
-                        }))
+        Msg::Internal(Internal::AddonsAPIResult(
+            APIRequest::AddonCollectionGet { auth_key, .. },
+            result,
+        )) if profile.auth.as_ref().map(|auth| &auth.key) == Some(auth_key) => match result {
+            Ok(addons) => {
+                let transport_urls = addons
+                    .iter()
+                    .map(|addon| &addon.transport_url)
+                    .cloned()
+                    .collect();
+                if profile.addons != *addons {
+                    profile.addons = addons.to_owned();
+                    Effects::msg(Msg::Event(Event::AddonsPulledFromAPI { transport_urls }))
                         .join(Effects::msg(Msg::Internal(Internal::ProfileChanged(false))))
-                    } else {
-                        Effects::msg(Msg::Event(Event::AddonsPulledFromAPI {
-                            uid: profile.uid(),
-                        }))
+                } else {
+                    Effects::msg(Msg::Event(Event::AddonsPulledFromAPI { transport_urls }))
                         .unchanged()
-                    }
                 }
-                Err(error) => Effects::msg(Msg::Event(Event::Error {
-                    error: error.to_owned(),
-                    source: Box::new(Event::AddonsPulledFromAPI { uid: profile.uid() }),
-                }))
-                .unchanged(),
             }
-        }
-        Msg::Internal(Internal::ProfileChanged(persisted)) if !persisted => Effects::one(Box::new(
-            Env::set_storage(PROFILE_STORAGE_KEY, Some(profile))
-                .map_err(CtxError::from)
-                .map(enclose!((profile.uid() => uid) move |_| {
-                    Msg::Event(Event::ProfilePushedToStorage { uid })
-                }))
-                .map_err(enclose!((profile.uid() => uid) move |error| {
-                    Msg::Event(Event::Error {
-                        error,
-                        source: Box::new(Event::ProfilePushedToStorage { uid }),
-                    })
-                })),
-        ))
-        .unchanged(),
+            Err(error) => Effects::msg(Msg::Event(Event::Error {
+                error: error.to_owned(),
+                source: Box::new(Event::AddonsPulledFromAPI {
+                    transport_urls: Default::default(),
+                }),
+            }))
+            .unchanged(),
+        },
         _ => Effects::none().unchanged(),
     }
+}
+
+fn push_addons_to_api<Env: Environment + 'static>(
+    addons: Vec<Descriptor>,
+    auth_key: &str,
+) -> Effect {
+    let transport_urls = addons
+        .iter()
+        .map(|addon| &addon.transport_url)
+        .cloned()
+        .collect();
+    let request = APIRequest::AddonCollectionSet {
+        auth_key: auth_key.to_owned(),
+        addons,
+    };
+    Box::new(
+        fetch_api::<Env, _, SuccessResponse>(&request).then(move |result| match result {
+            Ok(_) => Ok(Msg::Event(Event::AddonsPushedToAPI { transport_urls })),
+            Err(error) => Err(Msg::Event(Event::Error {
+                error,
+                source: Box::new(Event::AddonsPushedToAPI { transport_urls }),
+            })),
+        }),
+    )
+}
+
+fn pull_addons_from_api<Env: Environment + 'static>(auth_key: &str) -> Effect {
+    let request = APIRequest::AddonCollectionGet {
+        auth_key: auth_key.to_owned(),
+        update: true,
+    };
+    Box::new(
+        fetch_api::<Env, _, _>(&request)
+            .map(|CollectionResponse { addons, .. }| addons)
+            .then(move |result| Ok(Msg::Internal(Internal::AddonsAPIResult(request, result)))),
+    )
+}
+
+fn push_profile_to_storage<Env: Environment + 'static>(profile: &Profile) -> Effect {
+    Box::new(Env::set_storage(PROFILE_STORAGE_KEY, Some(profile)).then(
+        enclose!((profile.uid() => uid) move |result| match result {
+            Ok(_) => Ok(Msg::Event(Event::ProfilePushedToStorage { uid })),
+            Err(error) => Err(Msg::Event(Event::Error {
+                error: CtxError::from(error),
+                source: Box::new(Event::ProfilePushedToStorage { uid }),
+            }))
+        }),
+    ))
 }

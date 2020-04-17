@@ -1,21 +1,20 @@
-use super::{fetch_api, CtxError, CtxRequest, CtxStatus};
+use super::{fetch_api, CtxError, CtxRequest, CtxStatus, OtherError};
 use crate::constants::{
     LIBRARY_COLLECTION_NAME, LIBRARY_RECENT_COUNT, LIBRARY_RECENT_STORAGE_KEY, LIBRARY_STORAGE_KEY,
 };
 use crate::state_types::msg::{Action, ActionCtx, Event, Internal, Msg};
-use crate::state_types::{Effects, Environment};
-use crate::types::api::{DatastoreCmd, DatastoreReq, DatastoreReqBuilder, SuccessResponse};
-use crate::types::profile::Profile;
+use crate::state_types::{Effect, Effects, Environment};
+use crate::types::api::AuthKey;
+use crate::types::api::{DatastoreCmd, DatastoreReq, SuccessResponse};
 use crate::types::{LibBucket, LibItem, LibItemModified, LibItemState};
-use enclose::enclose;
 use futures::future::Either;
-use futures::{future, Future};
-use lazysort::SortedBy;
+use futures::Future;
+use std::collections::HashMap;
 use std::ops::Deref;
 
 pub fn update_library<Env: Environment + 'static>(
     library: &mut LibBucket,
-    profile: &Profile,
+    auth_key: Option<&AuthKey>,
     status: &CtxStatus,
     msg: &Msg,
 ) -> Effects {
@@ -49,123 +48,98 @@ pub fn update_library<Env: Environment + 'static>(
                     lib_item.ctime = Some(ctime.to_owned());
                 };
             };
-            Effects::msg(Msg::Internal(Internal::UpdateLibraryItem(lib_item))).unchanged()
+            Effects::msg(Msg::Internal(Internal::UpdateLibraryItem(lib_item)))
+                .join(Effects::msg(Msg::Event(Event::LibraryItemAdded {
+                    id: meta_preview.id.to_owned(),
+                })))
+                .unchanged()
         }
-        Msg::Action(Action::Ctx(ActionCtx::RemoveFromLibrary(id))) => {
-            match library.items.get(id) {
-                Some(lib_item) => {
-                    let mut lib_item = lib_item.to_owned();
-                    lib_item.removed = true;
-                    Effects::msg(Msg::Internal(Internal::UpdateLibraryItem(lib_item))).unchanged()
-                }
-                _ => {
-                    // TODO Consider return error event for item not in lib
-                    Effects::none().unchanged()
-                }
+        Msg::Action(Action::Ctx(ActionCtx::RemoveFromLibrary(id))) => match library.items.get(id) {
+            Some(lib_item) => {
+                let mut lib_item = lib_item.to_owned();
+                lib_item.removed = true;
+                Effects::msg(Msg::Internal(Internal::UpdateLibraryItem(lib_item)))
+                    .join(Effects::msg(Msg::Event(Event::LibraryItemRemoved {
+                        id: id.to_owned(),
+                    })))
+                    .unchanged()
             }
-        }
-        Msg::Action(Action::Ctx(ActionCtx::RewindLibraryItem(id))) => {
-            match library.items.get(id) {
-                Some(lib_item) => {
-                    let mut lib_item = lib_item.to_owned();
-                    lib_item.state.time_offset = 0;
-                    Effects::msg(Msg::Internal(Internal::UpdateLibraryItem(lib_item))).unchanged()
-                }
-                _ => {
-                    // TODO Consider return error event for item not in lib
-                    Effects::none().unchanged()
-                }
+            _ => Effects::msg(Msg::Event(Event::Error {
+                error: CtxError::from(OtherError::LibraryItemNotFound),
+                source: Box::new(Event::LibraryItemRemoved { id: id.to_owned() }),
+            }))
+            .unchanged(),
+        },
+        Msg::Action(Action::Ctx(ActionCtx::RewindLibraryItem(id))) => match library.items.get(id) {
+            Some(lib_item) => {
+                let mut lib_item = lib_item.to_owned();
+                lib_item.state.time_offset = 0;
+                Effects::msg(Msg::Internal(Internal::UpdateLibraryItem(lib_item)))
+                    .join(Effects::msg(Msg::Event(Event::LibraryItemRewided {
+                        id: id.to_owned(),
+                    })))
+                    .unchanged()
             }
-        }
-        Msg::Action(Action::Ctx(ActionCtx::SyncLibraryWithAPI)) => {
-            match &profile.auth {
-                Some(auth) => Effects::one(Box::new(
-                    sync_with_api::<Env>(&auth.key, library.to_owned()).then(
-                        enclose!((auth.key.to_owned() => auth_key) move |result| {
-                            Ok(Msg::Internal(Internal::LibrarySyncResult(auth_key, result)))
-                        }),
-                    ),
-                ))
-                .unchanged(),
-                _ => {
-                    // TODO Consider return error event for user not logged in
-                    Effects::none().unchanged()
-                }
+            _ => Effects::msg(Msg::Event(Event::Error {
+                error: CtxError::from(OtherError::LibraryItemNotFound),
+                source: Box::new(Event::LibraryItemRewided { id: id.to_owned() }),
+            }))
+            .unchanged(),
+        },
+        Msg::Action(Action::Ctx(ActionCtx::SyncLibraryWithAPI)) => match auth_key {
+            Some(auth_key) => {
+                Effects::one(plan_sync_with_api::<Env>(library, auth_key)).unchanged()
             }
-        }
+            _ => Effects::msg(Msg::Event(Event::Error {
+                error: CtxError::from(OtherError::UserNotLoggedIn),
+                source: Box::new(Event::LibrarySyncWithAPIPlanned {
+                    plan: Default::default(),
+                }),
+            }))
+            .unchanged(),
+        },
         Msg::Internal(Internal::UpdateLibraryItem(lib_item)) => {
             let mut lib_item = lib_item.to_owned();
             lib_item.mtime = Env::now();
-            let persist_effects = Effects::one(Box::new(
-                update_and_persist::<Env>(
-                    library,
-                    LibBucket::new(profile.uid(), vec![lib_item.to_owned()]),
-                )
-                .map(enclose!((profile.uid() => uid) move |_| {
-                    Msg::Event(Event::LibraryPushedToStorage { uid })
-                }))
-                .map_err(enclose!((profile.uid() => uid) move |error| {
-                    Msg::Event(Event::Error {
-                        error,
-                        source: Box::new(Event::LibraryPushedToStorage { uid }),
-                    })
-                })),
-            ));
-            let push_effects = match &profile.auth {
-                Some(auth) => Effects::one(Box::new(
-                    fetch_api::<Env, _, SuccessResponse>(&DatastoreReq {
-                        auth_key: auth.key.to_owned(),
-                        collection: LIBRARY_COLLECTION_NAME.to_owned(),
-                        cmd: DatastoreCmd::Put {
-                            changes: vec![lib_item],
-                        },
-                    })
-                    .map(enclose!((profile.uid() => uid) move |_| {
-                        Msg::Event(Event::LibraryPushedToAPI { uid })
-                    }))
-                    .map_err(enclose!((profile.uid() => uid) move |error| {
-                        Msg::Event(Event::Error {
-                            error,
-                            source: Box::new(Event::LibraryPushedToAPI { uid }),
-                        })
-                    })),
+            let push_to_api_effects = match auth_key {
+                Some(auth_key) => Effects::one(push_items_to_api::<Env>(
+                    vec![lib_item.to_owned()],
+                    auth_key,
                 ))
                 .unchanged(),
                 _ => Effects::none().unchanged(),
             };
-            persist_effects
-                .join(push_effects)
+            let push_to_storage_effects = Effects::one(update_and_push_items_to_storage::<Env>(
+                library,
+                vec![lib_item],
+            ));
+            push_to_api_effects
+                .join(push_to_storage_effects)
                 .join(Effects::msg(Msg::Internal(Internal::LibraryChanged(true))))
         }
         Msg::Internal(Internal::LibraryChanged(persisted)) if !persisted => {
-            let (recent_bucket, other_bucket) = library.split_by_recent();
-            Effects::one(Box::new(
-                Env::set_storage(LIBRARY_RECENT_STORAGE_KEY, Some(&recent_bucket))
-                    .join(Env::set_storage(LIBRARY_STORAGE_KEY, Some(&other_bucket)))
-                    .map(enclose!((profile.uid() => uid) move |_| {
-                        Msg::Event(Event::LibraryPushedToStorage { uid })
-                    }))
-                    .map_err(enclose!((profile.uid() => uid) move |error| {
-                        Msg::Event(Event::Error {
-                            error: CtxError::from(error),
-                            source: Box::new(Event::LibraryPushedToStorage { uid }),
-                        })
-                    })),
-            ))
-            .unchanged()
+            Effects::one(push_library_to_storage::<Env>(library)).unchanged()
         }
         Msg::Internal(Internal::CtxStorageResult(result)) => match (status, result.deref()) {
-            (CtxStatus::Loading(CtxRequest::Storage), Ok((_, recent_bucket, other_bucket))) => {
-                let mut next_library = LibBucket::new(profile.uid(), vec![]);
-                if let Some(recent_bucket) = recent_bucket {
-                    next_library.merge(recent_bucket.to_owned())
+            (
+                CtxStatus::Loading(CtxRequest::Storage),
+                Ok((profile, recent_bucket, other_bucket)),
+            ) => {
+                let mut next_library =
+                    LibBucket::new(profile.as_ref().and_then(|profile| profile.uid()), vec![]);
+                if let Some((uid, items)) = recent_bucket {
+                    if next_library.uid == *uid {
+                        next_library.merge(items.to_owned());
+                    };
                 };
-                if let Some(other_bucket) = other_bucket {
-                    next_library.merge(other_bucket.to_owned())
+                if let Some((uid, items)) = other_bucket {
+                    if next_library.uid == *uid {
+                        next_library.merge(items.to_owned());
+                    };
                 };
                 if *library != next_library {
                     *library = next_library;
-                    Effects::msg(Msg::Internal(Internal::LibraryChanged(false)))
+                    Effects::msg(Msg::Internal(Internal::LibraryChanged(true)))
                 } else {
                     Effects::none().unchanged()
                 }
@@ -173,10 +147,12 @@ pub fn update_library<Env: Environment + 'static>(
             _ => Effects::none().unchanged(),
         },
         Msg::Internal(Internal::CtxAuthResult(auth_request, result)) => match (status, result) {
-            (CtxStatus::Loading(CtxRequest::API(loading_auth_request)), Ok((_, _, lib_items)))
-                if loading_auth_request == auth_request =>
-            {
-                let next_library = LibBucket::new(profile.uid(), lib_items.to_owned());
+            (
+                CtxStatus::Loading(CtxRequest::API(loading_auth_request)),
+                Ok((auth, _, lib_items)),
+            ) if loading_auth_request == auth_request => {
+                let next_library =
+                    LibBucket::new(Some(auth.user.id.to_owned()), lib_items.to_owned());
                 if *library != next_library {
                     *library = next_library;
                     Effects::msg(Msg::Internal(Internal::LibraryChanged(false)))
@@ -186,139 +162,215 @@ pub fn update_library<Env: Environment + 'static>(
             }
             _ => Effects::none().unchanged(),
         },
-        Msg::Internal(Internal::LibrarySyncResult(auth_key, result))
-            if profile.auth.as_ref().map(|auth| &auth.key) == Some(auth_key) =>
-        {
-            match result {
-                Ok(items) => Effects::msg(Msg::Event(Event::LibrarySyncedWithAPI {
-                    uid: profile.uid(),
+        Msg::Internal(Internal::LibrarySyncPlanResult(
+            DatastoreReq {
+                auth_key: loading_auth_key,
+                ..
+            },
+            result,
+        )) if Some(loading_auth_key) == auth_key => match result {
+            Ok((pull_ids, push_ids)) => {
+                let push_items = library
+                    .items
+                    .iter()
+                    .filter(move |(id, _)| push_ids.iter().any(|push_id| push_id == *id))
+                    .map(|(_, item)| item)
+                    .cloned()
+                    .collect();
+                Effects::msg(Msg::Event(Event::LibrarySyncWithAPIPlanned {
+                    plan: (pull_ids.to_owned(), push_ids.to_owned()),
                 }))
-                .join(Effects::one(Box::new(
-                    update_and_persist::<Env>(
-                        library,
-                        LibBucket::new(profile.uid(), items.to_owned()),
-                    )
-                    .map(enclose!((profile.uid() => uid) move |_| {
-                        Msg::Event(Event::LibraryPushedToStorage { uid })
-                    }))
-                    .map_err(enclose!((profile.uid() => uid) move |error| {
-                        Msg::Event(Event::Error {
-                            error,
-                            source: Box::new(Event::LibraryPushedToStorage { uid }),
-                        })
-                    })),
-                )))
-                .join(Effects::msg(Msg::Internal(Internal::LibraryChanged(true)))),
-                Err(error) => Effects::msg(Msg::Event(Event::Error {
-                    error: error.to_owned(),
-                    source: Box::new(Event::LibrarySyncedWithAPI { uid: profile.uid() }),
-                }))
-                .unchanged(),
+                .join(Effects::many(vec![
+                    push_items_to_api::<Env>(push_items, loading_auth_key),
+                    pull_items_from_api::<Env>(pull_ids.to_owned(), loading_auth_key),
+                ]))
+                .unchanged()
             }
-        }
+            Err(error) => Effects::msg(Msg::Event(Event::Error {
+                error: error.to_owned(),
+                source: Box::new(Event::LibrarySyncWithAPIPlanned {
+                    plan: Default::default(),
+                }),
+            }))
+            .unchanged(),
+        },
+        Msg::Internal(Internal::LibraryPullResult(
+            DatastoreReq {
+                auth_key: loading_auth_key,
+                cmd: DatastoreCmd::Get { ids, .. },
+                ..
+            },
+            result,
+        )) if Some(loading_auth_key) == auth_key => match result {
+            Ok(items) => Effects::one(update_and_push_items_to_storage::<Env>(
+                library,
+                items.to_owned(),
+            ))
+            .join(Effects::msg(Msg::Event(Event::LibraryItemsPulledFromAPI {
+                ids: ids.to_owned(),
+            })))
+            .join(Effects::msg(Msg::Internal(Internal::LibraryChanged(true)))),
+            Err(error) => Effects::msg(Msg::Event(Event::Error {
+                error: error.to_owned(),
+                source: Box::new(Event::LibraryItemsPulledFromAPI {
+                    ids: ids.to_owned(),
+                }),
+            }))
+            .unchanged(),
+        },
         _ => Effects::none().unchanged(),
     }
 }
 
-// TODO consider use LibBucketBorrowed
-fn sync_with_api<Env: Environment + 'static>(
-    auth_key: &str,
-    local_lib: LibBucket,
-) -> impl Future<Item = Vec<LibItem>, Error = CtxError> {
-    // @TODO consider asserting if uid matches auth
-    let builder = DatastoreReqBuilder::default()
-        .auth_key(auth_key.to_owned())
-        .collection(LIBRARY_COLLECTION_NAME.to_owned())
-        .clone();
-    let meta_req = builder.clone().with_cmd(DatastoreCmd::Meta {});
-
-    fetch_api::<Env, _, Vec<LibItemModified>>(&meta_req).and_then(move |remote_mtimes| {
-        let map_remote = remote_mtimes
-            .into_iter()
-            .map(|LibItemModified(k, mtime)| (k, mtime))
-            .collect::<std::collections::HashMap<_, _>>();
-        // IDs to pull
-        let ids = map_remote
-            .iter()
-            .filter(|(k, v)| {
-                local_lib
-                    .items
-                    .get(*k)
-                    .map_or(true, |item| item.mtime < **v)
-            })
-            .map(|(k, _)| k.clone())
-            .collect::<Vec<String>>();
-        // Items to push
-        let LibBucket { items, .. } = local_lib;
-        let changes = items
-            .into_iter()
-            .filter(|(id, item)| {
-                map_remote.get(id).map_or(true, |date| *date < item.mtime) && item.should_push()
-            })
-            .map(|(_, v)| v)
-            .collect::<Vec<LibItem>>();
-
-        let get_fut = if ids.is_empty() {
-            Either::A(future::ok(vec![]))
-        } else {
-            Either::B(fetch_api::<Env, _, Vec<LibItem>>(
-                &builder
-                    .clone()
-                    .with_cmd(DatastoreCmd::Get { ids, all: false }),
-            ))
-        };
-
-        let put_fut = if changes.is_empty() {
-            Either::A(future::ok(()))
-        } else {
-            Either::B(
-                fetch_api::<Env, _, SuccessResponse>(
-                    &builder.clone().with_cmd(DatastoreCmd::Put { changes }),
-                )
-                .map(|_| ()),
-            )
-        };
-
-        get_fut.join(put_fut).map(move |(items, _)| items)
-    })
-}
-
-fn update_and_persist<Env: Environment + 'static>(
-    bucket: &mut LibBucket,
-    new_bucket: LibBucket,
-) -> impl Future<Item = (), Error = CtxError> {
-    let recent_items = bucket
-        .items
-        .values()
-        .sorted_by(|a, b| b.mtime.cmp(&a.mtime))
-        .take(LIBRARY_RECENT_COUNT)
+fn update_and_push_items_to_storage<Env: Environment + 'static>(
+    library: &mut LibBucket,
+    items: Vec<LibItem>,
+) -> Effect {
+    let ids = items
+        .iter()
+        .map(|item| &item.id)
+        .cloned()
         .collect::<Vec<_>>();
-    let are_new_items_in_recent = new_bucket
-        .items
-        .keys()
-        .all(move |id| recent_items.iter().any(|item| item.id == *id));
-    bucket.merge(new_bucket);
-    if bucket.items.len() <= LIBRARY_RECENT_COUNT {
+    let are_items_in_recent = library.are_ids_in_recent(&ids);
+    library.merge(items);
+    let push_to_storage_future = if library.items.len() <= LIBRARY_RECENT_COUNT {
         Either::A(
-            Env::set_storage(LIBRARY_RECENT_STORAGE_KEY, Some(bucket))
-                .join(Env::set_storage::<LibBucket>(LIBRARY_STORAGE_KEY, None))
-                .map(|(_, _)| ())
-                .map_err(CtxError::from),
+            Env::set_storage(
+                LIBRARY_RECENT_STORAGE_KEY,
+                Some(&(&library.uid, library.items.values().collect::<Vec<_>>())),
+            )
+            .join(Env::set_storage::<()>(LIBRARY_STORAGE_KEY, None))
+            .map(|_| ()),
         )
     } else {
-        let (recent_bucket, other_bucket) = bucket.split_by_recent();
-        if are_new_items_in_recent {
-            Either::B(Either::A(
-                Env::set_storage(LIBRARY_RECENT_STORAGE_KEY, Some(&recent_bucket))
-                    .map_err(CtxError::from),
-            ))
+        let (recent_items, other_items) = library.split_items_by_recent();
+        if are_items_in_recent {
+            Either::B(Either::A(Env::set_storage(
+                LIBRARY_RECENT_STORAGE_KEY,
+                Some(&(&library.uid, recent_items)),
+            )))
         } else {
             Either::B(Either::B(
-                Env::set_storage(LIBRARY_RECENT_STORAGE_KEY, Some(&recent_bucket))
-                    .join(Env::set_storage(LIBRARY_STORAGE_KEY, Some(&other_bucket)))
-                    .map(|(_, _)| ())
-                    .map_err(CtxError::from),
+                Env::set_storage(
+                    LIBRARY_RECENT_STORAGE_KEY,
+                    Some(&(&library.uid, recent_items)),
+                )
+                .join(Env::set_storage(
+                    LIBRARY_STORAGE_KEY,
+                    Some(&(&library.uid, other_items)),
+                ))
+                .map(|_| ()),
             ))
         }
-    }
+    };
+    Box::new(push_to_storage_future.then(move |result| match result {
+        Ok(_) => Ok(Msg::Event(Event::LibraryItemsPushedToStorage { ids })),
+        Err(error) => Err(Msg::Event(Event::Error {
+            error: CtxError::from(error),
+            source: Box::new(Event::LibraryItemsPushedToStorage { ids }),
+        })),
+    }))
+}
+
+fn push_library_to_storage<Env: Environment + 'static>(library: &LibBucket) -> Effect {
+    let ids = library.items.keys().cloned().collect();
+    let (recent_items, other_items) = library.split_items_by_recent();
+    Box::new(
+        Env::set_storage(
+            LIBRARY_RECENT_STORAGE_KEY,
+            Some(&(&library.uid, recent_items)),
+        )
+        .join(Env::set_storage(
+            LIBRARY_STORAGE_KEY,
+            Some(&(&library.uid, other_items)),
+        ))
+        .then(move |result| match result {
+            Ok(_) => Ok(Msg::Event(Event::LibraryItemsPushedToStorage { ids })),
+            Err(error) => Err(Msg::Event(Event::Error {
+                error: CtxError::from(error),
+                source: Box::new(Event::LibraryItemsPushedToStorage { ids }),
+            })),
+        }),
+    )
+}
+
+fn push_items_to_api<Env: Environment + 'static>(items: Vec<LibItem>, auth_key: &str) -> Effect {
+    let ids = items.iter().map(|item| &item.id).cloned().collect();
+    Box::new(
+        fetch_api::<Env, _, SuccessResponse>(&DatastoreReq {
+            auth_key: auth_key.to_owned(),
+            collection: LIBRARY_COLLECTION_NAME.to_owned(),
+            cmd: DatastoreCmd::Put { changes: items },
+        })
+        .then(move |result| match result {
+            Ok(_) => Ok(Msg::Event(Event::LibraryItemsPushedToAPI { ids })),
+            Err(error) => Err(Msg::Event(Event::Error {
+                error,
+                source: Box::new(Event::LibraryItemsPushedToAPI { ids }),
+            })),
+        }),
+    )
+}
+
+fn pull_items_from_api<Env: Environment + 'static>(ids: Vec<String>, auth_key: &str) -> Effect {
+    let request = DatastoreReq {
+        auth_key: auth_key.to_owned(),
+        collection: LIBRARY_COLLECTION_NAME.to_owned(),
+        cmd: DatastoreCmd::Get { ids, all: false },
+    };
+    Box::new(
+        fetch_api::<Env, _, _>(&request)
+            .then(move |result| Ok(Msg::Internal(Internal::LibraryPullResult(request, result)))),
+    )
+}
+
+fn plan_sync_with_api<Env: Environment + 'static>(library: &LibBucket, auth_key: &str) -> Effect {
+    let local_mtimes = library
+        .items
+        .iter()
+        .filter(|(_, item)| item.should_sync())
+        .map(|(id, item)| (id.to_owned(), item.mtime.to_owned()))
+        .collect::<HashMap<_, _>>();
+    let request = DatastoreReq {
+        auth_key: auth_key.to_owned(),
+        collection: LIBRARY_COLLECTION_NAME.to_owned(),
+        cmd: DatastoreCmd::Meta {},
+    };
+    Box::new(
+        fetch_api::<Env, _, Vec<LibItemModified>>(&request)
+            .map(|remote_mtimes| {
+                remote_mtimes
+                    .into_iter()
+                    .map(|LibItemModified(id, mtime)| (id, mtime))
+                    .collect::<HashMap<_, _>>()
+            })
+            .map(move |remote_mtimes| {
+                let pull_ids = remote_mtimes
+                    .iter()
+                    .filter(|(id, remote_mtime)| {
+                        local_mtimes
+                            .get(*id)
+                            .map_or(true, |local_mtime| local_mtime < remote_mtime)
+                    })
+                    .map(|(id, _)| id)
+                    .cloned()
+                    .collect();
+                let push_ids = local_mtimes
+                    .iter()
+                    .filter(|(id, local_mtime)| {
+                        remote_mtimes
+                            .get(*id)
+                            .map_or(true, |remote_mtime| remote_mtime < local_mtime)
+                    })
+                    .map(|(id, _)| id)
+                    .cloned()
+                    .collect();
+                (pull_ids, push_ids)
+            })
+            .then(move |result| {
+                Ok(Msg::Internal(Internal::LibrarySyncPlanResult(
+                    request, result,
+                )))
+            }),
+    )
 }
