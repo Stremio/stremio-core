@@ -201,13 +201,13 @@ pub fn update_library<Env: Environment + 'static>(
             },
             result,
         )) if Some(loading_auth_key) == auth_key => match result {
-            Ok(items) => Effects::one(update_and_push_items_to_storage::<Env>(
+            Ok(items) => Effects::msg(Msg::Event(Event::LibraryItemsPulledFromAPI {
+                ids: ids.to_owned(),
+            }))
+            .join(Effects::one(update_and_push_items_to_storage::<Env>(
                 library,
                 items.to_owned(),
-            ))
-            .join(Effects::msg(Msg::Event(Event::LibraryItemsPulledFromAPI {
-                ids: ids.to_owned(),
-            })))
+            )))
             .join(Effects::msg(Msg::Internal(Internal::LibraryChanged(true)))),
             Err(error) => Effects::msg(Msg::Event(Event::Error {
                 error: error.to_owned(),
