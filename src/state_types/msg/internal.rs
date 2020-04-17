@@ -13,7 +13,9 @@ pub type CtxStorageResponse = (
     Option<(UID, Vec<LibItem>)>,
 );
 
-pub type CtxAuthResponse = (Auth, Vec<Descriptor>, Vec<LibItem>);
+pub type AuthResponse = (Auth, Vec<Descriptor>, Vec<LibItem>);
+
+pub type LibraryPlanResponse = (Vec<String>, Vec<String>);
 
 //
 // Those messages are meant to be dispatched and hanled only inside stremio-core crate
@@ -23,11 +25,11 @@ pub enum Internal {
     // Result for pull profile and library from storage.
     CtxStorageResult(Result<CtxStorageResponse, CtxError>),
     // Result for authenticate to API.
-    CtxAuthResult(AuthRequest, Result<CtxAuthResponse, CtxError>),
+    CtxAuthResult(AuthRequest, Result<AuthResponse, CtxError>),
     // Result for pull addons from API.
     AddonsAPIResult(APIRequest, Result<Vec<Descriptor>, CtxError>),
     // Result for library sync plan with API.
-    LibrarySyncPlanResult(DatastoreReq, Result<(Vec<String>, Vec<String>), CtxError>),
+    LibrarySyncPlanResult(DatastoreReq, Result<LibraryPlanResponse, CtxError>),
     // Result for pull library items from API.
     LibraryPullResult(DatastoreReq, Result<Vec<LibItem>, CtxError>),
     // Dispatched when library item needs to be updated in the memory, storage and API.
