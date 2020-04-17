@@ -121,7 +121,13 @@ pub fn update_profile<Env: Environment + 'static>(
                 .iter()
                 .position(|addon| addon.transport_url == *transport_url);
             if let Some(addon_position) = addon_position {
-                if profile.addons[addon_position].flags.protected {
+                if !profile.addons[addon_position].flags.protected {
+                    profile.addons.remove(addon_position);
+                    Effects::msg(Msg::Event(Event::AddonUninstalled {
+                        transport_url: transport_url.to_owned(),
+                    }))
+                    .join(Effects::msg(Msg::Internal(Internal::ProfileChanged(false))))
+                } else {
                     Effects::msg(Msg::Event(Event::Error {
                         error: CtxError::from(OtherError::AddonIsProtected),
                         source: Box::new(Event::AddonUninstalled {
@@ -129,12 +135,6 @@ pub fn update_profile<Env: Environment + 'static>(
                         }),
                     }))
                     .unchanged()
-                } else {
-                    profile.addons.remove(addon_position);
-                    Effects::msg(Msg::Event(Event::AddonUninstalled {
-                        transport_url: transport_url.to_owned(),
-                    }))
-                    .join(Effects::msg(Msg::Internal(Internal::ProfileChanged(false))))
                 }
             } else {
                 Effects::msg(Msg::Event(Event::Error {
