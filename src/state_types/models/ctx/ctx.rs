@@ -4,27 +4,18 @@ use crate::constants::{
 };
 use crate::state_types::msg::{Action, ActionCtx, ActionLoad, Event, Internal, Msg};
 use crate::state_types::{Effect, Effects, Environment, Update};
-use crate::types::addons::Descriptor;
 use crate::types::api::{
     APIRequest, Auth, AuthRequest, AuthResponse, CollectionResponse, DatastoreCmd, DatastoreReq,
     SuccessResponse,
 };
-use crate::types::profile::{Profile, UID};
-use crate::types::{LibBucket, LibItem};
+use crate::types::profile::Profile;
+use crate::types::LibBucket;
 use derivative::Derivative;
 use enclose::enclose;
 use futures::Future;
 use serde::Serialize;
 use std::marker::PhantomData;
 use std::ops::Deref;
-
-pub type CtxStorageResponse = (
-    Option<Profile>,
-    Option<(UID, Vec<LibItem>)>,
-    Option<(UID, Vec<LibItem>)>,
-);
-
-pub type CtxAuthResponse = (Auth, Vec<Descriptor>, Vec<LibItem>);
 
 #[derive(Clone, Debug, PartialEq)]
 pub enum CtxRequest {

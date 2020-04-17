@@ -1,10 +1,19 @@
-use crate::state_types::models::ctx::{CtxAuthResponse, CtxError, CtxStorageResponse};
+use crate::state_types::models::ctx::CtxError;
 use crate::state_types::models::streaming_server::Settings as StreamingServerSettings;
 use crate::state_types::EnvError;
 use crate::types::addons::{Descriptor, Manifest, ResourceRequest, ResourceResponse, TransportUrl};
-use crate::types::api::{APIRequest, AuthRequest, DatastoreReq};
+use crate::types::api::{APIRequest, Auth, AuthRequest, DatastoreReq};
+use crate::types::profile::{Profile, UID};
 use crate::types::LibItem;
 use url::Url;
+
+pub type CtxStorageResponse = (
+    Option<Profile>,
+    Option<(UID, Vec<LibItem>)>,
+    Option<(UID, Vec<LibItem>)>,
+);
+
+pub type CtxAuthResponse = (Auth, Vec<Descriptor>, Vec<LibItem>);
 
 //
 // Those messages are meant to be dispatched and hanled only inside stremio-core crate
