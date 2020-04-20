@@ -13,7 +13,7 @@ pub struct LibraryItems {
 impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for LibraryItems {
     fn update(&mut self, ctx: &Ctx<Env>, msg: &Msg) -> Effects {
         match msg {
-            Msg::Internal(Internal::LibraryChanged(_)) => ids_update(&mut self.ids, ctx.library()),
+            Msg::Internal(Internal::LibraryChanged(_)) => ids_update(&mut self.ids, &ctx.library),
             _ => Effects::none().unchanged(),
         }
     }
