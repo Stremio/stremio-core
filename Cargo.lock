@@ -525,7 +525,7 @@ dependencies = [
 
 [[package]]
 name = "stremio-core-web"
-version = "0.12.0"
+version = "0.13.0"
 dependencies = [
  "console_error_panic_hook",
  "env-web",
