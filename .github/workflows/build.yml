@@ -13,4 +13,4 @@ jobs:
     steps:
         - uses: actions/checkout@v1
         - name: Build
-          run: rustup default nightly && cargo install wasm-pack && yarn install && yarn build
+          run: rustup default nightly && cargo install wasm-pack && npm install && npm run build
