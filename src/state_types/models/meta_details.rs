@@ -12,8 +12,8 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct Selected {
-    meta_resource_ref: ResourceRef,
-    streams_resource_ref: Option<ResourceRef>,
+    pub meta_resource_ref: ResourceRef,
+    pub streams_resource_ref: Option<ResourceRef>,
 }
 
 #[derive(Default, Debug, Clone, Serialize)]

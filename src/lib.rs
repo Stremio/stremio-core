@@ -8,11 +8,17 @@ pub mod types;
 #[cfg(test)]
 mod tests {
     use crate::addon_transport::*;
-    use crate::state_types::messages::*;
+    use crate::state_types::models::catalog_with_filters::CatalogWithFilters;
+    use crate::state_types::models::catalogs_with_extra::CatalogsWithExtra;
     use crate::state_types::models::common::*;
-    use crate::state_types::models::*;
+    use crate::state_types::models::continue_watching_preview::ContinueWatchingPreview;
+    use crate::state_types::models::ctx::*;
+    use crate::state_types::models::meta_details::MetaDetails;
+    use crate::state_types::models::notifications::Notifications;
+    use crate::state_types::msg::*;
     use crate::state_types::*;
     use crate::types::addons::*;
+    use crate::types::api::AuthRequest;
     use crate::types::*;
     use chrono::{DateTime, Utc};
     use futures::future::lazy;
@@ -128,12 +134,14 @@ mod tests {
             one: Content {},
             two: Content {},
         };
-        let fx = m.update(&Msg::Action(Action::LoadCtx));
+        let fx = m.update(&Msg::Action(Action::Load(ActionLoad::Ctx)));
         assert!(fx.has_changed, "has changed");
         assert_eq!(fx.effects.len(), 3, "proper number of effects");
     }
     fn dummy_effect() -> Effects {
-        Effects::one(Box::new(future::ok(Msg::Action(Action::LoadCtx))))
+        Effects::one(Box::new(future::ok(Msg::Action(Action::Load(
+            ActionLoad::Ctx,
+        )))))
     }
 
     // Testing the CatalogsWithExtra model
@@ -151,9 +159,9 @@ mod tests {
         let (runtime, _) = Runtime::<Env, Model>::new(app, 1000);
 
         // Run a single dispatch of a Load msg
-        let msg = Msg::Action(Action::Load(ActionLoad::CatalogsWithExtra {
-            extra: vec![],
-        }));
+        let msg = Msg::Action(Action::Load(ActionLoad::CatalogsWithExtra(
+            models::catalogs_with_extra::Selected { extra: vec![] },
+        )));
         run(runtime.dispatch(&msg));
         // since this is after the .run() has ended, this means all async effects
         // have processed
@@ -178,7 +186,9 @@ mod tests {
 
         // Now try the same, but with Search
         let extra = vec![("search".to_owned(), "grand tour".to_owned())];
-        let msg = Msg::Action(Action::Load(ActionLoad::CatalogsWithExtra { extra }));
+        let msg = Msg::Action(Action::Load(ActionLoad::CatalogsWithExtra(
+            models::catalogs_with_extra::Selected { extra },
+        )));
         run(runtime.dispatch(&msg));
         assert_eq!(
             runtime.app.read().unwrap().catalogs.catalog_resources.len(),
@@ -193,15 +203,15 @@ mod tests {
         #[derive(Model, Debug)]
         struct Model {
             ctx: Ctx<Env>,
-            catalogs: CatalogFiltered<MetaPreview>,
+            catalogs: CatalogWithFilters<MetaPreview>,
         }
 
         let app = Model {
             ctx: Default::default(),
-            catalogs: CatalogFiltered {
+            catalogs: CatalogWithFilters {
+                selected: Default::default(),
                 selectable: Default::default(),
                 catalog_resource: Default::default(),
-                selectable_priority: SelectablePriority::Type,
             },
         };
         let (runtime, _) = Runtime::<Env, Model>::new(app, 1000);
@@ -210,8 +220,12 @@ mod tests {
             base: "https://v3-cinemeta.strem.io/manifest.json".to_owned(),
             path: ResourceRef::without_extra("catalog", "movie", "top"),
         };
-        let action = Action::Load(ActionLoad::CatalogFiltered(req.to_owned()));
-        run(runtime.dispatch_with(|model| model.catalogs.update(&model.ctx, &action.into())));
+        let action = Msg::Action(Action::Load(ActionLoad::CatalogWithFilters(
+            models::catalog_with_filters::Selected {
+                request: req.to_owned(),
+            },
+        )));
+        run(runtime.dispatch_with(|model| model.catalogs.update(&model.ctx, &action)));
         // Clone the state so that we don't keep a lock on .app
         let state = runtime.app.read().unwrap().catalogs.to_owned();
         assert!(state.catalog_resource.is_some(), "selected is right");
@@ -223,7 +237,7 @@ mod tests {
                 .request
                 .path
                 .type_name
-                .eq(&state.selectable.types[0].load_request.path.type_name),
+                .eq(&state.selectable.types[0].request.path.type_name),
             "first type is selected"
         );
         assert!(
@@ -234,15 +248,15 @@ mod tests {
                 .request
                 .path
                 .type_name
-                .eq(&state.selectable.catalogs[0].load_request.path.type_name),
+                .eq(&state.selectable.catalogs[0].request.path.type_name),
             "first catalog is selected"
         );
         assert_eq!(
-            state.selectable.types[0].load_request.path.type_name, "movie",
+            state.selectable.types[0].request.path.type_name, "movie",
             "first type is movie"
         );
         assert_eq!(
-            state.selectable.types[1].load_request.path.type_name, "series",
+            state.selectable.types[1].request.path.type_name, "series",
             "second type is series"
         );
         assert!(state.selectable.catalogs.len() > 3, "has catalogs");
@@ -269,8 +283,10 @@ mod tests {
                 &[("skip".to_owned(), "100".to_owned())],
             ),
         };
-        let action = Action::Load(ActionLoad::CatalogFiltered(load_next));
-        run(runtime.dispatch(&action.into()));
+        let action = Msg::Action(Action::Load(ActionLoad::CatalogWithFilters(
+            models::catalog_with_filters::Selected { request: load_next },
+        )));
+        run(runtime.dispatch(&action));
         let state = runtime.app.read().unwrap().catalogs.to_owned();
         assert!(
             state
@@ -280,7 +296,7 @@ mod tests {
                 .request
                 .path
                 .type_name
-                .eq(&state.selectable.types[0].load_request.path.type_name),
+                .eq(&state.selectable.types[0].request.path.type_name),
             "first type is still selected"
         );
         assert!(
@@ -289,7 +305,7 @@ mod tests {
                 .as_ref()
                 .unwrap()
                 .request
-                .eq_no_extra(&state.selectable.catalogs[0].load_request),
+                .eq_no_extra(&state.selectable.catalogs[0].request),
             "first catalog is still selected"
         );
         assert_eq!(
@@ -320,10 +336,12 @@ mod tests {
             .iter()
             .find(|c| c.name == "By year")
             .expect("could not find year catalog");
-        let action = Action::Load(ActionLoad::CatalogFiltered(
-            year_catalog.load_request.to_owned(),
-        ));
-        run(runtime.dispatch(&action.into()));
+        let action = Msg::Action(Action::Load(ActionLoad::CatalogWithFilters(
+            models::catalog_with_filters::Selected {
+                request: year_catalog.request.to_owned(),
+            },
+        )));
+        run(runtime.dispatch(&action));
         let state = &runtime.app.read().unwrap().catalogs;
         let catalog_resource = state
             .catalog_resource
@@ -361,17 +379,24 @@ mod tests {
         let app = Model::default();
         let (runtime, _) = Runtime::<Env, Model>::new(app, 1000);
 
-        // If we login here with some dummy account, we can use this pretty nicely
-        //let action = Action::UserOp(ActionUser::Login { email, password });
-        //run(runtime.dispatch(&action.into()));
-
         // @TODO install some addons that provide streams
-        let action = Action::Load(ActionLoad::MetaDetails {
-            type_name: "series".to_string(),
-            id: "tt0773262".to_string(),
-            video_id: Some("tt0773262:6:1".to_string()),
-        });
-        run(runtime.dispatch(&action.into()));
+        let action = Msg::Action(Action::Load(ActionLoad::MetaDetails(
+            models::meta_details::Selected {
+                meta_resource_ref: ResourceRef {
+                    resource: "meta".to_string(),
+                    type_name: "series".to_string(),
+                    id: "tt0773262".to_string(),
+                    extra: vec![],
+                },
+                streams_resource_ref: Some(ResourceRef {
+                    resource: "stream".to_string(),
+                    type_name: "series".to_string(),
+                    id: "tt0773262:6:1".to_string(),
+                    extra: vec![],
+                }),
+            },
+        )));
+        run(runtime.dispatch(&action));
         let state = &runtime.app.read().unwrap().meta_details;
         assert_eq!(state.streams_resources.len(), 2, "2 groups");
     }
@@ -382,48 +407,38 @@ mod tests {
         #[derive(Model, Debug, Default)]
         struct Model {
             ctx: Ctx<Env>,
-            lib_recent: ContinueWatching,
+            lib_recent: ContinueWatchingPreview,
             notifs: Notifications,
         }
         let (runtime, _) = Runtime::<Env, Model>::new(Model::default(), 1000);
 
         // Log into a user, check if library synced correctly
-        // We are always support to start with LoadCtx, even though it is not needed here
-        run(runtime.dispatch(&Msg::Action(Action::LoadCtx)));
+        run(runtime.dispatch(&Msg::Action(Action::Load(ActionLoad::Ctx))));
 
         // if this user gets deleted, the test will fail
         // @TODO register a new user instead
-        let login_msg: Msg = Action::UserOp(ActionUser::Login {
+        let login_msg = Msg::Action(Action::Ctx(ActionCtx::Authenticate(AuthRequest::Login {
             email: "ctxandlib@stremio.com".into(),
             password: "ctxandlib".into(),
-        })
-        .into();
+        })));
         run(runtime.dispatch(&login_msg));
         // @TODO test if the addon collection is pulled
         let model = &runtime.app.read().unwrap();
-        let first_content = model.ctx.content.to_owned();
-        let first_lib = if let LibraryLoadable::Ready(l) = &model.ctx.library {
-            assert!(!l.items.is_empty(), "library has items");
-            // LibRecent is "continue watching"
-            assert!(!model.lib_recent.lib_items.is_empty(), "has recent items");
-            l.to_owned()
-        } else {
-            panic!("library must be Ready")
-        };
+        let first_content = model.ctx.profile.to_owned();
+        assert!(!model.ctx.library.items.is_empty(), "library has items");
+        // LibRecent is "continue watching"
+        assert!(!model.lib_recent.lib_items.is_empty(), "has recent items");
+        let first_lib = model.ctx.library.to_owned();
 
-        // New runtime, just LoadCtx, to see if the ctx was persisted
         let (runtime, _) = Runtime::<Env, Model>::new(Model::default(), 1000);
-        assert_eq!(runtime.app.read().unwrap().ctx.is_loaded, false);
-        run(runtime.dispatch(&Msg::Action(Action::LoadCtx)));
+        run(runtime.dispatch(&Msg::Action(Action::Load(ActionLoad::Ctx))));
         {
             let ctx = &runtime.app.read().unwrap().ctx;
-            assert_eq!(&first_content, &ctx.content, "content is the same");
-            if let LibraryLoadable::Ready(l) = &ctx.library {
-                assert_eq!(&first_lib, l, "loaded lib is same as synced");
-            } else {
-                panic!("library must be Ready")
-            }
-            assert!(ctx.is_loaded);
+            assert_eq!(&first_content, &ctx.profile, "content is the same");
+            assert_eq!(
+                &first_lib, &model.ctx.library,
+                "loaded lib is same as synced"
+            );
         }
 
         // Update notifications
@@ -434,9 +449,9 @@ mod tests {
             let addons: Vec<Descriptor> =
                 serde_json::from_slice(include_bytes!("../stremio-official-addons/index.json"))
                     .expect("official addons JSON parse");
-            runtime.app.write().unwrap().ctx.content.addons[0] = addons[0].clone();
+            runtime.app.write().unwrap().ctx.profile.addons[0] = addons[0].clone();
             // we did unspeakable things, now dispatch the load action
-            run(runtime.dispatch(&Action::Load(ActionLoad::Notifications).into()));
+            run(runtime.dispatch(&Msg::Action(Action::Load(ActionLoad::Notifications))));
             // ...
             let model = &runtime.app.read().unwrap();
             assert_eq!(model.notifs.groups.len(), 1);
@@ -450,33 +465,29 @@ mod tests {
         }
 
         // Logout and expect everything to be reset
-        let logout_action = Action::UserOp(ActionUser::Logout);
-        run(runtime.dispatch(&logout_action.into()));
+        let logout_action = Msg::Action(Action::Ctx(ActionCtx::Logout));
+        run(runtime.dispatch(&logout_action));
         {
             let model = &runtime.app.read().unwrap();
-            assert!(model.ctx.content.auth.is_none(), "logged out");
-            assert!(model.ctx.content.addons.len() > 0, "has addons");
-            if let LibraryLoadable::Ready(l) = &model.ctx.library {
-                assert!(l.items.is_empty(), "library must be empty");
-                assert!(model.lib_recent.lib_items.is_empty(), "is empty");
-            } else {
-                panic!("library must be Ready")
-            }
+            assert!(model.ctx.profile.auth.is_none(), "logged out");
+            assert!(model.ctx.profile.addons.len() > 0, "has addons");
+            assert!(model.ctx.library.items.is_empty(), "library must be empty");
+            assert!(model.lib_recent.lib_items.is_empty(), "is empty");
         }
 
         // Addon updating in anon mode works
         let zero_ver = semver::Version::new(0, 0, 0);
         {
-            let addons = &mut runtime.app.write().unwrap().ctx.content.addons;
+            let addons = &mut runtime.app.write().unwrap().ctx.profile.addons;
             addons[0].manifest.version = zero_ver.clone();
             addons[0].flags.extra.insert("foo".into(), "bar".into());
             assert_eq!(&addons[0].manifest.version, &zero_ver);
         }
-        let update_action = Action::UserOp(ActionUser::PullAndUpdateAddons);
-        run(runtime.dispatch(&update_action.into()));
+        let update_action = Msg::Action(Action::Ctx(ActionCtx::PullAddonsFromAPI));
+        run(runtime.dispatch(&update_action));
         {
             let model = &runtime.app.read().unwrap();
-            let first_addon = &model.ctx.content.addons[0];
+            let first_addon = &model.ctx.profile.addons[0];
             let expected_val = serde_json::Value::String("bar".into());
             assert_ne!(&first_addon.manifest.version, &zero_ver);
             assert_eq!(first_addon.flags.extra.get("foo"), Some(&expected_val));
@@ -484,21 +495,17 @@ mod tests {
 
         // we will now add an item for the anon user
         let item = first_lib.items.values().next().unwrap().to_owned();
-        run(runtime.dispatch(&Msg::Action(Action::UserOp(ActionUser::LibUpdate(item)))));
+        run(runtime.dispatch(&Msg::Internal(Internal::UpdateLibraryItem(item))));
+
         // take a copy now so we can compare later
         let anon_lib = runtime.app.read().unwrap().ctx.library.to_owned();
 
         // we will load again to make sure it's persisted
         let (runtime, _) = Runtime::<Env, Model>::new(Model::default(), 1000);
-        run(runtime.dispatch(&Msg::Action(Action::LoadCtx)));
+        run(runtime.dispatch(&Msg::Action(Action::Load(ActionLoad::Ctx))));
         {
             let ctx = &runtime.app.read().unwrap().ctx;
             assert_eq!(anon_lib, ctx.library);
-            if let LibraryLoadable::Ready(l) = &ctx.library {
-                assert_eq!(l.items.len(), 1, "library has 1 item");
-            } else {
-                panic!("library must be Ready")
-            }
         }
     }
 
@@ -508,7 +515,7 @@ mod tests {
     use std::collections::BTreeMap;
     use std::sync::RwLock;
     lazy_static! {
-        static ref STORAGE: RwLock<BTreeMap<String, String>> = { Default::default() };
+        static ref STORAGE: RwLock<BTreeMap<String, String>> = Default::default();
     }
     struct Env {}
     impl Environment for Env {
