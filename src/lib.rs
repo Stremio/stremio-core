@@ -248,7 +248,7 @@ mod tests {
                 c.request.base == "http://127.0.0.1:7001/manifest.json"
                     && c.request.path.type_name == "movie"
             })
-            .expect("could not find year catalog");
+            .expect("could not find test catalog");
 
         let req = ResourceRequest {
             base: "http://127.0.0.1:7001/manifest.json".to_owned(),
