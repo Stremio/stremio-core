@@ -8,6 +8,7 @@ pub mod types;
 #[cfg(test)]
 mod tests {
     use crate::addon_transport::*;
+    use crate::state_types::models::addon_details::AddonDetails;
     use crate::state_types::models::catalog_with_filters::CatalogWithFilters;
     use crate::state_types::models::catalogs_with_extra::CatalogsWithExtra;
     use crate::state_types::models::common::*;
@@ -56,9 +57,9 @@ mod tests {
     #[test]
     fn get_videos() {
         run(lazy(|| {
-            let transport_url = "https://v3-cinemeta.strem.io/manifest.json";
+            let transport_url = "http://127.0.0.1:7001/manifest.json";
             AddonHTTPTransport::<Env>::from_url(&transport_url)
-                .get(&ResourceRef::without_extra("meta", "series", "tt0386676"))
+                .get(&ResourceRef::without_extra("meta", "series", "pt2"))
                 .then(|res| {
                     match res {
                         Err(e) => panic!("failed getting metadata {:?}", e),
@@ -203,11 +204,13 @@ mod tests {
         #[derive(Model, Debug)]
         struct Model {
             ctx: Ctx<Env>,
+            addon_details: AddonDetails,
             catalogs: CatalogWithFilters<MetaPreview>,
         }
 
         let app = Model {
             ctx: Default::default(),
+            addon_details: Default::default(),
             catalogs: CatalogWithFilters {
                 selected: Default::default(),
                 selectable: Default::default(),
@@ -215,10 +218,41 @@ mod tests {
             },
         };
         let (runtime, _) = Runtime::<Env, Model>::new(app, 1000);
+        let addon_details = Msg::Action(Action::Load(ActionLoad::AddonDetails(
+            models::addon_details::Selected {
+                transport_url: "http://127.0.0.1:7001/manifest.json".to_owned(),
+            },
+        )));
+        run(runtime.dispatch(&addon_details));
+        let addon_desc = match runtime
+            .app
+            .write()
+            .unwrap()
+            .addon_details
+            .addon
+            .to_owned()
+            .unwrap()
+            .content
+        {
+            Loadable::Ready(x) => x,
+            x => panic!("addon not ready, but instead: {:?}", x),
+        };
+        let addon = Msg::Action(Action::Ctx(ActionCtx::InstallAddon(addon_desc)));
+        run(runtime.dispatch(&addon));
+        let state = runtime.app.read().unwrap().catalogs.to_owned();
+        let test_catalog = state
+            .selectable
+            .catalogs
+            .iter()
+            .find(|c| {
+                c.request.base == "http://127.0.0.1:7001/manifest.json"
+                    && c.request.path.type_name == "movie"
+            })
+            .expect("could not find year catalog");
 
         let req = ResourceRequest {
-            base: "https://v3-cinemeta.strem.io/manifest.json".to_owned(),
-            path: ResourceRef::without_extra("catalog", "movie", "top"),
+            base: "http://127.0.0.1:7001/manifest.json".to_owned(),
+            path: ResourceRef::without_extra("catalog", "movie", "test"),
         };
         let action = Msg::Action(Action::Load(ActionLoad::CatalogWithFilters(
             models::catalog_with_filters::Selected {
@@ -248,18 +282,14 @@ mod tests {
                 .request
                 .path
                 .type_name
-                .eq(&state.selectable.catalogs[0].request.path.type_name),
+                .eq(&test_catalog.request.path.type_name),
             "first catalog is selected"
         );
         assert_eq!(
             state.selectable.types[0].request.path.type_name, "movie",
             "first type is movie"
         );
-        assert_eq!(
-            state.selectable.types[1].request.path.type_name, "series",
-            "second type is series"
-        );
-        assert!(state.selectable.catalogs.len() > 3, "has catalogs");
+        assert!(state.selectable.catalogs.len() > 0, "has catalogs");
         match &state.catalog_resource {
             Some(ResourceLoadable {
                 content: Loadable::Ready(x),
@@ -275,11 +305,11 @@ mod tests {
             "there should be a next page"
         );
         let load_next = ResourceRequest {
-            base: "https://v3-cinemeta.strem.io/manifest.json".to_owned(),
+            base: "http://127.0.0.1:7001/manifest.json".to_owned(),
             path: ResourceRef::with_extra(
                 "catalog",
                 "movie",
-                "top",
+                "test",
                 &[("skip".to_owned(), "100".to_owned())],
             ),
         };
@@ -305,7 +335,7 @@ mod tests {
                 .as_ref()
                 .unwrap()
                 .request
-                .eq_no_extra(&state.selectable.catalogs[0].request),
+                .eq_no_extra(&test_catalog.request),
             "first catalog is still selected"
         );
         assert_eq!(
@@ -326,44 +356,6 @@ mod tests {
         assert!(
             state.selectable.has_prev_page,
             "there should be a prev page"
-        );
-
-        //dbg!(&state);
-
-        let year_catalog = state
-            .selectable
-            .catalogs
-            .iter()
-            .find(|c| c.name == "By year")
-            .expect("could not find year catalog");
-        let action = Msg::Action(Action::Load(ActionLoad::CatalogWithFilters(
-            models::catalog_with_filters::Selected {
-                request: year_catalog.request.to_owned(),
-            },
-        )));
-        run(runtime.dispatch(&action));
-        let state = &runtime.app.read().unwrap().catalogs;
-        let catalog_resource = state
-            .catalog_resource
-            .as_ref()
-            .expect("should have catalog_resource");
-        assert_eq!(
-            catalog_resource.request.path.get_extra_first_val("skip"),
-            None,
-            "first page"
-        );
-        assert_eq!(
-            catalog_resource.request.path.id, "year",
-            "year catalog is loaded"
-        );
-        // The year catalog is not seekable
-        assert!(
-            !state.selectable.has_next_page,
-            "there shouldn't be a next page"
-        );
-        assert!(
-            !state.selectable.has_prev_page,
-            "there shouldn't be a prev page"
         );
     }
 
@@ -409,6 +401,7 @@ mod tests {
             ctx: Ctx<Env>,
             lib_recent: ContinueWatchingPreview,
             notifs: Notifications,
+            addon_details: AddonDetails,
         }
         let (runtime, _) = Runtime::<Env, Model>::new(Model::default(), 1000);
 
@@ -446,10 +439,26 @@ mod tests {
             // ¯\_(ツ)_/¯
             // temporary hack (really) until last-videos catalog lands in upstream cinemeta
             // and gets updated for our user
-            let addons: Vec<Descriptor> =
-                serde_json::from_slice(include_bytes!("../stremio-official-addons/index.json"))
-                    .expect("official addons JSON parse");
-            runtime.app.write().unwrap().ctx.profile.addons[0] = addons[0].clone();
+            let addon_details = Msg::Action(Action::Load(ActionLoad::AddonDetails(
+                models::addon_details::Selected {
+                    transport_url: "http://127.0.0.1:7001/manifest.json".to_owned(),
+                },
+            )));
+            run(runtime.dispatch(&addon_details));
+            let addon_desc = match runtime
+                .app
+                .write()
+                .unwrap()
+                .addon_details
+                .addon
+                .to_owned()
+                .unwrap()
+                .content
+            {
+                Loadable::Ready(x) => x,
+                x => panic!("addon not ready, but instead: {:?}", x),
+            };
+            runtime.app.write().unwrap().ctx.profile.addons[0] = addon_desc;
             // we did unspeakable things, now dispatch the load action
             run(runtime.dispatch(&Msg::Action(Action::Load(ActionLoad::Notifications))));
             // ...
