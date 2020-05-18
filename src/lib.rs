@@ -92,6 +92,65 @@ mod tests {
     }
 
     #[test]
+    fn install_and_uninstall_addon() {
+        use stremio_derive::Model;
+        #[derive(Model, Debug, Default)]
+        struct Model {
+            ctx: Ctx<Env>,
+            addon_details: AddonDetails,
+        }
+
+        let (runtime, _) = Runtime::<Env, Model>::new(Model::default(), 1000);
+        let addon_details = Msg::Action(Action::Load(ActionLoad::AddonDetails(
+            models::addon_details::Selected {
+                transport_url: "http://127.0.0.1:7001/manifest.json".to_owned(),
+            },
+        )));
+        run(runtime.dispatch(&addon_details));
+        let addon_desc = match runtime
+            .app
+            .write()
+            .unwrap()
+            .addon_details
+            .addon
+            .to_owned()
+            .unwrap()
+            .content
+        {
+            Loadable::Ready(x) => x,
+            x => panic!("addon not ready, but instead: {:?}", x),
+        };
+        let addons_len_before_install = runtime.app.read().unwrap().ctx.profile.addons.len();
+        let addon = Msg::Action(Action::Ctx(ActionCtx::InstallAddon(addon_desc)));
+        run(runtime.dispatch(&addon));
+
+        let addons = &runtime.app.read().unwrap().ctx.profile.addons.to_owned();
+        let addons_len_after_install = addons.len();
+        let test_addon = addons
+            .iter()
+            .find(|c| c.transport_url == "http://127.0.0.1:7001/manifest.json")
+            .expect("could not find test addon");
+        assert_eq!(
+            addons_len_after_install - addons_len_before_install,
+            1,
+            "test addon is installed"
+        );
+        assert_eq!(
+            &test_addon.transport_url, "http://127.0.0.1:7001/manifest.json",
+            "correct test addon is installed"
+        );
+        let no_addon = Msg::Action(Action::Ctx(ActionCtx::UninstallAddon(
+            test_addon.transport_url.to_owned(),
+        )));
+        run(runtime.dispatch(&no_addon));
+        let addons_len_after_uninstall = runtime.app.read().unwrap().ctx.profile.addons.len();
+        assert_eq!(
+            addons_len_before_install, addons_len_after_uninstall,
+            "test addon is uninstalled"
+        );
+    }
+
+    #[test]
     fn sample_storage() {
         let key = "foo".to_owned();
         let value = "fooobar".to_owned();
