@@ -151,6 +151,139 @@ mod tests {
     }
 
     #[test]
+    fn add_to_remove_from_library() {
+        use stremio_derive::Model;
+        #[derive(Model, Debug, Default)]
+        struct Model {
+            ctx: Ctx<Env>,
+            catalogs: CatalogWithFilters<MetaPreview>,
+        }
+        let (runtime, _) = Runtime::<Env, Model>::new(Model::default(), 1000);
+
+        // Log into a user, check if library synced correctly
+        run(runtime.dispatch(&Msg::Action(Action::Load(ActionLoad::Ctx))));
+
+        // if this user gets deleted, the test will fail
+        // @TODO register a new user instead
+        let login_msg = Msg::Action(Action::Ctx(ActionCtx::Authenticate(AuthRequest::Login {
+            email: "ctxandlib@stremio.com".into(),
+            password: "ctxandlib".into(),
+        })));
+        run(runtime.dispatch(&login_msg));
+        let req = ResourceRequest {
+            base: "http://127.0.0.1:7001/manifest.json".to_owned(),
+            path: ResourceRef::without_extra("catalog", "movie", "test"),
+        };
+        let action = Msg::Action(Action::Load(ActionLoad::CatalogWithFilters(
+            models::catalog_with_filters::Selected {
+                request: req.to_owned(),
+            },
+        )));
+        run(runtime.dispatch_with(|model| model.catalogs.update(&model.ctx, &action)));
+        let content = match runtime
+            .app
+            .write()
+            .unwrap()
+            .catalogs
+            .to_owned()
+            .catalog_resource
+            .unwrap()
+            .content
+        {
+            Loadable::Ready(x) => x,
+            x => panic!("content not ready, but instead: {:?}", x),
+        };
+        let first_meta_preview = &content[0];
+        let items = &runtime.app.read().unwrap().ctx.library.items.to_owned();
+        let has_item = match items.get(&first_meta_preview.id) {
+            Some(item) => {
+                if item.removed {
+                    false
+                } else {
+                    true
+                }
+            }
+            None => false,
+        };
+
+        if has_item {
+            let remove_action = Msg::Action(Action::Ctx(ActionCtx::RemoveFromLibrary(
+                first_meta_preview.id.to_owned(),
+            )));
+            run(runtime.dispatch(&remove_action));
+            assert!(
+                &runtime
+                    .app
+                    .read()
+                    .unwrap()
+                    .ctx
+                    .library
+                    .items
+                    .to_owned()
+                    .get(&first_meta_preview.id)
+                    .unwrap()
+                    .removed,
+                "item is removed"
+            );
+            let add_action = Msg::Action(Action::Ctx(ActionCtx::AddToLibrary(
+                first_meta_preview.to_owned(),
+            )));
+            run(runtime.dispatch(&add_action));
+            assert!(
+                !&runtime
+                    .app
+                    .read()
+                    .unwrap()
+                    .ctx
+                    .library
+                    .items
+                    .to_owned()
+                    .get(&first_meta_preview.id)
+                    .unwrap()
+                    .removed,
+                "item is added"
+            );
+        } else {
+            let add_action = Msg::Action(Action::Ctx(ActionCtx::AddToLibrary(
+                first_meta_preview.to_owned(),
+            )));
+            run(runtime.dispatch(&add_action));
+            assert!(
+                !&runtime
+                    .app
+                    .read()
+                    .unwrap()
+                    .ctx
+                    .library
+                    .items
+                    .to_owned()
+                    .get(&first_meta_preview.id)
+                    .unwrap()
+                    .removed,
+                "item is added"
+            );
+            let remove_action = Msg::Action(Action::Ctx(ActionCtx::RemoveFromLibrary(
+                first_meta_preview.id.to_owned(),
+            )));
+            run(runtime.dispatch(&remove_action));
+            assert!(
+                &runtime
+                    .app
+                    .read()
+                    .unwrap()
+                    .ctx
+                    .library
+                    .items
+                    .to_owned()
+                    .get(&first_meta_preview.id)
+                    .unwrap()
+                    .removed,
+                "item is removed"
+            );
+        };
+    }
+
+    #[test]
     fn sample_storage() {
         let key = "foo".to_owned();
         let value = "fooobar".to_owned();
