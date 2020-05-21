@@ -59,7 +59,7 @@ mod tests {
         run(lazy(|| {
             let transport_url = "http://127.0.0.1:7001/manifest.json";
             AddonHTTPTransport::<Env>::from_url(&transport_url)
-                .get(&ResourceRef::without_extra("meta", "series", "pt2"))
+                .get(&ResourceRef::without_extra("meta", "series", "st2"))
                 .then(|res| {
                     match res {
                         Err(e) => panic!("failed getting metadata {:?}", e),
