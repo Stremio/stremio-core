@@ -284,6 +284,234 @@ mod tests {
     }
 
     #[test]
+    fn rewind_library_item() {
+        use stremio_derive::Model;
+        #[derive(Model, Debug, Default)]
+        struct Model {
+            ctx: Ctx<Env>,
+            addon_details: AddonDetails,
+            catalogs: CatalogWithFilters<MetaPreview>,
+        }
+        let (runtime, _) = Runtime::<Env, Model>::new(Model::default(), 1000);
+
+        // Testing without user
+        let addon_details = Msg::Action(Action::Load(ActionLoad::AddonDetails(
+            models::addon_details::Selected {
+                transport_url: "http://127.0.0.1:7001/manifest.json".to_owned(),
+            },
+        )));
+        run(runtime.dispatch(&addon_details));
+        let addon_desc = match runtime
+            .app
+            .write()
+            .unwrap()
+            .addon_details
+            .addon
+            .to_owned()
+            .unwrap()
+            .content
+        {
+            Loadable::Ready(x) => x,
+            x => panic!("addon not ready, but instead: {:?}", x),
+        };
+        let addon = Msg::Action(Action::Ctx(ActionCtx::InstallAddon(addon_desc)));
+        run(runtime.dispatch(&addon));
+
+        let req = ResourceRequest {
+            base: "http://127.0.0.1:7001/manifest.json".to_owned(),
+            path: ResourceRef::without_extra("catalog", "movie", "test"),
+        };
+        let action = Msg::Action(Action::Load(ActionLoad::CatalogWithFilters(
+            models::catalog_with_filters::Selected {
+                request: req.to_owned(),
+            },
+        )));
+        run(runtime.dispatch_with(|model| model.catalogs.update(&model.ctx, &action)));
+        let content = match runtime
+            .app
+            .write()
+            .unwrap()
+            .catalogs
+            .to_owned()
+            .catalog_resource
+            .unwrap()
+            .content
+        {
+            Loadable::Ready(x) => x,
+            x => panic!("content not ready, but instead: {:?}", x),
+        };
+        let first_meta_preview = &content[0];
+        let add_action = Msg::Action(Action::Ctx(ActionCtx::AddToLibrary(
+            first_meta_preview.to_owned(),
+        )));
+        run(runtime.dispatch(&add_action));
+
+        let mut lib_item = runtime
+            .app
+            .read()
+            .unwrap()
+            .ctx
+            .library
+            .items
+            .get(&first_meta_preview.id)
+            .unwrap()
+            .to_owned();
+
+        // set time_offset to number greater than 0
+        lib_item.state.time_offset = 10;
+        run(runtime.dispatch(&Msg::Internal(Internal::UpdateLibraryItem(
+            lib_item.to_owned(),
+        ))));
+        assert!(
+            runtime
+                .app
+                .read()
+                .unwrap()
+                .ctx
+                .library
+                .items
+                .get(&first_meta_preview.id)
+                .unwrap()
+                .to_owned()
+                .state
+                .time_offset
+                == 10,
+            "time offset is right"
+        );
+        let rewind_action = Msg::Action(Action::Ctx(ActionCtx::RewindLibraryItem(lib_item.id)));
+        run(runtime.dispatch(&rewind_action));
+        assert!(
+            runtime
+                .app
+                .read()
+                .unwrap()
+                .ctx
+                .library
+                .items
+                .get(&first_meta_preview.id)
+                .unwrap()
+                .to_owned()
+                .state
+                .time_offset
+                == 0,
+            "time offset is rewinded"
+        );
+
+        // Testing with user
+
+        // Log into a user, check if library synced correctly
+        run(runtime.dispatch(&Msg::Action(Action::Load(ActionLoad::Ctx))));
+
+        // if this user gets deleted, the test will fail
+        // @TODO register a new user instead
+        let login_msg = Msg::Action(Action::Ctx(ActionCtx::Authenticate(AuthRequest::Login {
+            email: "ctxandlib@stremio.com".into(),
+            password: "ctxandlib".into(),
+        })));
+        run(runtime.dispatch(&login_msg));
+        let addon_details = Msg::Action(Action::Load(ActionLoad::AddonDetails(
+            models::addon_details::Selected {
+                transport_url: "http://127.0.0.1:7001/manifest.json".to_owned(),
+            },
+        )));
+        run(runtime.dispatch(&addon_details));
+        let addon_desc = match runtime
+            .app
+            .write()
+            .unwrap()
+            .addon_details
+            .addon
+            .to_owned()
+            .unwrap()
+            .content
+        {
+            Loadable::Ready(x) => x,
+            x => panic!("addon not ready, but instead: {:?}", x),
+        };
+        let addon = Msg::Action(Action::Ctx(ActionCtx::InstallAddon(addon_desc)));
+        run(runtime.dispatch(&addon));
+        let req = ResourceRequest {
+            base: "http://127.0.0.1:7001/manifest.json".to_owned(),
+            path: ResourceRef::without_extra("catalog", "movie", "test"),
+        };
+        let action = Msg::Action(Action::Load(ActionLoad::CatalogWithFilters(
+            models::catalog_with_filters::Selected {
+                request: req.to_owned(),
+            },
+        )));
+        run(runtime.dispatch_with(|model| model.catalogs.update(&model.ctx, &action)));
+        let content = match runtime
+            .app
+            .write()
+            .unwrap()
+            .catalogs
+            .to_owned()
+            .catalog_resource
+            .unwrap()
+            .content
+        {
+            Loadable::Ready(x) => x,
+            x => panic!("content not ready, but instead: {:?}", x),
+        };
+        let first_meta_preview = &content[0];
+        let add_action = Msg::Action(Action::Ctx(ActionCtx::AddToLibrary(
+            first_meta_preview.to_owned(),
+        )));
+        run(runtime.dispatch(&add_action));
+
+        let mut lib_item = runtime
+            .app
+            .read()
+            .unwrap()
+            .ctx
+            .library
+            .items
+            .get(&first_meta_preview.id)
+            .unwrap()
+            .to_owned();
+
+        // set time_offset to number greater than 0
+        lib_item.state.time_offset = 10;
+        run(runtime.dispatch(&Msg::Internal(Internal::UpdateLibraryItem(
+            lib_item.to_owned(),
+        ))));
+        assert!(
+            runtime
+                .app
+                .read()
+                .unwrap()
+                .ctx
+                .library
+                .items
+                .get(&first_meta_preview.id)
+                .unwrap()
+                .to_owned()
+                .state
+                .time_offset
+                == 10,
+            "time offset is right"
+        );
+        let rewind_action = Msg::Action(Action::Ctx(ActionCtx::RewindLibraryItem(lib_item.id)));
+        run(runtime.dispatch(&rewind_action));
+        assert!(
+            runtime
+                .app
+                .read()
+                .unwrap()
+                .ctx
+                .library
+                .items
+                .get(&first_meta_preview.id)
+                .unwrap()
+                .to_owned()
+                .state
+                .time_offset
+                == 0,
+            "time offset is rewinded"
+        );
+    }
+
+    #[test]
     fn sample_storage() {
         let key = "foo".to_owned();
         let value = "fooobar".to_owned();
