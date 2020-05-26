@@ -864,6 +864,15 @@ mod tests {
                 },
             )));
             run(runtime.dispatch(&addon_details));
+
+            // remove cinemeta
+            runtime.app.write().unwrap().ctx.profile.addons.remove(0);
+            let addon_details = Msg::Action(Action::Load(ActionLoad::AddonDetails(
+                models::addon_details::Selected {
+                    transport_url: "http://127.0.0.1:7001/manifest.json".to_owned(),
+                },
+            )));
+            run(runtime.dispatch(&addon_details));
             let addon_desc = match runtime
                 .app
                 .write()
@@ -877,7 +886,9 @@ mod tests {
                 Loadable::Ready(x) => x,
                 x => panic!("addon not ready, but instead: {:?}", x),
             };
-            runtime.app.write().unwrap().ctx.profile.addons[0] = addon_desc;
+            let install_action = Msg::Action(Action::Ctx(ActionCtx::InstallAddon(addon_desc)));
+            run(runtime.dispatch(&install_action));
+
             // we did unspeakable things, now dispatch the load action
             run(runtime.dispatch(&Msg::Action(Action::Load(ActionLoad::Notifications))));
             // ...
