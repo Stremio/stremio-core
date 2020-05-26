@@ -121,8 +121,8 @@ mod tests {
             x => panic!("addon not ready, but instead: {:?}", x),
         };
         let addons_len_before_install = runtime.app.read().unwrap().ctx.profile.addons.len();
-        let addon = Msg::Action(Action::Ctx(ActionCtx::InstallAddon(addon_desc)));
-        run(runtime.dispatch(&addon));
+        let install_action = Msg::Action(Action::Ctx(ActionCtx::InstallAddon(addon_desc)));
+        run(runtime.dispatch(&install_action));
 
         let addons = &runtime.app.read().unwrap().ctx.profile.addons.to_owned();
         let addons_len_after_install = addons.len();
@@ -139,10 +139,10 @@ mod tests {
             &test_addon.transport_url, "http://127.0.0.1:7001/manifest.json",
             "correct test addon is installed"
         );
-        let no_addon = Msg::Action(Action::Ctx(ActionCtx::UninstallAddon(
+        let uninstall_action = Msg::Action(Action::Ctx(ActionCtx::UninstallAddon(
             test_addon.transport_url.to_owned(),
         )));
-        run(runtime.dispatch(&no_addon));
+        run(runtime.dispatch(&uninstall_action));
         let addons_len_after_uninstall = runtime.app.read().unwrap().ctx.profile.addons.len();
         assert_eq!(
             addons_len_before_install, addons_len_after_uninstall,
@@ -314,9 +314,8 @@ mod tests {
             Loadable::Ready(x) => x,
             x => panic!("addon not ready, but instead: {:?}", x),
         };
-        let addon = Msg::Action(Action::Ctx(ActionCtx::InstallAddon(addon_desc)));
-        run(runtime.dispatch(&addon));
-
+        let install_action = Msg::Action(Action::Ctx(ActionCtx::InstallAddon(addon_desc)));
+        run(runtime.dispatch(&install_action));
         let req = ResourceRequest {
             base: "http://127.0.0.1:7001/manifest.json".to_owned(),
             path: ResourceRef::without_extra("catalog", "movie", "test"),
@@ -428,8 +427,8 @@ mod tests {
             Loadable::Ready(x) => x,
             x => panic!("addon not ready, but instead: {:?}", x),
         };
-        let addon = Msg::Action(Action::Ctx(ActionCtx::InstallAddon(addon_desc)));
-        run(runtime.dispatch(&addon));
+        let install_action = Msg::Action(Action::Ctx(ActionCtx::InstallAddon(addon_desc)));
+        run(runtime.dispatch(&install_action));
         let req = ResourceRequest {
             base: "http://127.0.0.1:7001/manifest.json".to_owned(),
             path: ResourceRef::without_extra("catalog", "movie", "test"),
@@ -657,8 +656,8 @@ mod tests {
             Loadable::Ready(x) => x,
             x => panic!("addon not ready, but instead: {:?}", x),
         };
-        let addon = Msg::Action(Action::Ctx(ActionCtx::InstallAddon(addon_desc)));
-        run(runtime.dispatch(&addon));
+        let install_action = Msg::Action(Action::Ctx(ActionCtx::InstallAddon(addon_desc)));
+        run(runtime.dispatch(&install_action));
         let state = runtime.app.read().unwrap().catalogs.to_owned();
         let test_catalog = state
             .selectable
