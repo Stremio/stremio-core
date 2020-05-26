@@ -92,6 +92,67 @@ mod tests {
     }
 
     #[test]
+    fn addon_details() {
+        use stremio_derive::Model;
+        #[derive(Model, Debug, Default)]
+        struct Model {
+            ctx: Ctx<Env>,
+            addon_details: AddonDetails,
+            catalogs: CatalogWithFilters<MetaPreview>,
+        }
+        let (runtime, _) = Runtime::<Env, Model>::new(Model::default(), 1000);
+
+        let addon_details = Msg::Action(Action::Load(ActionLoad::AddonDetails(
+            models::addon_details::Selected {
+                transport_url: "http://127.0.0.1:7001/manifest.json".to_owned(),
+            },
+        )));
+        run(runtime.dispatch(&addon_details));
+        let addon_desc = match runtime
+            .app
+            .write()
+            .unwrap()
+            .addon_details
+            .addon
+            .to_owned()
+            .unwrap()
+            .content
+        {
+            Loadable::Ready(x) => x,
+            x => panic!("addon not ready, but instead: {:?}", x),
+        };
+        assert!(
+            addon_desc.manifest.id == "com.stremio.taddon",
+            "id is correct"
+        );
+        assert!(
+            addon_desc.transport_url == "http://127.0.0.1:7001/manifest.json",
+            "transport url is correct"
+        );
+
+        // testing with incorrect url
+        let addon_details = Msg::Action(Action::Load(ActionLoad::AddonDetails(
+            models::addon_details::Selected {
+                transport_url: "http://example.com/manifest.json".to_owned(),
+            },
+        )));
+        run(runtime.dispatch(&addon_details));
+        match runtime
+            .app
+            .write()
+            .unwrap()
+            .addon_details
+            .addon
+            .to_owned()
+            .unwrap()
+            .content
+        {
+            Loadable::Err(e) => assert!(true, "addon errored"),
+            _ => panic!("the addon didn't throw error"),
+        };
+    }
+
+    #[test]
     fn install_and_uninstall_addon() {
         use stremio_derive::Model;
         #[derive(Model, Debug, Default)]
