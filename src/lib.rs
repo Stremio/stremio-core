@@ -14,6 +14,7 @@ mod tests {
     use crate::state_types::models::common::*;
     use crate::state_types::models::continue_watching_preview::ContinueWatchingPreview;
     use crate::state_types::models::ctx::*;
+    use crate::state_types::models::library_with_filters::{LibraryWithFilters, NotRemovedFilter};
     use crate::state_types::models::meta_details::MetaDetails;
     use crate::state_types::models::notifications::Notifications;
     use crate::state_types::msg::*;
@@ -26,6 +27,7 @@ mod tests {
     use futures::{future, Future};
     use serde::de::DeserializeOwned;
     use serde::Serialize;
+    use std::cmp::Ordering;
     use tokio::executor::current_thread::spawn;
     use tokio::runtime::current_thread::run;
 
@@ -569,6 +571,122 @@ mod tests {
                 == 0,
             "time offset is rewinded"
         );
+    }
+
+    #[test]
+    fn library_with_filters() {
+        use stremio_derive::Model;
+        #[derive(Model, Debug, Default)]
+        struct Model {
+            ctx: Ctx<Env>,
+            library: LibraryWithFilters<NotRemovedFilter>,
+            catalogs: CatalogWithFilters<MetaPreview>,
+        }
+        let (runtime, _) = Runtime::<Env, Model>::new(Model::default(), 1000);
+
+        // Log into a user, check if library synced correctly
+        run(runtime.dispatch(&Msg::Action(Action::Load(ActionLoad::Ctx))));
+
+        // if this user gets deleted, the test will fail
+        // @TODO register a new user instead
+        let login_msg = Msg::Action(Action::Ctx(ActionCtx::Authenticate(AuthRequest::Login {
+            email: "ctxandlib@stremio.com".into(),
+            password: "ctxandlib".into(),
+        })));
+        run(runtime.dispatch(&login_msg));
+
+        let req = ResourceRequest {
+            base: "http://127.0.0.1:7001/manifest.json".to_owned(),
+            path: ResourceRef::without_extra("catalog", "movie", "test"),
+        };
+        let action = Msg::Action(Action::Load(ActionLoad::CatalogWithFilters(
+            models::catalog_with_filters::Selected {
+                request: req.to_owned(),
+            },
+        )));
+        run(runtime.dispatch_with(|model| model.catalogs.update(&model.ctx, &action)));
+        let content = match runtime
+            .app
+            .write()
+            .unwrap()
+            .catalogs
+            .to_owned()
+            .catalog_resource
+            .unwrap()
+            .content
+        {
+            Loadable::Ready(x) => x,
+            x => panic!("content not ready, but instead: {:?}", x),
+        };
+        let first_meta_preview = &content[0];
+        let add_action = Msg::Action(Action::Ctx(ActionCtx::AddToLibrary(
+            first_meta_preview.to_owned(),
+        )));
+        run(runtime.dispatch(&add_action));
+
+        let req = ResourceRequest {
+            base: "http://127.0.0.1:7001/manifest.json".to_owned(),
+            path: ResourceRef::without_extra("catalog", "series", "test"),
+        };
+        let action = Msg::Action(Action::Load(ActionLoad::CatalogWithFilters(
+            models::catalog_with_filters::Selected {
+                request: req.to_owned(),
+            },
+        )));
+        run(runtime.dispatch_with(|model| model.catalogs.update(&model.ctx, &action)));
+        let content = match runtime
+            .app
+            .write()
+            .unwrap()
+            .catalogs
+            .to_owned()
+            .catalog_resource
+            .unwrap()
+            .content
+        {
+            Loadable::Ready(x) => x,
+            x => panic!("content not ready, but instead: {:?}", x),
+        };
+        let first_meta_preview = &content[0];
+        let second_meta_preview = &content[1];
+        let add_action = Msg::Action(Action::Ctx(ActionCtx::AddToLibrary(
+            first_meta_preview.to_owned(),
+        )));
+        run(runtime.dispatch(&add_action));
+        let add_action = Msg::Action(Action::Ctx(ActionCtx::AddToLibrary(
+            second_meta_preview.to_owned(),
+        )));
+        run(runtime.dispatch(&add_action));
+
+        let lib_action = Msg::Action(Action::Load(ActionLoad::LibraryWithFilters(
+            models::library_with_filters::Selected {
+                type_name: Some("movie".into()),
+                sort: models::library_with_filters::Sort::LastWatched,
+            },
+        )));
+        run(runtime.dispatch(&lib_action));
+        assert_eq!(
+            &runtime.app.read().unwrap().library.lib_items[0].type_name,
+            "movie",
+            "first item has type movie"
+        );
+
+        let lib_action = Msg::Action(Action::Load(ActionLoad::LibraryWithFilters(
+            models::library_with_filters::Selected {
+                type_name: Some("series".into()),
+                sort: models::library_with_filters::Sort::Name,
+            },
+        )));
+        run(runtime.dispatch(&lib_action));
+        assert_eq!(
+            &runtime.app.read().unwrap().library.lib_items[0].type_name,
+            "series",
+            "first item has type series"
+        );
+        let name_comparing = runtime.app.read().unwrap().library.lib_items[0]
+            .name
+            .cmp(&runtime.app.read().unwrap().library.lib_items[1].name);
+        assert_eq!(Ordering::Less, name_comparing);
     }
 
     #[test]
