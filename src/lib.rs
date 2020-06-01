@@ -149,7 +149,7 @@ mod tests {
             .unwrap()
             .content
         {
-            Loadable::Err(e) => assert!(true, "addon errored"),
+            Loadable::Err(_) => assert!(true, "addon errored"),
             _ => panic!("the addon didn't throw error"),
         };
     }
