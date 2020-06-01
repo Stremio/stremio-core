@@ -214,7 +214,7 @@ mod tests {
     }
 
     #[test]
-    fn login() {
+    fn login_logout() {
         use stremio_derive::Model;
         #[derive(Model, Debug, Default)]
         struct Model {
@@ -252,7 +252,18 @@ mod tests {
                 }
                 _ => false,
             },
-            "user logged successfully"
+            "user logged in successfully"
+        );
+
+        // Logout and expect everything to be reset
+        let logout_action = Msg::Action(Action::Ctx(ActionCtx::Logout));
+        run(runtime.dispatch(&logout_action));
+        assert!(
+            match runtime.app.write().unwrap().ctx.profile.auth {
+                None => true,
+                _ => false,
+            },
+            "user logged out successfully"
         );
     }
 
