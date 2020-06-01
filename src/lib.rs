@@ -214,6 +214,49 @@ mod tests {
     }
 
     #[test]
+    fn login() {
+        use stremio_derive::Model;
+        #[derive(Model, Debug, Default)]
+        struct Model {
+            ctx: Ctx<Env>,
+            lib_recent: ContinueWatchingPreview,
+        }
+        let (runtime, _) = Runtime::<Env, Model>::new(Model::default(), 1000);
+
+        assert!(
+            match runtime.app.write().unwrap().ctx.profile.auth {
+                None => true,
+                _ => false,
+            },
+            "there is no user"
+        );
+
+        // Log into a user, check if library synced correctly
+        run(runtime.dispatch(&Msg::Action(Action::Load(ActionLoad::Ctx))));
+
+        // if this user gets deleted, the test will fail
+        // @TODO register a new user instead
+        let login_msg = Msg::Action(Action::Ctx(ActionCtx::Authenticate(AuthRequest::Login {
+            email: "ctxandlib@stremio.com".into(),
+            password: "ctxandlib".into(),
+        })));
+        run(runtime.dispatch(&login_msg));
+        assert!(
+            match &runtime.app.write().unwrap().ctx.profile.auth {
+                Some(auth) => {
+                    if auth.user.email == "ctxandlib@stremio.com" {
+                        true
+                    } else {
+                        false
+                    }
+                }
+                _ => false,
+            },
+            "user logged successfully"
+        );
+    }
+
+    #[test]
     fn add_to_remove_from_library() {
         use stremio_derive::Model;
         #[derive(Model, Debug, Default)]
