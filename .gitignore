@@ -3,3 +3,4 @@
 /wasm_build
 /build
 /static
+/package-lock.json
