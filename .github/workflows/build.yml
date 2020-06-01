@@ -1,16 +1,18 @@
 name: Build
 
-on:
-  push:
-    branches:
-      - '*'
-    tags-ignore:
-      - '*'
+on: push
 
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-        - uses: actions/checkout@v1
-        - name: Build
-          run: rustup default nightly && cargo install wasm-pack && npm install && npm run build
+    - name: Checkout
+      uses: actions/checkout@v1
+    - name: Setup RUST
+      run: |
+        rustup default nightly
+        cargo install wasm-pack
+    - name: Install NPM dependencies
+      run: npm install
+    - name: Build
+      run: npm run build
