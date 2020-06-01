@@ -1,6 +1,7 @@
 {
     "name": "@stremio/stremio-core-web",
     "version": "0.14.0",
+    "publisher": "Smart Code Ltd.",
     "main": "build/stremio_core_web.js",
     "license": "MIT",
     "scripts": {
