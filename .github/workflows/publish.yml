@@ -1,0 +1,29 @@
+name: Publish
+
+on:
+  release:
+    types: [published]
+    
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Setup NodeJS
+      uses: actions/setup-node@v1
+      with:
+        node-version: 10
+        registry-url: https://registry.npmjs.org/
+    - name: Checkout
+      uses: actions/checkout@v1
+    - name: Setup RUST
+      run: |
+        rustup default nightly
+        cargo install wasm-pack
+    - name: Install NPM dependencies
+      run: npm install
+    - name: Build
+      run: npm run build
+    - name: Publish to NPM
+      run: npm publish --access public
+      env:
+        NODE_AUTH_TOKEN: ${{ secrets.NPM_PUBLISH_TOKEN }}
