@@ -729,7 +729,11 @@ mod tests {
         let name_comparing = runtime.app.read().unwrap().library.lib_items[0]
             .name
             .cmp(&runtime.app.read().unwrap().library.lib_items[1].name);
-        assert_eq!(Ordering::Less, name_comparing);
+        assert_eq!(
+            Ordering::Less,
+            name_comparing,
+            "items are arranged alphabetically"
+        );
     }
 
     #[test]
