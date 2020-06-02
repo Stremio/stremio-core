@@ -1,6 +1,6 @@
 /target
 /node_modules
 /wasm_build
-/build
-/static
 /package-lock.json
+stremio_core_web.js
+stremio_core_web_bg.wasm
