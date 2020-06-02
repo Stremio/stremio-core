@@ -14,7 +14,7 @@ jobs:
         node-version: 10
         registry-url: https://registry.npmjs.org/
     - name: Checkout
-      uses: actions/checkout@v1
+      uses: actions/checkout@v2
     - name: Setup RUST
       run: |
         rustup default nightly
