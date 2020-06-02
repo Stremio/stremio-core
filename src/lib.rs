@@ -1022,31 +1022,69 @@ mod tests {
         struct Model {
             ctx: Ctx<Env>,
             meta_details: MetaDetails,
+            addon_details: AddonDetails,
         }
 
         let app = Model::default();
         let (runtime, _) = Runtime::<Env, Model>::new(app, 1000);
 
-        // @TODO install some addons that provide streams
+        // install addon that provides streams
+        let addon_details = Msg::Action(Action::Load(ActionLoad::AddonDetails(
+            models::addon_details::Selected {
+                transport_url: "http://127.0.0.1:7001/manifest.json".to_owned(),
+            },
+        )));
+        run(runtime.dispatch(&addon_details));
+        let addon_desc = match runtime
+            .app
+            .write()
+            .unwrap()
+            .addon_details
+            .addon
+            .to_owned()
+            .unwrap()
+            .content
+        {
+            Loadable::Ready(x) => x,
+            x => panic!("addon not ready, but instead: {:?}", x),
+        };
+        let install_action = Msg::Action(Action::Ctx(ActionCtx::InstallAddon(addon_desc)));
+        run(runtime.dispatch(&install_action));
+
         let action = Msg::Action(Action::Load(ActionLoad::MetaDetails(
             models::meta_details::Selected {
                 meta_resource_ref: ResourceRef {
                     resource: "meta".to_string(),
                     type_name: "series".to_string(),
-                    id: "tt0773262".to_string(),
+                    id: "st2".to_string(),
+                    extra: vec![],
+                },
+                streams_resource_ref: None,
+            },
+        )));
+        run(runtime.dispatch(&action));
+        let state = &runtime.app.read().unwrap().meta_details.to_owned();
+        assert_eq!(state.streams_resources.len(), 0, "0 groups");
+
+        let action = Msg::Action(Action::Load(ActionLoad::MetaDetails(
+            models::meta_details::Selected {
+                meta_resource_ref: ResourceRef {
+                    resource: "meta".to_string(),
+                    type_name: "series".to_string(),
+                    id: "st2".to_string(),
                     extra: vec![],
                 },
                 streams_resource_ref: Some(ResourceRef {
                     resource: "stream".to_string(),
                     type_name: "series".to_string(),
-                    id: "tt0773262:6:1".to_string(),
+                    id: "st2v1".to_string(),
                     extra: vec![],
                 }),
             },
         )));
         run(runtime.dispatch(&action));
-        let state = &runtime.app.read().unwrap().meta_details;
-        assert_eq!(state.streams_resources.len(), 2, "2 groups");
+        let state = &runtime.app.read().unwrap().meta_details.to_owned();
+        assert_eq!(state.streams_resources.len(), 1, "1 group");
     }
 
     #[test]
