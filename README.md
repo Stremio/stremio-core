@@ -1,6 +1,10 @@
-# stremio-core-web
+# Stremio Core Web
 
-### Build
+Bridge between [stremio-core](https://github.com/stremio/stremio-core) and [stremio-web](https://github.com/stremio/stremio-web)
+
+
+## Build
+
 ```
 npm install
 npm run build
