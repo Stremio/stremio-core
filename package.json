@@ -1,6 +1,7 @@
 {
     "name": "@stremio/stremio-core-web",
     "version": "0.14.0",
+    "description": "Bridge between stremio-core and stremio-web",
     "publisher": "Smart Code Ltd.",
     "website": "www.stremio.com",
     "main": "build/stremio_core_web.js",
