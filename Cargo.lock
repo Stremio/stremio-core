@@ -183,7 +183,7 @@ checksum = "1056f553da426e9c025a662efa48b52e62e0a3a7648aa2d15aeaaf7f0d329357"
 [[package]]
 name = "env-web"
 version = "0.1.0"
-source = "git+https://github.com/Stremio/stremio-core?branch=development#530c22ab85ffe11f507265773020353e4e3f8701"
+source = "git+https://github.com/Stremio/stremio-core?branch=development#484841bb9f3400483f6cc6f73e73f1ccf1470518"
 dependencies = [
  "chrono",
  "futures",
@@ -499,7 +499,7 @@ checksum = "05720e22615919e4734f6a99ceae50d00226c3c5aca406e102ebc33298214e0a"
 [[package]]
 name = "stremio-core"
 version = "0.1.0"
-source = "git+https://github.com/Stremio/stremio-core?branch=development#530c22ab85ffe11f507265773020353e4e3f8701"
+source = "git+https://github.com/Stremio/stremio-core?branch=development#484841bb9f3400483f6cc6f73e73f1ccf1470518"
 dependencies = [
  "base64",
  "chrono",
@@ -542,7 +542,7 @@ dependencies = [
 [[package]]
 name = "stremio-derive"
 version = "0.1.0"
-source = "git+https://github.com/Stremio/stremio-core?branch=development#530c22ab85ffe11f507265773020353e4e3f8701"
+source = "git+https://github.com/Stremio/stremio-core?branch=development#484841bb9f3400483f6cc6f73e73f1ccf1470518"
 dependencies = [
  "proc-macro-crate",
  "proc-macro2 1.0.10",
