@@ -3,6 +3,7 @@ use crate::state_types::models::ctx::Ctx;
 use crate::state_types::msg::{Action, ActionStreamingServer, Internal, Msg};
 use crate::state_types::{Effects, EnvError, Environment, UpdateWithCtx};
 use crate::types::api::SuccessResponse;
+use enclose::enclose;
 use futures::Future;
 use http::request::Request;
 use serde::{Deserialize, Serialize};
@@ -29,6 +30,7 @@ pub type Selected = Url;
 pub struct StreamingServer {
     pub selected: Option<Selected>,
     pub settings: Option<Loadable<Settings, String>>,
+    pub base_url: Option<Loadable<Url, String>>,
 }
 
 impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for StreamingServer {
@@ -38,14 +40,28 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for StreamingServer {
                 let url = ctx.profile.settings.streaming_server_url.to_owned();
                 let next_selected = Some(url.to_owned());
                 let next_settings = Some(Loadable::Loading);
-                if self.selected != next_selected || self.settings != next_settings {
+                let next_base_url = Some(Loadable::Loading);
+                if self.selected != next_selected
+                    || self.settings != next_settings
+                    || self.base_url != next_base_url
+                {
                     self.selected = next_selected;
                     self.settings = next_settings;
-                    Effects::one(Box::new(get_settings::<Env>(&url).then(move |result| {
-                        Ok(Msg::Internal(Internal::StreamingServerSettingsResult(
-                            url, result,
-                        )))
-                    })))
+                    self.base_url = next_base_url;
+                    Effects::many(vec![
+                        Box::new(
+                            get_settings::<Env>(&url).then(enclose!((url) move |result| {
+                                Ok(Msg::Internal(Internal::StreamingServerSettingsResult(
+                                    url, result,
+                                )))
+                            })),
+                        ),
+                        Box::new(get_base_url::<Env>(&url).then(move |result| {
+                            Ok(Msg::Internal(Internal::StreamingServerBaseURLResult(
+                                url, result,
+                            )))
+                        })),
+                    ])
                 } else {
                     Effects::none().unchanged()
                 }
@@ -74,17 +90,39 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for StreamingServer {
                 let url = ctx.profile.settings.streaming_server_url.to_owned();
                 self.selected = Some(url.to_owned());
                 self.settings = Some(Loadable::Loading);
-                Effects::one(Box::new(get_settings::<Env>(&url).then(move |result| {
-                    Ok(Msg::Internal(Internal::StreamingServerSettingsResult(
-                        url, result,
-                    )))
-                })))
+                self.base_url = Some(Loadable::Loading);
+                Effects::many(vec![
+                    Box::new(
+                        get_settings::<Env>(&url).then(enclose!((url) move |result| {
+                            Ok(Msg::Internal(Internal::StreamingServerSettingsResult(
+                                url, result,
+                            )))
+                        })),
+                    ),
+                    Box::new(get_base_url::<Env>(&url).then(move |result| {
+                        Ok(Msg::Internal(Internal::StreamingServerBaseURLResult(
+                            url, result,
+                        )))
+                    })),
+                ])
             }
             Msg::Internal(Internal::StreamingServerSettingsResult(url, result)) => {
                 match (&self.selected, &self.settings) {
                     (Some(loading_url), Some(Loadable::Loading)) if loading_url == url => {
                         self.settings = match result {
                             Ok(settings) => Some(Loadable::Ready(settings.to_owned())),
+                            Err(error) => Some(Loadable::Err(error.to_string())),
+                        };
+                        Effects::none()
+                    }
+                    _ => Effects::none().unchanged(),
+                }
+            }
+            Msg::Internal(Internal::StreamingServerBaseURLResult(url, result)) => {
+                match (&self.selected, &self.base_url) {
+                    (Some(loading_url), Some(Loadable::Loading)) if loading_url == url => {
+                        self.base_url = match result {
+                            Ok(base_url) => Some(Loadable::Ready(base_url.to_owned())),
                             Err(error) => Some(Loadable::Err(error.to_string())),
                         };
                         Effects::none()
@@ -121,6 +159,21 @@ pub fn get_settings<Env: Environment + 'static>(
         .body(())
         .expect("request builder cannot fail");
     Env::fetch_serde::<_, Resp>(request).map(|resp| resp.values)
+}
+
+pub fn get_base_url<Env: Environment + 'static>(
+    url: &Url,
+) -> impl Future<Item = Url, Error = EnvError> {
+    #[derive(Deserialize)]
+    struct Resp {
+        #[serde(rename = "baseUrl")]
+        base_url: Url,
+    }
+    let endpoint = url.join("settings").unwrap();
+    let request = Request::get(endpoint.as_str())
+        .body(())
+        .expect("request builder cannot fail");
+    Env::fetch_serde::<_, Resp>(request).map(|resp| resp.base_url)
 }
 
 pub fn update_settings<Env: Environment + 'static>(

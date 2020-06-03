@@ -40,6 +40,8 @@ pub enum Internal {
     LibraryChanged(bool),
     // Result for loading streaming server settings.
     StreamingServerSettingsResult(Url, Result<StreamingServerSettings, EnvError>),
+    // Result for loading streaming server base url.
+    StreamingServerBaseURLResult(Url, Result<Url, EnvError>),
     // Result for updating streaming server settings.
     StreamingServerUpdateSettingsResult(Url, Result<(), EnvError>),
     ResourceRequestResult(ResourceRequest, Box<Result<ResourceResponse, EnvError>>),
