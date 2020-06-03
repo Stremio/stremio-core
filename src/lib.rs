@@ -1016,6 +1016,67 @@ mod tests {
     }
 
     #[test]
+    fn meta_details() {
+        use stremio_derive::Model;
+        #[derive(Model, Debug, Default)]
+        struct Model {
+            ctx: Ctx<Env>,
+            meta_details: MetaDetails,
+            addon_details: AddonDetails,
+        }
+
+        let app = Model::default();
+        let (runtime, _) = Runtime::<Env, Model>::new(app, 1000);
+
+        // install addon that provides streams
+        let addon_details = Msg::Action(Action::Load(ActionLoad::AddonDetails(
+            models::addon_details::Selected {
+                transport_url: "http://127.0.0.1:7001/manifest.json".to_owned(),
+            },
+        )));
+        run(runtime.dispatch(&addon_details));
+        let addon_desc = match runtime
+            .app
+            .write()
+            .unwrap()
+            .addon_details
+            .addon
+            .to_owned()
+            .unwrap()
+            .content
+        {
+            Loadable::Ready(x) => x,
+            x => panic!("addon not ready, but instead: {:?}", x),
+        };
+        let install_action = Msg::Action(Action::Ctx(ActionCtx::InstallAddon(addon_desc)));
+        run(runtime.dispatch(&install_action));
+
+        let action = Msg::Action(Action::Load(ActionLoad::MetaDetails(
+            models::meta_details::Selected {
+                meta_resource_ref: ResourceRef {
+                    resource: "meta".to_string(),
+                    type_name: "series".to_string(),
+                    id: "st2".to_string(),
+                    extra: vec![],
+                },
+                streams_resource_ref: Some(ResourceRef {
+                    resource: "stream".to_string(),
+                    type_name: "series".to_string(),
+                    id: "st2v1".to_string(),
+                    extra: vec![],
+                }),
+            },
+        )));
+        run(runtime.dispatch(&action));
+        let model = &runtime.app.read().unwrap();
+        let first_meta_resource = match &model.meta_details.meta_resources[0].content {
+            Loadable::Ready(x) => x,
+            x => panic!("content not ready, but instead: {:?}", x),
+        };
+        assert_eq!(first_meta_resource.id, "st2", "id is the same");
+    }
+
+    #[test]
     fn streams() {
         use stremio_derive::Model;
         #[derive(Model, Debug, Default)]
