@@ -147,12 +147,12 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for StreamingServer {
     }
 }
 
-pub fn get_settings<Env: Environment + 'static>(
+fn get_settings<Env: Environment + 'static>(
     url: &Url,
 ) -> impl Future<Item = Settings, Error = EnvError> {
     #[derive(Deserialize)]
     struct Resp {
-        pub values: Settings,
+        values: Settings,
     }
     let endpoint = url.join("settings").unwrap();
     let request = Request::get(endpoint.as_str())
@@ -161,7 +161,7 @@ pub fn get_settings<Env: Environment + 'static>(
     Env::fetch_serde::<_, Resp>(request).map(|resp| resp.values)
 }
 
-pub fn get_base_url<Env: Environment + 'static>(
+fn get_base_url<Env: Environment + 'static>(
     url: &Url,
 ) -> impl Future<Item = Url, Error = EnvError> {
     #[derive(Deserialize)]
@@ -176,20 +176,20 @@ pub fn get_base_url<Env: Environment + 'static>(
     Env::fetch_serde::<_, Resp>(request).map(|resp| resp.base_url)
 }
 
-pub fn update_settings<Env: Environment + 'static>(
+fn update_settings<Env: Environment + 'static>(
     url: &Url,
     settings: &Settings,
 ) -> impl Future<Item = (), Error = EnvError> {
     #[derive(Serialize)]
     #[serde(rename_all = "camelCase")]
     struct Body {
-        pub cache_size: Option<f64>,
-        pub bt_max_connections: u64,
-        pub bt_handshake_timeout: u64,
-        pub bt_request_timeout: u64,
-        pub bt_download_speed_soft_limit: f64,
-        pub bt_download_speed_hard_limit: f64,
-        pub bt_min_peers_for_stable: u64,
+        cache_size: Option<f64>,
+        bt_max_connections: u64,
+        bt_handshake_timeout: u64,
+        bt_request_timeout: u64,
+        bt_download_speed_soft_limit: f64,
+        bt_download_speed_hard_limit: f64,
+        bt_min_peers_for_stable: u64,
     }
     let body = Body {
         cache_size: settings.cache_size.to_owned(),
