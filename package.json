@@ -7,7 +7,7 @@
         "email": "office@stremio.com",
         "url": "https://stremio.com"
     },
-    "main": "build/stremio_core_web.js",
+    "main": "stremio_core_web.js",
     "license": "MIT",
     "repository": {
         "type": "git",
