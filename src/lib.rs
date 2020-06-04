@@ -17,6 +17,7 @@ mod tests {
     use crate::state_types::models::library_with_filters::{LibraryWithFilters, NotRemovedFilter};
     use crate::state_types::models::meta_details::MetaDetails;
     use crate::state_types::models::notifications::Notifications;
+    use crate::state_types::models::player::Player;
     use crate::state_types::msg::*;
     use crate::state_types::*;
     use crate::types::addons::*;
@@ -1146,6 +1147,93 @@ mod tests {
         run(runtime.dispatch(&action));
         let state = &runtime.app.read().unwrap().meta_details.to_owned();
         assert_eq!(state.streams_resources.len(), 1, "1 group");
+    }
+
+    #[test]
+    fn player_stream() {
+        use stremio_derive::Model;
+        #[derive(Model, Debug, Default)]
+        struct Model {
+            ctx: Ctx<Env>,
+            meta_details: MetaDetails,
+            addon_details: AddonDetails,
+            player: Player,
+        }
+
+        let app = Model::default();
+        let (runtime, _) = Runtime::<Env, Model>::new(app, 1000);
+
+        // install addon that provides streams
+        let addon_details = Msg::Action(Action::Load(ActionLoad::AddonDetails(
+            models::addon_details::Selected {
+                transport_url: "http://127.0.0.1:7001/manifest.json".to_owned(),
+            },
+        )));
+        run(runtime.dispatch(&addon_details));
+        let addon_desc = match runtime
+            .app
+            .write()
+            .unwrap()
+            .addon_details
+            .addon
+            .to_owned()
+            .unwrap()
+            .content
+        {
+            Loadable::Ready(x) => x,
+            x => panic!("addon not ready, but instead: {:?}", x),
+        };
+        let install_action = Msg::Action(Action::Ctx(ActionCtx::InstallAddon(addon_desc)));
+        run(runtime.dispatch(&install_action));
+
+        let action = Msg::Action(Action::Load(ActionLoad::MetaDetails(
+            models::meta_details::Selected {
+                meta_resource_ref: ResourceRef {
+                    resource: "meta".to_string(),
+                    type_name: "series".to_string(),
+                    id: "st2".to_string(),
+                    extra: vec![],
+                },
+                streams_resource_ref: Some(ResourceRef {
+                    resource: "stream".to_string(),
+                    type_name: "series".to_string(),
+                    id: "st2v1".to_string(),
+                    extra: vec![],
+                }),
+            },
+        )));
+        run(runtime.dispatch(&action));
+
+        let first_meta_resource_content =
+            match runtime.app.write().unwrap().meta_details.meta_resources[0]
+                .to_owned()
+                .content
+            {
+                Loadable::Ready(x) => x,
+                x => panic!("content not ready, but instead: {:?}", x),
+            };
+        let stream = &first_meta_resource_content.videos[0].streams[0];
+        let player = Msg::Action(Action::Load(ActionLoad::Player(models::player::Selected {
+            stream: stream.to_owned(),
+            stream_resource_request: Default::default(),
+            meta_resource_request: Default::default(),
+            subtitles_resource_ref: Default::default(),
+            video_id: Default::default(),
+        })));
+        run(runtime.dispatch(&player));
+        assert_eq!(
+            runtime
+                .app
+                .write()
+                .unwrap()
+                .player
+                .selected
+                .to_owned()
+                .unwrap()
+                .stream,
+            stream.to_owned(),
+            "stream is the same"
+        );
     }
 
     #[test]
