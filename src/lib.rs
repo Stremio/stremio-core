@@ -646,7 +646,7 @@ mod tests {
         run(runtime.dispatch(&login_msg));
         let addons = &runtime.app.read().unwrap().ctx.profile.addons.to_owned();
 
-        //check if user addons contain the test addon
+        // check if user addons contain the test addon
         let has_addon = addons
             .iter()
             .any(|addon| addon.transport_url == "http://127.0.0.1:7001/manifest.json");
