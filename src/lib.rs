@@ -629,6 +629,97 @@ mod tests {
     }
 
     #[test]
+    fn push_addons_to_api() {
+        use stremio_derive::Model;
+        #[derive(Model, Debug, Default)]
+        struct Model {
+            ctx: Ctx<Env>,
+            addon_details: AddonDetails,
+        }
+        let (runtime, _) = Runtime::<Env, Model>::new(Model::default(), 1000);
+
+        // Log into a user
+        let login_msg = Msg::Action(Action::Ctx(ActionCtx::Authenticate(AuthRequest::Login {
+            email: "ctxandlib@stremio.com".into(),
+            password: "ctxandlib".into(),
+        })));
+        run(runtime.dispatch(&login_msg));
+        let addons = &runtime.app.read().unwrap().ctx.profile.addons.to_owned();
+
+        //check if user addons contain the test addon
+        let has_addon = addons
+            .iter()
+            .any(|addon| addon.transport_url == "http://127.0.0.1:7001/manifest.json");
+
+        if has_addon {
+            let addons_len_before_uninstall = &runtime.app.read().unwrap().ctx.profile.addons.len();
+            let test_addon = addons
+                .iter()
+                .find(|c| c.transport_url == "http://127.0.0.1:7001/manifest.json")
+                .expect("could not find test addon");
+            let uninstall_action = Msg::Action(Action::Ctx(ActionCtx::UninstallAddon(
+                test_addon.transport_url.to_owned(),
+            )));
+            run(runtime.dispatch(&uninstall_action));
+            let action = Msg::Action(Action::Ctx(ActionCtx::PushAddonsToAPI));
+            run(runtime.dispatch(&action));
+
+            let logout_action = Msg::Action(Action::Ctx(ActionCtx::Logout));
+            run(runtime.dispatch(&logout_action));
+            let login_msg = Msg::Action(Action::Ctx(ActionCtx::Authenticate(AuthRequest::Login {
+                email: "ctxandlib@stremio.com".into(),
+                password: "ctxandlib".into(),
+            })));
+            run(runtime.dispatch(&login_msg));
+            let addons_len_after_relogin = &runtime.app.read().unwrap().ctx.profile.addons.len();
+            assert_eq!(
+                addons_len_before_uninstall - addons_len_after_relogin,
+                1,
+                "addons are pushed to API"
+            );
+        } else {
+            let addons_len_before_install = &runtime.app.read().unwrap().ctx.profile.addons.len();
+            let addon_details = Msg::Action(Action::Load(ActionLoad::AddonDetails(
+                models::addon_details::Selected {
+                    transport_url: "http://127.0.0.1:7001/manifest.json".to_owned(),
+                },
+            )));
+            run(runtime.dispatch(&addon_details));
+            let addon_desc = match runtime
+                .app
+                .write()
+                .unwrap()
+                .addon_details
+                .addon
+                .to_owned()
+                .unwrap()
+                .content
+            {
+                Loadable::Ready(x) => x,
+                x => panic!("addon not ready, but instead: {:?}", x),
+            };
+            let install_action = Msg::Action(Action::Ctx(ActionCtx::InstallAddon(addon_desc)));
+            run(runtime.dispatch(&install_action));
+            let action = Msg::Action(Action::Ctx(ActionCtx::PushAddonsToAPI));
+            run(runtime.dispatch(&action));
+
+            let logout_action = Msg::Action(Action::Ctx(ActionCtx::Logout));
+            run(runtime.dispatch(&logout_action));
+            let login_msg = Msg::Action(Action::Ctx(ActionCtx::Authenticate(AuthRequest::Login {
+                email: "ctxandlib@stremio.com".into(),
+                password: "ctxandlib".into(),
+            })));
+            run(runtime.dispatch(&login_msg));
+            let addons_len_after_relogin = &runtime.app.read().unwrap().ctx.profile.addons.len();
+            assert_eq!(
+                addons_len_after_relogin - addons_len_before_install,
+                1,
+                "addons are pushed to API"
+            );
+        }
+    }
+
+    #[test]
     fn library_with_filters() {
         use stremio_derive::Model;
         #[derive(Model, Debug, Default)]
