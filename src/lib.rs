@@ -133,6 +133,24 @@ mod tests {
             "transport url is correct"
         );
 
+        // testing the unload action
+        let unload = Msg::Action(Action::Unload);
+        run(runtime.dispatch(&unload));
+        assert!(
+            match runtime.app.write().unwrap().addon_details.selected {
+                None => true,
+                _ => false,
+            },
+            "selected is None"
+        );
+        assert!(
+            match runtime.app.write().unwrap().addon_details.addon {
+                None => true,
+                _ => false,
+            },
+            "addon is None"
+        );
+
         // testing with incorrect url
         let addon_details = Msg::Action(Action::Load(ActionLoad::AddonDetails(
             models::addon_details::Selected {
@@ -837,6 +855,22 @@ mod tests {
             name_comparing,
             "items are arranged alphabetically"
         );
+
+        // testing the unload action
+        let unload = Msg::Action(Action::Unload);
+        run(runtime.dispatch(&unload));
+        assert!(
+            match runtime.app.write().unwrap().library.selected {
+                None => true,
+                _ => false,
+            },
+            "selected is None"
+        );
+        assert_eq!(
+            runtime.app.read().unwrap().library.lib_items.len(),
+            0,
+            "lib items are empty"
+        );
     }
 
     #[test]
@@ -943,6 +977,22 @@ mod tests {
             runtime.app.read().unwrap().catalogs.catalog_resources.len(),
             5,
             "groups is the right length when searching"
+        );
+
+        // testing the unload action
+        let unload = Msg::Action(Action::Unload);
+        run(runtime.dispatch(&unload));
+        assert!(
+            match runtime.app.write().unwrap().catalogs.selected {
+                None => true,
+                _ => false,
+            },
+            "selected is None"
+        );
+        assert_eq!(
+            runtime.app.read().unwrap().catalogs.catalog_resources.len(),
+            0,
+            "catalog resources are empty"
         );
     }
 
@@ -1105,6 +1155,24 @@ mod tests {
             state.selectable.has_prev_page,
             "there should be a prev page"
         );
+
+        // testing the unload action
+        let unload = Msg::Action(Action::Unload);
+        run(runtime.dispatch(&unload));
+        assert!(
+            match runtime.app.write().unwrap().catalogs.selected {
+                None => true,
+                _ => false,
+            },
+            "selected is None"
+        );
+        assert!(
+            match runtime.app.write().unwrap().catalogs.catalog_resource {
+                None => true,
+                _ => false,
+            },
+            "catalog resource is None"
+        );
     }
 
     #[test]
@@ -1160,12 +1228,45 @@ mod tests {
             },
         )));
         run(runtime.dispatch(&action));
-        let model = &runtime.app.read().unwrap();
-        let first_meta_resource = match &model.meta_details.meta_resources[0].content {
-            Loadable::Ready(x) => x,
+        match &runtime.app.write().unwrap().meta_details.meta_resources[0].content {
+            Loadable::Ready(first_meta_resource) => {
+                assert_eq!(first_meta_resource.id, "st2", "id is the same")
+            }
             x => panic!("content not ready, but instead: {:?}", x),
         };
-        assert_eq!(first_meta_resource.id, "st2", "id is the same");
+
+        // testing the unload action
+        let unload = Msg::Action(Action::Unload);
+        run(runtime.dispatch(&unload));
+        assert!(
+            match runtime.app.write().unwrap().meta_details.selected {
+                None => true,
+                _ => false,
+            },
+            "selected is None"
+        );
+        assert_eq!(
+            runtime
+                .app
+                .read()
+                .unwrap()
+                .meta_details
+                .meta_resources
+                .len(),
+            0,
+            "meta resources are empty"
+        );
+        assert_eq!(
+            runtime
+                .app
+                .read()
+                .unwrap()
+                .meta_details
+                .streams_resources
+                .len(),
+            0,
+            "streams resources are empty"
+        );
     }
 
     #[test]
@@ -1324,6 +1425,17 @@ mod tests {
                 .stream,
             stream.to_owned(),
             "stream is the same"
+        );
+
+        // testing the unload action
+        let unload = Msg::Action(Action::Unload);
+        run(runtime.dispatch(&unload));
+        assert!(
+            match runtime.app.write().unwrap().player.selected {
+                None => true,
+                _ => false,
+            },
+            "selected is None"
         );
     }
 
