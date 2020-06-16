@@ -647,6 +647,156 @@ mod tests {
     }
 
     #[test]
+    fn action_player() {
+        use stremio_derive::Model;
+        #[derive(Model, Debug, Default)]
+        struct Model {
+            ctx: Ctx<Env>,
+            addon_details: AddonDetails,
+            meta_details: MetaDetails,
+            player: Player,
+            lib_recent: ContinueWatchingPreview,
+        }
+
+        let app = Model::default();
+        let (runtime, _) = Runtime::<Env, Model>::new(app, 1000);
+
+        // if this user gets deleted, the test will fail
+        // @TODO register a new user instead
+        let login_msg = Msg::Action(Action::Ctx(ActionCtx::Authenticate(AuthRequest::Login {
+            email: "ctxandlib@stremio.com".into(),
+            password: "ctxandlib".into(),
+        })));
+        run(runtime.dispatch(&login_msg));
+
+        // install addon that provides streams
+        let addon_details = Msg::Action(Action::Load(ActionLoad::AddonDetails(
+            models::addon_details::Selected {
+                transport_url: "http://127.0.0.1:7001/manifest.json".to_owned(),
+            },
+        )));
+        run(runtime.dispatch(&addon_details));
+        let addon_desc = match runtime
+            .app
+            .write()
+            .unwrap()
+            .addon_details
+            .addon
+            .to_owned()
+            .unwrap()
+            .content
+        {
+            Loadable::Ready(x) => x,
+            x => panic!("addon not ready, but instead: {:?}", x),
+        };
+        let install_action = Msg::Action(Action::Ctx(ActionCtx::InstallAddon(addon_desc)));
+        run(runtime.dispatch(&install_action));
+
+        let action = Msg::Action(Action::Load(ActionLoad::MetaDetails(
+            models::meta_details::Selected {
+                meta_resource_ref: ResourceRef {
+                    resource: "meta".to_string(),
+                    type_name: "series".to_string(),
+                    id: "st2".to_string(),
+                    extra: vec![],
+                },
+                streams_resource_ref: Some(ResourceRef {
+                    resource: "stream".to_string(),
+                    type_name: "series".to_string(),
+                    id: "st2v1".to_string(),
+                    extra: vec![],
+                }),
+            },
+        )));
+        run(runtime.dispatch(&action));
+
+        let first_meta_resource_content =
+            match runtime.app.write().unwrap().meta_details.meta_resources[0]
+                .to_owned()
+                .content
+            {
+                Loadable::Ready(x) => x,
+                x => panic!("content not ready, but instead: {:?}", x),
+            };
+        let stream = &first_meta_resource_content.videos[0].streams[0];
+        let req = runtime.app.write().unwrap().meta_details.meta_resources[0]
+            .request
+            .to_owned();
+        let video_id = &first_meta_resource_content.videos[0].id;
+        let player = Msg::Action(Action::Load(ActionLoad::Player(models::player::Selected {
+            stream: stream.to_owned(),
+            stream_resource_request: Default::default(),
+            meta_resource_request: Some(req),
+            subtitles_resource_ref: Default::default(),
+            video_id: Some(video_id.to_owned()),
+        })));
+        run(runtime.dispatch(&player));
+
+        // testing the UpdateLibraryItemState action
+        let player_lib_item = runtime
+            .app
+            .read()
+            .unwrap()
+            .player
+            .lib_item
+            .to_owned()
+            .unwrap();
+        let rewind_action = Msg::Action(Action::Ctx(ActionCtx::RewindLibraryItem(
+            player_lib_item.id.to_owned(),
+        )));
+        run(runtime.dispatch(&rewind_action));
+
+        // set time and duration with proper numbers
+        let update_action = Msg::Action(Action::Player(ActionPlayer::UpdateLibraryItemState {
+            time: 10,
+            duration: 100,
+        }));
+        run(runtime.dispatch(&update_action));
+        assert_eq!(
+            runtime
+                .app
+                .read()
+                .unwrap()
+                .player
+                .lib_item
+                .to_owned()
+                .unwrap()
+                .state
+                .time_offset,
+            10 as u64,
+            "time offset is correct"
+        );
+        assert_eq!(
+            runtime
+                .app
+                .read()
+                .unwrap()
+                .player
+                .lib_item
+                .to_owned()
+                .unwrap()
+                .state
+                .duration,
+            100 as u64,
+            "duration is correct"
+        );
+
+        // testing the PushToLibrary action
+        let push_action = Msg::Action(Action::Player(ActionPlayer::PushToLibrary));
+        run(runtime.dispatch(&push_action));
+        let lib_items = &runtime.app.read().unwrap().lib_recent.lib_items;
+        let lib_item = lib_items
+            .iter()
+            .find(|i| i.id == player_lib_item.id.to_owned())
+            .expect("could not find lib item");
+        assert_eq!(
+            lib_item.state.time_offset, 10 as u64,
+            "time offset is correct"
+        );
+        assert_eq!(lib_item.state.duration, 100 as u64, "duration is correct");
+    }
+
+    #[test]
     fn push_addons_to_api() {
         use stremio_derive::Model;
         #[derive(Model, Debug, Default)]
