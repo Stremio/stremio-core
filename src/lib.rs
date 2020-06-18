@@ -287,6 +287,37 @@ mod tests {
     }
 
     #[test]
+    fn update_profile_settings() {
+        use stremio_derive::Model;
+        #[derive(Model, Debug, Default)]
+        struct Model {
+            ctx: Ctx<Env>,
+        }
+        let (runtime, _) = Runtime::<Env, Model>::new(Model::default(), 1000);
+
+        let login_msg = Msg::Action(Action::Ctx(ActionCtx::Authenticate(AuthRequest::Login {
+            email: "ctxandlib@stremio.com".into(),
+            password: "ctxandlib".into(),
+        })));
+        run(runtime.dispatch(&login_msg));
+
+        // changing settings with proper values
+        let settings = profile::Settings {
+            subtitles_language: "bg".to_string(),
+            subtitles_size: 150,
+            ..runtime.app.read().unwrap().ctx.profile.settings.to_owned()
+        };
+        let update_action =
+            Msg::Action(Action::Ctx(ActionCtx::UpdateSettings(settings.to_owned())));
+        run(runtime.dispatch(&update_action));
+        assert_eq!(
+            settings.to_owned(),
+            runtime.app.read().unwrap().ctx.profile.settings,
+            "settings are updated correctly"
+        );
+    }
+
+    #[test]
     fn add_to_remove_from_library() {
         use stremio_derive::Model;
         #[derive(Model, Debug, Default)]
