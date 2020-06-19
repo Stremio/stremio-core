@@ -18,6 +18,7 @@ mod tests {
     use crate::state_types::models::meta_details::MetaDetails;
     use crate::state_types::models::notifications::Notifications;
     use crate::state_types::models::player::Player;
+    use crate::state_types::models::streaming_server::StreamingServer;
     use crate::state_types::msg::*;
     use crate::state_types::*;
     use crate::types::addons::*;
@@ -674,6 +675,66 @@ mod tests {
                 .time_offset
                 == 0,
             "time offset is rewinded"
+        );
+    }
+
+    // streaming server must be available
+    #[test]
+    fn action_streaming_server() {
+        use stremio_derive::Model;
+        #[derive(Model, Debug, Default)]
+        struct Model {
+            ctx: Ctx<Env>,
+            streaming_server: StreamingServer,
+        }
+        let (runtime, _) = Runtime::<Env, Model>::new(Model::default(), 1000);
+
+        let reload = Msg::Action(Action::StreamingServer(ActionStreamingServer::Reload));
+        run(runtime.dispatch(&reload));
+        assert!(
+            match &runtime.app.write().unwrap().streaming_server.settings {
+                Some(_s) => true,
+                _ => false,
+            },
+            "settings are loaded"
+        );
+        let ready_settings = match runtime
+            .app
+            .read()
+            .unwrap()
+            .streaming_server
+            .settings
+            .to_owned()
+            .unwrap()
+        {
+            Loadable::Ready(x) => x,
+            x => panic!("settings not ready, but instead: {:?}", x),
+        };
+
+        // changing settings with proper values
+        let settings = models::streaming_server::Settings {
+            bt_max_connections: 25,
+            ..ready_settings.to_owned()
+        };
+        let update_action = Msg::Action(Action::StreamingServer(
+            ActionStreamingServer::UpdateSettings(settings.to_owned()),
+        ));
+        run(runtime.dispatch(&update_action));
+
+        // changing settings with proper values
+        let settings = models::streaming_server::Settings {
+            bt_max_connections: 45,
+            ..ready_settings.to_owned()
+        };
+        let update_action = Msg::Action(Action::StreamingServer(
+            ActionStreamingServer::UpdateSettings(settings.to_owned()),
+        ));
+        run(runtime.dispatch(&update_action));
+        let ready_settings = Loadable::Ready(settings);
+        assert_eq!(
+            runtime.app.read().unwrap().streaming_server.settings,
+            Some(ready_settings),
+            "settings are updated correctly"
         );
     }
 
@@ -1774,14 +1835,19 @@ mod tests {
             let (parts, body) = in_req.into_parts();
             let method = reqwest::Method::from_bytes(parts.method.as_str().as_bytes())
                 .expect("method is not valid for reqwest");
-            let mut req = reqwest::r#async::Client::new().request(method, &parts.uri.to_string());
+            let mut req =
+                reqwest::r#async::Client::new().request(method.to_owned(), &parts.uri.to_string());
             // NOTE: both might be HeaderMap, so maybe there's a better way?
             for (k, v) in parts.headers.iter() {
                 req = req.header(k.as_str(), v.as_ref());
             }
             // @TODO add content-type application/json
             // @TODO: if the response code is not 200, return an error related to that
-            req = req.json(&body);
+            req = if method.to_owned() == reqwest::Method::GET {
+                req
+            } else {
+                req.json(&body)
+            };
             let fut = req
                 .send()
                 .and_then(|mut res: reqwest::r#async::Response| res.json::<OUT>())
