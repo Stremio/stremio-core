@@ -24,6 +24,8 @@ jobs:
       with:
         repository: nklhrstv/stremio-pentest-addon
     - name: Run Test Addon
-      run: ./run
+      run: |
+        yarn install
+        cd stremio-pentest-addon && ./run
     - name: Test
       run: cargo test
