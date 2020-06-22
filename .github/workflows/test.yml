@@ -26,6 +26,6 @@ jobs:
     - name: Run Test Addon
       run: |
         yarn install
-        ./run
+        ./run &
     - name: Test
       run: cargo test
