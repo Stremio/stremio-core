@@ -15,5 +15,9 @@ jobs:
     - uses: actions/checkout@v1
     - name: Submodules
       run: git submodule update --init --recursive
+    - name: Server
+      run: |
+        curl https://s3-eu-west-1.amazonaws.com/stremio-artifacts/four/master/server.js > ./server.js
+        node server.js &
     - name: Test
       run: cargo test
