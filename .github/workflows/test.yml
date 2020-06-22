@@ -26,6 +26,6 @@ jobs:
     - name: Run Test Addon
       run: |
         yarn install
-        cd stremio-pentest-addon && ./run
+        ./run
     - name: Test
       run: cargo test
