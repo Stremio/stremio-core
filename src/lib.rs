@@ -182,8 +182,8 @@ mod tests {
             ctx: Ctx<Env>,
             addon_details: AddonDetails,
         }
-
         let (runtime, _) = Runtime::<Env, Model>::new(Model::default(), 1000);
+        
         let addon_details = Msg::Action(Action::Load(ActionLoad::AddonDetails(
             models::addon_details::Selected {
                 transport_url: "http://127.0.0.1:7001/manifest.json".to_owned(),
@@ -250,9 +250,6 @@ mod tests {
             },
             "there is no user"
         );
-
-        // Log into a user, check if library synced correctly
-        run(runtime.dispatch(&Msg::Action(Action::Load(ActionLoad::Ctx))));
 
         // if this user gets deleted, the test will fail
         // @TODO register a new user instead
@@ -327,9 +324,6 @@ mod tests {
             catalogs: CatalogWithFilters<MetaPreview>,
         }
         let (runtime, _) = Runtime::<Env, Model>::new(Model::default(), 1000);
-
-        // Log into a user, check if library synced correctly
-        run(runtime.dispatch(&Msg::Action(Action::Load(ActionLoad::Ctx))));
 
         // if this user gets deleted, the test will fail
         // @TODO register a new user instead
@@ -566,9 +560,6 @@ mod tests {
 
         // Testing with user
 
-        // Log into a user, check if library synced correctly
-        run(runtime.dispatch(&Msg::Action(Action::Load(ActionLoad::Ctx))));
-
         // if this user gets deleted, the test will fail
         // @TODO register a new user instead
         let login_msg = Msg::Action(Action::Ctx(ActionCtx::Authenticate(AuthRequest::Login {
@@ -700,7 +691,7 @@ mod tests {
         );
         let ready_settings = match runtime
             .app
-            .read()
+            .write()
             .unwrap()
             .streaming_server
             .settings
@@ -989,9 +980,6 @@ mod tests {
             catalogs: CatalogWithFilters<MetaPreview>,
         }
         let (runtime, _) = Runtime::<Env, Model>::new(Model::default(), 1000);
-
-        // Log into a user, check if library synced correctly
-        run(runtime.dispatch(&Msg::Action(Action::Load(ActionLoad::Ctx))));
 
         // if this user gets deleted, the test will fail
         // @TODO register a new user instead
