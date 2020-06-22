@@ -1,0 +1,19 @@
+name: Test
+
+on:
+  push:
+    branches:
+      - '*'
+    tags-ignore:
+      - '*'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v1
+    - name: Submodules
+      run: git submodule update --init --recursive
+    - name: Test
+      run: cargo test
