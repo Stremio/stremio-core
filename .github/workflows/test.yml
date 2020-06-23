@@ -27,6 +27,6 @@ jobs:
     - name: Run Test Addon
       run: |
         yarn install
-        cd stremio-pentest-addon && yarn start --delay 1 --error 0 --port 7001 &
+        cd stremio-pentest-addon && (yarn start --delay 1 --error 0 --port 7001) &
     - name: Test
       run: cargo test
