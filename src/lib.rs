@@ -102,7 +102,6 @@ mod tests {
         struct Model {
             ctx: Ctx<Env>,
             addon_details: AddonDetails,
-            catalogs: CatalogWithFilters<MetaPreview>,
         }
         let (runtime, _) = Runtime::<Env, Model>::new(Model::default(), 1000);
 
@@ -151,6 +150,17 @@ mod tests {
             },
             "addon is None"
         );
+    }
+
+    #[test]
+    fn incorrect_addon_details_url() {
+        use stremio_derive::Model;
+        #[derive(Model, Debug, Default)]
+        struct Model {
+            ctx: Ctx<Env>,
+            addon_details: AddonDetails,
+        }
+        let (runtime, _) = Runtime::<Env, Model>::new(Model::default(), 1000);
 
         // testing with incorrect url
         let addon_details = Msg::Action(Action::Load(ActionLoad::AddonDetails(
@@ -183,7 +193,6 @@ mod tests {
             addon_details: AddonDetails,
         }
         let (runtime, _) = Runtime::<Env, Model>::new(Model::default(), 1000);
-        
         let addon_details = Msg::Action(Action::Load(ActionLoad::AddonDetails(
             models::addon_details::Selected {
                 transport_url: "http://127.0.0.1:7001/manifest.json".to_owned(),
