@@ -105,12 +105,12 @@ mod tests {
         }
         let (runtime, _) = Runtime::<Env, Model>::new(Model::default(), 1000);
 
-        let addon_details = Msg::Action(Action::Load(ActionLoad::AddonDetails(
+        let addon_details_action = Msg::Action(Action::Load(ActionLoad::AddonDetails(
             models::addon_details::Selected {
                 transport_url: "http://127.0.0.1:7001/manifest.json".to_owned(),
             },
         )));
-        run(runtime.dispatch(&addon_details));
+        run(runtime.dispatch(&addon_details_action));
         let addon_desc = match runtime
             .app
             .write()
@@ -163,12 +163,12 @@ mod tests {
         let (runtime, _) = Runtime::<Env, Model>::new(Model::default(), 1000);
 
         // testing with incorrect url
-        let addon_details = Msg::Action(Action::Load(ActionLoad::AddonDetails(
+        let addon_details_action = Msg::Action(Action::Load(ActionLoad::AddonDetails(
             models::addon_details::Selected {
                 transport_url: "http://example.com/manifest.json".to_owned(),
             },
         )));
-        run(runtime.dispatch(&addon_details));
+        run(runtime.dispatch(&addon_details_action));
         assert!(
             match runtime
                 .app
@@ -196,12 +196,12 @@ mod tests {
             addon_details: AddonDetails,
         }
         let (runtime, _) = Runtime::<Env, Model>::new(Model::default(), 1000);
-        let addon_details = Msg::Action(Action::Load(ActionLoad::AddonDetails(
+        let addon_details_action = Msg::Action(Action::Load(ActionLoad::AddonDetails(
             models::addon_details::Selected {
                 transport_url: "http://127.0.0.1:7001/manifest.json".to_owned(),
             },
         )));
-        run(runtime.dispatch(&addon_details));
+        run(runtime.dispatch(&addon_details_action));
         let addon_desc = match runtime
             .app
             .write()
@@ -469,12 +469,12 @@ mod tests {
         let (runtime, _) = Runtime::<Env, Model>::new(Model::default(), 1000);
 
         // Testing without user
-        let addon_details = Msg::Action(Action::Load(ActionLoad::AddonDetails(
+        let addon_details_action = Msg::Action(Action::Load(ActionLoad::AddonDetails(
             models::addon_details::Selected {
                 transport_url: "http://127.0.0.1:7001/manifest.json".to_owned(),
             },
         )));
-        run(runtime.dispatch(&addon_details));
+        run(runtime.dispatch(&addon_details_action));
         let addon_desc = match runtime
             .app
             .write()
@@ -579,12 +579,12 @@ mod tests {
             password: "ctxandlib".into(),
         })));
         run(runtime.dispatch(&login_msg));
-        let addon_details = Msg::Action(Action::Load(ActionLoad::AddonDetails(
+        let addon_details_action = Msg::Action(Action::Load(ActionLoad::AddonDetails(
             models::addon_details::Selected {
                 transport_url: "http://127.0.0.1:7001/manifest.json".to_owned(),
             },
         )));
-        run(runtime.dispatch(&addon_details));
+        run(runtime.dispatch(&addon_details_action));
         let addon_desc = match runtime
             .app
             .write()
@@ -765,12 +765,12 @@ mod tests {
         run(runtime.dispatch(&login_msg));
 
         // install addon that provides streams
-        let addon_details = Msg::Action(Action::Load(ActionLoad::AddonDetails(
+        let addon_details_action = Msg::Action(Action::Load(ActionLoad::AddonDetails(
             models::addon_details::Selected {
                 transport_url: "http://127.0.0.1:7001/manifest.json".to_owned(),
             },
         )));
-        run(runtime.dispatch(&addon_details));
+        run(runtime.dispatch(&addon_details_action));
         let addon_desc = match runtime
             .app
             .write()
@@ -942,12 +942,12 @@ mod tests {
             );
         } else {
             let addons_len_before_install = &runtime.app.read().unwrap().ctx.profile.addons.len();
-            let addon_details = Msg::Action(Action::Load(ActionLoad::AddonDetails(
+            let addon_details_action = Msg::Action(Action::Load(ActionLoad::AddonDetails(
                 models::addon_details::Selected {
                     transport_url: "http://127.0.0.1:7001/manifest.json".to_owned(),
                 },
             )));
-            run(runtime.dispatch(&addon_details));
+            run(runtime.dispatch(&addon_details_action));
             let addon_desc = match runtime
                 .app
                 .write()
@@ -1258,12 +1258,12 @@ mod tests {
             },
         };
         let (runtime, _) = Runtime::<Env, Model>::new(app, 1000);
-        let addon_details = Msg::Action(Action::Load(ActionLoad::AddonDetails(
+        let addon_details_action = Msg::Action(Action::Load(ActionLoad::AddonDetails(
             models::addon_details::Selected {
                 transport_url: "http://127.0.0.1:7001/manifest.json".to_owned(),
             },
         )));
-        run(runtime.dispatch(&addon_details));
+        run(runtime.dispatch(&addon_details_action));
         let addon_desc = match runtime
             .app
             .write()
@@ -1431,12 +1431,12 @@ mod tests {
         let (runtime, _) = Runtime::<Env, Model>::new(app, 1000);
 
         // install addon that provides streams
-        let addon_details = Msg::Action(Action::Load(ActionLoad::AddonDetails(
+        let addon_details_action = Msg::Action(Action::Load(ActionLoad::AddonDetails(
             models::addon_details::Selected {
                 transport_url: "http://127.0.0.1:7001/manifest.json".to_owned(),
             },
         )));
-        run(runtime.dispatch(&addon_details));
+        run(runtime.dispatch(&addon_details_action));
         let addon_desc = match runtime
             .app
             .write()
@@ -1525,12 +1525,12 @@ mod tests {
         let (runtime, _) = Runtime::<Env, Model>::new(app, 1000);
 
         // install addon that provides streams
-        let addon_details = Msg::Action(Action::Load(ActionLoad::AddonDetails(
+        let addon_details_action = Msg::Action(Action::Load(ActionLoad::AddonDetails(
             models::addon_details::Selected {
                 transport_url: "http://127.0.0.1:7001/manifest.json".to_owned(),
             },
         )));
-        run(runtime.dispatch(&addon_details));
+        run(runtime.dispatch(&addon_details_action));
         let addon_desc = match runtime
             .app
             .write()
@@ -1598,12 +1598,12 @@ mod tests {
         let (runtime, _) = Runtime::<Env, Model>::new(app, 1000);
 
         // install addon that provides streams
-        let addon_details = Msg::Action(Action::Load(ActionLoad::AddonDetails(
+        let addon_details_action = Msg::Action(Action::Load(ActionLoad::AddonDetails(
             models::addon_details::Selected {
                 transport_url: "http://127.0.0.1:7001/manifest.json".to_owned(),
             },
         )));
-        run(runtime.dispatch(&addon_details));
+        run(runtime.dispatch(&addon_details_action));
         let addon_desc = match runtime
             .app
             .write()
@@ -1727,21 +1727,21 @@ mod tests {
             // ¯\_(ツ)_/¯
             // temporary hack (really) until last-videos catalog lands in upstream cinemeta
             // and gets updated for our user
-            let addon_details = Msg::Action(Action::Load(ActionLoad::AddonDetails(
+            let addon_details_action = Msg::Action(Action::Load(ActionLoad::AddonDetails(
                 models::addon_details::Selected {
                     transport_url: "http://127.0.0.1:7001/manifest.json".to_owned(),
                 },
             )));
-            run(runtime.dispatch(&addon_details));
+            run(runtime.dispatch(&addon_details_action));
 
             // remove cinemeta
             runtime.app.write().unwrap().ctx.profile.addons.remove(0);
-            let addon_details = Msg::Action(Action::Load(ActionLoad::AddonDetails(
+            let addon_details_action = Msg::Action(Action::Load(ActionLoad::AddonDetails(
                 models::addon_details::Selected {
                     transport_url: "http://127.0.0.1:7001/manifest.json".to_owned(),
                 },
             )));
-            run(runtime.dispatch(&addon_details));
+            run(runtime.dispatch(&addon_details_action));
             let addon_desc = match runtime
                 .app
                 .write()
