@@ -169,19 +169,22 @@ mod tests {
             },
         )));
         run(runtime.dispatch(&addon_details));
-        match runtime
-            .app
-            .write()
-            .unwrap()
-            .addon_details
-            .addon
-            .to_owned()
-            .unwrap()
-            .content
-        {
-            Loadable::Err(_) => assert!(true, "addon errored"),
-            _ => panic!("the addon didn't throw error"),
-        };
+        assert!(
+            match runtime
+                .app
+                .write()
+                .unwrap()
+                .addon_details
+                .addon
+                .to_owned()
+                .unwrap()
+                .content
+            {
+                Loadable::Err(_) => true,
+                _ => false,
+            },
+            "addon errored"
+        );
     }
 
     #[test]
