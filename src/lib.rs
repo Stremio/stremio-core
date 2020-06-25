@@ -458,7 +458,7 @@ mod tests {
     }
 
     #[test]
-    fn rewind_library_item() {
+    fn rewind_library_item_without_user() {
         use stremio_derive::Model;
         #[derive(Model, Debug, Default)]
         struct Model {
@@ -569,6 +569,18 @@ mod tests {
                 == 0,
             "time offset is rewinded"
         );
+    }
+
+    #[test]
+    fn rewind_library_item_with_user() {
+        use stremio_derive::Model;
+        #[derive(Model, Debug, Default)]
+        struct Model {
+            ctx: Ctx<Env>,
+            addon_details: AddonDetails,
+            catalogs: CatalogWithFilters<MetaPreview>,
+        }
+        let (runtime, _) = Runtime::<Env, Model>::new(Model::default(), 1000);
 
         // Testing with user
 
