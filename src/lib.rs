@@ -251,7 +251,6 @@ mod tests {
         #[derive(Model, Debug, Default)]
         struct Model {
             ctx: Ctx<Env>,
-            lib_recent: ContinueWatchingPreview,
         }
         let (runtime, _) = Runtime::<Env, Model>::new(Model::default(), 1000);
 
