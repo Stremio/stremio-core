@@ -137,17 +137,11 @@ mod tests {
         let unload = Msg::Action(Action::Unload);
         run(runtime.dispatch(&unload));
         assert!(
-            match runtime.app.write().unwrap().addon_details.selected {
-                None => true,
-                _ => false,
-            },
+            runtime.app.read().unwrap().addon_details.selected.is_none(),
             "selected is None"
         );
         assert!(
-            match runtime.app.write().unwrap().addon_details.addon {
-                None => true,
-                _ => false,
-            },
+            runtime.app.read().unwrap().addon_details.addon.is_none(),
             "addon is None"
         );
     }
@@ -255,10 +249,7 @@ mod tests {
         let (runtime, _) = Runtime::<Env, Model>::new(Model::default(), 1000);
 
         assert!(
-            match runtime.app.write().unwrap().ctx.profile.auth {
-                None => true,
-                _ => false,
-            },
+            runtime.app.read().unwrap().ctx.profile.auth.is_none(),
             "there is no user"
         );
 
@@ -271,13 +262,7 @@ mod tests {
         run(runtime.dispatch(&login_msg));
         assert!(
             match &runtime.app.write().unwrap().ctx.profile.auth {
-                Some(auth) => {
-                    if auth.user.email == "ctxandlib@stremio.com" {
-                        true
-                    } else {
-                        false
-                    }
-                }
+                Some(auth) => auth.user.email == "ctxandlib@stremio.com",
                 _ => false,
             },
             "user logged in successfully"
@@ -287,10 +272,7 @@ mod tests {
         let logout_action = Msg::Action(Action::Ctx(ActionCtx::Logout));
         run(runtime.dispatch(&logout_action));
         assert!(
-            match runtime.app.write().unwrap().ctx.profile.auth {
-                None => true,
-                _ => false,
-            },
+            runtime.app.read().unwrap().ctx.profile.auth.is_none(),
             "user logged out successfully"
         );
     }
@@ -369,13 +351,7 @@ mod tests {
         let first_meta_preview = &content[0];
         let items = &runtime.app.read().unwrap().ctx.library.items.to_owned();
         let has_item = match items.get(&first_meta_preview.id) {
-            Some(item) => {
-                if item.removed {
-                    false
-                } else {
-                    true
-                }
-            }
+            Some(item) => !item.removed,
             None => false,
         };
 
@@ -706,10 +682,13 @@ mod tests {
         let reload = Msg::Action(Action::StreamingServer(ActionStreamingServer::Reload));
         run(runtime.dispatch(&reload));
         assert!(
-            match &runtime.app.write().unwrap().streaming_server.settings {
-                Some(_s) => true,
-                _ => false,
-            },
+            runtime
+                .app
+                .read()
+                .unwrap()
+                .streaming_server
+                .settings
+                .is_some(),
             "settings are loaded"
         );
         let ready_settings = match runtime
@@ -1113,10 +1092,7 @@ mod tests {
         let unload = Msg::Action(Action::Unload);
         run(runtime.dispatch(&unload));
         assert!(
-            match runtime.app.write().unwrap().library.selected {
-                None => true,
-                _ => false,
-            },
+            runtime.app.read().unwrap().library.selected.is_none(),
             "selected is None"
         );
         assert_eq!(
@@ -1236,10 +1212,7 @@ mod tests {
         let unload = Msg::Action(Action::Unload);
         run(runtime.dispatch(&unload));
         assert!(
-            match runtime.app.write().unwrap().catalogs.selected {
-                None => true,
-                _ => false,
-            },
+            runtime.app.read().unwrap().catalogs.selected.is_none(),
             "selected is None"
         );
         assert_eq!(
@@ -1413,17 +1386,17 @@ mod tests {
         let unload = Msg::Action(Action::Unload);
         run(runtime.dispatch(&unload));
         assert!(
-            match runtime.app.write().unwrap().catalogs.selected {
-                None => true,
-                _ => false,
-            },
+            runtime.app.read().unwrap().catalogs.selected.is_none(),
             "selected is None"
         );
         assert!(
-            match runtime.app.write().unwrap().catalogs.catalog_resource {
-                None => true,
-                _ => false,
-            },
+            runtime
+                .app
+                .read()
+                .unwrap()
+                .catalogs
+                .catalog_resource
+                .is_none(),
             "catalog resource is None"
         );
     }
@@ -1492,10 +1465,7 @@ mod tests {
         let unload = Msg::Action(Action::Unload);
         run(runtime.dispatch(&unload));
         assert!(
-            match runtime.app.write().unwrap().meta_details.selected {
-                None => true,
-                _ => false,
-            },
+            runtime.app.read().unwrap().meta_details.selected.is_none(),
             "selected is None"
         );
         assert_eq!(
@@ -1684,10 +1654,7 @@ mod tests {
         let unload = Msg::Action(Action::Unload);
         run(runtime.dispatch(&unload));
         assert!(
-            match runtime.app.write().unwrap().player.selected {
-                None => true,
-                _ => false,
-            },
+            runtime.app.read().unwrap().player.selected.is_none(),
             "selected is None"
         );
     }
