@@ -1,0 +1,33 @@
+name: Test
+
+on: [push]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
+      name: Checkout
+    - name: Init git submodules
+      run: git submodule update --init --recursive
+    - name: Download streaming server
+      run: curl https://s3-eu-west-1.amazonaws.com/stremio-artifacts/four/v4.4.116/server.js > ./server.js
+    - name: Start streaming server
+      run: node server.js &
+    - name: Checkout stremio test addon
+      uses: actions/checkout@v2
+      with:
+        repository: Stremio/stremio-test-addon
+        path: stremio-test-addon
+        ref: v1.0.0
+    - name: Install stremio test addon dependencies
+      run: |
+        cd stremio-test-addon
+        yarn install
+    - name: Start stremio test addon
+      run: |
+        cd stremio-test-addon
+        yarn start --delay 1 --error 0 --port 7001 &
+    - name: Test
+      run: cargo test
