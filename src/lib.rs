@@ -6,6 +6,177 @@ pub mod state_types;
 pub mod types;
 
 #[cfg(test)]
+mod unit_tests {
+
+    use crate::constants::{LIBRARY_RECENT_STORAGE_KEY, LIBRARY_STORAGE_KEY, PROFILE_STORAGE_KEY};
+    use crate::state_types::models::ctx::*;
+    use crate::state_types::msg::*;
+    use crate::state_types::*;
+    use crate::types::api::APIRequest;
+    use crate::types::api::Auth;
+    use crate::types::api::{APIResult, SuccessResponse, True, User};
+    use crate::types::profile::{Profile, UID};
+    use crate::types::{LibBucket, LibItem};
+    use chrono::{DateTime, Utc};
+    use futures::{future, Future};
+    use lazy_static::lazy_static;
+    use serde::de::DeserializeOwned;
+    use serde::Serialize;
+    use std::any::Any;
+    use std::collections::BTreeMap;
+    use std::fmt::Debug;
+    use std::sync::RwLock;
+    use stremio_derive::Model;
+    use tokio::executor::current_thread::spawn;
+    use tokio::runtime::current_thread::run;
+
+    lazy_static! {
+        static ref STORAGE: RwLock<BTreeMap<String, String>> = Default::default();
+        static ref REQUESTS: RwLock<Vec<(String, String)>> = Default::default();
+    }
+
+    struct Env {}
+    impl Environment for Env {
+        fn fetch_serde<IN, OUT>(request: Request<IN>) -> EnvFuture<OUT>
+        where
+            IN: 'static + Serialize + Any,
+            OUT: 'static + DeserializeOwned,
+        {
+            let (head, body) = request.into_parts();
+            let path = head.uri.path().to_owned();
+            let method = head.method.as_str().to_owned();
+            REQUESTS
+                .write()
+                .unwrap()
+                .push((path.to_owned(), method.to_owned()));
+            match (path.as_str(), method.as_str()) {
+                ("/api/logout", "POST") => {
+                    let api_request = (&body as &dyn Any).downcast_ref::<APIRequest>().unwrap();
+                    Box::new(future::ok(
+                        // TODO fix this! Workaround for the borrow checker.
+                        serde_json::from_str(
+                            &serde_json::to_string(&APIResult::Ok {
+                                result: SuccessResponse { success: True {} },
+                            })
+                            .unwrap(),
+                        )
+                        .unwrap(),
+                    ))
+                }
+                _ => panic!("unhandled request"),
+            }
+        }
+        fn exec(fut: Box<dyn Future<Item = (), Error = ()>>) {
+            spawn(fut);
+        }
+        fn get_storage<T: 'static + DeserializeOwned>(key: &str) -> EnvFuture<Option<T>> {
+            Box::new(future::ok(
+                STORAGE
+                    .read()
+                    .unwrap()
+                    .get(key)
+                    .map(|data| serde_json::from_str(&data).unwrap()),
+            ))
+        }
+        fn set_storage<T: Serialize>(key: &str, value: Option<&T>) -> EnvFuture<()> {
+            let mut storage = STORAGE.write().unwrap();
+            match value {
+                Some(v) => storage.insert(key.to_string(), serde_json::to_string(v).unwrap()),
+                None => storage.remove(key),
+            };
+            Box::new(future::ok(()))
+        }
+        fn now() -> DateTime<Utc> {
+            Utc::now()
+        }
+    }
+
+    #[test]
+    fn actionctx_logout() {
+        #[derive(Model, Debug, Default)]
+        struct Model {
+            ctx: Ctx<Env>,
+        }
+        let profile = Profile {
+            auth: Some(Auth {
+                key: "auth_key".to_owned(),
+                user: User {
+                    id: "user_id".to_owned(),
+                    email: "user_email".to_owned(),
+                    fb_id: None,
+                    avatar: None,
+                    last_modified: Env::now(),
+                    date_registered: Env::now(),
+                },
+            }),
+            ..Default::default()
+        };
+        let library = LibBucket {
+            uid: profile.uid(),
+            ..Default::default()
+        };
+        REQUESTS.write().unwrap().clear();
+        STORAGE.write().unwrap().clear();
+        STORAGE.write().unwrap().insert(
+            PROFILE_STORAGE_KEY.to_owned(),
+            serde_json::to_string(&profile).unwrap(),
+        );
+        STORAGE.write().unwrap().insert(
+            LIBRARY_RECENT_STORAGE_KEY.to_owned(),
+            serde_json::to_string::<(UID, Vec<LibItem>)>(&(profile.uid(), vec![])).unwrap(),
+        );
+        STORAGE.write().unwrap().insert(
+            LIBRARY_STORAGE_KEY.to_owned(),
+            serde_json::to_string::<(UID, Vec<LibItem>)>(&(profile.uid(), vec![])).unwrap(),
+        );
+        let (runtime, _) = Runtime::<Env, Model>::new(
+            Model {
+                ctx: Ctx {
+                    profile,
+                    library,
+                    ..Default::default()
+                },
+            },
+            1000,
+        );
+        run(runtime.dispatch(&Msg::Action(Action::Ctx(ActionCtx::Logout))));
+        assert!(
+            runtime.app.read().unwrap().ctx.profile.auth.is_none(),
+            "profile updated successfully in memory"
+        );
+        assert!(
+            runtime.app.read().unwrap().ctx.library.uid.is_none()
+                && runtime.app.read().unwrap().ctx.library.items.is_empty(),
+            "library updated successfully in memory"
+        );
+        assert!(
+            STORAGE
+                .read()
+                .unwrap()
+                .get(PROFILE_STORAGE_KEY)
+                .map_or(true, |data| {
+                    serde_json::from_str::<Profile>(&data)
+                        .unwrap()
+                        .auth
+                        .is_none()
+                }),
+            "profile updated successfully in storage"
+        );
+        // TODO library updated successfully in storage
+        assert_eq!(
+            REQUESTS.read().unwrap().len(),
+            1,
+            "One request has been send"
+        );
+        assert_eq!(
+            REQUESTS.read().unwrap().get(0).unwrap(),
+            &("/api/logout".to_owned(), "POST".to_owned()),
+            "Logout request has been send"
+        );
+    }
+}
+
+#[cfg(test)]
 mod tests {
     use crate::addon_transport::*;
     use crate::state_types::models::addon_details::AddonDetails;
