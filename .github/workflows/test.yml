@@ -8,6 +8,7 @@ jobs:
 
     steps:
     - uses: actions/checkout@v1
+      name: Checkout
     - name: Submodules
       run: git submodule update --init --recursive
     - name: Server
@@ -17,11 +18,11 @@ jobs:
     - name: Checkout Test Addon
       uses: actions/checkout@v2
       with:
-        repository: nklhrstv/stremio-pentest-addon
-        path: stremio-pentest-addon
+        repository: Stremio/stremio-test-addon
+        path: stremio-test-addon
     - name: Run Test Addon
       run: |
-        cd stremio-pentest-addon
+        cd stremio-test-addon
         yarn install
         yarn start --delay 1 --error 0 --port 7001 &
     - name: Test
