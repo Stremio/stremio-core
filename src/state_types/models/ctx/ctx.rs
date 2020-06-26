@@ -39,10 +39,10 @@ pub struct Ctx<Env: Environment> {
     pub library: LibBucket,
     #[serde(skip)]
     #[derivative(Default(value = "CtxStatus::Ready"))]
-    status: CtxStatus,
+    pub status: CtxStatus,
     #[serde(skip)]
     #[derivative(Debug = "ignore")]
-    env: PhantomData<Env>,
+    pub env: PhantomData<Env>,
 }
 
 impl<Env: Environment + 'static> Update for Ctx<Env> {
