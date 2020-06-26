@@ -148,7 +148,7 @@ pub struct SuccessResponse {
     pub success: True,
 }
 
-#[derive(Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug)]
 #[serde(untagged)]
 pub enum APIResult<T> {
     Err { error: APIErr },
