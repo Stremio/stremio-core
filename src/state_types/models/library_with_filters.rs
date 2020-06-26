@@ -33,6 +33,7 @@ impl LibraryFilter for ContinueWatchingFilter {
     }
 }
 
+#[derive(Debug)]
 pub struct NotRemovedFilter {}
 impl LibraryFilter for NotRemovedFilter {
     fn predicate(lib_item: &LibItem) -> bool {

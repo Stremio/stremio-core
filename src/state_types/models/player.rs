@@ -14,15 +14,15 @@ use std::cmp;
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct Selected {
-    stream: Stream,
+    pub stream: Stream,
     #[serde(default)]
-    stream_resource_request: Option<ResourceRequest>,
+    pub stream_resource_request: Option<ResourceRequest>,
     #[serde(default)]
-    meta_resource_request: Option<ResourceRequest>,
+    pub meta_resource_request: Option<ResourceRequest>,
     #[serde(default)]
-    subtitles_resource_ref: Option<ResourceRef>,
+    pub subtitles_resource_ref: Option<ResourceRef>,
     #[serde(default)]
-    video_id: Option<String>,
+    pub video_id: Option<String>,
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize)]

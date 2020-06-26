@@ -96,7 +96,6 @@ mod test {
         {"state":{"lastWatched":"2016-06-03T08:36:42.494Z","timeWatched":0,"timeOffset":0,"overallTimeWatched":0,"timesWatched":0,"flaggedWatched":0,"duration":0,"video_id":"","watched":"","noNotif":false,"season":0,"episode":0,"watchedEpisodes":[]},"_id":"tt0004972","removed":true,"temp":true,"_ctime":"2016-06-03T08:29:46.612Z","_mtime":"2016-06-03T08:36:43.991Z","name":"The Birth of a Nation","type":"movie","poster":"https://images.metahub.space/poster/medium/tt0004972/img","background":"","logo":"","year":"","imdb_id":"tt0004972"}
         "#;
         let l: LibItem = serde_json::from_str(&serialized).unwrap();
-        assert_eq!(l.background, None, "background deserialized correctly");
         assert_eq!(
             l.poster,
             Some("https://images.metahub.space/poster/medium/tt0004972/img".to_owned()),
