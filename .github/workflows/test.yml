@@ -9,21 +9,22 @@ jobs:
     steps:
     - uses: actions/checkout@v1
       name: Checkout
-    - name: Submodules
+    - name: Init git submodules
       run: git submodule update --init --recursive
-    - name: Server
-      run: |
-        curl https://s3-eu-west-1.amazonaws.com/stremio-artifacts/four/master/server.js > ./server.js
-        node server.js &
-    - name: Checkout Test Addon
+    - name: Download streaming server
+      run: curl https://s3-eu-west-1.amazonaws.com/stremio-artifacts/four/master/server.js > ./server.js
+    - name: Start streaming server
+      run: node server.js &
+    - name: Checkout stremio test addon
       uses: actions/checkout@v2
       with:
         repository: Stremio/stremio-test-addon
         path: stremio-test-addon
-    - name: Run Test Addon
+    - name: Install stremio test addon dependencies
       run: |
         cd stremio-test-addon
         yarn install
-        yarn start --delay 1 --error 0 --port 7001 &
+    - name: Start stremio test addon
+      run: yarn start --delay 1 --error 0 --port 7001 &
     - name: Test
       run: cargo test
