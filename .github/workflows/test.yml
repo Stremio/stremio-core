@@ -25,6 +25,8 @@ jobs:
         cd stremio-test-addon
         yarn install
     - name: Start stremio test addon
-      run: yarn start --delay 1 --error 0 --port 7001 &
+      run: |
+        cd stremio-test-addon
+        yarn start --delay 1 --error 0 --port 7001 &
     - name: Test
       run: cargo test
