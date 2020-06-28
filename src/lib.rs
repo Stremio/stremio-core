@@ -12,90 +12,125 @@ mod unit_tests {
     use crate::state_types::models::ctx::*;
     use crate::state_types::msg::*;
     use crate::state_types::*;
-    use crate::types::api::APIRequest;
-    use crate::types::api::Auth;
-    use crate::types::api::{APIResult, SuccessResponse, True, User};
+    use crate::types::api::{APIRequest, APIResult, Auth, SuccessResponse, True, User};
     use crate::types::profile::{Profile, UID};
     use crate::types::{LibBucket, LibItem};
-    use chrono::{DateTime, Utc};
-    use futures::{future, Future};
-    use lazy_static::lazy_static;
+    use futures::future;
     use serde::de::DeserializeOwned;
-    use serde::Serialize;
-    use std::any::Any;
-    use std::collections::BTreeMap;
     use std::fmt::Debug;
-    use std::sync::RwLock;
     use stremio_derive::Model;
-    use tokio::executor::current_thread::spawn;
     use tokio::runtime::current_thread::run;
 
-    lazy_static! {
-        static ref STORAGE: RwLock<BTreeMap<String, String>> = Default::default();
-        static ref REQUESTS: RwLock<Vec<(String, String)>> = Default::default();
-    }
+    mod env {
+        use crate::state_types::{EnvFuture, Environment};
+        use chrono::{DateTime, Utc};
+        use futures::{future, Future};
+        use lazy_static::lazy_static;
+        use serde::de::DeserializeOwned;
+        use serde::Serialize;
+        use std::collections::BTreeMap;
+        use std::collections::HashMap;
+        use std::sync::RwLock;
+        use tokio::executor::current_thread::spawn;
 
-    struct Env {}
-    impl Environment for Env {
-        fn fetch_serde<IN, OUT>(request: Request<IN>) -> EnvFuture<OUT>
-        where
-            IN: 'static + Serialize + Any,
-            OUT: 'static + DeserializeOwned,
-        {
-            let (head, body) = request.into_parts();
-            let path = head.uri.path().to_owned();
-            let method = head.method.as_str().to_owned();
-            REQUESTS
-                .write()
-                .unwrap()
-                .push((path.to_owned(), method.to_owned()));
-            match (path.as_str(), method.as_str()) {
-                ("/api/logout", "POST") => {
-                    let api_request = (&body as &dyn Any).downcast_ref::<APIRequest>().unwrap();
-                    Box::new(future::ok(
-                        // TODO fix this! Workaround for the borrow checker.
-                        serde_json::from_str(
-                            &serde_json::to_string(&APIResult::Ok {
-                                result: SuccessResponse { success: True {} },
-                            })
-                            .unwrap(),
-                        )
-                        .unwrap(),
-                    ))
+        lazy_static! {
+            pub static ref NOW: RwLock<DateTime<Utc>> = RwLock::new(Utc::now());
+            pub static ref REQUESTS: RwLock<Vec<Request>> = Default::default();
+            pub static ref STORAGE: RwLock<BTreeMap<String, String>> = Default::default();
+        }
+
+        #[derive(Clone, Debug)]
+        pub struct Request {
+            pub url: String,
+            pub method: String,
+            pub headers: HashMap<String, String>,
+            pub body: String,
+        }
+        impl<T: 'static + Serialize> From<http::Request<T>> for Request {
+            fn from(request: http::Request<T>) -> Self {
+                let (head, body) = request.into_parts();
+                Request {
+                    url: head.uri.to_string(),
+                    method: head.method.as_str().to_owned(),
+                    headers: head
+                        .headers
+                        .iter()
+                        .map(|(key, value)| {
+                            (key.as_str().to_owned(), value.to_str().unwrap().to_owned())
+                        })
+                        .collect::<HashMap<_, _>>(),
+                    body: serde_json::to_string(&body).unwrap(),
                 }
-                _ => panic!("unhandled request"),
             }
         }
-        fn exec(fut: Box<dyn Future<Item = (), Error = ()>>) {
-            spawn(fut);
-        }
-        fn get_storage<T: 'static + DeserializeOwned>(key: &str) -> EnvFuture<Option<T>> {
-            Box::new(future::ok(
-                STORAGE
-                    .read()
-                    .unwrap()
-                    .get(key)
-                    .map(|data| serde_json::from_str(&data).unwrap()),
-            ))
-        }
-        fn set_storage<T: Serialize>(key: &str, value: Option<&T>) -> EnvFuture<()> {
-            let mut storage = STORAGE.write().unwrap();
-            match value {
-                Some(v) => storage.insert(key.to_string(), serde_json::to_string(v).unwrap()),
-                None => storage.remove(key),
-            };
-            Box::new(future::ok(()))
-        }
-        fn now() -> DateTime<Utc> {
-            Utc::now()
+
+        pub struct Env {}
+        impl Environment for Env {
+            fn fetch_serde<IN, OUT>(request: http::Request<IN>) -> EnvFuture<OUT>
+            where
+                IN: 'static + Serialize,
+                OUT: 'static + DeserializeOwned,
+            {
+                let request = Request::from(request);
+                REQUESTS.write().unwrap().push(request.to_owned());
+                Env::mock_fetch_resp(request)
+            }
+            fn get_storage<T: 'static + DeserializeOwned>(key: &str) -> EnvFuture<Option<T>> {
+                Box::new(future::ok(
+                    STORAGE
+                        .read()
+                        .unwrap()
+                        .get(key)
+                        .map(|data| serde_json::from_str(&data).unwrap()),
+                ))
+            }
+            fn set_storage<T: Serialize>(key: &str, value: Option<&T>) -> EnvFuture<()> {
+                let mut storage = STORAGE.write().unwrap();
+                match value {
+                    Some(v) => storage.insert(key.to_string(), serde_json::to_string(v).unwrap()),
+                    None => storage.remove(key),
+                };
+                Box::new(future::ok(()))
+            }
+            fn exec(fut: Box<dyn Future<Item = (), Error = ()>>) {
+                spawn(fut);
+            }
+            fn now() -> DateTime<Utc> {
+                *NOW.read().unwrap()
+            }
         }
     }
 
     #[test]
     fn actionctx_logout() {
+        impl env::Env {
+            fn mock_fetch_resp<T: 'static + DeserializeOwned>(
+                request: env::Request,
+            ) -> EnvFuture<T> {
+                match (
+                    request.url.as_str(),
+                    request.method.as_str(),
+                    serde_json::from_str(request.body.as_str()),
+                ) {
+                    ("https://api.strem.io/api/logout", "POST", Ok(APIRequest::Logout { .. })) => {
+                        Box::new(future::ok(
+                            // TODO fix this! Workaround for the borrow checker.
+                            serde_json::from_str(
+                                &serde_json::to_string(&APIResult::Ok {
+                                    result: SuccessResponse { success: True {} },
+                                })
+                                .unwrap(),
+                            )
+                            .unwrap(),
+                        ))
+                    }
+                    _ => panic!("Unhandled fetch request: {:#?}", request),
+                }
+            }
+        }
         #[derive(Model, Debug, Default)]
         struct Model {
-            ctx: Ctx<Env>,
+            ctx: Ctx<env::Env>,
         }
         let profile = Profile {
             auth: Some(Auth {
@@ -105,8 +140,8 @@ mod unit_tests {
                     email: "user_email".to_owned(),
                     fb_id: None,
                     avatar: None,
-                    last_modified: Env::now(),
-                    date_registered: Env::now(),
+                    last_modified: env::Env::now(),
+                    date_registered: env::Env::now(),
                 },
             }),
             ..Default::default()
@@ -115,21 +150,21 @@ mod unit_tests {
             uid: profile.uid(),
             ..Default::default()
         };
-        REQUESTS.write().unwrap().clear();
-        STORAGE.write().unwrap().clear();
-        STORAGE.write().unwrap().insert(
+        env::REQUESTS.write().unwrap().clear();
+        env::STORAGE.write().unwrap().clear();
+        env::STORAGE.write().unwrap().insert(
             PROFILE_STORAGE_KEY.to_owned(),
             serde_json::to_string(&profile).unwrap(),
         );
-        STORAGE.write().unwrap().insert(
+        env::STORAGE.write().unwrap().insert(
             LIBRARY_RECENT_STORAGE_KEY.to_owned(),
             serde_json::to_string::<(UID, Vec<LibItem>)>(&(profile.uid(), vec![])).unwrap(),
         );
-        STORAGE.write().unwrap().insert(
+        env::STORAGE.write().unwrap().insert(
             LIBRARY_STORAGE_KEY.to_owned(),
             serde_json::to_string::<(UID, Vec<LibItem>)>(&(profile.uid(), vec![])).unwrap(),
         );
-        let (runtime, _) = Runtime::<Env, Model>::new(
+        let (runtime, _) = Runtime::<env::Env, Model>::new(
             Model {
                 ctx: Ctx {
                     profile,
@@ -150,7 +185,7 @@ mod unit_tests {
             "library updated successfully in memory"
         );
         assert!(
-            STORAGE
+            env::STORAGE
                 .read()
                 .unwrap()
                 .get(PROFILE_STORAGE_KEY)
@@ -164,15 +199,19 @@ mod unit_tests {
         );
         // TODO library updated successfully in storage
         assert_eq!(
-            REQUESTS.read().unwrap().len(),
+            env::REQUESTS.read().unwrap().len(),
             1,
             "One request has been send"
         );
-        assert_eq!(
-            REQUESTS.read().unwrap().get(0).unwrap(),
-            &("/api/logout".to_owned(), "POST".to_owned()),
-            "Logout request has been send"
-        );
+        // assert_eq!(
+        //     env::REQUESTS.read().unwrap().get(0).unwrap(),
+        //     &(
+        //         "/api/logout".to_owned(),
+        //         "POST".to_owned(),
+        //         "{\"type\":\"Logout\",\"authKey\":\"auth_key\"}".to_owned()
+        //     ),
+        //     "Logout request has been send"
+        // );
     }
 }
 
