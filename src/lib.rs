@@ -6,6 +6,9 @@ pub mod state_types;
 pub mod types;
 
 #[cfg(test)]
+mod unit_tests;
+
+#[cfg(test)]
 mod tests {
     use crate::addon_transport::*;
     use crate::state_types::models::addon_details::AddonDetails;
