@@ -44,7 +44,7 @@ pub enum AuthRequest {
     },
 }
 
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize)]
 #[serde(tag = "type")]
 pub enum APIRequest {
     Auth(AuthRequest),
