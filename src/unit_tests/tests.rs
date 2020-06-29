@@ -8,6 +8,7 @@ use crate::types::profile::{Profile, UID};
 use crate::types::{LibBucket, LibItem};
 use futures::future;
 use serde::de::DeserializeOwned;
+use std::any::Any;
 use std::fmt::Debug;
 use stremio_derive::Model;
 use tokio::runtime::current_thread::run;
@@ -23,16 +24,10 @@ fn actionctx_logout() {
                     && method == "POST"
                     && body == "{\"type\":\"Logout\",\"authKey\":\"auth_key\"}" =>
                 {
-                    Box::new(future::ok(
-                        // TODO fix this! Workaround for the borrow checker.
-                        serde_json::from_str(
-                            &serde_json::to_string(&APIResult::Ok {
-                                result: SuccessResponse { success: True {} },
-                            })
-                            .unwrap(),
-                        )
-                        .unwrap(),
-                    ))
+                    let result: Box<dyn Any> = Box::new(APIResult::Ok {
+                        result: SuccessResponse { success: True {} },
+                    });
+                    Box::new(future::ok(*result.downcast::<T>().unwrap()))
                 }
                 _ => panic!("Unhandled fetch request: {:#?}", request),
             }
