@@ -1,4 +1,4 @@
-use super::{Env, Request, REQUESTS, STORAGE};
+use super::{Env, Request, FETCH_HANDLER, REQUESTS, STORAGE};
 use crate::constants::{LIBRARY_RECENT_STORAGE_KEY, LIBRARY_STORAGE_KEY, PROFILE_STORAGE_KEY};
 use crate::state_types::models::ctx::Ctx;
 use crate::state_types::msg::{Action, ActionCtx, Msg};
@@ -7,7 +7,6 @@ use crate::types::api::{APIResult, Auth, SuccessResponse, True, User};
 use crate::types::profile::{Profile, UID};
 use crate::types::{LibBucket, LibItem};
 use futures::future;
-use serde::de::DeserializeOwned;
 use std::any::Any;
 use std::fmt::Debug;
 use stremio_derive::Model;
@@ -15,27 +14,24 @@ use tokio::runtime::current_thread::run;
 
 #[test]
 fn actionctx_logout() {
-    impl Env {
-        pub fn unit_test_fetch<T: 'static + DeserializeOwned>(request: Request) -> EnvFuture<T> {
-            match request {
-                Request {
-                    url, method, body, ..
-                } if url == "https://api.strem.io/api/logout"
-                    && method == "POST"
-                    && body == "{\"type\":\"Logout\",\"authKey\":\"auth_key\"}" =>
-                {
-                    let result: Box<dyn Any> = Box::new(APIResult::Ok {
-                        result: SuccessResponse { success: True {} },
-                    });
-                    Box::new(future::ok(*result.downcast::<T>().unwrap()))
-                }
-                _ => panic!("Unhandled fetch request: {:#?}", request),
-            }
-        }
-    }
     #[derive(Model, Debug, Default)]
     struct Model {
         ctx: Ctx<Env>,
+    }
+    fn fetch_handler(request: Request) -> EnvFuture<Box<dyn Any>> {
+        match request {
+            Request {
+                url, method, body, ..
+            } if url == "https://api.strem.io/api/logout"
+                && method == "POST"
+                && body == "{\"type\":\"Logout\",\"authKey\":\"auth_key\"}" =>
+            {
+                Box::new(future::ok(Box::new(APIResult::Ok {
+                    result: SuccessResponse { success: True {} },
+                }) as Box<dyn Any>))
+            }
+            _ => panic!("Unhandled fetch request: {:#?}", request),
+        }
     }
     let profile = Profile {
         auth: Some(Auth {
@@ -56,6 +52,7 @@ fn actionctx_logout() {
         ..Default::default()
     };
     Env::reset();
+    *FETCH_HANDLER.write().unwrap() = Box::new(fetch_handler);
     STORAGE.write().unwrap().insert(
         PROFILE_STORAGE_KEY.to_owned(),
         serde_json::to_string(&profile).unwrap(),

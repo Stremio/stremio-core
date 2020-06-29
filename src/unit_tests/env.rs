@@ -4,16 +4,22 @@ use futures::{future, Future};
 use lazy_static::lazy_static;
 use serde::de::DeserializeOwned;
 use serde::Serialize;
+use std::any::Any;
 use std::collections::BTreeMap;
 use std::collections::HashMap;
+use std::ops::Fn;
 use std::sync::RwLock;
 use tokio::executor::current_thread::spawn;
 
 lazy_static! {
+    pub static ref FETCH_HANDLER: RwLock<FetchHandler> =
+        RwLock::new(Box::new(default_fetch_handler));
     pub static ref REQUESTS: RwLock<Vec<Request>> = Default::default();
     pub static ref STORAGE: RwLock<BTreeMap<String, String>> = Default::default();
     pub static ref NOW: RwLock<DateTime<Utc>> = RwLock::new(Utc::now());
 }
+
+pub type FetchHandler = Box<dyn Fn(Request) -> EnvFuture<Box<dyn Any>> + Send + Sync + 'static>;
 
 #[derive(Clone, Debug)]
 pub struct Request {
@@ -43,6 +49,7 @@ pub struct Env {}
 
 impl Env {
     pub fn reset() {
+        *FETCH_HANDLER.write().unwrap() = Box::new(default_fetch_handler);
         *REQUESTS.write().unwrap() = vec![];
         *STORAGE.write().unwrap() = BTreeMap::new();
         *NOW.write().unwrap() = Utc::now();
@@ -57,7 +64,9 @@ impl Environment for Env {
     {
         let request = Request::from(request);
         REQUESTS.write().unwrap().push(request.to_owned());
-        Env::unit_test_fetch(request)
+        Box::new(
+            FETCH_HANDLER.read().unwrap()(request).map(|resp| *resp.downcast::<OUT>().unwrap()),
+        )
     }
     fn get_storage<T: 'static + DeserializeOwned>(key: &str) -> EnvFuture<Option<T>> {
         Box::new(future::ok(
@@ -82,4 +91,8 @@ impl Environment for Env {
     fn exec(fut: Box<dyn Future<Item = (), Error = ()>>) {
         spawn(fut);
     }
+}
+
+pub fn default_fetch_handler(request: Request) -> EnvFuture<Box<dyn Any>> {
+    panic!("Unhandled fetch request: {:#?}", request)
 }
