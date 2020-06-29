@@ -1,4 +1,4 @@
-use super::{Env, Request, FETCH_HANDLER, REQUESTS, STORAGE};
+use super::{default_fetch_handler, Env, Request, FETCH_HANDLER, REQUESTS, STORAGE};
 use crate::constants::{LIBRARY_RECENT_STORAGE_KEY, LIBRARY_STORAGE_KEY, PROFILE_STORAGE_KEY};
 use crate::state_types::models::ctx::Ctx;
 use crate::state_types::msg::{Action, ActionCtx, Msg};
@@ -30,7 +30,7 @@ fn actionctx_logout() {
                     result: SuccessResponse { success: True {} },
                 }) as Box<dyn Any>))
             }
-            _ => panic!("Unhandled fetch request: {:#?}", request),
+            _ => default_fetch_handler(request),
         }
     }
     let profile = Profile {
