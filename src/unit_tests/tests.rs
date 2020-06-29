@@ -1,9 +1,14 @@
 use super::{default_fetch_handler, Env, Request, FETCH_HANDLER, REQUESTS, STORAGE};
-use crate::constants::{LIBRARY_RECENT_STORAGE_KEY, LIBRARY_STORAGE_KEY, PROFILE_STORAGE_KEY};
+use crate::constants::{
+    LIBRARY_COLLECTION_NAME, LIBRARY_RECENT_STORAGE_KEY, LIBRARY_STORAGE_KEY, PROFILE_STORAGE_KEY,
+};
 use crate::state_types::models::ctx::Ctx;
 use crate::state_types::msg::{Action, ActionCtx, Msg};
 use crate::state_types::{EnvFuture, Environment, Runtime};
-use crate::types::api::{APIResult, Auth, SuccessResponse, True, User};
+use crate::types::api::{
+    APIResult, Auth, AuthRequest, AuthResponse, CollectionResponse, DatastoreCmd, DatastoreReq,
+    SuccessResponse, True, User,
+};
 use crate::types::profile::{Profile, UID};
 use crate::types::{LibBucket, LibItem};
 use futures::future;
@@ -120,7 +125,103 @@ fn actionctx_logout() {
 
 #[test]
 fn actionctx_login() {
-    // TODO
+    #[derive(Model, Debug, Default)]
+    struct Model {
+        ctx: Ctx<Env>,
+    }
+    fn fetch_handler(request: Request) -> EnvFuture<Box<dyn Any>> {
+        match request {
+            Request {
+                url, method, body, ..
+            } if url == "https://api.strem.io/api/login"
+                && method == "POST"
+                && body == "{\"type\":\"Auth\",\"type\":\"Login\",\"email\":\"user_email\",\"password\":\"user_password\"}" =>
+            {
+                Box::new(future::ok(Box::new(APIResult::Ok {
+                    result: AuthResponse {
+                        key: "auth_key".to_owned(),
+                        user: User {
+                            id: "user_id".to_owned(),
+                            email: "user_email".to_owned(),
+                            fb_id: None,
+                            avatar: None,
+                            last_modified: Env::now(),
+                            date_registered: Env::now(),
+                        }
+                    },
+                }) as Box<dyn Any>))
+            }
+            Request {
+                url, method, body, ..
+            } if url == "https://api.strem.io/api/addonCollectionGet"
+                && method == "POST"
+                && body == "{\"type\":\"AddonCollectionGet\",\"authKey\":\"auth_key\",\"update\":true}" =>
+            {
+                Box::new(future::ok(Box::new(APIResult::Ok {
+                    result: CollectionResponse {
+                        addons: vec![],
+                        last_modified: Env::now(),
+                    },
+                }) as Box<dyn Any>))
+            }
+            Request {
+                url, method, body, ..
+            } if url == "https://api.strem.io/api/datastoreGet"
+                && method == "POST"
+                && body == "{\"authKey\":\"auth_key\",\"collection\":\"libraryItem\",\"ids\":[],\"all\":true}" =>
+            {
+                Box::new(future::ok(Box::new(APIResult::Ok {
+                    result: DatastoreReq {
+                        auth_key: "auth_key".to_owned(),
+                        collection: LIBRARY_COLLECTION_NAME.to_owned(),
+                        cmd: DatastoreCmd::Get {
+                            ids: vec![],
+                            all: false,
+                        },
+                    },
+                }) as Box<dyn Any>))
+            }
+            _ => default_fetch_handler(request),
+        }
+    }
+    let profile = Profile {
+        auth: Some(Auth {
+            key: "auth_key".to_owned(),
+            user: User {
+                id: "user_id".to_owned(),
+                email: "user_email".to_owned(),
+                fb_id: None,
+                avatar: None,
+                last_modified: Env::now(),
+                date_registered: Env::now(),
+            },
+        }),
+        ..Default::default()
+    };
+    let library = LibBucket {
+        uid: profile.uid(),
+        ..Default::default()
+    };
+    Env::reset();
+    *FETCH_HANDLER.write().unwrap() = Box::new(fetch_handler);
+    let (runtime, _) = Runtime::<Env, Model>::new(
+        Model {
+            ctx: Ctx {
+                profile,
+                library,
+                ..Default::default()
+            },
+        },
+        1000,
+    );
+    run(
+        runtime.dispatch(&Msg::Action(Action::Ctx(ActionCtx::Authenticate(
+            AuthRequest::Login {
+                email: "user_email".into(),
+                password: "user_password".into(),
+            },
+        )))),
+    );
 }
 
 #[test]
