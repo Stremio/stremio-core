@@ -117,3 +117,13 @@ fn actionctx_logout() {
         "Logout request has been send"
     );
 }
+
+#[test]
+fn actionctx_login() {
+    // TODO
+}
+
+#[test]
+fn actionctx_signup() {
+    // TODO
+}
