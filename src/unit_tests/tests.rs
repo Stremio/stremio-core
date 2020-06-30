@@ -1,17 +1,15 @@
 use super::{default_fetch_handler, Env, Request, FETCH_HANDLER, REQUESTS, STORAGE};
-use crate::constants::{
-    LIBRARY_COLLECTION_NAME, LIBRARY_RECENT_STORAGE_KEY, LIBRARY_STORAGE_KEY, PROFILE_STORAGE_KEY,
-};
+use crate::constants::{LIBRARY_RECENT_STORAGE_KEY, LIBRARY_STORAGE_KEY, PROFILE_STORAGE_KEY};
 use crate::state_types::models::ctx::Ctx;
 use crate::state_types::msg::{Action, ActionCtx, Msg};
 use crate::state_types::{EnvFuture, Environment, Runtime};
 use crate::types::api::{
-    APIResult, Auth, AuthRequest, AuthResponse, CollectionResponse, DatastoreCmd, DatastoreReq,
-    SuccessResponse, True, User,
+    APIResult, Auth, AuthRequest, AuthResponse, CollectionResponse, SuccessResponse, True, User,
 };
 use crate::types::profile::{Profile, UID};
 use crate::types::{LibBucket, LibItem};
 use futures::future;
+use lazy_static::lazy_static;
 use std::any::Any;
 use std::fmt::Debug;
 use stremio_derive::Model;
@@ -129,6 +127,22 @@ fn actionctx_login() {
     struct Model {
         ctx: Ctx<Env>,
     }
+    let (runtime, _) = Runtime::<Env, Model>::new(Model::default(), 1000);
+    assert!(
+        runtime.app.read().unwrap().ctx.profile.auth.is_none(),
+        "there is no user"
+    );
+    lazy_static! {
+        #[derive(Debug)]
+        static ref TEST_USER: User = User {
+            id: "user_id".to_owned(),
+            email: "user_email".to_owned(),
+            fb_id: None,
+            avatar: None,
+            last_modified: Env::now(),
+            date_registered: Env::now(),
+        };
+    }
     fn fetch_handler(request: Request) -> EnvFuture<Box<dyn Any>> {
         match request {
             Request {
@@ -140,14 +154,7 @@ fn actionctx_login() {
                 Box::new(future::ok(Box::new(APIResult::Ok {
                     result: AuthResponse {
                         key: "auth_key".to_owned(),
-                        user: User {
-                            id: "user_id".to_owned(),
-                            email: "user_email".to_owned(),
-                            fb_id: None,
-                            avatar: None,
-                            last_modified: Env::now(),
-                            date_registered: Env::now(),
-                        }
+                        user: TEST_USER.to_owned()
                     },
                 }) as Box<dyn Any>))
             }
@@ -170,50 +177,17 @@ fn actionctx_login() {
                 && method == "POST"
                 && body == "{\"authKey\":\"auth_key\",\"collection\":\"libraryItem\",\"ids\":[],\"all\":true}" =>
             {
+                let empty_library: Vec<LibItem> = Vec::new();
                 Box::new(future::ok(Box::new(APIResult::Ok {
-                    result: DatastoreReq {
-                        auth_key: "auth_key".to_owned(),
-                        collection: LIBRARY_COLLECTION_NAME.to_owned(),
-                        cmd: DatastoreCmd::Get {
-                            ids: vec![],
-                            all: false,
-                        },
-                    },
+                    result: empty_library,
                 }) as Box<dyn Any>))
             }
             _ => default_fetch_handler(request),
         }
     }
-    let profile = Profile {
-        auth: Some(Auth {
-            key: "auth_key".to_owned(),
-            user: User {
-                id: "user_id".to_owned(),
-                email: "user_email".to_owned(),
-                fb_id: None,
-                avatar: None,
-                last_modified: Env::now(),
-                date_registered: Env::now(),
-            },
-        }),
-        ..Default::default()
-    };
-    let library = LibBucket {
-        uid: profile.uid(),
-        ..Default::default()
-    };
     Env::reset();
     *FETCH_HANDLER.write().unwrap() = Box::new(fetch_handler);
-    let (runtime, _) = Runtime::<Env, Model>::new(
-        Model {
-            ctx: Ctx {
-                profile,
-                library,
-                ..Default::default()
-            },
-        },
-        1000,
-    );
+    let (runtime, _) = Runtime::<Env, Model>::new(Model::default(), 1000);
     run(
         runtime.dispatch(&Msg::Action(Action::Ctx(ActionCtx::Authenticate(
             AuthRequest::Login {
@@ -221,6 +195,84 @@ fn actionctx_login() {
                 password: "user_password".into(),
             },
         )))),
+    );
+    assert!(
+        runtime.app.read().unwrap().ctx.profile.auth.is_some(),
+        "profile updated successfully in memory"
+    );
+    assert_eq!(
+        runtime
+            .app
+            .read()
+            .unwrap()
+            .ctx
+            .profile
+            .auth
+            .to_owned()
+            .unwrap()
+            .user,
+        *TEST_USER,
+        "logged user equal to the test user"
+    );
+    assert!(
+        runtime.app.read().unwrap().ctx.library.uid.is_some()
+            && runtime.app.read().unwrap().ctx.library.items.is_empty(),
+        "library updated successfully in memory"
+    );
+    assert!(
+        STORAGE
+            .read()
+            .unwrap()
+            .get(PROFILE_STORAGE_KEY)
+            .map_or(true, |data| {
+                serde_json::from_str::<Profile>(&data)
+                    .unwrap()
+                    .auth
+                    .is_some()
+            }),
+        "profile updated successfully in storage"
+    );
+    // TODO library updated successfully in storage
+    assert_eq!(
+        REQUESTS.read().unwrap().len(),
+        3,
+        "Three request has been send"
+    );
+    assert!(
+        match REQUESTS.read().unwrap().get(0).unwrap() {
+            Request {
+                url, method, body, ..
+            } if url == "https://api.strem.io/api/login"
+                && method == "POST"
+                && body == "{\"type\":\"Auth\",\"type\":\"Login\",\"email\":\"user_email\",\"password\":\"user_password\"}" =>
+                true,
+            _ => false,
+        },
+        "Login request has been send"
+    );
+    assert!(
+        match REQUESTS.read().unwrap().get(1).unwrap() {
+            Request {
+                url, method, body, ..
+            } if url == "https://api.strem.io/api/addonCollectionGet"
+                && method == "POST"
+                && body == "{\"type\":\"AddonCollectionGet\",\"authKey\":\"auth_key\",\"update\":true}" =>
+                true,
+            _ => false,
+        },
+        "AddonCollectionGet request has been send"
+    );
+    assert!(
+        match REQUESTS.read().unwrap().get(2).unwrap() {
+            Request {
+                url, method, body, ..
+            } if url == "https://api.strem.io/api/datastoreGet"
+                && method == "POST"
+                && body == "{\"authKey\":\"auth_key\",\"collection\":\"libraryItem\",\"ids\":[],\"all\":true}" =>
+                true,
+            _ => false,
+        },
+        "DatastoreGet request has been send"
     );
 }
 
