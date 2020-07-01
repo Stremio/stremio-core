@@ -211,7 +211,7 @@ fn actionctx_login() {
         "logged user equal to the test user"
     );
     assert!(
-        runtime.app.read().unwrap().ctx.library.uid.is_some()
+        runtime.app.read().unwrap().ctx.library.uid == Some("user_id".to_string())
             && runtime.app.read().unwrap().ctx.library.items.is_empty(),
         "library updated successfully in memory"
     );
@@ -367,7 +367,7 @@ fn actionctx_signup() {
         "registered user equal to the test user"
     );
     assert!(
-        runtime.app.read().unwrap().ctx.library.uid.is_some()
+        runtime.app.read().unwrap().ctx.library.uid == Some("user_id".to_string())
             && runtime.app.read().unwrap().ctx.library.items.is_empty(),
         "library updated successfully in memory"
     );
