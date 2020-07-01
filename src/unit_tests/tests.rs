@@ -129,11 +129,6 @@ fn actionctx_login() {
     struct Model {
         ctx: Ctx<Env>,
     }
-    let (runtime, _) = Runtime::<Env, Model>::new(Model::default(), 1000);
-    assert!(
-        runtime.app.read().unwrap().ctx.profile.auth.is_none(),
-        "there is no user"
-    );
     lazy_static! {
         #[derive(Debug)]
         static ref TEST_USER: User = User {
@@ -284,11 +279,6 @@ fn actionctx_signup() {
     struct Model {
         ctx: Ctx<Env>,
     }
-    let (runtime, _) = Runtime::<Env, Model>::new(Model::default(), 1000);
-    assert!(
-        runtime.app.read().unwrap().ctx.profile.auth.is_none(),
-        "there is no user"
-    );
     lazy_static! {
         #[derive(Debug)]
         static ref TEST_USER: User = User {
