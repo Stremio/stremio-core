@@ -11,7 +11,6 @@ use crate::types::profile::{Profile, UID};
 use crate::types::{LibBucket, LibItem};
 use chrono::prelude::*;
 use futures::future;
-use lazy_static::lazy_static;
 use std::any::Any;
 use std::fmt::Debug;
 use stremio_derive::Model;
@@ -129,17 +128,6 @@ fn actionctx_login() {
     struct Model {
         ctx: Ctx<Env>,
     }
-    lazy_static! {
-        #[derive(Debug)]
-        static ref TEST_USER: User = User {
-            id: "user_id".to_owned(),
-            email: "user_email".to_owned(),
-            fb_id: None,
-            avatar: None,
-            last_modified: Env::now(),
-            date_registered: Env::now(),
-        };
-    }
     fn fetch_handler(request: Request) -> EnvFuture<Box<dyn Any>> {
         match request {
             Request {
@@ -151,7 +139,14 @@ fn actionctx_login() {
                 Box::new(future::ok(Box::new(APIResult::Ok {
                     result: AuthResponse {
                         key: "auth_key".to_owned(),
-                        user: TEST_USER.to_owned()
+                        user: User {
+                            id: "user_id".to_owned(),
+                            email: "user_email".to_owned(),
+                            fb_id: None,
+                            avatar: None,
+                            last_modified: Env::now(),
+                            date_registered: Env::now(),
+                        }
                     },
                 }) as Box<dyn Any>))
             }
@@ -192,23 +187,20 @@ fn actionctx_login() {
             },
         )))),
     );
-    assert!(
-        runtime.app.read().unwrap().ctx.profile.auth.is_some(),
-        "profile updated successfully in memory"
-    );
     assert_eq!(
-        runtime
-            .app
-            .read()
-            .unwrap()
-            .ctx
-            .profile
-            .auth
-            .to_owned()
-            .unwrap()
-            .user,
-        *TEST_USER,
-        "logged user equal to the test user"
+        runtime.app.read().unwrap().ctx.profile.auth,
+        Some(Auth {
+            key: "auth_key".to_owned(),
+            user: User {
+                id: "user_id".to_owned(),
+                email: "user_email".to_owned(),
+                fb_id: None,
+                avatar: None,
+                last_modified: Env::now(),
+                date_registered: Env::now(),
+            },
+        }),
+        "profile updated successfully in memory"
     );
     assert!(
         runtime.app.read().unwrap().ctx.library.uid == Some("user_id".to_string())
@@ -278,17 +270,6 @@ fn actionctx_signup() {
     struct Model {
         ctx: Ctx<Env>,
     }
-    lazy_static! {
-        #[derive(Debug)]
-        static ref TEST_USER: User = User {
-            id: "user_id".to_owned(),
-            email: "user_email".to_owned(),
-            fb_id: None,
-            avatar: None,
-            last_modified: Env::now(),
-            date_registered: Env::now(),
-        };
-    }
     fn fetch_handler(request: Request) -> EnvFuture<Box<dyn Any>> {
         match request {
             Request {
@@ -300,7 +281,14 @@ fn actionctx_signup() {
                 Box::new(future::ok(Box::new(APIResult::Ok {
                     result: AuthResponse {
                         key: "auth_key".to_owned(),
-                        user: TEST_USER.to_owned()
+                        user: User {
+                            id: "user_id".to_owned(),
+                            email: "user_email".to_owned(),
+                            fb_id: None,
+                            avatar: None,
+                            last_modified: Env::now(),
+                            date_registered: Env::now(),
+                        }
                     },
                 }) as Box<dyn Any>))
             }
@@ -348,23 +336,21 @@ fn actionctx_signup() {
             },
         )))),
     );
-    assert!(
-        runtime.app.read().unwrap().ctx.profile.auth.is_some(),
-        "profile updated successfully in memory"
-    );
+    dbg!("{:?}", &runtime.app.read().unwrap().ctx.profile.auth);
     assert_eq!(
-        runtime
-            .app
-            .read()
-            .unwrap()
-            .ctx
-            .profile
-            .auth
-            .to_owned()
-            .unwrap()
-            .user,
-        *TEST_USER,
-        "registered user equal to the test user"
+        runtime.app.read().unwrap().ctx.profile.auth,
+        Some(Auth {
+            key: "auth_key".to_owned(),
+            user: User {
+                id: "user_id".to_owned(),
+                email: "user_email".to_owned(),
+                fb_id: None,
+                avatar: None,
+                last_modified: Env::now(),
+                date_registered: Env::now(),
+            },
+        }),
+        "profile updated successfully in memory"
     );
     assert!(
         runtime.app.read().unwrap().ctx.library.uid == Some("user_id".to_string())
