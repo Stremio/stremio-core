@@ -107,7 +107,7 @@ fn actionctx_logout() {
     assert_eq!(
         REQUESTS.read().unwrap().len(),
         1,
-        "One request has been send"
+        "One request has been sent"
     );
     assert!(
         match REQUESTS.read().unwrap().get(0).unwrap() {
@@ -119,7 +119,7 @@ fn actionctx_logout() {
                 true,
             _ => false,
         },
-        "Logout request has been send"
+        "Logout request has been sent"
     );
 }
 
@@ -238,7 +238,7 @@ fn actionctx_login() {
     assert_eq!(
         REQUESTS.read().unwrap().len(),
         3,
-        "Three request has been send"
+        "Three requests have been sent"
     );
     assert!(
         match REQUESTS.read().unwrap().get(0).unwrap() {
@@ -250,7 +250,7 @@ fn actionctx_login() {
                 true,
             _ => false,
         },
-        "Login request has been send"
+        "Login request has been sent"
     );
     assert!(
         match REQUESTS.read().unwrap().get(1).unwrap() {
@@ -262,7 +262,7 @@ fn actionctx_login() {
                 true,
             _ => false,
         },
-        "AddonCollectionGet request has been send"
+        "AddonCollectionGet request has been sent"
     );
     assert!(
         match REQUESTS.read().unwrap().get(2).unwrap() {
@@ -274,7 +274,7 @@ fn actionctx_login() {
                 true,
             _ => false,
         },
-        "DatastoreGet request has been send"
+        "DatastoreGet request has been sent"
     );
 }
 
