@@ -174,9 +174,8 @@ fn actionctx_login() {
                 && method == "POST"
                 && body == "{\"authKey\":\"auth_key\",\"collection\":\"libraryItem\",\"ids\":[],\"all\":true}" =>
             {
-                let empty_library: Vec<LibItem> = Vec::new();
                 Box::new(future::ok(Box::new(APIResult::Ok {
-                    result: empty_library,
+                    result: Vec::<LibItem>::new(),
                 }) as Box<dyn Any>))
             }
             _ => default_fetch_handler(request),
@@ -324,9 +323,8 @@ fn actionctx_signup() {
                 && method == "POST"
                 && body == "{\"authKey\":\"auth_key\",\"collection\":\"libraryItem\",\"ids\":[],\"all\":true}" =>
             {
-                let empty_library: Vec<LibItem> = Vec::new();
                 Box::new(future::ok(Box::new(APIResult::Ok {
-                    result: empty_library,
+                    result: Vec::<LibItem>::new(),
                 }) as Box<dyn Any>))
             }
             _ => default_fetch_handler(request),
