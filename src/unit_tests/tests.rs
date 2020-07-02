@@ -188,18 +188,22 @@ fn actionctx_login() {
         )))),
     );
     assert_eq!(
-        runtime.app.read().unwrap().ctx.profile.auth,
-        Some(Auth {
-            key: "auth_key".to_owned(),
-            user: User {
-                id: "user_id".to_owned(),
-                email: "user_email".to_owned(),
-                fb_id: None,
-                avatar: None,
-                last_modified: Env::now(),
-                date_registered: Env::now(),
-            },
-        }),
+        runtime.app.read().unwrap().ctx.profile,
+        Profile {
+            auth: Some(Auth {
+                key: "auth_key".to_owned(),
+                user: User {
+                    id: "user_id".to_owned(),
+                    email: "user_email".to_owned(),
+                    fb_id: None,
+                    avatar: None,
+                    last_modified: Env::now(),
+                    date_registered: Env::now(),
+                },
+            }),
+            addons: vec![],
+            ..Default::default()
+        },
         "profile updated successfully in memory"
     );
     assert!(
@@ -337,18 +341,22 @@ fn actionctx_signup() {
         )))),
     );
     assert_eq!(
-        runtime.app.read().unwrap().ctx.profile.auth,
-        Some(Auth {
-            key: "auth_key".to_owned(),
-            user: User {
-                id: "user_id".to_owned(),
-                email: "user_email".to_owned(),
-                fb_id: None,
-                avatar: None,
-                last_modified: Env::now(),
-                date_registered: Env::now(),
-            },
-        }),
+        runtime.app.read().unwrap().ctx.profile,
+        Profile {
+            auth: Some(Auth {
+                key: "auth_key".to_owned(),
+                user: User {
+                    id: "user_id".to_owned(),
+                    email: "user_email".to_owned(),
+                    fb_id: None,
+                    avatar: None,
+                    last_modified: Env::now(),
+                    date_registered: Env::now(),
+                },
+            }),
+            addons: vec![],
+            ..Default::default()
+        },
         "profile updated successfully in memory"
     );
     assert!(
