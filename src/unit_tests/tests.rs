@@ -102,7 +102,16 @@ fn actionctx_logout() {
             }),
         "profile updated successfully in storage"
     );
-    // TODO library updated successfully in storage
+    assert!(
+        STORAGE
+            .read()
+            .unwrap()
+            .get(LIBRARY_STORAGE_KEY)
+            .map_or(true, |data| {
+                serde_json::from_str::<(UID, Vec<LibItem>)>(&data).unwrap()
+            } == (None, vec![])),
+        "library updated successfully in storage"
+    );
     assert_eq!(
         REQUESTS.read().unwrap().len(),
         1,
@@ -229,7 +238,16 @@ fn actionctx_login() {
             })),
         "profile updated successfully in storage"
     );
-    // TODO library updated successfully in storage
+    assert!(
+        STORAGE
+            .read()
+            .unwrap()
+            .get(LIBRARY_STORAGE_KEY)
+            .map_or(true, |data| {
+                serde_json::from_str::<(UID, Vec<LibItem>)>(&data).unwrap()
+            } == (Some("user_id".to_owned()), vec![])),
+        "library updated successfully in storage"
+    );
     assert_eq!(
         REQUESTS.read().unwrap().len(),
         3,
@@ -386,7 +404,16 @@ fn actionctx_signup() {
             })),
         "profile updated successfully in storage"
     );
-    // TODO library updated successfully in storage
+    assert!(
+        STORAGE
+            .read()
+            .unwrap()
+            .get(LIBRARY_STORAGE_KEY)
+            .map_or(true, |data| {
+                serde_json::from_str::<(UID, Vec<LibItem>)>(&data).unwrap()
+            } == (Some("user_id".to_owned()), vec![])),
+        "library updated successfully in storage"
+    );
     assert_eq!(
         REQUESTS.read().unwrap().len(),
         3,
