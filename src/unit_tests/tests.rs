@@ -336,7 +336,6 @@ fn actionctx_signup() {
             },
         )))),
     );
-    dbg!("{:?}", &runtime.app.read().unwrap().ctx.profile.auth);
     assert_eq!(
         runtime.app.read().unwrap().ctx.profile.auth,
         Some(Auth {
