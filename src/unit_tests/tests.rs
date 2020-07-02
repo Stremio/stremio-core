@@ -108,15 +108,13 @@ fn actionctx_logout() {
         1,
         "One request has been sent"
     );
-    assert!(
-        match REQUESTS.read().unwrap().get(0).unwrap() {
-            Request {
-                url, method, body, ..
-            } if url == "https://api.strem.io/api/logout"
-                && method == "POST"
-                && body == "{\"type\":\"Logout\",\"authKey\":\"auth_key\"}" =>
-                true,
-            _ => false,
+    assert_eq!(
+        REQUESTS.read().unwrap().get(0).unwrap().to_owned(),
+        Request {
+            url: "https://api.strem.io/api/logout".to_owned(),
+            method: "POST".to_owned(),
+            body: "{\"type\":\"Logout\",\"authKey\":\"auth_key\"}".to_owned(),
+            ..Default::default()
         },
         "Logout request has been sent"
     );
@@ -230,39 +228,36 @@ fn actionctx_login() {
         3,
         "Three requests have been sent"
     );
-    assert!(
-        match REQUESTS.read().unwrap().get(0).unwrap() {
-            Request {
-                url, method, body, ..
-            } if url == "https://api.strem.io/api/login"
-                && method == "POST"
-                && body == "{\"type\":\"Auth\",\"type\":\"Login\",\"email\":\"user_email\",\"password\":\"user_password\"}" =>
-                true,
-            _ => false,
+    assert_eq!(
+        REQUESTS.read().unwrap().get(0).unwrap().to_owned(),
+        Request {
+            url: "https://api.strem.io/api/login".to_owned(),
+            method: "POST".to_owned(),
+            body: "{\"type\":\"Auth\",\"type\":\"Login\",\"email\":\"user_email\",\"password\":\"user_password\"}".to_owned(),
+            ..Default::default()
         },
         "Login request has been sent"
     );
-    assert!(
-        match REQUESTS.read().unwrap().get(1).unwrap() {
-            Request {
-                url, method, body, ..
-            } if url == "https://api.strem.io/api/addonCollectionGet"
-                && method == "POST"
-                && body == "{\"type\":\"AddonCollectionGet\",\"authKey\":\"auth_key\",\"update\":true}" =>
-                true,
-            _ => false,
+    assert_eq!(
+        REQUESTS.read().unwrap().get(1).unwrap().to_owned(),
+        Request {
+            url: "https://api.strem.io/api/addonCollectionGet".to_owned(),
+            method: "POST".to_owned(),
+            body: "{\"type\":\"AddonCollectionGet\",\"authKey\":\"auth_key\",\"update\":true}"
+                .to_owned(),
+            ..Default::default()
         },
         "AddonCollectionGet request has been sent"
     );
-    assert!(
-        match REQUESTS.read().unwrap().get(2).unwrap() {
-            Request {
-                url, method, body, ..
-            } if url == "https://api.strem.io/api/datastoreGet"
-                && method == "POST"
-                && body == "{\"authKey\":\"auth_key\",\"collection\":\"libraryItem\",\"ids\":[],\"all\":true}" =>
-                true,
-            _ => false,
+    assert_eq!(
+        REQUESTS.read().unwrap().get(2).unwrap().to_owned(),
+        Request {
+            url: "https://api.strem.io/api/datastoreGet".to_owned(),
+            method: "POST".to_owned(),
+            body:
+                "{\"authKey\":\"auth_key\",\"collection\":\"libraryItem\",\"ids\":[],\"all\":true}"
+                    .to_owned(),
+            ..Default::default()
         },
         "DatastoreGet request has been sent"
     );
@@ -383,39 +378,37 @@ fn actionctx_signup() {
         3,
         "Three requests have been sent"
     );
-    assert!(
-        match REQUESTS.read().unwrap().get(0).unwrap() {
-            Request {
-                url, method, body, ..
-            } if url == "https://api.strem.io/api/register"
-                && method == "POST"
-                && body == "{\"type\":\"Auth\",\"type\":\"Register\",\"email\":\"user_email\",\"password\":\"user_password\",\"gdpr_consent\":{\"tos\":true,\"privacy\":true,\"marketing\":false,\"time\":\"2020-01-01T00:00:00Z\",\"from\":\"web\"}}" =>
-                true,
-            _ => false,
+
+    assert_eq!(
+        REQUESTS.read().unwrap().get(0).unwrap().to_owned(),
+        Request {
+            url: "https://api.strem.io/api/register".to_owned(),
+            method: "POST".to_owned(),
+            body: "{\"type\":\"Auth\",\"type\":\"Register\",\"email\":\"user_email\",\"password\":\"user_password\",\"gdpr_consent\":{\"tos\":true,\"privacy\":true,\"marketing\":false,\"time\":\"2020-01-01T00:00:00Z\",\"from\":\"web\"}}".to_owned(),
+            ..Default::default()
         },
         "Register request has been sent"
     );
-    assert!(
-        match REQUESTS.read().unwrap().get(1).unwrap() {
-            Request {
-                url, method, body, ..
-            } if url == "https://api.strem.io/api/addonCollectionGet"
-                && method == "POST"
-                && body == "{\"type\":\"AddonCollectionGet\",\"authKey\":\"auth_key\",\"update\":true}" =>
-                true,
-            _ => false,
+    assert_eq!(
+        REQUESTS.read().unwrap().get(1).unwrap().to_owned(),
+        Request {
+            url: "https://api.strem.io/api/addonCollectionGet".to_owned(),
+            method: "POST".to_owned(),
+            body: "{\"type\":\"AddonCollectionGet\",\"authKey\":\"auth_key\",\"update\":true}"
+                .to_owned(),
+            ..Default::default()
         },
         "AddonCollectionGet request has been sent"
     );
-    assert!(
-        match REQUESTS.read().unwrap().get(2).unwrap() {
-            Request {
-                url, method, body, ..
-            } if url == "https://api.strem.io/api/datastoreGet"
-                && method == "POST"
-                && body == "{\"authKey\":\"auth_key\",\"collection\":\"libraryItem\",\"ids\":[],\"all\":true}" =>
-                true,
-            _ => false,
+    assert_eq!(
+        REQUESTS.read().unwrap().get(2).unwrap().to_owned(),
+        Request {
+            url: "https://api.strem.io/api/datastoreGet".to_owned(),
+            method: "POST".to_owned(),
+            body:
+                "{\"authKey\":\"auth_key\",\"collection\":\"libraryItem\",\"ids\":[],\"all\":true}"
+                    .to_owned(),
+            ..Default::default()
         },
         "DatastoreGet request has been sent"
     );
