@@ -224,18 +224,22 @@ fn actionctx_login() {
             .unwrap()
             .get(PROFILE_STORAGE_KEY)
             .map_or(true, |data| {
-                serde_json::from_str::<Profile>(&data).unwrap().auth
-            } == Some(Auth {
-                key: "auth_key".to_owned(),
-                user: User {
-                    id: "user_id".to_owned(),
-                    email: "user_email".to_owned(),
-                    fb_id: None,
-                    avatar: None,
-                    last_modified: Env::now(),
-                    date_registered: Env::now(),
-                },
-            })),
+                serde_json::from_str::<Profile>(&data).unwrap()
+            } == Profile {
+                auth: Some(Auth {
+                    key: "auth_key".to_owned(),
+                    user: User {
+                        id: "user_id".to_owned(),
+                        email: "user_email".to_owned(),
+                        fb_id: None,
+                        avatar: None,
+                        last_modified: Env::now(),
+                        date_registered: Env::now(),
+                    },
+                }),
+                addons: vec![],
+                ..Default::default()
+            },),
         "profile updated successfully in storage"
     );
     assert!(
@@ -390,18 +394,22 @@ fn actionctx_signup() {
             .unwrap()
             .get(PROFILE_STORAGE_KEY)
             .map_or(true, |data| {
-                serde_json::from_str::<Profile>(&data).unwrap().auth
-            } == Some(Auth {
-                key: "auth_key".to_owned(),
-                user: User {
-                    id: "user_id".to_owned(),
-                    email: "user_email".to_owned(),
-                    fb_id: None,
-                    avatar: None,
-                    last_modified: Env::now(),
-                    date_registered: Env::now(),
-                },
-            })),
+                serde_json::from_str::<Profile>(&data).unwrap()
+            } == Profile {
+                auth: Some(Auth {
+                    key: "auth_key".to_owned(),
+                    user: User {
+                        id: "user_id".to_owned(),
+                        email: "user_email".to_owned(),
+                        fb_id: None,
+                        avatar: None,
+                        last_modified: Env::now(),
+                        date_registered: Env::now(),
+                    },
+                }),
+                addons: vec![],
+                ..Default::default()
+            },),
         "profile updated successfully in storage"
     );
     assert!(
