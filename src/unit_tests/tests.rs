@@ -108,8 +108,8 @@ fn actionctx_logout() {
             .unwrap()
             .get(LIBRARY_RECENT_STORAGE_KEY)
             .map_or(true, |data| {
-                serde_json::from_str::<(UID, Vec<LibItem>)>(&data).unwrap()
-            } == (None, vec![])),
+                serde_json::from_str::<(UID, Vec<LibItem>)>(&data).unwrap() == (None, vec![])
+            }),
         "recent library updated successfully in storage"
     );
     assert!(
@@ -118,8 +118,8 @@ fn actionctx_logout() {
             .unwrap()
             .get(LIBRARY_STORAGE_KEY)
             .map_or(true, |data| {
-                serde_json::from_str::<(UID, Vec<LibItem>)>(&data).unwrap()
-            } == (None, vec![])),
+                serde_json::from_str::<(UID, Vec<LibItem>)>(&data).unwrap() == (None, vec![])
+            }),
         "library updated successfully in storage"
     );
     assert_eq!(
@@ -235,21 +235,22 @@ fn actionctx_login() {
             .get(PROFILE_STORAGE_KEY)
             .map_or(false, |data| {
                 serde_json::from_str::<Profile>(&data).unwrap()
-            } == Profile {
-                auth: Some(Auth {
-                    key: "auth_key".to_owned(),
-                    user: User {
-                        id: "user_id".to_owned(),
-                        email: "user_email".to_owned(),
-                        fb_id: None,
-                        avatar: None,
-                        last_modified: Env::now(),
-                        date_registered: Env::now(),
-                    },
-                }),
-                addons: vec![],
-                ..Default::default()
-            },),
+                    == Profile {
+                        auth: Some(Auth {
+                            key: "auth_key".to_owned(),
+                            user: User {
+                                id: "user_id".to_owned(),
+                                email: "user_email".to_owned(),
+                                fb_id: None,
+                                avatar: None,
+                                last_modified: Env::now(),
+                                date_registered: Env::now(),
+                            },
+                        }),
+                        addons: vec![],
+                        ..Default::default()
+                    }
+            }),
         "profile updated successfully in storage"
     );
     assert!(
@@ -259,7 +260,8 @@ fn actionctx_login() {
             .get(LIBRARY_RECENT_STORAGE_KEY)
             .map_or(false, |data| {
                 serde_json::from_str::<(UID, Vec<LibItem>)>(&data).unwrap()
-            } == (Some("user_id".to_owned()), vec![])),
+                    == (Some("user_id".to_owned()), vec![])
+            }),
         "recent library updated successfully in storage"
     );
     assert!(
@@ -269,7 +271,8 @@ fn actionctx_login() {
             .get(LIBRARY_STORAGE_KEY)
             .map_or(false, |data| {
                 serde_json::from_str::<(UID, Vec<LibItem>)>(&data).unwrap()
-            } == (Some("user_id".to_owned()), vec![])),
+                    == (Some("user_id".to_owned()), vec![])
+            }),
         "library updated successfully in storage"
     );
     assert_eq!(
@@ -415,21 +418,22 @@ fn actionctx_signup() {
             .get(PROFILE_STORAGE_KEY)
             .map_or(false, |data| {
                 serde_json::from_str::<Profile>(&data).unwrap()
-            } == Profile {
-                auth: Some(Auth {
-                    key: "auth_key".to_owned(),
-                    user: User {
-                        id: "user_id".to_owned(),
-                        email: "user_email".to_owned(),
-                        fb_id: None,
-                        avatar: None,
-                        last_modified: Env::now(),
-                        date_registered: Env::now(),
-                    },
-                }),
-                addons: vec![],
-                ..Default::default()
-            },),
+                    == Profile {
+                        auth: Some(Auth {
+                            key: "auth_key".to_owned(),
+                            user: User {
+                                id: "user_id".to_owned(),
+                                email: "user_email".to_owned(),
+                                fb_id: None,
+                                avatar: None,
+                                last_modified: Env::now(),
+                                date_registered: Env::now(),
+                            },
+                        }),
+                        addons: vec![],
+                        ..Default::default()
+                    }
+            }),
         "profile updated successfully in storage"
     );
     assert!(
@@ -439,7 +443,8 @@ fn actionctx_signup() {
             .get(LIBRARY_RECENT_STORAGE_KEY)
             .map_or(false, |data| {
                 serde_json::from_str::<(UID, Vec<LibItem>)>(&data).unwrap()
-            } == (Some("user_id".to_owned()), vec![])),
+                    == (Some("user_id".to_owned()), vec![])
+            }),
         "recent library updated successfully in storage"
     );
     assert!(
@@ -449,7 +454,8 @@ fn actionctx_signup() {
             .get(LIBRARY_STORAGE_KEY)
             .map_or(false, |data| {
                 serde_json::from_str::<(UID, Vec<LibItem>)>(&data).unwrap()
-            } == (Some("user_id".to_owned()), vec![])),
+                    == (Some("user_id".to_owned()), vec![])
+            }),
         "library updated successfully in storage"
     );
     assert_eq!(
