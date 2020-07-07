@@ -1,9 +1,7 @@
 use super::{default_fetch_handler, Env, Request, FETCH_HANDLER, REQUESTS, STORAGE};
 use crate::constants::{LIBRARY_RECENT_STORAGE_KEY, LIBRARY_STORAGE_KEY, PROFILE_STORAGE_KEY};
-use crate::state_types::models::addon_details::{AddonDetails, Selected};
-use crate::state_types::models::common::{DescriptorContent, DescriptorLoadable};
 use crate::state_types::models::ctx::Ctx;
-use crate::state_types::msg::{Action, ActionCtx, ActionLoad, Msg};
+use crate::state_types::msg::{Action, ActionCtx, Msg};
 use crate::state_types::{EnvFuture, Environment, Runtime};
 use crate::types::addons::{Descriptor, DescriptorFlags, Manifest};
 use crate::types::api::{
@@ -497,151 +495,46 @@ fn actionctx_installaddon() {
     #[derive(Model, Debug, Default)]
     struct Model {
         ctx: Ctx<Env>,
-        addon_details: AddonDetails,
     }
-    fn fetch_handler(request: Request) -> EnvFuture<Box<dyn Any>> {
-        match request {
-            Request {
-                url, method, body, ..
-            } if url == "http://127.0.0.1:7001/manifest.json"
-                && method == "GET"
-                && body == "null" =>
-            {
-                Box::new(future::ok(Box::new(Manifest {
-                    id: "com.stremio.taddon".to_owned(),
-                    version: Version {
-                        major: 1,
-                        minor: 0,
-                        patch: 0,
-                        pre: Default::default(),
-                        build: Default::default(),
-                    },
-                    name: "Stremio\'s test addon".to_owned(),
-                    contact_email: None,
-                    description: Some("Addon for test the stremio addons system".to_owned()),
-                    logo: None,
-                    background: None,
-                    types: Default::default(),
-                    resources: Default::default(),
-                    id_prefixes: Default::default(),
-                    catalogs: Default::default(),
-                    addon_catalogs: Default::default(),
-                    behavior_hints: Default::default(),
-                }) as Box<dyn Any>))
-            }
-            _ => default_fetch_handler(request),
-        }
-    }
+    let addon = Descriptor {
+        manifest: Manifest {
+            id: "com.stremio.taddon".to_owned(),
+            version: Version {
+                major: 1,
+                minor: 0,
+                patch: 0,
+                pre: vec![],
+                build: vec![],
+            },
+            name: "Stremio\'s test addon".to_owned(),
+            contact_email: None,
+            description: Some("Addon for test the stremio addons system".to_owned()),
+            logo: None,
+            background: None,
+            types: vec![],
+            resources: vec![],
+            id_prefixes: Some(vec![]),
+            catalogs: vec![],
+            addon_catalogs: vec![],
+            behavior_hints: Default::default(),
+        },
+        transport_url: "http://127.0.0.1:7001/manifest.json".to_owned(),
+        flags: DescriptorFlags {
+            official: false,
+            protected: false,
+            extra: Default::default(),
+        },
+    };
     Env::reset();
-    *FETCH_HANDLER.write().unwrap() = Box::new(fetch_handler);
     let (runtime, _) = Runtime::<Env, Model>::new(Model::default(), 1000);
     run(
-        runtime.dispatch(&Msg::Action(Action::Load(ActionLoad::AddonDetails(
-            Selected {
-                transport_url: "http://127.0.0.1:7001/manifest.json".to_owned(),
-            },
-        )))),
-    );
-    run(
         runtime.dispatch(&Msg::Action(Action::Ctx(ActionCtx::InstallAddon(
-            Descriptor {
-                manifest: Manifest {
-                    id: "com.stremio.taddon".to_owned(),
-                    version: Version {
-                        major: 1,
-                        minor: 0,
-                        patch: 0,
-                        pre: Default::default(),
-                        build: Default::default(),
-                    },
-                    name: "Stremio\'s test addon".to_owned(),
-                    contact_email: None,
-                    description: Some("Addon for test the stremio addons system".to_owned()),
-                    logo: None,
-                    background: None,
-                    types: Default::default(),
-                    resources: Default::default(),
-                    id_prefixes: Default::default(),
-                    catalogs: Default::default(),
-                    addon_catalogs: Default::default(),
-                    behavior_hints: Default::default(),
-                },
-                transport_url: "http://127.0.0.1:7001/manifest.json".to_owned(),
-                flags: DescriptorFlags {
-                    official: false,
-                    protected: false,
-                    extra: Default::default(),
-                },
-            },
+            addon.to_owned(),
         )))),
-    );
-    assert_eq!(
-        runtime.app.read().unwrap().addon_details.addon,
-        Some(DescriptorLoadable {
-            transport_url: "http://127.0.0.1:7001/manifest.json".to_owned(),
-            content: DescriptorContent::Ready(Descriptor {
-                manifest: Manifest {
-                    id: "com.stremio.taddon".to_owned(),
-                    version: Version {
-                        major: 1,
-                        minor: 0,
-                        patch: 0,
-                        pre: Default::default(),
-                        build: Default::default(),
-                    },
-                    name: "Stremio\'s test addon".to_owned(),
-                    contact_email: None,
-                    description: Some("Addon for test the stremio addons system".to_owned(),),
-                    logo: None,
-                    background: None,
-                    types: Default::default(),
-                    resources: Default::default(),
-                    id_prefixes: None,
-                    catalogs: Default::default(),
-                    addon_catalogs: Default::default(),
-                    behavior_hints: Default::default(),
-                },
-                transport_url: "http://127.0.0.1:7001/manifest.json".to_owned(),
-                flags: DescriptorFlags {
-                    official: false,
-                    protected: false,
-                    extra: Default::default(),
-                },
-            },),
-        },),
-        "addon updated successfully in memory"
     );
     assert_eq!(
         runtime.app.read().unwrap().ctx.profile.addons.last(),
-        Some(&Descriptor {
-            manifest: Manifest {
-                id: "com.stremio.taddon".to_owned(),
-                version: Version {
-                    major: 1,
-                    minor: 0,
-                    patch: 0,
-                    pre: Default::default(),
-                    build: Default::default(),
-                },
-                name: "Stremio\'s test addon".to_owned(),
-                contact_email: None,
-                description: Some("Addon for test the stremio addons system".to_owned(),),
-                logo: None,
-                background: None,
-                types: Default::default(),
-                resources: Default::default(),
-                id_prefixes: None,
-                catalogs: Default::default(),
-                addon_catalogs: Default::default(),
-                behavior_hints: Default::default(),
-            },
-            transport_url: "http://127.0.0.1:7001/manifest.json".to_owned(),
-            flags: DescriptorFlags {
-                official: false,
-                protected: false,
-                extra: Default::default(),
-            },
-        }),
+        Some(&addon),
         "addon installed successfully"
     );
     assert_eq!(
@@ -649,50 +542,7 @@ fn actionctx_installaddon() {
             .unwrap()
             .addons
             .last(),
-        Some(&Descriptor {
-            manifest: Manifest {
-                id: "com.stremio.taddon".to_owned(),
-                version: Version {
-                    major: 1,
-                    minor: 0,
-                    patch: 0,
-                    pre: Default::default(),
-                    build: Default::default(),
-                },
-                name: "Stremio\'s test addon".to_owned(),
-                contact_email: None,
-                description: Some("Addon for test the stremio addons system".to_owned(),),
-                logo: None,
-                background: None,
-                types: Default::default(),
-                resources: Default::default(),
-                id_prefixes: None,
-                catalogs: Default::default(),
-                addon_catalogs: Default::default(),
-                behavior_hints: Default::default(),
-            },
-            transport_url: "http://127.0.0.1:7001/manifest.json".to_owned(),
-            flags: DescriptorFlags {
-                official: false,
-                protected: false,
-                extra: Default::default(),
-            },
-        },),
+        Some(&addon),
         "addon updated successfully in storage"
-    );
-    assert_eq!(
-        REQUESTS.read().unwrap().len(),
-        1,
-        "One request has been sent"
-    );
-    assert_eq!(
-        REQUESTS.read().unwrap().get(0).unwrap().to_owned(),
-        Request {
-            url: "http://127.0.0.1:7001/manifest.json".to_owned(),
-            method: "GET".to_owned(),
-            body: "null".to_owned(),
-            ..Default::default()
-        },
-        "Addon details request has been sent"
     );
 }
