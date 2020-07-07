@@ -3,6 +3,7 @@ use crate::constants::{LIBRARY_RECENT_STORAGE_KEY, LIBRARY_STORAGE_KEY, PROFILE_
 use crate::state_types::models::ctx::Ctx;
 use crate::state_types::msg::{Action, ActionCtx, Msg};
 use crate::state_types::{EnvFuture, Environment, Runtime};
+use crate::types::addons::{Descriptor, Manifest};
 use crate::types::api::{
     APIResult, Auth, AuthRequest, AuthResponse, CollectionResponse, GDPRConsent, SuccessResponse,
     True, User,
@@ -11,6 +12,7 @@ use crate::types::profile::{Profile, UID};
 use crate::types::{LibBucket, LibItem};
 use chrono::prelude::{TimeZone, Utc};
 use futures::future;
+use semver::Version;
 use std::any::Any;
 use std::fmt::Debug;
 use stremio_derive::Model;
@@ -485,5 +487,62 @@ fn actionctx_signup() {
             ..Default::default()
         },
         "DatastoreGet request has been sent"
+    );
+}
+
+#[test]
+fn actionctx_installaddon() {
+    #[derive(Model, Debug, Default)]
+    struct Model {
+        ctx: Ctx<Env>,
+    }
+    let addon = Descriptor {
+        manifest: Manifest {
+            id: "id".to_owned(),
+            version: Version::new(0, 0, 1),
+            name: "name".to_owned(),
+            contact_email: None,
+            description: None,
+            logo: None,
+            background: None,
+            types: vec![],
+            resources: vec![],
+            id_prefixes: None,
+            catalogs: vec![],
+            addon_catalogs: vec![],
+            behavior_hints: Default::default(),
+        },
+        transport_url: "transport_url".to_owned(),
+        flags: Default::default(),
+    };
+    Env::reset();
+    let (runtime, _) = Runtime::<Env, Model>::new(
+        Model {
+            ctx: Ctx {
+                profile: Profile {
+                    addons: vec![],
+                    ..Default::default()
+                },
+                ..Default::default()
+            },
+        },
+        1000,
+    );
+    run(
+        runtime.dispatch(&Msg::Action(Action::Ctx(ActionCtx::InstallAddon(
+            addon.to_owned(),
+        )))),
+    );
+    assert_eq!(
+        runtime.app.read().unwrap().ctx.profile.addons[0],
+        addon,
+        "addon installed successfully"
+    );
+    assert_eq!(
+        serde_json::from_str::<Profile>(&STORAGE.read().unwrap().get(PROFILE_STORAGE_KEY).unwrap())
+            .unwrap()
+            .addons[0],
+        addon,
+        "addon updated successfully in storage"
     );
 }
