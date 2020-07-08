@@ -548,14 +548,14 @@ fn actionctx_installaddon() {
 }
 
 #[test]
-fn actionctx_installaddon_twice() {
+fn actionctx_installaddon_update() {
     #[derive(Model, Debug, Default)]
     struct Model {
         ctx: Ctx<Env>,
     }
-    let first_addon = Descriptor {
+    let addon = Descriptor {
         manifest: Manifest {
-            id: "first_addon_id".to_owned(),
+            id: "first_addon_new_id".to_owned(),
             version: Version::new(0, 0, 1),
             name: "name".to_owned(),
             contact_email: None,
@@ -569,26 +569,7 @@ fn actionctx_installaddon_twice() {
             addon_catalogs: vec![],
             behavior_hints: Default::default(),
         },
-        transport_url: "transport_url".to_owned(),
-        flags: Default::default(),
-    };
-    let second_addon = Descriptor {
-        manifest: Manifest {
-            id: "second_addon_id".to_owned(),
-            version: Version::new(0, 0, 1),
-            name: "name".to_owned(),
-            contact_email: None,
-            description: None,
-            logo: None,
-            background: None,
-            types: vec![],
-            resources: vec![],
-            id_prefixes: None,
-            catalogs: vec![],
-            addon_catalogs: vec![],
-            behavior_hints: Default::default(),
-        },
-        transport_url: "transport_url".to_owned(),
+        transport_url: "first_addon_transport_url".to_owned(),
         flags: Default::default(),
     };
     Env::reset();
@@ -596,7 +577,46 @@ fn actionctx_installaddon_twice() {
         Model {
             ctx: Ctx {
                 profile: Profile {
-                    addons: vec![],
+                    addons: vec![
+                        Descriptor {
+                            manifest: Manifest {
+                                id: "first_addon_id".to_owned(),
+                                version: Version::new(0, 0, 1),
+                                name: "name".to_owned(),
+                                contact_email: None,
+                                description: None,
+                                logo: None,
+                                background: None,
+                                types: vec![],
+                                resources: vec![],
+                                id_prefixes: None,
+                                catalogs: vec![],
+                                addon_catalogs: vec![],
+                                behavior_hints: Default::default(),
+                            },
+                            transport_url: "first_addon_transport_url".to_owned(),
+                            flags: Default::default(),
+                        },
+                        Descriptor {
+                            manifest: Manifest {
+                                id: "second_addon_id".to_owned(),
+                                version: Version::new(0, 0, 1),
+                                name: "name".to_owned(),
+                                contact_email: None,
+                                description: None,
+                                logo: None,
+                                background: None,
+                                types: vec![],
+                                resources: vec![],
+                                id_prefixes: None,
+                                catalogs: vec![],
+                                addon_catalogs: vec![],
+                                behavior_hints: Default::default(),
+                            },
+                            transport_url: "second_addon_transport_url".to_owned(),
+                            flags: Default::default(),
+                        },
+                    ],
                     ..Default::default()
                 },
                 ..Default::default()
@@ -606,22 +626,17 @@ fn actionctx_installaddon_twice() {
     );
     run(
         runtime.dispatch(&Msg::Action(Action::Ctx(ActionCtx::InstallAddon(
-            first_addon.to_owned(),
-        )))),
-    );
-    run(
-        runtime.dispatch(&Msg::Action(Action::Ctx(ActionCtx::InstallAddon(
-            second_addon.to_owned(),
+            addon.to_owned(),
         )))),
     );
     assert_eq!(
         runtime.app.read().unwrap().ctx.profile.addons.len(),
-        1,
-        "There is one addon in memory"
+        2,
+        "There are two addons in memory"
     );
     assert_eq!(
         runtime.app.read().unwrap().ctx.profile.addons[0],
-        second_addon,
+        addon,
         "addon updated successfully in memory"
     );
     assert_eq!(
@@ -629,14 +644,14 @@ fn actionctx_installaddon_twice() {
             .unwrap()
             .addons
             .len(),
-        1,
-        "There is one addon in storage"
+        2,
+        "There are two addons in storage"
     );
     assert_eq!(
         serde_json::from_str::<Profile>(&STORAGE.read().unwrap().get(PROFILE_STORAGE_KEY).unwrap())
             .unwrap()
             .addons[0],
-        second_addon,
+        addon,
         "addon updated successfully in storage"
     );
 }
