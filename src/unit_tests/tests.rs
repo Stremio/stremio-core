@@ -546,3 +546,97 @@ fn actionctx_installaddon() {
         "addon updated successfully in storage"
     );
 }
+
+#[test]
+fn actionctx_installaddon_twice() {
+    #[derive(Model, Debug, Default)]
+    struct Model {
+        ctx: Ctx<Env>,
+    }
+    let first_addon = Descriptor {
+        manifest: Manifest {
+            id: "first_addon_id".to_owned(),
+            version: Version::new(0, 0, 1),
+            name: "name".to_owned(),
+            contact_email: None,
+            description: None,
+            logo: None,
+            background: None,
+            types: vec![],
+            resources: vec![],
+            id_prefixes: None,
+            catalogs: vec![],
+            addon_catalogs: vec![],
+            behavior_hints: Default::default(),
+        },
+        transport_url: "transport_url".to_owned(),
+        flags: Default::default(),
+    };
+    let second_addon = Descriptor {
+        manifest: Manifest {
+            id: "second_addon_id".to_owned(),
+            version: Version::new(0, 0, 1),
+            name: "name".to_owned(),
+            contact_email: None,
+            description: None,
+            logo: None,
+            background: None,
+            types: vec![],
+            resources: vec![],
+            id_prefixes: None,
+            catalogs: vec![],
+            addon_catalogs: vec![],
+            behavior_hints: Default::default(),
+        },
+        transport_url: "transport_url".to_owned(),
+        flags: Default::default(),
+    };
+    Env::reset();
+    let (runtime, _) = Runtime::<Env, Model>::new(
+        Model {
+            ctx: Ctx {
+                profile: Profile {
+                    addons: vec![],
+                    ..Default::default()
+                },
+                ..Default::default()
+            },
+        },
+        1000,
+    );
+    run(
+        runtime.dispatch(&Msg::Action(Action::Ctx(ActionCtx::InstallAddon(
+            first_addon.to_owned(),
+        )))),
+    );
+    run(
+        runtime.dispatch(&Msg::Action(Action::Ctx(ActionCtx::InstallAddon(
+            second_addon.to_owned(),
+        )))),
+    );
+    assert_eq!(
+        runtime.app.read().unwrap().ctx.profile.addons.len(),
+        1,
+        "There is one addon in memory"
+    );
+    assert_eq!(
+        runtime.app.read().unwrap().ctx.profile.addons[0],
+        second_addon,
+        "addon updated successfully in memory"
+    );
+    assert_eq!(
+        serde_json::from_str::<Profile>(&STORAGE.read().unwrap().get(PROFILE_STORAGE_KEY).unwrap())
+            .unwrap()
+            .addons
+            .len(),
+        1,
+        "There is one addon in storage"
+    );
+    assert_eq!(
+        serde_json::from_str::<Profile>(&STORAGE.read().unwrap().get(PROFILE_STORAGE_KEY).unwrap())
+            .unwrap()
+            .addons[0],
+        second_addon,
+        "addon updated successfully in storage"
+    );
+}
