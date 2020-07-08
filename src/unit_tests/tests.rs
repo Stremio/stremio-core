@@ -491,7 +491,7 @@ fn actionctx_signup() {
 }
 
 #[test]
-fn actionctx_installaddon() {
+fn actionctx_installaddon_install() {
     #[derive(Model, Debug, Default)]
     struct Model {
         ctx: Ctx<Env>,
