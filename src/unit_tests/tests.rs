@@ -555,7 +555,7 @@ fn actionctx_installaddon_update() {
     }
     let addon = Descriptor {
         manifest: Manifest {
-            id: "first_addon_new_id".to_owned(),
+            id: "id1.0".to_owned(),
             version: Version::new(0, 0, 1),
             name: "name".to_owned(),
             contact_email: None,
@@ -569,7 +569,7 @@ fn actionctx_installaddon_update() {
             addon_catalogs: vec![],
             behavior_hints: Default::default(),
         },
-        transport_url: "first_addon_transport_url".to_owned(),
+        transport_url: "transport_url1".to_owned(),
         flags: Default::default(),
     };
     Env::reset();
@@ -580,7 +580,7 @@ fn actionctx_installaddon_update() {
                     addons: vec![
                         Descriptor {
                             manifest: Manifest {
-                                id: "first_addon_id".to_owned(),
+                                id: "id1".to_owned(),
                                 version: Version::new(0, 0, 1),
                                 name: "name".to_owned(),
                                 contact_email: None,
@@ -594,12 +594,12 @@ fn actionctx_installaddon_update() {
                                 addon_catalogs: vec![],
                                 behavior_hints: Default::default(),
                             },
-                            transport_url: "first_addon_transport_url".to_owned(),
+                            transport_url: "transport_url1".to_owned(),
                             flags: Default::default(),
                         },
                         Descriptor {
                             manifest: Manifest {
-                                id: "second_addon_id".to_owned(),
+                                id: "id2".to_owned(),
                                 version: Version::new(0, 0, 1),
                                 name: "name".to_owned(),
                                 contact_email: None,
@@ -613,7 +613,7 @@ fn actionctx_installaddon_update() {
                                 addon_catalogs: vec![],
                                 behavior_hints: Default::default(),
                             },
-                            transport_url: "second_addon_transport_url".to_owned(),
+                            transport_url: "transport_url2".to_owned(),
                             flags: Default::default(),
                         },
                     ],
@@ -694,25 +694,7 @@ fn actionctx_installaddon_update_fail() {
         Model {
             ctx: Ctx {
                 profile: Profile {
-                    addons: vec![Descriptor {
-                        manifest: Manifest {
-                            id: "id".to_owned(),
-                            version: Version::new(0, 0, 1),
-                            name: "name".to_owned(),
-                            contact_email: None,
-                            description: None,
-                            logo: None,
-                            background: None,
-                            types: vec![],
-                            resources: vec![],
-                            id_prefixes: None,
-                            catalogs: vec![],
-                            addon_catalogs: vec![],
-                            behavior_hints: Default::default(),
-                        },
-                        transport_url: "transport_url".to_owned(),
-                        flags: Default::default(),
-                    }],
+                    addons: vec![addon.to_owned()],
                     ..Default::default()
                 },
                 ..Default::default()
