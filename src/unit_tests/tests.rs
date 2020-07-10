@@ -844,7 +844,7 @@ fn actionctx_uninstalladdon_uninstall_protected() {
     );
     run(
         runtime.dispatch(&Msg::Action(Action::Ctx(ActionCtx::UninstallAddon(
-            addon.transport_url,
+            addon.to_owned().transport_url,
         )))),
     );
     assert_eq!(
@@ -853,12 +853,24 @@ fn actionctx_uninstalladdon_uninstall_protected() {
         "There is one addon in memory"
     );
     assert_eq!(
+        runtime.app.read().unwrap().ctx.profile.addons[0],
+        addon.to_owned(),
+        "protected addon is in memory"
+    );
+    assert_eq!(
         serde_json::from_str::<Profile>(&STORAGE.read().unwrap().get(PROFILE_STORAGE_KEY).unwrap())
             .unwrap()
             .addons
             .len(),
         1,
         "There is one addon in storage"
+    );
+    assert_eq!(
+        serde_json::from_str::<Profile>(&STORAGE.read().unwrap().get(PROFILE_STORAGE_KEY).unwrap())
+            .unwrap()
+            .addons[0],
+        addon.to_owned(),
+        "protected addon is in storage"
     );
 }
 
@@ -891,7 +903,7 @@ fn actionctx_uninstalladdon_fail() {
     STORAGE.write().unwrap().insert(
         PROFILE_STORAGE_KEY.to_owned(),
         serde_json::to_string(&Profile {
-            addons: vec![],
+            addons: vec![addon.to_owned()],
             ..Default::default()
         })
         .unwrap(),
@@ -900,7 +912,7 @@ fn actionctx_uninstalladdon_fail() {
         Model {
             ctx: Ctx {
                 profile: Profile {
-                    addons: vec![],
+                    addons: vec![addon.to_owned()],
                     ..Default::default()
                 },
                 ..Default::default()
@@ -910,18 +922,20 @@ fn actionctx_uninstalladdon_fail() {
     );
     run(
         runtime.dispatch(&Msg::Action(Action::Ctx(ActionCtx::UninstallAddon(
-            addon.transport_url,
+            "transport_url2".to_owned(),
         )))),
     );
-    assert!(
-        runtime.app.read().unwrap().ctx.profile.addons.is_empty(),
-        "addons are empty in memory"
+    assert_eq!(
+        runtime.app.read().unwrap().ctx.profile.addons.len(),
+        1,
+        "There is one addon in memory"
     );
-    assert!(
+    assert_eq!(
         serde_json::from_str::<Profile>(&STORAGE.read().unwrap().get(PROFILE_STORAGE_KEY).unwrap())
             .unwrap()
             .addons
-            .is_empty(),
-        "addons are empty in storage"
+            .len(),
+        1,
+        "There is one addon in storage"
     );
 }
