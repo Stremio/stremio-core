@@ -3,7 +3,7 @@ use crate::constants::{LIBRARY_RECENT_STORAGE_KEY, LIBRARY_STORAGE_KEY, PROFILE_
 use crate::state_types::models::ctx::Ctx;
 use crate::state_types::msg::{Action, ActionCtx, Msg};
 use crate::state_types::{EnvFuture, Environment, Runtime};
-use crate::types::addons::{Descriptor, Manifest};
+use crate::types::addons::{Descriptor, DescriptorFlags, Manifest};
 use crate::types::api::{
     APIResult, Auth, AuthRequest, AuthResponse, CollectionResponse, GDPRConsent, SuccessResponse,
     True, User,
@@ -719,5 +719,209 @@ fn actionctx_installaddon_update_fail() {
             .len(),
         1,
         "There is one addon in storage"
+    );
+}
+
+#[test]
+fn actionctx_uninstalladdon_uninstall() {
+    #[derive(Model, Debug, Default)]
+    struct Model {
+        ctx: Ctx<Env>,
+    }
+    let addon = Descriptor {
+        manifest: Manifest {
+            id: "id".to_owned(),
+            version: Version::new(0, 0, 1),
+            name: "name".to_owned(),
+            contact_email: None,
+            description: None,
+            logo: None,
+            background: None,
+            types: vec![],
+            resources: vec![],
+            id_prefixes: None,
+            catalogs: vec![],
+            addon_catalogs: vec![],
+            behavior_hints: Default::default(),
+        },
+        transport_url: "transport_url".to_owned(),
+        flags: Default::default(),
+    };
+    Env::reset();
+    STORAGE.write().unwrap().insert(
+        PROFILE_STORAGE_KEY.to_owned(),
+        serde_json::to_string(&Profile {
+            addons: vec![addon.to_owned()],
+            ..Default::default()
+        })
+        .unwrap(),
+    );
+    let (runtime, _) = Runtime::<Env, Model>::new(
+        Model {
+            ctx: Ctx {
+                profile: Profile {
+                    addons: vec![addon.to_owned()],
+                    ..Default::default()
+                },
+                ..Default::default()
+            },
+        },
+        1000,
+    );
+    run(
+        runtime.dispatch(&Msg::Action(Action::Ctx(ActionCtx::UninstallAddon(
+            addon.transport_url,
+        )))),
+    );
+    assert!(
+        runtime.app.read().unwrap().ctx.profile.addons.is_empty(),
+        "addons updated successfully in memory"
+    );
+    assert!(
+        STORAGE
+            .read()
+            .unwrap()
+            .get(PROFILE_STORAGE_KEY)
+            .map_or(true, |data| {
+                serde_json::from_str::<Profile>(&data)
+                    .unwrap()
+                    .addons
+                    .is_empty()
+            }),
+        "addons updated successfully in storage"
+    );
+}
+
+#[test]
+fn actionctx_uninstalladdon_uninstall_protected() {
+    #[derive(Model, Debug, Default)]
+    struct Model {
+        ctx: Ctx<Env>,
+    }
+    let addon = Descriptor {
+        manifest: Manifest {
+            id: "id".to_owned(),
+            version: Version::new(0, 0, 1),
+            name: "name".to_owned(),
+            contact_email: None,
+            description: None,
+            logo: None,
+            background: None,
+            types: vec![],
+            resources: vec![],
+            id_prefixes: None,
+            catalogs: vec![],
+            addon_catalogs: vec![],
+            behavior_hints: Default::default(),
+        },
+        transport_url: "transport_url".to_owned(),
+        flags: DescriptorFlags {
+            official: false,
+            protected: true,
+            extra: Default::default(),
+        },
+    };
+    Env::reset();
+    STORAGE.write().unwrap().insert(
+        PROFILE_STORAGE_KEY.to_owned(),
+        serde_json::to_string(&Profile {
+            addons: vec![addon.to_owned()],
+            ..Default::default()
+        })
+        .unwrap(),
+    );
+    let (runtime, _) = Runtime::<Env, Model>::new(
+        Model {
+            ctx: Ctx {
+                profile: Profile {
+                    addons: vec![addon.to_owned()],
+                    ..Default::default()
+                },
+                ..Default::default()
+            },
+        },
+        1000,
+    );
+    run(
+        runtime.dispatch(&Msg::Action(Action::Ctx(ActionCtx::UninstallAddon(
+            addon.transport_url,
+        )))),
+    );
+    assert_eq!(
+        runtime.app.read().unwrap().ctx.profile.addons.len(),
+        1,
+        "There is one addon in memory"
+    );
+    assert_eq!(
+        serde_json::from_str::<Profile>(&STORAGE.read().unwrap().get(PROFILE_STORAGE_KEY).unwrap())
+            .unwrap()
+            .addons
+            .len(),
+        1,
+        "There is one addon in storage"
+    );
+}
+
+#[test]
+fn actionctx_uninstalladdon_fail() {
+    #[derive(Model, Debug, Default)]
+    struct Model {
+        ctx: Ctx<Env>,
+    }
+    let addon = Descriptor {
+        manifest: Manifest {
+            id: "id".to_owned(),
+            version: Version::new(0, 0, 1),
+            name: "name".to_owned(),
+            contact_email: None,
+            description: None,
+            logo: None,
+            background: None,
+            types: vec![],
+            resources: vec![],
+            id_prefixes: None,
+            catalogs: vec![],
+            addon_catalogs: vec![],
+            behavior_hints: Default::default(),
+        },
+        transport_url: "transport_url".to_owned(),
+        flags: Default::default(),
+    };
+    Env::reset();
+    STORAGE.write().unwrap().insert(
+        PROFILE_STORAGE_KEY.to_owned(),
+        serde_json::to_string(&Profile {
+            addons: vec![],
+            ..Default::default()
+        })
+        .unwrap(),
+    );
+    let (runtime, _) = Runtime::<Env, Model>::new(
+        Model {
+            ctx: Ctx {
+                profile: Profile {
+                    addons: vec![],
+                    ..Default::default()
+                },
+                ..Default::default()
+            },
+        },
+        1000,
+    );
+    run(
+        runtime.dispatch(&Msg::Action(Action::Ctx(ActionCtx::UninstallAddon(
+            addon.transport_url,
+        )))),
+    );
+    assert!(
+        runtime.app.read().unwrap().ctx.profile.addons.is_empty(),
+        "addons are empty in memory"
+    );
+    assert!(
+        serde_json::from_str::<Profile>(&STORAGE.read().unwrap().get(PROFILE_STORAGE_KEY).unwrap())
+            .unwrap()
+            .addons
+            .is_empty(),
+        "addons are empty in storage"
     );
 }
