@@ -545,6 +545,10 @@ fn actionctx_installaddon_install() {
         addon,
         "addon updated successfully in storage"
     );
+    assert!(
+        REQUESTS.read().unwrap().is_empty(),
+        "No requests have been sent"
+    );
 }
 
 #[test]
@@ -753,6 +757,10 @@ fn actionctx_installaddon_update() {
             .addons[0],
         addon,
         "addon updated successfully in storage"
+    );
+    assert!(
+        REQUESTS.read().unwrap().is_empty(),
+        "No requests have been sent"
     );
 }
 
