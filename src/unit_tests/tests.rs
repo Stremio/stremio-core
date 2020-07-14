@@ -657,7 +657,7 @@ fn actionctx_installaddon_update() {
 }
 
 #[test]
-fn actionctx_installaddon_update_fail() {
+fn actionctx_installaddon_already_installed() {
     #[derive(Model, Debug, Default)]
     struct Model {
         ctx: Ctx<Env>,
