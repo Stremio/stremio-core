@@ -962,28 +962,15 @@ fn actionctx_uninstalladdon_uninstall_protected() {
         )))),
     );
     assert_eq!(
-        runtime.app.read().unwrap().ctx.profile.addons.len(),
-        1,
-        "There is one addon in memory"
-    );
-    assert_eq!(
-        runtime.app.read().unwrap().ctx.profile.addons[0],
-        addon.to_owned(),
+        runtime.app.read().unwrap().ctx.profile.addons,
+        vec![addon.to_owned()],
         "protected addon is in memory"
     );
     assert_eq!(
         serde_json::from_str::<Profile>(&STORAGE.read().unwrap().get(PROFILE_STORAGE_KEY).unwrap())
             .unwrap()
-            .addons
-            .len(),
-        1,
-        "There is one addon in storage"
-    );
-    assert_eq!(
-        serde_json::from_str::<Profile>(&STORAGE.read().unwrap().get(PROFILE_STORAGE_KEY).unwrap())
-            .unwrap()
-            .addons[0],
-        addon.to_owned(),
+            .addons,
+        vec![addon.to_owned()],
         "protected addon is in storage"
     );
 }
