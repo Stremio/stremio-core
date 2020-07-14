@@ -1026,17 +1026,22 @@ fn actionctx_uninstalladdon_fail() {
             "transport_url2".to_owned(),
         )))),
     );
-    assert_eq!(
-        runtime.app.read().unwrap().ctx.profile.addons.len(),
-        1,
-        "There is one addon in memory"
+    assert!(
+        runtime
+            .app
+            .read()
+            .unwrap()
+            .ctx
+            .profile
+            .addons
+            .contains(&addon),
+        "addon is in memory"
     );
-    assert_eq!(
+    assert!(
         serde_json::from_str::<Profile>(&STORAGE.read().unwrap().get(PROFILE_STORAGE_KEY).unwrap())
             .unwrap()
             .addons
-            .len(),
-        1,
-        "There is one addon in storage"
+            .contains(&addon),
+        "addon is in storage"
     );
 }
