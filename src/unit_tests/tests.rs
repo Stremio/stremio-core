@@ -790,6 +790,10 @@ fn actionctx_uninstalladdon_uninstall() {
             }),
         "addons updated successfully in storage"
     );
+    assert!(
+        REQUESTS.read().unwrap().is_empty(),
+        "No requests have been sent"
+    );
 }
 
 #[test]
