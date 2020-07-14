@@ -836,45 +836,31 @@ fn actionctx_uninstalladdon_uninstall_with_user() {
         transport_url: "transport_url".to_owned(),
         flags: Default::default(),
     };
+    let profile = Profile {
+        auth: Some(Auth {
+            key: "auth_key".to_owned(),
+            user: User {
+                id: "user_id".to_owned(),
+                email: "user_email".to_owned(),
+                fb_id: None,
+                avatar: None,
+                last_modified: Env::now(),
+                date_registered: Env::now(),
+            },
+        }),
+        addons: vec![addon.to_owned()],
+        ..Default::default()
+    };
     Env::reset();
     *FETCH_HANDLER.write().unwrap() = Box::new(fetch_handler);
     STORAGE.write().unwrap().insert(
         PROFILE_STORAGE_KEY.to_owned(),
-        serde_json::to_string(&Profile {
-            auth: Some(Auth {
-                key: "auth_key".to_owned(),
-                user: User {
-                    id: "user_id".to_owned(),
-                    email: "user_email".to_owned(),
-                    fb_id: None,
-                    avatar: None,
-                    last_modified: Env::now(),
-                    date_registered: Env::now(),
-                },
-            }),
-            addons: vec![addon.to_owned()],
-            ..Default::default()
-        })
-        .unwrap(),
+        serde_json::to_string(&profile).unwrap(),
     );
     let (runtime, _) = Runtime::<Env, Model>::new(
         Model {
             ctx: Ctx {
-                profile: Profile {
-                    auth: Some(Auth {
-                        key: "auth_key".to_owned(),
-                        user: User {
-                            id: "user_id".to_owned(),
-                            email: "user_email".to_owned(),
-                            fb_id: None,
-                            avatar: None,
-                            last_modified: Env::now(),
-                            date_registered: Env::now(),
-                        },
-                    }),
-                    addons: vec![addon.to_owned()],
-                    ..Default::default()
-                },
+                profile,
                 ..Default::default()
             },
         },
