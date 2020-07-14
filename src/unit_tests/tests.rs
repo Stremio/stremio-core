@@ -140,7 +140,7 @@ fn actionctx_logout() {
 }
 
 #[test]
-fn actionctx_login() {
+fn actionctx_authenticate_login() {
     #[derive(Model, Debug, Default)]
     struct Model {
         ctx: Ctx<Env>,
@@ -312,7 +312,7 @@ fn actionctx_login() {
 }
 
 #[test]
-fn actionctx_signup() {
+fn actionctx_authenticate_register() {
     #[derive(Model, Debug, Default)]
     struct Model {
         ctx: Ctx<Env>,
