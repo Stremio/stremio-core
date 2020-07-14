@@ -97,7 +97,7 @@ fn actionctx_logout() {
             .read()
             .unwrap()
             .get(PROFILE_STORAGE_KEY)
-            .map_or(true, |data| {
+            .map_or(false, |data| {
                 serde_json::from_str::<Profile>(&data).unwrap() == Default::default()
             }),
         "profile updated successfully in storage"
@@ -107,7 +107,7 @@ fn actionctx_logout() {
             .read()
             .unwrap()
             .get(LIBRARY_RECENT_STORAGE_KEY)
-            .map_or(true, |data| {
+            .map_or(false, |data| {
                 serde_json::from_str::<(UID, Vec<LibItem>)>(&data).unwrap() == Default::default()
             }),
         "recent library updated successfully in storage"
@@ -117,7 +117,7 @@ fn actionctx_logout() {
             .read()
             .unwrap()
             .get(LIBRARY_STORAGE_KEY)
-            .map_or(true, |data| {
+            .map_or(false, |data| {
                 serde_json::from_str::<(UID, Vec<LibItem>)>(&data).unwrap() == Default::default()
             }),
         "library updated successfully in storage"
@@ -782,7 +782,7 @@ fn actionctx_uninstalladdon_anonymous() {
             .read()
             .unwrap()
             .get(PROFILE_STORAGE_KEY)
-            .map_or(true, |data| {
+            .map_or(false, |data| {
                 serde_json::from_str::<Profile>(&data)
                     .unwrap()
                     .addons
@@ -880,7 +880,7 @@ fn actionctx_uninstalladdon_with_user() {
             .read()
             .unwrap()
             .get(PROFILE_STORAGE_KEY)
-            .map_or(true, |data| {
+            .map_or(false, |data| {
                 serde_json::from_str::<Profile>(&data)
                     .unwrap()
                     .addons
