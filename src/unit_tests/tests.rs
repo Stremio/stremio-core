@@ -770,7 +770,7 @@ fn actionctx_uninstalladdon_uninstall() {
     );
     run(
         runtime.dispatch(&Msg::Action(Action::Ctx(ActionCtx::UninstallAddon(
-            addon.transport_url,
+            "transport_url".to_owned(),
         )))),
     );
     assert!(
@@ -868,7 +868,7 @@ fn actionctx_uninstalladdon_uninstall_with_user() {
     );
     run(
         runtime.dispatch(&Msg::Action(Action::Ctx(ActionCtx::UninstallAddon(
-            addon.transport_url,
+            "transport_url".to_owned(),
         )))),
     );
     assert!(
@@ -958,7 +958,7 @@ fn actionctx_uninstalladdon_uninstall_protected() {
     );
     run(
         runtime.dispatch(&Msg::Action(Action::Ctx(ActionCtx::UninstallAddon(
-            addon.to_owned().transport_url,
+            "transport_url".to_owned(),
         )))),
     );
     assert_eq!(
