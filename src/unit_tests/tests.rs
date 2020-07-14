@@ -723,7 +723,7 @@ fn actionctx_installaddon_already_installed() {
 }
 
 #[test]
-fn actionctx_uninstalladdon_uninstall() {
+fn actionctx_uninstalladdon_anonymous() {
     #[derive(Model, Debug, Default)]
     struct Model {
         ctx: Ctx<Env>,
@@ -797,7 +797,7 @@ fn actionctx_uninstalladdon_uninstall() {
 }
 
 #[test]
-fn actionctx_uninstalladdon_uninstall_with_user() {
+fn actionctx_uninstalladdon_with_user() {
     #[derive(Model, Debug, Default)]
     struct Model {
         ctx: Ctx<Env>,
@@ -907,7 +907,7 @@ fn actionctx_uninstalladdon_uninstall_with_user() {
 }
 
 #[test]
-fn actionctx_uninstalladdon_uninstall_protected() {
+fn actionctx_uninstalladdon_protected() {
     #[derive(Model, Debug, Default)]
     struct Model {
         ctx: Ctx<Env>,
@@ -976,7 +976,7 @@ fn actionctx_uninstalladdon_uninstall_protected() {
 }
 
 #[test]
-fn actionctx_uninstalladdon_fail() {
+fn actionctx_uninstalladdon_not_installed() {
     #[derive(Model, Debug, Default)]
     struct Model {
         ctx: Ctx<Env>,
