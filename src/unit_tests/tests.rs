@@ -728,41 +728,37 @@ fn actionctx_uninstalladdon_anonymous() {
     struct Model {
         ctx: Ctx<Env>,
     }
-    let addon = Descriptor {
-        manifest: Manifest {
-            id: "id".to_owned(),
-            version: Version::new(0, 0, 1),
-            name: "name".to_owned(),
-            contact_email: None,
-            description: None,
-            logo: None,
-            background: None,
-            types: vec![],
-            resources: vec![],
-            id_prefixes: None,
-            catalogs: vec![],
-            addon_catalogs: vec![],
-            behavior_hints: Default::default(),
-        },
-        transport_url: "transport_url".to_owned(),
-        flags: Default::default(),
+    let profile = Profile {
+        addons: vec![Descriptor {
+            manifest: Manifest {
+                id: "id".to_owned(),
+                version: Version::new(0, 0, 1),
+                name: "name".to_owned(),
+                contact_email: None,
+                description: None,
+                logo: None,
+                background: None,
+                types: vec![],
+                resources: vec![],
+                id_prefixes: None,
+                catalogs: vec![],
+                addon_catalogs: vec![],
+                behavior_hints: Default::default(),
+            },
+            transport_url: "transport_url".to_owned(),
+            flags: Default::default(),
+        }],
+        ..Default::default()
     };
     Env::reset();
     STORAGE.write().unwrap().insert(
         PROFILE_STORAGE_KEY.to_owned(),
-        serde_json::to_string(&Profile {
-            addons: vec![addon.to_owned()],
-            ..Default::default()
-        })
-        .unwrap(),
+        serde_json::to_string(&profile).unwrap(),
     );
     let (runtime, _) = Runtime::<Env, Model>::new(
         Model {
             ctx: Ctx {
-                profile: Profile {
-                    addons: vec![addon.to_owned()],
-                    ..Default::default()
-                },
+                profile,
                 ..Default::default()
             },
         },
@@ -817,25 +813,6 @@ fn actionctx_uninstalladdon_with_user() {
             _ => default_fetch_handler(request),
         }
     }
-    let addon = Descriptor {
-        manifest: Manifest {
-            id: "id".to_owned(),
-            version: Version::new(0, 0, 1),
-            name: "name".to_owned(),
-            contact_email: None,
-            description: None,
-            logo: None,
-            background: None,
-            types: vec![],
-            resources: vec![],
-            id_prefixes: None,
-            catalogs: vec![],
-            addon_catalogs: vec![],
-            behavior_hints: Default::default(),
-        },
-        transport_url: "transport_url".to_owned(),
-        flags: Default::default(),
-    };
     let profile = Profile {
         auth: Some(Auth {
             key: "auth_key".to_owned(),
@@ -848,7 +825,25 @@ fn actionctx_uninstalladdon_with_user() {
                 date_registered: Env::now(),
             },
         }),
-        addons: vec![addon.to_owned()],
+        addons: vec![Descriptor {
+            manifest: Manifest {
+                id: "id".to_owned(),
+                version: Version::new(0, 0, 1),
+                name: "name".to_owned(),
+                contact_email: None,
+                description: None,
+                logo: None,
+                background: None,
+                types: vec![],
+                resources: vec![],
+                id_prefixes: None,
+                catalogs: vec![],
+                addon_catalogs: vec![],
+                behavior_hints: Default::default(),
+            },
+            transport_url: "transport_url".to_owned(),
+            flags: Default::default(),
+        }],
         ..Default::default()
     };
     Env::reset();
@@ -935,22 +930,30 @@ fn actionctx_uninstalladdon_protected() {
             extra: Default::default(),
         },
     };
+    let profile = Profile {
+        auth: Some(Auth {
+            key: "auth_key".to_owned(),
+            user: User {
+                id: "user_id".to_owned(),
+                email: "user_email".to_owned(),
+                fb_id: None,
+                avatar: None,
+                last_modified: Env::now(),
+                date_registered: Env::now(),
+            },
+        }),
+        addons: vec![addon.to_owned()],
+        ..Default::default()
+    };
     Env::reset();
     STORAGE.write().unwrap().insert(
         PROFILE_STORAGE_KEY.to_owned(),
-        serde_json::to_string(&Profile {
-            addons: vec![addon.to_owned()],
-            ..Default::default()
-        })
-        .unwrap(),
+        serde_json::to_string(&profile).unwrap(),
     );
     let (runtime, _) = Runtime::<Env, Model>::new(
         Model {
             ctx: Ctx {
-                profile: Profile {
-                    addons: vec![addon.to_owned()],
-                    ..Default::default()
-                },
+                profile,
                 ..Default::default()
             },
         },
@@ -966,11 +969,14 @@ fn actionctx_uninstalladdon_protected() {
         vec![addon.to_owned()],
         "protected addon is in memory"
     );
-    assert_eq!(
-        serde_json::from_str::<Profile>(&STORAGE.read().unwrap().get(PROFILE_STORAGE_KEY).unwrap())
+    assert!(
+        STORAGE
+            .read()
             .unwrap()
-            .addons,
-        vec![addon.to_owned()],
+            .get(PROFILE_STORAGE_KEY)
+            .map_or(false, |data| {
+                serde_json::from_str::<Profile>(&data).unwrap().addons == vec![addon.to_owned()]
+            }),
         "protected addon is in storage"
     );
 }
@@ -1000,22 +1006,30 @@ fn actionctx_uninstalladdon_not_installed() {
         transport_url: "transport_url".to_owned(),
         flags: Default::default(),
     };
+    let profile = Profile {
+        auth: Some(Auth {
+            key: "auth_key".to_owned(),
+            user: User {
+                id: "user_id".to_owned(),
+                email: "user_email".to_owned(),
+                fb_id: None,
+                avatar: None,
+                last_modified: Env::now(),
+                date_registered: Env::now(),
+            },
+        }),
+        addons: vec![addon.to_owned()],
+        ..Default::default()
+    };
     Env::reset();
     STORAGE.write().unwrap().insert(
         PROFILE_STORAGE_KEY.to_owned(),
-        serde_json::to_string(&Profile {
-            addons: vec![addon.to_owned()],
-            ..Default::default()
-        })
-        .unwrap(),
+        serde_json::to_string(&profile).unwrap(),
     );
     let (runtime, _) = Runtime::<Env, Model>::new(
         Model {
             ctx: Ctx {
-                profile: Profile {
-                    addons: vec![addon.to_owned()],
-                    ..Default::default()
-                },
+                profile,
                 ..Default::default()
             },
         },
@@ -1026,22 +1040,23 @@ fn actionctx_uninstalladdon_not_installed() {
             "transport_url2".to_owned(),
         )))),
     );
-    assert!(
-        runtime
-            .app
-            .read()
-            .unwrap()
-            .ctx
-            .profile
-            .addons
-            .contains(&addon),
-        "addon is in memory"
+    assert_eq!(
+        runtime.app.read().unwrap().ctx.profile.addons,
+        vec![addon.to_owned()],
+        "addons in memory not updated"
     );
     assert!(
-        serde_json::from_str::<Profile>(&STORAGE.read().unwrap().get(PROFILE_STORAGE_KEY).unwrap())
+        STORAGE
+            .read()
             .unwrap()
-            .addons
-            .contains(&addon),
-        "addon is in storage"
+            .get(PROFILE_STORAGE_KEY)
+            .map_or(false, |data| {
+                serde_json::from_str::<Profile>(&data).unwrap().addons == vec![addon.to_owned()]
+            }),
+        "addons in storage not updated"
+    );
+    assert!(
+        REQUESTS.read().unwrap().is_empty(),
+        "No requests have been sent"
     );
 }
