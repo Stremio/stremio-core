@@ -132,9 +132,18 @@ pub fn update_profile<Env: Environment + 'static>(
             if let Some(addon_position) = addon_position {
                 if !profile.addons[addon_position].flags.protected {
                     profile.addons.remove(addon_position);
+                    let push_to_api_effects = match &profile.auth {
+                        Some(auth) => Effects::one(push_addons_to_api::<Env>(
+                            profile.addons.to_owned(),
+                            &auth.key,
+                        ))
+                        .unchanged(),
+                        _ => Effects::none().unchanged(),
+                    };
                     Effects::msg(Msg::Event(Event::AddonUninstalled {
                         transport_url: transport_url.to_owned(),
                     }))
+                    .join(push_to_api_effects)
                     .join(Effects::msg(Msg::Internal(Internal::ProfileChanged(false))))
                 } else {
                     Effects::msg(Msg::Event(Event::Error {
