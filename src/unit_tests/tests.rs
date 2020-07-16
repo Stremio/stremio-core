@@ -1184,17 +1184,6 @@ fn actionctx_uninstalladdon_protected() {
         },
     };
     let profile = Profile {
-        auth: Some(Auth {
-            key: "auth_key".to_owned(),
-            user: User {
-                id: "user_id".to_owned(),
-                email: "user_email".to_owned(),
-                fb_id: None,
-                avatar: None,
-                last_modified: Env::now(),
-                date_registered: Env::now(),
-            },
-        }),
         addons: vec![addon.to_owned()],
         ..Default::default()
     };
@@ -1232,6 +1221,10 @@ fn actionctx_uninstalladdon_protected() {
             }),
         "protected addon is in storage"
     );
+    assert!(
+        REQUESTS.read().unwrap().is_empty(),
+        "No requests have been sent"
+    );
 }
 
 #[test]
@@ -1260,17 +1253,6 @@ fn actionctx_uninstalladdon_not_installed() {
         flags: Default::default(),
     };
     let profile = Profile {
-        auth: Some(Auth {
-            key: "auth_key".to_owned(),
-            user: User {
-                id: "user_id".to_owned(),
-                email: "user_email".to_owned(),
-                fb_id: None,
-                avatar: None,
-                last_modified: Env::now(),
-                date_registered: Env::now(),
-            },
-        }),
         addons: vec![addon.to_owned()],
         ..Default::default()
     };
