@@ -96,6 +96,11 @@ pub fn update_profile<Env: Environment + 'static>(
                     .iter()
                     .map(|addon| &addon.transport_url)
                     .position(|transport_url| *transport_url == addon.transport_url);
+                if let Some(addon_position) = addon_position {
+                    profile.addons[addon_position] = addon.to_owned();
+                } else {
+                    profile.addons.push(addon.to_owned());
+                };
                 let push_to_api_effects = match &profile.auth {
                     Some(auth) => Effects::one(push_addons_to_api::<Env>(
                         profile.addons.to_owned(),
@@ -103,11 +108,6 @@ pub fn update_profile<Env: Environment + 'static>(
                     ))
                     .unchanged(),
                     _ => Effects::none().unchanged(),
-                };
-                if let Some(addon_position) = addon_position {
-                    profile.addons[addon_position] = addon.to_owned();
-                } else {
-                    profile.addons.push(addon.to_owned());
                 };
                 Effects::msg(Msg::Event(Event::AddonInstalled {
                     transport_url: addon.transport_url.to_owned(),
