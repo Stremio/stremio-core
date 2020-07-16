@@ -832,7 +832,7 @@ fn actionctx_installaddon_already_installed() {
 }
 
 #[test]
-fn actionctx_uninstalladdon_anonymous() {
+fn actionctx_uninstalladdon() {
     #[derive(Model, Debug, Default)]
     struct Model {
         ctx: Ctx<Env>,
