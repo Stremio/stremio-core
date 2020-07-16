@@ -534,15 +534,18 @@ fn actionctx_installaddon_install() {
         )))),
     );
     assert_eq!(
-        runtime.app.read().unwrap().ctx.profile.addons[0],
-        addon,
+        runtime.app.read().unwrap().ctx.profile.addons,
+        vec![addon.to_owned()],
         "addon installed successfully"
     );
-    assert_eq!(
-        serde_json::from_str::<Profile>(&STORAGE.read().unwrap().get(PROFILE_STORAGE_KEY).unwrap())
+    assert!(
+        STORAGE
+            .read()
             .unwrap()
-            .addons[0],
-        addon,
+            .get(PROFILE_STORAGE_KEY)
+            .map_or(false, |data| {
+                serde_json::from_str::<Profile>(&data).unwrap().addons == vec![addon.to_owned()]
+            }),
         "addon updated successfully in storage"
     );
     assert!(
@@ -622,15 +625,18 @@ fn actionctx_installaddon_install_with_user() {
         )))),
     );
     assert_eq!(
-        runtime.app.read().unwrap().ctx.profile.addons[0],
-        addon,
+        runtime.app.read().unwrap().ctx.profile.addons,
+        vec![addon.to_owned()],
         "addon installed successfully"
     );
-    assert_eq!(
-        serde_json::from_str::<Profile>(&STORAGE.read().unwrap().get(PROFILE_STORAGE_KEY).unwrap())
+    assert!(
+        STORAGE
+            .read()
             .unwrap()
-            .addons[0],
-        addon,
+            .get(PROFILE_STORAGE_KEY)
+            .map_or(false, |data| {
+                serde_json::from_str::<Profile>(&data).unwrap().addons == vec![addon.to_owned()]
+            }),
         "addon updated successfully in storage"
     );
     assert_eq!(
@@ -676,6 +682,25 @@ fn actionctx_installaddon_update() {
         transport_url: "transport_url1".to_owned(),
         flags: Default::default(),
     };
+    let addon2 = Descriptor {
+        manifest: Manifest {
+            id: "id2".to_owned(),
+            version: Version::new(0, 0, 1),
+            name: "name".to_owned(),
+            contact_email: None,
+            description: None,
+            logo: None,
+            background: None,
+            types: vec![],
+            resources: vec![],
+            id_prefixes: None,
+            catalogs: vec![],
+            addon_catalogs: vec![],
+            behavior_hints: Default::default(),
+        },
+        transport_url: "transport_url2".to_owned(),
+        flags: Default::default(),
+    };
     Env::reset();
     let (runtime, _) = Runtime::<Env, Model>::new(
         Model {
@@ -701,25 +726,7 @@ fn actionctx_installaddon_update() {
                             transport_url: "transport_url1".to_owned(),
                             flags: Default::default(),
                         },
-                        Descriptor {
-                            manifest: Manifest {
-                                id: "id2".to_owned(),
-                                version: Version::new(0, 0, 1),
-                                name: "name".to_owned(),
-                                contact_email: None,
-                                description: None,
-                                logo: None,
-                                background: None,
-                                types: vec![],
-                                resources: vec![],
-                                id_prefixes: None,
-                                catalogs: vec![],
-                                addon_catalogs: vec![],
-                                behavior_hints: Default::default(),
-                            },
-                            transport_url: "transport_url2".to_owned(),
-                            flags: Default::default(),
-                        },
+                        addon2.to_owned(),
                     ],
                     ..Default::default()
                 },
@@ -734,28 +741,19 @@ fn actionctx_installaddon_update() {
         )))),
     );
     assert_eq!(
-        runtime.app.read().unwrap().ctx.profile.addons.len(),
-        2,
-        "There are two addons in memory"
-    );
-    assert_eq!(
-        runtime.app.read().unwrap().ctx.profile.addons[0],
-        addon,
+        runtime.app.read().unwrap().ctx.profile.addons,
+        vec![addon.to_owned(), addon2.to_owned()],
         "addon updated successfully in memory"
     );
-    assert_eq!(
-        serde_json::from_str::<Profile>(&STORAGE.read().unwrap().get(PROFILE_STORAGE_KEY).unwrap())
+    assert!(
+        STORAGE
+            .read()
             .unwrap()
-            .addons
-            .len(),
-        2,
-        "There are two addons in storage"
-    );
-    assert_eq!(
-        serde_json::from_str::<Profile>(&STORAGE.read().unwrap().get(PROFILE_STORAGE_KEY).unwrap())
-            .unwrap()
-            .addons[0],
-        addon,
+            .get(PROFILE_STORAGE_KEY)
+            .map_or(false, |data| {
+                serde_json::from_str::<Profile>(&data).unwrap().addons
+                    == vec![addon.to_owned(), addon2.to_owned()]
+            }),
         "addon updated successfully in storage"
     );
     assert!(
@@ -804,6 +802,25 @@ fn actionctx_installaddon_update_with_user() {
         transport_url: "transport_url1".to_owned(),
         flags: Default::default(),
     };
+    let addon2 = Descriptor {
+        manifest: Manifest {
+            id: "id2".to_owned(),
+            version: Version::new(0, 0, 1),
+            name: "name".to_owned(),
+            contact_email: None,
+            description: None,
+            logo: None,
+            background: None,
+            types: vec![],
+            resources: vec![],
+            id_prefixes: None,
+            catalogs: vec![],
+            addon_catalogs: vec![],
+            behavior_hints: Default::default(),
+        },
+        transport_url: "transport_url2".to_owned(),
+        flags: Default::default(),
+    };
     Env::reset();
     *FETCH_HANDLER.write().unwrap() = Box::new(fetch_handler);
     let (runtime, _) = Runtime::<Env, Model>::new(
@@ -841,25 +858,7 @@ fn actionctx_installaddon_update_with_user() {
                             transport_url: "transport_url1".to_owned(),
                             flags: Default::default(),
                         },
-                        Descriptor {
-                            manifest: Manifest {
-                                id: "id2".to_owned(),
-                                version: Version::new(0, 0, 1),
-                                name: "name".to_owned(),
-                                contact_email: None,
-                                description: None,
-                                logo: None,
-                                background: None,
-                                types: vec![],
-                                resources: vec![],
-                                id_prefixes: None,
-                                catalogs: vec![],
-                                addon_catalogs: vec![],
-                                behavior_hints: Default::default(),
-                            },
-                            transport_url: "transport_url2".to_owned(),
-                            flags: Default::default(),
-                        },
+                        addon2.to_owned(),
                     ],
                     ..Default::default()
                 },
@@ -874,28 +873,19 @@ fn actionctx_installaddon_update_with_user() {
         )))),
     );
     assert_eq!(
-        runtime.app.read().unwrap().ctx.profile.addons.len(),
-        2,
-        "There are two addons in memory"
-    );
-    assert_eq!(
-        runtime.app.read().unwrap().ctx.profile.addons[0],
-        addon,
+        runtime.app.read().unwrap().ctx.profile.addons,
+        vec![addon.to_owned(), addon2.to_owned()],
         "addon updated successfully in memory"
     );
-    assert_eq!(
-        serde_json::from_str::<Profile>(&STORAGE.read().unwrap().get(PROFILE_STORAGE_KEY).unwrap())
+    assert!(
+        STORAGE
+            .read()
             .unwrap()
-            .addons
-            .len(),
-        2,
-        "There are two addons in storage"
-    );
-    assert_eq!(
-        serde_json::from_str::<Profile>(&STORAGE.read().unwrap().get(PROFILE_STORAGE_KEY).unwrap())
-            .unwrap()
-            .addons[0],
-        addon,
+            .get(PROFILE_STORAGE_KEY)
+            .map_or(false, |data| {
+                serde_json::from_str::<Profile>(&data).unwrap().addons
+                    == vec![addon.to_owned(), addon2.to_owned()]
+            }),
         "addon updated successfully in storage"
     );
     assert_eq!(
@@ -941,22 +931,19 @@ fn actionctx_installaddon_already_installed() {
         transport_url: "transport_url".to_owned(),
         flags: Default::default(),
     };
+    let profile = Profile {
+        addons: vec![addon.to_owned()],
+        ..Default::default()
+    };
     Env::reset();
     STORAGE.write().unwrap().insert(
         PROFILE_STORAGE_KEY.to_owned(),
-        serde_json::to_string(&Profile {
-            addons: vec![addon.to_owned()],
-            ..Default::default()
-        })
-        .unwrap(),
+        serde_json::to_string(&profile).unwrap(),
     );
     let (runtime, _) = Runtime::<Env, Model>::new(
         Model {
             ctx: Ctx {
-                profile: Profile {
-                    addons: vec![addon.to_owned()],
-                    ..Default::default()
-                },
+                profile,
                 ..Default::default()
             },
         },
@@ -968,17 +955,23 @@ fn actionctx_installaddon_already_installed() {
         )))),
     );
     assert_eq!(
-        runtime.app.read().unwrap().ctx.profile.addons.len(),
-        1,
-        "There is one addon in memory"
+        runtime.app.read().unwrap().ctx.profile.addons,
+        vec![addon.to_owned()],
+        "addons in memory not updated"
     );
-    assert_eq!(
-        serde_json::from_str::<Profile>(&STORAGE.read().unwrap().get(PROFILE_STORAGE_KEY).unwrap())
+    assert!(
+        STORAGE
+            .read()
             .unwrap()
-            .addons
-            .len(),
-        1,
-        "There is one addon in storage"
+            .get(PROFILE_STORAGE_KEY)
+            .map_or(false, |data| {
+                serde_json::from_str::<Profile>(&data).unwrap().addons == vec![addon.to_owned()]
+            }),
+        "addons in storage not updated"
+    );
+    assert!(
+        REQUESTS.read().unwrap().is_empty(),
+        "No requests have been sent"
     );
 }
 
