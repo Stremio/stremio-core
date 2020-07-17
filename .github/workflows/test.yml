@@ -12,4 +12,4 @@ jobs:
     - name: Init git submodules
       run: git submodule update --init --recursive
     - name: Test
-      run: cargo test
+      run: cargo test unit_tests -- --test-threads=1
