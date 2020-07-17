@@ -14,5 +14,9 @@ jobs:
       run: rustup toolchain install 1.45.0
     - name: Set default rust toolchain
       run: rustup default 1.45.0
+    - name: Install rustfmt
+      run: rustup component add rustfmt
+    - name: Lint code format
+      run: cargo fmt --all -- --check
     - name: Test
       run: cargo test unit_tests -- --test-threads=1
