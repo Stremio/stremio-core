@@ -10,5 +10,9 @@ jobs:
       uses: actions/checkout@v2
     - name: Init git submodules
       run: git submodule update --init --recursive
+    - name: Install rust toolchain
+      run: rustup toolchain install 1.45.0
+    - name: Set default rust toolchain
+      run: rustup default 1.45.0
     - name: Test
       run: cargo test unit_tests -- --test-threads=1
