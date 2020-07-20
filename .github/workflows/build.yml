@@ -8,10 +8,12 @@ jobs:
     steps:
     - name: Checkout
       uses: actions/checkout@v2
-    - name: Setup RUST
-      run: |
-        rustup default nightly
-        cargo install wasm-pack
+    - name: Install rust toolchain
+      run: rustup toolchain install 1.45.0
+    - name: Set default rust toolchain
+      run: rustup default 1.45.0
+    - name: Install wasm-pack
+      run: cargo install wasm-pack
     - name: Install NPM dependencies
       run: npm install
     - name: Build
