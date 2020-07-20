@@ -1,6 +1,6 @@
 {
     "name": "@stremio/stremio-core-web",
-    "version": "0.16.0",
+    "version": "0.17.0",
     "description": "Bridge between stremio-core and stremio-web",
     "author": {
         "name": "Smart Code Ltd.",
