@@ -4,7 +4,9 @@ use crate::state_types::{EnvFuture, Environment, Runtime};
 use crate::types::api::{APIResult, Auth, SuccessResponse, True, User};
 use crate::types::profile::Profile;
 use crate::types::{LibItem, MetaPreview};
-use crate::unit_tests::{default_fetch_handler, Env, Request, FETCH_HANDLER, REQUESTS};
+use crate::unit_tests::{default_fetch_handler, Env, Request, FETCH_HANDLER, NOW, REQUESTS};
+use chrono::prelude::TimeZone;
+use chrono::Utc;
 use futures::future;
 use std::any::Any;
 use std::fmt::Debug;
@@ -48,6 +50,7 @@ fn actionctx_addtolibrary() {
     };
     Env::reset();
     *FETCH_HANDLER.write().unwrap() = Box::new(fetch_handler);
+    *NOW.write().unwrap() = Utc.ymd(2020, 1, 1).and_hms_milli(0, 0, 0, 0);
     let (runtime, _) = Runtime::<Env, Model>::new(
         Model {
             ctx: Ctx {

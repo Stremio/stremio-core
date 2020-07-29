@@ -1,5 +1,4 @@
 use crate::state_types::{EnvFuture, Environment};
-use chrono::prelude::TimeZone;
 use chrono::{DateTime, Utc};
 use futures::{future, Future};
 use lazy_static::lazy_static;
@@ -87,7 +86,7 @@ impl Environment for Env {
         Box::new(future::ok(()))
     }
     fn now() -> DateTime<Utc> {
-        Utc.ymd(2020, 1, 1).and_hms_milli(0, 0, 0, 0)
+        *NOW.read().unwrap()
     }
     fn exec(fut: Box<dyn Future<Item = (), Error = ()>>) {
         spawn(fut);
