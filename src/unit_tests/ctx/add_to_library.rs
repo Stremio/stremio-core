@@ -1,4 +1,4 @@
-use crate::constants::LIBRARY_RECENT_STORAGE_KEY;
+use crate::constants::{LIBRARY_RECENT_STORAGE_KEY, LIBRARY_STORAGE_KEY};
 use crate::state_types::models::ctx::Ctx;
 use crate::state_types::msg::{Action, ActionCtx, Msg};
 use crate::state_types::{EnvFuture, Environment, Runtime};
@@ -120,6 +120,10 @@ fn actionctx_addtolibrary() {
                 serde_json::from_str::<(UID, Vec<LibItem>)>(&data).unwrap()
                     == (None, vec![lib_item])
             }),
+        "recent library updated successfully in storage"
+    );
+    assert!(
+        STORAGE.read().unwrap().get(LIBRARY_STORAGE_KEY).is_none(),
         "library updated successfully in storage"
     );
     assert_eq!(
