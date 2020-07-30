@@ -12,7 +12,6 @@ use chrono::prelude::TimeZone;
 use chrono::Utc;
 use futures::future;
 use std::any::Any;
-use std::collections::HashMap;
 use std::fmt::Debug;
 use stremio_derive::Model;
 use tokio::runtime::current_thread::run;
@@ -151,21 +150,6 @@ fn actionctx_addtolibrary_already_added() {
     struct Model {
         ctx: Ctx<Env>,
     }
-    fn fetch_handler(request: Request) -> EnvFuture<Box<dyn Any>> {
-        match request {
-            Request {
-                url, method, body, ..
-            } if url == "https://api.strem.io/api/datastorePut"
-                && method == "POST"
-                && body == "{\"authKey\":\"auth_key\",\"collection\":\"libraryItem\",\"changes\":[{\"_id\":\"id\",\"removed\":false,\"temp\":false,\"_ctime\":\"2020-01-01T00:00:00Z\",\"_mtime\":\"2020-01-01T00:00:00Z\",\"state\":{\"lastWatched\":null,\"timeWatched\":0,\"timeOffset\":0,\"overallTimeWatched\":0,\"timesWatched\":0,\"flaggedWatched\":0,\"duration\":0,\"video_id\":null,\"watched\":null,\"lastVidReleased\":null,\"noNotif\":false},\"name\":\"name\",\"type\":\"type_name\",\"poster\":null,\"behaviorHints\":{\"defaultVideoId\":null}}]}" =>
-            {
-                Box::new(future::ok(Box::new(APIResult::Ok {
-                    result: SuccessResponse { success: True {} },
-                }) as Box<dyn Any>))
-            }
-            _ => default_fetch_handler(request),
-        }
-    }
     let meta_preview = MetaPreview {
         id: "id".to_owned(),
         type_name: "type_name".to_owned(),
@@ -193,31 +177,16 @@ fn actionctx_addtolibrary_already_added() {
         poster_shape: Default::default(),
         behavior_hints: Default::default(),
     };
-    let mut items = HashMap::new();
-    items.insert("id".to_owned(), lib_item.to_owned());
     Env::reset();
-    *FETCH_HANDLER.write().unwrap() = Box::new(fetch_handler);
     *NOW.write().unwrap() = Utc.ymd(2020, 1, 1).and_hms_milli(0, 0, 0, 0);
     let (runtime, _) = Runtime::<Env, Model>::new(
         Model {
             ctx: Ctx {
-                profile: Profile {
-                    auth: Some(Auth {
-                        key: "auth_key".to_owned(),
-                        user: User {
-                            id: "user_id".to_owned(),
-                            email: "user_email".to_owned(),
-                            fb_id: None,
-                            avatar: None,
-                            last_modified: Env::now(),
-                            date_registered: Env::now(),
-                        },
-                    }),
-                    ..Default::default()
-                },
                 library: LibBucket {
-                    uid: None,
-                    items: items,
+                    uid: Some("id".to_owned()),
+                    items: vec![("id".to_owned(), lib_item.to_owned())]
+                        .into_iter()
+                        .collect(),
                 },
                 ..Default::default()
             },
@@ -253,7 +222,7 @@ fn actionctx_addtolibrary_already_added() {
             .get(LIBRARY_RECENT_STORAGE_KEY)
             .map_or(false, |data| {
                 serde_json::from_str::<(UID, Vec<LibItem>)>(&data).unwrap()
-                    == (None, vec![lib_item])
+                    == (Some("id".to_owned()), vec![lib_item])
             }),
         "recent library updated successfully in storage"
     );
@@ -261,20 +230,8 @@ fn actionctx_addtolibrary_already_added() {
         STORAGE.read().unwrap().get(LIBRARY_STORAGE_KEY).is_none(),
         "library updated successfully in storage"
     );
-    assert_eq!(
-        REQUESTS.read().unwrap().len(),
-        1,
-        "One request has been sent"
-    );
-    assert_eq!(
-        REQUESTS.read().unwrap().get(0).unwrap().to_owned(),
-        Request {
-            url: "https://api.strem.io/api/datastorePut".to_owned(),
-            method: "POST".to_owned(),
-            body: "{\"authKey\":\"auth_key\",\"collection\":\"libraryItem\",\"changes\":[{\"_id\":\"id\",\"removed\":false,\"temp\":false,\"_ctime\":\"2020-01-01T00:00:00Z\",\"_mtime\":\"2020-01-01T00:00:00Z\",\"state\":{\"lastWatched\":null,\"timeWatched\":0,\"timeOffset\":0,\"overallTimeWatched\":0,\"timesWatched\":0,\"flaggedWatched\":0,\"duration\":0,\"video_id\":null,\"watched\":null,\"lastVidReleased\":null,\"noNotif\":false},\"name\":\"name\",\"type\":\"type_name\",\"poster\":null,\"behaviorHints\":{\"defaultVideoId\":null}}]}"
-                .to_owned(),
-            ..Default::default()
-        },
-        "datastorePut request has been sent"
+    assert!(
+        REQUESTS.read().unwrap().is_empty(),
+        "No requests have been sent"
     );
 }
