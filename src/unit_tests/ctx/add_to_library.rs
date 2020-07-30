@@ -1,10 +1,13 @@
+use crate::constants::LIBRARY_RECENT_STORAGE_KEY;
 use crate::state_types::models::ctx::Ctx;
 use crate::state_types::msg::{Action, ActionCtx, Msg};
 use crate::state_types::{EnvFuture, Environment, Runtime};
 use crate::types::api::{APIResult, Auth, SuccessResponse, True, User};
-use crate::types::profile::Profile;
+use crate::types::profile::{Profile, UID};
 use crate::types::{LibItem, MetaPreview};
-use crate::unit_tests::{default_fetch_handler, Env, Request, FETCH_HANDLER, NOW, REQUESTS};
+use crate::unit_tests::{
+    default_fetch_handler, Env, Request, FETCH_HANDLER, NOW, REQUESTS, STORAGE,
+};
 use chrono::prelude::TimeZone;
 use chrono::Utc;
 use futures::future;
@@ -46,6 +49,19 @@ fn actionctx_addtolibrary() {
         released: None,
         poster_shape: Default::default(),
         trailer: None,
+        behavior_hints: Default::default(),
+    };
+    let lib_item = LibItem {
+        id: "id".to_owned(),
+        removed: false,
+        temp: false,
+        ctime: Some(Utc.ymd(2020, 1, 1).and_hms_milli(0, 0, 0, 0)),
+        mtime: Utc.ymd(2020, 1, 1).and_hms_milli(0, 0, 0, 0),
+        state: Default::default(),
+        name: "name".to_owned(),
+        type_name: "type_name".to_owned(),
+        poster: None,
+        poster_shape: Default::default(),
         behavior_hints: Default::default(),
     };
     Env::reset();
@@ -92,20 +108,19 @@ fn actionctx_addtolibrary() {
             .library
             .items
             .get(&meta_preview.id),
-        Some(&LibItem {
-            id: "id".to_owned(),
-            removed: false,
-            temp: false,
-            ctime: Some(Env::now()),
-            mtime: Env::now(),
-            state: Default::default(),
-            name: "name".to_owned(),
-            type_name: "type_name".to_owned(),
-            poster: None,
-            poster_shape: Default::default(),
-            behavior_hints: Default::default(),
-        }),
+        Some(&lib_item),
         "library updated successfully in memory"
+    );
+    assert!(
+        STORAGE
+            .read()
+            .unwrap()
+            .get(LIBRARY_RECENT_STORAGE_KEY)
+            .map_or(false, |data| {
+                serde_json::from_str::<(UID, Vec<LibItem>)>(&data).unwrap()
+                    == (None, vec![lib_item])
+            }),
+        "library updated successfully in storage"
     );
     assert_eq!(
         REQUESTS.read().unwrap().len(),
