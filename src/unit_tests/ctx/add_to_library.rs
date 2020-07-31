@@ -168,8 +168,8 @@ fn actionctx_addtolibrary_already_added() {
         id: "id".to_owned(),
         removed: false,
         temp: false,
-        ctime: Some(Utc.ymd(2020, 1, 1).and_hms_milli(0, 0, 0, 0)),
-        mtime: Utc.ymd(2020, 1, 1).and_hms_milli(0, 0, 0, 0),
+        ctime: Some(Env::now()),
+        mtime: Env::now(),
         state: Default::default(),
         name: "name".to_owned(),
         type_name: "type_name".to_owned(),
@@ -178,7 +178,6 @@ fn actionctx_addtolibrary_already_added() {
         behavior_hints: Default::default(),
     };
     Env::reset();
-    *NOW.write().unwrap() = Utc.ymd(2020, 1, 1).and_hms_milli(0, 0, 0, 0);
     let (runtime, _) = Runtime::<Env, Model>::new(
         Model {
             ctx: Ctx {
@@ -211,9 +210,39 @@ fn actionctx_addtolibrary_already_added() {
             .ctx
             .library
             .items
-            .get(&meta_preview.id),
-        Some(&lib_item),
-        "library updated successfully in memory"
+            .get(&meta_preview.id)
+            .unwrap()
+            .ctime,
+        Some(&lib_item).unwrap().ctime,
+        "library item ctime not changed in memory"
+    );
+    assert_eq!(
+        runtime
+            .app
+            .read()
+            .unwrap()
+            .ctx
+            .library
+            .items
+            .get(&meta_preview.id)
+            .unwrap()
+            .state,
+        Some(&lib_item).unwrap().state,
+        "library item state not changed in memory"
+    );
+    assert!(
+        runtime
+            .app
+            .read()
+            .unwrap()
+            .ctx
+            .library
+            .items
+            .get(&meta_preview.id)
+            .unwrap()
+            .mtime
+            > Some(&lib_item).unwrap().mtime,
+        "library item mtime updated successfully in memory"
     );
     assert!(
         STORAGE
@@ -221,10 +250,41 @@ fn actionctx_addtolibrary_already_added() {
             .unwrap()
             .get(LIBRARY_RECENT_STORAGE_KEY)
             .map_or(false, |data| {
-                serde_json::from_str::<(UID, Vec<LibItem>)>(&data).unwrap()
-                    == (Some("id".to_owned()), vec![lib_item])
+                serde_json::from_str::<(UID, Vec<LibItem>)>(&data)
+                    .unwrap()
+                    .1[0]
+                    .ctime
+                    == Some(&lib_item).unwrap().ctime
             }),
-        "recent library updated successfully in storage"
+        "recent library item ctime not changed in storage"
+    );
+    assert!(
+        STORAGE
+            .read()
+            .unwrap()
+            .get(LIBRARY_RECENT_STORAGE_KEY)
+            .map_or(false, |data| {
+                serde_json::from_str::<(UID, Vec<LibItem>)>(&data)
+                    .unwrap()
+                    .1[0]
+                    .state
+                    == Some(&lib_item).unwrap().state
+            }),
+        "recent library item state not changed in storage"
+    );
+    assert!(
+        STORAGE
+            .read()
+            .unwrap()
+            .get(LIBRARY_RECENT_STORAGE_KEY)
+            .map_or(false, |data| {
+                serde_json::from_str::<(UID, Vec<LibItem>)>(&data)
+                    .unwrap()
+                    .1[0]
+                    .mtime
+                    > Some(&lib_item).unwrap().mtime
+            }),
+        "recent library item mtime updated successfully in storage"
     );
     assert!(
         STORAGE.read().unwrap().get(LIBRARY_STORAGE_KEY).is_none(),
