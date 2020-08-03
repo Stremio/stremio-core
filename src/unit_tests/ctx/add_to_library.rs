@@ -4,7 +4,7 @@ use crate::state_types::msg::{Action, ActionCtx, Msg};
 use crate::state_types::{EnvFuture, Environment, Runtime};
 use crate::types::api::{APIResult, Auth, SuccessResponse, True, User};
 use crate::types::profile::{Profile, UID};
-use crate::types::{LibBucket, LibItem, LibItemState, MetaPreview};
+use crate::types::{BehaviorHints, LibBucket, LibItem, LibItemState, MetaPreview, PosterShape};
 use crate::unit_tests::{
     default_fetch_handler, Env, Request, FETCH_HANDLER, NOW, REQUESTS, STORAGE,
 };
@@ -155,49 +155,63 @@ fn actionctx_addtolibrary_already_added() {
         type_name: "type_name".to_owned(),
         name: "name".to_owned(),
         poster: Some("poster".to_owned()),
+        poster_shape: PosterShape::Square,
         logo: None,
         description: None,
         release_info: None,
         runtime: None,
         released: None,
-        poster_shape: Default::default(),
         trailer: None,
-        behavior_hints: Default::default(),
+        behavior_hints: BehaviorHints {
+            default_video_id: Some("video_id2".to_owned()),
+        },
     };
     let lib_item = LibItem {
         id: "id".to_owned(),
+        type_name: "type_name".to_owned(),
+        name: "name".to_owned(),
+        poster: Some("poster".to_owned()),
+        poster_shape: PosterShape::Square,
         removed: false,
         temp: false,
         ctime: Some(Utc.ymd(2020, 1, 1).and_hms_milli(0, 0, 0, 0)),
-        mtime: Utc.ymd(2020, 1, 1).and_hms_milli(0, 0, 0, 0),
+        mtime: Utc.ymd(2020, 1, 2).and_hms_milli(0, 0, 0, 0),
         state: LibItemState {
-            last_watched: None,
-            time_watched: 0,
-            time_offset: 0,
-            overall_time_watched: 0,
-            times_watched: 0,
-            flagged_watched: 0,
-            duration: 0,
-            video_id: None,
-            watched: None,
-            last_vid_released: None,
-            no_notif: false,
+            video_id: Some("video_id".to_owned()),
+            ..LibItemState::default()
         },
-        name: "name".to_owned(),
-        type_name: "type_name".to_owned(),
-        poster: None,
-        poster_shape: Default::default(),
-        behavior_hints: Default::default(),
+        behavior_hints: BehaviorHints {
+            default_video_id: Some("video_id2".to_owned()),
+        },
     };
     Env::reset();
+    *NOW.write().unwrap() = Utc.ymd(2020, 1, 2).and_hms_milli(0, 0, 0, 0);
     let (runtime, _) = Runtime::<Env, Model>::new(
         Model {
             ctx: Ctx {
                 library: LibBucket {
                     uid: None,
-                    items: vec![("id".to_owned(), lib_item.to_owned())]
-                        .into_iter()
-                        .collect(),
+                    items: vec![(
+                        "id".to_owned(),
+                        LibItem {
+                            id: "id".to_owned(),
+                            type_name: "type_name_".to_owned(),
+                            name: "name_".to_owned(),
+                            poster: None,
+                            poster_shape: PosterShape::Unspecified,
+                            removed: true,
+                            temp: true,
+                            ctime: Some(Utc.ymd(2020, 1, 1).and_hms_milli(0, 0, 0, 0)),
+                            mtime: Utc.ymd(2020, 1, 1).and_hms_milli(0, 0, 0, 0),
+                            state: LibItemState {
+                                video_id: Some("video_id".to_owned()),
+                                ..LibItemState::default()
+                            },
+                            behavior_hints: Default::default(),
+                        },
+                    )]
+                    .into_iter()
+                    .collect(),
                 },
                 ..Default::default()
             },
@@ -214,45 +228,32 @@ fn actionctx_addtolibrary_already_added() {
         1,
         "There is one library item in memory"
     );
-    let library_item_memory = runtime
-        .app
-        .read()
-        .unwrap()
-        .ctx
-        .library
-        .items
-        .get(&meta_preview.id)
-        .unwrap()
-        .to_owned();
-    assert!(
-        library_item_memory.to_owned().ctime == lib_item.ctime
-            && library_item_memory.to_owned().state == lib_item.state
-            && library_item_memory.to_owned().mtime == Env::now()
-            && library_item_memory.to_owned().poster == meta_preview.poster,
-        "library item updated successfully in memory"
+    assert_eq!(
+        runtime
+            .app
+            .read()
+            .unwrap()
+            .ctx
+            .library
+            .items
+            .get(&lib_item.id),
+        Some(&lib_item),
+        "Library updated successfully in memory"
     );
-    let library_item_storage = serde_json::from_str::<(UID, Vec<LibItem>)>(
-        &STORAGE
+    assert!(
+        STORAGE
             .read()
             .unwrap()
             .get(LIBRARY_RECENT_STORAGE_KEY)
-            .unwrap(),
-    )
-    .unwrap()
-    .1
-    .get(0)
-    .unwrap()
-    .to_owned();
-    assert!(
-        library_item_storage.ctime == lib_item.ctime
-            && library_item_storage.state == lib_item.state
-            && library_item_storage.mtime == Env::now()
-            && library_item_storage.poster == meta_preview.poster,
-        "recent library item updated successfully in storage"
+            .map_or(false, |data| {
+                serde_json::from_str::<(UID, Vec<LibItem>)>(&data).unwrap()
+                    == (None, vec![lib_item])
+            }),
+        "Library recent slot updated successfully in storage"
     );
     assert!(
         STORAGE.read().unwrap().get(LIBRARY_STORAGE_KEY).is_none(),
-        "library updated successfully in storage"
+        "Library slot updated successfully in storage"
     );
     assert!(
         REQUESTS.read().unwrap().is_empty(),
