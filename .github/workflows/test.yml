@@ -3,13 +3,24 @@ name: Test
 on: [push]
 
 jobs:
-  build:
+  test:
     runs-on: ubuntu-latest
-
     steps:
-    - uses: actions/checkout@v2
-      name: Checkout
+    - name: Checkout
+      uses: actions/checkout@v2
     - name: Init git submodules
       run: git submodule update --init --recursive
+    - name: Install rust toolchain
+      run: rustup toolchain install 1.45.0
+    - name: Set default rust toolchain
+      run: rustup default 1.45.0
+    - name: Install rustfmt
+      run: rustup component add rustfmt
+    - name: Install clippy
+      run: rustup component add clippy
+    - name: Lint code format
+      run: cargo fmt --all -- --check
+    - name: Lint code
+      run: cargo clippy --all -- -D warnings
     - name: Test
       run: cargo test unit_tests -- --test-threads=1

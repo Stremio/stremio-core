@@ -4,34 +4,33 @@ version = "0.1.0"
 authors = ["Ivo Georgiev <ivo@strem.io>"]
 edition = "2018"
 
+[workspace]
+
+[lib]
+doctest = false
+
 [dependencies]
 serde = { version = "1.0", features = ["derive", "rc"] }
 serde_derive = "1.0"
 serde_json = "1.0"
-#vtt = { git = "https://github.com/Ivshti/vtt.git" }
-futures = "0.1.x"
+futures = "0.1"
 http = "0.1"
-url = { version = "2.1.1", features = ["serde"] }
-percent-encoding = "2.1.0"
+url = { version = "2.1", features = ["serde"] }
+percent-encoding = "2.1"
 chrono = { version = "0.4", features = ["serde"] }
-lazy_static = "1.2.0"
-enclose = "1.1.6"
-semver = { version = "0.9.0", features = ["serde"] }
-base64 = "0.10.1"
-serde-hex = "0.1.0"
+lazy_static = "1.4"
+enclose = "1.1"
+semver = { version = "0.10", features = ["serde"] }
+base64 = "0.12"
+serde-hex = "0.1"
 either = "1.5"
-stremio-derive = { path = "stremio-derive", version = "0.1.0" }
-derivative = "2.1.1"
+stremio-derive = { path = "stremio-derive" }
+derivative = "2.1"
 derive_more = "0.15.0"
-derive_builder = "0.7"
-lazysort = "0.2.1"
+derive_builder = "0.9"
+lazysort = "0.2"
 itertools = "0.8"
 
-[workspace]
-
 [dev-dependencies]
-reqwest = "0.9.x"
+reqwest = "0.9"
 tokio = "0.1"
-
-[lib]
-doctest = false
