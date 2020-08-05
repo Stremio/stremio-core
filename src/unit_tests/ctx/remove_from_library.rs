@@ -28,7 +28,7 @@ fn actionctx_removefromlibrary() {
                 url, method, body, ..
             } if url == "https://api.strem.io/api/datastorePut"
                 && method == "POST"
-                && body == "{\"authKey\":\"auth_key\",\"collection\":\"libraryItem\",\"changes\":[{\"_id\":\"id\",\"removed\":true,\"temp\":false,\"_ctime\":\"2020-01-01T00:00:00Z\",\"_mtime\":\"2020-01-01T00:00:00Z\",\"state\":{\"lastWatched\":null,\"timeWatched\":0,\"timeOffset\":0,\"overallTimeWatched\":0,\"timesWatched\":0,\"flaggedWatched\":0,\"duration\":0,\"video_id\":null,\"watched\":null,\"lastVidReleased\":null,\"noNotif\":false},\"name\":\"name\",\"type\":\"type_name\",\"poster\":null,\"behaviorHints\":{\"defaultVideoId\":null}}]}" =>
+                && body == "{\"authKey\":\"auth_key\",\"collection\":\"libraryItem\",\"changes\":[{\"_id\":\"id\",\"removed\":true,\"temp\":false,\"_ctime\":\"2020-01-01T00:00:00Z\",\"_mtime\":\"2020-01-02T00:00:00Z\",\"state\":{\"lastWatched\":null,\"timeWatched\":0,\"timeOffset\":0,\"overallTimeWatched\":0,\"timesWatched\":0,\"flaggedWatched\":0,\"duration\":0,\"video_id\":null,\"watched\":null,\"lastVidReleased\":null,\"noNotif\":false},\"name\":\"name\",\"type\":\"type_name\",\"poster\":null,\"behaviorHints\":{\"defaultVideoId\":null}}]}" =>
             {
                 Box::new(future::ok(Box::new(APIResult::Ok {
                     result: SuccessResponse { success: True {} },
@@ -42,7 +42,7 @@ fn actionctx_removefromlibrary() {
         removed: false,
         temp: false,
         ctime: Some(Utc.ymd(2020, 1, 1).and_hms_milli(0, 0, 0, 0)),
-        mtime: Utc.ymd(2019, 1, 1).and_hms_milli(0, 0, 0, 0),
+        mtime: Utc.ymd(2020, 1, 1).and_hms_milli(0, 0, 0, 0),
         state: Default::default(),
         name: "name".to_owned(),
         type_name: "type_name".to_owned(),
@@ -52,12 +52,12 @@ fn actionctx_removefromlibrary() {
     };
     let lib_item_removed = LibItem {
         removed: true,
-        mtime: Utc.ymd(2020, 1, 1).and_hms_milli(0, 0, 0, 0),
+        mtime: Utc.ymd(2020, 1, 2).and_hms_milli(0, 0, 0, 0),
         ..lib_item.to_owned()
     };
     Env::reset();
     *FETCH_HANDLER.write().unwrap() = Box::new(fetch_handler);
-    *NOW.write().unwrap() = Utc.ymd(2020, 1, 1).and_hms_milli(0, 0, 0, 0);
+    *NOW.write().unwrap() = Utc.ymd(2020, 1, 2).and_hms_milli(0, 0, 0, 0);
     STORAGE.write().unwrap().insert(
         LIBRARY_RECENT_STORAGE_KEY.to_owned(),
         serde_json::to_string::<(UID, Vec<LibItem>)>(&(
@@ -96,7 +96,7 @@ fn actionctx_removefromlibrary() {
     );
     run(
         runtime.dispatch(&Msg::Action(Action::Ctx(ActionCtx::RemoveFromLibrary(
-            lib_item.to_owned().id,
+            lib_item.id.to_owned(),
         )))),
     );
     assert_eq!(
@@ -136,7 +136,7 @@ fn actionctx_removefromlibrary() {
         Request {
             url: "https://api.strem.io/api/datastorePut".to_owned(),
             method: "POST".to_owned(),
-            body: "{\"authKey\":\"auth_key\",\"collection\":\"libraryItem\",\"changes\":[{\"_id\":\"id\",\"removed\":true,\"temp\":false,\"_ctime\":\"2020-01-01T00:00:00Z\",\"_mtime\":\"2020-01-01T00:00:00Z\",\"state\":{\"lastWatched\":null,\"timeWatched\":0,\"timeOffset\":0,\"overallTimeWatched\":0,\"timesWatched\":0,\"flaggedWatched\":0,\"duration\":0,\"video_id\":null,\"watched\":null,\"lastVidReleased\":null,\"noNotif\":false},\"name\":\"name\",\"type\":\"type_name\",\"poster\":null,\"behaviorHints\":{\"defaultVideoId\":null}}]}"
+            body: "{\"authKey\":\"auth_key\",\"collection\":\"libraryItem\",\"changes\":[{\"_id\":\"id\",\"removed\":true,\"temp\":false,\"_ctime\":\"2020-01-01T00:00:00Z\",\"_mtime\":\"2020-01-02T00:00:00Z\",\"state\":{\"lastWatched\":null,\"timeWatched\":0,\"timeOffset\":0,\"overallTimeWatched\":0,\"timesWatched\":0,\"flaggedWatched\":0,\"duration\":0,\"video_id\":null,\"watched\":null,\"lastVidReleased\":null,\"noNotif\":false},\"name\":\"name\",\"type\":\"type_name\",\"poster\":null,\"behaviorHints\":{\"defaultVideoId\":null}}]}"
                 .to_owned(),
             ..Default::default()
         },
@@ -196,7 +196,7 @@ fn actionctx_removefromlibrary_not_added() {
             .library
             .items
             .get(&lib_item.id),
-        Some(&lib_item.to_owned()),
+        Some(&lib_item),
         "Library not updated in memory"
     );
     assert!(
