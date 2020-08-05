@@ -113,7 +113,7 @@ fn actionctx_addtolibrary() {
             .items
             .get(&meta_preview.id),
         Some(&lib_item),
-        "library updated successfully in memory"
+        "Library updated successfully in memory"
     );
     assert!(
         STORAGE
@@ -124,11 +124,11 @@ fn actionctx_addtolibrary() {
                 serde_json::from_str::<(UID, Vec<LibItem>)>(&data).unwrap()
                     == (Some("id".to_owned()), vec![lib_item])
             }),
-        "recent library updated successfully in storage"
+        "Library recent slot updated successfully in storage"
     );
     assert!(
         STORAGE.read().unwrap().get(LIBRARY_STORAGE_KEY).is_none(),
-        "library updated successfully in storage"
+        "Library slot updated successfully in storage"
     );
     assert_eq!(
         REQUESTS.read().unwrap().len(),
