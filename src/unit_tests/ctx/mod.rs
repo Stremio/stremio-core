@@ -5,3 +5,4 @@ mod logout;
 mod remove_from_library;
 mod rewind_library_item;
 mod uninstall_addon;
+mod update_settings;
