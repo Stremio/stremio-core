@@ -23,7 +23,7 @@ fn actionctx_updatesettings() {
     let (runtime, _) = Runtime::<Env, Model>::new(Model::default(), 1000);
     run(
         runtime.dispatch(&Msg::Action(Action::Ctx(ActionCtx::UpdateSettings(
-            settings.to_owned()
+            settings.to_owned(),
         )))),
     );
     assert_eq!(
@@ -78,7 +78,7 @@ fn actionctx_updatesettings_not_changed() {
     );
     run(
         runtime.dispatch(&Msg::Action(Action::Ctx(ActionCtx::UpdateSettings(
-            settings.to_owned()
+            settings.to_owned(),
         )))),
     );
     assert_eq!(
