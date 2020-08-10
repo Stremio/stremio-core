@@ -2,6 +2,7 @@ mod add_to_library;
 mod authenticate;
 mod install_addon;
 mod logout;
+mod push_addons_to_api;
 mod remove_from_library;
 mod rewind_library_item;
 mod uninstall_addon;
