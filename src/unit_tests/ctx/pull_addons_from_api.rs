@@ -1,16 +1,132 @@
+use crate::constants::PROFILE_STORAGE_KEY;
 use crate::state_types::models::ctx::Ctx;
 use crate::state_types::msg::{Action, ActionCtx, Msg};
 use crate::state_types::{EnvFuture, Environment, Runtime};
-use crate::types::addons::{Descriptor, Manifest};
+use crate::types::addons::{Descriptor, DescriptorFlags, Manifest, ManifestResource};
 use crate::types::api::{APIResult, Auth, CollectionResponse, User};
 use crate::types::profile::Profile;
-use crate::unit_tests::{default_fetch_handler, Env, Request, FETCH_HANDLER, REQUESTS};
+use crate::unit_tests::{default_fetch_handler, Env, Request, FETCH_HANDLER, REQUESTS, STORAGE};
 use futures::future;
 use semver::Version;
 use std::any::Any;
 use std::fmt::Debug;
 use stremio_derive::Model;
 use tokio::runtime::current_thread::run;
+
+#[test]
+fn actionctx_pulladdonsfromapi() {
+    #[derive(Model, Debug, Default)]
+    struct Model {
+        ctx: Ctx<Env>,
+    }
+    let addon = Descriptor {
+        manifest: Manifest {
+            id: "id".to_owned(),
+            version: Version::new(0, 0, 1),
+            name: "name".to_owned(),
+            contact_email: None,
+            description: None,
+            logo: None,
+            background: None,
+            types: vec![],
+            resources: vec![],
+            id_prefixes: None,
+            catalogs: vec![],
+            addon_catalogs: vec![],
+            behavior_hints: Default::default(),
+        },
+        transport_url: "transport_url".to_owned(),
+        flags: Default::default(),
+    };
+    let official_addon = Descriptor {
+        manifest: Manifest {
+            id: "org.stremio.opensubtitles".to_owned(),
+            version: Version {
+                major: 0,
+                minor: 22,
+                patch: 0,
+                pre: vec![],
+                build: vec![],
+            },
+            name: "OpenSubtitles".to_owned(),
+            contact_email: None,
+            description: Some("The official add-on for subtitles from OpenSubtitles".to_owned()),
+            logo: Some("http://www.strem.io/images/addons/opensubtitles-logo.png".to_owned()),
+            background: None,
+            types: vec!["series".to_owned(), "movie".to_owned(), "other".to_owned()],
+            resources: vec![ManifestResource::Short("subtitles".to_owned())],
+            id_prefixes: None,
+            catalogs: vec![],
+            addon_catalogs: vec![],
+            behavior_hints: Default::default(),
+        },
+        transport_url: "https://opensubtitles.strem.io/stremio/v1".to_owned(),
+        flags: DescriptorFlags {
+            official: true,
+            protected: false,
+            extra: Default::default(),
+        },
+    };
+    Env::reset();
+    let (runtime, _) = Runtime::<Env, Model>::new(
+        Model {
+            ctx: Ctx {
+                profile: Profile {
+                    addons: vec![
+                        addon.to_owned(),
+                        Descriptor {
+                            manifest: Manifest {
+                                id: "org.stremio.opensubtitles".to_owned(),
+                                version: Version::new(0, 0, 2),
+                                name: "name".to_owned(),
+                                contact_email: None,
+                                description: None,
+                                logo: None,
+                                background: None,
+                                types: vec![],
+                                resources: vec![],
+                                id_prefixes: None,
+                                catalogs: vec![],
+                                addon_catalogs: vec![],
+                                behavior_hints: Default::default(),
+                            },
+                            transport_url: "transport_url2".to_owned(),
+                            flags: DescriptorFlags {
+                                official: true,
+                                protected: false,
+                                extra: Default::default(),
+                            },
+                        },
+                    ],
+                    ..Default::default()
+                },
+                ..Default::default()
+            },
+        },
+        1000,
+    );
+    run(runtime.dispatch(&Msg::Action(Action::Ctx(ActionCtx::PullAddonsFromAPI))));
+    assert_eq!(
+        runtime.app.read().unwrap().ctx.profile.addons,
+        vec![addon.to_owned(), official_addon.to_owned()],
+        "addons updated successfully in memory"
+    );
+    assert!(
+        STORAGE
+            .read()
+            .unwrap()
+            .get(PROFILE_STORAGE_KEY)
+            .map_or(false, |data| {
+                serde_json::from_str::<Profile>(&data).unwrap().addons
+                    == vec![addon.to_owned(), official_addon.to_owned()]
+            }),
+        "addons updated successfully in storage"
+    );
+    assert!(
+        REQUESTS.read().unwrap().is_empty(),
+        "No requests have been sent"
+    );
+}
 
 #[test]
 fn actionctx_pulladdonsfromapi_with_user() {
