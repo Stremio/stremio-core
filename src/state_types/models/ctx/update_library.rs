@@ -9,7 +9,6 @@ use crate::types::api::{DatastoreCmd, DatastoreReq, SuccessResponse};
 use crate::types::{LibBucket, LibItem, LibItemModified, LibItemState};
 use futures::future::Either;
 use futures::Future;
-use itertools::Itertools;
 use std::collections::HashMap;
 
 pub fn update_library<Env: Environment + 'static>(
@@ -352,7 +351,6 @@ fn plan_sync_with_api<Env: Environment + 'static>(library: &LibBucket, auth_key:
                             .get(*id)
                             .map_or(true, |local_mtime| local_mtime < remote_mtime)
                     })
-                    .sorted_by(|a, b| a.cmp(b))
                     .map(|(id, _)| id)
                     .cloned()
                     .collect();
@@ -363,7 +361,6 @@ fn plan_sync_with_api<Env: Environment + 'static>(library: &LibBucket, auth_key:
                             .get(*id)
                             .map_or(true, |remote_mtime| remote_mtime < local_mtime)
                     })
-                    .sorted_by(|a, b| a.cmp(b))
                     .map(|(id, _)| id)
                     .cloned()
                     .collect();
