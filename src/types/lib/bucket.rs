@@ -3,12 +3,12 @@ use crate::constants::LIBRARY_RECENT_COUNT;
 use crate::types::profile::UID;
 use lazysort::SortedBy;
 use std::cmp;
-use std::collections::{BTreeMap, HashSet};
+use std::collections::{HashMap, HashSet};
 
 #[derive(Default, Debug, Clone, PartialEq)]
 pub struct LibBucket {
     pub uid: UID,
-    pub items: BTreeMap<String, LibItem>,
+    pub items: HashMap<String, LibItem>,
 }
 
 impl LibBucket {
