@@ -184,7 +184,7 @@ fn actionload_synclibrarywithapi_with_user() {
                     ..Default::default()
                 },
                 library: LibBucket {
-                    uid: Some("id".to_owned()),
+                    uid: Some("user_id".to_owned()),
                     items: vec![("id3".to_owned(), lib_item3.to_owned())]
                         .into_iter()
                         .collect(),
@@ -198,7 +198,7 @@ fn actionload_synclibrarywithapi_with_user() {
     assert_eq!(
         runtime.app.read().unwrap().ctx.library,
         LibBucket {
-            uid: Some("id".to_string()),
+            uid: Some("user_id".to_string()),
             items: vec![
                 ("id1".to_owned(), lib_item1.to_owned()),
                 ("id2".to_owned(), lib_item2.to_owned()),
@@ -217,7 +217,7 @@ fn actionload_synclibrarywithapi_with_user() {
             .map_or(false, |data| {
                 serde_json::from_str::<(UID, Vec<LibItem>)>(&data).unwrap()
                     == (
-                        Some("id".to_owned()),
+                        Some("user_id".to_owned()),
                         vec![
                             lib_item1.to_owned(),
                             lib_item2.to_owned(),
