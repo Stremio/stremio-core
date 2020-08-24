@@ -17,7 +17,7 @@ use stremio_derive::Model;
 use tokio::runtime::current_thread::run;
 
 #[test]
-fn actionload_synclibrarywithapi() {
+fn actionctx_synclibrarywithapi() {
     #[derive(Model, Debug, Default)]
     struct Model {
         ctx: Ctx<Env>,
@@ -60,7 +60,7 @@ fn actionload_synclibrarywithapi() {
 }
 
 #[test]
-fn actionload_synclibrarywithapi_with_user() {
+fn actionctx_synclibrarywithapi_with_user() {
     #[derive(Model, Debug, Default)]
     struct Model {
         ctx: Ctx<Env>,
