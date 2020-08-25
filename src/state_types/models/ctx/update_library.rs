@@ -169,23 +169,23 @@ pub fn update_library<Env: Environment + 'static>(
             result,
         )) if Some(loading_auth_key) == auth_key => match result {
             Ok((pull_ids, push_ids)) => {
-                let push_items: Vec<_> = library
+                let push_items = library
                     .items
                     .iter()
                     .filter(move |(id, _)| push_ids.iter().any(|push_id| push_id == *id))
                     .map(|(_, item)| item)
                     .cloned()
-                    .collect();
-                let push_items_to_api_effect = if push_items.is_empty() {
-                    Effects::none()
+                    .collect::<Vec<_>>();
+                let push_items_to_api_effects = if push_items.is_empty() {
+                    Effects::none().unchanged()
                 } else {
                     Effects::one(push_items_to_api::<Env>(
                         push_items.to_owned(),
                         loading_auth_key,
                     ))
                 };
-                let pull_items_from_api_effect = if pull_ids.is_empty() {
-                    Effects::one(update_and_push_items_to_storage::<Env>(library, push_items))
+                let pull_items_from_api_effects = if pull_ids.is_empty() {
+                    Effects::none().unchanged()
                 } else {
                     Effects::one(pull_items_from_api::<Env>(
                         pull_ids.to_owned(),
@@ -195,8 +195,8 @@ pub fn update_library<Env: Environment + 'static>(
                 Effects::msg(Msg::Event(Event::LibrarySyncWithAPIPlanned {
                     plan: (pull_ids.to_owned(), push_ids.to_owned()),
                 }))
-                .join(push_items_to_api_effect)
-                .join(pull_items_from_api_effect)
+                .join(push_items_to_api_effects)
+                .join(pull_items_from_api_effects)
                 .unchanged()
             }
             Err(error) => Effects::msg(Msg::Event(Event::Error {

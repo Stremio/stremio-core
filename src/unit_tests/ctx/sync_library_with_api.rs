@@ -411,6 +411,19 @@ fn actionctx_synclibrarywithapi_with_user_filtered() {
     }
     Env::reset();
     *FETCH_HANDLER.write().unwrap() = Box::new(fetch_handler);
+    STORAGE.write().unwrap().insert(
+        LIBRARY_RECENT_STORAGE_KEY.to_owned(),
+        serde_json::to_string::<(UID, Vec<LibItem>)>(&(
+            Some("user_id".to_owned()),
+            vec![
+                LOCAL_REMOVED_NOT_WATCHED_ITEM.to_owned(),
+                LOCAL_REMOVED_WATCHED_ITEM.to_owned(),
+                LOCAL_NOT_REMOVED_NOT_WATCHED_ITEM.to_owned(),
+                LOCAL_NOT_REMOVED_WATCHED_ITEM.to_owned(),
+            ],
+        ))
+        .unwrap(),
+    );
     let (runtime, _) = Runtime::<Env, Model>::new(
         Model {
             ctx: Ctx {
