@@ -185,10 +185,7 @@ pub fn update_library<Env: Environment + 'static>(
                     ))
                 };
                 let pull_items_from_api_effect = if pull_ids.is_empty() {
-                    Effects::one(update_and_push_items_to_storage::<Env>(
-                        library,
-                        push_items.to_owned(),
-                    ))
+                    Effects::one(update_and_push_items_to_storage::<Env>(library, push_items))
                 } else {
                     Effects::one(pull_items_from_api::<Env>(
                         pull_ids.to_owned(),
