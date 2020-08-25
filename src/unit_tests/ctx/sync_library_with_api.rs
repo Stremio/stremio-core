@@ -406,16 +406,6 @@ fn actionctx_synclibrarywithapi_with_user_filtered() {
                     _ => default_fetch_handler(request),
                 }
             }
-            Request {
-                url, method, body, ..
-            } if url == "https://api.strem.io/api/datastoreGet"
-                && method == "POST"
-                && body == "{\"authKey\":\"auth_key\",\"collection\":\"libraryItem\",\"ids\":[],\"all\":false}" =>
-            {
-                Box::new(future::ok(Box::new(APIResult::Ok {
-                    result: Vec::<LibItem>::new(),
-                }) as Box<dyn Any>))
-            }
             _ => default_fetch_handler(request),
         }
     }
@@ -512,34 +502,17 @@ fn actionctx_synclibrarywithapi_with_user_filtered() {
     );
     assert_eq!(
         REQUESTS.read().unwrap().len(),
-        3,
-        "Three requests have been sent"
+        2,
+        "Two requests have been sent"
     );
     assert_eq!(
-        REQUESTS.read().unwrap().get(0).unwrap().to_owned(),
-        Request {
-            url: "https://api.strem.io/api/datastoreMeta".to_owned(),
-            method: "POST".to_owned(),
-            body: "{\"authKey\":\"auth_key\",\"collection\":\"libraryItem\"}".to_owned(),
-            ..Default::default()
-        },
+        REQUESTS.read().unwrap().get(0).unwrap().url,
+        "https://api.strem.io/api/datastoreMeta".to_owned(),
         "datastoreMeta request has been sent"
     );
     assert_eq!(
         REQUESTS.read().unwrap().get(1).unwrap().url,
         "https://api.strem.io/api/datastorePut".to_owned(),
         "datastorePut request has been sent"
-    );
-    assert_eq!(
-        REQUESTS.read().unwrap().get(2).unwrap().to_owned(),
-        Request {
-            url: "https://api.strem.io/api/datastoreGet".to_owned(),
-            method: "POST".to_owned(),
-            body:
-                "{\"authKey\":\"auth_key\",\"collection\":\"libraryItem\",\"ids\":[],\"all\":false}"
-                    .to_owned(),
-            ..Default::default()
-        },
-        "datastoreGet request has been sent"
     );
 }
