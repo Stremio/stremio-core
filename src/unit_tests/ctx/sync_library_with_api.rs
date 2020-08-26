@@ -23,35 +23,7 @@ fn actionctx_synclibrarywithapi() {
         ctx: Ctx<Env>,
     }
     Env::reset();
-    let (runtime, _) = Runtime::<Env, Model>::new(
-        Model {
-            ctx: Ctx {
-                library: LibBucket {
-                    uid: None,
-                    items: vec![(
-                        "id".to_owned(),
-                        LibItem {
-                            id: "id".to_owned(),
-                            type_name: "type_name".to_owned(),
-                            name: "name".to_owned(),
-                            poster: None,
-                            poster_shape: Default::default(),
-                            removed: false,
-                            temp: false,
-                            ctime: Some(Env::now()),
-                            mtime: Env::now(),
-                            state: Default::default(),
-                            behavior_hints: Default::default(),
-                        },
-                    )]
-                    .into_iter()
-                    .collect(),
-                },
-                ..Default::default()
-            },
-        },
-        1000,
-    );
+    let (runtime, _) = Runtime::<Env, Model>::new(Model::default(), 1000);
     run(runtime.dispatch(&Msg::Action(Action::Ctx(ActionCtx::SyncLibraryWithAPI))));
     assert!(
         REQUESTS.read().unwrap().is_empty(),
