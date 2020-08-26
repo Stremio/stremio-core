@@ -315,3 +315,66 @@ fn actionctx_synclibrarywithapi_with_user() {
         "datastoreGet request has been sent"
     );
 }
+
+#[test]
+fn actionctx_synclibrarywithapi_with_user_empty_library() {
+    #[derive(Model, Debug, Default)]
+    struct Model {
+        ctx: Ctx<Env>,
+    }
+    fn fetch_handler(request: Request) -> EnvFuture<Box<dyn Any>> {
+        match &request {
+            Request {
+                url, method, body, ..
+            } if url == "https://api.strem.io/api/datastoreMeta"
+                && method == "POST"
+                && body == "{\"authKey\":\"auth_key\",\"collection\":\"libraryItem\"}" =>
+            {
+                Box::new(future::ok(Box::new(APIResult::Ok {
+                    result: Vec::<LibItemModified>::new(),
+                }) as Box<dyn Any>))
+            }
+            _ => default_fetch_handler(request),
+        }
+    }
+    Env::reset();
+    *FETCH_HANDLER.write().unwrap() = Box::new(fetch_handler);
+    let (runtime, _) = Runtime::<Env, Model>::new(
+        Model {
+            ctx: Ctx {
+                profile: Profile {
+                    auth: Some(Auth {
+                        key: "auth_key".to_owned(),
+                        user: User {
+                            id: "user_id".to_owned(),
+                            email: "user_email".to_owned(),
+                            fb_id: None,
+                            avatar: None,
+                            last_modified: Env::now(),
+                            date_registered: Env::now(),
+                        },
+                    }),
+                    ..Default::default()
+                },
+                ..Default::default()
+            },
+        },
+        1000,
+    );
+    run(runtime.dispatch(&Msg::Action(Action::Ctx(ActionCtx::SyncLibraryWithAPI))));
+    assert_eq!(
+        REQUESTS.read().unwrap().len(),
+        1,
+        "One request has been sent"
+    );
+    assert_eq!(
+        REQUESTS.read().unwrap().get(0).unwrap().to_owned(),
+        Request {
+            url: "https://api.strem.io/api/datastoreMeta".to_owned(),
+            method: "POST".to_owned(),
+            body: "{\"authKey\":\"auth_key\",\"collection\":\"libraryItem\"}".to_owned(),
+            ..Default::default()
+        },
+        "datastoreMeta request has been sent"
+    );
+}
