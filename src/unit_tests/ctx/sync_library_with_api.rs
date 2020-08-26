@@ -90,7 +90,7 @@ fn actionctx_synclibrarywithapi_with_user() {
             state: Default::default(),
             behavior_hints: Default::default(),
         };
-        static ref LOCAL_REMOVED_ITEM: LibItem = LibItem {
+        static ref LOCAL_NOT_WATCHED_ITEM: LibItem = LibItem {
             id: "id5".to_owned(),
             type_name: "type_name".to_owned(),
             name: "name".to_owned(),
@@ -103,18 +103,18 @@ fn actionctx_synclibrarywithapi_with_user() {
             state: Default::default(),
             behavior_hints: Default::default(),
         };
-        static ref LOCAL_NOT_WATCHED_ITEM: LibItem = LibItem {
+        static ref LOCAL_WATCHED_ITEM: LibItem = LibItem {
             id: "id6".to_owned(),
             type_name: "type_name".to_owned(),
             name: "name".to_owned(),
             poster: None,
             poster_shape: Default::default(),
-            removed: false,
+            removed: true,
             temp: false,
             ctime: Some(Utc.ymd(2020, 1, 1).and_hms_milli(0, 0, 0, 0)),
             mtime: Utc.ymd(2020, 1, 1).and_hms_milli(0, 0, 0, 0),
             state: LibItemState {
-                overall_time_watched: 60000,
+                overall_time_watched: 60001,
                 ..LibItemState::default()
             },
             behavior_hints: Default::default(),
@@ -162,7 +162,7 @@ fn actionctx_synclibrarywithapi_with_user() {
                             && body.changes.len() == 3
                             && body.changes.contains(&LOCAL_NEWER_ITEM)
                             && body.changes.contains(&LOCAL_ONLY_ITEM)
-                            && body.changes.contains(&LOCAL_NOT_WATCHED_ITEM) =>
+                            && body.changes.contains(&LOCAL_WATCHED_ITEM) =>
                     {
                         Box::new(future::ok(Box::new(APIResult::Ok {
                             result: SuccessResponse { success: True {} },
@@ -233,12 +233,12 @@ fn actionctx_synclibrarywithapi_with_user() {
                             },
                         ),
                         (
-                            LOCAL_REMOVED_ITEM.id.to_owned(),
-                            LOCAL_REMOVED_ITEM.to_owned(),
-                        ),
-                        (
                             LOCAL_NOT_WATCHED_ITEM.id.to_owned(),
                             LOCAL_NOT_WATCHED_ITEM.to_owned(),
+                        ),
+                        (
+                            LOCAL_WATCHED_ITEM.id.to_owned(),
+                            LOCAL_WATCHED_ITEM.to_owned(),
                         ),
                     ]
                     .into_iter()
@@ -263,12 +263,12 @@ fn actionctx_synclibrarywithapi_with_user() {
                 ),
                 (REMOTE_ONLY_ITEM.id.to_owned(), REMOTE_ONLY_ITEM.to_owned()),
                 (
-                    LOCAL_REMOVED_ITEM.id.to_owned(),
-                    LOCAL_REMOVED_ITEM.to_owned()
-                ),
-                (
                     LOCAL_NOT_WATCHED_ITEM.id.to_owned(),
                     LOCAL_NOT_WATCHED_ITEM.to_owned()
+                ),
+                (
+                    LOCAL_WATCHED_ITEM.id.to_owned(),
+                    LOCAL_WATCHED_ITEM.to_owned()
                 ),
             ]
             .into_iter()
@@ -289,8 +289,8 @@ fn actionctx_synclibrarywithapi_with_user() {
                     && items.contains(&LOCAL_ONLY_ITEM)
                     && items.contains(&REMOTE_NEWER_ITEM)
                     && items.contains(&LOCAL_NEWER_ITEM)
-                    && items.contains(&LOCAL_REMOVED_ITEM)
                     && items.contains(&LOCAL_NOT_WATCHED_ITEM)
+                    && items.contains(&LOCAL_WATCHED_ITEM)
             }),
         "Library recent slot updated successfully in storage"
     );
