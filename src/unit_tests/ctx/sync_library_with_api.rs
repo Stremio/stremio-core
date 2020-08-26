@@ -368,13 +368,8 @@ fn actionctx_synclibrarywithapi_with_user_empty_library() {
         "One request has been sent"
     );
     assert_eq!(
-        REQUESTS.read().unwrap().get(0).unwrap().to_owned(),
-        Request {
-            url: "https://api.strem.io/api/datastoreMeta".to_owned(),
-            method: "POST".to_owned(),
-            body: "{\"authKey\":\"auth_key\",\"collection\":\"libraryItem\"}".to_owned(),
-            ..Default::default()
-        },
+        REQUESTS.read().unwrap().get(0).unwrap().url,
+        "https://api.strem.io/api/datastoreMeta".to_owned(),
         "datastoreMeta request has been sent"
     );
 }
