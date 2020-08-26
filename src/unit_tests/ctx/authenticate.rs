@@ -39,6 +39,13 @@ fn actionctx_authenticate_login() {
                             avatar: None,
                             last_modified: Env::now(),
                             date_registered: Env::now(),
+                            gdpr_consent: GDPRConsent {
+                                tos: true,
+                                privacy: true,
+                                marketing: true,
+                                time: Env::now(),
+                                from: "tests".to_owned(),
+                            },
                         }
                     },
                 }) as Box<dyn Any>))
@@ -92,6 +99,13 @@ fn actionctx_authenticate_login() {
                     avatar: None,
                     last_modified: Env::now(),
                     date_registered: Env::now(),
+                    gdpr_consent: GDPRConsent {
+                        tos: true,
+                        privacy: true,
+                        marketing: true,
+                        time: Env::now(),
+                        from: "tests".to_owned(),
+                    },
                 },
             }),
             addons: vec![],
@@ -120,6 +134,13 @@ fn actionctx_authenticate_login() {
                     avatar: None,
                     last_modified: Env::now(),
                     date_registered: Env::now(),
+                    gdpr_consent: GDPRConsent {
+                        tos: true,
+                        privacy: true,
+                        marketing: true,
+                        time: Env::now(),
+                        from: "tests".to_owned(),
+                    },
                 },
             }),
             addons: vec![],
@@ -211,6 +232,13 @@ fn actionctx_authenticate_register() {
                             avatar: None,
                             last_modified: Env::now(),
                             date_registered: Env::now(),
+                            gdpr_consent: GDPRConsent {
+                                tos: true,
+                                privacy: true,
+                                marketing: true,
+                                time: Env::now(),
+                                from: "tests".to_owned(),
+                            },
                         }
                     },
                 }) as Box<dyn Any>))
@@ -271,6 +299,13 @@ fn actionctx_authenticate_register() {
                     avatar: None,
                     last_modified: Env::now(),
                     date_registered: Env::now(),
+                    gdpr_consent: GDPRConsent {
+                        tos: true,
+                        privacy: true,
+                        marketing: true,
+                        time: Env::now(),
+                        from: "tests".to_owned(),
+                    },
                 },
             }),
             addons: vec![],
@@ -299,6 +334,13 @@ fn actionctx_authenticate_register() {
                     avatar: None,
                     last_modified: Env::now(),
                     date_registered: Env::now(),
+                    gdpr_consent: GDPRConsent {
+                        tos: true,
+                        privacy: true,
+                        marketing: true,
+                        time: Env::now(),
+                        from: "tests".to_owned(),
+                    },
                 },
             }),
             addons: vec![],

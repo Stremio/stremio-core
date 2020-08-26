@@ -2,7 +2,7 @@ use crate::state_types::models::ctx::Ctx;
 use crate::state_types::msg::{Action, ActionCtx, Msg};
 use crate::state_types::{EnvFuture, Environment, Runtime};
 use crate::types::addons::{Descriptor, Manifest};
-use crate::types::api::{APIResult, Auth, SuccessResponse, True, User};
+use crate::types::api::{APIResult, Auth, GDPRConsent, SuccessResponse, True, User};
 use crate::types::profile::Profile;
 use crate::unit_tests::{default_fetch_handler, Env, Request, FETCH_HANDLER, REQUESTS};
 use futures::future;
@@ -92,6 +92,13 @@ fn actionctx_pushaddonstoapi_with_user() {
                             avatar: None,
                             last_modified: Env::now(),
                             date_registered: Env::now(),
+                            gdpr_consent: GDPRConsent {
+                                tos: true,
+                                privacy: true,
+                                marketing: true,
+                                time: Env::now(),
+                                from: "tests".to_owned(),
+                            },
                         },
                     }),
                     addons: vec![Descriptor {

@@ -2,7 +2,7 @@ use crate::constants::{LIBRARY_RECENT_STORAGE_KEY, LIBRARY_STORAGE_KEY, PROFILE_
 use crate::state_types::models::ctx::Ctx;
 use crate::state_types::msg::{Action, ActionCtx, Msg};
 use crate::state_types::{EnvFuture, Environment, Runtime};
-use crate::types::api::{APIResult, Auth, SuccessResponse, True, User};
+use crate::types::api::{APIResult, Auth, GDPRConsent, SuccessResponse, True, User};
 use crate::types::profile::{Profile, UID};
 use crate::types::{LibBucket, LibItem};
 use crate::unit_tests::{default_fetch_handler, Env, Request, FETCH_HANDLER, REQUESTS, STORAGE};
@@ -43,6 +43,13 @@ fn actionctx_logout() {
                 avatar: None,
                 last_modified: Env::now(),
                 date_registered: Env::now(),
+                gdpr_consent: GDPRConsent {
+                    tos: true,
+                    privacy: true,
+                    marketing: true,
+                    time: Env::now(),
+                    from: "tests".to_owned(),
+                },
             },
         }),
         ..Default::default()
