@@ -79,7 +79,7 @@ pub struct Video {
     pub streams: Vec<Stream>,
     #[serde(flatten)]
     pub series_info: Option<SeriesInfo>,
-    pub trailer: Option<Stream>,
+    pub trailer: Vec<Stream>,
 }
 
 #[derive(PartialEq, Clone, Debug, Deserialize, Serialize, Default)]
@@ -98,7 +98,7 @@ pub struct MetaPreview {
     pub released: Option<DateTime<Utc>>,
     #[serde(default, skip_serializing_if = "PosterShape::is_unspecified")]
     pub poster_shape: PosterShape,
-    pub trailer: Option<Stream>,
+    pub trailer: Vec<Stream>,
     #[serde(default)]
     pub behavior_hints: BehaviorHints,
 }
@@ -130,7 +130,7 @@ pub struct MetaDetail {
     pub links: Vec<Link>,
     // @TODO use some ISO language type
     // pub language: Option<String>,
-    pub trailer: Option<Stream>,
+    pub trailer: Vec<Stream>,
     #[serde(default)]
     pub behavior_hints: BehaviorHints,
 }

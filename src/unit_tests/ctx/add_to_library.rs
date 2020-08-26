@@ -48,7 +48,7 @@ fn actionctx_addtolibrary() {
         runtime: None,
         released: None,
         poster_shape: Default::default(),
-        trailer: None,
+        trailer: vec![],
         behavior_hints: Default::default(),
     };
     let lib_item = LibItem {
@@ -165,7 +165,7 @@ fn actionctx_addtolibrary_already_added() {
         release_info: None,
         runtime: None,
         released: None,
-        trailer: None,
+        trailer: vec![],
         behavior_hints: BehaviorHints {
             default_video_id: Some("video_id2".to_owned()),
         },
