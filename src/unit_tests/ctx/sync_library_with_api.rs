@@ -90,6 +90,35 @@ fn actionctx_synclibrarywithapi_with_user() {
             state: Default::default(),
             behavior_hints: Default::default(),
         };
+        static ref LOCAL_REMOVED_ITEM: LibItem = LibItem {
+            id: "id5".to_owned(),
+            type_name: "type_name".to_owned(),
+            name: "name".to_owned(),
+            poster: None,
+            poster_shape: Default::default(),
+            removed: true,
+            temp: false,
+            ctime: Some(Utc.ymd(2020, 1, 1).and_hms_milli(0, 0, 0, 0)),
+            mtime: Utc.ymd(2020, 1, 1).and_hms_milli(0, 0, 0, 0),
+            state: Default::default(),
+            behavior_hints: Default::default(),
+        };
+        static ref LOCAL_NOT_WATCHED_ITEM: LibItem = LibItem {
+            id: "id6".to_owned(),
+            type_name: "type_name".to_owned(),
+            name: "name".to_owned(),
+            poster: None,
+            poster_shape: Default::default(),
+            removed: false,
+            temp: false,
+            ctime: Some(Utc.ymd(2020, 1, 1).and_hms_milli(0, 0, 0, 0)),
+            mtime: Utc.ymd(2020, 1, 1).and_hms_milli(0, 0, 0, 0),
+            state: LibItemState {
+                overall_time_watched: 60000,
+                ..LibItemState::default()
+            },
+            behavior_hints: Default::default(),
+        };
     }
     fn fetch_handler(request: Request) -> EnvFuture<Box<dyn Any>> {
         match &request {
@@ -130,9 +159,10 @@ fn actionctx_synclibrarywithapi_with_user() {
                     Result::Ok(body)
                         if body.auth_key == "auth_key"
                             && body.collection == "libraryItem"
-                            && body.changes.len() == 2
+                            && body.changes.len() == 3
                             && body.changes.contains(&LOCAL_NEWER_ITEM)
-                            && body.changes.contains(&LOCAL_ONLY_ITEM) =>
+                            && body.changes.contains(&LOCAL_ONLY_ITEM)
+                            && body.changes.contains(&LOCAL_NOT_WATCHED_ITEM) =>
                     {
                         Box::new(future::ok(Box::new(APIResult::Ok {
                             result: SuccessResponse { success: True {} },
@@ -202,6 +232,14 @@ fn actionctx_synclibrarywithapi_with_user() {
                                 ..REMOTE_NEWER_ITEM.to_owned()
                             },
                         ),
+                        (
+                            LOCAL_REMOVED_ITEM.id.to_owned(),
+                            LOCAL_REMOVED_ITEM.to_owned(),
+                        ),
+                        (
+                            LOCAL_NOT_WATCHED_ITEM.id.to_owned(),
+                            LOCAL_NOT_WATCHED_ITEM.to_owned(),
+                        ),
                     ]
                     .into_iter()
                     .collect(),
@@ -224,6 +262,14 @@ fn actionctx_synclibrarywithapi_with_user() {
                     REMOTE_NEWER_ITEM.to_owned()
                 ),
                 (REMOTE_ONLY_ITEM.id.to_owned(), REMOTE_ONLY_ITEM.to_owned()),
+                (
+                    LOCAL_REMOVED_ITEM.id.to_owned(),
+                    LOCAL_REMOVED_ITEM.to_owned()
+                ),
+                (
+                    LOCAL_NOT_WATCHED_ITEM.id.to_owned(),
+                    LOCAL_NOT_WATCHED_ITEM.to_owned()
+                ),
             ]
             .into_iter()
             .collect(),
@@ -238,11 +284,13 @@ fn actionctx_synclibrarywithapi_with_user() {
             .map(|data| serde_json::from_str::<(UID, Vec<LibItem>)>(&data).unwrap())
             .map_or(false, |(uid, items)| {
                 uid == Some("user_id".to_owned())
-                    && items.len() == 4
+                    && items.len() == 6
                     && items.contains(&REMOTE_ONLY_ITEM)
                     && items.contains(&LOCAL_ONLY_ITEM)
                     && items.contains(&REMOTE_NEWER_ITEM)
                     && items.contains(&LOCAL_NEWER_ITEM)
+                    && items.contains(&LOCAL_REMOVED_ITEM)
+                    && items.contains(&LOCAL_NOT_WATCHED_ITEM)
             }),
         "Library recent slot updated successfully in storage"
     );
@@ -265,239 +313,5 @@ fn actionctx_synclibrarywithapi_with_user() {
         REQUESTS.read().unwrap().get(2).unwrap().url,
         "https://api.strem.io/api/datastoreGet".to_owned(),
         "datastoreGet request has been sent"
-    );
-}
-
-#[test]
-fn actionctx_synclibrarywithapi_with_user_filtered() {
-    #[derive(Model, Debug, Default)]
-    struct Model {
-        ctx: Ctx<Env>,
-    }
-    lazy_static! {
-        static ref LOCAL_REMOVED_NOT_WATCHED_ITEM: LibItem = LibItem {
-            id: "id1".to_owned(),
-            type_name: "type_name".to_owned(),
-            name: "name".to_owned(),
-            poster: None,
-            poster_shape: Default::default(),
-            removed: true,
-            temp: false,
-            ctime: Some(Utc.ymd(2020, 1, 1).and_hms_milli(0, 0, 0, 0)),
-            mtime: Utc.ymd(2020, 1, 1).and_hms_milli(0, 0, 0, 0),
-            state: LibItemState {
-                overall_time_watched: 60000,
-                ..LibItemState::default()
-            },
-            behavior_hints: Default::default(),
-        };
-        static ref LOCAL_REMOVED_WATCHED_ITEM: LibItem = LibItem {
-            id: "id2".to_owned(),
-            type_name: "type_name".to_owned(),
-            name: "name".to_owned(),
-            poster: None,
-            poster_shape: Default::default(),
-            removed: true,
-            temp: false,
-            ctime: Some(Utc.ymd(2020, 1, 1).and_hms_milli(0, 0, 0, 0)),
-            mtime: Utc.ymd(2020, 1, 1).and_hms_milli(0, 0, 0, 0),
-            state: LibItemState {
-                overall_time_watched: 60001,
-                ..LibItemState::default()
-            },
-            behavior_hints: Default::default(),
-        };
-        static ref LOCAL_NOT_REMOVED_NOT_WATCHED_ITEM: LibItem = LibItem {
-            id: "id3".to_owned(),
-            type_name: "type_name".to_owned(),
-            name: "name".to_owned(),
-            poster: None,
-            poster_shape: Default::default(),
-            removed: false,
-            temp: false,
-            ctime: Some(Utc.ymd(2020, 1, 1).and_hms_milli(0, 0, 0, 0)),
-            mtime: Utc.ymd(2020, 1, 1).and_hms_milli(0, 0, 0, 0),
-            state: LibItemState {
-                overall_time_watched: 60000,
-                ..LibItemState::default()
-            },
-            behavior_hints: Default::default(),
-        };
-        static ref LOCAL_NOT_REMOVED_WATCHED_ITEM: LibItem = LibItem {
-            id: "id4".to_owned(),
-            type_name: "type_name".to_owned(),
-            name: "name".to_owned(),
-            poster: None,
-            poster_shape: Default::default(),
-            removed: false,
-            temp: false,
-            ctime: Some(Utc.ymd(2020, 1, 1).and_hms_milli(0, 0, 0, 0)),
-            mtime: Utc.ymd(2020, 1, 1).and_hms_milli(0, 0, 0, 0),
-            state: LibItemState {
-                overall_time_watched: 60001,
-                ..LibItemState::default()
-            },
-            behavior_hints: Default::default(),
-        };
-    }
-    fn fetch_handler(request: Request) -> EnvFuture<Box<dyn Any>> {
-        match &request {
-            Request {
-                url, method, body, ..
-            } if url == "https://api.strem.io/api/datastoreMeta"
-                && method == "POST"
-                && body == "{\"authKey\":\"auth_key\",\"collection\":\"libraryItem\"}" =>
-            {
-                Box::new(future::ok(Box::new(APIResult::Ok {
-                    result: Vec::<LibItemModified>::new(),
-                }) as Box<dyn Any>))
-            }
-            Request {
-                url, method, body, ..
-            } if url == "https://api.strem.io/api/datastorePut" && method == "POST" => {
-                #[derive(Deserialize)]
-                #[serde(rename_all = "camelCase")]
-                struct Body {
-                    auth_key: AuthKey,
-                    collection: String,
-                    changes: Vec<LibItem>,
-                }
-                match serde_json::from_str::<Body>(&body) {
-                    Result::Ok(body)
-                        if body.auth_key == "auth_key"
-                            && body.collection == "libraryItem"
-                            && body.changes.len() == 3
-                            && body.changes.contains(&LOCAL_REMOVED_WATCHED_ITEM)
-                            && body.changes.contains(&LOCAL_NOT_REMOVED_NOT_WATCHED_ITEM)
-                            && body.changes.contains(&LOCAL_NOT_REMOVED_WATCHED_ITEM) =>
-                    {
-                        Box::new(future::ok(Box::new(APIResult::Ok {
-                            result: SuccessResponse { success: True {} },
-                        }) as Box<dyn Any>))
-                    }
-                    _ => default_fetch_handler(request),
-                }
-            }
-            _ => default_fetch_handler(request),
-        }
-    }
-    Env::reset();
-    *FETCH_HANDLER.write().unwrap() = Box::new(fetch_handler);
-    STORAGE.write().unwrap().insert(
-        LIBRARY_RECENT_STORAGE_KEY.to_owned(),
-        serde_json::to_string::<(UID, Vec<LibItem>)>(&(
-            Some("user_id".to_owned()),
-            vec![
-                LOCAL_REMOVED_NOT_WATCHED_ITEM.to_owned(),
-                LOCAL_REMOVED_WATCHED_ITEM.to_owned(),
-                LOCAL_NOT_REMOVED_NOT_WATCHED_ITEM.to_owned(),
-                LOCAL_NOT_REMOVED_WATCHED_ITEM.to_owned(),
-            ],
-        ))
-        .unwrap(),
-    );
-    let (runtime, _) = Runtime::<Env, Model>::new(
-        Model {
-            ctx: Ctx {
-                profile: Profile {
-                    auth: Some(Auth {
-                        key: "auth_key".to_owned(),
-                        user: User {
-                            id: "user_id".to_owned(),
-                            email: "user_email".to_owned(),
-                            fb_id: None,
-                            avatar: None,
-                            last_modified: Env::now(),
-                            date_registered: Env::now(),
-                        },
-                    }),
-                    ..Default::default()
-                },
-                library: LibBucket {
-                    uid: Some("user_id".to_owned()),
-                    items: vec![
-                        (
-                            LOCAL_REMOVED_WATCHED_ITEM.id.to_owned(),
-                            LOCAL_REMOVED_WATCHED_ITEM.to_owned(),
-                        ),
-                        (
-                            LOCAL_REMOVED_NOT_WATCHED_ITEM.id.to_owned(),
-                            LOCAL_REMOVED_NOT_WATCHED_ITEM.to_owned(),
-                        ),
-                        (
-                            LOCAL_NOT_REMOVED_WATCHED_ITEM.id.to_owned(),
-                            LOCAL_NOT_REMOVED_WATCHED_ITEM.to_owned(),
-                        ),
-                        (
-                            LOCAL_NOT_REMOVED_NOT_WATCHED_ITEM.id.to_owned(),
-                            LOCAL_NOT_REMOVED_NOT_WATCHED_ITEM.to_owned(),
-                        ),
-                    ]
-                    .into_iter()
-                    .collect(),
-                },
-                ..Default::default()
-            },
-        },
-        1000,
-    );
-    run(runtime.dispatch(&Msg::Action(Action::Ctx(ActionCtx::SyncLibraryWithAPI))));
-    assert_eq!(
-        runtime.app.read().unwrap().ctx.library,
-        LibBucket {
-            uid: Some("user_id".to_string()),
-            items: vec![
-                (
-                    LOCAL_REMOVED_NOT_WATCHED_ITEM.id.to_owned(),
-                    LOCAL_REMOVED_NOT_WATCHED_ITEM.to_owned(),
-                ),
-                (
-                    LOCAL_REMOVED_WATCHED_ITEM.id.to_owned(),
-                    LOCAL_REMOVED_WATCHED_ITEM.to_owned(),
-                ),
-                (
-                    LOCAL_NOT_REMOVED_NOT_WATCHED_ITEM.id.to_owned(),
-                    LOCAL_NOT_REMOVED_NOT_WATCHED_ITEM.to_owned(),
-                ),
-                (
-                    LOCAL_NOT_REMOVED_WATCHED_ITEM.id.to_owned(),
-                    LOCAL_NOT_REMOVED_WATCHED_ITEM.to_owned(),
-                ),
-            ]
-            .into_iter()
-            .collect(),
-        },
-        "library updated successfully in memory"
-    );
-    assert!(
-        STORAGE
-            .read()
-            .unwrap()
-            .get(LIBRARY_RECENT_STORAGE_KEY)
-            .map(|data| serde_json::from_str::<(UID, Vec<LibItem>)>(&data).unwrap())
-            .map_or(false, |(uid, items)| {
-                uid == Some("user_id".to_owned())
-                    && items.len() == 4
-                    && items.contains(&LOCAL_REMOVED_NOT_WATCHED_ITEM)
-                    && items.contains(&LOCAL_REMOVED_WATCHED_ITEM)
-                    && items.contains(&LOCAL_NOT_REMOVED_NOT_WATCHED_ITEM)
-                    && items.contains(&LOCAL_NOT_REMOVED_WATCHED_ITEM)
-            }),
-        "Library recent slot updated successfully in storage"
-    );
-    assert_eq!(
-        REQUESTS.read().unwrap().len(),
-        2,
-        "Two requests have been sent"
-    );
-    assert_eq!(
-        REQUESTS.read().unwrap().get(0).unwrap().url,
-        "https://api.strem.io/api/datastoreMeta".to_owned(),
-        "datastoreMeta request has been sent"
-    );
-    assert_eq!(
-        REQUESTS.read().unwrap().get(1).unwrap().url,
-        "https://api.strem.io/api/datastorePut".to_owned(),
-        "datastorePut request has been sent"
     );
 }
