@@ -1,23 +1,13 @@
+use derivative::Derivative;
 use serde::{Deserialize, Serialize};
 
-#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
+#[derive(Derivative, Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
+#[derivative(Default)]
 #[serde(rename_all = "camelCase")]
 pub enum PosterShape {
-    Poster,
     Square,
     Landscape,
+    #[derivative(Default)]
     #[serde(other)]
-    Unspecified,
-}
-
-impl Default for PosterShape {
-    fn default() -> Self {
-        PosterShape::Unspecified
-    }
-}
-
-impl PosterShape {
-    pub fn is_unspecified(&self) -> bool {
-        *self == PosterShape::Unspecified
-    }
+    Poster,
 }

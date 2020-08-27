@@ -204,7 +204,7 @@ fn actionctx_addtolibrary_already_added() {
                             type_name: "type_name_".to_owned(),
                             name: "name_".to_owned(),
                             poster: None,
-                            poster_shape: PosterShape::Unspecified,
+                            poster_shape: PosterShape::Poster,
                             removed: true,
                             temp: true,
                             ctime: Some(Utc.ymd(2020, 1, 1).and_hms_milli(0, 0, 0, 0)),

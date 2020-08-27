@@ -18,7 +18,7 @@ pub struct MetaItem {
     pub release_info: Option<String>,
     pub runtime: Option<String>,
     pub released: Option<DateTime<Utc>>,
-    #[serde(default, skip_serializing_if = "PosterShape::is_unspecified")]
+    #[serde(default)]
     pub poster_shape: PosterShape,
     // @TODO: default to one video
     #[serde(default)]
@@ -49,7 +49,7 @@ pub struct MetaItemPreview {
     pub release_info: Option<String>,
     pub runtime: Option<String>,
     pub released: Option<DateTime<Utc>>,
-    #[serde(default, skip_serializing_if = "PosterShape::is_unspecified")]
+    #[serde(default)]
     pub poster_shape: PosterShape,
     #[serde(default)]
     pub trailers: Vec<Stream>,
