@@ -1,8 +1,8 @@
-use crate::constants::PROFILE_STORAGE_KEY;
+use crate::constants::{DEFAULT_ADDON, OFFICIAL_ADDONS, PROFILE_STORAGE_KEY};
 use crate::state_types::models::ctx::Ctx;
 use crate::state_types::msg::{Action, ActionCtx, Msg};
 use crate::state_types::{EnvFuture, Environment, Runtime};
-use crate::types::addons::{Descriptor, DescriptorFlags, Manifest, ManifestResource};
+use crate::types::addons::{Descriptor, Manifest};
 use crate::types::api::{APIResult, Auth, CollectionResponse, User};
 use crate::types::profile::Profile;
 use crate::unit_tests::{default_fetch_handler, Env, Request, FETCH_HANDLER, REQUESTS, STORAGE};
@@ -19,64 +19,17 @@ fn actionctx_pulladdonsfromapi() {
     struct Model {
         ctx: Ctx<Env>,
     }
-    let addon = Descriptor {
-        manifest: Manifest {
-            id: "id".to_owned(),
-            version: Version::new(0, 0, 1),
-            name: "name".to_owned(),
-            contact_email: None,
-            description: None,
-            logo: None,
-            background: None,
-            types: vec![],
-            resources: vec![],
-            id_prefixes: None,
-            catalogs: vec![],
-            addon_catalogs: vec![],
-            behavior_hints: Default::default(),
-        },
-        transport_url: "transport_url".to_owned(),
-        flags: Default::default(),
-    };
-    let official_addon = Descriptor {
-        manifest: Manifest {
-            id: "org.stremio.opensubtitles".to_owned(),
-            version: Version {
-                major: 0,
-                minor: 22,
-                patch: 0,
-                pre: vec![],
-                build: vec![],
-            },
-            name: "OpenSubtitles".to_owned(),
-            contact_email: None,
-            description: Some("The official add-on for subtitles from OpenSubtitles".to_owned()),
-            logo: Some("http://www.strem.io/images/addons/opensubtitles-logo.png".to_owned()),
-            background: None,
-            types: vec!["series".to_owned(), "movie".to_owned(), "other".to_owned()],
-            resources: vec![ManifestResource::Short("subtitles".to_owned())],
-            id_prefixes: None,
-            catalogs: vec![],
-            addon_catalogs: vec![],
-            behavior_hints: Default::default(),
-        },
-        transport_url: "https://opensubtitles.strem.io/stremio/v1".to_owned(),
-        flags: DescriptorFlags {
-            official: true,
-            protected: false,
-            extra: Default::default(),
-        },
-    };
+    let official_addon = &OFFICIAL_ADDONS.to_vec()[0];
     Env::reset();
     let (runtime, _) = Runtime::<Env, Model>::new(
         Model {
             ctx: Ctx {
                 profile: Profile {
                     addons: vec![
-                        addon.to_owned(),
+                        DEFAULT_ADDON.to_owned(),
                         Descriptor {
                             manifest: Manifest {
-                                id: "org.stremio.opensubtitles".to_owned(),
+                                id: official_addon.manifest.id.to_owned(),
                                 version: Version::new(0, 0, 2),
                                 name: "name".to_owned(),
                                 contact_email: None,
@@ -91,11 +44,7 @@ fn actionctx_pulladdonsfromapi() {
                                 behavior_hints: Default::default(),
                             },
                             transport_url: "transport_url2".to_owned(),
-                            flags: DescriptorFlags {
-                                official: true,
-                                protected: false,
-                                extra: Default::default(),
-                            },
+                            flags: Default::default(),
                         },
                     ],
                     ..Default::default()
@@ -108,7 +57,13 @@ fn actionctx_pulladdonsfromapi() {
     run(runtime.dispatch(&Msg::Action(Action::Ctx(ActionCtx::PullAddonsFromAPI))));
     assert_eq!(
         runtime.app.read().unwrap().ctx.profile.addons,
-        vec![addon.to_owned(), official_addon.to_owned()],
+        vec![
+            DEFAULT_ADDON.to_owned(),
+            Descriptor {
+                flags: Default::default(),
+                ..official_addon.to_owned()
+            }
+        ],
         "addons updated successfully in memory"
     );
     assert!(
@@ -118,7 +73,13 @@ fn actionctx_pulladdonsfromapi() {
             .get(PROFILE_STORAGE_KEY)
             .map_or(false, |data| {
                 serde_json::from_str::<Profile>(&data).unwrap().addons
-                    == vec![addon.to_owned(), official_addon.to_owned()]
+                    == vec![
+                        DEFAULT_ADDON.to_owned(),
+                        Descriptor {
+                            flags: Default::default(),
+                            ..official_addon.to_owned()
+                        },
+                    ]
             }),
         "addons updated successfully in storage"
     );
@@ -144,7 +105,7 @@ fn actionctx_pulladdonsfromapi_with_user() {
             {
                 Box::new(future::ok(Box::new(APIResult::Ok {
                     result: CollectionResponse {
-                        addons: vec![],
+                        addons: OFFICIAL_ADDONS.to_vec(),
                         last_modified: Env::now(),
                     },
                 }) as Box<dyn Any>))
@@ -169,25 +130,7 @@ fn actionctx_pulladdonsfromapi_with_user() {
                             date_registered: Env::now(),
                         },
                     }),
-                    addons: vec![Descriptor {
-                        manifest: Manifest {
-                            id: "id".to_owned(),
-                            version: Version::new(0, 0, 1),
-                            name: "name".to_owned(),
-                            contact_email: None,
-                            description: None,
-                            logo: None,
-                            background: None,
-                            types: vec![],
-                            resources: vec![],
-                            id_prefixes: None,
-                            catalogs: vec![],
-                            addon_catalogs: vec![],
-                            behavior_hints: Default::default(),
-                        },
-                        transport_url: "transport_url".to_owned(),
-                        flags: Default::default(),
-                    }],
+                    addons: vec![DEFAULT_ADDON.to_owned()],
                     ..Default::default()
                 },
                 ..Default::default()
@@ -196,6 +139,21 @@ fn actionctx_pulladdonsfromapi_with_user() {
         1000,
     );
     run(runtime.dispatch(&Msg::Action(Action::Ctx(ActionCtx::PullAddonsFromAPI))));
+    assert_eq!(
+        runtime.app.read().unwrap().ctx.profile.addons,
+        OFFICIAL_ADDONS.to_vec(),
+        "addons updated successfully in memory"
+    );
+    assert!(
+        STORAGE
+            .read()
+            .unwrap()
+            .get(PROFILE_STORAGE_KEY)
+            .map_or(false, |data| {
+                serde_json::from_str::<Profile>(&data).unwrap().addons == OFFICIAL_ADDONS.to_vec()
+            }),
+        "addons updated successfully in storage"
+    );
     assert_eq!(
         REQUESTS.read().unwrap().len(),
         1,
