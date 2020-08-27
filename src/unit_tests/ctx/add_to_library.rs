@@ -2,9 +2,10 @@ use crate::constants::{LIBRARY_RECENT_STORAGE_KEY, LIBRARY_STORAGE_KEY};
 use crate::state_types::models::ctx::Ctx;
 use crate::state_types::msg::{Action, ActionCtx, Msg};
 use crate::state_types::{EnvFuture, Environment, Runtime};
-use crate::types::api::{APIResult, Auth, GDPRConsent, SuccessResponse, True, User};
-use crate::types::profile::{Profile, UID};
-use crate::types::{BehaviorHints, LibBucket, LibItem, LibItemState, MetaPreview, PosterShape};
+use crate::types::api::{APIResult, SuccessResponse, True};
+use crate::types::library::{LibBucket, LibItem, LibItemState};
+use crate::types::profile::{Auth, GDPRConsent, Profile, User, UID};
+use crate::types::resource::{MetaBehaviorHints, MetaItemPreview, PosterShape};
 use crate::unit_tests::{
     default_fetch_handler, Env, Request, FETCH_HANDLER, NOW, REQUESTS, STORAGE,
 };
@@ -28,7 +29,7 @@ fn actionctx_addtolibrary() {
                 url, method, body, ..
             } if url == "https://api.strem.io/api/datastorePut"
                 && method == "POST"
-                && body == "{\"authKey\":\"auth_key\",\"collection\":\"libraryItem\",\"changes\":[{\"_id\":\"id\",\"removed\":false,\"temp\":false,\"_ctime\":\"2020-01-01T00:00:00Z\",\"_mtime\":\"2020-01-01T00:00:00Z\",\"state\":{\"lastWatched\":null,\"timeWatched\":0,\"timeOffset\":0,\"overallTimeWatched\":0,\"timesWatched\":0,\"flaggedWatched\":0,\"duration\":0,\"video_id\":null,\"watched\":null,\"lastVidReleased\":null,\"noNotif\":false},\"name\":\"name\",\"type\":\"type_name\",\"poster\":null,\"behaviorHints\":{\"defaultVideoId\":null}}]}" =>
+                && body == "{\"authKey\":\"auth_key\",\"collection\":\"libraryItem\",\"changes\":[{\"_id\":\"id\",\"name\":\"name\",\"type\":\"type_name\",\"poster\":null,\"removed\":false,\"temp\":false,\"_ctime\":\"2020-01-01T00:00:00Z\",\"_mtime\":\"2020-01-01T00:00:00Z\",\"state\":{\"lastWatched\":null,\"timeWatched\":0,\"timeOffset\":0,\"overallTimeWatched\":0,\"timesWatched\":0,\"flaggedWatched\":0,\"duration\":0,\"video_id\":null,\"watched\":null,\"lastVidReleased\":null,\"noNotif\":false},\"behaviorHints\":{\"defaultVideoId\":null}}]}" =>
             {
                 Box::new(future::ok(Box::new(APIResult::Ok {
                     result: SuccessResponse { success: True {} },
@@ -37,7 +38,7 @@ fn actionctx_addtolibrary() {
             _ => default_fetch_handler(request),
         }
     }
-    let meta_preview = MetaPreview {
+    let meta_preview = MetaItemPreview {
         id: "id".to_owned(),
         type_name: "type_name".to_owned(),
         name: "name".to_owned(),
@@ -48,7 +49,7 @@ fn actionctx_addtolibrary() {
         runtime: None,
         released: None,
         poster_shape: Default::default(),
-        trailer: vec![],
+        trailers: vec![],
         behavior_hints: Default::default(),
     };
     let lib_item = LibItem {
@@ -143,14 +144,8 @@ fn actionctx_addtolibrary() {
         "One request has been sent"
     );
     assert_eq!(
-        REQUESTS.read().unwrap().get(0).unwrap().to_owned(),
-        Request {
-            url: "https://api.strem.io/api/datastorePut".to_owned(),
-            method: "POST".to_owned(),
-            body: "{\"authKey\":\"auth_key\",\"collection\":\"libraryItem\",\"changes\":[{\"_id\":\"id\",\"removed\":false,\"temp\":false,\"_ctime\":\"2020-01-01T00:00:00Z\",\"_mtime\":\"2020-01-01T00:00:00Z\",\"state\":{\"lastWatched\":null,\"timeWatched\":0,\"timeOffset\":0,\"overallTimeWatched\":0,\"timesWatched\":0,\"flaggedWatched\":0,\"duration\":0,\"video_id\":null,\"watched\":null,\"lastVidReleased\":null,\"noNotif\":false},\"name\":\"name\",\"type\":\"type_name\",\"poster\":null,\"behaviorHints\":{\"defaultVideoId\":null}}]}"
-                .to_owned(),
-            ..Default::default()
-        },
+        REQUESTS.read().unwrap().get(0).unwrap().url.to_owned(),
+        "https://api.strem.io/api/datastorePut".to_owned(),
         "datastorePut request has been sent"
     );
 }
@@ -161,7 +156,7 @@ fn actionctx_addtolibrary_already_added() {
     struct Model {
         ctx: Ctx<Env>,
     }
-    let meta_preview = MetaPreview {
+    let meta_preview = MetaItemPreview {
         id: "id".to_owned(),
         type_name: "type_name".to_owned(),
         name: "name".to_owned(),
@@ -172,8 +167,8 @@ fn actionctx_addtolibrary_already_added() {
         release_info: None,
         runtime: None,
         released: None,
-        trailer: vec![],
-        behavior_hints: BehaviorHints {
+        trailers: vec![],
+        behavior_hints: MetaBehaviorHints {
             default_video_id: Some("video_id2".to_owned()),
         },
     };
@@ -191,7 +186,7 @@ fn actionctx_addtolibrary_already_added() {
             video_id: Some("video_id".to_owned()),
             ..LibItemState::default()
         },
-        behavior_hints: BehaviorHints {
+        behavior_hints: MetaBehaviorHints {
             default_video_id: Some("video_id2".to_owned()),
         },
     };

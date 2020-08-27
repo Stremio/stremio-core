@@ -1,4 +1,4 @@
-use crate::types::addons::Descriptor;
+use crate::types::addon::Descriptor;
 use lazy_static::lazy_static;
 
 pub const API_URL: &str = "https://api.strem.io";

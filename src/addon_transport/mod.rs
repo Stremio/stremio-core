@@ -1,5 +1,5 @@
 use crate::state_types::{EnvFuture, Environment, Request};
-use crate::types::addons::*;
+use crate::types::addon::*;
 use futures::future::err;
 use std::marker::PhantomData;
 

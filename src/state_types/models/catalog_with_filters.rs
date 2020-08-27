@@ -6,11 +6,11 @@ use crate::state_types::models::common::{
 use crate::state_types::models::ctx::Ctx;
 use crate::state_types::msg::{Action, ActionLoad, Internal, Msg};
 use crate::state_types::{Effects, Environment, UpdateWithCtx};
-use crate::types::addons::{
+use crate::types::addon::{
     Descriptor, DescriptorPreview, Manifest, ManifestCatalog, ManifestExtraProp, ResourceRef,
     ResourceRequest, ResourceResponse,
 };
-use crate::types::MetaPreview;
+use crate::types::resource::MetaItemPreview;
 use derivative::Derivative;
 use itertools::Itertools;
 use serde::{Deserialize, Serialize};
@@ -28,7 +28,7 @@ pub trait CatalogResourceAdapter {
     fn catalog_page_size() -> Option<usize>;
 }
 
-impl CatalogResourceAdapter for MetaPreview {
+impl CatalogResourceAdapter for MetaItemPreview {
     fn resource_name() -> &'static str {
         "catalog"
     }

@@ -5,11 +5,11 @@ use crate::constants::{
 use crate::state_types::msg::{Action, ActionCtx, ActionLoad, Event, Internal, Msg};
 use crate::state_types::{Effect, Effects, Environment, Update};
 use crate::types::api::{
-    APIRequest, Auth, AuthRequest, AuthResponse, CollectionResponse, DatastoreCmd, DatastoreReq,
+    APIRequest, AuthRequest, AuthResponse, CollectionResponse, DatastoreCommand, DatastoreRequest,
     SuccessResponse,
 };
-use crate::types::profile::Profile;
-use crate::types::LibBucket;
+use crate::types::library::LibBucket;
+use crate::types::profile::{Auth, Profile};
 use derivative::Derivative;
 use enclose::enclose;
 use futures::Future;
@@ -172,10 +172,10 @@ fn authenticate<Env: Environment + 'static>(auth_request: &AuthRequest) -> Effec
                     update: true,
                 })
                 .map(|CollectionResponse { addons, .. }| addons)
-                .join(fetch_api::<Env, _, _>(&DatastoreReq {
+                .join(fetch_api::<Env, _, _>(&DatastoreRequest {
                     auth_key: auth.key.to_owned(),
                     collection: LIBRARY_COLLECTION_NAME.to_owned(),
-                    cmd: DatastoreCmd::Get {
+                    command: DatastoreCommand::Get {
                         ids: vec![],
                         all: true,
                     },

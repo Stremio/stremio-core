@@ -2,7 +2,7 @@ use super::{fetch_api, CtxError, CtxRequest, CtxStatus, OtherError};
 use crate::constants::{OFFICIAL_ADDONS, PROFILE_STORAGE_KEY};
 use crate::state_types::msg::{Action, ActionCtx, Event, Internal, Msg};
 use crate::state_types::{Effect, Effects, Environment};
-use crate::types::addons::Descriptor;
+use crate::types::addon::Descriptor;
 use crate::types::api::{APIRequest, CollectionResponse, SuccessResponse};
 use crate::types::profile::{Profile, Settings};
 use enclose::enclose;

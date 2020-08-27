@@ -4,7 +4,7 @@ use crate::state_types::models::common::{
 use crate::state_types::models::ctx::Ctx;
 use crate::state_types::msg::{Action, ActionLoad, Internal, Msg};
 use crate::state_types::{Effects, Environment, UpdateWithCtx};
-use crate::types::addons::TransportUrl;
+use crate::types::addon::TransportUrl;
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]

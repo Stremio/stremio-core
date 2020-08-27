@@ -4,9 +4,9 @@ use crate::constants::{
 };
 use crate::state_types::msg::{Action, ActionCtx, Event, Internal, Msg};
 use crate::state_types::{Effect, Effects, Environment};
-use crate::types::api::AuthKey;
-use crate::types::api::{DatastoreCmd, DatastoreReq, SuccessResponse};
-use crate::types::{LibBucket, LibItem, LibItemModified, LibItemState};
+use crate::types::profile::AuthKey;
+use crate::types::api::{DatastoreCommand, DatastoreRequest, SuccessResponse, LibItemModified};
+use crate::types::library::{LibBucket, LibItem, LibItemState};
 use futures::future::Either;
 use futures::Future;
 use std::collections::HashMap;
@@ -162,7 +162,7 @@ pub fn update_library<Env: Environment + 'static>(
             _ => Effects::none().unchanged(),
         },
         Msg::Internal(Internal::LibrarySyncPlanResult(
-            DatastoreReq {
+            DatastoreRequest {
                 auth_key: loading_auth_key,
                 ..
             },
@@ -206,9 +206,9 @@ pub fn update_library<Env: Environment + 'static>(
             .unchanged(),
         },
         Msg::Internal(Internal::LibraryPullResult(
-            DatastoreReq {
+            DatastoreRequest {
                 auth_key: loading_auth_key,
-                cmd: DatastoreCmd::Get { ids, .. },
+                command: DatastoreCommand::Get { ids, .. },
                 ..
             },
             result,
@@ -308,10 +308,10 @@ fn push_library_to_storage<Env: Environment + 'static>(library: &LibBucket) -> E
 fn push_items_to_api<Env: Environment + 'static>(items: Vec<LibItem>, auth_key: &str) -> Effect {
     let ids = items.iter().map(|item| &item.id).cloned().collect();
     Box::new(
-        fetch_api::<Env, _, SuccessResponse>(&DatastoreReq {
+        fetch_api::<Env, _, SuccessResponse>(&DatastoreRequest {
             auth_key: auth_key.to_owned(),
             collection: LIBRARY_COLLECTION_NAME.to_owned(),
-            cmd: DatastoreCmd::Put { changes: items },
+            command: DatastoreCommand::Put { changes: items },
         })
         .then(move |result| match result {
             Ok(_) => Ok(Msg::Event(Event::LibraryItemsPushedToAPI { ids })),
@@ -324,10 +324,10 @@ fn push_items_to_api<Env: Environment + 'static>(items: Vec<LibItem>, auth_key: 
 }
 
 fn pull_items_from_api<Env: Environment + 'static>(ids: Vec<String>, auth_key: &str) -> Effect {
-    let request = DatastoreReq {
+    let request = DatastoreRequest {
         auth_key: auth_key.to_owned(),
         collection: LIBRARY_COLLECTION_NAME.to_owned(),
-        cmd: DatastoreCmd::Get { ids, all: false },
+        command: DatastoreCommand::Get { ids, all: false },
     };
     Box::new(
         fetch_api::<Env, _, _>(&request)
@@ -342,10 +342,10 @@ fn plan_sync_with_api<Env: Environment + 'static>(library: &LibBucket, auth_key:
         .filter(|(_, item)| item.should_sync())
         .map(|(id, item)| (id.to_owned(), item.mtime.to_owned()))
         .collect::<HashMap<_, _>>();
-    let request = DatastoreReq {
+    let request = DatastoreRequest {
         auth_key: auth_key.to_owned(),
         collection: LIBRARY_COLLECTION_NAME.to_owned(),
-        cmd: DatastoreCmd::Meta {},
+        command: DatastoreCommand::Meta {},
     };
     Box::new(
         fetch_api::<Env, _, Vec<LibItemModified>>(&request)

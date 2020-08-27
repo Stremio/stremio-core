@@ -3,8 +3,8 @@ use crate::state_types::models::ctx::Ctx;
 use crate::state_types::msg::Internal::*;
 use crate::state_types::msg::*;
 use crate::state_types::*;
-use crate::types::addons::{ResourceRef, ResourceRequest};
-use crate::types::MetaDetail;
+use crate::types::addon::{ResourceRef, ResourceRequest};
+use crate::types::resource::MetaItem;
 use futures::{future, Future};
 use lazysort::SortedBy;
 use serde_derive::*;
@@ -17,7 +17,7 @@ const LAST_VID_IDS: &str = "lastVideosIds";
 
 #[derive(Debug, Clone, Default, Serialize)]
 pub struct Notifications {
-    pub groups: Vec<ResourceLoadable<Vec<MetaDetail>>>,
+    pub groups: Vec<ResourceLoadable<Vec<MetaItem>>>,
 }
 impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for Notifications {
     fn update(&mut self, ctx: &Ctx<Env>, msg: &Msg) -> Effects {

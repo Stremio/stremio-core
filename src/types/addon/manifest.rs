@@ -1,14 +1,10 @@
-use crate::types::addons::ResourceRef;
+use crate::types::addon::ResourceRef;
 use either::Either;
 use semver::Version;
-use serde_derive::*;
+use serde::{Deserialize, Serialize};
 use std::borrow::Cow;
 
-// Resource descriptors
-// those define how a resource may be requested
-// the tricky thing here is that resources may either be provided in a short notation, e.g. `"stream"`
-// or long e.g. `{ name: "stream", types: ["movie"], id_prefixes: ["tt"] }`
-#[derive(Debug, PartialEq, Clone, Deserialize, Serialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(untagged)]
 pub enum ManifestResource {
     Short(String),
@@ -19,25 +15,26 @@ pub enum ManifestResource {
         id_prefixes: Option<Vec<String>>,
     },
 }
+
 impl ManifestResource {
     fn name(&self) -> &str {
         match self {
-            ManifestResource::Short(n) => n,
+            ManifestResource::Short(name) => name,
             ManifestResource::Full { name, .. } => name,
         }
     }
 }
 
-// Extra descriptors
-// those define the extra properties that may be passed for a catalog
-#[derive(Debug, Clone, PartialEq, Deserialize, Serialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct OptionsLimit(pub usize);
+
 impl Default for OptionsLimit {
     fn default() -> OptionsLimit {
         OptionsLimit(1)
     }
 }
-#[derive(Debug, PartialEq, Clone, Deserialize, Serialize, Default)]
+
+#[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ManifestExtraProp {
     pub name: String,
@@ -47,15 +44,14 @@ pub struct ManifestExtraProp {
     #[serde(default)]
     pub options_limit: OptionsLimit,
 }
-#[derive(Debug, PartialEq, Clone, Deserialize, Serialize)]
+
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(untagged)]
 pub enum ManifestExtra {
     Full {
         #[serde(rename = "extra")]
         props: Vec<ManifestExtraProp>,
     },
-    // Short notation, which was the standard before v3.1 protocol: https://github.com/Stremio/stremio-addon-sdk/milestone/1
-    // kind of obsolete, but addons may use it
     Short {
         #[serde(default, rename = "extraRequired")]
         required: Vec<String>,
@@ -63,13 +59,14 @@ pub enum ManifestExtra {
         supported: Vec<String>,
     },
 }
+
 impl Default for ManifestExtra {
     fn default() -> Self {
         ManifestExtra::Full { props: vec![] }
     }
 }
 
-#[derive(Debug, PartialEq, Clone, Deserialize, Serialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ManifestCatalog {
     #[serde(rename = "type")]
@@ -79,6 +76,7 @@ pub struct ManifestCatalog {
     #[serde(flatten)]
     pub extra: ManifestExtra,
 }
+
 impl ManifestCatalog {
     pub fn extra_iter<'a>(&'a self) -> impl Iterator<Item = Cow<ManifestExtraProp>> + 'a {
         match &self.extra {
@@ -107,7 +105,7 @@ impl ManifestCatalog {
     }
 }
 
-#[derive(Debug, PartialEq, Clone, Deserialize, Serialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ManifestPreview {
     pub id: String,
@@ -119,10 +117,7 @@ pub struct ManifestPreview {
     pub types: Vec<String>,
 }
 
-// The manifest itself
-// If we construct the addon with a builder, we can only take ManifestPreview
-// and fill in the rest
-#[derive(Debug, PartialEq, Clone, Deserialize, Serialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Manifest {
     pub id: String,

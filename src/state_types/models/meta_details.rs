@@ -6,8 +6,8 @@ use crate::state_types::models::common::{
 use crate::state_types::models::ctx::Ctx;
 use crate::state_types::msg::{Action, ActionLoad, Internal, Msg};
 use crate::state_types::{Effects, Environment, UpdateWithCtx};
-use crate::types::addons::{AggrRequest, ResourceRef};
-use crate::types::{MetaDetail, Stream};
+use crate::types::addon::{AggrRequest, ResourceRef};
+use crate::types::resource::{MetaItem, Stream};
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -19,7 +19,7 @@ pub struct Selected {
 #[derive(Default, Debug, Clone, Serialize)]
 pub struct MetaDetails {
     pub selected: Option<Selected>,
-    pub meta_resources: Vec<ResourceLoadable<MetaDetail>>,
+    pub meta_resources: Vec<ResourceLoadable<MetaItem>>,
     pub streams_resources: Vec<ResourceLoadable<Vec<Stream>>>,
 }
 
@@ -111,7 +111,7 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for MetaDetails {
 }
 
 fn streams_resource_from_meta_resources(
-    meta_resources: &[ResourceLoadable<MetaDetail>],
+    meta_resources: &[ResourceLoadable<MetaItem>],
     video_id: &str,
 ) -> Option<ResourceLoadable<Vec<Stream>>> {
     meta_resources

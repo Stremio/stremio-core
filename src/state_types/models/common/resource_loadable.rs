@@ -1,7 +1,7 @@
 use super::Loadable;
 use crate::state_types::msg::{Internal, Msg};
 use crate::state_types::{Effect, Effects, EnvError, Environment};
-use crate::types::addons::{AggrRequest, Descriptor, ResourceRequest, ResourceResponse};
+use crate::types::addon::{AggrRequest, Descriptor, ResourceRequest, ResourceResponse};
 use futures::Future;
 use serde::Serialize;
 use std::convert::TryFrom;

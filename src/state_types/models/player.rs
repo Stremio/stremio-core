@@ -6,9 +6,10 @@ use crate::state_types::models::common::{
 use crate::state_types::models::ctx::Ctx;
 use crate::state_types::msg::{Action, ActionLoad, ActionPlayer, Internal, Msg};
 use crate::state_types::{Effects, Environment, UpdateWithCtx};
-use crate::types::addons::{AggrRequest, ResourceRef, ResourceRequest};
+use crate::types::addon::{AggrRequest, ResourceRef, ResourceRequest};
+use crate::types::library::{LibBucket, LibItem, LibItemState};
 use crate::types::profile::Settings as ProfileSettings;
-use crate::types::{LibBucket, LibItem, LibItemState, MetaDetail, Stream, SubtitlesSource, Video};
+use crate::types::resource::{MetaItem, Stream, Subtitles, Video};
 use serde::{Deserialize, Serialize};
 use std::cmp;
 
@@ -28,8 +29,8 @@ pub struct Selected {
 #[derive(Default, Debug, Clone, PartialEq, Serialize)]
 pub struct Player {
     pub selected: Option<Selected>,
-    pub meta_resource: Option<ResourceLoadable<MetaDetail>>,
-    pub subtitles_resources: Vec<ResourceLoadable<Vec<SubtitlesSource>>>,
+    pub meta_resource: Option<ResourceLoadable<MetaItem>>,
+    pub subtitles_resources: Vec<ResourceLoadable<Vec<Subtitles>>>,
     pub next_video: Option<Video>,
     pub lib_item: Option<LibItem>,
 }
@@ -188,7 +189,7 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for Player {
 
 fn next_video_update(
     video: &mut Option<Video>,
-    meta_resource: &Option<ResourceLoadable<MetaDetail>>,
+    meta_resource: &Option<ResourceLoadable<MetaItem>>,
     video_id: &Option<String>,
     settings: &ProfileSettings,
 ) -> Effects {
@@ -217,7 +218,7 @@ fn next_video_update(
 
 fn lib_item_update<Env: Environment>(
     lib_item: &mut Option<LibItem>,
-    meta_resource: &Option<ResourceLoadable<MetaDetail>>,
+    meta_resource: &Option<ResourceLoadable<MetaItem>>,
     library: &LibBucket,
 ) -> Effects {
     let next_lib_item = match meta_resource {

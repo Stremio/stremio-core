@@ -5,8 +5,8 @@ use crate::state_types::models::common::{
 use crate::state_types::models::ctx::Ctx;
 use crate::state_types::msg::{Action, ActionLoad, Internal, Msg};
 use crate::state_types::{Effects, Environment, UpdateWithCtx};
-use crate::types::addons::{AggrRequest, ExtraProp};
-use crate::types::MetaPreview;
+use crate::types::addon::{AggrRequest, ExtraProp};
+use crate::types::resource::MetaItemPreview;
 use serde::{Deserialize, Serialize};
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -17,7 +17,7 @@ pub struct Selected {
 #[derive(Default, Debug, Clone, PartialEq, Serialize)]
 pub struct CatalogsWithExtra {
     pub selected: Option<Selected>,
-    pub catalog_resources: Vec<ResourceLoadable<Vec<MetaPreview>>>,
+    pub catalog_resources: Vec<ResourceLoadable<Vec<MetaItemPreview>>>,
 }
 
 impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for CatalogsWithExtra {

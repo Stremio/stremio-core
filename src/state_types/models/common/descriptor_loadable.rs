@@ -2,7 +2,7 @@ use super::Loadable;
 use crate::constants::OFFICIAL_ADDONS;
 use crate::state_types::msg::{Internal, Msg};
 use crate::state_types::{Effects, EnvError, Environment};
-use crate::types::addons::{Descriptor, Manifest, TransportUrl};
+use crate::types::addon::{Descriptor, Manifest, TransportUrl};
 use futures::Future;
 use serde::Serialize;
 

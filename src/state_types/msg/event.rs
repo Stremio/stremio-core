@@ -1,7 +1,7 @@
 use crate::state_types::models::ctx::CtxError;
-use crate::types::addons::TransportUrl;
-use crate::types::api::{AuthKey, AuthRequest};
-use crate::types::profile::{Settings, UID};
+use crate::types::addon::TransportUrl;
+use crate::types::api::AuthRequest;
+use crate::types::profile::{AuthKey, Settings, UID};
 use serde::Serialize;
 
 //

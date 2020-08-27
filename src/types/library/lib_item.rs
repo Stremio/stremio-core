@@ -1,18 +1,9 @@
-use crate::types::{BehaviorHints, PosterShape};
-use chrono::serde::ts_milliseconds;
+use crate::types::resource::{MetaBehaviorHints, PosterShape};
 use chrono::{DateTime, Utc};
 use serde::de::IntoDeserializer;
 use serde::{Deserialize, Serialize};
 
-// Reference: https://github.com/Stremio/stremio-api/blob/master/types/libraryItem.go
-
-#[derive(Debug, Deserialize, Eq, PartialEq)]
-pub struct LibItemModified(
-    pub String,
-    #[serde(with = "ts_milliseconds")] pub DateTime<Utc>,
-);
-
-#[derive(Serialize, Deserialize, Debug, Default, Clone, PartialEq, Eq, Ord, PartialOrd)]
+#[derive(Clone, Debug, Default, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct LibItemState {
     #[serde(deserialize_with = "empty_string_as_none")]
@@ -35,22 +26,11 @@ pub struct LibItemState {
     pub no_notif: bool,
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct LibItem {
     #[serde(rename = "_id")]
     pub id: String,
-
-    pub removed: bool,
-    pub temp: bool,
-
-    #[serde(rename = "_ctime", deserialize_with = "empty_string_as_none", default)]
-    pub ctime: Option<DateTime<Utc>>,
-    #[serde(rename = "_mtime")]
-    pub mtime: DateTime<Utc>,
-
-    pub state: LibItemState,
-
     pub name: String,
     #[serde(rename = "type")]
     pub type_name: String,
@@ -58,12 +38,18 @@ pub struct LibItem {
     pub poster: Option<String>,
     #[serde(default, skip_serializing_if = "PosterShape::is_unspecified")]
     pub poster_shape: PosterShape,
+    pub removed: bool,
+    pub temp: bool,
+    #[serde(rename = "_ctime", deserialize_with = "empty_string_as_none", default)]
+    pub ctime: Option<DateTime<Utc>>,
+    #[serde(rename = "_mtime")]
+    pub mtime: DateTime<Utc>,
+    pub state: LibItemState,
     #[serde(default)]
-    pub behavior_hints: BehaviorHints,
+    pub behavior_hints: MetaBehaviorHints,
 }
 
 impl LibItem {
-    // The purpose of this function is to ease the load on the sync system
     pub fn should_sync(&self) -> bool {
         !self.removed || self.state.overall_time_watched > 60_000
     }
@@ -82,24 +68,5 @@ where
     match opt {
         None | Some("") => Ok(None),
         Some(s) => T::deserialize(s.into_deserializer()).map(Some),
-    }
-}
-
-#[cfg(test)]
-mod test {
-    use super::*;
-
-    #[test]
-    pub fn test_deser() {
-        // `serialized` is copy-pasted from Stremio v4.4
-        let serialized = r#"
-        {"state":{"lastWatched":"2016-06-03T08:36:42.494Z","timeWatched":0,"timeOffset":0,"overallTimeWatched":0,"timesWatched":0,"flaggedWatched":0,"duration":0,"video_id":"","watched":"","noNotif":false,"season":0,"episode":0,"watchedEpisodes":[]},"_id":"tt0004972","removed":true,"temp":true,"_ctime":"2016-06-03T08:29:46.612Z","_mtime":"2016-06-03T08:36:43.991Z","name":"The Birth of a Nation","type":"movie","poster":"https://images.metahub.space/poster/medium/tt0004972/img","background":"","logo":"","year":"","imdb_id":"tt0004972"}
-        "#;
-        let l: LibItem = serde_json::from_str(&serialized).unwrap();
-        assert_eq!(
-            l.poster,
-            Some("https://images.metahub.space/poster/medium/tt0004972/img".to_owned()),
-            "poster deserialized correctly"
-        );
     }
 }

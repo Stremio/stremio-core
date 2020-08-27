@@ -1,8 +1,16 @@
-use crate::types::api::GDPRConsent;
 use chrono::{DateTime, Utc};
-use serde_derive::*;
+use serde::{Deserialize, Serialize};
 
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct GDPRConsent {
+    pub tos: bool,
+    pub privacy: bool,
+    pub marketing: bool,
+    pub time: DateTime<Utc>,
+    pub from: String,
+}
+
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct User {
     #[serde(rename = "_id")]
@@ -14,6 +22,4 @@ pub struct User {
     pub date_registered: DateTime<Utc>,
     #[serde(rename = "gdpr_consent")]
     pub gdpr_consent: GDPRConsent,
-    // @TODO: others?
-    // https://github.com/Stremio/stremio-api/blob/master/types/user.go
 }

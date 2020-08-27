@@ -1,4 +1,4 @@
-use crate::types::addons::*;
+use crate::types::addon::*;
 use serde_derive::*;
 
 //

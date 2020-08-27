@@ -1,7 +1,7 @@
 use super::AddonInterface;
 use crate::state_types::{EnvError, EnvFuture, Environment, Request};
-use crate::types::addons::*;
-use crate::types::*;
+use crate::types::addon::*;
+use crate::types::resource::*;
 use futures::{future, Future};
 use serde_derive::*;
 use serde_json::json;
@@ -64,16 +64,16 @@ pub enum JsonRPCResp<T> {
 #[derive(Deserialize)]
 pub struct SubtitlesResult {
     pub id: String,
-    pub all: Vec<SubtitlesSource>,
+    pub all: Vec<Subtitles>,
 }
 
-impl From<Vec<MetaPreview>> for ResourceResponse {
-    fn from(metas: Vec<MetaPreview>) -> Self {
+impl From<Vec<MetaItemPreview>> for ResourceResponse {
+    fn from(metas: Vec<MetaItemPreview>) -> Self {
         ResourceResponse::Metas { metas }
     }
 }
-impl From<MetaDetail> for ResourceResponse {
-    fn from(meta: MetaDetail) -> Self {
+impl From<MetaItem> for ResourceResponse {
+    fn from(meta: MetaItem) -> Self {
         ResourceResponse::Meta { meta }
     }
 }
@@ -124,12 +124,12 @@ impl<'a, T: Environment> AddonInterface for AddonLegacyTransport<'a, T> {
 
         match &path.resource as &str {
             "catalog" => Box::new(
-                T::fetch_serde::<_, JsonRPCResp<Vec<MetaPreview>>>(fetch_req)
+                T::fetch_serde::<_, JsonRPCResp<Vec<MetaItemPreview>>>(fetch_req)
                     .and_then(map_response)
                     .map(Into::into),
             ),
             "meta" => Box::new(
-                T::fetch_serde::<_, JsonRPCResp<MetaDetail>>(fetch_req)
+                T::fetch_serde::<_, JsonRPCResp<MetaItem>>(fetch_req)
                     .and_then(map_response)
                     .map(Into::into),
             ),
@@ -266,7 +266,7 @@ fn query_from_id(id: &str) -> Value {
 #[cfg(test)]
 mod test {
     use super::*;
-    use crate::types::addons::ResourceRef;
+    use crate::types::addon::ResourceRef;
 
     // Those are a bit sensitive for now, but that's a good thing, since it will force us
     // to pay attention to minor details that might matter with the legacy system

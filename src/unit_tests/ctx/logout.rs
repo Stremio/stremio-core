@@ -2,9 +2,9 @@ use crate::constants::{LIBRARY_RECENT_STORAGE_KEY, LIBRARY_STORAGE_KEY, PROFILE_
 use crate::state_types::models::ctx::Ctx;
 use crate::state_types::msg::{Action, ActionCtx, Msg};
 use crate::state_types::{EnvFuture, Environment, Runtime};
-use crate::types::api::{APIResult, Auth, GDPRConsent, SuccessResponse, True, User};
-use crate::types::profile::{Profile, UID};
-use crate::types::{LibBucket, LibItem};
+use crate::types::api::{APIResult, SuccessResponse, True};
+use crate::types::library::{LibBucket, LibItem};
+use crate::types::profile::{Auth, GDPRConsent, Profile, User, UID};
 use crate::unit_tests::{default_fetch_handler, Env, Request, FETCH_HANDLER, REQUESTS, STORAGE};
 use futures::future;
 use std::any::Any;
