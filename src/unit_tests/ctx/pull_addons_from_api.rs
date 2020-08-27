@@ -1,4 +1,4 @@
-use crate::constants::{DEFAULT_ADDON, OFFICIAL_ADDONS, PROFILE_STORAGE_KEY};
+use crate::constants::{OFFICIAL_ADDONS, PROFILE_STORAGE_KEY};
 use crate::state_types::models::ctx::Ctx;
 use crate::state_types::msg::{Action, ActionCtx, Msg};
 use crate::state_types::{EnvFuture, Environment, Runtime};
@@ -26,7 +26,6 @@ fn actionctx_pulladdonsfromapi() {
             ctx: Ctx {
                 profile: Profile {
                     addons: vec![
-                        DEFAULT_ADDON.to_owned(),
                         Descriptor {
                             manifest: Manifest {
                                 id: official_addon.manifest.id.to_owned(),
@@ -58,7 +57,6 @@ fn actionctx_pulladdonsfromapi() {
     assert_eq!(
         runtime.app.read().unwrap().ctx.profile.addons,
         vec![
-            DEFAULT_ADDON.to_owned(),
             Descriptor {
                 flags: Default::default(),
                 ..official_addon.to_owned()
@@ -74,7 +72,6 @@ fn actionctx_pulladdonsfromapi() {
             .map_or(false, |data| {
                 serde_json::from_str::<Profile>(&data).unwrap().addons
                     == vec![
-                        DEFAULT_ADDON.to_owned(),
                         Descriptor {
                             flags: Default::default(),
                             ..official_addon.to_owned()
@@ -130,7 +127,25 @@ fn actionctx_pulladdonsfromapi_with_user() {
                             date_registered: Env::now(),
                         },
                     }),
-                    addons: vec![DEFAULT_ADDON.to_owned()],
+                    addons: vec![Descriptor {
+                        manifest: Manifest {
+                            id: "id".to_owned(),
+                            version: Version::new(0, 0, 1),
+                            name: "name".to_owned(),
+                            contact_email: None,
+                            description: None,
+                            logo: None,
+                            background: None,
+                            types: vec![],
+                            resources: vec![],
+                            id_prefixes: None,
+                            catalogs: vec![],
+                            addon_catalogs: vec![],
+                            behavior_hints: Default::default(),
+                        },
+                        transport_url: "transport_url".to_owned(),
+                        flags: Default::default(),
+                    }],
                     ..Default::default()
                 },
                 ..Default::default()
