@@ -1,7 +1,7 @@
 use crate::types::addon::Descriptor;
 use crate::types::library::LibItem;
 use crate::types::profile::{AuthKey, GDPRConsent};
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 
 pub trait APIMethodName {
     fn method_name(&self) -> &str;

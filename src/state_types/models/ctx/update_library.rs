@@ -4,9 +4,9 @@ use crate::constants::{
 };
 use crate::state_types::msg::{Action, ActionCtx, Event, Internal, Msg};
 use crate::state_types::{Effect, Effects, Environment};
-use crate::types::profile::AuthKey;
-use crate::types::api::{DatastoreCommand, DatastoreRequest, SuccessResponse, LibItemModified};
+use crate::types::api::{DatastoreCommand, DatastoreRequest, LibItemModified, SuccessResponse};
 use crate::types::library::{LibBucket, LibItem, LibItemState};
+use crate::types::profile::AuthKey;
 use futures::future::Either;
 use futures::Future;
 use std::collections::HashMap;
