@@ -1,4 +1,4 @@
-use super::{Action, Event, Internal};
+use crate::state_types::msg::{Action, Event, Internal};
 
 #[derive(Debug)]
 pub enum Msg {

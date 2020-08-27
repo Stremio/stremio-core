@@ -1,4 +1,6 @@
-use super::common::{resources_update, ResourceContent, ResourceLoadable, ResourcesAction};
+use crate::state_types::models::common::{
+    resources_update, ResourceContent, ResourceLoadable, ResourcesAction,
+};
 use crate::state_types::models::ctx::Ctx;
 use crate::state_types::msg::Internal::*;
 use crate::state_types::msg::*;

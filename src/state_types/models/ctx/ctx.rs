@@ -1,7 +1,7 @@
-use super::{fetch_api, update_library, update_profile, CtxError};
 use crate::constants::{
     LIBRARY_COLLECTION_NAME, LIBRARY_RECENT_STORAGE_KEY, LIBRARY_STORAGE_KEY, PROFILE_STORAGE_KEY,
 };
+use crate::state_types::models::ctx::{fetch_api, update_library, update_profile, CtxError};
 use crate::state_types::msg::{Action, ActionCtx, ActionLoad, Event, Internal, Msg};
 use crate::state_types::{Effect, Effects, Environment, Update};
 use crate::types::api::{

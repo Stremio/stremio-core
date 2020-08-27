@@ -1,4 +1,4 @@
-use super::CtxError;
+use crate::state_types::models::ctx::CtxError;
 use crate::state_types::{Environment, Request};
 use crate::types::api::{APIMethodName, APIResult};
 use futures::Future;
