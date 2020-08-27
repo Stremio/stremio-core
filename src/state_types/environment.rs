@@ -13,7 +13,7 @@ pub type EnvError = Box<dyn Error>;
 pub type EnvFuture<T> = Box<dyn Future<Item = T, Error = EnvError>>;
 
 pub trait Environment {
-    fn fetch_serde<IN, OUT>(request: Request<IN>) -> EnvFuture<OUT>
+    fn fetch<IN, OUT>(request: Request<IN>) -> EnvFuture<OUT>
     where
         IN: 'static + Serialize,
         OUT: 'static + DeserializeOwned;

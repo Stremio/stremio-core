@@ -15,7 +15,7 @@ where
     let request = Request::post(url)
         .body(api_request.to_owned())
         .expect("fetch_api request builder cannot fail");
-    Env::fetch_serde::<_, _>(request)
+    Env::fetch::<_, _>(request)
         .map_err(CtxError::from)
         .and_then(|result| match result {
             APIResult::Ok { result } => Ok(result),

@@ -57,7 +57,7 @@ impl Env {
 }
 
 impl Environment for Env {
-    fn fetch_serde<IN, OUT>(request: http::Request<IN>) -> EnvFuture<OUT>
+    fn fetch<IN, OUT>(request: http::Request<IN>) -> EnvFuture<OUT>
     where
         IN: 'static + Serialize,
         OUT: 'static + DeserializeOwned,

@@ -158,7 +158,7 @@ fn get_settings<Env: Environment + 'static>(
     let request = Request::get(endpoint.as_str())
         .body(())
         .expect("request builder cannot fail");
-    Env::fetch_serde::<_, Resp>(request).map(|resp| resp.values)
+    Env::fetch::<_, Resp>(request).map(|resp| resp.values)
 }
 
 fn get_base_url<Env: Environment + 'static>(
@@ -173,7 +173,7 @@ fn get_base_url<Env: Environment + 'static>(
     let request = Request::get(endpoint.as_str())
         .body(())
         .expect("request builder cannot fail");
-    Env::fetch_serde::<_, Resp>(request).map(|resp| resp.base_url)
+    Env::fetch::<_, Resp>(request).map(|resp| resp.base_url)
 }
 
 fn update_settings<Env: Environment + 'static>(
@@ -205,5 +205,5 @@ fn update_settings<Env: Environment + 'static>(
         .header("content-type", "application/json")
         .body(body)
         .expect("request builder cannot fail");
-    Env::fetch_serde::<_, SuccessResponse>(request).map(|_| ())
+    Env::fetch::<_, SuccessResponse>(request).map(|_| ())
 }

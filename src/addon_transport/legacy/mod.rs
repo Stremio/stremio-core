@@ -124,22 +124,22 @@ impl<'a, T: Environment> AddonInterface for AddonLegacyTransport<'a, T> {
 
         match &path.resource as &str {
             "catalog" => Box::new(
-                T::fetch_serde::<_, JsonRPCResp<Vec<MetaItemPreview>>>(fetch_req)
+                T::fetch::<_, JsonRPCResp<Vec<MetaItemPreview>>>(fetch_req)
                     .and_then(map_response)
                     .map(Into::into),
             ),
             "meta" => Box::new(
-                T::fetch_serde::<_, JsonRPCResp<MetaItem>>(fetch_req)
+                T::fetch::<_, JsonRPCResp<MetaItem>>(fetch_req)
                     .and_then(map_response)
                     .map(Into::into),
             ),
             "stream" => Box::new(
-                T::fetch_serde::<_, JsonRPCResp<Vec<Stream>>>(fetch_req)
+                T::fetch::<_, JsonRPCResp<Vec<Stream>>>(fetch_req)
                     .and_then(map_response)
                     .map(Into::into),
             ),
             "subtitles" => Box::new(
-                T::fetch_serde::<_, JsonRPCResp<SubtitlesResult>>(fetch_req)
+                T::fetch::<_, JsonRPCResp<SubtitlesResult>>(fetch_req)
                     .and_then(map_response)
                     .map(Into::into),
             ),
@@ -150,7 +150,7 @@ impl<'a, T: Environment> AddonInterface for AddonLegacyTransport<'a, T> {
         let url = format!("{}/q.json?b={}", self.transport_url, MANIFEST_REQUEST_PARAM);
         let r = Request::get(url).body(()).expect("builder cannot fail");
         Box::new(
-            T::fetch_serde::<_, JsonRPCResp<LegacyManifestResp>>(r)
+            T::fetch::<_, JsonRPCResp<LegacyManifestResp>>(r)
                 .and_then(map_response)
                 .map(Into::into),
         )

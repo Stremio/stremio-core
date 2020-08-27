@@ -41,7 +41,7 @@ impl<T: Environment> AddonInterface for AddonHTTPTransport<T> {
 
         let url = self.transport_url.replace(MANIFEST_PATH, &path.to_string());
         let r = Request::get(&url).body(()).expect("builder cannot fail");
-        T::fetch_serde::<_, ResourceResponse>(r)
+        T::fetch::<_, ResourceResponse>(r)
     }
     fn manifest(&self) -> EnvFuture<Manifest> {
         if self.transport_url.ends_with(LEGACY_PATH) {
@@ -51,6 +51,6 @@ impl<T: Environment> AddonInterface for AddonHTTPTransport<T> {
         let r = Request::get(&self.transport_url)
             .body(())
             .expect("builder cannot fail");
-        T::fetch_serde::<_, Manifest>(r)
+        T::fetch::<_, Manifest>(r)
     }
 }
