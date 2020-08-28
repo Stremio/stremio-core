@@ -109,7 +109,7 @@ fn actionctx_pulladdonsfromapi_with_user() {
             {
                 Box::new(future::ok(Box::new(APIResult::Ok {
                     result: CollectionResponse {
-                        addons: OFFICIAL_ADDONS.to_vec(),
+                        addons: OFFICIAL_ADDONS.to_owned(),
                         last_modified: Env::now(),
                     },
                 }) as Box<dyn Any>))
@@ -163,7 +163,7 @@ fn actionctx_pulladdonsfromapi_with_user() {
     run(runtime.dispatch(&Msg::Action(Action::Ctx(ActionCtx::PullAddonsFromAPI))));
     assert_eq!(
         runtime.app.read().unwrap().ctx.profile.addons,
-        OFFICIAL_ADDONS.to_vec(),
+        OFFICIAL_ADDONS.to_owned(),
         "addons updated successfully in memory"
     );
     assert!(
@@ -172,7 +172,7 @@ fn actionctx_pulladdonsfromapi_with_user() {
             .unwrap()
             .get(PROFILE_STORAGE_KEY)
             .map_or(false, |data| {
-                serde_json::from_str::<Profile>(&data).unwrap().addons == OFFICIAL_ADDONS.to_vec()
+                serde_json::from_str::<Profile>(&data).unwrap().addons == OFFICIAL_ADDONS.to_owned()
             }),
         "addons updated successfully in storage"
     );
