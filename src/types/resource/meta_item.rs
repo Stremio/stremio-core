@@ -1,6 +1,7 @@
 use crate::types::resource::{PosterShape, Stream, Video};
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
+use url::Url;
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -61,7 +62,7 @@ pub struct MetaItemPreview {
 pub struct Link {
     name: String,
     category: String,
-    url: String,
+    url: Url,
 }
 
 #[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize)]
