@@ -3,7 +3,7 @@ use chrono::{DateTime, Utc};
 use serde::de::IntoDeserializer;
 use serde::{Deserialize, Serialize};
 
-#[derive(Clone, Debug, Default, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
+#[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct LibItemState {
     #[serde(deserialize_with = "empty_string_as_none")]
