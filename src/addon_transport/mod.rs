@@ -1,6 +1,7 @@
-use crate::state_types::{EnvFuture, Environment, Request};
+use crate::state_types::{EnvFuture, Environment};
 use crate::types::addon::*;
 use futures::future::err;
+use http::Request;
 use std::marker::PhantomData;
 use url::Url;
 

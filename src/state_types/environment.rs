@@ -2,11 +2,10 @@ use crate::addon_transport::{AddonHTTPTransport, AddonInterface};
 use crate::constants::API_URL;
 use chrono::{DateTime, Utc};
 use futures::Future;
+use http::Request;
 use serde::{Deserialize, Serialize};
 use std::error::Error;
 use url::Url;
-
-pub use http::Request;
 
 pub type EnvError = Box<dyn Error>;
 
