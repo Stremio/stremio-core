@@ -2,7 +2,7 @@ use crate::types::resource::{PosterShape, Stream, Video};
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 
-#[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct MetaItem {
     pub id: String,
@@ -35,7 +35,7 @@ pub struct MetaItem {
     pub behavior_hints: MetaBehaviorHints,
 }
 
-#[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct MetaItemPreview {
     pub id: String,
