@@ -1,6 +1,7 @@
 use crate::types::resource::Subtitles;
 use serde::{Deserialize, Serialize};
 use serde_hex::{SerHex, Strict};
+use url::Url;
 
 // * Deduplication can be achieved by simple comparison (Eq)
 // * @TODO Sorting
@@ -27,14 +28,14 @@ impl Stream {
             return false;
         }
         match &self.source {
-            StreamSource::Url { url } if url.starts_with("https:") => true,
+            StreamSource::Url { url } => url.scheme() == "https",
             _ => false,
         }
     }
     pub fn is_p2p(&self) -> bool {
         match &self.source {
             StreamSource::Torrent { .. } => true,
-            StreamSource::Url { url } if url.starts_with("magnet:") => true,
+            StreamSource::Url { url } => url.scheme() == "magnet",
             _ => false,
         }
     }
@@ -44,7 +45,7 @@ impl Stream {
 #[serde(untagged)]
 pub enum StreamSource {
     Url {
-        url: String,
+        url: Url,
     },
     #[serde(rename_all = "camelCase")]
     YouTube {
@@ -58,10 +59,10 @@ pub enum StreamSource {
     },
     #[serde(rename_all = "camelCase")]
     External {
-        external_url: String,
+        external_url: Url,
     },
     #[serde(rename_all = "camelCase")]
     PlayerFrame {
-        player_frame_url: String,
+        player_frame_url: Url,
     },
 }
