@@ -2,9 +2,10 @@ use crate::constants::OFFICIAL_ADDONS;
 use crate::state_types::models::common::Loadable;
 use crate::state_types::msg::{Internal, Msg};
 use crate::state_types::{Effects, EnvError, Environment};
-use crate::types::addon::{Descriptor, Manifest, TransportUrl};
+use crate::types::addon::{Descriptor, Manifest};
 use futures::Future;
 use serde::Serialize;
+use url::Url;
 
 pub type DescriptorError = String;
 
@@ -12,7 +13,7 @@ pub type DescriptorContent = Loadable<Descriptor, DescriptorError>;
 
 #[derive(Debug, Clone, Serialize)]
 pub struct DescriptorLoadable {
-    pub transport_url: TransportUrl,
+    pub transport_url: Url,
     pub content: DescriptorContent,
 }
 
@@ -24,10 +25,10 @@ impl PartialEq for DescriptorLoadable {
 
 pub enum DescriptorAction<'a> {
     DescriptorRequested {
-        transport_url: &'a TransportUrl,
+        transport_url: &'a Url,
     },
     ManifestRequestResult {
-        transport_url: &'a TransportUrl,
+        transport_url: &'a Url,
         result: &'a Result<Manifest, EnvError>,
     },
 }
@@ -85,7 +86,7 @@ pub fn descriptor_update<Env: Environment + 'static>(
 }
 
 fn get_manifest<Env: Environment + 'static>(
-    transport_url: &str,
+    transport_url: &Url,
 ) -> impl Future<Item = Manifest, Error = EnvError> {
     Env::addon_transport(transport_url).manifest()
 }

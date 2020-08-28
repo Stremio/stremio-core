@@ -73,7 +73,7 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for Notifications {
                                         &extra_props,
                                     );
                                     let addon_req =
-                                        ResourceRequest::new(&addon.transport_url, path);
+                                        ResourceRequest::new(addon.transport_url.to_owned(), path);
 
                                     (
                                         ResourceLoadable {

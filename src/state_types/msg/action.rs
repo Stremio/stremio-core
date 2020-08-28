@@ -5,11 +5,12 @@ use crate::state_types::models::library_with_filters::Selected as LibraryWithFil
 use crate::state_types::models::meta_details::Selected as MetaDetailsSelected;
 use crate::state_types::models::player::Selected as PlayerSelected;
 use crate::state_types::models::streaming_server::Settings as StreamingServerSettings;
-use crate::types::addon::{Descriptor, TransportUrl};
+use crate::types::addon::Descriptor;
 use crate::types::api::AuthRequest;
 use crate::types::profile::Settings as ProfileSettings;
 use crate::types::resource::MetaItemPreview;
 use serde::Deserialize;
+use url::Url;
 
 #[derive(Debug, Clone, Deserialize)]
 #[serde(tag = "action", content = "args")]
@@ -17,7 +18,7 @@ pub enum ActionCtx {
     Authenticate(AuthRequest),
     Logout,
     InstallAddon(Descriptor),
-    UninstallAddon(TransportUrl),
+    UninstallAddon(Url),
     UpdateSettings(ProfileSettings),
     AddToLibrary(MetaItemPreview),
     RemoveFromLibrary(String),

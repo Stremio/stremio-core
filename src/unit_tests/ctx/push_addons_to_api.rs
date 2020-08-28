@@ -11,6 +11,7 @@ use std::any::Any;
 use std::fmt::Debug;
 use stremio_derive::Model;
 use tokio::runtime::current_thread::run;
+use url::Url;
 
 #[test]
 fn actionctx_pushaddonstoapi() {
@@ -39,7 +40,7 @@ fn actionctx_pushaddonstoapi() {
                             addon_catalogs: vec![],
                             behavior_hints: Default::default(),
                         },
-                        transport_url: "transport_url".to_owned(),
+                        transport_url: Url::parse("https://transport_url").unwrap(),
                         flags: Default::default(),
                     }],
                     ..Default::default()
@@ -68,7 +69,7 @@ fn actionctx_pushaddonstoapi_with_user() {
                 url, method, body, ..
             } if url == "https://api.strem.io/api/addonCollectionSet"
                 && method == "POST"
-                && body == "{\"type\":\"AddonCollectionSet\",\"authKey\":\"auth_key\",\"addons\":[{\"manifest\":{\"id\":\"id\",\"version\":\"0.0.1\",\"name\":\"name\",\"contactEmail\":null,\"description\":null,\"logo\":null,\"background\":null,\"types\":[],\"resources\":[],\"idPrefixes\":null,\"catalogs\":[],\"addonCatalogs\":[],\"behaviorHints\":{}},\"transportUrl\":\"transport_url\",\"flags\":{\"official\":false,\"protected\":false}}]}" =>
+                && body == "{\"type\":\"AddonCollectionSet\",\"authKey\":\"auth_key\",\"addons\":[{\"manifest\":{\"id\":\"id\",\"version\":\"0.0.1\",\"name\":\"name\",\"contactEmail\":null,\"description\":null,\"logo\":null,\"background\":null,\"types\":[],\"resources\":[],\"idPrefixes\":null,\"catalogs\":[],\"addonCatalogs\":[],\"behaviorHints\":{}},\"transportUrl\":\"https://transport_url/\",\"flags\":{\"official\":false,\"protected\":false}}]}" =>
             {
                 Box::new(future::ok(Box::new(APIResult::Ok {
                     result: SuccessResponse { success: True {} },
@@ -117,7 +118,7 @@ fn actionctx_pushaddonstoapi_with_user() {
                             addon_catalogs: vec![],
                             behavior_hints: Default::default(),
                         },
-                        transport_url: "transport_url".to_owned(),
+                        transport_url: Url::parse("https://transport_url").unwrap(),
                         flags: Default::default(),
                     }],
                     ..Default::default()
@@ -138,7 +139,7 @@ fn actionctx_pushaddonstoapi_with_user() {
         Request {
             url: "https://api.strem.io/api/addonCollectionSet".to_owned(),
             method: "POST".to_owned(),
-            body: "{\"type\":\"AddonCollectionSet\",\"authKey\":\"auth_key\",\"addons\":[{\"manifest\":{\"id\":\"id\",\"version\":\"0.0.1\",\"name\":\"name\",\"contactEmail\":null,\"description\":null,\"logo\":null,\"background\":null,\"types\":[],\"resources\":[],\"idPrefixes\":null,\"catalogs\":[],\"addonCatalogs\":[],\"behaviorHints\":{}},\"transportUrl\":\"transport_url\",\"flags\":{\"official\":false,\"protected\":false}}]}"
+            body: "{\"type\":\"AddonCollectionSet\",\"authKey\":\"auth_key\",\"addons\":[{\"manifest\":{\"id\":\"id\",\"version\":\"0.0.1\",\"name\":\"name\",\"contactEmail\":null,\"description\":null,\"logo\":null,\"background\":null,\"types\":[],\"resources\":[],\"idPrefixes\":null,\"catalogs\":[],\"addonCatalogs\":[],\"behaviorHints\":{}},\"transportUrl\":\"https://transport_url/\",\"flags\":{\"official\":false,\"protected\":false}}]}"
                 .to_owned(),
             ..Default::default()
         },

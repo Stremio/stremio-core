@@ -9,6 +9,7 @@ use serde_json::value::Value;
 use std::error::Error;
 use std::fmt;
 use std::marker::PhantomData;
+use url::Url;
 
 mod legacy_manifest;
 use self::legacy_manifest::LegacyManifestResp;
@@ -103,11 +104,11 @@ fn map_response<T: 'static + Sized>(resp: JsonRPCResp<T>) -> EnvFuture<T> {
 //
 pub struct AddonLegacyTransport<'a, T: Environment> {
     env: PhantomData<T>,
-    transport_url: &'a str,
+    transport_url: &'a Url,
 }
 
 impl<'a, T: Environment> AddonLegacyTransport<'a, T> {
-    pub fn from_url(transport_url: &'a str) -> Self {
+    pub fn from_url(transport_url: &'a Url) -> Self {
         AddonLegacyTransport {
             env: PhantomData,
             transport_url,
@@ -157,7 +158,7 @@ impl<'a, T: Environment> AddonInterface for AddonLegacyTransport<'a, T> {
     }
 }
 
-fn build_legacy_req(transport_url: &str, path: &ResourceRef) -> Result<Request<()>, EnvError> {
+fn build_legacy_req(transport_url: &Url, path: &ResourceRef) -> Result<Request<()>, EnvError> {
     // Limitations of this legacy adapter:
     // * does not support subtitles
     // * does not support searching (meta.search)
@@ -273,7 +274,8 @@ mod test {
     // (e.g. omitting values vs `null` values)
     #[test]
     fn catalog() {
-        let transport_url = "https://stremio-mixer.schneider.ax/stremioget/stremio/v1".to_owned();
+        let transport_url = Url::parse("https://stremio-mixer.schneider.ax/stremioget/stremio/v1")
+            .expect("mixer url to be valid");
         let path = ResourceRef::without_extra("catalog", "tv", "popularities.mixer");
         assert_eq!(
             &build_legacy_req(&transport_url, &path).unwrap().uri().to_string(),
@@ -283,7 +285,8 @@ mod test {
 
     #[test]
     fn stream_imdb() {
-        let transport_url = "https://legacywatchhub.strem.io/stremio/v1".to_owned();
+        let transport_url = Url::parse("https://legacywatchhub.strem.io/stremio/v1")
+            .expect("legacywatchhub url to be valid");
         let path = ResourceRef::without_extra("stream", "series", "tt0386676:5:1");
         assert_eq!(
             &build_legacy_req(&transport_url, &path).unwrap().uri().to_string(),

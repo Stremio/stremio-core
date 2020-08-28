@@ -4,12 +4,12 @@ use crate::state_types::models::common::{
 use crate::state_types::models::ctx::Ctx;
 use crate::state_types::msg::{Action, ActionLoad, Internal, Msg};
 use crate::state_types::{Effects, Environment, UpdateWithCtx};
-use crate::types::addon::TransportUrl;
 use serde::{Deserialize, Serialize};
+use url::Url;
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct Selected {
-    pub transport_url: TransportUrl,
+    pub transport_url: Url,
 }
 
 #[derive(Default, Debug, Clone, Serialize)]

@@ -1,9 +1,9 @@
-use crate::types::addon::{Descriptor, TransportUrl};
+use crate::types::addon::Descriptor;
 use percent_encoding::{utf8_percent_encode, NON_ALPHANUMERIC};
 use serde::{Deserialize, Serialize};
 use std::fmt;
 use std::hash::Hash;
-use url::form_urlencoded;
+use url::{form_urlencoded, Url};
 
 pub type ExtraProp = (String, String);
 
@@ -72,13 +72,12 @@ impl fmt::Display for ResourceRef {
 
 #[derive(Clone, Debug, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub struct ResourceRequest {
-    pub base: TransportUrl,
+    pub base: Url,
     pub path: ResourceRef,
 }
 
 impl ResourceRequest {
-    pub fn new(base: &str, path: ResourceRef) -> Self {
-        let base = base.to_owned();
+    pub fn new(base: Url, path: ResourceRef) -> Self {
         ResourceRequest { base, path }
     }
     pub fn eq_no_extra(&self, other: &ResourceRequest) -> bool {
@@ -107,7 +106,7 @@ impl AggrRequest<'_> {
                             (
                                 addon,
                                 ResourceRequest::new(
-                                    &addon.transport_url,
+                                    addon.transport_url.to_owned(),
                                     ResourceRef::with_extra(
                                         "catalog",
                                         &cat.type_name,
@@ -126,7 +125,7 @@ impl AggrRequest<'_> {
                 .map(|addon| {
                     (
                         addon,
-                        ResourceRequest::new(&addon.transport_url, path.to_owned()),
+                        ResourceRequest::new(addon.transport_url.to_owned(), path.to_owned()),
                     )
                 })
                 .collect(),

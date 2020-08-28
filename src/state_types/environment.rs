@@ -4,6 +4,7 @@ use chrono::{DateTime, Utc};
 use futures::Future;
 use serde::{Deserialize, Serialize};
 use std::error::Error;
+use url::Url;
 
 pub use http::Request;
 
@@ -22,7 +23,7 @@ pub trait Environment {
     where
         for<'de> T: Deserialize<'de> + 'static;
     fn set_storage<T: Serialize>(key: &str, value: Option<&T>) -> EnvFuture<()>;
-    fn addon_transport(url: &str) -> Box<dyn AddonInterface>
+    fn addon_transport(url: &Url) -> Box<dyn AddonInterface>
     where
         Self: Sized + 'static,
     {

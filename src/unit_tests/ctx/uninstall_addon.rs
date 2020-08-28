@@ -12,6 +12,7 @@ use std::any::Any;
 use std::fmt::Debug;
 use stremio_derive::Model;
 use tokio::runtime::current_thread::run;
+use url::Url;
 
 #[test]
 fn actionctx_uninstalladdon() {
@@ -36,7 +37,7 @@ fn actionctx_uninstalladdon() {
                 addon_catalogs: vec![],
                 behavior_hints: Default::default(),
             },
-            transport_url: "transport_url".to_owned(),
+            transport_url: Url::parse("https://transport_url").unwrap(),
             flags: Default::default(),
         }],
         ..Default::default()
@@ -57,7 +58,7 @@ fn actionctx_uninstalladdon() {
     );
     run(
         runtime.dispatch(&Msg::Action(Action::Ctx(ActionCtx::UninstallAddon(
-            "transport_url".to_owned(),
+            Url::parse("https://transport_url").unwrap(),
         )))),
     );
     assert!(
@@ -139,7 +140,7 @@ fn actionctx_uninstalladdon_with_user() {
                 addon_catalogs: vec![],
                 behavior_hints: Default::default(),
             },
-            transport_url: "transport_url".to_owned(),
+            transport_url: Url::parse("https://transport_url").unwrap(),
             flags: Default::default(),
         }],
         ..Default::default()
@@ -161,7 +162,7 @@ fn actionctx_uninstalladdon_with_user() {
     );
     run(
         runtime.dispatch(&Msg::Action(Action::Ctx(ActionCtx::UninstallAddon(
-            "transport_url".to_owned(),
+            Url::parse("https://transport_url").unwrap(),
         )))),
     );
     assert!(
@@ -221,7 +222,7 @@ fn actionctx_uninstalladdon_protected() {
             addon_catalogs: vec![],
             behavior_hints: Default::default(),
         },
-        transport_url: "transport_url".to_owned(),
+        transport_url: Url::parse("https://transport_url").unwrap(),
         flags: DescriptorFlags {
             official: false,
             protected: true,
@@ -248,7 +249,7 @@ fn actionctx_uninstalladdon_protected() {
     );
     run(
         runtime.dispatch(&Msg::Action(Action::Ctx(ActionCtx::UninstallAddon(
-            "transport_url".to_owned(),
+            Url::parse("https://transport_url").unwrap(),
         )))),
     );
     assert_eq!(
@@ -294,7 +295,7 @@ fn actionctx_uninstalladdon_not_installed() {
             addon_catalogs: vec![],
             behavior_hints: Default::default(),
         },
-        transport_url: "transport_url".to_owned(),
+        transport_url: Url::parse("https://transport_url").unwrap(),
         flags: Default::default(),
     };
     let profile = Profile {
@@ -317,7 +318,7 @@ fn actionctx_uninstalladdon_not_installed() {
     );
     run(
         runtime.dispatch(&Msg::Action(Action::Ctx(ActionCtx::UninstallAddon(
-            "transport_url2".to_owned(),
+            Url::parse("https://transport_url2").unwrap(),
         )))),
     );
     assert_eq!(

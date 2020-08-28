@@ -1,7 +1,7 @@
 use crate::state_types::models::ctx::CtxError;
 use crate::state_types::models::streaming_server::Settings as StreamingServerSettings;
 use crate::state_types::EnvError;
-use crate::types::addon::{Descriptor, Manifest, ResourceRequest, ResourceResponse, TransportUrl};
+use crate::types::addon::{Descriptor, Manifest, ResourceRequest, ResourceResponse};
 use crate::types::api::{APIRequest, AuthRequest, DatastoreRequest};
 use crate::types::library::{LibBucket, LibItem};
 use crate::types::profile::{Auth, Profile};
@@ -41,5 +41,5 @@ pub enum Internal {
     // Result for updating streaming server settings.
     StreamingServerUpdateSettingsResult(Url, Result<(), EnvError>),
     ResourceRequestResult(ResourceRequest, Box<Result<ResourceResponse, EnvError>>),
-    ManifestRequestResult(TransportUrl, Result<Manifest, EnvError>),
+    ManifestRequestResult(Url, Result<Manifest, EnvError>),
 }
