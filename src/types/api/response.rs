@@ -33,7 +33,7 @@ pub struct AuthResponse {
     pub user: User,
 }
 
-#[derive(Debug, PartialEq, Eq, Deserialize)]
+#[derive(Debug, PartialEq, Deserialize)]
 pub struct LibItemModified(
     pub String,
     #[serde(with = "ts_milliseconds")] pub DateTime<Utc>,
