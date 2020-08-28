@@ -8,7 +8,6 @@ use crate::types::profile::Profile;
 use crate::unit_tests::{default_fetch_handler, Env, Request, FETCH_HANDLER, REQUESTS, STORAGE};
 use futures::future;
 use semver::Version;
-use serde_json::json;
 use std::any::Any;
 use std::fmt::Debug;
 use stremio_derive::Model;
@@ -20,7 +19,7 @@ fn actionctx_pulladdonsfromapi() {
     struct Model {
         ctx: Ctx<Env>,
     }
-    let official_addon = &OFFICIAL_ADDONS.to_vec()[0];
+    let official_addon = &OFFICIAL_ADDONS.first().unwrap().to_owned();
     Env::reset();
     let (runtime, _) = Runtime::<Env, Model>::new(
         Model {
@@ -34,12 +33,12 @@ fn actionctx_pulladdonsfromapi() {
                         transport_url: "transport_url".to_owned(),
                         flags: DescriptorFlags {
                             extra: {
-                                [("flag".to_owned(), json!("custom"))]
+                                [("flag".to_owned(), serde_json::Value::Bool(true))]
                                     .iter()
                                     .cloned()
                                     .collect()
                             },
-                            ..DescriptorFlags::default()
+                            ..official_addon.flags.to_owned()
                         },
                     }],
                     ..Default::default()
@@ -55,12 +54,12 @@ fn actionctx_pulladdonsfromapi() {
         vec![Descriptor {
             flags: DescriptorFlags {
                 extra: {
-                    [("flag".to_owned(), json!("custom"))]
+                    [("flag".to_owned(), serde_json::Value::Bool(true))]
                         .iter()
                         .cloned()
                         .collect()
                 },
-                ..DescriptorFlags::default()
+                ..official_addon.flags.to_owned()
             },
             ..official_addon.to_owned()
         }],
@@ -76,12 +75,12 @@ fn actionctx_pulladdonsfromapi() {
                     == vec![Descriptor {
                         flags: DescriptorFlags {
                             extra: {
-                                [("flag".to_owned(), json!("custom"))]
+                                [("flag".to_owned(), serde_json::Value::Bool(true))]
                                     .iter()
                                     .cloned()
                                     .collect()
                             },
-                            ..DescriptorFlags::default()
+                            ..official_addon.flags.to_owned()
                         },
                         ..official_addon.to_owned()
                     }]
@@ -183,14 +182,8 @@ fn actionctx_pulladdonsfromapi_with_user() {
         "One request has been sent"
     );
     assert_eq!(
-        REQUESTS.read().unwrap().get(0).unwrap().to_owned(),
-        Request {
-            url: "https://api.strem.io/api/addonCollectionGet".to_owned(),
-            method: "POST".to_owned(),
-            body: "{\"type\":\"AddonCollectionGet\",\"authKey\":\"auth_key\",\"update\":true}"
-                .to_owned(),
-            ..Default::default()
-        },
+        REQUESTS.read().unwrap().get(0).unwrap().url,
+        "https://api.strem.io/api/addonCollectionGet".to_owned(),
         "addonCollectionGet request has been sent"
     );
 }
