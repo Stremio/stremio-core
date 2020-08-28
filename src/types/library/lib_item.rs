@@ -26,7 +26,7 @@ pub struct LibItemState {
     pub no_notif: bool,
 }
 
-#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct LibItem {
     #[serde(rename = "_id")]
