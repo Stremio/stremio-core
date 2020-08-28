@@ -28,7 +28,7 @@ pub trait Environment {
     {
         Box::new(AddonHTTPTransport::<Self>::from_url(url))
     }
-    fn api_url() -> &'static str {
-        API_URL
+    fn api_url() -> &'static Url {
+        &API_URL
     }
 }

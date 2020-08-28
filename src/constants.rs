@@ -2,7 +2,6 @@ use crate::types::addon::Descriptor;
 use lazy_static::lazy_static;
 use url::Url;
 
-pub const API_URL: &str = "https://api.strem.io";
 pub const PROFILE_STORAGE_KEY: &str = "profile";
 pub const LIBRARY_STORAGE_KEY: &str = "library";
 pub const LIBRARY_RECENT_STORAGE_KEY: &str = "recent_library";
@@ -18,6 +17,8 @@ pub const LIBRARY_RECENT_COUNT: usize = 200;
 pub const WATCHED_THRESHOLD_COEF: f64 = 0.7;
 
 lazy_static! {
+    pub static ref API_URL: Url =
+        Url::parse("https://api.strem.io").expect("API_URL parse cannot fail");
     pub static ref STREAMING_SERVER_URL: Url =
         Url::parse("http://127.0.0.1:11470").expect("STREAMING_SERVER_URL parse cannot fail");
     pub static ref OFFICIAL_ADDONS: Vec<Descriptor> =
