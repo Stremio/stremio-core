@@ -2,12 +2,13 @@ use crate::constants::{OFFICIAL_ADDONS, PROFILE_STORAGE_KEY};
 use crate::state_types::models::ctx::Ctx;
 use crate::state_types::msg::{Action, ActionCtx, Msg};
 use crate::state_types::{EnvFuture, Environment, Runtime};
-use crate::types::addons::{Descriptor, Manifest};
+use crate::types::addons::{Descriptor, DescriptorFlags, Manifest};
 use crate::types::api::{APIResult, Auth, CollectionResponse, User};
 use crate::types::profile::Profile;
 use crate::unit_tests::{default_fetch_handler, Env, Request, FETCH_HANDLER, REQUESTS, STORAGE};
 use futures::future;
 use semver::Version;
+use serde_json::json;
 use std::any::Any;
 use std::fmt::Debug;
 use stremio_derive::Model;
@@ -25,27 +26,22 @@ fn actionctx_pulladdonsfromapi() {
         Model {
             ctx: Ctx {
                 profile: Profile {
-                    addons: vec![
-                        Descriptor {
-                            manifest: Manifest {
-                                id: official_addon.manifest.id.to_owned(),
-                                version: Version::new(0, 0, 2),
-                                name: "name".to_owned(),
-                                contact_email: None,
-                                description: None,
-                                logo: None,
-                                background: None,
-                                types: vec![],
-                                resources: vec![],
-                                id_prefixes: None,
-                                catalogs: vec![],
-                                addon_catalogs: vec![],
-                                behavior_hints: Default::default(),
-                            },
-                            transport_url: "transport_url2".to_owned(),
-                            flags: Default::default(),
+                    addons: vec![Descriptor {
+                        manifest: Manifest {
+                            version: Version::new(0, 0, 1),
+                            ..official_addon.manifest.to_owned()
                         },
-                    ],
+                        transport_url: "transport_url".to_owned(),
+                        flags: DescriptorFlags {
+                            extra: {
+                                [("flag".to_owned(), json!("custom"))]
+                                    .iter()
+                                    .cloned()
+                                    .collect()
+                            },
+                            ..DescriptorFlags::default()
+                        },
+                    }],
                     ..Default::default()
                 },
                 ..Default::default()
@@ -56,12 +52,18 @@ fn actionctx_pulladdonsfromapi() {
     run(runtime.dispatch(&Msg::Action(Action::Ctx(ActionCtx::PullAddonsFromAPI))));
     assert_eq!(
         runtime.app.read().unwrap().ctx.profile.addons,
-        vec![
-            Descriptor {
-                flags: Default::default(),
-                ..official_addon.to_owned()
-            }
-        ],
+        vec![Descriptor {
+            flags: DescriptorFlags {
+                extra: {
+                    [("flag".to_owned(), json!("custom"))]
+                        .iter()
+                        .cloned()
+                        .collect()
+                },
+                ..DescriptorFlags::default()
+            },
+            ..official_addon.to_owned()
+        }],
         "addons updated successfully in memory"
     );
     assert!(
@@ -71,12 +73,18 @@ fn actionctx_pulladdonsfromapi() {
             .get(PROFILE_STORAGE_KEY)
             .map_or(false, |data| {
                 serde_json::from_str::<Profile>(&data).unwrap().addons
-                    == vec![
-                        Descriptor {
-                            flags: Default::default(),
-                            ..official_addon.to_owned()
+                    == vec![Descriptor {
+                        flags: DescriptorFlags {
+                            extra: {
+                                [("flag".to_owned(), json!("custom"))]
+                                    .iter()
+                                    .cloned()
+                                    .collect()
+                            },
+                            ..DescriptorFlags::default()
                         },
-                    ]
+                        ..official_addon.to_owned()
+                    }]
             }),
         "addons updated successfully in storage"
     );
