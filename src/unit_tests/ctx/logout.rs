@@ -66,11 +66,11 @@ fn actionctx_logout() {
     );
     STORAGE.write().unwrap().insert(
         LIBRARY_RECENT_STORAGE_KEY.to_owned(),
-        serde_json::to_string::<(UID, Vec<LibItem>)>(&(profile.uid(), vec![])).unwrap(),
+        serde_json::to_string(&LibBucket::new(profile.uid(), vec![])).unwrap(),
     );
     STORAGE.write().unwrap().insert(
         LIBRARY_STORAGE_KEY.to_owned(),
-        serde_json::to_string::<(UID, Vec<LibItem>)>(&(profile.uid(), vec![])).unwrap(),
+        serde_json::to_string(&LibBucket::new(profile.uid(), vec![])).unwrap(),
     );
     let (runtime, _) = Runtime::<Env, Model>::new(
         Model {
@@ -109,7 +109,7 @@ fn actionctx_logout() {
             .unwrap()
             .get(LIBRARY_RECENT_STORAGE_KEY)
             .map_or(false, |data| {
-                serde_json::from_str::<(UID, Vec<LibItem>)>(&data).unwrap() == Default::default()
+                serde_json::from_str::<LibBucket>(&data).unwrap() == Default::default()
             }),
         "recent library updated successfully in storage"
     );
@@ -119,7 +119,7 @@ fn actionctx_logout() {
             .unwrap()
             .get(LIBRARY_STORAGE_KEY)
             .map_or(false, |data| {
-                serde_json::from_str::<(UID, Vec<LibItem>)>(&data).unwrap() == Default::default()
+                serde_json::from_str::<LibBucket>(&data).unwrap() == Default::default()
             }),
         "library updated successfully in storage"
     );

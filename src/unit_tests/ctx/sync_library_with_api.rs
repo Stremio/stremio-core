@@ -283,22 +283,23 @@ fn actionctx_synclibrarywithapi_with_user() {
         },
         "library updated successfully in memory"
     );
-    assert!(
+    assert_eq!(
         STORAGE
             .read()
             .unwrap()
             .get(LIBRARY_RECENT_STORAGE_KEY)
-            .map(|data| serde_json::from_str::<(UID, Vec<LibItem>)>(&data).unwrap())
-            .map_or(false, |(uid, items)| {
-                uid == Some("user_id".to_owned())
-                    && items.len() == 6
-                    && items.contains(&REMOTE_ONLY_ITEM)
-                    && items.contains(&LOCAL_ONLY_ITEM)
-                    && items.contains(&REMOTE_NEWER_ITEM)
-                    && items.contains(&LOCAL_NEWER_ITEM)
-                    && items.contains(&LOCAL_NOT_WATCHED_ITEM)
-                    && items.contains(&LOCAL_WATCHED_ITEM)
-            }),
+            .map(|data| serde_json::from_str::<LibBucket>(&data).unwrap()),
+        Some(LibBucket::new(
+            Some("user_id".to_owned()),
+            vec![
+                REMOTE_ONLY_ITEM.to_owned(),
+                LOCAL_ONLY_ITEM.to_owned(),
+                REMOTE_NEWER_ITEM.to_owned(),
+                LOCAL_NEWER_ITEM.to_owned(),
+                LOCAL_NOT_WATCHED_ITEM.to_owned(),
+                LOCAL_WATCHED_ITEM.to_owned(),
+            ]
+        )),
         "Library recent slot updated successfully in storage"
     );
     assert_eq!(

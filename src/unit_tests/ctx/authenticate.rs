@@ -147,7 +147,7 @@ fn actionctx_authenticate_login() {
         "profile updated successfully in storage"
     );
     assert_eq!(
-        serde_json::from_str::<(UID, Vec<LibItem>)>(
+        serde_json::from_str::<LibBucket>(
             &STORAGE
                 .read()
                 .unwrap()
@@ -155,15 +155,15 @@ fn actionctx_authenticate_login() {
                 .unwrap()
         )
         .unwrap(),
-        (Some("user_id".to_owned()), vec![]),
+        LibBucket::new(Some("user_id".to_owned()), vec![]),
         "recent library updated successfully in storage"
     );
     assert_eq!(
-        serde_json::from_str::<(UID, Vec<LibItem>)>(
+        serde_json::from_str::<LibBucket>(
             &STORAGE.read().unwrap().get(LIBRARY_STORAGE_KEY).unwrap()
         )
         .unwrap(),
-        (Some("user_id".to_owned()), vec![]),
+        LibBucket::new(Some("user_id".to_owned()), vec![]),
         "library updated successfully in storage"
     );
     assert_eq!(
@@ -347,7 +347,7 @@ fn actionctx_authenticate_register() {
         "profile updated successfully in storage"
     );
     assert_eq!(
-        serde_json::from_str::<(UID, Vec<LibItem>)>(
+        serde_json::from_str::<LibBucket>(
             &STORAGE
                 .read()
                 .unwrap()
@@ -355,15 +355,15 @@ fn actionctx_authenticate_register() {
                 .unwrap()
         )
         .unwrap(),
-        (Some("user_id".to_owned()), vec![]),
+        LibBucket::new(Some("user_id".to_owned()), vec![]),
         "recent library updated successfully in storage"
     );
     assert_eq!(
-        serde_json::from_str::<(UID, Vec<LibItem>)>(
+        serde_json::from_str::<LibBucket>(
             &STORAGE.read().unwrap().get(LIBRARY_STORAGE_KEY).unwrap()
         )
         .unwrap(),
-        (Some("user_id".to_owned()), vec![]),
+        LibBucket::new(Some("user_id".to_owned()), vec![]),
         "library updated successfully in storage"
     );
     assert_eq!(

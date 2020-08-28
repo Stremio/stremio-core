@@ -3,15 +3,11 @@ use crate::state_types::models::streaming_server::Settings as StreamingServerSet
 use crate::state_types::EnvError;
 use crate::types::addon::{Descriptor, Manifest, ResourceRequest, ResourceResponse, TransportUrl};
 use crate::types::api::{APIRequest, AuthRequest, DatastoreRequest};
-use crate::types::library::LibItem;
-use crate::types::profile::{Auth, Profile, UID};
+use crate::types::library::{LibBucket, LibItem};
+use crate::types::profile::{Auth, Profile};
 use url::Url;
 
-pub type CtxStorageResponse = (
-    Option<Profile>,
-    Option<(UID, Vec<LibItem>)>,
-    Option<(UID, Vec<LibItem>)>,
-);
+pub type CtxStorageResponse = (Option<Profile>, Option<LibBucket>, Option<LibBucket>);
 
 pub type AuthResponse = (Auth, Vec<Descriptor>, Vec<LibItem>);
 

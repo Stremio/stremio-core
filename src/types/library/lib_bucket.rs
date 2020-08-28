@@ -2,10 +2,11 @@ use crate::constants::LIBRARY_RECENT_COUNT;
 use crate::types::library::LibItem;
 use crate::types::profile::UID;
 use lazysort::SortedBy;
+use serde::{Deserialize, Serialize};
 use std::cmp;
 use std::collections::{HashMap, HashSet};
 
-#[derive(Clone, Debug, Default, PartialEq)]
+#[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize)]
 pub struct LibBucket {
     pub uid: UID,
     pub items: HashMap<String, LibItem>,
@@ -54,5 +55,20 @@ impl LibBucket {
         let recent_count = cmp::min(LIBRARY_RECENT_COUNT, sorted_items.len());
         let (recent_items, other_items) = sorted_items.split_at(recent_count);
         (recent_items.to_vec(), other_items.to_vec())
+    }
+}
+
+#[derive(Serialize)]
+pub struct LibBucketBorrowed<'a> {
+    pub uid: &'a UID,
+    pub items: HashMap<&'a str, &'a LibItem>,
+}
+
+impl<'a> LibBucketBorrowed<'a> {
+    pub fn new(uid: &'a UID, items: &[&'a LibItem]) -> Self {
+        LibBucketBorrowed {
+            uid,
+            items: items.iter().map(|item| (item.id.as_str(), *item)).collect(),
+        }
     }
 }

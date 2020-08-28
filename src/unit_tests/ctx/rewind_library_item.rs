@@ -66,7 +66,7 @@ fn actionctx_rewindlibraryitem() {
     *NOW.write().unwrap() = Utc.ymd(2020, 1, 2).and_hms_milli(0, 0, 0, 0);
     STORAGE.write().unwrap().insert(
         LIBRARY_RECENT_STORAGE_KEY.to_owned(),
-        serde_json::to_string::<(UID, Vec<LibItem>)>(&(
+        serde_json::to_string(&LibBucket::new(
             Some("id".to_owned()),
             vec![lib_item.to_owned()],
         ))
@@ -130,8 +130,8 @@ fn actionctx_rewindlibraryitem() {
             .unwrap()
             .get(LIBRARY_RECENT_STORAGE_KEY)
             .map_or(false, |data| {
-                serde_json::from_str::<(UID, Vec<LibItem>)>(&data).unwrap()
-                    == (Some("id".to_owned()), vec![lib_item_rewinded])
+                serde_json::from_str::<LibBucket>(&data).unwrap()
+                    == LibBucket::new(Some("id".to_owned()), vec![lib_item_rewinded])
             }),
         "Library recent slot updated successfully in storage"
     );
@@ -176,7 +176,7 @@ fn actionctx_rewindlibraryitem_not_added() {
     Env::reset();
     STORAGE.write().unwrap().insert(
         LIBRARY_RECENT_STORAGE_KEY.to_owned(),
-        serde_json::to_string::<(UID, Vec<LibItem>)>(&(None, vec![lib_item.to_owned()])).unwrap(),
+        serde_json::to_string(&LibBucket::new(None, vec![lib_item.to_owned()])).unwrap(),
     );
     let (runtime, _) = Runtime::<Env, Model>::new(
         Model {
@@ -215,8 +215,8 @@ fn actionctx_rewindlibraryitem_not_added() {
             .unwrap()
             .get(LIBRARY_RECENT_STORAGE_KEY)
             .map_or(false, |data| {
-                serde_json::from_str::<(UID, Vec<LibItem>)>(&data).unwrap()
-                    == (None, vec![lib_item])
+                serde_json::from_str::<LibBucket>(&data).unwrap()
+                    == LibBucket::new(None, vec![lib_item])
             }),
         "Library recent slot not updated in storage"
     );

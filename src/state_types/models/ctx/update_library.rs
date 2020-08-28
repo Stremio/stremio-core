@@ -5,7 +5,7 @@ use crate::state_types::models::ctx::{fetch_api, CtxError, CtxRequest, CtxStatus
 use crate::state_types::msg::{Action, ActionCtx, Event, Internal, Msg};
 use crate::state_types::{Effect, Effects, Environment};
 use crate::types::api::{DatastoreCommand, DatastoreRequest, LibItemModified, SuccessResponse};
-use crate::types::library::{LibBucket, LibItem, LibItemState};
+use crate::types::library::{LibBucket, LibBucketBorrowed, LibItem, LibItemState};
 use crate::types::profile::AuthKey;
 use futures::future::Either;
 use futures::Future;
@@ -126,14 +126,14 @@ pub fn update_library<Env: Environment + 'static>(
             ) => {
                 let mut next_library =
                     LibBucket::new(profile.as_ref().and_then(|profile| profile.uid()), vec![]);
-                if let Some((uid, items)) = recent_bucket {
-                    if next_library.uid == *uid {
-                        next_library.merge(items.to_owned());
+                if let Some(recent_bucket) = recent_bucket {
+                    if next_library.uid == recent_bucket.uid {
+                        next_library.merge(recent_bucket.items.values().cloned().collect());
                     };
                 };
-                if let Some((uid, items)) = other_bucket {
-                    if next_library.uid == *uid {
-                        next_library.merge(items.to_owned());
+                if let Some(other_bucket) = other_bucket {
+                    if next_library.uid == other_bucket.uid {
+                        next_library.merge(other_bucket.items.values().cloned().collect());
                     };
                 };
                 if *library != next_library {
@@ -246,29 +246,26 @@ fn update_and_push_items_to_storage<Env: Environment + 'static>(
     library.merge(items);
     let push_to_storage_future = if library.items.len() <= LIBRARY_RECENT_COUNT {
         Either::A(
-            Env::set_storage(
-                LIBRARY_RECENT_STORAGE_KEY,
-                Some(&(&library.uid, library.items.values().collect::<Vec<_>>())),
-            )
-            .join(Env::set_storage::<()>(LIBRARY_STORAGE_KEY, None))
-            .map(|_| ()),
+            Env::set_storage(LIBRARY_RECENT_STORAGE_KEY, Some(&library))
+                .join(Env::set_storage::<()>(LIBRARY_STORAGE_KEY, None))
+                .map(|_| ()),
         )
     } else {
         let (recent_items, other_items) = library.split_items_by_recent();
         if are_items_in_recent {
             Either::B(Either::A(Env::set_storage(
                 LIBRARY_RECENT_STORAGE_KEY,
-                Some(&(&library.uid, recent_items)),
+                Some(&LibBucketBorrowed::new(&library.uid, &recent_items)),
             )))
         } else {
             Either::B(Either::B(
                 Env::set_storage(
                     LIBRARY_RECENT_STORAGE_KEY,
-                    Some(&(&library.uid, recent_items)),
+                    Some(&LibBucketBorrowed::new(&library.uid, &recent_items)),
                 )
                 .join(Env::set_storage(
                     LIBRARY_STORAGE_KEY,
-                    Some(&(&library.uid, other_items)),
+                    Some(&LibBucketBorrowed::new(&library.uid, &other_items)),
                 ))
                 .map(|_| ()),
             ))
@@ -289,11 +286,11 @@ fn push_library_to_storage<Env: Environment + 'static>(library: &LibBucket) -> E
     Box::new(
         Env::set_storage(
             LIBRARY_RECENT_STORAGE_KEY,
-            Some(&(&library.uid, recent_items)),
+            Some(&LibBucketBorrowed::new(&library.uid, &recent_items)),
         )
         .join(Env::set_storage(
             LIBRARY_STORAGE_KEY,
-            Some(&(&library.uid, other_items)),
+            Some(&LibBucketBorrowed::new(&library.uid, &other_items)),
         ))
         .then(move |result| match result {
             Ok(_) => Ok(Msg::Event(Event::LibraryItemsPushedToStorage { ids })),

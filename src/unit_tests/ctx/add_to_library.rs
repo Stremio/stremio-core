@@ -129,8 +129,8 @@ fn actionctx_addtolibrary() {
             .unwrap()
             .get(LIBRARY_RECENT_STORAGE_KEY)
             .map_or(false, |data| {
-                serde_json::from_str::<(UID, Vec<LibItem>)>(&data).unwrap()
-                    == (Some("id".to_owned()), vec![lib_item])
+                serde_json::from_str::<LibBucket>(&data).unwrap()
+                    == LibBucket::new(Some("id".to_owned()), vec![lib_item])
             }),
         "Library recent slot updated successfully in storage"
     );
@@ -252,8 +252,8 @@ fn actionctx_addtolibrary_already_added() {
             .unwrap()
             .get(LIBRARY_RECENT_STORAGE_KEY)
             .map_or(false, |data| {
-                serde_json::from_str::<(UID, Vec<LibItem>)>(&data).unwrap()
-                    == (None, vec![lib_item])
+                serde_json::from_str::<LibBucket>(&data).unwrap()
+                    == LibBucket::new(None, vec![lib_item])
             }),
         "Library recent slot updated successfully in storage"
     );
