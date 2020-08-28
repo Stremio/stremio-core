@@ -1,11 +1,12 @@
 use chrono::offset::TimeZone;
 use chrono::{DateTime, Utc};
 use futures::{future, Future};
+use http::Request;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::error::Error;
 use std::fmt;
-use stremio_core::state_types::{EnvFuture, Environment, Request};
+use stremio_core::state_types::{EnvFuture, Environment};
 use wasm_bindgen::prelude::JsValue;
 use wasm_bindgen::JsCast;
 use wasm_bindgen_futures::spawn_local;
