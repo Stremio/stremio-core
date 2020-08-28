@@ -2,9 +2,9 @@ use crate::constants::{OFFICIAL_ADDONS, PROFILE_STORAGE_KEY};
 use crate::state_types::models::ctx::Ctx;
 use crate::state_types::msg::{Action, ActionCtx, Msg};
 use crate::state_types::{EnvFuture, Environment, Runtime};
-use crate::types::addons::{Descriptor, DescriptorFlags, Manifest};
-use crate::types::api::{APIResult, Auth, CollectionResponse, User};
-use crate::types::profile::Profile;
+use crate::types::addon::{Descriptor, DescriptorFlags, Manifest};
+use crate::types::api::{APIResult, CollectionResponse};
+use crate::types::profile::{Auth, GDPRConsent, Profile, User};
 use crate::unit_tests::{default_fetch_handler, Env, Request, FETCH_HANDLER, REQUESTS, STORAGE};
 use futures::future;
 use semver::Version;
@@ -12,6 +12,7 @@ use std::any::Any;
 use std::fmt::Debug;
 use stremio_derive::Model;
 use tokio::runtime::current_thread::run;
+use url::Url;
 
 #[test]
 fn actionctx_pulladdonsfromapi() {
@@ -30,7 +31,7 @@ fn actionctx_pulladdonsfromapi() {
                             version: Version::new(0, 0, 1),
                             ..official_addon.manifest.to_owned()
                         },
-                        transport_url: "transport_url".to_owned(),
+                        transport_url: Url::parse("https://transport_url").unwrap(),
                         flags: DescriptorFlags {
                             extra: {
                                 [("flag".to_owned(), serde_json::Value::Bool(true))]
@@ -132,6 +133,13 @@ fn actionctx_pulladdonsfromapi_with_user() {
                             avatar: None,
                             last_modified: Env::now(),
                             date_registered: Env::now(),
+                            gdpr_consent: GDPRConsent {
+                                tos: true,
+                                privacy: true,
+                                marketing: true,
+                                time: Env::now(),
+                                from: "tests".to_owned(),
+                            },
                         },
                     }),
                     addons: vec![Descriptor {
@@ -150,7 +158,7 @@ fn actionctx_pulladdonsfromapi_with_user() {
                             addon_catalogs: vec![],
                             behavior_hints: Default::default(),
                         },
-                        transport_url: "transport_url".to_owned(),
+                        transport_url: Url::parse("https://transport_url").unwrap(),
                         flags: Default::default(),
                     }],
                     ..Default::default()
