@@ -1,8 +1,7 @@
 use chrono::offset::TimeZone;
 use chrono::{DateTime, Utc};
 use futures::{future, Future};
-use serde::de::DeserializeOwned;
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::error::Error;
 use std::fmt;
@@ -72,7 +71,10 @@ impl Env {
             .local_storage()?
             .ok_or(EnvError::StorageMissing)
     }
-    fn get_storage_sync<T: 'static + DeserializeOwned>(key: &str) -> Result<Option<T>, EnvError> {
+    fn get_storage_sync<T>(key: &str) -> Result<Option<T>, EnvError>
+    where
+        for<'de> T: Deserialize<'de> + 'static,
+    {
         let storage = Self::get_storage()?;
         let val = storage.get_item(key)?;
         Ok(match val {
@@ -97,7 +99,7 @@ impl Environment for Env {
     fn fetch<IN, OUT>(in_request: Request<IN>) -> EnvFuture<OUT>
     where
         IN: 'static + Serialize,
-        OUT: 'static + DeserializeOwned,
+        for<'de> OUT: Deserialize<'de> + 'static,
     {
         let window = web_sys::window().unwrap();
         let mut opts = RequestInit::new();
@@ -149,7 +151,10 @@ impl Environment for Env {
         let (secs, millis) = (millis / 1000, millis % 1000);
         Utc.timestamp(secs, millis as u32 * 1_000_000)
     }
-    fn get_storage<T: 'static + DeserializeOwned>(key: &str) -> EnvFuture<Option<T>> {
+    fn get_storage<T>(key: &str) -> EnvFuture<Option<T>>
+    where
+        for<'de> T: Deserialize<'de> + 'static,
+    {
         Self::wrap_to_fut(Self::get_storage_sync(key))
     }
     fn set_storage<T: Serialize>(key: &str, value: Option<&T>) -> EnvFuture<()> {

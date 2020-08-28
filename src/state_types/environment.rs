@@ -2,8 +2,7 @@ use crate::addon_transport::{AddonHTTPTransport, AddonInterface};
 use crate::constants::API_URL;
 use chrono::{DateTime, Utc};
 use futures::Future;
-use serde::de::DeserializeOwned;
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use std::error::Error;
 
 pub use http::Request;
@@ -16,10 +15,12 @@ pub trait Environment {
     fn fetch<IN, OUT>(request: Request<IN>) -> EnvFuture<OUT>
     where
         IN: 'static + Serialize,
-        OUT: 'static + DeserializeOwned;
+        for<'de> OUT: 'static + Deserialize<'de>;
     fn exec(fut: Box<dyn Future<Item = (), Error = ()>>);
     fn now() -> DateTime<Utc>;
-    fn get_storage<T: 'static + DeserializeOwned>(key: &str) -> EnvFuture<Option<T>>;
+    fn get_storage<T>(key: &str) -> EnvFuture<Option<T>>
+    where
+        for<'de> T: Deserialize<'de> + 'static;
     fn set_storage<T: Serialize>(key: &str, value: Option<&T>) -> EnvFuture<()>;
     fn addon_transport(url: &str) -> Box<dyn AddonInterface>
     where

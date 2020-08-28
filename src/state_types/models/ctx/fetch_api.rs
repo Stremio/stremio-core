@@ -2,14 +2,13 @@ use crate::state_types::models::ctx::CtxError;
 use crate::state_types::{Environment, Request};
 use crate::types::api::{APIMethodName, APIResult};
 use futures::Future;
-use serde::de::DeserializeOwned;
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 
 pub fn fetch_api<Env, REQ, RESP>(api_request: &REQ) -> impl Future<Item = RESP, Error = CtxError>
 where
     Env: Environment + 'static,
     REQ: APIMethodName + Clone + Serialize + 'static,
-    RESP: DeserializeOwned + 'static,
+    for<'de> RESP: Deserialize<'de> + 'static,
 {
     let url = format!("{}/api/{}", Env::api_url(), api_request.method_name());
     let request = Request::post(url)

@@ -2,8 +2,7 @@ use crate::state_types::{EnvFuture, Environment};
 use chrono::{DateTime, Utc};
 use futures::{future, Future};
 use lazy_static::lazy_static;
-use serde::de::DeserializeOwned;
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use std::any::Any;
 use std::collections::BTreeMap;
 use std::collections::HashMap;
@@ -60,7 +59,7 @@ impl Environment for Env {
     fn fetch<IN, OUT>(request: http::Request<IN>) -> EnvFuture<OUT>
     where
         IN: 'static + Serialize,
-        OUT: 'static + DeserializeOwned,
+        for<'de> OUT: 'static + Deserialize<'de>,
     {
         let request = Request::from(request);
         REQUESTS.write().unwrap().push(request.to_owned());
@@ -68,7 +67,10 @@ impl Environment for Env {
             FETCH_HANDLER.read().unwrap()(request).map(|resp| *resp.downcast::<OUT>().unwrap()),
         )
     }
-    fn get_storage<T: 'static + DeserializeOwned>(key: &str) -> EnvFuture<Option<T>> {
+    fn get_storage<T>(key: &str) -> EnvFuture<Option<T>>
+    where
+        for<'de> T: 'static + Deserialize<'de>,
+    {
         Box::new(future::ok(
             STORAGE
                 .read()
