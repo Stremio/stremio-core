@@ -43,7 +43,7 @@ pub struct SuccessResponse {
     pub success: True,
 }
 
-#[derive(Clone, Debug, Copy, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Copy, PartialEq)]
 pub struct True;
 
 impl<'de> Deserialize<'de> for True {
