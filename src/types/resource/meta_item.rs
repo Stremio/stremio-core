@@ -65,7 +65,7 @@ pub struct Link {
     url: Url,
 }
 
-#[derive(Clone, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct MetaBehaviorHints {
     pub default_video_id: Option<String>,
