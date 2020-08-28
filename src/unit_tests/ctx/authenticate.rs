@@ -4,7 +4,7 @@ use crate::state_types::msg::{Action, ActionCtx, Msg};
 use crate::state_types::{EnvFuture, Environment, Runtime};
 use crate::types::api::{APIResult, AuthRequest, AuthResponse, CollectionResponse};
 use crate::types::library::{LibBucket, LibItem};
-use crate::types::profile::{Auth, GDPRConsent, Profile, User, UID};
+use crate::types::profile::{Auth, GDPRConsent, Profile, User};
 use crate::unit_tests::{default_fetch_handler, Env, Request, FETCH_HANDLER, REQUESTS, STORAGE};
 use chrono::prelude::{TimeZone, Utc};
 use futures::future;

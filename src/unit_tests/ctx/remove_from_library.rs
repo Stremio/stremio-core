@@ -4,7 +4,7 @@ use crate::state_types::msg::{Action, ActionCtx, Msg};
 use crate::state_types::{EnvFuture, Environment, Runtime};
 use crate::types::api::{APIResult, SuccessResponse, True};
 use crate::types::library::{LibBucket, LibItem};
-use crate::types::profile::{Auth, GDPRConsent, Profile, User, UID};
+use crate::types::profile::{Auth, GDPRConsent, Profile, User};
 use crate::unit_tests::{
     default_fetch_handler, Env, Request, FETCH_HANDLER, NOW, REQUESTS, STORAGE,
 };
