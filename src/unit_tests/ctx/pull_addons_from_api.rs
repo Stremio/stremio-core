@@ -19,7 +19,7 @@ fn actionctx_pulladdonsfromapi() {
     struct Model {
         ctx: Ctx<Env>,
     }
-    let official_addon = &OFFICIAL_ADDONS.first().unwrap().to_owned();
+    let official_addon = OFFICIAL_ADDONS.first().unwrap().to_owned();
     Env::reset();
     let (runtime, _) = Runtime::<Env, Model>::new(
         Model {
