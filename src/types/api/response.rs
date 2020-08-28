@@ -2,9 +2,8 @@ use crate::types::addon::Descriptor;
 use crate::types::profile::{AuthKey, User};
 use chrono::serde::ts_milliseconds;
 use chrono::{DateTime, Utc};
-use serde::de::{Unexpected, Visitor};
+use serde::de::Unexpected;
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
-use std::fmt;
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct APIErr {
@@ -52,28 +51,14 @@ impl<'de> Deserialize<'de> for True {
     where
         D: Deserializer<'de>,
     {
-        struct TrueVisitor;
-
-        impl<'de> Visitor<'de> for TrueVisitor {
-            type Value = True;
-
-            fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
-                formatter.write_str("true")
-            }
-
-            fn visit_bool<E>(self, value: bool) -> Result<True, E>
-            where
-                E: serde::de::Error,
-            {
-                if value {
-                    Ok(True)
-                } else {
-                    Err(E::invalid_value(Unexpected::Bool(value), &self))
-                }
-            }
+        match bool::deserialize(deserializer) {
+            Ok(value) if value => Ok(True),
+            Ok(value) => Err(serde::de::Error::invalid_value(
+                Unexpected::Bool(value),
+                &"true",
+            )),
+            Err(error) => Err(error),
         }
-
-        deserializer.deserialize_bool(TrueVisitor)
     }
 }
 
