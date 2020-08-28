@@ -27,8 +27,7 @@ impl Default for Settings {
             play_in_background: true,
             play_in_external_player: false,
             hardware_decoding: false,
-            streaming_server_url: Url::parse(STREAMING_SERVER_URL)
-                .expect("streaming_server_url builder cannot fail"),
+            streaming_server_url: STREAMING_SERVER_URL.to_owned(),
             interface_language: "eng".to_owned(),
             subtitles_language: "eng".to_owned(),
             subtitles_size: 100,
