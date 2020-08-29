@@ -23,12 +23,7 @@ pub enum CtxError {
 
 impl fmt::Display for CtxError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match &self {
-            CtxError::API { message, code } | CtxError::Other { message, code } => {
-                write!(f, "{} {}", message, code)
-            }
-            CtxError::Env { message } => write!(f, "{}", message),
-        }
+        write!(f, "{:?}", self)
     }
 }
 
