@@ -1,7 +1,7 @@
 [package]
 name = "stremio-core"
 version = "0.1.0"
-authors = ["Ivo Georgiev <ivo@strem.io>"]
+authors = ["Smart Code Ltd."]
 edition = "2018"
 
 [workspace]
