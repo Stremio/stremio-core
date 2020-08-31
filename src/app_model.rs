@@ -1,5 +1,5 @@
 use crate::models::library_items::LibraryItems;
-use env_web::Env;
+use crate::env::Env;
 use serde::{Deserialize, Serialize};
 use stremio_core::state_types::models::addon_details::AddonDetails;
 use stremio_core::state_types::models::catalog_with_filters::CatalogWithFilters;

@@ -1,6 +1,6 @@
-use super::app_model::{AppModel, ModelFieldName};
+use crate::app_model::{AppModel, ModelFieldName};
+use crate::env::Env;
 use console_error_panic_hook;
-use env_web::Env;
 use futures::future;
 use futures::stream::Stream;
 use std::panic;
