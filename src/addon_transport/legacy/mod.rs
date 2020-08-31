@@ -4,7 +4,7 @@ use crate::types::addon::*;
 use crate::types::resource::*;
 use futures::{future, Future};
 use http::Request;
-use serde_derive::*;
+use serde::*;
 use serde_json::json;
 use serde_json::value::Value;
 use std::error::Error;

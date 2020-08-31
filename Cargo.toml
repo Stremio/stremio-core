@@ -10,27 +10,24 @@ edition = "2018"
 doctest = false
 
 [dependencies]
-serde = { version = "1.0", features = ["derive", "rc"] }
-serde_derive = "1.0"
+stremio-derive = { path = "stremio-derive" }
+serde = "1.0"
 serde_json = "1.0"
+serde-hex = "0.1"
 futures = "0.1"
 http = "0.1"
 url = { version = "2.1", features = ["serde"] }
 percent-encoding = "2.1"
 chrono = { version = "0.4", features = ["serde"] }
-lazy_static = "1.4"
-enclose = "1.1"
 semver = { version = "0.10", features = ["serde"] }
 base64 = "0.12"
-serde-hex = "0.1"
 either = "1.5"
-stremio-derive = { path = "stremio-derive" }
+enclose = "1.1"
 derivative = "2.1"
 derive_more = "0.15.0"
-derive_builder = "0.9"
 lazysort = "0.2"
+lazy_static = "1.4"
 itertools = "0.8"
 
 [dev-dependencies]
-reqwest = "0.9"
 tokio = "0.1"

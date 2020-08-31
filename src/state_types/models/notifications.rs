@@ -9,7 +9,7 @@ use crate::types::addon::{ResourceRef, ResourceRequest};
 use crate::types::resource::MetaItem;
 use futures::{future, Future};
 use lazysort::SortedBy;
-use serde_derive::*;
+use serde::*;
 
 // Cinemeta/Channels are curently limited to that many
 // but in general, it's healthy to have some sort of a limit

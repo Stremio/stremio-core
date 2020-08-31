@@ -1,5 +1,5 @@
 use crate::types::addon::*;
-use serde_derive::*;
+use serde::*;
 
 //
 // Manifest types
