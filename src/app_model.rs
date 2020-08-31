@@ -12,8 +12,8 @@ use stremio_core::state_types::models::library_with_filters::{
 use stremio_core::state_types::models::meta_details::MetaDetails;
 use stremio_core::state_types::models::player::Player;
 use stremio_core::state_types::models::streaming_server::StreamingServer;
-use stremio_core::types::addons::DescriptorPreview;
-use stremio_core::types::MetaPreview;
+use stremio_core::types::addon::DescriptorPreview;
+use stremio_core::types::resource::MetaItemPreview;
 use stremio_derive::Model;
 
 #[derive(Model, Default, Serialize)]
@@ -22,7 +22,7 @@ pub struct AppModel {
     pub library_items: LibraryItems,
     pub continue_watching_preview: ContinueWatchingPreview,
     pub board: CatalogsWithExtra,
-    pub discover: CatalogWithFilters<MetaPreview>,
+    pub discover: CatalogWithFilters<MetaItemPreview>,
     pub library: LibraryWithFilters<NotRemovedFilter>,
     pub continue_watching: LibraryWithFilters<ContinueWatchingFilter>,
     pub search: CatalogsWithExtra,

@@ -3,7 +3,7 @@ use serde::Serialize;
 use stremio_core::state_types::models::ctx::Ctx;
 use stremio_core::state_types::msg::{Internal, Msg};
 use stremio_core::state_types::{Effects, Environment, UpdateWithCtx};
-use stremio_core::types::LibBucket;
+use stremio_core::types::library::LibBucket;
 
 #[derive(Default, Debug, Clone, Serialize)]
 pub struct LibraryItems {
