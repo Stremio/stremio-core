@@ -1,12 +1,40 @@
-use crate::types::addon::{Descriptor, Manifest};
-use crate::types::profile::{Auth, GDPRConsent, Profile, User};
+use crate::types::profile::{Auth, GDPRConsent, Profile, Settings, User};
 use chrono::prelude::TimeZone;
 use chrono::Utc;
-use semver::Version;
 use url::Url;
 
 #[test]
 fn deserialize_profile() {
+    let profile = Profile {
+        addons: vec![],
+        settings: Settings {
+            interface_language: "interface_language".to_owned(),
+            streaming_server_url: Url::parse("https://streaming_server_url").unwrap(),
+            binge_watching: false,
+            play_in_background: true,
+            play_in_external_player: false,
+            hardware_decoding: false,
+            subtitles_language: "subtitles_language".to_owned(),
+            subtitles_size: 100,
+            subtitles_font: "subtitles_font".to_owned(),
+            subtitles_bold: false,
+            subtitles_offset: 5,
+            subtitles_text_color: "subtitles_text_color".to_owned(),
+            subtitles_background_color: "subtitles_background_color".to_owned(),
+            subtitles_outline_color: "subtitles_outline_color".to_owned(),
+        },
+        ..Default::default()
+    };
+    let profile_json = r##"{"auth":null,"addons":[],"settings":{"interface_language":"interface_language","streaming_server_url":"https://streaming_server_url/","binge_watching":false,"play_in_background":true,"play_in_external_player":false,"hardware_decoding":false,"subtitles_language":"subtitles_language","subtitles_size":100,"subtitles_font":"subtitles_font","subtitles_bold":false,"subtitles_offset":5,"subtitles_text_color":"subtitles_text_color","subtitles_background_color":"subtitles_background_color","subtitles_outline_color":"subtitles_outline_color"}}"##;
+    let profile_deserialize = serde_json::from_str(&profile_json).unwrap();
+    assert_eq!(
+        profile, profile_deserialize,
+        "profile deserialized successfully"
+    );
+}
+
+#[test]
+fn deserialize_profile_with_user() {
     let profile = Profile {
         auth: Some(Auth {
             key: "auth_key".to_owned(),
@@ -26,28 +54,25 @@ fn deserialize_profile() {
                 },
             },
         }),
-        addons: vec![Descriptor {
-            manifest: Manifest {
-                id: "id".to_owned(),
-                version: Version::new(0, 0, 1),
-                name: "name".to_owned(),
-                contact_email: None,
-                description: None,
-                logo: None,
-                background: None,
-                types: vec![],
-                resources: vec![],
-                id_prefixes: None,
-                catalogs: vec![],
-                addon_catalogs: vec![],
-                behavior_hints: Default::default(),
-            },
-            transport_url: Url::parse("https://transport_url").unwrap(),
-            flags: Default::default(),
-        }],
-        ..Default::default()
+        addons: vec![],
+        settings: Settings {
+            interface_language: "interface_language".to_owned(),
+            streaming_server_url: Url::parse("https://streaming_server_url").unwrap(),
+            binge_watching: false,
+            play_in_background: true,
+            play_in_external_player: false,
+            hardware_decoding: false,
+            subtitles_language: "subtitles_language".to_owned(),
+            subtitles_size: 100,
+            subtitles_font: "subtitles_font".to_owned(),
+            subtitles_bold: false,
+            subtitles_offset: 5,
+            subtitles_text_color: "subtitles_text_color".to_owned(),
+            subtitles_background_color: "subtitles_background_color".to_owned(),
+            subtitles_outline_color: "subtitles_outline_color".to_owned(),
+        },
     };
-    let profile_json = "{\"auth\":{\"key\":\"auth_key\",\"user\":{\"_id\":\"user_id\",\"email\":\"user_email\",\"fbId\":null,\"avatar\":null,\"lastModified\":\"2020-01-01T00:00:00Z\",\"dateRegistered\":\"2020-01-01T00:00:00Z\",\"gdpr_consent\":{\"tos\":true,\"privacy\":true,\"marketing\":true,\"time\":\"2020-01-01T00:00:00Z\",\"from\":\"tests\"}}},\"addons\":[{\"manifest\":{\"id\":\"id\",\"version\":\"0.0.1\",\"name\":\"name\",\"contactEmail\":null,\"description\":null,\"logo\":null,\"background\":null,\"types\":[],\"resources\":[],\"idPrefixes\":null,\"catalogs\":[],\"addonCatalogs\":[],\"behaviorHints\":{}},\"transportUrl\":\"https://transport_url/\",\"flags\":{\"official\":false,\"protected\":false}}],\"settings\":{\"interface_language\":\"eng\",\"streaming_server_url\":\"http://127.0.0.1:11470/\",\"binge_watching\":false,\"play_in_background\":true,\"play_in_external_player\":false,\"hardware_decoding\":false,\"subtitles_language\":\"eng\",\"subtitles_size\":100,\"subtitles_font\":\"Roboto\",\"subtitles_bold\":false,\"subtitles_offset\":5,\"subtitles_text_color\":\"#FFFFFFFF\",\"subtitles_background_color\":\"#00000000\",\"subtitles_outline_color\":\"#00000000\"}}";
+    let profile_json = r##"{"auth":{"key":"auth_key","user":{"_id":"user_id","email":"user_email","fbId":null,"avatar":null,"lastModified":"2020-01-01T00:00:00Z","dateRegistered":"2020-01-01T00:00:00Z","gdpr_consent":{"tos":true,"privacy":true,"marketing":true,"time":"2020-01-01T00:00:00Z","from":"tests"}}},"addons":[],"settings":{"interface_language":"interface_language","streaming_server_url":"https://streaming_server_url/","binge_watching":false,"play_in_background":true,"play_in_external_player":false,"hardware_decoding":false,"subtitles_language":"subtitles_language","subtitles_size":100,"subtitles_font":"subtitles_font","subtitles_bold":false,"subtitles_offset":5,"subtitles_text_color":"subtitles_text_color","subtitles_background_color":"subtitles_background_color","subtitles_outline_color":"subtitles_outline_color"}}"##;
     let profile_deserialize = serde_json::from_str(&profile_json).unwrap();
     assert_eq!(
         profile, profile_deserialize,
