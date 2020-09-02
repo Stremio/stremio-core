@@ -1,6 +1,6 @@
+use crate::types::empty_string_as_none;
 use crate::types::resource::{MetaBehaviorHints, PosterShape};
 use chrono::{DateTime, Utc};
-use serde::de::{Deserializer, IntoDeserializer};
 use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize)]
@@ -55,18 +55,5 @@ impl LibItem {
     }
     pub fn is_in_continue_watching(&self) -> bool {
         self.should_sync() && (!self.removed || self.temp) && self.state.time_offset > 0
-    }
-}
-
-fn empty_string_as_none<'de, D, T>(deserializer: D) -> Result<Option<T>, D::Error>
-where
-    D: Deserializer<'de>,
-    T: serde::Deserialize<'de>,
-{
-    match Option::<String>::deserialize(deserializer) {
-        Ok(Some(value)) if value.is_empty() => Ok(None),
-        Ok(Some(value)) => T::deserialize(value.into_deserializer()).map(Some),
-        Ok(None) => Ok(None),
-        Err(error) => Err(error),
     }
 }
