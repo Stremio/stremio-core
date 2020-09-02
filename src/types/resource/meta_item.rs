@@ -21,13 +21,10 @@ pub struct MetaItem {
     pub released: Option<DateTime<Utc>>,
     #[serde(default)]
     pub poster_shape: PosterShape,
-    // @TODO: default to one video
     #[serde(default)]
     pub videos: Vec<Video>,
     #[serde(default)]
     pub links: Vec<Link>,
-    // @TODO use some ISO language type
-    // pub language: Option<String>,
     #[serde(default)]
     pub trailers: Vec<Stream>,
     #[serde(default)]
