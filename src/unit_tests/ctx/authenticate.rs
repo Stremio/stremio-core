@@ -2,7 +2,9 @@ use crate::constants::{LIBRARY_RECENT_STORAGE_KEY, LIBRARY_STORAGE_KEY, PROFILE_
 use crate::state_types::models::ctx::Ctx;
 use crate::state_types::msg::{Action, ActionCtx, Msg};
 use crate::state_types::{EnvFuture, Environment, Runtime};
-use crate::types::api::{APIResult, AuthRequest, AuthResponse, CollectionResponse};
+use crate::types::api::{
+    APIResult, AuthRequest, AuthResponse, CollectionResponse, GDPRConsentWithTime,
+};
 use crate::types::library::{LibBucket, LibItem};
 use crate::types::profile::{Auth, GDPRConsent, Profile, User};
 use crate::unit_tests::{default_fetch_handler, Env, Request, FETCH_HANDLER, REQUESTS, STORAGE};
@@ -41,7 +43,6 @@ fn actionctx_authenticate_login() {
                                 tos: true,
                                 privacy: true,
                                 marketing: true,
-                                time: Env::now(),
                                 from: "tests".to_owned(),
                             },
                         }
@@ -101,7 +102,6 @@ fn actionctx_authenticate_login() {
                         tos: true,
                         privacy: true,
                         marketing: true,
-                        time: Env::now(),
                         from: "tests".to_owned(),
                     },
                 },
@@ -136,7 +136,6 @@ fn actionctx_authenticate_login() {
                         tos: true,
                         privacy: true,
                         marketing: true,
-                        time: Env::now(),
                         from: "tests".to_owned(),
                     },
                 },
@@ -218,7 +217,7 @@ fn actionctx_authenticate_register() {
                 url, method, body, ..
             } if url == "https://api.strem.io/api/register"
                 && method == "POST"
-                && body == "{\"type\":\"Auth\",\"type\":\"Register\",\"email\":\"user_email\",\"password\":\"user_password\",\"gdpr_consent\":{\"tos\":true,\"privacy\":true,\"marketing\":false,\"time\":\"2020-01-01T00:00:00Z\",\"from\":\"web\"}}" =>
+                && body == "{\"type\":\"Auth\",\"type\":\"Register\",\"email\":\"user_email\",\"password\":\"user_password\",\"gdpr_consent\":{\"tos\":true,\"privacy\":true,\"marketing\":false,\"from\":\"web\",\"time\":\"2020-01-01T00:00:00Z\"}}" =>
             {
                 Box::new(future::ok(Box::new(APIResult::Ok {
                     result: AuthResponse {
@@ -234,7 +233,6 @@ fn actionctx_authenticate_register() {
                                 tos: true,
                                 privacy: true,
                                 marketing: true,
-                                time: Env::now(),
                                 from: "tests".to_owned(),
                             },
                         }
@@ -275,12 +273,14 @@ fn actionctx_authenticate_register() {
             AuthRequest::Register {
                 email: "user_email".into(),
                 password: "user_password".into(),
-                gdpr_consent: GDPRConsent {
-                    tos: true,
-                    privacy: true,
-                    marketing: false,
+                gdpr_consent: GDPRConsentWithTime {
+                    gdpr_consent: GDPRConsent {
+                        tos: true,
+                        privacy: true,
+                        marketing: false,
+                        from: "web".to_owned(),
+                    },
                     time: Utc.ymd(2020, 1, 1).and_hms_milli(0, 0, 0, 0),
-                    from: "web".to_owned(),
                 },
             },
         )))),
@@ -301,7 +301,6 @@ fn actionctx_authenticate_register() {
                         tos: true,
                         privacy: true,
                         marketing: true,
-                        time: Env::now(),
                         from: "tests".to_owned(),
                     },
                 },
@@ -336,7 +335,6 @@ fn actionctx_authenticate_register() {
                         tos: true,
                         privacy: true,
                         marketing: true,
-                        time: Env::now(),
                         from: "tests".to_owned(),
                     },
                 },
@@ -376,7 +374,7 @@ fn actionctx_authenticate_register() {
         Request {
             url: "https://api.strem.io/api/register".to_owned(),
             method: "POST".to_owned(),
-            body: "{\"type\":\"Auth\",\"type\":\"Register\",\"email\":\"user_email\",\"password\":\"user_password\",\"gdpr_consent\":{\"tos\":true,\"privacy\":true,\"marketing\":false,\"time\":\"2020-01-01T00:00:00Z\",\"from\":\"web\"}}".to_owned(),
+            body: "{\"type\":\"Auth\",\"type\":\"Register\",\"email\":\"user_email\",\"password\":\"user_password\",\"gdpr_consent\":{\"tos\":true,\"privacy\":true,\"marketing\":false,\"from\":\"web\",\"time\":\"2020-01-01T00:00:00Z\"}}".to_owned(),
             ..Default::default()
         },
         "Register request has been sent"

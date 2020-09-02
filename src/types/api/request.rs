@@ -1,10 +1,18 @@
 use crate::types::addon::Descriptor;
 use crate::types::library::LibItem;
 use crate::types::profile::{AuthKey, GDPRConsent};
+use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 
 pub trait APIMethodName {
     fn method_name(&self) -> &str;
+}
+
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct GDPRConsentWithTime {
+    #[serde(flatten)]
+    pub gdpr_consent: GDPRConsent,
+    pub time: DateTime<Utc>,
 }
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -17,7 +25,7 @@ pub enum AuthRequest {
     Register {
         email: String,
         password: String,
-        gdpr_consent: GDPRConsent,
+        gdpr_consent: GDPRConsentWithTime,
     },
 }
 

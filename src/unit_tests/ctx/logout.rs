@@ -47,7 +47,6 @@ fn actionctx_logout() {
                     tos: true,
                     privacy: true,
                     marketing: true,
-                    time: Env::now(),
                     from: "tests".to_owned(),
                 },
             },
