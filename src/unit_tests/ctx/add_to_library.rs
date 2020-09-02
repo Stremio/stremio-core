@@ -3,9 +3,9 @@ use crate::state_types::models::ctx::Ctx;
 use crate::state_types::msg::{Action, ActionCtx, Msg};
 use crate::state_types::{EnvFuture, Environment, Runtime};
 use crate::types::api::{APIResult, SuccessResponse, True};
-use crate::types::library::{LibBucket, LibItem, LibItemState};
+use crate::types::library::{LibBucket, LibItem, LibItemBehaviorHints, LibItemState};
 use crate::types::profile::{Auth, GDPRConsent, Profile, User};
-use crate::types::resource::{MetaBehaviorHints, MetaItemPreview, PosterShape};
+use crate::types::resource::{MetaItemBehaviorHints, MetaItemPreview, PosterShape};
 use crate::unit_tests::{
     default_fetch_handler, Env, Request, FETCH_HANDLER, NOW, REQUESTS, STORAGE,
 };
@@ -167,8 +167,9 @@ fn actionctx_addtolibrary_already_added() {
         runtime: None,
         released: None,
         trailers: vec![],
-        behavior_hints: MetaBehaviorHints {
+        behavior_hints: MetaItemBehaviorHints {
             default_video_id: Some("video_id2".to_owned()),
+            featured_video_id: None,
         },
     };
     let lib_item = LibItem {
@@ -185,7 +186,7 @@ fn actionctx_addtolibrary_already_added() {
             video_id: Some("video_id".to_owned()),
             ..LibItemState::default()
         },
-        behavior_hints: MetaBehaviorHints {
+        behavior_hints: LibItemBehaviorHints {
             default_video_id: Some("video_id2".to_owned()),
         },
     };

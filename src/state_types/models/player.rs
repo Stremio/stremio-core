@@ -7,7 +7,7 @@ use crate::state_types::models::ctx::Ctx;
 use crate::state_types::msg::{Action, ActionLoad, ActionPlayer, Internal, Msg};
 use crate::state_types::{Effects, Environment, UpdateWithCtx};
 use crate::types::addon::{AggrRequest, ResourceRef, ResourceRequest};
-use crate::types::library::{LibBucket, LibItem, LibItemState};
+use crate::types::library::{LibBucket, LibItem, LibItemBehaviorHints, LibItemState};
 use crate::types::profile::Settings as ProfileSettings;
 use crate::types::resource::{MetaItem, Stream, Subtitles, Video};
 use serde::{Deserialize, Serialize};
@@ -248,7 +248,9 @@ fn lib_item_update<Env: Environment>(
                     type_name: meta_item.type_name.to_owned(),
                     poster: meta_item.poster.to_owned(),
                     poster_shape: meta_item.poster_shape.to_owned(),
-                    behavior_hints: meta_item.behavior_hints,
+                    behavior_hints: LibItemBehaviorHints {
+                        default_video_id: meta_item.behavior_hints.default_video_id.to_owned(),
+                    },
                 }),
                 (Some(meta_item), None) => Some(LibItem {
                     id: meta_item.id.to_owned(),
@@ -261,7 +263,9 @@ fn lib_item_update<Env: Environment>(
                     type_name: meta_item.type_name.to_owned(),
                     poster: meta_item.poster.to_owned(),
                     poster_shape: meta_item.poster_shape.to_owned(),
-                    behavior_hints: meta_item.behavior_hints,
+                    behavior_hints: LibItemBehaviorHints {
+                        default_video_id: meta_item.behavior_hints.default_video_id.to_owned(),
+                    },
                 }),
                 (None, Some(lib_item)) => Some(lib_item),
                 _ => None,

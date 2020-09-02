@@ -21,19 +21,14 @@ pub struct MetaItem {
     pub released: Option<DateTime<Utc>>,
     #[serde(default)]
     pub poster_shape: PosterShape,
-    // @TODO: default to one video
     #[serde(default)]
     pub videos: Vec<Video>,
-    // This is a video id; the case of the video not being in .videos must be handled at runtime
-    pub featured_vid: Option<String>,
     #[serde(default)]
     pub links: Vec<Link>,
-    // @TODO use some ISO language type
-    // pub language: Option<String>,
     #[serde(default)]
     pub trailers: Vec<Stream>,
     #[serde(default)]
-    pub behavior_hints: MetaBehaviorHints,
+    pub behavior_hints: MetaItemBehaviorHints,
 }
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -55,7 +50,7 @@ pub struct MetaItemPreview {
     #[serde(default)]
     pub trailers: Vec<Stream>,
     #[serde(default)]
-    pub behavior_hints: MetaBehaviorHints,
+    pub behavior_hints: MetaItemBehaviorHints,
 }
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -67,6 +62,7 @@ pub struct Link {
 
 #[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
-pub struct MetaBehaviorHints {
+pub struct MetaItemBehaviorHints {
     pub default_video_id: Option<String>,
+    pub featured_video_id: Option<String>,
 }

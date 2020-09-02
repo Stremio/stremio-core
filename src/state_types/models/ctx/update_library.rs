@@ -5,7 +5,9 @@ use crate::state_types::models::ctx::{fetch_api, CtxError, CtxRequest, CtxStatus
 use crate::state_types::msg::{Action, ActionCtx, Event, Internal, Msg};
 use crate::state_types::{Effect, Effects, Environment};
 use crate::types::api::{DatastoreCommand, DatastoreRequest, LibItemModified, SuccessResponse};
-use crate::types::library::{LibBucket, LibBucketBorrowed, LibItem, LibItemState};
+use crate::types::library::{
+    LibBucket, LibBucketBorrowed, LibItem, LibItemBehaviorHints, LibItemState,
+};
 use crate::types::profile::AuthKey;
 use futures::future::Either;
 use futures::Future;
@@ -34,7 +36,9 @@ pub fn update_library<Env: Environment + 'static>(
                 name: meta_preview.name.to_owned(),
                 poster: meta_preview.poster.to_owned(),
                 poster_shape: meta_preview.poster_shape.to_owned(),
-                behavior_hints: meta_preview.behavior_hints.to_owned(),
+                behavior_hints: LibItemBehaviorHints {
+                    default_video_id: meta_preview.behavior_hints.default_video_id.to_owned(),
+                },
                 removed: false,
                 temp: false,
                 mtime: Env::now(),
