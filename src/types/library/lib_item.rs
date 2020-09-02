@@ -1,5 +1,5 @@
 use crate::types::empty_string_as_none;
-use crate::types::resource::{MetaBehaviorHints, PosterShape};
+use crate::types::resource::PosterShape;
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 
@@ -26,6 +26,12 @@ pub struct LibItemState {
     pub no_notif: bool,
 }
 
+#[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct LibItemBehaviorHints {
+    pub default_video_id: Option<String>,
+}
+
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct LibItem {
@@ -46,7 +52,7 @@ pub struct LibItem {
     pub mtime: DateTime<Utc>,
     pub state: LibItemState,
     #[serde(default)]
-    pub behavior_hints: MetaBehaviorHints,
+    pub behavior_hints: LibItemBehaviorHints,
 }
 
 impl LibItem {
