@@ -2,6 +2,7 @@ use crate::types::addon::Descriptor;
 use lazy_static::lazy_static;
 use url::Url;
 
+pub const SCHEMA_VERSION_STORAGE_KEY: &str = "schema_version";
 pub const PROFILE_STORAGE_KEY: &str = "profile";
 pub const LIBRARY_STORAGE_KEY: &str = "library";
 pub const LIBRARY_RECENT_STORAGE_KEY: &str = "recent_library";
