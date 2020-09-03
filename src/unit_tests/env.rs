@@ -1,6 +1,7 @@
 use crate::state_types::{EnvFuture, Environment};
 use chrono::{DateTime, Utc};
-use futures::{future, Future};
+use core::pin::Pin;
+use futures::{future, Future, TryFutureExt};
 use lazy_static::lazy_static;
 use serde::{Deserialize, Serialize};
 use std::any::Any;
@@ -8,7 +9,6 @@ use std::collections::BTreeMap;
 use std::collections::HashMap;
 use std::ops::Fn;
 use std::sync::RwLock;
-use tokio::executor::current_thread::spawn;
 
 lazy_static! {
     pub static ref FETCH_HANDLER: RwLock<FetchHandler> =
@@ -63,21 +63,21 @@ impl Environment for Env {
     {
         let request = Request::from(request);
         REQUESTS.write().unwrap().push(request.to_owned());
-        Box::new(
-            FETCH_HANDLER.read().unwrap()(request).map(|resp| *resp.downcast::<OUT>().unwrap()),
-        )
+        Pin::new(Box::new(
+            FETCH_HANDLER.read().unwrap()(request).map_ok(|resp| *resp.downcast::<OUT>().unwrap()),
+        ))
     }
     fn get_storage<T>(key: &str) -> EnvFuture<Option<T>>
     where
         for<'de> T: 'static + Deserialize<'de>,
     {
-        Box::new(future::ok(
+        Pin::new(Box::new(future::ok(
             STORAGE
                 .read()
                 .unwrap()
                 .get(key)
                 .map(|data| serde_json::from_str(&data).unwrap()),
-        ))
+        )))
     }
     fn set_storage<T: Serialize>(key: &str, value: Option<&T>) -> EnvFuture<()> {
         let mut storage = STORAGE.write().unwrap();
@@ -85,13 +85,13 @@ impl Environment for Env {
             Some(v) => storage.insert(key.to_string(), serde_json::to_string(v).unwrap()),
             None => storage.remove(key),
         };
-        Box::new(future::ok(()))
+        Pin::new(Box::new(future::ok(())))
     }
     fn now() -> DateTime<Utc> {
         *NOW.read().unwrap()
     }
-    fn exec(fut: Box<dyn Future<Item = (), Error = ()>>) {
-        spawn(fut);
+    fn exec(future: Pin<Box<dyn Future<Output = ()> + Unpin>>) {
+        tokio_current_thread::spawn(future);
     }
 }
 

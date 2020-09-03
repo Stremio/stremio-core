@@ -10,9 +10,10 @@ use crate::types::api::{
 };
 use crate::types::library::LibBucket;
 use crate::types::profile::{Auth, Profile};
+use core::pin::Pin;
 use derivative::Derivative;
 use enclose::enclose;
-use futures::Future;
+use futures::{future, FutureExt, TryFutureExt};
 use serde::Serialize;
 use std::marker::PhantomData;
 
@@ -151,56 +152,58 @@ impl<Env: Environment + 'static> Update for Ctx<Env> {
 }
 
 fn pull_ctx_from_storage<Env: Environment + 'static>() -> Effect {
-    Box::new(
-        Env::get_storage(PROFILE_STORAGE_KEY)
-            .join3(
-                Env::get_storage(LIBRARY_RECENT_STORAGE_KEY),
-                Env::get_storage(LIBRARY_STORAGE_KEY),
-            )
-            .map_err(CtxError::from)
-            .then(|result| Ok(Msg::Internal(Internal::CtxStorageResult(result)))),
-    )
+    Pin::new(Box::new(
+        future::try_join3(
+            Env::get_storage(PROFILE_STORAGE_KEY),
+            Env::get_storage(LIBRARY_RECENT_STORAGE_KEY),
+            Env::get_storage(LIBRARY_STORAGE_KEY),
+        )
+        .map_err(CtxError::from)
+        .map(|result| Msg::Internal(Internal::CtxStorageResult(result))),
+    ))
 }
 
 fn authenticate<Env: Environment + 'static>(auth_request: &AuthRequest) -> Effect {
-    Box::new(
+    Pin::new(Box::new(
         fetch_api::<Env, _, _>(&APIRequest::Auth(auth_request.to_owned()))
-            .map(|AuthResponse { key, user }| Auth { key, user })
+            .map_ok(|AuthResponse { key, user }| Auth { key, user })
             .and_then(|auth| {
-                fetch_api::<Env, _, _>(&APIRequest::AddonCollectionGet {
-                    auth_key: auth.key.to_owned(),
-                    update: true,
-                })
-                .map(|CollectionResponse { addons, .. }| addons)
-                .join(fetch_api::<Env, _, _>(&DatastoreRequest {
-                    auth_key: auth.key.to_owned(),
-                    collection: LIBRARY_COLLECTION_NAME.to_owned(),
-                    command: DatastoreCommand::Get {
-                        ids: vec![],
-                        all: true,
-                    },
-                }))
-                .map(move |(addons, lib_items)| (auth, addons, lib_items))
+                future::try_join(
+                    fetch_api::<Env, _, _>(&APIRequest::AddonCollectionGet {
+                        auth_key: auth.key.to_owned(),
+                        update: true,
+                    })
+                    .map_ok(|CollectionResponse { addons, .. }| addons),
+                    fetch_api::<Env, _, _>(&DatastoreRequest {
+                        auth_key: auth.key.to_owned(),
+                        collection: LIBRARY_COLLECTION_NAME.to_owned(),
+                        command: DatastoreCommand::Get {
+                            ids: vec![],
+                            all: true,
+                        },
+                    }),
+                )
+                .map_ok(move |(addons, lib_items)| (auth, addons, lib_items))
             })
-            .then(enclose!((auth_request) move |result| {
-                Ok(Msg::Internal(Internal::CtxAuthResult(auth_request, result)))
+            .map(enclose!((auth_request) move |result| {
+                Msg::Internal(Internal::CtxAuthResult(auth_request, result))
             })),
-    )
+    ))
 }
 
 fn delete_session<Env: Environment + 'static>(auth_key: &str) -> Effect {
-    Box::new(
+    Pin::new(Box::new(
         fetch_api::<Env, _, SuccessResponse>(&APIRequest::Logout {
             auth_key: auth_key.to_owned(),
         })
-        .then(enclose!((auth_key.to_owned() => auth_key) move |result|
+        .map(enclose!((auth_key.to_owned() => auth_key) move |result|
             match result {
-                Ok(_) => Ok(Msg::Event(Event::SessionDeleted { auth_key })),
-                Err(error) => Err(Msg::Event(Event::Error {
+                Ok(_) => Msg::Event(Event::SessionDeleted { auth_key }),
+                Err(error) => Msg::Event(Event::Error {
                     error,
                     source: Box::new(Event::SessionDeleted { auth_key }),
-                })),
+                }),
             }
         )),
-    )
+    ))
 }

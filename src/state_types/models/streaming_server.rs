@@ -3,8 +3,9 @@ use crate::state_types::models::ctx::Ctx;
 use crate::state_types::msg::{Action, ActionStreamingServer, Internal, Msg};
 use crate::state_types::{Effects, EnvError, Environment, UpdateWithCtx};
 use crate::types::api::SuccessResponse;
+use core::pin::Pin;
 use enclose::enclose;
-use futures::Future;
+use futures::{Future, FutureExt, TryFutureExt};
 use http::request::Request;
 use serde::{Deserialize, Serialize};
 use url::Url;
@@ -49,18 +50,16 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for StreamingServer {
                     self.settings = next_settings;
                     self.base_url = next_base_url;
                     Effects::many(vec![
-                        Box::new(
-                            get_settings::<Env>(&url).then(enclose!((url) move |result| {
-                                Ok(Msg::Internal(Internal::StreamingServerSettingsResult(
+                        Pin::new(Box::new(get_settings::<Env>(&url).map(
+                            enclose!((url) move |result| {
+                                Msg::Internal(Internal::StreamingServerSettingsResult(
                                     url, result,
-                                )))
-                            })),
-                        ),
-                        Box::new(get_base_url::<Env>(&url).then(move |result| {
-                            Ok(Msg::Internal(Internal::StreamingServerBaseURLResult(
-                                url, result,
-                            )))
-                        })),
+                                ))
+                            }),
+                        ))),
+                        Pin::new(Box::new(get_base_url::<Env>(&url).map(move |result| {
+                            Msg::Internal(Internal::StreamingServerBaseURLResult(url, result))
+                        }))),
                     ])
                 } else {
                     Effects::none().unchanged()
@@ -74,12 +73,12 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for StreamingServer {
                 {
                     *ready_settings = settings.to_owned();
                     let url = url.to_owned();
-                    Effects::one(Box::new(update_settings::<Env>(&url, settings).then(
-                        move |result| {
-                            Ok(Msg::Internal(
-                                Internal::StreamingServerUpdateSettingsResult(url, result),
+                    Effects::one(Pin::new(Box::new(
+                        update_settings::<Env>(&url, settings).map(move |result| {
+                            Msg::Internal(Internal::StreamingServerUpdateSettingsResult(
+                                url, result,
                             ))
-                        },
+                        }),
                     )))
                 }
                 _ => Effects::none().unchanged(),
@@ -92,18 +91,16 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for StreamingServer {
                 self.settings = Some(Loadable::Loading);
                 self.base_url = Some(Loadable::Loading);
                 Effects::many(vec![
-                    Box::new(
-                        get_settings::<Env>(&url).then(enclose!((url) move |result| {
-                            Ok(Msg::Internal(Internal::StreamingServerSettingsResult(
+                    Pin::new(Box::new(get_settings::<Env>(&url).map(
+                        enclose!((url) move |result| {
+                            Msg::Internal(Internal::StreamingServerSettingsResult(
                                 url, result,
-                            )))
-                        })),
-                    ),
-                    Box::new(get_base_url::<Env>(&url).then(move |result| {
-                        Ok(Msg::Internal(Internal::StreamingServerBaseURLResult(
-                            url, result,
-                        )))
-                    })),
+                            ))
+                        }),
+                    ))),
+                    Pin::new(Box::new(get_base_url::<Env>(&url).map(move |result| {
+                        Msg::Internal(Internal::StreamingServerBaseURLResult(url, result))
+                    }))),
                 ])
             }
             Msg::Internal(Internal::StreamingServerSettingsResult(url, result)) => {
@@ -149,7 +146,7 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for StreamingServer {
 
 fn get_settings<Env: Environment + 'static>(
     url: &Url,
-) -> impl Future<Item = Settings, Error = EnvError> {
+) -> impl Future<Output = Result<Settings, EnvError>> {
     #[derive(Deserialize)]
     struct Resp {
         values: Settings,
@@ -158,12 +155,12 @@ fn get_settings<Env: Environment + 'static>(
     let request = Request::get(endpoint.as_str())
         .body(())
         .expect("request builder cannot fail");
-    Env::fetch::<_, Resp>(request).map(|resp| resp.values)
+    Env::fetch::<_, Resp>(request).map_ok(|resp| resp.values)
 }
 
 fn get_base_url<Env: Environment + 'static>(
     url: &Url,
-) -> impl Future<Item = Url, Error = EnvError> {
+) -> impl Future<Output = Result<Url, EnvError>> {
     #[derive(Deserialize)]
     struct Resp {
         #[serde(rename = "baseUrl")]
@@ -173,13 +170,13 @@ fn get_base_url<Env: Environment + 'static>(
     let request = Request::get(endpoint.as_str())
         .body(())
         .expect("request builder cannot fail");
-    Env::fetch::<_, Resp>(request).map(|resp| resp.base_url)
+    Env::fetch::<_, Resp>(request).map_ok(|resp| resp.base_url)
 }
 
 fn update_settings<Env: Environment + 'static>(
     url: &Url,
     settings: &Settings,
-) -> impl Future<Item = (), Error = EnvError> {
+) -> impl Future<Output = Result<(), EnvError>> {
     #[derive(Serialize)]
     #[serde(rename_all = "camelCase")]
     struct Body {
@@ -205,5 +202,5 @@ fn update_settings<Env: Environment + 'static>(
         .header("content-type", "application/json")
         .body(body)
         .expect("request builder cannot fail");
-    Env::fetch::<_, SuccessResponse>(request).map(|_| ())
+    Env::fetch::<_, SuccessResponse>(request).map_ok(|_| ())
 }

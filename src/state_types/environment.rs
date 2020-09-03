@@ -1,6 +1,7 @@
 use crate::addon_transport::{AddonHTTPTransport, AddonInterface};
 use crate::constants::API_URL;
 use chrono::{DateTime, Utc};
+use core::pin::Pin;
 use futures::Future;
 use http::Request;
 use serde::{Deserialize, Serialize};
@@ -9,14 +10,14 @@ use url::Url;
 
 pub type EnvError = Box<dyn Error>;
 
-pub type EnvFuture<T> = Box<dyn Future<Item = T, Error = EnvError>>;
+pub type EnvFuture<T> = Pin<Box<dyn Future<Output = Result<T, EnvError>> + Unpin>>;
 
 pub trait Environment {
     fn fetch<IN, OUT>(request: Request<IN>) -> EnvFuture<OUT>
     where
         IN: 'static + Serialize,
         for<'de> OUT: 'static + Deserialize<'de>;
-    fn exec(fut: Box<dyn Future<Item = (), Error = ()>>);
+    fn exec(future: Pin<Box<dyn Future<Output = ()> + Unpin>>);
     fn now() -> DateTime<Utc>;
     fn get_storage<T>(key: &str) -> EnvFuture<Option<T>>
     where

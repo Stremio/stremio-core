@@ -1,9 +1,10 @@
 use crate::state_types::msg::{Event, Msg};
 use crate::state_types::{Effects, Environment, Update};
+use core::pin::Pin;
 use derivative::Derivative;
 use enclose::enclose;
-use futures::sync::mpsc::{channel, Receiver, Sender};
-use futures::{future, Future};
+use futures::channel::mpsc::{channel, Receiver, Sender};
+use futures::{future, Future, FutureExt};
 use serde::Serialize;
 use std::marker::PhantomData;
 use std::sync::{Arc, RwLock};
@@ -39,7 +40,7 @@ impl<Env: Environment + 'static, M: Update + 'static> Runtime<Env, M> {
     pub fn dispatch_with<T: FnOnce(&mut M) -> Effects>(
         &self,
         with: T,
-    ) -> Box<dyn Future<Item = (), Error = ()>> {
+    ) -> Pin<Box<dyn Future<Output = ()> + Unpin>> {
         let handle = self.clone();
         let fx = with(&mut *self.app.write().expect("rwlock write failed"));
         // Send events
@@ -51,18 +52,14 @@ impl<Env: Environment + 'static, M: Update + 'static> Runtime<Env, M> {
         }
         // Handle next effects
         let all = fx.effects.into_iter().map(enclose!((handle) move |ft| ft
-            .then(enclose!((handle) move |r| {
-                let msg = match r {
-                    Ok(msg) => msg,
-                    Err(msg) => msg,
-                };
+            .then(enclose!((handle) move |msg| {
                 Env::exec(handle.dispatch(&msg));
-                future::ok(())
+                future::ready(())
             }))
         ));
-        Box::new(futures::future::join_all(all).map(|_| ()))
+        Pin::new(Box::new(futures::future::join_all(all).map(|_| ())))
     }
-    pub fn dispatch(&self, msg: &Msg) -> Box<dyn Future<Item = (), Error = ()>> {
+    pub fn dispatch(&self, msg: &Msg) -> Pin<Box<dyn Future<Output = ()> + Unpin>> {
         {
             let mut tx = self.tx.clone();
             if let Msg::Event(ev) = msg {

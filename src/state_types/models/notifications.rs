@@ -7,7 +7,8 @@ use crate::state_types::msg::*;
 use crate::state_types::*;
 use crate::types::addon::{ResourceRef, ResourceRequest};
 use crate::types::resource::MetaItem;
-use futures::{future, Future};
+use core::pin::Pin;
+use futures::FutureExt;
 use lazysort::SortedBy;
 use serde::*;
 
@@ -80,18 +81,16 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for Notifications {
                                             request: addon_req.to_owned(),
                                             content: ResourceContent::Loading,
                                         },
-                                        Box::new(
+                                        Pin::new(Box::new(
                                             Env::addon_transport(&addon_req.base)
                                                 .get(&addon_req.path)
-                                                .then(move |result| {
-                                                    future::ok(Msg::Internal(
-                                                        Internal::ResourceRequestResult(
-                                                            addon_req,
-                                                            Box::new(result),
-                                                        ),
+                                                .map(move |result| {
+                                                    Msg::Internal(Internal::ResourceRequestResult(
+                                                        addon_req,
+                                                        Box::new(result),
                                                     ))
                                                 }),
-                                        ),
+                                        )),
                                     )
                                 })
                                 .collect::<Vec<_>>()

@@ -2,7 +2,9 @@ use super::AddonInterface;
 use crate::state_types::{EnvError, EnvFuture, Environment};
 use crate::types::addon::*;
 use crate::types::resource::*;
-use futures::{future, Future};
+use core::pin::Pin;
+use futures::future;
+use futures::future::TryFutureExt;
 use http::Request;
 use serde::*;
 use serde_json::json;
@@ -94,10 +96,10 @@ impl From<SubtitlesResult> for ResourceResponse {
 
 #[allow(clippy::boxed_local)]
 fn map_response<T: 'static + Sized>(resp: JsonRPCResp<T>) -> EnvFuture<T> {
-    Box::new(match resp {
+    Pin::new(Box::new(match resp {
         JsonRPCResp::Result { result } => future::ok(result),
         JsonRPCResp::Error { error } => future::err(LegacyErr::JsonRPC(error).into()),
-    })
+    }))
 }
 
 //
@@ -121,41 +123,41 @@ impl<'a, T: Environment> AddonInterface for AddonLegacyTransport<'a, T> {
     fn get(&self, path: &ResourceRef) -> EnvFuture<ResourceResponse> {
         let fetch_req = match build_legacy_req(self.transport_url, path) {
             Ok(r) => r,
-            Err(e) => return Box::new(future::err(e)),
+            Err(e) => return Pin::new(Box::new(future::err(e))),
         };
 
         match &path.resource as &str {
-            "catalog" => Box::new(
+            "catalog" => Pin::new(Box::new(
                 T::fetch::<_, JsonRPCResp<Vec<MetaItemPreview>>>(fetch_req)
                     .and_then(map_response)
-                    .map(Into::into),
-            ),
-            "meta" => Box::new(
+                    .map_ok(Into::into),
+            )),
+            "meta" => Pin::new(Box::new(
                 T::fetch::<_, JsonRPCResp<MetaItem>>(fetch_req)
                     .and_then(map_response)
-                    .map(Into::into),
-            ),
-            "stream" => Box::new(
+                    .map_ok(Into::into),
+            )),
+            "stream" => Pin::new(Box::new(
                 T::fetch::<_, JsonRPCResp<Vec<Stream>>>(fetch_req)
                     .and_then(map_response)
-                    .map(Into::into),
-            ),
-            "subtitles" => Box::new(
+                    .map_ok(Into::into),
+            )),
+            "subtitles" => Pin::new(Box::new(
                 T::fetch::<_, JsonRPCResp<SubtitlesResult>>(fetch_req)
                     .and_then(map_response)
-                    .map(Into::into),
-            ),
-            _ => Box::new(future::err(LegacyErr::UnsupportedResource.into())),
+                    .map_ok(Into::into),
+            )),
+            _ => Pin::new(Box::new(future::err(LegacyErr::UnsupportedResource.into()))),
         }
     }
     fn manifest(&self) -> EnvFuture<Manifest> {
         let url = format!("{}/q.json?b={}", self.transport_url, MANIFEST_REQUEST_PARAM);
         let r = Request::get(url).body(()).expect("builder cannot fail");
-        Box::new(
+        Pin::new(Box::new(
             T::fetch::<_, JsonRPCResp<LegacyManifestResp>>(r)
                 .and_then(map_response)
-                .map(Into::into),
-        )
+                .map_ok(Into::into),
+        ))
     }
 }
 

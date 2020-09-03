@@ -1,11 +1,11 @@
 use crate::state_types::models::ctx::CtxError;
 use crate::state_types::Environment;
 use crate::types::api::{APIMethodName, APIResult};
-use futures::Future;
+use futures::{future, Future, TryFutureExt};
 use http::Request;
 use serde::{Deserialize, Serialize};
 
-pub fn fetch_api<Env, REQ, RESP>(api_request: &REQ) -> impl Future<Item = RESP, Error = CtxError>
+pub fn fetch_api<Env, REQ, RESP>(api_request: &REQ) -> impl Future<Output = Result<RESP, CtxError>>
 where
     Env: Environment + 'static,
     REQ: APIMethodName + Clone + Serialize + 'static,
@@ -22,7 +22,7 @@ where
     Env::fetch::<_, _>(request)
         .map_err(CtxError::from)
         .and_then(|result| match result {
-            APIResult::Ok { result } => Ok(result),
-            APIResult::Err { error } => Err(CtxError::from(error)),
+            APIResult::Ok { result } => future::ready(Ok(result)),
+            APIResult::Err { error } => future::ready(Err(CtxError::from(error))),
         })
 }

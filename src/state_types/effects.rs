@@ -1,7 +1,8 @@
 use crate::state_types::msg::Msg;
+use core::pin::Pin;
 use futures::{future, Future};
 
-pub type Effect = Box<dyn Future<Item = Msg, Error = Msg>>;
+pub type Effect = Pin<Box<dyn Future<Output = Msg> + Unpin>>;
 
 pub struct Effects {
     pub effects: Vec<Effect>,
@@ -16,9 +17,9 @@ impl Effects {
         }
     }
 
-    pub fn one(x: Effect) -> Self {
+    pub fn one(effect: Effect) -> Self {
         Effects {
-            effects: vec![x],
+            effects: vec![effect],
             has_changed: true,
         }
     }
@@ -30,8 +31,8 @@ impl Effects {
         }
     }
 
-    pub fn msg(x: Msg) -> Self {
-        Effects::one(Box::new(future::ok(x)))
+    pub fn msg(msg: Msg) -> Self {
+        Effects::one(Pin::new(Box::new(future::ready(msg))))
     }
 
     pub fn unchanged(mut self) -> Self {
@@ -39,9 +40,9 @@ impl Effects {
         self
     }
 
-    pub fn join(mut self, mut x: Effects) -> Self {
-        self.has_changed = self.has_changed || x.has_changed;
-        self.effects.append(&mut x.effects);
+    pub fn join(mut self, mut effects: Effects) -> Self {
+        self.has_changed = self.has_changed || effects.has_changed;
+        self.effects.append(&mut effects.effects);
         self
     }
 }

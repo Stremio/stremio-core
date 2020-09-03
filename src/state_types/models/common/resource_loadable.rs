@@ -2,7 +2,8 @@ use crate::state_types::models::common::Loadable;
 use crate::state_types::msg::{Internal, Msg};
 use crate::state_types::{Effect, Effects, EnvError, Environment};
 use crate::types::addon::{AggrRequest, Descriptor, ResourceRequest, ResourceResponse};
-use futures::Future;
+use core::pin::Pin;
+use futures::FutureExt;
 use serde::Serialize;
 use std::convert::TryFrom;
 
@@ -67,16 +68,16 @@ where
                     request: request.to_owned(),
                     content: ResourceContent::Loading,
                 });
-                Effects::one(Box::new(
+                Effects::one(Pin::new(Box::new(
                     Env::addon_transport(&request.base)
                         .get(&request.path)
-                        .then(move |result| {
-                            Ok(Msg::Internal(Internal::ResourceRequestResult(
+                        .map(move |result| {
+                            Msg::Internal(Internal::ResourceRequestResult(
                                 request,
                                 Box::new(result),
-                            )))
+                            ))
                         }),
-                ))
+                )))
             } else {
                 Effects::none().unchanged()
             }
@@ -145,13 +146,15 @@ where
                                 request: request.to_owned(),
                                 content: ResourceContent::Loading,
                             },
-                            Box::new(Env::addon_transport(&request.base).get(&request.path).then(
-                                move |result| {
-                                    Ok(Msg::Internal(Internal::ResourceRequestResult(
-                                        request,
-                                        Box::new(result),
-                                    )))
-                                },
+                            Pin::new(Box::new(
+                                Env::addon_transport(&request.base).get(&request.path).map(
+                                    move |result| {
+                                        Msg::Internal(Internal::ResourceRequestResult(
+                                            request,
+                                            Box::new(result),
+                                        ))
+                                    },
+                                ),
                             )),
                         )
                     })
