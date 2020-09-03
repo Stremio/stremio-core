@@ -6,11 +6,11 @@ use crate::types::api::{APIResult, SuccessResponse, True};
 use crate::types::library::LibBucket;
 use crate::types::profile::{Auth, GDPRConsent, Profile, User};
 use crate::unit_tests::{default_fetch_handler, Env, Request, FETCH_HANDLER, REQUESTS, STORAGE};
+use core::pin::Pin;
 use futures::future;
 use std::any::Any;
 use std::fmt::Debug;
 use stremio_derive::Model;
-use tokio::runtime::current_thread::run;
 
 #[test]
 fn actionctx_logout() {
@@ -26,9 +26,9 @@ fn actionctx_logout() {
                 && method == "POST"
                 && body == "{\"type\":\"Logout\",\"authKey\":\"auth_key\"}" =>
             {
-                Box::new(future::ok(Box::new(APIResult::Ok {
+                Pin::new(Box::new(future::ok(Box::new(APIResult::Ok {
                     result: SuccessResponse { success: True {} },
-                }) as Box<dyn Any>))
+                }) as Box<dyn Any>)))
             }
             _ => default_fetch_handler(request),
         }
@@ -81,7 +81,9 @@ fn actionctx_logout() {
         },
         1000,
     );
-    run(runtime.dispatch(&Msg::Action(Action::Ctx(ActionCtx::Logout))));
+    tokio_current_thread::block_on_all(
+        runtime.dispatch(&Msg::Action(Action::Ctx(ActionCtx::Logout))),
+    );
     assert_eq!(
         runtime.app.read().unwrap().ctx.profile,
         Default::default(),

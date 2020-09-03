@@ -9,11 +9,11 @@ use crate::types::library::{LibBucket, LibItem};
 use crate::types::profile::{Auth, GDPRConsent, Profile, User};
 use crate::unit_tests::{default_fetch_handler, Env, Request, FETCH_HANDLER, REQUESTS, STORAGE};
 use chrono::prelude::{TimeZone, Utc};
+use core::pin::Pin;
 use futures::future;
 use std::any::Any;
 use std::fmt::Debug;
 use stremio_derive::Model;
-use tokio::runtime::current_thread::run;
 
 #[test]
 fn actionctx_authenticate_login() {
@@ -29,7 +29,7 @@ fn actionctx_authenticate_login() {
                 && method == "POST"
                 && body == "{\"type\":\"Auth\",\"type\":\"Login\",\"email\":\"user_email\",\"password\":\"user_password\"}" =>
             {
-                Box::new(future::ok(Box::new(APIResult::Ok {
+                Pin::new(Box::new(future::ok(Box::new(APIResult::Ok {
                     result: AuthResponse {
                         key: "auth_key".to_owned(),
                         user: User {
@@ -47,7 +47,7 @@ fn actionctx_authenticate_login() {
                             },
                         }
                     },
-                }) as Box<dyn Any>))
+                }) as Box<dyn Any>)))
             }
             Request {
                 url, method, body, ..
@@ -55,12 +55,12 @@ fn actionctx_authenticate_login() {
                 && method == "POST"
                 && body == "{\"type\":\"AddonCollectionGet\",\"authKey\":\"auth_key\",\"update\":true}" =>
             {
-                Box::new(future::ok(Box::new(APIResult::Ok {
+                Pin::new(Box::new(future::ok(Box::new(APIResult::Ok {
                     result: CollectionResponse {
                         addons: vec![],
                         last_modified: Env::now(),
                     },
-                }) as Box<dyn Any>))
+                }) as Box<dyn Any>)))
             }
             Request {
                 url, method, body, ..
@@ -68,9 +68,9 @@ fn actionctx_authenticate_login() {
                 && method == "POST"
                 && body == "{\"authKey\":\"auth_key\",\"collection\":\"libraryItem\",\"ids\":[],\"all\":true}" =>
             {
-                Box::new(future::ok(Box::new(APIResult::Ok {
+                Pin::new(Box::new(future::ok(Box::new(APIResult::Ok {
                     result: Vec::<LibItem>::new(),
-                }) as Box<dyn Any>))
+                }) as Box<dyn Any>)))
             }
             _ => default_fetch_handler(request),
         }
@@ -78,14 +78,12 @@ fn actionctx_authenticate_login() {
     Env::reset();
     *FETCH_HANDLER.write().unwrap() = Box::new(fetch_handler);
     let (runtime, _) = Runtime::<Env, Model>::new(Model::default(), 1000);
-    run(
-        runtime.dispatch(&Msg::Action(Action::Ctx(ActionCtx::Authenticate(
-            AuthRequest::Login {
-                email: "user_email".into(),
-                password: "user_password".into(),
-            },
-        )))),
-    );
+    tokio_current_thread::block_on_all(runtime.dispatch(&Msg::Action(Action::Ctx(
+        ActionCtx::Authenticate(AuthRequest::Login {
+            email: "user_email".into(),
+            password: "user_password".into(),
+        }),
+    ))));
     assert_eq!(
         runtime.app.read().unwrap().ctx.profile,
         Profile {
@@ -219,7 +217,7 @@ fn actionctx_authenticate_register() {
                 && method == "POST"
                 && body == "{\"type\":\"Auth\",\"type\":\"Register\",\"email\":\"user_email\",\"password\":\"user_password\",\"gdpr_consent\":{\"tos\":true,\"privacy\":true,\"marketing\":false,\"from\":\"web\",\"time\":\"2020-01-01T00:00:00Z\"}}" =>
             {
-                Box::new(future::ok(Box::new(APIResult::Ok {
+                Pin::new( Box::new(future::ok(Box::new(APIResult::Ok {
                     result: AuthResponse {
                         key: "auth_key".to_owned(),
                         user: User {
@@ -237,7 +235,7 @@ fn actionctx_authenticate_register() {
                             },
                         }
                     },
-                }) as Box<dyn Any>))
+                }) as Box<dyn Any>)))
             }
             Request {
                 url, method, body, ..
@@ -245,12 +243,12 @@ fn actionctx_authenticate_register() {
                 && method == "POST"
                 && body == "{\"type\":\"AddonCollectionGet\",\"authKey\":\"auth_key\",\"update\":true}" =>
             {
-                Box::new(future::ok(Box::new(APIResult::Ok {
+                Pin::new(Box::new(future::ok(Box::new(APIResult::Ok {
                     result: CollectionResponse {
                         addons: vec![],
                         last_modified: Env::now(),
                     },
-                }) as Box<dyn Any>))
+                }) as Box<dyn Any>)))
             }
             Request {
                 url, method, body, ..
@@ -258,9 +256,9 @@ fn actionctx_authenticate_register() {
                 && method == "POST"
                 && body == "{\"authKey\":\"auth_key\",\"collection\":\"libraryItem\",\"ids\":[],\"all\":true}" =>
             {
-                Box::new(future::ok(Box::new(APIResult::Ok {
+                Pin::new(Box::new(future::ok(Box::new(APIResult::Ok {
                     result: Vec::<LibItem>::new(),
-                }) as Box<dyn Any>))
+                }) as Box<dyn Any>)))
             }
             _ => default_fetch_handler(request),
         }
@@ -268,23 +266,21 @@ fn actionctx_authenticate_register() {
     Env::reset();
     *FETCH_HANDLER.write().unwrap() = Box::new(fetch_handler);
     let (runtime, _) = Runtime::<Env, Model>::new(Model::default(), 1000);
-    run(
-        runtime.dispatch(&Msg::Action(Action::Ctx(ActionCtx::Authenticate(
-            AuthRequest::Register {
-                email: "user_email".into(),
-                password: "user_password".into(),
-                gdpr_consent: GDPRConsentWithTime {
-                    gdpr_consent: GDPRConsent {
-                        tos: true,
-                        privacy: true,
-                        marketing: false,
-                        from: "web".to_owned(),
-                    },
-                    time: Utc.ymd(2020, 1, 1).and_hms_milli(0, 0, 0, 0),
+    tokio_current_thread::block_on_all(runtime.dispatch(&Msg::Action(Action::Ctx(
+        ActionCtx::Authenticate(AuthRequest::Register {
+            email: "user_email".into(),
+            password: "user_password".into(),
+            gdpr_consent: GDPRConsentWithTime {
+                gdpr_consent: GDPRConsent {
+                    tos: true,
+                    privacy: true,
+                    marketing: false,
+                    from: "web".to_owned(),
                 },
+                time: Utc.ymd(2020, 1, 1).and_hms_milli(0, 0, 0, 0),
             },
-        )))),
-    );
+        }),
+    ))));
     assert_eq!(
         runtime.app.read().unwrap().ctx.profile,
         Profile {

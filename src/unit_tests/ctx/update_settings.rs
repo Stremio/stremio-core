@@ -6,7 +6,6 @@ use crate::types::profile::{Profile, Settings};
 use crate::unit_tests::{Env, REQUESTS, STORAGE};
 use std::fmt::Debug;
 use stremio_derive::Model;
-use tokio::runtime::current_thread::run;
 
 #[test]
 fn actionctx_updatesettings() {
@@ -21,11 +20,9 @@ fn actionctx_updatesettings() {
     };
     Env::reset();
     let (runtime, _) = Runtime::<Env, Model>::new(Model::default(), 1000);
-    run(
-        runtime.dispatch(&Msg::Action(Action::Ctx(ActionCtx::UpdateSettings(
-            settings.to_owned(),
-        )))),
-    );
+    tokio_current_thread::block_on_all(runtime.dispatch(&Msg::Action(Action::Ctx(
+        ActionCtx::UpdateSettings(settings.to_owned()),
+    ))));
     assert_eq!(
         runtime.app.read().unwrap().ctx.profile.settings,
         settings,
@@ -76,11 +73,9 @@ fn actionctx_updatesettings_not_changed() {
         },
         1000,
     );
-    run(
-        runtime.dispatch(&Msg::Action(Action::Ctx(ActionCtx::UpdateSettings(
-            settings.to_owned(),
-        )))),
-    );
+    tokio_current_thread::block_on_all(runtime.dispatch(&Msg::Action(Action::Ctx(
+        ActionCtx::UpdateSettings(settings.to_owned()),
+    ))));
     assert_eq!(
         runtime.app.read().unwrap().ctx.profile.settings,
         settings,

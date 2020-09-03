@@ -6,12 +6,12 @@ use crate::types::addon::{Descriptor, Manifest};
 use crate::types::api::{APIResult, SuccessResponse, True};
 use crate::types::profile::{Auth, GDPRConsent, Profile, User};
 use crate::unit_tests::{default_fetch_handler, Env, Request, FETCH_HANDLER, REQUESTS, STORAGE};
+use core::pin::Pin;
 use futures::future;
 use semver::Version;
 use std::any::Any;
 use std::fmt::Debug;
 use stremio_derive::Model;
-use tokio::runtime::current_thread::run;
 use url::Url;
 
 #[test]
@@ -52,11 +52,9 @@ fn actionctx_installaddon_install() {
         },
         1000,
     );
-    run(
-        runtime.dispatch(&Msg::Action(Action::Ctx(ActionCtx::InstallAddon(
-            addon.to_owned(),
-        )))),
-    );
+    tokio_current_thread::block_on_all(runtime.dispatch(&Msg::Action(Action::Ctx(
+        ActionCtx::InstallAddon(addon.to_owned()),
+    ))));
     assert_eq!(
         runtime.app.read().unwrap().ctx.profile.addons,
         vec![addon.to_owned()],
@@ -92,9 +90,9 @@ fn actionctx_installaddon_install_with_user() {
                 && method == "POST"
                 && body == "{\"type\":\"AddonCollectionSet\",\"authKey\":\"auth_key\",\"addons\":[{\"manifest\":{\"id\":\"id\",\"version\":\"0.0.1\",\"name\":\"name\",\"contactEmail\":null,\"description\":null,\"logo\":null,\"background\":null,\"types\":[],\"resources\":[],\"idPrefixes\":null,\"catalogs\":[],\"addonCatalogs\":[],\"behaviorHints\":{}},\"transportUrl\":\"https://transport_url/\",\"flags\":{\"official\":false,\"protected\":false}}]}" =>
             {
-                Box::new(future::ok(Box::new(APIResult::Ok {
+                Pin::new(Box::new(future::ok(Box::new(APIResult::Ok {
                     result: SuccessResponse { success: True {} },
-                }) as Box<dyn Any>))
+                }) as Box<dyn Any>)))
             }
             _ => default_fetch_handler(request),
         }
@@ -149,11 +147,9 @@ fn actionctx_installaddon_install_with_user() {
         },
         1000,
     );
-    run(
-        runtime.dispatch(&Msg::Action(Action::Ctx(ActionCtx::InstallAddon(
-            addon.to_owned(),
-        )))),
-    );
+    tokio_current_thread::block_on_all(runtime.dispatch(&Msg::Action(Action::Ctx(
+        ActionCtx::InstallAddon(addon.to_owned()),
+    ))));
     assert_eq!(
         runtime.app.read().unwrap().ctx.profile.addons,
         vec![addon.to_owned()],
@@ -265,11 +261,9 @@ fn actionctx_installaddon_update() {
         },
         1000,
     );
-    run(
-        runtime.dispatch(&Msg::Action(Action::Ctx(ActionCtx::InstallAddon(
-            addon.to_owned(),
-        )))),
-    );
+    tokio_current_thread::block_on_all(runtime.dispatch(&Msg::Action(Action::Ctx(
+        ActionCtx::InstallAddon(addon.to_owned()),
+    ))));
     assert_eq!(
         runtime.app.read().unwrap().ctx.profile.addons,
         vec![addon.to_owned(), addon2.to_owned()],
@@ -335,11 +329,9 @@ fn actionctx_installaddon_already_installed() {
         },
         1000,
     );
-    run(
-        runtime.dispatch(&Msg::Action(Action::Ctx(ActionCtx::InstallAddon(
-            addon.to_owned(),
-        )))),
-    );
+    tokio_current_thread::block_on_all(runtime.dispatch(&Msg::Action(Action::Ctx(
+        ActionCtx::InstallAddon(addon.to_owned()),
+    ))));
     assert_eq!(
         runtime.app.read().unwrap().ctx.profile.addons,
         vec![addon.to_owned()],

@@ -6,12 +6,12 @@ use crate::types::addon::{Descriptor, DescriptorFlags, Manifest};
 use crate::types::api::{APIResult, SuccessResponse, True};
 use crate::types::profile::{Auth, GDPRConsent, Profile, User};
 use crate::unit_tests::{default_fetch_handler, Env, Request, FETCH_HANDLER, REQUESTS, STORAGE};
+use core::pin::Pin;
 use futures::future;
 use semver::Version;
 use std::any::Any;
 use std::fmt::Debug;
 use stremio_derive::Model;
-use tokio::runtime::current_thread::run;
 use url::Url;
 
 #[test]
@@ -56,11 +56,9 @@ fn actionctx_uninstalladdon() {
         },
         1000,
     );
-    run(
-        runtime.dispatch(&Msg::Action(Action::Ctx(ActionCtx::UninstallAddon(
-            Url::parse("https://transport_url").unwrap(),
-        )))),
-    );
+    tokio_current_thread::block_on_all(runtime.dispatch(&Msg::Action(Action::Ctx(
+        ActionCtx::UninstallAddon(Url::parse("https://transport_url").unwrap()),
+    ))));
     assert!(
         runtime.app.read().unwrap().ctx.profile.addons.is_empty(),
         "addons updated successfully in memory"
@@ -98,9 +96,9 @@ fn actionctx_uninstalladdon_with_user() {
                 && method == "POST"
                 && body == "{\"type\":\"AddonCollectionSet\",\"authKey\":\"auth_key\",\"addons\":[]}" =>
             {
-                Box::new(future::ok(Box::new(APIResult::Ok {
+                Pin::new(Box::new(future::ok(Box::new(APIResult::Ok {
                     result: SuccessResponse { success: True {} },
-                }) as Box<dyn Any>))
+                }) as Box<dyn Any>)))
             }
             _ => default_fetch_handler(request),
         }
@@ -159,11 +157,9 @@ fn actionctx_uninstalladdon_with_user() {
         },
         1000,
     );
-    run(
-        runtime.dispatch(&Msg::Action(Action::Ctx(ActionCtx::UninstallAddon(
-            Url::parse("https://transport_url").unwrap(),
-        )))),
-    );
+    tokio_current_thread::block_on_all(runtime.dispatch(&Msg::Action(Action::Ctx(
+        ActionCtx::UninstallAddon(Url::parse("https://transport_url").unwrap()),
+    ))));
     assert!(
         runtime.app.read().unwrap().ctx.profile.addons.is_empty(),
         "addons updated successfully in memory"
@@ -246,11 +242,9 @@ fn actionctx_uninstalladdon_protected() {
         },
         1000,
     );
-    run(
-        runtime.dispatch(&Msg::Action(Action::Ctx(ActionCtx::UninstallAddon(
-            Url::parse("https://transport_url").unwrap(),
-        )))),
-    );
+    tokio_current_thread::block_on_all(runtime.dispatch(&Msg::Action(Action::Ctx(
+        ActionCtx::UninstallAddon(Url::parse("https://transport_url").unwrap()),
+    ))));
     assert_eq!(
         runtime.app.read().unwrap().ctx.profile.addons,
         vec![addon.to_owned()],
@@ -315,11 +309,9 @@ fn actionctx_uninstalladdon_not_installed() {
         },
         1000,
     );
-    run(
-        runtime.dispatch(&Msg::Action(Action::Ctx(ActionCtx::UninstallAddon(
-            Url::parse("https://transport_url2").unwrap(),
-        )))),
-    );
+    tokio_current_thread::block_on_all(runtime.dispatch(&Msg::Action(Action::Ctx(
+        ActionCtx::UninstallAddon(Url::parse("https://transport_url2").unwrap()),
+    ))));
     assert_eq!(
         runtime.app.read().unwrap().ctx.profile.addons,
         vec![addon.to_owned()],

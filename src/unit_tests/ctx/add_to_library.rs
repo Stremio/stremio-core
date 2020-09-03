@@ -11,11 +11,11 @@ use crate::unit_tests::{
 };
 use chrono::prelude::TimeZone;
 use chrono::Utc;
+use core::pin::Pin;
 use futures::future;
 use std::any::Any;
 use std::fmt::Debug;
 use stremio_derive::Model;
-use tokio::runtime::current_thread::run;
 
 #[test]
 fn actionctx_addtolibrary() {
@@ -31,9 +31,9 @@ fn actionctx_addtolibrary() {
                 && method == "POST"
                 && body == "{\"authKey\":\"auth_key\",\"collection\":\"libraryItem\",\"changes\":[{\"_id\":\"id\",\"name\":\"name\",\"type\":\"type_name\",\"poster\":null,\"posterShape\":\"poster\",\"removed\":false,\"temp\":false,\"_ctime\":\"2020-01-01T00:00:00Z\",\"_mtime\":\"2020-01-01T00:00:00Z\",\"state\":{\"lastWatched\":null,\"timeWatched\":0,\"timeOffset\":0,\"overallTimeWatched\":0,\"timesWatched\":0,\"flaggedWatched\":0,\"duration\":0,\"video_id\":null,\"watched\":null,\"lastVidReleased\":null,\"noNotif\":false},\"behaviorHints\":{\"defaultVideoId\":null}}]}" =>
             {
-                Box::new(future::ok(Box::new(APIResult::Ok {
+                Pin::new(Box::new(future::ok(Box::new(APIResult::Ok {
                     result: SuccessResponse { success: True {} },
-                }) as Box<dyn Any>))
+                }) as Box<dyn Any>)))
             }
             _ => default_fetch_handler(request),
         }
@@ -100,11 +100,9 @@ fn actionctx_addtolibrary() {
         },
         1000,
     );
-    run(
-        runtime.dispatch(&Msg::Action(Action::Ctx(ActionCtx::AddToLibrary(
-            meta_preview.to_owned(),
-        )))),
-    );
+    tokio_current_thread::block_on_all(runtime.dispatch(&Msg::Action(Action::Ctx(
+        ActionCtx::AddToLibrary(meta_preview.to_owned()),
+    ))));
     assert_eq!(
         runtime.app.read().unwrap().ctx.library.items.len(),
         1,
@@ -224,11 +222,9 @@ fn actionctx_addtolibrary_already_added() {
         },
         1000,
     );
-    run(
-        runtime.dispatch(&Msg::Action(Action::Ctx(ActionCtx::AddToLibrary(
-            meta_preview.to_owned(),
-        )))),
-    );
+    tokio_current_thread::block_on_all(runtime.dispatch(&Msg::Action(Action::Ctx(
+        ActionCtx::AddToLibrary(meta_preview.to_owned()),
+    ))));
     assert_eq!(
         runtime.app.read().unwrap().ctx.library.items.len(),
         1,
