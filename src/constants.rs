@@ -16,6 +16,7 @@ pub const CATALOG_PAGE_SIZE: usize = 100;
 pub const CATALOG_PREVIEW_SIZE: usize = 10;
 pub const LIBRARY_RECENT_COUNT: usize = 200;
 pub const WATCHED_THRESHOLD_COEF: f64 = 0.7;
+pub const SCHEMA_VERSION: usize = 1;
 
 lazy_static! {
     pub static ref API_URL: Url =
