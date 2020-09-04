@@ -1,5 +1,7 @@
-pub mod env;
-pub mod models;
+mod models;
 
-pub mod app_model;
-pub mod stremio_core_web;
+mod app_model;
+mod stremio_core_web;
+
+mod env;
+use env::*;

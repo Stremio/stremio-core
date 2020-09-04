@@ -1,8 +1,8 @@
 use crate::app_model::{AppModel, ModelFieldName};
-use crate::env::Env;
+use crate::Env;
 use console_error_panic_hook;
-use futures::future;
-use futures::stream::Stream;
+use core::pin::Pin;
+use futures::{future, StreamExt};
 use std::panic;
 use stremio_core::state_types::msg::{Action, Msg};
 use stremio_core::state_types::{Environment, Runtime, Update, UpdateWithCtx};
@@ -20,10 +20,10 @@ impl StremioCoreWeb {
         panic::set_hook(Box::new(console_error_panic_hook::hook));
         let app = AppModel::default();
         let (runtime, rx) = Runtime::<Env, AppModel>::new(app, 1000);
-        Env::exec(Box::new(rx.for_each(move |msg| {
+        Env::exec(Pin::new(Box::new(rx.for_each(move |msg| {
             let _ = emit.call1(&JsValue::NULL, &JsValue::from_serde(&msg).unwrap());
-            future::ok(())
-        })));
+            future::ready(())
+        }))));
         StremioCoreWeb { runtime }
     }
     pub fn dispatch(&self, action: &JsValue, model_field: &JsValue) -> JsValue {
