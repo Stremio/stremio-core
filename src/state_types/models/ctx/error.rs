@@ -1,5 +1,5 @@
 use crate::state_types::EnvError;
-use crate::types::api::APIErr;
+use crate::types::api::APIError;
 use serde::Serialize;
 use std::error::Error;
 use std::fmt;
@@ -38,8 +38,8 @@ impl Error for CtxError {
     }
 }
 
-impl From<APIErr> for CtxError {
-    fn from(error: APIErr) -> Self {
+impl From<APIError> for CtxError {
+    fn from(error: APIError) -> Self {
         CtxError::API {
             message: error.message.to_owned(),
             code: error.code.to_owned(),

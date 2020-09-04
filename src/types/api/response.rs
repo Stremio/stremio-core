@@ -6,7 +6,7 @@ use serde::de::Unexpected;
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
-pub struct APIErr {
+pub struct APIError {
     pub message: String,
     pub code: u64,
 }
@@ -14,7 +14,7 @@ pub struct APIErr {
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(untagged)]
 pub enum APIResult<T> {
-    Err { error: APIErr },
+    Err { error: APIError },
     Ok { result: T },
 }
 
