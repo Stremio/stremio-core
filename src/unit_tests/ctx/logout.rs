@@ -9,7 +9,6 @@ use crate::unit_tests::{default_fetch_handler, Env, Request, FETCH_HANDLER, REQU
 use core::pin::Pin;
 use futures::future;
 use std::any::Any;
-use std::fmt::Debug;
 use stremio_derive::Model;
 
 #[test]

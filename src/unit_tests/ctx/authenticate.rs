@@ -12,7 +12,6 @@ use chrono::prelude::{TimeZone, Utc};
 use core::pin::Pin;
 use futures::future;
 use std::any::Any;
-use std::fmt::Debug;
 use stremio_derive::Model;
 
 #[test]

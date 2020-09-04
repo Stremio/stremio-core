@@ -4,7 +4,6 @@ use crate::state_types::msg::{Action, ActionCtx, Msg};
 use crate::state_types::Runtime;
 use crate::types::profile::{Profile, Settings};
 use crate::unit_tests::{Env, REQUESTS, STORAGE};
-use std::fmt::Debug;
 use stremio_derive::Model;
 
 #[test]

@@ -9,7 +9,6 @@ use core::pin::Pin;
 use futures::future;
 use semver::Version;
 use std::any::Any;
-use std::fmt::Debug;
 use stremio_derive::Model;
 use url::Url;
 

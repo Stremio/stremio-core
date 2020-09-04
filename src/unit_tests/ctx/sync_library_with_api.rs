@@ -13,7 +13,6 @@ use futures::future;
 use lazy_static::lazy_static;
 use serde::Deserialize;
 use std::any::Any;
-use std::fmt::Debug;
 use stremio_derive::Model;
 
 #[test]
