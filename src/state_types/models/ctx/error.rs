@@ -11,6 +11,7 @@ pub enum OtherError {
     AddonAlreadyInstalled,
     AddonNotInstalled,
     AddonIsProtected,
+    StorageSchemaVersionDowngrade,
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -63,6 +64,7 @@ impl From<OtherError> for CtxError {
                 OtherError::AddonAlreadyInstalled => 802,
                 OtherError::AddonNotInstalled => 803,
                 OtherError::AddonIsProtected => 804,
+                OtherError::StorageSchemaVersionDowngrade => 805,
             },
             message: match &error {
                 OtherError::UserNotLoggedIn => "User is not logged in".to_owned(),
@@ -70,6 +72,9 @@ impl From<OtherError> for CtxError {
                 OtherError::AddonAlreadyInstalled => "Addon is already installed".to_owned(),
                 OtherError::AddonNotInstalled => "Addon is not installed".to_owned(),
                 OtherError::AddonIsProtected => "Addon is protected".to_owned(),
+                OtherError::StorageSchemaVersionDowngrade => {
+                    "Storage schema version downgrade now allowed".to_owned()
+                }
             },
         }
     }
