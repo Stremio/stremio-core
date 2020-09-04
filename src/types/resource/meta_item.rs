@@ -1,5 +1,6 @@
-use crate::types::resource::{PosterShape, Stream, Video};
+use crate::types::resource::{Stream, Video};
 use chrono::{DateTime, Utc};
+use derivative::Derivative;
 use serde::{Deserialize, Serialize};
 use url::Url;
 
@@ -51,6 +52,17 @@ pub struct MetaItemPreview {
     pub trailers: Vec<Stream>,
     #[serde(default)]
     pub behavior_hints: MetaItemBehaviorHints,
+}
+
+#[derive(Derivative, Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derivative(Default)]
+#[serde(rename_all = "camelCase")]
+pub enum PosterShape {
+    Square,
+    Landscape,
+    #[derivative(Default)]
+    #[serde(other)]
+    Poster,
 }
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
