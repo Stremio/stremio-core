@@ -67,9 +67,9 @@ pub enum PosterShape {
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Link {
-    name: String,
-    category: String,
-    url: Url,
+    pub name: String,
+    pub category: String,
+    pub url: Url,
 }
 
 #[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize)]
