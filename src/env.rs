@@ -129,5 +129,5 @@ fn js_error_message(error: JsValue) -> String {
     error
         .dyn_into::<js_sys::Error>()
         .map(|error| String::from(error.message()))
-        .unwrap_or("Unknown Error".to_owned())
+        .unwrap_or_else(|_| "Unknown Error".to_owned())
 }

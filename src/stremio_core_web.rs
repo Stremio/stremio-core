@@ -1,6 +1,5 @@
 use crate::app_model::{AppModel, ModelFieldName};
 use crate::Env;
-use console_error_panic_hook;
 use core::pin::Pin;
 use futures::{future, StreamExt};
 use std::panic;
