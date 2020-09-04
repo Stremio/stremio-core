@@ -26,7 +26,29 @@ fn deserialize_resource_response_metas() {
             featured_video_id: None,
         },
     }];
-    let metas_json = r#"{"metas":[{"id":"id","type":"type_name","name":"name","poster":null,"logo":null,"description":null,"releaseInfo":null,"runtime":null,"released":null,"posterShape":"poster","trailers":[],"behaviorHints":{"defaultVideoId":null,"featuredVideoId":null}}]}"#;
+    let metas_json = r#"
+    {
+        "metas": [
+            {
+                "id": "id",
+                "type": "type_name",
+                "name": "name",
+                "poster": null,
+                "logo": null,
+                "description": null,
+                "releaseInfo": null,
+                "runtime": null,
+                "released": null,
+                "posterShape": "poster",
+                "trailers": [],
+                "behaviorHints": {
+                    "defaultVideoId": null,
+                    "featuredVideoId": null
+                }
+            }
+        ]
+    }
+    "#;
     let metas_deserialize = serde_json::from_str(&metas_json).unwrap();
     match metas_deserialize {
         Metas { metas } => assert_eq!(metas, metas_vec, "metas deserialized successfully"),
@@ -70,7 +92,51 @@ fn deserialize_resource_response_metas_detailed() {
         trailers: vec![],
         behavior_hints: Default::default(),
     }];
-    let metas_detailed_json = r#"{"metasDetailed":[{"id":"id","type":"type_name","name":"name","poster":null,"background":null,"logo":null,"popularity":null,"description":null,"releaseInfo":null,"runtime":null,"released":null,"posterShape":"poster","videos":[{"id":"id","title":"title","released":"2020-01-01T00:00:00Z","overview":null,"thumbnail":null,"streams":[],"season":1,"episode":1,"trailers":[]}],"links":[{"name":"name","category":"category","url":"https://url/"}],"trailers":[],"behaviorHints":{"defaultVideoId":null,"featuredVideoId":null}}]}"#;
+    let metas_detailed_json = r#"
+    {
+        "metasDetailed": [
+            {
+                "id": "id",
+                "type": "type_name",
+                "name": "name",
+                "poster": null,
+                "background": null,
+                "logo": null,
+                "popularity": null,
+                "description": null,
+                "releaseInfo": null,
+                "runtime": null,
+                "released": null,
+                "posterShape": "poster",
+                "videos": [
+                    {
+                        "id": "id",
+                        "title": "title",
+                        "released": "2020-01-01T00:00:00Z",
+                        "overview": null,
+                        "thumbnail": null,
+                        "streams": [],
+                        "season": 1,
+                        "episode": 1,
+                        "trailers": []
+                    }
+                ],
+                "links": [
+                    {
+                        "name": "name",
+                        "category": "category",
+                        "url": "https://url/"
+                    }
+                ],
+                "trailers": [],
+                "behaviorHints": {
+                    "defaultVideoId": null,
+                    "featuredVideoId": null
+                }
+            }
+        ]
+    }
+    "#;
     let metas_detailed_deserialize = serde_json::from_str(&metas_detailed_json).unwrap();
     match metas_detailed_deserialize {
         MetasDetailed { metas_detailed } => assert_eq!(
@@ -117,7 +183,49 @@ fn deserialize_resource_response_meta() {
         trailers: vec![],
         behavior_hints: Default::default(),
     };
-    let meta_json = r#"{"meta":{"id":"id","type":"type_name","name":"name","poster":null,"background":null,"logo":null,"popularity":null,"description":null,"releaseInfo":null,"runtime":null,"released":null,"posterShape":"poster","videos":[{"id":"id","title":"title","released":"2020-01-01T00:00:00Z","overview":null,"thumbnail":null,"streams":[],"season":1,"episode":1,"trailers":[]}],"links":[{"name":"name","category":"category","url":"https://url/"}],"trailers":[],"behaviorHints":{"defaultVideoId":null,"featuredVideoId":null}}}"#;
+    let meta_json = r#"
+    {
+        "meta": {
+            "id": "id",
+            "type": "type_name",
+            "name": "name",
+            "poster": null,
+            "background": null,
+            "logo": null,
+            "popularity": null,
+            "description": null,
+            "releaseInfo": null,
+            "runtime": null,
+            "released": null,
+            "posterShape": "poster",
+            "videos": [
+                {
+                    "id": "id",
+                    "title": "title",
+                    "released": "2020-01-01T00:00:00Z",
+                    "overview": null,
+                    "thumbnail": null,
+                    "streams": [],
+                    "season": 1,
+                    "episode": 1,
+                    "trailers": []
+                }
+            ],
+            "links": [
+                {
+                    "name": "name",
+                    "category": "category",
+                    "url": "https://url/"
+                }
+            ],
+            "trailers": [],
+            "behaviorHints": {
+                "defaultVideoId": null,
+                "featuredVideoId": null
+            }
+        }
+    }
+    "#;
     let meta_deserialize = serde_json::from_str(&meta_json).unwrap();
     match meta_deserialize {
         Meta { meta } => assert_eq!(meta, meta_item, "meta deserialized successfully"),
@@ -132,7 +240,17 @@ fn deserialize_resource_response_subtitles() {
         lang: "lang".to_owned(),
         url: Url::parse("https://url").unwrap(),
     }];
-    let subtitles_json = r#"{"subtitles":[{"id":"id","lang":"lang","url":"https://url/"}]}"#;
+    let subtitles_json = r#"
+    {
+        "subtitles": [
+            {
+                "id": "id",
+                "lang": "lang",
+                "url": "https://url/"
+            }
+        ]
+    }
+    "#;
     let subtitles_deserialize = serde_json::from_str(&subtitles_json).unwrap();
     match subtitles_deserialize {
         ResourceResponse::Subtitles { subtitles } => assert_eq!(
