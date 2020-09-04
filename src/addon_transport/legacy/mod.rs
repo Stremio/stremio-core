@@ -48,6 +48,16 @@ impl Error for LegacyErr {
     }
 }
 
+impl Into<EnvError> for LegacyErr {
+    fn into(self) -> EnvError {
+        EnvError::AddonTransport(match self {
+            LegacyErr::JsonRPC(error) => error.message,
+            LegacyErr::UnsupportedResource => "legacy transport: unsupported resource".to_owned(),
+            LegacyErr::UnsupportedRequest => "legacy transport: unsupported request".to_owned(),
+        })
+    }
+}
+
 //
 // JSON RPC types
 //
@@ -203,7 +213,11 @@ fn build_legacy_req(transport_url: &Url, path: &ResourceRef) -> Result<Request<(
             // Just use the query, but add "type" to it
             let mut query = match query_from_id(id) {
                 Value::Object(q) => q,
-                _ => return Err("legacy: stream request without a valid id".into()),
+                _ => {
+                    return Err(EnvError::AddonTransport(
+                        "legacy: stream request without a valid id".to_owned(),
+                    ))
+                }
             };
             query.insert("type".into(), Value::String(type_name.to_owned()));
             build_jsonrpc("stream.find", json!({ "query": query }))
@@ -220,7 +234,7 @@ fn build_legacy_req(transport_url: &Url, path: &ResourceRef) -> Result<Request<(
     // https://github.com/Stremio/stremio-addons/blob/v2.8.14/rpc.js#L53
     let param_str = base64::encode(&serde_json::to_string(&q_json)?);
     let url = format!("{}/q.json?b={}", transport_url, param_str);
-    Ok(Request::get(&url).body(())?)
+    Ok(Request::get(&url).body(()).expect("builder cannot fail"))
 }
 
 fn build_jsonrpc(method: &str, params: Value) -> Value {

@@ -162,8 +162,8 @@ fn pull_ctx_from_storage<Env: Environment + 'static>() -> Effect {
                     Env::get_storage(LIBRARY_RECENT_STORAGE_KEY),
                     Env::get_storage(LIBRARY_STORAGE_KEY),
                 )
-                .map_err(CtxError::from)
             })
+            .map_err(CtxError::from)
             .map(|result| Msg::Internal(Internal::CtxStorageResult(result))),
     ))
 }

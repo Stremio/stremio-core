@@ -5,10 +5,29 @@ use core::pin::Pin;
 use futures::Future;
 use http::Request;
 use serde::{Deserialize, Serialize};
-use std::error::Error;
+use std::fmt;
 use url::Url;
 
-pub type EnvError = Box<dyn Error>;
+#[derive(Debug)]
+pub enum EnvError {
+    StorageUnavailable,
+    StorageSchemaVersionDowngrade(usize, usize),
+    Fetch(String),
+    AddonTransport(String),
+    Serde(serde_json::error::Error),
+}
+
+impl fmt::Display for EnvError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{:?}", self)
+    }
+}
+
+impl From<serde_json::error::Error> for EnvError {
+    fn from(error: serde_json::error::Error) -> Self {
+        EnvError::Serde(error)
+    }
+}
 
 pub type EnvFuture<T> = Pin<Box<dyn Future<Output = Result<T, EnvError>> + Unpin>>;
 

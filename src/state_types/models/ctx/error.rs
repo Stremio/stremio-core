@@ -1,8 +1,6 @@
 use crate::state_types::EnvError;
 use crate::types::api::APIError;
 use serde::Serialize;
-use std::error::Error;
-use std::fmt;
 
 #[derive(Debug, Clone)]
 pub enum OtherError {
@@ -11,39 +9,19 @@ pub enum OtherError {
     AddonAlreadyInstalled,
     AddonNotInstalled,
     AddonIsProtected,
-    StorageSchemaVersionDowngrade,
 }
 
 #[derive(Debug, Clone, Serialize)]
 #[serde(tag = "type")]
 pub enum CtxError {
-    API { message: String, code: u64 },
+    API(APIError),
     Env { message: String },
     Other { message: String, code: u64 },
 }
 
-impl fmt::Display for CtxError {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{:?}", self)
-    }
-}
-
-impl Error for CtxError {
-    fn description(&self) -> &str {
-        match &self {
-            CtxError::API { message, .. }
-            | CtxError::Env { message }
-            | CtxError::Other { message, .. } => message,
-        }
-    }
-}
-
 impl From<APIError> for CtxError {
     fn from(error: APIError) -> Self {
-        CtxError::API {
-            message: error.message.to_owned(),
-            code: error.code.to_owned(),
-        }
+        CtxError::API(error)
     }
 }
 
@@ -64,7 +42,6 @@ impl From<OtherError> for CtxError {
                 OtherError::AddonAlreadyInstalled => 802,
                 OtherError::AddonNotInstalled => 803,
                 OtherError::AddonIsProtected => 804,
-                OtherError::StorageSchemaVersionDowngrade => 805,
             },
             message: match &error {
                 OtherError::UserNotLoggedIn => "User is not logged in".to_owned(),
@@ -72,9 +49,6 @@ impl From<OtherError> for CtxError {
                 OtherError::AddonAlreadyInstalled => "Addon is already installed".to_owned(),
                 OtherError::AddonNotInstalled => "Addon is not installed".to_owned(),
                 OtherError::AddonIsProtected => "Addon is protected".to_owned(),
-                OtherError::StorageSchemaVersionDowngrade => {
-                    "Storage schema version downgrade now allowed".to_owned()
-                }
             },
         }
     }
