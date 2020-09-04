@@ -220,7 +220,6 @@ fn actionctx_uninstalladdon_protected() {
         flags: DescriptorFlags {
             official: false,
             protected: true,
-            extra: Default::default(),
         },
     };
     let profile = Profile {

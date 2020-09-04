@@ -2,7 +2,7 @@ use crate::constants::{OFFICIAL_ADDONS, PROFILE_STORAGE_KEY};
 use crate::state_types::models::ctx::Ctx;
 use crate::state_types::msg::{Action, ActionCtx, Msg};
 use crate::state_types::{EnvFuture, Environment, Runtime};
-use crate::types::addon::{Descriptor, DescriptorFlags, Manifest};
+use crate::types::addon::{Descriptor, Manifest};
 use crate::types::api::{APIResult, CollectionResponse};
 use crate::types::profile::{Auth, GDPRConsent, Profile, User};
 use crate::unit_tests::{default_fetch_handler, Env, Request, FETCH_HANDLER, REQUESTS, STORAGE};
@@ -31,15 +31,7 @@ fn actionctx_pulladdonsfromapi() {
                             ..official_addon.manifest.to_owned()
                         },
                         transport_url: Url::parse("https://transport_url").unwrap(),
-                        flags: DescriptorFlags {
-                            extra: {
-                                [("flag".to_owned(), serde_json::Value::Bool(true))]
-                                    .iter()
-                                    .cloned()
-                                    .collect()
-                            },
-                            ..official_addon.flags.to_owned()
-                        },
+                        flags: official_addon.flags.to_owned(),
                     }],
                     ..Default::default()
                 },
@@ -53,18 +45,7 @@ fn actionctx_pulladdonsfromapi() {
     );
     assert_eq!(
         runtime.app.read().unwrap().ctx.profile.addons,
-        vec![Descriptor {
-            flags: DescriptorFlags {
-                extra: {
-                    [("flag".to_owned(), serde_json::Value::Bool(true))]
-                        .iter()
-                        .cloned()
-                        .collect()
-                },
-                ..official_addon.flags.to_owned()
-            },
-            ..official_addon.to_owned()
-        }],
+        vec![official_addon.to_owned()],
         "addons updated successfully in memory"
     );
     assert!(
@@ -74,18 +55,7 @@ fn actionctx_pulladdonsfromapi() {
             .get(PROFILE_STORAGE_KEY)
             .map_or(false, |data| {
                 serde_json::from_str::<Profile>(&data).unwrap().addons
-                    == vec![Descriptor {
-                        flags: DescriptorFlags {
-                            extra: {
-                                [("flag".to_owned(), serde_json::Value::Bool(true))]
-                                    .iter()
-                                    .cloned()
-                                    .collect()
-                            },
-                            ..official_addon.flags.to_owned()
-                        },
-                        ..official_addon.to_owned()
-                    }]
+                    == vec![official_addon.to_owned()]
             }),
         "addons updated successfully in storage"
     );
