@@ -25,8 +25,8 @@ pub struct Runtime<Env: Environment, AppModel: Update> {
 }
 
 impl<Env: Environment + 'static, AppModel: Update + 'static> Runtime<Env, AppModel> {
-    pub fn new(app: AppModel, len: usize) -> (Self, Receiver<RuntimeEvent>) {
-        let (tx, rx) = channel(len);
+    pub fn new(app: AppModel, buffer: usize) -> (Self, Receiver<RuntimeEvent>) {
+        let (tx, rx) = channel(buffer);
         let app = Arc::new(RwLock::new(app));
         (
             Runtime {
