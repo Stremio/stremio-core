@@ -227,14 +227,14 @@ fn lib_item_update<Env: Environment>(
                 ResourceLoadable {
                     content: ResourceContent::Ready(meta_item),
                     ..
-                } => Some(meta_item.to_owned()),
+                } => Some(meta_item),
                 _ => None,
             };
             let lib_item = match lib_item {
                 Some(LibItem { id, .. }) if id == &meta_resource.request.path.id => {
-                    lib_item.to_owned()
+                    lib_item.as_ref()
                 }
-                _ => library.items.get(&meta_resource.request.path.id).cloned(),
+                _ => library.items.get(&meta_resource.request.path.id),
             };
             match (meta_item, lib_item) {
                 (Some(meta_item), Some(lib_item)) => Some(LibItem {
@@ -243,7 +243,7 @@ fn lib_item_update<Env: Environment>(
                     temp: lib_item.temp.to_owned(),
                     ctime: lib_item.ctime.to_owned(),
                     mtime: lib_item.mtime.to_owned(),
-                    state: lib_item.state,
+                    state: lib_item.state.to_owned(),
                     name: meta_item.name.to_owned(),
                     type_name: meta_item.type_name.to_owned(),
                     poster: meta_item.poster.to_owned(),
@@ -267,7 +267,7 @@ fn lib_item_update<Env: Environment>(
                         default_video_id: meta_item.behavior_hints.default_video_id.to_owned(),
                     },
                 }),
-                (None, Some(lib_item)) => Some(lib_item),
+                (None, Some(lib_item)) => Some(lib_item.to_owned()),
                 _ => None,
             }
         }

@@ -9,8 +9,8 @@ pub enum ResourceResponse {
     Metas {
         metas: Vec<MetaItemPreview>,
     },
+    #[serde(rename_all = "camelCase")]
     MetasDetailed {
-        #[serde(rename = "camelCase")]
         metas_detailed: Vec<MetaItem>,
     },
     Meta {
