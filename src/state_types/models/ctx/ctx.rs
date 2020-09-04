@@ -1,7 +1,9 @@
 use crate::constants::{
     LIBRARY_COLLECTION_NAME, LIBRARY_RECENT_STORAGE_KEY, LIBRARY_STORAGE_KEY, PROFILE_STORAGE_KEY,
 };
-use crate::state_types::models::ctx::{fetch_api, update_library, update_profile, CtxError};
+use crate::state_types::models::ctx::{
+    fetch_api, migrate_storage_schema, update_library, update_profile, CtxError,
+};
 use crate::state_types::msg::{Action, ActionCtx, ActionLoad, Event, Internal, Msg};
 use crate::state_types::{Effect, Effects, Environment, Update};
 use crate::types::api::{
@@ -153,13 +155,16 @@ impl<Env: Environment + 'static> Update for Ctx<Env> {
 
 fn pull_ctx_from_storage<Env: Environment + 'static>() -> Effect {
     Pin::new(Box::new(
-        future::try_join3(
-            Env::get_storage(PROFILE_STORAGE_KEY),
-            Env::get_storage(LIBRARY_RECENT_STORAGE_KEY),
-            Env::get_storage(LIBRARY_STORAGE_KEY),
-        )
-        .map_err(CtxError::from)
-        .map(|result| Msg::Internal(Internal::CtxStorageResult(result))),
+        migrate_storage_schema::<Env>()
+            .and_then(|_| {
+                future::try_join3(
+                    Env::get_storage(PROFILE_STORAGE_KEY),
+                    Env::get_storage(LIBRARY_RECENT_STORAGE_KEY),
+                    Env::get_storage(LIBRARY_STORAGE_KEY),
+                )
+                .map_err(CtxError::from)
+            })
+            .map(|result| Msg::Internal(Internal::CtxStorageResult(result))),
     ))
 }
 
