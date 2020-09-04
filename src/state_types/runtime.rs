@@ -11,7 +11,7 @@ use std::sync::{Arc, RwLock};
 
 #[derive(Debug, Serialize)]
 #[serde(tag = "name", content = "args")]
-pub enum RuntimeEv {
+pub enum RuntimeEvent {
     NewState,
     Event(Event),
 }
@@ -20,12 +20,12 @@ pub enum RuntimeEv {
 #[derivative(Debug, Clone(bound = ""))]
 pub struct Runtime<Env: Environment, M: Update> {
     pub app: Arc<RwLock<M>>,
-    tx: Sender<RuntimeEv>,
+    tx: Sender<RuntimeEvent>,
     env: PhantomData<Env>,
 }
 
 impl<Env: Environment + 'static, M: Update + 'static> Runtime<Env, M> {
-    pub fn new(app: M, len: usize) -> (Self, Receiver<RuntimeEv>) {
+    pub fn new(app: M, len: usize) -> (Self, Receiver<RuntimeEvent>) {
         let (tx, rx) = channel(len);
         let app = Arc::new(RwLock::new(app));
         (
@@ -47,7 +47,7 @@ impl<Env: Environment + 'static, M: Update + 'static> Runtime<Env, M> {
         {
             let mut tx = self.tx.clone();
             if fx.has_changed {
-                let _ = tx.try_send(RuntimeEv::NewState);
+                let _ = tx.try_send(RuntimeEvent::NewState);
             }
         }
         // Handle next effects
@@ -63,7 +63,7 @@ impl<Env: Environment + 'static, M: Update + 'static> Runtime<Env, M> {
         {
             let mut tx = self.tx.clone();
             if let Msg::Event(ev) = msg {
-                let _ = tx.try_send(RuntimeEv::Event(ev.to_owned()));
+                let _ = tx.try_send(RuntimeEvent::Event(ev.to_owned()));
             }
         }
         self.dispatch_with(|model| model.update(msg))
