@@ -16,7 +16,8 @@ use core::pin::Pin;
 use derivative::Derivative;
 use enclose::enclose;
 use futures::{future, FutureExt, TryFutureExt};
-use serde::Serialize;
+use serde::ser::SerializeMap;
+use serde::{Serialize, Serializer};
 use std::marker::PhantomData;
 
 #[derive(Clone, Debug, PartialEq)]
@@ -38,7 +39,7 @@ pub struct Ctx<Env: Environment> {
     // TODO StreamsBucket
     // TODO SubtitlesBucket
     // TODO SearchesBucket
-    #[serde(skip)]
+    #[serde(serialize_with = "serialize_lib_bucket")]
     pub library: LibBucket,
     #[serde(skip)]
     #[derivative(Default(value = "CtxStatus::Ready"))]
@@ -211,4 +212,26 @@ fn delete_session<Env: Environment + 'static>(auth_key: &str) -> Effect {
             }
         )),
     ))
+}
+
+fn serialize_lib_bucket<S>(lib_bucket: &LibBucket, serializer: S) -> Result<S::Ok, S::Error>
+where
+    S: Serializer,
+{
+    #[derive(Serialize)]
+    struct LibItemProjection {
+        pub removed: bool,
+        pub temp: bool,
+    }
+    let mut map = serializer.serialize_map(Some(lib_bucket.items.len()))?;
+    for lib_item in lib_bucket.items.values() {
+        map.serialize_entry(
+            &lib_item.id,
+            &LibItemProjection {
+                removed: lib_item.removed,
+                temp: lib_item.temp,
+            },
+        )?;
+    }
+    map.end()
 }
