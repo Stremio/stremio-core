@@ -1,5 +1,4 @@
 use crate::addon_transport::{AddonHTTPTransport, AddonTransport};
-use crate::constants::API_URL;
 use chrono::{DateTime, Utc};
 use core::pin::Pin;
 use futures::Future;
@@ -47,8 +46,5 @@ pub trait Environment {
         Self: Sized + 'static,
     {
         Box::new(AddonHTTPTransport::<Self>::new(transport_url))
-    }
-    fn api_url() -> &'static Url {
-        &API_URL
     }
 }

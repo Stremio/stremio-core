@@ -1,3 +1,4 @@
+use crate::constants::API_URL;
 use crate::state_types::models::ctx::CtxError;
 use crate::state_types::Environment;
 use crate::types::api::{APIMethodName, APIResult};
@@ -11,7 +12,7 @@ where
     REQ: APIMethodName + Clone + Serialize + 'static,
     for<'de> RESP: Deserialize<'de> + 'static,
 {
-    let url = Env::api_url()
+    let url = API_URL
         .join("api/")
         .expect("api url builder cannot fail")
         .join(api_request.method_name())
