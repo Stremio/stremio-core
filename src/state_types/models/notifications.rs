@@ -83,7 +83,7 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for Notifications {
                                         },
                                         Pin::new(Box::new(
                                             Env::addon_transport(&addon_req.base)
-                                                .get(&addon_req.path)
+                                                .resource(&addon_req.path)
                                                 .map(move |result| {
                                                     Msg::Internal(Internal::ResourceRequestResult(
                                                         addon_req,

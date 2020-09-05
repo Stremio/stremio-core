@@ -70,7 +70,7 @@ where
                 });
                 Effects::one(Pin::new(Box::new(
                     Env::addon_transport(&request.base)
-                        .get(&request.path)
+                        .resource(&request.path)
                         .map(move |result| {
                             Msg::Internal(Internal::ResourceRequestResult(
                                 request,
@@ -147,14 +147,14 @@ where
                                 content: ResourceContent::Loading,
                             },
                             Pin::new(Box::new(
-                                Env::addon_transport(&request.base).get(&request.path).map(
-                                    move |result| {
+                                Env::addon_transport(&request.base)
+                                    .resource(&request.path)
+                                    .map(move |result| {
                                         Msg::Internal(Internal::ResourceRequestResult(
                                             request,
                                             Box::new(result),
                                         ))
-                                    },
-                                ),
+                                    }),
                             )),
                         )
                     })

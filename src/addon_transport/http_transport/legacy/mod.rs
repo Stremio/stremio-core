@@ -1,4 +1,4 @@
-use super::AddonInterface;
+use crate::addon_transport::AddonTransport;
 use crate::state_types::{EnvError, EnvFuture, Environment};
 use crate::types::addon::*;
 use crate::types::resource::*;
@@ -121,7 +121,7 @@ pub struct AddonLegacyTransport<'a, T: Environment> {
 }
 
 impl<'a, T: Environment> AddonLegacyTransport<'a, T> {
-    pub fn from_url(transport_url: &'a Url) -> Self {
+    pub fn new(transport_url: &'a Url) -> Self {
         AddonLegacyTransport {
             env: PhantomData,
             transport_url,
@@ -129,8 +129,8 @@ impl<'a, T: Environment> AddonLegacyTransport<'a, T> {
     }
 }
 
-impl<'a, T: Environment> AddonInterface for AddonLegacyTransport<'a, T> {
-    fn get(&self, path: &ResourceRef) -> EnvFuture<ResourceResponse> {
+impl<'a, T: Environment> AddonTransport for AddonLegacyTransport<'a, T> {
+    fn resource(&self, path: &ResourceRef) -> EnvFuture<ResourceResponse> {
         let fetch_req = match build_legacy_req(self.transport_url, path) {
             Ok(r) => r,
             Err(e) => return Pin::new(Box::new(future::err(e))),
