@@ -1,5 +1,5 @@
 use crate::app_model::{AppModel, ModelFieldName};
-use crate::Env;
+use crate::env::Env;
 use core::pin::Pin;
 use futures::{future, StreamExt};
 use std::panic;
@@ -31,9 +31,6 @@ impl StremioCoreWeb {
             let effects = if let Ok(model_field) = model_field.into_serde::<ModelFieldName>() {
                 self.runtime.dispatch_with(|model| match model_field {
                     ModelFieldName::Ctx => model.ctx.update(&message),
-                    ModelFieldName::LibraryItems => {
-                        model.library_items.update(&model.ctx, &message)
-                    }
                     ModelFieldName::ContinueWatchingPreview => {
                         model.continue_watching_preview.update(&model.ctx, &message)
                     }
@@ -68,7 +65,6 @@ impl StremioCoreWeb {
         if let Ok(model_field) = model_field.into_serde::<ModelFieldName>() {
             match model_field {
                 ModelFieldName::Ctx => JsValue::from_serde(&model.ctx).unwrap(),
-                ModelFieldName::LibraryItems => JsValue::from_serde(&model.library_items).unwrap(),
                 ModelFieldName::ContinueWatchingPreview => {
                     JsValue::from_serde(&model.continue_watching_preview).unwrap()
                 }

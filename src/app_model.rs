@@ -1,5 +1,4 @@
-use crate::models::library_items::LibraryItems;
-use crate::Env;
+use crate::env::Env;
 use serde::{Deserialize, Serialize};
 use stremio_core::state_types::models::addon_details::AddonDetails;
 use stremio_core::state_types::models::catalog_with_filters::CatalogWithFilters;
@@ -19,7 +18,6 @@ use stremio_derive::Model;
 #[derive(Model, Default, Serialize)]
 pub struct AppModel {
     pub ctx: Ctx<Env>,
-    pub library_items: LibraryItems,
     pub continue_watching_preview: ContinueWatchingPreview,
     pub board: CatalogsWithExtra,
     pub discover: CatalogWithFilters<MetaItemPreview>,
@@ -37,7 +35,6 @@ pub struct AppModel {
 #[serde(rename_all = "snake_case")]
 pub enum ModelFieldName {
     Ctx,
-    LibraryItems,
     ContinueWatchingPreview,
     Board,
     Discover,
