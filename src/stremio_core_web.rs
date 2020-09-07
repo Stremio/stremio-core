@@ -2,6 +2,7 @@ use crate::app_model::{AppModel, ModelFieldName};
 use crate::env::Env;
 use core::pin::Pin;
 use futures::{future, StreamExt};
+use std::ops::Deref;
 use std::panic;
 use stremio_core::state_types::msg::{Action, Msg};
 use stremio_core::state_types::{Environment, Runtime, Update, UpdateWithCtx};
@@ -61,7 +62,7 @@ impl StremioCoreWeb {
         }
     }
     pub fn get_state(&self, model_field: &JsValue) -> JsValue {
-        let model = &*self.runtime.app.read().unwrap();
+        let model = self.runtime.app().expect("app read failed");
         if let Ok(model_field) = model_field.into_serde::<ModelFieldName>() {
             match model_field {
                 ModelFieldName::Ctx => JsValue::from_serde(&model.ctx).unwrap(),
@@ -84,7 +85,7 @@ impl StremioCoreWeb {
                 ModelFieldName::Player => JsValue::from_serde(&model.player).unwrap(),
             }
         } else {
-            JsValue::from_serde(model).unwrap()
+            JsValue::from_serde(&model.deref()).unwrap()
         }
     }
 }
