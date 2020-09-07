@@ -259,7 +259,7 @@ fn actionctx_synclibrarywithapi_with_user() {
         runtime.dispatch(&Msg::Action(Action::Ctx(ActionCtx::SyncLibraryWithAPI))),
     );
     assert_eq!(
-        runtime.app.read().unwrap().ctx.library,
+        runtime.app().unwrap().ctx.library,
         LibBucket {
             uid: Some("user_id".to_string()),
             items: vec![

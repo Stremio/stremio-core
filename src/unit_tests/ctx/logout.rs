@@ -83,12 +83,12 @@ fn actionctx_logout() {
         runtime.dispatch(&Msg::Action(Action::Ctx(ActionCtx::Logout))),
     );
     assert_eq!(
-        runtime.app.read().unwrap().ctx.profile,
+        runtime.app().unwrap().ctx.profile,
         Default::default(),
         "profile updated successfully in memory"
     );
     assert_eq!(
-        runtime.app.read().unwrap().ctx.library,
+        runtime.app().unwrap().ctx.library,
         Default::default(),
         "library updated successfully in memory"
     );

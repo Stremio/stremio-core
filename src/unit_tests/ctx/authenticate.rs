@@ -83,7 +83,7 @@ fn actionctx_authenticate_login() {
         }),
     ))));
     assert_eq!(
-        runtime.app.read().unwrap().ctx.profile,
+        runtime.app().unwrap().ctx.profile,
         Profile {
             auth: Some(Auth {
                 key: "auth_key".to_owned(),
@@ -108,7 +108,7 @@ fn actionctx_authenticate_login() {
         "profile updated successfully in memory"
     );
     assert_eq!(
-        runtime.app.read().unwrap().ctx.library,
+        runtime.app().unwrap().ctx.library,
         LibBucket {
             uid: Some("user_id".to_string()),
             ..Default::default()
@@ -280,7 +280,7 @@ fn actionctx_authenticate_register() {
         }),
     ))));
     assert_eq!(
-        runtime.app.read().unwrap().ctx.profile,
+        runtime.app().unwrap().ctx.profile,
         Profile {
             auth: Some(Auth {
                 key: "auth_key".to_owned(),
@@ -305,7 +305,7 @@ fn actionctx_authenticate_register() {
         "profile updated successfully in memory"
     );
     assert_eq!(
-        runtime.app.read().unwrap().ctx.library,
+        runtime.app().unwrap().ctx.library,
         LibBucket {
             uid: Some("user_id".to_string()),
             ..Default::default()

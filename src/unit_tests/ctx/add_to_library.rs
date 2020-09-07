@@ -102,14 +102,13 @@ fn actionctx_addtolibrary() {
         ActionCtx::AddToLibrary(meta_preview.to_owned()),
     ))));
     assert_eq!(
-        runtime.app.read().unwrap().ctx.library.items.len(),
+        runtime.app().unwrap().ctx.library.items.len(),
         1,
         "There is one library item in memory"
     );
     assert_eq!(
         runtime
-            .app
-            .read()
+            .app()
             .unwrap()
             .ctx
             .library
@@ -224,19 +223,12 @@ fn actionctx_addtolibrary_already_added() {
         ActionCtx::AddToLibrary(meta_preview.to_owned()),
     ))));
     assert_eq!(
-        runtime.app.read().unwrap().ctx.library.items.len(),
+        runtime.app().unwrap().ctx.library.items.len(),
         1,
         "There is one library item in memory"
     );
     assert_eq!(
-        runtime
-            .app
-            .read()
-            .unwrap()
-            .ctx
-            .library
-            .items
-            .get(&lib_item.id),
+        runtime.app().unwrap().ctx.library.items.get(&lib_item.id),
         Some(&lib_item),
         "Library updated successfully in memory"
     );

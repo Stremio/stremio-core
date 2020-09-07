@@ -43,7 +43,7 @@ fn actionctx_pulladdonsfromapi() {
         runtime.dispatch(&Msg::Action(Action::Ctx(ActionCtx::PullAddonsFromAPI))),
     );
     assert_eq!(
-        runtime.app.read().unwrap().ctx.profile.addons,
+        runtime.app().unwrap().ctx.profile.addons,
         vec![official_addon.to_owned()],
         "addons updated successfully in memory"
     );
@@ -141,7 +141,7 @@ fn actionctx_pulladdonsfromapi_with_user() {
         runtime.dispatch(&Msg::Action(Action::Ctx(ActionCtx::PullAddonsFromAPI))),
     );
     assert_eq!(
-        runtime.app.read().unwrap().ctx.profile.addons,
+        runtime.app().unwrap().ctx.profile.addons,
         OFFICIAL_ADDONS.to_owned(),
         "addons updated successfully in memory"
     );

@@ -54,7 +54,7 @@ fn actionctx_installaddon_install() {
         ActionCtx::InstallAddon(addon.to_owned()),
     ))));
     assert_eq!(
-        runtime.app.read().unwrap().ctx.profile.addons,
+        runtime.app().unwrap().ctx.profile.addons,
         vec![addon.to_owned()],
         "addon installed successfully"
     );
@@ -149,7 +149,7 @@ fn actionctx_installaddon_install_with_user() {
         ActionCtx::InstallAddon(addon.to_owned()),
     ))));
     assert_eq!(
-        runtime.app.read().unwrap().ctx.profile.addons,
+        runtime.app().unwrap().ctx.profile.addons,
         vec![addon.to_owned()],
         "addon installed successfully"
     );
@@ -263,7 +263,7 @@ fn actionctx_installaddon_update() {
         ActionCtx::InstallAddon(addon.to_owned()),
     ))));
     assert_eq!(
-        runtime.app.read().unwrap().ctx.profile.addons,
+        runtime.app().unwrap().ctx.profile.addons,
         vec![addon.to_owned(), addon2.to_owned()],
         "addon updated successfully in memory"
     );
@@ -331,7 +331,7 @@ fn actionctx_installaddon_already_installed() {
         ActionCtx::InstallAddon(addon.to_owned()),
     ))));
     assert_eq!(
-        runtime.app.read().unwrap().ctx.profile.addons,
+        runtime.app().unwrap().ctx.profile.addons,
         vec![addon.to_owned()],
         "addons in memory not updated"
     );

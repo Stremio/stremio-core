@@ -58,7 +58,7 @@ fn actionctx_uninstalladdon() {
         ActionCtx::UninstallAddon(Url::parse("https://transport_url").unwrap()),
     ))));
     assert!(
-        runtime.app.read().unwrap().ctx.profile.addons.is_empty(),
+        runtime.app().unwrap().ctx.profile.addons.is_empty(),
         "addons updated successfully in memory"
     );
     assert!(
@@ -159,7 +159,7 @@ fn actionctx_uninstalladdon_with_user() {
         ActionCtx::UninstallAddon(Url::parse("https://transport_url").unwrap()),
     ))));
     assert!(
-        runtime.app.read().unwrap().ctx.profile.addons.is_empty(),
+        runtime.app().unwrap().ctx.profile.addons.is_empty(),
         "addons updated successfully in memory"
     );
     assert!(
@@ -243,7 +243,7 @@ fn actionctx_uninstalladdon_protected() {
         ActionCtx::UninstallAddon(Url::parse("https://transport_url").unwrap()),
     ))));
     assert_eq!(
-        runtime.app.read().unwrap().ctx.profile.addons,
+        runtime.app().unwrap().ctx.profile.addons,
         vec![addon.to_owned()],
         "protected addon is in memory"
     );
@@ -310,7 +310,7 @@ fn actionctx_uninstalladdon_not_installed() {
         ActionCtx::UninstallAddon(Url::parse("https://transport_url2").unwrap()),
     ))));
     assert_eq!(
-        runtime.app.read().unwrap().ctx.profile.addons,
+        runtime.app().unwrap().ctx.profile.addons,
         vec![addon.to_owned()],
         "addons in memory not updated"
     );

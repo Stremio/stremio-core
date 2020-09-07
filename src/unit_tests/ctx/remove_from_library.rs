@@ -102,14 +102,7 @@ fn actionctx_removefromlibrary() {
         ActionCtx::RemoveFromLibrary(lib_item.id.to_owned()),
     ))));
     assert_eq!(
-        runtime
-            .app
-            .read()
-            .unwrap()
-            .ctx
-            .library
-            .items
-            .get(&lib_item.id),
+        runtime.app().unwrap().ctx.library.items.get(&lib_item.id),
         Some(&lib_item_removed),
         "Library updated successfully in memory"
     );
@@ -182,14 +175,7 @@ fn actionctx_removefromlibrary_not_added() {
         ActionCtx::RemoveFromLibrary("id2".to_owned()),
     ))));
     assert_eq!(
-        runtime
-            .app
-            .read()
-            .unwrap()
-            .ctx
-            .library
-            .items
-            .get(&lib_item.id),
+        runtime.app().unwrap().ctx.library.items.get(&lib_item.id),
         Some(&lib_item),
         "Library not updated in memory"
     );

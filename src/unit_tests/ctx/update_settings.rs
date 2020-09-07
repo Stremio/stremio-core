@@ -23,7 +23,7 @@ fn actionctx_updatesettings() {
         ActionCtx::UpdateSettings(settings.to_owned()),
     ))));
     assert_eq!(
-        runtime.app.read().unwrap().ctx.profile.settings,
+        runtime.app().unwrap().ctx.profile.settings,
         settings,
         "Settings updated successfully in memory"
     );
@@ -76,7 +76,7 @@ fn actionctx_updatesettings_not_changed() {
         ActionCtx::UpdateSettings(settings.to_owned()),
     ))));
     assert_eq!(
-        runtime.app.read().unwrap().ctx.profile.settings,
+        runtime.app().unwrap().ctx.profile.settings,
         settings,
         "Settings not updated in memory"
     );

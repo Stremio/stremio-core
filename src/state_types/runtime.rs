@@ -7,7 +7,7 @@ use futures::channel::mpsc::{channel, Receiver, Sender};
 use futures::{future, Future, FutureExt};
 use serde::Serialize;
 use std::marker::PhantomData;
-use std::sync::{Arc, RwLock};
+use std::sync::{Arc, LockResult, RwLock, RwLockReadGuard};
 
 #[derive(Debug, Serialize)]
 #[serde(tag = "name", content = "args")]
@@ -19,7 +19,7 @@ pub enum RuntimeEvent {
 #[derive(Derivative)]
 #[derivative(Debug, Clone(bound = ""))]
 pub struct Runtime<Env: Environment, App: Update> {
-    pub app: Arc<RwLock<App>>,
+    app: Arc<RwLock<App>>,
     tx: Sender<RuntimeEvent>,
     env: PhantomData<Env>,
 }
@@ -36,6 +36,9 @@ impl<Env: Environment + 'static, App: Update + 'static> Runtime<Env, App> {
             },
             rx,
         )
+    }
+    pub fn app(&self) -> LockResult<RwLockReadGuard<App>> {
+        self.app.read()
     }
     pub fn dispatch_with<T: FnOnce(&mut App) -> Effects>(
         &self,

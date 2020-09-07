@@ -108,14 +108,7 @@ fn actionctx_rewindlibraryitem() {
         ActionCtx::RewindLibraryItem(lib_item.id.to_owned()),
     ))));
     assert_eq!(
-        runtime
-            .app
-            .read()
-            .unwrap()
-            .ctx
-            .library
-            .items
-            .get(&lib_item.id),
+        runtime.app().unwrap().ctx.library.items.get(&lib_item.id),
         Some(&lib_item_rewinded),
         "Library updated successfully in memory"
     );
@@ -191,14 +184,7 @@ fn actionctx_rewindlibraryitem_not_added() {
         ActionCtx::RewindLibraryItem("id2".to_owned()),
     ))));
     assert_eq!(
-        runtime
-            .app
-            .read()
-            .unwrap()
-            .ctx
-            .library
-            .items
-            .get(&lib_item.id),
+        runtime.app().unwrap().ctx.library.items.get(&lib_item.id),
         Some(&lib_item),
         "Library not updated in memory"
     );
