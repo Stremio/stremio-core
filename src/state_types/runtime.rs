@@ -47,7 +47,7 @@ impl<Env: Environment + 'static, App: Update + 'static> Runtime<Env, App> {
             self.emit_event(RuntimeEvent::NewState);
         };
         // Handle next effects
-        let all = fx.effects.into_iter().map(enclose!((handle) move |ft| ft
+        let all = fx.into_iter().map(enclose!((handle) move |ft| ft
             .then(enclose!((handle) move |msg| {
                 Env::exec(handle.dispatch(&msg));
                 future::ready(())

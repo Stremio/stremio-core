@@ -5,8 +5,17 @@ use futures::{future, Future};
 pub type Effect = Pin<Box<dyn Future<Output = Msg> + Unpin>>;
 
 pub struct Effects {
-    pub effects: Vec<Effect>,
+    effects: Vec<Effect>,
     pub has_changed: bool,
+}
+
+impl IntoIterator for Effects {
+    type Item = Effect;
+    type IntoIter = std::vec::IntoIter<Self::Item>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        self.effects.into_iter()
+    }
 }
 
 impl Effects {
