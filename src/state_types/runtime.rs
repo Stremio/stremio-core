@@ -18,14 +18,14 @@ pub enum RuntimeEvent {
 
 #[derive(Derivative)]
 #[derivative(Debug, Clone(bound = ""))]
-pub struct Runtime<Env: Environment, AppModel: Update> {
-    pub app: Arc<RwLock<AppModel>>,
+pub struct Runtime<Env: Environment, App: Update> {
+    pub app: Arc<RwLock<App>>,
     tx: Sender<RuntimeEvent>,
     env: PhantomData<Env>,
 }
 
-impl<Env: Environment + 'static, AppModel: Update + 'static> Runtime<Env, AppModel> {
-    pub fn new(app: AppModel, buffer: usize) -> (Self, Receiver<RuntimeEvent>) {
+impl<Env: Environment + 'static, App: Update + 'static> Runtime<Env, App> {
+    pub fn new(app: App, buffer: usize) -> (Self, Receiver<RuntimeEvent>) {
         let (tx, rx) = channel(buffer);
         let app = Arc::new(RwLock::new(app));
         (
@@ -37,7 +37,7 @@ impl<Env: Environment + 'static, AppModel: Update + 'static> Runtime<Env, AppMod
             rx,
         )
     }
-    pub fn dispatch_with<T: FnOnce(&mut AppModel) -> Effects>(
+    pub fn dispatch_with<T: FnOnce(&mut App) -> Effects>(
         &self,
         with: T,
     ) -> Pin<Box<dyn Future<Output = ()> + Unpin>> {
