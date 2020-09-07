@@ -9,7 +9,6 @@ use crate::types::library::{LibBucket, LibItem};
 use crate::types::profile::{Auth, GDPRConsent, Profile, User};
 use crate::unit_tests::{default_fetch_handler, Env, Request, FETCH_HANDLER, REQUESTS, STORAGE};
 use chrono::prelude::{TimeZone, Utc};
-use core::pin::Pin;
 use futures::future;
 use std::any::Any;
 use stremio_derive::Model;
@@ -28,7 +27,7 @@ fn actionctx_authenticate_login() {
                 && method == "POST"
                 && body == "{\"type\":\"Auth\",\"type\":\"Login\",\"email\":\"user_email\",\"password\":\"user_password\"}" =>
             {
-                Pin::new(Box::new(future::ok(Box::new(APIResult::Ok {
+                Box::pin(future::ok(Box::new(APIResult::Ok {
                     result: AuthResponse {
                         key: "auth_key".to_owned(),
                         user: User {
@@ -46,7 +45,7 @@ fn actionctx_authenticate_login() {
                             },
                         }
                     },
-                }) as Box<dyn Any>)))
+                }) as Box<dyn Any>))
             }
             Request {
                 url, method, body, ..
@@ -54,12 +53,12 @@ fn actionctx_authenticate_login() {
                 && method == "POST"
                 && body == "{\"type\":\"AddonCollectionGet\",\"authKey\":\"auth_key\",\"update\":true}" =>
             {
-                Pin::new(Box::new(future::ok(Box::new(APIResult::Ok {
+                Box::pin(future::ok(Box::new(APIResult::Ok {
                     result: CollectionResponse {
                         addons: vec![],
                         last_modified: Env::now(),
                     },
-                }) as Box<dyn Any>)))
+                }) as Box<dyn Any>))
             }
             Request {
                 url, method, body, ..
@@ -67,9 +66,9 @@ fn actionctx_authenticate_login() {
                 && method == "POST"
                 && body == "{\"authKey\":\"auth_key\",\"collection\":\"libraryItem\",\"ids\":[],\"all\":true}" =>
             {
-                Pin::new(Box::new(future::ok(Box::new(APIResult::Ok {
+                Box::pin(future::ok(Box::new(APIResult::Ok {
                     result: Vec::<LibItem>::new(),
-                }) as Box<dyn Any>)))
+                }) as Box<dyn Any>))
             }
             _ => default_fetch_handler(request),
         }
@@ -216,7 +215,7 @@ fn actionctx_authenticate_register() {
                 && method == "POST"
                 && body == "{\"type\":\"Auth\",\"type\":\"Register\",\"email\":\"user_email\",\"password\":\"user_password\",\"gdpr_consent\":{\"tos\":true,\"privacy\":true,\"marketing\":false,\"from\":\"web\",\"time\":\"2020-01-01T00:00:00Z\"}}" =>
             {
-                Pin::new( Box::new(future::ok(Box::new(APIResult::Ok {
+                Box::pin(future::ok(Box::new(APIResult::Ok {
                     result: AuthResponse {
                         key: "auth_key".to_owned(),
                         user: User {
@@ -234,7 +233,7 @@ fn actionctx_authenticate_register() {
                             },
                         }
                     },
-                }) as Box<dyn Any>)))
+                }) as Box<dyn Any>))
             }
             Request {
                 url, method, body, ..
@@ -242,12 +241,12 @@ fn actionctx_authenticate_register() {
                 && method == "POST"
                 && body == "{\"type\":\"AddonCollectionGet\",\"authKey\":\"auth_key\",\"update\":true}" =>
             {
-                Pin::new(Box::new(future::ok(Box::new(APIResult::Ok {
+                Box::pin(future::ok(Box::new(APIResult::Ok {
                     result: CollectionResponse {
                         addons: vec![],
                         last_modified: Env::now(),
                     },
-                }) as Box<dyn Any>)))
+                }) as Box<dyn Any>))
             }
             Request {
                 url, method, body, ..
@@ -255,9 +254,9 @@ fn actionctx_authenticate_register() {
                 && method == "POST"
                 && body == "{\"authKey\":\"auth_key\",\"collection\":\"libraryItem\",\"ids\":[],\"all\":true}" =>
             {
-                Pin::new(Box::new(future::ok(Box::new(APIResult::Ok {
+                Box::pin(future::ok(Box::new(APIResult::Ok {
                     result: Vec::<LibItem>::new(),
-                }) as Box<dyn Any>)))
+                }) as Box<dyn Any>))
             }
             _ => default_fetch_handler(request),
         }

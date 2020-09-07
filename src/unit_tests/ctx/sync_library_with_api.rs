@@ -8,7 +8,6 @@ use crate::types::profile::{Auth, AuthKey, GDPRConsent, Profile, User};
 use crate::unit_tests::{default_fetch_handler, Env, Request, FETCH_HANDLER, REQUESTS, STORAGE};
 use chrono::prelude::TimeZone;
 use chrono::{Duration, Utc};
-use core::pin::Pin;
 use futures::future;
 use lazy_static::lazy_static;
 use serde::Deserialize;
@@ -129,7 +128,7 @@ fn actionctx_synclibrarywithapi_with_user() {
                 && method == "POST"
                 && body == "{\"authKey\":\"auth_key\",\"collection\":\"libraryItem\"}" =>
             {
-                Pin::new(Box::new(future::ok(Box::new(APIResult::Ok {
+                Box::pin(future::ok(Box::new(APIResult::Ok {
                     result: vec![
                         LibItemModified(
                             REMOTE_ONLY_ITEM.id.to_owned(),
@@ -144,7 +143,7 @@ fn actionctx_synclibrarywithapi_with_user() {
                             REMOTE_NEWER_ITEM.mtime.to_owned(),
                         ),
                     ],
-                }) as Box<dyn Any>)))
+                }) as Box<dyn Any>))
             }
             Request {
                 url, method, body, ..
@@ -165,10 +164,9 @@ fn actionctx_synclibrarywithapi_with_user() {
                             && body.changes.contains(&LOCAL_ONLY_ITEM)
                             && body.changes.contains(&LOCAL_WATCHED_ITEM) =>
                     {
-                        Pin::new(Box::new(future::ok(Box::new(APIResult::Ok {
+                        Box::pin(future::ok(Box::new(APIResult::Ok {
                             result: SuccessResponse { success: True {} },
-                        })
-                            as Box<dyn Any>)))
+                        }) as Box<dyn Any>))
                     }
                     _ => default_fetch_handler(request),
                 }
@@ -193,10 +191,9 @@ fn actionctx_synclibrarywithapi_with_user() {
                             && body.ids.contains(&REMOTE_ONLY_ITEM.id)
                             && body.ids.contains(&REMOTE_NEWER_ITEM.id) =>
                     {
-                        Pin::new(Box::new(future::ok(Box::new(APIResult::Ok {
+                        Box::pin(future::ok(Box::new(APIResult::Ok {
                             result: vec![REMOTE_ONLY_ITEM.to_owned(), REMOTE_NEWER_ITEM.to_owned()],
-                        })
-                            as Box<dyn Any>)))
+                        }) as Box<dyn Any>))
                     }
                     _ => default_fetch_handler(request),
                 }
@@ -342,9 +339,9 @@ fn actionctx_synclibrarywithapi_with_user_empty_library() {
                 && method == "POST"
                 && body == "{\"authKey\":\"auth_key\",\"collection\":\"libraryItem\"}" =>
             {
-                Pin::new(Box::new(future::ok(Box::new(APIResult::Ok {
+                Box::pin(future::ok(Box::new(APIResult::Ok {
                     result: Vec::<LibItemModified>::new(),
-                }) as Box<dyn Any>)))
+                }) as Box<dyn Any>))
             }
             _ => default_fetch_handler(request),
         }

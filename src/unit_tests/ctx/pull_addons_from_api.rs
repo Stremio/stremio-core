@@ -6,7 +6,6 @@ use crate::types::addon::{Descriptor, Manifest};
 use crate::types::api::{APIResult, CollectionResponse};
 use crate::types::profile::{Auth, GDPRConsent, Profile, User};
 use crate::unit_tests::{default_fetch_handler, Env, Request, FETCH_HANDLER, REQUESTS, STORAGE};
-use core::pin::Pin;
 use futures::future;
 use semver::Version;
 use std::any::Any;
@@ -79,12 +78,12 @@ fn actionctx_pulladdonsfromapi_with_user() {
                 && method == "POST"
                 && body == "{\"type\":\"AddonCollectionGet\",\"authKey\":\"auth_key\",\"update\":true}" =>
             {
-                Pin::new(Box::new(future::ok(Box::new(APIResult::Ok {
+                Box::pin(future::ok(Box::new(APIResult::Ok {
                     result: CollectionResponse {
                         addons: OFFICIAL_ADDONS.to_owned(),
                         last_modified: Env::now(),
                     },
-                }) as Box<dyn Any>)))
+                }) as Box<dyn Any>))
             }
             _ => default_fetch_handler(request),
         }

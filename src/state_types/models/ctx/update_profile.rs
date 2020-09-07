@@ -5,7 +5,6 @@ use crate::state_types::{Effect, Effects, Environment};
 use crate::types::addon::Descriptor;
 use crate::types::api::{APIRequest, CollectionResponse, SuccessResponse};
 use crate::types::profile::{Profile, Settings};
-use core::pin::Pin;
 use enclose::enclose;
 use futures::{FutureExt, TryFutureExt};
 
@@ -256,7 +255,7 @@ fn push_addons_to_api<Env: Environment + 'static>(
         auth_key: auth_key.to_owned(),
         addons,
     };
-    Pin::new(Box::new(
+    Box::pin(
         fetch_api::<Env, _, SuccessResponse>(&request).map(move |result| match result {
             Ok(_) => Msg::Event(Event::AddonsPushedToAPI { transport_urls }),
             Err(error) => Msg::Event(Event::Error {
@@ -264,7 +263,7 @@ fn push_addons_to_api<Env: Environment + 'static>(
                 source: Box::new(Event::AddonsPushedToAPI { transport_urls }),
             }),
         }),
-    ))
+    )
 }
 
 fn pull_addons_from_api<Env: Environment + 'static>(auth_key: &str) -> Effect {
@@ -272,23 +271,21 @@ fn pull_addons_from_api<Env: Environment + 'static>(auth_key: &str) -> Effect {
         auth_key: auth_key.to_owned(),
         update: true,
     };
-    Pin::new(Box::new(
+    Box::pin(
         fetch_api::<Env, _, _>(&request)
             .map_ok(|CollectionResponse { addons, .. }| addons)
             .map(move |result| Msg::Internal(Internal::AddonsAPIResult(request, result))),
-    ))
+    )
 }
 
 fn push_profile_to_storage<Env: Environment + 'static>(profile: &Profile) -> Effect {
-    Pin::new(Box::new(
-        Env::set_storage(PROFILE_STORAGE_KEY, Some(profile)).map(
-            enclose!((profile.uid() => uid) move |result| match result {
-                Ok(_) => Msg::Event(Event::ProfilePushedToStorage { uid }),
-                Err(error) => Msg::Event(Event::Error {
-                    error: CtxError::from(error),
-                    source: Box::new(Event::ProfilePushedToStorage { uid }),
-                })
-            }),
-        ),
+    Box::pin(Env::set_storage(PROFILE_STORAGE_KEY, Some(profile)).map(
+        enclose!((profile.uid() => uid) move |result| match result {
+            Ok(_) => Msg::Event(Event::ProfilePushedToStorage { uid }),
+            Err(error) => Msg::Event(Event::Error {
+                error: CtxError::from(error),
+                source: Box::new(Event::ProfilePushedToStorage { uid }),
+            })
+        }),
     ))
 }

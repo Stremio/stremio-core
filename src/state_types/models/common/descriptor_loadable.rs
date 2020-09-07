@@ -3,7 +3,6 @@ use crate::state_types::models::common::Loadable;
 use crate::state_types::msg::{Internal, Msg};
 use crate::state_types::{Effects, EnvError, Environment};
 use crate::types::addon::{Descriptor, Manifest};
-use core::pin::Pin;
 use futures::FutureExt;
 use serde::Serialize;
 use url::Url;
@@ -50,13 +49,13 @@ pub fn descriptor_update<Env: Environment + 'static>(
                     transport_url: transport_url.to_owned(),
                     content: DescriptorContent::Loading,
                 });
-                Effects::one(Pin::new(Box::new(
+                Effects::one(Box::pin(
                     Env::addon_transport(&transport_url)
                         .manifest()
                         .map(move |result| {
                             Msg::Internal(Internal::ManifestRequestResult(transport_url, result))
                         }),
-                )))
+                ))
             } else {
                 Effects::none().unchanged()
             }

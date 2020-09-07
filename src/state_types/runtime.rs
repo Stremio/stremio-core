@@ -53,7 +53,7 @@ impl<Env: Environment + 'static, App: Update + 'static> Runtime<Env, App> {
                 future::ready(())
             }))
         ));
-        Pin::new(Box::new(futures::future::join_all(all).map(|_| ())))
+        Box::pin(futures::future::join_all(all).map(|_| ()))
     }
     pub fn dispatch(&self, msg: &Msg) -> Pin<Box<dyn Future<Output = ()> + Unpin>> {
         if let Msg::Event(event) = msg {

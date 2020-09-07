@@ -7,7 +7,6 @@ use crate::state_types::msg::*;
 use crate::state_types::*;
 use crate::types::addon::{ResourceRef, ResourceRequest};
 use crate::types::resource::MetaItem;
-use core::pin::Pin;
 use futures::FutureExt;
 use lazysort::SortedBy;
 use serde::*;
@@ -81,7 +80,7 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for Notifications {
                                             request: addon_req.to_owned(),
                                             content: ResourceContent::Loading,
                                         },
-                                        Pin::new(Box::new(
+                                        Box::pin(
                                             Env::addon_transport(&addon_req.base)
                                                 .resource(&addon_req.path)
                                                 .map(move |result| {
@@ -90,7 +89,7 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for Notifications {
                                                         Box::new(result),
                                                     ))
                                                 }),
-                                        )),
+                                        ),
                                     )
                                 })
                                 .collect::<Vec<_>>()

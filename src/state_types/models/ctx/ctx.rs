@@ -12,7 +12,6 @@ use crate::types::api::{
 };
 use crate::types::library::LibBucket;
 use crate::types::profile::{Auth, Profile};
-use core::pin::Pin;
 use derivative::Derivative;
 use enclose::enclose;
 use futures::{future, FutureExt, TryFutureExt};
@@ -155,7 +154,7 @@ impl<Env: Environment + 'static> Update for Ctx<Env> {
 }
 
 fn pull_ctx_from_storage<Env: Environment + 'static>() -> Effect {
-    Pin::new(Box::new(
+    Box::pin(
         migrate_storage_schema::<Env>()
             .and_then(|_| {
                 future::try_join3(
@@ -166,11 +165,11 @@ fn pull_ctx_from_storage<Env: Environment + 'static>() -> Effect {
             })
             .map_err(CtxError::from)
             .map(|result| Msg::Internal(Internal::CtxStorageResult(result))),
-    ))
+    )
 }
 
 fn authenticate<Env: Environment + 'static>(auth_request: &AuthRequest) -> Effect {
-    Pin::new(Box::new(
+    Box::pin(
         fetch_api::<Env, _, _>(&APIRequest::Auth(auth_request.to_owned()))
             .map_ok(|AuthResponse { key, user }| Auth { key, user })
             .and_then(|auth| {
@@ -194,11 +193,11 @@ fn authenticate<Env: Environment + 'static>(auth_request: &AuthRequest) -> Effec
             .map(enclose!((auth_request) move |result| {
                 Msg::Internal(Internal::CtxAuthResult(auth_request, result))
             })),
-    ))
+    )
 }
 
 fn delete_session<Env: Environment + 'static>(auth_key: &str) -> Effect {
-    Pin::new(Box::new(
+    Box::pin(
         fetch_api::<Env, _, SuccessResponse>(&APIRequest::Logout {
             auth_key: auth_key.to_owned(),
         })
@@ -211,7 +210,7 @@ fn delete_session<Env: Environment + 'static>(auth_key: &str) -> Effect {
                 }),
             }
         )),
-    ))
+    )
 }
 
 fn serialize_lib_bucket<S>(lib_bucket: &LibBucket, serializer: S) -> Result<S::Ok, S::Error>

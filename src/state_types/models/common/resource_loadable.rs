@@ -2,7 +2,6 @@ use crate::state_types::models::common::Loadable;
 use crate::state_types::msg::{Internal, Msg};
 use crate::state_types::{Effect, Effects, EnvError, Environment};
 use crate::types::addon::{AggrRequest, Descriptor, ResourceRequest, ResourceResponse};
-use core::pin::Pin;
 use futures::FutureExt;
 use serde::Serialize;
 use std::convert::TryFrom;
@@ -68,7 +67,7 @@ where
                     request: request.to_owned(),
                     content: ResourceContent::Loading,
                 });
-                Effects::one(Pin::new(Box::new(
+                Effects::one(Box::pin(
                     Env::addon_transport(&request.base)
                         .resource(&request.path)
                         .map(move |result| {
@@ -77,7 +76,7 @@ where
                                 Box::new(result),
                             ))
                         }),
-                )))
+                ))
             } else {
                 Effects::none().unchanged()
             }
@@ -146,7 +145,7 @@ where
                                 request: request.to_owned(),
                                 content: ResourceContent::Loading,
                             },
-                            Pin::new(Box::new(
+                            Box::pin(
                                 Env::addon_transport(&request.base)
                                     .resource(&request.path)
                                     .map(move |result| {
@@ -155,7 +154,7 @@ where
                                             Box::new(result),
                                         ))
                                     }),
-                            )),
+                            ),
                         )
                     })
                     .unzip::<_, _, Vec<_>, Vec<_>>();

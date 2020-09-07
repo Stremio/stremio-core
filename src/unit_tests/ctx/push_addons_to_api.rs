@@ -5,7 +5,6 @@ use crate::types::addon::{Descriptor, Manifest};
 use crate::types::api::{APIResult, SuccessResponse, True};
 use crate::types::profile::{Auth, GDPRConsent, Profile, User};
 use crate::unit_tests::{default_fetch_handler, Env, Request, FETCH_HANDLER, REQUESTS};
-use core::pin::Pin;
 use futures::future;
 use semver::Version;
 use std::any::Any;
@@ -72,9 +71,9 @@ fn actionctx_pushaddonstoapi_with_user() {
                 && method == "POST"
                 && body == "{\"type\":\"AddonCollectionSet\",\"authKey\":\"auth_key\",\"addons\":[{\"manifest\":{\"id\":\"id\",\"version\":\"0.0.1\",\"name\":\"name\",\"contactEmail\":null,\"description\":null,\"logo\":null,\"background\":null,\"types\":[],\"resources\":[],\"idPrefixes\":null,\"catalogs\":[],\"addonCatalogs\":[],\"behaviorHints\":{}},\"transportUrl\":\"https://transport_url/\",\"flags\":{\"official\":false,\"protected\":false}}]}" =>
             {
-                Pin::new(Box::new(future::ok(Box::new(APIResult::Ok {
+                Box::pin(future::ok(Box::new(APIResult::Ok {
                     result: SuccessResponse { success: True {} },
-                }) as Box<dyn Any>)))
+                }) as Box<dyn Any>))
             }
             _ => default_fetch_handler(request),
         }

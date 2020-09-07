@@ -6,7 +6,6 @@ use crate::types::api::{APIResult, SuccessResponse, True};
 use crate::types::library::LibBucket;
 use crate::types::profile::{Auth, GDPRConsent, Profile, User};
 use crate::unit_tests::{default_fetch_handler, Env, Request, FETCH_HANDLER, REQUESTS, STORAGE};
-use core::pin::Pin;
 use futures::future;
 use std::any::Any;
 use stremio_derive::Model;
@@ -25,9 +24,9 @@ fn actionctx_logout() {
                 && method == "POST"
                 && body == "{\"type\":\"Logout\",\"authKey\":\"auth_key\"}" =>
             {
-                Pin::new(Box::new(future::ok(Box::new(APIResult::Ok {
+                Box::pin(future::ok(Box::new(APIResult::Ok {
                     result: SuccessResponse { success: True {} },
-                }) as Box<dyn Any>)))
+                }) as Box<dyn Any>))
             }
             _ => default_fetch_handler(request),
         }

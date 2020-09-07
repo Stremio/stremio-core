@@ -3,7 +3,6 @@ use crate::addon_transport::AddonTransport;
 use crate::constants::{ADDON_LEGACY_PATH, ADDON_MANIFEST_PATH};
 use crate::state_types::{EnvError, EnvFuture, Environment};
 use crate::types::addon::{Manifest, ResourceRef, ResourceResponse};
-use core::pin::Pin;
 use futures::future;
 use http::Request;
 use std::marker::PhantomData;
@@ -30,10 +29,10 @@ impl<Env: Environment> AddonTransport for AddonHTTPTransport<Env> {
         }
 
         if !self.transport_url.path().ends_with(ADDON_MANIFEST_PATH) {
-            return Pin::new(Box::new(future::err(EnvError::AddonTransport(format!(
+            return Box::pin(future::err(EnvError::AddonTransport(format!(
                 "addon http transport url must ends with {}",
                 ADDON_MANIFEST_PATH
-            )))));
+            ))));
         }
 
         let url = self

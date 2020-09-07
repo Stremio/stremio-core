@@ -63,21 +63,21 @@ impl Environment for Env {
     {
         let request = Request::from(request);
         REQUESTS.write().unwrap().push(request.to_owned());
-        Pin::new(Box::new(
+        Box::pin(
             FETCH_HANDLER.read().unwrap()(request).map_ok(|resp| *resp.downcast::<OUT>().unwrap()),
-        ))
+        )
     }
     fn get_storage<T>(key: &str) -> EnvFuture<Option<T>>
     where
         for<'de> T: 'static + Deserialize<'de>,
     {
-        Pin::new(Box::new(future::ok(
+        Box::pin(future::ok(
             STORAGE
                 .read()
                 .unwrap()
                 .get(key)
                 .map(|data| serde_json::from_str(&data).unwrap()),
-        )))
+        ))
     }
     fn set_storage<T: Serialize>(key: &str, value: Option<&T>) -> EnvFuture<()> {
         let mut storage = STORAGE.write().unwrap();
@@ -85,7 +85,7 @@ impl Environment for Env {
             Some(v) => storage.insert(key.to_string(), serde_json::to_string(v).unwrap()),
             None => storage.remove(key),
         };
-        Pin::new(Box::new(future::ok(())))
+        Box::pin(future::ok(()))
     }
     fn now() -> DateTime<Utc> {
         *NOW.read().unwrap()

@@ -32,7 +32,7 @@ impl Effects {
     }
 
     pub fn msg(msg: Msg) -> Self {
-        Effects::one(Pin::new(Box::new(future::ready(msg))))
+        Effects::one(Box::pin(future::ready(msg)))
     }
 
     pub fn unchanged(mut self) -> Self {

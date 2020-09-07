@@ -9,7 +9,6 @@ use crate::types::library::{
     LibBucket, LibBucketBorrowed, LibItem, LibItemBehaviorHints, LibItemState,
 };
 use crate::types::profile::AuthKey;
-use core::pin::Pin;
 use futures::future::Either;
 use futures::{future, FutureExt, TryFutureExt};
 use std::collections::HashMap;
@@ -280,21 +279,19 @@ fn update_and_push_items_to_storage<Env: Environment + 'static>(
             ))
         }
     };
-    Pin::new(Box::new(push_to_storage_future.map(
-        move |result| match result {
-            Ok(_) => Msg::Event(Event::LibraryItemsPushedToStorage { ids }),
-            Err(error) => Msg::Event(Event::Error {
-                error: CtxError::from(error),
-                source: Box::new(Event::LibraryItemsPushedToStorage { ids }),
-            }),
-        },
-    )))
+    Box::pin(push_to_storage_future.map(move |result| match result {
+        Ok(_) => Msg::Event(Event::LibraryItemsPushedToStorage { ids }),
+        Err(error) => Msg::Event(Event::Error {
+            error: CtxError::from(error),
+            source: Box::new(Event::LibraryItemsPushedToStorage { ids }),
+        }),
+    }))
 }
 
 fn push_library_to_storage<Env: Environment + 'static>(library: &LibBucket) -> Effect {
     let ids = library.items.keys().cloned().collect();
     let (recent_items, other_items) = library.split_items_by_recent();
-    Pin::new(Box::new(
+    Box::pin(
         future::try_join_all(vec![
             Env::set_storage(
                 LIBRARY_RECENT_STORAGE_KEY,
@@ -312,12 +309,12 @@ fn push_library_to_storage<Env: Environment + 'static>(library: &LibBucket) -> E
                 source: Box::new(Event::LibraryItemsPushedToStorage { ids }),
             }),
         }),
-    ))
+    )
 }
 
 fn push_items_to_api<Env: Environment + 'static>(items: Vec<LibItem>, auth_key: &str) -> Effect {
     let ids = items.iter().map(|item| &item.id).cloned().collect();
-    Pin::new(Box::new(
+    Box::pin(
         fetch_api::<Env, _, SuccessResponse>(&DatastoreRequest {
             auth_key: auth_key.to_owned(),
             collection: LIBRARY_COLLECTION_NAME.to_owned(),
@@ -330,7 +327,7 @@ fn push_items_to_api<Env: Environment + 'static>(items: Vec<LibItem>, auth_key: 
                 source: Box::new(Event::LibraryItemsPushedToAPI { ids }),
             }),
         }),
-    ))
+    )
 }
 
 fn pull_items_from_api<Env: Environment + 'static>(ids: Vec<String>, auth_key: &str) -> Effect {
@@ -339,9 +336,10 @@ fn pull_items_from_api<Env: Environment + 'static>(ids: Vec<String>, auth_key: &
         collection: LIBRARY_COLLECTION_NAME.to_owned(),
         command: DatastoreCommand::Get { ids, all: false },
     };
-    Pin::new(Box::new(fetch_api::<Env, _, _>(&request).map(
-        move |result| Msg::Internal(Internal::LibraryPullResult(request, result)),
-    )))
+    Box::pin(
+        fetch_api::<Env, _, _>(&request)
+            .map(move |result| Msg::Internal(Internal::LibraryPullResult(request, result))),
+    )
 }
 
 fn plan_sync_with_api<Env: Environment + 'static>(library: &LibBucket, auth_key: &str) -> Effect {
@@ -356,7 +354,7 @@ fn plan_sync_with_api<Env: Environment + 'static>(library: &LibBucket, auth_key:
         collection: LIBRARY_COLLECTION_NAME.to_owned(),
         command: DatastoreCommand::Meta {},
     };
-    Pin::new(Box::new(
+    Box::pin(
         fetch_api::<Env, _, Vec<LibItemModified>>(&request)
             .map_ok(|remote_mtimes| {
                 remote_mtimes
@@ -388,5 +386,5 @@ fn plan_sync_with_api<Env: Environment + 'static>(library: &LibBucket, auth_key:
                 (pull_ids, push_ids)
             })
             .map(move |result| Msg::Internal(Internal::LibrarySyncPlanResult(request, result))),
-    ))
+    )
 }
