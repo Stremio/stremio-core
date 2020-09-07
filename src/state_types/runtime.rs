@@ -43,13 +43,9 @@ impl<Env: Environment + 'static, App: Update + 'static> Runtime<Env, App> {
     ) -> Pin<Box<dyn Future<Output = ()> + Unpin>> {
         let handle = self.clone();
         let fx = with(&mut *self.app.write().expect("rwlock write failed"));
-        // Send events
-        {
-            let mut tx = self.tx.clone();
-            if fx.has_changed {
-                let _ = tx.try_send(RuntimeEvent::NewState);
-            }
-        }
+        if fx.has_changed {
+            self.emit_event(RuntimeEvent::NewState);
+        };
         // Handle next effects
         let all = fx.effects.into_iter().map(enclose!((handle) move |ft| ft
             .then(enclose!((handle) move |msg| {
@@ -60,12 +56,12 @@ impl<Env: Environment + 'static, App: Update + 'static> Runtime<Env, App> {
         Pin::new(Box::new(futures::future::join_all(all).map(|_| ())))
     }
     pub fn dispatch(&self, msg: &Msg) -> Pin<Box<dyn Future<Output = ()> + Unpin>> {
-        {
-            let mut tx = self.tx.clone();
-            if let Msg::Event(ev) = msg {
-                let _ = tx.try_send(RuntimeEvent::Event(ev.to_owned()));
-            }
-        }
+        if let Msg::Event(event) = msg {
+            self.emit_event(RuntimeEvent::Event(event.to_owned()));
+        };
         self.dispatch_with(|model| model.update(msg))
+    }
+    fn emit_event(&self, event: RuntimeEvent) {
+        self.tx.clone().try_send(event).unwrap();
     }
 }
