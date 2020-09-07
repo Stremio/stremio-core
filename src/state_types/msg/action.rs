@@ -31,19 +31,6 @@ pub enum ActionCtx {
 }
 
 #[derive(Debug, Clone, Deserialize)]
-#[serde(tag = "model", content = "args")]
-pub enum ActionLoad {
-    Ctx,
-    AddonDetails(AddonDetailsSelected),
-    CatalogWithFilters(CatalogWithFiltersSelected),
-    CatalogsWithExtra(CatalogsWithExtraSelected),
-    LibraryWithFilters(LibraryWithFiltersSelected),
-    MetaDetails(MetaDetailsSelected),
-    Player(PlayerSelected),
-    Notifications,
-}
-
-#[derive(Debug, Clone, Deserialize)]
 #[serde(tag = "action", content = "args")]
 pub enum ActionStreamingServer {
     Reload,
@@ -57,6 +44,19 @@ pub enum ActionPlayer {
     PushToLibrary,
 }
 
+#[derive(Debug, Clone, Deserialize)]
+#[serde(tag = "model", content = "args")]
+pub enum ActionLoad {
+    Ctx,
+    AddonDetails(AddonDetailsSelected),
+    CatalogWithFilters(CatalogWithFiltersSelected),
+    CatalogsWithExtra(CatalogsWithExtraSelected),
+    LibraryWithFilters(LibraryWithFiltersSelected),
+    MetaDetails(MetaDetailsSelected),
+    Player(PlayerSelected),
+    Notifications,
+}
+
 //
 // Those messages are meant to be dispatched only by the users of the stremio-core crate and handled by the stremio-core crate
 //
@@ -64,8 +64,8 @@ pub enum ActionPlayer {
 #[serde(tag = "action", content = "args")]
 pub enum Action {
     Ctx(ActionCtx),
-    Load(ActionLoad),
     StreamingServer(ActionStreamingServer),
     Player(ActionPlayer),
+    Load(ActionLoad),
     Unload,
 }
