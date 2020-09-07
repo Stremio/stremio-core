@@ -76,7 +76,7 @@ fn actionctx_authenticate_login() {
     }
     Env::reset();
     *FETCH_HANDLER.write().unwrap() = Box::new(fetch_handler);
-    let (runtime, _) = Runtime::<Env, Model>::new(Model::default(), 1000);
+    let (runtime, _rx) = Runtime::<Env, Model>::new(Model::default(), 1000);
     tokio_current_thread::block_on_all(runtime.dispatch(&Msg::Action(Action::Ctx(
         ActionCtx::Authenticate(AuthRequest::Login {
             email: "user_email".into(),
@@ -264,7 +264,7 @@ fn actionctx_authenticate_register() {
     }
     Env::reset();
     *FETCH_HANDLER.write().unwrap() = Box::new(fetch_handler);
-    let (runtime, _) = Runtime::<Env, Model>::new(Model::default(), 1000);
+    let (runtime, _rx) = Runtime::<Env, Model>::new(Model::default(), 1000);
     tokio_current_thread::block_on_all(runtime.dispatch(&Msg::Action(Action::Ctx(
         ActionCtx::Authenticate(AuthRequest::Register {
             email: "user_email".into(),

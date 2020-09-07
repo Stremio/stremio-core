@@ -18,7 +18,7 @@ fn actionctx_updatesettings() {
         ..Settings::default()
     };
     Env::reset();
-    let (runtime, _) = Runtime::<Env, Model>::new(Model::default(), 1000);
+    let (runtime, _rx) = Runtime::<Env, Model>::new(Model::default(), 1000);
     tokio_current_thread::block_on_all(runtime.dispatch(&Msg::Action(Action::Ctx(
         ActionCtx::UpdateSettings(settings.to_owned()),
     ))));
@@ -63,7 +63,7 @@ fn actionctx_updatesettings_not_changed() {
         PROFILE_STORAGE_KEY.to_owned(),
         serde_json::to_string(&profile).unwrap(),
     );
-    let (runtime, _) = Runtime::<Env, Model>::new(
+    let (runtime, _rx) = Runtime::<Env, Model>::new(
         Model {
             ctx: Ctx {
                 profile,

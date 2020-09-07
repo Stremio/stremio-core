@@ -22,7 +22,7 @@ fn actionctx_synclibrarywithapi() {
         ctx: Ctx<Env>,
     }
     Env::reset();
-    let (runtime, _) = Runtime::<Env, Model>::new(Model::default(), 1000);
+    let (runtime, _rx) = Runtime::<Env, Model>::new(Model::default(), 1000);
     tokio_current_thread::block_on_all(
         runtime.dispatch(&Msg::Action(Action::Ctx(ActionCtx::SyncLibraryWithAPI))),
     );
@@ -206,7 +206,7 @@ fn actionctx_synclibrarywithapi_with_user() {
     }
     Env::reset();
     *FETCH_HANDLER.write().unwrap() = Box::new(fetch_handler);
-    let (runtime, _) = Runtime::<Env, Model>::new(
+    let (runtime, _rx) = Runtime::<Env, Model>::new(
         Model {
             ctx: Ctx {
                 profile: Profile {
@@ -351,7 +351,7 @@ fn actionctx_synclibrarywithapi_with_user_empty_library() {
     }
     Env::reset();
     *FETCH_HANDLER.write().unwrap() = Box::new(fetch_handler);
-    let (runtime, _) = Runtime::<Env, Model>::new(
+    let (runtime, _rx) = Runtime::<Env, Model>::new(
         Model {
             ctx: Ctx {
                 profile: Profile {

@@ -21,7 +21,7 @@ fn actionctx_pulladdonsfromapi() {
     }
     let official_addon = OFFICIAL_ADDONS.first().unwrap();
     Env::reset();
-    let (runtime, _) = Runtime::<Env, Model>::new(
+    let (runtime, _rx) = Runtime::<Env, Model>::new(
         Model {
             ctx: Ctx {
                 profile: Profile {
@@ -91,7 +91,7 @@ fn actionctx_pulladdonsfromapi_with_user() {
     }
     Env::reset();
     *FETCH_HANDLER.write().unwrap() = Box::new(fetch_handler);
-    let (runtime, _) = Runtime::<Env, Model>::new(
+    let (runtime, _rx) = Runtime::<Env, Model>::new(
         Model {
             ctx: Ctx {
                 profile: Profile {

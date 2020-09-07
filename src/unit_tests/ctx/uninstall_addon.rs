@@ -46,7 +46,7 @@ fn actionctx_uninstalladdon() {
         PROFILE_STORAGE_KEY.to_owned(),
         serde_json::to_string(&profile).unwrap(),
     );
-    let (runtime, _) = Runtime::<Env, Model>::new(
+    let (runtime, _rx) = Runtime::<Env, Model>::new(
         Model {
             ctx: Ctx {
                 profile,
@@ -147,7 +147,7 @@ fn actionctx_uninstalladdon_with_user() {
         PROFILE_STORAGE_KEY.to_owned(),
         serde_json::to_string(&profile).unwrap(),
     );
-    let (runtime, _) = Runtime::<Env, Model>::new(
+    let (runtime, _rx) = Runtime::<Env, Model>::new(
         Model {
             ctx: Ctx {
                 profile,
@@ -231,7 +231,7 @@ fn actionctx_uninstalladdon_protected() {
         PROFILE_STORAGE_KEY.to_owned(),
         serde_json::to_string(&profile).unwrap(),
     );
-    let (runtime, _) = Runtime::<Env, Model>::new(
+    let (runtime, _rx) = Runtime::<Env, Model>::new(
         Model {
             ctx: Ctx {
                 profile,
@@ -298,7 +298,7 @@ fn actionctx_uninstalladdon_not_installed() {
         PROFILE_STORAGE_KEY.to_owned(),
         serde_json::to_string(&profile).unwrap(),
     );
-    let (runtime, _) = Runtime::<Env, Model>::new(
+    let (runtime, _rx) = Runtime::<Env, Model>::new(
         Model {
             ctx: Ctx {
                 profile,

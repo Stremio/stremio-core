@@ -70,7 +70,7 @@ fn actionctx_logout() {
         LIBRARY_STORAGE_KEY.to_owned(),
         serde_json::to_string(&LibBucket::new(profile.uid(), vec![])).unwrap(),
     );
-    let (runtime, _) = Runtime::<Env, Model>::new(
+    let (runtime, _rx) = Runtime::<Env, Model>::new(
         Model {
             ctx: Ctx {
                 profile,

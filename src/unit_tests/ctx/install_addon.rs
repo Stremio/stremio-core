@@ -39,7 +39,7 @@ fn actionctx_installaddon_install() {
         flags: Default::default(),
     };
     Env::reset();
-    let (runtime, _) = Runtime::<Env, Model>::new(
+    let (runtime, _rx) = Runtime::<Env, Model>::new(
         Model {
             ctx: Ctx {
                 profile: Profile {
@@ -117,7 +117,7 @@ fn actionctx_installaddon_install_with_user() {
     };
     Env::reset();
     *FETCH_HANDLER.write().unwrap() = Box::new(fetch_handler);
-    let (runtime, _) = Runtime::<Env, Model>::new(
+    let (runtime, _rx) = Runtime::<Env, Model>::new(
         Model {
             ctx: Ctx {
                 profile: Profile {
@@ -227,7 +227,7 @@ fn actionctx_installaddon_update() {
         flags: Default::default(),
     };
     Env::reset();
-    let (runtime, _) = Runtime::<Env, Model>::new(
+    let (runtime, _rx) = Runtime::<Env, Model>::new(
         Model {
             ctx: Ctx {
                 profile: Profile {
@@ -319,7 +319,7 @@ fn actionctx_installaddon_already_installed() {
         PROFILE_STORAGE_KEY.to_owned(),
         serde_json::to_string(&profile).unwrap(),
     );
-    let (runtime, _) = Runtime::<Env, Model>::new(
+    let (runtime, _rx) = Runtime::<Env, Model>::new(
         Model {
             ctx: Ctx {
                 profile,

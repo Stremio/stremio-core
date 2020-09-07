@@ -65,7 +65,7 @@ fn actionctx_removefromlibrary() {
         ))
         .unwrap(),
     );
-    let (runtime, _) = Runtime::<Env, Model>::new(
+    let (runtime, _rx) = Runtime::<Env, Model>::new(
         Model {
             ctx: Ctx {
                 profile: Profile {
@@ -165,7 +165,7 @@ fn actionctx_removefromlibrary_not_added() {
         LIBRARY_RECENT_STORAGE_KEY.to_owned(),
         serde_json::to_string(&LibBucket::new(None, vec![lib_item.to_owned()])).unwrap(),
     );
-    let (runtime, _) = Runtime::<Env, Model>::new(
+    let (runtime, _rx) = Runtime::<Env, Model>::new(
         Model {
             ctx: Ctx {
                 library: LibBucket {
