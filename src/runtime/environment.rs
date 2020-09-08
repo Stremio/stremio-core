@@ -1,6 +1,7 @@
 use crate::addon_transport::{AddonHTTPTransport, AddonTransport};
 use chrono::{DateTime, Utc};
-use futures::future::{Future, LocalBoxFuture};
+use futures::future::LocalBoxFuture;
+use futures::Future;
 use http::Request;
 use serde::{Deserialize, Serialize};
 use std::fmt;

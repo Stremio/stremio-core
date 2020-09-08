@@ -1,5 +1,6 @@
-use crate::types::addon::*;
-use serde::*;
+use crate::types::addon::{Manifest, ManifestCatalog, ManifestResource};
+use semver::Version;
+use serde::Deserialize;
 
 //
 // Manifest types
@@ -41,7 +42,7 @@ pub struct LegacyManifest {
     description: Option<String>,
     logo: Option<String>,
     background: Option<String>,
-    version: semver::Version,
+    version: Version,
     methods: Vec<String>,
     types: Vec<String>,
     contact_email: Option<String>,

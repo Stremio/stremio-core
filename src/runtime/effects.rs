@@ -1,6 +1,6 @@
 use crate::runtime::msg::Msg;
-use futures::future;
-use futures::future::{FutureExt, LocalBoxFuture};
+use futures::future::LocalBoxFuture;
+use futures::{future, FutureExt};
 
 pub type Effect = LocalBoxFuture<'static, Msg>;
 

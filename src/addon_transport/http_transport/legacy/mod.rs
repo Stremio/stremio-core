@@ -1,13 +1,11 @@
 use crate::addon_transport::AddonTransport;
 use crate::runtime::{EnvError, EnvFuture, Environment};
-use crate::types::addon::*;
-use crate::types::resource::*;
-use futures::future;
-use futures::future::{FutureExt, TryFutureExt};
+use crate::types::addon::{Manifest, ResourceRef, ResourceResponse};
+use crate::types::resource::{MetaItem, MetaItemPreview, Stream, Subtitles};
+use futures::{future, FutureExt, TryFutureExt};
 use http::Request;
-use serde::*;
+use serde::Deserialize;
 use serde_json::json;
-use serde_json::value::Value;
 use std::error::Error;
 use std::fmt;
 use std::marker::PhantomData;
@@ -187,7 +185,7 @@ fn build_legacy_req(transport_url: &Url, path: &ResourceRef) -> Result<Request<(
             let sort = if id != "top" {
                 json!({ id.to_owned(): -1, "popularity": -1 })
             } else {
-                Value::Null
+                serde_json::Value::Null
             };
             build_jsonrpc(
                 "meta.find",
@@ -205,14 +203,17 @@ fn build_legacy_req(transport_url: &Url, path: &ResourceRef) -> Result<Request<(
         "stream" => {
             // Just use the query, but add "type" to it
             let mut query = match query_from_id(id) {
-                Value::Object(q) => q,
+                serde_json::Value::Object(q) => q,
                 _ => {
                     return Err(EnvError::AddonTransport(
                         "legacy: stream request without a valid id".to_owned(),
                     ))
                 }
             };
-            query.insert("type".into(), Value::String(type_name.to_owned()));
+            query.insert(
+                "type".into(),
+                serde_json::Value::String(type_name.to_owned()),
+            );
             build_jsonrpc("stream.find", json!({ "query": query }))
         }
         "subtitles" => build_jsonrpc(
@@ -230,16 +231,16 @@ fn build_legacy_req(transport_url: &Url, path: &ResourceRef) -> Result<Request<(
     Ok(Request::get(&url).body(()).expect("builder cannot fail"))
 }
 
-fn build_jsonrpc(method: &str, params: Value) -> Value {
+fn build_jsonrpc(method: &str, params: serde_json::Value) -> serde_json::Value {
     json!({
-        "params": [Value::Null, params],
+        "params": [serde_json::Value::Null, params],
         "method": method,
         "id": 1,
         "jsonrpc": "2.0",
     })
 }
 
-fn query_from_id(id: &str) -> Value {
+fn query_from_id(id: &str) -> serde_json::Value {
     let parts: Vec<&str> = id.split(':').collect();
     // IMDb format: tt...:(season:episode)?
     if id.starts_with(IMDB_PREFIX) {
@@ -271,7 +272,7 @@ fn query_from_id(id: &str) -> Value {
     if parts.len() == 2 {
         return json!({ parts[0].to_owned(): parts[1] });
     }
-    Value::Null
+    serde_json::Value::Null
 }
 
 #[cfg(test)]
