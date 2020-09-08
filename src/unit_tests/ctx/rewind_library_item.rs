@@ -1,6 +1,6 @@
 use crate::constants::{LIBRARY_RECENT_STORAGE_KEY, LIBRARY_STORAGE_KEY};
 use crate::state_types::models::ctx::Ctx;
-use crate::state_types::msg::{Action, ActionCtx, Msg};
+use crate::state_types::msg::{Action, ActionCtx};
 use crate::state_types::{EnvFuture, Environment, Runtime};
 use crate::types::api::{APIResult, SuccessResponse, True};
 use crate::types::library::{LibBucket, LibItem, LibItemState};
@@ -10,7 +10,7 @@ use crate::unit_tests::{
 };
 use chrono::prelude::TimeZone;
 use chrono::Utc;
-use futures::future;
+use futures::{future, FutureExt};
 use std::any::Any;
 use stremio_derive::Model;
 
@@ -28,9 +28,9 @@ fn actionctx_rewindlibraryitem() {
                 && method == "POST"
                 && body == "{\"authKey\":\"auth_key\",\"collection\":\"libraryItem\",\"changes\":[{\"_id\":\"id\",\"name\":\"name\",\"type\":\"type_name\",\"poster\":null,\"posterShape\":\"poster\",\"removed\":false,\"temp\":false,\"_ctime\":\"2020-01-01T00:00:00Z\",\"_mtime\":\"2020-01-02T00:00:00Z\",\"state\":{\"lastWatched\":null,\"timeWatched\":0,\"timeOffset\":0,\"overallTimeWatched\":0,\"timesWatched\":0,\"flaggedWatched\":0,\"duration\":0,\"video_id\":null,\"watched\":null,\"lastVidReleased\":null,\"noNotif\":false},\"behaviorHints\":{\"defaultVideoId\":null}}]}" =>
             {
-                Box::pin(future::ok(Box::new(APIResult::Ok {
+                future::ok(Box::new(APIResult::Ok {
                     result: SuccessResponse { success: True {} },
-                }) as Box<dyn Any>))
+                }) as Box<dyn Any>).boxed_local()
             }
             _ => default_fetch_handler(request),
         }
@@ -104,11 +104,13 @@ fn actionctx_rewindlibraryitem() {
         },
         1000,
     );
-    tokio_current_thread::block_on_all(runtime.dispatch(&Msg::Action(Action::Ctx(
-        ActionCtx::RewindLibraryItem(lib_item.id.to_owned()),
-    ))));
+    Env::run(|| {
+        runtime.dispatch(Action::Ctx(ActionCtx::RewindLibraryItem(
+            lib_item.id.to_owned(),
+        )))
+    });
     assert_eq!(
-        runtime.app().unwrap().ctx.library.items.get(&lib_item.id),
+        runtime.model().unwrap().ctx.library.items.get(&lib_item.id),
         Some(&lib_item_rewinded),
         "Library updated successfully in memory"
     );
@@ -180,11 +182,9 @@ fn actionctx_rewindlibraryitem_not_added() {
         },
         1000,
     );
-    tokio_current_thread::block_on_all(runtime.dispatch(&Msg::Action(Action::Ctx(
-        ActionCtx::RewindLibraryItem("id2".to_owned()),
-    ))));
+    Env::run(|| runtime.dispatch(Action::Ctx(ActionCtx::RewindLibraryItem("id2".to_owned()))));
     assert_eq!(
-        runtime.app().unwrap().ctx.library.items.get(&lib_item.id),
+        runtime.model().unwrap().ctx.library.items.get(&lib_item.id),
         Some(&lib_item),
         "Library not updated in memory"
     );

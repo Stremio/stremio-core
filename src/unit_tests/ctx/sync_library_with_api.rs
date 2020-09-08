@@ -1,6 +1,6 @@
 use crate::constants::LIBRARY_RECENT_STORAGE_KEY;
 use crate::state_types::models::ctx::Ctx;
-use crate::state_types::msg::{Action, ActionCtx, Msg};
+use crate::state_types::msg::{Action, ActionCtx};
 use crate::state_types::{EnvFuture, Environment, Runtime};
 use crate::types::api::{APIResult, LibItemModified, SuccessResponse, True};
 use crate::types::library::{LibBucket, LibItem, LibItemState};
@@ -8,7 +8,7 @@ use crate::types::profile::{Auth, AuthKey, GDPRConsent, Profile, User};
 use crate::unit_tests::{default_fetch_handler, Env, Request, FETCH_HANDLER, REQUESTS, STORAGE};
 use chrono::prelude::TimeZone;
 use chrono::{Duration, Utc};
-use futures::future;
+use futures::{future, FutureExt};
 use lazy_static::lazy_static;
 use serde::Deserialize;
 use std::any::Any;
@@ -22,9 +22,7 @@ fn actionctx_synclibrarywithapi() {
     }
     Env::reset();
     let (runtime, _rx) = Runtime::<Env, Model>::new(Model::default(), 1000);
-    tokio_current_thread::block_on_all(
-        runtime.dispatch(&Msg::Action(Action::Ctx(ActionCtx::SyncLibraryWithAPI))),
-    );
+    Env::run(|| runtime.dispatch(Action::Ctx(ActionCtx::SyncLibraryWithAPI)));
     assert!(
         REQUESTS.read().unwrap().is_empty(),
         "No requests have been sent"
@@ -128,7 +126,7 @@ fn actionctx_synclibrarywithapi_with_user() {
                 && method == "POST"
                 && body == "{\"authKey\":\"auth_key\",\"collection\":\"libraryItem\"}" =>
             {
-                Box::pin(future::ok(Box::new(APIResult::Ok {
+                future::ok(Box::new(APIResult::Ok {
                     result: vec![
                         LibItemModified(
                             REMOTE_ONLY_ITEM.id.to_owned(),
@@ -143,7 +141,8 @@ fn actionctx_synclibrarywithapi_with_user() {
                             REMOTE_NEWER_ITEM.mtime.to_owned(),
                         ),
                     ],
-                }) as Box<dyn Any>))
+                }) as Box<dyn Any>)
+                .boxed_local()
             }
             Request {
                 url, method, body, ..
@@ -164,9 +163,10 @@ fn actionctx_synclibrarywithapi_with_user() {
                             && body.changes.contains(&LOCAL_ONLY_ITEM)
                             && body.changes.contains(&LOCAL_WATCHED_ITEM) =>
                     {
-                        Box::pin(future::ok(Box::new(APIResult::Ok {
+                        future::ok(Box::new(APIResult::Ok {
                             result: SuccessResponse { success: True {} },
-                        }) as Box<dyn Any>))
+                        }) as Box<dyn Any>)
+                        .boxed_local()
                     }
                     _ => default_fetch_handler(request),
                 }
@@ -191,9 +191,10 @@ fn actionctx_synclibrarywithapi_with_user() {
                             && body.ids.contains(&REMOTE_ONLY_ITEM.id)
                             && body.ids.contains(&REMOTE_NEWER_ITEM.id) =>
                     {
-                        Box::pin(future::ok(Box::new(APIResult::Ok {
+                        future::ok(Box::new(APIResult::Ok {
                             result: vec![REMOTE_ONLY_ITEM.to_owned(), REMOTE_NEWER_ITEM.to_owned()],
-                        }) as Box<dyn Any>))
+                        }) as Box<dyn Any>)
+                        .boxed_local()
                     }
                     _ => default_fetch_handler(request),
                 }
@@ -255,11 +256,9 @@ fn actionctx_synclibrarywithapi_with_user() {
         },
         1000,
     );
-    tokio_current_thread::block_on_all(
-        runtime.dispatch(&Msg::Action(Action::Ctx(ActionCtx::SyncLibraryWithAPI))),
-    );
+    Env::run(|| runtime.dispatch(Action::Ctx(ActionCtx::SyncLibraryWithAPI)));
     assert_eq!(
-        runtime.app().unwrap().ctx.library,
+        runtime.model().unwrap().ctx.library,
         LibBucket {
             uid: Some("user_id".to_string()),
             items: vec![
@@ -339,9 +338,10 @@ fn actionctx_synclibrarywithapi_with_user_empty_library() {
                 && method == "POST"
                 && body == "{\"authKey\":\"auth_key\",\"collection\":\"libraryItem\"}" =>
             {
-                Box::pin(future::ok(Box::new(APIResult::Ok {
+                future::ok(Box::new(APIResult::Ok {
                     result: Vec::<LibItemModified>::new(),
-                }) as Box<dyn Any>))
+                }) as Box<dyn Any>)
+                .boxed_local()
             }
             _ => default_fetch_handler(request),
         }
@@ -376,9 +376,7 @@ fn actionctx_synclibrarywithapi_with_user_empty_library() {
         },
         1000,
     );
-    tokio_current_thread::block_on_all(
-        runtime.dispatch(&Msg::Action(Action::Ctx(ActionCtx::SyncLibraryWithAPI))),
-    );
+    Env::run(|| runtime.dispatch(Action::Ctx(ActionCtx::SyncLibraryWithAPI)));
     assert_eq!(
         REQUESTS.read().unwrap().len(),
         1,

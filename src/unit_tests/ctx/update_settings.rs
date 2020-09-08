@@ -1,6 +1,6 @@
 use crate::constants::PROFILE_STORAGE_KEY;
 use crate::state_types::models::ctx::Ctx;
-use crate::state_types::msg::{Action, ActionCtx, Msg};
+use crate::state_types::msg::{Action, ActionCtx};
 use crate::state_types::Runtime;
 use crate::types::profile::{Profile, Settings};
 use crate::unit_tests::{Env, REQUESTS, STORAGE};
@@ -19,11 +19,9 @@ fn actionctx_updatesettings() {
     };
     Env::reset();
     let (runtime, _rx) = Runtime::<Env, Model>::new(Model::default(), 1000);
-    tokio_current_thread::block_on_all(runtime.dispatch(&Msg::Action(Action::Ctx(
-        ActionCtx::UpdateSettings(settings.to_owned()),
-    ))));
+    Env::run(|| runtime.dispatch(Action::Ctx(ActionCtx::UpdateSettings(settings.to_owned()))));
     assert_eq!(
-        runtime.app().unwrap().ctx.profile.settings,
+        runtime.model().unwrap().ctx.profile.settings,
         settings,
         "Settings updated successfully in memory"
     );
@@ -72,11 +70,9 @@ fn actionctx_updatesettings_not_changed() {
         },
         1000,
     );
-    tokio_current_thread::block_on_all(runtime.dispatch(&Msg::Action(Action::Ctx(
-        ActionCtx::UpdateSettings(settings.to_owned()),
-    ))));
+    Env::run(|| runtime.dispatch(Action::Ctx(ActionCtx::UpdateSettings(settings.to_owned()))));
     assert_eq!(
-        runtime.app().unwrap().ctx.profile.settings,
+        runtime.model().unwrap().ctx.profile.settings,
         settings,
         "Settings not updated in memory"
     );

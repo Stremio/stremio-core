@@ -1,12 +1,12 @@
 use crate::constants::{LIBRARY_RECENT_STORAGE_KEY, LIBRARY_STORAGE_KEY, PROFILE_STORAGE_KEY};
 use crate::state_types::models::ctx::Ctx;
-use crate::state_types::msg::{Action, ActionCtx, Msg};
+use crate::state_types::msg::{Action, ActionCtx};
 use crate::state_types::{EnvFuture, Environment, Runtime};
 use crate::types::api::{APIResult, SuccessResponse, True};
 use crate::types::library::LibBucket;
 use crate::types::profile::{Auth, GDPRConsent, Profile, User};
 use crate::unit_tests::{default_fetch_handler, Env, Request, FETCH_HANDLER, REQUESTS, STORAGE};
-use futures::future;
+use futures::{future, FutureExt};
 use std::any::Any;
 use stremio_derive::Model;
 
@@ -24,9 +24,10 @@ fn actionctx_logout() {
                 && method == "POST"
                 && body == "{\"type\":\"Logout\",\"authKey\":\"auth_key\"}" =>
             {
-                Box::pin(future::ok(Box::new(APIResult::Ok {
+                future::ok(Box::new(APIResult::Ok {
                     result: SuccessResponse { success: True {} },
-                }) as Box<dyn Any>))
+                }) as Box<dyn Any>)
+                .boxed_local()
             }
             _ => default_fetch_handler(request),
         }
@@ -79,16 +80,14 @@ fn actionctx_logout() {
         },
         1000,
     );
-    tokio_current_thread::block_on_all(
-        runtime.dispatch(&Msg::Action(Action::Ctx(ActionCtx::Logout))),
-    );
+    Env::run(|| runtime.dispatch(Action::Ctx(ActionCtx::Logout)));
     assert_eq!(
-        runtime.app().unwrap().ctx.profile,
+        runtime.model().unwrap().ctx.profile,
         Default::default(),
         "profile updated successfully in memory"
     );
     assert_eq!(
-        runtime.app().unwrap().ctx.library,
+        runtime.model().unwrap().ctx.library,
         Default::default(),
         "library updated successfully in memory"
     );

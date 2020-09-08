@@ -1,12 +1,12 @@
 use crate::constants::{OFFICIAL_ADDONS, PROFILE_STORAGE_KEY};
 use crate::state_types::models::ctx::Ctx;
-use crate::state_types::msg::{Action, ActionCtx, Msg};
+use crate::state_types::msg::{Action, ActionCtx};
 use crate::state_types::{EnvFuture, Environment, Runtime};
 use crate::types::addon::{Descriptor, Manifest};
 use crate::types::api::{APIResult, CollectionResponse};
 use crate::types::profile::{Auth, GDPRConsent, Profile, User};
 use crate::unit_tests::{default_fetch_handler, Env, Request, FETCH_HANDLER, REQUESTS, STORAGE};
-use futures::future;
+use futures::{future, FutureExt};
 use semver::Version;
 use std::any::Any;
 use stremio_derive::Model;
@@ -39,11 +39,9 @@ fn actionctx_pulladdonsfromapi() {
         },
         1000,
     );
-    tokio_current_thread::block_on_all(
-        runtime.dispatch(&Msg::Action(Action::Ctx(ActionCtx::PullAddonsFromAPI))),
-    );
+    Env::run(|| runtime.dispatch(Action::Ctx(ActionCtx::PullAddonsFromAPI)));
     assert_eq!(
-        runtime.app().unwrap().ctx.profile.addons,
+        runtime.model().unwrap().ctx.profile.addons,
         vec![official_addon.to_owned()],
         "addons updated successfully in memory"
     );
@@ -78,12 +76,12 @@ fn actionctx_pulladdonsfromapi_with_user() {
                 && method == "POST"
                 && body == "{\"type\":\"AddonCollectionGet\",\"authKey\":\"auth_key\",\"update\":true}" =>
             {
-                Box::pin(future::ok(Box::new(APIResult::Ok {
+                future::ok(Box::new(APIResult::Ok {
                     result: CollectionResponse {
                         addons: OFFICIAL_ADDONS.to_owned(),
                         last_modified: Env::now(),
                     },
-                }) as Box<dyn Any>))
+                }) as Box<dyn Any>).boxed_local()
             }
             _ => default_fetch_handler(request),
         }
@@ -137,11 +135,9 @@ fn actionctx_pulladdonsfromapi_with_user() {
         },
         1000,
     );
-    tokio_current_thread::block_on_all(
-        runtime.dispatch(&Msg::Action(Action::Ctx(ActionCtx::PullAddonsFromAPI))),
-    );
+    Env::run(|| runtime.dispatch(Action::Ctx(ActionCtx::PullAddonsFromAPI)));
     assert_eq!(
-        runtime.app().unwrap().ctx.profile.addons,
+        runtime.model().unwrap().ctx.profile.addons,
         OFFICIAL_ADDONS.to_owned(),
         "addons updated successfully in memory"
     );

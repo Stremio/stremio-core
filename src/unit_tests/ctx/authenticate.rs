@@ -1,6 +1,6 @@
 use crate::constants::{LIBRARY_RECENT_STORAGE_KEY, LIBRARY_STORAGE_KEY, PROFILE_STORAGE_KEY};
 use crate::state_types::models::ctx::Ctx;
-use crate::state_types::msg::{Action, ActionCtx, Msg};
+use crate::state_types::msg::{Action, ActionCtx};
 use crate::state_types::{EnvFuture, Environment, Runtime};
 use crate::types::api::{
     APIResult, AuthRequest, AuthResponse, CollectionResponse, GDPRConsentWithTime,
@@ -9,7 +9,7 @@ use crate::types::library::{LibBucket, LibItem};
 use crate::types::profile::{Auth, GDPRConsent, Profile, User};
 use crate::unit_tests::{default_fetch_handler, Env, Request, FETCH_HANDLER, REQUESTS, STORAGE};
 use chrono::prelude::{TimeZone, Utc};
-use futures::future;
+use futures::{future, FutureExt};
 use std::any::Any;
 use stremio_derive::Model;
 
@@ -27,7 +27,7 @@ fn actionctx_authenticate_login() {
                 && method == "POST"
                 && body == "{\"type\":\"Auth\",\"type\":\"Login\",\"email\":\"user_email\",\"password\":\"user_password\"}" =>
             {
-                Box::pin(future::ok(Box::new(APIResult::Ok {
+                future::ok(Box::new(APIResult::Ok {
                     result: AuthResponse {
                         key: "auth_key".to_owned(),
                         user: User {
@@ -45,7 +45,7 @@ fn actionctx_authenticate_login() {
                             },
                         }
                     },
-                }) as Box<dyn Any>))
+                }) as Box<dyn Any>).boxed_local()
             }
             Request {
                 url, method, body, ..
@@ -53,12 +53,12 @@ fn actionctx_authenticate_login() {
                 && method == "POST"
                 && body == "{\"type\":\"AddonCollectionGet\",\"authKey\":\"auth_key\",\"update\":true}" =>
             {
-                Box::pin(future::ok(Box::new(APIResult::Ok {
+                future::ok(Box::new(APIResult::Ok {
                     result: CollectionResponse {
                         addons: vec![],
                         last_modified: Env::now(),
                     },
-                }) as Box<dyn Any>))
+                }) as Box<dyn Any>).boxed_local()
             }
             Request {
                 url, method, body, ..
@@ -66,9 +66,9 @@ fn actionctx_authenticate_login() {
                 && method == "POST"
                 && body == "{\"authKey\":\"auth_key\",\"collection\":\"libraryItem\",\"ids\":[],\"all\":true}" =>
             {
-                Box::pin(future::ok(Box::new(APIResult::Ok {
+                future::ok(Box::new(APIResult::Ok {
                     result: Vec::<LibItem>::new(),
-                }) as Box<dyn Any>))
+                }) as Box<dyn Any>).boxed_local()
             }
             _ => default_fetch_handler(request),
         }
@@ -76,14 +76,14 @@ fn actionctx_authenticate_login() {
     Env::reset();
     *FETCH_HANDLER.write().unwrap() = Box::new(fetch_handler);
     let (runtime, _rx) = Runtime::<Env, Model>::new(Model::default(), 1000);
-    tokio_current_thread::block_on_all(runtime.dispatch(&Msg::Action(Action::Ctx(
-        ActionCtx::Authenticate(AuthRequest::Login {
+    Env::run(|| {
+        runtime.dispatch(Action::Ctx(ActionCtx::Authenticate(AuthRequest::Login {
             email: "user_email".into(),
             password: "user_password".into(),
-        }),
-    ))));
+        })))
+    });
     assert_eq!(
-        runtime.app().unwrap().ctx.profile,
+        runtime.model().unwrap().ctx.profile,
         Profile {
             auth: Some(Auth {
                 key: "auth_key".to_owned(),
@@ -108,7 +108,7 @@ fn actionctx_authenticate_login() {
         "profile updated successfully in memory"
     );
     assert_eq!(
-        runtime.app().unwrap().ctx.library,
+        runtime.model().unwrap().ctx.library,
         LibBucket {
             uid: Some("user_id".to_string()),
             ..Default::default()
@@ -215,7 +215,7 @@ fn actionctx_authenticate_register() {
                 && method == "POST"
                 && body == "{\"type\":\"Auth\",\"type\":\"Register\",\"email\":\"user_email\",\"password\":\"user_password\",\"gdpr_consent\":{\"tos\":true,\"privacy\":true,\"marketing\":false,\"from\":\"web\",\"time\":\"2020-01-01T00:00:00Z\"}}" =>
             {
-                Box::pin(future::ok(Box::new(APIResult::Ok {
+                future::ok(Box::new(APIResult::Ok {
                     result: AuthResponse {
                         key: "auth_key".to_owned(),
                         user: User {
@@ -233,7 +233,7 @@ fn actionctx_authenticate_register() {
                             },
                         }
                     },
-                }) as Box<dyn Any>))
+                }) as Box<dyn Any>).boxed_local()
             }
             Request {
                 url, method, body, ..
@@ -241,12 +241,12 @@ fn actionctx_authenticate_register() {
                 && method == "POST"
                 && body == "{\"type\":\"AddonCollectionGet\",\"authKey\":\"auth_key\",\"update\":true}" =>
             {
-                Box::pin(future::ok(Box::new(APIResult::Ok {
+                future::ok(Box::new(APIResult::Ok {
                     result: CollectionResponse {
                         addons: vec![],
                         last_modified: Env::now(),
                     },
-                }) as Box<dyn Any>))
+                }) as Box<dyn Any>).boxed_local()
             }
             Request {
                 url, method, body, ..
@@ -254,9 +254,9 @@ fn actionctx_authenticate_register() {
                 && method == "POST"
                 && body == "{\"authKey\":\"auth_key\",\"collection\":\"libraryItem\",\"ids\":[],\"all\":true}" =>
             {
-                Box::pin(future::ok(Box::new(APIResult::Ok {
+                future::ok(Box::new(APIResult::Ok {
                     result: Vec::<LibItem>::new(),
-                }) as Box<dyn Any>))
+                }) as Box<dyn Any>).boxed_local()
             }
             _ => default_fetch_handler(request),
         }
@@ -264,23 +264,25 @@ fn actionctx_authenticate_register() {
     Env::reset();
     *FETCH_HANDLER.write().unwrap() = Box::new(fetch_handler);
     let (runtime, _rx) = Runtime::<Env, Model>::new(Model::default(), 1000);
-    tokio_current_thread::block_on_all(runtime.dispatch(&Msg::Action(Action::Ctx(
-        ActionCtx::Authenticate(AuthRequest::Register {
-            email: "user_email".into(),
-            password: "user_password".into(),
-            gdpr_consent: GDPRConsentWithTime {
-                gdpr_consent: GDPRConsent {
-                    tos: true,
-                    privacy: true,
-                    marketing: false,
-                    from: "web".to_owned(),
+    Env::run(|| {
+        runtime.dispatch(Action::Ctx(ActionCtx::Authenticate(
+            AuthRequest::Register {
+                email: "user_email".into(),
+                password: "user_password".into(),
+                gdpr_consent: GDPRConsentWithTime {
+                    gdpr_consent: GDPRConsent {
+                        tos: true,
+                        privacy: true,
+                        marketing: false,
+                        from: "web".to_owned(),
+                    },
+                    time: Utc.ymd(2020, 1, 1).and_hms_milli(0, 0, 0, 0),
                 },
-                time: Utc.ymd(2020, 1, 1).and_hms_milli(0, 0, 0, 0),
             },
-        }),
-    ))));
+        )))
+    });
     assert_eq!(
-        runtime.app().unwrap().ctx.profile,
+        runtime.model().unwrap().ctx.profile,
         Profile {
             auth: Some(Auth {
                 key: "auth_key".to_owned(),
@@ -305,7 +307,7 @@ fn actionctx_authenticate_register() {
         "profile updated successfully in memory"
     );
     assert_eq!(
-        runtime.app().unwrap().ctx.library,
+        runtime.model().unwrap().ctx.library,
         LibBucket {
             uid: Some("user_id".to_string()),
             ..Default::default()
