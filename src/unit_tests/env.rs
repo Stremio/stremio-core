@@ -53,6 +53,11 @@ impl Env {
         *STORAGE.write().unwrap() = BTreeMap::new();
         *NOW.write().unwrap() = Utc::now();
     }
+    pub fn run<F: FnOnce()>(runnable: F) {
+        tokio_current_thread::block_on_all(future::lazy(|_| {
+            runnable();
+        }))
+    }
 }
 
 impl Environment for Env {
