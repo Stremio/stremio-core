@@ -67,7 +67,7 @@ where
                     request: request.to_owned(),
                     content: ResourceContent::Loading,
                 });
-                Effects::one(Box::pin(
+                Effects::one(
                     Env::addon_transport(&request.base)
                         .resource(&request.path)
                         .map(move |result| {
@@ -75,8 +75,9 @@ where
                                 request,
                                 Box::new(result),
                             ))
-                        }),
-                ))
+                        })
+                        .boxed_local(),
+                )
             } else {
                 Effects::none().unchanged()
             }
@@ -145,16 +146,15 @@ where
                                 request: request.to_owned(),
                                 content: ResourceContent::Loading,
                             },
-                            Box::pin(
-                                Env::addon_transport(&request.base)
-                                    .resource(&request.path)
-                                    .map(move |result| {
-                                        Msg::Internal(Internal::ResourceRequestResult(
-                                            request,
-                                            Box::new(result),
-                                        ))
-                                    }),
-                            ),
+                            Env::addon_transport(&request.base)
+                                .resource(&request.path)
+                                .map(move |result| {
+                                    Msg::Internal(Internal::ResourceRequestResult(
+                                        request,
+                                        Box::new(result),
+                                    ))
+                                })
+                                .boxed_local(),
                         )
                     })
                     .unzip::<_, _, Vec<_>, Vec<_>>();

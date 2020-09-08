@@ -49,13 +49,14 @@ pub fn descriptor_update<Env: Environment + 'static>(
                     transport_url: transport_url.to_owned(),
                     content: DescriptorContent::Loading,
                 });
-                Effects::one(Box::pin(
+                Effects::one(
                     Env::addon_transport(&transport_url)
                         .manifest()
                         .map(move |result| {
                             Msg::Internal(Internal::ManifestRequestResult(transport_url, result))
-                        }),
-                ))
+                        })
+                        .boxed_local(),
+                )
             } else {
                 Effects::none().unchanged()
             }

@@ -80,16 +80,15 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for Notifications {
                                             request: addon_req.to_owned(),
                                             content: ResourceContent::Loading,
                                         },
-                                        Box::pin(
-                                            Env::addon_transport(&addon_req.base)
-                                                .resource(&addon_req.path)
-                                                .map(move |result| {
-                                                    Msg::Internal(Internal::ResourceRequestResult(
-                                                        addon_req,
-                                                        Box::new(result),
-                                                    ))
-                                                }),
-                                        ),
+                                        Env::addon_transport(&addon_req.base)
+                                            .resource(&addon_req.path)
+                                            .map(move |result| {
+                                                Msg::Internal(Internal::ResourceRequestResult(
+                                                    addon_req,
+                                                    Box::new(result),
+                                                ))
+                                            })
+                                            .boxed_local(),
                                     )
                                 })
                                 .collect::<Vec<_>>()

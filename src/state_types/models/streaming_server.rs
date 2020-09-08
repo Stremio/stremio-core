@@ -49,14 +49,18 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for StreamingServer {
                     self.settings = next_settings;
                     self.base_url = next_base_url;
                     Effects::many(vec![
-                        Box::pin(get_settings::<Env>(&url).map(enclose!((url) move |result| {
-                            Msg::Internal(Internal::StreamingServerSettingsResult(
-                                url, result,
-                            ))
-                        }))),
-                        Box::pin(get_base_url::<Env>(&url).map(move |result| {
-                            Msg::Internal(Internal::StreamingServerBaseURLResult(url, result))
-                        })),
+                        get_settings::<Env>(&url)
+                            .map(enclose!((url) move |result| {
+                                Msg::Internal(Internal::StreamingServerSettingsResult(
+                                    url, result,
+                                ))
+                            }))
+                            .boxed_local(),
+                        get_base_url::<Env>(&url)
+                            .map(move |result| {
+                                Msg::Internal(Internal::StreamingServerBaseURLResult(url, result))
+                            })
+                            .boxed_local(),
                     ])
                 } else {
                     Effects::none().unchanged()
@@ -70,13 +74,15 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for StreamingServer {
                 {
                     *ready_settings = settings.to_owned();
                     let url = url.to_owned();
-                    Effects::one(Box::pin(update_settings::<Env>(&url, settings).map(
-                        move |result| {
-                            Msg::Internal(Internal::StreamingServerUpdateSettingsResult(
-                                url, result,
-                            ))
-                        },
-                    )))
+                    Effects::one(
+                        update_settings::<Env>(&url, settings)
+                            .map(move |result| {
+                                Msg::Internal(Internal::StreamingServerUpdateSettingsResult(
+                                    url, result,
+                                ))
+                            })
+                            .boxed_local(),
+                    )
                 }
                 _ => Effects::none().unchanged(),
             },
@@ -88,14 +94,18 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for StreamingServer {
                 self.settings = Some(Loadable::Loading);
                 self.base_url = Some(Loadable::Loading);
                 Effects::many(vec![
-                    Box::pin(get_settings::<Env>(&url).map(enclose!((url) move |result| {
-                        Msg::Internal(Internal::StreamingServerSettingsResult(
-                            url, result,
-                        ))
-                    }))),
-                    Box::pin(get_base_url::<Env>(&url).map(move |result| {
-                        Msg::Internal(Internal::StreamingServerBaseURLResult(url, result))
-                    })),
+                    get_settings::<Env>(&url)
+                        .map(enclose!((url) move |result| {
+                            Msg::Internal(Internal::StreamingServerSettingsResult(
+                                url, result,
+                            ))
+                        }))
+                        .boxed_local(),
+                    get_base_url::<Env>(&url)
+                        .map(move |result| {
+                            Msg::Internal(Internal::StreamingServerBaseURLResult(url, result))
+                        })
+                        .boxed_local(),
                 ])
             }
             Msg::Internal(Internal::StreamingServerSettingsResult(url, result)) => {

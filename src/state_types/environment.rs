@@ -1,7 +1,6 @@
 use crate::addon_transport::{AddonHTTPTransport, AddonTransport};
 use chrono::{DateTime, Utc};
-use core::pin::Pin;
-use futures::Future;
+use futures::future::{Future, LocalBoxFuture};
 use http::Request;
 use serde::{Deserialize, Serialize};
 use std::fmt;
@@ -28,14 +27,16 @@ impl From<serde_json::error::Error> for EnvError {
     }
 }
 
-pub type EnvFuture<T> = Pin<Box<dyn Future<Output = Result<T, EnvError>> + Unpin>>;
+pub type EnvFuture<T> = LocalBoxFuture<'static, Result<T, EnvError>>;
 
 pub trait Environment {
     fn fetch<IN, OUT>(request: Request<IN>) -> EnvFuture<OUT>
     where
         IN: Serialize + 'static,
         for<'de> OUT: Deserialize<'de> + 'static;
-    fn exec(future: Pin<Box<dyn Future<Output = ()> + Unpin>>);
+    fn exec<F>(future: F)
+    where
+        F: Future<Output = ()> + 'static;
     fn now() -> DateTime<Utc>;
     fn get_storage<T>(key: &str) -> EnvFuture<Option<T>>
     where

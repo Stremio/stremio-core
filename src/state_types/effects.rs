@@ -1,8 +1,8 @@
 use crate::state_types::msg::Msg;
-use core::pin::Pin;
-use futures::{future, Future};
+use futures::future;
+use futures::future::{FutureExt, LocalBoxFuture};
 
-pub type Effect = Pin<Box<dyn Future<Output = Msg> + Unpin>>;
+pub type Effect = LocalBoxFuture<'static, Msg>;
 
 pub struct Effects {
     effects: Vec<Effect>,
@@ -41,7 +41,7 @@ impl Effects {
     }
 
     pub fn msg(msg: Msg) -> Self {
-        Effects::one(Box::pin(future::ready(msg)))
+        Effects::one(future::ready(msg).boxed_local())
     }
 
     pub fn unchanged(mut self) -> Self {

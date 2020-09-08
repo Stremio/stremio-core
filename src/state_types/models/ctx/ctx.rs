@@ -154,63 +154,60 @@ impl<Env: Environment + 'static> Update for Ctx<Env> {
 }
 
 fn pull_ctx_from_storage<Env: Environment + 'static>() -> Effect {
-    Box::pin(
-        migrate_storage_schema::<Env>()
-            .and_then(|_| {
-                future::try_join3(
-                    Env::get_storage(PROFILE_STORAGE_KEY),
-                    Env::get_storage(LIBRARY_RECENT_STORAGE_KEY),
-                    Env::get_storage(LIBRARY_STORAGE_KEY),
-                )
-            })
-            .map_err(CtxError::from)
-            .map(|result| Msg::Internal(Internal::CtxStorageResult(result))),
-    )
+    migrate_storage_schema::<Env>()
+        .and_then(|_| {
+            future::try_join3(
+                Env::get_storage(PROFILE_STORAGE_KEY),
+                Env::get_storage(LIBRARY_RECENT_STORAGE_KEY),
+                Env::get_storage(LIBRARY_STORAGE_KEY),
+            )
+        })
+        .map_err(CtxError::from)
+        .map(|result| Msg::Internal(Internal::CtxStorageResult(result)))
+        .boxed_local()
 }
 
 fn authenticate<Env: Environment + 'static>(auth_request: &AuthRequest) -> Effect {
-    Box::pin(
-        fetch_api::<Env, _, _>(&APIRequest::Auth(auth_request.to_owned()))
-            .map_ok(|AuthResponse { key, user }| Auth { key, user })
-            .and_then(|auth| {
-                future::try_join(
-                    fetch_api::<Env, _, _>(&APIRequest::AddonCollectionGet {
-                        auth_key: auth.key.to_owned(),
-                        update: true,
-                    })
-                    .map_ok(|CollectionResponse { addons, .. }| addons),
-                    fetch_api::<Env, _, _>(&DatastoreRequest {
-                        auth_key: auth.key.to_owned(),
-                        collection: LIBRARY_COLLECTION_NAME.to_owned(),
-                        command: DatastoreCommand::Get {
-                            ids: vec![],
-                            all: true,
-                        },
-                    }),
-                )
-                .map_ok(move |(addons, lib_items)| (auth, addons, lib_items))
-            })
-            .map(enclose!((auth_request) move |result| {
-                Msg::Internal(Internal::CtxAuthResult(auth_request, result))
-            })),
-    )
+    fetch_api::<Env, _, _>(&APIRequest::Auth(auth_request.to_owned()))
+        .map_ok(|AuthResponse { key, user }| Auth { key, user })
+        .and_then(|auth| {
+            future::try_join(
+                fetch_api::<Env, _, _>(&APIRequest::AddonCollectionGet {
+                    auth_key: auth.key.to_owned(),
+                    update: true,
+                })
+                .map_ok(|CollectionResponse { addons, .. }| addons),
+                fetch_api::<Env, _, _>(&DatastoreRequest {
+                    auth_key: auth.key.to_owned(),
+                    collection: LIBRARY_COLLECTION_NAME.to_owned(),
+                    command: DatastoreCommand::Get {
+                        ids: vec![],
+                        all: true,
+                    },
+                }),
+            )
+            .map_ok(move |(addons, lib_items)| (auth, addons, lib_items))
+        })
+        .map(enclose!((auth_request) move |result| {
+            Msg::Internal(Internal::CtxAuthResult(auth_request, result))
+        }))
+        .boxed_local()
 }
 
 fn delete_session<Env: Environment + 'static>(auth_key: &str) -> Effect {
-    Box::pin(
-        fetch_api::<Env, _, SuccessResponse>(&APIRequest::Logout {
-            auth_key: auth_key.to_owned(),
-        })
-        .map(enclose!((auth_key.to_owned() => auth_key) move |result|
-            match result {
-                Ok(_) => Msg::Event(Event::SessionDeleted { auth_key }),
-                Err(error) => Msg::Event(Event::Error {
-                    error,
-                    source: Box::new(Event::SessionDeleted { auth_key }),
-                }),
-            }
-        )),
-    )
+    fetch_api::<Env, _, SuccessResponse>(&APIRequest::Logout {
+        auth_key: auth_key.to_owned(),
+    })
+    .map(enclose!((auth_key.to_owned() => auth_key) move |result|
+        match result {
+            Ok(_) => Msg::Event(Event::SessionDeleted { auth_key }),
+            Err(error) => Msg::Event(Event::Error {
+                error,
+                source: Box::new(Event::SessionDeleted { auth_key }),
+            }),
+        }
+    ))
+    .boxed_local()
 }
 
 fn serialize_lib_bucket<S>(lib_bucket: &LibBucket, serializer: S) -> Result<S::Ok, S::Error>

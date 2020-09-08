@@ -67,7 +67,7 @@ where
         if effects.has_changed {
             self.emit(RuntimeEvent::NewState);
         };
-        Env::exec(Box::pin(
+        Env::exec(
             future::join_all(effects.into_iter().map(
                 enclose!((self.clone() => runtime) move |effect| {
                     effect.then(enclose!((runtime) move |msg| async move {
@@ -90,6 +90,6 @@ where
                 }),
             ))
             .map(|_| ()),
-        ));
+        );
     }
 }
