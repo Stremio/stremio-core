@@ -1,6 +1,6 @@
 use crate::constants::{LIBRARY_RECENT_STORAGE_KEY, LIBRARY_STORAGE_KEY};
 use crate::state_types::models::ctx::Ctx;
-use crate::state_types::msg::{Action, ActionCtx, Msg};
+use crate::state_types::msg::{Action, ActionCtx};
 use crate::state_types::{EnvFuture, Environment, Runtime};
 use crate::types::api::{APIResult, SuccessResponse, True};
 use crate::types::library::{LibBucket, LibItem, LibItemBehaviorHints, LibItemState};
@@ -18,7 +18,7 @@ use stremio_derive::Model;
 #[test]
 fn actionctx_addtolibrary() {
     #[derive(Model, Debug, Default)]
-    struct Model {
+    struct AppModel {
         ctx: Ctx<Env>,
     }
     fn fetch_handler(request: Request) -> EnvFuture<Box<dyn Any>> {
@@ -66,8 +66,8 @@ fn actionctx_addtolibrary() {
     Env::reset();
     *FETCH_HANDLER.write().unwrap() = Box::new(fetch_handler);
     *NOW.write().unwrap() = Utc.ymd(2020, 1, 1).and_hms_milli(0, 0, 0, 0);
-    let (runtime, _rx) = Runtime::<Env, Model>::new(
-        Model {
+    let (runtime, _rx) = Runtime::<Env, _>::new(
+        AppModel {
             ctx: Ctx {
                 profile: Profile {
                     auth: Some(Auth {
@@ -98,17 +98,19 @@ fn actionctx_addtolibrary() {
         },
         1000,
     );
-    tokio_current_thread::block_on_all(runtime.dispatch(&Msg::Action(Action::Ctx(
-        ActionCtx::AddToLibrary(meta_preview.to_owned()),
-    ))));
+    Env::run(|| {
+        runtime.dispatch(Action::Ctx(ActionCtx::AddToLibrary(
+            meta_preview.to_owned(),
+        )))
+    });
     assert_eq!(
-        runtime.app().unwrap().ctx.library.items.len(),
+        runtime.model().unwrap().ctx.library.items.len(),
         1,
         "There is one library item in memory"
     );
     assert_eq!(
         runtime
-            .app()
+            .model()
             .unwrap()
             .ctx
             .library
@@ -147,7 +149,7 @@ fn actionctx_addtolibrary() {
 #[test]
 fn actionctx_addtolibrary_already_added() {
     #[derive(Model, Debug, Default)]
-    struct Model {
+    struct AppModel {
         ctx: Ctx<Env>,
     }
     let meta_preview = MetaItemPreview {
@@ -187,8 +189,8 @@ fn actionctx_addtolibrary_already_added() {
     };
     Env::reset();
     *NOW.write().unwrap() = Utc.ymd(2020, 1, 2).and_hms_milli(0, 0, 0, 0);
-    let (runtime, _rx) = Runtime::<Env, Model>::new(
-        Model {
+    let (runtime, _rx) = Runtime::<Env, _>::new(
+        AppModel {
             ctx: Ctx {
                 library: LibBucket {
                     uid: None,
@@ -219,16 +221,18 @@ fn actionctx_addtolibrary_already_added() {
         },
         1000,
     );
-    tokio_current_thread::block_on_all(runtime.dispatch(&Msg::Action(Action::Ctx(
-        ActionCtx::AddToLibrary(meta_preview.to_owned()),
-    ))));
+    Env::run(|| {
+        runtime.dispatch(Action::Ctx(ActionCtx::AddToLibrary(
+            meta_preview.to_owned(),
+        )))
+    });
     assert_eq!(
-        runtime.app().unwrap().ctx.library.items.len(),
+        runtime.model().unwrap().ctx.library.items.len(),
         1,
         "There is one library item in memory"
     );
     assert_eq!(
-        runtime.app().unwrap().ctx.library.items.get(&lib_item.id),
+        runtime.model().unwrap().ctx.library.items.get(&lib_item.id),
         Some(&lib_item),
         "Library updated successfully in memory"
     );
