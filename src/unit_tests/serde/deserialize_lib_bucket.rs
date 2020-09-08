@@ -205,3 +205,81 @@ fn deserialize_lib_bucket() {
         "library bucket deserialized successfully"
     );
 }
+
+#[test]
+fn deserialize_lib_bucket_empty_string_as_none() {
+    let lib_bucket = LibBucket {
+        uid: None,
+        items: vec![(
+            "id1".to_owned(),
+            LibItem {
+                id: "id1".to_owned(),
+                removed: false,
+                temp: false,
+                ctime: None,
+                mtime: Utc.ymd(2020, 1, 1).and_hms_milli(0, 0, 0, 0),
+                state: LibItemState {
+                    last_watched: None,
+                    time_watched: 0,
+                    time_offset: 0,
+                    overall_time_watched: 0,
+                    times_watched: 0,
+                    flagged_watched: 0,
+                    duration: 0,
+                    video_id: None,
+                    watched: None,
+                    last_vid_released: None,
+                    no_notif: false,
+                },
+                name: "name".to_owned(),
+                type_name: "type_name".to_owned(),
+                poster: None,
+                poster_shape: PosterShape::Poster,
+                behavior_hints: LibItemBehaviorHints {
+                    default_video_id: None,
+                },
+            },
+        )]
+        .into_iter()
+        .collect(),
+    };
+    let lib_bucket_json = r#"
+    {
+        "uid": null,
+        "items": {
+            "id1": {
+                "_id": "id1",
+                "name": "name",
+                "type": "type_name",
+                "poster": "",
+                "posterShape": "poster",
+                "removed": false,
+                "temp": false,
+                "_ctime": "",
+                "_mtime": "2020-01-01T00:00:00Z",
+                "state": {
+                    "lastWatched": "",
+                    "timeWatched": 0,
+                    "timeOffset": 0,
+                    "overallTimeWatched": 0,
+                    "timesWatched": 0,
+                    "flaggedWatched": 0,
+                    "duration": 0,
+                    "video_id": "",
+                    "watched": "",
+                    "lastVidReleased": "",
+                    "noNotif": false
+                },
+                "behaviorHints": {
+                    "defaultVideoId": null
+                }
+            }
+        }
+    }
+    "#;
+    let lib_bucket_deserialize = serde_json::from_str(&lib_bucket_json).unwrap();
+    assert_eq!(
+        lib_bucket, lib_bucket_deserialize,
+        "library bucket deserialized successfully"
+    );
+}
