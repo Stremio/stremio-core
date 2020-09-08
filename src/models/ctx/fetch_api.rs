@@ -1,6 +1,6 @@
 use crate::constants::API_URL;
-use crate::state_types::models::ctx::CtxError;
-use crate::state_types::Environment;
+use crate::models::ctx::CtxError;
+use crate::runtime::Environment;
 use crate::types::api::{APIMethodName, APIResult};
 use futures::{future, Future, TryFutureExt};
 use http::Request;

@@ -1,7 +1,7 @@
-use crate::state_types::models::common::Loadable;
-use crate::state_types::models::ctx::Ctx;
-use crate::state_types::msg::{Action, ActionStreamingServer, Internal, Msg};
-use crate::state_types::{Effects, EnvError, Environment, UpdateWithCtx};
+use crate::models::common::Loadable;
+use crate::models::ctx::Ctx;
+use crate::runtime::msg::{Action, ActionStreamingServer, Internal, Msg};
+use crate::runtime::{Effects, EnvError, Environment, UpdateWithCtx};
 use crate::types::api::SuccessResponse;
 use enclose::enclose;
 use futures::{Future, FutureExt, TryFutureExt};

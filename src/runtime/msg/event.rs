@@ -1,4 +1,4 @@
-use crate::state_types::models::ctx::CtxError;
+use crate::models::ctx::CtxError;
 use crate::types::api::AuthRequest;
 use crate::types::profile::{AuthKey, Settings, UID};
 use serde::Serialize;

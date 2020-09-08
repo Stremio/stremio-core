@@ -1,7 +1,7 @@
-use crate::state_types::models::common::eq_update;
-use crate::state_types::models::ctx::Ctx;
-use crate::state_types::msg::{Action, ActionLoad, Internal, Msg};
-use crate::state_types::{Effects, Environment, UpdateWithCtx};
+use crate::models::common::eq_update;
+use crate::models::ctx::Ctx;
+use crate::runtime::msg::{Action, ActionLoad, Internal, Msg};
+use crate::runtime::{Effects, Environment, UpdateWithCtx};
 use crate::types::library::{LibBucket, LibItem};
 use derivative::Derivative;
 use itertools::Itertools;

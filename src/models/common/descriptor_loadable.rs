@@ -1,7 +1,7 @@
 use crate::constants::OFFICIAL_ADDONS;
-use crate::state_types::models::common::Loadable;
-use crate::state_types::msg::{Internal, Msg};
-use crate::state_types::{Effects, EnvError, Environment};
+use crate::models::common::Loadable;
+use crate::runtime::msg::{Internal, Msg};
+use crate::runtime::{Effects, EnvError, Environment};
 use crate::types::addon::{Descriptor, Manifest};
 use futures::FutureExt;
 use serde::Serialize;

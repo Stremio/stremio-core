@@ -1,4 +1,4 @@
-use crate::state_types::msg::Msg;
+use crate::runtime::msg::Msg;
 use futures::future;
 use futures::future::{FutureExt, LocalBoxFuture};
 

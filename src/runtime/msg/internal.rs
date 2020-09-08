@@ -1,6 +1,6 @@
-use crate::state_types::models::ctx::CtxError;
-use crate::state_types::models::streaming_server::Settings as StreamingServerSettings;
-use crate::state_types::EnvError;
+use crate::models::ctx::CtxError;
+use crate::models::streaming_server::Settings as StreamingServerSettings;
+use crate::runtime::EnvError;
 use crate::types::addon::{Descriptor, Manifest, ResourceRequest, ResourceResponse};
 use crate::types::api::{APIRequest, AuthRequest, DatastoreRequest};
 use crate::types::library::{LibBucket, LibItem};

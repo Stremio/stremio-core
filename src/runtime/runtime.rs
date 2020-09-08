@@ -1,5 +1,5 @@
-use crate::state_types::msg::{Action, Event, Msg};
-use crate::state_types::{Effects, Environment, Model};
+use crate::runtime::msg::{Action, Event, Msg};
+use crate::runtime::{Effects, Environment, Model};
 use derivative::Derivative;
 use enclose::enclose;
 use futures::channel::mpsc::{channel, Receiver, Sender};

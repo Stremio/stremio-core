@@ -1,7 +1,7 @@
 use crate::constants::PROFILE_STORAGE_KEY;
-use crate::state_types::models::ctx::Ctx;
-use crate::state_types::msg::{Action, ActionCtx};
-use crate::state_types::Runtime;
+use crate::models::ctx::Ctx;
+use crate::runtime::msg::{Action, ActionCtx};
+use crate::runtime::Runtime;
 use crate::types::profile::{Profile, Settings};
 use crate::unit_tests::{Env, REQUESTS, STORAGE};
 use stremio_derive::Model;

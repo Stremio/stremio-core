@@ -2,7 +2,7 @@ use crate::constants::{
     LIBRARY_RECENT_STORAGE_KEY, LIBRARY_STORAGE_KEY, PROFILE_STORAGE_KEY, SCHEMA_VERSION,
     SCHEMA_VERSION_STORAGE_KEY,
 };
-use crate::state_types::{EnvError, Environment};
+use crate::runtime::{EnvError, Environment};
 use futures::future::Either;
 use futures::{future, Future, TryFutureExt};
 

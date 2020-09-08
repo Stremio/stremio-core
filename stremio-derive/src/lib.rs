@@ -49,11 +49,11 @@ pub fn model_derive(input: TokenStream) -> TokenStream {
                 .map(|(field, variant_ident)| {
                     let field_ident = &field.ident;
                     quote! {
-                        Self::Field::#variant_ident => #core_ident::state_types::UpdateWithCtx::update(&mut self.#field_ident, &self.ctx, msg)
+                        Self::Field::#variant_ident => #core_ident::runtime::UpdateWithCtx::update(&mut self.#field_ident, &self.ctx, msg)
                     }
                 })
                 .chain(iter::once(quote! {
-                    Ctx => #core_ident::state_types::Update::update(&mut self.ctx, msg)
+                    Ctx => #core_ident::runtime::Update::update(&mut self.ctx, msg)
                 }))
                 .collect::<Vec<_>>();
             let field_updates = fields
@@ -63,11 +63,11 @@ pub fn model_derive(input: TokenStream) -> TokenStream {
                 .map(|field| {
                     let field_ident = &field.ident;
                     quote! {
-                        .join(#core_ident::state_types::UpdateWithCtx::update(&mut self.#field_ident, &self.ctx, msg))
+                        .join(#core_ident::runtime::UpdateWithCtx::update(&mut self.#field_ident, &self.ctx, msg))
                     }
                 })
                 .chain(iter::once(quote! {
-                    #core_ident::state_types::Update::update(&mut self.ctx, msg)
+                    #core_ident::runtime::Update::update(&mut self.ctx, msg)
                 }))
                 .rev()
                 .collect::<Vec<_>>();
@@ -78,15 +78,15 @@ pub fn model_derive(input: TokenStream) -> TokenStream {
                     #(#field_enum_variant_idents),*
                 }
 
-                impl #core_ident::state_types::Update for #struct_ident {
-                    fn update(&mut self, msg: &#core_ident::state_types::msg::Msg) -> #core_ident::state_types::Effects {
+                impl #core_ident::runtime::Update for #struct_ident {
+                    fn update(&mut self, msg: &#core_ident::runtime::msg::Msg) -> #core_ident::runtime::Effects {
                         #(#field_updates)*
                     }
                 }
 
-                impl #core_ident::state_types::Model for #struct_ident {
+                impl #core_ident::runtime::Model for #struct_ident {
                     type Field = #field_enum_ident;
-                    fn update_field(&mut self, field: &Self::Field, msg: &#core_ident::state_types::msg::Msg) -> #core_ident::state_types::Effects {
+                    fn update_field(&mut self, field: &Self::Field, msg: &#core_ident::runtime::msg::Msg) -> #core_ident::runtime::Effects {
                         match field {
                             #(#field_update_match_arms),*
                         }

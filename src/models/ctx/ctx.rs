@@ -1,11 +1,11 @@
 use crate::constants::{
     LIBRARY_COLLECTION_NAME, LIBRARY_RECENT_STORAGE_KEY, LIBRARY_STORAGE_KEY, PROFILE_STORAGE_KEY,
 };
-use crate::state_types::models::ctx::{
+use crate::models::ctx::{
     fetch_api, migrate_storage_schema, update_library, update_profile, CtxError,
 };
-use crate::state_types::msg::{Action, ActionCtx, ActionLoad, Event, Internal, Msg};
-use crate::state_types::{Effect, Effects, Environment, Update};
+use crate::runtime::msg::{Action, ActionCtx, ActionLoad, Event, Internal, Msg};
+use crate::runtime::{Effect, Effects, Environment, Update};
 use crate::types::api::{
     APIRequest, AuthRequest, AuthResponse, CollectionResponse, DatastoreCommand, DatastoreRequest,
     SuccessResponse,

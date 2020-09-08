@@ -1,10 +1,10 @@
 use crate::constants::CATALOG_PREVIEW_SIZE;
-use crate::state_types::models::common::{
+use crate::models::common::{
     eq_update, resources_update_with_vector_content, ResourceLoadable, ResourcesAction,
 };
-use crate::state_types::models::ctx::Ctx;
-use crate::state_types::msg::{Action, ActionLoad, Internal, Msg};
-use crate::state_types::{Effects, Environment, UpdateWithCtx};
+use crate::models::ctx::Ctx;
+use crate::runtime::msg::{Action, ActionLoad, Internal, Msg};
+use crate::runtime::{Effects, Environment, UpdateWithCtx};
 use crate::types::addon::{AggrRequest, ExtraProp};
 use crate::types::resource::MetaItemPreview;
 use serde::{Deserialize, Serialize};

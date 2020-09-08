@@ -1,6 +1,6 @@
-use crate::state_types::models::common::Loadable;
-use crate::state_types::msg::{Internal, Msg};
-use crate::state_types::{Effect, Effects, EnvError, Environment};
+use crate::models::common::Loadable;
+use crate::runtime::msg::{Internal, Msg};
+use crate::runtime::{Effect, Effects, EnvError, Environment};
 use crate::types::addon::{AggrRequest, Descriptor, ResourceRequest, ResourceResponse};
 use futures::FutureExt;
 use serde::Serialize;

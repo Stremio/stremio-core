@@ -1,4 +1,4 @@
-use crate::state_types::EnvError;
+use crate::runtime::EnvError;
 use crate::types::api::APIError;
 use serde::Serialize;
 

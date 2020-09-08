@@ -1,9 +1,9 @@
 use crate::constants::{
     LIBRARY_COLLECTION_NAME, LIBRARY_RECENT_COUNT, LIBRARY_RECENT_STORAGE_KEY, LIBRARY_STORAGE_KEY,
 };
-use crate::state_types::models::ctx::{fetch_api, CtxError, CtxRequest, CtxStatus, OtherError};
-use crate::state_types::msg::{Action, ActionCtx, Event, Internal, Msg};
-use crate::state_types::{Effect, Effects, Environment};
+use crate::models::ctx::{fetch_api, CtxError, CtxRequest, CtxStatus, OtherError};
+use crate::runtime::msg::{Action, ActionCtx, Event, Internal, Msg};
+use crate::runtime::{Effect, Effects, Environment};
 use crate::types::api::{DatastoreCommand, DatastoreRequest, LibItemModified, SuccessResponse};
 use crate::types::library::{
     LibBucket, LibBucketBorrowed, LibItem, LibItemBehaviorHints, LibItemState,

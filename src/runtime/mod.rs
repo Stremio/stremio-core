@@ -1,4 +1,3 @@
-pub mod models;
 pub mod msg;
 
 mod effects;

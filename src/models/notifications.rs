@@ -1,10 +1,8 @@
-use crate::state_types::models::common::{
-    resources_update, ResourceContent, ResourceLoadable, ResourcesAction,
-};
-use crate::state_types::models::ctx::Ctx;
-use crate::state_types::msg::Internal::*;
-use crate::state_types::msg::*;
-use crate::state_types::*;
+use crate::models::common::{resources_update, ResourceContent, ResourceLoadable, ResourcesAction};
+use crate::models::ctx::Ctx;
+use crate::runtime::msg::Internal::*;
+use crate::runtime::msg::*;
+use crate::runtime::*;
 use crate::types::addon::{ResourceRef, ResourceRequest};
 use crate::types::resource::MetaItem;
 use futures::FutureExt;

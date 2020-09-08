@@ -1,7 +1,7 @@
 use crate::addon_transport::http_transport::legacy::AddonLegacyTransport;
 use crate::addon_transport::AddonTransport;
 use crate::constants::{ADDON_LEGACY_PATH, ADDON_MANIFEST_PATH};
-use crate::state_types::{EnvError, EnvFuture, Environment};
+use crate::runtime::{EnvError, EnvFuture, Environment};
 use crate::types::addon::{Manifest, ResourceRef, ResourceResponse};
 use futures::{future, FutureExt};
 use http::Request;

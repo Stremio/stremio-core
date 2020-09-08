@@ -1,5 +1,5 @@
-use crate::state_types::msg::Msg;
-use crate::state_types::Effects;
+use crate::runtime::msg::Msg;
+use crate::runtime::Effects;
 
 pub trait Model: Update {
     type Field;

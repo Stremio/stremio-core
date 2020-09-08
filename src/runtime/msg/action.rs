@@ -1,10 +1,10 @@
-use crate::state_types::models::addon_details::Selected as AddonDetailsSelected;
-use crate::state_types::models::catalog_with_filters::Selected as CatalogWithFiltersSelected;
-use crate::state_types::models::catalogs_with_extra::Selected as CatalogsWithExtraSelected;
-use crate::state_types::models::library_with_filters::Selected as LibraryWithFiltersSelected;
-use crate::state_types::models::meta_details::Selected as MetaDetailsSelected;
-use crate::state_types::models::player::Selected as PlayerSelected;
-use crate::state_types::models::streaming_server::Settings as StreamingServerSettings;
+use crate::models::addon_details::Selected as AddonDetailsSelected;
+use crate::models::catalog_with_filters::Selected as CatalogWithFiltersSelected;
+use crate::models::catalogs_with_extra::Selected as CatalogsWithExtraSelected;
+use crate::models::library_with_filters::Selected as LibraryWithFiltersSelected;
+use crate::models::meta_details::Selected as MetaDetailsSelected;
+use crate::models::player::Selected as PlayerSelected;
+use crate::models::streaming_server::Settings as StreamingServerSettings;
 use crate::types::addon::Descriptor;
 use crate::types::api::AuthRequest;
 use crate::types::profile::Settings as ProfileSettings;

@@ -1,4 +1,4 @@
-use crate::state_types::EnvFuture;
+use crate::runtime::EnvFuture;
 use crate::types::addon::{Manifest, ResourceRef, ResourceResponse};
 
 pub trait AddonTransport {

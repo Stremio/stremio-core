@@ -1,11 +1,11 @@
 use crate::constants::{CATALOG_PAGE_SIZE, SKIP_EXTRA_NAME};
-use crate::state_types::models::common::{
+use crate::models::common::{
     eq_update, resource_update_with_vector_content, ResourceAction, ResourceContent,
     ResourceLoadable,
 };
-use crate::state_types::models::ctx::Ctx;
-use crate::state_types::msg::{Action, ActionLoad, Internal, Msg};
-use crate::state_types::{Effects, Environment, UpdateWithCtx};
+use crate::models::ctx::Ctx;
+use crate::runtime::msg::{Action, ActionLoad, Internal, Msg};
+use crate::runtime::{Effects, Environment, UpdateWithCtx};
 use crate::types::addon::{
     Descriptor, DescriptorPreview, Manifest, ManifestCatalog, ManifestExtraProp, ResourceRef,
     ResourceRequest, ResourceResponse,

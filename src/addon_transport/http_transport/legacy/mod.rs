@@ -1,5 +1,5 @@
 use crate::addon_transport::AddonTransport;
-use crate::state_types::{EnvError, EnvFuture, Environment};
+use crate::runtime::{EnvError, EnvFuture, Environment};
 use crate::types::addon::*;
 use crate::types::resource::*;
 use futures::future;
