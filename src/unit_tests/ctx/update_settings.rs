@@ -9,7 +9,7 @@ use stremio_derive::Model;
 #[test]
 fn actionctx_updatesettings() {
     #[derive(Model, Debug, Default)]
-    struct Model {
+    struct TestModel {
         ctx: Ctx<Env>,
     }
     let settings = Settings {
@@ -18,7 +18,7 @@ fn actionctx_updatesettings() {
         ..Settings::default()
     };
     Env::reset();
-    let (runtime, _rx) = Runtime::<Env, Model>::new(Model::default(), 1000);
+    let (runtime, _rx) = Runtime::<Env, _>::new(TestModel::default(), 1000);
     Env::run(|| runtime.dispatch(Action::Ctx(ActionCtx::UpdateSettings(settings.to_owned()))));
     assert_eq!(
         runtime.model().unwrap().ctx.profile.settings,
@@ -44,7 +44,7 @@ fn actionctx_updatesettings() {
 #[test]
 fn actionctx_updatesettings_not_changed() {
     #[derive(Model, Debug, Default)]
-    struct Model {
+    struct TestModel {
         ctx: Ctx<Env>,
     }
     let settings = Settings {
@@ -61,8 +61,8 @@ fn actionctx_updatesettings_not_changed() {
         PROFILE_STORAGE_KEY.to_owned(),
         serde_json::to_string(&profile).unwrap(),
     );
-    let (runtime, _rx) = Runtime::<Env, Model>::new(
-        Model {
+    let (runtime, _rx) = Runtime::<Env, _>::new(
+        TestModel {
             ctx: Ctx {
                 profile,
                 ..Default::default()

@@ -17,11 +17,11 @@ use stremio_derive::Model;
 #[test]
 fn actionctx_synclibrarywithapi() {
     #[derive(Model, Debug, Default)]
-    struct Model {
+    struct TestModel {
         ctx: Ctx<Env>,
     }
     Env::reset();
-    let (runtime, _rx) = Runtime::<Env, Model>::new(Model::default(), 1000);
+    let (runtime, _rx) = Runtime::<Env, _>::new(TestModel::default(), 1000);
     Env::run(|| runtime.dispatch(Action::Ctx(ActionCtx::SyncLibraryWithAPI)));
     assert!(
         REQUESTS.read().unwrap().is_empty(),
@@ -32,7 +32,7 @@ fn actionctx_synclibrarywithapi() {
 #[test]
 fn actionctx_synclibrarywithapi_with_user() {
     #[derive(Model, Debug, Default)]
-    struct Model {
+    struct TestModel {
         ctx: Ctx<Env>,
     }
     lazy_static! {
@@ -204,8 +204,8 @@ fn actionctx_synclibrarywithapi_with_user() {
     }
     Env::reset();
     *FETCH_HANDLER.write().unwrap() = Box::new(fetch_handler);
-    let (runtime, _rx) = Runtime::<Env, Model>::new(
-        Model {
+    let (runtime, _rx) = Runtime::<Env, _>::new(
+        TestModel {
             ctx: Ctx {
                 profile: Profile {
                     auth: Some(Auth {
@@ -327,7 +327,7 @@ fn actionctx_synclibrarywithapi_with_user() {
 #[test]
 fn actionctx_synclibrarywithapi_with_user_empty_library() {
     #[derive(Model, Debug, Default)]
-    struct Model {
+    struct TestModel {
         ctx: Ctx<Env>,
     }
     fn fetch_handler(request: Request) -> EnvFuture<Box<dyn Any>> {
@@ -348,8 +348,8 @@ fn actionctx_synclibrarywithapi_with_user_empty_library() {
     }
     Env::reset();
     *FETCH_HANDLER.write().unwrap() = Box::new(fetch_handler);
-    let (runtime, _rx) = Runtime::<Env, Model>::new(
-        Model {
+    let (runtime, _rx) = Runtime::<Env, _>::new(
+        TestModel {
             ctx: Ctx {
                 profile: Profile {
                     auth: Some(Auth {

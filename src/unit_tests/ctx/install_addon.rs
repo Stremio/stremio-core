@@ -15,7 +15,7 @@ use url::Url;
 #[test]
 fn actionctx_installaddon_install() {
     #[derive(Model, Debug, Default)]
-    struct Model {
+    struct TestModel {
         ctx: Ctx<Env>,
     }
     let addon = Descriptor {
@@ -38,8 +38,8 @@ fn actionctx_installaddon_install() {
         flags: Default::default(),
     };
     Env::reset();
-    let (runtime, _rx) = Runtime::<Env, Model>::new(
-        Model {
+    let (runtime, _rx) = Runtime::<Env, _>::new(
+        TestModel {
             ctx: Ctx {
                 profile: Profile {
                     addons: vec![],
@@ -75,7 +75,7 @@ fn actionctx_installaddon_install() {
 #[test]
 fn actionctx_installaddon_install_with_user() {
     #[derive(Model, Debug, Default)]
-    struct Model {
+    struct TestModel {
         ctx: Ctx<Env>,
     }
     fn fetch_handler(request: Request) -> EnvFuture<Box<dyn Any>> {
@@ -114,8 +114,8 @@ fn actionctx_installaddon_install_with_user() {
     };
     Env::reset();
     *FETCH_HANDLER.write().unwrap() = Box::new(fetch_handler);
-    let (runtime, _rx) = Runtime::<Env, Model>::new(
-        Model {
+    let (runtime, _rx) = Runtime::<Env, _>::new(
+        TestModel {
             ctx: Ctx {
                 profile: Profile {
                     auth: Some(Auth {
@@ -180,7 +180,7 @@ fn actionctx_installaddon_install_with_user() {
 #[test]
 fn actionctx_installaddon_update() {
     #[derive(Model, Debug, Default)]
-    struct Model {
+    struct TestModel {
         ctx: Ctx<Env>,
     }
     let addon = Descriptor {
@@ -222,8 +222,8 @@ fn actionctx_installaddon_update() {
         flags: Default::default(),
     };
     Env::reset();
-    let (runtime, _rx) = Runtime::<Env, Model>::new(
-        Model {
+    let (runtime, _rx) = Runtime::<Env, _>::new(
+        TestModel {
             ctx: Ctx {
                 profile: Profile {
                     addons: vec![
@@ -281,7 +281,7 @@ fn actionctx_installaddon_update() {
 #[test]
 fn actionctx_installaddon_already_installed() {
     #[derive(Model, Debug, Default)]
-    struct Model {
+    struct TestModel {
         ctx: Ctx<Env>,
     }
     let addon = Descriptor {
@@ -312,8 +312,8 @@ fn actionctx_installaddon_already_installed() {
         PROFILE_STORAGE_KEY.to_owned(),
         serde_json::to_string(&profile).unwrap(),
     );
-    let (runtime, _rx) = Runtime::<Env, Model>::new(
-        Model {
+    let (runtime, _rx) = Runtime::<Env, _>::new(
+        TestModel {
             ctx: Ctx {
                 profile,
                 ..Default::default()

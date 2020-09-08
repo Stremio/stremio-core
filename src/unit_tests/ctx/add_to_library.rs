@@ -18,7 +18,7 @@ use stremio_derive::Model;
 #[test]
 fn actionctx_addtolibrary() {
     #[derive(Model, Debug, Default)]
-    struct AppModel {
+    struct TestModel {
         ctx: Ctx<Env>,
     }
     fn fetch_handler(request: Request) -> EnvFuture<Box<dyn Any>> {
@@ -67,7 +67,7 @@ fn actionctx_addtolibrary() {
     *FETCH_HANDLER.write().unwrap() = Box::new(fetch_handler);
     *NOW.write().unwrap() = Utc.ymd(2020, 1, 1).and_hms_milli(0, 0, 0, 0);
     let (runtime, _rx) = Runtime::<Env, _>::new(
-        AppModel {
+        TestModel {
             ctx: Ctx {
                 profile: Profile {
                     auth: Some(Auth {
@@ -149,7 +149,7 @@ fn actionctx_addtolibrary() {
 #[test]
 fn actionctx_addtolibrary_already_added() {
     #[derive(Model, Debug, Default)]
-    struct AppModel {
+    struct TestModel {
         ctx: Ctx<Env>,
     }
     let meta_preview = MetaItemPreview {
@@ -190,7 +190,7 @@ fn actionctx_addtolibrary_already_added() {
     Env::reset();
     *NOW.write().unwrap() = Utc.ymd(2020, 1, 2).and_hms_milli(0, 0, 0, 0);
     let (runtime, _rx) = Runtime::<Env, _>::new(
-        AppModel {
+        TestModel {
             ctx: Ctx {
                 library: LibBucket {
                     uid: None,

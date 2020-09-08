@@ -13,7 +13,7 @@ use stremio_derive::Model;
 #[test]
 fn actionctx_logout() {
     #[derive(Model, Debug, Default)]
-    struct Model {
+    struct TestModel {
         ctx: Ctx<Env>,
     }
     fn fetch_handler(request: Request) -> EnvFuture<Box<dyn Any>> {
@@ -70,8 +70,8 @@ fn actionctx_logout() {
         LIBRARY_STORAGE_KEY.to_owned(),
         serde_json::to_string(&LibBucket::new(profile.uid(), vec![])).unwrap(),
     );
-    let (runtime, _rx) = Runtime::<Env, Model>::new(
-        Model {
+    let (runtime, _rx) = Runtime::<Env, _>::new(
+        TestModel {
             ctx: Ctx {
                 profile,
                 library,

@@ -17,7 +17,7 @@ use stremio_derive::Model;
 #[test]
 fn actionctx_rewindlibraryitem() {
     #[derive(Model, Debug, Default)]
-    struct Model {
+    struct TestModel {
         ctx: Ctx<Env>,
     }
     fn fetch_handler(request: Request) -> EnvFuture<Box<dyn Any>> {
@@ -70,8 +70,8 @@ fn actionctx_rewindlibraryitem() {
         ))
         .unwrap(),
     );
-    let (runtime, _rx) = Runtime::<Env, Model>::new(
-        Model {
+    let (runtime, _rx) = Runtime::<Env, _>::new(
+        TestModel {
             ctx: Ctx {
                 profile: Profile {
                     auth: Some(Auth {
@@ -144,7 +144,7 @@ fn actionctx_rewindlibraryitem() {
 #[test]
 fn actionctx_rewindlibraryitem_not_added() {
     #[derive(Model, Debug, Default)]
-    struct Model {
+    struct TestModel {
         ctx: Ctx<Env>,
     }
     let lib_item = LibItem {
@@ -168,8 +168,8 @@ fn actionctx_rewindlibraryitem_not_added() {
         LIBRARY_RECENT_STORAGE_KEY.to_owned(),
         serde_json::to_string(&LibBucket::new(None, vec![lib_item.to_owned()])).unwrap(),
     );
-    let (runtime, _rx) = Runtime::<Env, Model>::new(
-        Model {
+    let (runtime, _rx) = Runtime::<Env, _>::new(
+        TestModel {
             ctx: Ctx {
                 library: LibBucket {
                     uid: None,

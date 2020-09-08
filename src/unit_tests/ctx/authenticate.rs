@@ -16,7 +16,7 @@ use stremio_derive::Model;
 #[test]
 fn actionctx_authenticate_login() {
     #[derive(Model, Debug, Default)]
-    struct Model {
+    struct TestModel {
         ctx: Ctx<Env>,
     }
     fn fetch_handler(request: Request) -> EnvFuture<Box<dyn Any>> {
@@ -75,7 +75,7 @@ fn actionctx_authenticate_login() {
     }
     Env::reset();
     *FETCH_HANDLER.write().unwrap() = Box::new(fetch_handler);
-    let (runtime, _rx) = Runtime::<Env, Model>::new(Model::default(), 1000);
+    let (runtime, _rx) = Runtime::<Env, _>::new(TestModel::default(), 1000);
     Env::run(|| {
         runtime.dispatch(Action::Ctx(ActionCtx::Authenticate(AuthRequest::Login {
             email: "user_email".into(),
@@ -204,7 +204,7 @@ fn actionctx_authenticate_login() {
 #[test]
 fn actionctx_authenticate_register() {
     #[derive(Model, Debug, Default)]
-    struct Model {
+    struct TestModel {
         ctx: Ctx<Env>,
     }
     fn fetch_handler(request: Request) -> EnvFuture<Box<dyn Any>> {
@@ -263,7 +263,7 @@ fn actionctx_authenticate_register() {
     }
     Env::reset();
     *FETCH_HANDLER.write().unwrap() = Box::new(fetch_handler);
-    let (runtime, _rx) = Runtime::<Env, Model>::new(Model::default(), 1000);
+    let (runtime, _rx) = Runtime::<Env, _>::new(TestModel::default(), 1000);
     Env::run(|| {
         runtime.dispatch(Action::Ctx(ActionCtx::Authenticate(
             AuthRequest::Register {

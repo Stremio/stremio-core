@@ -15,7 +15,7 @@ use url::Url;
 #[test]
 fn actionctx_uninstalladdon() {
     #[derive(Model, Debug, Default)]
-    struct Model {
+    struct TestModel {
         ctx: Ctx<Env>,
     }
     let profile = Profile {
@@ -45,8 +45,8 @@ fn actionctx_uninstalladdon() {
         PROFILE_STORAGE_KEY.to_owned(),
         serde_json::to_string(&profile).unwrap(),
     );
-    let (runtime, _rx) = Runtime::<Env, Model>::new(
-        Model {
+    let (runtime, _rx) = Runtime::<Env, _>::new(
+        TestModel {
             ctx: Ctx {
                 profile,
                 ..Default::default()
@@ -85,7 +85,7 @@ fn actionctx_uninstalladdon() {
 #[test]
 fn actionctx_uninstalladdon_with_user() {
     #[derive(Model, Debug, Default)]
-    struct Model {
+    struct TestModel {
         ctx: Ctx<Env>,
     }
     fn fetch_handler(request: Request) -> EnvFuture<Box<dyn Any>> {
@@ -148,8 +148,8 @@ fn actionctx_uninstalladdon_with_user() {
         PROFILE_STORAGE_KEY.to_owned(),
         serde_json::to_string(&profile).unwrap(),
     );
-    let (runtime, _rx) = Runtime::<Env, Model>::new(
-        Model {
+    let (runtime, _rx) = Runtime::<Env, _>::new(
+        TestModel {
             ctx: Ctx {
                 profile,
                 ..Default::default()
@@ -200,7 +200,7 @@ fn actionctx_uninstalladdon_with_user() {
 #[test]
 fn actionctx_uninstalladdon_protected() {
     #[derive(Model, Debug, Default)]
-    struct Model {
+    struct TestModel {
         ctx: Ctx<Env>,
     }
     let addon = Descriptor {
@@ -234,8 +234,8 @@ fn actionctx_uninstalladdon_protected() {
         PROFILE_STORAGE_KEY.to_owned(),
         serde_json::to_string(&profile).unwrap(),
     );
-    let (runtime, _rx) = Runtime::<Env, Model>::new(
-        Model {
+    let (runtime, _rx) = Runtime::<Env, _>::new(
+        TestModel {
             ctx: Ctx {
                 profile,
                 ..Default::default()
@@ -272,7 +272,7 @@ fn actionctx_uninstalladdon_protected() {
 #[test]
 fn actionctx_uninstalladdon_not_installed() {
     #[derive(Model, Debug, Default)]
-    struct Model {
+    struct TestModel {
         ctx: Ctx<Env>,
     }
     let addon = Descriptor {
@@ -303,8 +303,8 @@ fn actionctx_uninstalladdon_not_installed() {
         PROFILE_STORAGE_KEY.to_owned(),
         serde_json::to_string(&profile).unwrap(),
     );
-    let (runtime, _rx) = Runtime::<Env, Model>::new(
-        Model {
+    let (runtime, _rx) = Runtime::<Env, _>::new(
+        TestModel {
             ctx: Ctx {
                 profile,
                 ..Default::default()
