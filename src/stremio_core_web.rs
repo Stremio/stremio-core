@@ -40,31 +40,28 @@ impl StremioCoreWeb {
             _ => JsValue::from(false),
         }
     }
-    pub fn get_state(&self, model_field: &JsValue) -> JsValue {
+    pub fn get_state(&self, field: &JsValue) -> JsValue {
         let model = self.runtime.model().expect("model read failed");
-        if let Ok(model_field) = model_field.into_serde::<WebModelField>() {
-            match model_field {
-                WebModelField::Ctx => JsValue::from_serde(&model.ctx).unwrap(),
-                WebModelField::ContinueWatchingPreview => {
-                    JsValue::from_serde(&model.continue_watching_preview).unwrap()
-                }
-                WebModelField::Board => JsValue::from_serde(&model.board).unwrap(),
-                WebModelField::Discover => JsValue::from_serde(&model.discover).unwrap(),
-                WebModelField::Library => JsValue::from_serde(&model.library).unwrap(),
-                WebModelField::ContinueWatching => {
-                    JsValue::from_serde(&model.continue_watching).unwrap()
-                }
-                WebModelField::Search => JsValue::from_serde(&model.search).unwrap(),
-                WebModelField::MetaDetails => JsValue::from_serde(&model.meta_details).unwrap(),
-                WebModelField::Addons => JsValue::from_serde(&model.addons).unwrap(),
-                WebModelField::AddonDetails => JsValue::from_serde(&model.addon_details).unwrap(),
-                WebModelField::StreamingServer => {
-                    JsValue::from_serde(&model.streaming_server).unwrap()
-                }
-                WebModelField::Player => JsValue::from_serde(&model.player).unwrap(),
+        match field.into_serde() {
+            Ok(WebModelField::Ctx) => JsValue::from_serde(&model.ctx).unwrap(),
+            Ok(WebModelField::ContinueWatchingPreview) => {
+                JsValue::from_serde(&model.continue_watching_preview).unwrap()
             }
-        } else {
-            JsValue::from_serde(&model.deref()).unwrap()
+            Ok(WebModelField::Board) => JsValue::from_serde(&model.board).unwrap(),
+            Ok(WebModelField::Discover) => JsValue::from_serde(&model.discover).unwrap(),
+            Ok(WebModelField::Library) => JsValue::from_serde(&model.library).unwrap(),
+            Ok(WebModelField::ContinueWatching) => {
+                JsValue::from_serde(&model.continue_watching).unwrap()
+            }
+            Ok(WebModelField::Search) => JsValue::from_serde(&model.search).unwrap(),
+            Ok(WebModelField::MetaDetails) => JsValue::from_serde(&model.meta_details).unwrap(),
+            Ok(WebModelField::Addons) => JsValue::from_serde(&model.addons).unwrap(),
+            Ok(WebModelField::AddonDetails) => JsValue::from_serde(&model.addon_details).unwrap(),
+            Ok(WebModelField::StreamingServer) => {
+                JsValue::from_serde(&model.streaming_server).unwrap()
+            }
+            Ok(WebModelField::Player) => JsValue::from_serde(&model.player).unwrap(),
+            Err(_) => JsValue::from_serde(&model.deref()).unwrap(),
         }
     }
 }
