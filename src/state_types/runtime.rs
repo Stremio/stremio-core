@@ -1,12 +1,12 @@
-use crate::state_types::msg::{Event, Msg};
-use crate::state_types::{Effects, Environment, Update};
-use core::pin::Pin;
+use crate::state_types::msg::{Action, Event, Msg};
+use crate::state_types::{Effects, Environment, Model};
 use derivative::Derivative;
 use enclose::enclose;
 use futures::channel::mpsc::{channel, Receiver, Sender};
-use futures::{future, Future, FutureExt};
+use futures::{future, FutureExt};
 use serde::Serialize;
 use std::marker::PhantomData;
+use std::ops::DerefMut;
 use std::sync::{Arc, LockResult, RwLock, RwLockReadGuard};
 
 #[derive(Debug, Serialize)]
@@ -18,53 +18,78 @@ pub enum RuntimeEvent {
 
 #[derive(Derivative)]
 #[derivative(Debug, Clone(bound = ""))]
-pub struct Runtime<Env: Environment, App: Update> {
-    app: Arc<RwLock<App>>,
+pub struct Runtime<Env: Environment, M: Model> {
+    model: Arc<RwLock<M>>,
     tx: Sender<RuntimeEvent>,
     env: PhantomData<Env>,
 }
 
-impl<Env: Environment + 'static, App: Update + 'static> Runtime<Env, App> {
-    pub fn new(app: App, buffer: usize) -> (Self, Receiver<RuntimeEvent>) {
+impl<Env, M> Runtime<Env, M>
+where
+    Env: Environment + 'static,
+    M: Model + 'static,
+{
+    pub fn new(model: M, buffer: usize) -> (Self, Receiver<RuntimeEvent>) {
         let (tx, rx) = channel(buffer);
-        let app = Arc::new(RwLock::new(app));
+        let model = Arc::new(RwLock::new(model));
         (
             Runtime {
-                app,
+                model,
                 tx,
                 env: PhantomData,
             },
             rx,
         )
     }
-    pub fn app(&self) -> LockResult<RwLockReadGuard<App>> {
-        self.app.read()
+    pub fn model(&self) -> LockResult<RwLockReadGuard<M>> {
+        self.model.read()
     }
-    pub fn dispatch_with<T: FnOnce(&mut App) -> Effects>(
-        &self,
-        with: T,
-    ) -> Pin<Box<dyn Future<Output = ()> + Unpin>> {
-        let handle = self.clone();
-        let fx = with(&mut *self.app.write().expect("rwlock write failed"));
-        if fx.has_changed {
-            self.emit_event(RuntimeEvent::NewState);
+    pub fn dispatch(&self, action: Action) {
+        let effects = self
+            .model
+            .write()
+            .expect("model write failed")
+            .update(&Msg::Action(action));
+        self.handle_effects(effects);
+    }
+    pub fn dispatch_to_field(&self, field: &M::Field, action: Action) {
+        let effects = self
+            .model
+            .write()
+            .expect("model write failed")
+            .update_field(&field, &Msg::Action(action));
+        self.handle_effects(effects);
+    }
+    fn emit(&self, event: RuntimeEvent) {
+        self.tx.clone().try_send(event).expect("emit event failed");
+    }
+    fn handle_effects(&self, effects: Effects) {
+        if effects.has_changed {
+            self.emit(RuntimeEvent::NewState);
         };
-        // Handle next effects
-        let all = fx.into_iter().map(enclose!((handle) move |ft| ft
-            .then(enclose!((handle) move |msg| {
-                Env::exec(handle.dispatch(&msg));
-                future::ready(())
-            }))
+        Env::exec(Box::pin(
+            future::join_all(effects.into_iter().map(
+                enclose!((self.clone() => runtime) move |effect| {
+                    effect.then(enclose!((runtime) move |msg| async move {
+                        match msg {
+                            Msg::Event(event) => {
+                                runtime.emit(RuntimeEvent::Event(event));
+                            }
+                            Msg::Internal(_) => {
+                                let effects = runtime
+                                    .model
+                                    .write()
+                                    .expect("model write failed")
+                                    .deref_mut()
+                                    .update(&msg);
+                                runtime.handle_effects(effects);
+                            }
+                            _ => {}
+                        }
+                    }))
+                }),
+            ))
+            .map(|_| ()),
         ));
-        Box::pin(futures::future::join_all(all).map(|_| ()))
-    }
-    pub fn dispatch(&self, msg: &Msg) -> Pin<Box<dyn Future<Output = ()> + Unpin>> {
-        if let Msg::Event(event) = msg {
-            self.emit_event(RuntimeEvent::Event(event.to_owned()));
-        };
-        self.dispatch_with(|model| model.update(msg))
-    }
-    fn emit_event(&self, event: RuntimeEvent) {
-        self.tx.clone().try_send(event).unwrap();
     }
 }
