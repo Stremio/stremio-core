@@ -5,6 +5,11 @@ use std::ops::Deref;
 use stremio_core::runtime::{Environment, Runtime};
 use wasm_bindgen::prelude::{wasm_bindgen, JsValue};
 
+#[wasm_bindgen(start)]
+pub fn _run() {
+    std::panic::set_hook(Box::new(console_error_panic_hook::hook));
+}
+
 #[wasm_bindgen]
 pub struct StremioCoreWeb {
     runtime: Runtime<Env, WebModel>,
@@ -14,7 +19,6 @@ pub struct StremioCoreWeb {
 impl StremioCoreWeb {
     #[wasm_bindgen(constructor)]
     pub fn new(emit: js_sys::Function) -> StremioCoreWeb {
-        std::panic::set_hook(Box::new(console_error_panic_hook::hook));
         let (runtime, rx) = Runtime::<Env, _>::new(WebModel::default(), 1000);
         Env::exec(rx.for_each(move |msg| {
             emit.call1(&JsValue::NULL, &JsValue::from_serde(&msg).unwrap())
