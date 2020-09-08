@@ -1,3 +1,3 @@
-mod app_model;
 mod env;
+mod model;
 mod stremio_core_web;

@@ -1,12 +1,11 @@
 use chrono::offset::TimeZone;
 use chrono::{DateTime, Utc};
-use core::pin::Pin;
-use future::Either;
-use futures::{future, Future, TryFutureExt};
+use futures::future::Either;
+use futures::{future, Future, FutureExt, TryFutureExt};
 use http::{Method, Request};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
-use stremio_core::state_types::{EnvError, EnvFuture, Environment};
+use stremio_core::runtime::{EnvError, EnvFuture, Environment};
 use wasm_bindgen::{JsCast, JsValue};
 use wasm_bindgen_futures::{spawn_local, JsFuture};
 
@@ -46,44 +45,46 @@ impl Environment for Env {
         let promise = web_sys::window()
             .expect("window is not available")
             .fetch_with_request(&request);
-        Pin::new(Box::new(
-            JsFuture::from(promise)
-                .map_err(|error| EnvError::Fetch(js_error_message(error)))
-                .and_then(|resp| {
-                    let resp = resp.dyn_into::<web_sys::Response>().unwrap();
-                    if resp.status() != 200 {
-                        Either::Right(future::err(EnvError::Fetch(format!(
-                            "Unexpected HTTP status code {}",
-                            resp.status(),
-                        ))))
-                    } else {
-                        // @TODO: optimize this, as this is basically deserializing in JS -> serializing in
-                        // JS -> deserializing in rust
-                        Either::Left(
-                            JsFuture::from(resp.json().unwrap())
-                                .map_err(|error| EnvError::Fetch(js_error_message(error))),
-                        )
-                    }
-                })
-                .and_then(|resp| future::ready(resp.into_serde().map_err(EnvError::from))),
-        ))
+        JsFuture::from(promise)
+            .map_err(|error| EnvError::Fetch(js_error_message(error)))
+            .and_then(|resp| {
+                let resp = resp.dyn_into::<web_sys::Response>().unwrap();
+                if resp.status() != 200 {
+                    Either::Right(future::err(EnvError::Fetch(format!(
+                        "Unexpected HTTP status code {}",
+                        resp.status(),
+                    ))))
+                } else {
+                    // @TODO: optimize this, as this is basically deserializing in JS -> serializing in
+                    // JS -> deserializing in rust
+                    Either::Left(
+                        JsFuture::from(resp.json().unwrap())
+                            .map_err(|error| EnvError::Fetch(js_error_message(error))),
+                    )
+                }
+            })
+            .and_then(|resp| future::ready(resp.into_serde().map_err(EnvError::from)))
+            .boxed_local()
     }
-    fn exec(future: Pin<Box<dyn Future<Output = ()> + Unpin>>) {
+    fn get_storage<T>(key: &str) -> EnvFuture<Option<T>>
+    where
+        for<'de> T: Deserialize<'de> + 'static,
+    {
+        future::ready(get_storage_sync(key)).boxed_local()
+    }
+    fn set_storage<T: Serialize>(key: &str, value: Option<&T>) -> EnvFuture<()> {
+        future::ready(set_storage_sync(key, value)).boxed_local()
+    }
+    fn exec<F>(future: F)
+    where
+        F: Future<Output = ()> + 'static,
+    {
         spawn_local(future)
     }
     fn now() -> DateTime<Utc> {
         let millis = js_sys::Date::now() as i64;
         let (secs, millis) = (millis / 1000, millis % 1000);
         Utc.timestamp(secs, millis as u32 * 1_000_000)
-    }
-    fn get_storage<T>(key: &str) -> EnvFuture<Option<T>>
-    where
-        for<'de> T: Deserialize<'de> + 'static,
-    {
-        Pin::new(Box::new(future::ready(get_storage_sync(key))))
-    }
-    fn set_storage<T: Serialize>(key: &str, value: Option<&T>) -> EnvFuture<()> {
-        Pin::new(Box::new(future::ready(set_storage_sync(key, value))))
     }
 }
 
