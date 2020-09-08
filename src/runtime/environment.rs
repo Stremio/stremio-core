@@ -35,14 +35,14 @@ pub trait Environment {
     where
         IN: Serialize + 'static,
         for<'de> OUT: Deserialize<'de> + 'static;
-    fn exec<F>(future: F)
-    where
-        F: Future<Output = ()> + 'static;
-    fn now() -> DateTime<Utc>;
     fn get_storage<T>(key: &str) -> EnvFuture<Option<T>>
     where
         for<'de> T: Deserialize<'de> + 'static;
     fn set_storage<T: Serialize>(key: &str, value: Option<&T>) -> EnvFuture<()>;
+    fn exec<F>(future: F)
+    where
+        F: Future<Output = ()> + 'static;
+    fn now() -> DateTime<Utc>;
     fn addon_transport(transport_url: &Url) -> Box<dyn AddonTransport>
     where
         Self: Sized + 'static,

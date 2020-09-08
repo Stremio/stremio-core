@@ -92,14 +92,14 @@ impl Environment for Env {
         };
         future::ok(()).boxed_local()
     }
-    fn now() -> DateTime<Utc> {
-        *NOW.read().unwrap()
-    }
     fn exec<F>(future: F)
     where
         F: Future<Output = ()> + 'static,
     {
         tokio_current_thread::spawn(future);
+    }
+    fn now() -> DateTime<Utc> {
+        *NOW.read().unwrap()
     }
 }
 
