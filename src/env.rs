@@ -14,7 +14,7 @@ pub enum Env {}
 impl Environment for Env {
     fn fetch<IN, OUT>(request: Request<IN>) -> EnvFuture<OUT>
     where
-        IN: Serialize + 'static,
+        IN: Serialize,
         for<'de> OUT: Deserialize<'de> + 'static,
     {
         let (parts, body) = request.into_parts();
