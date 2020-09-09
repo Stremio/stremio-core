@@ -77,7 +77,7 @@ pub struct DatastoreRequest {
 impl APIMethodName for DatastoreRequest {
     fn method_name(&self) -> &str {
         match &self.command {
-            DatastoreCommand::Meta {} => "datastoreMeta",
+            DatastoreCommand::Meta => "datastoreMeta",
             DatastoreCommand::Get { .. } => "datastoreGet",
             DatastoreCommand::Put { .. } => "datastorePut",
         }
@@ -88,7 +88,7 @@ impl APIMethodName for DatastoreRequest {
 #[cfg_attr(test, derive(Debug))]
 #[serde(untagged)]
 pub enum DatastoreCommand {
-    Meta {},
+    Meta,
     Get {
         #[serde(default)]
         ids: Vec<String>,
