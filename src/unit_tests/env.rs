@@ -27,7 +27,7 @@ pub struct Request {
     pub body: String,
 }
 
-impl<T: 'static + Serialize> From<http::Request<T>> for Request {
+impl<T: Serialize> From<http::Request<T>> for Request {
     fn from(request: http::Request<T>) -> Self {
         let (head, body) = request.into_parts();
         Request {
@@ -62,8 +62,8 @@ impl Env {
 impl Environment for Env {
     fn fetch<IN, OUT>(request: http::Request<IN>) -> EnvFuture<OUT>
     where
-        IN: 'static + Serialize,
-        for<'de> OUT: 'static + Deserialize<'de>,
+        IN: Serialize,
+        for<'de> OUT: Deserialize<'de> + 'static,
     {
         let request = Request::from(request);
         REQUESTS.write().unwrap().push(request.to_owned());
@@ -73,7 +73,7 @@ impl Environment for Env {
     }
     fn get_storage<T>(key: &str) -> EnvFuture<Option<T>>
     where
-        for<'de> T: 'static + Deserialize<'de>,
+        for<'de> T: Deserialize<'de> + 'static,
     {
         future::ok(
             STORAGE

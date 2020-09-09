@@ -64,7 +64,7 @@ pub type EnvFuture<T> = LocalBoxFuture<'static, Result<T, EnvError>>;
 pub trait Environment {
     fn fetch<IN, OUT>(request: Request<IN>) -> EnvFuture<OUT>
     where
-        IN: Serialize + 'static,
+        IN: Serialize,
         for<'de> OUT: Deserialize<'de> + 'static;
     fn get_storage<T>(key: &str) -> EnvFuture<Option<T>>
     where
