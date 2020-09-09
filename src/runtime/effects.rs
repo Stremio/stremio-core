@@ -25,30 +25,25 @@ impl Effects {
             has_changed: true,
         }
     }
-
     pub fn one(effect: Effect) -> Self {
         Effects {
             effects: vec![effect],
             has_changed: true,
         }
     }
-
     pub fn many(effects: Vec<Effect>) -> Self {
         Effects {
             effects,
             has_changed: true,
         }
     }
-
     pub fn msg(msg: Msg) -> Self {
         Effects::one(future::ready(msg).boxed_local())
     }
-
     pub fn unchanged(mut self) -> Self {
         self.has_changed = false;
         self
     }
-
     pub fn join(mut self, mut effects: Effects) -> Self {
         self.has_changed = self.has_changed || effects.has_changed;
         self.effects.append(&mut effects.effects);
