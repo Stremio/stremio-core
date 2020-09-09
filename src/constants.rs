@@ -21,11 +21,10 @@ pub const WATCHED_THRESHOLD_COEF: f64 = 0.7;
 pub const SCHEMA_VERSION: usize = 1;
 
 lazy_static! {
-    pub static ref API_URL: Url =
-        Url::parse("https://api.strem.io").expect("API_URL parse cannot fail");
+    pub static ref API_URL: Url = Url::parse("https://api.strem.io").expect("API_URL parse failed");
     pub static ref STREAMING_SERVER_URL: Url =
-        Url::parse("http://127.0.0.1:11470").expect("STREAMING_SERVER_URL parse cannot fail");
+        Url::parse("http://127.0.0.1:11470").expect("STREAMING_SERVER_URL parse failed");
     pub static ref OFFICIAL_ADDONS: Vec<Descriptor> =
         serde_json::from_slice(include_bytes!("../stremio-official-addons/index.json"))
-            .expect("official addons JSON parse");
+            .expect("OFFICIAL_ADDONS parse failed");
 }

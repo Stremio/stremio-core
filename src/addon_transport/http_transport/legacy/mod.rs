@@ -139,7 +139,7 @@ impl<'a, T: Environment> AddonTransport for AddonLegacyTransport<'a, T> {
     }
     fn manifest(&self) -> EnvFuture<Manifest> {
         let url = format!("{}/q.json?b={}", self.transport_url, MANIFEST_REQUEST_PARAM);
-        let r = Request::get(url).body(()).expect("builder cannot fail");
+        let r = Request::get(url).body(()).expect("request builder failed");
         T::fetch::<_, JsonRPCResp<LegacyManifestResp>>(r)
             .and_then(map_response)
             .map_ok(Into::into)
@@ -215,7 +215,7 @@ fn build_legacy_req(transport_url: &Url, path: &ResourceRef) -> Result<Request<(
         &serde_json::to_string(&q_json).map_err(|error| EnvError::Serde(error.to_string()))?,
     );
     let url = format!("{}/q.json?b={}", transport_url, param_str);
-    Ok(Request::get(&url).body(()).expect("builder cannot fail"))
+    Ok(Request::get(&url).body(()).expect("request builder failed"))
 }
 
 fn build_jsonrpc(method: &str, params: serde_json::Value) -> serde_json::Value {
@@ -273,7 +273,7 @@ mod test {
     #[test]
     fn catalog() {
         let transport_url = Url::parse("https://stremio-mixer.schneider.ax/stremioget/stremio/v1")
-            .expect("mixer url to be valid");
+            .expect("url parse failed");
         let path = ResourceRef::without_extra("catalog", "tv", "popularities.mixer");
         assert_eq!(
             &build_legacy_req(&transport_url, &path).unwrap().uri().to_string(),
@@ -283,8 +283,8 @@ mod test {
 
     #[test]
     fn stream_imdb() {
-        let transport_url = Url::parse("https://legacywatchhub.strem.io/stremio/v1")
-            .expect("legacywatchhub url to be valid");
+        let transport_url =
+            Url::parse("https://legacywatchhub.strem.io/stremio/v1").expect("url parse failed");
         let path = ResourceRef::without_extra("stream", "series", "tt0386676:5:1");
         assert_eq!(
             &build_legacy_req(&transport_url, &path).unwrap().uri().to_string(),

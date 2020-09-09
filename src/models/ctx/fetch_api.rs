@@ -14,12 +14,12 @@ where
 {
     let url = API_URL
         .join("api/")
-        .expect("api url builder cannot fail")
+        .expect("url builder failed")
         .join(api_request.method_name())
-        .expect("api url builder cannot fail");
+        .expect("url builder failed");
     let request = Request::post(url.as_str())
         .body(api_request.to_owned())
-        .expect("fetch_api request builder cannot fail");
+        .expect("request builder failed");
     Env::fetch::<_, _>(request)
         .map_err(CtxError::from)
         .and_then(|result| match result {
