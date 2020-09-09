@@ -597,7 +597,7 @@ dependencies = [
 
 [[package]]
 name = "stremio-core-web"
-version = "0.17.0"
+version = "0.18.0"
 dependencies = [
  "chrono",
  "console_error_panic_hook",
