@@ -1,7 +1,7 @@
 use derivative::Derivative;
 use serde::Serialize;
 
-#[derive(Derivative, Clone, PartialEq, Serialize)]
+#[derive(Derivative, PartialEq, Serialize)]
 #[derivative(Default)]
 #[serde(tag = "type", content = "content")]
 pub enum Loadable<R, E> {

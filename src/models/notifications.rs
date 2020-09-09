@@ -15,7 +15,7 @@ const MAX_PER_REQUEST: usize = 50;
 // The name of the extra property
 const LAST_VID_IDS: &str = "lastVideosIds";
 
-#[derive(Clone, Default, Serialize)]
+#[derive(Default, Serialize)]
 pub struct Notifications {
     pub groups: Vec<ResourceLoadable<Vec<MetaItem>>>,
 }

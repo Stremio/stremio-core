@@ -12,7 +12,7 @@ pub struct Selected {
     pub transport_url: Url,
 }
 
-#[derive(Default, Clone, Serialize)]
+#[derive(Default, Serialize)]
 pub struct AddonDetails {
     pub selected: Option<Selected>,
     pub addon: Option<DescriptorLoadable>,

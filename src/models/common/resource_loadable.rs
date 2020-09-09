@@ -6,7 +6,7 @@ use futures::FutureExt;
 use serde::Serialize;
 use std::convert::TryFrom;
 
-#[derive(Clone, PartialEq, Serialize)]
+#[derive(PartialEq, Serialize)]
 #[serde(tag = "type", content = "content")]
 pub enum ResourceError {
     EmptyContent,
@@ -14,7 +14,7 @@ pub enum ResourceError {
     Env(EnvError),
 }
 
-#[derive(Clone, Serialize)]
+#[derive(Serialize)]
 pub struct ResourceLoadable<T> {
     pub request: ResourceRequest,
     pub content: Loadable<T, ResourceError>,

@@ -7,7 +7,7 @@ use futures::FutureExt;
 use serde::Serialize;
 use url::Url;
 
-#[derive(Clone, Serialize)]
+#[derive(Serialize)]
 pub struct DescriptorLoadable {
     pub transport_url: Url,
     pub content: Loadable<Descriptor, EnvError>,

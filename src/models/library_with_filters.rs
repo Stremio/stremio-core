@@ -40,7 +40,7 @@ impl LibraryFilter for NotRemovedFilter {
     }
 }
 
-#[derive(Derivative, Clone, Serialize)]
+#[derive(Derivative, Serialize)]
 #[derivative(Default(bound = ""))]
 pub struct LibraryWithFilters<F> {
     pub selected: Option<Selected>,

@@ -16,7 +16,7 @@ pub struct Selected {
     pub streams_resource_ref: Option<ResourceRef>,
 }
 
-#[derive(Default, Clone, Serialize)]
+#[derive(Default, Serialize)]
 pub struct MetaDetails {
     pub selected: Option<Selected>,
     pub meta_resources: Vec<ResourceLoadable<MetaItem>>,

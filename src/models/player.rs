@@ -26,7 +26,7 @@ pub struct Selected {
     pub video_id: Option<String>,
 }
 
-#[derive(Default, Clone, PartialEq, Serialize)]
+#[derive(Default, Serialize)]
 pub struct Player {
     pub selected: Option<Selected>,
     pub meta_resource: Option<ResourceLoadable<MetaItem>>,

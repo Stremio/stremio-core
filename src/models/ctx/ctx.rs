@@ -19,19 +19,19 @@ use serde::ser::SerializeMap;
 use serde::{Serialize, Serializer};
 use std::marker::PhantomData;
 
-#[derive(Clone, PartialEq)]
+#[derive(PartialEq)]
 pub enum CtxRequest {
     Storage,
     API(AuthRequest),
 }
 
-#[derive(Clone, PartialEq)]
+#[derive(PartialEq)]
 pub enum CtxStatus {
     Loading(CtxRequest),
     Ready,
 }
 
-#[derive(Derivative, Clone, PartialEq, Serialize)]
+#[derive(Derivative, Serialize)]
 #[derivative(Default)]
 pub struct Ctx<Env: Environment> {
     pub profile: Profile,

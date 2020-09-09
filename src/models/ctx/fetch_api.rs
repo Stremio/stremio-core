@@ -9,7 +9,7 @@ use serde::{Deserialize, Serialize};
 pub fn fetch_api<Env, REQ, RESP>(api_request: &REQ) -> impl Future<Output = Result<RESP, CtxError>>
 where
     Env: Environment + 'static,
-    REQ: APIMethodName + Clone + Serialize + 'static,
+    REQ: APIMethodName + Clone + Serialize,
     for<'de> RESP: Deserialize<'de> + 'static,
 {
     let url = API_URL

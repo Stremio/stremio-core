@@ -69,13 +69,13 @@ pub struct SelectableCatalog {
     pub request: ResourceRequest,
 }
 
-#[derive(Clone, PartialEq, Serialize)]
+#[derive(PartialEq, Serialize)]
 pub struct SelectableType {
     pub name: String,
     pub request: ResourceRequest,
 }
 
-#[derive(Default, Clone, PartialEq, Serialize)]
+#[derive(Default, PartialEq, Serialize)]
 pub struct Selectable {
     pub types: Vec<SelectableType>,
     pub catalogs: Vec<SelectableCatalog>,
@@ -84,7 +84,7 @@ pub struct Selectable {
     pub has_next_page: bool,
 }
 
-#[derive(Derivative, Clone, Serialize)]
+#[derive(Derivative, Serialize)]
 #[derivative(Default(bound = ""))]
 pub struct CatalogWithFilters<T> {
     pub selected: Option<Selected>,
