@@ -73,14 +73,13 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for StreamingServer {
                     if ready_settings != settings =>
                 {
                     *ready_settings = settings.to_owned();
-                    let url = url.to_owned();
                     Effects::one(
                         update_settings::<Env>(&url, settings)
-                            .map(move |result| {
+                            .map(enclose!((url) move |result| {
                                 Msg::Internal(Internal::StreamingServerUpdateSettingsResult(
                                     url, result,
                                 ))
-                            })
+                            }))
                             .boxed_local(),
                     )
                 }
