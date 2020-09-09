@@ -7,7 +7,8 @@ use url::{form_urlencoded, Url};
 
 pub type ExtraProp = (String, String);
 
-#[derive(Clone, Debug, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[derive(Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[cfg_attr(test, derive(Debug))]
 pub struct ResourceRef {
     pub resource: String,
     pub type_name: String,
@@ -70,7 +71,8 @@ impl fmt::Display for ResourceRef {
     }
 }
 
-#[derive(Clone, Debug, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[derive(Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[cfg_attr(test, derive(Debug))]
 pub struct ResourceRequest {
     pub base: Url,
     pub path: ResourceRef,
@@ -85,7 +87,8 @@ impl ResourceRequest {
     }
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone)]
+#[cfg_attr(test, derive(Debug))]
 pub enum AggrRequest<'a> {
     AllCatalogs { extra: &'a Vec<ExtraProp> },
     AllOfResource(ResourceRef),

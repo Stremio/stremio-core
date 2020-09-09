@@ -2,7 +2,8 @@ use crate::constants::STREAMING_SERVER_URL;
 use serde::{Deserialize, Serialize};
 use url::Url;
 
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, PartialEq, Serialize, Deserialize)]
+#[cfg_attr(test, derive(Debug))]
 pub struct Settings {
     pub interface_language: String,
     pub streaming_server_url: Url,

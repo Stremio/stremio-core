@@ -2,7 +2,8 @@ use crate::types::addon::{Manifest, ManifestPreview};
 use serde::{Deserialize, Serialize};
 use url::Url;
 
-#[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Default, PartialEq, Serialize, Deserialize)]
+#[cfg_attr(test, derive(Debug))]
 #[serde(rename_all = "camelCase")]
 pub struct DescriptorFlags {
     #[serde(default)]
@@ -11,14 +12,16 @@ pub struct DescriptorFlags {
     pub protected: bool,
 }
 
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, PartialEq, Serialize, Deserialize)]
+#[cfg_attr(test, derive(Debug))]
 #[serde(rename_all = "camelCase")]
 pub struct DescriptorPreview {
     pub manifest: ManifestPreview,
     pub transport_url: Url,
 }
 
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, PartialEq, Serialize, Deserialize)]
+#[cfg_attr(test, derive(Debug))]
 #[serde(rename_all = "camelCase")]
 pub struct Descriptor {
     pub manifest: Manifest,

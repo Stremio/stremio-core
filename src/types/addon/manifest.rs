@@ -4,7 +4,8 @@ use semver::Version;
 use serde::{Deserialize, Serialize};
 use std::borrow::Cow;
 
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, PartialEq, Serialize, Deserialize)]
+#[cfg_attr(test, derive(Debug))]
 #[serde(untagged)]
 pub enum ManifestResource {
     Short(String),
@@ -25,7 +26,8 @@ impl ManifestResource {
     }
 }
 
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, PartialEq, Serialize, Deserialize)]
+#[cfg_attr(test, derive(Debug))]
 pub struct OptionsLimit(pub usize);
 
 impl Default for OptionsLimit {
@@ -34,7 +36,8 @@ impl Default for OptionsLimit {
     }
 }
 
-#[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Default, PartialEq, Serialize, Deserialize)]
+#[cfg_attr(test, derive(Debug))]
 #[serde(rename_all = "camelCase")]
 pub struct ManifestExtraProp {
     pub name: String,
@@ -45,7 +48,8 @@ pub struct ManifestExtraProp {
     pub options_limit: OptionsLimit,
 }
 
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, PartialEq, Serialize, Deserialize)]
+#[cfg_attr(test, derive(Debug))]
 #[serde(untagged)]
 pub enum ManifestExtra {
     Full {
@@ -66,7 +70,8 @@ impl Default for ManifestExtra {
     }
 }
 
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, PartialEq, Serialize, Deserialize)]
+#[cfg_attr(test, derive(Debug))]
 #[serde(rename_all = "camelCase")]
 pub struct ManifestCatalog {
     #[serde(rename = "type")]
@@ -105,7 +110,8 @@ impl ManifestCatalog {
     }
 }
 
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, PartialEq, Serialize, Deserialize)]
+#[cfg_attr(test, derive(Debug))]
 #[serde(rename_all = "camelCase")]
 pub struct ManifestPreview {
     pub id: String,
@@ -117,7 +123,8 @@ pub struct ManifestPreview {
     pub types: Vec<String>,
 }
 
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, PartialEq, Serialize, Deserialize)]
+#[cfg_attr(test, derive(Debug))]
 #[serde(rename_all = "camelCase")]
 pub struct Manifest {
     pub id: String,

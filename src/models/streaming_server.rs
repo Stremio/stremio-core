@@ -9,7 +9,7 @@ use http::request::Request;
 use serde::{Deserialize, Serialize};
 use url::Url;
 
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Settings {
     pub app_path: String,

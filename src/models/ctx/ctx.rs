@@ -19,20 +19,20 @@ use serde::ser::SerializeMap;
 use serde::{Serialize, Serializer};
 use std::marker::PhantomData;
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, PartialEq)]
 pub enum CtxRequest {
     Storage,
     API(AuthRequest),
 }
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, PartialEq)]
 pub enum CtxStatus {
     Loading(CtxRequest),
     Ready,
 }
 
 #[derive(Derivative, Clone, PartialEq, Serialize)]
-#[derivative(Default, Debug)]
+#[derivative(Default)]
 pub struct Ctx<Env: Environment> {
     pub profile: Profile,
     // TODO StreamsBucket
@@ -44,7 +44,6 @@ pub struct Ctx<Env: Environment> {
     #[derivative(Default(value = "CtxStatus::Ready"))]
     pub status: CtxStatus,
     #[serde(skip)]
-    #[derivative(Debug = "ignore")]
     pub env: PhantomData<Env>,
 }
 

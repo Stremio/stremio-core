@@ -8,14 +8,16 @@ pub trait APIMethodName {
     fn method_name(&self) -> &str;
 }
 
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, PartialEq, Serialize, Deserialize)]
+#[cfg_attr(test, derive(Debug))]
 pub struct GDPRConsentWithTime {
     #[serde(flatten)]
     pub gdpr_consent: GDPRConsent,
     pub time: DateTime<Utc>,
 }
 
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, PartialEq, Serialize, Deserialize)]
+#[cfg_attr(test, derive(Debug))]
 #[serde(tag = "type")]
 pub enum AuthRequest {
     Login {
@@ -29,7 +31,8 @@ pub enum AuthRequest {
     },
 }
 
-#[derive(Clone, Debug, PartialEq, Serialize)]
+#[derive(Clone, PartialEq, Serialize)]
+#[cfg_attr(test, derive(Debug))]
 #[serde(tag = "type")]
 pub enum APIRequest {
     Auth(AuthRequest),
@@ -61,7 +64,8 @@ impl APIMethodName for APIRequest {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Serialize)]
+#[derive(Clone, PartialEq, Serialize)]
+#[cfg_attr(test, derive(Debug))]
 #[serde(untagged)]
 pub enum DatastoreCommand {
     Meta {},
@@ -76,7 +80,8 @@ pub enum DatastoreCommand {
     },
 }
 
-#[derive(Debug, Clone, PartialEq, Serialize)]
+#[derive(Clone, PartialEq, Serialize)]
+#[cfg_attr(test, derive(Debug))]
 #[serde(rename_all = "camelCase")]
 pub struct DatastoreRequest {
     pub auth_key: AuthKey,

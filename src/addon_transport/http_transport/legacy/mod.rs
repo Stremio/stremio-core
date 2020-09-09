@@ -6,8 +6,6 @@ use futures::{future, FutureExt, TryFutureExt};
 use http::Request;
 use serde::Deserialize;
 use serde_json::json;
-use std::error::Error;
-use std::fmt;
 use std::marker::PhantomData;
 use url::Url;
 
@@ -24,31 +22,17 @@ const MANIFEST_REQUEST_PARAM: &str =
 //
 // Errors
 //
-#[derive(Debug)]
+#[cfg_attr(test, derive(Debug))]
 pub enum LegacyErr {
     JsonRPC(JsonRPCErr),
     UnsupportedResource,
     UnsupportedRequest,
 }
-impl fmt::Display for LegacyErr {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{:?}", self)
-    }
-}
-impl Error for LegacyErr {
-    fn description(&self) -> &str {
-        match self {
-            LegacyErr::JsonRPC(err) => &err.message,
-            LegacyErr::UnsupportedResource => "legacy transport: unsupported resource",
-            LegacyErr::UnsupportedRequest => "legacy transport: unsupported request",
-        }
-    }
-}
 
 impl Into<EnvError> for LegacyErr {
     fn into(self) -> EnvError {
         EnvError::AddonTransport(match self {
-            LegacyErr::JsonRPC(error) => error.message,
+            LegacyErr::JsonRPC(error) => format!("rpc error {}: {}", error.code, error.message),
             LegacyErr::UnsupportedResource => "legacy transport: unsupported resource".to_owned(),
             LegacyErr::UnsupportedRequest => "legacy transport: unsupported request".to_owned(),
         })
@@ -58,7 +42,8 @@ impl Into<EnvError> for LegacyErr {
 //
 // JSON RPC types
 //
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize)]
+#[cfg_attr(test, derive(Debug))]
 pub struct JsonRPCErr {
     message: String,
     #[serde(default)]
@@ -291,8 +276,8 @@ mod test {
             .expect("mixer url to be valid");
         let path = ResourceRef::without_extra("catalog", "tv", "popularities.mixer");
         assert_eq!(
-            build_legacy_req(&transport_url, &path).map(|request| request.uri().to_string()),
-            Some("https://stremio-mixer.schneider.ax/stremioget/stremio/v1/q.json?b=eyJpZCI6MSwianNvbnJwYyI6IjIuMCIsIm1ldGhvZCI6Im1ldGEuZmluZCIsInBhcmFtcyI6W251bGwseyJsaW1pdCI6MTAwLCJxdWVyeSI6eyJ0eXBlIjoidHYifSwic2tpcCI6MCwic29ydCI6eyJwb3B1bGFyaXRpZXMubWl4ZXIiOi0xLCJwb3B1bGFyaXR5IjotMX19XX0=".to_owned()),
+            &build_legacy_req(&transport_url, &path).unwrap().uri().to_string(),
+            "https://stremio-mixer.schneider.ax/stremioget/stremio/v1/q.json?b=eyJpZCI6MSwianNvbnJwYyI6IjIuMCIsIm1ldGhvZCI6Im1ldGEuZmluZCIsInBhcmFtcyI6W251bGwseyJsaW1pdCI6MTAwLCJxdWVyeSI6eyJ0eXBlIjoidHYifSwic2tpcCI6MCwic29ydCI6eyJwb3B1bGFyaXRpZXMubWl4ZXIiOi0xLCJwb3B1bGFyaXR5IjotMX19XX0=",
         );
     }
 
@@ -302,8 +287,8 @@ mod test {
             .expect("legacywatchhub url to be valid");
         let path = ResourceRef::without_extra("stream", "series", "tt0386676:5:1");
         assert_eq!(
-            build_legacy_req(&transport_url, &path).map(|request| request.uri().to_string()),
-            Some("https://legacywatchhub.strem.io/stremio/v1/q.json?b=eyJpZCI6MSwianNvbnJwYyI6IjIuMCIsIm1ldGhvZCI6InN0cmVhbS5maW5kIiwicGFyYW1zIjpbbnVsbCx7InF1ZXJ5Ijp7ImVwaXNvZGUiOjEsImltZGJfaWQiOiJ0dDAzODY2NzYiLCJzZWFzb24iOjUsInR5cGUiOiJzZXJpZXMifX1dfQ==".to_owned())
+            &build_legacy_req(&transport_url, &path).unwrap().uri().to_string(),
+            "https://legacywatchhub.strem.io/stremio/v1/q.json?b=eyJpZCI6MSwianNvbnJwYyI6IjIuMCIsIm1ldGhvZCI6InN0cmVhbS5maW5kIiwicGFyYW1zIjpbbnVsbCx7InF1ZXJ5Ijp7ImVwaXNvZGUiOjEsImltZGJfaWQiOiJ0dDAzODY2NzYiLCJzZWFzb24iOjUsInR5cGUiOiJzZXJpZXMifX1dfQ=="
         );
     }
 

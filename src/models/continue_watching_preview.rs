@@ -6,7 +6,7 @@ use crate::types::library::{LibBucket, LibItem};
 use lazysort::SortedBy;
 use serde::Serialize;
 
-#[derive(Default, Debug, Clone, Serialize)]
+#[derive(Default, Clone, Serialize)]
 pub struct ContinueWatchingPreview {
     pub lib_items: Vec<LibItem>,
 }

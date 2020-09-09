@@ -57,25 +57,25 @@ impl CatalogResourceAdapter for DescriptorPreview {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, PartialEq, Serialize, Deserialize)]
 pub struct Selected {
     pub request: ResourceRequest,
 }
 
-#[derive(Debug, Clone, PartialEq, Serialize)]
+#[derive(Clone, PartialEq, Serialize)]
 pub struct SelectableCatalog {
     pub name: String,
     pub addon_name: String,
     pub request: ResourceRequest,
 }
 
-#[derive(Debug, Clone, PartialEq, Serialize)]
+#[derive(Clone, PartialEq, Serialize)]
 pub struct SelectableType {
     pub name: String,
     pub request: ResourceRequest,
 }
 
-#[derive(Default, Debug, Clone, PartialEq, Serialize)]
+#[derive(Default, Clone, PartialEq, Serialize)]
 pub struct Selectable {
     pub types: Vec<SelectableType>,
     pub catalogs: Vec<SelectableCatalog>,

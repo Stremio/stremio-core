@@ -3,7 +3,8 @@ use serde::{Deserialize, Serialize};
 
 pub type AuthKey = String;
 
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, PartialEq, Serialize, Deserialize)]
+#[cfg_attr(test, derive(Debug))]
 pub struct Auth {
     pub key: AuthKey,
     pub user: User,

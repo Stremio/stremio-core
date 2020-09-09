@@ -1,6 +1,6 @@
 use serde::Serialize;
 
-#[derive(Debug, Clone, PartialEq, Serialize)]
+#[derive(Clone, PartialEq, Serialize)]
 #[serde(tag = "type", content = "content")]
 pub enum Loadable<R, E> {
     Loading,

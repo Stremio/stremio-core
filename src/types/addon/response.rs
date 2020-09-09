@@ -3,7 +3,8 @@ use crate::types::resource::{MetaItem, MetaItemPreview, Stream, Subtitles};
 use derive_more::TryInto;
 use serde::{Deserialize, Serialize};
 
-#[derive(Clone, Debug, TryInto, Serialize, Deserialize)]
+#[derive(Clone, TryInto, Serialize, Deserialize)]
+#[cfg_attr(test, derive(Debug))]
 #[serde(untagged)]
 pub enum ResourceResponse {
     Metas {

@@ -4,7 +4,8 @@ use derivative::Derivative;
 use serde::{Deserialize, Serialize};
 use url::Url;
 
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, PartialEq, Serialize, Deserialize)]
+#[cfg_attr(test, derive(Debug))]
 #[serde(rename_all = "camelCase")]
 pub struct MetaItem {
     pub id: String,
@@ -32,7 +33,8 @@ pub struct MetaItem {
     pub behavior_hints: MetaItemBehaviorHints,
 }
 
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, PartialEq, Serialize, Deserialize)]
+#[cfg_attr(test, derive(Debug))]
 #[serde(rename_all = "camelCase")]
 pub struct MetaItemPreview {
     pub id: String,
@@ -54,7 +56,8 @@ pub struct MetaItemPreview {
     pub behavior_hints: MetaItemBehaviorHints,
 }
 
-#[derive(Derivative, Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Derivative, Clone, PartialEq, Serialize, Deserialize)]
+#[cfg_attr(test, derive(Debug))]
 #[derivative(Default)]
 #[serde(rename_all = "camelCase")]
 pub enum PosterShape {
@@ -65,13 +68,15 @@ pub enum PosterShape {
     Poster,
 }
 
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, PartialEq, Serialize, Deserialize)]
+#[cfg_attr(test, derive(Debug))]
 pub struct SeriesInfo {
     pub season: u32,
     pub episode: u32,
 }
 
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, PartialEq, Serialize, Deserialize)]
+#[cfg_attr(test, derive(Debug))]
 #[serde(rename_all = "camelCase")]
 pub struct Video {
     pub id: String,
@@ -88,14 +93,16 @@ pub struct Video {
     pub trailers: Vec<Stream>,
 }
 
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, PartialEq, Serialize, Deserialize)]
+#[cfg_attr(test, derive(Debug))]
 pub struct Link {
     pub name: String,
     pub category: String,
     pub url: Url,
 }
 
-#[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Default, PartialEq, Serialize, Deserialize)]
+#[cfg_attr(test, derive(Debug))]
 #[serde(rename_all = "camelCase")]
 pub struct MetaItemBehaviorHints {
     pub default_video_id: Option<String>,

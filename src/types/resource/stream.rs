@@ -7,7 +7,8 @@ use url::Url;
 // * @TODO Sorting
 // * @TODO Serializing/deserializing streams with gzip+base64, for URLs
 
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, PartialEq, Serialize, Deserialize)]
+#[cfg_attr(test, derive(Debug))]
 #[serde(rename_all = "camelCase")]
 pub struct Stream {
     #[serde(flatten)]
@@ -41,7 +42,8 @@ impl Stream {
     }
 }
 
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, PartialEq, Serialize, Deserialize)]
+#[cfg_attr(test, derive(Debug))]
 #[serde(untagged)]
 pub enum StreamSource {
     Url {

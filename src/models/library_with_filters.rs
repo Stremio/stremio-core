@@ -8,7 +8,7 @@ use itertools::Itertools;
 use serde::{Deserialize, Serialize};
 use std::marker::PhantomData;
 
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "lowercase")]
 pub enum Sort {
     LastWatched,
@@ -16,7 +16,7 @@ pub enum Sort {
     Name,
 }
 
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, PartialEq, Serialize, Deserialize)]
 pub struct Selected {
     pub type_name: Option<String>,
     pub sort: Sort,
@@ -33,7 +33,6 @@ impl LibraryFilter for ContinueWatchingFilter {
     }
 }
 
-#[derive(Debug)]
 pub struct NotRemovedFilter {}
 impl LibraryFilter for NotRemovedFilter {
     fn predicate(lib_item: &LibItem) -> bool {
@@ -41,7 +40,7 @@ impl LibraryFilter for NotRemovedFilter {
     }
 }
 
-#[derive(Derivative, Debug, Clone, Serialize)]
+#[derive(Derivative, Clone, Serialize)]
 #[derivative(Default(bound = ""))]
 pub struct LibraryWithFilters<F> {
     pub selected: Option<Selected>,
