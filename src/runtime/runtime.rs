@@ -9,7 +9,7 @@ use std::marker::PhantomData;
 use std::ops::DerefMut;
 use std::sync::{Arc, LockResult, RwLock, RwLockReadGuard};
 
-#[derive(Debug, Serialize)]
+#[derive(Serialize)]
 #[serde(tag = "name", content = "args")]
 pub enum RuntimeEvent {
     NewState,
@@ -17,7 +17,7 @@ pub enum RuntimeEvent {
 }
 
 #[derive(Derivative)]
-#[derivative(Debug, Clone(bound = ""))]
+#[derivative(Clone(bound = ""))]
 pub struct Runtime<Env: Environment, M: Model> {
     model: Arc<RwLock<M>>,
     tx: Sender<RuntimeEvent>,
