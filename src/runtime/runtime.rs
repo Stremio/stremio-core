@@ -84,7 +84,9 @@ where
                                     .update(&msg);
                                 runtime.handle_effects(effects);
                             }
-                            _ => {}
+                            Msg::Action(_) => {
+                                panic!("effects are not allowed to resolve to action");
+                            }
                         }
                     }))
                 }),
