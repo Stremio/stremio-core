@@ -15,7 +15,7 @@ use stremio_derive::Model;
 
 #[test]
 fn actionctx_authenticate_login() {
-    #[derive(Model, Debug, Default)]
+    #[derive(Model, Default)]
     struct TestModel {
         ctx: Ctx<Env>,
     }
@@ -203,7 +203,7 @@ fn actionctx_authenticate_login() {
 
 #[test]
 fn actionctx_authenticate_register() {
-    #[derive(Model, Debug, Default)]
+    #[derive(Model, Default)]
     struct TestModel {
         ctx: Ctx<Env>,
     }

@@ -14,7 +14,7 @@ use url::Url;
 
 #[test]
 fn actionctx_uninstalladdon() {
-    #[derive(Model, Debug, Default)]
+    #[derive(Model, Default)]
     struct TestModel {
         ctx: Ctx<Env>,
     }
@@ -84,7 +84,7 @@ fn actionctx_uninstalladdon() {
 
 #[test]
 fn actionctx_uninstalladdon_with_user() {
-    #[derive(Model, Debug, Default)]
+    #[derive(Model, Default)]
     struct TestModel {
         ctx: Ctx<Env>,
     }
@@ -199,7 +199,7 @@ fn actionctx_uninstalladdon_with_user() {
 
 #[test]
 fn actionctx_uninstalladdon_protected() {
-    #[derive(Model, Debug, Default)]
+    #[derive(Model, Default)]
     struct TestModel {
         ctx: Ctx<Env>,
     }
@@ -271,7 +271,7 @@ fn actionctx_uninstalladdon_protected() {
 
 #[test]
 fn actionctx_uninstalladdon_not_installed() {
-    #[derive(Model, Debug, Default)]
+    #[derive(Model, Default)]
     struct TestModel {
         ctx: Ctx<Env>,
     }

@@ -8,7 +8,7 @@ use stremio_derive::Model;
 
 #[test]
 fn actionctx_updatesettings() {
-    #[derive(Model, Debug, Default)]
+    #[derive(Model, Default)]
     struct TestModel {
         ctx: Ctx<Env>,
     }
@@ -43,7 +43,7 @@ fn actionctx_updatesettings() {
 
 #[test]
 fn actionctx_updatesettings_not_changed() {
-    #[derive(Model, Debug, Default)]
+    #[derive(Model, Default)]
     struct TestModel {
         ctx: Ctx<Env>,
     }

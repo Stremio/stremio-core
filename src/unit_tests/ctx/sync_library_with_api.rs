@@ -16,7 +16,7 @@ use stremio_derive::Model;
 
 #[test]
 fn actionctx_synclibrarywithapi() {
-    #[derive(Model, Debug, Default)]
+    #[derive(Model, Default)]
     struct TestModel {
         ctx: Ctx<Env>,
     }
@@ -31,7 +31,7 @@ fn actionctx_synclibrarywithapi() {
 
 #[test]
 fn actionctx_synclibrarywithapi_with_user() {
-    #[derive(Model, Debug, Default)]
+    #[derive(Model, Default)]
     struct TestModel {
         ctx: Ctx<Env>,
     }
@@ -326,7 +326,7 @@ fn actionctx_synclibrarywithapi_with_user() {
 
 #[test]
 fn actionctx_synclibrarywithapi_with_user_empty_library() {
-    #[derive(Model, Debug, Default)]
+    #[derive(Model, Default)]
     struct TestModel {
         ctx: Ctx<Env>,
     }
