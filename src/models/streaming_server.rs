@@ -26,7 +26,7 @@ pub struct Settings {
 
 pub type Selected = Url;
 
-#[derive(Default, Clone, PartialEq, Serialize)]
+#[derive(Default, Serialize)]
 pub struct StreamingServer {
     pub selected: Option<Selected>,
     pub settings: Option<Loadable<Settings, EnvError>>,
