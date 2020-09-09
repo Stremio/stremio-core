@@ -3,6 +3,32 @@ use crate::types::api::APIError;
 use serde::ser::{SerializeStruct, Serializer};
 use serde::Serialize;
 
+#[derive(Clone, Serialize)]
+#[serde(tag = "type")]
+pub enum CtxError {
+    API(APIError),
+    Env(EnvError),
+    Other(OtherError),
+}
+
+impl From<APIError> for CtxError {
+    fn from(error: APIError) -> Self {
+        CtxError::API(error)
+    }
+}
+
+impl From<EnvError> for CtxError {
+    fn from(error: EnvError) -> Self {
+        CtxError::Env(error)
+    }
+}
+
+impl From<OtherError> for CtxError {
+    fn from(error: OtherError) -> Self {
+        CtxError::Other(error)
+    }
+}
+
 #[derive(Clone)]
 pub enum OtherError {
     UserNotLoggedIn,
@@ -42,31 +68,5 @@ impl Serialize for OtherError {
         state.serialize_field("code", &self.code())?;
         state.serialize_field("message", &self.message())?;
         state.end()
-    }
-}
-
-#[derive(Clone, Serialize)]
-#[serde(tag = "type")]
-pub enum CtxError {
-    API(APIError),
-    Env(EnvError),
-    Other(OtherError),
-}
-
-impl From<APIError> for CtxError {
-    fn from(error: APIError) -> Self {
-        CtxError::API(error)
-    }
-}
-
-impl From<EnvError> for CtxError {
-    fn from(error: EnvError) -> Self {
-        CtxError::Env(error)
-    }
-}
-
-impl From<OtherError> for CtxError {
-    fn from(error: OtherError) -> Self {
-        CtxError::Other(error)
     }
 }

@@ -5,19 +5,19 @@ use chrono::{DateTime, Utc};
 use serde::de::Unexpected;
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
 
-#[derive(Clone, Serialize, Deserialize)]
-#[cfg_attr(test, derive(Debug))]
-pub struct APIError {
-    pub message: String,
-    pub code: u64,
-}
-
 #[derive(Serialize, Deserialize)]
 #[cfg_attr(test, derive(Debug))]
 #[serde(untagged)]
 pub enum APIResult<T> {
     Err { error: APIError },
     Ok { result: T },
+}
+
+#[derive(Clone, Serialize, Deserialize)]
+#[cfg_attr(test, derive(Debug))]
+pub struct APIError {
+    pub message: String,
+    pub code: u64,
 }
 
 #[derive(Serialize, Deserialize)]

@@ -8,29 +8,6 @@ pub trait APIMethodName {
     fn method_name(&self) -> &str;
 }
 
-#[derive(Clone, PartialEq, Serialize, Deserialize)]
-#[cfg_attr(test, derive(Debug))]
-pub struct GDPRConsentWithTime {
-    #[serde(flatten)]
-    pub gdpr_consent: GDPRConsent,
-    pub time: DateTime<Utc>,
-}
-
-#[derive(Clone, PartialEq, Serialize, Deserialize)]
-#[cfg_attr(test, derive(Debug))]
-#[serde(tag = "type")]
-pub enum AuthRequest {
-    Login {
-        email: String,
-        password: String,
-    },
-    Register {
-        email: String,
-        password: String,
-        gdpr_consent: GDPRConsentWithTime,
-    },
-}
-
 #[derive(Clone, PartialEq, Serialize)]
 #[cfg_attr(test, derive(Debug))]
 #[serde(tag = "type")]
@@ -64,20 +41,27 @@ impl APIMethodName for APIRequest {
     }
 }
 
-#[derive(Clone, PartialEq, Serialize)]
+#[derive(Clone, PartialEq, Serialize, Deserialize)]
 #[cfg_attr(test, derive(Debug))]
-#[serde(untagged)]
-pub enum DatastoreCommand {
-    Meta {},
-    Get {
-        #[serde(default)]
-        ids: Vec<String>,
-        all: bool,
+#[serde(tag = "type")]
+pub enum AuthRequest {
+    Login {
+        email: String,
+        password: String,
     },
-    Put {
-        #[serde(default)]
-        changes: Vec<LibItem>,
+    Register {
+        email: String,
+        password: String,
+        gdpr_consent: GDPRConsentWithTime,
     },
+}
+
+#[derive(Clone, PartialEq, Serialize, Deserialize)]
+#[cfg_attr(test, derive(Debug))]
+pub struct GDPRConsentWithTime {
+    #[serde(flatten)]
+    pub gdpr_consent: GDPRConsent,
+    pub time: DateTime<Utc>,
 }
 
 #[derive(Clone, PartialEq, Serialize)]
@@ -98,4 +82,20 @@ impl APIMethodName for DatastoreRequest {
             DatastoreCommand::Put { .. } => "datastorePut",
         }
     }
+}
+
+#[derive(Clone, PartialEq, Serialize)]
+#[cfg_attr(test, derive(Debug))]
+#[serde(untagged)]
+pub enum DatastoreCommand {
+    Meta {},
+    Get {
+        #[serde(default)]
+        ids: Vec<String>,
+        all: bool,
+    },
+    Put {
+        #[serde(default)]
+        changes: Vec<LibItem>,
+    },
 }
