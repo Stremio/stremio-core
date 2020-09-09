@@ -23,7 +23,7 @@ where
     Env::fetch::<_, _>(request)
         .map_err(CtxError::from)
         .and_then(|result| match result {
-            APIResult::Ok { result } => future::ready(Ok(result)),
-            APIResult::Err { error } => future::ready(Err(CtxError::from(error))),
+            APIResult::Ok { result } => future::ok(result),
+            APIResult::Err { error } => future::err(CtxError::from(error)),
         })
 }
