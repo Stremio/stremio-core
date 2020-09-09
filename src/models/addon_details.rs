@@ -1,5 +1,5 @@
 use crate::models::common::{
-    descriptor_update, eq_update, DescriptorAction, DescriptorContent, DescriptorLoadable,
+    descriptor_update, eq_update, DescriptorAction, DescriptorLoadable, Loadable,
 };
 use crate::models::ctx::Ctx;
 use crate::runtime::msg::{Action, ActionLoad, Internal, Msg};
@@ -7,12 +7,12 @@ use crate::runtime::{Effects, Environment, UpdateWithCtx};
 use serde::{Deserialize, Serialize};
 use url::Url;
 
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, PartialEq, Serialize, Deserialize)]
 pub struct Selected {
     pub transport_url: Url,
 }
 
-#[derive(Default, Debug, Clone, Serialize)]
+#[derive(Default, Clone, Serialize)]
 pub struct AddonDetails {
     pub selected: Option<Selected>,
     pub addon: Option<DescriptorLoadable>,
@@ -33,7 +33,7 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for AddonDetails {
                         &mut self.addon,
                         Some(DescriptorLoadable {
                             transport_url: selected.transport_url.to_owned(),
-                            content: DescriptorContent::Ready(addon.to_owned()),
+                            content: Loadable::Ready(addon.to_owned()),
                         }),
                     ),
                     None => descriptor_update::<Env>(

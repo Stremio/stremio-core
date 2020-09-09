@@ -1,4 +1,4 @@
-use crate::models::common::{resources_update, ResourceContent, ResourceLoadable, ResourcesAction};
+use crate::models::common::{resources_update, Loadable, ResourceLoadable, ResourcesAction};
 use crate::models::ctx::Ctx;
 use crate::runtime::msg::Internal::*;
 use crate::runtime::msg::*;
@@ -15,7 +15,7 @@ const MAX_PER_REQUEST: usize = 50;
 // The name of the extra property
 const LAST_VID_IDS: &str = "lastVideosIds";
 
-#[derive(Debug, Clone, Default, Serialize)]
+#[derive(Clone, Default, Serialize)]
 pub struct Notifications {
     pub groups: Vec<ResourceLoadable<Vec<MetaItem>>>,
 }
@@ -76,7 +76,7 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for Notifications {
                                     (
                                         ResourceLoadable {
                                             request: addon_req.to_owned(),
-                                            content: ResourceContent::Loading,
+                                            content: Loadable::Loading,
                                         },
                                         Env::addon_transport(&addon_req.base)
                                             .resource(&addon_req.path)
@@ -108,7 +108,7 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for Notifications {
                         },
                     );
                     // Modify all the items so that only the new videos are left
-                    if let ResourceContent::Ready(ref mut meta_items) = self.groups[idx].content {
+                    if let Loadable::Ready(ref mut meta_items) = self.groups[idx].content {
                         for item in meta_items {
                             if let Some(lib_item) = ctx.library.items.get(&item.id) {
                                 item.videos

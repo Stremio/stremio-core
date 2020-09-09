@@ -14,7 +14,7 @@ pub struct Selected {
     pub extra: Vec<ExtraProp>,
 }
 
-#[derive(Default, Debug, Clone, PartialEq, Serialize)]
+#[derive(Default, Clone, PartialEq, Serialize)]
 pub struct CatalogsWithExtra {
     pub selected: Option<Selected>,
     pub catalog_resources: Vec<ResourceLoadable<Vec<MetaItemPreview>>>,

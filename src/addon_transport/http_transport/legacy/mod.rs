@@ -226,7 +226,9 @@ fn build_legacy_req(transport_url: &Url, path: &ResourceRef) -> Result<Request<(
     // not safe; however, the original implementation of stremio-addons work the same way,
     // so we're technically replicating a legacy bug on purpose
     // https://github.com/Stremio/stremio-addons/blob/v2.8.14/rpc.js#L53
-    let param_str = base64::encode(&serde_json::to_string(&q_json)?);
+    let param_str = base64::encode(
+        &serde_json::to_string(&q_json).map_err(|error| EnvError::Serde(error.to_string()))?,
+    );
     let url = format!("{}/q.json?b={}", transport_url, param_str);
     Ok(Request::get(&url).body(()).expect("builder cannot fail"))
 }
@@ -289,8 +291,8 @@ mod test {
             .expect("mixer url to be valid");
         let path = ResourceRef::without_extra("catalog", "tv", "popularities.mixer");
         assert_eq!(
-            &build_legacy_req(&transport_url, &path).unwrap().uri().to_string(),
-            "https://stremio-mixer.schneider.ax/stremioget/stremio/v1/q.json?b=eyJpZCI6MSwianNvbnJwYyI6IjIuMCIsIm1ldGhvZCI6Im1ldGEuZmluZCIsInBhcmFtcyI6W251bGwseyJsaW1pdCI6MTAwLCJxdWVyeSI6eyJ0eXBlIjoidHYifSwic2tpcCI6MCwic29ydCI6eyJwb3B1bGFyaXRpZXMubWl4ZXIiOi0xLCJwb3B1bGFyaXR5IjotMX19XX0=",
+            build_legacy_req(&transport_url, &path).map(|request| request.uri().to_string()),
+            Some("https://stremio-mixer.schneider.ax/stremioget/stremio/v1/q.json?b=eyJpZCI6MSwianNvbnJwYyI6IjIuMCIsIm1ldGhvZCI6Im1ldGEuZmluZCIsInBhcmFtcyI6W251bGwseyJsaW1pdCI6MTAwLCJxdWVyeSI6eyJ0eXBlIjoidHYifSwic2tpcCI6MCwic29ydCI6eyJwb3B1bGFyaXRpZXMubWl4ZXIiOi0xLCJwb3B1bGFyaXR5IjotMX19XX0=".to_owned()),
         );
     }
 
@@ -300,8 +302,8 @@ mod test {
             .expect("legacywatchhub url to be valid");
         let path = ResourceRef::without_extra("stream", "series", "tt0386676:5:1");
         assert_eq!(
-            &build_legacy_req(&transport_url, &path).unwrap().uri().to_string(),
-            "https://legacywatchhub.strem.io/stremio/v1/q.json?b=eyJpZCI6MSwianNvbnJwYyI6IjIuMCIsIm1ldGhvZCI6InN0cmVhbS5maW5kIiwicGFyYW1zIjpbbnVsbCx7InF1ZXJ5Ijp7ImVwaXNvZGUiOjEsImltZGJfaWQiOiJ0dDAzODY2NzYiLCJzZWFzb24iOjUsInR5cGUiOiJzZXJpZXMifX1dfQ=="
+            build_legacy_req(&transport_url, &path).map(|request| request.uri().to_string()),
+            Some("https://legacywatchhub.strem.io/stremio/v1/q.json?b=eyJpZCI6MSwianNvbnJwYyI6IjIuMCIsIm1ldGhvZCI6InN0cmVhbS5maW5kIiwicGFyYW1zIjpbbnVsbCx7InF1ZXJ5Ijp7ImVwaXNvZGUiOjEsImltZGJfaWQiOiJ0dDAzODY2NzYiLCJzZWFzb24iOjUsInR5cGUiOiJzZXJpZXMifX1dfQ==".to_owned())
         );
     }
 

@@ -12,7 +12,7 @@ use crate::types::resource::MetaItemPreview;
 use serde::Deserialize;
 use url::Url;
 
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Clone, Deserialize)]
 #[serde(tag = "action", content = "args")]
 pub enum ActionCtx {
     Authenticate(AuthRequest),
@@ -30,21 +30,21 @@ pub enum ActionCtx {
     SyncLibraryWithAPI,
 }
 
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Clone, Deserialize)]
 #[serde(tag = "action", content = "args")]
 pub enum ActionStreamingServer {
     Reload,
     UpdateSettings(StreamingServerSettings),
 }
 
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Clone, Deserialize)]
 #[serde(tag = "action", content = "args")]
 pub enum ActionPlayer {
     UpdateLibraryItemState { time: u64, duration: u64 },
     PushToLibrary,
 }
 
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Clone, Deserialize)]
 #[serde(tag = "model", content = "args")]
 pub enum ActionLoad {
     Ctx,
@@ -60,7 +60,7 @@ pub enum ActionLoad {
 //
 // Those messages are meant to be dispatched only by the users of the stremio-core crate and handled by the stremio-core crate
 //
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Clone, Deserialize)]
 #[serde(tag = "action", content = "args")]
 pub enum Action {
     Ctx(ActionCtx),

@@ -3,28 +3,52 @@ use chrono::{DateTime, Utc};
 use futures::future::LocalBoxFuture;
 use futures::Future;
 use http::Request;
-use serde::{Deserialize, Serialize};
-use std::fmt;
+use serde::ser::SerializeStruct;
+use serde::{Deserialize, Serialize, Serializer};
 use url::Url;
 
-#[derive(Debug)]
+#[derive(Clone, PartialEq)]
 pub enum EnvError {
     StorageUnavailable,
     StorageSchemaVersionDowngrade(usize, usize),
     Fetch(String),
     AddonTransport(String),
-    Serde(serde_json::error::Error),
+    Serde(String),
 }
 
-impl fmt::Display for EnvError {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{:?}", self)
+impl EnvError {
+    pub fn message(&self) -> String {
+        match &self {
+            EnvError::StorageUnavailable => "Storage is not available.".to_owned(),
+            EnvError::StorageSchemaVersionDowngrade(from, to) => format!(
+                "Downgrade storage schema version from {} to {} is not allowed.",
+                from, to
+            ),
+            EnvError::Fetch(message) => format!("Failed to fetch: {}", message),
+            EnvError::AddonTransport(message) => format!("Addon protocol violation: {}", message),
+            EnvError::Serde(message) => format!("Serialization error: {}", message),
+        }
+    }
+    pub fn code(&self) -> u64 {
+        match &self {
+            EnvError::StorageUnavailable => 1,
+            EnvError::StorageSchemaVersionDowngrade(_, _) => 2,
+            EnvError::Fetch(_) => 3,
+            EnvError::AddonTransport(_) => 4,
+            EnvError::Serde(_) => 5,
+        }
     }
 }
 
-impl From<serde_json::error::Error> for EnvError {
-    fn from(error: serde_json::error::Error) -> Self {
-        EnvError::Serde(error)
+impl Serialize for EnvError {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        let mut state = serializer.serialize_struct("EnvError", 2)?;
+        state.serialize_field("code", &self.code())?;
+        state.serialize_field("message", &self.message())?;
+        state.end()
     }
 }
 

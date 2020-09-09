@@ -1,7 +1,7 @@
 use crate::constants::WATCHED_THRESHOLD_COEF;
 use crate::models::common::{
-    eq_update, resource_update, resources_update_with_vector_content, ResourceAction,
-    ResourceContent, ResourceLoadable, ResourcesAction,
+    eq_update, resource_update, resources_update_with_vector_content, Loadable, ResourceAction,
+    ResourceLoadable, ResourcesAction,
 };
 use crate::models::ctx::Ctx;
 use crate::runtime::msg::{Action, ActionLoad, ActionPlayer, Internal, Msg};
@@ -13,7 +13,7 @@ use crate::types::resource::{MetaItem, Stream, Subtitles, Video};
 use serde::{Deserialize, Serialize};
 use std::cmp;
 
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, PartialEq, Serialize, Deserialize)]
 pub struct Selected {
     pub stream: Stream,
     #[serde(default)]
@@ -26,7 +26,7 @@ pub struct Selected {
     pub video_id: Option<String>,
 }
 
-#[derive(Default, Debug, Clone, PartialEq, Serialize)]
+#[derive(Default, Clone, PartialEq, Serialize)]
 pub struct Player {
     pub selected: Option<Selected>,
     pub meta_resource: Option<ResourceLoadable<MetaItem>>,
@@ -196,7 +196,7 @@ fn next_video_update(
     let next_video = match (meta_resource, video_id) {
         (
             Some(ResourceLoadable {
-                content: ResourceContent::Ready(meta_detail),
+                content: Loadable::Ready(meta_detail),
                 ..
             }),
             Some(video_id),
@@ -225,7 +225,7 @@ fn lib_item_update<Env: Environment>(
         Some(meta_resource) => {
             let meta_item = match meta_resource {
                 ResourceLoadable {
-                    content: ResourceContent::Ready(meta_item),
+                    content: Loadable::Ready(meta_item),
                     ..
                 } => Some(meta_item),
                 _ => None,

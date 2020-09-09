@@ -1,7 +1,7 @@
 use crate::constants::{META_RESOURCE_NAME, STREAM_RESOURCE_NAME};
 use crate::models::common::{
-    eq_update, resources_update, resources_update_with_vector_content, ResourceContent,
-    ResourceLoadable, ResourcesAction,
+    eq_update, resources_update, resources_update_with_vector_content, Loadable, ResourceLoadable,
+    ResourcesAction,
 };
 use crate::models::ctx::Ctx;
 use crate::runtime::msg::{Action, ActionLoad, Internal, Msg};
@@ -10,13 +10,13 @@ use crate::types::addon::{AggrRequest, ResourceRef};
 use crate::types::resource::{MetaItem, Stream};
 use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, PartialEq, Serialize, Deserialize)]
 pub struct Selected {
     pub meta_resource_ref: ResourceRef,
     pub streams_resource_ref: Option<ResourceRef>,
 }
 
-#[derive(Default, Debug, Clone, Serialize)]
+#[derive(Default, Clone, Serialize)]
 pub struct MetaDetails {
     pub selected: Option<Selected>,
     pub meta_resources: Vec<ResourceLoadable<MetaItem>>,
@@ -117,7 +117,7 @@ fn streams_resource_from_meta_resources(
     meta_resources
         .iter()
         .find_map(|resource| match &resource.content {
-            ResourceContent::Ready(meta_detail) => Some((&resource.request, meta_detail)),
+            Loadable::Ready(meta_detail) => Some((&resource.request, meta_detail)),
             _ => None,
         })
         .and_then(|(meta_request, meta_detail)| {
@@ -129,6 +129,6 @@ fn streams_resource_from_meta_resources(
         })
         .map(|(meta_request, streams)| ResourceLoadable {
             request: meta_request.to_owned(),
-            content: ResourceContent::Ready(streams.to_owned()),
+            content: Loadable::Ready(streams.to_owned()),
         })
 }

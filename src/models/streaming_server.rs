@@ -26,11 +26,11 @@ pub struct Settings {
 
 pub type Selected = Url;
 
-#[derive(Default, Debug, Clone, PartialEq, Serialize)]
+#[derive(Default, Clone, PartialEq, Serialize)]
 pub struct StreamingServer {
     pub selected: Option<Selected>,
-    pub settings: Option<Loadable<Settings, String>>,
-    pub base_url: Option<Loadable<Url, String>>,
+    pub settings: Option<Loadable<Settings, EnvError>>,
+    pub base_url: Option<Loadable<Url, EnvError>>,
 }
 
 impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for StreamingServer {
@@ -113,7 +113,7 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for StreamingServer {
                     (Some(loading_url), Some(Loadable::Loading)) if loading_url == url => {
                         self.settings = match result {
                             Ok(settings) => Some(Loadable::Ready(settings.to_owned())),
-                            Err(error) => Some(Loadable::Err(error.to_string())),
+                            Err(error) => Some(Loadable::Err(error.to_owned())),
                         };
                         Effects::none()
                     }
@@ -125,7 +125,7 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for StreamingServer {
                     (Some(loading_url), Some(Loadable::Loading)) if loading_url == url => {
                         self.base_url = match result {
                             Ok(base_url) => Some(Loadable::Ready(base_url.to_owned())),
-                            Err(error) => Some(Loadable::Err(error.to_string())),
+                            Err(error) => Some(Loadable::Err(error.to_owned())),
                         };
                         Effects::none()
                     }
@@ -137,7 +137,7 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for StreamingServer {
                     Some(server_url) if server_url == url => match result {
                         Ok(_) => Effects::none().unchanged(),
                         Err(error) => {
-                            self.settings = Some(Loadable::Err(error.to_string()));
+                            self.settings = Some(Loadable::Err(error.to_owned()));
                             Effects::none()
                         }
                     },

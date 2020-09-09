@@ -1,7 +1,6 @@
 use crate::constants::{CATALOG_PAGE_SIZE, SKIP_EXTRA_NAME};
 use crate::models::common::{
-    eq_update, resource_update_with_vector_content, ResourceAction, ResourceContent,
-    ResourceLoadable,
+    eq_update, resource_update_with_vector_content, Loadable, ResourceAction, ResourceLoadable,
 };
 use crate::models::ctx::Ctx;
 use crate::runtime::msg::{Action, ActionLoad, Internal, Msg};
@@ -85,7 +84,7 @@ pub struct Selectable {
     pub has_next_page: bool,
 }
 
-#[derive(Derivative, Debug, Clone, Serialize)]
+#[derive(Derivative, Clone, Serialize)]
 #[derivative(Default(bound = ""))]
 pub struct CatalogWithFilters<T> {
     pub selected: Option<Selected>,
@@ -279,12 +278,12 @@ fn selectable_update<T: CatalogResourceAdapter>(
                     .map(|skip| skip == 0)
                     .unwrap_or(true);
                 let last_page_requested = match &catalog_resource.content {
-                    ResourceContent::Ready(content) => match T::catalog_page_size() {
+                    Loadable::Ready(content) => match T::catalog_page_size() {
                         Some(catalog_page_size) => content.len() < catalog_page_size,
                         None => true,
                     },
-                    ResourceContent::Err(_) => true,
-                    ResourceContent::Loading => true,
+                    Loadable::Err(_) => true,
+                    Loadable::Loading => true,
                 };
                 let has_prev_page = skip_supported && !first_page_requested;
                 let has_next_page = skip_supported && !last_page_requested;

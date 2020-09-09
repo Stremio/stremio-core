@@ -7,14 +7,10 @@ use futures::FutureExt;
 use serde::Serialize;
 use url::Url;
 
-pub type DescriptorError = String;
-
-pub type DescriptorContent = Loadable<Descriptor, DescriptorError>;
-
-#[derive(Debug, Clone, Serialize)]
+#[derive(Clone, Serialize)]
 pub struct DescriptorLoadable {
     pub transport_url: Url,
-    pub content: DescriptorContent,
+    pub content: Loadable<Descriptor, EnvError>,
 }
 
 impl PartialEq for DescriptorLoadable {
@@ -47,7 +43,7 @@ pub fn descriptor_update<Env: Environment + 'static>(
                 let transport_url = transport_url.to_owned();
                 *descriptor = Some(DescriptorLoadable {
                     transport_url: transport_url.to_owned(),
-                    content: DescriptorContent::Loading,
+                    content: Loadable::Loading,
                 });
                 Effects::one(
                     Env::addon_transport(&transport_url)
@@ -67,7 +63,7 @@ pub fn descriptor_update<Env: Environment + 'static>(
         } => match descriptor {
             Some(descriptor) if descriptor.transport_url == *transport_url => {
                 descriptor.content = match result {
-                    Ok(manifest) => DescriptorContent::Ready(Descriptor {
+                    Ok(manifest) => Loadable::Ready(Descriptor {
                         transport_url: transport_url.to_owned(),
                         manifest: manifest.to_owned(),
                         flags: OFFICIAL_ADDONS
@@ -76,7 +72,7 @@ pub fn descriptor_update<Env: Environment + 'static>(
                             .map(|descriptor| descriptor.flags.to_owned())
                             .unwrap_or_default(),
                     }),
-                    Err(error) => DescriptorContent::Err(error.to_string()),
+                    Err(error) => Loadable::Err(error.to_owned()),
                 };
                 Effects::none()
             }

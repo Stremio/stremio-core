@@ -1,8 +1,9 @@
 use crate::runtime::EnvError;
 use crate::types::api::APIError;
+use serde::ser::{SerializeStruct, Serializer};
 use serde::Serialize;
 
-#[derive(Debug, Clone)]
+#[derive(Clone)]
 pub enum OtherError {
     UserNotLoggedIn,
     LibraryItemNotFound,
@@ -11,12 +12,45 @@ pub enum OtherError {
     AddonIsProtected,
 }
 
-#[derive(Debug, Clone, Serialize)]
+impl OtherError {
+    pub fn message(&self) -> String {
+        match &self {
+            OtherError::UserNotLoggedIn => "User is not logged in".to_owned(),
+            OtherError::LibraryItemNotFound => "Item is not found in library".to_owned(),
+            OtherError::AddonAlreadyInstalled => "Addon is already installed".to_owned(),
+            OtherError::AddonNotInstalled => "Addon is not installed".to_owned(),
+            OtherError::AddonIsProtected => "Addon is protected".to_owned(),
+        }
+    }
+    pub fn code(&self) -> u64 {
+        match &self {
+            OtherError::UserNotLoggedIn => 1,
+            OtherError::LibraryItemNotFound => 2,
+            OtherError::AddonAlreadyInstalled => 3,
+            OtherError::AddonNotInstalled => 4,
+            OtherError::AddonIsProtected => 5,
+        }
+    }
+}
+
+impl Serialize for OtherError {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        let mut state = serializer.serialize_struct("OtherError", 2)?;
+        state.serialize_field("code", &self.code())?;
+        state.serialize_field("message", &self.message())?;
+        state.end()
+    }
+}
+
+#[derive(Clone, Serialize)]
 #[serde(tag = "type")]
 pub enum CtxError {
     API(APIError),
-    Env { message: String },
-    Other { message: String, code: u64 },
+    Env(EnvError),
+    Other(OtherError),
 }
 
 impl From<APIError> for CtxError {
@@ -27,29 +61,12 @@ impl From<APIError> for CtxError {
 
 impl From<EnvError> for CtxError {
     fn from(error: EnvError) -> Self {
-        CtxError::Env {
-            message: error.to_string(),
-        }
+        CtxError::Env(error)
     }
 }
 
 impl From<OtherError> for CtxError {
     fn from(error: OtherError) -> Self {
-        CtxError::Other {
-            code: match &error {
-                OtherError::UserNotLoggedIn => 800,
-                OtherError::LibraryItemNotFound => 801,
-                OtherError::AddonAlreadyInstalled => 802,
-                OtherError::AddonNotInstalled => 803,
-                OtherError::AddonIsProtected => 804,
-            },
-            message: match &error {
-                OtherError::UserNotLoggedIn => "User is not logged in".to_owned(),
-                OtherError::LibraryItemNotFound => "Item is not found in library".to_owned(),
-                OtherError::AddonAlreadyInstalled => "Addon is already installed".to_owned(),
-                OtherError::AddonNotInstalled => "Addon is not installed".to_owned(),
-                OtherError::AddonIsProtected => "Addon is protected".to_owned(),
-            },
-        }
+        CtxError::Other(error)
     }
 }

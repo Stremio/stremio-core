@@ -6,20 +6,18 @@ use futures::FutureExt;
 use serde::Serialize;
 use std::convert::TryFrom;
 
-#[derive(Debug, Clone, PartialEq, Serialize)]
+#[derive(Clone, PartialEq, Serialize)]
 #[serde(tag = "type", content = "content")]
 pub enum ResourceError {
     EmptyContent,
     UnexpectedResponse(String),
-    Other(String),
+    Env(EnvError),
 }
 
-pub type ResourceContent<T> = Loadable<T, ResourceError>;
-
-#[derive(Debug, Clone, Serialize)]
+#[derive(Clone, Serialize)]
 pub struct ResourceLoadable<T> {
     pub request: ResourceRequest,
-    pub content: ResourceContent<T>,
+    pub content: Loadable<T, ResourceError>,
 }
 
 impl<T> PartialEq for ResourceLoadable<T> {
@@ -65,7 +63,7 @@ where
                 let request = request.to_owned();
                 *resource = Some(ResourceLoadable {
                     request: request.to_owned(),
-                    content: ResourceContent::Loading,
+                    content: Loadable::Loading,
                 });
                 Effects::one(
                     Env::addon_transport(&request.base)
@@ -144,7 +142,7 @@ where
                         (
                             ResourceLoadable {
                                 request: request.to_owned(),
-                                content: ResourceContent::Loading,
+                                content: Loadable::Loading,
                             },
                             Env::addon_transport(&request.base)
                                 .resource(&request.path)
@@ -213,23 +211,23 @@ where
 
 fn resource_content_from_result<T>(
     result: &Result<ResourceResponse, EnvError>,
-) -> ResourceContent<T>
+) -> Loadable<T, ResourceError>
 where
     T: TryFrom<ResourceResponse, Error = &'static str>,
 {
     match result {
         Ok(result) => match T::try_from(result.to_owned()) {
-            Ok(content) => ResourceContent::Ready(content),
-            Err(error) => ResourceContent::Err(ResourceError::UnexpectedResponse(error.to_owned())),
+            Ok(content) => Loadable::Ready(content),
+            Err(error) => Loadable::Err(ResourceError::UnexpectedResponse(error.to_owned())),
         },
-        Err(error) => ResourceContent::Err(ResourceError::Other(error.to_string())),
+        Err(error) => Loadable::Err(ResourceError::Env(error.to_owned())),
     }
 }
 
 fn resource_vector_content_from_result<T>(
     result: &Result<ResourceResponse, EnvError>,
     limit: &Option<usize>,
-) -> ResourceContent<Vec<T>>
+) -> Loadable<Vec<T>, ResourceError>
 where
     Vec<T>: TryFrom<ResourceResponse, Error = &'static str>,
 {
@@ -237,15 +235,15 @@ where
         Ok(result) => match <Vec<T>>::try_from(result.to_owned()) {
             Ok(content) => {
                 if content.is_empty() {
-                    ResourceContent::Err(ResourceError::EmptyContent)
+                    Loadable::Err(ResourceError::EmptyContent)
                 } else if let Some(limit) = limit {
-                    ResourceContent::Ready(content.into_iter().take(limit.to_owned()).collect())
+                    Loadable::Ready(content.into_iter().take(limit.to_owned()).collect())
                 } else {
-                    ResourceContent::Ready(content)
+                    Loadable::Ready(content)
                 }
             }
-            Err(error) => ResourceContent::Err(ResourceError::UnexpectedResponse(error.to_owned())),
+            Err(error) => Loadable::Err(ResourceError::UnexpectedResponse(error.to_owned())),
         },
-        Err(error) => ResourceContent::Err(ResourceError::Other(error.to_string())),
+        Err(error) => Loadable::Err(ResourceError::Env(error.to_owned())),
     }
 }
