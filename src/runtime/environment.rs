@@ -8,6 +8,7 @@ use serde::{Deserialize, Serialize, Serializer};
 use url::Url;
 
 #[derive(Clone, PartialEq)]
+#[cfg_attr(test, derive(Debug))]
 pub enum EnvError {
     StorageUnavailable,
     StorageSchemaVersionDowngrade(usize, usize),
