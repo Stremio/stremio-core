@@ -2,7 +2,7 @@ use crate::types::addon::{Manifest, ManifestPreview};
 use serde::{Deserialize, Serialize};
 use url::Url;
 
-#[derive(Clone, Default, PartialEq, Serialize, Deserialize)]
+#[derive(Default, Clone, PartialEq, Serialize, Deserialize)]
 #[cfg_attr(test, derive(Debug))]
 #[serde(rename_all = "camelCase")]
 pub struct DescriptorFlags {

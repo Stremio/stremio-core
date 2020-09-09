@@ -19,7 +19,7 @@ lazy_static! {
 
 pub type FetchHandler = Box<dyn Fn(Request) -> EnvFuture<Box<dyn Any>> + Send + Sync + 'static>;
 
-#[derive(Clone, Debug, Default, PartialEq)]
+#[derive(Default, Debug, Clone, PartialEq)]
 pub struct Request {
     pub url: String,
     pub method: String,
