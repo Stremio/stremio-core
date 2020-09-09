@@ -1,4 +1,5 @@
 use crate::types::addon::ResourceRef;
+use derivative::Derivative;
 use either::Either;
 use semver::Version;
 use serde::{Deserialize, Serialize};
@@ -118,10 +119,12 @@ impl ManifestCatalog {
     }
 }
 
-#[derive(Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Derivative, Clone, PartialEq, Serialize, Deserialize)]
+#[derivative(Default)]
 #[cfg_attr(test, derive(Debug))]
 #[serde(untagged)]
 pub enum ManifestExtra {
+    #[derivative(Default)]
     Full {
         #[serde(rename = "extra")]
         props: Vec<ManifestExtraProp>,
@@ -132,12 +135,6 @@ pub enum ManifestExtra {
         #[serde(default, rename = "extraSupported")]
         supported: Vec<String>,
     },
-}
-
-impl Default for ManifestExtra {
-    fn default() -> Self {
-        ManifestExtra::Full { props: vec![] }
-    }
 }
 
 #[derive(Default, Clone, PartialEq, Serialize, Deserialize)]
