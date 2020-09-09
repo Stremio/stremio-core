@@ -53,6 +53,12 @@ impl Serialize for EnvError {
     }
 }
 
+impl From<serde_json::Error> for EnvError {
+    fn from(error: serde_json::Error) -> Self {
+        EnvError::Serde(error.to_string())
+    }
+}
+
 pub type EnvFuture<T> = LocalBoxFuture<'static, Result<T, EnvError>>;
 
 pub trait Environment {
