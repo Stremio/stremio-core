@@ -156,7 +156,7 @@ fn get_settings<Env: Environment + 'static>(
     struct Resp {
         values: Settings,
     }
-    let endpoint = url.join("settings").unwrap();
+    let endpoint = url.join("settings").expect("url builder failed");
     let request = Request::get(endpoint.as_str())
         .body(())
         .expect("request builder failed");
@@ -171,7 +171,7 @@ fn get_base_url<Env: Environment + 'static>(
         #[serde(rename = "baseUrl")]
         base_url: Url,
     }
-    let endpoint = url.join("settings").unwrap();
+    let endpoint = url.join("settings").expect("url builder failed");
     let request = Request::get(endpoint.as_str())
         .body(())
         .expect("request builder failed");
@@ -202,7 +202,7 @@ fn update_settings<Env: Environment + 'static>(
         bt_download_speed_hard_limit: settings.bt_download_speed_hard_limit.to_owned(),
         bt_min_peers_for_stable: settings.bt_min_peers_for_stable.to_owned(),
     };
-    let endpoint = url.join("settings").unwrap();
+    let endpoint = url.join("settings").expect("url builder failed");
     let request = Request::post(endpoint.as_str())
         .header("content-type", "application/json")
         .body(body)
