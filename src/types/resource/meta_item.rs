@@ -107,4 +107,6 @@ pub struct Link {
 pub struct MetaItemBehaviorHints {
     pub default_video_id: Option<String>,
     pub featured_video_id: Option<String>,
+    #[serde(default)]
+    pub has_scheduled_videos: bool,
 }
