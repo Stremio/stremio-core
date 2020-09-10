@@ -80,7 +80,7 @@ pub struct SeriesInfo {
 #[serde(rename_all = "camelCase")]
 pub struct Video {
     pub id: String,
-    #[serde(alias = "name")]
+    #[serde(default, alias = "name")]
     pub title: String,
     pub released: Option<DateTime<Utc>>,
     pub overview: Option<String>,
