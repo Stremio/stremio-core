@@ -23,6 +23,7 @@ fn deserialize_resource_response_metas() {
         behavior_hints: MetaItemBehaviorHints {
             default_video_id: None,
             featured_video_id: None,
+            has_scheduled_videos: false,
         },
     }];
     let metas_json = r#"{"metas":[{"id":"id","type":"type_name","name":"name","poster":null,"logo":null,"description":null,"releaseInfo":null,"runtime":null,"released":null,"posterShape":"poster","trailer_streams":[],"behaviorHints":{"defaultVideoId":null,"featuredVideoId":null}}]}"#;
@@ -51,7 +52,7 @@ fn deserialize_resource_response_metas_detailed() {
         videos: vec![Video {
             id: "id".to_owned(),
             title: "title".to_owned(),
-            released: Utc.ymd(2020, 1, 1).and_hms_milli(0, 0, 0, 0),
+            released: Some(Utc.ymd(2020, 1, 1).and_hms_milli(0, 0, 0, 0)),
             overview: None,
             thumbnail: None,
             streams: vec![],

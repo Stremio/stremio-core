@@ -167,6 +167,7 @@ fn actionctx_addtolibrary_already_added() {
         behavior_hints: MetaItemBehaviorHints {
             default_video_id: Some("video_id2".to_owned()),
             featured_video_id: None,
+            has_scheduled_videos: false,
         },
     };
     let lib_item = LibItem {
