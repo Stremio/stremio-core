@@ -28,7 +28,7 @@ pub struct MetaItem {
     #[serde(default)]
     pub links: Vec<Link>,
     #[serde(default)]
-    pub trailers: Vec<Stream>,
+    pub trailer_streams: Vec<Stream>,
     #[serde(default)]
     pub behavior_hints: MetaItemBehaviorHints,
 }
@@ -51,7 +51,7 @@ pub struct MetaItemPreview {
     #[serde(default)]
     pub poster_shape: PosterShape,
     #[serde(default)]
-    pub trailers: Vec<Stream>,
+    pub trailer_streams: Vec<Stream>,
     #[serde(default)]
     pub behavior_hints: MetaItemBehaviorHints,
 }
@@ -90,7 +90,7 @@ pub struct Video {
     #[serde(flatten)]
     pub series_info: Option<SeriesInfo>,
     #[serde(default)]
-    pub trailers: Vec<Stream>,
+    pub trailer_streams: Vec<Stream>,
 }
 
 #[derive(Clone, PartialEq, Serialize, Deserialize)]

@@ -19,13 +19,13 @@ fn deserialize_resource_response_metas() {
         runtime: None,
         released: None,
         poster_shape: Default::default(),
-        trailers: vec![],
+        trailer_streams: vec![],
         behavior_hints: MetaItemBehaviorHints {
             default_video_id: None,
             featured_video_id: None,
         },
     }];
-    let metas_json = r#"{"metas":[{"id":"id","type":"type_name","name":"name","poster":null,"logo":null,"description":null,"releaseInfo":null,"runtime":null,"released":null,"posterShape":"poster","trailers":[],"behaviorHints":{"defaultVideoId":null,"featuredVideoId":null}}]}"#;
+    let metas_json = r#"{"metas":[{"id":"id","type":"type_name","name":"name","poster":null,"logo":null,"description":null,"releaseInfo":null,"runtime":null,"released":null,"posterShape":"poster","trailer_streams":[],"behaviorHints":{"defaultVideoId":null,"featuredVideoId":null}}]}"#;
     let metas_deserialize = serde_json::from_str(&metas_json).unwrap();
     match metas_deserialize {
         Metas { metas } => assert_eq!(metas, metas_vec, "metas deserialized successfully"),
@@ -59,17 +59,17 @@ fn deserialize_resource_response_metas_detailed() {
                 season: 1,
                 episode: 1,
             }),
-            trailers: vec![],
+            trailer_streams: vec![],
         }],
         links: vec![Link {
             name: "name".to_owned(),
             category: "category".to_owned(),
             url: Url::parse("https://url").unwrap(),
         }],
-        trailers: vec![],
+        trailer_streams: vec![],
         behavior_hints: Default::default(),
     }];
-    let metas_detailed_json = r#"{"metasDetailed":[{"id":"id","type":"type_name","name":"name","poster":null,"background":null,"logo":null,"popularity":null,"description":null,"releaseInfo":null,"runtime":null,"released":null,"posterShape":"poster","videos":[{"id":"id","title":"title","released":"2020-01-01T00:00:00Z","overview":null,"thumbnail":null,"streams":[],"season":1,"episode":1,"trailers":[]}],"links":[{"name":"name","category":"category","url":"https://url/"}],"trailers":[],"behaviorHints":{"defaultVideoId":null,"featuredVideoId":null}}]}"#;
+    let metas_detailed_json = r#"{"metasDetailed":[{"id":"id","type":"type_name","name":"name","poster":null,"background":null,"logo":null,"popularity":null,"description":null,"releaseInfo":null,"runtime":null,"released":null,"posterShape":"poster","videos":[{"id":"id","title":"title","released":"2020-01-01T00:00:00Z","overview":null,"thumbnail":null,"streams":[],"season":1,"episode":1,"trailer_streams":[]}],"links":[{"name":"name","category":"category","url":"https://url/"}],"trailer_streams":[],"behaviorHints":{"defaultVideoId":null,"featuredVideoId":null}}]}"#;
     let metas_detailed_deserialize = serde_json::from_str(&metas_detailed_json).unwrap();
     match metas_detailed_deserialize {
         MetasDetailed { metas_detailed } => assert_eq!(
