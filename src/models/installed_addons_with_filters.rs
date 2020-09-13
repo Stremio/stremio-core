@@ -2,7 +2,8 @@ use crate::models::common::eq_update;
 use crate::models::ctx::Ctx;
 use crate::runtime::msg::{Action, ActionLoad, Internal, Msg};
 use crate::runtime::{Effects, Environment, UpdateWithCtx};
-use crate::types::addon::{Descriptor, DescriptorPreview, ManifestPreview};
+use crate::types::addon::{DescriptorPreview, ManifestPreview};
+use crate::types::profile::Profile;
 use serde::Serialize;
 
 pub type Selected = String;
@@ -22,21 +23,17 @@ where
         match msg {
             Msg::Action(Action::Load(ActionLoad::InstalledAddonsWithFilters(selected))) => {
                 let selected_effects = eq_update(&mut self.selected, Some(selected.to_owned()));
-                let addons_effects =
-                    addons_update(&mut self.addons, &self.selected, &ctx.profile.addons);
+                let addons_effects = addons_update(&mut self.addons, &self.selected, &ctx.profile);
                 selected_effects.join(addons_effects)
             }
             Msg::Action(Action::Unload) => {
                 let selected_effects = eq_update(&mut self.selected, None);
-                let addons_effects =
-                    addons_update(&mut self.addons, &self.selected, &ctx.profile.addons);
+                let addons_effects = addons_update(&mut self.addons, &self.selected, &ctx.profile);
                 selected_effects.join(addons_effects)
             }
             Msg::Internal(Internal::ProfileChanged(_)) => {
-                let type_names_effects =
-                    type_names_update(&mut self.type_names, &ctx.profile.addons);
-                let addons_effects =
-                    addons_update(&mut self.addons, &self.selected, &ctx.profile.addons);
+                let type_names_effects = type_names_update(&mut self.type_names, &ctx.profile);
+                let addons_effects = addons_update(&mut self.addons, &self.selected, &ctx.profile);
                 type_names_effects.join(addons_effects)
             }
             _ => Effects::none().unchanged(),
@@ -44,8 +41,9 @@ where
     }
 }
 
-fn type_names_update(type_names: &mut Vec<String>, installed_addons: &[Descriptor]) -> Effects {
-    let next_type_names = installed_addons
+fn type_names_update(type_names: &mut Vec<String>, profile: &Profile) -> Effects {
+    let next_type_names = profile
+        .addons
         .iter()
         .flat_map(|addon| &addon.manifest.types)
         .cloned()
@@ -61,10 +59,11 @@ fn type_names_update(type_names: &mut Vec<String>, installed_addons: &[Descripto
 fn addons_update(
     addons: &mut Vec<DescriptorPreview>,
     selected: &Option<Selected>,
-    installed_addons: &[Descriptor],
+    profile: &Profile,
 ) -> Effects {
     let next_addons = match selected {
-        Some(type_name) => installed_addons
+        Some(type_name) => profile
+            .addons
             .iter()
             .filter(|addon| addon.manifest.types.contains(type_name))
             .map(|addon| DescriptorPreview {
