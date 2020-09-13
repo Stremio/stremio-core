@@ -44,7 +44,7 @@ where
     }
 }
 
-fn type_names_update(type_names: &mut Vec<String>, installed_addons: &Vec<Descriptor>) -> Effects {
+fn type_names_update(type_names: &mut Vec<String>, installed_addons: &[Descriptor]) -> Effects {
     let next_type_names = installed_addons
         .iter()
         .flat_map(|addon| &addon.manifest.types)
@@ -61,7 +61,7 @@ fn type_names_update(type_names: &mut Vec<String>, installed_addons: &Vec<Descri
 fn addons_update(
     addons: &mut Vec<DescriptorPreview>,
     selected: &Option<Selected>,
-    installed_addons: &Vec<Descriptor>,
+    installed_addons: &[Descriptor],
 ) -> Effects {
     let next_addons = match selected {
         Some(type_name) => installed_addons
