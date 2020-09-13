@@ -1,4 +1,4 @@
-use crate::addon_transport::{AddonHTTPTransport, AddonTransport};
+use crate::addon_transport::{AddonHTTPTransport, AddonTransport, UnsupportedTransport};
 use chrono::{DateTime, Utc};
 use futures::future::LocalBoxFuture;
 use futures::Future;
@@ -78,6 +78,9 @@ pub trait Environment {
     where
         Self: Sized + 'static,
     {
-        Box::new(AddonHTTPTransport::<Self>::new(transport_url))
+        match transport_url.scheme() {
+            "http" | "https" => Box::new(AddonHTTPTransport::<Self>::new(transport_url.to_owned())),
+            _ => Box::new(UnsupportedTransport::new(transport_url.to_owned())),
+        }
     }
 }

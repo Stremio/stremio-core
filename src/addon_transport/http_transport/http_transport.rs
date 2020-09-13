@@ -14,9 +14,9 @@ pub struct AddonHTTPTransport<Env: Environment> {
 }
 
 impl<Env: Environment> AddonHTTPTransport<Env> {
-    pub fn new(transport_url: &Url) -> Self {
+    pub fn new(transport_url: Url) -> Self {
         AddonHTTPTransport {
-            transport_url: transport_url.to_owned(),
+            transport_url,
             env: PhantomData,
         }
     }
