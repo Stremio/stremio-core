@@ -1,6 +1,7 @@
 use crate::models::addon_details::Selected as AddonDetailsSelected;
 use crate::models::catalog_with_filters::Selected as CatalogWithFiltersSelected;
 use crate::models::catalogs_with_extra::Selected as CatalogsWithExtraSelected;
+use crate::models::installed_addons_with_filters::Selected as InstalledAddonsWithFiltersSelected;
 use crate::models::library_with_filters::Selected as LibraryWithFiltersSelected;
 use crate::models::meta_details::Selected as MetaDetailsSelected;
 use crate::models::player::Selected as PlayerSelected;
@@ -51,6 +52,7 @@ pub enum ActionLoad {
     AddonDetails(AddonDetailsSelected),
     CatalogWithFilters(CatalogWithFiltersSelected),
     CatalogsWithExtra(CatalogsWithExtraSelected),
+    InstalledAddonsWithFilters(InstalledAddonsWithFiltersSelected),
     LibraryWithFilters(LibraryWithFiltersSelected),
     MetaDetails(MetaDetailsSelected),
     Player(PlayerSelected),
