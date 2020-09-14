@@ -26,14 +26,16 @@ pub trait LibraryFilter {
     fn predicate(lib_item: &LibItem) -> bool;
 }
 
-pub struct ContinueWatchingFilter {}
+pub enum ContinueWatchingFilter {}
+
 impl LibraryFilter for ContinueWatchingFilter {
     fn predicate(lib_item: &LibItem) -> bool {
         lib_item.is_in_continue_watching()
     }
 }
 
-pub struct NotRemovedFilter {}
+pub enum NotRemovedFilter {}
+
 impl LibraryFilter for NotRemovedFilter {
     fn predicate(lib_item: &LibItem) -> bool {
         !lib_item.removed
