@@ -5,9 +5,12 @@ use crate::runtime::{Effects, Environment, UpdateWithCtx};
 use crate::types::addon::{DescriptorPreview, ManifestPreview};
 use crate::types::profile::Profile;
 use itertools::Itertools;
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 
-pub type Selected = String;
+#[derive(Clone, PartialEq, Serialize, Deserialize)]
+pub struct Selected {
+    type_name: Option<String>,
+}
 
 #[derive(Default, Serialize)]
 pub struct InstalledAddonsWithFilters {
@@ -64,10 +67,13 @@ fn addons_update(
     profile: &Profile,
 ) -> Effects {
     let next_addons = match selected {
-        Some(type_name) => profile
+        Some(selected) => profile
             .addons
             .iter()
-            .filter(|addon| addon.manifest.types.contains(type_name))
+            .filter(|addon| match &selected.type_name {
+                Some(type_name) => addon.manifest.types.contains(type_name),
+                None => true,
+            })
             .map(|addon| DescriptorPreview {
                 transport_url: addon.transport_url.to_owned(),
                 manifest: ManifestPreview {
