@@ -1,5 +1,5 @@
 use crate::types::addon::ResourceResponse::{Meta, Metas, MetasDetailed};
-use crate::types::addon::{DescriptorPreview, ManifestPreview, ResourceResponse};
+use crate::types::addon::{DescriptorPreview, ManifestPreview};
 use crate::types::resource::{
     Link, MetaItem, MetaItemBehaviorHints, MetaItemPreview, SeriesInfo, Subtitles, Video,
 };
@@ -236,30 +236,25 @@ fn deserialize_resource_response_meta() {
 
 #[test]
 fn deserialize_resource_response_subtitles() {
-    let subtitles_vec = vec![Subtitles {
+    let subtitles = vec![Subtitles {
         id: "id".to_owned(),
         lang: "lang".to_owned(),
         url: Url::parse("https://url").unwrap(),
     }];
     let subtitles_json = r#"
-    {
-        "subtitles": [
-            {
-                "id": "id",
-                "lang": "lang",
-                "url": "https://url/"
-            }
-        ]
-    }
+    [
+        {
+            "id": "id",
+            "lang": "lang",
+            "url": "https://url/"
+        }
+    ]
     "#;
-    let subtitles_deserialize = serde_json::from_str(&subtitles_json).unwrap();
-    match subtitles_deserialize {
-        ResourceResponse::Subtitles { subtitles } => assert_eq!(
-            subtitles, subtitles_vec,
-            "subtitles deserialized successfully"
-        ),
-        _ => panic!("failed getting subtitles"),
-    };
+    let subtitles_deserialize: Vec<Subtitles> = serde_json::from_str(&subtitles_json).unwrap();
+    assert_eq!(
+        subtitles, subtitles_deserialize,
+        "subtitles deserialized successfully"
+    );
 }
 
 #[test]
