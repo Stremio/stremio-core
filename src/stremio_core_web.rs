@@ -55,7 +55,10 @@ impl StremioCoreWeb {
             }
             Ok(WebModelField::Search) => JsValue::from_serde(&model.search).unwrap(),
             Ok(WebModelField::MetaDetails) => JsValue::from_serde(&model.meta_details).unwrap(),
-            Ok(WebModelField::Addons) => JsValue::from_serde(&model.addons).unwrap(),
+            Ok(WebModelField::RemoteAddons) => JsValue::from_serde(&model.remote_addons).unwrap(),
+            Ok(WebModelField::InstalledAddons) => {
+                JsValue::from_serde(&model.installed_addons).unwrap()
+            }
             Ok(WebModelField::AddonDetails) => JsValue::from_serde(&model.addon_details).unwrap(),
             Ok(WebModelField::StreamingServer) => {
                 JsValue::from_serde(&model.streaming_server).unwrap()

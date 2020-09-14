@@ -5,6 +5,7 @@ use stremio_core::models::catalog_with_filters::CatalogWithFilters;
 use stremio_core::models::catalogs_with_extra::CatalogsWithExtra;
 use stremio_core::models::continue_watching_preview::ContinueWatchingPreview;
 use stremio_core::models::ctx::Ctx;
+use stremio_core::models::installed_addons_with_filters::InstalledAddonsWithFilters;
 use stremio_core::models::library_with_filters::{
     ContinueWatchingFilter, LibraryWithFilters, NotRemovedFilter,
 };
@@ -25,7 +26,8 @@ pub struct WebModel {
     pub continue_watching: LibraryWithFilters<ContinueWatchingFilter>,
     pub search: CatalogsWithExtra,
     pub meta_details: MetaDetails,
-    pub addons: CatalogWithFilters<DescriptorPreview>,
+    pub remote_addons: CatalogWithFilters<DescriptorPreview>,
+    pub installed_addons: InstalledAddonsWithFilters,
     pub addon_details: AddonDetails,
     pub streaming_server: StreamingServer,
     pub player: Player,
