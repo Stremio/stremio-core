@@ -58,33 +58,20 @@ where
         match msg {
             Msg::Action(Action::Load(ActionLoad::LibraryWithFilters(selected))) => {
                 let selected_effects = eq_update(&mut self.selected, Some(selected.to_owned()));
-                let lib_items_effects = lib_items_update(
-                    &mut self.lib_items,
-                    &self.selected,
-                    F::predicate,
-                    &ctx.library,
-                );
+                let lib_items_effects =
+                    lib_items_update::<F>(&mut self.lib_items, &self.selected, &ctx.library);
                 selected_effects.join(lib_items_effects)
             }
             Msg::Action(Action::Unload) => {
                 let selected_effects = eq_update(&mut self.selected, None);
-                let lib_items_effects = lib_items_update(
-                    &mut self.lib_items,
-                    &self.selected,
-                    F::predicate,
-                    &ctx.library,
-                );
+                let lib_items_effects =
+                    lib_items_update::<F>(&mut self.lib_items, &self.selected, &ctx.library);
                 selected_effects.join(lib_items_effects)
             }
             Msg::Internal(Internal::LibraryChanged(_)) => {
-                let type_names_effects =
-                    type_names_update(&mut self.type_names, F::predicate, &ctx.library);
-                let lib_items_effects = lib_items_update(
-                    &mut self.lib_items,
-                    &self.selected,
-                    F::predicate,
-                    &ctx.library,
-                );
+                let type_names_effects = type_names_update::<F>(&mut self.type_names, &ctx.library);
+                let lib_items_effects =
+                    lib_items_update::<F>(&mut self.lib_items, &self.selected, &ctx.library);
                 type_names_effects.join(lib_items_effects)
             }
             _ => Effects::none().unchanged(),
@@ -92,15 +79,14 @@ where
     }
 }
 
-fn type_names_update(
+fn type_names_update<F: LibraryFilter>(
     type_names: &mut Vec<String>,
-    filter_predicate: impl Fn(&LibItem) -> bool,
     library: &LibBucket,
 ) -> Effects {
     let next_type_names = library
         .items
         .values()
-        .filter(|lib_item| filter_predicate(lib_item))
+        .filter(|lib_item| F::predicate(lib_item))
         .map(|lib_item| lib_item.type_name.to_owned())
         .unique()
         .collect::<Vec<_>>();
@@ -112,17 +98,16 @@ fn type_names_update(
     }
 }
 
-fn lib_items_update(
+fn lib_items_update<F: LibraryFilter>(
     lib_items: &mut Vec<LibItem>,
     selected: &Option<Selected>,
-    filter_predicate: impl Fn(&LibItem) -> bool,
     library: &LibBucket,
 ) -> Effects {
     let next_lib_items = match selected {
         Some(selected) => library
             .items
             .values()
-            .filter(|lib_item| filter_predicate(lib_item))
+            .filter(|lib_item| F::predicate(lib_item))
             .filter(|lib_item| match &selected.type_name {
                 Some(type_name) => *type_name == lib_item.type_name,
                 None => true,
