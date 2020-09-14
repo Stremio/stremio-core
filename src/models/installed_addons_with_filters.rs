@@ -4,6 +4,7 @@ use crate::runtime::msg::{Action, ActionLoad, Internal, Msg};
 use crate::runtime::{Effects, Environment, UpdateWithCtx};
 use crate::types::addon::{DescriptorPreview, ManifestPreview};
 use crate::types::profile::Profile;
+use itertools::Itertools;
 use serde::Serialize;
 
 pub type Selected = String;
@@ -46,6 +47,7 @@ fn type_names_update(type_names: &mut Vec<String>, profile: &Profile) -> Effects
         .addons
         .iter()
         .flat_map(|addon| &addon.manifest.types)
+        .unique()
         .cloned()
         .collect::<Vec<_>>();
     if *type_names != next_type_names {
