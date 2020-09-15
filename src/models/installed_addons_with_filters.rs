@@ -12,11 +12,23 @@ pub struct Selected {
     type_name: Option<String>,
 }
 
-#[derive(Default, Serialize)]
+#[derive(Serialize)]
 pub struct InstalledAddonsWithFilters {
     pub selected: Option<Selected>,
     pub type_names: Vec<String>,
     pub addons: Vec<DescriptorPreview>,
+}
+
+impl Default for InstalledAddonsWithFilters {
+    fn default() -> Self {
+        let mut type_names = vec![];
+        let _ = type_names_update(&mut type_names, &Profile::default());
+        InstalledAddonsWithFilters {
+            type_names,
+            selected: None,
+            addons: vec![],
+        }
+    }
 }
 
 impl<Env> UpdateWithCtx<Ctx<Env>> for InstalledAddonsWithFilters

@@ -6,11 +6,11 @@ use crate::models::ctx::Ctx;
 use crate::runtime::msg::{Action, ActionLoad, Internal, Msg};
 use crate::runtime::{Effects, Environment, UpdateWithCtx};
 use crate::types::addon::{
-    Descriptor, DescriptorPreview, Manifest, ManifestCatalog, ManifestExtraProp, ResourceRef,
-    ResourceRequest, ResourceResponse,
+    DescriptorPreview, Manifest, ManifestCatalog, ManifestExtraProp, ResourceRef, ResourceRequest,
+    ResourceResponse,
 };
+use crate::types::profile::Profile;
 use crate::types::resource::MetaItemPreview;
-use derivative::Derivative;
 use itertools::Itertools;
 use serde::{Deserialize, Serialize};
 use std::convert::TryFrom;
@@ -84,12 +84,23 @@ pub struct Selectable {
     pub has_next_page: bool,
 }
 
-#[derive(Derivative, Serialize)]
-#[derivative(Default(bound = ""))]
+#[derive(Serialize)]
 pub struct CatalogWithFilters<T> {
     pub selected: Option<Selected>,
     pub selectable: Selectable,
     pub catalog_resource: Option<ResourceLoadable<Vec<T>>>,
+}
+
+impl<T: CatalogResourceAdapter> Default for CatalogWithFilters<T> {
+    fn default() -> Self {
+        let mut selectable = Selectable::default();
+        let _ = selectable_update::<T>(&mut selectable, &None, &Profile::default());
+        CatalogWithFilters {
+            selectable,
+            selected: None,
+            catalog_resource: None,
+        }
+    }
 }
 
 impl<Env, T> UpdateWithCtx<Ctx<Env>> for CatalogWithFilters<T>
@@ -108,11 +119,8 @@ where
                         request: &selected.request,
                     },
                 );
-                let selectable_effects = selectable_update(
-                    &mut self.selectable,
-                    &self.catalog_resource,
-                    &ctx.profile.addons,
-                );
+                let selectable_effects =
+                    selectable_update(&mut self.selectable, &self.catalog_resource, &ctx.profile);
                 selected_effects
                     .join(catalog_effects)
                     .join(selectable_effects)
@@ -120,11 +128,8 @@ where
             Msg::Action(Action::Unload) => {
                 let selected_effects = eq_update(&mut self.selected, None);
                 let catalog_effects = eq_update(&mut self.catalog_resource, None);
-                let selectable_effects = selectable_update(
-                    &mut self.selectable,
-                    &self.catalog_resource,
-                    &ctx.profile.addons,
-                );
+                let selectable_effects =
+                    selectable_update(&mut self.selectable, &self.catalog_resource, &ctx.profile);
                 selected_effects
                     .join(catalog_effects)
                     .join(selectable_effects)
@@ -138,18 +143,13 @@ where
                         limit: &T::catalog_page_size(),
                     },
                 );
-                let selectable_effects = selectable_update(
-                    &mut self.selectable,
-                    &self.catalog_resource,
-                    &ctx.profile.addons,
-                );
+                let selectable_effects =
+                    selectable_update(&mut self.selectable, &self.catalog_resource, &ctx.profile);
                 catalog_effects.join(selectable_effects)
             }
-            Msg::Internal(Internal::ProfileChanged(_)) => selectable_update(
-                &mut self.selectable,
-                &self.catalog_resource,
-                &ctx.profile.addons,
-            ),
+            Msg::Internal(Internal::ProfileChanged(_)) => {
+                selectable_update(&mut self.selectable, &self.catalog_resource, &ctx.profile)
+            }
             _ => Effects::none().unchanged(),
         }
     }
@@ -158,9 +158,10 @@ where
 fn selectable_update<T: CatalogResourceAdapter>(
     selectable: &mut Selectable,
     catalog_resource: &Option<ResourceLoadable<Vec<T>>>,
-    addons: &[Descriptor],
+    profile: &Profile,
 ) -> Effects {
-    let selectable_catalogs = addons
+    let selectable_catalogs = profile
+        .addons
         .iter()
         .flat_map(|addon| {
             T::catalogs_from_manifest(&addon.manifest)
@@ -252,7 +253,8 @@ fn selectable_update<T: CatalogResourceAdapter>(
         }
     };
     let (selectable_extra, has_prev_page, has_next_page) = match catalog_resource {
-        Some(catalog_resource) => addons
+        Some(catalog_resource) => profile
+            .addons
             .iter()
             .find(|addon| addon.transport_url == catalog_resource.request.base)
             .iter()
