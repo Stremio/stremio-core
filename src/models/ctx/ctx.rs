@@ -25,9 +25,11 @@ pub enum CtxRequest {
     API(AuthRequest),
 }
 
-#[derive(PartialEq)]
+#[derive(Derivative, PartialEq)]
+#[derivative(Default)]
 pub enum CtxStatus {
     Loading(CtxRequest),
+    #[derivative(Default)]
     Ready,
 }
 
@@ -41,7 +43,6 @@ pub struct Ctx<Env: Environment> {
     #[serde(serialize_with = "serialize_lib_bucket")]
     pub library: LibBucket,
     #[serde(skip)]
-    #[derivative(Default(value = "CtxStatus::Ready"))]
     pub status: CtxStatus,
     #[serde(skip)]
     pub env: PhantomData<Env>,
