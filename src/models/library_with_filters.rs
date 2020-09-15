@@ -43,7 +43,7 @@ impl LibraryFilter for NotRemovedFilter {
 }
 
 #[derive(Derivative, Serialize)]
-#[derivative(Default(bound = ""))]
+#[derivative(Default)]
 pub struct LibraryWithFilters<F> {
     pub selected: Option<Selected>,
     pub type_names: Vec<String>,
