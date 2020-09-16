@@ -2,7 +2,8 @@ use crate::types::empty_string_as_none;
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, PartialEq, Serialize, Deserialize)]
+#[cfg_attr(test, derive(Debug))]
 pub struct GDPRConsent {
     pub tos: bool,
     pub privacy: bool,
@@ -10,7 +11,8 @@ pub struct GDPRConsent {
     pub from: String,
 }
 
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, PartialEq, Serialize, Deserialize)]
+#[cfg_attr(test, derive(Debug))]
 #[serde(rename_all = "camelCase")]
 pub struct User {
     #[serde(rename = "_id")]

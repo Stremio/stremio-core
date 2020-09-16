@@ -5,17 +5,19 @@ use chrono::{DateTime, Utc};
 use serde::de::Unexpected;
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
-pub struct APIErr {
-    pub message: String,
-    pub code: u64,
-}
-
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Serialize, Deserialize)]
+#[cfg_attr(test, derive(Debug))]
 #[serde(untagged)]
 pub enum APIResult<T> {
-    Err { error: APIErr },
+    Err { error: APIError },
     Ok { result: T },
+}
+
+#[derive(Clone, Serialize, Deserialize)]
+#[cfg_attr(test, derive(Debug))]
+pub struct APIError {
+    pub message: String,
+    pub code: u64,
 }
 
 #[derive(Serialize, Deserialize)]
@@ -32,7 +34,8 @@ pub struct AuthResponse {
     pub user: User,
 }
 
-#[derive(Debug, PartialEq, Deserialize)]
+#[derive(PartialEq, Deserialize)]
+#[cfg_attr(test, derive(Debug))]
 pub struct LibItemModified(
     pub String,
     #[serde(with = "ts_milliseconds")] pub DateTime<Utc>,
@@ -43,7 +46,8 @@ pub struct SuccessResponse {
     pub success: True,
 }
 
-#[derive(Clone, Debug, Copy, PartialEq)]
+#[derive(Clone, Copy, PartialEq)]
+#[cfg_attr(test, derive(Debug))]
 pub struct True;
 
 impl<'de> Deserialize<'de> for True {

@@ -1,7 +1,7 @@
 use crate::constants::{LIBRARY_RECENT_STORAGE_KEY, LIBRARY_STORAGE_KEY};
-use crate::state_types::models::ctx::Ctx;
-use crate::state_types::msg::{Action, ActionCtx, Msg};
-use crate::state_types::{EnvFuture, Environment, Runtime};
+use crate::models::ctx::Ctx;
+use crate::runtime::msg::{Action, ActionCtx};
+use crate::runtime::{EnvFuture, Environment, Runtime};
 use crate::types::api::{APIResult, SuccessResponse, True};
 use crate::types::library::{LibBucket, LibItem};
 use crate::types::profile::{Auth, GDPRConsent, Profile, User};
@@ -10,16 +10,14 @@ use crate::unit_tests::{
 };
 use chrono::prelude::TimeZone;
 use chrono::Utc;
-use futures::future;
+use futures::{future, FutureExt};
 use std::any::Any;
-use std::fmt::Debug;
 use stremio_derive::Model;
-use tokio::runtime::current_thread::run;
 
 #[test]
 fn actionctx_removefromlibrary() {
-    #[derive(Model, Debug, Default)]
-    struct Model {
+    #[derive(Model, Default)]
+    struct TestModel {
         ctx: Ctx<Env>,
     }
     fn fetch_handler(request: Request) -> EnvFuture<Box<dyn Any>> {
@@ -30,9 +28,9 @@ fn actionctx_removefromlibrary() {
                 && method == "POST"
                 && body == "{\"authKey\":\"auth_key\",\"collection\":\"libraryItem\",\"changes\":[{\"_id\":\"id\",\"name\":\"name\",\"type\":\"type_name\",\"poster\":null,\"posterShape\":\"poster\",\"removed\":true,\"temp\":false,\"_ctime\":\"2020-01-01T00:00:00Z\",\"_mtime\":\"2020-01-02T00:00:00Z\",\"state\":{\"lastWatched\":null,\"timeWatched\":0,\"timeOffset\":0,\"overallTimeWatched\":0,\"timesWatched\":0,\"flaggedWatched\":0,\"duration\":0,\"video_id\":null,\"watched\":null,\"lastVidReleased\":null,\"noNotif\":false},\"behaviorHints\":{\"defaultVideoId\":null}}]}" =>
             {
-                Box::new(future::ok(Box::new(APIResult::Ok {
+                future::ok(Box::new(APIResult::Ok {
                     result: SuccessResponse { success: True {} },
-                }) as Box<dyn Any>))
+                }) as Box<dyn Any>).boxed_local()
             }
             _ => default_fetch_handler(request),
         }
@@ -66,8 +64,8 @@ fn actionctx_removefromlibrary() {
         ))
         .unwrap(),
     );
-    let (runtime, _) = Runtime::<Env, Model>::new(
-        Model {
+    let (runtime, _rx) = Runtime::<Env, _>::new(
+        TestModel {
             ctx: Ctx {
                 profile: Profile {
                     auth: Some(Auth {
@@ -100,20 +98,13 @@ fn actionctx_removefromlibrary() {
         },
         1000,
     );
-    run(
-        runtime.dispatch(&Msg::Action(Action::Ctx(ActionCtx::RemoveFromLibrary(
+    Env::run(|| {
+        runtime.dispatch(Action::Ctx(ActionCtx::RemoveFromLibrary(
             lib_item.id.to_owned(),
-        )))),
-    );
+        )))
+    });
     assert_eq!(
-        runtime
-            .app
-            .read()
-            .unwrap()
-            .ctx
-            .library
-            .items
-            .get(&lib_item.id),
+        runtime.model().unwrap().ctx.library.items.get(&lib_item.id),
         Some(&lib_item_removed),
         "Library updated successfully in memory"
     );
@@ -146,8 +137,8 @@ fn actionctx_removefromlibrary() {
 
 #[test]
 fn actionctx_removefromlibrary_not_added() {
-    #[derive(Model, Debug, Default)]
-    struct Model {
+    #[derive(Model, Default)]
+    struct TestModel {
         ctx: Ctx<Env>,
     }
     let lib_item = LibItem {
@@ -168,8 +159,8 @@ fn actionctx_removefromlibrary_not_added() {
         LIBRARY_RECENT_STORAGE_KEY.to_owned(),
         serde_json::to_string(&LibBucket::new(None, vec![lib_item.to_owned()])).unwrap(),
     );
-    let (runtime, _) = Runtime::<Env, Model>::new(
-        Model {
+    let (runtime, _rx) = Runtime::<Env, _>::new(
+        TestModel {
             ctx: Ctx {
                 library: LibBucket {
                     uid: None,
@@ -182,20 +173,9 @@ fn actionctx_removefromlibrary_not_added() {
         },
         1000,
     );
-    run(
-        runtime.dispatch(&Msg::Action(Action::Ctx(ActionCtx::RemoveFromLibrary(
-            "id2".to_owned(),
-        )))),
-    );
+    Env::run(|| runtime.dispatch(Action::Ctx(ActionCtx::RemoveFromLibrary("id2".to_owned()))));
     assert_eq!(
-        runtime
-            .app
-            .read()
-            .unwrap()
-            .ctx
-            .library
-            .items
-            .get(&lib_item.id),
+        runtime.model().unwrap().ctx.library.items.get(&lib_item.id),
         Some(&lib_item),
         "Library not updated in memory"
     );

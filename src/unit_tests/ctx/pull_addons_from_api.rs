@@ -1,29 +1,27 @@
 use crate::constants::{OFFICIAL_ADDONS, PROFILE_STORAGE_KEY};
-use crate::state_types::models::ctx::Ctx;
-use crate::state_types::msg::{Action, ActionCtx, Msg};
-use crate::state_types::{EnvFuture, Environment, Runtime};
-use crate::types::addon::{Descriptor, DescriptorFlags, Manifest};
+use crate::models::ctx::Ctx;
+use crate::runtime::msg::{Action, ActionCtx};
+use crate::runtime::{EnvFuture, Environment, Runtime};
+use crate::types::addon::{Descriptor, Manifest};
 use crate::types::api::{APIResult, CollectionResponse};
 use crate::types::profile::{Auth, GDPRConsent, Profile, User};
 use crate::unit_tests::{default_fetch_handler, Env, Request, FETCH_HANDLER, REQUESTS, STORAGE};
-use futures::future;
+use futures::{future, FutureExt};
 use semver::Version;
 use std::any::Any;
-use std::fmt::Debug;
 use stremio_derive::Model;
-use tokio::runtime::current_thread::run;
 use url::Url;
 
 #[test]
 fn actionctx_pulladdonsfromapi() {
-    #[derive(Model, Debug, Default)]
-    struct Model {
+    #[derive(Model, Default)]
+    struct TestModel {
         ctx: Ctx<Env>,
     }
     let official_addon = OFFICIAL_ADDONS.first().unwrap();
     Env::reset();
-    let (runtime, _) = Runtime::<Env, Model>::new(
-        Model {
+    let (runtime, _rx) = Runtime::<Env, _>::new(
+        TestModel {
             ctx: Ctx {
                 profile: Profile {
                     addons: vec![Descriptor {
@@ -32,15 +30,7 @@ fn actionctx_pulladdonsfromapi() {
                             ..official_addon.manifest.to_owned()
                         },
                         transport_url: Url::parse("https://transport_url").unwrap(),
-                        flags: DescriptorFlags {
-                            extra: {
-                                [("flag".to_owned(), serde_json::Value::Bool(true))]
-                                    .iter()
-                                    .cloned()
-                                    .collect()
-                            },
-                            ..official_addon.flags.to_owned()
-                        },
+                        flags: official_addon.flags.to_owned(),
                     }],
                     ..Default::default()
                 },
@@ -49,21 +39,10 @@ fn actionctx_pulladdonsfromapi() {
         },
         1000,
     );
-    run(runtime.dispatch(&Msg::Action(Action::Ctx(ActionCtx::PullAddonsFromAPI))));
+    Env::run(|| runtime.dispatch(Action::Ctx(ActionCtx::PullAddonsFromAPI)));
     assert_eq!(
-        runtime.app.read().unwrap().ctx.profile.addons,
-        vec![Descriptor {
-            flags: DescriptorFlags {
-                extra: {
-                    [("flag".to_owned(), serde_json::Value::Bool(true))]
-                        .iter()
-                        .cloned()
-                        .collect()
-                },
-                ..official_addon.flags.to_owned()
-            },
-            ..official_addon.to_owned()
-        }],
+        runtime.model().unwrap().ctx.profile.addons,
+        vec![official_addon.to_owned()],
         "addons updated successfully in memory"
     );
     assert!(
@@ -73,18 +52,7 @@ fn actionctx_pulladdonsfromapi() {
             .get(PROFILE_STORAGE_KEY)
             .map_or(false, |data| {
                 serde_json::from_str::<Profile>(&data).unwrap().addons
-                    == vec![Descriptor {
-                        flags: DescriptorFlags {
-                            extra: {
-                                [("flag".to_owned(), serde_json::Value::Bool(true))]
-                                    .iter()
-                                    .cloned()
-                                    .collect()
-                            },
-                            ..official_addon.flags.to_owned()
-                        },
-                        ..official_addon.to_owned()
-                    }]
+                    == vec![official_addon.to_owned()]
             }),
         "addons updated successfully in storage"
     );
@@ -96,8 +64,8 @@ fn actionctx_pulladdonsfromapi() {
 
 #[test]
 fn actionctx_pulladdonsfromapi_with_user() {
-    #[derive(Model, Debug, Default)]
-    struct Model {
+    #[derive(Model, Default)]
+    struct TestModel {
         ctx: Ctx<Env>,
     }
     fn fetch_handler(request: Request) -> EnvFuture<Box<dyn Any>> {
@@ -108,20 +76,20 @@ fn actionctx_pulladdonsfromapi_with_user() {
                 && method == "POST"
                 && body == "{\"type\":\"AddonCollectionGet\",\"authKey\":\"auth_key\",\"update\":true}" =>
             {
-                Box::new(future::ok(Box::new(APIResult::Ok {
+                future::ok(Box::new(APIResult::Ok {
                     result: CollectionResponse {
                         addons: OFFICIAL_ADDONS.to_owned(),
                         last_modified: Env::now(),
                     },
-                }) as Box<dyn Any>))
+                }) as Box<dyn Any>).boxed_local()
             }
             _ => default_fetch_handler(request),
         }
     }
     Env::reset();
     *FETCH_HANDLER.write().unwrap() = Box::new(fetch_handler);
-    let (runtime, _) = Runtime::<Env, Model>::new(
-        Model {
+    let (runtime, _rx) = Runtime::<Env, _>::new(
+        TestModel {
             ctx: Ctx {
                 profile: Profile {
                     auth: Some(Auth {
@@ -167,9 +135,9 @@ fn actionctx_pulladdonsfromapi_with_user() {
         },
         1000,
     );
-    run(runtime.dispatch(&Msg::Action(Action::Ctx(ActionCtx::PullAddonsFromAPI))));
+    Env::run(|| runtime.dispatch(Action::Ctx(ActionCtx::PullAddonsFromAPI)));
     assert_eq!(
-        runtime.app.read().unwrap().ctx.profile.addons,
+        runtime.model().unwrap().ctx.profile.addons,
         OFFICIAL_ADDONS.to_owned(),
         "addons updated successfully in memory"
     );

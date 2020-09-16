@@ -1,3 +1,4 @@
 [submodule "stremio-official-addons"]
 	path = stremio-official-addons
 	url = https://github.com/stremio/stremio-official-addons
+	branch = addons-v3.1

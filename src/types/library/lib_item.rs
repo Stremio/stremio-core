@@ -3,36 +3,8 @@ use crate::types::resource::PosterShape;
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 
-#[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct LibItemState {
-    #[serde(deserialize_with = "empty_string_as_none")]
-    pub last_watched: Option<DateTime<Utc>>,
-    pub time_watched: u64,
-    pub time_offset: u64,
-    pub overall_time_watched: u64,
-    pub times_watched: u32,
-    // @TODO: consider bool that can be deserialized from an integer
-    pub flagged_watched: u32,
-    pub duration: u64,
-    #[serde(rename = "video_id", deserialize_with = "empty_string_as_none")]
-    pub video_id: Option<String>,
-    // @TODO bitfield, special type
-    #[serde(deserialize_with = "empty_string_as_none")]
-    pub watched: Option<String>,
-    // release date of last observed video
-    #[serde(deserialize_with = "empty_string_as_none", default)]
-    pub last_vid_released: Option<DateTime<Utc>>,
-    pub no_notif: bool,
-}
-
-#[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct LibItemBehaviorHints {
-    pub default_video_id: Option<String>,
-}
-
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, PartialEq, Serialize, Deserialize)]
+#[cfg_attr(test, derive(Debug))]
 #[serde(rename_all = "camelCase")]
 pub struct LibItem {
     #[serde(rename = "_id")]
@@ -62,4 +34,35 @@ impl LibItem {
     pub fn is_in_continue_watching(&self) -> bool {
         self.should_sync() && (!self.removed || self.temp) && self.state.time_offset > 0
     }
+}
+
+#[derive(Default, Clone, PartialEq, Serialize, Deserialize)]
+#[cfg_attr(test, derive(Debug))]
+#[serde(rename_all = "camelCase")]
+pub struct LibItemState {
+    #[serde(deserialize_with = "empty_string_as_none")]
+    pub last_watched: Option<DateTime<Utc>>,
+    pub time_watched: u64,
+    pub time_offset: u64,
+    pub overall_time_watched: u64,
+    pub times_watched: u32,
+    // @TODO: consider bool that can be deserialized from an integer
+    pub flagged_watched: u32,
+    pub duration: u64,
+    #[serde(rename = "video_id", deserialize_with = "empty_string_as_none")]
+    pub video_id: Option<String>,
+    // @TODO bitfield, special type
+    #[serde(deserialize_with = "empty_string_as_none")]
+    pub watched: Option<String>,
+    // release date of last observed video
+    #[serde(deserialize_with = "empty_string_as_none", default)]
+    pub last_vid_released: Option<DateTime<Utc>>,
+    pub no_notif: bool,
+}
+
+#[derive(Default, Clone, PartialEq, Serialize, Deserialize)]
+#[cfg_attr(test, derive(Debug))]
+#[serde(rename_all = "camelCase")]
+pub struct LibItemBehaviorHints {
+    pub default_video_id: Option<String>,
 }

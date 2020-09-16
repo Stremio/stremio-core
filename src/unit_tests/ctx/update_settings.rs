@@ -1,17 +1,15 @@
 use crate::constants::PROFILE_STORAGE_KEY;
-use crate::state_types::models::ctx::Ctx;
-use crate::state_types::msg::{Action, ActionCtx, Msg};
-use crate::state_types::Runtime;
+use crate::models::ctx::Ctx;
+use crate::runtime::msg::{Action, ActionCtx};
+use crate::runtime::Runtime;
 use crate::types::profile::{Profile, Settings};
 use crate::unit_tests::{Env, REQUESTS, STORAGE};
-use std::fmt::Debug;
 use stremio_derive::Model;
-use tokio::runtime::current_thread::run;
 
 #[test]
 fn actionctx_updatesettings() {
-    #[derive(Model, Debug, Default)]
-    struct Model {
+    #[derive(Model, Default)]
+    struct TestModel {
         ctx: Ctx<Env>,
     }
     let settings = Settings {
@@ -20,14 +18,10 @@ fn actionctx_updatesettings() {
         ..Settings::default()
     };
     Env::reset();
-    let (runtime, _) = Runtime::<Env, Model>::new(Model::default(), 1000);
-    run(
-        runtime.dispatch(&Msg::Action(Action::Ctx(ActionCtx::UpdateSettings(
-            settings.to_owned(),
-        )))),
-    );
+    let (runtime, _rx) = Runtime::<Env, _>::new(TestModel::default(), 1000);
+    Env::run(|| runtime.dispatch(Action::Ctx(ActionCtx::UpdateSettings(settings.to_owned()))));
     assert_eq!(
-        runtime.app.read().unwrap().ctx.profile.settings,
+        runtime.model().unwrap().ctx.profile.settings,
         settings,
         "Settings updated successfully in memory"
     );
@@ -49,8 +43,8 @@ fn actionctx_updatesettings() {
 
 #[test]
 fn actionctx_updatesettings_not_changed() {
-    #[derive(Model, Debug, Default)]
-    struct Model {
+    #[derive(Model, Default)]
+    struct TestModel {
         ctx: Ctx<Env>,
     }
     let settings = Settings {
@@ -67,8 +61,8 @@ fn actionctx_updatesettings_not_changed() {
         PROFILE_STORAGE_KEY.to_owned(),
         serde_json::to_string(&profile).unwrap(),
     );
-    let (runtime, _) = Runtime::<Env, Model>::new(
-        Model {
+    let (runtime, _rx) = Runtime::<Env, _>::new(
+        TestModel {
             ctx: Ctx {
                 profile,
                 ..Default::default()
@@ -76,13 +70,9 @@ fn actionctx_updatesettings_not_changed() {
         },
         1000,
     );
-    run(
-        runtime.dispatch(&Msg::Action(Action::Ctx(ActionCtx::UpdateSettings(
-            settings.to_owned(),
-        )))),
-    );
+    Env::run(|| runtime.dispatch(Action::Ctx(ActionCtx::UpdateSettings(settings.to_owned()))));
     assert_eq!(
-        runtime.app.read().unwrap().ctx.profile.settings,
+        runtime.model().unwrap().ctx.profile.settings,
         settings,
         "Settings not updated in memory"
     );

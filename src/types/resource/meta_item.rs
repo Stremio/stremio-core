@@ -1,9 +1,11 @@
-use crate::types::resource::{PosterShape, Stream, Video};
+use crate::types::resource::Stream;
 use chrono::{DateTime, Utc};
+use derivative::Derivative;
 use serde::{Deserialize, Serialize};
 use url::Url;
 
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, PartialEq, Serialize, Deserialize)]
+#[cfg_attr(test, derive(Debug))]
 #[serde(rename_all = "camelCase")]
 pub struct MetaItem {
     pub id: String,
@@ -26,12 +28,13 @@ pub struct MetaItem {
     #[serde(default)]
     pub links: Vec<Link>,
     #[serde(default)]
-    pub trailers: Vec<Stream>,
+    pub trailer_streams: Vec<Stream>,
     #[serde(default)]
     pub behavior_hints: MetaItemBehaviorHints,
 }
 
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, PartialEq, Serialize, Deserialize)]
+#[cfg_attr(test, derive(Debug))]
 #[serde(rename_all = "camelCase")]
 pub struct MetaItemPreview {
     pub id: String,
@@ -48,21 +51,62 @@ pub struct MetaItemPreview {
     #[serde(default)]
     pub poster_shape: PosterShape,
     #[serde(default)]
-    pub trailers: Vec<Stream>,
+    pub trailer_streams: Vec<Stream>,
     #[serde(default)]
     pub behavior_hints: MetaItemBehaviorHints,
 }
 
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Derivative, Clone, PartialEq, Serialize, Deserialize)]
+#[cfg_attr(test, derive(Debug))]
+#[derivative(Default)]
+#[serde(rename_all = "camelCase")]
+pub enum PosterShape {
+    Square,
+    Landscape,
+    #[derivative(Default)]
+    #[serde(other)]
+    Poster,
+}
+
+#[derive(Clone, PartialEq, Serialize, Deserialize)]
+#[cfg_attr(test, derive(Debug))]
+pub struct SeriesInfo {
+    pub season: u32,
+    pub episode: u32,
+}
+
+#[derive(Clone, PartialEq, Serialize, Deserialize)]
+#[cfg_attr(test, derive(Debug))]
+#[serde(rename_all = "camelCase")]
+pub struct Video {
+    pub id: String,
+    #[serde(default, alias = "name")]
+    pub title: String,
+    pub released: Option<DateTime<Utc>>,
+    pub overview: Option<String>,
+    pub thumbnail: Option<String>,
+    #[serde(default)]
+    pub streams: Vec<Stream>,
+    #[serde(flatten)]
+    pub series_info: Option<SeriesInfo>,
+    #[serde(default)]
+    pub trailer_streams: Vec<Stream>,
+}
+
+#[derive(Clone, PartialEq, Serialize, Deserialize)]
+#[cfg_attr(test, derive(Debug))]
 pub struct Link {
     pub name: String,
     pub category: String,
     pub url: Url,
 }
 
-#[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize)]
+#[derive(Default, Clone, PartialEq, Serialize, Deserialize)]
+#[cfg_attr(test, derive(Debug))]
 #[serde(rename_all = "camelCase")]
 pub struct MetaItemBehaviorHints {
     pub default_video_id: Option<String>,
     pub featured_video_id: Option<String>,
+    #[serde(default)]
+    pub has_scheduled_videos: bool,
 }

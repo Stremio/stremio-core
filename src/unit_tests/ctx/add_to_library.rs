@@ -1,7 +1,7 @@
 use crate::constants::{LIBRARY_RECENT_STORAGE_KEY, LIBRARY_STORAGE_KEY};
-use crate::state_types::models::ctx::Ctx;
-use crate::state_types::msg::{Action, ActionCtx, Msg};
-use crate::state_types::{EnvFuture, Environment, Runtime};
+use crate::models::ctx::Ctx;
+use crate::runtime::msg::{Action, ActionCtx};
+use crate::runtime::{EnvFuture, Environment, Runtime};
 use crate::types::api::{APIResult, SuccessResponse, True};
 use crate::types::library::{LibBucket, LibItem, LibItemBehaviorHints, LibItemState};
 use crate::types::profile::{Auth, GDPRConsent, Profile, User};
@@ -11,16 +11,14 @@ use crate::unit_tests::{
 };
 use chrono::prelude::TimeZone;
 use chrono::Utc;
-use futures::future;
+use futures::{future, FutureExt};
 use std::any::Any;
-use std::fmt::Debug;
 use stremio_derive::Model;
-use tokio::runtime::current_thread::run;
 
 #[test]
 fn actionctx_addtolibrary() {
-    #[derive(Model, Debug, Default)]
-    struct Model {
+    #[derive(Model, Default)]
+    struct TestModel {
         ctx: Ctx<Env>,
     }
     fn fetch_handler(request: Request) -> EnvFuture<Box<dyn Any>> {
@@ -31,9 +29,9 @@ fn actionctx_addtolibrary() {
                 && method == "POST"
                 && body == "{\"authKey\":\"auth_key\",\"collection\":\"libraryItem\",\"changes\":[{\"_id\":\"id\",\"name\":\"name\",\"type\":\"type_name\",\"poster\":null,\"posterShape\":\"poster\",\"removed\":false,\"temp\":false,\"_ctime\":\"2020-01-01T00:00:00Z\",\"_mtime\":\"2020-01-01T00:00:00Z\",\"state\":{\"lastWatched\":null,\"timeWatched\":0,\"timeOffset\":0,\"overallTimeWatched\":0,\"timesWatched\":0,\"flaggedWatched\":0,\"duration\":0,\"video_id\":null,\"watched\":null,\"lastVidReleased\":null,\"noNotif\":false},\"behaviorHints\":{\"defaultVideoId\":null}}]}" =>
             {
-                Box::new(future::ok(Box::new(APIResult::Ok {
+                future::ok(Box::new(APIResult::Ok {
                     result: SuccessResponse { success: True {} },
-                }) as Box<dyn Any>))
+                }) as Box<dyn Any>).boxed_local()
             }
             _ => default_fetch_handler(request),
         }
@@ -49,7 +47,7 @@ fn actionctx_addtolibrary() {
         runtime: None,
         released: None,
         poster_shape: Default::default(),
-        trailers: vec![],
+        trailer_streams: vec![],
         behavior_hints: Default::default(),
     };
     let lib_item = LibItem {
@@ -68,8 +66,8 @@ fn actionctx_addtolibrary() {
     Env::reset();
     *FETCH_HANDLER.write().unwrap() = Box::new(fetch_handler);
     *NOW.write().unwrap() = Utc.ymd(2020, 1, 1).and_hms_milli(0, 0, 0, 0);
-    let (runtime, _) = Runtime::<Env, Model>::new(
-        Model {
+    let (runtime, _rx) = Runtime::<Env, _>::new(
+        TestModel {
             ctx: Ctx {
                 profile: Profile {
                     auth: Some(Auth {
@@ -100,20 +98,19 @@ fn actionctx_addtolibrary() {
         },
         1000,
     );
-    run(
-        runtime.dispatch(&Msg::Action(Action::Ctx(ActionCtx::AddToLibrary(
+    Env::run(|| {
+        runtime.dispatch(Action::Ctx(ActionCtx::AddToLibrary(
             meta_preview.to_owned(),
-        )))),
-    );
+        )))
+    });
     assert_eq!(
-        runtime.app.read().unwrap().ctx.library.items.len(),
+        runtime.model().unwrap().ctx.library.items.len(),
         1,
         "There is one library item in memory"
     );
     assert_eq!(
         runtime
-            .app
-            .read()
+            .model()
             .unwrap()
             .ctx
             .library
@@ -151,8 +148,8 @@ fn actionctx_addtolibrary() {
 
 #[test]
 fn actionctx_addtolibrary_already_added() {
-    #[derive(Model, Debug, Default)]
-    struct Model {
+    #[derive(Model, Default)]
+    struct TestModel {
         ctx: Ctx<Env>,
     }
     let meta_preview = MetaItemPreview {
@@ -166,10 +163,11 @@ fn actionctx_addtolibrary_already_added() {
         release_info: None,
         runtime: None,
         released: None,
-        trailers: vec![],
+        trailer_streams: vec![],
         behavior_hints: MetaItemBehaviorHints {
             default_video_id: Some("video_id2".to_owned()),
             featured_video_id: None,
+            has_scheduled_videos: false,
         },
     };
     let lib_item = LibItem {
@@ -192,8 +190,8 @@ fn actionctx_addtolibrary_already_added() {
     };
     Env::reset();
     *NOW.write().unwrap() = Utc.ymd(2020, 1, 2).and_hms_milli(0, 0, 0, 0);
-    let (runtime, _) = Runtime::<Env, Model>::new(
-        Model {
+    let (runtime, _rx) = Runtime::<Env, _>::new(
+        TestModel {
             ctx: Ctx {
                 library: LibBucket {
                     uid: None,
@@ -224,25 +222,18 @@ fn actionctx_addtolibrary_already_added() {
         },
         1000,
     );
-    run(
-        runtime.dispatch(&Msg::Action(Action::Ctx(ActionCtx::AddToLibrary(
+    Env::run(|| {
+        runtime.dispatch(Action::Ctx(ActionCtx::AddToLibrary(
             meta_preview.to_owned(),
-        )))),
-    );
+        )))
+    });
     assert_eq!(
-        runtime.app.read().unwrap().ctx.library.items.len(),
+        runtime.model().unwrap().ctx.library.items.len(),
         1,
         "There is one library item in memory"
     );
     assert_eq!(
-        runtime
-            .app
-            .read()
-            .unwrap()
-            .ctx
-            .library
-            .items
-            .get(&lib_item.id),
+        runtime.model().unwrap().ctx.library.items.get(&lib_item.id),
         Some(&lib_item),
         "Library updated successfully in memory"
     );

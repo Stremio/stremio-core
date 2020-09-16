@@ -1,21 +1,19 @@
 use crate::constants::{LIBRARY_RECENT_STORAGE_KEY, LIBRARY_STORAGE_KEY, PROFILE_STORAGE_KEY};
-use crate::state_types::models::ctx::Ctx;
-use crate::state_types::msg::{Action, ActionCtx, Msg};
-use crate::state_types::{EnvFuture, Environment, Runtime};
+use crate::models::ctx::Ctx;
+use crate::runtime::msg::{Action, ActionCtx};
+use crate::runtime::{EnvFuture, Environment, Runtime};
 use crate::types::api::{APIResult, SuccessResponse, True};
 use crate::types::library::LibBucket;
 use crate::types::profile::{Auth, GDPRConsent, Profile, User};
 use crate::unit_tests::{default_fetch_handler, Env, Request, FETCH_HANDLER, REQUESTS, STORAGE};
-use futures::future;
+use futures::{future, FutureExt};
 use std::any::Any;
-use std::fmt::Debug;
 use stremio_derive::Model;
-use tokio::runtime::current_thread::run;
 
 #[test]
 fn actionctx_logout() {
-    #[derive(Model, Debug, Default)]
-    struct Model {
+    #[derive(Model, Default)]
+    struct TestModel {
         ctx: Ctx<Env>,
     }
     fn fetch_handler(request: Request) -> EnvFuture<Box<dyn Any>> {
@@ -26,9 +24,10 @@ fn actionctx_logout() {
                 && method == "POST"
                 && body == "{\"type\":\"Logout\",\"authKey\":\"auth_key\"}" =>
             {
-                Box::new(future::ok(Box::new(APIResult::Ok {
+                future::ok(Box::new(APIResult::Ok {
                     result: SuccessResponse { success: True {} },
-                }) as Box<dyn Any>))
+                }) as Box<dyn Any>)
+                .boxed_local()
             }
             _ => default_fetch_handler(request),
         }
@@ -71,8 +70,8 @@ fn actionctx_logout() {
         LIBRARY_STORAGE_KEY.to_owned(),
         serde_json::to_string(&LibBucket::new(profile.uid(), vec![])).unwrap(),
     );
-    let (runtime, _) = Runtime::<Env, Model>::new(
-        Model {
+    let (runtime, _rx) = Runtime::<Env, _>::new(
+        TestModel {
             ctx: Ctx {
                 profile,
                 library,
@@ -81,14 +80,14 @@ fn actionctx_logout() {
         },
         1000,
     );
-    run(runtime.dispatch(&Msg::Action(Action::Ctx(ActionCtx::Logout))));
+    Env::run(|| runtime.dispatch(Action::Ctx(ActionCtx::Logout)));
     assert_eq!(
-        runtime.app.read().unwrap().ctx.profile,
+        runtime.model().unwrap().ctx.profile,
         Default::default(),
         "profile updated successfully in memory"
     );
     assert_eq!(
-        runtime.app.read().unwrap().ctx.library,
+        runtime.model().unwrap().ctx.library,
         Default::default(),
         "library updated successfully in memory"
     );

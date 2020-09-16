@@ -1,27 +1,25 @@
-use crate::state_types::models::ctx::Ctx;
-use crate::state_types::msg::{Action, ActionCtx, Msg};
-use crate::state_types::{EnvFuture, Environment, Runtime};
+use crate::models::ctx::Ctx;
+use crate::runtime::msg::{Action, ActionCtx};
+use crate::runtime::{EnvFuture, Environment, Runtime};
 use crate::types::addon::{Descriptor, Manifest};
 use crate::types::api::{APIResult, SuccessResponse, True};
 use crate::types::profile::{Auth, GDPRConsent, Profile, User};
 use crate::unit_tests::{default_fetch_handler, Env, Request, FETCH_HANDLER, REQUESTS};
-use futures::future;
+use futures::{future, FutureExt};
 use semver::Version;
 use std::any::Any;
-use std::fmt::Debug;
 use stremio_derive::Model;
-use tokio::runtime::current_thread::run;
 use url::Url;
 
 #[test]
 fn actionctx_pushaddonstoapi() {
-    #[derive(Model, Debug, Default)]
-    struct Model {
+    #[derive(Model, Default)]
+    struct TestModel {
         ctx: Ctx<Env>,
     }
     Env::reset();
-    let (runtime, _) = Runtime::<Env, Model>::new(
-        Model {
+    let (runtime, _rx) = Runtime::<Env, _>::new(
+        TestModel {
             ctx: Ctx {
                 profile: Profile {
                     addons: vec![Descriptor {
@@ -50,7 +48,7 @@ fn actionctx_pushaddonstoapi() {
         },
         1000,
     );
-    run(runtime.dispatch(&Msg::Action(Action::Ctx(ActionCtx::PushAddonsToAPI))));
+    Env::run(|| runtime.dispatch(Action::Ctx(ActionCtx::PushAddonsToAPI)));
     assert!(
         REQUESTS.read().unwrap().is_empty(),
         "No requests have been sent"
@@ -59,8 +57,8 @@ fn actionctx_pushaddonstoapi() {
 
 #[test]
 fn actionctx_pushaddonstoapi_with_user() {
-    #[derive(Model, Debug, Default)]
-    struct Model {
+    #[derive(Model, Default)]
+    struct TestModel {
         ctx: Ctx<Env>,
     }
     fn fetch_handler(request: Request) -> EnvFuture<Box<dyn Any>> {
@@ -71,17 +69,17 @@ fn actionctx_pushaddonstoapi_with_user() {
                 && method == "POST"
                 && body == "{\"type\":\"AddonCollectionSet\",\"authKey\":\"auth_key\",\"addons\":[{\"manifest\":{\"id\":\"id\",\"version\":\"0.0.1\",\"name\":\"name\",\"contactEmail\":null,\"description\":null,\"logo\":null,\"background\":null,\"types\":[],\"resources\":[],\"idPrefixes\":null,\"catalogs\":[],\"addonCatalogs\":[],\"behaviorHints\":{}},\"transportUrl\":\"https://transport_url/\",\"flags\":{\"official\":false,\"protected\":false}}]}" =>
             {
-                Box::new(future::ok(Box::new(APIResult::Ok {
+                future::ok(Box::new(APIResult::Ok {
                     result: SuccessResponse { success: True {} },
-                }) as Box<dyn Any>))
+                }) as Box<dyn Any>).boxed_local()
             }
             _ => default_fetch_handler(request),
         }
     }
     Env::reset();
     *FETCH_HANDLER.write().unwrap() = Box::new(fetch_handler);
-    let (runtime, _) = Runtime::<Env, Model>::new(
-        Model {
+    let (runtime, _rx) = Runtime::<Env, _>::new(
+        TestModel {
             ctx: Ctx {
                 profile: Profile {
                     auth: Some(Auth {
@@ -127,7 +125,7 @@ fn actionctx_pushaddonstoapi_with_user() {
         },
         1000,
     );
-    run(runtime.dispatch(&Msg::Action(Action::Ctx(ActionCtx::PushAddonsToAPI))));
+    Env::run(|| runtime.dispatch(Action::Ctx(ActionCtx::PushAddonsToAPI)));
     assert_eq!(
         REQUESTS.read().unwrap().len(),
         1,

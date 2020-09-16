@@ -1,30 +1,28 @@
 use crate::constants::LIBRARY_RECENT_STORAGE_KEY;
-use crate::state_types::models::ctx::Ctx;
-use crate::state_types::msg::{Action, ActionCtx, Msg};
-use crate::state_types::{EnvFuture, Environment, Runtime};
+use crate::models::ctx::Ctx;
+use crate::runtime::msg::{Action, ActionCtx};
+use crate::runtime::{EnvFuture, Environment, Runtime};
 use crate::types::api::{APIResult, LibItemModified, SuccessResponse, True};
 use crate::types::library::{LibBucket, LibItem, LibItemState};
 use crate::types::profile::{Auth, AuthKey, GDPRConsent, Profile, User};
 use crate::unit_tests::{default_fetch_handler, Env, Request, FETCH_HANDLER, REQUESTS, STORAGE};
 use chrono::prelude::TimeZone;
 use chrono::{Duration, Utc};
-use futures::future;
+use futures::{future, FutureExt};
 use lazy_static::lazy_static;
 use serde::Deserialize;
 use std::any::Any;
-use std::fmt::Debug;
 use stremio_derive::Model;
-use tokio::runtime::current_thread::run;
 
 #[test]
 fn actionctx_synclibrarywithapi() {
-    #[derive(Model, Debug, Default)]
-    struct Model {
+    #[derive(Model, Default)]
+    struct TestModel {
         ctx: Ctx<Env>,
     }
     Env::reset();
-    let (runtime, _) = Runtime::<Env, Model>::new(Model::default(), 1000);
-    run(runtime.dispatch(&Msg::Action(Action::Ctx(ActionCtx::SyncLibraryWithAPI))));
+    let (runtime, _rx) = Runtime::<Env, _>::new(TestModel::default(), 1000);
+    Env::run(|| runtime.dispatch(Action::Ctx(ActionCtx::SyncLibraryWithAPI)));
     assert!(
         REQUESTS.read().unwrap().is_empty(),
         "No requests have been sent"
@@ -33,8 +31,8 @@ fn actionctx_synclibrarywithapi() {
 
 #[test]
 fn actionctx_synclibrarywithapi_with_user() {
-    #[derive(Model, Debug, Default)]
-    struct Model {
+    #[derive(Model, Default)]
+    struct TestModel {
         ctx: Ctx<Env>,
     }
     lazy_static! {
@@ -128,7 +126,7 @@ fn actionctx_synclibrarywithapi_with_user() {
                 && method == "POST"
                 && body == "{\"authKey\":\"auth_key\",\"collection\":\"libraryItem\"}" =>
             {
-                Box::new(future::ok(Box::new(APIResult::Ok {
+                future::ok(Box::new(APIResult::Ok {
                     result: vec![
                         LibItemModified(
                             REMOTE_ONLY_ITEM.id.to_owned(),
@@ -143,7 +141,8 @@ fn actionctx_synclibrarywithapi_with_user() {
                             REMOTE_NEWER_ITEM.mtime.to_owned(),
                         ),
                     ],
-                }) as Box<dyn Any>))
+                }) as Box<dyn Any>)
+                .boxed_local()
             }
             Request {
                 url, method, body, ..
@@ -164,9 +163,10 @@ fn actionctx_synclibrarywithapi_with_user() {
                             && body.changes.contains(&LOCAL_ONLY_ITEM)
                             && body.changes.contains(&LOCAL_WATCHED_ITEM) =>
                     {
-                        Box::new(future::ok(Box::new(APIResult::Ok {
+                        future::ok(Box::new(APIResult::Ok {
                             result: SuccessResponse { success: True {} },
-                        }) as Box<dyn Any>))
+                        }) as Box<dyn Any>)
+                        .boxed_local()
                     }
                     _ => default_fetch_handler(request),
                 }
@@ -191,9 +191,10 @@ fn actionctx_synclibrarywithapi_with_user() {
                             && body.ids.contains(&REMOTE_ONLY_ITEM.id)
                             && body.ids.contains(&REMOTE_NEWER_ITEM.id) =>
                     {
-                        Box::new(future::ok(Box::new(APIResult::Ok {
+                        future::ok(Box::new(APIResult::Ok {
                             result: vec![REMOTE_ONLY_ITEM.to_owned(), REMOTE_NEWER_ITEM.to_owned()],
-                        }) as Box<dyn Any>))
+                        }) as Box<dyn Any>)
+                        .boxed_local()
                     }
                     _ => default_fetch_handler(request),
                 }
@@ -203,8 +204,8 @@ fn actionctx_synclibrarywithapi_with_user() {
     }
     Env::reset();
     *FETCH_HANDLER.write().unwrap() = Box::new(fetch_handler);
-    let (runtime, _) = Runtime::<Env, Model>::new(
-        Model {
+    let (runtime, _rx) = Runtime::<Env, _>::new(
+        TestModel {
             ctx: Ctx {
                 profile: Profile {
                     auth: Some(Auth {
@@ -255,9 +256,9 @@ fn actionctx_synclibrarywithapi_with_user() {
         },
         1000,
     );
-    run(runtime.dispatch(&Msg::Action(Action::Ctx(ActionCtx::SyncLibraryWithAPI))));
+    Env::run(|| runtime.dispatch(Action::Ctx(ActionCtx::SyncLibraryWithAPI)));
     assert_eq!(
-        runtime.app.read().unwrap().ctx.library,
+        runtime.model().unwrap().ctx.library,
         LibBucket {
             uid: Some("user_id".to_string()),
             items: vec![
@@ -325,8 +326,8 @@ fn actionctx_synclibrarywithapi_with_user() {
 
 #[test]
 fn actionctx_synclibrarywithapi_with_user_empty_library() {
-    #[derive(Model, Debug, Default)]
-    struct Model {
+    #[derive(Model, Default)]
+    struct TestModel {
         ctx: Ctx<Env>,
     }
     fn fetch_handler(request: Request) -> EnvFuture<Box<dyn Any>> {
@@ -337,17 +338,18 @@ fn actionctx_synclibrarywithapi_with_user_empty_library() {
                 && method == "POST"
                 && body == "{\"authKey\":\"auth_key\",\"collection\":\"libraryItem\"}" =>
             {
-                Box::new(future::ok(Box::new(APIResult::Ok {
+                future::ok(Box::new(APIResult::Ok {
                     result: Vec::<LibItemModified>::new(),
-                }) as Box<dyn Any>))
+                }) as Box<dyn Any>)
+                .boxed_local()
             }
             _ => default_fetch_handler(request),
         }
     }
     Env::reset();
     *FETCH_HANDLER.write().unwrap() = Box::new(fetch_handler);
-    let (runtime, _) = Runtime::<Env, Model>::new(
-        Model {
+    let (runtime, _rx) = Runtime::<Env, _>::new(
+        TestModel {
             ctx: Ctx {
                 profile: Profile {
                     auth: Some(Auth {
@@ -374,7 +376,7 @@ fn actionctx_synclibrarywithapi_with_user_empty_library() {
         },
         1000,
     );
-    run(runtime.dispatch(&Msg::Action(Action::Ctx(ActionCtx::SyncLibraryWithAPI))));
+    Env::run(|| runtime.dispatch(Action::Ctx(ActionCtx::SyncLibraryWithAPI)));
     assert_eq!(
         REQUESTS.read().unwrap().len(),
         1,
