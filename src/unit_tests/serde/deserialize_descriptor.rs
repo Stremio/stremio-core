@@ -58,10 +58,6 @@ fn deserialize_descriptor() {
             flags: DescriptorFlags {
                 official: true,
                 protected: true,
-                extra: vec![("flag".to_owned(), serde_json::Value::Bool(true))]
-                    .iter()
-                    .cloned()
-                    .collect(),
             },
         },
         Descriptor {
@@ -84,7 +80,6 @@ fn deserialize_descriptor() {
             flags: DescriptorFlags {
                 official: false,
                 protected: false,
-                extra: vec![].iter().cloned().collect(),
             },
         },
     ];
@@ -154,8 +149,7 @@ fn deserialize_descriptor() {
             "transportUrl": "https://transport_url/",
             "flags": {
                 "official": true,
-                "protected": true,
-                "flag": true
+                "protected": true
             }
         },
         {
