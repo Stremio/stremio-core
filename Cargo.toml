@@ -21,7 +21,7 @@ percent-encoding = "2.1"
 chrono = { version = "0.4", features = ["serde"] }
 semver = { version = "0.10", features = ["serde"] }
 base64 = "0.12"
-either = "1.5"
+either = "1.6"
 enclose = "1.1"
 derivative = "2.1"
 derive_more = "0.99"
