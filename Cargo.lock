@@ -488,7 +488,7 @@ dependencies = [
 [[package]]
 name = "stremio-core"
 version = "0.1.0"
-source = "git+https://github.com/Stremio/stremio-core?branch=development#41c372e9e46ec16f9e4821edc7bbc2e4a4390ec5"
+source = "git+https://github.com/Stremio/stremio-core?branch=development#68c5844dab35b28e62f3c4f60c0dac6c0bd4029d"
 dependencies = [
  "base64",
  "chrono",
@@ -507,6 +507,7 @@ dependencies = [
  "serde-hex",
  "serde_json",
  "stremio-derive",
+ "stremio-official-addons",
  "url",
 ]
 
@@ -532,7 +533,7 @@ dependencies = [
 [[package]]
 name = "stremio-derive"
 version = "0.1.0"
-source = "git+https://github.com/Stremio/stremio-core?branch=development#41c372e9e46ec16f9e4821edc7bbc2e4a4390ec5"
+source = "git+https://github.com/Stremio/stremio-core?branch=development#68c5844dab35b28e62f3c4f60c0dac6c0bd4029d"
 dependencies = [
  "case",
  "proc-macro-crate",
@@ -541,6 +542,12 @@ dependencies = [
  "quote",
  "syn",
 ]
+
+[[package]]
+name = "stremio-official-addons"
+version = "2.0.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "1aaa4710a00f5b7c0c91f40a41f14a904c71e6f308b340065e3eef6022687d4e"
 
 [[package]]
 name = "syn"
