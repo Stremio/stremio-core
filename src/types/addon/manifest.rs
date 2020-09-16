@@ -137,6 +137,16 @@ pub enum ManifestExtra {
     },
 }
 
+#[derive(Clone, PartialEq, Serialize, Deserialize)]
+#[cfg_attr(test, derive(Debug))]
+pub struct OptionsLimit(pub usize);
+
+impl Default for OptionsLimit {
+    fn default() -> OptionsLimit {
+        OptionsLimit(1)
+    }
+}
+
 #[derive(Default, Clone, PartialEq, Serialize, Deserialize)]
 #[cfg_attr(test, derive(Debug))]
 #[serde(rename_all = "camelCase")]
@@ -146,7 +156,7 @@ pub struct ManifestExtraProp {
     pub is_required: bool,
     pub options: Option<Vec<String>>,
     #[serde(default)]
-    pub options_limit: usize,
+    pub options_limit: OptionsLimit,
 }
 
 #[derive(Clone, PartialEq, Serialize, Deserialize)]
