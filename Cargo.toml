@@ -27,7 +27,7 @@ derivative = "2.1"
 derive_more = "0.15.0"
 lazysort = "0.2"
 lazy_static = "1.4"
-itertools = "0.8"
+itertools = "0.9"
 
 [dev-dependencies]
 tokio = { version = "0.2", features = ["rt-core"] }
