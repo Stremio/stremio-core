@@ -167,7 +167,7 @@ fn deserialize_resource_response_meta() {
         videos: vec![Video {
             id: "id".to_owned(),
             title: "title".to_owned(),
-            released: Utc.ymd(2020, 1, 1).and_hms_milli(0, 0, 0, 0),
+            released: Some(Utc.ymd(2020, 1, 1).and_hms_milli(0, 0, 0, 0)),
             overview: None,
             thumbnail: None,
             streams: vec![],
@@ -175,14 +175,14 @@ fn deserialize_resource_response_meta() {
                 season: 1,
                 episode: 1,
             }),
-            trailers: vec![],
+            trailer_streams: vec![],
         }],
         links: vec![Link {
             name: "name".to_owned(),
             category: "category".to_owned(),
             url: Url::parse("https://url").unwrap(),
         }],
-        trailers: vec![],
+        trailer_streams: vec![],
         behavior_hints: Default::default(),
     };
     let meta_json = r#"
