@@ -21,10 +21,11 @@ fn deserialize_resource_response_metas() {
         runtime: None,
         released: None,
         poster_shape: Default::default(),
-        trailers: vec![],
+        trailer_streams: vec![],
         behavior_hints: MetaItemBehaviorHints {
             default_video_id: None,
             featured_video_id: None,
+            has_scheduled_videos: false,
         },
     }];
     let metas_json = r#"
@@ -75,7 +76,7 @@ fn deserialize_resource_response_metas_detailed() {
         videos: vec![Video {
             id: "id".to_owned(),
             title: "title".to_owned(),
-            released: Utc.ymd(2020, 1, 1).and_hms_milli(0, 0, 0, 0),
+            released: Some(Utc.ymd(2020, 1, 1).and_hms_milli(0, 0, 0, 0)),
             overview: None,
             thumbnail: None,
             streams: vec![],
@@ -83,14 +84,14 @@ fn deserialize_resource_response_metas_detailed() {
                 season: 1,
                 episode: 1,
             }),
-            trailers: vec![],
+            trailer_streams: vec![],
         }],
         links: vec![Link {
             name: "name".to_owned(),
             category: "category".to_owned(),
             url: Url::parse("https://url").unwrap(),
         }],
-        trailers: vec![],
+        trailer_streams: vec![],
         behavior_hints: Default::default(),
     }];
     let metas_detailed_json = r#"
