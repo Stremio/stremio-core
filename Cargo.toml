@@ -18,12 +18,12 @@ serde = "1.0"
 serde_json = "1.0"
 chrono = "0.4"
 futures = "0.3"
-http = "0.1"
+http = "0.2"
 js-sys = "0.3"
 wasm-bindgen = { version = "0.2.67", features = ["serde-serialize"] }
 wasm-bindgen-futures = "0.4"
 console_error_panic_hook = "0.1"
-itertools = "0.8"
+itertools = "0.9"
 
 [dependencies.web-sys]
 version = "0.3"
