@@ -25,6 +25,6 @@ lazy_static! {
     pub static ref STREAMING_SERVER_URL: Url =
         Url::parse("http://127.0.0.1:11470").expect("STREAMING_SERVER_URL parse failed");
     pub static ref OFFICIAL_ADDONS: Vec<Descriptor> =
-        serde_json::from_slice(include_bytes!("../stremio-official-addons/addons.json"))
+        serde_json::from_slice(stremio_official_addons::ADDONS)
             .expect("OFFICIAL_ADDONS parse failed");
 }
