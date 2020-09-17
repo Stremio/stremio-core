@@ -91,9 +91,9 @@ dependencies = [
 
 [[package]]
 name = "either"
-version = "1.6.0"
+version = "1.6.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "cd56b59865bce947ac5958779cfa508f6c3b9497cc762b7e24a12d11ccde2c4f"
+checksum = "e78d4f1cc4ae33bbfc157ed5d5a5ef3bc29227303d595861deb238fcec4e9457"
 
 [[package]]
 name = "enclose"
@@ -488,7 +488,7 @@ dependencies = [
 [[package]]
 name = "stremio-core"
 version = "0.1.0"
-source = "git+https://github.com/Stremio/stremio-core?branch=development#68c5844dab35b28e62f3c4f60c0dac6c0bd4029d"
+source = "git+https://github.com/Stremio/stremio-core?branch=development#d494e4253e53ca2f2efa97c7a3628d20709648e0"
 dependencies = [
  "base64",
  "chrono",
@@ -533,7 +533,7 @@ dependencies = [
 [[package]]
 name = "stremio-derive"
 version = "0.1.0"
-source = "git+https://github.com/Stremio/stremio-core?branch=development#68c5844dab35b28e62f3c4f60c0dac6c0bd4029d"
+source = "git+https://github.com/Stremio/stremio-core?branch=development#d494e4253e53ca2f2efa97c7a3628d20709648e0"
 dependencies = [
  "case",
  "proc-macro-crate",
