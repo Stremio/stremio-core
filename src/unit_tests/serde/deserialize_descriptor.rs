@@ -158,7 +158,7 @@ fn deserialize_descriptor() {
 
 #[test]
 fn deserialize_manifest_extra_prop() {
-    let manifest_extra_prop = vec![
+    let manifest_extra_props = vec![
         // ALL fields are defined with SOME value
         ManifestExtraProp {
             name: "name".to_owned(),
@@ -181,7 +181,7 @@ fn deserialize_manifest_extra_prop() {
             options_limit: OptionsLimit(0),
         },
     ];
-    let manifest_extra_prop_json = r#"
+    let manifest_extra_props_json = r#"
     [
         {
             "name": "name",
@@ -203,10 +203,10 @@ fn deserialize_manifest_extra_prop() {
         }
     ]
     "#;
-    let manifest_extra_prop_deserialize: Vec<ManifestExtraProp> =
-        serde_json::from_str(&manifest_extra_prop_json).unwrap();
+    let manifest_extra_props_deserialize: Vec<ManifestExtraProp> =
+        serde_json::from_str(&manifest_extra_props_json).unwrap();
     assert_eq!(
-        manifest_extra_prop, manifest_extra_prop_deserialize,
-        "manifest_extra_prop deserialized successfully"
+        manifest_extra_props, manifest_extra_props_deserialize,
+        "manifest extra prop deserialized successfully"
     );
 }
