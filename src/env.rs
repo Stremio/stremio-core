@@ -25,7 +25,7 @@ impl Environment for Env {
             for (key, value) in parts.headers.iter() {
                 let key = key.as_str().to_owned();
                 let value = String::from_utf8_lossy(value.as_bytes()).into_owned();
-                headers.entry(key).or_insert_with(Vec::new).push(value)
+                headers.entry(key).or_insert_with(Vec::new).push(value);
             }
             JsValue::from_serde(&headers).unwrap()
         };
