@@ -31,14 +31,7 @@ fn deserialize_descriptor() {
                     type_name: "type_name".to_owned(),
                     id: "id".to_owned(),
                     name: Some("name".to_owned()),
-                    extra: ManifestExtra::Full {
-                        props: vec![ManifestExtraProp {
-                            name: "name".to_owned(),
-                            is_required: true,
-                            options: Some(vec!["option".to_owned()]),
-                            options_limit: OptionsLimit(1),
-                        }],
-                    },
+                    extra: ManifestExtra::Full { props: vec![] },
                 }],
                 addon_catalogs: vec![ManifestCatalog {
                     type_name: "type_name".to_owned(),
@@ -117,16 +110,7 @@ fn deserialize_descriptor() {
                         "type": "type_name",
                         "id": "id",
                         "name": "name",
-                        "extra": [
-                            {
-                                "name": "name",
-                                "isRequired": true,
-                                "options": [
-                                    "option"
-                                ],
-                                "optionsLimit": 1
-                            }
-                        ]
+                        "extra": []
                     }
                 ],
                 "addonCatalogs": [
@@ -169,5 +153,60 @@ fn deserialize_descriptor() {
     assert_eq!(
         descriptors, descriptors_deserialize,
         "descriptor deserialized successfully"
+    );
+}
+
+#[test]
+fn deserialize_manifest_extra_prop() {
+    let manifest_extra_prop = vec![
+        // ALL fields are defined with SOME value
+        ManifestExtraProp {
+            name: "name".to_owned(),
+            is_required: true,
+            options: Some(vec!["option".to_owned()]),
+            options_limit: OptionsLimit(2),
+        },
+        // serde(default) are omited
+        ManifestExtraProp {
+            name: "name".to_owned(),
+            is_required: false,
+            options: None,
+            options_limit: OptionsLimit(1),
+        },
+        // ALL NONEs are set to null.
+        ManifestExtraProp {
+            name: "name".to_owned(),
+            is_required: false,
+            options: None,
+            options_limit: OptionsLimit(0),
+        },
+    ];
+    let manifest_extra_prop_json = r#"
+    [
+        {
+            "name": "name",
+            "isRequired": true,
+            "options": [
+                "option"
+            ],
+            "optionsLimit": 2
+        },
+        {
+            "name": "name",
+            "options": null
+        },
+        {
+            "name": "name",
+            "isRequired": false,
+            "options": null,
+            "optionsLimit": 0
+        }
+    ]
+    "#;
+    let manifest_extra_prop_deserialize: Vec<ManifestExtraProp> =
+        serde_json::from_str(&manifest_extra_prop_json).unwrap();
+    assert_eq!(
+        manifest_extra_prop, manifest_extra_prop_deserialize,
+        "manifest_extra_prop deserialized successfully"
     );
 }
