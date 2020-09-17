@@ -39,8 +39,8 @@ fn deserialize_descriptor() {
             },
             transport_url: Url::parse("https://transport_url").unwrap(),
             flags: DescriptorFlags {
-                official: true,
-                protected: true,
+                official: false,
+                protected: false,
             },
         },
         Descriptor {
@@ -106,8 +106,8 @@ fn deserialize_descriptor() {
             },
             "transportUrl": "https://transport_url/",
             "flags": {
-                "official": true,
-                "protected": true
+                "official": false,
+                "protected": false
             }
         },
         {
@@ -265,5 +265,36 @@ fn deserialize_manifest_extra_prop() {
     assert_eq!(
         manifest_extra_props, manifest_extra_props_deserialize,
         "manifest extra prop deserialized successfully"
+    );
+}
+
+#[test]
+fn deserialize_descriptor_flags() {
+    let descriptor_flags = vec![
+        // ALL fields are defined
+        DescriptorFlags {
+            official: true,
+            protected: true,
+        },
+        // serde(default) are omited
+        DescriptorFlags {
+            official: false,
+            protected: false,
+        },
+    ];
+    let descriptor_flags_json = r#"
+    [
+        {
+            "official": true,
+            "protected": true
+        },
+        {}
+    ]
+    "#;
+    let descriptor_flags_deserialize: Vec<DescriptorFlags> =
+        serde_json::from_str(&descriptor_flags_json).unwrap();
+    assert_eq!(
+        descriptor_flags, descriptor_flags_deserialize,
+        "descriptor flags deserialized successfully"
     );
 }
