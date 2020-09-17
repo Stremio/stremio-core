@@ -20,18 +20,8 @@ fn deserialize_descriptor() {
                 types: vec!["type".to_owned()],
                 resources: vec![],
                 id_prefixes: Some(vec!["id_prefix".to_owned()]),
-                catalogs: vec![ManifestCatalog {
-                    type_name: "type_name".to_owned(),
-                    id: "id".to_owned(),
-                    name: Some("name".to_owned()),
-                    extra: ManifestExtra::Full { props: vec![] },
-                }],
-                addon_catalogs: vec![ManifestCatalog {
-                    type_name: "type_name".to_owned(),
-                    id: "id".to_owned(),
-                    name: Some("name".to_owned()),
-                    extra: ManifestExtra::Full { props: vec![] },
-                }],
+                catalogs: vec![],
+                addon_catalogs: vec![],
                 behavior_hints: vec![("behavior_hint".to_owned(), serde_json::Value::Bool(true))]
                     .iter()
                     .cloned()
@@ -84,22 +74,8 @@ fn deserialize_descriptor() {
                 "idPrefixes": [
                     "id_prefix"
                 ],
-                "catalogs": [
-                    {
-                        "type": "type_name",
-                        "id": "id",
-                        "name": "name",
-                        "extra": []
-                    }
-                ],
-                "addonCatalogs": [
-                    {
-                        "type": "type_name",
-                        "id": "id",
-                        "name": "name",
-                        "extra": []
-                    }
-                ],
+                "catalogs": [],
+                "addonCatalogs": [],
                 "behaviorHints": {
                     "behavior_hint": true
                 }
@@ -171,6 +147,48 @@ fn deserialize_manifest_resource() {
     assert_eq!(
         manifest_resources, manifest_resources_deserialize,
         "manifest resource deserialized successfully"
+    );
+}
+
+#[test]
+fn deserialize_manifest_catalog() {
+    let manifest_catalogs = vec![
+        // ALL fields are defined with SOME value
+        ManifestCatalog {
+            type_name: "type_name".to_owned(),
+            id: "id".to_owned(),
+            name: Some("name".to_owned()),
+            extra: ManifestExtra::Full { props: vec![] },
+        },
+        // ALL NONEs are set to null.
+        ManifestCatalog {
+            type_name: "type_name".to_owned(),
+            id: "id".to_owned(),
+            name: None,
+            extra: ManifestExtra::Full { props: vec![] },
+        },
+    ];
+    let manifest_catalogs_json = r#"
+    [
+        {
+            "type": "type_name",
+            "id": "id",
+            "name": "name",
+            "extra": []
+        },
+        {
+            "type": "type_name",
+            "id": "id",
+            "name": null,
+            "extra": []
+        }
+    ]
+    "#;
+    let manifest_catalogs_deserialize: Vec<ManifestCatalog> =
+        serde_json::from_str(&manifest_catalogs_json).unwrap();
+    assert_eq!(
+        manifest_catalogs, manifest_catalogs_deserialize,
+        "manifest catalog deserialized successfully"
     );
 }
 
