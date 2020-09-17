@@ -32,5 +32,6 @@ features = [
 	'Request',
 	'RequestInit',
 	'Response',
-	'Storage'
+	'Storage',
+	'console'
 ]

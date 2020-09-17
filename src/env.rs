@@ -86,6 +86,10 @@ impl Environment for Env {
         let (secs, millis) = (millis / 1000, millis % 1000);
         Utc.timestamp(secs, millis as u32 * 1_000_000)
     }
+    #[cfg(debug_assertions)]
+    fn log(message: String) {
+        web_sys::console::log_1(&JsValue::from(message));
+    }
 }
 
 fn local_storage() -> Result<web_sys::Storage, EnvError> {
