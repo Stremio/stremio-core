@@ -101,6 +101,9 @@ impl Environment for Env {
     fn now() -> DateTime<Utc> {
         *NOW.read().unwrap()
     }
+    fn log(message: String) {
+        println!("{}", message)
+    }
 }
 
 pub fn default_fetch_handler(request: Request) -> EnvFuture<Box<dyn Any>> {
