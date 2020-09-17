@@ -30,10 +30,7 @@ fn deserialize_descriptor() {
                     type_name: "type_name".to_owned(),
                     id: "id".to_owned(),
                     name: Some("name".to_owned()),
-                    extra: ManifestExtra::Short {
-                        required: vec!["required".to_owned()],
-                        supported: vec!["supported".to_owned()],
-                    },
+                    extra: ManifestExtra::Full { props: vec![] },
                 }],
                 behavior_hints: vec![("behavior_hint".to_owned(), serde_json::Value::Bool(true))]
                     .iter()
@@ -100,12 +97,7 @@ fn deserialize_descriptor() {
                         "type": "type_name",
                         "id": "id",
                         "name": "name",
-                        "extraRequired": [
-                            "required"
-                        ],
-                        "extraSupported": [
-                            "supported"
-                        ]
+                        "extra": []
                     }
                 ],
                 "behaviorHints": {
@@ -179,6 +171,45 @@ fn deserialize_manifest_resource() {
     assert_eq!(
         manifest_resources, manifest_resources_deserialize,
         "manifest resource deserialized successfully"
+    );
+}
+
+#[test]
+fn deserialize_manifest_extra() {
+    let manifest_extra = vec![
+        ManifestExtra::Full { props: vec![] },
+        // ALL fields are defined
+        ManifestExtra::Short {
+            required: vec!["required".to_owned()],
+            supported: vec!["supported".to_owned()],
+        },
+        // serde(default) are omited
+        ManifestExtra::Short {
+            required: vec![],
+            supported: vec![],
+        },
+    ];
+    let manifest_extra_json = r#"
+    [
+        {
+            "extra": []
+        },
+        {
+            "extraRequired": [
+                "required"
+            ],
+            "extraSupported": [
+                "supported"
+            ]
+        },
+        {}
+    ]
+    "#;
+    let manifest_extra_deserialize: Vec<ManifestExtra> =
+        serde_json::from_str(&manifest_extra_json).unwrap();
+    assert_eq!(
+        manifest_extra, manifest_extra_deserialize,
+        "manifest extra deserialized successfully"
     );
 }
 
