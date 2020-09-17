@@ -18,14 +18,7 @@ fn deserialize_descriptor() {
                 logo: Some("logo".to_owned()),
                 background: Some("background".to_owned()),
                 types: vec!["type".to_owned()],
-                resources: vec![
-                    ManifestResource::Short("resource".to_owned()),
-                    ManifestResource::Full {
-                        name: "name".to_owned(),
-                        types: Some(vec!["type".to_owned()]),
-                        id_prefixes: Some(vec!["id_prefix".to_owned()]),
-                    },
-                ],
+                resources: vec![],
                 id_prefixes: Some(vec!["id_prefix".to_owned()]),
                 catalogs: vec![ManifestCatalog {
                     type_name: "type_name".to_owned(),
@@ -90,18 +83,7 @@ fn deserialize_descriptor() {
                 "types": [
                     "type"
                 ],
-                "resources": [
-                    "resource",
-                    {
-                        "name": "name",
-                        "types": [
-                            "type"
-                        ],
-                        "idPrefixes": [
-                            "id_prefix"
-                        ]
-                    }
-                ],
+                "resources": [],
                 "idPrefixes": [
                     "id_prefix"
                 ],
@@ -153,6 +135,50 @@ fn deserialize_descriptor() {
     assert_eq!(
         descriptors, descriptors_deserialize,
         "descriptor deserialized successfully"
+    );
+}
+
+#[test]
+fn deserialize_manifest_resource() {
+    let manifest_resources = vec![
+        ManifestResource::Short("resource".to_owned()),
+        // ALL fields are defined with SOME value
+        ManifestResource::Full {
+            name: "name".to_owned(),
+            types: Some(vec!["type".to_owned()]),
+            id_prefixes: Some(vec!["id_prefix".to_owned()]),
+        },
+        // ALL NONEs are set to null.
+        ManifestResource::Full {
+            name: "name".to_owned(),
+            types: None,
+            id_prefixes: None,
+        },
+    ];
+    let manifest_resources_json = r#"
+    [
+        "resource",
+        {
+            "name": "name",
+            "types": [
+                "type"
+            ],
+            "idPrefixes": [
+                "id_prefix"
+            ]
+        },
+        {
+            "name": "name",
+            "types": null,
+            "idPrefixes": null
+        }
+    ]
+    "#;
+    let manifest_resources_deserialize: Vec<ManifestResource> =
+        serde_json::from_str(&manifest_resources_json).unwrap();
+    assert_eq!(
+        manifest_resources, manifest_resources_deserialize,
+        "manifest resource deserialized successfully"
     );
 }
 
