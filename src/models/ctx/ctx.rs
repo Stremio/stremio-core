@@ -165,6 +165,7 @@ fn pull_ctx_from_storage<Env: Environment + 'static>() -> Effect {
         .map_err(CtxError::from)
         .map(|result| Msg::Internal(Internal::CtxStorageResult(result)))
         .boxed_local()
+        .into()
 }
 
 fn authenticate<Env: Environment + 'static>(auth_request: &AuthRequest) -> Effect {
@@ -192,6 +193,7 @@ fn authenticate<Env: Environment + 'static>(auth_request: &AuthRequest) -> Effec
             Msg::Internal(Internal::CtxAuthResult(auth_request, result))
         }))
         .boxed_local()
+        .into()
 }
 
 fn delete_session<Env: Environment + 'static>(auth_key: &str) -> Effect {
@@ -208,6 +210,7 @@ fn delete_session<Env: Environment + 'static>(auth_key: &str) -> Effect {
         }
     ))
     .boxed_local()
+    .into()
 }
 
 fn serialize_lib_bucket<S>(lib_bucket: &LibBucket, serializer: S) -> Result<S::Ok, S::Error>

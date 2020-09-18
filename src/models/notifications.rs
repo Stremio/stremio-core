@@ -86,7 +86,8 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for Notifications {
                                                     Box::new(result),
                                                 ))
                                             })
-                                            .boxed_local(),
+                                            .boxed_local()
+                                            .into(),
                                     )
                                 })
                                 .collect::<Vec<_>>()

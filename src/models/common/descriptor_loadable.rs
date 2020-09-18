@@ -45,7 +45,7 @@ pub fn descriptor_update<Env: Environment + 'static>(
                     transport_url: transport_url.to_owned(),
                     content: Loadable::Loading,
                 });
-                Effects::one(
+                Effects::future(
                     Env::addon_transport(&transport_url)
                         .manifest()
                         .map(move |result| {

@@ -48,7 +48,7 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for StreamingServer {
                     self.selected = next_selected;
                     self.settings = next_settings;
                     self.base_url = next_base_url;
-                    Effects::many(vec![
+                    Effects::futures(vec![
                         get_settings::<Env>(&url)
                             .map(enclose!((url) move |result| {
                                 Msg::Internal(Internal::StreamingServerSettingsResult(
@@ -73,7 +73,7 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for StreamingServer {
                     if ready_settings != settings =>
                 {
                     *ready_settings = settings.to_owned();
-                    Effects::one(
+                    Effects::future(
                         update_settings::<Env>(&url, settings)
                             .map(enclose!((url) move |result| {
                                 Msg::Internal(Internal::StreamingServerUpdateSettingsResult(
@@ -92,7 +92,7 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for StreamingServer {
                 self.selected = Some(url.to_owned());
                 self.settings = Some(Loadable::Loading);
                 self.base_url = Some(Loadable::Loading);
-                Effects::many(vec![
+                Effects::futures(vec![
                     get_settings::<Env>(&url)
                         .map(enclose!((url) move |result| {
                             Msg::Internal(Internal::StreamingServerSettingsResult(

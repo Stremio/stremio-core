@@ -264,6 +264,7 @@ fn push_addons_to_api<Env: Environment + 'static>(
             }),
         })
         .boxed_local()
+        .into()
 }
 
 fn pull_addons_from_api<Env: Environment + 'static>(auth_key: &str) -> Effect {
@@ -275,6 +276,7 @@ fn pull_addons_from_api<Env: Environment + 'static>(auth_key: &str) -> Effect {
         .map_ok(|CollectionResponse { addons, .. }| addons)
         .map(move |result| Msg::Internal(Internal::AddonsAPIResult(request, result)))
         .boxed_local()
+        .into()
 }
 
 fn push_profile_to_storage<Env: Environment + 'static>(profile: &Profile) -> Effect {
@@ -287,4 +289,5 @@ fn push_profile_to_storage<Env: Environment + 'static>(profile: &Profile) -> Eff
             })
         }))
         .boxed_local()
+        .into()
 }
