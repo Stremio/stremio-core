@@ -27,3 +27,17 @@ fn serialize_api_request_addon_collection_get() {
         "AddonCollectionGet serialized successfully"
     );
 }
+
+#[test]
+fn serialize_api_request_addon_collection_set() {
+    let addon_collection_set = APIRequest::AddonCollectionSet {
+        auth_key: "auth_key".to_owned(),
+        addons: vec![],
+    };
+    let addon_collection_set_json = r#"{"type":"AddonCollectionSet","authKey":"auth_key","addons":[]}"#;
+    let addon_collection_set_serialize = serde_json::to_string(&addon_collection_set).unwrap();
+    assert_eq!(
+        addon_collection_set_json, addon_collection_set_serialize,
+        "AddonCollectionSet serialized successfully"
+    );
+}
