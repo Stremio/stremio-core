@@ -16,6 +16,7 @@ use url::Url;
 #[derive(Deserialize)]
 #[serde(tag = "action", content = "args")]
 pub enum ActionCtx {
+    PullFromStorage,
     Authenticate(AuthRequest),
     Logout,
     InstallAddon(Descriptor),
@@ -48,7 +49,6 @@ pub enum ActionPlayer {
 #[derive(Deserialize)]
 #[serde(tag = "model", content = "args")]
 pub enum ActionLoad {
-    Ctx,
     AddonDetails(AddonDetailsSelected),
     CatalogWithFilters(CatalogWithFiltersSelected),
     CatalogsWithExtra(CatalogsWithExtraSelected),
