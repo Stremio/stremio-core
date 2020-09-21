@@ -43,7 +43,7 @@ impl<T: Serialize> From<http::Request<T>> for Request {
     }
 }
 
-pub struct Env {}
+pub enum Env {}
 
 impl Env {
     pub fn reset() {
