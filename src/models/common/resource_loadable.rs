@@ -1,6 +1,6 @@
 use crate::models::common::Loadable;
 use crate::runtime::msg::{Internal, Msg};
-use crate::runtime::{Effect, Effects, EnvError, Environment};
+use crate::runtime::{Effects, EnvError, Environment};
 use crate::types::addon::{AggrRequest, Descriptor, ResourceRequest, ResourceResponse};
 use futures::FutureExt;
 use serde::Serialize;
@@ -65,7 +65,7 @@ where
                     request: request.to_owned(),
                     content: Loadable::Loading,
                 });
-                Effects::one(
+                Effects::future(
                     Env::addon_transport(&request.base)
                         .resource(&request.path)
                         .map(move |result| {
@@ -138,7 +138,7 @@ where
                 let (next_resources, effects) = requests
                     .iter()
                     .cloned()
-                    .map(|request| -> (_, Effect) {
+                    .map(|request| {
                         (
                             ResourceLoadable {
                                 request: request.to_owned(),
@@ -152,7 +152,8 @@ where
                                         Box::new(result),
                                     ))
                                 })
-                                .boxed_local(),
+                                .boxed_local()
+                                .into(),
                         )
                     })
                     .unzip::<_, _, Vec<_>, Vec<_>>();

@@ -288,6 +288,7 @@ fn update_and_push_items_to_storage<Env: Environment + 'static>(
             }),
         })
         .boxed_local()
+        .into()
 }
 
 fn push_library_to_storage<Env: Environment + 'static>(library: &LibBucket) -> Effect {
@@ -311,6 +312,7 @@ fn push_library_to_storage<Env: Environment + 'static>(library: &LibBucket) -> E
         }),
     })
     .boxed_local()
+    .into()
 }
 
 fn push_items_to_api<Env: Environment + 'static>(items: Vec<LibItem>, auth_key: &str) -> Effect {
@@ -328,6 +330,7 @@ fn push_items_to_api<Env: Environment + 'static>(items: Vec<LibItem>, auth_key: 
         }),
     })
     .boxed_local()
+    .into()
 }
 
 fn pull_items_from_api<Env: Environment + 'static>(ids: Vec<String>, auth_key: &str) -> Effect {
@@ -339,6 +342,7 @@ fn pull_items_from_api<Env: Environment + 'static>(ids: Vec<String>, auth_key: &
     fetch_api::<Env, _, _>(&request)
         .map(move |result| Msg::Internal(Internal::LibraryPullResult(request, result)))
         .boxed_local()
+        .into()
 }
 
 fn plan_sync_with_api<Env: Environment + 'static>(library: &LibBucket, auth_key: &str) -> Effect {
@@ -385,4 +389,5 @@ fn plan_sync_with_api<Env: Environment + 'static>(library: &LibBucket, auth_key:
         })
         .map(move |result| Msg::Internal(Internal::LibrarySyncPlanResult(request, result)))
         .boxed_local()
+        .into()
 }

@@ -1,12 +1,11 @@
 use crate::runtime::msg::{Action, Event, Msg};
-use crate::runtime::{Effects, Environment, Model};
+use crate::runtime::{Effect, Effects, Environment, Model};
 use derivative::Derivative;
 use enclose::enclose;
 use futures::channel::mpsc::{channel, Receiver, Sender};
-use futures::{future, FutureExt};
+use futures::FutureExt;
 use serde::Serialize;
 use std::marker::PhantomData;
-use std::ops::DerefMut;
 use std::sync::{Arc, LockResult, RwLock, RwLockReadGuard};
 
 #[derive(Serialize)]
@@ -67,31 +66,33 @@ where
         if effects.has_changed {
             self.emit(RuntimeEvent::NewState);
         };
-        Env::exec(
-            future::join_all(effects.into_iter().map(
-                enclose!((self.clone() => runtime) move |effect| {
-                    effect.then(enclose!((runtime) move |msg| async move {
-                        match msg {
-                            Msg::Event(event) => {
-                                runtime.emit(RuntimeEvent::Event(event));
-                            }
-                            Msg::Internal(_) => {
-                                let effects = runtime
-                                    .model
-                                    .write()
-                                    .expect("model write failed")
-                                    .deref_mut()
-                                    .update(&msg);
-                                runtime.handle_effects(effects);
-                            }
-                            Msg::Action(_) => {
-                                panic!("effects are not allowed to resolve to action");
-                            }
-                        }
-                    }))
-                }),
-            ))
-            .map(|_| ()),
-        );
+        effects
+            .into_iter()
+            .for_each(enclose!((self.clone() => runtime) move |effect| {
+                match effect {
+                    Effect::Msg(msg) => {
+                        runtime.handle_effect_output(msg);
+                    }
+                    Effect::Future(future) => {
+                        Env::exec(future.then(enclose!((runtime) move |msg| async move {
+                            runtime.handle_effect_output(msg);
+                        })))
+                    }
+                }
+            }));
+    }
+    fn handle_effect_output(&self, msg: Msg) {
+        match msg {
+            Msg::Event(event) => {
+                self.emit(RuntimeEvent::Event(event));
+            }
+            Msg::Internal(_) => {
+                let effects = self.model.write().expect("model write failed").update(&msg);
+                self.handle_effects(effects);
+            }
+            Msg::Action(_) => {
+                panic!("effects are not allowed to resolve with action");
+            }
+        }
     }
 }

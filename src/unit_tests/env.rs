@@ -43,7 +43,7 @@ impl<T: Serialize> From<http::Request<T>> for Request {
     }
 }
 
-pub struct Env {}
+pub enum Env {}
 
 impl Env {
     pub fn reset() {
@@ -100,6 +100,9 @@ impl Environment for Env {
     }
     fn now() -> DateTime<Utc> {
         *NOW.read().unwrap()
+    }
+    fn log(message: String) {
+        println!("{}", message)
     }
 }
 

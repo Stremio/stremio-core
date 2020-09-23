@@ -4,7 +4,7 @@ use crate::constants::{
 use crate::models::ctx::{
     fetch_api, migrate_storage_schema, update_library, update_profile, CtxError,
 };
-use crate::runtime::msg::{Action, ActionCtx, ActionLoad, Event, Internal, Msg};
+use crate::runtime::msg::{Action, ActionCtx, Event, Internal, Msg};
 use crate::runtime::{Effect, Effects, Environment, Update};
 use crate::types::api::{
     APIRequest, AuthRequest, AuthResponse, CollectionResponse, DatastoreCommand, DatastoreRequest,
@@ -51,7 +51,7 @@ pub struct Ctx<Env: Environment> {
 impl<Env: Environment + 'static> Update for Ctx<Env> {
     fn update(&mut self, msg: &Msg) -> Effects {
         match msg {
-            Msg::Action(Action::Load(ActionLoad::Ctx)) => {
+            Msg::Action(Action::Ctx(ActionCtx::PullFromStorage)) => {
                 self.status = CtxStatus::Loading(CtxRequest::Storage);
                 Effects::one(pull_ctx_from_storage::<Env>()).unchanged()
             }
@@ -165,6 +165,7 @@ fn pull_ctx_from_storage<Env: Environment + 'static>() -> Effect {
         .map_err(CtxError::from)
         .map(|result| Msg::Internal(Internal::CtxStorageResult(result)))
         .boxed_local()
+        .into()
 }
 
 fn authenticate<Env: Environment + 'static>(auth_request: &AuthRequest) -> Effect {
@@ -192,6 +193,7 @@ fn authenticate<Env: Environment + 'static>(auth_request: &AuthRequest) -> Effec
             Msg::Internal(Internal::CtxAuthResult(auth_request, result))
         }))
         .boxed_local()
+        .into()
 }
 
 fn delete_session<Env: Environment + 'static>(auth_key: &str) -> Effect {
@@ -208,6 +210,7 @@ fn delete_session<Env: Environment + 'static>(auth_key: &str) -> Effect {
         }
     ))
     .boxed_local()
+    .into()
 }
 
 fn serialize_lib_bucket<S>(lib_bucket: &LibBucket, serializer: S) -> Result<S::Ok, S::Error>

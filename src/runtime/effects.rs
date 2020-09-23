@@ -1,8 +1,12 @@
 use crate::runtime::msg::Msg;
+use derive_more::From;
 use futures::future::LocalBoxFuture;
-use futures::{future, FutureExt};
 
-pub type Effect = LocalBoxFuture<'static, Msg>;
+#[derive(From)]
+pub enum Effect {
+    Msg(Msg),
+    Future(LocalBoxFuture<'static, Msg>),
+}
 
 pub struct Effects {
     effects: Vec<Effect>,
@@ -38,7 +42,16 @@ impl Effects {
         }
     }
     pub fn msg(msg: Msg) -> Self {
-        Effects::one(future::ready(msg).boxed_local())
+        Effects::one(Effect::Msg(msg))
+    }
+    pub fn future(future: LocalBoxFuture<'static, Msg>) -> Self {
+        Effects::one(Effect::Future(future))
+    }
+    pub fn msgs(msgs: Vec<Msg>) -> Self {
+        Effects::many(msgs.into_iter().map(Effect::from).collect())
+    }
+    pub fn futures(futures: Vec<LocalBoxFuture<'static, Msg>>) -> Self {
+        Effects::many(futures.into_iter().map(Effect::from).collect())
     }
     pub fn unchanged(mut self) -> Self {
         self.has_changed = false;
