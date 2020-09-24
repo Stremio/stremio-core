@@ -31,3 +31,34 @@ fn deserialize_stream_source_youtube() {
         "YouTube deserialized successfully"
     );
 }
+
+#[test]
+fn deserialize_stream_source_torrent() {
+    let torrents = vec![
+        StreamSource::Torrent {
+            info_hash: [1; 20],
+            file_idx: Some(1),
+        },
+        StreamSource::Torrent {
+            info_hash: [1; 20],
+            file_idx: None,
+        },
+    ];
+    let torrents_json = r#"
+    [
+        {
+            "infoHash": "0101010101010101010101010101010101010101",
+            "fileIdx": 1
+        },
+        {
+            "infoHash": "0101010101010101010101010101010101010101",
+            "fileIdx": null
+        }
+    ]
+    "#;
+    let torrents_deserialize: Vec<StreamSource> = serde_json::from_str(&torrents_json).unwrap();
+    assert_eq!(
+        torrents, torrents_deserialize,
+        "Torrent deserialized successfully"
+    );
+}
