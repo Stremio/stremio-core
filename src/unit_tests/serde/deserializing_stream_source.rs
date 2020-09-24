@@ -79,3 +79,20 @@ fn deserialize_stream_source_external() {
         "External deserialized successfully"
     );
 }
+
+#[test]
+fn deserialize_stream_source_player_frame() {
+    let player_frame = StreamSource::PlayerFrame {
+        player_frame_url: Url::parse("https://player_frame_url").unwrap(),
+    };
+    let player_frame_json = r#"
+    {
+        "playerFrameUrl": "https://player_frame_url/"
+    }
+    "#;
+    let player_frame_deserialize = serde_json::from_str(&player_frame_json).unwrap();
+    assert_eq!(
+        player_frame, player_frame_deserialize,
+        "PlayerFrame deserialized successfully"
+    );
+}
