@@ -62,3 +62,20 @@ fn deserialize_stream_source_torrent() {
         "Torrent deserialized successfully"
     );
 }
+
+#[test]
+fn deserialize_stream_source_external() {
+    let external = StreamSource::External {
+        external_url: Url::parse("https://external_url").unwrap(),
+    };
+    let external_json = r#"
+    {
+        "externalUrl": "https://external_url/"
+    }
+    "#;
+    let external_deserialize = serde_json::from_str(&external_json).unwrap();
+    assert_eq!(
+        external, external_deserialize,
+        "External deserialized successfully"
+    );
+}
