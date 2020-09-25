@@ -1,12 +1,12 @@
 use crate::constants::{LIBRARY_RECENT_STORAGE_KEY, LIBRARY_STORAGE_KEY};
 use crate::models::ctx::Ctx;
 use crate::runtime::msg::{Action, ActionCtx};
-use crate::runtime::{EnvFuture, Environment, Runtime};
+use crate::runtime::{Env, EnvFuture, Runtime};
 use crate::types::api::{APIResult, SuccessResponse, True};
 use crate::types::library::{LibBucket, LibItem};
 use crate::types::profile::{Auth, GDPRConsent, Profile, User};
 use crate::unit_tests::{
-    default_fetch_handler, Env, Request, FETCH_HANDLER, NOW, REQUESTS, STORAGE,
+    default_fetch_handler, Request, TestEnv, FETCH_HANDLER, NOW, REQUESTS, STORAGE,
 };
 use chrono::prelude::TimeZone;
 use chrono::Utc;
@@ -18,7 +18,7 @@ use stremio_derive::Model;
 fn actionctx_removefromlibrary() {
     #[derive(Model, Default)]
     struct TestModel {
-        ctx: Ctx<Env>,
+        ctx: Ctx<TestEnv>,
     }
     fn fetch_handler(request: Request) -> EnvFuture<Box<dyn Any>> {
         match request {
@@ -53,7 +53,7 @@ fn actionctx_removefromlibrary() {
         mtime: Utc.ymd(2020, 1, 2).and_hms_milli(0, 0, 0, 0),
         ..lib_item.to_owned()
     };
-    Env::reset();
+    TestEnv::reset();
     *FETCH_HANDLER.write().unwrap() = Box::new(fetch_handler);
     *NOW.write().unwrap() = Utc.ymd(2020, 1, 2).and_hms_milli(0, 0, 0, 0);
     STORAGE.write().unwrap().insert(
@@ -64,7 +64,7 @@ fn actionctx_removefromlibrary() {
         ))
         .unwrap(),
     );
-    let (runtime, _rx) = Runtime::<Env, _>::new(
+    let (runtime, _rx) = Runtime::<TestEnv, _>::new(
         TestModel {
             ctx: Ctx {
                 profile: Profile {
@@ -75,8 +75,8 @@ fn actionctx_removefromlibrary() {
                             email: "user_email".to_owned(),
                             fb_id: None,
                             avatar: None,
-                            last_modified: Env::now(),
-                            date_registered: Env::now(),
+                            last_modified: TestEnv::now(),
+                            date_registered: TestEnv::now(),
                             gdpr_consent: GDPRConsent {
                                 tos: true,
                                 privacy: true,
@@ -98,7 +98,7 @@ fn actionctx_removefromlibrary() {
         },
         1000,
     );
-    Env::run(|| {
+    TestEnv::run(|| {
         runtime.dispatch(Action::Ctx(ActionCtx::RemoveFromLibrary(
             lib_item.id.to_owned(),
         )))
@@ -139,7 +139,7 @@ fn actionctx_removefromlibrary() {
 fn actionctx_removefromlibrary_not_added() {
     #[derive(Model, Default)]
     struct TestModel {
-        ctx: Ctx<Env>,
+        ctx: Ctx<TestEnv>,
     }
     let lib_item = LibItem {
         id: "id".to_owned(),
@@ -154,12 +154,12 @@ fn actionctx_removefromlibrary_not_added() {
         poster_shape: Default::default(),
         behavior_hints: Default::default(),
     };
-    Env::reset();
+    TestEnv::reset();
     STORAGE.write().unwrap().insert(
         LIBRARY_RECENT_STORAGE_KEY.to_owned(),
         serde_json::to_string(&LibBucket::new(None, vec![lib_item.to_owned()])).unwrap(),
     );
-    let (runtime, _rx) = Runtime::<Env, _>::new(
+    let (runtime, _rx) = Runtime::<TestEnv, _>::new(
         TestModel {
             ctx: Ctx {
                 library: LibBucket {
@@ -173,7 +173,7 @@ fn actionctx_removefromlibrary_not_added() {
         },
         1000,
     );
-    Env::run(|| runtime.dispatch(Action::Ctx(ActionCtx::RemoveFromLibrary("id2".to_owned()))));
+    TestEnv::run(|| runtime.dispatch(Action::Ctx(ActionCtx::RemoveFromLibrary("id2".to_owned()))));
     assert_eq!(
         runtime.model().unwrap().ctx.library.items.get(&lib_item.id),
         Some(&lib_item),

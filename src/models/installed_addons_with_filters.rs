@@ -1,7 +1,7 @@
 use crate::models::common::eq_update;
 use crate::models::ctx::Ctx;
 use crate::runtime::msg::{Action, ActionLoad, Internal, Msg};
-use crate::runtime::{Effects, Environment, UpdateWithCtx};
+use crate::runtime::{Effects, Env, UpdateWithCtx};
 use crate::types::addon::{DescriptorPreview, ManifestPreview};
 use crate::types::profile::Profile;
 use itertools::Itertools;
@@ -31,11 +31,11 @@ impl Default for InstalledAddonsWithFilters {
     }
 }
 
-impl<Env> UpdateWithCtx<Ctx<Env>> for InstalledAddonsWithFilters
+impl<E> UpdateWithCtx<Ctx<E>> for InstalledAddonsWithFilters
 where
-    Env: Environment + 'static,
+    E: Env + 'static,
 {
-    fn update(&mut self, ctx: &Ctx<Env>, msg: &Msg) -> Effects {
+    fn update(&mut self, ctx: &Ctx<E>, msg: &Msg) -> Effects {
         match msg {
             Msg::Action(Action::Load(ActionLoad::InstalledAddonsWithFilters(selected))) => {
                 let selected_effects = eq_update(&mut self.selected, Some(selected.to_owned()));

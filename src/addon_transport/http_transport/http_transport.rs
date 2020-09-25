@@ -1,19 +1,19 @@
 use crate::addon_transport::http_transport::legacy::AddonLegacyTransport;
 use crate::addon_transport::AddonTransport;
 use crate::constants::{ADDON_LEGACY_PATH, ADDON_MANIFEST_PATH};
-use crate::runtime::{EnvError, EnvFuture, Environment};
+use crate::runtime::{Env, EnvError, EnvFuture};
 use crate::types::addon::{Manifest, ResourceRef, ResourceResponse};
 use futures::{future, FutureExt};
 use http::Request;
 use std::marker::PhantomData;
 use url::Url;
 
-pub struct AddonHTTPTransport<Env: Environment> {
+pub struct AddonHTTPTransport<E: Env> {
     transport_url: Url,
-    env: PhantomData<Env>,
+    env: PhantomData<E>,
 }
 
-impl<Env: Environment> AddonHTTPTransport<Env> {
+impl<E: Env> AddonHTTPTransport<E> {
     pub fn new(transport_url: Url) -> Self {
         AddonHTTPTransport {
             transport_url,
@@ -22,10 +22,10 @@ impl<Env: Environment> AddonHTTPTransport<Env> {
     }
 }
 
-impl<Env: Environment> AddonTransport for AddonHTTPTransport<Env> {
+impl<E: Env> AddonTransport for AddonHTTPTransport<E> {
     fn resource(&self, path: &ResourceRef) -> EnvFuture<ResourceResponse> {
         if self.transport_url.path().ends_with(ADDON_LEGACY_PATH) {
-            return AddonLegacyTransport::<Env>::new(&self.transport_url).resource(&path);
+            return AddonLegacyTransport::<E>::new(&self.transport_url).resource(&path);
         }
 
         if !self.transport_url.path().ends_with(ADDON_MANIFEST_PATH) {
@@ -41,16 +41,16 @@ impl<Env: Environment> AddonTransport for AddonHTTPTransport<Env> {
             .as_str()
             .replace(ADDON_MANIFEST_PATH, &path.to_string());
         let request = Request::get(&url).body(()).expect("request builder failed");
-        Env::fetch(request)
+        E::fetch(request)
     }
     fn manifest(&self) -> EnvFuture<Manifest> {
         if self.transport_url.path().ends_with(ADDON_LEGACY_PATH) {
-            return AddonLegacyTransport::<Env>::new(&self.transport_url).manifest();
+            return AddonLegacyTransport::<E>::new(&self.transport_url).manifest();
         }
 
         let request = Request::get(self.transport_url.as_str())
             .body(())
             .expect("request builder failed");
-        Env::fetch(request)
+        E::fetch(request)
     }
 }

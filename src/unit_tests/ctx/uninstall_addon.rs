@@ -1,11 +1,13 @@
 use crate::constants::PROFILE_STORAGE_KEY;
 use crate::models::ctx::Ctx;
 use crate::runtime::msg::{Action, ActionCtx};
-use crate::runtime::{EnvFuture, Environment, Runtime};
+use crate::runtime::{Env, EnvFuture, Runtime};
 use crate::types::addon::{Descriptor, DescriptorFlags, Manifest};
 use crate::types::api::{APIResult, SuccessResponse, True};
 use crate::types::profile::{Auth, GDPRConsent, Profile, User};
-use crate::unit_tests::{default_fetch_handler, Env, Request, FETCH_HANDLER, REQUESTS, STORAGE};
+use crate::unit_tests::{
+    default_fetch_handler, Request, TestEnv, FETCH_HANDLER, REQUESTS, STORAGE,
+};
 use futures::{future, FutureExt};
 use semver::Version;
 use std::any::Any;
@@ -16,7 +18,7 @@ use url::Url;
 fn actionctx_uninstalladdon() {
     #[derive(Model, Default)]
     struct TestModel {
-        ctx: Ctx<Env>,
+        ctx: Ctx<TestEnv>,
     }
     let profile = Profile {
         addons: vec![Descriptor {
@@ -40,12 +42,12 @@ fn actionctx_uninstalladdon() {
         }],
         ..Default::default()
     };
-    Env::reset();
+    TestEnv::reset();
     STORAGE.write().unwrap().insert(
         PROFILE_STORAGE_KEY.to_owned(),
         serde_json::to_string(&profile).unwrap(),
     );
-    let (runtime, _rx) = Runtime::<Env, _>::new(
+    let (runtime, _rx) = Runtime::<TestEnv, _>::new(
         TestModel {
             ctx: Ctx {
                 profile,
@@ -54,7 +56,7 @@ fn actionctx_uninstalladdon() {
         },
         1000,
     );
-    Env::run(|| {
+    TestEnv::run(|| {
         runtime.dispatch(Action::Ctx(ActionCtx::UninstallAddon(
             Url::parse("https://transport_url").unwrap(),
         )))
@@ -86,7 +88,7 @@ fn actionctx_uninstalladdon() {
 fn actionctx_uninstalladdon_with_user() {
     #[derive(Model, Default)]
     struct TestModel {
-        ctx: Ctx<Env>,
+        ctx: Ctx<TestEnv>,
     }
     fn fetch_handler(request: Request) -> EnvFuture<Box<dyn Any>> {
         match request {
@@ -111,8 +113,8 @@ fn actionctx_uninstalladdon_with_user() {
                 email: "user_email".to_owned(),
                 fb_id: None,
                 avatar: None,
-                last_modified: Env::now(),
-                date_registered: Env::now(),
+                last_modified: TestEnv::now(),
+                date_registered: TestEnv::now(),
                 gdpr_consent: GDPRConsent {
                     tos: true,
                     privacy: true,
@@ -142,13 +144,13 @@ fn actionctx_uninstalladdon_with_user() {
         }],
         ..Default::default()
     };
-    Env::reset();
+    TestEnv::reset();
     *FETCH_HANDLER.write().unwrap() = Box::new(fetch_handler);
     STORAGE.write().unwrap().insert(
         PROFILE_STORAGE_KEY.to_owned(),
         serde_json::to_string(&profile).unwrap(),
     );
-    let (runtime, _rx) = Runtime::<Env, _>::new(
+    let (runtime, _rx) = Runtime::<TestEnv, _>::new(
         TestModel {
             ctx: Ctx {
                 profile,
@@ -157,7 +159,7 @@ fn actionctx_uninstalladdon_with_user() {
         },
         1000,
     );
-    Env::run(|| {
+    TestEnv::run(|| {
         runtime.dispatch(Action::Ctx(ActionCtx::UninstallAddon(
             Url::parse("https://transport_url").unwrap(),
         )))
@@ -201,7 +203,7 @@ fn actionctx_uninstalladdon_with_user() {
 fn actionctx_uninstalladdon_protected() {
     #[derive(Model, Default)]
     struct TestModel {
-        ctx: Ctx<Env>,
+        ctx: Ctx<TestEnv>,
     }
     let addon = Descriptor {
         manifest: Manifest {
@@ -229,12 +231,12 @@ fn actionctx_uninstalladdon_protected() {
         addons: vec![addon.to_owned()],
         ..Default::default()
     };
-    Env::reset();
+    TestEnv::reset();
     STORAGE.write().unwrap().insert(
         PROFILE_STORAGE_KEY.to_owned(),
         serde_json::to_string(&profile).unwrap(),
     );
-    let (runtime, _rx) = Runtime::<Env, _>::new(
+    let (runtime, _rx) = Runtime::<TestEnv, _>::new(
         TestModel {
             ctx: Ctx {
                 profile,
@@ -243,7 +245,7 @@ fn actionctx_uninstalladdon_protected() {
         },
         1000,
     );
-    Env::run(|| {
+    TestEnv::run(|| {
         runtime.dispatch(Action::Ctx(ActionCtx::UninstallAddon(
             Url::parse("https://transport_url").unwrap(),
         )))
@@ -273,7 +275,7 @@ fn actionctx_uninstalladdon_protected() {
 fn actionctx_uninstalladdon_not_installed() {
     #[derive(Model, Default)]
     struct TestModel {
-        ctx: Ctx<Env>,
+        ctx: Ctx<TestEnv>,
     }
     let addon = Descriptor {
         manifest: Manifest {
@@ -298,12 +300,12 @@ fn actionctx_uninstalladdon_not_installed() {
         addons: vec![addon.to_owned()],
         ..Default::default()
     };
-    Env::reset();
+    TestEnv::reset();
     STORAGE.write().unwrap().insert(
         PROFILE_STORAGE_KEY.to_owned(),
         serde_json::to_string(&profile).unwrap(),
     );
-    let (runtime, _rx) = Runtime::<Env, _>::new(
+    let (runtime, _rx) = Runtime::<TestEnv, _>::new(
         TestModel {
             ctx: Ctx {
                 profile,
@@ -312,7 +314,7 @@ fn actionctx_uninstalladdon_not_installed() {
         },
         1000,
     );
-    Env::run(|| {
+    TestEnv::run(|| {
         runtime.dispatch(Action::Ctx(ActionCtx::UninstallAddon(
             Url::parse("https://transport_url2").unwrap(),
         )))

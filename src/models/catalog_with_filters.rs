@@ -4,7 +4,7 @@ use crate::models::common::{
 };
 use crate::models::ctx::Ctx;
 use crate::runtime::msg::{Action, ActionLoad, Internal, Msg};
-use crate::runtime::{Effects, Environment, UpdateWithCtx};
+use crate::runtime::{Effects, Env, UpdateWithCtx};
 use crate::types::addon::{
     DescriptorPreview, Manifest, ManifestCatalog, ManifestExtraProp, ResourceRef, ResourceRequest,
     ResourceResponse,
@@ -103,17 +103,17 @@ impl<T: CatalogResourceAdapter> Default for CatalogWithFilters<T> {
     }
 }
 
-impl<Env, T> UpdateWithCtx<Ctx<Env>> for CatalogWithFilters<T>
+impl<E, T> UpdateWithCtx<Ctx<E>> for CatalogWithFilters<T>
 where
-    Env: Environment + 'static,
+    E: Env + 'static,
     T: CatalogResourceAdapter,
     Vec<T>: TryFrom<ResourceResponse, Error = &'static str>,
 {
-    fn update(&mut self, ctx: &Ctx<Env>, msg: &Msg) -> Effects {
+    fn update(&mut self, ctx: &Ctx<E>, msg: &Msg) -> Effects {
         match msg {
             Msg::Action(Action::Load(ActionLoad::CatalogWithFilters(selected))) => {
                 let selected_effects = eq_update(&mut self.selected, Some(selected.to_owned()));
-                let catalog_effects = resource_update_with_vector_content::<Env, _>(
+                let catalog_effects = resource_update_with_vector_content::<E, _>(
                     &mut self.catalog_resource,
                     ResourceAction::ResourceRequested {
                         request: &selected.request,
@@ -135,7 +135,7 @@ where
                     .join(selectable_effects)
             }
             Msg::Internal(Internal::ResourceRequestResult(request, result)) => {
-                let catalog_effects = resource_update_with_vector_content::<Env, _>(
+                let catalog_effects = resource_update_with_vector_content::<E, _>(
                     &mut self.catalog_resource,
                     ResourceAction::ResourceRequestResult {
                         request,

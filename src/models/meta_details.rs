@@ -5,7 +5,7 @@ use crate::models::common::{
 };
 use crate::models::ctx::Ctx;
 use crate::runtime::msg::{Action, ActionLoad, Internal, Msg};
-use crate::runtime::{Effects, Environment, UpdateWithCtx};
+use crate::runtime::{Effects, Env, UpdateWithCtx};
 use crate::types::addon::{AggrRequest, ResourceRef};
 use crate::types::resource::{MetaItem, Stream};
 use serde::{Deserialize, Serialize};
@@ -23,12 +23,12 @@ pub struct MetaDetails {
     pub streams_resources: Vec<ResourceLoadable<Vec<Stream>>>,
 }
 
-impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for MetaDetails {
-    fn update(&mut self, ctx: &Ctx<Env>, msg: &Msg) -> Effects {
+impl<E: Env + 'static> UpdateWithCtx<Ctx<E>> for MetaDetails {
+    fn update(&mut self, ctx: &Ctx<E>, msg: &Msg) -> Effects {
         match msg {
             Msg::Action(Action::Load(ActionLoad::MetaDetails(selected))) => {
                 let selected_effects = eq_update(&mut self.selected, Some(selected.to_owned()));
-                let meta_effects = resources_update::<Env, _>(
+                let meta_effects = resources_update::<E, _>(
                     &mut self.meta_resources,
                     ResourcesAction::ResourcesRequested {
                         request: &AggrRequest::AllOfResource(selected.meta_resource_ref.to_owned()),
@@ -43,7 +43,7 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for MetaDetails {
                         ) {
                             eq_update(&mut self.streams_resources, vec![streams_resource])
                         } else {
-                            resources_update_with_vector_content::<Env, _>(
+                            resources_update_with_vector_content::<E, _>(
                                 &mut self.streams_resources,
                                 ResourcesAction::ResourcesRequested {
                                     request: &AggrRequest::AllOfResource(
@@ -67,7 +67,7 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for MetaDetails {
             Msg::Internal(Internal::ResourceRequestResult(request, result))
                 if request.path.resource == META_RESOURCE_NAME =>
             {
-                let meta_effects = resources_update::<Env, _>(
+                let meta_effects = resources_update::<E, _>(
                     &mut self.meta_resources,
                     ResourcesAction::ResourceRequestResult {
                         request,
@@ -96,7 +96,7 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for MetaDetails {
             Msg::Internal(Internal::ResourceRequestResult(request, result))
                 if request.path.resource == STREAM_RESOURCE_NAME =>
             {
-                resources_update_with_vector_content::<Env, _>(
+                resources_update_with_vector_content::<E, _>(
                     &mut self.streams_resources,
                     ResourcesAction::ResourceRequestResult {
                         request,

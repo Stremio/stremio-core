@@ -1,7 +1,7 @@
 use crate::constants::LIBRARY_COLLECTION_NAME;
 use crate::models::ctx::{fetch_api, update_library, update_profile};
 use crate::runtime::msg::{Action, ActionCtx, Event, Internal, Msg};
-use crate::runtime::{Effect, Effects, Environment, Update};
+use crate::runtime::{Effect, Effects, Env, Update};
 use crate::types::api::{
     APIRequest, AuthRequest, AuthResponse, CollectionResponse, DatastoreCommand, DatastoreRequest,
     SuccessResponse,
@@ -25,7 +25,7 @@ pub enum CtxStatus {
 
 #[derive(Derivative, Serialize)]
 #[derivative(Default)]
-pub struct Ctx<Env: Environment> {
+pub struct Ctx<E: Env> {
     pub profile: Profile,
     // TODO StreamsBucket
     // TODO SubtitlesBucket
@@ -35,10 +35,10 @@ pub struct Ctx<Env: Environment> {
     #[serde(skip)]
     pub status: CtxStatus,
     #[serde(skip)]
-    pub env: PhantomData<Env>,
+    pub env: PhantomData<E>,
 }
 
-impl<Env: Environment> Ctx<Env> {
+impl<E: Env> Ctx<E> {
     pub fn new(profile: Profile, library: LibBucket) -> Self {
         Ctx {
             profile,
@@ -49,21 +49,21 @@ impl<Env: Environment> Ctx<Env> {
     }
 }
 
-impl<Env: Environment + 'static> Update for Ctx<Env> {
+impl<E: Env + 'static> Update for Ctx<E> {
     fn update(&mut self, msg: &Msg) -> Effects {
         match msg {
             Msg::Action(Action::Ctx(ActionCtx::Authenticate(auth_request))) => {
                 self.status = CtxStatus::Loading(auth_request.to_owned());
-                Effects::one(authenticate::<Env>(auth_request)).unchanged()
+                Effects::one(authenticate::<E>(auth_request)).unchanged()
             }
             Msg::Action(Action::Ctx(ActionCtx::Logout)) => {
                 let uid = self.profile.uid();
                 let session_effects = match &self.profile.auth {
-                    Some(auth) => Effects::one(delete_session::<Env>(&auth.key)).unchanged(),
+                    Some(auth) => Effects::one(delete_session::<E>(&auth.key)).unchanged(),
                     _ => Effects::none().unchanged(),
                 };
-                let profile_effects = update_profile::<Env>(&mut self.profile, &self.status, msg);
-                let library_effects = update_library::<Env>(
+                let profile_effects = update_profile::<E>(&mut self.profile, &self.status, msg);
+                let library_effects = update_library::<E>(
                     &mut self.library,
                     self.profile.auth.as_ref().map(|auth| &auth.key),
                     &self.status,
@@ -77,8 +77,8 @@ impl<Env: Environment + 'static> Update for Ctx<Env> {
                     .join(library_effects)
             }
             Msg::Internal(Internal::CtxAuthResult(auth_request, result)) => {
-                let profile_effects = update_profile::<Env>(&mut self.profile, &self.status, msg);
-                let library_effects = update_library::<Env>(
+                let profile_effects = update_profile::<E>(&mut self.profile, &self.status, msg);
+                let library_effects = update_library::<E>(
                     &mut self.library,
                     self.profile.auth.as_ref().map(|auth| &auth.key),
                     &self.status,
@@ -108,8 +108,8 @@ impl<Env: Environment + 'static> Update for Ctx<Env> {
                 profile_effects.join(library_effects).join(ctx_effects)
             }
             _ => {
-                let profile_effects = update_profile::<Env>(&mut self.profile, &self.status, &msg);
-                let library_effects = update_library::<Env>(
+                let profile_effects = update_profile::<E>(&mut self.profile, &self.status, &msg);
+                let library_effects = update_library::<E>(
                     &mut self.library,
                     self.profile.auth.as_ref().map(|auth| &auth.key),
                     &self.status,
@@ -121,17 +121,17 @@ impl<Env: Environment + 'static> Update for Ctx<Env> {
     }
 }
 
-fn authenticate<Env: Environment + 'static>(auth_request: &AuthRequest) -> Effect {
-    fetch_api::<Env, _, _>(&APIRequest::Auth(auth_request.to_owned()))
+fn authenticate<E: Env + 'static>(auth_request: &AuthRequest) -> Effect {
+    fetch_api::<E, _, _>(&APIRequest::Auth(auth_request.to_owned()))
         .map_ok(|AuthResponse { key, user }| Auth { key, user })
         .and_then(|auth| {
             future::try_join(
-                fetch_api::<Env, _, _>(&APIRequest::AddonCollectionGet {
+                fetch_api::<E, _, _>(&APIRequest::AddonCollectionGet {
                     auth_key: auth.key.to_owned(),
                     update: true,
                 })
                 .map_ok(|CollectionResponse { addons, .. }| addons),
-                fetch_api::<Env, _, _>(&DatastoreRequest {
+                fetch_api::<E, _, _>(&DatastoreRequest {
                     auth_key: auth.key.to_owned(),
                     collection: LIBRARY_COLLECTION_NAME.to_owned(),
                     command: DatastoreCommand::Get {
@@ -149,8 +149,8 @@ fn authenticate<Env: Environment + 'static>(auth_request: &AuthRequest) -> Effec
         .into()
 }
 
-fn delete_session<Env: Environment + 'static>(auth_key: &str) -> Effect {
-    fetch_api::<Env, _, SuccessResponse>(&APIRequest::Logout {
+fn delete_session<E: Env + 'static>(auth_key: &str) -> Effect {
+    fetch_api::<E, _, SuccessResponse>(&APIRequest::Logout {
         auth_key: auth_key.to_owned(),
     })
     .map(enclose!((auth_key.to_owned() => auth_key) move |result|

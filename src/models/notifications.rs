@@ -19,8 +19,8 @@ const LAST_VID_IDS: &str = "lastVideosIds";
 pub struct Notifications {
     pub groups: Vec<ResourceLoadable<Vec<MetaItem>>>,
 }
-impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for Notifications {
-    fn update(&mut self, ctx: &Ctx<Env>, msg: &Msg) -> Effects {
+impl<E: Env + 'static> UpdateWithCtx<Ctx<E>> for Notifications {
+    fn update(&mut self, ctx: &Ctx<E>, msg: &Msg) -> Effects {
         match msg {
             Msg::Action(Action::Load(ActionLoad::Notifications)) => {
                 let lib = &ctx.library;
@@ -78,7 +78,7 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for Notifications {
                                             request: addon_req.to_owned(),
                                             content: Loadable::Loading,
                                         },
-                                        Env::addon_transport(&addon_req.base)
+                                        E::addon_transport(&addon_req.base)
                                             .resource(&addon_req.path)
                                             .map(move |result| {
                                                 Msg::Internal(Internal::ResourceRequestResult(
@@ -100,7 +100,7 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for Notifications {
             }
             Msg::Internal(ResourceRequestResult(req, result)) => {
                 if let Some(idx) = self.groups.iter().position(|g| g.request == *req) {
-                    resources_update::<Env, _>(
+                    resources_update::<E, _>(
                         &mut self.groups,
                         ResourcesAction::ResourceRequestResult {
                             request: req,

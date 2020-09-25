@@ -4,7 +4,7 @@ use crate::models::common::{
 };
 use crate::models::ctx::Ctx;
 use crate::runtime::msg::{Action, ActionLoad, Internal, Msg};
-use crate::runtime::{Effects, Environment, UpdateWithCtx};
+use crate::runtime::{Effects, Env, UpdateWithCtx};
 use crate::types::addon::{AggrRequest, ExtraProp};
 use crate::types::resource::MetaItemPreview;
 use serde::{Deserialize, Serialize};
@@ -20,12 +20,12 @@ pub struct CatalogsWithExtra {
     pub catalog_resources: Vec<ResourceLoadable<Vec<MetaItemPreview>>>,
 }
 
-impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for CatalogsWithExtra {
-    fn update(&mut self, ctx: &Ctx<Env>, msg: &Msg) -> Effects {
+impl<E: Env + 'static> UpdateWithCtx<Ctx<E>> for CatalogsWithExtra {
+    fn update(&mut self, ctx: &Ctx<E>, msg: &Msg) -> Effects {
         match msg {
             Msg::Action(Action::Load(ActionLoad::CatalogsWithExtra(selected))) => {
                 let selected_effects = eq_update(&mut self.selected, Some(selected.to_owned()));
-                let catalogs_effects = resources_update_with_vector_content::<Env, _>(
+                let catalogs_effects = resources_update_with_vector_content::<E, _>(
                     &mut self.catalog_resources,
                     ResourcesAction::ResourcesRequested {
                         request: &AggrRequest::AllCatalogs {
@@ -42,7 +42,7 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for CatalogsWithExtra {
                 selected_effects.join(catalogs_effects)
             }
             Msg::Internal(Internal::ResourceRequestResult(request, result)) => {
-                resources_update_with_vector_content::<Env, _>(
+                resources_update_with_vector_content::<E, _>(
                     &mut self.catalog_resources,
                     ResourcesAction::ResourceRequestResult {
                         request,
@@ -52,7 +52,7 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for CatalogsWithExtra {
                 )
             }
             Msg::Internal(Internal::ProfileChanged(_)) => match &self.selected {
-                Some(selected) => resources_update_with_vector_content::<Env, _>(
+                Some(selected) => resources_update_with_vector_content::<E, _>(
                     &mut self.catalog_resources,
                     ResourcesAction::ResourcesRequested {
                         request: &AggrRequest::AllCatalogs {

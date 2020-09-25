@@ -5,7 +5,7 @@ use crate::models::common::{
 };
 use crate::models::ctx::Ctx;
 use crate::runtime::msg::{Action, ActionLoad, ActionPlayer, Internal, Msg};
-use crate::runtime::{Effects, Environment, UpdateWithCtx};
+use crate::runtime::{Effects, Env, UpdateWithCtx};
 use crate::types::addon::{AggrRequest, ResourceRef, ResourceRequest};
 use crate::types::library::{LibBucket, LibItem, LibItemBehaviorHints, LibItemState};
 use crate::types::profile::Settings as ProfileSettings;
@@ -35,13 +35,13 @@ pub struct Player {
     pub lib_item: Option<LibItem>,
 }
 
-impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for Player {
-    fn update(&mut self, ctx: &Ctx<Env>, msg: &Msg) -> Effects {
+impl<E: Env + 'static> UpdateWithCtx<Ctx<E>> for Player {
+    fn update(&mut self, ctx: &Ctx<E>, msg: &Msg) -> Effects {
         match msg {
             Msg::Action(Action::Load(ActionLoad::Player(selected))) => {
                 let selected_effects = eq_update(&mut self.selected, Some(selected.to_owned()));
                 let meta_effects = match &selected.meta_resource_request {
-                    Some(meta_resource_request) => resource_update::<Env, _>(
+                    Some(meta_resource_request) => resource_update::<E, _>(
                         &mut self.meta_resource,
                         ResourceAction::ResourceRequested {
                             request: meta_resource_request,
@@ -50,7 +50,7 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for Player {
                     _ => eq_update(&mut self.meta_resource, None),
                 };
                 let subtitles_effects = match &selected.subtitles_resource_ref {
-                    Some(subtitles_resource_ref) => resources_update_with_vector_content::<Env, _>(
+                    Some(subtitles_resource_ref) => resources_update_with_vector_content::<E, _>(
                         &mut self.subtitles_resources,
                         ResourcesAction::ResourcesRequested {
                             request: &AggrRequest::AllOfResource(subtitles_resource_ref.to_owned()),
@@ -69,7 +69,7 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for Player {
                     &ctx.profile.settings,
                 );
                 let lib_item_effects =
-                    lib_item_update::<Env>(&mut self.lib_item, &self.meta_resource, &ctx.library);
+                    lib_item_update::<E>(&mut self.lib_item, &self.meta_resource, &ctx.library);
                 selected_effects
                     .join(meta_effects)
                     .join(subtitles_effects)
@@ -90,7 +90,7 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for Player {
                     &ctx.profile.settings,
                 );
                 let lib_item_effects =
-                    lib_item_update::<Env>(&mut self.lib_item, &self.meta_resource, &ctx.library);
+                    lib_item_update::<E>(&mut self.lib_item, &self.meta_resource, &ctx.library);
                 selected_effects
                     .join(meta_effects)
                     .join(subtitles_effects)
@@ -109,7 +109,7 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for Player {
                     Some(lib_item),
                 ) = (&self.selected, &mut self.lib_item)
                 {
-                    lib_item.state.last_watched = Some(Env::now());
+                    lib_item.state.last_watched = Some(E::now());
                     if lib_item.state.video_id != Some(video_id.to_owned()) {
                         lib_item.state.video_id = Some(video_id.to_owned());
                         lib_item.state.overall_time_watched = lib_item
@@ -150,7 +150,7 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for Player {
                 _ => Effects::none().unchanged(),
             },
             Msg::Internal(Internal::ResourceRequestResult(request, result)) => {
-                let meta_effects = resource_update::<Env, _>(
+                let meta_effects = resource_update::<E, _>(
                     &mut self.meta_resource,
                     ResourceAction::ResourceRequestResult {
                         request,
@@ -158,7 +158,7 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for Player {
                         limit: &None,
                     },
                 );
-                let subtitles_effects = resources_update_with_vector_content::<Env, _>(
+                let subtitles_effects = resources_update_with_vector_content::<E, _>(
                     &mut self.subtitles_resources,
                     ResourcesAction::ResourceRequestResult {
                         request,
@@ -176,7 +176,7 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for Player {
                     &ctx.profile.settings,
                 );
                 let lib_item_effects =
-                    lib_item_update::<Env>(&mut self.lib_item, &self.meta_resource, &ctx.library);
+                    lib_item_update::<E>(&mut self.lib_item, &self.meta_resource, &ctx.library);
                 meta_effects
                     .join(subtitles_effects)
                     .join(next_video_effects)
@@ -216,7 +216,7 @@ fn next_video_update(
     }
 }
 
-fn lib_item_update<Env: Environment>(
+fn lib_item_update<E: Env>(
     lib_item: &mut Option<LibItem>,
     meta_resource: &Option<ResourceLoadable<MetaItem>>,
     library: &LibBucket,
@@ -256,8 +256,8 @@ fn lib_item_update<Env: Environment>(
                     id: meta_item.id.to_owned(),
                     removed: true,
                     temp: true,
-                    ctime: Some(Env::now()),
-                    mtime: Env::now(),
+                    ctime: Some(E::now()),
+                    mtime: E::now(),
                     state: LibItemState::default(),
                     name: meta_item.name.to_owned(),
                     type_name: meta_item.type_name.to_owned(),

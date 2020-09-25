@@ -1,7 +1,7 @@
 use crate::constants::OFFICIAL_ADDONS;
 use crate::models::common::Loadable;
 use crate::runtime::msg::{Internal, Msg};
-use crate::runtime::{Effects, EnvError, Environment};
+use crate::runtime::{Effects, Env, EnvError};
 use crate::types::addon::{Descriptor, Manifest};
 use futures::FutureExt;
 use serde::Serialize;
@@ -29,7 +29,7 @@ pub enum DescriptorAction<'a> {
     },
 }
 
-pub fn descriptor_update<Env: Environment + 'static>(
+pub fn descriptor_update<E: Env + 'static>(
     descriptor: &mut Option<DescriptorLoadable>,
     action: DescriptorAction,
 ) -> Effects {
@@ -46,7 +46,7 @@ pub fn descriptor_update<Env: Environment + 'static>(
                     content: Loadable::Loading,
                 });
                 Effects::future(
-                    Env::addon_transport(&transport_url)
+                    E::addon_transport(&transport_url)
                         .manifest()
                         .map(move |result| {
                             Msg::Internal(Internal::ManifestRequestResult(transport_url, result))

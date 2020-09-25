@@ -3,7 +3,7 @@ use crate::models::common::{
 };
 use crate::models::ctx::Ctx;
 use crate::runtime::msg::{Action, ActionLoad, Internal, Msg};
-use crate::runtime::{Effects, Environment, UpdateWithCtx};
+use crate::runtime::{Effects, Env, UpdateWithCtx};
 use serde::{Deserialize, Serialize};
 use url::Url;
 
@@ -18,8 +18,8 @@ pub struct AddonDetails {
     pub addon: Option<DescriptorLoadable>,
 }
 
-impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for AddonDetails {
-    fn update(&mut self, ctx: &Ctx<Env>, msg: &Msg) -> Effects {
+impl<E: Env + 'static> UpdateWithCtx<Ctx<E>> for AddonDetails {
+    fn update(&mut self, ctx: &Ctx<E>, msg: &Msg) -> Effects {
         match msg {
             Msg::Action(Action::Load(ActionLoad::AddonDetails(selected))) => {
                 let selected_effects = eq_update(&mut self.selected, Some(selected.to_owned()));
@@ -36,7 +36,7 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for AddonDetails {
                             content: Loadable::Ready(addon.to_owned()),
                         }),
                     ),
-                    None => descriptor_update::<Env>(
+                    None => descriptor_update::<E>(
                         &mut self.addon,
                         DescriptorAction::DescriptorRequested {
                             transport_url: &selected.transport_url,
@@ -51,7 +51,7 @@ impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for AddonDetails {
                 selected_effects.join(addon_effects)
             }
             Msg::Internal(Internal::ManifestRequestResult(transport_url, result)) => {
-                descriptor_update::<Env>(
+                descriptor_update::<E>(
                     &mut self.addon,
                     DescriptorAction::ManifestRequestResult {
                         transport_url,

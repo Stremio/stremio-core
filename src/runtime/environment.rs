@@ -65,7 +65,7 @@ impl From<serde_json::Error> for EnvError {
 
 pub type EnvFuture<T> = LocalBoxFuture<'static, Result<T, EnvError>>;
 
-pub trait Environment {
+pub trait Env {
     fn fetch<IN, OUT>(request: Request<IN>) -> EnvFuture<OUT>
     where
         IN: Serialize,
@@ -111,12 +111,12 @@ pub trait Environment {
     }
 }
 
-fn migrate_storage_schema_v1<Env: Environment + 'static>() -> EnvFuture<()> {
+fn migrate_storage_schema_v1<E: Env + 'static>() -> EnvFuture<()> {
     future::try_join_all(vec![
-        Env::set_storage(SCHEMA_VERSION_STORAGE_KEY, Some(&1)),
-        Env::set_storage::<()>(PROFILE_STORAGE_KEY, None),
-        Env::set_storage::<()>(LIBRARY_RECENT_STORAGE_KEY, None),
-        Env::set_storage::<()>(LIBRARY_STORAGE_KEY, None),
+        E::set_storage(SCHEMA_VERSION_STORAGE_KEY, Some(&1)),
+        E::set_storage::<()>(PROFILE_STORAGE_KEY, None),
+        E::set_storage::<()>(LIBRARY_RECENT_STORAGE_KEY, None),
+        E::set_storage::<()>(LIBRARY_STORAGE_KEY, None),
     ])
     .map_ok(|_| ())
     .boxed_local()

@@ -3,7 +3,7 @@ use crate::constants::{
 };
 use crate::models::ctx::{fetch_api, CtxError, CtxStatus, OtherError};
 use crate::runtime::msg::{Action, ActionCtx, Event, Internal, Msg};
-use crate::runtime::{Effect, Effects, Environment};
+use crate::runtime::{Effect, Effects, Env};
 use crate::types::api::{DatastoreCommand, DatastoreRequest, LibItemModified, SuccessResponse};
 use crate::types::library::{
     LibBucket, LibBucketBorrowed, LibItem, LibItemBehaviorHints, LibItemState,
@@ -13,7 +13,7 @@ use futures::future::Either;
 use futures::{future, FutureExt, TryFutureExt};
 use std::collections::HashMap;
 
-pub fn update_library<Env: Environment + 'static>(
+pub fn update_library<E: Env + 'static>(
     library: &mut LibBucket,
     auth_key: Option<&AuthKey>,
     status: &CtxStatus,
@@ -41,8 +41,8 @@ pub fn update_library<Env: Environment + 'static>(
                 },
                 removed: false,
                 temp: false,
-                mtime: Env::now(),
-                ctime: Some(Env::now()),
+                mtime: E::now(),
+                ctime: Some(E::now()),
                 state: LibItemState::default(),
             };
             if let Some(LibItem { ctime, state, .. }) = library.items.get(&meta_preview.id) {
@@ -90,9 +90,7 @@ pub fn update_library<Env: Environment + 'static>(
             .unchanged(),
         },
         Msg::Action(Action::Ctx(ActionCtx::SyncLibraryWithAPI)) => match auth_key {
-            Some(auth_key) => {
-                Effects::one(plan_sync_with_api::<Env>(library, auth_key)).unchanged()
-            }
+            Some(auth_key) => Effects::one(plan_sync_with_api::<E>(library, auth_key)).unchanged(),
             _ => Effects::msg(Msg::Event(Event::Error {
                 error: CtxError::from(OtherError::UserNotLoggedIn),
                 source: Box::new(Event::LibrarySyncWithAPIPlanned {
@@ -103,16 +101,15 @@ pub fn update_library<Env: Environment + 'static>(
         },
         Msg::Internal(Internal::UpdateLibraryItem(lib_item)) => {
             let mut lib_item = lib_item.to_owned();
-            lib_item.mtime = Env::now();
+            lib_item.mtime = E::now();
             let push_to_api_effects = match auth_key {
-                Some(auth_key) => Effects::one(push_items_to_api::<Env>(
-                    vec![lib_item.to_owned()],
-                    auth_key,
-                ))
-                .unchanged(),
+                Some(auth_key) => {
+                    Effects::one(push_items_to_api::<E>(vec![lib_item.to_owned()], auth_key))
+                        .unchanged()
+                }
                 _ => Effects::none().unchanged(),
             };
-            let push_to_storage_effects = Effects::one(update_and_push_items_to_storage::<Env>(
+            let push_to_storage_effects = Effects::one(update_and_push_items_to_storage::<E>(
                 library,
                 vec![lib_item],
             ));
@@ -121,7 +118,7 @@ pub fn update_library<Env: Environment + 'static>(
                 .join(Effects::msg(Msg::Internal(Internal::LibraryChanged(true))))
         }
         Msg::Internal(Internal::LibraryChanged(persisted)) if !persisted => {
-            Effects::one(push_library_to_storage::<Env>(library)).unchanged()
+            Effects::one(push_library_to_storage::<E>(library)).unchanged()
         }
         Msg::Internal(Internal::CtxAuthResult(auth_request, result)) => match (status, result) {
             (CtxStatus::Loading(loading_auth_request), Ok((auth, _, lib_items)))
@@ -156,12 +153,12 @@ pub fn update_library<Env: Environment + 'static>(
                 let push_items_to_api_effects = if push_items.is_empty() {
                     Effects::none().unchanged()
                 } else {
-                    Effects::one(push_items_to_api::<Env>(push_items, loading_auth_key)).unchanged()
+                    Effects::one(push_items_to_api::<E>(push_items, loading_auth_key)).unchanged()
                 };
                 let pull_items_from_api_effects = if pull_ids.is_empty() {
                     Effects::none().unchanged()
                 } else {
-                    Effects::one(pull_items_from_api::<Env>(
+                    Effects::one(pull_items_from_api::<E>(
                         pull_ids.to_owned(),
                         loading_auth_key,
                     ))
@@ -193,7 +190,7 @@ pub fn update_library<Env: Environment + 'static>(
             Ok(items) => Effects::msg(Msg::Event(Event::LibraryItemsPulledFromAPI {
                 ids: ids.to_owned(),
             }))
-            .join(Effects::one(update_and_push_items_to_storage::<Env>(
+            .join(Effects::one(update_and_push_items_to_storage::<E>(
                 library,
                 items.to_owned(),
             )))
@@ -210,7 +207,7 @@ pub fn update_library<Env: Environment + 'static>(
     }
 }
 
-fn update_and_push_items_to_storage<Env: Environment + 'static>(
+fn update_and_push_items_to_storage<E: Env + 'static>(
     library: &mut LibBucket,
     items: Vec<LibItem>,
 ) -> Effect {
@@ -224,26 +221,26 @@ fn update_and_push_items_to_storage<Env: Environment + 'static>(
     let push_to_storage_future = if library.items.len() <= LIBRARY_RECENT_COUNT {
         Either::Left(
             future::try_join_all(vec![
-                Env::set_storage(LIBRARY_RECENT_STORAGE_KEY, Some(&library)),
-                Env::set_storage::<()>(LIBRARY_STORAGE_KEY, None),
+                E::set_storage(LIBRARY_RECENT_STORAGE_KEY, Some(&library)),
+                E::set_storage::<()>(LIBRARY_STORAGE_KEY, None),
             ])
             .map_ok(|_| ()),
         )
     } else {
         let (recent_items, other_items) = library.split_items_by_recent();
         if are_items_in_recent {
-            Either::Right(Either::Left(Env::set_storage(
+            Either::Right(Either::Left(E::set_storage(
                 LIBRARY_RECENT_STORAGE_KEY,
                 Some(&LibBucketBorrowed::new(&library.uid, &recent_items)),
             )))
         } else {
             Either::Right(Either::Right(
                 future::try_join_all(vec![
-                    Env::set_storage(
+                    E::set_storage(
                         LIBRARY_RECENT_STORAGE_KEY,
                         Some(&LibBucketBorrowed::new(&library.uid, &recent_items)),
                     ),
-                    Env::set_storage(
+                    E::set_storage(
                         LIBRARY_STORAGE_KEY,
                         Some(&LibBucketBorrowed::new(&library.uid, &other_items)),
                     ),
@@ -264,15 +261,15 @@ fn update_and_push_items_to_storage<Env: Environment + 'static>(
         .into()
 }
 
-fn push_library_to_storage<Env: Environment + 'static>(library: &LibBucket) -> Effect {
+fn push_library_to_storage<E: Env + 'static>(library: &LibBucket) -> Effect {
     let ids = library.items.keys().cloned().collect();
     let (recent_items, other_items) = library.split_items_by_recent();
     future::try_join_all(vec![
-        Env::set_storage(
+        E::set_storage(
             LIBRARY_RECENT_STORAGE_KEY,
             Some(&LibBucketBorrowed::new(&library.uid, &recent_items)),
         ),
-        Env::set_storage(
+        E::set_storage(
             LIBRARY_STORAGE_KEY,
             Some(&LibBucketBorrowed::new(&library.uid, &other_items)),
         ),
@@ -288,9 +285,9 @@ fn push_library_to_storage<Env: Environment + 'static>(library: &LibBucket) -> E
     .into()
 }
 
-fn push_items_to_api<Env: Environment + 'static>(items: Vec<LibItem>, auth_key: &str) -> Effect {
+fn push_items_to_api<E: Env + 'static>(items: Vec<LibItem>, auth_key: &str) -> Effect {
     let ids = items.iter().map(|item| &item.id).cloned().collect();
-    fetch_api::<Env, _, SuccessResponse>(&DatastoreRequest {
+    fetch_api::<E, _, SuccessResponse>(&DatastoreRequest {
         auth_key: auth_key.to_owned(),
         collection: LIBRARY_COLLECTION_NAME.to_owned(),
         command: DatastoreCommand::Put { changes: items },
@@ -306,19 +303,19 @@ fn push_items_to_api<Env: Environment + 'static>(items: Vec<LibItem>, auth_key: 
     .into()
 }
 
-fn pull_items_from_api<Env: Environment + 'static>(ids: Vec<String>, auth_key: &str) -> Effect {
+fn pull_items_from_api<E: Env + 'static>(ids: Vec<String>, auth_key: &str) -> Effect {
     let request = DatastoreRequest {
         auth_key: auth_key.to_owned(),
         collection: LIBRARY_COLLECTION_NAME.to_owned(),
         command: DatastoreCommand::Get { ids, all: false },
     };
-    fetch_api::<Env, _, _>(&request)
+    fetch_api::<E, _, _>(&request)
         .map(move |result| Msg::Internal(Internal::LibraryPullResult(request, result)))
         .boxed_local()
         .into()
 }
 
-fn plan_sync_with_api<Env: Environment + 'static>(library: &LibBucket, auth_key: &str) -> Effect {
+fn plan_sync_with_api<E: Env + 'static>(library: &LibBucket, auth_key: &str) -> Effect {
     let local_mtimes = library
         .items
         .iter()
@@ -330,7 +327,7 @@ fn plan_sync_with_api<Env: Environment + 'static>(library: &LibBucket, auth_key:
         collection: LIBRARY_COLLECTION_NAME.to_owned(),
         command: DatastoreCommand::Meta {},
     };
-    fetch_api::<Env, _, Vec<LibItemModified>>(&request)
+    fetch_api::<E, _, Vec<LibItemModified>>(&request)
         .map_ok(|remote_mtimes| {
             remote_mtimes
                 .into_iter()
