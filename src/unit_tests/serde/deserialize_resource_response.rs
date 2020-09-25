@@ -1,7 +1,6 @@
 use crate::types::addon::ResourceResponse;
 use crate::types::resource::{
-    Link, MetaItem, MetaItemBehaviorHints, PosterShape, SeriesInfo, Stream, StreamSource,
-    Subtitles, Video,
+    Link, MetaItem, MetaItemBehaviorHints, PosterShape, SeriesInfo, Stream, StreamSource, Video,
 };
 use chrono::prelude::TimeZone;
 use chrono::Utc;
@@ -285,24 +284,16 @@ fn deserialize_resource_response_streams() {
 
 #[test]
 fn deserialize_resource_response_subtitles() {
-    let subtitles = vec![Subtitles {
-        id: "id".to_owned(),
-        lang: "lang".to_owned(),
-        url: Url::parse("https://url").unwrap(),
-    }];
+    let subtitles = ResourceResponse::Subtitles { subtitles: vec![] };
     let subtitles_json = r#"
-    [
-        {
-            "id": "id",
-            "lang": "lang",
-            "url": "https://url"
-        }
-    ]
+    {
+        "subtitles": []
+    }
     "#;
-    let subtitles_deserialize: Vec<Subtitles> = serde_json::from_str(&subtitles_json).unwrap();
+    let subtitles_deserialize = serde_json::from_str(&subtitles_json).unwrap();
     assert_eq!(
         subtitles, subtitles_deserialize,
-        "subtitles deserialized successfully"
+        "Subtitles deserialized successfully"
     );
 }
 
