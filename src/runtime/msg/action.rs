@@ -16,7 +16,6 @@ use url::Url;
 #[derive(Deserialize)]
 #[serde(tag = "action", content = "args")]
 pub enum ActionCtx {
-    PullFromStorage,
     Authenticate(AuthRequest),
     Logout,
     InstallAddon(Descriptor),

@@ -1,5 +1,5 @@
 use crate::constants::{OFFICIAL_ADDONS, PROFILE_STORAGE_KEY};
-use crate::models::ctx::{fetch_api, CtxError, CtxRequest, CtxStatus, OtherError};
+use crate::models::ctx::{fetch_api, CtxError, CtxStatus, OtherError};
 use crate::runtime::msg::{Action, ActionCtx, Event, Internal, Msg};
 use crate::runtime::{Effect, Effects, Environment};
 use crate::types::addon::Descriptor;
@@ -181,20 +181,8 @@ pub fn update_profile<Env: Environment + 'static>(
         Msg::Internal(Internal::ProfileChanged(persisted)) if !persisted => {
             Effects::one(push_profile_to_storage::<Env>(profile)).unchanged()
         }
-        Msg::Internal(Internal::CtxStorageResult(result)) => match (status, result) {
-            (CtxStatus::Loading(CtxRequest::Storage), Ok((result_profile, _, _))) => {
-                let next_proifle = result_profile.to_owned().unwrap_or_default();
-                if *profile != next_proifle {
-                    *profile = next_proifle;
-                    Effects::msg(Msg::Internal(Internal::ProfileChanged(true)))
-                } else {
-                    Effects::none().unchanged()
-                }
-            }
-            _ => Effects::none().unchanged(),
-        },
         Msg::Internal(Internal::CtxAuthResult(auth_request, result)) => match (status, result) {
-            (CtxStatus::Loading(CtxRequest::API(loading_auth_request)), Ok((auth, addons, _)))
+            (CtxStatus::Loading(loading_auth_request), Ok((auth, addons, _)))
                 if loading_auth_request == auth_request =>
             {
                 let next_proifle = Profile {

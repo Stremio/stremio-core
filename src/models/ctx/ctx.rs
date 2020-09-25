@@ -1,9 +1,5 @@
-use crate::constants::{
-    LIBRARY_COLLECTION_NAME, LIBRARY_RECENT_STORAGE_KEY, LIBRARY_STORAGE_KEY, PROFILE_STORAGE_KEY,
-};
-use crate::models::ctx::{
-    fetch_api, migrate_storage_schema, update_library, update_profile, CtxError,
-};
+use crate::constants::LIBRARY_COLLECTION_NAME;
+use crate::models::ctx::{fetch_api, update_library, update_profile};
 use crate::runtime::msg::{Action, ActionCtx, Event, Internal, Msg};
 use crate::runtime::{Effect, Effects, Environment, Update};
 use crate::types::api::{
@@ -19,16 +15,10 @@ use serde::ser::SerializeMap;
 use serde::{Serialize, Serializer};
 use std::marker::PhantomData;
 
-#[derive(PartialEq)]
-pub enum CtxRequest {
-    Storage,
-    API(AuthRequest),
-}
-
 #[derive(Derivative, PartialEq)]
 #[derivative(Default)]
 pub enum CtxStatus {
-    Loading(CtxRequest),
+    Loading(AuthRequest),
     #[derivative(Default)]
     Ready,
 }
@@ -48,15 +38,22 @@ pub struct Ctx<Env: Environment> {
     pub env: PhantomData<Env>,
 }
 
+impl<Env: Environment> Ctx<Env> {
+    pub fn new(profile: Profile, library: LibBucket) -> Self {
+        Ctx {
+            profile,
+            library,
+            status: CtxStatus::Ready,
+            env: PhantomData,
+        }
+    }
+}
+
 impl<Env: Environment + 'static> Update for Ctx<Env> {
     fn update(&mut self, msg: &Msg) -> Effects {
         match msg {
-            Msg::Action(Action::Ctx(ActionCtx::PullFromStorage)) => {
-                self.status = CtxStatus::Loading(CtxRequest::Storage);
-                Effects::one(pull_ctx_from_storage::<Env>()).unchanged()
-            }
             Msg::Action(Action::Ctx(ActionCtx::Authenticate(auth_request))) => {
-                self.status = CtxStatus::Loading(CtxRequest::API(auth_request.to_owned()));
+                self.status = CtxStatus::Loading(auth_request.to_owned());
                 Effects::one(authenticate::<Env>(auth_request)).unchanged()
             }
             Msg::Action(Action::Ctx(ActionCtx::Logout)) => {
@@ -79,35 +76,6 @@ impl<Env: Environment + 'static> Update for Ctx<Env> {
                     .join(profile_effects)
                     .join(library_effects)
             }
-            Msg::Internal(Internal::CtxStorageResult(result)) => {
-                let profile_effects = update_profile::<Env>(&mut self.profile, &self.status, msg);
-                let library_effects = update_library::<Env>(
-                    &mut self.library,
-                    self.profile.auth.as_ref().map(|auth| &auth.key),
-                    &self.status,
-                    msg,
-                );
-                let ctx_effects = match &self.status {
-                    CtxStatus::Loading(CtxRequest::Storage) => {
-                        self.status = CtxStatus::Ready;
-                        match result {
-                            Ok(_) => Effects::msg(Msg::Event(Event::CtxPulledFromStorage {
-                                uid: self.profile.uid(),
-                            }))
-                            .unchanged(),
-                            Err(error) => Effects::msg(Msg::Event(Event::Error {
-                                error: error.to_owned(),
-                                source: Box::new(Event::CtxPulledFromStorage {
-                                    uid: Default::default(),
-                                }),
-                            }))
-                            .unchanged(),
-                        }
-                    }
-                    _ => Effects::none().unchanged(),
-                };
-                profile_effects.join(library_effects).join(ctx_effects)
-            }
             Msg::Internal(Internal::CtxAuthResult(auth_request, result)) => {
                 let profile_effects = update_profile::<Env>(&mut self.profile, &self.status, msg);
                 let library_effects = update_library::<Env>(
@@ -117,7 +85,7 @@ impl<Env: Environment + 'static> Update for Ctx<Env> {
                     msg,
                 );
                 let ctx_effects = match &self.status {
-                    CtxStatus::Loading(CtxRequest::API(loading_auth_request))
+                    CtxStatus::Loading(loading_auth_request)
                         if loading_auth_request == auth_request =>
                     {
                         self.status = CtxStatus::Ready;
@@ -151,21 +119,6 @@ impl<Env: Environment + 'static> Update for Ctx<Env> {
             }
         }
     }
-}
-
-fn pull_ctx_from_storage<Env: Environment + 'static>() -> Effect {
-    migrate_storage_schema::<Env>()
-        .and_then(|_| {
-            future::try_join3(
-                Env::get_storage(PROFILE_STORAGE_KEY),
-                Env::get_storage(LIBRARY_RECENT_STORAGE_KEY),
-                Env::get_storage(LIBRARY_STORAGE_KEY),
-            )
-        })
-        .map_err(CtxError::from)
-        .map(|result| Msg::Internal(Internal::CtxStorageResult(result)))
-        .boxed_local()
-        .into()
 }
 
 fn authenticate<Env: Environment + 'static>(auth_request: &AuthRequest) -> Effect {

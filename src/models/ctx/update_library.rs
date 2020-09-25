@@ -1,7 +1,7 @@
 use crate::constants::{
     LIBRARY_COLLECTION_NAME, LIBRARY_RECENT_COUNT, LIBRARY_RECENT_STORAGE_KEY, LIBRARY_STORAGE_KEY,
 };
-use crate::models::ctx::{fetch_api, CtxError, CtxRequest, CtxStatus, OtherError};
+use crate::models::ctx::{fetch_api, CtxError, CtxStatus, OtherError};
 use crate::runtime::msg::{Action, ActionCtx, Event, Internal, Msg};
 use crate::runtime::{Effect, Effects, Environment};
 use crate::types::api::{DatastoreCommand, DatastoreRequest, LibItemModified, SuccessResponse};
@@ -123,37 +123,10 @@ pub fn update_library<Env: Environment + 'static>(
         Msg::Internal(Internal::LibraryChanged(persisted)) if !persisted => {
             Effects::one(push_library_to_storage::<Env>(library)).unchanged()
         }
-        Msg::Internal(Internal::CtxStorageResult(result)) => match (status, result) {
-            (
-                CtxStatus::Loading(CtxRequest::Storage),
-                Ok((profile, recent_bucket, other_bucket)),
-            ) => {
-                let mut next_library =
-                    LibBucket::new(profile.as_ref().and_then(|profile| profile.uid()), vec![]);
-                if let Some(recent_bucket) = recent_bucket {
-                    if next_library.uid == recent_bucket.uid {
-                        next_library.merge(recent_bucket.items.values().cloned().collect());
-                    };
-                };
-                if let Some(other_bucket) = other_bucket {
-                    if next_library.uid == other_bucket.uid {
-                        next_library.merge(other_bucket.items.values().cloned().collect());
-                    };
-                };
-                if *library != next_library {
-                    *library = next_library;
-                    Effects::msg(Msg::Internal(Internal::LibraryChanged(true)))
-                } else {
-                    Effects::none().unchanged()
-                }
-            }
-            _ => Effects::none().unchanged(),
-        },
         Msg::Internal(Internal::CtxAuthResult(auth_request, result)) => match (status, result) {
-            (
-                CtxStatus::Loading(CtxRequest::API(loading_auth_request)),
-                Ok((auth, _, lib_items)),
-            ) if loading_auth_request == auth_request => {
+            (CtxStatus::Loading(loading_auth_request), Ok((auth, _, lib_items)))
+                if loading_auth_request == auth_request =>
+            {
                 let next_library =
                     LibBucket::new(Some(auth.user.id.to_owned()), lib_items.to_owned());
                 if *library != next_library {
