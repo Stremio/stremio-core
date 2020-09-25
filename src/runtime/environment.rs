@@ -1,7 +1,11 @@
 use crate::addon_transport::{AddonHTTPTransport, AddonTransport, UnsupportedTransport};
+use crate::constants::{
+    LIBRARY_RECENT_STORAGE_KEY, LIBRARY_STORAGE_KEY, PROFILE_STORAGE_KEY, SCHEMA_VERSION,
+    SCHEMA_VERSION_STORAGE_KEY,
+};
 use chrono::{DateTime, Utc};
-use futures::future::LocalBoxFuture;
-use futures::Future;
+use futures::future::{Either, LocalBoxFuture};
+use futures::{future, Future, FutureExt, TryFutureExt};
 use http::Request;
 use serde::ser::SerializeStruct;
 use serde::{Deserialize, Serialize, Serializer};
@@ -76,6 +80,26 @@ pub trait Environment {
     fn now() -> DateTime<Utc>;
     #[cfg(debug_assertions)]
     fn log(message: String);
+    fn migrate_storage_schema() -> EnvFuture<()>
+    where
+        Self: Sized + 'static,
+    {
+        Self::get_storage::<usize>(SCHEMA_VERSION_STORAGE_KEY)
+            .and_then(|schema_version| {
+                match schema_version {
+                    Some(schema_version) if schema_version > SCHEMA_VERSION => {
+                        Either::Left(future::err(EnvError::StorageSchemaVersionDowngrade(
+                            schema_version,
+                            SCHEMA_VERSION,
+                        )))
+                    }
+                    None => Either::Right(migrate_storage_schema_v1::<Self>()),
+                    // TODO Some(1) => Either::Right(migrate_storage_schema_v2::<Self>()),
+                    _ => Either::Left(future::ok(())),
+                }
+            })
+            .boxed_local()
+    }
     fn addon_transport(transport_url: &Url) -> Box<dyn AddonTransport>
     where
         Self: Sized + 'static,
@@ -85,4 +109,15 @@ pub trait Environment {
             _ => Box::new(UnsupportedTransport::new(transport_url.to_owned())),
         }
     }
+}
+
+fn migrate_storage_schema_v1<Env: Environment + 'static>() -> EnvFuture<()> {
+    future::try_join_all(vec![
+        Env::set_storage(SCHEMA_VERSION_STORAGE_KEY, Some(&1)),
+        Env::set_storage::<()>(PROFILE_STORAGE_KEY, None),
+        Env::set_storage::<()>(LIBRARY_RECENT_STORAGE_KEY, None),
+        Env::set_storage::<()>(LIBRARY_STORAGE_KEY, None),
+    ])
+    .map_ok(|_| ())
+    .boxed_local()
 }
