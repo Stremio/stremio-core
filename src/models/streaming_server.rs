@@ -176,7 +176,7 @@ fn set_settings<E: Env + 'static>(url: &Url, settings: &Settings) -> Effect {
     };
     let endpoint = url.join("settings").expect("url builder failed");
     let request = Request::post(endpoint.as_str())
-        .header("content-type", "application/json")
+        .header(http::header::CONTENT_TYPE, "application/json")
         .body(body)
         .expect("request builder failed");
     E::fetch::<_, SuccessResponse>(request)
