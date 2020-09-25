@@ -91,15 +91,19 @@ pub struct CatalogWithFilters<T> {
     pub catalog_resource: Option<ResourceLoadable<Vec<T>>>,
 }
 
-impl<T: CatalogResourceAdapter> Default for CatalogWithFilters<T> {
-    fn default() -> Self {
+impl<T: CatalogResourceAdapter> CatalogWithFilters<T> {
+    pub fn new(profile: &Profile) -> (Self, Effects) {
+        let catalog_resource = None;
         let mut selectable = Selectable::default();
-        let _ = selectable_update::<T>(&mut selectable, &None, &Profile::default());
-        CatalogWithFilters {
-            selectable,
-            selected: None,
-            catalog_resource: None,
-        }
+        let effects = selectable_update::<T>(&mut selectable, &catalog_resource, &profile);
+        (
+            CatalogWithFilters {
+                selectable,
+                catalog_resource,
+                selected: None,
+            },
+            effects,
+        )
     }
 }
 
