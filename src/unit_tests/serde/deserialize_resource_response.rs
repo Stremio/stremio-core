@@ -1,6 +1,6 @@
 use crate::types::addon::ResourceResponse;
 use crate::types::resource::{
-    Link, MetaItem, MetaItemBehaviorHints, PosterShape, SeriesInfo, Stream, StreamSource, Video,
+    Link, MetaItem, MetaItemBehaviorHints, PosterShape, SeriesInfo, Video,
 };
 use chrono::prelude::TimeZone;
 use chrono::Utc;
@@ -233,52 +233,16 @@ fn deserialize_resource_response_meta() {
 
 #[test]
 fn deserialize_resource_response_streams() {
-    let streams = vec![
-        // ALL fields are defined with SOME value
-        Stream {
-            source: StreamSource::Url {
-                url: Url::parse("https://url").unwrap(),
-            },
-            title: Some("title".to_owned()),
-            thumbnail: Some("thumbnail".to_owned()),
-            subtitles: vec![],
-            behavior_hints: vec![("behavior_hint".to_owned(), serde_json::Value::Bool(true))]
-                .iter()
-                .cloned()
-                .collect(),
-        },
-        // serde(default) are omited
-        Stream {
-            source: StreamSource::Url {
-                url: Url::parse("https://url").unwrap(),
-            },
-            title: None,
-            thumbnail: None,
-            subtitles: vec![],
-            behavior_hints: vec![].iter().cloned().collect(),
-        },
-    ];
+    let streams = ResourceResponse::Streams { streams: vec![] };
     let streams_json = r#"
-    [
-        {
-            "url": "https://url",
-            "title": "title",
-            "thumbnail": "thumbnail",
-            "behaviorHints": {
-                "behavior_hint": true
-            }
-        },
-        {
-            "url": "https://url",
-            "title": null,
-            "thumbnail": null
-        }
-    ]
+    {
+        "streams": []
+    }
     "#;
-    let streams_deserialize: Vec<Stream> = serde_json::from_str(&streams_json).unwrap();
+    let streams_deserialize = serde_json::from_str(&streams_json).unwrap();
     assert_eq!(
         streams, streams_deserialize,
-        "streams deserialized successfully"
+        "Streams deserialized successfully"
     );
 }
 
