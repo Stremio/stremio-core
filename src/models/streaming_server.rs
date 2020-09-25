@@ -1,10 +1,10 @@
 use crate::models::common::Loadable;
 use crate::models::ctx::Ctx;
 use crate::runtime::msg::{Action, ActionStreamingServer, Internal, Msg};
-use crate::runtime::{Effects, Env, EnvError, UpdateWithCtx};
+use crate::runtime::{Effect, Effects, Env, EnvError, UpdateWithCtx};
 use crate::types::api::SuccessResponse;
 use enclose::enclose;
-use futures::{Future, FutureExt, TryFutureExt};
+use futures::{FutureExt, TryFutureExt};
 use http::request::Request;
 use serde::{Deserialize, Serialize};
 use url::Url;
@@ -48,20 +48,7 @@ impl<E: Env + 'static> UpdateWithCtx<Ctx<E>> for StreamingServer {
                     self.selected = next_selected;
                     self.settings = next_settings;
                     self.base_url = next_base_url;
-                    Effects::futures(vec![
-                        get_settings::<E>(&url)
-                            .map(enclose!((url) move |result| {
-                                Msg::Internal(Internal::StreamingServerSettingsResult(
-                                    url, result,
-                                ))
-                            }))
-                            .boxed_local(),
-                        get_base_url::<E>(&url)
-                            .map(move |result| {
-                                Msg::Internal(Internal::StreamingServerBaseURLResult(url, result))
-                            })
-                            .boxed_local(),
-                    ])
+                    Effects::many(vec![get_settings::<E>(&url), get_base_url::<E>(&url)])
                 } else {
                     Effects::none().unchanged()
                 }
@@ -73,15 +60,7 @@ impl<E: Env + 'static> UpdateWithCtx<Ctx<E>> for StreamingServer {
                     if ready_settings != settings =>
                 {
                     *ready_settings = settings.to_owned();
-                    Effects::future(
-                        set_settings::<E>(&url, settings)
-                            .map(enclose!((url) move |result| {
-                                Msg::Internal(Internal::StreamingServerUpdateSettingsResult(
-                                    url, result,
-                                ))
-                            }))
-                            .boxed_local(),
-                    )
+                    Effects::one(set_settings::<E>(&url, settings))
                 }
                 _ => Effects::none().unchanged(),
             },
@@ -92,20 +71,7 @@ impl<E: Env + 'static> UpdateWithCtx<Ctx<E>> for StreamingServer {
                 self.selected = Some(url.to_owned());
                 self.settings = Some(Loadable::Loading);
                 self.base_url = Some(Loadable::Loading);
-                Effects::futures(vec![
-                    get_settings::<E>(&url)
-                        .map(enclose!((url) move |result| {
-                            Msg::Internal(Internal::StreamingServerSettingsResult(
-                                url, result,
-                            ))
-                        }))
-                        .boxed_local(),
-                    get_base_url::<E>(&url)
-                        .map(move |result| {
-                            Msg::Internal(Internal::StreamingServerBaseURLResult(url, result))
-                        })
-                        .boxed_local(),
-                ])
+                Effects::many(vec![get_settings::<E>(&url), get_base_url::<E>(&url)])
             }
             Msg::Internal(Internal::StreamingServerSettingsResult(url, result)) => {
                 match (&self.selected, &self.settings) {
@@ -148,7 +114,7 @@ impl<E: Env + 'static> UpdateWithCtx<Ctx<E>> for StreamingServer {
     }
 }
 
-fn get_settings<E: Env + 'static>(url: &Url) -> impl Future<Output = Result<Settings, EnvError>> {
+fn get_settings<E: Env + 'static>(url: &Url) -> Effect {
     #[derive(Deserialize)]
     struct Resp {
         values: Settings,
@@ -157,10 +123,18 @@ fn get_settings<E: Env + 'static>(url: &Url) -> impl Future<Output = Result<Sett
     let request = Request::get(endpoint.as_str())
         .body(())
         .expect("request builder failed");
-    E::fetch::<_, Resp>(request).map_ok(|resp| resp.values)
+    E::fetch::<_, Resp>(request)
+        .map_ok(|resp| resp.values)
+        .map(enclose!((url) move |result| {
+            Msg::Internal(Internal::StreamingServerSettingsResult(
+                url, result,
+            ))
+        }))
+        .boxed_local()
+        .into()
 }
 
-fn get_base_url<E: Env + 'static>(url: &Url) -> impl Future<Output = Result<Url, EnvError>> {
+fn get_base_url<E: Env + 'static>(url: &Url) -> Effect {
     #[derive(Deserialize)]
     struct Resp {
         #[serde(rename = "baseUrl")]
@@ -170,13 +144,16 @@ fn get_base_url<E: Env + 'static>(url: &Url) -> impl Future<Output = Result<Url,
     let request = Request::get(endpoint.as_str())
         .body(())
         .expect("request builder failed");
-    E::fetch::<_, Resp>(request).map_ok(|resp| resp.base_url)
+    E::fetch::<_, Resp>(request)
+        .map_ok(|resp| resp.base_url)
+        .map(enclose!((url) move |result|
+            Msg::Internal(Internal::StreamingServerBaseURLResult(url, result))
+        ))
+        .boxed_local()
+        .into()
 }
 
-fn set_settings<E: Env + 'static>(
-    url: &Url,
-    settings: &Settings,
-) -> impl Future<Output = Result<(), EnvError>> {
+fn set_settings<E: Env + 'static>(url: &Url, settings: &Settings) -> Effect {
     #[derive(Serialize)]
     #[serde(rename_all = "camelCase")]
     struct Body {
@@ -202,5 +179,13 @@ fn set_settings<E: Env + 'static>(
         .header("content-type", "application/json")
         .body(body)
         .expect("request builder failed");
-    E::fetch::<_, SuccessResponse>(request).map_ok(|_| ())
+    E::fetch::<_, SuccessResponse>(request)
+        .map_ok(|_| ())
+        .map(enclose!((url) move |result| {
+            Msg::Internal(Internal::StreamingServerUpdateSettingsResult(
+                url, result,
+            ))
+        }))
+        .boxed_local()
+        .into()
 }
