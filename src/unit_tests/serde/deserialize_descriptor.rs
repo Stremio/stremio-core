@@ -80,7 +80,7 @@ fn deserialize_descriptor() {
                     "behavior_hint": true
                 }
             },
-            "transportUrl": "https://transport_url/",
+            "transportUrl": "https://transport_url",
             "flags": {
                 "official": false,
                 "protected": false
@@ -95,7 +95,7 @@ fn deserialize_descriptor() {
                 "resources": [],
                 "idPrefixes": null
             },
-            "transportUrl": "https://transport_url/"
+            "transportUrl": "https://transport_url"
         }
     ]
     "#;

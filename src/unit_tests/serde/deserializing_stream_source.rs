@@ -8,7 +8,7 @@ fn deserialize_stream_source_url() {
     };
     let url_json = r#"
     {
-        "url": "https://url/"
+        "url": "https://url"
     }
     "#;
     let url_deserialize = serde_json::from_str(&url_json).unwrap();
@@ -70,7 +70,7 @@ fn deserialize_stream_source_external() {
     };
     let external_json = r#"
     {
-        "externalUrl": "https://external_url/"
+        "externalUrl": "https://external_url"
     }
     "#;
     let external_deserialize = serde_json::from_str(&external_json).unwrap();
@@ -87,7 +87,7 @@ fn deserialize_stream_source_player_frame() {
     };
     let player_frame_json = r#"
     {
-        "playerFrameUrl": "https://player_frame_url/"
+        "playerFrameUrl": "https://player_frame_url"
     }
     "#;
     let player_frame_deserialize = serde_json::from_str(&player_frame_json).unwrap();

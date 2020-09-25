@@ -31,7 +31,7 @@ fn deserialize_profile() {
         "addons": [],
         "settings": {
             "interface_language": "interface_language",
-            "streaming_server_url": "https://streaming_server_url/",
+            "streaming_server_url": "https://streaming_server_url",
             "binge_watching": false,
             "play_in_background": true,
             "play_in_external_player": false,
@@ -114,7 +114,7 @@ fn deserialize_profile_with_user() {
         "addons": [],
         "settings": {
             "interface_language": "interface_language",
-            "streaming_server_url": "https://streaming_server_url/",
+            "streaming_server_url": "https://streaming_server_url",
             "binge_watching": false,
             "play_in_background": true,
             "play_in_external_player": false,

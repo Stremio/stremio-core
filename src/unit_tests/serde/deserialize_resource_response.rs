@@ -263,7 +263,7 @@ fn deserialize_resource_response_meta() {
                 {
                     "name": "name",
                     "category": "category",
-                    "url": "https://url/"
+                    "url": "https://url"
                 }
             ],
             "trailerStreams": [],
@@ -354,7 +354,7 @@ fn deserialize_resource_response_streams() {
     let streams_json = r#"
     [
         {
-            "url": "https://url/",
+            "url": "https://url",
             "title": "title",
             "thumbnail": "thumbnail",
             "behaviorHints": {
@@ -362,7 +362,7 @@ fn deserialize_resource_response_streams() {
             }
         },
         {
-            "url": "https://url/",
+            "url": "https://url",
             "title": null,
             "thumbnail": null
         }
@@ -387,7 +387,7 @@ fn deserialize_resource_response_subtitles() {
         {
             "id": "id",
             "lang": "lang",
-            "url": "https://url/"
+            "url": "https://url"
         }
     ]
     "#;
@@ -440,7 +440,7 @@ fn deserialize_resource_response_addons() {
                     "type"
                 ]
             },
-            "transportUrl": "https://transport_url/"
+            "transportUrl": "https://transport_url"
         },
         {
             "manifest": {
@@ -452,7 +452,7 @@ fn deserialize_resource_response_addons() {
                 "background": null,
                 "types": []
             },
-            "transportUrl": "https://transport_url/"
+            "transportUrl": "https://transport_url"
         }
     ]
     "#;
