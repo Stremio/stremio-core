@@ -22,6 +22,23 @@ fn deserialize_resource_response_metas() {
 }
 
 #[test]
+fn deserialize_resource_response_metas_detailed() {
+    let metas_detailed = ResourceResponse::MetasDetailed {
+        metas_detailed: vec![],
+    };
+    let metas_detailed_json = r#"
+    {
+        "metasDetailed": []
+    }
+    "#;
+    let metas_detailed_deserialize = serde_json::from_str(&metas_detailed_json).unwrap();
+    assert_eq!(
+        metas_detailed, metas_detailed_deserialize,
+        "MetasDetailed deserialized successfully"
+    );
+}
+
+#[test]
 fn deserialize_resource_response_meta() {
     let meta_items = vec![
         // ALL fields are defined with SOME value
