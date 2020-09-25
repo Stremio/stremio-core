@@ -19,15 +19,18 @@ pub struct InstalledAddonsWithFilters {
     pub addons: Vec<DescriptorPreview>,
 }
 
-impl Default for InstalledAddonsWithFilters {
-    fn default() -> Self {
+impl InstalledAddonsWithFilters {
+    pub fn new(profile: &Profile) -> (Self, Effects) {
         let mut type_names = vec![];
-        let _ = type_names_update(&mut type_names, &Profile::default());
-        InstalledAddonsWithFilters {
-            type_names,
-            selected: None,
-            addons: vec![],
-        }
+        let effects = type_names_update(&mut type_names, &profile);
+        (
+            InstalledAddonsWithFilters {
+                type_names,
+                selected: None,
+                addons: vec![],
+            },
+            effects,
+        )
     }
 }
 
