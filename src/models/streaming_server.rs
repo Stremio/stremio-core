@@ -74,7 +74,7 @@ impl<E: Env + 'static> UpdateWithCtx<Ctx<E>> for StreamingServer {
                 {
                     *ready_settings = settings.to_owned();
                     Effects::future(
-                        update_settings::<E>(&url, settings)
+                        set_settings::<E>(&url, settings)
                             .map(enclose!((url) move |result| {
                                 Msg::Internal(Internal::StreamingServerUpdateSettingsResult(
                                     url, result,
@@ -173,7 +173,7 @@ fn get_base_url<E: Env + 'static>(url: &Url) -> impl Future<Output = Result<Url,
     E::fetch::<_, Resp>(request).map_ok(|resp| resp.base_url)
 }
 
-fn update_settings<E: Env + 'static>(
+fn set_settings<E: Env + 'static>(
     url: &Url,
     settings: &Settings,
 ) -> impl Future<Output = Result<(), EnvError>> {
