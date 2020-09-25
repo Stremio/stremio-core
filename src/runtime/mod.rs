@@ -3,8 +3,8 @@ pub mod msg;
 mod effects;
 pub use effects::*;
 
-mod environment;
-pub use environment::*;
+mod env;
+pub use env::*;
 
 mod runtime;
 pub use runtime::*;
