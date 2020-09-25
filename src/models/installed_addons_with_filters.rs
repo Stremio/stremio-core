@@ -29,7 +29,7 @@ impl InstalledAddonsWithFilters {
                 selected: None,
                 addons: vec![],
             },
-            effects,
+            effects.unchanged(),
         )
     }
 }

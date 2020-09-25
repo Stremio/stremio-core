@@ -102,7 +102,7 @@ impl<T: CatalogResourceAdapter> CatalogWithFilters<T> {
                 catalog_resource,
                 selected: None,
             },
-            effects,
+            effects.unchanged(),
         )
     }
 }
