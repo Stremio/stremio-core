@@ -10,3 +10,24 @@ pub enum Loadable<R, E> {
     Ready(R),
     Err(E),
 }
+
+impl<R, E> Loadable<R, E> {
+    pub fn is_ready(&self) -> bool {
+        match self {
+            Loadable::Ready(_) => true,
+            _ => false,
+        }
+    }
+    pub fn is_err(&self) -> bool {
+        match self {
+            Loadable::Err(_) => true,
+            _ => false,
+        }
+    }
+    pub fn is_loading(&self) -> bool {
+        match self {
+            Loadable::Loading => true,
+            _ => false,
+        }
+    }
+}
