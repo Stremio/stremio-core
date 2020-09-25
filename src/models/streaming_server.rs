@@ -1,8 +1,9 @@
-use crate::models::common::Loadable;
+use crate::models::common::{eq_update, Loadable};
 use crate::models::ctx::Ctx;
 use crate::runtime::msg::{Action, ActionStreamingServer, Internal, Msg};
 use crate::runtime::{Effect, Effects, Env, EnvError, UpdateWithCtx};
 use crate::types::api::SuccessResponse;
+use crate::types::profile::Profile;
 use enclose::enclose;
 use futures::{FutureExt, TryFutureExt};
 use http::request::Request;
@@ -26,87 +27,96 @@ pub struct Settings {
 
 pub type Selected = Url;
 
-#[derive(Default, Serialize)]
+#[derive(Serialize)]
 pub struct StreamingServer {
-    pub selected: Option<Selected>,
-    pub settings: Option<Loadable<Settings, EnvError>>,
-    pub base_url: Option<Loadable<Url, EnvError>>,
+    pub selected: Selected,
+    pub settings: Loadable<Settings, EnvError>,
+    pub base_url: Loadable<Url, EnvError>,
+}
+
+impl StreamingServer {
+    pub fn new<E: Env + 'static>(profile: &Profile) -> (Self, Effects) {
+        let selected = profile.settings.streaming_server_url.to_owned();
+        let effects = Effects::many(vec![
+            get_settings::<E>(&selected),
+            get_base_url::<E>(&selected),
+        ]);
+        (
+            StreamingServer {
+                selected,
+                settings: Loadable::Loading,
+                base_url: Loadable::Loading,
+            },
+            effects.unchanged(),
+        )
+    }
 }
 
 impl<E: Env + 'static> UpdateWithCtx<Ctx<E>> for StreamingServer {
     fn update(&mut self, ctx: &Ctx<E>, msg: &Msg) -> Effects {
         match msg {
             Msg::Action(Action::StreamingServer(ActionStreamingServer::Reload)) => {
-                let url = ctx.profile.settings.streaming_server_url.to_owned();
-                let next_selected = Some(url.to_owned());
-                let next_settings = Some(Loadable::Loading);
-                let next_base_url = Some(Loadable::Loading);
-                if self.selected != next_selected
-                    || self.settings != next_settings
-                    || self.base_url != next_base_url
-                {
-                    self.selected = next_selected;
-                    self.settings = next_settings;
-                    self.base_url = next_base_url;
-                    Effects::many(vec![get_settings::<E>(&url), get_base_url::<E>(&url)])
-                } else {
-                    Effects::none().unchanged()
-                }
+                let settings_effects = eq_update(&mut self.settings, Loadable::Loading);
+                let base_url_effects = eq_update(&mut self.base_url, Loadable::Loading);
+                Effects::many(vec![
+                    get_settings::<E>(&self.selected),
+                    get_base_url::<E>(&self.selected),
+                ])
+                .unchanged()
+                .join(settings_effects)
+                .join(base_url_effects)
             }
             Msg::Action(Action::StreamingServer(ActionStreamingServer::UpdateSettings(
                 settings,
-            ))) => match (&self.selected, &mut self.settings) {
-                (Some(url), Some(Loadable::Ready(ready_settings)))
-                    if ready_settings != settings =>
-                {
-                    *ready_settings = settings.to_owned();
-                    Effects::one(set_settings::<E>(&url, settings))
-                }
-                _ => Effects::none().unchanged(),
-            },
+            ))) if self.settings.is_ready() => {
+                let settings_effects =
+                    eq_update(&mut self.settings, Loadable::Ready(settings.to_owned()));
+                Effects::one(set_settings::<E>(&self.selected, settings))
+                    .unchanged()
+                    .join(settings_effects)
+            }
             Msg::Internal(Internal::ProfileChanged(_))
-                if self.selected.as_ref() != Some(&ctx.profile.settings.streaming_server_url) =>
+                if self.selected != ctx.profile.settings.streaming_server_url =>
             {
-                let url = ctx.profile.settings.streaming_server_url.to_owned();
-                self.selected = Some(url.to_owned());
-                self.settings = Some(Loadable::Loading);
-                self.base_url = Some(Loadable::Loading);
-                Effects::many(vec![get_settings::<E>(&url), get_base_url::<E>(&url)])
+                self.selected = ctx.profile.settings.streaming_server_url.to_owned();
+                self.settings = Loadable::Loading;
+                self.base_url = Loadable::Loading;
+                Effects::many(vec![
+                    get_settings::<E>(&self.selected),
+                    get_base_url::<E>(&self.selected),
+                ])
             }
-            Msg::Internal(Internal::StreamingServerSettingsResult(url, result)) => {
-                match (&self.selected, &self.settings) {
-                    (Some(loading_url), Some(Loadable::Loading)) if loading_url == url => {
-                        self.settings = match result {
-                            Ok(settings) => Some(Loadable::Ready(settings.to_owned())),
-                            Err(error) => Some(Loadable::Err(error.to_owned())),
-                        };
-                        Effects::none()
-                    }
-                    _ => Effects::none().unchanged(),
-                }
-            }
-            Msg::Internal(Internal::StreamingServerBaseURLResult(url, result)) => {
-                match (&self.selected, &self.base_url) {
-                    (Some(loading_url), Some(Loadable::Loading)) if loading_url == url => {
-                        self.base_url = match result {
-                            Ok(base_url) => Some(Loadable::Ready(base_url.to_owned())),
-                            Err(error) => Some(Loadable::Err(error.to_owned())),
-                        };
-                        Effects::none()
-                    }
-                    _ => Effects::none().unchanged(),
-                }
-            }
-            Msg::Internal(Internal::StreamingServerUpdateSettingsResult(url, result)) => {
-                match &self.selected {
-                    Some(server_url) if server_url == url => match result {
-                        Ok(_) => Effects::none().unchanged(),
-                        Err(error) => {
-                            self.settings = Some(Loadable::Err(error.to_owned()));
-                            Effects::none()
-                        }
+            Msg::Internal(Internal::StreamingServerSettingsResult(url, result))
+                if self.selected == *url && self.settings.is_loading() =>
+            {
+                eq_update(
+                    &mut self.settings,
+                    match result {
+                        Ok(settings) => Loadable::Ready(settings.to_owned()),
+                        Err(error) => Loadable::Err(error.to_owned()),
                     },
-                    _ => Effects::none().unchanged(),
+                )
+            }
+            Msg::Internal(Internal::StreamingServerBaseURLResult(url, result))
+                if self.selected == *url && self.base_url.is_loading() =>
+            {
+                eq_update(
+                    &mut self.base_url,
+                    match result {
+                        Ok(base_url) => Loadable::Ready(base_url.to_owned()),
+                        Err(error) => Loadable::Err(error.to_owned()),
+                    },
+                )
+            }
+            Msg::Internal(Internal::StreamingServerUpdateSettingsResult(url, result))
+                if self.selected == *url =>
+            {
+                match result {
+                    Ok(_) => Effects::none().unchanged(),
+                    Err(error) => {
+                        self.settings = Loadable::Err(error.to_owned());
+                        Effects::none()
+                    }
                 }
             }
             _ => Effects::none().unchanged(),
