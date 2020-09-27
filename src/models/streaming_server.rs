@@ -75,7 +75,7 @@ impl<E: Env + 'static> UpdateWithCtx<Ctx<E>> for StreamingServer {
                     .unchanged()
                     .join(settings_effects)
             }
-            Msg::Internal(Internal::ProfileChanged(_))
+            Msg::Internal(Internal::ProfileChanged)
                 if self.selected != ctx.profile.settings.streaming_server_url =>
             {
                 self.selected = ctx.profile.settings.streaming_server_url.to_owned();

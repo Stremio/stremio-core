@@ -51,7 +51,7 @@ impl<E: Env + 'static> UpdateWithCtx<Ctx<E>> for CatalogsWithExtra {
                     },
                 )
             }
-            Msg::Internal(Internal::ProfileChanged(_)) => match &self.selected {
+            Msg::Internal(Internal::ProfileChanged) => match &self.selected {
                 Some(selected) => resources_update_with_vector_content::<E, _>(
                     &mut self.catalog_resources,
                     ResourcesAction::ResourcesRequested {

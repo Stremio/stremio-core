@@ -50,7 +50,7 @@ where
                 let addons_effects = addons_update(&mut self.addons, &self.selected, &ctx.profile);
                 selected_effects.join(addons_effects)
             }
-            Msg::Internal(Internal::ProfileChanged(_)) => {
+            Msg::Internal(Internal::ProfileChanged) => {
                 let type_names_effects = type_names_update(&mut self.type_names, &ctx.profile);
                 let addons_effects = addons_update(&mut self.addons, &self.selected, &ctx.profile);
                 type_names_effects.join(addons_effects)

@@ -18,7 +18,7 @@ pub fn update_profile<E: Env + 'static>(
             let next_profile = Profile::default();
             if *profile != next_profile {
                 *profile = next_profile;
-                Effects::msg(Msg::Internal(Internal::ProfileChanged(false)))
+                Effects::msg(Msg::Internal(Internal::ProfileChanged))
             } else {
                 Effects::none().unchanged()
             }
@@ -81,7 +81,7 @@ pub fn update_profile<E: Env + 'static>(
                     if profile.addons != next_addons {
                         profile.addons = next_addons;
                         Effects::msg(Msg::Event(Event::AddonsPulledFromAPI { transport_urls }))
-                            .join(Effects::msg(Msg::Internal(Internal::ProfileChanged(false))))
+                            .join(Effects::msg(Msg::Internal(Internal::ProfileChanged)))
                     } else {
                         Effects::msg(Msg::Event(Event::AddonsPulledFromAPI { transport_urls }))
                             .unchanged()
@@ -113,7 +113,7 @@ pub fn update_profile<E: Env + 'static>(
                     transport_url: addon.transport_url.to_owned(),
                 }))
                 .join(push_to_api_effects)
-                .join(Effects::msg(Msg::Internal(Internal::ProfileChanged(false))))
+                .join(Effects::msg(Msg::Internal(Internal::ProfileChanged)))
             } else {
                 Effects::msg(Msg::Event(Event::Error {
                     error: CtxError::from(OtherError::AddonAlreadyInstalled),
@@ -144,7 +144,7 @@ pub fn update_profile<E: Env + 'static>(
                         transport_url: transport_url.to_owned(),
                     }))
                     .join(push_to_api_effects)
-                    .join(Effects::msg(Msg::Internal(Internal::ProfileChanged(false))))
+                    .join(Effects::msg(Msg::Internal(Internal::ProfileChanged)))
                 } else {
                     Effects::msg(Msg::Event(Event::Error {
                         error: CtxError::from(OtherError::AddonIsProtected),
@@ -170,7 +170,7 @@ pub fn update_profile<E: Env + 'static>(
                 Effects::msg(Msg::Event(Event::SettingsUpdated {
                     settings: settings.to_owned(),
                 }))
-                .join(Effects::msg(Msg::Internal(Internal::ProfileChanged(false))))
+                .join(Effects::msg(Msg::Internal(Internal::ProfileChanged)))
             } else {
                 Effects::msg(Msg::Event(Event::SettingsUpdated {
                     settings: settings.to_owned(),
@@ -178,7 +178,7 @@ pub fn update_profile<E: Env + 'static>(
                 .unchanged()
             }
         }
-        Msg::Internal(Internal::ProfileChanged(persisted)) if !persisted => {
+        Msg::Internal(Internal::ProfileChanged) => {
             Effects::one(push_profile_to_storage::<E>(profile)).unchanged()
         }
         Msg::Internal(Internal::CtxAuthResult(auth_request, result)) => match (status, result) {
@@ -192,7 +192,7 @@ pub fn update_profile<E: Env + 'static>(
                 };
                 if *profile != next_proifle {
                     *profile = next_proifle;
-                    Effects::msg(Msg::Internal(Internal::ProfileChanged(false)))
+                    Effects::msg(Msg::Internal(Internal::ProfileChanged))
                 } else {
                     Effects::none().unchanged()
                 }
@@ -212,7 +212,7 @@ pub fn update_profile<E: Env + 'static>(
                 if profile.addons != *addons {
                     profile.addons = addons.to_owned();
                     Effects::msg(Msg::Event(Event::AddonsPulledFromAPI { transport_urls }))
-                        .join(Effects::msg(Msg::Internal(Internal::ProfileChanged(false))))
+                        .join(Effects::msg(Msg::Internal(Internal::ProfileChanged)))
                 } else {
                     Effects::msg(Msg::Event(Event::AddonsPulledFromAPI { transport_urls }))
                         .unchanged()

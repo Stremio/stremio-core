@@ -151,7 +151,7 @@ where
                     selectable_update(&mut self.selectable, &self.catalog_resource, &ctx.profile);
                 catalog_effects.join(selectable_effects)
             }
-            Msg::Internal(Internal::ProfileChanged(_)) => {
+            Msg::Internal(Internal::ProfileChanged) => {
                 selectable_update(&mut self.selectable, &self.catalog_resource, &ctx.profile)
             }
             _ => Effects::none().unchanged(),
