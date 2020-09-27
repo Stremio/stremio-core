@@ -5,13 +5,13 @@ use futures::{future, Future, FutureExt, TryFutureExt};
 use http::{Method, Request};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
-use stremio_core::runtime::{EnvError, EnvFuture, Environment};
+use stremio_core::runtime::{Env, EnvError, EnvFuture};
 use wasm_bindgen::{JsCast, JsValue};
 use wasm_bindgen_futures::{spawn_local, JsFuture};
 
-pub enum Env {}
+pub enum WebEnv {}
 
-impl Environment for Env {
+impl Env for WebEnv {
     fn fetch<IN, OUT>(request: Request<IN>) -> EnvFuture<OUT>
     where
         IN: Serialize,

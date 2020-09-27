@@ -1,8 +1,11 @@
-use crate::env::Env;
+use crate::env::WebEnv;
 use crate::model::{WebModel, WebModelField};
 use futures::{future, StreamExt};
 use std::ops::Deref;
-use stremio_core::runtime::{Environment, Runtime};
+use stremio_core::runtime::msg::{Event, Msg};
+use stremio_core::runtime::{Effects, Env, Runtime};
+use stremio_core::types::library::LibBucket;
+use stremio_core::types::profile::Profile;
 use wasm_bindgen::prelude::{wasm_bindgen, JsValue};
 
 #[wasm_bindgen(start)]
@@ -12,15 +15,16 @@ pub fn _run() {
 
 #[wasm_bindgen]
 pub struct StremioCoreWeb {
-    runtime: Runtime<Env, WebModel>,
+    runtime: Runtime<WebEnv, WebModel>,
 }
 
 #[wasm_bindgen]
 impl StremioCoreWeb {
     #[wasm_bindgen(constructor)]
     pub fn new(emit: js_sys::Function) -> StremioCoreWeb {
-        let (runtime, rx) = Runtime::<Env, _>::new(WebModel::default(), 1000);
-        Env::exec(rx.for_each(move |msg| {
+        let (web_model, effects) = WebModel::new(Profile::default(), LibBucket::default());
+        let (runtime, rx) = Runtime::<WebEnv, _>::new(web_model, effects, 1000);
+        WebEnv::exec(rx.for_each(move |msg| {
             emit.call1(&JsValue::NULL, &JsValue::from_serde(&msg).unwrap())
                 .expect("emit event failed");
             future::ready(())
