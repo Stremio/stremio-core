@@ -1,6 +1,6 @@
 use crate::models::ctx::Ctx;
 use crate::runtime::msg::{Action, ActionCtx};
-use crate::runtime::{Env, EnvFuture, Runtime};
+use crate::runtime::{Effects, Env, EnvFuture, Runtime};
 use crate::types::addon::{Descriptor, Manifest};
 use crate::types::api::{APIResult, SuccessResponse, True};
 use crate::types::profile::{Auth, GDPRConsent, Profile, User};
@@ -46,6 +46,7 @@ fn actionctx_pushaddonstoapi() {
                 ..Default::default()
             },
         },
+        Effects::none().unchanged(),
         1000,
     );
     TestEnv::run(|| runtime.dispatch(Action::Ctx(ActionCtx::PushAddonsToAPI)));
@@ -123,6 +124,7 @@ fn actionctx_pushaddonstoapi_with_user() {
                 ..Default::default()
             },
         },
+        Effects::none().unchanged(),
         1000,
     );
     TestEnv::run(|| runtime.dispatch(Action::Ctx(ActionCtx::PushAddonsToAPI)));

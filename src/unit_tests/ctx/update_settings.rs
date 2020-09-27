@@ -1,7 +1,7 @@
 use crate::constants::PROFILE_STORAGE_KEY;
 use crate::models::ctx::Ctx;
 use crate::runtime::msg::{Action, ActionCtx};
-use crate::runtime::Runtime;
+use crate::runtime::{Effects, Runtime};
 use crate::types::profile::{Profile, Settings};
 use crate::unit_tests::{TestEnv, REQUESTS, STORAGE};
 use stremio_derive::Model;
@@ -18,7 +18,8 @@ fn actionctx_updatesettings() {
         ..Settings::default()
     };
     TestEnv::reset();
-    let (runtime, _rx) = Runtime::<TestEnv, _>::new(TestModel::default(), 1000);
+    let (runtime, _rx) =
+        Runtime::<TestEnv, _>::new(TestModel::default(), Effects::none().unchanged(), 1000);
     TestEnv::run(|| runtime.dispatch(Action::Ctx(ActionCtx::UpdateSettings(settings.to_owned()))));
     assert_eq!(
         runtime.model().unwrap().ctx.profile.settings,
@@ -68,6 +69,7 @@ fn actionctx_updatesettings_not_changed() {
                 ..Default::default()
             },
         },
+        Effects::none().unchanged(),
         1000,
     );
     TestEnv::run(|| runtime.dispatch(Action::Ctx(ActionCtx::UpdateSettings(settings.to_owned()))));

@@ -1,7 +1,7 @@
 use crate::constants::{LIBRARY_RECENT_STORAGE_KEY, LIBRARY_STORAGE_KEY, PROFILE_STORAGE_KEY};
 use crate::models::ctx::Ctx;
 use crate::runtime::msg::{Action, ActionCtx};
-use crate::runtime::{Env, EnvFuture, Runtime};
+use crate::runtime::{Effects, Env, EnvFuture, Runtime};
 use crate::types::api::{
     APIResult, AuthRequest, AuthResponse, CollectionResponse, GDPRConsentWithTime,
 };
@@ -77,7 +77,8 @@ fn actionctx_authenticate_login() {
     }
     TestEnv::reset();
     *FETCH_HANDLER.write().unwrap() = Box::new(fetch_handler);
-    let (runtime, _rx) = Runtime::<TestEnv, _>::new(TestModel::default(), 1000);
+    let (runtime, _rx) =
+        Runtime::<TestEnv, _>::new(TestModel::default(), Effects::none().unchanged(), 1000);
     TestEnv::run(|| {
         runtime.dispatch(Action::Ctx(ActionCtx::Authenticate(AuthRequest::Login {
             email: "user_email".into(),
@@ -265,7 +266,8 @@ fn actionctx_authenticate_register() {
     }
     TestEnv::reset();
     *FETCH_HANDLER.write().unwrap() = Box::new(fetch_handler);
-    let (runtime, _rx) = Runtime::<TestEnv, _>::new(TestModel::default(), 1000);
+    let (runtime, _rx) =
+        Runtime::<TestEnv, _>::new(TestModel::default(), Effects::none().unchanged(), 1000);
     TestEnv::run(|| {
         runtime.dispatch(Action::Ctx(ActionCtx::Authenticate(
             AuthRequest::Register {

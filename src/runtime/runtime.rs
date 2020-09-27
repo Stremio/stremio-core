@@ -28,17 +28,16 @@ where
     E: Env + 'static,
     M: Model + 'static,
 {
-    pub fn new(model: M, buffer: usize) -> (Self, Receiver<RuntimeEvent>) {
+    pub fn new(model: M, effects: Effects, buffer: usize) -> (Self, Receiver<RuntimeEvent>) {
         let (tx, rx) = channel(buffer);
         let model = Arc::new(RwLock::new(model));
-        (
-            Runtime {
-                model,
-                tx,
-                env: PhantomData,
-            },
-            rx,
-        )
+        let runtime = Runtime {
+            model,
+            tx,
+            env: PhantomData,
+        };
+        runtime.handle_effects(effects);
+        (runtime, rx)
     }
     pub fn model(&self) -> LockResult<RwLockReadGuard<M>> {
         self.model.read()

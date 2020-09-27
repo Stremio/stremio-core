@@ -1,7 +1,7 @@
 use crate::constants::PROFILE_STORAGE_KEY;
 use crate::models::ctx::Ctx;
 use crate::runtime::msg::{Action, ActionCtx};
-use crate::runtime::{Env, EnvFuture, Runtime};
+use crate::runtime::{Effects, Env, EnvFuture, Runtime};
 use crate::types::addon::{Descriptor, Manifest};
 use crate::types::api::{APIResult, SuccessResponse, True};
 use crate::types::profile::{Auth, GDPRConsent, Profile, User};
@@ -50,6 +50,7 @@ fn actionctx_installaddon_install() {
                 ..Default::default()
             },
         },
+        Effects::none().unchanged(),
         1000,
     );
     TestEnv::run(|| runtime.dispatch(Action::Ctx(ActionCtx::InstallAddon(addon.to_owned()))));
@@ -143,6 +144,7 @@ fn actionctx_installaddon_install_with_user() {
                 ..Default::default()
             },
         },
+        Effects::none().unchanged(),
         1000,
     );
     TestEnv::run(|| runtime.dispatch(Action::Ctx(ActionCtx::InstallAddon(addon.to_owned()))));
@@ -255,6 +257,7 @@ fn actionctx_installaddon_update() {
                 ..Default::default()
             },
         },
+        Effects::none().unchanged(),
         1000,
     );
     TestEnv::run(|| runtime.dispatch(Action::Ctx(ActionCtx::InstallAddon(addon.to_owned()))));
@@ -321,6 +324,7 @@ fn actionctx_installaddon_already_installed() {
                 ..Default::default()
             },
         },
+        Effects::none().unchanged(),
         1000,
     );
     TestEnv::run(|| runtime.dispatch(Action::Ctx(ActionCtx::InstallAddon(addon.to_owned()))));

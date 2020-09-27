@@ -1,7 +1,7 @@
 use crate::constants::PROFILE_STORAGE_KEY;
 use crate::models::ctx::Ctx;
 use crate::runtime::msg::{Action, ActionCtx};
-use crate::runtime::{Env, EnvFuture, Runtime};
+use crate::runtime::{Effects, Env, EnvFuture, Runtime};
 use crate::types::addon::{Descriptor, DescriptorFlags, Manifest};
 use crate::types::api::{APIResult, SuccessResponse, True};
 use crate::types::profile::{Auth, GDPRConsent, Profile, User};
@@ -54,6 +54,7 @@ fn actionctx_uninstalladdon() {
                 ..Default::default()
             },
         },
+        Effects::none().unchanged(),
         1000,
     );
     TestEnv::run(|| {
@@ -157,6 +158,7 @@ fn actionctx_uninstalladdon_with_user() {
                 ..Default::default()
             },
         },
+        Effects::none().unchanged(),
         1000,
     );
     TestEnv::run(|| {
@@ -243,6 +245,7 @@ fn actionctx_uninstalladdon_protected() {
                 ..Default::default()
             },
         },
+        Effects::none().unchanged(),
         1000,
     );
     TestEnv::run(|| {
@@ -312,6 +315,7 @@ fn actionctx_uninstalladdon_not_installed() {
                 ..Default::default()
             },
         },
+        Effects::none().unchanged(),
         1000,
     );
     TestEnv::run(|| {
