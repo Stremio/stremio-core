@@ -15,11 +15,9 @@ use serde::ser::SerializeMap;
 use serde::{Serialize, Serializer};
 use std::marker::PhantomData;
 
-#[derive(Derivative, PartialEq)]
-#[derivative(Default)]
+#[derive(PartialEq)]
 pub enum CtxStatus {
     Loading(AuthRequest),
-    #[derivative(Default)]
     Ready,
 }
 
@@ -33,6 +31,7 @@ pub struct Ctx<E: Env> {
     #[serde(serialize_with = "serialize_lib_bucket")]
     pub library: LibBucket,
     #[serde(skip)]
+    #[derivative(Default(value = "CtxStatus::Ready"))]
     pub status: CtxStatus,
     #[serde(skip)]
     pub env: PhantomData<E>,
