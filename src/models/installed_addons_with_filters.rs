@@ -12,7 +12,7 @@ pub struct Selected {
     type_name: Option<String>,
 }
 
-#[derive(Serialize)]
+#[derive(Default, Serialize)]
 pub struct InstalledAddonsWithFilters {
     pub selected: Option<Selected>,
     pub type_names: Vec<String>,
