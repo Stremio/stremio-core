@@ -217,7 +217,7 @@ fn update_and_push_items_to_storage<E: Env + 'static>(
         .cloned()
         .collect::<Vec<_>>();
     let are_items_in_recent = library.are_ids_in_recent(&ids);
-    library.merge(items);
+    library.merge_items(items);
     let push_to_storage_future = if library.items.len() <= LIBRARY_RECENT_COUNT {
         Either::Left(
             future::try_join_all(vec![

@@ -23,7 +23,18 @@ impl LibBucket {
                 .collect(),
         }
     }
-    pub fn merge(&mut self, items: Vec<LibItem>) {
+    pub fn merge_bucket(&mut self, lib_bucket: LibBucket) {
+        if self.uid == lib_bucket.uid {
+            self.merge_items(
+                lib_bucket
+                    .items
+                    .into_iter()
+                    .map(|(_, lib_item)| lib_item)
+                    .collect(),
+            );
+        };
+    }
+    pub fn merge_items(&mut self, items: Vec<LibItem>) {
         for new_item in items.into_iter() {
             match self.items.get_mut(&new_item.id) {
                 Some(item) => {
