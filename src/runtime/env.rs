@@ -85,18 +85,16 @@ pub trait Env {
         Self: Sized + 'static,
     {
         Self::get_storage::<usize>(SCHEMA_VERSION_STORAGE_KEY)
-            .and_then(|schema_version| {
-                match schema_version {
-                    Some(schema_version) if schema_version > SCHEMA_VERSION => {
-                        Either::Left(future::err(EnvError::StorageSchemaVersionDowngrade(
-                            schema_version,
-                            SCHEMA_VERSION,
-                        )))
-                    }
-                    None => Either::Right(migrate_storage_schema_v1::<Self>()),
-                    // TODO Some(1) => Either::Right(migrate_storage_schema_v2::<Self>()),
-                    _ => Either::Left(future::ok(())),
+            .and_then(|schema_version| match schema_version {
+                Some(schema_version) if schema_version > SCHEMA_VERSION => {
+                    Either::Left(future::err(EnvError::StorageSchemaVersionDowngrade(
+                        schema_version,
+                        SCHEMA_VERSION,
+                    )))
                 }
+                None => Either::Right(migrate_storage_schema_v1::<Self>()),
+                // TODO Some(1) => Either::Right(migrate_storage_schema_v2::<Self>()),
+                _ => Either::Left(future::ok(())),
             })
             .boxed_local()
     }
