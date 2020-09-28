@@ -84,7 +84,7 @@ pub struct Selectable {
     pub has_next_page: bool,
 }
 
-#[derive(Serialize)]
+#[derive(Default, Serialize)]
 pub struct CatalogWithFilters<T> {
     pub selected: Option<Selected>,
     pub selectable: Selectable,
