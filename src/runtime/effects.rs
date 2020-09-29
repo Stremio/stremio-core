@@ -1,5 +1,5 @@
 use crate::runtime::msg::Msg;
-use derive_more::From;
+use derive_more::{From, IntoIterator};
 use futures::future::LocalBoxFuture;
 
 pub type EffectFuture = LocalBoxFuture<'static, Msg>;
@@ -10,18 +10,11 @@ pub enum Effect {
     Future(EffectFuture),
 }
 
+#[derive(IntoIterator)]
 pub struct Effects {
+    #[into_iterator(owned)]
     effects: Vec<Effect>,
     pub has_changed: bool,
-}
-
-impl IntoIterator for Effects {
-    type Item = Effect;
-    type IntoIter = std::vec::IntoIter<Self::Item>;
-
-    fn into_iter(self) -> Self::IntoIter {
-        self.effects.into_iter()
-    }
 }
 
 impl Effects {
