@@ -31,7 +31,7 @@ impl EnvError {
                 from, to
             ),
             EnvError::StorageSchemaVersionUpgrade(source) => format!(
-                "Upgrade storage schema version failed. {}",
+                "Upgrade storage schema version failed caused by: {}",
                 source.message()
             ),
             EnvError::Fetch(message) => format!("Failed to fetch: {}", message),
