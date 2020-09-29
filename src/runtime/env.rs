@@ -109,14 +109,14 @@ pub trait Env {
                     ));
                 };
                 if schema_version == 0 {
-                    migrate_storage_schema_v1::<Self>()
+                    migrate_storage_schema_to_v1::<Self>()
                         .map_err(|error| EnvError::StorageSchemaVersionUpgrade(Box::new(error)))
                         .await?;
                     schema_version = 1;
                 };
                 // TODO v2
                 // if schema_version == 1 {
-                //     migrate_storage_schema_v2::<Self>()
+                //     migrate_storage_schema_to_v2::<Self>()
                 //         .map_err(|error| EnvError::StorageSchemaVersionUpgrade(Box::new(error)))
                 //         .await?;
                 //     schema_version = 2;
@@ -133,7 +133,7 @@ pub trait Env {
     }
 }
 
-fn migrate_storage_schema_v1<E: Env + 'static>() -> EnvFuture<()> {
+fn migrate_storage_schema_to_v1<E: Env + 'static>() -> EnvFuture<()> {
     future::try_join_all(vec![
         E::set_storage(SCHEMA_VERSION_STORAGE_KEY, Some(&1)),
         E::set_storage::<()>(PROFILE_STORAGE_KEY, None),
