@@ -7,16 +7,14 @@ fn deserialize_lib_bucket() {
         items: vec![].into_iter().collect(),
     };
     let lib_bucket_json = r#"
-    [
-        {
-            "uid": "uid",
-            "items": {}
-        }
-    ]
+    {
+        "uid": "uid",
+        "items": {}
+    }
     "#;
-    let lib_bucket_deserialize: LibBucket = serde_json::from_str(&lib_bucket_json).unwrap();
+    let lib_bucket_deserialize = serde_json::from_str(&lib_bucket_json).unwrap();
     assert_eq!(
         lib_bucket, lib_bucket_deserialize,
-        "library bucket deserialized successfully"
+        "LibBucket deserialized successfully"
     );
 }
