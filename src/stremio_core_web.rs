@@ -1,73 +1,126 @@
 use crate::env::WebEnv;
 use crate::model::{WebModel, WebModelField};
 use futures::{future, StreamExt};
-use std::ops::Deref;
-use stremio_core::runtime::{Env, Runtime};
+use lazy_static::lazy_static;
+use std::sync::RwLock;
+use stremio_core::constants::{
+    LIBRARY_RECENT_STORAGE_KEY, LIBRARY_STORAGE_KEY, PROFILE_STORAGE_KEY,
+};
+use stremio_core::models::common::Loadable;
+use stremio_core::runtime::{Env, EnvError, Runtime};
 use stremio_core::types::library::LibBucket;
 use stremio_core::types::profile::Profile;
 use wasm_bindgen::prelude::{wasm_bindgen, JsValue};
 
+lazy_static! {
+    static ref RUNTIME: RwLock<Option<Loadable<Runtime<WebEnv, WebModel>, EnvError>>> =
+        Default::default();
+}
+
 #[wasm_bindgen(start)]
-pub fn _run() {
+pub fn start() {
     std::panic::set_hook(Box::new(console_error_panic_hook::hook));
 }
 
 #[wasm_bindgen]
-pub struct StremioCoreWeb {
-    runtime: Runtime<WebEnv, WebModel>,
+pub async fn initialize_runtime(emit: js_sys::Function) {
+    if RUNTIME.read().expect("runtime read failed").is_some() {
+        panic!("unable to initialize runtime multiple times");
+    };
+
+    *RUNTIME.write().expect("runtime write failed") = Some(Loadable::Loading);
+    let migration_result = WebEnv::migrate_storage_schema().await;
+    match migration_result {
+        Ok(_) => {
+            let storage_result = future::try_join3(
+                WebEnv::get_storage::<Profile>(PROFILE_STORAGE_KEY),
+                WebEnv::get_storage::<LibBucket>(LIBRARY_RECENT_STORAGE_KEY),
+                WebEnv::get_storage::<LibBucket>(LIBRARY_STORAGE_KEY),
+            )
+            .await;
+            match storage_result {
+                Ok((profile, recent_bucket, other_bucket)) => {
+                    let profile = profile.unwrap_or_default();
+                    let mut lib_bucket = LibBucket::new(profile.uid(), vec![]);
+                    if let Some(recent_bucket) = recent_bucket {
+                        lib_bucket.merge_bucket(recent_bucket);
+                    };
+                    if let Some(other_bucket) = other_bucket {
+                        lib_bucket.merge_bucket(other_bucket);
+                    };
+                    let (model, effects) = WebModel::new(profile, lib_bucket);
+                    let (runtime, rx) = Runtime::<WebEnv, _>::new(model, effects, 1000);
+                    WebEnv::exec(rx.for_each(move |msg| {
+                        emit.call1(&JsValue::NULL, &JsValue::from_serde(&msg).unwrap())
+                            .expect("emit event failed");
+                        future::ready(())
+                    }));
+                    *RUNTIME.write().expect("runtime write failed") =
+                        Some(Loadable::Ready(runtime));
+                }
+                Err(error) => {
+                    *RUNTIME.write().expect("runtime write failed") = Some(Loadable::Err(error));
+                }
+            }
+        }
+        Err(error) => {
+            *RUNTIME.write().expect("runtime write failed") = Some(Loadable::Err(error));
+        }
+    };
 }
 
 #[wasm_bindgen]
-impl StremioCoreWeb {
-    #[wasm_bindgen(constructor)]
-    pub fn new(emit: js_sys::Function) -> StremioCoreWeb {
-        let (web_model, effects) = WebModel::new(Profile::default(), LibBucket::default());
-        let (runtime, rx) = Runtime::<WebEnv, _>::new(web_model, effects, 1000);
-        WebEnv::exec(rx.for_each(move |msg| {
-            emit.call1(&JsValue::NULL, &JsValue::from_serde(&msg).unwrap())
-                .expect("emit event failed");
-            future::ready(())
-        }));
-        StremioCoreWeb { runtime }
-    }
-    pub fn dispatch(&self, field: &JsValue, action: &JsValue) -> JsValue {
-        match (field.into_serde(), action.into_serde()) {
-            (Ok(field), Ok(action)) => {
-                self.runtime.dispatch_to_field(&field, action);
-                JsValue::from(true)
+pub fn get_state(field: &JsValue) -> JsValue {
+    match &*RUNTIME.read().expect("runtime read failed") {
+        Some(Loadable::Ready(runtime)) => {
+            let model = runtime.model().expect("model read failed");
+            match field.into_serde() {
+                Ok(WebModelField::Ctx) => JsValue::from_serde(&model.ctx).unwrap(),
+                Ok(WebModelField::ContinueWatchingPreview) => {
+                    JsValue::from_serde(&model.continue_watching_preview).unwrap()
+                }
+                Ok(WebModelField::Board) => JsValue::from_serde(&model.board).unwrap(),
+                Ok(WebModelField::Discover) => JsValue::from_serde(&model.discover).unwrap(),
+                Ok(WebModelField::Library) => JsValue::from_serde(&model.library).unwrap(),
+                Ok(WebModelField::ContinueWatching) => {
+                    JsValue::from_serde(&model.continue_watching).unwrap()
+                }
+                Ok(WebModelField::Search) => JsValue::from_serde(&model.search).unwrap(),
+                Ok(WebModelField::MetaDetails) => JsValue::from_serde(&model.meta_details).unwrap(),
+                Ok(WebModelField::RemoteAddons) => {
+                    JsValue::from_serde(&model.remote_addons).unwrap()
+                }
+                Ok(WebModelField::InstalledAddons) => {
+                    JsValue::from_serde(&model.installed_addons).unwrap()
+                }
+                Ok(WebModelField::AddonDetails) => {
+                    JsValue::from_serde(&model.addon_details).unwrap()
+                }
+                Ok(WebModelField::StreamingServer) => {
+                    JsValue::from_serde(&model.streaming_server).unwrap()
+                }
+                Ok(WebModelField::Player) => JsValue::from_serde(&model.player).unwrap(),
+                Err(_) => JsValue::from_serde(&*model).unwrap(),
             }
-            (Err(_), Ok(action)) => {
-                self.runtime.dispatch(action);
-                JsValue::from(true)
-            }
-            _ => JsValue::from(false),
         }
+        _ => panic!("runtime is not ready"),
     }
-    pub fn get_state(&self, field: &JsValue) -> JsValue {
-        let model = self.runtime.model().expect("model read failed");
-        match field.into_serde() {
-            Ok(WebModelField::Ctx) => JsValue::from_serde(&model.ctx).unwrap(),
-            Ok(WebModelField::ContinueWatchingPreview) => {
-                JsValue::from_serde(&model.continue_watching_preview).unwrap()
+}
+
+#[wasm_bindgen]
+pub fn dispatch(action: &JsValue, field: &JsValue) -> JsValue {
+    match &*RUNTIME.read().expect("runtime read failed") {
+        Some(Loadable::Ready(runtime)) => match (action.into_serde(), field.into_serde()) {
+            (Ok(action), Ok(field)) => {
+                runtime.dispatch_to_field(&field, action);
+                JsValue::TRUE
             }
-            Ok(WebModelField::Board) => JsValue::from_serde(&model.board).unwrap(),
-            Ok(WebModelField::Discover) => JsValue::from_serde(&model.discover).unwrap(),
-            Ok(WebModelField::Library) => JsValue::from_serde(&model.library).unwrap(),
-            Ok(WebModelField::ContinueWatching) => {
-                JsValue::from_serde(&model.continue_watching).unwrap()
+            (Ok(action), Err(_)) => {
+                runtime.dispatch(action);
+                JsValue::TRUE
             }
-            Ok(WebModelField::Search) => JsValue::from_serde(&model.search).unwrap(),
-            Ok(WebModelField::MetaDetails) => JsValue::from_serde(&model.meta_details).unwrap(),
-            Ok(WebModelField::RemoteAddons) => JsValue::from_serde(&model.remote_addons).unwrap(),
-            Ok(WebModelField::InstalledAddons) => {
-                JsValue::from_serde(&model.installed_addons).unwrap()
-            }
-            Ok(WebModelField::AddonDetails) => JsValue::from_serde(&model.addon_details).unwrap(),
-            Ok(WebModelField::StreamingServer) => {
-                JsValue::from_serde(&model.streaming_server).unwrap()
-            }
-            Ok(WebModelField::Player) => JsValue::from_serde(&model.player).unwrap(),
-            Err(_) => JsValue::from_serde(&model.deref()).unwrap(),
-        }
+            _ => JsValue::FALSE,
+        },
+        _ => panic!("runtime is not ready"),
     }
 }
