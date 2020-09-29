@@ -174,9 +174,9 @@ where
         pub removed: bool,
         pub temp: bool,
     }
-    let mut map = serializer.serialize_map(Some(lib_bucket.items.len()))?;
+    let mut state = serializer.serialize_map(Some(lib_bucket.items.len()))?;
     for lib_item in lib_bucket.items.values() {
-        map.serialize_entry(
+        state.serialize_entry(
             &lib_item.id,
             &LibItemProjection {
                 removed: lib_item.removed,
@@ -184,5 +184,5 @@ where
             },
         )?;
     }
-    map.end()
+    state.end()
 }
