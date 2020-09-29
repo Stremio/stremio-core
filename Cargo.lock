@@ -521,6 +521,7 @@ dependencies = [
  "http",
  "itertools",
  "js-sys",
+ "lazy_static",
  "serde",
  "serde_json",
  "stremio-core",

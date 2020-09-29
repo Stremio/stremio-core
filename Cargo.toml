@@ -23,6 +23,7 @@ js-sys = "0.3"
 wasm-bindgen = { version = "0.2.67", features = ["serde-serialize"] }
 wasm-bindgen-futures = "0.4"
 console_error_panic_hook = "0.1"
+lazy_static = "1.4"
 itertools = "0.9"
 
 [dependencies.web-sys]
