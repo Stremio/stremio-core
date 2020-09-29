@@ -41,11 +41,14 @@ impl WebModel {
         let (discover, discover_effects) = CatalogWithFilters::<MetaItemPreview>::new(&profile);
         let (remote_addons, remote_addons_effects) =
             CatalogWithFilters::<DescriptorPreview>::new(&profile);
+        let (installed_addons, installed_addons_effects) =
+            InstalledAddonsWithFilters::new(&profile);
         let (streaming_server, streaming_server_effects) = StreamingServer::new::<WebEnv>(&profile);
         let model = WebModel {
             ctx: Ctx::new(profile, library),
             discover,
             remote_addons,
+            installed_addons,
             streaming_server,
             continue_watching_preview: Default::default(),
             board: Default::default(),
@@ -53,7 +56,6 @@ impl WebModel {
             continue_watching: Default::default(),
             search: Default::default(),
             meta_details: Default::default(),
-            installed_addons: Default::default(),
             addon_details: Default::default(),
             player: Default::default(),
         };
@@ -61,6 +63,7 @@ impl WebModel {
             model,
             discover_effects
                 .join(remote_addons_effects)
+                .join(installed_addons_effects)
                 .join(streaming_server_effects),
         )
     }
