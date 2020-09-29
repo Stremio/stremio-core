@@ -86,6 +86,15 @@ pub trait Env {
     fn now() -> DateTime<Utc>;
     #[cfg(debug_assertions)]
     fn log(message: String);
+    fn addon_transport(transport_url: &Url) -> Box<dyn AddonTransport>
+    where
+        Self: Sized + 'static,
+    {
+        match transport_url.scheme() {
+            "http" | "https" => Box::new(AddonHTTPTransport::<Self>::new(transport_url.to_owned())),
+            _ => Box::new(UnsupportedTransport::new(transport_url.to_owned())),
+        }
+    }
     fn migrate_storage_schema() -> EnvFuture<()>
     where
         Self: Sized + 'static,
@@ -121,15 +130,6 @@ pub trait Env {
                 Ok(())
             })
             .boxed_local()
-    }
-    fn addon_transport(transport_url: &Url) -> Box<dyn AddonTransport>
-    where
-        Self: Sized + 'static,
-    {
-        match transport_url.scheme() {
-            "http" | "https" => Box::new(AddonHTTPTransport::<Self>::new(transport_url.to_owned())),
-            _ => Box::new(UnsupportedTransport::new(transport_url.to_owned())),
-        }
     }
 }
 
