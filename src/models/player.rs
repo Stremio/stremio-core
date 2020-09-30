@@ -7,7 +7,9 @@ use crate::models::ctx::Ctx;
 use crate::runtime::msg::{Action, ActionLoad, ActionPlayer, Internal, Msg};
 use crate::runtime::{Effects, Env, UpdateWithCtx};
 use crate::types::addon::{AggrRequest, ResourceRef, ResourceRequest};
-use crate::types::library::{LibBucket, LibItem, LibItemBehaviorHints, LibItemState};
+use crate::types::library::{
+    LibraryBucket, LibraryItem, LibraryItemBehaviorHints, LibraryItemState,
+};
 use crate::types::profile::Settings as ProfileSettings;
 use crate::types::resource::{MetaItem, Stream, Subtitles, Video};
 use serde::{Deserialize, Serialize};
@@ -32,7 +34,7 @@ pub struct Player {
     pub meta_resource: Option<ResourceLoadable<MetaItem>>,
     pub subtitles_resources: Vec<ResourceLoadable<Vec<Subtitles>>>,
     pub next_video: Option<Video>,
-    pub lib_item: Option<LibItem>,
+    pub library_item: Option<LibraryItem>,
 }
 
 impl<E: Env + 'static> UpdateWithCtx<Ctx<E>> for Player {
@@ -68,13 +70,16 @@ impl<E: Env + 'static> UpdateWithCtx<Ctx<E>> for Player {
                         .and_then(|selected| selected.video_id.to_owned()),
                     &ctx.profile.settings,
                 );
-                let lib_item_effects =
-                    lib_item_update::<E>(&mut self.lib_item, &self.meta_resource, &ctx.library);
+                let library_item_effects = library_item_update::<E>(
+                    &mut self.library_item,
+                    &self.meta_resource,
+                    &ctx.library,
+                );
                 selected_effects
                     .join(meta_effects)
                     .join(subtitles_effects)
                     .join(next_video_effects)
-                    .join(lib_item_effects)
+                    .join(library_item_effects)
             }
             Msg::Action(Action::Unload) => {
                 let selected_effects = eq_update(&mut self.selected, None);
@@ -89,13 +94,16 @@ impl<E: Env + 'static> UpdateWithCtx<Ctx<E>> for Player {
                         .and_then(|selected| selected.video_id.to_owned()),
                     &ctx.profile.settings,
                 );
-                let lib_item_effects =
-                    lib_item_update::<E>(&mut self.lib_item, &self.meta_resource, &ctx.library);
+                let library_item_effects = library_item_update::<E>(
+                    &mut self.library_item,
+                    &self.meta_resource,
+                    &ctx.library,
+                );
                 selected_effects
                     .join(meta_effects)
                     .join(subtitles_effects)
                     .join(next_video_effects)
-                    .join(lib_item_effects)
+                    .join(library_item_effects)
             }
             Msg::Action(Action::Player(ActionPlayer::UpdateLibraryItemState {
                 time,
@@ -106,45 +114,47 @@ impl<E: Env + 'static> UpdateWithCtx<Ctx<E>> for Player {
                         video_id: Some(video_id),
                         ..
                     }),
-                    Some(lib_item),
-                ) = (&self.selected, &mut self.lib_item)
+                    Some(library_item),
+                ) = (&self.selected, &mut self.library_item)
                 {
-                    lib_item.state.last_watched = Some(E::now());
-                    if lib_item.state.video_id != Some(video_id.to_owned()) {
-                        lib_item.state.video_id = Some(video_id.to_owned());
-                        lib_item.state.overall_time_watched = lib_item
+                    library_item.state.last_watched = Some(E::now());
+                    if library_item.state.video_id != Some(video_id.to_owned()) {
+                        library_item.state.video_id = Some(video_id.to_owned());
+                        library_item.state.overall_time_watched = library_item
                             .state
                             .overall_time_watched
-                            .saturating_add(lib_item.state.time_watched);
-                        lib_item.state.time_watched = 0;
-                        lib_item.state.flagged_watched = 0;
+                            .saturating_add(library_item.state.time_watched);
+                        library_item.state.time_watched = 0;
+                        library_item.state.flagged_watched = 0;
                     } else {
-                        lib_item.state.time_watched = lib_item.state.time_watched.saturating_add(
-                            cmp::min(1000, cmp::max(0, time - lib_item.state.time_offset)),
-                        );
+                        library_item.state.time_watched =
+                            library_item.state.time_watched.saturating_add(cmp::min(
+                                1000,
+                                cmp::max(0, time - library_item.state.time_offset),
+                            ));
                     };
-                    lib_item.state.time_offset = time.to_owned();
-                    lib_item.state.duration = duration.to_owned();
-                    if lib_item.state.flagged_watched == 0
-                        && lib_item.state.time_watched as f64
-                            > lib_item.state.duration as f64 * WATCHED_THRESHOLD_COEF
+                    library_item.state.time_offset = time.to_owned();
+                    library_item.state.duration = duration.to_owned();
+                    if library_item.state.flagged_watched == 0
+                        && library_item.state.time_watched as f64
+                            > library_item.state.duration as f64 * WATCHED_THRESHOLD_COEF
                     {
-                        lib_item.state.flagged_watched = 1;
-                        lib_item.state.times_watched =
-                            lib_item.state.times_watched.saturating_add(1);
+                        library_item.state.flagged_watched = 1;
+                        library_item.state.times_watched =
+                            library_item.state.times_watched.saturating_add(1);
                     };
-                    if lib_item.temp && lib_item.state.times_watched == 0 {
-                        lib_item.removed = true;
+                    if library_item.temp && library_item.state.times_watched == 0 {
+                        library_item.removed = true;
                     };
-                    if lib_item.removed {
-                        lib_item.temp = true;
+                    if library_item.removed {
+                        library_item.temp = true;
                     };
                 };
                 Effects::none()
             }
-            Msg::Action(Action::Player(ActionPlayer::PushToLibrary)) => match &self.lib_item {
-                Some(lib_item) => Effects::msg(Msg::Internal(Internal::UpdateLibraryItem(
-                    lib_item.to_owned(),
+            Msg::Action(Action::Player(ActionPlayer::PushToLibrary)) => match &self.library_item {
+                Some(library_item) => Effects::msg(Msg::Internal(Internal::UpdateLibraryItem(
+                    library_item.to_owned(),
                 )))
                 .unchanged(),
                 _ => Effects::none().unchanged(),
@@ -175,12 +185,15 @@ impl<E: Env + 'static> UpdateWithCtx<Ctx<E>> for Player {
                         .and_then(|selected| selected.video_id.to_owned()),
                     &ctx.profile.settings,
                 );
-                let lib_item_effects =
-                    lib_item_update::<E>(&mut self.lib_item, &self.meta_resource, &ctx.library);
+                let library_item_effects = library_item_update::<E>(
+                    &mut self.library_item,
+                    &self.meta_resource,
+                    &ctx.library,
+                );
                 meta_effects
                     .join(subtitles_effects)
                     .join(next_video_effects)
-                    .join(lib_item_effects)
+                    .join(library_item_effects)
             }
             _ => Effects::none().unchanged(),
         }
@@ -216,12 +229,12 @@ fn next_video_update(
     }
 }
 
-fn lib_item_update<E: Env>(
-    lib_item: &mut Option<LibItem>,
+fn library_item_update<E: Env>(
+    library_item: &mut Option<LibraryItem>,
     meta_resource: &Option<ResourceLoadable<MetaItem>>,
-    library: &LibBucket,
+    library: &LibraryBucket,
 ) -> Effects {
-    let next_lib_item = match meta_resource {
+    let next_library_item = match meta_resource {
         Some(meta_resource) => {
             let meta_item = match meta_resource {
                 ResourceLoadable {
@@ -230,58 +243,58 @@ fn lib_item_update<E: Env>(
                 } => Some(meta_item),
                 _ => None,
             };
-            let lib_item = match lib_item {
-                Some(LibItem { id, .. }) if id == &meta_resource.request.path.id => {
-                    lib_item.as_ref()
+            let library_item = match library_item {
+                Some(LibraryItem { id, .. }) if id == &meta_resource.request.path.id => {
+                    library_item.as_ref()
                 }
                 _ => library.items.get(&meta_resource.request.path.id),
             };
-            match (meta_item, lib_item) {
-                (Some(meta_item), Some(lib_item)) => Some(LibItem {
-                    id: lib_item.id.to_owned(),
-                    removed: lib_item.removed.to_owned(),
-                    temp: lib_item.temp.to_owned(),
-                    ctime: lib_item.ctime.to_owned(),
-                    mtime: lib_item.mtime.to_owned(),
-                    state: lib_item.state.to_owned(),
+            match (meta_item, library_item) {
+                (Some(meta_item), Some(library_item)) => Some(LibraryItem {
+                    id: library_item.id.to_owned(),
+                    removed: library_item.removed.to_owned(),
+                    temp: library_item.temp.to_owned(),
+                    ctime: library_item.ctime.to_owned(),
+                    mtime: library_item.mtime.to_owned(),
+                    state: library_item.state.to_owned(),
                     name: meta_item.name.to_owned(),
                     type_name: meta_item.type_name.to_owned(),
                     poster: meta_item.poster.to_owned(),
                     poster_shape: meta_item.poster_shape.to_owned(),
-                    behavior_hints: LibItemBehaviorHints {
+                    behavior_hints: LibraryItemBehaviorHints {
                         default_video_id: meta_item.behavior_hints.default_video_id.to_owned(),
                     },
                 }),
-                (Some(meta_item), None) => Some(LibItem {
+                (Some(meta_item), None) => Some(LibraryItem {
                     id: meta_item.id.to_owned(),
                     removed: true,
                     temp: true,
                     ctime: Some(E::now()),
                     mtime: E::now(),
-                    state: LibItemState::default(),
+                    state: LibraryItemState::default(),
                     name: meta_item.name.to_owned(),
                     type_name: meta_item.type_name.to_owned(),
                     poster: meta_item.poster.to_owned(),
                     poster_shape: meta_item.poster_shape.to_owned(),
-                    behavior_hints: LibItemBehaviorHints {
+                    behavior_hints: LibraryItemBehaviorHints {
                         default_video_id: meta_item.behavior_hints.default_video_id.to_owned(),
                     },
                 }),
-                (None, Some(lib_item)) => Some(lib_item.to_owned()),
+                (None, Some(library_item)) => Some(library_item.to_owned()),
                 _ => None,
             }
         }
         _ => None,
     };
-    if lib_item != &next_lib_item {
-        let update_library_item_effects = match lib_item {
-            Some(lib_item) => Effects::msg(Msg::Internal(Internal::UpdateLibraryItem(
-                lib_item.to_owned(),
+    if library_item != &next_library_item {
+        let update_library_item_effects = match library_item {
+            Some(library_item) => Effects::msg(Msg::Internal(Internal::UpdateLibraryItem(
+                library_item.to_owned(),
             )))
             .unchanged(),
             _ => Effects::none().unchanged(),
         };
-        *lib_item = next_lib_item;
+        *library_item = next_library_item;
         Effects::none().join(update_library_item_effects)
     } else {
         Effects::none().unchanged()

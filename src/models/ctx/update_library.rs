@@ -6,7 +6,7 @@ use crate::runtime::msg::{Action, ActionCtx, Event, Internal, Msg};
 use crate::runtime::{Effect, Effects, Env};
 use crate::types::api::{DatastoreCommand, DatastoreRequest, LibItemModified, SuccessResponse};
 use crate::types::library::{
-    LibBucket, LibBucketBorrowed, LibItem, LibItemBehaviorHints, LibItemState,
+    LibraryBucket, LibraryBucketBorrowed, LibraryItem, LibraryItemBehaviorHints, LibraryItemState,
 };
 use crate::types::profile::AuthKey;
 use futures::future::Either;
@@ -14,14 +14,14 @@ use futures::{future, FutureExt, TryFutureExt};
 use std::collections::HashMap;
 
 pub fn update_library<E: Env + 'static>(
-    library: &mut LibBucket,
+    library: &mut LibraryBucket,
     auth_key: Option<&AuthKey>,
     status: &CtxStatus,
     msg: &Msg,
 ) -> Effects {
     match msg {
         Msg::Action(Action::Ctx(ActionCtx::Logout)) => {
-            let next_library = LibBucket::default();
+            let next_library = LibraryBucket::default();
             if *library != next_library {
                 *library = next_library;
                 Effects::msg(Msg::Internal(Internal::LibraryChanged(false)))
@@ -30,38 +30,38 @@ pub fn update_library<E: Env + 'static>(
             }
         }
         Msg::Action(Action::Ctx(ActionCtx::AddToLibrary(meta_preview))) => {
-            let mut lib_item = LibItem {
+            let mut library_item = LibraryItem {
                 id: meta_preview.id.to_owned(),
                 type_name: meta_preview.type_name.to_owned(),
                 name: meta_preview.name.to_owned(),
                 poster: meta_preview.poster.to_owned(),
                 poster_shape: meta_preview.poster_shape.to_owned(),
-                behavior_hints: LibItemBehaviorHints {
+                behavior_hints: LibraryItemBehaviorHints {
                     default_video_id: meta_preview.behavior_hints.default_video_id.to_owned(),
                 },
                 removed: false,
                 temp: false,
                 mtime: E::now(),
                 ctime: Some(E::now()),
-                state: LibItemState::default(),
+                state: LibraryItemState::default(),
             };
-            if let Some(LibItem { ctime, state, .. }) = library.items.get(&meta_preview.id) {
-                lib_item.state = state.to_owned();
+            if let Some(LibraryItem { ctime, state, .. }) = library.items.get(&meta_preview.id) {
+                library_item.state = state.to_owned();
                 if let Some(ctime) = ctime {
-                    lib_item.ctime = Some(ctime.to_owned());
+                    library_item.ctime = Some(ctime.to_owned());
                 };
             };
-            Effects::msg(Msg::Internal(Internal::UpdateLibraryItem(lib_item)))
+            Effects::msg(Msg::Internal(Internal::UpdateLibraryItem(library_item)))
                 .join(Effects::msg(Msg::Event(Event::LibraryItemAdded {
                     id: meta_preview.id.to_owned(),
                 })))
                 .unchanged()
         }
         Msg::Action(Action::Ctx(ActionCtx::RemoveFromLibrary(id))) => match library.items.get(id) {
-            Some(lib_item) => {
-                let mut lib_item = lib_item.to_owned();
-                lib_item.removed = true;
-                Effects::msg(Msg::Internal(Internal::UpdateLibraryItem(lib_item)))
+            Some(library_item) => {
+                let mut library_item = library_item.to_owned();
+                library_item.removed = true;
+                Effects::msg(Msg::Internal(Internal::UpdateLibraryItem(library_item)))
                     .join(Effects::msg(Msg::Event(Event::LibraryItemRemoved {
                         id: id.to_owned(),
                     })))
@@ -74,10 +74,10 @@ pub fn update_library<E: Env + 'static>(
             .unchanged(),
         },
         Msg::Action(Action::Ctx(ActionCtx::RewindLibraryItem(id))) => match library.items.get(id) {
-            Some(lib_item) => {
-                let mut lib_item = lib_item.to_owned();
-                lib_item.state.time_offset = 0;
-                Effects::msg(Msg::Internal(Internal::UpdateLibraryItem(lib_item)))
+            Some(library_item) => {
+                let mut library_item = library_item.to_owned();
+                library_item.state.time_offset = 0;
+                Effects::msg(Msg::Internal(Internal::UpdateLibraryItem(library_item)))
                     .join(Effects::msg(Msg::Event(Event::LibraryItemRewided {
                         id: id.to_owned(),
                     })))
@@ -99,19 +99,20 @@ pub fn update_library<E: Env + 'static>(
             }))
             .unchanged(),
         },
-        Msg::Internal(Internal::UpdateLibraryItem(lib_item)) => {
-            let mut lib_item = lib_item.to_owned();
-            lib_item.mtime = E::now();
+        Msg::Internal(Internal::UpdateLibraryItem(library_item)) => {
+            let mut library_item = library_item.to_owned();
+            library_item.mtime = E::now();
             let push_to_api_effects = match auth_key {
-                Some(auth_key) => {
-                    Effects::one(push_items_to_api::<E>(vec![lib_item.to_owned()], auth_key))
-                        .unchanged()
-                }
+                Some(auth_key) => Effects::one(push_items_to_api::<E>(
+                    vec![library_item.to_owned()],
+                    auth_key,
+                ))
+                .unchanged(),
                 _ => Effects::none().unchanged(),
             };
             let push_to_storage_effects = Effects::one(update_and_push_items_to_storage::<E>(
                 library,
-                vec![lib_item],
+                vec![library_item],
             ));
             push_to_api_effects
                 .join(push_to_storage_effects)
@@ -121,11 +122,11 @@ pub fn update_library<E: Env + 'static>(
             Effects::one(push_library_to_storage::<E>(library)).unchanged()
         }
         Msg::Internal(Internal::CtxAuthResult(auth_request, result)) => match (status, result) {
-            (CtxStatus::Loading(loading_auth_request), Ok((auth, _, lib_items)))
+            (CtxStatus::Loading(loading_auth_request), Ok((auth, _, library_items)))
                 if loading_auth_request == auth_request =>
             {
                 let next_library =
-                    LibBucket::new(Some(auth.user.id.to_owned()), lib_items.to_owned());
+                    LibraryBucket::new(Some(auth.user.id.to_owned()), library_items.to_owned());
                 if *library != next_library {
                     *library = next_library;
                     Effects::msg(Msg::Internal(Internal::LibraryChanged(false)))
@@ -208,8 +209,8 @@ pub fn update_library<E: Env + 'static>(
 }
 
 fn update_and_push_items_to_storage<E: Env + 'static>(
-    library: &mut LibBucket,
-    items: Vec<LibItem>,
+    library: &mut LibraryBucket,
+    items: Vec<LibraryItem>,
 ) -> Effect {
     let ids = items
         .iter()
@@ -231,18 +232,18 @@ fn update_and_push_items_to_storage<E: Env + 'static>(
         if are_items_in_recent {
             Either::Right(Either::Left(E::set_storage(
                 LIBRARY_RECENT_STORAGE_KEY,
-                Some(&LibBucketBorrowed::new(&library.uid, &recent_items)),
+                Some(&LibraryBucketBorrowed::new(&library.uid, &recent_items)),
             )))
         } else {
             Either::Right(Either::Right(
                 future::try_join_all(vec![
                     E::set_storage(
                         LIBRARY_RECENT_STORAGE_KEY,
-                        Some(&LibBucketBorrowed::new(&library.uid, &recent_items)),
+                        Some(&LibraryBucketBorrowed::new(&library.uid, &recent_items)),
                     ),
                     E::set_storage(
                         LIBRARY_STORAGE_KEY,
-                        Some(&LibBucketBorrowed::new(&library.uid, &other_items)),
+                        Some(&LibraryBucketBorrowed::new(&library.uid, &other_items)),
                     ),
                 ])
                 .map_ok(|_| ()),
@@ -261,17 +262,17 @@ fn update_and_push_items_to_storage<E: Env + 'static>(
         .into()
 }
 
-fn push_library_to_storage<E: Env + 'static>(library: &LibBucket) -> Effect {
+fn push_library_to_storage<E: Env + 'static>(library: &LibraryBucket) -> Effect {
     let ids = library.items.keys().cloned().collect();
     let (recent_items, other_items) = library.split_items_by_recent();
     future::try_join_all(vec![
         E::set_storage(
             LIBRARY_RECENT_STORAGE_KEY,
-            Some(&LibBucketBorrowed::new(&library.uid, &recent_items)),
+            Some(&LibraryBucketBorrowed::new(&library.uid, &recent_items)),
         ),
         E::set_storage(
             LIBRARY_STORAGE_KEY,
-            Some(&LibBucketBorrowed::new(&library.uid, &other_items)),
+            Some(&LibraryBucketBorrowed::new(&library.uid, &other_items)),
         ),
     ])
     .map(move |result| match result {
@@ -285,7 +286,7 @@ fn push_library_to_storage<E: Env + 'static>(library: &LibBucket) -> Effect {
     .into()
 }
 
-fn push_items_to_api<E: Env + 'static>(items: Vec<LibItem>, auth_key: &str) -> Effect {
+fn push_items_to_api<E: Env + 'static>(items: Vec<LibraryItem>, auth_key: &str) -> Effect {
     let ids = items.iter().map(|item| &item.id).cloned().collect();
     fetch_api::<E, _, SuccessResponse>(&DatastoreRequest {
         auth_key: auth_key.to_owned(),
@@ -315,7 +316,7 @@ fn pull_items_from_api<E: Env + 'static>(ids: Vec<String>, auth_key: &str) -> Ef
         .into()
 }
 
-fn plan_sync_with_api<E: Env + 'static>(library: &LibBucket, auth_key: &str) -> Effect {
+fn plan_sync_with_api<E: Env + 'static>(library: &LibraryBucket, auth_key: &str) -> Effect {
     let local_mtimes = library
         .items
         .iter()

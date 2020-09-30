@@ -3,13 +3,17 @@ use crate::models::streaming_server::Settings as StreamingServerSettings;
 use crate::runtime::EnvError;
 use crate::types::addon::{Descriptor, Manifest, ResourceRequest, ResourceResponse};
 use crate::types::api::{APIRequest, AuthRequest, DatastoreRequest};
-use crate::types::library::{LibBucket, LibItem};
+use crate::types::library::{LibraryBucket, LibraryItem};
 use crate::types::profile::{Auth, Profile};
 use url::Url;
 
-pub type CtxStorageResponse = (Option<Profile>, Option<LibBucket>, Option<LibBucket>);
+pub type CtxStorageResponse = (
+    Option<Profile>,
+    Option<LibraryBucket>,
+    Option<LibraryBucket>,
+);
 
-pub type AuthResponse = (Auth, Vec<Descriptor>, Vec<LibItem>);
+pub type AuthResponse = (Auth, Vec<Descriptor>, Vec<LibraryItem>);
 
 pub type LibraryPlanResponse = (Vec<String>, Vec<String>);
 
@@ -24,9 +28,9 @@ pub enum Internal {
     // Result for library sync plan with API.
     LibrarySyncPlanResult(DatastoreRequest, Result<LibraryPlanResponse, CtxError>),
     // Result for pull library items from API.
-    LibraryPullResult(DatastoreRequest, Result<Vec<LibItem>, CtxError>),
+    LibraryPullResult(DatastoreRequest, Result<Vec<LibraryItem>, CtxError>),
     // Dispatched when library item needs to be updated in the memory, storage and API.
-    UpdateLibraryItem(LibItem),
+    UpdateLibraryItem(LibraryItem),
     // Dispatched when some of auth, addons or settings changed.
     ProfileChanged,
     // Dispatched when library changes with a flag if its already persisted.

@@ -1,16 +1,18 @@
-use crate::types::library::{LibBucket, LibItem, LibItemBehaviorHints, LibItemState};
+use crate::types::library::{
+    LibraryBucket, LibraryItem, LibraryItemBehaviorHints, LibraryItemState,
+};
 use crate::types::resource::PosterShape;
 use chrono::prelude::TimeZone;
 use chrono::Utc;
 
 #[test]
 fn deserialize_lib_bucket() {
-    let lib_bucket = LibBucket {
+    let lib_bucket = LibraryBucket {
         uid: None,
         items: vec![
             (
                 "id1".to_owned(),
-                LibItem {
+                LibraryItem {
                     id: "id1".to_owned(),
                     removed: false,
                     temp: false,
@@ -26,13 +28,13 @@ fn deserialize_lib_bucket() {
             ),
             (
                 "id2".to_owned(),
-                LibItem {
+                LibraryItem {
                     id: "id2".to_owned(),
                     removed: false,
                     temp: false,
                     ctime: Some(Utc.ymd(2020, 1, 1).and_hms_milli(0, 0, 0, 0)),
                     mtime: Utc.ymd(2020, 1, 1).and_hms_milli(0, 0, 0, 0),
-                    state: LibItemState {
+                    state: LibraryItemState {
                         last_watched: None,
                         time_watched: 0,
                         time_offset: 0,
@@ -49,7 +51,7 @@ fn deserialize_lib_bucket() {
                     type_name: "type_name".to_owned(),
                     poster: None,
                     poster_shape: PosterShape::Square,
-                    behavior_hints: LibItemBehaviorHints {
+                    behavior_hints: LibraryItemBehaviorHints {
                         default_video_id: None,
                     },
                 },
@@ -68,12 +70,12 @@ fn deserialize_lib_bucket() {
 
 #[test]
 fn deserialize_lib_bucket_with_user() {
-    let lib_bucket = LibBucket {
+    let lib_bucket = LibraryBucket {
         uid: Some("user_id".to_owned()),
         items: vec![
             (
                 "id1".to_owned(),
-                LibItem {
+                LibraryItem {
                     id: "id1".to_owned(),
                     removed: false,
                     temp: false,
@@ -89,13 +91,13 @@ fn deserialize_lib_bucket_with_user() {
             ),
             (
                 "id2".to_owned(),
-                LibItem {
+                LibraryItem {
                     id: "id2".to_owned(),
                     removed: false,
                     temp: false,
                     ctime: Some(Utc.ymd(2020, 1, 1).and_hms_milli(0, 0, 0, 0)),
                     mtime: Utc.ymd(2020, 1, 1).and_hms_milli(0, 0, 0, 0),
-                    state: LibItemState {
+                    state: LibraryItemState {
                         last_watched: None,
                         time_watched: 0,
                         time_offset: 0,
@@ -112,7 +114,7 @@ fn deserialize_lib_bucket_with_user() {
                     type_name: "type_name".to_owned(),
                     poster: None,
                     poster_shape: PosterShape::Square,
-                    behavior_hints: LibItemBehaviorHints {
+                    behavior_hints: LibraryItemBehaviorHints {
                         default_video_id: None,
                     },
                 },

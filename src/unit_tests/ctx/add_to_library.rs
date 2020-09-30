@@ -3,7 +3,9 @@ use crate::models::ctx::Ctx;
 use crate::runtime::msg::{Action, ActionCtx};
 use crate::runtime::{Effects, Env, EnvFuture, Runtime};
 use crate::types::api::{APIResult, SuccessResponse, True};
-use crate::types::library::{LibBucket, LibItem, LibItemBehaviorHints, LibItemState};
+use crate::types::library::{
+    LibraryBucket, LibraryItem, LibraryItemBehaviorHints, LibraryItemState,
+};
 use crate::types::profile::{Auth, GDPRConsent, Profile, User};
 use crate::types::resource::{MetaItemBehaviorHints, MetaItemPreview, PosterShape};
 use crate::unit_tests::{
@@ -50,7 +52,7 @@ fn actionctx_addtolibrary() {
         trailer_streams: vec![],
         behavior_hints: Default::default(),
     };
-    let lib_item = LibItem {
+    let library_item = LibraryItem {
         id: "id".to_owned(),
         removed: false,
         temp: false,
@@ -89,7 +91,7 @@ fn actionctx_addtolibrary() {
                     }),
                     ..Default::default()
                 },
-                library: LibBucket {
+                library: LibraryBucket {
                     uid: Some("id".to_owned()),
                     ..Default::default()
                 },
@@ -117,7 +119,7 @@ fn actionctx_addtolibrary() {
             .library
             .items
             .get(&meta_preview.id),
-        Some(&lib_item),
+        Some(&library_item),
         "Library updated successfully in memory"
     );
     assert!(
@@ -126,8 +128,8 @@ fn actionctx_addtolibrary() {
             .unwrap()
             .get(LIBRARY_RECENT_STORAGE_KEY)
             .map_or(false, |data| {
-                serde_json::from_str::<LibBucket>(&data).unwrap()
-                    == LibBucket::new(Some("id".to_owned()), vec![lib_item])
+                serde_json::from_str::<LibraryBucket>(&data).unwrap()
+                    == LibraryBucket::new(Some("id".to_owned()), vec![library_item])
             }),
         "Library recent slot updated successfully in storage"
     );
@@ -171,7 +173,7 @@ fn actionctx_addtolibrary_already_added() {
             has_scheduled_videos: false,
         },
     };
-    let lib_item = LibItem {
+    let library_item = LibraryItem {
         id: "id".to_owned(),
         type_name: "type_name".to_owned(),
         name: "name".to_owned(),
@@ -181,11 +183,11 @@ fn actionctx_addtolibrary_already_added() {
         temp: false,
         ctime: Some(Utc.ymd(2020, 1, 1).and_hms_milli(0, 0, 0, 0)),
         mtime: Utc.ymd(2020, 1, 2).and_hms_milli(0, 0, 0, 0),
-        state: LibItemState {
+        state: LibraryItemState {
             video_id: Some("video_id".to_owned()),
-            ..LibItemState::default()
+            ..LibraryItemState::default()
         },
-        behavior_hints: LibItemBehaviorHints {
+        behavior_hints: LibraryItemBehaviorHints {
             default_video_id: Some("video_id2".to_owned()),
         },
     };
@@ -194,11 +196,11 @@ fn actionctx_addtolibrary_already_added() {
     let (runtime, _rx) = Runtime::<TestEnv, _>::new(
         TestModel {
             ctx: Ctx {
-                library: LibBucket {
+                library: LibraryBucket {
                     uid: None,
                     items: vec![(
                         "id".to_owned(),
-                        LibItem {
+                        LibraryItem {
                             id: "id".to_owned(),
                             type_name: "type_name_".to_owned(),
                             name: "name_".to_owned(),
@@ -208,9 +210,9 @@ fn actionctx_addtolibrary_already_added() {
                             temp: true,
                             ctime: Some(Utc.ymd(2020, 1, 1).and_hms_milli(0, 0, 0, 0)),
                             mtime: Utc.ymd(2020, 1, 1).and_hms_milli(0, 0, 0, 0),
-                            state: LibItemState {
+                            state: LibraryItemState {
                                 video_id: Some("video_id".to_owned()),
-                                ..LibItemState::default()
+                                ..LibraryItemState::default()
                             },
                             behavior_hints: Default::default(),
                         },
@@ -235,8 +237,14 @@ fn actionctx_addtolibrary_already_added() {
         "There is one library item in memory"
     );
     assert_eq!(
-        runtime.model().unwrap().ctx.library.items.get(&lib_item.id),
-        Some(&lib_item),
+        runtime
+            .model()
+            .unwrap()
+            .ctx
+            .library
+            .items
+            .get(&library_item.id),
+        Some(&library_item),
         "Library updated successfully in memory"
     );
     assert!(
@@ -245,8 +253,8 @@ fn actionctx_addtolibrary_already_added() {
             .unwrap()
             .get(LIBRARY_RECENT_STORAGE_KEY)
             .map_or(false, |data| {
-                serde_json::from_str::<LibBucket>(&data).unwrap()
-                    == LibBucket::new(None, vec![lib_item])
+                serde_json::from_str::<LibraryBucket>(&data).unwrap()
+                    == LibraryBucket::new(None, vec![library_item])
             }),
         "Library recent slot updated successfully in storage"
     );

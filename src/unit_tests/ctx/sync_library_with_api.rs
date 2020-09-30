@@ -3,7 +3,7 @@ use crate::models::ctx::Ctx;
 use crate::runtime::msg::{Action, ActionCtx};
 use crate::runtime::{Effects, Env, EnvFuture, Runtime};
 use crate::types::api::{APIResult, LibItemModified, SuccessResponse, True};
-use crate::types::library::{LibBucket, LibItem, LibItemState};
+use crate::types::library::{LibraryBucket, LibraryItem, LibraryItemState};
 use crate::types::profile::{Auth, AuthKey, GDPRConsent, Profile, User};
 use crate::unit_tests::{
     default_fetch_handler, Request, TestEnv, FETCH_HANDLER, REQUESTS, STORAGE,
@@ -39,7 +39,7 @@ fn actionctx_synclibrarywithapi_with_user() {
         ctx: Ctx<TestEnv>,
     }
     lazy_static! {
-        static ref REMOTE_ONLY_ITEM: LibItem = LibItem {
+        static ref REMOTE_ONLY_ITEM: LibraryItem = LibraryItem {
             id: "id1".to_owned(),
             type_name: "type_name".to_owned(),
             name: "name".to_owned(),
@@ -52,7 +52,7 @@ fn actionctx_synclibrarywithapi_with_user() {
             state: Default::default(),
             behavior_hints: Default::default(),
         };
-        static ref LOCAL_NEWER_ITEM: LibItem = LibItem {
+        static ref LOCAL_NEWER_ITEM: LibraryItem = LibraryItem {
             id: "id2".to_owned(),
             type_name: "type_name".to_owned(),
             name: "name".to_owned(),
@@ -65,7 +65,7 @@ fn actionctx_synclibrarywithapi_with_user() {
             state: Default::default(),
             behavior_hints: Default::default(),
         };
-        static ref REMOTE_NEWER_ITEM: LibItem = LibItem {
+        static ref REMOTE_NEWER_ITEM: LibraryItem = LibraryItem {
             id: "id3".to_owned(),
             type_name: "type_name".to_owned(),
             name: "name".to_owned(),
@@ -78,7 +78,7 @@ fn actionctx_synclibrarywithapi_with_user() {
             state: Default::default(),
             behavior_hints: Default::default(),
         };
-        static ref LOCAL_ONLY_ITEM: LibItem = LibItem {
+        static ref LOCAL_ONLY_ITEM: LibraryItem = LibraryItem {
             id: "id4".to_owned(),
             type_name: "type_name".to_owned(),
             name: "name".to_owned(),
@@ -91,7 +91,7 @@ fn actionctx_synclibrarywithapi_with_user() {
             state: Default::default(),
             behavior_hints: Default::default(),
         };
-        static ref LOCAL_NOT_WATCHED_ITEM: LibItem = LibItem {
+        static ref LOCAL_NOT_WATCHED_ITEM: LibraryItem = LibraryItem {
             id: "id5".to_owned(),
             type_name: "type_name".to_owned(),
             name: "name".to_owned(),
@@ -104,7 +104,7 @@ fn actionctx_synclibrarywithapi_with_user() {
             state: Default::default(),
             behavior_hints: Default::default(),
         };
-        static ref LOCAL_WATCHED_ITEM: LibItem = LibItem {
+        static ref LOCAL_WATCHED_ITEM: LibraryItem = LibraryItem {
             id: "id6".to_owned(),
             type_name: "type_name".to_owned(),
             name: "name".to_owned(),
@@ -114,9 +114,9 @@ fn actionctx_synclibrarywithapi_with_user() {
             temp: false,
             ctime: Some(Utc.ymd(2020, 1, 1).and_hms_milli(0, 0, 0, 0)),
             mtime: Utc.ymd(2020, 1, 1).and_hms_milli(0, 0, 0, 0),
-            state: LibItemState {
+            state: LibraryItemState {
                 overall_time_watched: 60001,
-                ..LibItemState::default()
+                ..LibraryItemState::default()
             },
             behavior_hints: Default::default(),
         };
@@ -155,7 +155,7 @@ fn actionctx_synclibrarywithapi_with_user() {
                 struct Body {
                     auth_key: AuthKey,
                     collection: String,
-                    changes: Vec<LibItem>,
+                    changes: Vec<LibraryItem>,
                 }
                 match serde_json::from_str::<Body>(&body) {
                     Result::Ok(body)
@@ -230,14 +230,14 @@ fn actionctx_synclibrarywithapi_with_user() {
                     }),
                     ..Default::default()
                 },
-                library: LibBucket {
+                library: LibraryBucket {
                     uid: Some("user_id".to_owned()),
                     items: vec![
                         (LOCAL_ONLY_ITEM.id.to_owned(), LOCAL_ONLY_ITEM.to_owned()),
                         (LOCAL_NEWER_ITEM.id.to_owned(), LOCAL_NEWER_ITEM.to_owned()),
                         (
                             REMOTE_NEWER_ITEM.id.to_owned(),
-                            LibItem {
+                            LibraryItem {
                                 mtime: REMOTE_NEWER_ITEM.mtime - Duration::days(1),
                                 ..REMOTE_NEWER_ITEM.to_owned()
                             },
@@ -263,7 +263,7 @@ fn actionctx_synclibrarywithapi_with_user() {
     TestEnv::run(|| runtime.dispatch(Action::Ctx(ActionCtx::SyncLibraryWithAPI)));
     assert_eq!(
         runtime.model().unwrap().ctx.library,
-        LibBucket {
+        LibraryBucket {
             uid: Some("user_id".to_string()),
             items: vec![
                 (LOCAL_ONLY_ITEM.id.to_owned(), LOCAL_ONLY_ITEM.to_owned()),
@@ -292,8 +292,8 @@ fn actionctx_synclibrarywithapi_with_user() {
             .read()
             .unwrap()
             .get(LIBRARY_RECENT_STORAGE_KEY)
-            .map(|data| serde_json::from_str::<LibBucket>(&data).unwrap()),
-        Some(LibBucket::new(
+            .map(|data| serde_json::from_str::<LibraryBucket>(&data).unwrap()),
+        Some(LibraryBucket::new(
             Some("user_id".to_owned()),
             vec![
                 REMOTE_ONLY_ITEM.to_owned(),

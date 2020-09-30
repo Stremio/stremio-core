@@ -1,5 +1,5 @@
-mod lib_bucket;
-pub use lib_bucket::*;
+mod library_bucket;
+pub use library_bucket::*;
 
-mod lib_item;
-pub use lib_item::*;
+mod library_item;
+pub use library_item::*;

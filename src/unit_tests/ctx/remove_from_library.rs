@@ -3,7 +3,7 @@ use crate::models::ctx::Ctx;
 use crate::runtime::msg::{Action, ActionCtx};
 use crate::runtime::{Effects, Env, EnvFuture, Runtime};
 use crate::types::api::{APIResult, SuccessResponse, True};
-use crate::types::library::{LibBucket, LibItem};
+use crate::types::library::{LibraryBucket, LibraryItem};
 use crate::types::profile::{Auth, GDPRConsent, Profile, User};
 use crate::unit_tests::{
     default_fetch_handler, Request, TestEnv, FETCH_HANDLER, NOW, REQUESTS, STORAGE,
@@ -35,7 +35,7 @@ fn actionctx_removefromlibrary() {
             _ => default_fetch_handler(request),
         }
     }
-    let lib_item = LibItem {
+    let library_item = LibraryItem {
         id: "id".to_owned(),
         removed: false,
         temp: false,
@@ -48,19 +48,19 @@ fn actionctx_removefromlibrary() {
         poster_shape: Default::default(),
         behavior_hints: Default::default(),
     };
-    let lib_item_removed = LibItem {
+    let library_item_removed = LibraryItem {
         removed: true,
         mtime: Utc.ymd(2020, 1, 2).and_hms_milli(0, 0, 0, 0),
-        ..lib_item.to_owned()
+        ..library_item.to_owned()
     };
     TestEnv::reset();
     *FETCH_HANDLER.write().unwrap() = Box::new(fetch_handler);
     *NOW.write().unwrap() = Utc.ymd(2020, 1, 2).and_hms_milli(0, 0, 0, 0);
     STORAGE.write().unwrap().insert(
         LIBRARY_RECENT_STORAGE_KEY.to_owned(),
-        serde_json::to_string(&LibBucket::new(
+        serde_json::to_string(&LibraryBucket::new(
             Some("id".to_owned()),
-            vec![lib_item.to_owned()],
+            vec![library_item.to_owned()],
         ))
         .unwrap(),
     );
@@ -87,9 +87,9 @@ fn actionctx_removefromlibrary() {
                     }),
                     ..Default::default()
                 },
-                library: LibBucket {
+                library: LibraryBucket {
                     uid: Some("id".to_owned()),
-                    items: vec![("id".to_owned(), lib_item.to_owned())]
+                    items: vec![("id".to_owned(), library_item.to_owned())]
                         .into_iter()
                         .collect(),
                 },
@@ -101,12 +101,18 @@ fn actionctx_removefromlibrary() {
     );
     TestEnv::run(|| {
         runtime.dispatch(Action::Ctx(ActionCtx::RemoveFromLibrary(
-            lib_item.id.to_owned(),
+            library_item.id.to_owned(),
         )))
     });
     assert_eq!(
-        runtime.model().unwrap().ctx.library.items.get(&lib_item.id),
-        Some(&lib_item_removed),
+        runtime
+            .model()
+            .unwrap()
+            .ctx
+            .library
+            .items
+            .get(&library_item.id),
+        Some(&library_item_removed),
         "Library updated successfully in memory"
     );
     assert!(
@@ -115,8 +121,8 @@ fn actionctx_removefromlibrary() {
             .unwrap()
             .get(LIBRARY_RECENT_STORAGE_KEY)
             .map_or(false, |data| {
-                serde_json::from_str::<LibBucket>(&data).unwrap()
-                    == LibBucket::new(Some("id".to_owned()), vec![lib_item_removed])
+                serde_json::from_str::<LibraryBucket>(&data).unwrap()
+                    == LibraryBucket::new(Some("id".to_owned()), vec![library_item_removed])
             }),
         "Library recent slot updated successfully in storage"
     );
@@ -142,7 +148,7 @@ fn actionctx_removefromlibrary_not_added() {
     struct TestModel {
         ctx: Ctx<TestEnv>,
     }
-    let lib_item = LibItem {
+    let library_item = LibraryItem {
         id: "id".to_owned(),
         removed: false,
         temp: false,
@@ -158,14 +164,14 @@ fn actionctx_removefromlibrary_not_added() {
     TestEnv::reset();
     STORAGE.write().unwrap().insert(
         LIBRARY_RECENT_STORAGE_KEY.to_owned(),
-        serde_json::to_string(&LibBucket::new(None, vec![lib_item.to_owned()])).unwrap(),
+        serde_json::to_string(&LibraryBucket::new(None, vec![library_item.to_owned()])).unwrap(),
     );
     let (runtime, _rx) = Runtime::<TestEnv, _>::new(
         TestModel {
             ctx: Ctx {
-                library: LibBucket {
+                library: LibraryBucket {
                     uid: None,
-                    items: vec![("id".to_owned(), lib_item.to_owned())]
+                    items: vec![("id".to_owned(), library_item.to_owned())]
                         .into_iter()
                         .collect(),
                 },
@@ -177,8 +183,14 @@ fn actionctx_removefromlibrary_not_added() {
     );
     TestEnv::run(|| runtime.dispatch(Action::Ctx(ActionCtx::RemoveFromLibrary("id2".to_owned()))));
     assert_eq!(
-        runtime.model().unwrap().ctx.library.items.get(&lib_item.id),
-        Some(&lib_item),
+        runtime
+            .model()
+            .unwrap()
+            .ctx
+            .library
+            .items
+            .get(&library_item.id),
+        Some(&library_item),
         "Library not updated in memory"
     );
     assert!(
@@ -187,8 +199,8 @@ fn actionctx_removefromlibrary_not_added() {
             .unwrap()
             .get(LIBRARY_RECENT_STORAGE_KEY)
             .map_or(false, |data| {
-                serde_json::from_str::<LibBucket>(&data).unwrap()
-                    == LibBucket::new(None, vec![lib_item])
+                serde_json::from_str::<LibraryBucket>(&data).unwrap()
+                    == LibraryBucket::new(None, vec![library_item])
             }),
         "Library recent slot not updated in storage"
     );

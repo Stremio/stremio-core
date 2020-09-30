@@ -3,7 +3,7 @@ use crate::models::ctx::Ctx;
 use crate::runtime::msg::{Action, ActionCtx};
 use crate::runtime::{Effects, Env, EnvFuture, Runtime};
 use crate::types::api::{APIResult, SuccessResponse, True};
-use crate::types::library::LibBucket;
+use crate::types::library::LibraryBucket;
 use crate::types::profile::{Auth, GDPRConsent, Profile, User};
 use crate::unit_tests::{
     default_fetch_handler, Request, TestEnv, FETCH_HANDLER, REQUESTS, STORAGE,
@@ -54,7 +54,7 @@ fn actionctx_logout() {
         }),
         ..Default::default()
     };
-    let library = LibBucket {
+    let library = LibraryBucket {
         uid: profile.uid(),
         ..Default::default()
     };
@@ -66,11 +66,11 @@ fn actionctx_logout() {
     );
     STORAGE.write().unwrap().insert(
         LIBRARY_RECENT_STORAGE_KEY.to_owned(),
-        serde_json::to_string(&LibBucket::new(profile.uid(), vec![])).unwrap(),
+        serde_json::to_string(&LibraryBucket::new(profile.uid(), vec![])).unwrap(),
     );
     STORAGE.write().unwrap().insert(
         LIBRARY_STORAGE_KEY.to_owned(),
-        serde_json::to_string(&LibBucket::new(profile.uid(), vec![])).unwrap(),
+        serde_json::to_string(&LibraryBucket::new(profile.uid(), vec![])).unwrap(),
     );
     let (runtime, _rx) = Runtime::<TestEnv, _>::new(
         TestModel {
@@ -110,7 +110,7 @@ fn actionctx_logout() {
             .unwrap()
             .get(LIBRARY_RECENT_STORAGE_KEY)
             .map_or(false, |data| {
-                serde_json::from_str::<LibBucket>(&data).unwrap() == Default::default()
+                serde_json::from_str::<LibraryBucket>(&data).unwrap() == Default::default()
             }),
         "recent library updated successfully in storage"
     );
@@ -120,7 +120,7 @@ fn actionctx_logout() {
             .unwrap()
             .get(LIBRARY_STORAGE_KEY)
             .map_or(false, |data| {
-                serde_json::from_str::<LibBucket>(&data).unwrap() == Default::default()
+                serde_json::from_str::<LibraryBucket>(&data).unwrap() == Default::default()
             }),
         "library updated successfully in storage"
     );
