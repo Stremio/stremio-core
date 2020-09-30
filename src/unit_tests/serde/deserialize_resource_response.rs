@@ -1,5 +1,6 @@
 use crate::types::addon::ResourceResponse;
 use crate::types::resource::MetaItem;
+use std::fmt::Write;
 
 #[test]
 fn deserialize_resource_response_metas() {
@@ -35,32 +36,13 @@ fn deserialize_resource_response_meta() {
     let meta = ResourceResponse::Meta {
         meta: MetaItem::default(),
     };
-    let meta_json = r#"
-    {
-        "meta": {
-            "id": "",
-            "type": "",
-            "name": "",
-            "poster": null,
-            "background": null,
-            "logo": null,
-            "popularity": null,
-            "description": null,
-            "releaseInfo": null,
-            "runtime": null,
-            "released": null,
-            "posterShape": "poster",
-            "videos": [],
-            "links": [],
-            "trailerStreams": [],
-            "behaviorHints": {
-                "defaultVideoId": null,
-                "featuredVideoId": null,
-                "hasScheduledVideos": false
-            }
-        }
-    }
-    "#;
+    let mut meta_json = "".to_string();
+    write!(
+        meta_json,
+        r#"{{ "meta": {} }}"#,
+        serde_json::to_string(&MetaItem::default()).unwrap()
+    )
+    .unwrap();
     let meta_deserialize = serde_json::from_str(&meta_json).unwrap();
     assert_eq!(meta, meta_deserialize, "Meta deserialized successfully");
 }
