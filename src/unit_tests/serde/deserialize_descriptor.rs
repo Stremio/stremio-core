@@ -28,10 +28,7 @@ fn deserialize_descriptor() {
                     .collect(),
             },
             transport_url: Url::parse("https://transport_url").unwrap(),
-            flags: DescriptorFlags {
-                official: false,
-                protected: false,
-            },
+            flags: DescriptorFlags::default(),
         },
         Descriptor {
             manifest: Manifest {
@@ -50,10 +47,7 @@ fn deserialize_descriptor() {
                 behavior_hints: vec![].iter().cloned().collect(),
             },
             transport_url: Url::parse("https://transport_url").unwrap(),
-            flags: DescriptorFlags {
-                official: false,
-                protected: false,
-            },
+            flags: DescriptorFlags::default(),
         },
     ];
     let descriptors_json = r#"
