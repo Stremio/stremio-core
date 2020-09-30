@@ -57,14 +57,14 @@ impl<E: Env + 'static> Update for Ctx<E> {
             }
             Msg::Action(Action::Ctx(ActionCtx::Logout)) => {
                 let uid = self.profile.uid();
-                let session_effects = match &self.profile.auth {
-                    Some(auth) => Effects::one(delete_session::<E>(&auth.key)).unchanged(),
+                let session_effects = match self.profile.auth_key() {
+                    Some(auth_key) => Effects::one(delete_session::<E>(auth_key)).unchanged(),
                     _ => Effects::none().unchanged(),
                 };
                 let profile_effects = update_profile::<E>(&mut self.profile, &self.status, msg);
                 let library_effects = update_library::<E>(
                     &mut self.library,
-                    self.profile.auth.as_ref().map(|auth| &auth.key),
+                    self.profile.auth_key(),
                     &self.status,
                     &msg,
                 );
@@ -79,7 +79,7 @@ impl<E: Env + 'static> Update for Ctx<E> {
                 let profile_effects = update_profile::<E>(&mut self.profile, &self.status, msg);
                 let library_effects = update_library::<E>(
                     &mut self.library,
-                    self.profile.auth.as_ref().map(|auth| &auth.key),
+                    self.profile.auth_key(),
                     &self.status,
                     msg,
                 );
@@ -110,7 +110,7 @@ impl<E: Env + 'static> Update for Ctx<E> {
                 let profile_effects = update_profile::<E>(&mut self.profile, &self.status, &msg);
                 let library_effects = update_library::<E>(
                     &mut self.library,
-                    self.profile.auth.as_ref().map(|auth| &auth.key),
+                    self.profile.auth_key(),
                     &self.status,
                     &msg,
                 );
