@@ -7,16 +7,10 @@ use futures::FutureExt;
 use serde::Serialize;
 use url::Url;
 
-#[derive(Serialize)]
+#[derive(PartialEq, Serialize)]
 pub struct DescriptorLoadable {
     pub transport_url: Url,
     pub content: Loadable<Descriptor, EnvError>,
-}
-
-impl PartialEq for DescriptorLoadable {
-    fn eq(&self, other: &Self) -> bool {
-        self.transport_url == other.transport_url
-    }
 }
 
 pub enum DescriptorAction<'a> {
