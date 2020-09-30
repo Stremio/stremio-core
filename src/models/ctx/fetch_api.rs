@@ -8,7 +8,7 @@ use serde::{Deserialize, Serialize};
 
 pub fn fetch_api<E, REQ, RESP>(api_request: &REQ) -> impl Future<Output = Result<RESP, CtxError>>
 where
-    E: Env + 'static,
+    E: Env,
     REQ: APIMethodName + Clone + Serialize,
     for<'de> RESP: Deserialize<'de> + 'static,
 {
