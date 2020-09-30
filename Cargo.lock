@@ -490,7 +490,7 @@ dependencies = [
 [[package]]
 name = "stremio-core"
 version = "0.1.0"
-source = "git+https://github.com/Stremio/stremio-core?branch=development#56f0be2c93b3b459f86cdee51faa0c7354f0bae6"
+source = "git+https://github.com/Stremio/stremio-core?branch=development#3484ae1dfef93ee8aa9390cfad3ed3d340dfde1d"
 dependencies = [
  "base64",
  "chrono",
@@ -536,7 +536,7 @@ dependencies = [
 [[package]]
 name = "stremio-derive"
 version = "0.1.0"
-source = "git+https://github.com/Stremio/stremio-core?branch=development#56f0be2c93b3b459f86cdee51faa0c7354f0bae6"
+source = "git+https://github.com/Stremio/stremio-core?branch=development#3484ae1dfef93ee8aa9390cfad3ed3d340dfde1d"
 dependencies = [
  "case",
  "proc-macro-crate",

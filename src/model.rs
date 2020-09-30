@@ -14,7 +14,7 @@ use stremio_core::models::player::Player;
 use stremio_core::models::streaming_server::StreamingServer;
 use stremio_core::runtime::Effects;
 use stremio_core::types::addon::DescriptorPreview;
-use stremio_core::types::library::LibBucket;
+use stremio_core::types::library::LibraryBucket;
 use stremio_core::types::profile::Profile;
 use stremio_core::types::resource::MetaItemPreview;
 use stremio_derive::Model;
@@ -37,7 +37,7 @@ pub struct WebModel {
 }
 
 impl WebModel {
-    pub fn new(profile: Profile, library: LibBucket) -> (WebModel, Effects) {
+    pub fn new(profile: Profile, library: LibraryBucket) -> (WebModel, Effects) {
         let (discover, discover_effects) = CatalogWithFilters::<MetaItemPreview>::new(&profile);
         let (remote_addons, remote_addons_effects) =
             CatalogWithFilters::<DescriptorPreview>::new(&profile);

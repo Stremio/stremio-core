@@ -8,7 +8,7 @@ use stremio_core::constants::{
 };
 use stremio_core::models::common::Loadable;
 use stremio_core::runtime::{Env, EnvError, Runtime};
-use stremio_core::types::library::LibBucket;
+use stremio_core::types::library::LibraryBucket;
 use stremio_core::types::profile::Profile;
 use wasm_bindgen::prelude::{wasm_bindgen, JsValue};
 
@@ -34,21 +34,21 @@ pub async fn initialize_runtime(emit: js_sys::Function) {
         Ok(_) => {
             let storage_result = future::try_join3(
                 WebEnv::get_storage::<Profile>(PROFILE_STORAGE_KEY),
-                WebEnv::get_storage::<LibBucket>(LIBRARY_RECENT_STORAGE_KEY),
-                WebEnv::get_storage::<LibBucket>(LIBRARY_STORAGE_KEY),
+                WebEnv::get_storage::<LibraryBucket>(LIBRARY_RECENT_STORAGE_KEY),
+                WebEnv::get_storage::<LibraryBucket>(LIBRARY_STORAGE_KEY),
             )
             .await;
             match storage_result {
                 Ok((profile, recent_bucket, other_bucket)) => {
                     let profile = profile.unwrap_or_default();
-                    let mut lib_bucket = LibBucket::new(profile.uid(), vec![]);
+                    let mut library = LibraryBucket::new(profile.uid(), vec![]);
                     if let Some(recent_bucket) = recent_bucket {
-                        lib_bucket.merge_bucket(recent_bucket);
+                        library.merge_bucket(recent_bucket);
                     };
                     if let Some(other_bucket) = other_bucket {
-                        lib_bucket.merge_bucket(other_bucket);
+                        library.merge_bucket(other_bucket);
                     };
-                    let (model, effects) = WebModel::new(profile, lib_bucket);
+                    let (model, effects) = WebModel::new(profile, library);
                     let (runtime, rx) = Runtime::<WebEnv, _>::new(model, effects, 1000);
                     WebEnv::exec(rx.for_each(move |msg| {
                         emit.call1(&JsValue::NULL, &JsValue::from_serde(&msg).unwrap())
