@@ -4,7 +4,6 @@ use url::Url;
 #[test]
 fn deserialize_stream() {
     let streams = vec![
-        // ALL fields are defined with SOME value
         Stream {
             source: StreamSource::Url {
                 url: Url::parse("https://url").unwrap(),
@@ -17,7 +16,6 @@ fn deserialize_stream() {
                 .cloned()
                 .collect(),
         },
-        // serde(default) are omited
         Stream {
             source: StreamSource::Url {
                 url: Url::parse("https://url").unwrap(),

@@ -110,13 +110,11 @@ fn deserialize_descriptor() {
 fn deserialize_manifest_resource() {
     let manifest_resources = vec![
         ManifestResource::Short("resource".to_owned()),
-        // ALL fields are defined with SOME value
         ManifestResource::Full {
             name: "name".to_owned(),
             types: Some(vec!["type".to_owned()]),
             id_prefixes: Some(vec!["id_prefix".to_owned()]),
         },
-        // ALL NONEs are set to null.
         ManifestResource::Full {
             name: "name".to_owned(),
             types: None,
@@ -153,14 +151,12 @@ fn deserialize_manifest_resource() {
 #[test]
 fn deserialize_manifest_catalog() {
     let manifest_catalogs = vec![
-        // ALL fields are defined with SOME value
         ManifestCatalog {
             type_name: "type_name".to_owned(),
             id: "id".to_owned(),
             name: Some("name".to_owned()),
             extra: ManifestExtra::Full { props: vec![] },
         },
-        // ALL NONEs are set to null.
         ManifestCatalog {
             type_name: "type_name".to_owned(),
             id: "id".to_owned(),
@@ -196,12 +192,10 @@ fn deserialize_manifest_catalog() {
 fn deserialize_manifest_extra() {
     let manifest_extra = vec![
         ManifestExtra::Full { props: vec![] },
-        // ALL fields are defined
         ManifestExtra::Short {
             required: vec!["required".to_owned()],
             supported: vec!["supported".to_owned()],
         },
-        // serde(default) are omited
         ManifestExtra::Short {
             required: vec![],
             supported: vec![],
@@ -234,21 +228,18 @@ fn deserialize_manifest_extra() {
 #[test]
 fn deserialize_manifest_extra_prop() {
     let manifest_extra_props = vec![
-        // ALL fields are defined with SOME value
         ManifestExtraProp {
             name: "name".to_owned(),
             is_required: true,
             options: Some(vec!["option".to_owned()]),
             options_limit: OptionsLimit(2),
         },
-        // serde(default) are omited
         ManifestExtraProp {
             name: "name".to_owned(),
             is_required: false,
             options: None,
             options_limit: OptionsLimit(1),
         },
-        // ALL NONEs are set to null.
         ManifestExtraProp {
             name: "name".to_owned(),
             is_required: false,
@@ -289,12 +280,10 @@ fn deserialize_manifest_extra_prop() {
 #[test]
 fn deserialize_descriptor_flags() {
     let descriptor_flags = vec![
-        // ALL fields are defined
         DescriptorFlags {
             official: true,
             protected: true,
         },
-        // serde(default) are omited
         DescriptorFlags {
             official: false,
             protected: false,
