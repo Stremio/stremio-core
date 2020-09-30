@@ -4,7 +4,7 @@ use crate::constants::{
 use crate::models::ctx::{fetch_api, CtxError, CtxStatus, OtherError};
 use crate::runtime::msg::{Action, ActionCtx, Event, Internal, Msg};
 use crate::runtime::{Effect, Effects, Env};
-use crate::types::api::{DatastoreCommand, DatastoreRequest, LibItemModified, SuccessResponse};
+use crate::types::api::{DatastoreCommand, DatastoreRequest, LibraryItemModified, SuccessResponse};
 use crate::types::library::{
     LibraryBucket, LibraryBucketBorrowed, LibraryItem, LibraryItemBehaviorHints, LibraryItemState,
 };
@@ -328,11 +328,11 @@ fn plan_sync_with_api<E: Env + 'static>(library: &LibraryBucket, auth_key: &str)
         collection: LIBRARY_COLLECTION_NAME.to_owned(),
         command: DatastoreCommand::Meta {},
     };
-    fetch_api::<E, _, Vec<LibItemModified>>(&request)
+    fetch_api::<E, _, Vec<LibraryItemModified>>(&request)
         .map_ok(|remote_mtimes| {
             remote_mtimes
                 .into_iter()
-                .map(|LibItemModified(id, mtime)| (id, mtime))
+                .map(|LibraryItemModified(id, mtime)| (id, mtime))
                 .collect::<HashMap<_, _>>()
         })
         .map_ok(move |remote_mtimes| {

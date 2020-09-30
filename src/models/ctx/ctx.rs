@@ -170,7 +170,7 @@ where
     S: Serializer,
 {
     #[derive(Serialize)]
-    struct LibItemProjection {
+    struct LibraryItemProjection {
         pub removed: bool,
         pub temp: bool,
     }
@@ -178,7 +178,7 @@ where
     for item in library.items.values() {
         state.serialize_entry(
             &item.id,
-            &LibItemProjection {
+            &LibraryItemProjection {
                 removed: item.removed,
                 temp: item.temp,
             },

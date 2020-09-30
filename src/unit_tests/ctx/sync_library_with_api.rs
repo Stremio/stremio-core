@@ -2,7 +2,7 @@ use crate::constants::LIBRARY_RECENT_STORAGE_KEY;
 use crate::models::ctx::Ctx;
 use crate::runtime::msg::{Action, ActionCtx};
 use crate::runtime::{Effects, Env, EnvFuture, Runtime};
-use crate::types::api::{APIResult, LibItemModified, SuccessResponse, True};
+use crate::types::api::{APIResult, LibraryItemModified, SuccessResponse, True};
 use crate::types::library::{LibraryBucket, LibraryItem, LibraryItemState};
 use crate::types::profile::{Auth, AuthKey, GDPRConsent, Profile, User};
 use crate::unit_tests::{
@@ -131,15 +131,15 @@ fn actionctx_synclibrarywithapi_with_user() {
             {
                 future::ok(Box::new(APIResult::Ok {
                     result: vec![
-                        LibItemModified(
+                        LibraryItemModified(
                             REMOTE_ONLY_ITEM.id.to_owned(),
                             REMOTE_ONLY_ITEM.mtime.to_owned(),
                         ),
-                        LibItemModified(
+                        LibraryItemModified(
                             LOCAL_NEWER_ITEM.id.to_owned(),
                             LOCAL_NEWER_ITEM.mtime - Duration::days(1),
                         ),
-                        LibItemModified(
+                        LibraryItemModified(
                             REMOTE_NEWER_ITEM.id.to_owned(),
                             REMOTE_NEWER_ITEM.mtime.to_owned(),
                         ),
@@ -343,7 +343,7 @@ fn actionctx_synclibrarywithapi_with_user_empty_library() {
                 && body == "{\"authKey\":\"auth_key\",\"collection\":\"libraryItem\"}" =>
             {
                 future::ok(Box::new(APIResult::Ok {
-                    result: Vec::<LibItemModified>::new(),
+                    result: Vec::<LibraryItemModified>::new(),
                 }) as Box<dyn Any>)
                 .boxed_local()
             }
