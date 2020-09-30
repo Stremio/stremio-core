@@ -1,5 +1,5 @@
 use crate::runtime::msg::{Action, Event, Msg};
-use crate::runtime::{Effect, Effects, Environment, Model};
+use crate::runtime::{Effect, Effects, Env, Model};
 use derivative::Derivative;
 use enclose::enclose;
 use futures::channel::mpsc::{channel, Receiver, Sender};
@@ -17,28 +17,27 @@ pub enum RuntimeEvent {
 
 #[derive(Derivative)]
 #[derivative(Clone(bound = ""))]
-pub struct Runtime<Env: Environment, M: Model> {
+pub struct Runtime<E: Env, M: Model> {
     model: Arc<RwLock<M>>,
     tx: Sender<RuntimeEvent>,
-    env: PhantomData<Env>,
+    env: PhantomData<E>,
 }
 
-impl<Env, M> Runtime<Env, M>
+impl<E, M> Runtime<E, M>
 where
-    Env: Environment + 'static,
+    E: Env + 'static,
     M: Model + 'static,
 {
-    pub fn new(model: M, buffer: usize) -> (Self, Receiver<RuntimeEvent>) {
+    pub fn new(model: M, effects: Effects, buffer: usize) -> (Self, Receiver<RuntimeEvent>) {
         let (tx, rx) = channel(buffer);
         let model = Arc::new(RwLock::new(model));
-        (
-            Runtime {
-                model,
-                tx,
-                env: PhantomData,
-            },
-            rx,
-        )
+        let runtime = Runtime {
+            model,
+            tx,
+            env: PhantomData,
+        };
+        runtime.handle_effects(effects);
+        (runtime, rx)
     }
     pub fn model(&self) -> LockResult<RwLockReadGuard<M>> {
         self.model.read()
@@ -74,7 +73,7 @@ where
                         runtime.handle_effect_output(msg);
                     }
                     Effect::Future(future) => {
-                        Env::exec(future.then(enclose!((runtime) move |msg| async move {
+                        E::exec(future.then(enclose!((runtime) move |msg| async move {
                             runtime.handle_effect_output(msg);
                         })))
                     }

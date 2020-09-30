@@ -1,11 +1,13 @@
 use crate::constants::{OFFICIAL_ADDONS, PROFILE_STORAGE_KEY};
 use crate::models::ctx::Ctx;
 use crate::runtime::msg::{Action, ActionCtx};
-use crate::runtime::{EnvFuture, Environment, Runtime};
+use crate::runtime::{Effects, Env, EnvFuture, Runtime};
 use crate::types::addon::{Descriptor, Manifest};
 use crate::types::api::{APIResult, CollectionResponse};
 use crate::types::profile::{Auth, GDPRConsent, Profile, User};
-use crate::unit_tests::{default_fetch_handler, Env, Request, FETCH_HANDLER, REQUESTS, STORAGE};
+use crate::unit_tests::{
+    default_fetch_handler, Request, TestEnv, FETCH_HANDLER, REQUESTS, STORAGE,
+};
 use futures::{future, FutureExt};
 use semver::Version;
 use std::any::Any;
@@ -16,11 +18,11 @@ use url::Url;
 fn actionctx_pulladdonsfromapi() {
     #[derive(Model, Default)]
     struct TestModel {
-        ctx: Ctx<Env>,
+        ctx: Ctx<TestEnv>,
     }
     let official_addon = OFFICIAL_ADDONS.first().unwrap();
-    Env::reset();
-    let (runtime, _rx) = Runtime::<Env, _>::new(
+    TestEnv::reset();
+    let (runtime, _rx) = Runtime::<TestEnv, _>::new(
         TestModel {
             ctx: Ctx {
                 profile: Profile {
@@ -37,9 +39,10 @@ fn actionctx_pulladdonsfromapi() {
                 ..Default::default()
             },
         },
+        Effects::none().unchanged(),
         1000,
     );
-    Env::run(|| runtime.dispatch(Action::Ctx(ActionCtx::PullAddonsFromAPI)));
+    TestEnv::run(|| runtime.dispatch(Action::Ctx(ActionCtx::PullAddonsFromAPI)));
     assert_eq!(
         runtime.model().unwrap().ctx.profile.addons,
         vec![official_addon.to_owned()],
@@ -66,7 +69,7 @@ fn actionctx_pulladdonsfromapi() {
 fn actionctx_pulladdonsfromapi_with_user() {
     #[derive(Model, Default)]
     struct TestModel {
-        ctx: Ctx<Env>,
+        ctx: Ctx<TestEnv>,
     }
     fn fetch_handler(request: Request) -> EnvFuture<Box<dyn Any>> {
         match request {
@@ -79,16 +82,16 @@ fn actionctx_pulladdonsfromapi_with_user() {
                 future::ok(Box::new(APIResult::Ok {
                     result: CollectionResponse {
                         addons: OFFICIAL_ADDONS.to_owned(),
-                        last_modified: Env::now(),
+                        last_modified: TestEnv::now(),
                     },
                 }) as Box<dyn Any>).boxed_local()
             }
             _ => default_fetch_handler(request),
         }
     }
-    Env::reset();
+    TestEnv::reset();
     *FETCH_HANDLER.write().unwrap() = Box::new(fetch_handler);
-    let (runtime, _rx) = Runtime::<Env, _>::new(
+    let (runtime, _rx) = Runtime::<TestEnv, _>::new(
         TestModel {
             ctx: Ctx {
                 profile: Profile {
@@ -99,8 +102,8 @@ fn actionctx_pulladdonsfromapi_with_user() {
                             email: "user_email".to_owned(),
                             fb_id: None,
                             avatar: None,
-                            last_modified: Env::now(),
-                            date_registered: Env::now(),
+                            last_modified: TestEnv::now(),
+                            date_registered: TestEnv::now(),
                             gdpr_consent: GDPRConsent {
                                 tos: true,
                                 privacy: true,
@@ -133,9 +136,10 @@ fn actionctx_pulladdonsfromapi_with_user() {
                 ..Default::default()
             },
         },
+        Effects::none().unchanged(),
         1000,
     );
-    Env::run(|| runtime.dispatch(Action::Ctx(ActionCtx::PullAddonsFromAPI)));
+    TestEnv::run(|| runtime.dispatch(Action::Ctx(ActionCtx::PullAddonsFromAPI)));
     assert_eq!(
         runtime.model().unwrap().ctx.profile.addons,
         OFFICIAL_ADDONS.to_owned(),

@@ -1,7 +1,7 @@
 use crate::constants::CATALOG_PREVIEW_SIZE;
 use crate::models::ctx::Ctx;
 use crate::runtime::msg::{Internal, Msg};
-use crate::runtime::{Effects, Environment, UpdateWithCtx};
+use crate::runtime::{Effects, Env, UpdateWithCtx};
 use crate::types::library::{LibBucket, LibItem};
 use lazysort::SortedBy;
 use serde::Serialize;
@@ -11,8 +11,8 @@ pub struct ContinueWatchingPreview {
     pub lib_items: Vec<LibItem>,
 }
 
-impl<Env: Environment + 'static> UpdateWithCtx<Ctx<Env>> for ContinueWatchingPreview {
-    fn update(&mut self, ctx: &Ctx<Env>, msg: &Msg) -> Effects {
+impl<E: Env + 'static> UpdateWithCtx<Ctx<E>> for ContinueWatchingPreview {
+    fn update(&mut self, ctx: &Ctx<E>, msg: &Msg) -> Effects {
         match msg {
             Msg::Internal(Internal::LibraryChanged(_)) => {
                 lib_items_update(&mut self.lib_items, &ctx.library)

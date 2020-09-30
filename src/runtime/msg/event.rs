@@ -10,7 +10,6 @@ use url::Url;
 #[derive(Serialize)]
 #[serde(tag = "event", content = "args")]
 pub enum Event {
-    CtxPulledFromStorage { uid: UID },
     ProfilePushedToStorage { uid: UID },
     LibraryItemsPushedToStorage { ids: Vec<String> },
     UserPulledFromAPI { uid: UID },

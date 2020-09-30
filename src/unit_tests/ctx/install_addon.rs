@@ -1,11 +1,13 @@
 use crate::constants::PROFILE_STORAGE_KEY;
 use crate::models::ctx::Ctx;
 use crate::runtime::msg::{Action, ActionCtx};
-use crate::runtime::{EnvFuture, Environment, Runtime};
+use crate::runtime::{Effects, Env, EnvFuture, Runtime};
 use crate::types::addon::{Descriptor, Manifest};
 use crate::types::api::{APIResult, SuccessResponse, True};
 use crate::types::profile::{Auth, GDPRConsent, Profile, User};
-use crate::unit_tests::{default_fetch_handler, Env, Request, FETCH_HANDLER, REQUESTS, STORAGE};
+use crate::unit_tests::{
+    default_fetch_handler, Request, TestEnv, FETCH_HANDLER, REQUESTS, STORAGE,
+};
 use futures::{future, FutureExt};
 use semver::Version;
 use std::any::Any;
@@ -16,7 +18,7 @@ use url::Url;
 fn actionctx_installaddon_install() {
     #[derive(Model, Default)]
     struct TestModel {
-        ctx: Ctx<Env>,
+        ctx: Ctx<TestEnv>,
     }
     let addon = Descriptor {
         manifest: Manifest {
@@ -37,8 +39,8 @@ fn actionctx_installaddon_install() {
         transport_url: Url::parse("https://transport_url").unwrap(),
         flags: Default::default(),
     };
-    Env::reset();
-    let (runtime, _rx) = Runtime::<Env, _>::new(
+    TestEnv::reset();
+    let (runtime, _rx) = Runtime::<TestEnv, _>::new(
         TestModel {
             ctx: Ctx {
                 profile: Profile {
@@ -48,9 +50,10 @@ fn actionctx_installaddon_install() {
                 ..Default::default()
             },
         },
+        Effects::none().unchanged(),
         1000,
     );
-    Env::run(|| runtime.dispatch(Action::Ctx(ActionCtx::InstallAddon(addon.to_owned()))));
+    TestEnv::run(|| runtime.dispatch(Action::Ctx(ActionCtx::InstallAddon(addon.to_owned()))));
     assert_eq!(
         runtime.model().unwrap().ctx.profile.addons,
         vec![addon.to_owned()],
@@ -76,7 +79,7 @@ fn actionctx_installaddon_install() {
 fn actionctx_installaddon_install_with_user() {
     #[derive(Model, Default)]
     struct TestModel {
-        ctx: Ctx<Env>,
+        ctx: Ctx<TestEnv>,
     }
     fn fetch_handler(request: Request) -> EnvFuture<Box<dyn Any>> {
         match request {
@@ -112,9 +115,9 @@ fn actionctx_installaddon_install_with_user() {
         transport_url: Url::parse("https://transport_url").unwrap(),
         flags: Default::default(),
     };
-    Env::reset();
+    TestEnv::reset();
     *FETCH_HANDLER.write().unwrap() = Box::new(fetch_handler);
-    let (runtime, _rx) = Runtime::<Env, _>::new(
+    let (runtime, _rx) = Runtime::<TestEnv, _>::new(
         TestModel {
             ctx: Ctx {
                 profile: Profile {
@@ -125,8 +128,8 @@ fn actionctx_installaddon_install_with_user() {
                             email: "user_email".to_owned(),
                             fb_id: None,
                             avatar: None,
-                            last_modified: Env::now(),
-                            date_registered: Env::now(),
+                            last_modified: TestEnv::now(),
+                            date_registered: TestEnv::now(),
                             gdpr_consent: GDPRConsent {
                                 tos: true,
                                 privacy: true,
@@ -141,9 +144,10 @@ fn actionctx_installaddon_install_with_user() {
                 ..Default::default()
             },
         },
+        Effects::none().unchanged(),
         1000,
     );
-    Env::run(|| runtime.dispatch(Action::Ctx(ActionCtx::InstallAddon(addon.to_owned()))));
+    TestEnv::run(|| runtime.dispatch(Action::Ctx(ActionCtx::InstallAddon(addon.to_owned()))));
     assert_eq!(
         runtime.model().unwrap().ctx.profile.addons,
         vec![addon.to_owned()],
@@ -181,7 +185,7 @@ fn actionctx_installaddon_install_with_user() {
 fn actionctx_installaddon_update() {
     #[derive(Model, Default)]
     struct TestModel {
-        ctx: Ctx<Env>,
+        ctx: Ctx<TestEnv>,
     }
     let addon = Descriptor {
         manifest: Manifest {
@@ -221,8 +225,8 @@ fn actionctx_installaddon_update() {
         transport_url: Url::parse("https://transport_url2").unwrap(),
         flags: Default::default(),
     };
-    Env::reset();
-    let (runtime, _rx) = Runtime::<Env, _>::new(
+    TestEnv::reset();
+    let (runtime, _rx) = Runtime::<TestEnv, _>::new(
         TestModel {
             ctx: Ctx {
                 profile: Profile {
@@ -253,9 +257,10 @@ fn actionctx_installaddon_update() {
                 ..Default::default()
             },
         },
+        Effects::none().unchanged(),
         1000,
     );
-    Env::run(|| runtime.dispatch(Action::Ctx(ActionCtx::InstallAddon(addon.to_owned()))));
+    TestEnv::run(|| runtime.dispatch(Action::Ctx(ActionCtx::InstallAddon(addon.to_owned()))));
     assert_eq!(
         runtime.model().unwrap().ctx.profile.addons,
         vec![addon.to_owned(), addon2.to_owned()],
@@ -282,7 +287,7 @@ fn actionctx_installaddon_update() {
 fn actionctx_installaddon_already_installed() {
     #[derive(Model, Default)]
     struct TestModel {
-        ctx: Ctx<Env>,
+        ctx: Ctx<TestEnv>,
     }
     let addon = Descriptor {
         manifest: Manifest {
@@ -307,21 +312,22 @@ fn actionctx_installaddon_already_installed() {
         addons: vec![addon.to_owned()],
         ..Default::default()
     };
-    Env::reset();
+    TestEnv::reset();
     STORAGE.write().unwrap().insert(
         PROFILE_STORAGE_KEY.to_owned(),
         serde_json::to_string(&profile).unwrap(),
     );
-    let (runtime, _rx) = Runtime::<Env, _>::new(
+    let (runtime, _rx) = Runtime::<TestEnv, _>::new(
         TestModel {
             ctx: Ctx {
                 profile,
                 ..Default::default()
             },
         },
+        Effects::none().unchanged(),
         1000,
     );
-    Env::run(|| runtime.dispatch(Action::Ctx(ActionCtx::InstallAddon(addon.to_owned()))));
+    TestEnv::run(|| runtime.dispatch(Action::Ctx(ActionCtx::InstallAddon(addon.to_owned()))));
     assert_eq!(
         runtime.model().unwrap().ctx.profile.addons,
         vec![addon.to_owned()],

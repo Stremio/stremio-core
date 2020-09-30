@@ -1,25 +1,20 @@
 use crate::runtime::msg::Msg;
-use derive_more::From;
+use derive_more::{From, IntoIterator};
 use futures::future::LocalBoxFuture;
+
+pub type EffectFuture = LocalBoxFuture<'static, Msg>;
 
 #[derive(From)]
 pub enum Effect {
     Msg(Msg),
-    Future(LocalBoxFuture<'static, Msg>),
+    Future(EffectFuture),
 }
 
+#[derive(IntoIterator)]
 pub struct Effects {
+    #[into_iterator(owned)]
     effects: Vec<Effect>,
     pub has_changed: bool,
-}
-
-impl IntoIterator for Effects {
-    type Item = Effect;
-    type IntoIter = std::vec::IntoIter<Self::Item>;
-
-    fn into_iter(self) -> Self::IntoIter {
-        self.effects.into_iter()
-    }
 }
 
 impl Effects {
@@ -44,13 +39,13 @@ impl Effects {
     pub fn msg(msg: Msg) -> Self {
         Effects::one(Effect::Msg(msg))
     }
-    pub fn future(future: LocalBoxFuture<'static, Msg>) -> Self {
+    pub fn future(future: EffectFuture) -> Self {
         Effects::one(Effect::Future(future))
     }
     pub fn msgs(msgs: Vec<Msg>) -> Self {
         Effects::many(msgs.into_iter().map(Effect::from).collect())
     }
-    pub fn futures(futures: Vec<LocalBoxFuture<'static, Msg>>) -> Self {
+    pub fn futures(futures: Vec<EffectFuture>) -> Self {
         Effects::many(futures.into_iter().map(Effect::from).collect())
     }
     pub fn unchanged(mut self) -> Self {

@@ -1,7 +1,11 @@
 use crate::addon_transport::{AddonHTTPTransport, AddonTransport, UnsupportedTransport};
+use crate::constants::{
+    LIBRARY_RECENT_STORAGE_KEY, LIBRARY_STORAGE_KEY, PROFILE_STORAGE_KEY, SCHEMA_VERSION,
+    SCHEMA_VERSION_STORAGE_KEY,
+};
 use chrono::{DateTime, Utc};
 use futures::future::LocalBoxFuture;
-use futures::Future;
+use futures::{future, Future, FutureExt, TryFutureExt};
 use http::Request;
 use serde::ser::SerializeStruct;
 use serde::{Deserialize, Serialize, Serializer};
@@ -12,6 +16,7 @@ use url::Url;
 pub enum EnvError {
     StorageUnavailable,
     StorageSchemaVersionDowngrade(usize, usize),
+    StorageSchemaVersionUpgrade(Box<EnvError>),
     Fetch(String),
     AddonTransport(String),
     Serde(String),
@@ -25,6 +30,10 @@ impl EnvError {
                 "Downgrade storage schema version from {} to {} is not allowed.",
                 from, to
             ),
+            EnvError::StorageSchemaVersionUpgrade(source) => format!(
+                "Upgrade storage schema version failed caused by: {}",
+                source.message()
+            ),
             EnvError::Fetch(message) => format!("Failed to fetch: {}", message),
             EnvError::AddonTransport(message) => format!("Addon protocol violation: {}", message),
             EnvError::Serde(message) => format!("Serialization error: {}", message),
@@ -34,9 +43,10 @@ impl EnvError {
         match &self {
             EnvError::StorageUnavailable => 1,
             EnvError::StorageSchemaVersionDowngrade(_, _) => 2,
-            EnvError::Fetch(_) => 3,
-            EnvError::AddonTransport(_) => 4,
-            EnvError::Serde(_) => 5,
+            EnvError::StorageSchemaVersionUpgrade(_) => 3,
+            EnvError::Fetch(_) => 4,
+            EnvError::AddonTransport(_) => 5,
+            EnvError::Serde(_) => 6,
         }
     }
 }
@@ -61,7 +71,7 @@ impl From<serde_json::Error> for EnvError {
 
 pub type EnvFuture<T> = LocalBoxFuture<'static, Result<T, EnvError>>;
 
-pub trait Environment {
+pub trait Env {
     fn fetch<IN, OUT>(request: Request<IN>) -> EnvFuture<OUT>
     where
         IN: Serialize,
@@ -85,4 +95,51 @@ pub trait Environment {
             _ => Box::new(UnsupportedTransport::new(transport_url.to_owned())),
         }
     }
+    fn migrate_storage_schema() -> EnvFuture<()>
+    where
+        Self: Sized + 'static,
+    {
+        Self::get_storage::<usize>(SCHEMA_VERSION_STORAGE_KEY)
+            .and_then(|schema_version| async move {
+                let mut schema_version = schema_version.unwrap_or_default();
+                if schema_version > SCHEMA_VERSION {
+                    return Err(EnvError::StorageSchemaVersionDowngrade(
+                        schema_version,
+                        SCHEMA_VERSION,
+                    ));
+                };
+                if schema_version == 0 {
+                    migrate_storage_schema_to_v1::<Self>()
+                        .map_err(|error| EnvError::StorageSchemaVersionUpgrade(Box::new(error)))
+                        .await?;
+                    schema_version = 1;
+                };
+                // TODO v2
+                // if schema_version == 1 {
+                //     migrate_storage_schema_to_v2::<Self>()
+                //         .map_err(|error| EnvError::StorageSchemaVersionUpgrade(Box::new(error)))
+                //         .await?;
+                //     schema_version = 2;
+                // };
+                if schema_version != SCHEMA_VERSION {
+                    panic!(
+                        "Storage schema version must be upgraded from {} to {}",
+                        schema_version, SCHEMA_VERSION
+                    );
+                };
+                Ok(())
+            })
+            .boxed_local()
+    }
+}
+
+fn migrate_storage_schema_to_v1<E: Env + 'static>() -> EnvFuture<()> {
+    future::try_join_all(vec![
+        E::set_storage(SCHEMA_VERSION_STORAGE_KEY, Some(&1)),
+        E::set_storage::<()>(PROFILE_STORAGE_KEY, None),
+        E::set_storage::<()>(LIBRARY_RECENT_STORAGE_KEY, None),
+        E::set_storage::<()>(LIBRARY_STORAGE_KEY, None),
+    ])
+    .map_ok(|_| ())
+    .boxed_local()
 }

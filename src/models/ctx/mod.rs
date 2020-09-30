@@ -1,9 +1,6 @@
 mod fetch_api;
 use fetch_api::*;
 
-mod migrate_storage_schema;
-use migrate_storage_schema::*;
-
 mod update_library;
 use update_library::*;
 

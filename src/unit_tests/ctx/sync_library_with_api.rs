@@ -1,11 +1,13 @@
 use crate::constants::LIBRARY_RECENT_STORAGE_KEY;
 use crate::models::ctx::Ctx;
 use crate::runtime::msg::{Action, ActionCtx};
-use crate::runtime::{EnvFuture, Environment, Runtime};
+use crate::runtime::{Effects, Env, EnvFuture, Runtime};
 use crate::types::api::{APIResult, LibItemModified, SuccessResponse, True};
 use crate::types::library::{LibBucket, LibItem, LibItemState};
 use crate::types::profile::{Auth, AuthKey, GDPRConsent, Profile, User};
-use crate::unit_tests::{default_fetch_handler, Env, Request, FETCH_HANDLER, REQUESTS, STORAGE};
+use crate::unit_tests::{
+    default_fetch_handler, Request, TestEnv, FETCH_HANDLER, REQUESTS, STORAGE,
+};
 use chrono::prelude::TimeZone;
 use chrono::{Duration, Utc};
 use futures::{future, FutureExt};
@@ -18,11 +20,12 @@ use stremio_derive::Model;
 fn actionctx_synclibrarywithapi() {
     #[derive(Model, Default)]
     struct TestModel {
-        ctx: Ctx<Env>,
+        ctx: Ctx<TestEnv>,
     }
-    Env::reset();
-    let (runtime, _rx) = Runtime::<Env, _>::new(TestModel::default(), 1000);
-    Env::run(|| runtime.dispatch(Action::Ctx(ActionCtx::SyncLibraryWithAPI)));
+    TestEnv::reset();
+    let (runtime, _rx) =
+        Runtime::<TestEnv, _>::new(TestModel::default(), Effects::none().unchanged(), 1000);
+    TestEnv::run(|| runtime.dispatch(Action::Ctx(ActionCtx::SyncLibraryWithAPI)));
     assert!(
         REQUESTS.read().unwrap().is_empty(),
         "No requests have been sent"
@@ -33,7 +36,7 @@ fn actionctx_synclibrarywithapi() {
 fn actionctx_synclibrarywithapi_with_user() {
     #[derive(Model, Default)]
     struct TestModel {
-        ctx: Ctx<Env>,
+        ctx: Ctx<TestEnv>,
     }
     lazy_static! {
         static ref REMOTE_ONLY_ITEM: LibItem = LibItem {
@@ -202,9 +205,9 @@ fn actionctx_synclibrarywithapi_with_user() {
             _ => default_fetch_handler(request),
         }
     }
-    Env::reset();
+    TestEnv::reset();
     *FETCH_HANDLER.write().unwrap() = Box::new(fetch_handler);
-    let (runtime, _rx) = Runtime::<Env, _>::new(
+    let (runtime, _rx) = Runtime::<TestEnv, _>::new(
         TestModel {
             ctx: Ctx {
                 profile: Profile {
@@ -215,8 +218,8 @@ fn actionctx_synclibrarywithapi_with_user() {
                             email: "user_email".to_owned(),
                             fb_id: None,
                             avatar: None,
-                            last_modified: Env::now(),
-                            date_registered: Env::now(),
+                            last_modified: TestEnv::now(),
+                            date_registered: TestEnv::now(),
                             gdpr_consent: GDPRConsent {
                                 tos: true,
                                 privacy: true,
@@ -254,9 +257,10 @@ fn actionctx_synclibrarywithapi_with_user() {
                 ..Default::default()
             },
         },
+        Effects::none().unchanged(),
         1000,
     );
-    Env::run(|| runtime.dispatch(Action::Ctx(ActionCtx::SyncLibraryWithAPI)));
+    TestEnv::run(|| runtime.dispatch(Action::Ctx(ActionCtx::SyncLibraryWithAPI)));
     assert_eq!(
         runtime.model().unwrap().ctx.library,
         LibBucket {
@@ -328,7 +332,7 @@ fn actionctx_synclibrarywithapi_with_user() {
 fn actionctx_synclibrarywithapi_with_user_empty_library() {
     #[derive(Model, Default)]
     struct TestModel {
-        ctx: Ctx<Env>,
+        ctx: Ctx<TestEnv>,
     }
     fn fetch_handler(request: Request) -> EnvFuture<Box<dyn Any>> {
         match &request {
@@ -346,9 +350,9 @@ fn actionctx_synclibrarywithapi_with_user_empty_library() {
             _ => default_fetch_handler(request),
         }
     }
-    Env::reset();
+    TestEnv::reset();
     *FETCH_HANDLER.write().unwrap() = Box::new(fetch_handler);
-    let (runtime, _rx) = Runtime::<Env, _>::new(
+    let (runtime, _rx) = Runtime::<TestEnv, _>::new(
         TestModel {
             ctx: Ctx {
                 profile: Profile {
@@ -359,8 +363,8 @@ fn actionctx_synclibrarywithapi_with_user_empty_library() {
                             email: "user_email".to_owned(),
                             fb_id: None,
                             avatar: None,
-                            last_modified: Env::now(),
-                            date_registered: Env::now(),
+                            last_modified: TestEnv::now(),
+                            date_registered: TestEnv::now(),
                             gdpr_consent: GDPRConsent {
                                 tos: true,
                                 privacy: true,
@@ -374,9 +378,10 @@ fn actionctx_synclibrarywithapi_with_user_empty_library() {
                 ..Default::default()
             },
         },
+        Effects::none().unchanged(),
         1000,
     );
-    Env::run(|| runtime.dispatch(Action::Ctx(ActionCtx::SyncLibraryWithAPI)));
+    TestEnv::run(|| runtime.dispatch(Action::Ctx(ActionCtx::SyncLibraryWithAPI)));
     assert_eq!(
         REQUESTS.read().unwrap().len(),
         1,

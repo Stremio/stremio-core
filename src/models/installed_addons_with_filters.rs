@@ -1,7 +1,7 @@
 use crate::models::common::eq_update;
 use crate::models::ctx::Ctx;
 use crate::runtime::msg::{Action, ActionLoad, Internal, Msg};
-use crate::runtime::{Effects, Environment, UpdateWithCtx};
+use crate::runtime::{Effects, Env, UpdateWithCtx};
 use crate::types::addon::{DescriptorPreview, ManifestPreview};
 use crate::types::profile::Profile;
 use itertools::Itertools;
@@ -12,30 +12,33 @@ pub struct Selected {
     type_name: Option<String>,
 }
 
-#[derive(Serialize)]
+#[derive(Default, Serialize)]
 pub struct InstalledAddonsWithFilters {
     pub selected: Option<Selected>,
     pub type_names: Vec<String>,
     pub addons: Vec<DescriptorPreview>,
 }
 
-impl Default for InstalledAddonsWithFilters {
-    fn default() -> Self {
+impl InstalledAddonsWithFilters {
+    pub fn new(profile: &Profile) -> (Self, Effects) {
         let mut type_names = vec![];
-        let _ = type_names_update(&mut type_names, &Profile::default());
-        InstalledAddonsWithFilters {
-            type_names,
-            selected: None,
-            addons: vec![],
-        }
+        let effects = type_names_update(&mut type_names, &profile);
+        (
+            InstalledAddonsWithFilters {
+                type_names,
+                selected: None,
+                addons: vec![],
+            },
+            effects.unchanged(),
+        )
     }
 }
 
-impl<Env> UpdateWithCtx<Ctx<Env>> for InstalledAddonsWithFilters
+impl<E> UpdateWithCtx<Ctx<E>> for InstalledAddonsWithFilters
 where
-    Env: Environment + 'static,
+    E: Env + 'static,
 {
-    fn update(&mut self, ctx: &Ctx<Env>, msg: &Msg) -> Effects {
+    fn update(&mut self, ctx: &Ctx<E>, msg: &Msg) -> Effects {
         match msg {
             Msg::Action(Action::Load(ActionLoad::InstalledAddonsWithFilters(selected))) => {
                 let selected_effects = eq_update(&mut self.selected, Some(selected.to_owned()));
@@ -47,7 +50,7 @@ where
                 let addons_effects = addons_update(&mut self.addons, &self.selected, &ctx.profile);
                 selected_effects.join(addons_effects)
             }
-            Msg::Internal(Internal::ProfileChanged(_)) => {
+            Msg::Internal(Internal::ProfileChanged) => {
                 let type_names_effects = type_names_update(&mut self.type_names, &ctx.profile);
                 let addons_effects = addons_update(&mut self.addons, &self.selected, &ctx.profile);
                 type_names_effects.join(addons_effects)

@@ -1,7 +1,7 @@
 use crate::models::common::eq_update;
 use crate::models::ctx::Ctx;
 use crate::runtime::msg::{Action, ActionLoad, Internal, Msg};
-use crate::runtime::{Effects, Environment, UpdateWithCtx};
+use crate::runtime::{Effects, Env, UpdateWithCtx};
 use crate::types::library::{LibBucket, LibItem};
 use derivative::Derivative;
 use itertools::Itertools;
@@ -51,12 +51,12 @@ pub struct LibraryWithFilters<F> {
     pub filter: PhantomData<F>,
 }
 
-impl<Env, F> UpdateWithCtx<Ctx<Env>> for LibraryWithFilters<F>
+impl<E, F> UpdateWithCtx<Ctx<E>> for LibraryWithFilters<F>
 where
-    Env: Environment + 'static,
+    E: Env + 'static,
     F: LibraryFilter,
 {
-    fn update(&mut self, ctx: &Ctx<Env>, msg: &Msg) -> Effects {
+    fn update(&mut self, ctx: &Ctx<E>, msg: &Msg) -> Effects {
         match msg {
             Msg::Action(Action::Load(ActionLoad::LibraryWithFilters(selected))) => {
                 let selected_effects = eq_update(&mut self.selected, Some(selected.to_owned()));

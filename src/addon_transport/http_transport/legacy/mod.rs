@@ -1,5 +1,5 @@
 use crate::addon_transport::AddonTransport;
-use crate::runtime::{EnvError, EnvFuture, Environment};
+use crate::runtime::{Env, EnvError, EnvFuture};
 use crate::types::addon::{Manifest, ResourceRef, ResourceResponse};
 use crate::types::resource::{MetaItem, MetaItemPreview, Stream, Subtitles};
 use futures::{future, FutureExt, TryFutureExt};
@@ -96,12 +96,12 @@ fn map_response<T: 'static + Sized>(resp: JsonRPCResp<T>) -> EnvFuture<T> {
 //
 // Transport implementation
 //
-pub struct AddonLegacyTransport<'a, T: Environment> {
+pub struct AddonLegacyTransport<'a, T: Env> {
     env: PhantomData<T>,
     transport_url: &'a Url,
 }
 
-impl<'a, T: Environment> AddonLegacyTransport<'a, T> {
+impl<'a, T: Env> AddonLegacyTransport<'a, T> {
     pub fn new(transport_url: &'a Url) -> Self {
         AddonLegacyTransport {
             env: PhantomData,
@@ -110,7 +110,7 @@ impl<'a, T: Environment> AddonLegacyTransport<'a, T> {
     }
 }
 
-impl<'a, T: Environment> AddonTransport for AddonLegacyTransport<'a, T> {
+impl<'a, T: Env> AddonTransport for AddonLegacyTransport<'a, T> {
     fn resource(&self, path: &ResourceRef) -> EnvFuture<ResourceResponse> {
         let fetch_req = match build_legacy_req(self.transport_url, path) {
             Ok(r) => r,

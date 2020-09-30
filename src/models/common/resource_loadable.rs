@@ -1,6 +1,6 @@
 use crate::models::common::Loadable;
 use crate::runtime::msg::{Internal, Msg};
-use crate::runtime::{Effects, EnvError, Environment};
+use crate::runtime::{Effects, Env, EnvError};
 use crate::types::addon::{AggrRequest, Descriptor, ResourceRequest, ResourceResponse};
 use futures::FutureExt;
 use serde::Serialize;
@@ -49,12 +49,12 @@ pub enum ResourcesAction<'a> {
     },
 }
 
-pub fn resource_update<Env, T>(
+pub fn resource_update<E, T>(
     resource: &mut Option<ResourceLoadable<T>>,
     action: ResourceAction,
 ) -> Effects
 where
-    Env: Environment + 'static,
+    E: Env + 'static,
     T: TryFrom<ResourceResponse, Error = &'static str>,
 {
     match action {
@@ -66,7 +66,7 @@ where
                     content: Loadable::Loading,
                 });
                 Effects::future(
-                    Env::addon_transport(&request.base)
+                    E::addon_transport(&request.base)
                         .resource(&request.path)
                         .map(move |result| {
                             Msg::Internal(Internal::ResourceRequestResult(
@@ -92,12 +92,12 @@ where
     }
 }
 
-pub fn resource_update_with_vector_content<Env, T>(
+pub fn resource_update_with_vector_content<E, T>(
     resource: &mut Option<ResourceLoadable<Vec<T>>>,
     action: ResourceAction,
 ) -> Effects
 where
-    Env: Environment + 'static,
+    E: Env + 'static,
     Vec<T>: TryFrom<ResourceResponse, Error = &'static str>,
 {
     match action {
@@ -112,16 +112,16 @@ where
             }
             _ => Effects::none().unchanged(),
         },
-        _ => resource_update::<Env, _>(resource, action),
+        _ => resource_update::<E, _>(resource, action),
     }
 }
 
-pub fn resources_update<Env, T>(
+pub fn resources_update<E, T>(
     resources: &mut Vec<ResourceLoadable<T>>,
     action: ResourcesAction,
 ) -> Effects
 where
-    Env: Environment + 'static,
+    E: Env + 'static,
     T: TryFrom<ResourceResponse, Error = &'static str>,
 {
     match action {
@@ -144,7 +144,7 @@ where
                                 request: request.to_owned(),
                                 content: Loadable::Loading,
                             },
-                            Env::addon_transport(&request.base)
+                            E::addon_transport(&request.base)
                                 .resource(&request.path)
                                 .map(move |result| {
                                     Msg::Internal(Internal::ResourceRequestResult(
@@ -180,12 +180,12 @@ where
     }
 }
 
-pub fn resources_update_with_vector_content<Env, T>(
+pub fn resources_update_with_vector_content<E, T>(
     resources: &mut Vec<ResourceLoadable<Vec<T>>>,
     action: ResourcesAction,
 ) -> Effects
 where
-    Env: Environment + 'static,
+    E: Env + 'static,
     Vec<T>: TryFrom<ResourceResponse, Error = &'static str>,
 {
     match action {
@@ -206,7 +206,7 @@ where
                 _ => Effects::none().unchanged(),
             }
         }
-        _ => resources_update::<Env, _>(resources, action),
+        _ => resources_update::<E, _>(resources, action),
     }
 }
 

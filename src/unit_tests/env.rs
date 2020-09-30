@@ -1,4 +1,4 @@
-use crate::runtime::{EnvFuture, Environment};
+use crate::runtime::{Env, EnvFuture};
 use chrono::{DateTime, Utc};
 use futures::{future, Future, FutureExt, TryFutureExt};
 use lazy_static::lazy_static;
@@ -43,9 +43,9 @@ impl<T: Serialize> From<http::Request<T>> for Request {
     }
 }
 
-pub enum Env {}
+pub enum TestEnv {}
 
-impl Env {
+impl TestEnv {
     pub fn reset() {
         *FETCH_HANDLER.write().unwrap() = Box::new(default_fetch_handler);
         *REQUESTS.write().unwrap() = vec![];
@@ -59,7 +59,7 @@ impl Env {
     }
 }
 
-impl Environment for Env {
+impl Env for TestEnv {
     fn fetch<IN, OUT>(request: http::Request<IN>) -> EnvFuture<OUT>
     where
         IN: Serialize,
