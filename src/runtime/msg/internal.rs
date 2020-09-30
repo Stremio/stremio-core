@@ -17,8 +17,6 @@ pub type LibraryPlanResponse = (Vec<String>, Vec<String>);
 // Those messages are meant to be dispatched and hanled only inside stremio-core crate
 //
 pub enum Internal {
-    // Result for pull profile and library from storage.
-    CtxStorageResult(Result<CtxStorageResponse, CtxError>),
     // Result for authenticate to API.
     CtxAuthResult(AuthRequest, Result<AuthResponse, CtxError>),
     // Result for pull addons from API.
