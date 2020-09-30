@@ -3,6 +3,7 @@ mod deserialize_descriptor_preview;
 mod deserialize_lib_bucket;
 mod deserialize_lib_item;
 mod deserialize_meta_item;
+mod deserialize_meta_item_behavior_hints;
 mod deserialize_meta_item_preview;
 mod deserialize_profile;
 mod deserialize_resource_response;

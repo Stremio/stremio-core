@@ -41,11 +41,7 @@ fn deserialize_meta_item() {
                 url: Url::parse("https://url").unwrap(),
             }],
             trailer_streams: vec![],
-            behavior_hints: MetaItemBehaviorHints {
-                default_video_id: Some("default_video_id".to_owned()),
-                featured_video_id: Some("featured_video_id".to_owned()),
-                has_scheduled_videos: true,
-            },
+            behavior_hints: MetaItemBehaviorHints::default(),
         },
         // serde(default) are omited
         MetaItem {
@@ -64,15 +60,11 @@ fn deserialize_meta_item() {
             videos: vec![],
             links: vec![],
             trailer_streams: vec![],
-            behavior_hints: MetaItemBehaviorHints {
-                default_video_id: None,
-                featured_video_id: None,
-                has_scheduled_videos: false,
-            },
+            behavior_hints: MetaItemBehaviorHints::default(),
         },
         // ALL NONEs are set to null.
         // poster shape is invalid
-        // title, streams, trailer_streams, has_scheduled_videos are omited
+        // title, streams, trailer_streams are omited
         MetaItem {
             id: "id3".to_owned(),
             type_name: "type_name".to_owned(),
@@ -101,11 +93,7 @@ fn deserialize_meta_item() {
             }],
             links: vec![],
             trailer_streams: vec![],
-            behavior_hints: MetaItemBehaviorHints {
-                default_video_id: None,
-                featured_video_id: None,
-                has_scheduled_videos: false,
-            },
+            behavior_hints: MetaItemBehaviorHints::default(),
         },
     ];
     let meta_items_json = r#"
@@ -145,9 +133,9 @@ fn deserialize_meta_item() {
             ],
             "trailerStreams": [],
             "behaviorHints": {
-                "defaultVideoId": "default_video_id",
-                "featuredVideoId": "featured_video_id",
-                "hasScheduledVideos": true
+                "defaultVideoId": null,
+                "featuredVideoId": null,
+                "has_scheduled_videos": false
             }
         },
         {
@@ -189,7 +177,8 @@ fn deserialize_meta_item() {
             "trailerStreams": [],
             "behaviorHints": {
                 "defaultVideoId": null,
-                "featuredVideoId": null
+                "featuredVideoId": null,
+                "has_scheduled_videos": false
             }
         }
     ]
