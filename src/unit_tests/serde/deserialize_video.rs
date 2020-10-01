@@ -25,10 +25,7 @@ fn deserialize_video() {
             overview: None,
             thumbnail: None,
             streams: vec![],
-            series_info: Some(SeriesInfo {
-                season: 1,
-                episode: 1,
-            }),
+            series_info: None,
             trailer_streams: vec![],
         },
     ];
@@ -49,9 +46,7 @@ fn deserialize_video() {
             "id": "id2",
             "released": null,
             "overview": null,
-            "thumbnail": null,
-            "season": 1,
-            "episode": 1
+            "thumbnail": null
         }
     ]
     "#;
