@@ -1,20 +1,20 @@
-use crate::types::library::LibBucket;
+use crate::types::library::LibraryBucket;
 
 #[test]
-fn deserialize_lib_bucket() {
-    let lib_bucket = LibBucket {
+fn deserialize_library_bucket() {
+    let library_bucket = LibraryBucket {
         uid: Some("uid".to_owned()),
         items: vec![].into_iter().collect(),
     };
-    let lib_bucket_json = r#"
+    let library_bucket_json = r#"
     {
         "uid": "uid",
         "items": {}
     }
     "#;
-    let lib_bucket_deserialize = serde_json::from_str(&lib_bucket_json).unwrap();
+    let library_bucket_deserialize = serde_json::from_str(&library_bucket_json).unwrap();
     assert_eq!(
-        lib_bucket, lib_bucket_deserialize,
-        "LibBucket deserialized successfully"
+        library_bucket, library_bucket_deserialize,
+        "LibraryBucket deserialized successfully"
     );
 }

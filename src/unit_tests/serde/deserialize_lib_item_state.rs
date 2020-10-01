@@ -1,4 +1,4 @@
-use crate::types::library::LibItemState;
+use crate::types::library::LibraryItemState;
 use chrono::prelude::TimeZone;
 use chrono::Utc;
 
@@ -6,7 +6,7 @@ use chrono::Utc;
 fn deserialize_lib_item_state() {
     let lib_item_states = vec![
         // ALL fields are defined with SOME value
-        LibItemState {
+        LibraryItemState {
             last_watched: Some(Utc.ymd(2020, 1, 1).and_hms_milli(0, 0, 0, 0)),
             time_watched: 1,
             time_offset: 1,
@@ -20,7 +20,7 @@ fn deserialize_lib_item_state() {
             no_notif: true,
         },
         // serde(default) are omited
-        LibItemState {
+        LibraryItemState {
             last_watched: None,
             time_watched: 0,
             time_offset: 0,
@@ -34,7 +34,7 @@ fn deserialize_lib_item_state() {
             no_notif: false,
         },
         // ALL NONEs are set to null
-        LibItemState {
+        LibraryItemState {
             last_watched: None,
             time_watched: 0,
             time_offset: 0,
@@ -90,7 +90,7 @@ fn deserialize_lib_item_state() {
         }
     ]
     "#;
-    let lib_item_states_deserialize: Vec<LibItemState> =
+    let lib_item_states_deserialize: Vec<LibraryItemState> =
         serde_json::from_str(&lib_item_states_json).unwrap();
     assert_eq!(
         lib_item_states, lib_item_states_deserialize,
@@ -100,7 +100,7 @@ fn deserialize_lib_item_state() {
 
 #[test]
 fn deserialize_lib_item_state_empty_string_as_none() {
-    let lib_item_state = LibItemState {
+    let lib_item_state = LibraryItemState {
         last_watched: None,
         time_watched: 0,
         time_offset: 0,

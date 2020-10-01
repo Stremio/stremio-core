@@ -1,5 +1,5 @@
 use crate::types::api::{APIRequest, AuthRequest, GDPRConsentWithTime};
-use crate::types::profile::GDPRConsent;
+use crate::types::profile::{AuthKey, GDPRConsent};
 use chrono::prelude::TimeZone;
 use chrono::Utc;
 
@@ -32,7 +32,7 @@ fn serialize_api_request_auth() {
 #[test]
 fn serialize_api_request_logout() {
     let logout = APIRequest::Logout {
-        auth_key: "auth_key".to_owned(),
+        auth_key: AuthKey("auth_key".to_owned()),
     };
     let logout_json = r#"{"type":"Logout","authKey":"auth_key"}"#;
     let logout_serialize = serde_json::to_string(&logout).unwrap();
@@ -45,7 +45,7 @@ fn serialize_api_request_logout() {
 #[test]
 fn serialize_api_request_addon_collection_get() {
     let addon_collection_get = APIRequest::AddonCollectionGet {
-        auth_key: "auth_key".to_owned(),
+        auth_key: AuthKey("auth_key".to_owned()),
         update: true,
     };
     let addon_collection_get_json =
@@ -60,7 +60,7 @@ fn serialize_api_request_addon_collection_get() {
 #[test]
 fn serialize_api_request_addon_collection_set() {
     let addon_collection_set = APIRequest::AddonCollectionSet {
-        auth_key: "auth_key".to_owned(),
+        auth_key: AuthKey("auth_key".to_owned()),
         addons: vec![],
     };
     let addon_collection_set_json =

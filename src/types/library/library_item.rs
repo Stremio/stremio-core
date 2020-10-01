@@ -6,7 +6,7 @@ use serde::{Deserialize, Serialize};
 #[derive(Clone, PartialEq, Serialize, Deserialize)]
 #[cfg_attr(test, derive(Debug))]
 #[serde(rename_all = "camelCase")]
-pub struct LibItem {
+pub struct LibraryItem {
     #[serde(rename = "_id")]
     pub id: String,
     pub name: String,
@@ -22,12 +22,12 @@ pub struct LibItem {
     pub ctime: Option<DateTime<Utc>>,
     #[serde(rename = "_mtime")]
     pub mtime: DateTime<Utc>,
-    pub state: LibItemState,
+    pub state: LibraryItemState,
     #[serde(default)]
-    pub behavior_hints: LibItemBehaviorHints,
+    pub behavior_hints: LibraryItemBehaviorHints,
 }
 
-impl LibItem {
+impl LibraryItem {
     pub fn should_sync(&self) -> bool {
         !self.removed || self.state.overall_time_watched > 60_000
     }
@@ -39,7 +39,7 @@ impl LibItem {
 #[derive(Default, Clone, PartialEq, Serialize, Deserialize)]
 #[cfg_attr(test, derive(Debug))]
 #[serde(rename_all = "camelCase")]
-pub struct LibItemState {
+pub struct LibraryItemState {
     #[serde(deserialize_with = "empty_string_as_none")]
     pub last_watched: Option<DateTime<Utc>>,
     pub time_watched: u64,
@@ -63,6 +63,6 @@ pub struct LibItemState {
 #[derive(Default, Clone, PartialEq, Serialize, Deserialize)]
 #[cfg_attr(test, derive(Debug))]
 #[serde(rename_all = "camelCase")]
-pub struct LibItemBehaviorHints {
+pub struct LibraryItemBehaviorHints {
     pub default_video_id: Option<String>,
 }

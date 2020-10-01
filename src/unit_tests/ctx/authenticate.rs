@@ -5,8 +5,8 @@ use crate::runtime::{Effects, Env, EnvFuture, Runtime};
 use crate::types::api::{
     APIResult, AuthRequest, AuthResponse, CollectionResponse, GDPRConsentWithTime,
 };
-use crate::types::library::{LibBucket, LibItem};
-use crate::types::profile::{Auth, GDPRConsent, Profile, User};
+use crate::types::library::{LibraryBucket, LibraryItem};
+use crate::types::profile::{Auth, AuthKey, GDPRConsent, Profile, User};
 use crate::unit_tests::{
     default_fetch_handler, Request, TestEnv, FETCH_HANDLER, REQUESTS, STORAGE,
 };
@@ -31,7 +31,7 @@ fn actionctx_authenticate_login() {
             {
                 future::ok(Box::new(APIResult::Ok {
                     result: AuthResponse {
-                        key: "auth_key".to_owned(),
+                        key: AuthKey("auth_key".to_owned()),
                         user: User {
                             id: "user_id".to_owned(),
                             email: "user_email".to_owned(),
@@ -69,7 +69,7 @@ fn actionctx_authenticate_login() {
                 && body == "{\"authKey\":\"auth_key\",\"collection\":\"libraryItem\",\"ids\":[],\"all\":true}" =>
             {
                 future::ok(Box::new(APIResult::Ok {
-                    result: Vec::<LibItem>::new(),
+                    result: Vec::<LibraryItem>::new(),
                 }) as Box<dyn Any>).boxed_local()
             }
             _ => default_fetch_handler(request),
@@ -89,7 +89,7 @@ fn actionctx_authenticate_login() {
         runtime.model().unwrap().ctx.profile,
         Profile {
             auth: Some(Auth {
-                key: "auth_key".to_owned(),
+                key: AuthKey("auth_key".to_owned()),
                 user: User {
                     id: "user_id".to_owned(),
                     email: "user_email".to_owned(),
@@ -112,7 +112,7 @@ fn actionctx_authenticate_login() {
     );
     assert_eq!(
         runtime.model().unwrap().ctx.library,
-        LibBucket {
+        LibraryBucket {
             uid: Some("user_id".to_string()),
             ..Default::default()
         },
@@ -123,7 +123,7 @@ fn actionctx_authenticate_login() {
             .unwrap(),
         Profile {
             auth: Some(Auth {
-                key: "auth_key".to_owned(),
+                key: AuthKey("auth_key".to_owned()),
                 user: User {
                     id: "user_id".to_owned(),
                     email: "user_email".to_owned(),
@@ -145,7 +145,7 @@ fn actionctx_authenticate_login() {
         "profile updated successfully in storage"
     );
     assert_eq!(
-        serde_json::from_str::<LibBucket>(
+        serde_json::from_str::<LibraryBucket>(
             &STORAGE
                 .read()
                 .unwrap()
@@ -153,15 +153,15 @@ fn actionctx_authenticate_login() {
                 .unwrap()
         )
         .unwrap(),
-        LibBucket::new(Some("user_id".to_owned()), vec![]),
+        LibraryBucket::new(Some("user_id".to_owned()), vec![]),
         "recent library updated successfully in storage"
     );
     assert_eq!(
-        serde_json::from_str::<LibBucket>(
+        serde_json::from_str::<LibraryBucket>(
             &STORAGE.read().unwrap().get(LIBRARY_STORAGE_KEY).unwrap()
         )
         .unwrap(),
-        LibBucket::new(Some("user_id".to_owned()), vec![]),
+        LibraryBucket::new(Some("user_id".to_owned()), vec![]),
         "library updated successfully in storage"
     );
     assert_eq!(
@@ -220,7 +220,7 @@ fn actionctx_authenticate_register() {
             {
                 future::ok(Box::new(APIResult::Ok {
                     result: AuthResponse {
-                        key: "auth_key".to_owned(),
+                        key: AuthKey("auth_key".to_owned()),
                         user: User {
                             id: "user_id".to_owned(),
                             email: "user_email".to_owned(),
@@ -258,7 +258,7 @@ fn actionctx_authenticate_register() {
                 && body == "{\"authKey\":\"auth_key\",\"collection\":\"libraryItem\",\"ids\":[],\"all\":true}" =>
             {
                 future::ok(Box::new(APIResult::Ok {
-                    result: Vec::<LibItem>::new(),
+                    result: Vec::<LibraryItem>::new(),
                 }) as Box<dyn Any>).boxed_local()
             }
             _ => default_fetch_handler(request),
@@ -289,7 +289,7 @@ fn actionctx_authenticate_register() {
         runtime.model().unwrap().ctx.profile,
         Profile {
             auth: Some(Auth {
-                key: "auth_key".to_owned(),
+                key: AuthKey("auth_key".to_owned()),
                 user: User {
                     id: "user_id".to_owned(),
                     email: "user_email".to_owned(),
@@ -312,7 +312,7 @@ fn actionctx_authenticate_register() {
     );
     assert_eq!(
         runtime.model().unwrap().ctx.library,
-        LibBucket {
+        LibraryBucket {
             uid: Some("user_id".to_string()),
             ..Default::default()
         },
@@ -323,7 +323,7 @@ fn actionctx_authenticate_register() {
             .unwrap(),
         Profile {
             auth: Some(Auth {
-                key: "auth_key".to_owned(),
+                key: AuthKey("auth_key".to_owned()),
                 user: User {
                     id: "user_id".to_owned(),
                     email: "user_email".to_owned(),
@@ -345,7 +345,7 @@ fn actionctx_authenticate_register() {
         "profile updated successfully in storage"
     );
     assert_eq!(
-        serde_json::from_str::<LibBucket>(
+        serde_json::from_str::<LibraryBucket>(
             &STORAGE
                 .read()
                 .unwrap()
@@ -353,15 +353,15 @@ fn actionctx_authenticate_register() {
                 .unwrap()
         )
         .unwrap(),
-        LibBucket::new(Some("user_id".to_owned()), vec![]),
+        LibraryBucket::new(Some("user_id".to_owned()), vec![]),
         "recent library updated successfully in storage"
     );
     assert_eq!(
-        serde_json::from_str::<LibBucket>(
+        serde_json::from_str::<LibraryBucket>(
             &STORAGE.read().unwrap().get(LIBRARY_STORAGE_KEY).unwrap()
         )
         .unwrap(),
-        LibBucket::new(Some("user_id".to_owned()), vec![]),
+        LibraryBucket::new(Some("user_id".to_owned()), vec![]),
         "library updated successfully in storage"
     );
     assert_eq!(

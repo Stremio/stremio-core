@@ -1,5 +1,5 @@
 use crate::constants::LIBRARY_RECENT_COUNT;
-use crate::types::library::LibItem;
+use crate::types::library::LibraryItem;
 use crate::types::profile::UID;
 use lazysort::SortedBy;
 use serde::{Deserialize, Serialize};
@@ -8,14 +8,14 @@ use std::collections::{HashMap, HashSet};
 
 #[derive(Default, Clone, PartialEq, Serialize, Deserialize)]
 #[cfg_attr(test, derive(Debug))]
-pub struct LibBucket {
+pub struct LibraryBucket {
     pub uid: UID,
-    pub items: HashMap<String, LibItem>,
+    pub items: HashMap<String, LibraryItem>,
 }
 
-impl LibBucket {
-    pub fn new(uid: UID, items: Vec<LibItem>) -> Self {
-        LibBucket {
+impl LibraryBucket {
+    pub fn new(uid: UID, items: Vec<LibraryItem>) -> Self {
+        LibraryBucket {
             uid,
             items: items
                 .into_iter()
@@ -23,18 +23,12 @@ impl LibBucket {
                 .collect(),
         }
     }
-    pub fn merge_bucket(&mut self, lib_bucket: LibBucket) {
-        if self.uid == lib_bucket.uid {
-            self.merge_items(
-                lib_bucket
-                    .items
-                    .into_iter()
-                    .map(|(_, lib_item)| lib_item)
-                    .collect(),
-            );
+    pub fn merge_bucket(&mut self, bucket: LibraryBucket) {
+        if self.uid == bucket.uid {
+            self.merge_items(bucket.items.into_iter().map(|(_, item)| item).collect());
         };
     }
-    pub fn merge_items(&mut self, items: Vec<LibItem>) {
+    pub fn merge_items(&mut self, items: Vec<LibraryItem>) {
         for new_item in items.into_iter() {
             match self.items.get_mut(&new_item.id) {
                 Some(item) => {
@@ -58,7 +52,7 @@ impl LibBucket {
             .collect::<HashSet<_>>();
         ids.iter().all(move |id| recent_item_ids.contains(id))
     }
-    pub fn split_items_by_recent(&self) -> (Vec<&LibItem>, Vec<&LibItem>) {
+    pub fn split_items_by_recent(&self) -> (Vec<&LibraryItem>, Vec<&LibraryItem>) {
         let sorted_items = self
             .items
             .values()
@@ -71,14 +65,14 @@ impl LibBucket {
 }
 
 #[derive(Serialize)]
-pub struct LibBucketBorrowed<'a> {
+pub struct LibraryBucketBorrowed<'a> {
     pub uid: &'a UID,
-    pub items: HashMap<&'a str, &'a LibItem>,
+    pub items: HashMap<&'a str, &'a LibraryItem>,
 }
 
-impl<'a> LibBucketBorrowed<'a> {
-    pub fn new(uid: &'a UID, items: &[&'a LibItem]) -> Self {
-        LibBucketBorrowed {
+impl<'a> LibraryBucketBorrowed<'a> {
+    pub fn new(uid: &'a UID, items: &[&'a LibraryItem]) -> Self {
+        LibraryBucketBorrowed {
             uid,
             items: items.iter().map(|item| (item.id.as_str(), *item)).collect(),
         }

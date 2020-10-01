@@ -1,4 +1,4 @@
-use crate::types::library::{LibItem, LibItemBehaviorHints, LibItemState};
+use crate::types::library::{LibraryItem, LibraryItemBehaviorHints, LibraryItemState};
 use crate::types::resource::PosterShape;
 use chrono::prelude::TimeZone;
 use chrono::Utc;
@@ -8,51 +8,51 @@ use std::fmt::Write;
 fn deserialize_lib_item() {
     let lib_items = vec![
         // ALL fields are defined with SOME value
-        LibItem {
+        LibraryItem {
             id: "id1".to_owned(),
             removed: true,
             temp: true,
             ctime: Some(Utc.ymd(2020, 1, 1).and_hms_milli(0, 0, 0, 0)),
             mtime: Utc.ymd(2020, 1, 1).and_hms_milli(0, 0, 0, 0),
-            state: LibItemState::default(),
+            state: LibraryItemState::default(),
             name: "name".to_owned(),
             type_name: "type_name".to_owned(),
             poster: Some("poster".to_owned()),
             poster_shape: PosterShape::Square,
-            behavior_hints: LibItemBehaviorHints {
+            behavior_hints: LibraryItemBehaviorHints {
                 default_video_id: Some("default_video_id".to_owned()),
             },
         },
         // serde(default) are omited
-        LibItem {
+        LibraryItem {
             id: "id2".to_owned(),
             removed: false,
             temp: false,
             ctime: None,
             mtime: Utc.ymd(2020, 1, 1).and_hms_milli(0, 0, 0, 0),
-            state: LibItemState::default(),
+            state: LibraryItemState::default(),
             name: "name".to_owned(),
             type_name: "type_name".to_owned(),
             poster: None,
             poster_shape: PosterShape::Poster,
-            behavior_hints: LibItemBehaviorHints {
+            behavior_hints: LibraryItemBehaviorHints {
                 default_video_id: None,
             },
         },
         // ALL NONEs are set to null.
         // poster shape is invalid
-        LibItem {
+        LibraryItem {
             id: "id3".to_owned(),
             removed: false,
             temp: false,
             ctime: None,
             mtime: Utc.ymd(2020, 1, 1).and_hms_milli(0, 0, 0, 0),
-            state: LibItemState::default(),
+            state: LibraryItemState::default(),
             name: "name".to_owned(),
             type_name: "type_name".to_owned(),
             poster: None,
             poster_shape: PosterShape::Poster,
-            behavior_hints: LibItemBehaviorHints {
+            behavior_hints: LibraryItemBehaviorHints {
                 default_video_id: None,
             },
         },
@@ -103,12 +103,12 @@ fn deserialize_lib_item() {
             }}
         ]
         "#,
-        serde_json::to_string(&LibItemState::default()).unwrap(),
-        serde_json::to_string(&LibItemState::default()).unwrap(),
-        serde_json::to_string(&LibItemState::default()).unwrap()
+        serde_json::to_string(&LibraryItemState::default()).unwrap(),
+        serde_json::to_string(&LibraryItemState::default()).unwrap(),
+        serde_json::to_string(&LibraryItemState::default()).unwrap()
     )
     .unwrap();
-    let lib_items_deserialize: Vec<LibItem> = serde_json::from_str(&lib_items_json).unwrap();
+    let lib_items_deserialize: Vec<LibraryItem> = serde_json::from_str(&lib_items_json).unwrap();
     assert_eq!(
         lib_items, lib_items_deserialize,
         "LibItem deserialized successfully"
@@ -117,18 +117,18 @@ fn deserialize_lib_item() {
 
 #[test]
 fn deserialize_lib_item_empty_string_as_none() {
-    let lib_item = LibItem {
+    let lib_item = LibraryItem {
         id: "id1".to_owned(),
         removed: false,
         temp: false,
         ctime: None,
         mtime: Utc.ymd(2020, 1, 1).and_hms_milli(0, 0, 0, 0),
-        state: LibItemState::default(),
+        state: LibraryItemState::default(),
         name: "name".to_owned(),
         type_name: "type_name".to_owned(),
         poster: None,
         poster_shape: PosterShape::Poster,
-        behavior_hints: LibItemBehaviorHints {
+        behavior_hints: LibraryItemBehaviorHints {
             default_video_id: None,
         },
     };
@@ -152,7 +152,7 @@ fn deserialize_lib_item_empty_string_as_none() {
                 }}
             }}
         "#,
-        serde_json::to_string(&LibItemState::default()).unwrap()
+        serde_json::to_string(&LibraryItemState::default()).unwrap()
     )
     .unwrap();
     let lib_item_deserialize = serde_json::from_str(&lib_item_json).unwrap();

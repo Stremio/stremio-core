@@ -14,16 +14,10 @@ pub enum ResourceError {
     Env(EnvError),
 }
 
-#[derive(Serialize)]
+#[derive(PartialEq, Serialize)]
 pub struct ResourceLoadable<T> {
     pub request: ResourceRequest,
     pub content: Loadable<T, ResourceError>,
-}
-
-impl<T> PartialEq for ResourceLoadable<T> {
-    fn eq(&self, other: &Self) -> bool {
-        self.request == other.request
-    }
 }
 
 pub enum ResourceAction<'a> {

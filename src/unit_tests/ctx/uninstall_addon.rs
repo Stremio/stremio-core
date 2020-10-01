@@ -4,7 +4,7 @@ use crate::runtime::msg::{Action, ActionCtx};
 use crate::runtime::{Effects, Env, EnvFuture, Runtime};
 use crate::types::addon::{Descriptor, DescriptorFlags, Manifest};
 use crate::types::api::{APIResult, SuccessResponse, True};
-use crate::types::profile::{Auth, GDPRConsent, Profile, User};
+use crate::types::profile::{Auth, AuthKey, GDPRConsent, Profile, User};
 use crate::unit_tests::{
     default_fetch_handler, Request, TestEnv, FETCH_HANDLER, REQUESTS, STORAGE,
 };
@@ -108,7 +108,7 @@ fn actionctx_uninstalladdon_with_user() {
     }
     let profile = Profile {
         auth: Some(Auth {
-            key: "auth_key".to_owned(),
+            key: AuthKey("auth_key".to_owned()),
             user: User {
                 id: "user_id".to_owned(),
                 email: "user_email".to_owned(),

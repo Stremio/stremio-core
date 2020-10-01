@@ -3,7 +3,7 @@ use crate::runtime::msg::{Action, ActionCtx};
 use crate::runtime::{Effects, Env, EnvFuture, Runtime};
 use crate::types::addon::{Descriptor, Manifest};
 use crate::types::api::{APIResult, SuccessResponse, True};
-use crate::types::profile::{Auth, GDPRConsent, Profile, User};
+use crate::types::profile::{Auth, AuthKey, GDPRConsent, Profile, User};
 use crate::unit_tests::{default_fetch_handler, Request, TestEnv, FETCH_HANDLER, REQUESTS};
 use futures::{future, FutureExt};
 use semver::Version;
@@ -84,7 +84,7 @@ fn actionctx_pushaddonstoapi_with_user() {
             ctx: Ctx {
                 profile: Profile {
                     auth: Some(Auth {
-                        key: "auth_key".to_owned(),
+                        key: AuthKey("auth_key".to_owned()),
                         user: User {
                             id: "user_id".to_owned(),
                             email: "user_email".to_owned(),

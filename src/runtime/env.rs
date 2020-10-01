@@ -97,7 +97,7 @@ pub trait Env {
     }
     fn migrate_storage_schema() -> EnvFuture<()>
     where
-        Self: Sized + 'static,
+        Self: Sized,
     {
         Self::get_storage::<usize>(SCHEMA_VERSION_STORAGE_KEY)
             .and_then(|schema_version| async move {
@@ -133,7 +133,7 @@ pub trait Env {
     }
 }
 
-fn migrate_storage_schema_to_v1<E: Env + 'static>() -> EnvFuture<()> {
+fn migrate_storage_schema_to_v1<E: Env>() -> EnvFuture<()> {
     future::try_join_all(vec![
         E::set_storage(SCHEMA_VERSION_STORAGE_KEY, Some(&1)),
         E::set_storage::<()>(PROFILE_STORAGE_KEY, None),

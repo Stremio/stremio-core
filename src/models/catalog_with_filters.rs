@@ -110,7 +110,7 @@ impl<T: CatalogResourceAdapter> CatalogWithFilters<T> {
 impl<E, T> UpdateWithCtx<Ctx<E>> for CatalogWithFilters<T>
 where
     E: Env + 'static,
-    T: CatalogResourceAdapter,
+    T: CatalogResourceAdapter + PartialEq,
     Vec<T>: TryFrom<ResourceResponse, Error = &'static str>,
 {
     fn update(&mut self, ctx: &Ctx<E>, msg: &Msg) -> Effects {

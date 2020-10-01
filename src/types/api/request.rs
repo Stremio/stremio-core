@@ -1,5 +1,5 @@
 use crate::types::addon::Descriptor;
-use crate::types::library::LibItem;
+use crate::types::library::LibraryItem;
 use crate::types::profile::{AuthKey, GDPRConsent};
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
@@ -96,6 +96,6 @@ pub enum DatastoreCommand {
     },
     Put {
         #[serde(default)]
-        changes: Vec<LibItem>,
+        changes: Vec<LibraryItem>,
     },
 }

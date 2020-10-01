@@ -3,8 +3,8 @@ use crate::models::ctx::Ctx;
 use crate::runtime::msg::{Action, ActionCtx};
 use crate::runtime::{Effects, Env, EnvFuture, Runtime};
 use crate::types::api::{APIResult, SuccessResponse, True};
-use crate::types::library::{LibBucket, LibItem, LibItemState};
-use crate::types::profile::{Auth, GDPRConsent, Profile, User};
+use crate::types::library::{LibraryBucket, LibraryItem, LibraryItemState};
+use crate::types::profile::{Auth, AuthKey, GDPRConsent, Profile, User};
 use crate::unit_tests::{
     default_fetch_handler, Request, TestEnv, FETCH_HANDLER, NOW, REQUESTS, STORAGE,
 };
@@ -35,15 +35,15 @@ fn actionctx_rewindlibraryitem() {
             _ => default_fetch_handler(request),
         }
     }
-    let lib_item = LibItem {
+    let library_item = LibraryItem {
         id: "id".to_owned(),
         removed: false,
         temp: false,
         ctime: Some(Utc.ymd(2020, 1, 1).and_hms_milli(0, 0, 0, 0)),
         mtime: Utc.ymd(2020, 1, 1).and_hms_milli(0, 0, 0, 0),
-        state: LibItemState {
+        state: LibraryItemState {
             time_offset: 10,
-            ..LibItemState::default()
+            ..LibraryItemState::default()
         },
         name: "name".to_owned(),
         type_name: "type_name".to_owned(),
@@ -51,22 +51,22 @@ fn actionctx_rewindlibraryitem() {
         poster_shape: Default::default(),
         behavior_hints: Default::default(),
     };
-    let lib_item_rewinded = LibItem {
+    let library_item_rewinded = LibraryItem {
         mtime: Utc.ymd(2020, 1, 2).and_hms_milli(0, 0, 0, 0),
-        state: LibItemState {
+        state: LibraryItemState {
             time_offset: 0,
-            ..LibItemState::default()
+            ..LibraryItemState::default()
         },
-        ..lib_item.to_owned()
+        ..library_item.to_owned()
     };
     TestEnv::reset();
     *FETCH_HANDLER.write().unwrap() = Box::new(fetch_handler);
     *NOW.write().unwrap() = Utc.ymd(2020, 1, 2).and_hms_milli(0, 0, 0, 0);
     STORAGE.write().unwrap().insert(
         LIBRARY_RECENT_STORAGE_KEY.to_owned(),
-        serde_json::to_string(&LibBucket::new(
+        serde_json::to_string(&LibraryBucket::new(
             Some("id".to_owned()),
-            vec![lib_item.to_owned()],
+            vec![library_item.to_owned()],
         ))
         .unwrap(),
     );
@@ -75,7 +75,7 @@ fn actionctx_rewindlibraryitem() {
             ctx: Ctx {
                 profile: Profile {
                     auth: Some(Auth {
-                        key: "auth_key".to_owned(),
+                        key: AuthKey("auth_key".to_owned()),
                         user: User {
                             id: "user_id".to_owned(),
                             email: "user_email".to_owned(),
@@ -93,9 +93,9 @@ fn actionctx_rewindlibraryitem() {
                     }),
                     ..Default::default()
                 },
-                library: LibBucket {
+                library: LibraryBucket {
                     uid: Some("id".to_owned()),
-                    items: vec![("id".to_owned(), lib_item.to_owned())]
+                    items: vec![("id".to_owned(), library_item.to_owned())]
                         .into_iter()
                         .collect(),
                 },
@@ -107,12 +107,18 @@ fn actionctx_rewindlibraryitem() {
     );
     TestEnv::run(|| {
         runtime.dispatch(Action::Ctx(ActionCtx::RewindLibraryItem(
-            lib_item.id.to_owned(),
+            library_item.id.to_owned(),
         )))
     });
     assert_eq!(
-        runtime.model().unwrap().ctx.library.items.get(&lib_item.id),
-        Some(&lib_item_rewinded),
+        runtime
+            .model()
+            .unwrap()
+            .ctx
+            .library
+            .items
+            .get(&library_item.id),
+        Some(&library_item_rewinded),
         "Library updated successfully in memory"
     );
     assert!(
@@ -121,8 +127,8 @@ fn actionctx_rewindlibraryitem() {
             .unwrap()
             .get(LIBRARY_RECENT_STORAGE_KEY)
             .map_or(false, |data| {
-                serde_json::from_str::<LibBucket>(&data).unwrap()
-                    == LibBucket::new(Some("id".to_owned()), vec![lib_item_rewinded])
+                serde_json::from_str::<LibraryBucket>(&data).unwrap()
+                    == LibraryBucket::new(Some("id".to_owned()), vec![library_item_rewinded])
             }),
         "Library recent slot updated successfully in storage"
     );
@@ -148,15 +154,15 @@ fn actionctx_rewindlibraryitem_not_added() {
     struct TestModel {
         ctx: Ctx<TestEnv>,
     }
-    let lib_item = LibItem {
+    let library_item = LibraryItem {
         id: "id".to_owned(),
         removed: false,
         temp: false,
         ctime: Some(Utc.ymd(2020, 1, 1).and_hms_milli(0, 0, 0, 0)),
         mtime: Utc.ymd(2020, 1, 1).and_hms_milli(0, 0, 0, 0),
-        state: LibItemState {
+        state: LibraryItemState {
             time_offset: 10,
-            ..LibItemState::default()
+            ..LibraryItemState::default()
         },
         name: "name".to_owned(),
         type_name: "type_name".to_owned(),
@@ -167,14 +173,14 @@ fn actionctx_rewindlibraryitem_not_added() {
     TestEnv::reset();
     STORAGE.write().unwrap().insert(
         LIBRARY_RECENT_STORAGE_KEY.to_owned(),
-        serde_json::to_string(&LibBucket::new(None, vec![lib_item.to_owned()])).unwrap(),
+        serde_json::to_string(&LibraryBucket::new(None, vec![library_item.to_owned()])).unwrap(),
     );
     let (runtime, _rx) = Runtime::<TestEnv, _>::new(
         TestModel {
             ctx: Ctx {
-                library: LibBucket {
+                library: LibraryBucket {
                     uid: None,
-                    items: vec![("id".to_owned(), lib_item.to_owned())]
+                    items: vec![("id".to_owned(), library_item.to_owned())]
                         .into_iter()
                         .collect(),
                 },
@@ -186,8 +192,14 @@ fn actionctx_rewindlibraryitem_not_added() {
     );
     TestEnv::run(|| runtime.dispatch(Action::Ctx(ActionCtx::RewindLibraryItem("id2".to_owned()))));
     assert_eq!(
-        runtime.model().unwrap().ctx.library.items.get(&lib_item.id),
-        Some(&lib_item),
+        runtime
+            .model()
+            .unwrap()
+            .ctx
+            .library
+            .items
+            .get(&library_item.id),
+        Some(&library_item),
         "Library not updated in memory"
     );
     assert!(
@@ -196,8 +208,8 @@ fn actionctx_rewindlibraryitem_not_added() {
             .unwrap()
             .get(LIBRARY_RECENT_STORAGE_KEY)
             .map_or(false, |data| {
-                serde_json::from_str::<LibBucket>(&data).unwrap()
-                    == LibBucket::new(None, vec![lib_item])
+                serde_json::from_str::<LibraryBucket>(&data).unwrap()
+                    == LibraryBucket::new(None, vec![library_item])
             }),
         "Library recent slot not updated in storage"
     );

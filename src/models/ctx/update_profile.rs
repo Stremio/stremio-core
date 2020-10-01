@@ -4,7 +4,7 @@ use crate::runtime::msg::{Action, ActionCtx, Event, Internal, Msg};
 use crate::runtime::{Effect, Effects, Env};
 use crate::types::addon::Descriptor;
 use crate::types::api::{APIRequest, CollectionResponse, SuccessResponse};
-use crate::types::profile::{Profile, Settings};
+use crate::types::profile::{AuthKey, Profile, Settings};
 use enclose::enclose;
 use futures::{FutureExt, TryFutureExt};
 
@@ -31,12 +31,11 @@ pub fn update_profile<E: Env + 'static>(
             // TODO implement
             Effects::msg(Msg::Event(Event::UserPulledFromAPI { uid: profile.uid() })).unchanged()
         }
-        Msg::Action(Action::Ctx(ActionCtx::PushAddonsToAPI)) => match &profile.auth {
-            Some(auth) => Effects::one(push_addons_to_api::<E>(
-                profile.addons.to_owned(),
-                &auth.key,
-            ))
-            .unchanged(),
+        Msg::Action(Action::Ctx(ActionCtx::PushAddonsToAPI)) => match profile.auth_key() {
+            Some(auth_key) => {
+                Effects::one(push_addons_to_api::<E>(profile.addons.to_owned(), auth_key))
+                    .unchanged()
+            }
             _ => Effects::msg(Msg::Event(Event::Error {
                 error: CtxError::from(OtherError::UserNotLoggedIn),
                 source: Box::new(Event::AddonsPushedToAPI {
@@ -51,8 +50,8 @@ pub fn update_profile<E: Env + 'static>(
             .unchanged(),
         },
         Msg::Action(Action::Ctx(ActionCtx::PullAddonsFromAPI)) => {
-            match &profile.auth {
-                Some(auth) => Effects::one(pull_addons_from_api::<E>(&auth.key)).unchanged(),
+            match profile.auth_key() {
+                Some(auth_key) => Effects::one(pull_addons_from_api::<E>(auth_key)).unchanged(),
                 _ => {
                     // TODO Does this code needs to be moved ?
                     let next_addons = profile
@@ -101,12 +100,11 @@ pub fn update_profile<E: Env + 'static>(
                 } else {
                     profile.addons.push(addon.to_owned());
                 };
-                let push_to_api_effects = match &profile.auth {
-                    Some(auth) => Effects::one(push_addons_to_api::<E>(
-                        profile.addons.to_owned(),
-                        &auth.key,
-                    ))
-                    .unchanged(),
+                let push_to_api_effects = match profile.auth_key() {
+                    Some(auth_key) => {
+                        Effects::one(push_addons_to_api::<E>(profile.addons.to_owned(), auth_key))
+                            .unchanged()
+                    }
                     _ => Effects::none().unchanged(),
                 };
                 Effects::msg(Msg::Event(Event::AddonInstalled {
@@ -132,10 +130,10 @@ pub fn update_profile<E: Env + 'static>(
             if let Some(addon_position) = addon_position {
                 if !profile.addons[addon_position].flags.protected {
                     profile.addons.remove(addon_position);
-                    let push_to_api_effects = match &profile.auth {
-                        Some(auth) => Effects::one(push_addons_to_api::<E>(
+                    let push_to_api_effects = match profile.auth_key() {
+                        Some(auth_key) => Effects::one(push_addons_to_api::<E>(
                             profile.addons.to_owned(),
-                            &auth.key,
+                            auth_key,
                         ))
                         .unchanged(),
                         _ => Effects::none().unchanged(),
@@ -202,7 +200,7 @@ pub fn update_profile<E: Env + 'static>(
         Msg::Internal(Internal::AddonsAPIResult(
             APIRequest::AddonCollectionGet { auth_key, .. },
             result,
-        )) if profile.auth.as_ref().map(|auth| &auth.key) == Some(auth_key) => match result {
+        )) if profile.auth_key() == Some(auth_key) => match result {
             Ok(addons) => {
                 let transport_urls = addons
                     .iter()
@@ -230,7 +228,7 @@ pub fn update_profile<E: Env + 'static>(
     }
 }
 
-fn push_addons_to_api<E: Env + 'static>(addons: Vec<Descriptor>, auth_key: &str) -> Effect {
+fn push_addons_to_api<E: Env + 'static>(addons: Vec<Descriptor>, auth_key: &AuthKey) -> Effect {
     let transport_urls = addons
         .iter()
         .map(|addon| &addon.transport_url)
@@ -252,7 +250,7 @@ fn push_addons_to_api<E: Env + 'static>(addons: Vec<Descriptor>, auth_key: &str)
         .into()
 }
 
-fn pull_addons_from_api<E: Env + 'static>(auth_key: &str) -> Effect {
+fn pull_addons_from_api<E: Env + 'static>(auth_key: &AuthKey) -> Effect {
     let request = APIRequest::AddonCollectionGet {
         auth_key: auth_key.to_owned(),
         update: true,

@@ -6,8 +6,8 @@ use crate::types::api::{
     APIRequest, AuthRequest, AuthResponse, CollectionResponse, DatastoreCommand, DatastoreRequest,
     SuccessResponse,
 };
-use crate::types::library::LibBucket;
-use crate::types::profile::{Auth, Profile};
+use crate::types::library::LibraryBucket;
+use crate::types::profile::{Auth, AuthKey, Profile};
 use derivative::Derivative;
 use enclose::enclose;
 use futures::{future, FutureExt, TryFutureExt};
@@ -28,8 +28,8 @@ pub struct Ctx<E: Env> {
     // TODO StreamsBucket
     // TODO SubtitlesBucket
     // TODO SearchesBucket
-    #[serde(serialize_with = "serialize_lib_bucket")]
-    pub library: LibBucket,
+    #[serde(serialize_with = "serialize_library")]
+    pub library: LibraryBucket,
     #[serde(skip)]
     #[derivative(Default(value = "CtxStatus::Ready"))]
     pub status: CtxStatus,
@@ -38,7 +38,7 @@ pub struct Ctx<E: Env> {
 }
 
 impl<E: Env> Ctx<E> {
-    pub fn new(profile: Profile, library: LibBucket) -> Self {
+    pub fn new(profile: Profile, library: LibraryBucket) -> Self {
         Ctx {
             profile,
             library,
@@ -57,14 +57,14 @@ impl<E: Env + 'static> Update for Ctx<E> {
             }
             Msg::Action(Action::Ctx(ActionCtx::Logout)) => {
                 let uid = self.profile.uid();
-                let session_effects = match &self.profile.auth {
-                    Some(auth) => Effects::one(delete_session::<E>(&auth.key)).unchanged(),
+                let session_effects = match self.profile.auth_key() {
+                    Some(auth_key) => Effects::one(delete_session::<E>(auth_key)).unchanged(),
                     _ => Effects::none().unchanged(),
                 };
                 let profile_effects = update_profile::<E>(&mut self.profile, &self.status, msg);
                 let library_effects = update_library::<E>(
                     &mut self.library,
-                    self.profile.auth.as_ref().map(|auth| &auth.key),
+                    self.profile.auth_key(),
                     &self.status,
                     &msg,
                 );
@@ -79,7 +79,7 @@ impl<E: Env + 'static> Update for Ctx<E> {
                 let profile_effects = update_profile::<E>(&mut self.profile, &self.status, msg);
                 let library_effects = update_library::<E>(
                     &mut self.library,
-                    self.profile.auth.as_ref().map(|auth| &auth.key),
+                    self.profile.auth_key(),
                     &self.status,
                     msg,
                 );
@@ -110,7 +110,7 @@ impl<E: Env + 'static> Update for Ctx<E> {
                 let profile_effects = update_profile::<E>(&mut self.profile, &self.status, &msg);
                 let library_effects = update_library::<E>(
                     &mut self.library,
-                    self.profile.auth.as_ref().map(|auth| &auth.key),
+                    self.profile.auth_key(),
                     &self.status,
                     &msg,
                 );
@@ -139,7 +139,7 @@ fn authenticate<E: Env + 'static>(auth_request: &AuthRequest) -> Effect {
                     },
                 }),
             )
-            .map_ok(move |(addons, lib_items)| (auth, addons, lib_items))
+            .map_ok(move |(addons, library_items)| (auth, addons, library_items))
         })
         .map(enclose!((auth_request) move |result| {
             Msg::Internal(Internal::CtxAuthResult(auth_request, result))
@@ -148,39 +148,37 @@ fn authenticate<E: Env + 'static>(auth_request: &AuthRequest) -> Effect {
         .into()
 }
 
-fn delete_session<E: Env + 'static>(auth_key: &str) -> Effect {
+fn delete_session<E: Env + 'static>(auth_key: &AuthKey) -> Effect {
     fetch_api::<E, _, SuccessResponse>(&APIRequest::Logout {
         auth_key: auth_key.to_owned(),
     })
-    .map(enclose!((auth_key.to_owned() => auth_key) move |result|
-        match result {
-            Ok(_) => Msg::Event(Event::SessionDeleted { auth_key }),
-            Err(error) => Msg::Event(Event::Error {
-                error,
-                source: Box::new(Event::SessionDeleted { auth_key }),
-            }),
-        }
-    ))
+    .map(enclose!((auth_key) move |result| match result {
+        Ok(_) => Msg::Event(Event::SessionDeleted { auth_key }),
+        Err(error) => Msg::Event(Event::Error {
+            error,
+            source: Box::new(Event::SessionDeleted { auth_key }),
+        }),
+    }))
     .boxed_local()
     .into()
 }
 
-fn serialize_lib_bucket<S>(lib_bucket: &LibBucket, serializer: S) -> Result<S::Ok, S::Error>
+fn serialize_library<S>(library: &LibraryBucket, serializer: S) -> Result<S::Ok, S::Error>
 where
     S: Serializer,
 {
     #[derive(Serialize)]
-    struct LibItemProjection {
+    struct LibraryItemProjection {
         pub removed: bool,
         pub temp: bool,
     }
-    let mut state = serializer.serialize_map(Some(lib_bucket.items.len()))?;
-    for lib_item in lib_bucket.items.values() {
+    let mut state = serializer.serialize_map(Some(library.items.len()))?;
+    for item in library.items.values() {
         state.serialize_entry(
-            &lib_item.id,
-            &LibItemProjection {
-                removed: lib_item.removed,
-                temp: lib_item.temp,
+            &item.id,
+            &LibraryItemProjection {
+                removed: item.removed,
+                temp: item.temp,
             },
         )?;
     }

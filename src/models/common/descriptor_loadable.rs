@@ -7,16 +7,10 @@ use futures::FutureExt;
 use serde::Serialize;
 use url::Url;
 
-#[derive(Serialize)]
+#[derive(PartialEq, Serialize)]
 pub struct DescriptorLoadable {
     pub transport_url: Url,
     pub content: Loadable<Descriptor, EnvError>,
-}
-
-impl PartialEq for DescriptorLoadable {
-    fn eq(&self, other: &Self) -> bool {
-        self.transport_url == other.transport_url
-    }
 }
 
 pub enum DescriptorAction<'a> {
@@ -61,19 +55,25 @@ pub fn descriptor_update<E: Env + 'static>(
             transport_url,
             result,
         } => match descriptor {
-            Some(descriptor) if descriptor.transport_url == *transport_url => {
-                descriptor.content = match result {
-                    Ok(manifest) => Loadable::Ready(Descriptor {
-                        transport_url: transport_url.to_owned(),
-                        manifest: manifest.to_owned(),
-                        flags: OFFICIAL_ADDONS
-                            .iter()
-                            .find(|descriptor| descriptor.transport_url == *transport_url)
-                            .map(|descriptor| descriptor.flags.to_owned())
-                            .unwrap_or_default(),
-                    }),
-                    Err(error) => Loadable::Err(error.to_owned()),
-                };
+            Some(DescriptorLoadable {
+                transport_url: loading_transport_url,
+                content: Loadable::Loading,
+            }) if loading_transport_url == transport_url => {
+                *descriptor = Some(DescriptorLoadable {
+                    transport_url: transport_url.to_owned(),
+                    content: match result {
+                        Ok(manifest) => Loadable::Ready(Descriptor {
+                            transport_url: transport_url.to_owned(),
+                            manifest: manifest.to_owned(),
+                            flags: OFFICIAL_ADDONS
+                                .iter()
+                                .find(|descriptor| descriptor.transport_url == *transport_url)
+                                .map(|descriptor| descriptor.flags.to_owned())
+                                .unwrap_or_default(),
+                        }),
+                        Err(error) => Loadable::Err(error.to_owned()),
+                    },
+                });
                 Effects::none()
             }
             _ => Effects::none().unchanged(),

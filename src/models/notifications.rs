@@ -23,7 +23,7 @@ impl<E: Env + 'static> UpdateWithCtx<Ctx<E>> for Notifications {
     fn update(&mut self, ctx: &Ctx<E>, msg: &Msg) -> Effects {
         match msg {
             Msg::Action(Action::Load(ActionLoad::Notifications)) => {
-                let lib = &ctx.library;
+                let library = &ctx.library;
 
                 let (groups, effects): (Vec<_>, Vec<_>) = ctx
                     .profile
@@ -38,7 +38,7 @@ impl<E: Env + 'static> UpdateWithCtx<Ctx<E>> for Notifications {
                             .filter(|cat| cat.extra_iter().any(|e| e.name == LAST_VID_IDS));
 
                         viable_catalogs.flat_map(move |cat| {
-                            let relevant_items = lib
+                            let relevant_items = library
                                 .items
                                 .values()
                                 // The item must be eligible for notifications,
@@ -111,16 +111,16 @@ impl<E: Env + 'static> UpdateWithCtx<Ctx<E>> for Notifications {
                     // Modify all the items so that only the new videos are left
                     if let Loadable::Ready(ref mut meta_items) = self.groups[idx].content {
                         for item in meta_items {
-                            if let Some(lib_item) = ctx.library.items.get(&item.id) {
+                            if let Some(library_item) = ctx.library.items.get(&item.id) {
                                 item.videos
                                     // It's not gonna be a notification if we don't have the
                                     // released date of the last watched video
                                     // NOTE: if we want to show the recent videos in the default
                                     // case, we should unwrap_or(now - THRESHOLD)
                                     // we have to get `now` somehow (environment or through a msg)
-                                    // Alternatively, just set that when we add lib items
+                                    // Alternatively, just set that when we add library items
                                     .retain(|v| {
-                                        lib_item.state.last_vid_released.map_or(false, |lvr| {
+                                        library_item.state.last_vid_released.map_or(false, |lvr| {
                                             v.released.map_or(false, |vr| vr > lvr)
                                         })
                                     });
