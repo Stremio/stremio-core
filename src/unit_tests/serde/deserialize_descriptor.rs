@@ -3,6 +3,7 @@ use crate::types::addon::{
     ManifestResource, OptionsLimit,
 };
 use semver::Version;
+use std::fmt::Write;
 use url::Url;
 
 #[test]
@@ -50,49 +51,52 @@ fn deserialize_descriptor() {
             flags: DescriptorFlags::default(),
         },
     ];
-    let descriptors_json = r#"
-    [
-        {
-            "manifest": {
-                "id": "id",
-                "version": "0.0.1",
-                "name": "name",
-                "contactEmail": "contact_email",
-                "description": "description",
-                "logo": "logo",
-                "background": "background",
-                "types": [
-                    "type"
-                ],
-                "resources": [],
-                "idPrefixes": [
-                    "id_prefix"
-                ],
-                "catalogs": [],
-                "addonCatalogs": [],
-                "behaviorHints": {
-                    "behavior_hint": true
-                }
-            },
-            "transportUrl": "https://transport_url",
-            "flags": {
-                "official": false,
-                "protected": false
-            }
-        },
-        {
-            "manifest": {
-                "id": "id",
-                "version": "0.0.1",
-                "name": "name",
-                "types": [],
-                "resources": [],
-                "idPrefixes": null
-            },
-            "transportUrl": "https://transport_url"
-        }
-    ]
-    "#;
+    let mut descriptors_json = "".to_string();
+    write!(
+        descriptors_json,
+        r#"
+        [
+            {{
+                "manifest": {{
+                    "id": "id",
+                    "version": "0.0.1",
+                    "name": "name",
+                    "contactEmail": "contact_email",
+                    "description": "description",
+                    "logo": "logo",
+                    "background": "background",
+                    "types": [
+                        "type"
+                    ],
+                    "resources": [],
+                    "idPrefixes": [
+                        "id_prefix"
+                    ],
+                    "catalogs": [],
+                    "addonCatalogs": [],
+                    "behaviorHints": {{
+                        "behavior_hint": true
+                    }}
+                }},
+                "transportUrl": "https://transport_url",
+                "flags": {}
+            }},
+            {{
+                "manifest": {{
+                    "id": "id",
+                    "version": "0.0.1",
+                    "name": "name",
+                    "types": [],
+                    "resources": [],
+                    "idPrefixes": null
+                }},
+                "transportUrl": "https://transport_url"
+            }}
+        ]
+        "#,
+        serde_json::to_string(&DescriptorFlags::default()).unwrap()
+    )
+    .unwrap();
     let descriptors_deserialize: Vec<Descriptor> = serde_json::from_str(&descriptors_json).unwrap();
     assert_eq!(
         descriptors, descriptors_deserialize,
