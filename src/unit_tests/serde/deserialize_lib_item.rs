@@ -2,6 +2,7 @@ use crate::types::library::{LibItem, LibItemBehaviorHints, LibItemState};
 use crate::types::resource::PosterShape;
 use chrono::prelude::TimeZone;
 use chrono::Utc;
+use std::fmt::Write;
 
 #[test]
 fn deserialize_lib_item() {
@@ -56,84 +57,57 @@ fn deserialize_lib_item() {
             },
         },
     ];
-    let lib_items_json = r#"
-    [
-        {
-            "_id": "id1",
-            "name": "name",
-            "type": "type_name",
-            "poster": "poster",
-            "posterShape": "square",
-            "removed": true,
-            "temp": true,
-            "_ctime": "2020-01-01T00:00:00Z",
-            "_mtime": "2020-01-01T00:00:00Z",
-            "state": {
-                "lastWatched": null,
-                "timeWatched": 0,
-                "timeOffset": 0,
-                "overallTimeWatched": 0,
-                "timesWatched": 0,
-                "flaggedWatched": 0,
-                "duration": 0,
-                "video_id": null,
-                "watched": null,
-                "lastVidReleased": null,
-                "noNotif": false
-            },
-            "behaviorHints": {
-                "defaultVideoId": "default_video_id"
-            }
-        },
-        {
-            "_id": "id2",
-            "name": "name",
-            "type": "type_name",
-            "removed": false,
-            "temp": false,
-            "_mtime": "2020-01-01T00:00:00Z",
-            "state": {
-                "lastWatched": null,
-                "timeWatched": 0,
-                "timeOffset": 0,
-                "overallTimeWatched": 0,
-                "timesWatched": 0,
-                "flaggedWatched": 0,
-                "duration": 0,
-                "video_id": null,
-                "watched": null,
-                "noNotif": false
-            }
-        },
-        {
-            "_id": "id3",
-            "name": "name",
-            "type": "type_name",
-            "poster": null,
-            "posterShape": "invalid",
-            "removed": false,
-            "temp": false,
-            "_ctime": null,
-            "_mtime": "2020-01-01T00:00:00Z",
-            "state": {
-                "lastWatched": null,
-                "timeWatched": 0,
-                "timeOffset": 0,
-                "overallTimeWatched": 0,
-                "timesWatched": 0,
-                "flaggedWatched": 0,
-                "duration": 0,
-                "video_id": null,
-                "watched": null,
-                "lastVidReleased": null,
-                "noNotif": false
-            },
-            "behaviorHints": {
-                "defaultVideoId": null
-            }
-        }
-    ]
-    "#;
+    let mut lib_items_json = "".to_string();
+    write!(
+        lib_items_json,
+        r#"
+        [
+            {{
+                "_id": "id1",
+                "name": "name",
+                "type": "type_name",
+                "poster": "poster",
+                "posterShape": "square",
+                "removed": true,
+                "temp": true,
+                "_ctime": "2020-01-01T00:00:00Z",
+                "_mtime": "2020-01-01T00:00:00Z",
+                "state": {},
+                "behaviorHints": {{
+                    "defaultVideoId": "default_video_id"
+                }}
+            }},
+            {{
+                "_id": "id2",
+                "name": "name",
+                "type": "type_name",
+                "removed": false,
+                "temp": false,
+                "_mtime": "2020-01-01T00:00:00Z",
+                "state": {}
+            }},
+            {{
+                "_id": "id3",
+                "name": "name",
+                "type": "type_name",
+                "poster": null,
+                "posterShape": "invalid",
+                "removed": false,
+                "temp": false,
+                "_ctime": null,
+                "_mtime": "2020-01-01T00:00:00Z",
+                "state": {},
+                "behaviorHints": {{
+                    "defaultVideoId": null
+                }}
+            }}
+        ]
+        "#,
+        serde_json::to_string(&LibItemState::default()).unwrap(),
+        serde_json::to_string(&LibItemState::default()).unwrap(),
+        serde_json::to_string(&LibItemState::default()).unwrap()
+    )
+    .unwrap();
     let lib_items_deserialize: Vec<LibItem> = serde_json::from_str(&lib_items_json).unwrap();
     assert_eq!(
         lib_items, lib_items_deserialize,
@@ -158,35 +132,29 @@ fn deserialize_lib_item_empty_string_as_none() {
             default_video_id: None,
         },
     };
-    let lib_item_json = r#"
-    {
-        "_id": "id1",
-        "name": "name",
-        "type": "type_name",
-        "poster": "",
-        "posterShape": "poster",
-        "removed": false,
-        "temp": false,
-        "_ctime": "",
-        "_mtime": "2020-01-01T00:00:00Z",
-        "state": {
-            "lastWatched": null,
-            "timeWatched": 0,
-            "timeOffset": 0,
-            "overallTimeWatched": 0,
-            "timesWatched": 0,
-            "flaggedWatched": 0,
-            "duration": 0,
-            "video_id": null,
-            "watched": null,
-            "lastVidReleased": null,
-            "noNotif": false
-        },
-        "behaviorHints": {
-            "defaultVideoId": null
-        }
-    }
-    "#;
+    let mut lib_item_json = "".to_string();
+    write!(
+        lib_item_json,
+        r#"
+            {{
+                "_id": "id1",
+                "name": "name",
+                "type": "type_name",
+                "poster": "",
+                "posterShape": "poster",
+                "removed": false,
+                "temp": false,
+                "_ctime": "",
+                "_mtime": "2020-01-01T00:00:00Z",
+                "state": {},
+                "behaviorHints": {{
+                    "defaultVideoId": null
+                }}
+            }}
+        "#,
+        serde_json::to_string(&LibItemState::default()).unwrap()
+    )
+    .unwrap();
     let lib_item_deserialize = serde_json::from_str(&lib_item_json).unwrap();
     assert_eq!(
         lib_item, lib_item_deserialize,
