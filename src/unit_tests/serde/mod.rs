@@ -10,5 +10,6 @@ mod deserialize_resource_response;
 mod deserialize_stream;
 mod deserialize_stream_source;
 mod deserialize_subtitles;
+mod deserialize_video;
 mod serialize_api_request;
 mod serialize_api_result;

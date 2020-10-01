@@ -1,6 +1,4 @@
-use crate::types::resource::{
-    Link, MetaItem, MetaItemBehaviorHints, PosterShape, SeriesInfo, Video,
-};
+use crate::types::resource::{Link, MetaItem, MetaItemBehaviorHints, PosterShape};
 use chrono::prelude::TimeZone;
 use chrono::Utc;
 use url::Url;
@@ -22,19 +20,7 @@ fn deserialize_meta_item() {
             runtime: Some("runtime".to_owned()),
             released: Some(Utc.ymd(2020, 1, 1).and_hms_milli(0, 0, 0, 0)),
             poster_shape: PosterShape::Square,
-            videos: vec![Video {
-                id: "id".to_owned(),
-                title: "title".to_owned(),
-                released: Some(Utc.ymd(2020, 1, 1).and_hms_milli(0, 0, 0, 0)),
-                overview: Some("overview".to_owned()),
-                thumbnail: Some("thumbnail".to_owned()),
-                streams: vec![],
-                series_info: Some(SeriesInfo {
-                    season: 1,
-                    episode: 1,
-                }),
-                trailer_streams: vec![],
-            }],
+            videos: vec![],
             links: vec![Link {
                 name: "name".to_owned(),
                 category: "category".to_owned(),
@@ -64,7 +50,6 @@ fn deserialize_meta_item() {
         },
         // ALL NONEs are set to null.
         // poster shape is invalid
-        // title, streams, trailer_streams are omited
         MetaItem {
             id: "id3".to_owned(),
             type_name: "type_name".to_owned(),
@@ -78,19 +63,7 @@ fn deserialize_meta_item() {
             runtime: None,
             released: None,
             poster_shape: PosterShape::Poster,
-            videos: vec![Video {
-                id: "id".to_owned(),
-                title: "".to_owned(),
-                released: None,
-                overview: None,
-                thumbnail: None,
-                streams: vec![],
-                series_info: Some(SeriesInfo {
-                    season: 1,
-                    episode: 1,
-                }),
-                trailer_streams: vec![],
-            }],
+            videos: vec![],
             links: vec![],
             trailer_streams: vec![],
             behavior_hints: MetaItemBehaviorHints::default(),
@@ -111,19 +84,7 @@ fn deserialize_meta_item() {
             "runtime": "runtime",
             "released": "2020-01-01T00:00:00Z",
             "posterShape": "square",
-            "videos": [
-                {
-                    "id": "id",
-                    "title": "title",
-                    "released": "2020-01-01T00:00:00Z",
-                    "overview": "overview",
-                    "thumbnail": "thumbnail",
-                    "streams": [],
-                    "season": 1,
-                    "episode": 1,
-                    "trailerStreams": []
-                }
-            ],
+            "videos": [],
             "links": [
                 {
                     "name": "name",
@@ -163,16 +124,7 @@ fn deserialize_meta_item() {
             "runtime": null,
             "released": null,
             "posterShape": "invalid",
-            "videos": [
-                {
-                    "id": "id",
-                    "released": null,
-                    "overview": null,
-                    "thumbnail": null,
-                    "season": 1,
-                    "episode": 1
-                }
-            ],
+            "videos": [],
             "links": [],
             "trailerStreams": [],
             "behaviorHints": {
