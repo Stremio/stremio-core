@@ -1,4 +1,4 @@
-use crate::types::profile::{Auth, GDPRConsent, Profile, Settings, User};
+use crate::types::profile::{Auth, AuthKey, GDPRConsent, Profile, Settings, User};
 use chrono::prelude::TimeZone;
 use chrono::Utc;
 use url::Url;
@@ -37,7 +37,7 @@ fn deserialize_profile() {
 fn deserialize_profile_with_user() {
     let profile = Profile {
         auth: Some(Auth {
-            key: "auth_key".to_owned(),
+            key: AuthKey("auth_key".to_owned()),
             user: User {
                 id: "user_id".to_owned(),
                 email: "user_email".to_owned(),

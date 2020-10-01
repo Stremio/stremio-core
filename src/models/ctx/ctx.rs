@@ -7,7 +7,7 @@ use crate::types::api::{
     SuccessResponse,
 };
 use crate::types::library::LibraryBucket;
-use crate::types::profile::{Auth, Profile};
+use crate::types::profile::{Auth, AuthKey, Profile};
 use derivative::Derivative;
 use enclose::enclose;
 use futures::{future, FutureExt, TryFutureExt};
@@ -148,19 +148,17 @@ fn authenticate<E: Env + 'static>(auth_request: &AuthRequest) -> Effect {
         .into()
 }
 
-fn delete_session<E: Env + 'static>(auth_key: &str) -> Effect {
+fn delete_session<E: Env + 'static>(auth_key: &AuthKey) -> Effect {
     fetch_api::<E, _, SuccessResponse>(&APIRequest::Logout {
         auth_key: auth_key.to_owned(),
     })
-    .map(enclose!((auth_key.to_owned() => auth_key) move |result|
-        match result {
-            Ok(_) => Msg::Event(Event::SessionDeleted { auth_key }),
-            Err(error) => Msg::Event(Event::Error {
-                error,
-                source: Box::new(Event::SessionDeleted { auth_key }),
-            }),
-        }
-    ))
+    .map(enclose!((auth_key) move |result| match result {
+        Ok(_) => Msg::Event(Event::SessionDeleted { auth_key }),
+        Err(error) => Msg::Event(Event::Error {
+            error,
+            source: Box::new(Event::SessionDeleted { auth_key }),
+        }),
+    }))
     .boxed_local()
     .into()
 }

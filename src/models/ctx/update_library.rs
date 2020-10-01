@@ -286,7 +286,7 @@ fn push_library_to_storage<E: Env + 'static>(library: &LibraryBucket) -> Effect 
     .into()
 }
 
-fn push_items_to_api<E: Env + 'static>(items: Vec<LibraryItem>, auth_key: &str) -> Effect {
+fn push_items_to_api<E: Env + 'static>(items: Vec<LibraryItem>, auth_key: &AuthKey) -> Effect {
     let ids = items.iter().map(|item| &item.id).cloned().collect();
     fetch_api::<E, _, SuccessResponse>(&DatastoreRequest {
         auth_key: auth_key.to_owned(),
@@ -304,7 +304,7 @@ fn push_items_to_api<E: Env + 'static>(items: Vec<LibraryItem>, auth_key: &str) 
     .into()
 }
 
-fn pull_items_from_api<E: Env + 'static>(ids: Vec<String>, auth_key: &str) -> Effect {
+fn pull_items_from_api<E: Env + 'static>(ids: Vec<String>, auth_key: &AuthKey) -> Effect {
     let request = DatastoreRequest {
         auth_key: auth_key.to_owned(),
         collection: LIBRARY_COLLECTION_NAME.to_owned(),
@@ -316,7 +316,7 @@ fn pull_items_from_api<E: Env + 'static>(ids: Vec<String>, auth_key: &str) -> Ef
         .into()
 }
 
-fn plan_sync_with_api<E: Env + 'static>(library: &LibraryBucket, auth_key: &str) -> Effect {
+fn plan_sync_with_api<E: Env + 'static>(library: &LibraryBucket, auth_key: &AuthKey) -> Effect {
     let local_mtimes = library
         .items
         .iter()

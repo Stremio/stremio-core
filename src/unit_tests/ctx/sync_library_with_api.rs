@@ -159,7 +159,7 @@ fn actionctx_synclibrarywithapi_with_user() {
                 }
                 match serde_json::from_str::<Body>(&body) {
                     Result::Ok(body)
-                        if body.auth_key == "auth_key"
+                        if body.auth_key == AuthKey("auth_key".to_owned())
                             && body.collection == "libraryItem"
                             && body.changes.len() == 3
                             && body.changes.contains(&LOCAL_NEWER_ITEM)
@@ -187,7 +187,7 @@ fn actionctx_synclibrarywithapi_with_user() {
                 }
                 match serde_json::from_str::<Body>(&body) {
                     Result::Ok(body)
-                        if body.auth_key == "auth_key"
+                        if body.auth_key == AuthKey("auth_key".to_owned())
                             && body.collection == "libraryItem"
                             && body.all == false
                             && body.ids.len() == 2
@@ -212,7 +212,7 @@ fn actionctx_synclibrarywithapi_with_user() {
             ctx: Ctx {
                 profile: Profile {
                     auth: Some(Auth {
-                        key: "auth_key".to_owned(),
+                        key: AuthKey("auth_key".to_owned()),
                         user: User {
                             id: "user_id".to_owned(),
                             email: "user_email".to_owned(),
@@ -357,7 +357,7 @@ fn actionctx_synclibrarywithapi_with_user_empty_library() {
             ctx: Ctx {
                 profile: Profile {
                     auth: Some(Auth {
-                        key: "auth_key".to_owned(),
+                        key: AuthKey("auth_key".to_owned()),
                         user: User {
                             id: "user_id".to_owned(),
                             email: "user_email".to_owned(),

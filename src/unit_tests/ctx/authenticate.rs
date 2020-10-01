@@ -6,7 +6,7 @@ use crate::types::api::{
     APIResult, AuthRequest, AuthResponse, CollectionResponse, GDPRConsentWithTime,
 };
 use crate::types::library::{LibraryBucket, LibraryItem};
-use crate::types::profile::{Auth, GDPRConsent, Profile, User};
+use crate::types::profile::{Auth, AuthKey, GDPRConsent, Profile, User};
 use crate::unit_tests::{
     default_fetch_handler, Request, TestEnv, FETCH_HANDLER, REQUESTS, STORAGE,
 };
@@ -31,7 +31,7 @@ fn actionctx_authenticate_login() {
             {
                 future::ok(Box::new(APIResult::Ok {
                     result: AuthResponse {
-                        key: "auth_key".to_owned(),
+                        key: AuthKey("auth_key".to_owned()),
                         user: User {
                             id: "user_id".to_owned(),
                             email: "user_email".to_owned(),
@@ -89,7 +89,7 @@ fn actionctx_authenticate_login() {
         runtime.model().unwrap().ctx.profile,
         Profile {
             auth: Some(Auth {
-                key: "auth_key".to_owned(),
+                key: AuthKey("auth_key".to_owned()),
                 user: User {
                     id: "user_id".to_owned(),
                     email: "user_email".to_owned(),
@@ -123,7 +123,7 @@ fn actionctx_authenticate_login() {
             .unwrap(),
         Profile {
             auth: Some(Auth {
-                key: "auth_key".to_owned(),
+                key: AuthKey("auth_key".to_owned()),
                 user: User {
                     id: "user_id".to_owned(),
                     email: "user_email".to_owned(),
@@ -220,7 +220,7 @@ fn actionctx_authenticate_register() {
             {
                 future::ok(Box::new(APIResult::Ok {
                     result: AuthResponse {
-                        key: "auth_key".to_owned(),
+                        key: AuthKey("auth_key".to_owned()),
                         user: User {
                             id: "user_id".to_owned(),
                             email: "user_email".to_owned(),
@@ -289,7 +289,7 @@ fn actionctx_authenticate_register() {
         runtime.model().unwrap().ctx.profile,
         Profile {
             auth: Some(Auth {
-                key: "auth_key".to_owned(),
+                key: AuthKey("auth_key".to_owned()),
                 user: User {
                     id: "user_id".to_owned(),
                     email: "user_email".to_owned(),
@@ -323,7 +323,7 @@ fn actionctx_authenticate_register() {
             .unwrap(),
         Profile {
             auth: Some(Auth {
-                key: "auth_key".to_owned(),
+                key: AuthKey("auth_key".to_owned()),
                 user: User {
                     id: "user_id".to_owned(),
                     email: "user_email".to_owned(),
