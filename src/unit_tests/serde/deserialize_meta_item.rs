@@ -1,7 +1,6 @@
-use crate::types::resource::{Link, MetaItem, MetaItemBehaviorHints, PosterShape};
+use crate::types::resource::{MetaItem, MetaItemBehaviorHints, PosterShape};
 use chrono::prelude::TimeZone;
 use chrono::Utc;
-use url::Url;
 
 #[test]
 fn deserialize_meta_item() {
@@ -21,11 +20,7 @@ fn deserialize_meta_item() {
             released: Some(Utc.ymd(2020, 1, 1).and_hms_milli(0, 0, 0, 0)),
             poster_shape: PosterShape::Square,
             videos: vec![],
-            links: vec![Link {
-                name: "name".to_owned(),
-                category: "category".to_owned(),
-                url: Url::parse("https://url").unwrap(),
-            }],
+            links: vec![],
             trailer_streams: vec![],
             behavior_hints: MetaItemBehaviorHints::default(),
         },
@@ -85,13 +80,7 @@ fn deserialize_meta_item() {
             "released": "2020-01-01T00:00:00Z",
             "posterShape": "square",
             "videos": [],
-            "links": [
-                {
-                    "name": "name",
-                    "category": "category",
-                    "url": "https://url"
-                }
-            ],
+            "links": [],
             "trailerStreams": [],
             "behaviorHints": {
                 "defaultVideoId": null,
