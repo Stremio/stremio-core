@@ -1,6 +1,7 @@
 use crate::types::resource::{MetaItem, MetaItemBehaviorHints, PosterShape};
 use chrono::prelude::TimeZone;
 use chrono::Utc;
+use std::fmt::Write;
 
 #[test]
 fn deserialize_meta_item() {
@@ -64,66 +65,65 @@ fn deserialize_meta_item() {
             behavior_hints: MetaItemBehaviorHints::default(),
         },
     ];
-    let meta_items_json = r#"
-    [
-        {
-            "id": "id1",
-            "type": "type_name",
-            "name": "name",
-            "poster": "poster",
-            "background": "background",
-            "logo": "logo",
-            "popularity": 1.0,
-            "description": "description",
-            "releaseInfo": "release_info",
-            "runtime": "runtime",
-            "released": "2020-01-01T00:00:00Z",
-            "posterShape": "square",
-            "videos": [],
-            "links": [],
-            "trailerStreams": [],
-            "behaviorHints": {
-                "defaultVideoId": null,
-                "featuredVideoId": null,
-                "has_scheduled_videos": false
-            }
-        },
-        {
-            "id": "id2",
-            "type": "type_name",
-            "poster": null,
-            "background": null,
-            "logo": null,
-            "popularity": null,
-            "description": null,
-            "releaseInfo": null,
-            "runtime": null,
-            "released": null
-        },
-        {
-            "id": "id3",
-            "type": "type_name",
-            "name": "name",
-            "poster": null,
-            "background": null,
-            "logo": null,
-            "popularity": null,
-            "description": null,
-            "releaseInfo": null,
-            "runtime": null,
-            "released": null,
-            "posterShape": "invalid",
-            "videos": [],
-            "links": [],
-            "trailerStreams": [],
-            "behaviorHints": {
-                "defaultVideoId": null,
-                "featuredVideoId": null,
-                "has_scheduled_videos": false
-            }
-        }
-    ]
-    "#;
+    let mut meta_items_json = "".to_string();
+    write!(
+        meta_items_json,
+        r#"
+        [
+            {{
+                "id": "id1",
+                "type": "type_name",
+                "name": "name",
+                "poster": "poster",
+                "background": "background",
+                "logo": "logo",
+                "popularity": 1.0,
+                "description": "description",
+                "releaseInfo": "release_info",
+                "runtime": "runtime",
+                "released": "2020-01-01T00:00:00Z",
+                "posterShape": "square",
+                "videos": [],
+                "links": [],
+                "trailerStreams": [],
+                "behaviorHints": {}
+            }},
+            {{
+                "id": "id2",
+                "type": "type_name",
+                "poster": null,
+                "background": null,
+                "logo": null,
+                "popularity": null,
+                "description": null,
+                "releaseInfo": null,
+                "runtime": null,
+                "released": null
+            }},
+            {{
+                "id": "id3",
+                "type": "type_name",
+                "name": "name",
+                "poster": null,
+                "background": null,
+                "logo": null,
+                "popularity": null,
+                "description": null,
+                "releaseInfo": null,
+                "runtime": null,
+                "released": null,
+                "posterShape": "invalid",
+                "videos": [],
+                "links": [],
+                "trailerStreams": [],
+                "behaviorHints": {}
+            }}
+        ]
+        "#,
+        serde_json::to_string(&MetaItemBehaviorHints::default()).unwrap(),
+        serde_json::to_string(&MetaItemBehaviorHints::default()).unwrap()
+    )
+    .unwrap();
     let meta_items_deserialize: Vec<MetaItem> = serde_json::from_str(&meta_items_json).unwrap();
     assert_eq!(
         meta_items, meta_items_deserialize,
