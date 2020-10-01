@@ -52,16 +52,17 @@ pub enum AuthRequest {
     Register {
         email: String,
         password: String,
-        gdpr_consent: GDPRConsentWithTime,
+        gdpr_consent: GDPRConsentRequest,
     },
 }
 
 #[derive(Clone, PartialEq, Serialize, Deserialize)]
 #[cfg_attr(test, derive(Debug))]
-pub struct GDPRConsentWithTime {
+pub struct GDPRConsentRequest {
     #[serde(flatten)]
     pub gdpr_consent: GDPRConsent,
     pub time: DateTime<Utc>,
+    pub from: String,
 }
 
 #[derive(Clone, PartialEq, Serialize)]
