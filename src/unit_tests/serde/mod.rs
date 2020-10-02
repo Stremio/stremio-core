@@ -1,4 +1,5 @@
 mod deserialize_descriptor;
+mod deserialize_descriptor_flags;
 mod deserialize_descriptor_preview;
 mod deserialize_lib_bucket;
 mod deserialize_lib_item;
