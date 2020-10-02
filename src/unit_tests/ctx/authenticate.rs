@@ -3,7 +3,7 @@ use crate::models::ctx::Ctx;
 use crate::runtime::msg::{Action, ActionCtx};
 use crate::runtime::{Effects, Env, EnvFuture, Runtime};
 use crate::types::api::{
-    APIResult, AuthRequest, AuthResponse, CollectionResponse, GDPRConsentWithTime,
+    APIResult, AuthRequest, AuthResponse, CollectionResponse, GDPRConsentRequest,
 };
 use crate::types::library::{LibraryBucket, LibraryItem};
 use crate::types::profile::{Auth, AuthKey, GDPRConsent, Profile, User};
@@ -43,7 +43,6 @@ fn actionctx_authenticate_login() {
                                 tos: true,
                                 privacy: true,
                                 marketing: true,
-                                from: "tests".to_owned(),
                             },
                         }
                     },
@@ -101,7 +100,6 @@ fn actionctx_authenticate_login() {
                         tos: true,
                         privacy: true,
                         marketing: true,
-                        from: "tests".to_owned(),
                     },
                 },
             }),
@@ -135,7 +133,6 @@ fn actionctx_authenticate_login() {
                         tos: true,
                         privacy: true,
                         marketing: true,
-                        from: "tests".to_owned(),
                     },
                 },
             }),
@@ -216,7 +213,7 @@ fn actionctx_authenticate_register() {
                 url, method, body, ..
             } if url == "https://api.strem.io/api/register"
                 && method == "POST"
-                && body == "{\"type\":\"Auth\",\"type\":\"Register\",\"email\":\"user_email\",\"password\":\"user_password\",\"gdpr_consent\":{\"tos\":true,\"privacy\":true,\"marketing\":false,\"from\":\"web\",\"time\":\"2020-01-01T00:00:00Z\"}}" =>
+                && body == "{\"type\":\"Auth\",\"type\":\"Register\",\"email\":\"user_email\",\"password\":\"user_password\",\"gdpr_consent\":{\"tos\":true,\"privacy\":true,\"marketing\":false,\"time\":\"2020-01-01T00:00:00Z\",\"from\":\"tests\"}}" =>
             {
                 future::ok(Box::new(APIResult::Ok {
                     result: AuthResponse {
@@ -232,7 +229,6 @@ fn actionctx_authenticate_register() {
                                 tos: true,
                                 privacy: true,
                                 marketing: true,
-                                from: "tests".to_owned(),
                             },
                         }
                     },
@@ -273,13 +269,13 @@ fn actionctx_authenticate_register() {
             AuthRequest::Register {
                 email: "user_email".into(),
                 password: "user_password".into(),
-                gdpr_consent: GDPRConsentWithTime {
+                gdpr_consent: GDPRConsentRequest {
                     gdpr_consent: GDPRConsent {
                         tos: true,
                         privacy: true,
                         marketing: false,
-                        from: "web".to_owned(),
                     },
+                    from: "tests".to_owned(),
                     time: Utc.ymd(2020, 1, 1).and_hms_milli(0, 0, 0, 0),
                 },
             },
@@ -301,7 +297,6 @@ fn actionctx_authenticate_register() {
                         tos: true,
                         privacy: true,
                         marketing: true,
-                        from: "tests".to_owned(),
                     },
                 },
             }),
@@ -335,7 +330,6 @@ fn actionctx_authenticate_register() {
                         tos: true,
                         privacy: true,
                         marketing: true,
-                        from: "tests".to_owned(),
                     },
                 },
             }),
@@ -374,7 +368,7 @@ fn actionctx_authenticate_register() {
         Request {
             url: "https://api.strem.io/api/register".to_owned(),
             method: "POST".to_owned(),
-            body: "{\"type\":\"Auth\",\"type\":\"Register\",\"email\":\"user_email\",\"password\":\"user_password\",\"gdpr_consent\":{\"tos\":true,\"privacy\":true,\"marketing\":false,\"from\":\"web\",\"time\":\"2020-01-01T00:00:00Z\"}}".to_owned(),
+            body: "{\"type\":\"Auth\",\"type\":\"Register\",\"email\":\"user_email\",\"password\":\"user_password\",\"gdpr_consent\":{\"tos\":true,\"privacy\":true,\"marketing\":false,\"time\":\"2020-01-01T00:00:00Z\",\"from\":\"tests\"}}".to_owned(),
             ..Default::default()
         },
         "Register request has been sent"

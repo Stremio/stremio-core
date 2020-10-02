@@ -48,7 +48,6 @@ fn actionctx_logout() {
                     tos: true,
                     privacy: true,
                     marketing: true,
-                    from: "tests".to_owned(),
                 },
             },
         }),

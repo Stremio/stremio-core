@@ -8,7 +8,6 @@ pub struct GDPRConsent {
     pub tos: bool,
     pub privacy: bool,
     pub marketing: bool,
-    pub from: String,
 }
 
 #[derive(Clone, PartialEq, Serialize, Deserialize)]
