@@ -1,4 +1,4 @@
-use crate::types::api::{APIRequest, AuthRequest, GDPRConsentWithTime};
+use crate::types::api::{APIRequest, AuthRequest, GDPRConsentRequest};
 use crate::types::profile::{AuthKey, GDPRConsent};
 use chrono::prelude::TimeZone;
 use chrono::Utc;
@@ -13,18 +13,18 @@ fn serialize_api_request_auth() {
         APIRequest::Auth(AuthRequest::Register {
             email: "email".to_owned(),
             password: "password".to_owned(),
-            gdpr_consent: GDPRConsentWithTime {
+            gdpr_consent: GDPRConsentRequest {
                 gdpr_consent: GDPRConsent {
                     tos: true,
                     privacy: true,
                     marketing: true,
-                    from: "from".to_owned(),
                 },
                 time: Utc.ymd(2020, 1, 1).and_hms_milli(0, 0, 0, 0),
+                from: "from".to_owned(),
             },
         }),
     ];
-    let auth_json = r#"[{"type":"Auth","type":"Login","email":"email","password":"password"},{"type":"Auth","type":"Register","email":"email","password":"password","gdpr_consent":{"tos":true,"privacy":true,"marketing":true,"from":"from","time":"2020-01-01T00:00:00Z"}}]"#;
+    let auth_json = r#"[{"type":"Auth","type":"Login","email":"email","password":"password"},{"type":"Auth","type":"Register","email":"email","password":"password","gdpr_consent":{"tos":true,"privacy":true,"marketing":true,"time":"2020-01-01T00:00:00Z","from":"from"}}]"#;
     let auth_serialize = serde_json::to_string(&auth).unwrap();
     assert_eq!(auth_json, auth_serialize, "Auth serialized successfully");
 }
