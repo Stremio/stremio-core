@@ -4,6 +4,7 @@ mod deserialize_lib_bucket;
 mod deserialize_lib_item;
 mod deserialize_lib_item_state;
 mod deserialize_link;
+mod deserialize_manifest;
 mod deserialize_meta_item;
 mod deserialize_meta_item_behavior_hints;
 mod deserialize_meta_item_preview;
