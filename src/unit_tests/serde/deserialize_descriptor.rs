@@ -1,6 +1,4 @@
-use crate::types::addon::{
-    Descriptor, DescriptorFlags, Manifest, ManifestExtra, ManifestExtraProp, OptionsLimit,
-};
+use crate::types::addon::{Descriptor, DescriptorFlags, Manifest, ManifestExtraProp, OptionsLimit};
 use url::Url;
 
 #[test]
@@ -39,43 +37,6 @@ fn deserialize_descriptor() {
     assert_eq!(
         descriptors, descriptors_deserialize,
         "Descriptor deserialized successfully"
-    );
-}
-
-#[test]
-fn deserialize_manifest_extra() {
-    let manifest_extra = vec![
-        ManifestExtra::Full { props: vec![] },
-        ManifestExtra::Short {
-            required: vec!["required".to_owned()],
-            supported: vec!["supported".to_owned()],
-        },
-        ManifestExtra::Short {
-            required: vec![],
-            supported: vec![],
-        },
-    ];
-    let manifest_extra_json = r#"
-    [
-        {
-            "extra": []
-        },
-        {
-            "extraRequired": [
-                "required"
-            ],
-            "extraSupported": [
-                "supported"
-            ]
-        },
-        {}
-    ]
-    "#;
-    let manifest_extra_deserialize: Vec<ManifestExtra> =
-        serde_json::from_str(&manifest_extra_json).unwrap();
-    assert_eq!(
-        manifest_extra, manifest_extra_deserialize,
-        "manifest extra deserialized successfully"
     );
 }
 

@@ -6,6 +6,7 @@ mod deserialize_lib_item_state;
 mod deserialize_link;
 mod deserialize_manifest;
 mod deserialize_manifest_catalog;
+mod deserialize_manifest_extra;
 mod deserialize_manifest_preview;
 mod deserialize_manifest_resource;
 mod deserialize_meta_item;
