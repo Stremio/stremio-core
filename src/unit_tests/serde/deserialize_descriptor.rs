@@ -2,105 +2,44 @@ use crate::types::addon::{
     Descriptor, DescriptorFlags, Manifest, ManifestCatalog, ManifestExtra, ManifestExtraProp,
     ManifestResource, OptionsLimit,
 };
-use semver::Version;
-use std::fmt::Write;
 use url::Url;
 
 #[test]
 fn deserialize_descriptor() {
     let descriptors = vec![
         Descriptor {
-            manifest: Manifest {
-                id: "id".to_owned(),
-                version: Version::new(0, 0, 1),
-                name: "name".to_owned(),
-                contact_email: Some("contact_email".to_owned()),
-                description: Some("description".to_owned()),
-                logo: Some("logo".to_owned()),
-                background: Some("background".to_owned()),
-                types: vec!["type".to_owned()],
-                resources: vec![],
-                id_prefixes: Some(vec!["id_prefix".to_owned()]),
-                catalogs: vec![],
-                addon_catalogs: vec![],
-                behavior_hints: vec![("behavior_hint".to_owned(), serde_json::Value::Bool(true))]
-                    .iter()
-                    .cloned()
-                    .collect(),
-            },
+            manifest: Manifest::default(),
             transport_url: Url::parse("https://transport_url").unwrap(),
             flags: DescriptorFlags::default(),
         },
         Descriptor {
-            manifest: Manifest {
-                id: "id".to_owned(),
-                version: Version::new(0, 0, 1),
-                name: "name".to_owned(),
-                contact_email: None,
-                description: None,
-                logo: None,
-                background: None,
-                types: vec![],
-                resources: vec![],
-                id_prefixes: None,
-                catalogs: vec![],
-                addon_catalogs: vec![],
-                behavior_hints: vec![].iter().cloned().collect(),
-            },
+            manifest: Manifest::default(),
             transport_url: Url::parse("https://transport_url").unwrap(),
             flags: DescriptorFlags::default(),
         },
     ];
-    let mut descriptors_json = "".to_string();
-    write!(
-        descriptors_json,
+    let descriptors_json = format!(
         r#"
         [
             {{
-                "manifest": {{
-                    "id": "id",
-                    "version": "0.0.1",
-                    "name": "name",
-                    "contactEmail": "contact_email",
-                    "description": "description",
-                    "logo": "logo",
-                    "background": "background",
-                    "types": [
-                        "type"
-                    ],
-                    "resources": [],
-                    "idPrefixes": [
-                        "id_prefix"
-                    ],
-                    "catalogs": [],
-                    "addonCatalogs": [],
-                    "behaviorHints": {{
-                        "behavior_hint": true
-                    }}
-                }},
+                "manifest": {},
                 "transportUrl": "https://transport_url",
                 "flags": {}
             }},
             {{
-                "manifest": {{
-                    "id": "id",
-                    "version": "0.0.1",
-                    "name": "name",
-                    "types": [],
-                    "resources": [],
-                    "idPrefixes": null
-                }},
+                "manifest": {},
                 "transportUrl": "https://transport_url"
             }}
         ]
         "#,
-        serde_json::to_string(&DescriptorFlags::default()).unwrap()
-    )
-    .unwrap();
+        serde_json::to_string(&Manifest::default()).unwrap(),
+        serde_json::to_string(&DescriptorFlags::default()).unwrap(),
+        serde_json::to_string(&Manifest::default()).unwrap(),
+    );
     let descriptors_deserialize: Vec<Descriptor> = serde_json::from_str(&descriptors_json).unwrap();
     assert_eq!(
         descriptors, descriptors_deserialize,
-        "descriptor deserialized successfully"
+        "Descriptor deserialized successfully"
     );
 }
 
