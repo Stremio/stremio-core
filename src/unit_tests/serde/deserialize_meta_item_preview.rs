@@ -1,7 +1,6 @@
 use crate::types::resource::{MetaItemBehaviorHints, MetaItemPreview, PosterShape};
 use chrono::prelude::TimeZone;
 use chrono::Utc;
-use std::fmt::Write;
 
 #[test]
 fn deserialize_meta_item_preview() {
@@ -53,9 +52,7 @@ fn deserialize_meta_item_preview() {
             behavior_hints: MetaItemBehaviorHints::default(),
         },
     ];
-    let mut meta_item_previews_json = "".to_string();
-    write!(
-        meta_item_previews_json,
+    let meta_item_previews_json = format!(
         r#"
         [
             {{
@@ -100,8 +97,7 @@ fn deserialize_meta_item_preview() {
         "#,
         serde_json::to_string(&MetaItemBehaviorHints::default()).unwrap(),
         serde_json::to_string(&MetaItemBehaviorHints::default()).unwrap()
-    )
-    .unwrap();
+    );
     let meta_item_previews_deserialize: Vec<MetaItemPreview> =
         serde_json::from_str(&meta_item_previews_json).unwrap();
     assert_eq!(
