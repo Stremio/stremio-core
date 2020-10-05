@@ -2,7 +2,6 @@ use crate::types::library::{LibraryItem, LibraryItemBehaviorHints, LibraryItemSt
 use crate::types::resource::PosterShape;
 use chrono::prelude::TimeZone;
 use chrono::Utc;
-use std::fmt::Write;
 
 #[test]
 fn deserialize_lib_item() {
@@ -57,9 +56,7 @@ fn deserialize_lib_item() {
             },
         },
     ];
-    let mut lib_items_json = "".to_string();
-    write!(
-        lib_items_json,
+    let lib_items_json = format!(
         r#"
         [
             {{
@@ -105,9 +102,8 @@ fn deserialize_lib_item() {
         "#,
         serde_json::to_string(&LibraryItemState::default()).unwrap(),
         serde_json::to_string(&LibraryItemState::default()).unwrap(),
-        serde_json::to_string(&LibraryItemState::default()).unwrap()
-    )
-    .unwrap();
+        serde_json::to_string(&LibraryItemState::default()).unwrap(),
+    );
     let lib_items_deserialize: Vec<LibraryItem> = serde_json::from_str(&lib_items_json).unwrap();
     assert_eq!(
         lib_items, lib_items_deserialize,
@@ -132,9 +128,7 @@ fn deserialize_lib_item_empty_string_as_none() {
             default_video_id: None,
         },
     };
-    let mut lib_item_json = "".to_string();
-    write!(
-        lib_item_json,
+    let lib_item_json = format!(
         r#"
             {{
                 "_id": "id1",
@@ -153,8 +147,7 @@ fn deserialize_lib_item_empty_string_as_none() {
             }}
         "#,
         serde_json::to_string(&LibraryItemState::default()).unwrap()
-    )
-    .unwrap();
+    );
     let lib_item_deserialize = serde_json::from_str(&lib_item_json).unwrap();
     assert_eq!(
         lib_item, lib_item_deserialize,
