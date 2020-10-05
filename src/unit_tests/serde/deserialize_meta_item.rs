@@ -1,7 +1,6 @@
 use crate::types::resource::{MetaItem, MetaItemBehaviorHints, PosterShape};
 use chrono::prelude::TimeZone;
 use chrono::Utc;
-use std::fmt::Write;
 
 #[test]
 fn deserialize_meta_item() {
@@ -65,9 +64,7 @@ fn deserialize_meta_item() {
             behavior_hints: MetaItemBehaviorHints::default(),
         },
     ];
-    let mut meta_items_json = "".to_string();
-    write!(
-        meta_items_json,
+    let meta_items_json = format!(
         r#"
         [
             {{
@@ -122,8 +119,7 @@ fn deserialize_meta_item() {
         "#,
         serde_json::to_string(&MetaItemBehaviorHints::default()).unwrap(),
         serde_json::to_string(&MetaItemBehaviorHints::default()).unwrap()
-    )
-    .unwrap();
+    );
     let meta_items_deserialize: Vec<MetaItem> = serde_json::from_str(&meta_items_json).unwrap();
     assert_eq!(
         meta_items, meta_items_deserialize,
