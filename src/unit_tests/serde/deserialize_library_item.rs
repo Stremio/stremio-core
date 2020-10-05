@@ -4,8 +4,8 @@ use chrono::prelude::TimeZone;
 use chrono::Utc;
 
 #[test]
-fn deserialize_lib_item() {
-    let lib_items = vec![
+fn deserialize_library_item() {
+    let library_items = vec![
         // ALL fields are defined with SOME value
         LibraryItem {
             id: "id1".to_owned(),
@@ -50,7 +50,7 @@ fn deserialize_lib_item() {
             behavior_hints: LibraryItemBehaviorHints::default(),
         },
     ];
-    let lib_items_json = format!(
+    let library_items_json = format!(
         r#"
         [
             {{
@@ -96,16 +96,17 @@ fn deserialize_lib_item() {
         serde_json::to_string(&LibraryItemState::default()).unwrap(),
         serde_json::to_string(&LibraryItemBehaviorHints::default()).unwrap(),
     );
-    let lib_items_deserialize: Vec<LibraryItem> = serde_json::from_str(&lib_items_json).unwrap();
+    let library_items_deserialize: Vec<LibraryItem> =
+        serde_json::from_str(&library_items_json).unwrap();
     assert_eq!(
-        lib_items, lib_items_deserialize,
-        "LibItem deserialized successfully"
+        library_items, library_items_deserialize,
+        "LibraryItem deserialized successfully"
     );
 }
 
 #[test]
-fn deserialize_lib_item_empty_string_as_none() {
-    let lib_item = LibraryItem {
+fn deserialize_library_item_empty_string_as_none() {
+    let library_item = LibraryItem {
         id: "id1".to_owned(),
         removed: false,
         temp: false,
@@ -118,7 +119,7 @@ fn deserialize_lib_item_empty_string_as_none() {
         poster_shape: PosterShape::Poster,
         behavior_hints: LibraryItemBehaviorHints::default(),
     };
-    let lib_item_json = format!(
+    let library_item_json = format!(
         r#"
             {{
                 "_id": "id1",
@@ -137,9 +138,9 @@ fn deserialize_lib_item_empty_string_as_none() {
         serde_json::to_string(&LibraryItemState::default()).unwrap(),
         serde_json::to_string(&LibraryItemBehaviorHints::default()).unwrap(),
     );
-    let lib_item_deserialize = serde_json::from_str(&lib_item_json).unwrap();
+    let library_item_deserialize = serde_json::from_str(&library_item_json).unwrap();
     assert_eq!(
-        lib_item, lib_item_deserialize,
-        "LibItem deserialized successfully"
+        library_item, library_item_deserialize,
+        "LibraryItem deserialized successfully"
     );
 }
