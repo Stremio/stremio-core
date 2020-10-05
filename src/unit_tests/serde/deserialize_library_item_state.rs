@@ -3,8 +3,8 @@ use chrono::prelude::TimeZone;
 use chrono::Utc;
 
 #[test]
-fn deserialize_lib_item_state() {
-    let lib_item_states = vec![
+fn deserialize_library_item_state() {
+    let library_item_states = vec![
         // ALL fields are defined with SOME value
         LibraryItemState {
             last_watched: Some(Utc.ymd(2020, 1, 1).and_hms_milli(0, 0, 0, 0)),
@@ -48,7 +48,7 @@ fn deserialize_lib_item_state() {
             no_notif: false,
         },
     ];
-    let lib_item_states_json = r#"
+    let library_item_states_json = r#"
     [
         {
             "lastWatched": "2020-01-01T00:00:00Z",
@@ -90,17 +90,17 @@ fn deserialize_lib_item_state() {
         }
     ]
     "#;
-    let lib_item_states_deserialize: Vec<LibraryItemState> =
-        serde_json::from_str(&lib_item_states_json).unwrap();
+    let library_item_states_deserialize: Vec<LibraryItemState> =
+        serde_json::from_str(&library_item_states_json).unwrap();
     assert_eq!(
-        lib_item_states, lib_item_states_deserialize,
-        "LibItemState deserialized successfully"
+        library_item_states, library_item_states_deserialize,
+        "LibraryItemState deserialized successfully"
     );
 }
 
 #[test]
-fn deserialize_lib_item_state_empty_string_as_none() {
-    let lib_item_state = LibraryItemState {
+fn deserialize_library_item_state_empty_string_as_none() {
+    let library_item_state = LibraryItemState {
         last_watched: None,
         time_watched: 0,
         time_offset: 0,
@@ -113,7 +113,7 @@ fn deserialize_lib_item_state_empty_string_as_none() {
         last_vid_released: None,
         no_notif: false,
     };
-    let lib_item_state_json = r#"
+    let library_item_state_json = r#"
     {
         "lastWatched": "",
         "timeWatched": 0,
@@ -128,9 +128,9 @@ fn deserialize_lib_item_state_empty_string_as_none() {
         "noNotif": false
     }
     "#;
-    let lib_item_state_deserialize = serde_json::from_str(&lib_item_state_json).unwrap();
+    let library_item_state_deserialize = serde_json::from_str(&library_item_state_json).unwrap();
     assert_eq!(
-        lib_item_state, lib_item_state_deserialize,
-        "LibItemState deserialized successfully"
+        library_item_state, library_item_state_deserialize,
+        "LibraryItemState deserialized successfully"
     );
 }
