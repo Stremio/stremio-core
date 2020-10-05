@@ -18,9 +18,7 @@ fn deserialize_lib_item() {
             type_name: "type_name".to_owned(),
             poster: Some("poster".to_owned()),
             poster_shape: PosterShape::Square,
-            behavior_hints: LibraryItemBehaviorHints {
-                default_video_id: Some("default_video_id".to_owned()),
-            },
+            behavior_hints: LibraryItemBehaviorHints::default(),
         },
         // serde(default) are omited
         LibraryItem {
@@ -34,9 +32,7 @@ fn deserialize_lib_item() {
             type_name: "type_name".to_owned(),
             poster: None,
             poster_shape: PosterShape::Poster,
-            behavior_hints: LibraryItemBehaviorHints {
-                default_video_id: None,
-            },
+            behavior_hints: LibraryItemBehaviorHints::default(),
         },
         // ALL NONEs are set to null.
         // poster shape is invalid
@@ -51,9 +47,7 @@ fn deserialize_lib_item() {
             type_name: "type_name".to_owned(),
             poster: None,
             poster_shape: PosterShape::Poster,
-            behavior_hints: LibraryItemBehaviorHints {
-                default_video_id: None,
-            },
+            behavior_hints: LibraryItemBehaviorHints::default(),
         },
     ];
     let lib_items_json = format!(
@@ -70,9 +64,7 @@ fn deserialize_lib_item() {
                 "_ctime": "2020-01-01T00:00:00Z",
                 "_mtime": "2020-01-01T00:00:00Z",
                 "state": {},
-                "behaviorHints": {{
-                    "defaultVideoId": "default_video_id"
-                }}
+                "behaviorHints": {}
             }},
             {{
                 "_id": "id2",
@@ -94,15 +86,15 @@ fn deserialize_lib_item() {
                 "_ctime": null,
                 "_mtime": "2020-01-01T00:00:00Z",
                 "state": {},
-                "behaviorHints": {{
-                    "defaultVideoId": null
-                }}
+                "behaviorHints": {}
             }}
         ]
         "#,
         serde_json::to_string(&LibraryItemState::default()).unwrap(),
+        serde_json::to_string(&LibraryItemBehaviorHints::default()).unwrap(),
         serde_json::to_string(&LibraryItemState::default()).unwrap(),
         serde_json::to_string(&LibraryItemState::default()).unwrap(),
+        serde_json::to_string(&LibraryItemBehaviorHints::default()).unwrap(),
     );
     let lib_items_deserialize: Vec<LibraryItem> = serde_json::from_str(&lib_items_json).unwrap();
     assert_eq!(
@@ -124,9 +116,7 @@ fn deserialize_lib_item_empty_string_as_none() {
         type_name: "type_name".to_owned(),
         poster: None,
         poster_shape: PosterShape::Poster,
-        behavior_hints: LibraryItemBehaviorHints {
-            default_video_id: None,
-        },
+        behavior_hints: LibraryItemBehaviorHints::default(),
     };
     let lib_item_json = format!(
         r#"
@@ -141,12 +131,11 @@ fn deserialize_lib_item_empty_string_as_none() {
                 "_ctime": "",
                 "_mtime": "2020-01-01T00:00:00Z",
                 "state": {},
-                "behaviorHints": {{
-                    "defaultVideoId": null
-                }}
+                "behaviorHints": {}
             }}
         "#,
-        serde_json::to_string(&LibraryItemState::default()).unwrap()
+        serde_json::to_string(&LibraryItemState::default()).unwrap(),
+        serde_json::to_string(&LibraryItemBehaviorHints::default()).unwrap(),
     );
     let lib_item_deserialize = serde_json::from_str(&lib_item_json).unwrap();
     assert_eq!(
