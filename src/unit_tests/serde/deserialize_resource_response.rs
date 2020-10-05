@@ -1,6 +1,5 @@
 use crate::types::addon::ResourceResponse;
 use crate::types::resource::MetaItem;
-use std::fmt::Write;
 
 #[test]
 fn deserialize_resource_response_metas() {
@@ -36,13 +35,10 @@ fn deserialize_resource_response_meta() {
     let meta = ResourceResponse::Meta {
         meta: MetaItem::default(),
     };
-    let mut meta_json = "".to_string();
-    write!(
-        meta_json,
+    let meta_json = format!(
         r#"{{ "meta": {} }}"#,
         serde_json::to_string(&MetaItem::default()).unwrap()
-    )
-    .unwrap();
+    );
     let meta_deserialize = serde_json::from_str(&meta_json).unwrap();
     assert_eq!(meta, meta_deserialize, "Meta deserialized successfully");
 }
