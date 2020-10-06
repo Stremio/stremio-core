@@ -5,7 +5,6 @@ use chrono::Utc;
 #[test]
 fn deserialize_library_item_state() {
     let library_item_states = vec![
-        // ALL fields are defined with SOME value
         LibraryItemState {
             last_watched: Some(Utc.ymd(2020, 1, 1).and_hms_milli(0, 0, 0, 0)),
             time_watched: 1,
@@ -19,7 +18,6 @@ fn deserialize_library_item_state() {
             last_vid_released: Some(Utc.ymd(2020, 1, 1).and_hms_milli(0, 0, 0, 0)),
             no_notif: true,
         },
-        // serde(default) are omited
         LibraryItemState {
             last_watched: None,
             time_watched: 0,
@@ -33,7 +31,6 @@ fn deserialize_library_item_state() {
             last_vid_released: None,
             no_notif: false,
         },
-        // ALL NONEs are set to null
         LibraryItemState {
             last_watched: None,
             time_watched: 0,

@@ -5,7 +5,6 @@ use chrono::Utc;
 #[test]
 fn deserialize_meta_item() {
     let meta_items = vec![
-        // ALL fields are defined with SOME value
         MetaItem {
             id: "id1".to_owned(),
             type_name: "type_name".to_owned(),
@@ -24,7 +23,6 @@ fn deserialize_meta_item() {
             trailer_streams: vec![],
             behavior_hints: MetaItemBehaviorHints::default(),
         },
-        // serde(default) are omited
         MetaItem {
             id: "id2".to_owned(),
             type_name: "type_name".to_owned(),
@@ -43,8 +41,6 @@ fn deserialize_meta_item() {
             trailer_streams: vec![],
             behavior_hints: MetaItemBehaviorHints::default(),
         },
-        // ALL NONEs are set to null.
-        // poster shape is invalid
         MetaItem {
             id: "id3".to_owned(),
             type_name: "type_name".to_owned(),

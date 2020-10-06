@@ -6,7 +6,6 @@ use chrono::Utc;
 #[test]
 fn deserialize_library_item() {
     let library_items = vec![
-        // ALL fields are defined with SOME value
         LibraryItem {
             id: "id1".to_owned(),
             removed: true,
@@ -20,7 +19,6 @@ fn deserialize_library_item() {
             poster_shape: PosterShape::Square,
             behavior_hints: LibraryItemBehaviorHints::default(),
         },
-        // serde(default) are omited
         LibraryItem {
             id: "id2".to_owned(),
             removed: false,
@@ -34,8 +32,6 @@ fn deserialize_library_item() {
             poster_shape: PosterShape::Poster,
             behavior_hints: LibraryItemBehaviorHints::default(),
         },
-        // ALL NONEs are set to null.
-        // poster shape is invalid
         LibraryItem {
             id: "id3".to_owned(),
             removed: false,
