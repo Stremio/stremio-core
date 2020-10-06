@@ -4,6 +4,7 @@ mod deserialize_descriptor_preview;
 mod deserialize_library_bucket;
 mod deserialize_library_item;
 mod deserialize_library_item_behavior_hints;
+mod deserialize_library_item_empty_string_as_none;
 mod deserialize_library_item_state;
 mod deserialize_link;
 mod deserialize_manifest;
