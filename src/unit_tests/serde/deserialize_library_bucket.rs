@@ -1,10 +1,11 @@
 use crate::types::library::LibraryBucket;
+use std::collections::HashMap;
 
 #[test]
 fn deserialize_library_bucket() {
     let library_bucket = LibraryBucket {
         uid: Some("uid".to_owned()),
-        items: vec![].into_iter().collect(),
+        items: HashMap::new(),
     };
     let library_bucket_json = r#"
     {
