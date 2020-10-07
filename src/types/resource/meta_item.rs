@@ -5,7 +5,7 @@ use serde::{Deserialize, Serialize};
 use url::Url;
 
 #[derive(Clone, PartialEq, Serialize, Deserialize)]
-#[cfg_attr(test, derive(Debug))]
+#[cfg_attr(test, derive(Debug, Default))]
 #[serde(rename_all = "camelCase")]
 pub struct MetaItem {
     pub id: String,
