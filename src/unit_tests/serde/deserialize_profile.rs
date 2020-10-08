@@ -25,7 +25,28 @@ fn deserialize_profile() {
         },
         ..Default::default()
     };
-    let profile_json = r##"{"auth":null,"addons":[],"settings":{"interface_language":"interface_language","streaming_server_url":"https://streaming_server_url/","binge_watching":false,"play_in_background":true,"play_in_external_player":false,"hardware_decoding":false,"subtitles_language":"subtitles_language","subtitles_size":100,"subtitles_font":"subtitles_font","subtitles_bold":false,"subtitles_offset":5,"subtitles_text_color":"subtitles_text_color","subtitles_background_color":"subtitles_background_color","subtitles_outline_color":"subtitles_outline_color"}}"##;
+    let profile_json = r##"
+    {
+        "auth": null,
+        "addons": [],
+        "settings": {
+            "interface_language": "interface_language",
+            "streaming_server_url": "https://streaming_server_url",
+            "binge_watching": false,
+            "play_in_background": true,
+            "play_in_external_player": false,
+            "hardware_decoding": false,
+            "subtitles_language": "subtitles_language",
+            "subtitles_size": 100,
+            "subtitles_font": "subtitles_font",
+            "subtitles_bold": false,
+            "subtitles_offset": 5,
+            "subtitles_text_color": "subtitles_text_color",
+            "subtitles_background_color": "subtitles_background_color",
+            "subtitles_outline_color": "subtitles_outline_color"
+        }
+    }
+    "##;
     let profile_deserialize = serde_json::from_str(&profile_json).unwrap();
     assert_eq!(
         profile, profile_deserialize,
@@ -70,7 +91,44 @@ fn deserialize_profile_with_user() {
             subtitles_outline_color: "subtitles_outline_color".to_owned(),
         },
     };
-    let profile_json = r##"{"auth":{"key":"auth_key","user":{"_id":"user_id","email":"user_email","fbId":null,"avatar":null,"lastModified":"2020-01-01T00:00:00Z","dateRegistered":"2020-01-01T00:00:00Z","gdpr_consent":{"tos":true,"privacy":true,"marketing":true,"from":"tests"}}},"addons":[],"settings":{"interface_language":"interface_language","streaming_server_url":"https://streaming_server_url/","binge_watching":false,"play_in_background":true,"play_in_external_player":false,"hardware_decoding":false,"subtitles_language":"subtitles_language","subtitles_size":100,"subtitles_font":"subtitles_font","subtitles_bold":false,"subtitles_offset":5,"subtitles_text_color":"subtitles_text_color","subtitles_background_color":"subtitles_background_color","subtitles_outline_color":"subtitles_outline_color"}}"##;
+    let profile_json = r##"
+    {
+        "auth": {
+            "key": "auth_key",
+            "user": {
+                "_id": "user_id",
+                "email": "user_email",
+                "fbId": null,
+                "avatar": null,
+                "lastModified": "2020-01-01T00:00:00Z",
+                "dateRegistered": "2020-01-01T00:00:00Z",
+                "gdpr_consent": {
+                    "tos": true,
+                    "privacy": true,
+                    "marketing": true,
+                    "from": "tests"
+                }
+            }
+        },
+        "addons": [],
+        "settings": {
+            "interface_language": "interface_language",
+            "streaming_server_url": "https://streaming_server_url",
+            "binge_watching": false,
+            "play_in_background": true,
+            "play_in_external_player": false,
+            "hardware_decoding": false,
+            "subtitles_language": "subtitles_language",
+            "subtitles_size": 100,
+            "subtitles_font": "subtitles_font",
+            "subtitles_bold": false,
+            "subtitles_offset": 5,
+            "subtitles_text_color": "subtitles_text_color",
+            "subtitles_background_color": "subtitles_background_color",
+            "subtitles_outline_color": "subtitles_outline_color"
+        }
+    }
+    "##;
     let profile_deserialize = serde_json::from_str(&profile_json).unwrap();
     assert_eq!(
         profile, profile_deserialize,

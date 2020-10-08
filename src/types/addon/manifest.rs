@@ -6,10 +6,12 @@ use serde::{Deserialize, Serialize};
 use std::borrow::Cow;
 
 #[derive(Clone, PartialEq, Serialize, Deserialize)]
-#[cfg_attr(test, derive(Debug))]
+#[cfg_attr(test, derive(Derivative, Debug))]
+#[cfg_attr(test, derivative(Default))]
 #[serde(rename_all = "camelCase")]
 pub struct Manifest {
     pub id: String,
+    #[cfg_attr(test, derivative(Default(value = "Version::new(0, 0, 1)")))]
     pub version: Version,
     pub name: String,
     pub contact_email: Option<String>,
@@ -67,10 +69,12 @@ impl Manifest {
 }
 
 #[derive(Clone, PartialEq, Serialize, Deserialize)]
-#[cfg_attr(test, derive(Debug))]
+#[cfg_attr(test, derive(Derivative, Debug))]
+#[cfg_attr(test, derivative(Default))]
 #[serde(rename_all = "camelCase")]
 pub struct ManifestPreview {
     pub id: String,
+    #[cfg_attr(test, derivative(Default(value = "Version::new(0, 0, 1)")))]
     pub version: Version,
     pub name: String,
     pub description: Option<String>,

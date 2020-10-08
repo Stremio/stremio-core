@@ -1,82 +1,89 @@
-use crate::types::addon::ResourceResponse::{Metas, MetasDetailed};
-use crate::types::resource::{
-    Link, MetaItem, MetaItemBehaviorHints, MetaItemPreview, SeriesInfo, Video,
-};
-use chrono::prelude::TimeZone;
-use chrono::Utc;
-use url::Url;
+use crate::types::addon::ResourceResponse;
+use crate::types::resource::MetaItem;
 
 #[test]
 fn deserialize_resource_response_metas() {
-    let metas_vec = vec![MetaItemPreview {
-        id: "id".to_owned(),
-        type_name: "type_name".to_owned(),
-        name: "name".to_owned(),
-        poster: None,
-        logo: None,
-        description: None,
-        release_info: None,
-        runtime: None,
-        released: None,
-        poster_shape: Default::default(),
-        trailer_streams: vec![],
-        behavior_hints: MetaItemBehaviorHints {
-            default_video_id: None,
-            featured_video_id: None,
-            has_scheduled_videos: false,
-        },
-    }];
-    let metas_json = r#"{"metas":[{"id":"id","type":"type_name","name":"name","poster":null,"logo":null,"description":null,"releaseInfo":null,"runtime":null,"released":null,"posterShape":"poster","trailer_streams":[],"behaviorHints":{"defaultVideoId":null,"featuredVideoId":null}}]}"#;
+    let metas = ResourceResponse::Metas { metas: vec![] };
+    let metas_json = r#"
+    {
+        "metas": []
+    }
+    "#;
     let metas_deserialize = serde_json::from_str(&metas_json).unwrap();
-    match metas_deserialize {
-        Metas { metas } => assert_eq!(metas, metas_vec, "metas deserialized successfully"),
-        _ => panic!("failed getting metas"),
-    };
+    assert_eq!(metas, metas_deserialize, "Metas deserialized successfully");
 }
 
 #[test]
 fn deserialize_resource_response_metas_detailed() {
-    let metas_detailed_vec = vec![MetaItem {
-        id: "id".to_owned(),
-        type_name: "type_name".to_owned(),
-        name: "name".to_owned(),
-        poster: None,
-        background: None,
-        logo: None,
-        popularity: None,
-        description: None,
-        release_info: None,
-        runtime: None,
-        released: None,
-        poster_shape: Default::default(),
-        videos: vec![Video {
-            id: "id".to_owned(),
-            title: "title".to_owned(),
-            released: Some(Utc.ymd(2020, 1, 1).and_hms_milli(0, 0, 0, 0)),
-            overview: None,
-            thumbnail: None,
-            streams: vec![],
-            series_info: Some(SeriesInfo {
-                season: 1,
-                episode: 1,
-            }),
-            trailer_streams: vec![],
-        }],
-        links: vec![Link {
-            name: "name".to_owned(),
-            category: "category".to_owned(),
-            url: Url::parse("https://url").unwrap(),
-        }],
-        trailer_streams: vec![],
-        behavior_hints: Default::default(),
-    }];
-    let metas_detailed_json = r#"{"metasDetailed":[{"id":"id","type":"type_name","name":"name","poster":null,"background":null,"logo":null,"popularity":null,"description":null,"releaseInfo":null,"runtime":null,"released":null,"posterShape":"poster","videos":[{"id":"id","title":"title","released":"2020-01-01T00:00:00Z","overview":null,"thumbnail":null,"streams":[],"season":1,"episode":1,"trailer_streams":[]}],"links":[{"name":"name","category":"category","url":"https://url/"}],"trailer_streams":[],"behaviorHints":{"defaultVideoId":null,"featuredVideoId":null}}]}"#;
-    let metas_detailed_deserialize = serde_json::from_str(&metas_detailed_json).unwrap();
-    match metas_detailed_deserialize {
-        MetasDetailed { metas_detailed } => assert_eq!(
-            metas_detailed, metas_detailed_vec,
-            "metas detailed deserialized successfully"
-        ),
-        _ => panic!("failed getting metas detailed"),
+    let metas_detailed = ResourceResponse::MetasDetailed {
+        metas_detailed: vec![],
     };
+    let metas_detailed_json = r#"
+    {
+        "metasDetailed": []
+    }
+    "#;
+    let metas_detailed_deserialize = serde_json::from_str(&metas_detailed_json).unwrap();
+    assert_eq!(
+        metas_detailed, metas_detailed_deserialize,
+        "MetasDetailed deserialized successfully"
+    );
+}
+
+#[test]
+fn deserialize_resource_response_meta() {
+    let meta = ResourceResponse::Meta {
+        meta: MetaItem::default(),
+    };
+    let meta_json = format!(
+        r#"{{ "meta": {} }}"#,
+        serde_json::to_string(&MetaItem::default()).unwrap()
+    );
+    let meta_deserialize = serde_json::from_str(&meta_json).unwrap();
+    assert_eq!(meta, meta_deserialize, "Meta deserialized successfully");
+}
+
+#[test]
+fn deserialize_resource_response_streams() {
+    let streams = ResourceResponse::Streams { streams: vec![] };
+    let streams_json = r#"
+    {
+        "streams": []
+    }
+    "#;
+    let streams_deserialize = serde_json::from_str(&streams_json).unwrap();
+    assert_eq!(
+        streams, streams_deserialize,
+        "Streams deserialized successfully"
+    );
+}
+
+#[test]
+fn deserialize_resource_response_subtitles() {
+    let subtitles = ResourceResponse::Subtitles { subtitles: vec![] };
+    let subtitles_json = r#"
+    {
+        "subtitles": []
+    }
+    "#;
+    let subtitles_deserialize = serde_json::from_str(&subtitles_json).unwrap();
+    assert_eq!(
+        subtitles, subtitles_deserialize,
+        "Subtitles deserialized successfully"
+    );
+}
+
+#[test]
+fn deserialize_resource_response_addons() {
+    let addons = ResourceResponse::Addons { addons: vec![] };
+    let addons_json = r#"
+    {
+        "addons": []
+    }
+    "#;
+    let addons_deserialize = serde_json::from_str(&addons_json).unwrap();
+    assert_eq!(
+        addons, addons_deserialize,
+        "Addons deserialized successfully"
+    );
 }
