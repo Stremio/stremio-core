@@ -107,7 +107,7 @@ impl From<&MetaItem> for MetaItemDeepLinks {
 
 #[derive(Serialize)]
 pub struct VideoDeepLinks {
-    pub meta_details_streams: Option<String>,
+    pub meta_details_streams: String,
     pub player: Option<String>,
 }
 
