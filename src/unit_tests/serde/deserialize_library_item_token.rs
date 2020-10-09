@@ -1,6 +1,6 @@
 use crate::types::library::{LibraryItem, LibraryItemBehaviorHints, LibraryItemState};
 use crate::types::resource::PosterShape;
-use crate::unit_tests::serde::constants_token::{LIBRARY_ITEM_BEHAVIOR_HINTS, LIBRARY_ITEM_STATE};
+use crate::unit_tests::serde::default_token_ext::DefaultTokens;
 use chrono::prelude::TimeZone;
 use chrono::Utc;
 use serde_test::{assert_tokens, Token};
@@ -39,9 +39,9 @@ fn deserialize_library_item() {
         Token::Str("state"),
     ]
     .iter()
-    .chain(LIBRARY_ITEM_STATE.iter())
+    .chain(LibraryItemState::default_token().iter())
     .chain([Token::Str("behaviorHints")].iter())
-    .chain(LIBRARY_ITEM_BEHAVIOR_HINTS.iter())
+    .chain(LibraryItemBehaviorHints::default_token().iter())
     .chain([Token::StructEnd, Token::SeqEnd].iter())
     .cloned()
     .collect::<Vec<Token>>();
