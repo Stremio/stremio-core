@@ -18,6 +18,7 @@ use stremio_core::types::library::LibraryBucket;
 use stremio_core::types::profile::Profile;
 use stremio_core::types::resource::MetaItemPreview;
 use stremio_derive::Model;
+use wasm_bindgen::JsValue;
 
 #[derive(Model, Serialize)]
 pub struct WebModel {
@@ -66,5 +67,26 @@ impl WebModel {
                 .join(installed_addons_effects)
                 .join(streaming_server_effects),
         )
+    }
+    pub fn get_state(&self, field: &WebModelField) -> JsValue {
+        match field {
+            WebModelField::Ctx => JsValue::from_serde(&self.ctx).unwrap(),
+            WebModelField::ContinueWatchingPreview => {
+                JsValue::from_serde(&self.continue_watching_preview).unwrap()
+            }
+            WebModelField::Board => JsValue::from_serde(&self.board).unwrap(),
+            WebModelField::Discover => JsValue::from_serde(&self.discover).unwrap(),
+            WebModelField::Library => JsValue::from_serde(&self.library).unwrap(),
+            WebModelField::ContinueWatching => {
+                JsValue::from_serde(&self.continue_watching).unwrap()
+            }
+            WebModelField::Search => JsValue::from_serde(&self.search).unwrap(),
+            WebModelField::MetaDetails => JsValue::from_serde(&self.meta_details).unwrap(),
+            WebModelField::RemoteAddons => JsValue::from_serde(&self.remote_addons).unwrap(),
+            WebModelField::InstalledAddons => JsValue::from_serde(&self.installed_addons).unwrap(),
+            WebModelField::AddonDetails => JsValue::from_serde(&self.addon_details).unwrap(),
+            WebModelField::StreamingServer => JsValue::from_serde(&self.streaming_server).unwrap(),
+            WebModelField::Player => JsValue::from_serde(&self.player).unwrap(),
+        }
     }
 }
