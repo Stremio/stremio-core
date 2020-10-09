@@ -89,7 +89,7 @@ pub fn dispatch(action: &JsValue, field: &JsValue) {
     match &*RUNTIME.read().expect("runtime read failed") {
         Some(Loadable::Ready(runtime)) => match (action.into_serde(), field.into_serde()) {
             (Ok(action), Ok(field)) => {
-                runtime.dispatch_to_field(&field, action);
+                runtime.dispatch_to_field(action, &field);
             }
             (Ok(action), Err(_)) => {
                 runtime.dispatch(action);
