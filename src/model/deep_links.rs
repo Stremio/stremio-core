@@ -7,7 +7,6 @@ use stremio_core::models::common::ResourceLoadable;
 use stremio_core::types::addon::ResourceRequest;
 use stremio_core::types::library::LibraryItem;
 use stremio_core::types::resource::{MetaItem, MetaItemPreview, Stream, Video};
-use url::form_urlencoded;
 
 #[derive(Serialize)]
 pub struct LibraryItemDeepLinks {
