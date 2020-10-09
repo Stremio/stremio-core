@@ -18,6 +18,8 @@ serde = "1.0"
 serde_json = "1.0"
 url = { version = "2.1", features = ["serde"] }
 percent-encoding = "2.1"
+base64 = "0.13"
+flate2 = "1.0"
 chrono = "0.4"
 futures = "0.3"
 http = "0.2"
