@@ -49,7 +49,7 @@ pub fn model_derive(input: TokenStream) -> TokenStream {
                 .map(|(field, variant_ident)| {
                     let field_ident = &field.ident;
                     quote! {
-                        Self::Field::#variant_ident => #core_ident::runtime::UpdateWithCtx::update(&mut self.#field_ident, &self.ctx, msg)
+                        Self::Field::#variant_ident => #core_ident::runtime::UpdateWithCtx::update(&mut self.#field_ident, &msg, &self.ctx)
                     }
                 })
                 .chain(iter::once(quote! {
@@ -63,7 +63,7 @@ pub fn model_derive(input: TokenStream) -> TokenStream {
                 .map(|field| {
                     let field_ident = &field.ident;
                     quote! {
-                        .join(#core_ident::runtime::UpdateWithCtx::update(&mut self.#field_ident, &self.ctx, msg))
+                        .join(#core_ident::runtime::UpdateWithCtx::update(&mut self.#field_ident, &msg, &self.ctx))
                     }
                 })
                 .chain(iter::once(quote! {
@@ -86,7 +86,7 @@ pub fn model_derive(input: TokenStream) -> TokenStream {
 
                 impl #core_ident::runtime::Model for #struct_ident {
                     type Field = #field_enum_ident;
-                    fn update_field(&mut self, field: &Self::Field, msg: &#core_ident::runtime::msg::Msg) -> #core_ident::runtime::Effects {
+                    fn update_field(&mut self, msg: &#core_ident::runtime::msg::Msg, field: &Self::Field) -> #core_ident::runtime::Effects {
                         match field {
                             #(#field_update_match_arms),*
                         }

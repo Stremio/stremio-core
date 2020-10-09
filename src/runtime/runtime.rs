@@ -50,12 +50,12 @@ where
             .update(&Msg::Action(action));
         self.handle_effects(effects);
     }
-    pub fn dispatch_to_field(&self, field: &M::Field, action: Action) {
+    pub fn dispatch_to_field(&self, action: Action, field: &M::Field) {
         let effects = self
             .model
             .write()
             .expect("model write failed")
-            .update_field(&field, &Msg::Action(action));
+            .update_field(&Msg::Action(action), &field);
         self.handle_effects(effects);
     }
     fn emit(&self, event: RuntimeEvent) {

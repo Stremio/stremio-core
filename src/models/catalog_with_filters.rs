@@ -113,7 +113,7 @@ where
     T: CatalogResourceAdapter + PartialEq,
     Vec<T>: TryFrom<ResourceResponse, Error = &'static str>,
 {
-    fn update(&mut self, ctx: &Ctx<E>, msg: &Msg) -> Effects {
+    fn update(&mut self, msg: &Msg, ctx: &Ctx<E>) -> Effects {
         match msg {
             Msg::Action(Action::Load(ActionLoad::CatalogWithFilters(selected))) => {
                 let selected_effects = eq_update(&mut self.selected, Some(selected.to_owned()));
