@@ -1,4 +1,3 @@
-mod constants_token;
 mod deserialize_descriptor;
 mod deserialize_descriptor_flags;
 mod deserialize_descriptor_preview;
