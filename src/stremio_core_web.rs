@@ -1,5 +1,5 @@
 use crate::env::WebEnv;
-use crate::model::{WebModel, WebModelField};
+use crate::model::WebModel;
 use futures::{future, StreamExt};
 use lazy_static::lazy_static;
 use std::sync::RwLock;
@@ -10,7 +10,8 @@ use stremio_core::models::common::Loadable;
 use stremio_core::runtime::{Env, EnvError, Runtime};
 use stremio_core::types::library::LibraryBucket;
 use stremio_core::types::profile::Profile;
-use wasm_bindgen::prelude::{wasm_bindgen, JsValue};
+use wasm_bindgen::prelude::wasm_bindgen;
+use wasm_bindgen::JsValue;
 
 lazy_static! {
     static ref RUNTIME: RwLock<Option<Loadable<Runtime<WebEnv, WebModel>, EnvError>>> =
@@ -75,32 +76,8 @@ pub fn get_state(field: &JsValue) -> JsValue {
         Some(Loadable::Ready(runtime)) => {
             let model = runtime.model().expect("model read failed");
             match field.into_serde() {
-                Ok(WebModelField::Ctx) => JsValue::from_serde(&model.ctx).unwrap(),
-                Ok(WebModelField::ContinueWatchingPreview) => {
-                    JsValue::from_serde(&model.continue_watching_preview).unwrap()
-                }
-                Ok(WebModelField::Board) => JsValue::from_serde(&model.board).unwrap(),
-                Ok(WebModelField::Discover) => JsValue::from_serde(&model.discover).unwrap(),
-                Ok(WebModelField::Library) => JsValue::from_serde(&model.library).unwrap(),
-                Ok(WebModelField::ContinueWatching) => {
-                    JsValue::from_serde(&model.continue_watching).unwrap()
-                }
-                Ok(WebModelField::Search) => JsValue::from_serde(&model.search).unwrap(),
-                Ok(WebModelField::MetaDetails) => JsValue::from_serde(&model.meta_details).unwrap(),
-                Ok(WebModelField::RemoteAddons) => {
-                    JsValue::from_serde(&model.remote_addons).unwrap()
-                }
-                Ok(WebModelField::InstalledAddons) => {
-                    JsValue::from_serde(&model.installed_addons).unwrap()
-                }
-                Ok(WebModelField::AddonDetails) => {
-                    JsValue::from_serde(&model.addon_details).unwrap()
-                }
-                Ok(WebModelField::StreamingServer) => {
-                    JsValue::from_serde(&model.streaming_server).unwrap()
-                }
-                Ok(WebModelField::Player) => JsValue::from_serde(&model.player).unwrap(),
-                Err(_) => JsValue::from_serde(&*model).unwrap(),
+                Ok(field) => model.get_state(&field),
+                Err(_) => JsValue::NULL,
             }
         }
         _ => panic!("runtime is not ready"),
