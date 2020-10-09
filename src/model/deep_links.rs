@@ -195,9 +195,7 @@ impl From<&ResourceLoadable<Vec<MetaItemPreview>>> for MetaCatalogResourceDeepLi
                 utf8_percent_encode(&catalog_resource.request.base.as_str(), NON_ALPHANUMERIC),
                 utf8_percent_encode(&catalog_resource.request.path.type_name, NON_ALPHANUMERIC),
                 utf8_percent_encode(&catalog_resource.request.path.id, NON_ALPHANUMERIC),
-                form_urlencoded::Serializer::new(String::new())
-                    .extend_pairs(&catalog_resource.request.path.extra)
-                    .finish()
+                serde_urlencoded::to_string(&catalog_resource.request.path.extra).unwrap()
             ),
         }
     }
