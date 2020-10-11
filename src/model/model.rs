@@ -1,5 +1,7 @@
 use crate::env::WebEnv;
-use crate::model::serializers::serialize_catalogs_with_extra;
+use crate::model::serializers::{
+    serialize_catalogs_with_extra, serialize_continue_watching_preview,
+};
 use serde::Serialize;
 use stremio_core::models::addon_details::AddonDetails;
 use stremio_core::models::catalog_with_filters::CatalogWithFilters;
@@ -72,9 +74,10 @@ impl WebModel {
     pub fn get_state(&self, field: &WebModelField) -> JsValue {
         match field {
             WebModelField::Ctx => JsValue::from_serde(&self.ctx).unwrap(),
-            WebModelField::ContinueWatchingPreview => {
-                JsValue::from_serde(&self.continue_watching_preview).unwrap()
-            }
+            WebModelField::ContinueWatchingPreview => JsValue::from_serde(
+                &serialize_continue_watching_preview(&self.continue_watching_preview),
+            )
+            .unwrap(),
             WebModelField::Board => {
                 JsValue::from_serde(&serialize_catalogs_with_extra(&self.board, &self.ctx)).unwrap()
             }

@@ -1,12 +1,16 @@
 use crate::env::WebEnv;
-use crate::model::deep_links::{MetaCatalogResourceDeepLinks, MetaItemDeepLinks};
+use crate::model::deep_links::{
+    LibraryItemDeepLinks, MetaCatalogResourceDeepLinks, MetaItemDeepLinks,
+};
 use serde::Serialize;
 use stremio_core::models::catalogs_with_extra::{
     CatalogsWithExtra, Selected as CatalogsWithExtraSelected,
 };
 use stremio_core::models::common::{Loadable, ResourceError};
+use stremio_core::models::continue_watching_preview::ContinueWatchingPreview;
 use stremio_core::models::ctx::Ctx;
 use stremio_core::types::addon::ResourceRequest;
+use stremio_core::types::library::LibraryItem;
 use stremio_core::types::resource::MetaItemPreview;
 
 pub fn serialize_catalogs_with_extra<'a>(
@@ -59,6 +63,31 @@ pub fn serialize_catalogs_with_extra<'a>(
                     .map(|addon| addon.manifest.name.as_ref())
                     .unwrap_or_else(|| catalog_resource.request.base.as_str()),
                 deep_links: MetaCatalogResourceDeepLinks::from(catalog_resource),
+            })
+            .collect::<Vec<_>>(),
+    })
+}
+
+pub fn serialize_continue_watching_preview<'a>(
+    continue_watching_preview: &'a ContinueWatchingPreview,
+) -> Box<dyn erased_serde::Serialize + 'a> {
+    #[derive(Serialize)]
+    struct _LibraryItem<'a> {
+        #[serde(flatten)]
+        library_item: &'a LibraryItem,
+        deep_links: LibraryItemDeepLinks,
+    }
+    #[derive(Serialize)]
+    struct _ContinueWatchingPreview<'a> {
+        library_items: Vec<_LibraryItem<'a>>,
+    }
+    Box::new(_ContinueWatchingPreview {
+        library_items: continue_watching_preview
+            .library_items
+            .iter()
+            .map(|library_item| _LibraryItem {
+                library_item,
+                deep_links: LibraryItemDeepLinks::from(library_item),
             })
             .collect::<Vec<_>>(),
     })
