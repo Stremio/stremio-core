@@ -65,7 +65,6 @@ pub struct Selected {
 #[derive(Clone, PartialEq, Serialize)]
 pub struct SelectableCatalog {
     pub name: String,
-    pub addon_name: String,
     pub request: ResourceRequest,
 }
 
@@ -190,7 +189,6 @@ fn selectable_update<T: CatalogResourceAdapter>(
                         .as_ref()
                         .unwrap_or(&manifest_catalog.id)
                         .to_owned(),
-                    addon_name: addon.manifest.name.to_owned(),
                     request: ResourceRequest {
                         base: addon.transport_url.to_owned(),
                         path: ResourceRef::with_extra(
