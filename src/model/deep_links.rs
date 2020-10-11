@@ -1,12 +1,23 @@
 use flate2::write::ZlibEncoder;
 use flate2::Compression;
-use percent_encoding::{utf8_percent_encode, NON_ALPHANUMERIC};
+use percent_encoding::{utf8_percent_encode, AsciiSet, NON_ALPHANUMERIC};
 use serde::Serialize;
 use std::io::Write;
 use stremio_core::models::common::ResourceLoadable;
 use stremio_core::types::addon::ResourceRequest;
 use stremio_core::types::library::LibraryItem;
 use stremio_core::types::resource::{MetaItem, MetaItemPreview, Stream, Video};
+
+const URI_COMPONENT_ENCODE_SET: &AsciiSet = &NON_ALPHANUMERIC
+    .remove(b'-')
+    .remove(b'_')
+    .remove(b'.')
+    .remove(b'!')
+    .remove(b'~')
+    .remove(b'*')
+    .remove(b'\'')
+    .remove(b'(')
+    .remove(b')');
 
 #[derive(Serialize)]
 pub struct LibraryItemDeepLinks {
@@ -21,8 +32,8 @@ impl From<&LibraryItem> for LibraryItemDeepLinks {
             meta_details_videos: match &item.behavior_hints.default_video_id {
                 None => Some(format!(
                     "#/metadetails/{}/{}",
-                    utf8_percent_encode(&item.type_name, NON_ALPHANUMERIC),
-                    utf8_percent_encode(&item.id, NON_ALPHANUMERIC)
+                    utf8_percent_encode(&item.type_name, URI_COMPONENT_ENCODE_SET),
+                    utf8_percent_encode(&item.id, URI_COMPONENT_ENCODE_SET)
                 )),
                 _ => None,
             },
@@ -34,9 +45,9 @@ impl From<&LibraryItem> for LibraryItemDeepLinks {
                 .map(|video_id| {
                     format!(
                         "#/metadetails/{}/{}/{}",
-                        utf8_percent_encode(&item.type_name, NON_ALPHANUMERIC),
-                        utf8_percent_encode(&item.id, NON_ALPHANUMERIC),
-                        utf8_percent_encode(&video_id, NON_ALPHANUMERIC)
+                        utf8_percent_encode(&item.type_name, URI_COMPONENT_ENCODE_SET),
+                        utf8_percent_encode(&item.id, URI_COMPONENT_ENCODE_SET),
+                        utf8_percent_encode(&video_id, URI_COMPONENT_ENCODE_SET)
                     )
                 }),
             player: None, // TODO use StreamsBucket
@@ -56,8 +67,8 @@ impl From<&MetaItemPreview> for MetaItemDeepLinks {
             meta_details_videos: match &item.behavior_hints.default_video_id {
                 None => Some(format!(
                     "#/metadetails/{}/{}",
-                    utf8_percent_encode(&item.type_name, NON_ALPHANUMERIC),
-                    utf8_percent_encode(&item.id, NON_ALPHANUMERIC)
+                    utf8_percent_encode(&item.type_name, URI_COMPONENT_ENCODE_SET),
+                    utf8_percent_encode(&item.id, URI_COMPONENT_ENCODE_SET)
                 )),
                 _ => None,
             },
@@ -68,9 +79,9 @@ impl From<&MetaItemPreview> for MetaItemDeepLinks {
                 .map(|video_id| {
                     format!(
                         "#/metadetails/{}/{}/{}",
-                        utf8_percent_encode(&item.type_name, NON_ALPHANUMERIC),
-                        utf8_percent_encode(&item.id, NON_ALPHANUMERIC),
-                        utf8_percent_encode(&video_id, NON_ALPHANUMERIC)
+                        utf8_percent_encode(&item.type_name, URI_COMPONENT_ENCODE_SET),
+                        utf8_percent_encode(&item.id, URI_COMPONENT_ENCODE_SET),
+                        utf8_percent_encode(&video_id, URI_COMPONENT_ENCODE_SET)
                     )
                 }),
         }
@@ -83,8 +94,8 @@ impl From<&MetaItem> for MetaItemDeepLinks {
             meta_details_videos: match &item.behavior_hints.default_video_id {
                 None => Some(format!(
                     "#/metadetails/{}/{}",
-                    utf8_percent_encode(&item.type_name, NON_ALPHANUMERIC),
-                    utf8_percent_encode(&item.id, NON_ALPHANUMERIC)
+                    utf8_percent_encode(&item.type_name, URI_COMPONENT_ENCODE_SET),
+                    utf8_percent_encode(&item.id, URI_COMPONENT_ENCODE_SET)
                 )),
                 _ => None,
             },
@@ -95,9 +106,9 @@ impl From<&MetaItem> for MetaItemDeepLinks {
                 .map(|video_id| {
                     format!(
                         "#/metadetails/{}/{}/{}",
-                        utf8_percent_encode(&item.type_name, NON_ALPHANUMERIC),
-                        utf8_percent_encode(&item.id, NON_ALPHANUMERIC),
-                        utf8_percent_encode(&video_id, NON_ALPHANUMERIC)
+                        utf8_percent_encode(&item.type_name, URI_COMPONENT_ENCODE_SET),
+                        utf8_percent_encode(&item.id, URI_COMPONENT_ENCODE_SET),
+                        utf8_percent_encode(&video_id, URI_COMPONENT_ENCODE_SET)
                     )
                 }),
         }
@@ -115,9 +126,9 @@ impl From<(&Video, &ResourceRequest)> for VideoDeepLinks {
         VideoDeepLinks {
             meta_details_streams: format!(
                 "#/metadetails/{}/{}/{}",
-                utf8_percent_encode(&request.path.type_name, NON_ALPHANUMERIC),
-                utf8_percent_encode(&request.path.id, NON_ALPHANUMERIC),
-                utf8_percent_encode(&video.id, NON_ALPHANUMERIC)
+                utf8_percent_encode(&request.path.type_name, URI_COMPONENT_ENCODE_SET),
+                utf8_percent_encode(&request.path.id, URI_COMPONENT_ENCODE_SET),
+                utf8_percent_encode(&video.id, URI_COMPONENT_ENCODE_SET)
             ),
             player: video.streams.first().and_then(|stream| {
                 if video.streams.len() == 1 {
@@ -125,13 +136,13 @@ impl From<(&Video, &ResourceRequest)> for VideoDeepLinks {
                         "#/player/{}/{}/{}/{}/{}/{}",
                         utf8_percent_encode(
                             &gz_encode(serde_json::to_string(stream).unwrap()),
-                            NON_ALPHANUMERIC
+                            URI_COMPONENT_ENCODE_SET
                         ),
-                        utf8_percent_encode(&request.base.as_str(), NON_ALPHANUMERIC),
-                        utf8_percent_encode(&request.base.as_str(), NON_ALPHANUMERIC),
-                        utf8_percent_encode(&request.path.type_name, NON_ALPHANUMERIC),
-                        utf8_percent_encode(&request.path.id, NON_ALPHANUMERIC),
-                        utf8_percent_encode(&video.id, NON_ALPHANUMERIC)
+                        utf8_percent_encode(&request.base.as_str(), URI_COMPONENT_ENCODE_SET),
+                        utf8_percent_encode(&request.base.as_str(), URI_COMPONENT_ENCODE_SET),
+                        utf8_percent_encode(&request.path.type_name, URI_COMPONENT_ENCODE_SET),
+                        utf8_percent_encode(&request.path.id, URI_COMPONENT_ENCODE_SET),
+                        utf8_percent_encode(&video.id, URI_COMPONENT_ENCODE_SET)
                     ))
                 } else {
                     None
@@ -153,7 +164,7 @@ impl From<&Stream> for StreamDeepLinks {
                 "#/player/{}",
                 utf8_percent_encode(
                     &gz_encode(serde_json::to_string(stream).unwrap()),
-                    NON_ALPHANUMERIC
+                    URI_COMPONENT_ENCODE_SET
                 ),
             ),
         }
@@ -169,13 +180,13 @@ impl From<(&Stream, &ResourceRequest, &ResourceRequest)> for StreamDeepLinks {
                 "#/player/{}/{}/{}/{}/{}/{}",
                 utf8_percent_encode(
                     &gz_encode(serde_json::to_string(stream).unwrap()),
-                    NON_ALPHANUMERIC
+                    URI_COMPONENT_ENCODE_SET
                 ),
-                utf8_percent_encode(&stream_request.base.as_str(), NON_ALPHANUMERIC),
-                utf8_percent_encode(&meta_request.base.as_str(), NON_ALPHANUMERIC),
-                utf8_percent_encode(&meta_request.path.type_name, NON_ALPHANUMERIC),
-                utf8_percent_encode(&meta_request.path.id, NON_ALPHANUMERIC),
-                utf8_percent_encode(&stream_request.path.id, NON_ALPHANUMERIC)
+                utf8_percent_encode(&stream_request.base.as_str(), URI_COMPONENT_ENCODE_SET),
+                utf8_percent_encode(&meta_request.base.as_str(), URI_COMPONENT_ENCODE_SET),
+                utf8_percent_encode(&meta_request.path.type_name, URI_COMPONENT_ENCODE_SET),
+                utf8_percent_encode(&meta_request.path.id, URI_COMPONENT_ENCODE_SET),
+                utf8_percent_encode(&stream_request.path.id, URI_COMPONENT_ENCODE_SET)
             ),
         }
     }
@@ -191,9 +202,15 @@ impl From<&ResourceLoadable<Vec<MetaItemPreview>>> for MetaCatalogResourceDeepLi
         MetaCatalogResourceDeepLinks {
             discover: format!(
                 "#/discover/{}/{}/{}?{}",
-                utf8_percent_encode(&catalog_resource.request.base.as_str(), NON_ALPHANUMERIC),
-                utf8_percent_encode(&catalog_resource.request.path.type_name, NON_ALPHANUMERIC),
-                utf8_percent_encode(&catalog_resource.request.path.id, NON_ALPHANUMERIC),
+                utf8_percent_encode(
+                    &catalog_resource.request.base.as_str(),
+                    URI_COMPONENT_ENCODE_SET
+                ),
+                utf8_percent_encode(
+                    &catalog_resource.request.path.type_name,
+                    URI_COMPONENT_ENCODE_SET
+                ),
+                utf8_percent_encode(&catalog_resource.request.path.id, URI_COMPONENT_ENCODE_SET),
                 serde_urlencoded::to_string(&catalog_resource.request.path.extra).unwrap()
             ),
         }
