@@ -1,6 +1,6 @@
 use crate::env::WebEnv;
 use crate::model::serializers::{
-    serialize_catalogs_with_extra, serialize_continue_watching_preview,
+    serialize_catalogs_with_extra, serialize_continue_watching_preview, serialize_discover,
 };
 use serde::Serialize;
 use stremio_core::models::addon_details::AddonDetails;
@@ -81,7 +81,9 @@ impl WebModel {
             WebModelField::Board => {
                 JsValue::from_serde(&serialize_catalogs_with_extra(&self.board, &self.ctx)).unwrap()
             }
-            WebModelField::Discover => JsValue::from_serde(&self.discover).unwrap(),
+            WebModelField::Discover => {
+                JsValue::from_serde(&serialize_discover(&self.discover, &self.ctx)).unwrap()
+            }
             WebModelField::Library => JsValue::from_serde(&self.library).unwrap(),
             WebModelField::ContinueWatching => {
                 JsValue::from_serde(&self.continue_watching).unwrap()

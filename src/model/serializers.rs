@@ -3,13 +3,17 @@ use crate::model::deep_links::{
     LibraryItemDeepLinks, MetaCatalogResourceDeepLinks, MetaItemDeepLinks,
 };
 use serde::Serialize;
+use stremio_core::models::catalog_with_filters::{
+    CatalogWithFilters, Selectable as CatalogWithFiltersSelectable,
+    Selected as CatalogWithFiltersSelected,
+};
 use stremio_core::models::catalogs_with_extra::{
     CatalogsWithExtra, Selected as CatalogsWithExtraSelected,
 };
 use stremio_core::models::common::{Loadable, ResourceError};
 use stremio_core::models::continue_watching_preview::ContinueWatchingPreview;
 use stremio_core::models::ctx::Ctx;
-use stremio_core::types::addon::ResourceRequest;
+use stremio_core::types::addon::{Descriptor, ResourceRequest};
 use stremio_core::types::library::LibraryItem;
 use stremio_core::types::resource::MetaItemPreview;
 
@@ -90,5 +94,54 @@ pub fn serialize_continue_watching_preview<'a>(
                 deep_links: LibraryItemDeepLinks::from(library_item),
             })
             .collect::<Vec<_>>(),
+    })
+}
+
+pub fn serialize_discover<'a>(
+    discover: &'a CatalogWithFilters<MetaItemPreview>,
+    ctx: &'a Ctx<WebEnv>,
+) -> Box<dyn erased_serde::Serialize + 'a> {
+    #[derive(Serialize)]
+    struct _MetaItemPreview<'a> {
+        #[serde(flatten)]
+        meta_item: &'a MetaItemPreview,
+        deep_links: MetaItemDeepLinks,
+    }
+    #[derive(Serialize)]
+    struct _ResourceLoadable<'a> {
+        request: &'a ResourceRequest,
+        content: Loadable<Vec<_MetaItemPreview<'a>>, &'a ResourceError>,
+        addon: Option<&'a Descriptor>,
+    }
+    #[derive(Serialize)]
+    struct _CatalogWithFilters<'a> {
+        selected: &'a Option<CatalogWithFiltersSelected>,
+        selectable: &'a CatalogWithFiltersSelectable,
+        catalog: Option<_ResourceLoadable<'a>>,
+    }
+    Box::new(_CatalogWithFilters {
+        selected: &discover.selected,
+        selectable: &discover.selectable,
+        catalog: discover.catalog.as_ref().map(|catalog| _ResourceLoadable {
+            request: &catalog.request,
+            content: match &catalog.content {
+                Loadable::Ready(meta_items) => Loadable::Ready(
+                    meta_items
+                        .iter()
+                        .map(|meta_item| _MetaItemPreview {
+                            meta_item,
+                            deep_links: MetaItemDeepLinks::from(meta_item),
+                        })
+                        .collect::<Vec<_>>(),
+                ),
+                Loadable::Loading => Loadable::Loading,
+                Loadable::Err(error) => Loadable::Err(&error),
+            },
+            addon: ctx
+                .profile
+                .addons
+                .iter()
+                .find(|addon| addon.transport_url == catalog.request.base),
+        }),
     })
 }
