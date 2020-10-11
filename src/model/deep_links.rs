@@ -1,5 +1,6 @@
 use flate2::write::ZlibEncoder;
 use flate2::Compression;
+use itertools::Itertools;
 use percent_encoding::{utf8_percent_encode, AsciiSet, NON_ALPHANUMERIC};
 use serde::Serialize;
 use std::io::Write;
@@ -211,7 +212,7 @@ impl From<&ResourceLoadable<Vec<MetaItemPreview>>> for MetaCatalogResourceDeepLi
                     URI_COMPONENT_ENCODE_SET
                 ),
                 utf8_percent_encode(&catalog_resource.request.path.id, URI_COMPONENT_ENCODE_SET),
-                serde_urlencoded::to_string(&catalog_resource.request.path.extra).unwrap()
+                query_params_encode(&catalog_resource.request.path.extra)
             ),
         }
     }
@@ -226,4 +227,17 @@ fn gz_encode(value: String) -> String {
         encoder.finish().expect("gz encode failed"),
         base64::URL_SAFE,
     )
+}
+
+fn query_params_encode(query_params: &[(String, String)]) -> String {
+    query_params
+        .iter()
+        .map(|(key, value)| {
+            format!(
+                "{}={}",
+                utf8_percent_encode(key, URI_COMPONENT_ENCODE_SET),
+                utf8_percent_encode(value, URI_COMPONENT_ENCODE_SET)
+            )
+        })
+        .join("&")
 }
