@@ -1,6 +1,5 @@
 use flate2::write::ZlibEncoder;
 use flate2::Compression;
-use itertools::Itertools;
 use percent_encoding::{utf8_percent_encode, AsciiSet, NON_ALPHANUMERIC};
 use serde::Serialize;
 use std::io;
@@ -9,6 +8,7 @@ use stremio_core::models::common::ResourceLoadable;
 use stremio_core::types::addon::ResourceRequest;
 use stremio_core::types::library::LibraryItem;
 use stremio_core::types::resource::{MetaItem, MetaItemPreview, Stream, Video};
+use url::form_urlencoded;
 
 const URI_COMPONENT_ENCODE_SET: &AsciiSet = &NON_ALPHANUMERIC
     .remove(b'-')
@@ -235,14 +235,7 @@ fn gz_encode(value: String) -> io::Result<Vec<u8>> {
 }
 
 fn query_params_encode(query_params: &[(String, String)]) -> String {
-    query_params
-        .iter()
-        .map(|(key, value)| {
-            format!(
-                "{}={}",
-                utf8_percent_encode(key, URI_COMPONENT_ENCODE_SET),
-                utf8_percent_encode(value, URI_COMPONENT_ENCODE_SET)
-            )
-        })
-        .join("&")
+    form_urlencoded::Serializer::new(String::new())
+        .extend_pairs(query_params)
+        .finish()
 }
