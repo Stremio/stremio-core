@@ -147,8 +147,7 @@ impl From<(&Video, &ResourceRequest)> for VideoDeepLinks {
                         "#/player/{}/{}/{}/{}/{}/{}",
                         utf8_percent_encode(
                             &base64::encode(
-                                gz_encode(serde_json::to_string(stream).unwrap())
-                                    .expect("gz encode failed")
+                                gz_encode(serde_json::to_string(stream).unwrap()).unwrap()
                             ),
                             URI_COMPONENT_ENCODE_SET
                         ),
@@ -174,10 +173,7 @@ impl From<&Stream> for StreamDeepLinks {
             player: format!(
                 "#/player/{}",
                 utf8_percent_encode(
-                    &base64::encode(
-                        gz_encode(serde_json::to_string(stream).unwrap())
-                            .expect("gz encode failed")
-                    ),
+                    &base64::encode(gz_encode(serde_json::to_string(stream).unwrap()).unwrap()),
                     URI_COMPONENT_ENCODE_SET
                 ),
             ),
@@ -193,10 +189,7 @@ impl From<(&Stream, &ResourceRequest, &ResourceRequest)> for StreamDeepLinks {
             player: format!(
                 "#/player/{}/{}/{}/{}/{}/{}",
                 utf8_percent_encode(
-                    &base64::encode(
-                        gz_encode(serde_json::to_string(stream).unwrap())
-                            .expect("gz encode failed")
-                    ),
+                    &base64::encode(gz_encode(serde_json::to_string(stream).unwrap()).unwrap()),
                     URI_COMPONENT_ENCODE_SET
                 ),
                 utf8_percent_encode(&stream_request.base.as_str(), URI_COMPONENT_ENCODE_SET),
