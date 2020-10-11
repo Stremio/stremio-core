@@ -17,6 +17,7 @@ stremio-derive = { git = "https://github.com/Stremio/stremio-core", branch = "de
 serde = "1.0"
 serde_json = "1.0"
 serde_urlencoded = "0.7"
+erased-serde = "0.3"
 url = { version = "2.1", features = ["serde"] }
 percent-encoding = "2.1"
 base64 = "0.13"
