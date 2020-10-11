@@ -3,6 +3,7 @@ use flate2::Compression;
 use itertools::Itertools;
 use percent_encoding::{utf8_percent_encode, AsciiSet, NON_ALPHANUMERIC};
 use serde::Serialize;
+use std::io;
 use std::io::Write;
 use stremio_core::models::common::ResourceLoadable;
 use stremio_core::types::addon::ResourceRequest;
@@ -136,7 +137,10 @@ impl From<(&Video, &ResourceRequest)> for VideoDeepLinks {
                     Some(format!(
                         "#/player/{}/{}/{}/{}/{}/{}",
                         utf8_percent_encode(
-                            &gz_encode(serde_json::to_string(stream).unwrap()),
+                            &base64::encode(
+                                gz_encode(serde_json::to_string(stream).unwrap())
+                                    .expect("gz encode failed")
+                            ),
                             URI_COMPONENT_ENCODE_SET
                         ),
                         utf8_percent_encode(&request.base.as_str(), URI_COMPONENT_ENCODE_SET),
@@ -164,7 +168,10 @@ impl From<&Stream> for StreamDeepLinks {
             player: format!(
                 "#/player/{}",
                 utf8_percent_encode(
-                    &gz_encode(serde_json::to_string(stream).unwrap()),
+                    &base64::encode(
+                        gz_encode(serde_json::to_string(stream).unwrap())
+                            .expect("gz encode failed")
+                    ),
                     URI_COMPONENT_ENCODE_SET
                 ),
             ),
@@ -180,7 +187,10 @@ impl From<(&Stream, &ResourceRequest, &ResourceRequest)> for StreamDeepLinks {
             player: format!(
                 "#/player/{}/{}/{}/{}/{}/{}",
                 utf8_percent_encode(
-                    &gz_encode(serde_json::to_string(stream).unwrap()),
+                    &base64::encode(
+                        gz_encode(serde_json::to_string(stream).unwrap())
+                            .expect("gz encode failed")
+                    ),
                     URI_COMPONENT_ENCODE_SET
                 ),
                 utf8_percent_encode(&stream_request.base.as_str(), URI_COMPONENT_ENCODE_SET),
@@ -218,15 +228,10 @@ impl From<&ResourceLoadable<Vec<MetaItemPreview>>> for MetaCatalogResourceDeepLi
     }
 }
 
-fn gz_encode(value: String) -> String {
+fn gz_encode(value: String) -> io::Result<Vec<u8>> {
     let mut encoder = ZlibEncoder::new(Vec::new(), Compression::default());
-    encoder
-        .write_all(value.as_bytes())
-        .expect("gz encode failed");
-    base64::encode_config(
-        encoder.finish().expect("gz encode failed"),
-        base64::URL_SAFE,
-    )
+    encoder.write_all(value.as_bytes())?;
+    Ok(encoder.finish()?)
 }
 
 fn query_params_encode(query_params: &[(String, String)]) -> String {
