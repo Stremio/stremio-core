@@ -1,5 +1,5 @@
 mod deep_links;
-pub use deep_links::*;
+mod serializers;
 
 mod model;
 pub use model::*;

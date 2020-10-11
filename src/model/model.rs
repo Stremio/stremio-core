@@ -1,4 +1,5 @@
 use crate::env::WebEnv;
+use crate::model::serializers::serialize_catalogs_with_extra;
 use serde::Serialize;
 use stremio_core::models::addon_details::AddonDetails;
 use stremio_core::models::catalog_with_filters::CatalogWithFilters;
@@ -74,13 +75,18 @@ impl WebModel {
             WebModelField::ContinueWatchingPreview => {
                 JsValue::from_serde(&self.continue_watching_preview).unwrap()
             }
-            WebModelField::Board => JsValue::from_serde(&self.board).unwrap(),
+            WebModelField::Board => {
+                JsValue::from_serde(&serialize_catalogs_with_extra(&self.board, &self.ctx)).unwrap()
+            }
             WebModelField::Discover => JsValue::from_serde(&self.discover).unwrap(),
             WebModelField::Library => JsValue::from_serde(&self.library).unwrap(),
             WebModelField::ContinueWatching => {
                 JsValue::from_serde(&self.continue_watching).unwrap()
             }
-            WebModelField::Search => JsValue::from_serde(&self.search).unwrap(),
+            WebModelField::Search => {
+                JsValue::from_serde(&serialize_catalogs_with_extra(&self.search, &self.ctx))
+                    .unwrap()
+            }
             WebModelField::MetaDetails => JsValue::from_serde(&self.meta_details).unwrap(),
             WebModelField::RemoteAddons => JsValue::from_serde(&self.remote_addons).unwrap(),
             WebModelField::InstalledAddons => JsValue::from_serde(&self.installed_addons).unwrap(),
