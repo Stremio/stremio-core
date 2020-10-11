@@ -31,14 +31,16 @@ pub struct LibraryItemDeepLinks {
 impl From<&LibraryItem> for LibraryItemDeepLinks {
     fn from(item: &LibraryItem) -> Self {
         LibraryItemDeepLinks {
-            meta_details_videos: match &item.behavior_hints.default_video_id {
-                None => Some(format!(
+            meta_details_videos: item
+                .behavior_hints
+                .default_video_id
+                .as_ref()
+                .cloned()
+                .xor(Some(format!(
                     "#/metadetails/{}/{}",
                     utf8_percent_encode(&item.type_name, URI_COMPONENT_ENCODE_SET),
                     utf8_percent_encode(&item.id, URI_COMPONENT_ENCODE_SET)
-                )),
-                _ => None,
-            },
+                ))),
             meta_details_streams: item
                 .state
                 .video_id
@@ -66,14 +68,16 @@ pub struct MetaItemDeepLinks {
 impl From<&MetaItemPreview> for MetaItemDeepLinks {
     fn from(item: &MetaItemPreview) -> Self {
         MetaItemDeepLinks {
-            meta_details_videos: match &item.behavior_hints.default_video_id {
-                None => Some(format!(
+            meta_details_videos: item
+                .behavior_hints
+                .default_video_id
+                .as_ref()
+                .cloned()
+                .xor(Some(format!(
                     "#/metadetails/{}/{}",
                     utf8_percent_encode(&item.type_name, URI_COMPONENT_ENCODE_SET),
                     utf8_percent_encode(&item.id, URI_COMPONENT_ENCODE_SET)
-                )),
-                _ => None,
-            },
+                ))),
             meta_details_streams: item
                 .behavior_hints
                 .default_video_id
@@ -93,14 +97,16 @@ impl From<&MetaItemPreview> for MetaItemDeepLinks {
 impl From<&MetaItem> for MetaItemDeepLinks {
     fn from(item: &MetaItem) -> Self {
         MetaItemDeepLinks {
-            meta_details_videos: match &item.behavior_hints.default_video_id {
-                None => Some(format!(
+            meta_details_videos: item
+                .behavior_hints
+                .default_video_id
+                .as_ref()
+                .cloned()
+                .xor(Some(format!(
                     "#/metadetails/{}/{}",
                     utf8_percent_encode(&item.type_name, URI_COMPONENT_ENCODE_SET),
                     utf8_percent_encode(&item.id, URI_COMPONENT_ENCODE_SET)
-                )),
-                _ => None,
-            },
+                ))),
             meta_details_streams: item
                 .behavior_hints
                 .default_video_id
@@ -132,9 +138,12 @@ impl From<(&Video, &ResourceRequest)> for VideoDeepLinks {
                 utf8_percent_encode(&request.path.id, URI_COMPONENT_ENCODE_SET),
                 utf8_percent_encode(&video.id, URI_COMPONENT_ENCODE_SET)
             ),
-            player: video.streams.first().and_then(|stream| {
-                if video.streams.len() == 1 {
-                    Some(format!(
+            player: video
+                .streams
+                .first()
+                .filter(|_| video.streams.len() == 1)
+                .map(|stream| {
+                    format!(
                         "#/player/{}/{}/{}/{}/{}/{}",
                         utf8_percent_encode(
                             &base64::encode(
@@ -148,11 +157,8 @@ impl From<(&Video, &ResourceRequest)> for VideoDeepLinks {
                         utf8_percent_encode(&request.path.type_name, URI_COMPONENT_ENCODE_SET),
                         utf8_percent_encode(&request.path.id, URI_COMPONENT_ENCODE_SET),
                         utf8_percent_encode(&video.id, URI_COMPONENT_ENCODE_SET)
-                    ))
-                } else {
-                    None
-                }
-            }),
+                    )
+                }),
         }
     }
 }
