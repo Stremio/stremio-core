@@ -1,6 +1,7 @@
-use crate::constants::{CATALOG_PAGE_SIZE, SKIP_EXTRA_NAME};
+use crate::constants::{CATALOG_PAGE_SIZE, SKIP_EXTRA_NAME, TYPE_PRIORITIES};
 use crate::models::common::{
-    eq_update, resource_update_with_vector_content, Loadable, ResourceAction, ResourceLoadable,
+    compare_with_priorities, eq_update, resource_update_with_vector_content, Loadable,
+    ResourceAction, ResourceLoadable,
 };
 use crate::models::ctx::Ctx;
 use crate::runtime::msg::{Action, ActionLoad, Internal, Msg};
@@ -253,6 +254,13 @@ fn selectable_update<T: CatalogResourceAdapter>(
             (selectable_types, selectable_catalogs)
         }
     };
+    let selectable_types = selectable_types
+        .into_iter()
+        .sorted_by(|a, b| {
+            compare_with_priorities(a.name.as_ref(), b.name.as_ref(), &*TYPE_PRIORITIES)
+        })
+        .rev()
+        .collect::<Vec<_>>();
     let (selectable_extra, has_prev_page, has_next_page) = match catalog {
         Some(catalog) => profile
             .addons

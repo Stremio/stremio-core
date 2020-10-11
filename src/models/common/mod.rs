@@ -1,3 +1,6 @@
+mod compare_with_priorities;
+pub use compare_with_priorities::*;
+
 mod descriptor_loadable;
 pub use descriptor_loadable::*;
 
