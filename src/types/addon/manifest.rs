@@ -4,6 +4,7 @@ use either::Either;
 use semver::Version;
 use serde::{Deserialize, Serialize};
 use std::borrow::Cow;
+use std::ops::Deref;
 
 #[derive(Clone, PartialEq, Serialize, Deserialize)]
 #[cfg_attr(test, derive(Derivative, Debug))]
@@ -148,6 +149,13 @@ pub struct OptionsLimit(pub usize);
 impl Default for OptionsLimit {
     fn default() -> OptionsLimit {
         OptionsLimit(1)
+    }
+}
+
+impl Deref for OptionsLimit {
+    type Target = usize;
+    fn deref(&self) -> &Self::Target {
+        &self.0
     }
 }
 
