@@ -3,26 +3,55 @@ use crate::types::resource::PosterShape;
 use crate::unit_tests::serde::default_token_ext::DefaultTokens;
 use chrono::prelude::TimeZone;
 use chrono::Utc;
-use serde_test::{assert_tokens, Token};
+use serde_test::{assert_de_tokens, Token};
 
 #[test]
 fn deserialize_library_item() {
-    assert_tokens(
-        &LibraryItem {
-            id: "id1".to_owned(),
-            name: "name".to_owned(),
-            type_: "type".to_owned(),
-            poster: Some("poster".to_owned()),
-            poster_shape: PosterShape::Square,
-            removed: true,
-            temp: true,
-            ctime: Some(Utc.ymd(2020, 1, 1).and_hms_milli(0, 0, 0, 0)),
-            mtime: Utc.ymd(2020, 1, 1).and_hms_milli(0, 0, 0, 0),
-            state: LibraryItemState::default(),
-            behavior_hints: LibraryItemBehaviorHints::default(),
-        },
+    assert_de_tokens(
+        &[
+            LibraryItem {
+                id: "id1".to_owned(),
+                name: "name".to_owned(),
+                type_: "type".to_owned(),
+                poster: Some("poster".to_owned()),
+                poster_shape: PosterShape::Square,
+                removed: true,
+                temp: true,
+                ctime: Some(Utc.ymd(2020, 1, 1).and_hms_milli(0, 0, 0, 0)),
+                mtime: Utc.ymd(2020, 1, 1).and_hms_milli(0, 0, 0, 0),
+                state: LibraryItemState::default(),
+                behavior_hints: LibraryItemBehaviorHints::default(),
+            },
+            LibraryItem {
+                id: "id2".to_owned(),
+                name: "name".to_owned(),
+                type_: "type".to_owned(),
+                poster: None,
+                poster_shape: PosterShape::Poster,
+                removed: false,
+                temp: false,
+                ctime: None,
+                mtime: Utc.ymd(2020, 1, 1).and_hms_milli(0, 0, 0, 0),
+                state: LibraryItemState::default(),
+                behavior_hints: LibraryItemBehaviorHints::default(),
+            },
+            LibraryItem {
+                id: "id3".to_owned(),
+                name: "name".to_owned(),
+                type_: "type".to_owned(),
+                poster: None,
+                poster_shape: PosterShape::Poster,
+                removed: false,
+                temp: false,
+                ctime: None,
+                mtime: Utc.ymd(2020, 1, 1).and_hms_milli(0, 0, 0, 0),
+                state: LibraryItemState::default(),
+                behavior_hints: LibraryItemBehaviorHints::default(),
+            },
+        ],
         &[
             vec![
+                Token::Tuple { len: 3 },
                 Token::Struct {
                     name: "LibraryItem",
                     len: 11,
@@ -56,6 +85,59 @@ fn deserialize_library_item() {
             vec![Token::Str("behaviorHints")],
             LibraryItemBehaviorHints::default_token(),
             vec![Token::StructEnd],
+            vec![
+                Token::Struct {
+                    name: "LibraryItem",
+                    len: 11,
+                },
+                Token::Str("_id"),
+                Token::Str("id2"),
+                Token::Str("name"),
+                Token::Str("name"),
+                Token::Str("type"),
+                Token::Str("type"),
+                Token::Str("removed"),
+                Token::Bool(false),
+                Token::Str("temp"),
+                Token::Bool(false),
+                Token::Str("_mtime"),
+                Token::Str("2020-01-01T00:00:00Z"),
+                Token::Str("state"),
+            ],
+            LibraryItemState::default_token(),
+            vec![Token::StructEnd],
+            vec![
+                Token::Struct {
+                    name: "LibraryItem",
+                    len: 11,
+                },
+                Token::Str("_id"),
+                Token::Str("id3"),
+                Token::Str("name"),
+                Token::Str("name"),
+                Token::Str("type"),
+                Token::Str("type"),
+                Token::Str("poster"),
+                Token::None,
+                Token::Str("posterShape"),
+                Token::UnitVariant {
+                    name: "PosterShape",
+                    variant: "invalid",
+                },
+                Token::Str("removed"),
+                Token::Bool(false),
+                Token::Str("temp"),
+                Token::Bool(false),
+                Token::Str("_ctime"),
+                Token::None,
+                Token::Str("_mtime"),
+                Token::Str("2020-01-01T00:00:00Z"),
+                Token::Str("state"),
+            ],
+            LibraryItemState::default_token(),
+            vec![Token::Str("behaviorHints")],
+            LibraryItemBehaviorHints::default_token(),
+            vec![Token::StructEnd, Token::TupleEnd],
         ]
         .concat(),
     );
