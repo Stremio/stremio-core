@@ -37,13 +37,6 @@ impl ResourceRef {
     pub fn get_extra_first_value(&self, key: &str) -> Option<&String> {
         self.extra.iter().find(|(k, _)| k == key).map(|(_, v)| v)
     }
-    pub fn set_extra_unique(&mut self, key: &str, val: String) {
-        let entry = self.extra.iter_mut().find(|(k, _)| k == key);
-        match entry {
-            Some(entry) => entry.1 = val,
-            None => self.extra.push((key.to_owned(), val)),
-        }
-    }
     pub fn eq_no_extra(&self, other: &ResourceRef) -> bool {
         self.resource == other.resource && self.type_ == other.type_ && self.id == other.id
     }
