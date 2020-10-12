@@ -138,7 +138,7 @@ fn ser_de_library_item() {
         ],
         &[
             vec![
-                Token::Tuple { len: 3 },
+                Token::Seq { len: Some(2) },
                 Token::Struct {
                     name: "LibraryItem",
                     len: 11,
@@ -190,7 +190,7 @@ fn ser_de_library_item() {
             LibraryItemState::default_token(),
             vec![Token::Str("behaviorHints")],
             LibraryItemBehaviorHints::default_token(),
-            vec![Token::StructEnd, Token::TupleEnd],
+            vec![Token::StructEnd, Token::SeqEnd],
         ]
         .concat(),
     );
