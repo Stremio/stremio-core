@@ -283,7 +283,7 @@ fn selectable_update<T: CatalogResourceAdapter>(
                 let first_page_requested = catalog
                     .request
                     .path
-                    .get_extra_first_val(SKIP_EXTRA_NAME)
+                    .get_extra_first_value(SKIP_EXTRA_NAME)
                     .and_then(|value| value.parse::<u32>().ok())
                     .map(|skip| skip == 0)
                     .unwrap_or(true);

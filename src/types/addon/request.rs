@@ -34,7 +34,7 @@ impl ResourceRef {
             extra: extra.to_owned(),
         }
     }
-    pub fn get_extra_first_val(&self, key: &str) -> Option<&String> {
+    pub fn get_extra_first_value(&self, key: &str) -> Option<&String> {
         self.extra.iter().find(|(k, _)| k == key).map(|(_, v)| v)
     }
     pub fn set_extra_unique(&mut self, key: &str, val: String) {

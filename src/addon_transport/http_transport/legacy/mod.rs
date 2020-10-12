@@ -159,7 +159,7 @@ fn build_legacy_req(transport_url: &Url, path: &ResourceRef) -> Result<Request<(
     let id = &path.id;
     let q_json = match &path.resource as &str {
         "catalog" => {
-            let genre = path.get_extra_first_val("genre");
+            let genre = path.get_extra_first_value("genre");
             let query = if let Some(genre) = genre {
                 json!({ "type": type_, "genre": genre })
             } else {
@@ -178,7 +178,7 @@ fn build_legacy_req(transport_url: &Url, path: &ResourceRef) -> Result<Request<(
                     "query": query,
                     "limit": 100,
                     "sort": sort,
-                    "skip": path.get_extra_first_val("skip")
+                    "skip": path.get_extra_first_value("skip")
                         .map(|s| s.parse::<u32>().unwrap_or(0))
                         .unwrap_or(0),
                 }),
