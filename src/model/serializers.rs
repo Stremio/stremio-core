@@ -67,7 +67,7 @@ pub fn serialize_catalogs_with_extra(
                     .find(|addon| addon.transport_url == catalog_resource.request.base)
                     .map(|addon| addon.manifest.name.as_ref())
                     .unwrap_or_else(|| catalog_resource.request.base.as_str()),
-                deep_links: MetaCatalogResourceDeepLinks::from(catalog_resource),
+                deep_links: MetaCatalogResourceDeepLinks::from(&catalog_resource.request),
             })
             .collect::<Vec<_>>(),
     })

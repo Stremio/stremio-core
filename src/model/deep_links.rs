@@ -2,10 +2,10 @@ use flate2::write::ZlibEncoder;
 use flate2::Compression;
 use percent_encoding::{utf8_percent_encode, AsciiSet, NON_ALPHANUMERIC};
 use serde::Serialize;
+use std::borrow::Borrow;
 use std::io;
 use std::io::Write;
-use stremio_core::models::common::ResourceLoadable;
-use stremio_core::types::addon::ResourceRequest;
+use stremio_core::types::addon::{ExtraValue, ResourceRequest};
 use stremio_core::types::library::LibraryItem;
 use stremio_core::types::resource::{MetaItem, MetaItemPreview, Stream, Video};
 use url::form_urlencoded;
@@ -207,21 +207,21 @@ pub struct MetaCatalogResourceDeepLinks {
     pub discover: String,
 }
 
-impl From<&ResourceLoadable<Vec<MetaItemPreview>>> for MetaCatalogResourceDeepLinks {
-    fn from(catalog_resource: &ResourceLoadable<Vec<MetaItemPreview>>) -> Self {
+impl From<&ResourceRequest> for MetaCatalogResourceDeepLinks {
+    fn from(request: &ResourceRequest) -> Self {
         MetaCatalogResourceDeepLinks {
             discover: format!(
                 "#/discover/{}/{}/{}?{}",
-                utf8_percent_encode(
-                    &catalog_resource.request.base.as_str(),
-                    URI_COMPONENT_ENCODE_SET
-                ),
-                utf8_percent_encode(
-                    &catalog_resource.request.path.type_,
-                    URI_COMPONENT_ENCODE_SET
-                ),
-                utf8_percent_encode(&catalog_resource.request.path.id, URI_COMPONENT_ENCODE_SET),
-                query_params_encode(&catalog_resource.request.path.extra)
+                utf8_percent_encode(&request.base.as_str(), URI_COMPONENT_ENCODE_SET),
+                utf8_percent_encode(&request.path.type_, URI_COMPONENT_ENCODE_SET),
+                utf8_percent_encode(&request.path.id, URI_COMPONENT_ENCODE_SET),
+                query_params_encode(
+                    request
+                        .path
+                        .extra
+                        .iter()
+                        .map(|ExtraValue { name, value }| (name, value))
+                )
             ),
         }
     }
@@ -233,7 +233,13 @@ fn gz_encode(value: String) -> io::Result<Vec<u8>> {
     Ok(encoder.finish()?)
 }
 
-fn query_params_encode(query_params: &[(String, String)]) -> String {
+fn query_params_encode<I, K, V>(query_params: I) -> String
+where
+    I: IntoIterator,
+    I::Item: Borrow<(K, V)>,
+    K: AsRef<str>,
+    V: AsRef<str>,
+{
     form_urlencoded::Serializer::new(String::new())
         .extend_pairs(query_params)
         .finish()
