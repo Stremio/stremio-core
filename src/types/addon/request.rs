@@ -11,24 +11,25 @@ pub type ExtraProp = (String, String);
 #[cfg_attr(test, derive(Debug))]
 pub struct ResourceRef {
     pub resource: String,
-    pub type_name: String,
+    #[serde(rename = "type")]
+    pub type_: String,
     pub id: String,
     pub extra: Vec<ExtraProp>,
 }
 
 impl ResourceRef {
-    pub fn without_extra(resource: &str, type_name: &str, id: &str) -> Self {
+    pub fn without_extra(resource: &str, type_: &str, id: &str) -> Self {
         ResourceRef {
             resource: resource.to_owned(),
-            type_name: type_name.to_owned(),
+            type_: type_.to_owned(),
             id: id.to_owned(),
             extra: vec![],
         }
     }
-    pub fn with_extra(resource: &str, type_name: &str, id: &str, extra: &[ExtraProp]) -> Self {
+    pub fn with_extra(resource: &str, type_: &str, id: &str, extra: &[ExtraProp]) -> Self {
         ResourceRef {
             resource: resource.to_owned(),
-            type_name: type_name.to_owned(),
+            type_: type_.to_owned(),
             id: id.to_owned(),
             extra: extra.to_owned(),
         }
@@ -47,7 +48,7 @@ impl ResourceRef {
         }
     }
     pub fn eq_no_extra(&self, other: &ResourceRef) -> bool {
-        self.resource == other.resource && self.type_name == other.type_name && self.id == other.id
+        self.resource == other.resource && self.type_ == other.type_ && self.id == other.id
     }
 }
 
@@ -57,7 +58,7 @@ impl fmt::Display for ResourceRef {
             f,
             "/{}/{}/{}",
             &utf8_percent_encode(&self.resource, NON_ALPHANUMERIC),
-            &utf8_percent_encode(&self.type_name, NON_ALPHANUMERIC),
+            &utf8_percent_encode(&self.type_, NON_ALPHANUMERIC),
             &utf8_percent_encode(&self.id, NON_ALPHANUMERIC)
         )?;
         if !self.extra.is_empty() {
@@ -110,12 +111,7 @@ impl AggrRequest<'_> {
                                 addon,
                                 ResourceRequest::new(
                                     addon.transport_url.to_owned(),
-                                    ResourceRef::with_extra(
-                                        "catalog",
-                                        &cat.type_name,
-                                        &cat.id,
-                                        extra,
-                                    ),
+                                    ResourceRef::with_extra("catalog", &cat.type_, &cat.id, extra),
                                 ),
                             )
                         })

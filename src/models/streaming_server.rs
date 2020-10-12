@@ -53,7 +53,7 @@ impl StreamingServer {
 }
 
 impl<E: Env + 'static> UpdateWithCtx<Ctx<E>> for StreamingServer {
-    fn update(&mut self, ctx: &Ctx<E>, msg: &Msg) -> Effects {
+    fn update(&mut self, msg: &Msg, ctx: &Ctx<E>) -> Effects {
         match msg {
             Msg::Action(Action::StreamingServer(ActionStreamingServer::Reload)) => {
                 let settings_effects = eq_update(&mut self.settings, Loadable::Loading);

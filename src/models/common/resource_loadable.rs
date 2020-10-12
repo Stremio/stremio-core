@@ -6,7 +6,7 @@ use futures::FutureExt;
 use serde::Serialize;
 use std::convert::TryFrom;
 
-#[derive(PartialEq, Serialize)]
+#[derive(Clone, PartialEq, Serialize)]
 #[serde(tag = "type", content = "content")]
 pub enum ResourceError {
     EmptyContent,

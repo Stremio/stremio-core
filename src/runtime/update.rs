@@ -3,7 +3,7 @@ use crate::runtime::Effects;
 
 pub trait Model: Update {
     type Field;
-    fn update_field(&mut self, field: &Self::Field, msg: &Msg) -> Effects;
+    fn update_field(&mut self, msg: &Msg, field: &Self::Field) -> Effects;
 }
 
 pub trait Update {
@@ -11,5 +11,5 @@ pub trait Update {
 }
 
 pub trait UpdateWithCtx<Ctx> {
-    fn update(&mut self, ctx: &Ctx, msg: &Msg) -> Effects;
+    fn update(&mut self, msg: &Msg, ctx: &Ctx) -> Effects;
 }

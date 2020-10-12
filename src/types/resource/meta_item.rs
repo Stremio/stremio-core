@@ -10,7 +10,7 @@ use url::Url;
 pub struct MetaItem {
     pub id: String,
     #[serde(rename = "type")]
-    pub type_name: String,
+    pub type_: String,
     #[serde(default)]
     pub name: String,
     pub poster: Option<String>,
@@ -39,7 +39,7 @@ pub struct MetaItem {
 pub struct MetaItemPreview {
     pub id: String,
     #[serde(rename = "type")]
-    pub type_name: String,
+    pub type_: String,
     #[serde(default)]
     pub name: String,
     pub poster: Option<String>,

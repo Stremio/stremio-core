@@ -1,6 +1,7 @@
-use crate::constants::{CATALOG_PAGE_SIZE, SKIP_EXTRA_NAME};
+use crate::constants::{CATALOG_PAGE_SIZE, SKIP_EXTRA_NAME, TYPE_PRIORITIES};
 use crate::models::common::{
-    eq_update, resource_update_with_vector_content, Loadable, ResourceAction, ResourceLoadable,
+    compare_with_priorities, eq_update, resource_update_with_vector_content, Loadable,
+    ResourceAction, ResourceLoadable,
 };
 use crate::models::ctx::Ctx;
 use crate::runtime::msg::{Action, ActionLoad, Internal, Msg};
@@ -65,7 +66,6 @@ pub struct Selected {
 #[derive(Clone, PartialEq, Serialize)]
 pub struct SelectableCatalog {
     pub name: String,
-    pub addon_name: String,
     pub request: ResourceRequest,
 }
 
@@ -88,18 +88,18 @@ pub struct Selectable {
 pub struct CatalogWithFilters<T> {
     pub selected: Option<Selected>,
     pub selectable: Selectable,
-    pub catalog_resource: Option<ResourceLoadable<Vec<T>>>,
+    pub catalog: Option<ResourceLoadable<Vec<T>>>,
 }
 
 impl<T: CatalogResourceAdapter> CatalogWithFilters<T> {
     pub fn new(profile: &Profile) -> (Self, Effects) {
-        let catalog_resource = None;
+        let catalog = None;
         let mut selectable = Selectable::default();
-        let effects = selectable_update::<T>(&mut selectable, &catalog_resource, &profile);
+        let effects = selectable_update::<T>(&mut selectable, &catalog, &profile);
         (
             CatalogWithFilters {
                 selectable,
-                catalog_resource,
+                catalog,
                 selected: None,
             },
             effects.unchanged(),
@@ -113,34 +113,34 @@ where
     T: CatalogResourceAdapter + PartialEq,
     Vec<T>: TryFrom<ResourceResponse, Error = &'static str>,
 {
-    fn update(&mut self, ctx: &Ctx<E>, msg: &Msg) -> Effects {
+    fn update(&mut self, msg: &Msg, ctx: &Ctx<E>) -> Effects {
         match msg {
             Msg::Action(Action::Load(ActionLoad::CatalogWithFilters(selected))) => {
                 let selected_effects = eq_update(&mut self.selected, Some(selected.to_owned()));
                 let catalog_effects = resource_update_with_vector_content::<E, _>(
-                    &mut self.catalog_resource,
+                    &mut self.catalog,
                     ResourceAction::ResourceRequested {
                         request: &selected.request,
                     },
                 );
                 let selectable_effects =
-                    selectable_update(&mut self.selectable, &self.catalog_resource, &ctx.profile);
+                    selectable_update(&mut self.selectable, &self.catalog, &ctx.profile);
                 selected_effects
                     .join(catalog_effects)
                     .join(selectable_effects)
             }
             Msg::Action(Action::Unload) => {
                 let selected_effects = eq_update(&mut self.selected, None);
-                let catalog_effects = eq_update(&mut self.catalog_resource, None);
+                let catalog_effects = eq_update(&mut self.catalog, None);
                 let selectable_effects =
-                    selectable_update(&mut self.selectable, &self.catalog_resource, &ctx.profile);
+                    selectable_update(&mut self.selectable, &self.catalog, &ctx.profile);
                 selected_effects
                     .join(catalog_effects)
                     .join(selectable_effects)
             }
             Msg::Internal(Internal::ResourceRequestResult(request, result)) => {
                 let catalog_effects = resource_update_with_vector_content::<E, _>(
-                    &mut self.catalog_resource,
+                    &mut self.catalog,
                     ResourceAction::ResourceRequestResult {
                         request,
                         result,
@@ -148,11 +148,11 @@ where
                     },
                 );
                 let selectable_effects =
-                    selectable_update(&mut self.selectable, &self.catalog_resource, &ctx.profile);
+                    selectable_update(&mut self.selectable, &self.catalog, &ctx.profile);
                 catalog_effects.join(selectable_effects)
             }
             Msg::Internal(Internal::ProfileChanged) => {
-                selectable_update(&mut self.selectable, &self.catalog_resource, &ctx.profile)
+                selectable_update(&mut self.selectable, &self.catalog, &ctx.profile)
             }
             _ => Effects::none().unchanged(),
         }
@@ -161,7 +161,7 @@ where
 
 fn selectable_update<T: CatalogResourceAdapter>(
     selectable: &mut Selectable,
-    catalog_resource: &Option<ResourceLoadable<Vec<T>>>,
+    catalog: &Option<ResourceLoadable<Vec<T>>>,
     profile: &Profile,
 ) -> Effects {
     let selectable_catalogs = profile
@@ -190,12 +190,11 @@ fn selectable_update<T: CatalogResourceAdapter>(
                         .as_ref()
                         .unwrap_or(&manifest_catalog.id)
                         .to_owned(),
-                    addon_name: addon.manifest.name.to_owned(),
                     request: ResourceRequest {
                         base: addon.transport_url.to_owned(),
                         path: ResourceRef::with_extra(
                             T::resource_name(),
-                            &manifest_catalog.type_name,
+                            &manifest_catalog.type_,
                             &manifest_catalog.id,
                             &default_required_extra,
                         ),
@@ -208,18 +207,17 @@ fn selectable_update<T: CatalogResourceAdapter>(
         SelectablePriority::Type => {
             let selectable_types = selectable_catalogs
                 .iter()
-                .unique_by(|selectable_catalog| &selectable_catalog.request.path.type_name)
+                .unique_by(|selectable_catalog| &selectable_catalog.request.path.type_)
                 .map(|selectable_catalog| SelectableType {
-                    name: selectable_catalog.request.path.type_name.to_owned(),
+                    name: selectable_catalog.request.path.type_.to_owned(),
                     request: selectable_catalog.request.to_owned(),
                 })
                 .collect::<Vec<_>>();
             let selectable_catalogs = selectable_catalogs
                 .iter()
-                .filter(|selectable_catalog| match catalog_resource {
-                    Some(catalog_resource) => {
-                        selectable_catalog.request.path.type_name
-                            == catalog_resource.request.path.type_name
+                .filter(|selectable_catalog| match catalog {
+                    Some(catalog) => {
+                        selectable_catalog.request.path.type_ == catalog.request.path.type_
                     }
                     None => true,
                 })
@@ -230,16 +228,16 @@ fn selectable_update<T: CatalogResourceAdapter>(
         SelectablePriority::Catalog => {
             let selectable_types = selectable_catalogs
                 .iter()
-                .filter(|selectable_catalog| match catalog_resource {
-                    Some(catalog_resource) => {
-                        selectable_catalog.request.path.id == catalog_resource.request.path.id
-                            && selectable_catalog.request.base == catalog_resource.request.base
+                .filter(|selectable_catalog| match catalog {
+                    Some(catalog) => {
+                        selectable_catalog.request.path.id == catalog.request.path.id
+                            && selectable_catalog.request.base == catalog.request.base
                     }
                     _ => true,
                 })
-                .unique_by(|selectable_catalog| &selectable_catalog.request.path.type_name)
+                .unique_by(|selectable_catalog| &selectable_catalog.request.path.type_)
                 .map(|selectable_catalog| SelectableType {
-                    name: selectable_catalog.request.path.type_name.to_owned(),
+                    name: selectable_catalog.request.path.type_.to_owned(),
                     request: selectable_catalog.request.to_owned(),
                 })
                 .collect::<Vec<_>>();
@@ -256,16 +254,22 @@ fn selectable_update<T: CatalogResourceAdapter>(
             (selectable_types, selectable_catalogs)
         }
     };
-    let (selectable_extra, has_prev_page, has_next_page) = match catalog_resource {
-        Some(catalog_resource) => profile
+    let selectable_types = selectable_types
+        .into_iter()
+        .sorted_by(|a, b| {
+            compare_with_priorities(a.name.as_ref(), b.name.as_ref(), &*TYPE_PRIORITIES)
+        })
+        .rev()
+        .collect::<Vec<_>>();
+    let (selectable_extra, has_prev_page, has_next_page) = match catalog {
+        Some(catalog) => profile
             .addons
             .iter()
-            .find(|addon| addon.transport_url == catalog_resource.request.base)
+            .find(|addon| addon.transport_url == catalog.request.base)
             .iter()
             .flat_map(|addon| T::catalogs_from_manifest(&addon.manifest))
-            .find(|ManifestCatalog { id, type_name, .. }| {
-                *id == catalog_resource.request.path.id
-                    && *type_name == catalog_resource.request.path.type_name
+            .find(|ManifestCatalog { id, type_, .. }| {
+                *id == catalog.request.path.id && *type_ == catalog.request.path.type_
             })
             .map(|manifest_catalog| {
                 let selectable_extra = manifest_catalog
@@ -276,14 +280,14 @@ fn selectable_update<T: CatalogResourceAdapter>(
                 let skip_supported = manifest_catalog
                     .extra_iter()
                     .any(|extra| extra.name == SKIP_EXTRA_NAME);
-                let first_page_requested = catalog_resource
+                let first_page_requested = catalog
                     .request
                     .path
                     .get_extra_first_val(SKIP_EXTRA_NAME)
                     .and_then(|value| value.parse::<u32>().ok())
                     .map(|skip| skip == 0)
                     .unwrap_or(true);
-                let last_page_requested = match &catalog_resource.content {
+                let last_page_requested = match &catalog.content {
                     Loadable::Ready(content) => match T::catalog_page_size() {
                         Some(catalog_page_size) => content.len() < catalog_page_size,
                         None => true,

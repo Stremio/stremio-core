@@ -11,7 +11,7 @@ pub struct LibraryItem {
     pub id: String,
     pub name: String,
     #[serde(rename = "type")]
-    pub type_name: String,
+    pub type_: String,
     #[serde(deserialize_with = "empty_string_as_none", default)]
     pub poster: Option<String>,
     #[serde(default)]

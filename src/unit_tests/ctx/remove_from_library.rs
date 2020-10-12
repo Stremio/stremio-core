@@ -26,7 +26,7 @@ fn actionctx_removefromlibrary() {
                 url, method, body, ..
             } if url == "https://api.strem.io/api/datastorePut"
                 && method == "POST"
-                && body == "{\"authKey\":\"auth_key\",\"collection\":\"libraryItem\",\"changes\":[{\"_id\":\"id\",\"name\":\"name\",\"type\":\"type_name\",\"poster\":null,\"posterShape\":\"poster\",\"removed\":true,\"temp\":false,\"_ctime\":\"2020-01-01T00:00:00Z\",\"_mtime\":\"2020-01-02T00:00:00Z\",\"state\":{\"lastWatched\":null,\"timeWatched\":0,\"timeOffset\":0,\"overallTimeWatched\":0,\"timesWatched\":0,\"flaggedWatched\":0,\"duration\":0,\"video_id\":null,\"watched\":null,\"lastVidReleased\":null,\"noNotif\":false},\"behaviorHints\":{\"defaultVideoId\":null}}]}" =>
+                && body == "{\"authKey\":\"auth_key\",\"collection\":\"libraryItem\",\"changes\":[{\"_id\":\"id\",\"name\":\"name\",\"type\":\"type\",\"poster\":null,\"posterShape\":\"poster\",\"removed\":true,\"temp\":false,\"_ctime\":\"2020-01-01T00:00:00Z\",\"_mtime\":\"2020-01-02T00:00:00Z\",\"state\":{\"lastWatched\":null,\"timeWatched\":0,\"timeOffset\":0,\"overallTimeWatched\":0,\"timesWatched\":0,\"flaggedWatched\":0,\"duration\":0,\"video_id\":null,\"watched\":null,\"lastVidReleased\":null,\"noNotif\":false},\"behaviorHints\":{\"defaultVideoId\":null}}]}" =>
             {
                 future::ok(Box::new(APIResult::Ok {
                     result: SuccessResponse { success: True {} },
@@ -43,7 +43,7 @@ fn actionctx_removefromlibrary() {
         mtime: Utc.ymd(2020, 1, 1).and_hms_milli(0, 0, 0, 0),
         state: Default::default(),
         name: "name".to_owned(),
-        type_name: "type_name".to_owned(),
+        type_: "type".to_owned(),
         poster: None,
         poster_shape: Default::default(),
         behavior_hints: Default::default(),
@@ -155,7 +155,7 @@ fn actionctx_removefromlibrary_not_added() {
         mtime: Utc.ymd(2020, 1, 1).and_hms_milli(0, 0, 0, 0),
         state: Default::default(),
         name: "name".to_owned(),
-        type_name: "type_name".to_owned(),
+        type_: "type".to_owned(),
         poster: None,
         poster_shape: Default::default(),
         behavior_hints: Default::default(),

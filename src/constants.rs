@@ -1,5 +1,6 @@
 use crate::types::addon::Descriptor;
 use lazy_static::lazy_static;
+use std::collections::HashMap;
 use url::Url;
 
 pub const SCHEMA_VERSION_STORAGE_KEY: &str = "schema_version";
@@ -27,4 +28,13 @@ lazy_static! {
     pub static ref OFFICIAL_ADDONS: Vec<Descriptor> =
         serde_json::from_slice(stremio_official_addons::ADDONS)
             .expect("OFFICIAL_ADDONS parse failed");
+    pub static ref TYPE_PRIORITIES: HashMap<&'static str, i32> = vec![
+        ("movie", 4),
+        ("series", 3),
+        ("channel", 2),
+        ("tv", 1),
+        ("other", i32::MIN)
+    ]
+    .into_iter()
+    .collect();
 }

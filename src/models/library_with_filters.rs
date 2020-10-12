@@ -18,7 +18,8 @@ pub enum Sort {
 
 #[derive(Clone, PartialEq, Serialize, Deserialize)]
 pub struct Selected {
-    pub type_name: Option<String>,
+    #[serde(rename = "type")]
+    pub type_: Option<String>,
     pub sort: Sort,
 }
 
@@ -46,7 +47,7 @@ impl LibraryFilter for NotRemovedFilter {
 #[derivative(Default)]
 pub struct LibraryWithFilters<F> {
     pub selected: Option<Selected>,
-    pub type_names: Vec<String>,
+    pub types: Vec<String>,
     pub library_items: Vec<LibraryItem>,
     pub filter: PhantomData<F>,
 }
@@ -56,7 +57,7 @@ where
     E: Env + 'static,
     F: LibraryFilter,
 {
-    fn update(&mut self, ctx: &Ctx<E>, msg: &Msg) -> Effects {
+    fn update(&mut self, msg: &Msg, ctx: &Ctx<E>) -> Effects {
         match msg {
             Msg::Action(Action::Load(ActionLoad::LibraryWithFilters(selected))) => {
                 let selected_effects = eq_update(&mut self.selected, Some(selected.to_owned()));
@@ -77,32 +78,29 @@ where
                 selected_effects.join(library_items_effects)
             }
             Msg::Internal(Internal::LibraryChanged(_)) => {
-                let type_names_effects = type_names_update::<F>(&mut self.type_names, &ctx.library);
+                let types_effects = types_update::<F>(&mut self.types, &ctx.library);
                 let library_items_effects = library_items_update::<F>(
                     &mut self.library_items,
                     &self.selected,
                     &ctx.library,
                 );
-                type_names_effects.join(library_items_effects)
+                types_effects.join(library_items_effects)
             }
             _ => Effects::none().unchanged(),
         }
     }
 }
 
-fn type_names_update<F: LibraryFilter>(
-    type_names: &mut Vec<String>,
-    library: &LibraryBucket,
-) -> Effects {
-    let next_type_names = library
+fn types_update<F: LibraryFilter>(types: &mut Vec<String>, library: &LibraryBucket) -> Effects {
+    let next_types = library
         .items
         .values()
         .filter(|library_item| F::predicate(library_item))
-        .map(|library_item| library_item.type_name.to_owned())
+        .map(|library_item| library_item.type_.to_owned())
         .unique()
         .collect::<Vec<_>>();
-    if *type_names != next_type_names {
-        *type_names = next_type_names;
+    if *types != next_types {
+        *types = next_types;
         Effects::none()
     } else {
         Effects::none().unchanged()
@@ -119,8 +117,8 @@ fn library_items_update<F: LibraryFilter>(
             .items
             .values()
             .filter(|library_item| F::predicate(library_item))
-            .filter(|library_item| match &selected.type_name {
-                Some(type_name) => *type_name == library_item.type_name,
+            .filter(|library_item| match &selected.type_ {
+                Some(type_) => *type_ == library_item.type_,
                 None => true,
             })
             .sorted_by(|a, b| match &selected.sort {
