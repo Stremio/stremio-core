@@ -46,10 +46,10 @@ impl<E: Env + 'static> UpdateWithCtx<Ctx<E>> for Notifications {
                                 .filter(|item| {
                                     !item.state.no_notif
                                         && !item.removed
-                                        && cat.type_name == item.type_name
+                                        && cat.type_ == item.type_
                                         && addon.manifest.is_supported(&ResourceRef::without_extra(
                                             "meta",
-                                            &item.type_name,
+                                            &item.type_,
                                             &item.id,
                                         ))
                                 })
@@ -66,7 +66,7 @@ impl<E: Env + 'static> UpdateWithCtx<Ctx<E>> for Notifications {
                                     let extra_props = [(LAST_VID_IDS.into(), ids.join(","))];
                                     let path = ResourceRef::with_extra(
                                         "catalog",
-                                        &cat.type_name,
+                                        &cat.type_,
                                         &cat.id,
                                         &extra_props,
                                     );

@@ -34,7 +34,7 @@ impl Manifest {
         &self,
         ResourceRef {
             resource,
-            type_name,
+            type_,
             id,
             extra,
         }: &ResourceRef,
@@ -44,7 +44,7 @@ impl Manifest {
             return self
                 .catalogs
                 .iter()
-                .any(|c| &c.type_name == type_name && &c.id == id && c.is_extra_supported(&extra));
+                .any(|c| &c.type_ == type_ && &c.id == id && c.is_extra_supported(&extra));
         }
         let res = match self.resources.iter().find(|res| res.name() == resource) {
             None => return false,
@@ -58,9 +58,9 @@ impl Manifest {
             ManifestResource::Short(_) => self.id_prefixes.as_ref(),
             ManifestResource::Full { id_prefixes, .. } => id_prefixes.as_ref(),
         };
-        // types MUST contain type_name
+        // types MUST contain type_
         // and if there is id_prefixes, our id should start with at least one of them
-        let is_types_match = types.map_or(false, |types| types.contains(type_name));
+        let is_types_match = types.map_or(false, |types| types.contains(type_));
         let is_id_match = id_prefixes.map_or(true, |prefixes| {
             prefixes.iter().any(|pref| id.starts_with(pref))
         });
@@ -88,7 +88,7 @@ pub struct ManifestPreview {
 #[serde(rename_all = "camelCase")]
 pub struct ManifestCatalog {
     #[serde(rename = "type")]
-    pub type_name: String,
+    pub type_: String,
     pub id: String,
     pub name: Option<String>,
     #[serde(flatten)]

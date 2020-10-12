@@ -258,7 +258,7 @@ fn library_item_update<E: Env>(
                     mtime: library_item.mtime.to_owned(),
                     state: library_item.state.to_owned(),
                     name: meta_item.name.to_owned(),
-                    type_name: meta_item.type_name.to_owned(),
+                    type_: meta_item.type_.to_owned(),
                     poster: meta_item.poster.to_owned(),
                     poster_shape: meta_item.poster_shape.to_owned(),
                     behavior_hints: LibraryItemBehaviorHints {
@@ -273,7 +273,7 @@ fn library_item_update<E: Env>(
                     mtime: E::now(),
                     state: LibraryItemState::default(),
                     name: meta_item.name.to_owned(),
-                    type_name: meta_item.type_name.to_owned(),
+                    type_: meta_item.type_.to_owned(),
                     poster: meta_item.poster.to_owned(),
                     poster_shape: meta_item.poster_shape.to_owned(),
                     behavior_hints: LibraryItemBehaviorHints {

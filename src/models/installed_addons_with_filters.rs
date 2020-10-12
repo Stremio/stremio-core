@@ -9,23 +9,24 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Clone, PartialEq, Serialize, Deserialize)]
 pub struct Selected {
-    type_name: Option<String>,
+    #[serde(rename = "type")]
+    type_: Option<String>,
 }
 
 #[derive(Default, Serialize)]
 pub struct InstalledAddonsWithFilters {
     pub selected: Option<Selected>,
-    pub type_names: Vec<String>,
+    pub types: Vec<String>,
     pub addons: Vec<DescriptorPreview>,
 }
 
 impl InstalledAddonsWithFilters {
     pub fn new(profile: &Profile) -> (Self, Effects) {
-        let mut type_names = vec![];
-        let effects = type_names_update(&mut type_names, &profile);
+        let mut types = vec![];
+        let effects = types_update(&mut types, &profile);
         (
             InstalledAddonsWithFilters {
-                type_names,
+                types,
                 selected: None,
                 addons: vec![],
             },
@@ -51,25 +52,25 @@ where
                 selected_effects.join(addons_effects)
             }
             Msg::Internal(Internal::ProfileChanged) => {
-                let type_names_effects = type_names_update(&mut self.type_names, &ctx.profile);
+                let types_effects = types_update(&mut self.types, &ctx.profile);
                 let addons_effects = addons_update(&mut self.addons, &self.selected, &ctx.profile);
-                type_names_effects.join(addons_effects)
+                types_effects.join(addons_effects)
             }
             _ => Effects::none().unchanged(),
         }
     }
 }
 
-fn type_names_update(type_names: &mut Vec<String>, profile: &Profile) -> Effects {
-    let next_type_names = profile
+fn types_update(types: &mut Vec<String>, profile: &Profile) -> Effects {
+    let next_types = profile
         .addons
         .iter()
         .flat_map(|addon| &addon.manifest.types)
         .unique()
         .cloned()
         .collect::<Vec<_>>();
-    if *type_names != next_type_names {
-        *type_names = next_type_names;
+    if *types != next_types {
+        *types = next_types;
         Effects::none()
     } else {
         Effects::none().unchanged()
@@ -85,8 +86,8 @@ fn addons_update(
         Some(selected) => profile
             .addons
             .iter()
-            .filter(|addon| match &selected.type_name {
-                Some(type_name) => addon.manifest.types.contains(type_name),
+            .filter(|addon| match &selected.type_ {
+                Some(type_) => addon.manifest.types.contains(type_),
                 None => true,
             })
             .map(|addon| DescriptorPreview {

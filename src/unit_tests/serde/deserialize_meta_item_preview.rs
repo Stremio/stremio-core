@@ -7,7 +7,7 @@ fn deserialize_meta_item_preview() {
     let meta_item_previews = vec![
         MetaItemPreview {
             id: "id1".to_owned(),
-            type_name: "type_name".to_owned(),
+            type_: "type".to_owned(),
             name: "name".to_owned(),
             poster: Some("poster".to_owned()),
             logo: Some("logo".to_owned()),
@@ -21,7 +21,7 @@ fn deserialize_meta_item_preview() {
         },
         MetaItemPreview {
             id: "id2".to_owned(),
-            type_name: "type_name".to_owned(),
+            type_: "type".to_owned(),
             name: "".to_owned(),
             poster: None,
             logo: None,
@@ -35,7 +35,7 @@ fn deserialize_meta_item_preview() {
         },
         MetaItemPreview {
             id: "id3".to_owned(),
-            type_name: "type_name".to_owned(),
+            type_: "type".to_owned(),
             name: "name".to_owned(),
             poster: None,
             logo: None,
@@ -53,7 +53,7 @@ fn deserialize_meta_item_preview() {
         [
             {{
                 "id": "id1",
-                "type": "type_name",
+                "type": "type",
                 "name": "name",
                 "poster": "poster",
                 "logo": "logo",
@@ -67,7 +67,7 @@ fn deserialize_meta_item_preview() {
             }},
             {{
                 "id": "id2",
-                "type": "type_name",
+                "type": "type",
                 "poster": null,
                 "logo": null,
                 "description": null,
@@ -77,7 +77,7 @@ fn deserialize_meta_item_preview() {
             }},
             {{
                 "id": "id3",
-                "type": "type_name",
+                "type": "type",
                 "name": "name",
                 "poster": null,
                 "logo": null,

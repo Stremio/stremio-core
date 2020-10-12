@@ -194,7 +194,7 @@ fn selectable_update<T: CatalogResourceAdapter>(
                         base: addon.transport_url.to_owned(),
                         path: ResourceRef::with_extra(
                             T::resource_name(),
-                            &manifest_catalog.type_name,
+                            &manifest_catalog.type_,
                             &manifest_catalog.id,
                             &default_required_extra,
                         ),
@@ -207,9 +207,9 @@ fn selectable_update<T: CatalogResourceAdapter>(
         SelectablePriority::Type => {
             let selectable_types = selectable_catalogs
                 .iter()
-                .unique_by(|selectable_catalog| &selectable_catalog.request.path.type_name)
+                .unique_by(|selectable_catalog| &selectable_catalog.request.path.type_)
                 .map(|selectable_catalog| SelectableType {
-                    name: selectable_catalog.request.path.type_name.to_owned(),
+                    name: selectable_catalog.request.path.type_.to_owned(),
                     request: selectable_catalog.request.to_owned(),
                 })
                 .collect::<Vec<_>>();
@@ -217,7 +217,7 @@ fn selectable_update<T: CatalogResourceAdapter>(
                 .iter()
                 .filter(|selectable_catalog| match catalog {
                     Some(catalog) => {
-                        selectable_catalog.request.path.type_name == catalog.request.path.type_name
+                        selectable_catalog.request.path.type_ == catalog.request.path.type_
                     }
                     None => true,
                 })
@@ -235,9 +235,9 @@ fn selectable_update<T: CatalogResourceAdapter>(
                     }
                     _ => true,
                 })
-                .unique_by(|selectable_catalog| &selectable_catalog.request.path.type_name)
+                .unique_by(|selectable_catalog| &selectable_catalog.request.path.type_)
                 .map(|selectable_catalog| SelectableType {
-                    name: selectable_catalog.request.path.type_name.to_owned(),
+                    name: selectable_catalog.request.path.type_.to_owned(),
                     request: selectable_catalog.request.to_owned(),
                 })
                 .collect::<Vec<_>>();
@@ -268,8 +268,8 @@ fn selectable_update<T: CatalogResourceAdapter>(
             .find(|addon| addon.transport_url == catalog.request.base)
             .iter()
             .flat_map(|addon| T::catalogs_from_manifest(&addon.manifest))
-            .find(|ManifestCatalog { id, type_name, .. }| {
-                *id == catalog.request.path.id && *type_name == catalog.request.path.type_name
+            .find(|ManifestCatalog { id, type_, .. }| {
+                *id == catalog.request.path.id && *type_ == catalog.request.path.type_
             })
             .map(|manifest_catalog| {
                 let selectable_extra = manifest_catalog

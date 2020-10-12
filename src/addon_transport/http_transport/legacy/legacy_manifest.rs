@@ -62,7 +62,7 @@ impl From<LegacyManifest> for Manifest {
                     .flat_map(|sort| {
                         let types = sort.types.as_ref().unwrap_or(&types);
                         types.iter().cloned().map(move |t| ManifestCatalog {
-                            type_name: t,
+                            type_: t,
                             id: sort.id.to_owned(),
                             name: sort.name.to_owned(),
                             extra: Default::default(),
@@ -72,7 +72,7 @@ impl From<LegacyManifest> for Manifest {
                 None => types
                     .iter()
                     .map(|t| ManifestCatalog {
-                        type_name: t.to_owned(),
+                        type_: t.to_owned(),
                         id: "top".to_owned(),
                         name: None,
                         extra: Default::default(),

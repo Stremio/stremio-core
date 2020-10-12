@@ -7,7 +7,7 @@ fn deserialize_meta_item() {
     let meta_items = vec![
         MetaItem {
             id: "id1".to_owned(),
-            type_name: "type_name".to_owned(),
+            type_: "type".to_owned(),
             name: "name".to_owned(),
             poster: Some("poster".to_owned()),
             background: Some("background".to_owned()),
@@ -25,7 +25,7 @@ fn deserialize_meta_item() {
         },
         MetaItem {
             id: "id2".to_owned(),
-            type_name: "type_name".to_owned(),
+            type_: "type".to_owned(),
             name: "".to_owned(),
             poster: None,
             background: None,
@@ -43,7 +43,7 @@ fn deserialize_meta_item() {
         },
         MetaItem {
             id: "id3".to_owned(),
-            type_name: "type_name".to_owned(),
+            type_: "type".to_owned(),
             name: "name".to_owned(),
             poster: None,
             background: None,
@@ -65,7 +65,7 @@ fn deserialize_meta_item() {
         [
             {{
                 "id": "id1",
-                "type": "type_name",
+                "type": "type",
                 "name": "name",
                 "poster": "poster",
                 "background": "background",
@@ -83,7 +83,7 @@ fn deserialize_meta_item() {
             }},
             {{
                 "id": "id2",
-                "type": "type_name",
+                "type": "type",
                 "poster": null,
                 "background": null,
                 "logo": null,
@@ -95,7 +95,7 @@ fn deserialize_meta_item() {
             }},
             {{
                 "id": "id3",
-                "type": "type_name",
+                "type": "type",
                 "name": "name",
                 "poster": null,
                 "background": null,
