@@ -1,11 +1,18 @@
 use crate::types::addon::Descriptor;
+use derive_more::{From, Into};
 use percent_encoding::{utf8_percent_encode, NON_ALPHANUMERIC};
 use serde::{Deserialize, Serialize};
 use std::fmt;
 use std::hash::Hash;
 use url::{form_urlencoded, Url};
 
-pub type ExtraProp = (String, String);
+#[derive(Clone, From, Into, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[cfg_attr(test, derive(Debug))]
+#[serde(from = "(String, String)", into = "(String, String)")]
+pub struct ExtraValue {
+    pub name: String,
+    pub value: String,
+}
 
 #[derive(Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
 #[cfg_attr(test, derive(Debug))]
@@ -14,7 +21,7 @@ pub struct ResourceRef {
     #[serde(rename = "type")]
     pub type_: String,
     pub id: String,
-    pub extra: Vec<ExtraProp>,
+    pub extra: Vec<ExtraValue>,
 }
 
 impl ResourceRef {
@@ -26,7 +33,7 @@ impl ResourceRef {
             extra: vec![],
         }
     }
-    pub fn with_extra(resource: &str, type_: &str, id: &str, extra: &[ExtraProp]) -> Self {
+    pub fn with_extra(resource: &str, type_: &str, id: &str, extra: &[ExtraValue]) -> Self {
         ResourceRef {
             resource: resource.to_owned(),
             type_: type_.to_owned(),
@@ -34,8 +41,11 @@ impl ResourceRef {
             extra: extra.to_owned(),
         }
     }
-    pub fn get_extra_first_value(&self, key: &str) -> Option<&String> {
-        self.extra.iter().find(|(k, _)| k == key).map(|(_, v)| v)
+    pub fn get_extra_first_value(&self, name: &str) -> Option<&String> {
+        self.extra
+            .iter()
+            .find(|extra_value| extra_value.name == name)
+            .map(|extra_value| &extra_value.value)
     }
     pub fn eq_no_extra(&self, other: &ResourceRef) -> bool {
         self.resource == other.resource && self.type_ == other.type_ && self.id == other.id
@@ -53,8 +63,8 @@ impl fmt::Display for ResourceRef {
         )?;
         if !self.extra.is_empty() {
             let mut extra_encoded = form_urlencoded::Serializer::new(String::new());
-            for (k, v) in self.extra.iter() {
-                extra_encoded.append_pair(&k, &v);
+            for ExtraValue { name, value } in self.extra.iter() {
+                extra_encoded.append_pair(&name, &value);
             }
             write!(f, "/{}", &extra_encoded.finish())?;
         }
@@ -81,7 +91,7 @@ impl ResourceRequest {
 #[derive(Clone)]
 #[cfg_attr(test, derive(Debug))]
 pub enum AggrRequest<'a> {
-    AllCatalogs { extra: &'a Vec<ExtraProp> },
+    AllCatalogs { extra: &'a Vec<ExtraValue> },
     AllOfResource(ResourceRef),
 }
 
@@ -95,13 +105,18 @@ impl AggrRequest<'_> {
                         .manifest
                         .catalogs
                         .iter()
-                        .filter(|cat| cat.is_extra_supported(&extra))
-                        .map(move |cat| {
+                        .filter(|catalog| catalog.is_extra_supported(&extra))
+                        .map(move |catalog| {
                             (
                                 addon,
                                 ResourceRequest::new(
                                     addon.transport_url.to_owned(),
-                                    ResourceRef::with_extra("catalog", &cat.type_, &cat.id, extra),
+                                    ResourceRef::with_extra(
+                                        "catalog",
+                                        &catalog.type_,
+                                        &catalog.id,
+                                        extra,
+                                    ),
                                 ),
                             )
                         })
@@ -110,7 +125,7 @@ impl AggrRequest<'_> {
                 .collect(),
             AggrRequest::AllOfResource(path) => addons
                 .iter()
-                .filter(|addon| addon.manifest.is_supported(&path))
+                .filter(|addon| addon.manifest.is_resource_supported(&path))
                 .map(|addon| {
                     (
                         addon,
