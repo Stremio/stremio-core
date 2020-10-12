@@ -34,11 +34,8 @@ impl ResourceRef {
             extra: extra.to_owned(),
         }
     }
-    pub fn get_extra_first_val(&self, key: &str) -> Option<&str> {
-        self.extra
-            .iter()
-            .find(|(k, _)| k == key)
-            .map(|(_, v)| v as &str)
+    pub fn get_extra_first_val(&self, key: &str) -> Option<&String> {
+        self.extra.iter().find(|(k, _)| k == key).map(|(_, v)| v)
     }
     pub fn set_extra_unique(&mut self, key: &str, val: String) {
         let entry = self.extra.iter_mut().find(|(k, _)| k == key);
