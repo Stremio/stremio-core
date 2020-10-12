@@ -38,7 +38,7 @@ impl From<&LibraryItem> for LibraryItemDeepLinks {
                 .cloned()
                 .xor(Some(format!(
                     "#/metadetails/{}/{}",
-                    utf8_percent_encode(&item.type_name, URI_COMPONENT_ENCODE_SET),
+                    utf8_percent_encode(&item.type_, URI_COMPONENT_ENCODE_SET),
                     utf8_percent_encode(&item.id, URI_COMPONENT_ENCODE_SET)
                 ))),
             meta_details_streams: item
@@ -49,7 +49,7 @@ impl From<&LibraryItem> for LibraryItemDeepLinks {
                 .map(|video_id| {
                     format!(
                         "#/metadetails/{}/{}/{}",
-                        utf8_percent_encode(&item.type_name, URI_COMPONENT_ENCODE_SET),
+                        utf8_percent_encode(&item.type_, URI_COMPONENT_ENCODE_SET),
                         utf8_percent_encode(&item.id, URI_COMPONENT_ENCODE_SET),
                         utf8_percent_encode(&video_id, URI_COMPONENT_ENCODE_SET)
                     )
@@ -75,7 +75,7 @@ impl From<&MetaItemPreview> for MetaItemDeepLinks {
                 .cloned()
                 .xor(Some(format!(
                     "#/metadetails/{}/{}",
-                    utf8_percent_encode(&item.type_name, URI_COMPONENT_ENCODE_SET),
+                    utf8_percent_encode(&item.type_, URI_COMPONENT_ENCODE_SET),
                     utf8_percent_encode(&item.id, URI_COMPONENT_ENCODE_SET)
                 ))),
             meta_details_streams: item
@@ -85,7 +85,7 @@ impl From<&MetaItemPreview> for MetaItemDeepLinks {
                 .map(|video_id| {
                     format!(
                         "#/metadetails/{}/{}/{}",
-                        utf8_percent_encode(&item.type_name, URI_COMPONENT_ENCODE_SET),
+                        utf8_percent_encode(&item.type_, URI_COMPONENT_ENCODE_SET),
                         utf8_percent_encode(&item.id, URI_COMPONENT_ENCODE_SET),
                         utf8_percent_encode(&video_id, URI_COMPONENT_ENCODE_SET)
                     )
@@ -104,7 +104,7 @@ impl From<&MetaItem> for MetaItemDeepLinks {
                 .cloned()
                 .xor(Some(format!(
                     "#/metadetails/{}/{}",
-                    utf8_percent_encode(&item.type_name, URI_COMPONENT_ENCODE_SET),
+                    utf8_percent_encode(&item.type_, URI_COMPONENT_ENCODE_SET),
                     utf8_percent_encode(&item.id, URI_COMPONENT_ENCODE_SET)
                 ))),
             meta_details_streams: item
@@ -114,7 +114,7 @@ impl From<&MetaItem> for MetaItemDeepLinks {
                 .map(|video_id| {
                     format!(
                         "#/metadetails/{}/{}/{}",
-                        utf8_percent_encode(&item.type_name, URI_COMPONENT_ENCODE_SET),
+                        utf8_percent_encode(&item.type_, URI_COMPONENT_ENCODE_SET),
                         utf8_percent_encode(&item.id, URI_COMPONENT_ENCODE_SET),
                         utf8_percent_encode(&video_id, URI_COMPONENT_ENCODE_SET)
                     )
@@ -134,7 +134,7 @@ impl From<(&Video, &ResourceRequest)> for VideoDeepLinks {
         VideoDeepLinks {
             meta_details_streams: format!(
                 "#/metadetails/{}/{}/{}",
-                utf8_percent_encode(&request.path.type_name, URI_COMPONENT_ENCODE_SET),
+                utf8_percent_encode(&request.path.type_, URI_COMPONENT_ENCODE_SET),
                 utf8_percent_encode(&request.path.id, URI_COMPONENT_ENCODE_SET),
                 utf8_percent_encode(&video.id, URI_COMPONENT_ENCODE_SET)
             ),
@@ -153,7 +153,7 @@ impl From<(&Video, &ResourceRequest)> for VideoDeepLinks {
                         ),
                         utf8_percent_encode(&request.base.as_str(), URI_COMPONENT_ENCODE_SET),
                         utf8_percent_encode(&request.base.as_str(), URI_COMPONENT_ENCODE_SET),
-                        utf8_percent_encode(&request.path.type_name, URI_COMPONENT_ENCODE_SET),
+                        utf8_percent_encode(&request.path.type_, URI_COMPONENT_ENCODE_SET),
                         utf8_percent_encode(&request.path.id, URI_COMPONENT_ENCODE_SET),
                         utf8_percent_encode(&video.id, URI_COMPONENT_ENCODE_SET)
                     )
@@ -194,7 +194,7 @@ impl From<(&Stream, &ResourceRequest, &ResourceRequest)> for StreamDeepLinks {
                 ),
                 utf8_percent_encode(&stream_request.base.as_str(), URI_COMPONENT_ENCODE_SET),
                 utf8_percent_encode(&meta_request.base.as_str(), URI_COMPONENT_ENCODE_SET),
-                utf8_percent_encode(&meta_request.path.type_name, URI_COMPONENT_ENCODE_SET),
+                utf8_percent_encode(&meta_request.path.type_, URI_COMPONENT_ENCODE_SET),
                 utf8_percent_encode(&meta_request.path.id, URI_COMPONENT_ENCODE_SET),
                 utf8_percent_encode(&stream_request.path.id, URI_COMPONENT_ENCODE_SET)
             ),
@@ -217,7 +217,7 @@ impl From<&ResourceLoadable<Vec<MetaItemPreview>>> for MetaCatalogResourceDeepLi
                     URI_COMPONENT_ENCODE_SET
                 ),
                 utf8_percent_encode(
-                    &catalog_resource.request.path.type_name,
+                    &catalog_resource.request.path.type_,
                     URI_COMPONENT_ENCODE_SET
                 ),
                 utf8_percent_encode(&catalog_resource.request.path.id, URI_COMPONENT_ENCODE_SET),
