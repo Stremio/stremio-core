@@ -18,7 +18,7 @@ fn deserialize_library_item() {
         Token::Str("name"),
         Token::Str("name"),
         Token::Str("type"),
-        Token::Str("type_name"),
+        Token::Str("type"),
         Token::Str("poster"),
         Token::Some,
         Token::Str("poster"),
@@ -49,7 +49,7 @@ fn deserialize_library_item() {
     vec.push(LibraryItem {
         id: "id1".to_owned(),
         name: "name".to_owned(),
-        type_name: "type_name".to_owned(),
+        type_: "type".to_owned(),
         poster: Some("poster".to_owned()),
         poster_shape: PosterShape::Square,
         removed: true,
