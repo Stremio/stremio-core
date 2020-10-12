@@ -16,11 +16,12 @@ use stremio_core::models::ctx::Ctx;
 use stremio_core::types::addon::{Descriptor, ResourceRequest};
 use stremio_core::types::library::LibraryItem;
 use stremio_core::types::resource::MetaItemPreview;
+use wasm_bindgen::JsValue;
 
-pub fn serialize_catalogs_with_extra<'a>(
-    catalogs_with_extra: &'a CatalogsWithExtra,
-    ctx: &'a Ctx<WebEnv>,
-) -> Box<dyn erased_serde::Serialize + 'a> {
+pub fn serialize_catalogs_with_extra(
+    catalogs_with_extra: &CatalogsWithExtra,
+    ctx: &Ctx<WebEnv>,
+) -> JsValue {
     #[derive(Serialize)]
     struct _MetaItemPreview<'a> {
         #[serde(flatten)]
@@ -39,7 +40,7 @@ pub fn serialize_catalogs_with_extra<'a>(
         selected: &'a Option<CatalogsWithExtraSelected>,
         catalog_resources: Vec<_ResourceLoadable<'a>>,
     }
-    Box::new(_CatalogsWithExtra {
+    JsValue::from_serde(&_CatalogsWithExtra {
         selected: &catalogs_with_extra.selected,
         catalog_resources: catalogs_with_extra
             .catalog_resources
@@ -70,11 +71,12 @@ pub fn serialize_catalogs_with_extra<'a>(
             })
             .collect::<Vec<_>>(),
     })
+    .unwrap()
 }
 
-pub fn serialize_continue_watching_preview<'a>(
-    continue_watching_preview: &'a ContinueWatchingPreview,
-) -> Box<dyn erased_serde::Serialize + 'a> {
+pub fn serialize_continue_watching_preview(
+    continue_watching_preview: &ContinueWatchingPreview,
+) -> JsValue {
     #[derive(Serialize)]
     struct _LibraryItem<'a> {
         #[serde(flatten)]
@@ -85,7 +87,7 @@ pub fn serialize_continue_watching_preview<'a>(
     struct _ContinueWatchingPreview<'a> {
         library_items: Vec<_LibraryItem<'a>>,
     }
-    Box::new(_ContinueWatchingPreview {
+    JsValue::from_serde(&_ContinueWatchingPreview {
         library_items: continue_watching_preview
             .library_items
             .iter()
@@ -95,12 +97,13 @@ pub fn serialize_continue_watching_preview<'a>(
             })
             .collect::<Vec<_>>(),
     })
+    .unwrap()
 }
 
-pub fn serialize_discover<'a>(
-    discover: &'a CatalogWithFilters<MetaItemPreview>,
-    ctx: &'a Ctx<WebEnv>,
-) -> Box<dyn erased_serde::Serialize + 'a> {
+pub fn serialize_discover(
+    discover: &CatalogWithFilters<MetaItemPreview>,
+    ctx: &Ctx<WebEnv>,
+) -> JsValue {
     #[derive(Serialize)]
     struct _MetaItemPreview<'a> {
         #[serde(flatten)]
@@ -119,7 +122,7 @@ pub fn serialize_discover<'a>(
         selectable: &'a CatalogWithFiltersSelectable,
         catalog: Option<_ResourceLoadable<'a>>,
     }
-    Box::new(_CatalogWithFilters {
+    JsValue::from_serde(&_CatalogWithFilters {
         selected: &discover.selected,
         selectable: &discover.selectable,
         catalog: discover.catalog.as_ref().map(|catalog| _ResourceLoadable {
@@ -144,4 +147,5 @@ pub fn serialize_discover<'a>(
                 .find(|addon| addon.transport_url == catalog.request.base),
         }),
     })
+    .unwrap()
 }
