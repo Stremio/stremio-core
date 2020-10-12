@@ -125,15 +125,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "1056f553da426e9c025a662efa48b52e62e0a3a7648aa2d15aeaaf7f0d329357"
 
 [[package]]
-name = "erased-serde"
-version = "0.3.12"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6ca8b296792113e1500fd935ae487be6e00ce318952a6880555554824d6ebf38"
-dependencies = [
- "serde",
-]
-
-[[package]]
 name = "flate2"
 version = "1.0.18"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -572,7 +563,6 @@ dependencies = [
  "base64 0.13.0",
  "chrono",
  "console_error_panic_hook",
- "erased-serde",
  "flate2",
  "futures",
  "http",
