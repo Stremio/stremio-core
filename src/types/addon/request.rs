@@ -1,4 +1,4 @@
-use crate::types::addon::Descriptor;
+use crate::types::addon::{Descriptor, ExtraProp};
 use derive_more::{From, Into};
 use percent_encoding::{utf8_percent_encode, NON_ALPHANUMERIC};
 use serde::{Deserialize, Serialize};
@@ -12,6 +12,45 @@ use url::{form_urlencoded, Url};
 pub struct ExtraValue {
     pub name: String,
     pub value: String,
+}
+
+pub trait ExtraExt {
+    fn extend_one_ref<'a>(
+        &'a self,
+        prop: &'a ExtraProp,
+        value: Option<&'a ExtraValue>,
+    ) -> Vec<&'a ExtraValue>;
+}
+
+impl ExtraExt for Vec<ExtraValue> {
+    fn extend_one_ref<'a>(
+        &'a self,
+        prop: &'a ExtraProp,
+        value: Option<&'a ExtraValue>,
+    ) -> Vec<&'a ExtraValue> {
+        let (extra, other_extra) = self
+            .iter()
+            .partition::<Vec<&ExtraValue>, _>(|&ExtraValue { name, .. }| *name == prop.name);
+        let extra = match value {
+            Some(value) if *prop.options_limit == 1 => vec![value],
+            Some(value) if *prop.options_limit > 1 => {
+                if extra
+                    .iter()
+                    .any(|extra_value| extra_value.value == value.value)
+                {
+                    extra
+                        .into_iter()
+                        .filter(|extra_value| extra_value.value != value.value)
+                        .collect::<Vec<_>>()
+                } else {
+                    extra.into_iter().chain(vec![value]).collect::<Vec<_>>()
+                }
+            }
+            None if !prop.is_required => vec![],
+            _ => extra,
+        };
+        extra.into_iter().chain(other_extra).collect()
+    }
 }
 
 #[derive(Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
