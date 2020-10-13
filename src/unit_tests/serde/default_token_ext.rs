@@ -1,5 +1,5 @@
 use crate::types::library::{LibraryItemBehaviorHints, LibraryItemState};
-use crate::types::resource::MetaItemBehaviorHints;
+use crate::types::resource::{MetaItemBehaviorHints, PosterShape};
 use serde_test::Token;
 
 pub trait DefaultTokens {
@@ -68,6 +68,18 @@ impl DefaultTokens for MetaItemBehaviorHints {
             Token::Str("hasScheduledVideos"),
             Token::Bool(false),
             Token::StructEnd,
+        ]
+    }
+}
+
+impl DefaultTokens for PosterShape {
+    fn default_token() -> Vec<Token> {
+        vec![
+            Token::Enum {
+                name: "PosterShape",
+            },
+            Token::Str("poster"),
+            Token::Unit,
         ]
     }
 }
