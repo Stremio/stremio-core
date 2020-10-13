@@ -4,8 +4,7 @@ use crate::model::deep_links::{
 };
 use serde::Serialize;
 use stremio_core::models::catalog_with_filters::{
-    CatalogWithFilters, Selectable as CatalogWithFiltersSelectable,
-    Selected as CatalogWithFiltersSelected,
+    CatalogWithFilters, Selected as CatalogWithFiltersSelected,
 };
 use stremio_core::models::catalogs_with_extra::{
     CatalogsWithExtra, Selected as CatalogsWithExtraSelected,
@@ -13,7 +12,7 @@ use stremio_core::models::catalogs_with_extra::{
 use stremio_core::models::common::{Loadable, ResourceError};
 use stremio_core::models::continue_watching_preview::ContinueWatchingPreview;
 use stremio_core::models::ctx::Ctx;
-use stremio_core::types::addon::{Descriptor, ResourceRequest};
+use stremio_core::types::addon::{Descriptor, ExtraExt, ExtraValue, ResourceRequest};
 use stremio_core::types::library::LibraryItem;
 use stremio_core::types::resource::MetaItemPreview;
 use wasm_bindgen::JsValue;
@@ -105,6 +104,37 @@ pub fn serialize_discover(
     ctx: &Ctx<WebEnv>,
 ) -> JsValue {
     #[derive(Serialize)]
+    pub struct _ExtraOption<'a> {
+        pub value: Option<&'a String>,
+        pub deep_links: MetaCatalogResourceDeepLinks,
+    }
+    #[derive(Serialize)]
+    pub struct _SelectableType<'a> {
+        pub name: &'a String,
+        pub request: &'a ResourceRequest,
+        pub deep_links: MetaCatalogResourceDeepLinks,
+    }
+    #[derive(Serialize)]
+    pub struct _SelectableCatalog<'a> {
+        pub name: &'a String,
+        pub request: &'a ResourceRequest,
+        pub deep_links: MetaCatalogResourceDeepLinks,
+    }
+    #[derive(Serialize)]
+    pub struct _ExtraProp<'a> {
+        pub name: &'a String,
+        pub is_required: &'a bool,
+        pub options: Vec<_ExtraOption<'a>>,
+    }
+    #[derive(Serialize)]
+    struct _Selectable<'a> {
+        pub types: Vec<_SelectableType<'a>>,
+        pub catalogs: Vec<_SelectableCatalog<'a>>,
+        pub extra: Vec<_ExtraProp<'a>>,
+        pub has_prev_page: &'a bool,
+        pub has_next_page: &'a bool,
+    }
+    #[derive(Serialize)]
     struct _MetaItemPreview<'a> {
         #[serde(flatten)]
         meta_item: &'a MetaItemPreview,
@@ -119,12 +149,85 @@ pub fn serialize_discover(
     #[derive(Serialize)]
     struct _CatalogWithFilters<'a> {
         selected: &'a Option<CatalogWithFiltersSelected>,
-        selectable: &'a CatalogWithFiltersSelectable,
+        selectable: _Selectable<'a>,
         catalog: Option<_ResourceLoadable<'a>>,
     }
     JsValue::from_serde(&_CatalogWithFilters {
         selected: &discover.selected,
-        selectable: &discover.selectable,
+        selectable: _Selectable {
+            types: discover
+                .selectable
+                .types
+                .iter()
+                .map(|selectable_type| _SelectableType {
+                    name: &selectable_type.name,
+                    request: &selectable_type.request,
+                    deep_links: MetaCatalogResourceDeepLinks::from(&selectable_type.request),
+                })
+                .collect(),
+            catalogs: discover
+                .selectable
+                .catalogs
+                .iter()
+                .map(|selectable_catalog| _SelectableCatalog {
+                    name: &selectable_catalog.name,
+                    request: &selectable_catalog.request,
+                    deep_links: MetaCatalogResourceDeepLinks::from(&selectable_catalog.request),
+                })
+                .collect(),
+            extra: match &discover.selected {
+                Some(selected) => discover
+                    .selectable
+                    .extra
+                    .iter()
+                    .map(|extra_prop| _ExtraProp {
+                        name: &extra_prop.name,
+                        is_required: &extra_prop.is_required,
+                        options: match &extra_prop.options {
+                            Some(options) => {
+                                let none_option = if extra_prop.is_required {
+                                    Some(_ExtraOption {
+                                        value: None,
+                                        deep_links: MetaCatalogResourceDeepLinks::from((
+                                            &selected.request.base,
+                                            &selected.request.path.type_,
+                                            &selected.request.path.id,
+                                            selected
+                                                .request
+                                                .path
+                                                .extra
+                                                .extend_one_ref(&extra_prop, None),
+                                        )),
+                                    })
+                                } else {
+                                    None
+                                };
+                                let options = options.iter().map(|value| _ExtraOption {
+                                    value: Some(value),
+                                    deep_links: MetaCatalogResourceDeepLinks::from((
+                                        &selected.request.base,
+                                        &selected.request.path.type_,
+                                        &selected.request.path.id,
+                                        selected.request.path.extra.extend_one_ref(
+                                            &extra_prop,
+                                            Some(&ExtraValue {
+                                                name: extra_prop.name.to_owned(),
+                                                value: value.to_owned(),
+                                            }),
+                                        ),
+                                    )),
+                                });
+                                none_option.into_iter().chain(options).collect()
+                            }
+                            _ => vec![],
+                        },
+                    })
+                    .collect(),
+                _ => vec![],
+            },
+            has_prev_page: &discover.selectable.has_prev_page,
+            has_next_page: &discover.selectable.has_next_page,
+        },
         catalog: discover.catalog.as_ref().map(|catalog| _ResourceLoadable {
             request: &catalog.request,
             content: match &catalog.content {
