@@ -1,4 +1,5 @@
 use crate::types::library::{LibraryItemBehaviorHints, LibraryItemState};
+use crate::types::resource::MetaItemBehaviorHints;
 use serde_test::Token;
 
 pub trait DefaultTokens {
@@ -48,6 +49,24 @@ impl DefaultTokens for LibraryItemBehaviorHints {
             },
             Token::Str("defaultVideoId"),
             Token::None,
+            Token::StructEnd,
+        ]
+    }
+}
+
+impl DefaultTokens for MetaItemBehaviorHints {
+    fn default_token() -> Vec<Token> {
+        vec![
+            Token::Struct {
+                name: "MetaItemBehaviorHints",
+                len: 3,
+            },
+            Token::Str("defaultVideoId"),
+            Token::None,
+            Token::Str("featuredVideoId"),
+            Token::None,
+            Token::Str("hasScheduledVideos"),
+            Token::Bool(false),
             Token::StructEnd,
         ]
     }
