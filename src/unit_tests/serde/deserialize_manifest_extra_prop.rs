@@ -1,21 +1,21 @@
-use crate::types::addon::{ManifestExtraProp, OptionsLimit};
+use crate::types::addon::{ExtraProp, OptionsLimit};
 
 #[test]
 fn deserialize_manifest_extra_prop() {
     let manifest_extra_props = vec![
-        ManifestExtraProp {
+        ExtraProp {
             name: "name".to_owned(),
             is_required: true,
             options: Some(vec!["option".to_owned()]),
             options_limit: OptionsLimit(2),
         },
-        ManifestExtraProp {
+        ExtraProp {
             name: "name".to_owned(),
             is_required: false,
             options: None,
             options_limit: OptionsLimit(1),
         },
-        ManifestExtraProp {
+        ExtraProp {
             name: "name".to_owned(),
             is_required: false,
             options: None,
@@ -44,7 +44,7 @@ fn deserialize_manifest_extra_prop() {
         }
     ]
     "#;
-    let manifest_extra_props_deserialize: Vec<ManifestExtraProp> =
+    let manifest_extra_props_deserialize: Vec<ExtraProp> =
         serde_json::from_str(&manifest_extra_props_json).unwrap();
     assert_eq!(
         manifest_extra_props, manifest_extra_props_deserialize,

@@ -3,7 +3,7 @@ use crate::models::ctx::Ctx;
 use crate::runtime::msg::Internal::*;
 use crate::runtime::msg::*;
 use crate::runtime::*;
-use crate::types::addon::{ResourceRef, ResourceRequest};
+use crate::types::addon::{ExtraValue, ResourceRef, ResourceRequest};
 use crate::types::resource::MetaItem;
 use futures::FutureExt;
 use lazysort::SortedBy;
@@ -35,7 +35,7 @@ impl<E: Env + 'static> UpdateWithCtx<Ctx<E>> for Notifications {
                             .manifest
                             .catalogs
                             .iter()
-                            .filter(|cat| cat.extra_iter().any(|e| e.name == LAST_VID_IDS));
+                            .filter(|cat| cat.extra.iter().any(|e| e.name == LAST_VID_IDS));
 
                         viable_catalogs.flat_map(move |cat| {
                             let relevant_items = library
@@ -47,11 +47,13 @@ impl<E: Env + 'static> UpdateWithCtx<Ctx<E>> for Notifications {
                                     !item.state.no_notif
                                         && !item.removed
                                         && cat.type_ == item.type_
-                                        && addon.manifest.is_supported(&ResourceRef::without_extra(
-                                            "meta",
-                                            &item.type_,
-                                            &item.id,
-                                        ))
+                                        && addon.manifest.is_resource_supported(
+                                            &ResourceRef::without_extra(
+                                                "meta",
+                                                &item.type_,
+                                                &item.id,
+                                            ),
+                                        )
                                 })
                                 .sorted_by(|a, b| b.mtime.cmp(&a.mtime))
                                 .collect::<Vec<_>>();
@@ -63,7 +65,10 @@ impl<E: Env + 'static> UpdateWithCtx<Ctx<E>> for Notifications {
                                 .map(|items_page| -> (_, Effect) {
                                     let ids =
                                         items_page.iter().map(|x| x.id.clone()).collect::<Vec<_>>();
-                                    let extra_props = [(LAST_VID_IDS.into(), ids.join(","))];
+                                    let extra_props = [ExtraValue {
+                                        name: LAST_VID_IDS.into(),
+                                        value: ids.join(","),
+                                    }];
                                     let path = ResourceRef::with_extra(
                                         "catalog",
                                         &cat.type_,

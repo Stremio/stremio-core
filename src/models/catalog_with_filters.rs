@@ -7,8 +7,8 @@ use crate::models::ctx::Ctx;
 use crate::runtime::msg::{Action, ActionLoad, Internal, Msg};
 use crate::runtime::{Effects, Env, UpdateWithCtx};
 use crate::types::addon::{
-    DescriptorPreview, Manifest, ManifestCatalog, ManifestExtraProp, ResourceRef, ResourceRequest,
-    ResourceResponse,
+    DescriptorPreview, ExtraProp, ExtraValue, Manifest, ManifestCatalog, ResourceRef,
+    ResourceRequest, ResourceResponse,
 };
 use crate::types::profile::Profile;
 use crate::types::resource::MetaItemPreview;
@@ -79,7 +79,7 @@ pub struct SelectableType {
 pub struct Selectable {
     pub types: Vec<SelectableType>,
     pub catalogs: Vec<SelectableCatalog>,
-    pub extra: Vec<ManifestExtraProp>,
+    pub extra: Vec<ExtraProp>,
     pub has_prev_page: bool,
     pub has_next_page: bool,
 }
@@ -174,14 +174,18 @@ fn selectable_update<T: CatalogResourceAdapter>(
         })
         .filter_map(|(addon, manifest_catalog)| {
             manifest_catalog
-                .extra_iter()
+                .extra
+                .iter()
                 .filter(|extra| extra.is_required)
                 .map(|extra| {
                     extra
                         .options
                         .as_ref()
                         .and_then(|options| options.first())
-                        .map(|first_option| (extra.name.to_owned(), first_option.to_owned()))
+                        .map(|first_option| ExtraValue {
+                            name: extra.name.to_owned(),
+                            value: first_option.to_owned(),
+                        })
                 })
                 .collect::<Option<Vec<_>>>()
                 .map(|default_required_extra| SelectableCatalog {
@@ -273,17 +277,19 @@ fn selectable_update<T: CatalogResourceAdapter>(
             })
             .map(|manifest_catalog| {
                 let selectable_extra = manifest_catalog
-                    .extra_iter()
+                    .extra
+                    .iter()
                     .filter(|extra| extra.options.iter().flatten().next().is_some())
                     .map(|extra| extra.into_owned())
                     .collect();
                 let skip_supported = manifest_catalog
-                    .extra_iter()
+                    .extra
+                    .iter()
                     .any(|extra| extra.name == SKIP_EXTRA_NAME);
                 let first_page_requested = catalog
                     .request
                     .path
-                    .get_extra_first_val(SKIP_EXTRA_NAME)
+                    .get_extra_first_value(SKIP_EXTRA_NAME)
                     .and_then(|value| value.parse::<u32>().ok())
                     .map(|skip| skip == 0)
                     .unwrap_or(true);

@@ -1,10 +1,10 @@
-use crate::types::addon::ResourceRef;
+use crate::types::addon::{ExtraValue, ResourceRef};
 use derivative::Derivative;
+use derive_more::Deref;
 use either::Either;
 use semver::Version;
 use serde::{Deserialize, Serialize};
 use std::borrow::Cow;
-use std::ops::Deref;
 
 #[derive(Clone, PartialEq, Serialize, Deserialize)]
 #[cfg_attr(test, derive(Derivative, Debug))]
@@ -31,41 +31,42 @@ pub struct Manifest {
 }
 
 impl Manifest {
-    pub fn is_supported(
-        &self,
-        ResourceRef {
-            resource,
-            type_,
-            id,
-            extra,
-        }: &ResourceRef,
-    ) -> bool {
-        // catalogs are a special case
-        if resource == "catalog" {
-            return self
-                .catalogs
-                .iter()
-                .any(|c| &c.type_ == type_ && &c.id == id && c.is_extra_supported(&extra));
+    pub fn is_resource_supported(&self, path: &ResourceRef) -> bool {
+        match path.resource.as_str() {
+            "catalog" => self.catalogs.iter().any(|catalog| {
+                catalog.type_ == path.type_
+                    && catalog.id == path.id
+                    && catalog.is_extra_supported(&path.extra)
+            }),
+            "addon_catalog" => self.addon_catalogs.iter().any(|catalog| {
+                catalog.type_ == path.type_
+                    && catalog.id == path.id
+                    && catalog.is_extra_supported(&path.extra)
+            }),
+            _ => {
+                let resource = match self
+                    .resources
+                    .iter()
+                    .find(|resource| resource.name() == path.resource)
+                {
+                    Some(resource) => resource,
+                    None => return false,
+                };
+                let types = match resource {
+                    ManifestResource::Short(_) => Some(&self.types),
+                    ManifestResource::Full { types, .. } => types.as_ref(),
+                };
+                let id_prefixes = match resource {
+                    ManifestResource::Short(_) => self.id_prefixes.as_ref(),
+                    ManifestResource::Full { id_prefixes, .. } => id_prefixes.as_ref(),
+                };
+                let type_supported = types.map_or(false, |types| types.contains(&path.type_));
+                let id_supported = id_prefixes.map_or(true, |id_prefixes| {
+                    id_prefixes.iter().any(|prefix| path.id.starts_with(prefix))
+                });
+                type_supported && id_supported
+            }
         }
-        let res = match self.resources.iter().find(|res| res.name() == resource) {
-            None => return false,
-            Some(resource) => resource,
-        };
-        let types = match res {
-            ManifestResource::Short(_) => Some(&self.types),
-            ManifestResource::Full { types, .. } => types.as_ref(),
-        };
-        let id_prefixes = match res {
-            ManifestResource::Short(_) => self.id_prefixes.as_ref(),
-            ManifestResource::Full { id_prefixes, .. } => id_prefixes.as_ref(),
-        };
-        // types MUST contain type_
-        // and if there is id_prefixes, our id should start with at least one of them
-        let is_types_match = types.map_or(false, |types| types.contains(type_));
-        let is_id_match = id_prefixes.map_or(true, |prefixes| {
-            prefixes.iter().any(|pref| id.starts_with(pref))
-        });
-        is_types_match && is_id_match
     }
 }
 
@@ -82,93 +83,6 @@ pub struct ManifestPreview {
     pub logo: Option<String>,
     pub background: Option<String>,
     pub types: Vec<String>,
-}
-
-#[derive(Clone, PartialEq, Serialize, Deserialize)]
-#[cfg_attr(test, derive(Debug))]
-#[serde(rename_all = "camelCase")]
-pub struct ManifestCatalog {
-    #[serde(rename = "type")]
-    pub type_: String,
-    pub id: String,
-    pub name: Option<String>,
-    #[serde(flatten)]
-    pub extra: ManifestExtra,
-}
-
-impl ManifestCatalog {
-    pub fn extra_iter<'a>(&'a self) -> impl Iterator<Item = Cow<ManifestExtraProp>> + 'a {
-        match &self.extra {
-            ManifestExtra::Full { props } => Either::Left(props.iter().map(Cow::Borrowed)),
-            ManifestExtra::Short {
-                required,
-                supported,
-            } => Either::Right(supported.iter().map(move |name| {
-                Cow::Owned(ManifestExtraProp {
-                    name: name.to_owned(),
-                    is_required: required.contains(name),
-                    ..Default::default()
-                })
-            })),
-        }
-    }
-    pub fn is_extra_supported(&self, extra: &[(String, String)]) -> bool {
-        let all_supported = extra
-            .iter()
-            .all(|(k, _)| self.extra_iter().any(|e| k == &e.name));
-        let requirements_satisfied = self
-            .extra_iter()
-            .filter(|e| e.is_required)
-            .all(|e| extra.iter().any(|(k, _)| k == &e.name));
-        all_supported && requirements_satisfied
-    }
-}
-
-#[derive(Derivative, Clone, PartialEq, Serialize, Deserialize)]
-#[derivative(Default)]
-#[cfg_attr(test, derive(Debug))]
-#[serde(untagged)]
-pub enum ManifestExtra {
-    #[derivative(Default)]
-    Full {
-        #[serde(rename = "extra")]
-        props: Vec<ManifestExtraProp>,
-    },
-    Short {
-        #[serde(default, rename = "extraRequired")]
-        required: Vec<String>,
-        #[serde(default, rename = "extraSupported")]
-        supported: Vec<String>,
-    },
-}
-
-#[derive(Clone, PartialEq, Serialize, Deserialize)]
-#[cfg_attr(test, derive(Debug))]
-pub struct OptionsLimit(pub usize);
-
-impl Default for OptionsLimit {
-    fn default() -> OptionsLimit {
-        OptionsLimit(1)
-    }
-}
-
-impl Deref for OptionsLimit {
-    type Target = usize;
-    fn deref(&self) -> &Self::Target {
-        &self.0
-    }
-}
-
-#[derive(Default, Clone, PartialEq, Serialize, Deserialize)]
-#[cfg_attr(test, derive(Debug))]
-#[serde(rename_all = "camelCase")]
-pub struct ManifestExtraProp {
-    pub name: String,
-    #[serde(default)]
-    pub is_required: bool,
-    pub options: Option<Vec<String>>,
-    #[serde(default)]
-    pub options_limit: OptionsLimit,
 }
 
 #[derive(Clone, PartialEq, Serialize, Deserialize)]
@@ -190,5 +104,95 @@ impl ManifestResource {
             ManifestResource::Short(name) => name,
             ManifestResource::Full { name, .. } => name,
         }
+    }
+}
+
+#[derive(Clone, PartialEq, Serialize, Deserialize)]
+#[cfg_attr(test, derive(Debug))]
+#[serde(rename_all = "camelCase")]
+pub struct ManifestCatalog {
+    #[serde(rename = "type")]
+    pub type_: String,
+    pub id: String,
+    pub name: Option<String>,
+    #[serde(flatten)]
+    pub extra: ManifestExtra,
+}
+
+impl ManifestCatalog {
+    pub fn is_extra_supported(&self, extra: &[ExtraValue]) -> bool {
+        let all_supported = extra.iter().all(|extra_value| {
+            self.extra
+                .iter()
+                .any(|extra_prop| extra_prop.name == extra_value.name)
+        });
+        let required_satisfied = self
+            .extra
+            .iter()
+            .filter(|extra_prop| extra_prop.is_required)
+            .all(|extra_prop| {
+                extra
+                    .iter()
+                    .any(|extra_value| extra_value.name == extra_prop.name)
+            });
+        all_supported && required_satisfied
+    }
+}
+
+#[derive(Derivative, Clone, PartialEq, Serialize, Deserialize)]
+#[derivative(Default)]
+#[cfg_attr(test, derive(Debug))]
+#[serde(untagged)]
+pub enum ManifestExtra {
+    #[derivative(Default)]
+    Full {
+        #[serde(rename = "extra")]
+        props: Vec<ExtraProp>,
+    },
+    Short {
+        #[serde(default, rename = "extraRequired")]
+        required: Vec<String>,
+        #[serde(default, rename = "extraSupported")]
+        supported: Vec<String>,
+    },
+}
+
+impl ManifestExtra {
+    pub fn iter<'a>(&'a self) -> impl Iterator<Item = Cow<ExtraProp>> + 'a {
+        match &self {
+            ManifestExtra::Full { props } => Either::Left(props.iter().map(Cow::Borrowed)),
+            ManifestExtra::Short {
+                required,
+                supported,
+            } => Either::Right(supported.iter().map(move |name| {
+                Cow::Owned(ExtraProp {
+                    name: name.to_owned(),
+                    is_required: required.contains(name),
+                    ..Default::default()
+                })
+            })),
+        }
+    }
+}
+
+#[derive(Default, Clone, PartialEq, Serialize, Deserialize)]
+#[cfg_attr(test, derive(Debug))]
+#[serde(rename_all = "camelCase")]
+pub struct ExtraProp {
+    pub name: String,
+    #[serde(default)]
+    pub is_required: bool,
+    pub options: Option<Vec<String>>,
+    #[serde(default)]
+    pub options_limit: OptionsLimit,
+}
+
+#[derive(Clone, Deref, PartialEq, Serialize, Deserialize)]
+#[cfg_attr(test, derive(Debug))]
+pub struct OptionsLimit(pub usize);
+
+impl Default for OptionsLimit {
+    fn default() -> OptionsLimit {
+        OptionsLimit(1)
     }
 }

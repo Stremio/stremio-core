@@ -5,13 +5,13 @@ use crate::models::common::{
 use crate::models::ctx::Ctx;
 use crate::runtime::msg::{Action, ActionLoad, Internal, Msg};
 use crate::runtime::{Effects, Env, UpdateWithCtx};
-use crate::types::addon::{AggrRequest, ExtraProp};
+use crate::types::addon::{AggrRequest, ExtraValue};
 use crate::types::resource::MetaItemPreview;
 use serde::{Deserialize, Serialize};
 
 #[derive(Clone, PartialEq, Serialize, Deserialize)]
 pub struct Selected {
-    pub extra: Vec<ExtraProp>,
+    pub extra: Vec<ExtraValue>,
 }
 
 #[derive(Default, Serialize)]
