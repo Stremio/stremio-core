@@ -185,7 +185,7 @@ pub fn serialize_discover(
                         is_required: &extra_prop.is_required,
                         options: match &extra_prop.options {
                             Some(options) => {
-                                let none_option = if extra_prop.is_required {
+                                let none_option = if !extra_prop.is_required {
                                     Some(_ExtraOption {
                                         value: None,
                                         deep_links: MetaCatalogResourceDeepLinks::from((
