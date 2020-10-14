@@ -30,20 +30,17 @@ impl ExtraExt for Vec<ExtraValue> {
     ) -> Vec<&'a ExtraValue> {
         let (extra, other_extra) = self
             .iter()
-            .partition::<Vec<&ExtraValue>, _>(|&ExtraValue { name, .. }| *name == prop.name);
+            .partition::<Vec<&ExtraValue>, _>(|ev| ev.name == prop.name);
         let extra = match value {
             Some(value) if *prop.options_limit == 1 => vec![value],
             Some(value) if *prop.options_limit > 1 => {
-                if extra
-                    .iter()
-                    .any(|extra_value| extra_value.value == value.value)
-                {
+                if extra.iter().any(|ev| ev.value == value.value) {
                     extra
                         .into_iter()
-                        .filter(|extra_value| extra_value.value != value.value)
-                        .collect::<Vec<_>>()
+                        .filter(|ev| ev.value != value.value)
+                        .collect()
                 } else {
-                    extra.into_iter().chain(vec![value]).collect::<Vec<_>>()
+                    extra.into_iter().chain(vec![value]).collect()
                 }
             }
             None if !prop.is_required => vec![],
