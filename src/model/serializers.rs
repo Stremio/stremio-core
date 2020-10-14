@@ -31,7 +31,7 @@ pub fn serialize_catalogs_with_extra(
     struct _ResourceLoadable<'a> {
         request: &'a ResourceRequest,
         content: Loadable<Vec<_MetaItemPreview<'a>>, &'a ResourceError>,
-        origin_name: &'a str,
+        addon: Option<&'a Descriptor>,
         deep_links: MetaCatalogResourceDeepLinks,
     }
     #[derive(Serialize)]
@@ -59,13 +59,11 @@ pub fn serialize_catalogs_with_extra(
                     Loadable::Loading => Loadable::Loading,
                     Loadable::Err(error) => Loadable::Err(&error),
                 },
-                origin_name: ctx
+                addon: ctx
                     .profile
                     .addons
                     .iter()
-                    .find(|addon| addon.transport_url == catalog_resource.request.base)
-                    .map(|addon| addon.manifest.name.as_ref())
-                    .unwrap_or_else(|| catalog_resource.request.base.as_str()),
+                    .find(|addon| addon.transport_url == catalog_resource.request.base),
                 deep_links: MetaCatalogResourceDeepLinks::from(&catalog_resource.request),
             })
             .collect::<Vec<_>>(),
