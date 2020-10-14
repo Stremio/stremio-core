@@ -6,7 +6,7 @@ use chrono::Utc;
 use serde_test::{assert_de_tokens, assert_tokens, Token};
 
 #[test]
-fn ser_de_library_item() {
+fn library_item() {
     assert_tokens(
         &vec![
             LibraryItem {

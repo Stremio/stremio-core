@@ -5,7 +5,7 @@ use chrono::Utc;
 use serde_test::{assert_de_tokens, assert_tokens, Token};
 
 #[test]
-fn ser_de_meta_item() {
+fn meta_item() {
     assert_tokens(
         &vec![
             MetaItem {
