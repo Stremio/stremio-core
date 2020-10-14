@@ -24,5 +24,6 @@ mod deserialize_subtitles;
 mod deserialize_video;
 mod library_item;
 mod meta_item;
+mod poster_shape;
 mod serialize_api_request;
 mod serialize_api_result;
