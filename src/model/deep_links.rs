@@ -24,9 +24,9 @@ const URI_COMPONENT_ENCODE_SET: &AsciiSet = &NON_ALPHANUMERIC
 
 #[derive(Serialize)]
 pub struct LibraryItemDeepLinks {
-    pub meta_details_videos: Option<String>,
-    pub meta_details_streams: Option<String>,
-    pub player: Option<String>,
+    meta_details_videos: Option<String>,
+    meta_details_streams: Option<String>,
+    player: Option<String>,
 }
 
 impl From<&LibraryItem> for LibraryItemDeepLinks {
@@ -62,8 +62,8 @@ impl From<&LibraryItem> for LibraryItemDeepLinks {
 
 #[derive(Serialize)]
 pub struct MetaItemDeepLinks {
-    pub meta_details_videos: Option<String>,
-    pub meta_details_streams: Option<String>,
+    meta_details_videos: Option<String>,
+    meta_details_streams: Option<String>,
 }
 
 impl From<&MetaItemPreview> for MetaItemDeepLinks {
@@ -126,8 +126,8 @@ impl From<&MetaItem> for MetaItemDeepLinks {
 
 #[derive(Serialize)]
 pub struct VideoDeepLinks {
-    pub meta_details_streams: String,
-    pub player: Option<String>,
+    meta_details_streams: String,
+    player: Option<String>,
 }
 
 impl From<(&Video, &ResourceRequest)> for VideoDeepLinks {
@@ -165,7 +165,7 @@ impl From<(&Video, &ResourceRequest)> for VideoDeepLinks {
 
 #[derive(Serialize)]
 pub struct StreamDeepLinks {
-    pub player: String,
+    player: String,
 }
 
 impl From<&Stream> for StreamDeepLinks {
@@ -205,7 +205,7 @@ impl From<(&Stream, &ResourceRequest, &ResourceRequest)> for StreamDeepLinks {
 
 #[derive(Serialize)]
 pub struct MetaCatalogResourceDeepLinks {
-    pub discover: String,
+    discover: String,
 }
 
 impl From<&ResourceRequest> for MetaCatalogResourceDeepLinks {
@@ -244,7 +244,7 @@ impl From<(&Url, &String, &String, Vec<&ExtraValue>)> for MetaCatalogResourceDee
 
 #[derive(Serialize)]
 pub struct LibraryDeepLinks {
-    pub library: String,
+    library: String,
 }
 
 impl From<&str> for LibraryDeepLinks {
