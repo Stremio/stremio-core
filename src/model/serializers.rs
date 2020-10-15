@@ -105,35 +105,35 @@ pub fn serialize_discover(
     ctx: &Ctx<WebEnv>,
 ) -> JsValue {
     #[derive(Serialize)]
-    pub struct _ExtraOption<'a> {
-        pub value: Option<&'a String>,
-        pub deep_links: MetaCatalogResourceDeepLinks,
+    struct _ExtraOption<'a> {
+        value: Option<&'a String>,
+        deep_links: MetaCatalogResourceDeepLinks,
     }
     #[derive(Serialize)]
-    pub struct _SelectableType<'a> {
-        pub name: &'a String,
-        pub request: &'a ResourceRequest,
-        pub deep_links: MetaCatalogResourceDeepLinks,
+    struct _SelectableType<'a> {
+        name: &'a String,
+        request: &'a ResourceRequest,
+        deep_links: MetaCatalogResourceDeepLinks,
     }
     #[derive(Serialize)]
-    pub struct _SelectableCatalog<'a> {
-        pub name: &'a String,
-        pub request: &'a ResourceRequest,
-        pub deep_links: MetaCatalogResourceDeepLinks,
+    struct _SelectableCatalog<'a> {
+        name: &'a String,
+        request: &'a ResourceRequest,
+        deep_links: MetaCatalogResourceDeepLinks,
     }
     #[derive(Serialize)]
-    pub struct _ExtraProp<'a> {
-        pub name: &'a String,
-        pub is_required: &'a bool,
-        pub options: Vec<_ExtraOption<'a>>,
+    struct _ExtraProp<'a> {
+        name: &'a String,
+        is_required: &'a bool,
+        options: Vec<_ExtraOption<'a>>,
     }
     #[derive(Serialize)]
     struct _Selectable<'a> {
-        pub types: Vec<_SelectableType<'a>>,
-        pub catalogs: Vec<_SelectableCatalog<'a>>,
-        pub extra: Vec<_ExtraProp<'a>>,
-        pub has_prev_page: &'a bool,
-        pub has_next_page: &'a bool,
+        types: Vec<_SelectableType<'a>>,
+        catalogs: Vec<_SelectableCatalog<'a>>,
+        extra: Vec<_ExtraProp<'a>>,
+        has_prev_page: &'a bool,
+        has_next_page: &'a bool,
     }
     #[derive(Serialize)]
     struct _MetaItemPreview<'a> {
