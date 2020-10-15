@@ -294,10 +294,8 @@ fn selectable_update<T: CatalogResourceAdapter>(
                                                     .request
                                                     .path
                                                     .extra
-                                                    .extend_one_ref(&extra_prop, None)
-                                                    .into_iter()
-                                                    .cloned()
-                                                    .collect::<Vec<_>>(),
+                                                    .to_owned()
+                                                    .extend_one(&extra_prop, None),
                                             ),
                                         },
                                     }
@@ -312,20 +310,13 @@ fn selectable_update<T: CatalogResourceAdapter>(
                                                 T::resource_name(),
                                                 &manifest_catalog.type_,
                                                 &manifest_catalog.id,
-                                                &catalog
-                                                    .request
-                                                    .path
-                                                    .extra
-                                                    .extend_one_ref(
-                                                        &extra_prop,
-                                                        Some(&ExtraValue {
-                                                            name: extra_prop.name.to_owned(),
-                                                            value: value.to_owned(),
-                                                        }),
-                                                    )
-                                                    .into_iter()
-                                                    .cloned()
-                                                    .collect::<Vec<_>>(),
+                                                &catalog.request.path.extra.to_owned().extend_one(
+                                                    &extra_prop,
+                                                    Some(ExtraValue {
+                                                        name: extra_prop.name.to_owned(),
+                                                        value: value.to_owned(),
+                                                    }),
+                                                ),
                                             ),
                                         },
                                     })

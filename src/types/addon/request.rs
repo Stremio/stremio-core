@@ -14,22 +14,18 @@ pub struct ExtraValue {
 }
 
 pub trait ExtraExt {
-    fn extend_one_ref<'a>(
-        &'a self,
-        prop: &'a ExtraProp,
-        value: Option<&'a ExtraValue>,
-    ) -> Vec<&'a ExtraValue>;
+    fn extend_one(self, prop: &ExtraProp, value: Option<ExtraValue>) -> Self;
 }
 
 impl ExtraExt for Vec<ExtraValue> {
-    fn extend_one_ref<'a>(
-        &'a self,
-        prop: &'a ExtraProp,
-        value: Option<&'a ExtraValue>,
-    ) -> Vec<&'a ExtraValue> {
+    fn extend_one(self, prop: &ExtraProp, value: Option<ExtraValue>) -> Self {
+        if value.as_ref().map(|ev| &ev.name) != Some(&prop.name) {
+            return self;
+        }
+
         let (extra, other_extra) = self
-            .iter()
-            .partition::<Vec<&ExtraValue>, _>(|ev| ev.name == prop.name);
+            .into_iter()
+            .partition::<Vec<ExtraValue>, _>(|ev| ev.name == prop.name);
         let extra = match value {
             Some(value) if *prop.options_limit == 1 => vec![value],
             Some(value) if *prop.options_limit > 1 => {
