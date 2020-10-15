@@ -30,9 +30,11 @@ impl LibraryFilter for NotRemovedFilter {
     }
 }
 
-#[derive(Clone, PartialEq, EnumIter, Serialize, Deserialize)]
+#[derive(Derivative, Clone, PartialEq, EnumIter, Serialize, Deserialize)]
+#[derivative(Default)]
 #[serde(rename_all = "lowercase")]
 pub enum Sort {
+    #[derivative(Default)]
     LastWatched,
     Name,
     TimesWatched,
@@ -42,6 +44,7 @@ pub enum Sort {
 pub struct Selected {
     #[serde(rename = "type")]
     pub type_: Option<String>,
+    #[serde(default)]
     pub sort: Sort,
 }
 
