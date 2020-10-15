@@ -65,13 +65,14 @@ pub struct Selected {
 
 #[derive(Clone, PartialEq, Serialize)]
 pub struct SelectableCatalog {
-    pub name: String,
+    pub catalog: String,
     pub request: ResourceRequest,
 }
 
 #[derive(PartialEq, Serialize)]
 pub struct SelectableType {
-    pub name: String,
+    #[serde(rename = "type")]
+    pub type_: String,
     pub request: ResourceRequest,
 }
 
@@ -176,7 +177,7 @@ fn selectable_update<T: CatalogResourceAdapter>(
             manifest_catalog
                 .default_required_extra()
                 .map(|default_required_extra| SelectableCatalog {
-                    name: manifest_catalog
+                    catalog: manifest_catalog
                         .name
                         .as_ref()
                         .unwrap_or(&manifest_catalog.id)
@@ -200,7 +201,7 @@ fn selectable_update<T: CatalogResourceAdapter>(
                 .iter()
                 .unique_by(|selectable_catalog| &selectable_catalog.request.path.type_)
                 .map(|selectable_catalog| SelectableType {
-                    name: selectable_catalog.request.path.type_.to_owned(),
+                    type_: selectable_catalog.request.path.type_.to_owned(),
                     request: selectable_catalog.request.to_owned(),
                 })
                 .collect::<Vec<_>>();
@@ -228,7 +229,7 @@ fn selectable_update<T: CatalogResourceAdapter>(
                 })
                 .unique_by(|selectable_catalog| &selectable_catalog.request.path.type_)
                 .map(|selectable_catalog| SelectableType {
-                    name: selectable_catalog.request.path.type_.to_owned(),
+                    type_: selectable_catalog.request.path.type_.to_owned(),
                     request: selectable_catalog.request.to_owned(),
                 })
                 .collect::<Vec<_>>();
@@ -248,7 +249,7 @@ fn selectable_update<T: CatalogResourceAdapter>(
     let selectable_types = selectable_types
         .into_iter()
         .sorted_by(|a, b| {
-            compare_with_priorities(a.name.as_ref(), b.name.as_ref(), &*TYPE_PRIORITIES)
+            compare_with_priorities(a.type_.as_ref(), b.type_.as_ref(), &*TYPE_PRIORITIES)
         })
         .rev()
         .collect::<Vec<_>>();
