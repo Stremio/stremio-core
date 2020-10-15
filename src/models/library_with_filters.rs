@@ -60,6 +60,22 @@ pub struct LibraryWithFilters<F> {
     pub filter: PhantomData<F>,
 }
 
+impl<F: LibraryFilter> LibraryWithFilters<F> {
+    pub fn new(library: &LibraryBucket) -> (Self, Effects) {
+        let mut selectable = Selectable::default();
+        let effects = selectable_update::<F>(&mut selectable, &library);
+        (
+            LibraryWithFilters {
+                selectable,
+                selected: None,
+                library_items: vec![],
+                filter: PhantomData,
+            },
+            effects.unchanged(),
+        )
+    }
+}
+
 impl<E, F> UpdateWithCtx<Ctx<E>> for LibraryWithFilters<F>
 where
     E: Env + 'static,
