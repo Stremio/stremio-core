@@ -192,8 +192,8 @@ fn selectable_update<T: CatalogResourceAdapter>(
                     },
                 })
         })
-        .unique_by(|selectable_catalog| selectable_catalog.request.to_owned())
-        .collect::<Vec<SelectableCatalog>>();
+        .dedup_by(|a, b| a.request == b.request)
+        .collect::<Vec<_>>();
     let (selectable_types, selectable_catalogs) = match T::selectable_priority() {
         SelectablePriority::Type => {
             let selectable_types = selectable_catalogs

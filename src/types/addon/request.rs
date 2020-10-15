@@ -3,10 +3,9 @@ use derive_more::{From, Into};
 use percent_encoding::{utf8_percent_encode, NON_ALPHANUMERIC};
 use serde::{Deserialize, Serialize};
 use std::fmt;
-use std::hash::Hash;
 use url::{form_urlencoded, Url};
 
-#[derive(Clone, From, Into, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[derive(Clone, From, Into, PartialEq, Serialize, Deserialize)]
 #[cfg_attr(test, derive(Debug))]
 #[serde(from = "(String, String)", into = "(String, String)")]
 pub struct ExtraValue {
@@ -50,7 +49,7 @@ impl ExtraExt for Vec<ExtraValue> {
     }
 }
 
-#[derive(Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[derive(Clone, PartialEq, Serialize, Deserialize)]
 #[cfg_attr(test, derive(Debug))]
 pub struct ResourceRef {
     pub resource: String,
@@ -108,7 +107,7 @@ impl fmt::Display for ResourceRef {
     }
 }
 
-#[derive(Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[derive(Clone, PartialEq, Serialize, Deserialize)]
 #[cfg_attr(test, derive(Debug))]
 pub struct ResourceRequest {
     pub base: Url,
