@@ -1,4 +1,4 @@
-use crate::types::addon::ManifestPreview;
+use crate::types::addon::{DescriptorFlags, Manifest, ManifestPreview};
 use crate::types::library::{LibraryItemBehaviorHints, LibraryItemState};
 use crate::types::resource::{MetaItemBehaviorHints, PosterShape};
 use serde_test::Token;
@@ -107,6 +107,65 @@ impl DefaultTokens for ManifestPreview {
             Token::Str("types"),
             Token::Seq { len: Some(0) },
             Token::SeqEnd,
+            Token::StructEnd,
+        ]
+    }
+}
+
+impl DefaultTokens for Manifest {
+    fn default_token() -> Vec<Token> {
+        vec![
+            Token::Struct {
+                name: "Manifest",
+                len: 13,
+            },
+            Token::Str("id"),
+            Token::Str(""),
+            Token::Str("version"),
+            Token::Str("0.0.1"),
+            Token::Str("name"),
+            Token::Str(""),
+            Token::Str("contactEmail"),
+            Token::None,
+            Token::Str("description"),
+            Token::None,
+            Token::Str("logo"),
+            Token::None,
+            Token::Str("background"),
+            Token::None,
+            Token::Str("types"),
+            Token::Seq { len: Some(0) },
+            Token::SeqEnd,
+            Token::Str("resources"),
+            Token::Seq { len: Some(0) },
+            Token::SeqEnd,
+            Token::Str("idPrefixes"),
+            Token::None,
+            Token::Str("catalogs"),
+            Token::Seq { len: Some(0) },
+            Token::SeqEnd,
+            Token::Str("addonCatalogs"),
+            Token::Seq { len: Some(0) },
+            Token::SeqEnd,
+            Token::Str("behaviorHints"),
+            Token::Map { len: Some(0) },
+            Token::MapEnd,
+            Token::StructEnd,
+        ]
+    }
+}
+
+impl DefaultTokens for DescriptorFlags {
+    fn default_token() -> Vec<Token> {
+        vec![
+            Token::Struct {
+                name: "DescriptorFlags",
+                len: 2,
+            },
+            Token::Str("official"),
+            Token::Bool(false),
+            Token::Str("protected"),
+            Token::Bool(false),
             Token::StructEnd,
         ]
     }
