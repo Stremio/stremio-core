@@ -137,6 +137,22 @@ impl ManifestCatalog {
             });
         all_supported && required_satisfied
     }
+    pub fn default_required_extra(&self) -> Option<Vec<ExtraValue>> {
+        self.extra
+            .iter()
+            .filter(|extra| extra.is_required)
+            .map(|extra| {
+                extra
+                    .options
+                    .as_ref()
+                    .and_then(|options| options.first())
+                    .map(|first_option| ExtraValue {
+                        name: extra.name.to_owned(),
+                        value: first_option.to_owned(),
+                    })
+            })
+            .collect::<Option<Vec<_>>>()
+    }
 }
 
 #[derive(Derivative, Clone, PartialEq, Serialize, Deserialize)]

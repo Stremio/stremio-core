@@ -174,20 +174,7 @@ fn selectable_update<T: CatalogResourceAdapter>(
         })
         .filter_map(|(addon, manifest_catalog)| {
             manifest_catalog
-                .extra
-                .iter()
-                .filter(|extra| extra.is_required)
-                .map(|extra| {
-                    extra
-                        .options
-                        .as_ref()
-                        .and_then(|options| options.first())
-                        .map(|first_option| ExtraValue {
-                            name: extra.name.to_owned(),
-                            value: first_option.to_owned(),
-                        })
-                })
-                .collect::<Option<Vec<_>>>()
+                .default_required_extra()
                 .map(|default_required_extra| SelectableCatalog {
                     name: manifest_catalog
                         .name
