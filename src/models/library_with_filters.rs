@@ -7,21 +7,8 @@ use derivative::Derivative;
 use itertools::Itertools;
 use serde::{Deserialize, Serialize};
 use std::marker::PhantomData;
-
-#[derive(Clone, PartialEq, Serialize, Deserialize)]
-#[serde(rename_all = "lowercase")]
-pub enum Sort {
-    LastWatched,
-    TimesWatched,
-    Name,
-}
-
-#[derive(Clone, PartialEq, Serialize, Deserialize)]
-pub struct Selected {
-    #[serde(rename = "type")]
-    pub type_: Option<String>,
-    pub sort: Sort,
-}
+use strum::IntoEnumIterator;
+use strum_macros::EnumIter;
 
 pub trait LibraryFilter {
     fn predicate(library_item: &LibraryItem) -> bool;
@@ -43,13 +30,50 @@ impl LibraryFilter for NotRemovedFilter {
     }
 }
 
+#[derive(Clone, PartialEq, EnumIter, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum Sort {
+    LastWatched,
+    Name,
+    TimesWatched,
+}
+
+#[derive(Clone, PartialEq, Serialize, Deserialize)]
+pub struct Selected {
+    #[serde(rename = "type")]
+    pub type_: Option<String>,
+    pub sort: Sort,
+}
+
+#[derive(Default, PartialEq, Serialize)]
+pub struct Selectable {
+    pub types: Vec<String>,
+    pub sorts: Vec<Sort>,
+}
+
 #[derive(Derivative, Serialize)]
 #[derivative(Default)]
 pub struct LibraryWithFilters<F> {
     pub selected: Option<Selected>,
-    pub types: Vec<String>,
+    pub selectable: Selectable,
     pub library_items: Vec<LibraryItem>,
     pub filter: PhantomData<F>,
+}
+
+impl<F: LibraryFilter> LibraryWithFilters<F> {
+    pub fn new(library: &LibraryBucket) -> (Self, Effects) {
+        let mut selectable = Selectable::default();
+        let effects = selectable_update::<F>(&mut selectable, &library);
+        (
+            LibraryWithFilters {
+                selectable,
+                selected: None,
+                library_items: vec![],
+                filter: PhantomData,
+            },
+            effects.unchanged(),
+        )
+    }
 }
 
 impl<E, F> UpdateWithCtx<Ctx<E>> for LibraryWithFilters<F>
@@ -78,29 +102,37 @@ where
                 selected_effects.join(library_items_effects)
             }
             Msg::Internal(Internal::LibraryChanged(_)) => {
-                let types_effects = types_update::<F>(&mut self.types, &ctx.library);
+                let selectable_effects = selectable_update::<F>(&mut self.selectable, &ctx.library);
                 let library_items_effects = library_items_update::<F>(
                     &mut self.library_items,
                     &self.selected,
                     &ctx.library,
                 );
-                types_effects.join(library_items_effects)
+                selectable_effects.join(library_items_effects)
             }
             _ => Effects::none().unchanged(),
         }
     }
 }
 
-fn types_update<F: LibraryFilter>(types: &mut Vec<String>, library: &LibraryBucket) -> Effects {
-    let next_types = library
+fn selectable_update<F: LibraryFilter>(
+    selectable: &mut Selectable,
+    library: &LibraryBucket,
+) -> Effects {
+    let selectable_types = library
         .items
         .values()
         .filter(|library_item| F::predicate(library_item))
         .map(|library_item| library_item.type_.to_owned())
         .unique()
         .collect::<Vec<_>>();
-    if *types != next_types {
-        *types = next_types;
+    let selectable_sorts = Sort::iter().collect();
+    let next_selectable = Selectable {
+        types: selectable_types,
+        sorts: selectable_sorts,
+    };
+    if *selectable != next_selectable {
+        *selectable = next_selectable;
         Effects::none()
     } else {
         Effects::none().unchanged()
