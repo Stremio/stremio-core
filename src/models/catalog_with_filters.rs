@@ -7,11 +7,12 @@ use crate::models::ctx::Ctx;
 use crate::runtime::msg::{Action, ActionLoad, Internal, Msg};
 use crate::runtime::{Effects, Env, UpdateWithCtx};
 use crate::types::addon::{
-    DescriptorPreview, ExtraProp, ExtraValue, Manifest, ManifestCatalog, ResourceRef,
+    DescriptorPreview, ExtraExt, ExtraValue, Manifest, ManifestCatalog, ResourceRef,
     ResourceRequest, ResourceResponse,
 };
 use crate::types::profile::Profile;
 use crate::types::resource::MetaItemPreview;
+use boolinator::Boolinator;
 use itertools::Itertools;
 use serde::{Deserialize, Serialize};
 use std::convert::TryFrom;
@@ -76,11 +77,23 @@ pub struct SelectableType {
     pub request: ResourceRequest,
 }
 
+#[derive(PartialEq, Serialize)]
+pub struct SelectableExtraOption {
+    pub value: Option<String>,
+    pub request: ResourceRequest,
+}
+
+#[derive(PartialEq, Serialize)]
+pub struct SelectableExtra {
+    pub name: String,
+    pub options: Vec<SelectableExtraOption>,
+}
+
 #[derive(Default, PartialEq, Serialize)]
 pub struct Selectable {
     pub types: Vec<SelectableType>,
     pub catalogs: Vec<SelectableCatalog>,
-    pub extra: Vec<ExtraProp>,
+    pub extra: Vec<SelectableExtra>,
     pub has_prev_page: bool,
     pub has_next_page: bool,
 }
@@ -262,8 +275,67 @@ fn selectable_update<T: CatalogResourceAdapter>(
                 let selectable_extra = manifest_catalog
                     .extra
                     .iter()
-                    .filter(|extra| extra.options.iter().flatten().next().is_some())
-                    .map(|extra| extra.into_owned())
+                    .filter_map(|extra_prop| {
+                        extra_prop
+                            .options
+                            .as_ref()
+                            .filter(|options| !options.is_empty())
+                            .map(|options| {
+                                let none_option = (!extra_prop.is_required).as_option().map(|_| {
+                                    SelectableExtraOption {
+                                        value: None,
+                                        request: ResourceRequest {
+                                            base: catalog.request.base.to_owned(),
+                                            path: ResourceRef::with_extra(
+                                                T::resource_name(),
+                                                &manifest_catalog.type_,
+                                                &manifest_catalog.id,
+                                                &catalog
+                                                    .request
+                                                    .path
+                                                    .extra
+                                                    .extend_one_ref(&extra_prop, None)
+                                                    .into_iter()
+                                                    .cloned()
+                                                    .collect::<Vec<_>>(),
+                                            ),
+                                        },
+                                    }
+                                });
+                                let options = options
+                                    .iter()
+                                    .map(|value| SelectableExtraOption {
+                                        value: Some(value.to_owned()),
+                                        request: ResourceRequest {
+                                            base: catalog.request.base.to_owned(),
+                                            path: ResourceRef::with_extra(
+                                                T::resource_name(),
+                                                &manifest_catalog.type_,
+                                                &manifest_catalog.id,
+                                                &catalog
+                                                    .request
+                                                    .path
+                                                    .extra
+                                                    .extend_one_ref(
+                                                        &extra_prop,
+                                                        Some(&ExtraValue {
+                                                            name: extra_prop.name.to_owned(),
+                                                            value: value.to_owned(),
+                                                        }),
+                                                    )
+                                                    .into_iter()
+                                                    .cloned()
+                                                    .collect::<Vec<_>>(),
+                                            ),
+                                        },
+                                    })
+                                    .collect::<Vec<_>>();
+                                SelectableExtra {
+                                    name: extra_prop.name.to_owned(),
+                                    options: none_option.into_iter().chain(options).collect(),
+                                }
+                            })
+                    })
                     .collect();
                 let skip_supported = manifest_catalog
                     .extra
