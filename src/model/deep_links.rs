@@ -243,14 +243,14 @@ impl From<(&Url, &String, &String, Vec<&ExtraValue>)> for MetaCatalogResourceDee
 }
 
 #[derive(Serialize)]
-pub struct ContinueWatchingDeepLinks {
-    pub continue_watching: String,
+pub struct LibraryDeepLinks {
+    pub library: String,
 }
 
-impl Default for ContinueWatchingDeepLinks {
-    fn default() -> Self {
-        ContinueWatchingDeepLinks {
-            continue_watching: "#/continuewatching".to_owned(),
+impl From<&str> for LibraryDeepLinks {
+    fn from(root: &str) -> Self {
+        LibraryDeepLinks {
+            library: format!("#/{}", root),
         }
     }
 }
