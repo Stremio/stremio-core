@@ -1,3 +1,4 @@
+use crate::types::addon::ManifestPreview;
 use crate::types::library::{LibraryItemBehaviorHints, LibraryItemState};
 use crate::types::resource::{MetaItemBehaviorHints, PosterShape};
 use serde_test::Token;
@@ -80,6 +81,33 @@ impl DefaultTokens for PosterShape {
             },
             Token::Str("poster"),
             Token::Unit,
+        ]
+    }
+}
+
+impl DefaultTokens for ManifestPreview {
+    fn default_token() -> Vec<Token> {
+        vec![
+            Token::Struct {
+                name: "ManifestPreview",
+                len: 7,
+            },
+            Token::Str("id"),
+            Token::Str(""),
+            Token::Str("version"),
+            Token::Str("0.0.1"),
+            Token::Str("name"),
+            Token::Str(""),
+            Token::Str("description"),
+            Token::None,
+            Token::Str("logo"),
+            Token::None,
+            Token::Str("background"),
+            Token::None,
+            Token::Str("types"),
+            Token::Seq { len: Some(0) },
+            Token::SeqEnd,
+            Token::StructEnd,
         ]
     }
 }
