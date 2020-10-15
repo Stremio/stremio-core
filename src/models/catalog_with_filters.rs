@@ -206,14 +206,13 @@ fn selectable_update<T: CatalogResourceAdapter>(
                 })
                 .collect::<Vec<_>>();
             let selectable_catalogs = selectable_catalogs
-                .iter()
+                .into_iter()
                 .filter(|selectable_catalog| match catalog {
                     Some(catalog) => {
                         selectable_catalog.request.path.type_ == catalog.request.path.type_
                     }
                     None => true,
                 })
-                .cloned()
                 .collect::<Vec<_>>();
             (selectable_types, selectable_catalogs)
         }
@@ -222,8 +221,8 @@ fn selectable_update<T: CatalogResourceAdapter>(
                 .iter()
                 .filter(|selectable_catalog| match catalog {
                     Some(catalog) => {
-                        selectable_catalog.request.path.id == catalog.request.path.id
-                            && selectable_catalog.request.base == catalog.request.base
+                        selectable_catalog.request.base == catalog.request.base
+                            && selectable_catalog.request.path.id == catalog.request.path.id
                     }
                     _ => true,
                 })
@@ -234,14 +233,10 @@ fn selectable_update<T: CatalogResourceAdapter>(
                 })
                 .collect::<Vec<_>>();
             let selectable_catalogs = selectable_catalogs
-                .iter()
-                .unique_by(|selectable_catalog| {
-                    (
-                        &selectable_catalog.request.base,
-                        &selectable_catalog.request.path.id,
-                    )
+                .into_iter()
+                .dedup_by(|a, b| {
+                    a.request.base == b.request.base && a.request.path.id == b.request.path.id
                 })
-                .cloned()
                 .collect::<Vec<_>>();
             (selectable_types, selectable_catalogs)
         }
