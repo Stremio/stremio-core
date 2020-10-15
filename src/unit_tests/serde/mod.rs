@@ -1,6 +1,6 @@
 mod default_token_ext;
+mod descriptor;
 mod descriptor_preview;
-mod deserialize_descriptor;
 mod deserialize_descriptor_flags;
 mod deserialize_library_bucket;
 mod deserialize_library_item_behavior_hints;
