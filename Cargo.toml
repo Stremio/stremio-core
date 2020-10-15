@@ -33,6 +33,6 @@ lazy_static = "1.4"
 itertools = "0.9"
 
 [dev-dependencies]
-serde_test = "1.0"
 tokio = { version = "0.2", features = ["rt-core"] }
 tokio-current-thread = "0.2.0-alpha.1"
+serde_test = "1.0"
