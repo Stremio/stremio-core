@@ -5,6 +5,7 @@ use serde::Serialize;
 use std::borrow::Borrow;
 use std::io;
 use std::io::Write;
+use stremio_core::models::library_with_filters::Sort;
 use stremio_core::types::addon::{ExtraValue, ResourceRequest};
 use stremio_core::types::library::LibraryItem;
 use stremio_core::types::resource::{MetaItem, MetaItemPreview, Stream, Video};
@@ -247,10 +248,30 @@ pub struct LibraryDeepLinks {
     library: String,
 }
 
-impl From<&str> for LibraryDeepLinks {
-    fn from(root: &str) -> Self {
+impl From<&String> for LibraryDeepLinks {
+    fn from(root: &String) -> Self {
         LibraryDeepLinks {
             library: format!("#/{}", root),
+        }
+    }
+}
+
+impl From<(&String, &Option<String>, &Sort)> for LibraryDeepLinks {
+    fn from((root, type_, sort): (&String, &Option<String>, &Sort)) -> Self {
+        LibraryDeepLinks {
+            library: match type_ {
+                Some(type_) => format!(
+                    "#/{}/{}?{}",
+                    root,
+                    utf8_percent_encode(type_, URI_COMPONENT_ENCODE_SET),
+                    query_params_encode(&[("sort", serde_json::to_string(sort).unwrap())])
+                ),
+                _ => format!(
+                    "#/{}?{}",
+                    root,
+                    query_params_encode(&[("sort", serde_json::to_string(sort).unwrap())])
+                ),
+            },
         }
     }
 }
