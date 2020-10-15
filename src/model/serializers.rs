@@ -1,6 +1,7 @@
 use crate::env::WebEnv;
 use crate::model::deep_links::{
-    LibraryItemDeepLinks, MetaCatalogResourceDeepLinks, MetaItemDeepLinks,
+    ContinueWatchingDeepLinks, LibraryItemDeepLinks, MetaCatalogResourceDeepLinks,
+    MetaItemDeepLinks,
 };
 use serde::Serialize;
 use stremio_core::models::catalog_with_filters::{
@@ -83,6 +84,7 @@ pub fn serialize_continue_watching_preview(
     #[derive(Serialize)]
     struct _ContinueWatchingPreview<'a> {
         library_items: Vec<_LibraryItem<'a>>,
+        deep_links: ContinueWatchingDeepLinks,
     }
     JsValue::from_serde(&_ContinueWatchingPreview {
         library_items: continue_watching_preview
@@ -93,6 +95,7 @@ pub fn serialize_continue_watching_preview(
                 deep_links: LibraryItemDeepLinks::from(library_item),
             })
             .collect::<Vec<_>>(),
+        deep_links: ContinueWatchingDeepLinks::default(),
     })
     .unwrap()
 }

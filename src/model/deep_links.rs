@@ -242,6 +242,19 @@ impl From<(&Url, &String, &String, Vec<&ExtraValue>)> for MetaCatalogResourceDee
     }
 }
 
+#[derive(Serialize)]
+pub struct ContinueWatchingDeepLinks {
+    pub continue_watching: String,
+}
+
+impl Default for ContinueWatchingDeepLinks {
+    fn default() -> Self {
+        ContinueWatchingDeepLinks {
+            continue_watching: "#/continuewatching".to_owned(),
+        }
+    }
+}
+
 fn gz_encode(value: String) -> io::Result<Vec<u8>> {
     let mut encoder = ZlibEncoder::new(Vec::new(), Compression::default());
     encoder.write_all(value.as_bytes())?;
