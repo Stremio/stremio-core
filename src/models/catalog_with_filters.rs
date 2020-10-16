@@ -67,6 +67,7 @@ pub struct Selected {
 #[derive(Clone, PartialEq, Serialize)]
 pub struct SelectableCatalog {
     pub catalog: String,
+    pub selected: bool,
     pub request: ResourceRequest,
 }
 
@@ -74,12 +75,14 @@ pub struct SelectableCatalog {
 pub struct SelectableType {
     #[serde(rename = "type")]
     pub type_: String,
+    pub selected: bool,
     pub request: ResourceRequest,
 }
 
 #[derive(PartialEq, Serialize)]
 pub struct SelectableExtraOption {
     pub value: Option<String>,
+    pub selected: bool,
     pub request: ResourceRequest,
 }
 
@@ -195,6 +198,13 @@ fn selectable_update<T: CatalogResourceAdapter>(
                         .as_ref()
                         .unwrap_or(&manifest_catalog.id)
                         .to_owned(),
+                    selected: catalog
+                        .as_ref()
+                        .map(|catalog| {
+                            catalog.request.base == addon.transport_url
+                                && catalog.request.path.id == manifest_catalog.id
+                        })
+                        .unwrap_or_default(),
                     request: ResourceRequest {
                         base: addon.transport_url.to_owned(),
                         path: ResourceRef::with_extra(
@@ -215,6 +225,12 @@ fn selectable_update<T: CatalogResourceAdapter>(
                 .unique_by(|selectable_catalog| &selectable_catalog.request.path.type_)
                 .map(|selectable_catalog| SelectableType {
                     type_: selectable_catalog.request.path.type_.to_owned(),
+                    selected: catalog
+                        .as_ref()
+                        .map(|catalog| {
+                            catalog.request.path.type_ == selectable_catalog.request.path.type_
+                        })
+                        .unwrap_or_default(),
                     request: selectable_catalog.request.to_owned(),
                 })
                 .collect::<Vec<_>>();
@@ -242,6 +258,12 @@ fn selectable_update<T: CatalogResourceAdapter>(
                 .unique_by(|selectable_catalog| &selectable_catalog.request.path.type_)
                 .map(|selectable_catalog| SelectableType {
                     type_: selectable_catalog.request.path.type_.to_owned(),
+                    selected: catalog
+                        .as_ref()
+                        .map(|catalog| {
+                            catalog.request.path.type_ == selectable_catalog.request.path.type_
+                        })
+                        .unwrap_or_default(),
                     request: selectable_catalog.request.to_owned(),
                 })
                 .collect::<Vec<_>>();
@@ -281,29 +303,39 @@ fn selectable_update<T: CatalogResourceAdapter>(
                             .as_ref()
                             .filter(|options| !options.is_empty())
                             .map(|options| {
-                                let none_option = (!extra_prop.is_required).as_option().map(|_| {
-                                    SelectableExtraOption {
-                                        value: None,
-                                        request: ResourceRequest {
-                                            base: catalog.request.base.to_owned(),
-                                            path: ResourceRef::with_extra(
-                                                T::resource_name(),
-                                                &manifest_catalog.type_,
-                                                &manifest_catalog.id,
-                                                &catalog
-                                                    .request
-                                                    .path
-                                                    .extra
-                                                    .to_owned()
-                                                    .extend_one(&extra_prop, None),
+                                let none_option =
+                                    (!extra_prop.is_required).as_option().map(|_| {
+                                        SelectableExtraOption {
+                                            value: None,
+                                            selected: catalog.request.path.extra.iter().all(
+                                                |extra_value| extra_value.name != extra_prop.name,
                                             ),
-                                        },
-                                    }
-                                });
+                                            request: ResourceRequest {
+                                                base: catalog.request.base.to_owned(),
+                                                path: ResourceRef::with_extra(
+                                                    T::resource_name(),
+                                                    &manifest_catalog.type_,
+                                                    &manifest_catalog.id,
+                                                    &catalog
+                                                        .request
+                                                        .path
+                                                        .extra
+                                                        .to_owned()
+                                                        .extend_one(&extra_prop, None),
+                                                ),
+                                            },
+                                        }
+                                    });
                                 let options = options
                                     .iter()
                                     .map(|value| SelectableExtraOption {
                                         value: Some(value.to_owned()),
+                                        selected: catalog.request.path.extra.iter().any(
+                                            |extra_value| {
+                                                extra_value.name == extra_prop.name
+                                                    && extra_value.value == *value
+                                            },
+                                        ),
                                         request: ResourceRequest {
                                             base: catalog.request.base.to_owned(),
                                             path: ResourceRef::with_extra(
