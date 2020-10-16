@@ -168,7 +168,7 @@ fn meta_item() {
         &[
             Token::Struct {
                 name: "MetaItem",
-                len: 16,
+                len: 10,
             },
             Token::Str("id"),
             Token::Str("id"),
