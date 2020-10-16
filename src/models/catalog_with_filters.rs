@@ -90,6 +90,7 @@ pub struct SelectableExtraOption {
 #[derive(PartialEq, Serialize)]
 pub struct SelectableExtra {
     pub name: String,
+    pub is_required: bool,
     pub options: Vec<SelectableExtraOption>,
 }
 
@@ -360,6 +361,7 @@ fn selectable_update<T: CatalogResourceAdapter>(
                                     .collect::<Vec<_>>();
                                 SelectableExtra {
                                     name: extra_prop.name.to_owned(),
+                                    is_required: extra_prop.is_required.to_owned(),
                                     options: none_option.into_iter().chain(options).collect(),
                                 }
                             })
