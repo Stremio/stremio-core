@@ -41,6 +41,7 @@ impl ExtraExt for Vec<ExtraValue> {
                 }
             }
             None if !prop.is_required => vec![],
+            _ if *prop.options_limit == 0 => vec![],
             _ => extra,
         };
         extra.into_iter().chain(other_extra).collect()
