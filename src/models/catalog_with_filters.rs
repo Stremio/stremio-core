@@ -7,8 +7,8 @@ use crate::models::ctx::Ctx;
 use crate::runtime::msg::{Action, ActionLoad, Internal, Msg};
 use crate::runtime::{Effects, Env, UpdateWithCtx};
 use crate::types::addon::{
-    DescriptorPreview, ExtraExt, ExtraValue, Manifest, ManifestCatalog, ResourceRef,
-    ResourceRequest, ResourceResponse,
+    DescriptorPreview, ExtraExt, Manifest, ManifestCatalog, ResourceRef, ResourceRequest,
+    ResourceResponse,
 };
 use crate::types::profile::Profile;
 use crate::types::resource::MetaItemPreview;
@@ -350,10 +350,7 @@ fn selectable_update<T: CatalogResourceAdapter>(
                                                 &manifest_catalog.id,
                                                 &catalog.request.path.extra.to_owned().extend_one(
                                                     &extra_prop,
-                                                    Some(ExtraValue {
-                                                        name: extra_prop.name.to_owned(),
-                                                        value: value.to_owned(),
-                                                    }),
+                                                    Some(value.to_owned()),
                                                 ),
                                             ),
                                         },
@@ -390,12 +387,7 @@ fn selectable_update<T: CatalogResourceAdapter>(
                                 &manifest_catalog.id,
                                 &catalog.request.path.extra.to_owned().extend_one(
                                     &extra_prop,
-                                    Some(ExtraValue {
-                                        name: extra_prop.name.to_owned(),
-                                        value: skip
-                                            .saturating_sub(catalog_page_size as u32)
-                                            .to_string(),
-                                    }),
+                                    Some(skip.saturating_sub(catalog_page_size as u32).to_string()),
                                 ),
                             ),
                         });
@@ -409,12 +401,10 @@ fn selectable_update<T: CatalogResourceAdapter>(
                                         &manifest_catalog.id,
                                         &catalog.request.path.extra.to_owned().extend_one(
                                             &extra_prop,
-                                            Some(ExtraValue {
-                                                name: extra_prop.name.to_owned(),
-                                                value: skip
-                                                    .saturating_add(catalog_page_size as u32)
+                                            Some(
+                                                skip.saturating_add(catalog_page_size as u32)
                                                     .to_string(),
-                                            }),
+                                            ),
                                         ),
                                     ),
                                 })
