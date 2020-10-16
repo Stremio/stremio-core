@@ -260,6 +260,7 @@ fn selectable_update<T: CatalogResourceAdapter>(
                     Some(catalog) => {
                         request.base == catalog.request.base
                             && request.path.id == catalog.request.path.id
+                            && request.path.resource == catalog.request.path.resource
                     }
                     _ => true,
                 })
