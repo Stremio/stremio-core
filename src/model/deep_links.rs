@@ -10,7 +10,6 @@ use stremio_core::types::addon::{ExtraValue, ResourceRequest};
 use stremio_core::types::library::LibraryItem;
 use stremio_core::types::resource::{MetaItem, MetaItemPreview, Stream, Video};
 use url::form_urlencoded;
-use url::Url;
 
 const URI_COMPONENT_ENCODE_SET: &AsciiSet = &NON_ALPHANUMERIC
     .remove(b'-')
