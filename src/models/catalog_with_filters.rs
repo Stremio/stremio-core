@@ -23,38 +23,38 @@ pub enum SelectablePriority {
 }
 
 pub trait CatalogResourceAdapter {
-    fn resource_name() -> &'static str;
-    fn catalogs_from_manifest(manifest: &Manifest) -> &[ManifestCatalog];
+    fn resource() -> &'static str;
+    fn catalogs(manifest: &Manifest) -> &[ManifestCatalog];
     fn selectable_priority() -> SelectablePriority;
-    fn catalog_page_size() -> Option<usize>;
+    fn page_size() -> Option<usize>;
 }
 
 impl CatalogResourceAdapter for MetaItemPreview {
-    fn resource_name() -> &'static str {
+    fn resource() -> &'static str {
         "catalog"
     }
-    fn catalogs_from_manifest(manifest: &Manifest) -> &[ManifestCatalog] {
+    fn catalogs(manifest: &Manifest) -> &[ManifestCatalog] {
         &manifest.catalogs
     }
     fn selectable_priority() -> SelectablePriority {
         SelectablePriority::Type
     }
-    fn catalog_page_size() -> Option<usize> {
+    fn page_size() -> Option<usize> {
         Some(CATALOG_PAGE_SIZE)
     }
 }
 
 impl CatalogResourceAdapter for DescriptorPreview {
-    fn resource_name() -> &'static str {
+    fn resource() -> &'static str {
         "addon_catalog"
     }
-    fn catalogs_from_manifest(manifest: &Manifest) -> &[ManifestCatalog] {
+    fn catalogs(manifest: &Manifest) -> &[ManifestCatalog] {
         &manifest.addon_catalogs
     }
     fn selectable_priority() -> SelectablePriority {
         SelectablePriority::Catalog
     }
-    fn catalog_page_size() -> Option<usize> {
+    fn page_size() -> Option<usize> {
         None
     }
 }
@@ -163,7 +163,7 @@ where
                     ResourceAction::ResourceRequestResult {
                         request,
                         result,
-                        limit: &T::catalog_page_size(),
+                        limit: &T::page_size(),
                     },
                 );
                 let selectable_effects =
@@ -187,7 +187,7 @@ fn selectable_update<T: CatalogResourceAdapter>(
         .addons
         .iter()
         .flat_map(|addon| {
-            T::catalogs_from_manifest(&addon.manifest)
+            T::catalogs(&addon.manifest)
                 .iter()
                 .map(move |manifest_catalog| (addon, manifest_catalog))
         })
@@ -207,12 +207,13 @@ fn selectable_update<T: CatalogResourceAdapter>(
                             catalog.request.base == addon.transport_url
                                 && catalog.request.path.id == manifest_catalog.id
                                 && catalog.request.path.type_ == manifest_catalog.type_
+                                && catalog.request.path.resource == T::resource()
                         })
                         .unwrap_or_default(),
                     request: ResourceRequest {
                         base: addon.transport_url.to_owned(),
                         path: ResourceRef {
-                            resource: T::resource_name().to_owned(),
+                            resource: T::resource().to_owned(),
                             type_: manifest_catalog.type_.to_owned(),
                             id: manifest_catalog.id.to_owned(),
                             extra: default_required_extra,
@@ -295,7 +296,7 @@ fn selectable_update<T: CatalogResourceAdapter>(
             .iter()
             .find(|addon| addon.transport_url == catalog.request.base)
             .iter()
-            .flat_map(|addon| T::catalogs_from_manifest(&addon.manifest))
+            .flat_map(|addon| T::catalogs(&addon.manifest))
             .find(|ManifestCatalog { id, type_, .. }| {
                 *id == catalog.request.path.id && *type_ == catalog.request.path.type_
             })
@@ -319,7 +320,7 @@ fn selectable_update<T: CatalogResourceAdapter>(
                                             request: ResourceRequest {
                                                 base: catalog.request.base.to_owned(),
                                                 path: ResourceRef {
-                                                    resource: T::resource_name().to_owned(),
+                                                    resource: T::resource().to_owned(),
                                                     type_: manifest_catalog.type_.to_owned(),
                                                     id: manifest_catalog.id.to_owned(),
                                                     extra: catalog
@@ -345,7 +346,7 @@ fn selectable_update<T: CatalogResourceAdapter>(
                                         request: ResourceRequest {
                                             base: catalog.request.base.to_owned(),
                                             path: ResourceRef {
-                                                resource: T::resource_name().to_owned(),
+                                                resource: T::resource().to_owned(),
                                                 type_: manifest_catalog.type_.to_owned(),
                                                 id: manifest_catalog.id.to_owned(),
                                                 extra: catalog
@@ -373,11 +374,8 @@ fn selectable_update<T: CatalogResourceAdapter>(
                     .extra
                     .iter()
                     .find(|extra_prop| extra_prop.name == SKIP_EXTRA_NAME)
-                    .and_then(|extra_prop| {
-                        T::catalog_page_size()
-                            .map(|catalog_page_size| (extra_prop, catalog_page_size))
-                    })
-                    .map(|(extra_prop, catalog_page_size)| {
+                    .and_then(|extra_prop| T::page_size().map(|page_size| (extra_prop, page_size)))
+                    .map(|(extra_prop, page_size)| {
                         let skip = catalog
                             .request
                             .path
@@ -387,34 +385,34 @@ fn selectable_update<T: CatalogResourceAdapter>(
                         let prev_page = (skip > 0).as_option().map(|_| ResourceRequest {
                             base: catalog.request.base.to_owned(),
                             path: ResourceRef {
-                                resource: T::resource_name().to_owned(),
+                                resource: T::resource().to_owned(),
                                 type_: manifest_catalog.type_.to_owned(),
                                 id: manifest_catalog.id.to_owned(),
                                 extra: catalog.request.path.extra.to_owned().extend_one(
                                     &extra_prop,
                                     Some(
-                                        ((skip.saturating_sub(catalog_page_size as u32)
-                                            / catalog_page_size as u32)
-                                            * catalog_page_size as u32)
+                                        ((skip.saturating_sub(page_size as u32)
+                                            / page_size as u32)
+                                            * page_size as u32)
                                             .to_string(),
                                     ),
                                 ),
                             },
                         });
                         let next_page = match &catalog.content {
-                            Loadable::Ready(content) if content.len() >= catalog_page_size => {
+                            Loadable::Ready(content) if content.len() >= page_size => {
                                 Some(ResourceRequest {
                                     base: catalog.request.base.to_owned(),
                                     path: ResourceRef {
-                                        resource: T::resource_name().to_owned(),
+                                        resource: T::resource().to_owned(),
                                         type_: manifest_catalog.type_.to_owned(),
                                         id: manifest_catalog.id.to_owned(),
                                         extra: catalog.request.path.extra.to_owned().extend_one(
                                             &extra_prop,
                                             Some(
-                                                ((skip.saturating_add(catalog_page_size as u32)
-                                                    / catalog_page_size as u32)
-                                                    * catalog_page_size as u32)
+                                                ((skip.saturating_add(page_size as u32)
+                                                    / page_size as u32)
+                                                    * page_size as u32)
                                                     .to_string(),
                                             ),
                                         ),
