@@ -123,7 +123,7 @@ fn library_item() {
             vec![
                 Token::Struct {
                     name: "LibraryItem",
-                    len: 11,
+                    len: 7,
                 },
                 Token::Str("_id"),
                 Token::Str("id"),

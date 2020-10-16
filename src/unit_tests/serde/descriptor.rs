@@ -40,7 +40,7 @@ fn descriptor() {
             vec![
                 Token::Struct {
                     name: "Descriptor",
-                    len: 3,
+                    len: 2,
                 },
                 Token::Str("manifest"),
             ],
