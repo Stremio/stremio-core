@@ -64,7 +64,7 @@ pub struct Selected {
     pub request: ResourceRequest,
 }
 
-#[derive(Clone, PartialEq, Serialize)]
+#[derive(PartialEq, Serialize)]
 pub struct SelectableCatalog {
     pub catalog: String,
     pub addon_name: String,
