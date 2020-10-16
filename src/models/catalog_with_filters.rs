@@ -203,6 +203,7 @@ fn selectable_update<T: CatalogResourceAdapter>(
                         .map(|catalog| {
                             catalog.request.base == addon.transport_url
                                 && catalog.request.path.id == manifest_catalog.id
+                                && catalog.request.path.type_ == manifest_catalog.type_
                         })
                         .unwrap_or_default(),
                     request: ResourceRequest {
