@@ -211,12 +211,12 @@ fn selectable_update<T: CatalogResourceAdapter>(
                         .unwrap_or_default(),
                     request: ResourceRequest {
                         base: addon.transport_url.to_owned(),
-                        path: ResourceRef::with_extra(
-                            T::resource_name(),
-                            &manifest_catalog.type_,
-                            &manifest_catalog.id,
-                            &default_required_extra,
-                        ),
+                        path: ResourceRef {
+                            resource: T::resource_name().to_owned(),
+                            type_: manifest_catalog.type_.to_owned(),
+                            id: manifest_catalog.id.to_owned(),
+                            extra: default_required_extra,
+                        },
                     },
                 })
         })
@@ -318,17 +318,17 @@ fn selectable_update<T: CatalogResourceAdapter>(
                                             ),
                                             request: ResourceRequest {
                                                 base: catalog.request.base.to_owned(),
-                                                path: ResourceRef::with_extra(
-                                                    T::resource_name(),
-                                                    &manifest_catalog.type_,
-                                                    &manifest_catalog.id,
-                                                    &catalog
+                                                path: ResourceRef {
+                                                    resource: T::resource_name().to_owned(),
+                                                    type_: manifest_catalog.type_.to_owned(),
+                                                    id: manifest_catalog.id.to_owned(),
+                                                    extra: catalog
                                                         .request
                                                         .path
                                                         .extra
                                                         .to_owned()
                                                         .extend_one(&extra_prop, None),
-                                                ),
+                                                },
                                             },
                                         }
                                     });
@@ -344,15 +344,20 @@ fn selectable_update<T: CatalogResourceAdapter>(
                                         ),
                                         request: ResourceRequest {
                                             base: catalog.request.base.to_owned(),
-                                            path: ResourceRef::with_extra(
-                                                T::resource_name(),
-                                                &manifest_catalog.type_,
-                                                &manifest_catalog.id,
-                                                &catalog.request.path.extra.to_owned().extend_one(
-                                                    &extra_prop,
-                                                    Some(value.to_owned()),
-                                                ),
-                                            ),
+                                            path: ResourceRef {
+                                                resource: T::resource_name().to_owned(),
+                                                type_: manifest_catalog.type_.to_owned(),
+                                                id: manifest_catalog.id.to_owned(),
+                                                extra: catalog
+                                                    .request
+                                                    .path
+                                                    .extra
+                                                    .to_owned()
+                                                    .extend_one(
+                                                        &extra_prop,
+                                                        Some(value.to_owned()),
+                                                    ),
+                                            },
                                         },
                                     })
                                     .collect::<Vec<_>>();
@@ -381,32 +386,32 @@ fn selectable_update<T: CatalogResourceAdapter>(
                             .unwrap_or(0);
                         let prev_page = (skip > 0).as_option().map(|_| ResourceRequest {
                             base: catalog.request.base.to_owned(),
-                            path: ResourceRef::with_extra(
-                                T::resource_name(),
-                                &manifest_catalog.type_,
-                                &manifest_catalog.id,
-                                &catalog.request.path.extra.to_owned().extend_one(
+                            path: ResourceRef {
+                                resource: T::resource_name().to_owned(),
+                                type_: manifest_catalog.type_.to_owned(),
+                                id: manifest_catalog.id.to_owned(),
+                                extra: catalog.request.path.extra.to_owned().extend_one(
                                     &extra_prop,
                                     Some(skip.saturating_sub(catalog_page_size as u32).to_string()),
                                 ),
-                            ),
+                            },
                         });
                         let next_page = match &catalog.content {
                             Loadable::Ready(content) if content.len() >= catalog_page_size => {
                                 Some(ResourceRequest {
                                     base: catalog.request.base.to_owned(),
-                                    path: ResourceRef::with_extra(
-                                        T::resource_name(),
-                                        &manifest_catalog.type_,
-                                        &manifest_catalog.id,
-                                        &catalog.request.path.extra.to_owned().extend_one(
+                                    path: ResourceRef {
+                                        resource: T::resource_name().to_owned(),
+                                        type_: manifest_catalog.type_.to_owned(),
+                                        id: manifest_catalog.id.to_owned(),
+                                        extra: catalog.request.path.extra.to_owned().extend_one(
                                             &extra_prop,
                                             Some(
                                                 skip.saturating_add(catalog_page_size as u32)
                                                     .to_string(),
                                             ),
                                         ),
-                                    ),
+                                    },
                                 })
                             }
                             _ => None,
