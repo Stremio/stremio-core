@@ -14,28 +14,30 @@ pub struct ExtraValue {
 }
 
 pub trait ExtraExt {
-    fn extend_one(self, prop: &ExtraProp, value: Option<ExtraValue>) -> Self;
+    fn extend_one(self, prop: &ExtraProp, value: Option<String>) -> Self;
 }
 
 impl ExtraExt for Vec<ExtraValue> {
-    fn extend_one(self, prop: &ExtraProp, value: Option<ExtraValue>) -> Self {
-        if value.as_ref().map(|ev| &ev.name) != Some(&prop.name) {
-            return self;
-        }
-
+    fn extend_one(self, prop: &ExtraProp, value: Option<String>) -> Self {
         let (extra, other_extra) = self
             .into_iter()
             .partition::<Vec<ExtraValue>, _>(|ev| ev.name == prop.name);
         let extra = match value {
-            Some(value) if *prop.options_limit == 1 => vec![value],
+            Some(value) if *prop.options_limit == 1 => vec![ExtraValue {
+                name: prop.name.to_owned(),
+                value,
+            }],
             Some(value) if *prop.options_limit > 1 => {
-                if extra.iter().any(|ev| ev.value == value.value) {
+                if extra.iter().any(|ev| ev.value == value) {
+                    extra.into_iter().filter(|ev| ev.value != value).collect()
+                } else {
                     extra
                         .into_iter()
-                        .filter(|ev| ev.value != value.value)
+                        .chain(vec![ExtraValue {
+                            name: prop.name.to_owned(),
+                            value,
+                        }])
                         .collect()
-                } else {
-                    extra.into_iter().chain(vec![value]).collect()
                 }
             }
             None if !prop.is_required => vec![],
