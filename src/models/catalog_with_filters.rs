@@ -99,8 +99,8 @@ pub struct Selectable {
     pub types: Vec<SelectableType>,
     pub catalogs: Vec<SelectableCatalog>,
     pub extra: Vec<SelectableExtra>,
-    pub has_prev_page: bool,
-    pub has_next_page: bool,
+    pub prev_page: Option<ResourceRequest>,
+    pub next_page: Option<ResourceRequest>,
 }
 
 #[derive(Default, Serialize)]
@@ -289,7 +289,7 @@ fn selectable_update<T: CatalogResourceAdapter>(
         })
         .rev()
         .collect::<Vec<_>>();
-    let (selectable_extra, has_prev_page, has_next_page) = match catalog {
+    let (selectable_extra, prev_page, next_page) = match catalog {
         Some(catalog) => profile
             .addons
             .iter()
@@ -367,28 +367,64 @@ fn selectable_update<T: CatalogResourceAdapter>(
                             })
                     })
                     .collect();
-                let skip_supported = manifest_catalog
+                let (prev_page, next_page) = manifest_catalog
                     .extra
                     .iter()
-                    .any(|extra| extra.name == SKIP_EXTRA_NAME);
-                let first_page_requested = catalog
-                    .request
-                    .path
-                    .get_extra_first_value(SKIP_EXTRA_NAME)
-                    .and_then(|value| value.parse::<u32>().ok())
-                    .map(|skip| skip == 0)
-                    .unwrap_or(true);
-                let last_page_requested = match &catalog.content {
-                    Loadable::Ready(content) => match T::catalog_page_size() {
-                        Some(catalog_page_size) => content.len() < catalog_page_size,
-                        None => true,
-                    },
-                    Loadable::Err(_) => true,
-                    Loadable::Loading => true,
-                };
-                let has_prev_page = skip_supported && !first_page_requested;
-                let has_next_page = skip_supported && !last_page_requested;
-                (selectable_extra, has_prev_page, has_next_page)
+                    .find(|extra_prop| extra_prop.name == SKIP_EXTRA_NAME)
+                    .and_then(|extra_prop| {
+                        T::catalog_page_size()
+                            .map(|catalog_page_size| (extra_prop, catalog_page_size))
+                    })
+                    .map(|(extra_prop, catalog_page_size)| {
+                        let skip = catalog
+                            .request
+                            .path
+                            .get_extra_first_value(SKIP_EXTRA_NAME)
+                            .and_then(|value| value.parse::<u32>().ok())
+                            .unwrap_or(0);
+                        let prev_page = (skip > 0).as_option().map(|_| ResourceRequest {
+                            base: catalog.request.base.to_owned(),
+                            path: ResourceRef::with_extra(
+                                T::resource_name(),
+                                &manifest_catalog.type_,
+                                &manifest_catalog.id,
+                                &catalog.request.path.extra.to_owned().extend_one(
+                                    &extra_prop,
+                                    Some(ExtraValue {
+                                        name: extra_prop.name.to_owned(),
+                                        value: skip
+                                            .saturating_sub(catalog_page_size as u32)
+                                            .to_string(),
+                                    }),
+                                ),
+                            ),
+                        });
+                        let next_page = match &catalog.content {
+                            Loadable::Ready(content) if content.len() >= catalog_page_size => {
+                                Some(ResourceRequest {
+                                    base: catalog.request.base.to_owned(),
+                                    path: ResourceRef::with_extra(
+                                        T::resource_name(),
+                                        &manifest_catalog.type_,
+                                        &manifest_catalog.id,
+                                        &catalog.request.path.extra.to_owned().extend_one(
+                                            &extra_prop,
+                                            Some(ExtraValue {
+                                                name: extra_prop.name.to_owned(),
+                                                value: skip
+                                                    .saturating_add(catalog_page_size as u32)
+                                                    .to_string(),
+                                            }),
+                                        ),
+                                    ),
+                                })
+                            }
+                            _ => None,
+                        };
+                        (prev_page, next_page)
+                    })
+                    .unwrap_or_default();
+                (selectable_extra, prev_page, next_page)
             })
             .unwrap_or_default(),
         _ => Default::default(),
@@ -397,8 +433,8 @@ fn selectable_update<T: CatalogResourceAdapter>(
         types: selectable_types,
         catalogs: selectable_catalogs,
         extra: selectable_extra,
-        has_prev_page,
-        has_next_page,
+        prev_page,
+        next_page,
     };
     if *selectable != next_selectable {
         *selectable = next_selectable;
