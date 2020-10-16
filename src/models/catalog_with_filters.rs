@@ -292,7 +292,7 @@ fn selectable_update<T: CatalogResourceAdapter>(
         .rev()
         .collect::<Vec<_>>();
     let (selectable_extra, prev_page, next_page) = match catalog {
-        Some(catalog) => profile
+        Some(catalog) if catalog.request.path.resource == T::resource() => profile
             .addons
             .iter()
             .find(|addon| addon.transport_url == catalog.request.base)
