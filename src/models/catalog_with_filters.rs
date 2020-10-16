@@ -279,7 +279,7 @@ fn selectable_update<T: CatalogResourceAdapter>(
     let selectable_types = selectable_types
         .into_iter()
         .sorted_by(|a, b| {
-            compare_with_priorities(a.type_.as_ref(), b.type_.as_ref(), &*TYPE_PRIORITIES)
+            compare_with_priorities(a.type_.as_str(), b.type_.as_str(), &*TYPE_PRIORITIES)
         })
         .rev()
         .collect::<Vec<_>>();
