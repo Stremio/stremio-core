@@ -392,7 +392,12 @@ fn selectable_update<T: CatalogResourceAdapter>(
                                 id: manifest_catalog.id.to_owned(),
                                 extra: catalog.request.path.extra.to_owned().extend_one(
                                     &extra_prop,
-                                    Some(skip.saturating_sub(catalog_page_size as u32).to_string()),
+                                    Some(
+                                        ((skip.saturating_sub(catalog_page_size as u32)
+                                            / catalog_page_size as u32)
+                                            * catalog_page_size as u32)
+                                            .to_string(),
+                                    ),
                                 ),
                             },
                         });
@@ -407,7 +412,9 @@ fn selectable_update<T: CatalogResourceAdapter>(
                                         extra: catalog.request.path.extra.to_owned().extend_one(
                                             &extra_prop,
                                             Some(
-                                                skip.saturating_add(catalog_page_size as u32)
+                                                ((skip.saturating_add(catalog_page_size as u32)
+                                                    / catalog_page_size as u32)
+                                                    * catalog_page_size as u32)
                                                     .to_string(),
                                             ),
                                         ),
