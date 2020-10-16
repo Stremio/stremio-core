@@ -229,20 +229,6 @@ impl From<&ResourceRequest> for MetaCatalogResourceDeepLinks {
     }
 }
 
-impl From<(&Url, &String, &String, Vec<&ExtraValue>)> for MetaCatalogResourceDeepLinks {
-    fn from((url, type_, id, extra): (&Url, &String, &String, Vec<&ExtraValue>)) -> Self {
-        MetaCatalogResourceDeepLinks {
-            discover: format!(
-                "#/discover/{}/{}/{}?{}",
-                utf8_percent_encode(&url.as_str(), URI_COMPONENT_ENCODE_SET),
-                utf8_percent_encode(&type_, URI_COMPONENT_ENCODE_SET),
-                utf8_percent_encode(&id, URI_COMPONENT_ENCODE_SET),
-                query_params_encode(extra.iter().map(|ExtraValue { name, value }| (name, value)))
-            ),
-        }
-    }
-}
-
 #[derive(Serialize)]
 pub struct LibraryDeepLinks {
     library: String,
