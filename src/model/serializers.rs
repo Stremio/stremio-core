@@ -3,6 +3,7 @@ use crate::model::deep_links::{
     LibraryDeepLinks, LibraryItemDeepLinks, MetaCatalogResourceDeepLinks, MetaItemDeepLinks,
 };
 use serde::Serialize;
+use stremio_core::constants::{CATALOG_PAGE_SIZE, SKIP_EXTRA_NAME};
 use stremio_core::models::catalog_with_filters::{
     CatalogWithFilters, Selected as CatalogWithFiltersSelected,
 };
@@ -12,7 +13,7 @@ use stremio_core::models::catalogs_with_extra::{
 use stremio_core::models::common::{Loadable, ResourceError};
 use stremio_core::models::continue_watching_preview::ContinueWatchingPreview;
 use stremio_core::models::ctx::Ctx;
-use stremio_core::types::addon::{Descriptor, ExtraExt, ExtraValue, ResourceRequest};
+use stremio_core::types::addon::ResourceRequest;
 use stremio_core::types::library::LibraryItem;
 use stremio_core::types::resource::MetaItemPreview;
 use wasm_bindgen::JsValue;
@@ -31,7 +32,7 @@ pub fn serialize_catalogs_with_extra(
     struct _ResourceLoadable<'a> {
         request: &'a ResourceRequest,
         content: Loadable<Vec<_MetaItemPreview<'a>>, &'a ResourceError>,
-        addon: Option<&'a Descriptor>,
+        addon_name: Option<&'a String>,
         deep_links: MetaCatalogResourceDeepLinks,
     }
     #[derive(Serialize)]
@@ -59,11 +60,12 @@ pub fn serialize_catalogs_with_extra(
                     Loadable::Loading => Loadable::Loading,
                     Loadable::Err(error) => Loadable::Err(&error),
                 },
-                addon: ctx
+                addon_name: ctx
                     .profile
                     .addons
                     .iter()
-                    .find(|addon| addon.transport_url == catalog_resource.request.base),
+                    .find(|addon| addon.transport_url == catalog_resource.request.base)
+                    .map(|addon| &addon.manifest.name),
                 deep_links: MetaCatalogResourceDeepLinks::from(&catalog_resource.request),
             })
             .collect::<Vec<_>>(),
@@ -94,7 +96,7 @@ pub fn serialize_continue_watching_preview(
                 deep_links: LibraryItemDeepLinks::from(library_item),
             })
             .collect::<Vec<_>>(),
-        deep_links: LibraryDeepLinks::from("continuewatching"),
+        deep_links: LibraryDeepLinks::from(&"continuewatching".to_owned()),
     })
     .unwrap()
 }
@@ -104,35 +106,42 @@ pub fn serialize_discover(
     ctx: &Ctx<WebEnv>,
 ) -> JsValue {
     #[derive(Serialize)]
-    struct _ExtraOption<'a> {
-        value: Option<&'a String>,
+    struct _SelectableExtraOption<'a> {
+        value: &'a Option<String>,
+        selected: &'a bool,
+        deep_links: MetaCatalogResourceDeepLinks,
+    }
+    #[derive(Serialize)]
+    struct _SelectableExtra<'a> {
+        name: &'a String,
+        is_required: &'a bool,
+        options: Vec<_SelectableExtraOption<'a>>,
+    }
+    #[derive(Serialize)]
+    struct _SelectableCatalog<'a> {
+        catalog: &'a String,
+        addon_name: &'a String,
+        selected: &'a bool,
         deep_links: MetaCatalogResourceDeepLinks,
     }
     #[derive(Serialize)]
     struct _SelectableType<'a> {
-        name: &'a String,
-        request: &'a ResourceRequest,
+        #[serde(rename = "type")]
+        type_: &'a String,
+        selected: &'a bool,
         deep_links: MetaCatalogResourceDeepLinks,
     }
     #[derive(Serialize)]
-    struct _SelectableCatalog<'a> {
-        name: &'a String,
-        request: &'a ResourceRequest,
+    struct SelectablePage {
         deep_links: MetaCatalogResourceDeepLinks,
-    }
-    #[derive(Serialize)]
-    struct _ExtraProp<'a> {
-        name: &'a String,
-        is_required: &'a bool,
-        options: Vec<_ExtraOption<'a>>,
     }
     #[derive(Serialize)]
     struct _Selectable<'a> {
         types: Vec<_SelectableType<'a>>,
         catalogs: Vec<_SelectableCatalog<'a>>,
-        extra: Vec<_ExtraProp<'a>>,
-        has_prev_page: &'a bool,
-        has_next_page: &'a bool,
+        extra: Vec<_SelectableExtra<'a>>,
+        prev_page: Option<SelectablePage>,
+        next_page: Option<SelectablePage>,
     }
     #[derive(Serialize)]
     struct _MetaItemPreview<'a> {
@@ -142,15 +151,16 @@ pub fn serialize_discover(
     }
     #[derive(Serialize)]
     struct _ResourceLoadable<'a> {
-        request: &'a ResourceRequest,
         content: Loadable<Vec<_MetaItemPreview<'a>>, &'a ResourceError>,
-        addon: Option<&'a Descriptor>,
+        addon_name: Option<&'a String>,
     }
     #[derive(Serialize)]
     struct _CatalogWithFilters<'a> {
         selected: &'a Option<CatalogWithFiltersSelected>,
         selectable: _Selectable<'a>,
         catalog: Option<_ResourceLoadable<'a>>,
+        default_request: Option<&'a ResourceRequest>,
+        page: u32,
     }
     JsValue::from_serde(&_CatalogWithFilters {
         selected: &discover.selected,
@@ -160,8 +170,8 @@ pub fn serialize_discover(
                 .types
                 .iter()
                 .map(|selectable_type| _SelectableType {
-                    name: &selectable_type.name,
-                    request: &selectable_type.request,
+                    type_: &selectable_type.type_,
+                    selected: &selectable_type.selected,
                     deep_links: MetaCatalogResourceDeepLinks::from(&selectable_type.request),
                 })
                 .collect(),
@@ -170,66 +180,46 @@ pub fn serialize_discover(
                 .catalogs
                 .iter()
                 .map(|selectable_catalog| _SelectableCatalog {
-                    name: &selectable_catalog.name,
-                    request: &selectable_catalog.request,
+                    catalog: &selectable_catalog.catalog,
+                    addon_name: &selectable_catalog.addon_name,
+                    selected: &selectable_catalog.selected,
                     deep_links: MetaCatalogResourceDeepLinks::from(&selectable_catalog.request),
                 })
                 .collect(),
-            extra: match &discover.selected {
-                Some(selected) => discover
-                    .selectable
-                    .extra
-                    .iter()
-                    .map(|extra_prop| _ExtraProp {
-                        name: &extra_prop.name,
-                        is_required: &extra_prop.is_required,
-                        options: match &extra_prop.options {
-                            Some(options) => {
-                                let none_option = if !extra_prop.is_required {
-                                    Some(_ExtraOption {
-                                        value: None,
-                                        deep_links: MetaCatalogResourceDeepLinks::from((
-                                            &selected.request.base,
-                                            &selected.request.path.type_,
-                                            &selected.request.path.id,
-                                            selected
-                                                .request
-                                                .path
-                                                .extra
-                                                .extend_one_ref(&extra_prop, None),
-                                        )),
-                                    })
-                                } else {
-                                    None
-                                };
-                                let options = options.iter().map(|value| _ExtraOption {
-                                    value: Some(value),
-                                    deep_links: MetaCatalogResourceDeepLinks::from((
-                                        &selected.request.base,
-                                        &selected.request.path.type_,
-                                        &selected.request.path.id,
-                                        selected.request.path.extra.extend_one_ref(
-                                            &extra_prop,
-                                            Some(&ExtraValue {
-                                                name: extra_prop.name.to_owned(),
-                                                value: value.to_owned(),
-                                            }),
-                                        ),
-                                    )),
-                                });
-                                none_option.into_iter().chain(options).collect()
-                            }
-                            _ => vec![],
-                        },
-                    })
-                    .collect(),
-                _ => vec![],
-            },
-            has_prev_page: &discover.selectable.has_prev_page,
-            has_next_page: &discover.selectable.has_next_page,
+            extra: discover
+                .selectable
+                .extra
+                .iter()
+                .map(|selectable_extra| _SelectableExtra {
+                    name: &selectable_extra.name,
+                    is_required: &selectable_extra.is_required,
+                    options: selectable_extra
+                        .options
+                        .iter()
+                        .map(|option| _SelectableExtraOption {
+                            value: &option.value,
+                            selected: &option.selected,
+                            deep_links: MetaCatalogResourceDeepLinks::from(&option.request),
+                        })
+                        .collect(),
+                })
+                .collect(),
+            prev_page: discover
+                .selectable
+                .prev_page
+                .as_ref()
+                .map(|request| SelectablePage {
+                    deep_links: MetaCatalogResourceDeepLinks::from(request),
+                }),
+            next_page: discover
+                .selectable
+                .next_page
+                .as_ref()
+                .map(|request| SelectablePage {
+                    deep_links: MetaCatalogResourceDeepLinks::from(request),
+                }),
         },
         catalog: discover.catalog.as_ref().map(|catalog| _ResourceLoadable {
-            request: &catalog.request,
             content: match &catalog.content {
                 Loadable::Ready(meta_items) => Loadable::Ready(
                     meta_items
@@ -243,12 +233,30 @@ pub fn serialize_discover(
                 Loadable::Loading => Loadable::Loading,
                 Loadable::Err(error) => Loadable::Err(&error),
             },
-            addon: ctx
+            addon_name: ctx
                 .profile
                 .addons
                 .iter()
-                .find(|addon| addon.transport_url == catalog.request.base),
+                .find(|addon| addon.transport_url == catalog.request.base)
+                .map(|addon| &addon.manifest.name),
         }),
+        default_request: discover
+            .selectable
+            .types
+            .first()
+            .map(|first_type| &first_type.request),
+        page: discover
+            .selected
+            .as_ref()
+            .and_then(|selected| {
+                selected
+                    .request
+                    .path
+                    .get_extra_first_value(SKIP_EXTRA_NAME)
+                    .and_then(|value| value.parse::<u32>().ok())
+                    .map(|skip| 1 + skip / CATALOG_PAGE_SIZE as u32)
+            })
+            .unwrap_or(1),
     })
     .unwrap()
 }
