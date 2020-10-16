@@ -28,7 +28,7 @@ fn descriptor_flags() {
         &[
             Token::Struct {
                 name: "DescriptorFlags",
-                len: 2,
+                len: 0,
             },
             Token::StructEnd,
         ],
