@@ -225,16 +225,16 @@ fn selectable_update<T: CatalogResourceAdapter>(
         SelectablePriority::Type => {
             let selectable_types = selectable_catalogs
                 .iter()
-                .unique_by(|selectable_catalog| &selectable_catalog.request.path.type_)
-                .map(|selectable_catalog| SelectableType {
-                    type_: selectable_catalog.request.path.type_.to_owned(),
+                .map(|selectable_catalog| &selectable_catalog.request)
+                .unique_by(|request| &request.path.type_)
+                .cloned()
+                .map(|request| SelectableType {
+                    type_: request.path.type_.to_owned(),
                     selected: catalog
                         .as_ref()
-                        .map(|catalog| {
-                            catalog.request.path.type_ == selectable_catalog.request.path.type_
-                        })
+                        .map(|catalog| catalog.request.path.type_ == request.path.type_)
                         .unwrap_or_default(),
-                    request: selectable_catalog.request.to_owned(),
+                    request,
                 })
                 .collect::<Vec<_>>();
             let selectable_catalogs = selectable_catalogs
@@ -251,23 +251,23 @@ fn selectable_update<T: CatalogResourceAdapter>(
         SelectablePriority::Catalog => {
             let selectable_types = selectable_catalogs
                 .iter()
-                .filter(|selectable_catalog| match catalog {
+                .map(|selectable_catalog| &selectable_catalog.request)
+                .filter(|request| match catalog {
                     Some(catalog) => {
-                        selectable_catalog.request.base == catalog.request.base
-                            && selectable_catalog.request.path.id == catalog.request.path.id
+                        request.base == catalog.request.base
+                            && request.path.id == catalog.request.path.id
                     }
                     _ => true,
                 })
-                .unique_by(|selectable_catalog| &selectable_catalog.request.path.type_)
-                .map(|selectable_catalog| SelectableType {
-                    type_: selectable_catalog.request.path.type_.to_owned(),
+                .unique_by(|request| &request.path.type_)
+                .cloned()
+                .map(|request| SelectableType {
+                    type_: request.path.type_.to_owned(),
                     selected: catalog
                         .as_ref()
-                        .map(|catalog| {
-                            catalog.request.path.type_ == selectable_catalog.request.path.type_
-                        })
+                        .map(|catalog| catalog.request.path.type_ == request.path.type_)
                         .unwrap_or_default(),
-                    request: selectable_catalog.request.to_owned(),
+                    request,
                 })
                 .collect::<Vec<_>>();
             let selectable_catalogs = selectable_catalogs
