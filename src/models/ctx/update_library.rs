@@ -32,7 +32,7 @@ pub fn update_library<E: Env + 'static>(
         Msg::Action(Action::Ctx(ActionCtx::AddToLibrary(meta_preview))) => {
             let mut library_item = LibraryItem {
                 id: meta_preview.id.to_owned(),
-                type_: meta_preview.type_.to_owned(),
+                r#type: meta_preview.r#type.to_owned(),
                 name: meta_preview.name.to_owned(),
                 poster: meta_preview.poster.to_owned(),
                 poster_shape: meta_preview.poster_shape.to_owned(),

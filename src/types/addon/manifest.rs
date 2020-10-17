@@ -34,12 +34,12 @@ impl Manifest {
     pub fn is_resource_supported(&self, path: &ResourcePath) -> bool {
         match path.resource.as_str() {
             "catalog" => self.catalogs.iter().any(|catalog| {
-                catalog.type_ == path.type_
+                catalog.r#type == path.r#type
                     && catalog.id == path.id
                     && catalog.is_extra_supported(&path.extra)
             }),
             "addon_catalog" => self.addon_catalogs.iter().any(|catalog| {
-                catalog.type_ == path.type_
+                catalog.r#type == path.r#type
                     && catalog.id == path.id
                     && catalog.is_extra_supported(&path.extra)
             }),
@@ -60,7 +60,7 @@ impl Manifest {
                     ManifestResource::Short(_) => self.id_prefixes.as_ref(),
                     ManifestResource::Full { id_prefixes, .. } => id_prefixes.as_ref(),
                 };
-                let type_supported = types.map_or(false, |types| types.contains(&path.type_));
+                let type_supported = types.map_or(false, |types| types.contains(&path.r#type));
                 let id_supported = id_prefixes.map_or(true, |id_prefixes| {
                     id_prefixes.iter().any(|prefix| path.id.starts_with(prefix))
                 });
@@ -112,8 +112,7 @@ impl ManifestResource {
 #[cfg_attr(test, derive(Debug))]
 #[serde(rename_all = "camelCase")]
 pub struct ManifestCatalog {
-    #[serde(rename = "type")]
-    pub type_: String,
+    pub r#type: String,
     pub id: String,
     pub name: Option<String>,
     #[serde(flatten)]

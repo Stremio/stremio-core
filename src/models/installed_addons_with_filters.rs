@@ -9,8 +9,7 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Clone, PartialEq, Serialize, Deserialize)]
 pub struct Selected {
-    #[serde(rename = "type")]
-    type_: Option<String>,
+    r#type: Option<String>,
 }
 
 #[derive(Default, Serialize)]
@@ -86,8 +85,8 @@ fn addons_update(
         Some(selected) => profile
             .addons
             .iter()
-            .filter(|addon| match &selected.type_ {
-                Some(type_) => addon.manifest.types.contains(type_),
+            .filter(|addon| match &selected.r#type {
+                Some(r#type) => addon.manifest.types.contains(r#type),
                 None => true,
             })
             .map(|addon| DescriptorPreview {

@@ -74,8 +74,7 @@ pub struct SelectableCatalog {
 
 #[derive(PartialEq, Serialize)]
 pub struct SelectableType {
-    #[serde(rename = "type")]
-    pub type_: String,
+    pub r#type: String,
     pub selected: bool,
     pub request: ResourceRequest,
 }
@@ -206,7 +205,7 @@ fn selectable_update<T: CatalogResourceAdapter>(
                         .map(|catalog| {
                             catalog.request.base == addon.transport_url
                                 && catalog.request.path.id == manifest_catalog.id
-                                && catalog.request.path.type_ == manifest_catalog.type_
+                                && catalog.request.path.r#type == manifest_catalog.r#type
                                 && catalog.request.path.resource == T::resource()
                         })
                         .unwrap_or_default(),
@@ -214,7 +213,7 @@ fn selectable_update<T: CatalogResourceAdapter>(
                         base: addon.transport_url.to_owned(),
                         path: ResourcePath {
                             resource: T::resource().to_owned(),
-                            type_: manifest_catalog.type_.to_owned(),
+                            r#type: manifest_catalog.r#type.to_owned(),
                             id: manifest_catalog.id.to_owned(),
                             extra: default_required_extra,
                         },
@@ -228,13 +227,13 @@ fn selectable_update<T: CatalogResourceAdapter>(
             let selectable_types = selectable_catalogs
                 .iter()
                 .map(|selectable_catalog| &selectable_catalog.request)
-                .unique_by(|request| &request.path.type_)
+                .unique_by(|request| &request.path.r#type)
                 .cloned()
                 .map(|request| SelectableType {
-                    type_: request.path.type_.to_owned(),
+                    r#type: request.path.r#type.to_owned(),
                     selected: catalog
                         .as_ref()
-                        .map(|catalog| catalog.request.path.type_ == request.path.type_)
+                        .map(|catalog| catalog.request.path.r#type == request.path.r#type)
                         .unwrap_or_default(),
                     request,
                 })
@@ -243,7 +242,7 @@ fn selectable_update<T: CatalogResourceAdapter>(
                 .into_iter()
                 .filter(|selectable_catalog| match catalog {
                     Some(catalog) => {
-                        selectable_catalog.request.path.type_ == catalog.request.path.type_
+                        selectable_catalog.request.path.r#type == catalog.request.path.r#type
                     }
                     None => true,
                 })
@@ -262,13 +261,13 @@ fn selectable_update<T: CatalogResourceAdapter>(
                     }
                     _ => true,
                 })
-                .unique_by(|request| &request.path.type_)
+                .unique_by(|request| &request.path.r#type)
                 .cloned()
                 .map(|request| SelectableType {
-                    type_: request.path.type_.to_owned(),
+                    r#type: request.path.r#type.to_owned(),
                     selected: catalog
                         .as_ref()
-                        .map(|catalog| catalog.request.path.type_ == request.path.type_)
+                        .map(|catalog| catalog.request.path.r#type == request.path.r#type)
                         .unwrap_or_default(),
                     request,
                 })
@@ -285,7 +284,7 @@ fn selectable_update<T: CatalogResourceAdapter>(
     let selectable_types = selectable_types
         .into_iter()
         .sorted_by(|a, b| {
-            compare_with_priorities(a.type_.as_str(), b.type_.as_str(), &*TYPE_PRIORITIES)
+            compare_with_priorities(a.r#type.as_str(), b.r#type.as_str(), &*TYPE_PRIORITIES)
         })
         .rev()
         .collect::<Vec<_>>();
@@ -296,8 +295,8 @@ fn selectable_update<T: CatalogResourceAdapter>(
             .find(|addon| addon.transport_url == catalog.request.base)
             .iter()
             .flat_map(|addon| T::catalogs(&addon.manifest))
-            .find(|ManifestCatalog { id, type_, .. }| {
-                *id == catalog.request.path.id && *type_ == catalog.request.path.type_
+            .find(|ManifestCatalog { id, r#type, .. }| {
+                *id == catalog.request.path.id && *r#type == catalog.request.path.r#type
             })
             .map(|manifest_catalog| {
                 let selectable_extra = manifest_catalog
@@ -320,7 +319,7 @@ fn selectable_update<T: CatalogResourceAdapter>(
                                                 base: catalog.request.base.to_owned(),
                                                 path: ResourcePath {
                                                     resource: T::resource().to_owned(),
-                                                    type_: manifest_catalog.type_.to_owned(),
+                                                    r#type: manifest_catalog.r#type.to_owned(),
                                                     id: manifest_catalog.id.to_owned(),
                                                     extra: catalog
                                                         .request
@@ -346,7 +345,7 @@ fn selectable_update<T: CatalogResourceAdapter>(
                                             base: catalog.request.base.to_owned(),
                                             path: ResourcePath {
                                                 resource: T::resource().to_owned(),
-                                                type_: manifest_catalog.type_.to_owned(),
+                                                r#type: manifest_catalog.r#type.to_owned(),
                                                 id: manifest_catalog.id.to_owned(),
                                                 extra: catalog
                                                     .request
@@ -385,7 +384,7 @@ fn selectable_update<T: CatalogResourceAdapter>(
                             base: catalog.request.base.to_owned(),
                             path: ResourcePath {
                                 resource: T::resource().to_owned(),
-                                type_: manifest_catalog.type_.to_owned(),
+                                r#type: manifest_catalog.r#type.to_owned(),
                                 id: manifest_catalog.id.to_owned(),
                                 extra: catalog.request.path.extra.to_owned().extend_one(
                                     &extra_prop,
@@ -404,7 +403,7 @@ fn selectable_update<T: CatalogResourceAdapter>(
                                     base: catalog.request.base.to_owned(),
                                     path: ResourcePath {
                                         resource: T::resource().to_owned(),
-                                        type_: manifest_catalog.type_.to_owned(),
+                                        r#type: manifest_catalog.r#type.to_owned(),
                                         id: manifest_catalog.id.to_owned(),
                                         extra: catalog.request.path.extra.to_owned().extend_one(
                                             &extra_prop,

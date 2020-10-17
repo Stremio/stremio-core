@@ -52,27 +52,26 @@ impl ExtraExt for Vec<ExtraValue> {
 #[cfg_attr(test, derive(Debug))]
 pub struct ResourcePath {
     pub resource: String,
-    #[serde(rename = "type")]
-    pub type_: String,
+    pub r#type: String,
     pub id: String,
     pub extra: Vec<ExtraValue>,
 }
 
 impl ResourcePath {
     #[inline]
-    pub fn without_extra(resource: &str, type_: &str, id: &str) -> Self {
+    pub fn without_extra(resource: &str, r#type: &str, id: &str) -> Self {
         ResourcePath {
             resource: resource.to_owned(),
-            type_: type_.to_owned(),
+            r#type: r#type.to_owned(),
             id: id.to_owned(),
             extra: vec![],
         }
     }
     #[inline]
-    pub fn with_extra(resource: &str, type_: &str, id: &str, extra: &[ExtraValue]) -> Self {
+    pub fn with_extra(resource: &str, r#type: &str, id: &str, extra: &[ExtraValue]) -> Self {
         ResourcePath {
             resource: resource.to_owned(),
-            type_: type_.to_owned(),
+            r#type: r#type.to_owned(),
             id: id.to_owned(),
             extra: extra.to_owned(),
         }
@@ -86,7 +85,7 @@ impl ResourcePath {
     }
     #[inline]
     pub fn eq_no_extra(&self, other: &ResourcePath) -> bool {
-        self.resource == other.resource && self.type_ == other.type_ && self.id == other.id
+        self.resource == other.resource && self.r#type == other.r#type && self.id == other.id
     }
 }
 
@@ -96,7 +95,7 @@ impl fmt::Display for ResourcePath {
             f,
             "/{}/{}/{}",
             &utf8_percent_encode(&self.resource, NON_ALPHANUMERIC),
-            &utf8_percent_encode(&self.type_, NON_ALPHANUMERIC),
+            &utf8_percent_encode(&self.r#type, NON_ALPHANUMERIC),
             &utf8_percent_encode(&self.id, NON_ALPHANUMERIC)
         )?;
         if !self.extra.is_empty() {
@@ -152,7 +151,7 @@ impl AggrRequest<'_> {
                                     addon.transport_url.to_owned(),
                                     ResourcePath::with_extra(
                                         "catalog",
-                                        &catalog.type_,
+                                        &catalog.r#type,
                                         &catalog.id,
                                         extra,
                                     ),

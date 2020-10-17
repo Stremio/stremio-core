@@ -12,7 +12,7 @@ fn library_item() {
             LibraryItem {
                 id: "id".to_owned(),
                 name: "name".to_owned(),
-                type_: "type".to_owned(),
+                r#type: "type".to_owned(),
                 poster: Some("poster".to_owned()),
                 poster_shape: PosterShape::default(),
                 removed: true,
@@ -25,7 +25,7 @@ fn library_item() {
             LibraryItem {
                 id: "id".to_owned(),
                 name: "name".to_owned(),
-                type_: "type".to_owned(),
+                r#type: "type".to_owned(),
                 poster: None,
                 poster_shape: PosterShape::default(),
                 removed: false,
@@ -109,7 +109,7 @@ fn library_item() {
         &LibraryItem {
             id: "id".to_owned(),
             name: "name".to_owned(),
-            type_: "type".to_owned(),
+            r#type: "type".to_owned(),
             poster: None,
             poster_shape: PosterShape::default(),
             removed: false,

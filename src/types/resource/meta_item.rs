@@ -9,8 +9,7 @@ use url::Url;
 #[serde(rename_all = "camelCase")]
 pub struct MetaItem {
     pub id: String,
-    #[serde(rename = "type")]
-    pub type_: String,
+    pub r#type: String,
     #[serde(default)]
     pub name: String,
     pub poster: Option<String>,
@@ -38,8 +37,7 @@ pub struct MetaItem {
 #[serde(rename_all = "camelCase")]
 pub struct MetaItemPreview {
     pub id: String,
-    #[serde(rename = "type")]
-    pub type_: String,
+    pub r#type: String,
     #[serde(default)]
     pub name: String,
     pub poster: Option<String>,

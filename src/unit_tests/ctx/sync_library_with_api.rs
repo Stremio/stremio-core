@@ -42,7 +42,7 @@ fn actionctx_synclibrarywithapi_with_user() {
     lazy_static! {
         static ref REMOTE_ONLY_ITEM: LibraryItem = LibraryItem {
             id: "id1".to_owned(),
-            type_: "type".to_owned(),
+            r#type: "type".to_owned(),
             name: "name".to_owned(),
             poster: None,
             poster_shape: Default::default(),
@@ -55,7 +55,7 @@ fn actionctx_synclibrarywithapi_with_user() {
         };
         static ref LOCAL_NEWER_ITEM: LibraryItem = LibraryItem {
             id: "id2".to_owned(),
-            type_: "type".to_owned(),
+            r#type: "type".to_owned(),
             name: "name".to_owned(),
             poster: None,
             poster_shape: Default::default(),
@@ -68,7 +68,7 @@ fn actionctx_synclibrarywithapi_with_user() {
         };
         static ref REMOTE_NEWER_ITEM: LibraryItem = LibraryItem {
             id: "id3".to_owned(),
-            type_: "type".to_owned(),
+            r#type: "type".to_owned(),
             name: "name".to_owned(),
             poster: None,
             poster_shape: Default::default(),
@@ -81,7 +81,7 @@ fn actionctx_synclibrarywithapi_with_user() {
         };
         static ref LOCAL_ONLY_ITEM: LibraryItem = LibraryItem {
             id: "id4".to_owned(),
-            type_: "type".to_owned(),
+            r#type: "type".to_owned(),
             name: "name".to_owned(),
             poster: None,
             poster_shape: Default::default(),
@@ -94,7 +94,7 @@ fn actionctx_synclibrarywithapi_with_user() {
         };
         static ref LOCAL_NOT_WATCHED_ITEM: LibraryItem = LibraryItem {
             id: "id5".to_owned(),
-            type_: "type".to_owned(),
+            r#type: "type".to_owned(),
             name: "name".to_owned(),
             poster: None,
             poster_shape: Default::default(),
@@ -107,7 +107,7 @@ fn actionctx_synclibrarywithapi_with_user() {
         };
         static ref LOCAL_WATCHED_ITEM: LibraryItem = LibraryItem {
             id: "id6".to_owned(),
-            type_: "type".to_owned(),
+            r#type: "type".to_owned(),
             name: "name".to_owned(),
             poster: None,
             poster_shape: Default::default(),

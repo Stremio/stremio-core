@@ -46,11 +46,11 @@ impl<E: Env + 'static> UpdateWithCtx<Ctx<E>> for Notifications {
                                 .filter(|item| {
                                     !item.state.no_notif
                                         && !item.removed
-                                        && cat.type_ == item.type_
+                                        && cat.r#type == item.r#type
                                         && addon.manifest.is_resource_supported(
                                             &ResourcePath::without_extra(
                                                 "meta",
-                                                &item.type_,
+                                                &item.r#type,
                                                 &item.id,
                                             ),
                                         )
@@ -71,7 +71,7 @@ impl<E: Env + 'static> UpdateWithCtx<Ctx<E>> for Notifications {
                                     }];
                                     let path = ResourcePath::with_extra(
                                         "catalog",
-                                        &cat.type_,
+                                        &cat.r#type,
                                         &cat.id,
                                         &extra_props,
                                     );

@@ -155,15 +155,15 @@ fn build_legacy_req(transport_url: &Url, path: &ResourcePath) -> Result<Request<
     // They affect functionality very little - there are no subtitles add-ons using the legacy
     // protocol (other than OpenSubtitles, which will be ported) and there's only one
     // known legacy add-on that support search (Stremio/stremio #379)
-    let type_ = &path.type_;
+    let r#type = &path.r#type;
     let id = &path.id;
     let q_json = match &path.resource as &str {
         "catalog" => {
             let genre = path.get_extra_first_value("genre");
             let query = if let Some(genre) = genre {
-                json!({ "type": type_, "genre": genre })
+                json!({ "type": r#type, "genre": genre })
             } else {
-                json!({ "type": type_ })
+                json!({ "type": r#type })
             };
             // Just follows the convention set out by stremboard
             // L287 cffb94e4a9c57f5872e768eff25164b53f004a2b
@@ -195,7 +195,7 @@ fn build_legacy_req(transport_url: &Url, path: &ResourcePath) -> Result<Request<
                     ))
                 }
             };
-            query.insert("type".into(), serde_json::Value::String(type_.to_owned()));
+            query.insert("type".into(), serde_json::Value::String(r#type.to_owned()));
             build_jsonrpc("stream.find", json!({ "query": query }))
         }
         "subtitles" => build_jsonrpc(

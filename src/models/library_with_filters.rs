@@ -43,8 +43,7 @@ pub enum Sort {
 
 #[derive(Clone, PartialEq, Serialize, Deserialize)]
 pub struct LibraryRequest {
-    #[serde(rename = "type")]
-    pub type_: Option<String>,
+    pub r#type: Option<String>,
     #[serde(default)]
     pub sort: Sort,
 }
@@ -56,8 +55,7 @@ pub struct Selected {
 
 #[derive(PartialEq, Serialize)]
 pub struct SelectableType {
-    #[serde(rename = "type")]
-    pub type_: Option<String>,
+    pub r#type: Option<String>,
     pub selected: bool,
     pub request: LibraryRequest,
 }
@@ -158,16 +156,16 @@ fn selectable_update<F: LibraryFilter>(
         .items
         .values()
         .filter(|library_item| F::predicate(library_item))
-        .map(|library_item| &library_item.type_)
+        .map(|library_item| &library_item.r#type)
         .unique()
         .sorted_by(|a, b| compare_with_priorities(a.as_str(), b.as_str(), &*TYPE_PRIORITIES))
         .rev()
         .cloned()
         .map(Some)
-        .map(|type_| SelectableType {
-            type_: type_.to_owned(),
+        .map(|r#type| SelectableType {
+            r#type: r#type.to_owned(),
             request: LibraryRequest {
-                type_: type_.to_owned(),
+                r#type: r#type.to_owned(),
                 sort: selected
                     .as_ref()
                     .map(|selected| selected.request.sort.to_owned())
@@ -175,7 +173,7 @@ fn selectable_update<F: LibraryFilter>(
             },
             selected: selected
                 .as_ref()
-                .map(|selected| selected.request.type_ == type_)
+                .map(|selected| selected.request.r#type == r#type)
                 .unwrap_or_default(),
         })
         .collect();
@@ -183,9 +181,9 @@ fn selectable_update<F: LibraryFilter>(
         .map(|sort| SelectableSort {
             sort: sort.to_owned(),
             request: LibraryRequest {
-                type_: selected
+                r#type: selected
                     .as_ref()
-                    .and_then(|selected| selected.request.type_.to_owned()),
+                    .and_then(|selected| selected.request.r#type.to_owned()),
                 sort: sort.to_owned(),
             },
             selected: selected
@@ -211,8 +209,8 @@ fn library_items_update<F: LibraryFilter>(
             .items
             .values()
             .filter(|library_item| F::predicate(library_item))
-            .filter(|library_item| match &selected.request.type_ {
-                Some(type_) => library_item.type_ == *type_,
+            .filter(|library_item| match &selected.request.r#type {
+                Some(r#type) => library_item.r#type == *r#type,
                 None => true,
             })
             .sorted_by(|a, b| match &selected.request.sort {

@@ -47,7 +47,7 @@ fn actionctx_rewindlibraryitem() {
             ..LibraryItemState::default()
         },
         name: "name".to_owned(),
-        type_: "type".to_owned(),
+        r#type: "type".to_owned(),
         poster: None,
         poster_shape: Default::default(),
         behavior_hints: Default::default(),
@@ -165,7 +165,7 @@ fn actionctx_rewindlibraryitem_not_added() {
             ..LibraryItemState::default()
         },
         name: "name".to_owned(),
-        type_: "type".to_owned(),
+        r#type: "type".to_owned(),
         poster: None,
         poster_shape: Default::default(),
         behavior_hints: Default::default(),
