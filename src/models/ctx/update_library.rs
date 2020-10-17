@@ -6,7 +6,7 @@ use crate::runtime::msg::{Action, ActionCtx, Event, Internal, Msg};
 use crate::runtime::{Effect, Effects, Env};
 use crate::types::api::{DatastoreCommand, DatastoreRequest, LibraryItemModified, SuccessResponse};
 use crate::types::library::{
-    LibraryBucket, LibraryBucketBorrowed, LibraryItem, LibraryItemBehaviorHints, LibraryItemState,
+    LibraryBucket, LibraryBucketRef, LibraryItem, LibraryItemBehaviorHints, LibraryItemState,
 };
 use crate::types::profile::AuthKey;
 use futures::future::Either;
@@ -232,18 +232,18 @@ fn update_and_push_items_to_storage<E: Env + 'static>(
         if are_items_in_recent {
             Either::Right(Either::Left(E::set_storage(
                 LIBRARY_RECENT_STORAGE_KEY,
-                Some(&LibraryBucketBorrowed::new(&library.uid, &recent_items)),
+                Some(&LibraryBucketRef::new(&library.uid, &recent_items)),
             )))
         } else {
             Either::Right(Either::Right(
                 future::try_join_all(vec![
                     E::set_storage(
                         LIBRARY_RECENT_STORAGE_KEY,
-                        Some(&LibraryBucketBorrowed::new(&library.uid, &recent_items)),
+                        Some(&LibraryBucketRef::new(&library.uid, &recent_items)),
                     ),
                     E::set_storage(
                         LIBRARY_STORAGE_KEY,
-                        Some(&LibraryBucketBorrowed::new(&library.uid, &other_items)),
+                        Some(&LibraryBucketRef::new(&library.uid, &other_items)),
                     ),
                 ])
                 .map_ok(|_| ()),
@@ -268,11 +268,11 @@ fn push_library_to_storage<E: Env + 'static>(library: &LibraryBucket) -> Effect 
     future::try_join_all(vec![
         E::set_storage(
             LIBRARY_RECENT_STORAGE_KEY,
-            Some(&LibraryBucketBorrowed::new(&library.uid, &recent_items)),
+            Some(&LibraryBucketRef::new(&library.uid, &recent_items)),
         ),
         E::set_storage(
             LIBRARY_STORAGE_KEY,
-            Some(&LibraryBucketBorrowed::new(&library.uid, &other_items)),
+            Some(&LibraryBucketRef::new(&library.uid, &other_items)),
         ),
     ])
     .map(move |result| match result {
