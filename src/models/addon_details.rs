@@ -15,7 +15,7 @@ pub struct Selected {
 #[derive(Default, Serialize)]
 pub struct AddonDetails {
     pub selected: Option<Selected>,
-    pub installed_addon: Option<Descriptor>,
+    pub local_addon: Option<Descriptor>,
     pub remote_addon: Option<DescriptorLoadable>,
 }
 
@@ -24,8 +24,8 @@ impl<E: Env + 'static> UpdateWithCtx<Ctx<E>> for AddonDetails {
         match msg {
             Msg::Action(Action::Load(ActionLoad::AddonDetails(selected))) => {
                 let selected_effects = eq_update(&mut self.selected, Some(selected.to_owned()));
-                let installed_addon_effects =
-                    installed_addon_update(&mut self.installed_addon, &self.selected, &ctx.profile);
+                let local_addon_effects =
+                    local_addon_update(&mut self.local_addon, &self.selected, &ctx.profile);
                 let remote_addon_effects = descriptor_update::<E>(
                     &mut self.remote_addon,
                     DescriptorAction::DescriptorRequested {
@@ -33,15 +33,15 @@ impl<E: Env + 'static> UpdateWithCtx<Ctx<E>> for AddonDetails {
                     },
                 );
                 selected_effects
-                    .join(installed_addon_effects)
+                    .join(local_addon_effects)
                     .join(remote_addon_effects)
             }
             Msg::Action(Action::Unload) => {
                 let selected_effects = eq_update(&mut self.selected, None);
-                let installed_addon_effects = eq_update(&mut self.installed_addon, None);
+                let local_addon_effects = eq_update(&mut self.local_addon, None);
                 let remote_addon_effects = eq_update(&mut self.remote_addon, None);
                 selected_effects
-                    .join(installed_addon_effects)
+                    .join(local_addon_effects)
                     .join(remote_addon_effects)
             }
             Msg::Internal(Internal::ManifestRequestResult(transport_url, result)) => {
@@ -54,27 +54,27 @@ impl<E: Env + 'static> UpdateWithCtx<Ctx<E>> for AddonDetails {
                 )
             }
             Msg::Internal(Internal::ProfileChanged) => {
-                installed_addon_update(&mut self.installed_addon, &self.selected, &ctx.profile)
+                local_addon_update(&mut self.local_addon, &self.selected, &ctx.profile)
             }
             _ => Effects::none().unchanged(),
         }
     }
 }
 
-fn installed_addon_update(
-    installed_addon: &mut Option<Descriptor>,
+fn local_addon_update(
+    local_addon: &mut Option<Descriptor>,
     selected: &Option<Selected>,
     profile: &Profile,
 ) -> Effects {
-    let next_installed_addon = selected.as_ref().and_then(|selected| {
+    let next_local_addon = selected.as_ref().and_then(|selected| {
         profile
             .addons
             .iter()
             .find(|addon| addon.transport_url == selected.transport_url)
             .cloned()
     });
-    if *installed_addon != next_installed_addon {
-        *installed_addon = next_installed_addon;
+    if *local_addon != next_local_addon {
+        *local_addon = next_local_addon;
         Effects::none()
     } else {
         Effects::none().unchanged()
