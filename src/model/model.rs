@@ -53,11 +53,11 @@ impl WebModel {
         let model = WebModel {
             ctx: Ctx::new(profile, library),
             continue_watching_preview,
+            board: Default::default(),
             discover,
             remote_addons,
             installed_addons,
             streaming_server,
-            board: Default::default(),
             library: Default::default(),
             continue_watching: Default::default(),
             search: Default::default(),

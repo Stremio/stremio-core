@@ -38,16 +38,16 @@ pub fn serialize_catalogs_with_extra(
     #[derive(Serialize)]
     struct _CatalogsWithExtra<'a> {
         selected: &'a Option<CatalogsWithExtraSelected>,
-        catalog_resources: Vec<_ResourceLoadable<'a>>,
+        catalogs: Vec<_ResourceLoadable<'a>>,
     }
     JsValue::from_serde(&_CatalogsWithExtra {
         selected: &catalogs_with_extra.selected,
-        catalog_resources: catalogs_with_extra
-            .catalog_resources
+        catalogs: catalogs_with_extra
+            .catalogs
             .iter()
-            .map(|catalog_resource| _ResourceLoadable {
-                request: &catalog_resource.request,
-                content: match &catalog_resource.content {
+            .map(|catalog| _ResourceLoadable {
+                request: &catalog.request,
+                content: match &catalog.content {
                     Loadable::Ready(meta_items) => Loadable::Ready(
                         meta_items
                             .iter()
@@ -64,9 +64,9 @@ pub fn serialize_catalogs_with_extra(
                     .profile
                     .addons
                     .iter()
-                    .find(|addon| addon.transport_url == catalog_resource.request.base)
+                    .find(|addon| addon.transport_url == catalog.request.base)
                     .map(|addon| &addon.manifest.name),
-                deep_links: MetaCatalogResourceDeepLinks::from(&catalog_resource.request),
+                deep_links: MetaCatalogResourceDeepLinks::from(&catalog.request),
             })
             .collect::<Vec<_>>(),
     })
