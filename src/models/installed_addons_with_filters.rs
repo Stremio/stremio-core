@@ -67,12 +67,7 @@ fn types_update(types: &mut Vec<String>, profile: &Profile) -> Effects {
         .unique()
         .cloned()
         .collect::<Vec<_>>();
-    if *types != next_types {
-        *types = next_types;
-        Effects::none()
-    } else {
-        Effects::none().unchanged()
-    }
+    eq_update(types, next_types)
 }
 
 fn addons_update(
