@@ -1,9 +1,7 @@
 use crate::types::addon::{Descriptor, ExtraProp};
 use derive_more::{From, Into};
-use percent_encoding::{utf8_percent_encode, NON_ALPHANUMERIC};
 use serde::{Deserialize, Serialize};
-use std::fmt;
-use url::{form_urlencoded, Url};
+use url::Url;
 
 #[derive(Clone, From, Into, PartialEq, Serialize, Deserialize)]
 #[cfg_attr(test, derive(Debug))]
@@ -86,26 +84,6 @@ impl ResourcePath {
     #[inline]
     pub fn eq_no_extra(&self, other: &ResourcePath) -> bool {
         self.resource == other.resource && self.r#type == other.r#type && self.id == other.id
-    }
-}
-
-impl fmt::Display for ResourcePath {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(
-            f,
-            "/{}/{}/{}",
-            &utf8_percent_encode(&self.resource, NON_ALPHANUMERIC),
-            &utf8_percent_encode(&self.r#type, NON_ALPHANUMERIC),
-            &utf8_percent_encode(&self.id, NON_ALPHANUMERIC)
-        )?;
-        if !self.extra.is_empty() {
-            let mut extra_encoded = form_urlencoded::Serializer::new(String::new());
-            for ExtraValue { name, value } in self.extra.iter() {
-                extra_encoded.append_pair(&name, &value);
-            }
-            write!(f, "/{}", &extra_encoded.finish())?;
-        }
-        write!(f, ".json")
     }
 }
 
