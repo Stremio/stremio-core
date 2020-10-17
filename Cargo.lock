@@ -548,7 +548,7 @@ dependencies = [
 [[package]]
 name = "stremio-core"
 version = "0.1.0"
-source = "git+https://github.com/Stremio/stremio-core?branch=development#2e1b9d7ea5f24db8f537149fe422b7dee1eeefcf"
+source = "git+https://github.com/Stremio/stremio-core?branch=development#d06c454e73fe2821d4c31a33abfd530434b35557"
 dependencies = [
  "base64 0.12.3",
  "boolinator",
@@ -601,7 +601,7 @@ dependencies = [
 [[package]]
 name = "stremio-derive"
 version = "0.1.0"
-source = "git+https://github.com/Stremio/stremio-core?branch=development#2e1b9d7ea5f24db8f537149fe422b7dee1eeefcf"
+source = "git+https://github.com/Stremio/stremio-core?branch=development#d06c454e73fe2821d4c31a33abfd530434b35557"
 dependencies = [
  "case",
  "proc-macro-crate",
@@ -637,9 +637,9 @@ dependencies = [
 
 [[package]]
 name = "syn"
-version = "1.0.44"
+version = "1.0.45"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e03e57e4fcbfe7749842d53e24ccb9aa12b7252dbe5e91d2acad31834c8b8fdd"
+checksum = "ea9c5432ff16d6152371f808fb5a871cd67368171b09bb21b43df8e4a47a3556"
 dependencies = [
  "proc-macro2",
  "quote",
