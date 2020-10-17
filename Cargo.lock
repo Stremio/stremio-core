@@ -548,7 +548,7 @@ dependencies = [
 [[package]]
 name = "stremio-core"
 version = "0.1.0"
-source = "git+https://github.com/Stremio/stremio-core?branch=development#22bbb2e67bd015cf6e3ec76f8f26be09d60cb118"
+source = "git+https://github.com/Stremio/stremio-core?branch=development#ae802e877d2f5c58264eb08d2c622ba9790a1ace"
 dependencies = [
  "base64 0.12.3",
  "boolinator",
@@ -601,7 +601,7 @@ dependencies = [
 [[package]]
 name = "stremio-derive"
 version = "0.1.0"
-source = "git+https://github.com/Stremio/stremio-core?branch=development#22bbb2e67bd015cf6e3ec76f8f26be09d60cb118"
+source = "git+https://github.com/Stremio/stremio-core?branch=development#ae802e877d2f5c58264eb08d2c622ba9790a1ace"
 dependencies = [
  "case",
  "proc-macro-crate",
