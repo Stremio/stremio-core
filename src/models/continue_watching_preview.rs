@@ -12,6 +12,17 @@ pub struct ContinueWatchingPreview {
     pub library_items: Vec<LibraryItem>,
 }
 
+impl ContinueWatchingPreview {
+    pub fn new(library: &LibraryBucket) -> (Self, Effects) {
+        let mut library_items = vec![];
+        let effects = library_items_update(&mut library_items, &library);
+        (
+            ContinueWatchingPreview { library_items },
+            effects.unchanged(),
+        )
+    }
+}
+
 impl<E: Env + 'static> UpdateWithCtx<Ctx<E>> for ContinueWatchingPreview {
     fn update(&mut self, msg: &Msg, ctx: &Ctx<E>) -> Effects {
         match msg {
