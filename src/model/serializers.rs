@@ -126,8 +126,7 @@ pub fn serialize_discover(
     }
     #[derive(Serialize)]
     struct _SelectableType<'a> {
-        #[serde(rename = "type")]
-        type_: &'a String,
+        r#type: &'a String,
         selected: &'a bool,
         deep_links: MetaCatalogResourceDeepLinks,
     }
@@ -170,7 +169,7 @@ pub fn serialize_discover(
                 .types
                 .iter()
                 .map(|selectable_type| _SelectableType {
-                    type_: &selectable_type.type_,
+                    r#type: &selectable_type.r#type,
                     selected: &selectable_type.selected,
                     deep_links: MetaCatalogResourceDeepLinks::from(&selectable_type.request),
                 })

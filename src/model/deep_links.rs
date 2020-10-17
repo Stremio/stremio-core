@@ -39,7 +39,7 @@ impl From<&LibraryItem> for LibraryItemDeepLinks {
                 .cloned()
                 .xor(Some(format!(
                     "#/metadetails/{}/{}",
-                    utf8_percent_encode(&item.type_, URI_COMPONENT_ENCODE_SET),
+                    utf8_percent_encode(&item.r#type, URI_COMPONENT_ENCODE_SET),
                     utf8_percent_encode(&item.id, URI_COMPONENT_ENCODE_SET)
                 ))),
             meta_details_streams: item
@@ -50,7 +50,7 @@ impl From<&LibraryItem> for LibraryItemDeepLinks {
                 .map(|video_id| {
                     format!(
                         "#/metadetails/{}/{}/{}",
-                        utf8_percent_encode(&item.type_, URI_COMPONENT_ENCODE_SET),
+                        utf8_percent_encode(&item.r#type, URI_COMPONENT_ENCODE_SET),
                         utf8_percent_encode(&item.id, URI_COMPONENT_ENCODE_SET),
                         utf8_percent_encode(&video_id, URI_COMPONENT_ENCODE_SET)
                     )
@@ -76,7 +76,7 @@ impl From<&MetaItemPreview> for MetaItemDeepLinks {
                 .cloned()
                 .xor(Some(format!(
                     "#/metadetails/{}/{}",
-                    utf8_percent_encode(&item.type_, URI_COMPONENT_ENCODE_SET),
+                    utf8_percent_encode(&item.r#type, URI_COMPONENT_ENCODE_SET),
                     utf8_percent_encode(&item.id, URI_COMPONENT_ENCODE_SET)
                 ))),
             meta_details_streams: item
@@ -86,7 +86,7 @@ impl From<&MetaItemPreview> for MetaItemDeepLinks {
                 .map(|video_id| {
                     format!(
                         "#/metadetails/{}/{}/{}",
-                        utf8_percent_encode(&item.type_, URI_COMPONENT_ENCODE_SET),
+                        utf8_percent_encode(&item.r#type, URI_COMPONENT_ENCODE_SET),
                         utf8_percent_encode(&item.id, URI_COMPONENT_ENCODE_SET),
                         utf8_percent_encode(&video_id, URI_COMPONENT_ENCODE_SET)
                     )
@@ -105,7 +105,7 @@ impl From<&MetaItem> for MetaItemDeepLinks {
                 .cloned()
                 .xor(Some(format!(
                     "#/metadetails/{}/{}",
-                    utf8_percent_encode(&item.type_, URI_COMPONENT_ENCODE_SET),
+                    utf8_percent_encode(&item.r#type, URI_COMPONENT_ENCODE_SET),
                     utf8_percent_encode(&item.id, URI_COMPONENT_ENCODE_SET)
                 ))),
             meta_details_streams: item
@@ -115,7 +115,7 @@ impl From<&MetaItem> for MetaItemDeepLinks {
                 .map(|video_id| {
                     format!(
                         "#/metadetails/{}/{}/{}",
-                        utf8_percent_encode(&item.type_, URI_COMPONENT_ENCODE_SET),
+                        utf8_percent_encode(&item.r#type, URI_COMPONENT_ENCODE_SET),
                         utf8_percent_encode(&item.id, URI_COMPONENT_ENCODE_SET),
                         utf8_percent_encode(&video_id, URI_COMPONENT_ENCODE_SET)
                     )
@@ -135,7 +135,7 @@ impl From<(&Video, &ResourceRequest)> for VideoDeepLinks {
         VideoDeepLinks {
             meta_details_streams: format!(
                 "#/metadetails/{}/{}/{}",
-                utf8_percent_encode(&request.path.type_, URI_COMPONENT_ENCODE_SET),
+                utf8_percent_encode(&request.path.r#type, URI_COMPONENT_ENCODE_SET),
                 utf8_percent_encode(&request.path.id, URI_COMPONENT_ENCODE_SET),
                 utf8_percent_encode(&video.id, URI_COMPONENT_ENCODE_SET)
             ),
@@ -154,7 +154,7 @@ impl From<(&Video, &ResourceRequest)> for VideoDeepLinks {
                         ),
                         utf8_percent_encode(&request.base.as_str(), URI_COMPONENT_ENCODE_SET),
                         utf8_percent_encode(&request.base.as_str(), URI_COMPONENT_ENCODE_SET),
-                        utf8_percent_encode(&request.path.type_, URI_COMPONENT_ENCODE_SET),
+                        utf8_percent_encode(&request.path.r#type, URI_COMPONENT_ENCODE_SET),
                         utf8_percent_encode(&request.path.id, URI_COMPONENT_ENCODE_SET),
                         utf8_percent_encode(&video.id, URI_COMPONENT_ENCODE_SET)
                     )
@@ -195,7 +195,7 @@ impl From<(&Stream, &ResourceRequest, &ResourceRequest)> for StreamDeepLinks {
                 ),
                 utf8_percent_encode(&stream_request.base.as_str(), URI_COMPONENT_ENCODE_SET),
                 utf8_percent_encode(&meta_request.base.as_str(), URI_COMPONENT_ENCODE_SET),
-                utf8_percent_encode(&meta_request.path.type_, URI_COMPONENT_ENCODE_SET),
+                utf8_percent_encode(&meta_request.path.r#type, URI_COMPONENT_ENCODE_SET),
                 utf8_percent_encode(&meta_request.path.id, URI_COMPONENT_ENCODE_SET),
                 utf8_percent_encode(&stream_request.path.id, URI_COMPONENT_ENCODE_SET)
             ),
@@ -214,7 +214,7 @@ impl From<&ResourceRequest> for MetaCatalogResourceDeepLinks {
             discover: format!(
                 "#/discover/{}/{}/{}?{}",
                 utf8_percent_encode(&request.base.as_str(), URI_COMPONENT_ENCODE_SET),
-                utf8_percent_encode(&request.path.type_, URI_COMPONENT_ENCODE_SET),
+                utf8_percent_encode(&request.path.r#type, URI_COMPONENT_ENCODE_SET),
                 utf8_percent_encode(&request.path.id, URI_COMPONENT_ENCODE_SET),
                 query_params_encode(
                     request
@@ -242,13 +242,13 @@ impl From<&String> for LibraryDeepLinks {
 }
 
 impl From<(&String, &Option<String>, &Sort)> for LibraryDeepLinks {
-    fn from((root, type_, sort): (&String, &Option<String>, &Sort)) -> Self {
+    fn from((root, r#type, sort): (&String, &Option<String>, &Sort)) -> Self {
         LibraryDeepLinks {
-            library: match type_ {
-                Some(type_) => format!(
+            library: match r#type {
+                Some(r#type) => format!(
                     "#/{}/{}?{}",
                     root,
-                    utf8_percent_encode(type_, URI_COMPONENT_ENCODE_SET),
+                    utf8_percent_encode(r#type, URI_COMPONENT_ENCODE_SET),
                     query_params_encode(&[("sort", serde_json::to_string(sort).unwrap())])
                 ),
                 _ => format!(
