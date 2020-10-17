@@ -2,7 +2,7 @@ use crate::addon_transport::http_transport::legacy::AddonLegacyTransport;
 use crate::addon_transport::AddonTransport;
 use crate::constants::{ADDON_LEGACY_PATH, ADDON_MANIFEST_PATH};
 use crate::runtime::{Env, EnvError, EnvFuture};
-use crate::types::addon::{Manifest, ResourceRef, ResourceResponse};
+use crate::types::addon::{Manifest, ResourcePath, ResourceResponse};
 use futures::{future, FutureExt};
 use http::Request;
 use std::marker::PhantomData;
@@ -23,7 +23,7 @@ impl<E: Env> AddonHTTPTransport<E> {
 }
 
 impl<E: Env> AddonTransport for AddonHTTPTransport<E> {
-    fn resource(&self, path: &ResourceRef) -> EnvFuture<ResourceResponse> {
+    fn resource(&self, path: &ResourcePath) -> EnvFuture<ResourceResponse> {
         if self.transport_url.path().ends_with(ADDON_LEGACY_PATH) {
             return AddonLegacyTransport::<E>::new(&self.transport_url).resource(&path);
         }

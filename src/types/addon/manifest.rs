@@ -1,4 +1,4 @@
-use crate::types::addon::{ExtraValue, ResourceRef};
+use crate::types::addon::{ExtraValue, ResourcePath};
 use derivative::Derivative;
 use derive_more::Deref;
 use either::Either;
@@ -31,7 +31,7 @@ pub struct Manifest {
 }
 
 impl Manifest {
-    pub fn is_resource_supported(&self, path: &ResourceRef) -> bool {
+    pub fn is_resource_supported(&self, path: &ResourcePath) -> bool {
         match path.resource.as_str() {
             "catalog" => self.catalogs.iter().any(|catalog| {
                 catalog.type_ == path.type_

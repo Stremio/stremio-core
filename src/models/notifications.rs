@@ -3,7 +3,7 @@ use crate::models::ctx::Ctx;
 use crate::runtime::msg::Internal::*;
 use crate::runtime::msg::*;
 use crate::runtime::*;
-use crate::types::addon::{ExtraValue, ResourceRef, ResourceRequest};
+use crate::types::addon::{ExtraValue, ResourcePath, ResourceRequest};
 use crate::types::resource::MetaItem;
 use futures::FutureExt;
 use lazysort::SortedBy;
@@ -48,7 +48,7 @@ impl<E: Env + 'static> UpdateWithCtx<Ctx<E>> for Notifications {
                                         && !item.removed
                                         && cat.type_ == item.type_
                                         && addon.manifest.is_resource_supported(
-                                            &ResourceRef::without_extra(
+                                            &ResourcePath::without_extra(
                                                 "meta",
                                                 &item.type_,
                                                 &item.id,
@@ -69,7 +69,7 @@ impl<E: Env + 'static> UpdateWithCtx<Ctx<E>> for Notifications {
                                         name: LAST_VID_IDS.into(),
                                         value: ids.join(","),
                                     }];
-                                    let path = ResourceRef::with_extra(
+                                    let path = ResourcePath::with_extra(
                                         "catalog",
                                         &cat.type_,
                                         &cat.id,

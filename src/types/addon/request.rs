@@ -50,7 +50,7 @@ impl ExtraExt for Vec<ExtraValue> {
 
 #[derive(Clone, PartialEq, Serialize, Deserialize)]
 #[cfg_attr(test, derive(Debug))]
-pub struct ResourceRef {
+pub struct ResourcePath {
     pub resource: String,
     #[serde(rename = "type")]
     pub type_: String,
@@ -58,9 +58,9 @@ pub struct ResourceRef {
     pub extra: Vec<ExtraValue>,
 }
 
-impl ResourceRef {
+impl ResourcePath {
     pub fn without_extra(resource: &str, type_: &str, id: &str) -> Self {
-        ResourceRef {
+        ResourcePath {
             resource: resource.to_owned(),
             type_: type_.to_owned(),
             id: id.to_owned(),
@@ -68,7 +68,7 @@ impl ResourceRef {
         }
     }
     pub fn with_extra(resource: &str, type_: &str, id: &str, extra: &[ExtraValue]) -> Self {
-        ResourceRef {
+        ResourcePath {
             resource: resource.to_owned(),
             type_: type_.to_owned(),
             id: id.to_owned(),
@@ -81,12 +81,12 @@ impl ResourceRef {
             .find(|extra_value| extra_value.name == name)
             .map(|extra_value| &extra_value.value)
     }
-    pub fn eq_no_extra(&self, other: &ResourceRef) -> bool {
+    pub fn eq_no_extra(&self, other: &ResourcePath) -> bool {
         self.resource == other.resource && self.type_ == other.type_ && self.id == other.id
     }
 }
 
-impl fmt::Display for ResourceRef {
+impl fmt::Display for ResourcePath {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(
             f,
@@ -110,11 +110,11 @@ impl fmt::Display for ResourceRef {
 #[cfg_attr(test, derive(Debug))]
 pub struct ResourceRequest {
     pub base: Url,
-    pub path: ResourceRef,
+    pub path: ResourcePath,
 }
 
 impl ResourceRequest {
-    pub fn new(base: Url, path: ResourceRef) -> Self {
+    pub fn new(base: Url, path: ResourcePath) -> Self {
         ResourceRequest { base, path }
     }
     pub fn eq_no_extra(&self, other: &ResourceRequest) -> bool {
@@ -126,7 +126,7 @@ impl ResourceRequest {
 #[cfg_attr(test, derive(Debug))]
 pub enum AggrRequest<'a> {
     AllCatalogs { extra: &'a Vec<ExtraValue> },
-    AllOfResource(ResourceRef),
+    AllOfResource(ResourcePath),
 }
 
 impl AggrRequest<'_> {
@@ -145,7 +145,7 @@ impl AggrRequest<'_> {
                                 addon,
                                 ResourceRequest::new(
                                     addon.transport_url.to_owned(),
-                                    ResourceRef::with_extra(
+                                    ResourcePath::with_extra(
                                         "catalog",
                                         &catalog.type_,
                                         &catalog.id,

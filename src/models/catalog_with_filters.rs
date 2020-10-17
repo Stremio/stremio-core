@@ -7,7 +7,7 @@ use crate::models::ctx::Ctx;
 use crate::runtime::msg::{Action, ActionLoad, Internal, Msg};
 use crate::runtime::{Effects, Env, UpdateWithCtx};
 use crate::types::addon::{
-    DescriptorPreview, ExtraExt, Manifest, ManifestCatalog, ResourceRef, ResourceRequest,
+    DescriptorPreview, ExtraExt, Manifest, ManifestCatalog, ResourcePath, ResourceRequest,
     ResourceResponse,
 };
 use crate::types::profile::Profile;
@@ -212,7 +212,7 @@ fn selectable_update<T: CatalogResourceAdapter>(
                         .unwrap_or_default(),
                     request: ResourceRequest {
                         base: addon.transport_url.to_owned(),
-                        path: ResourceRef {
+                        path: ResourcePath {
                             resource: T::resource().to_owned(),
                             type_: manifest_catalog.type_.to_owned(),
                             id: manifest_catalog.id.to_owned(),
@@ -320,7 +320,7 @@ fn selectable_update<T: CatalogResourceAdapter>(
                                             ),
                                             request: ResourceRequest {
                                                 base: catalog.request.base.to_owned(),
-                                                path: ResourceRef {
+                                                path: ResourcePath {
                                                     resource: T::resource().to_owned(),
                                                     type_: manifest_catalog.type_.to_owned(),
                                                     id: manifest_catalog.id.to_owned(),
@@ -346,7 +346,7 @@ fn selectable_update<T: CatalogResourceAdapter>(
                                         ),
                                         request: ResourceRequest {
                                             base: catalog.request.base.to_owned(),
-                                            path: ResourceRef {
+                                            path: ResourcePath {
                                                 resource: T::resource().to_owned(),
                                                 type_: manifest_catalog.type_.to_owned(),
                                                 id: manifest_catalog.id.to_owned(),
@@ -385,7 +385,7 @@ fn selectable_update<T: CatalogResourceAdapter>(
                             .unwrap_or(0);
                         let prev_page = (skip > 0).as_option().map(|_| ResourceRequest {
                             base: catalog.request.base.to_owned(),
-                            path: ResourceRef {
+                            path: ResourcePath {
                                 resource: T::resource().to_owned(),
                                 type_: manifest_catalog.type_.to_owned(),
                                 id: manifest_catalog.id.to_owned(),
@@ -404,7 +404,7 @@ fn selectable_update<T: CatalogResourceAdapter>(
                             Loadable::Ready(content) if content.len() == page_size => {
                                 Some(ResourceRequest {
                                     base: catalog.request.base.to_owned(),
-                                    path: ResourceRef {
+                                    path: ResourcePath {
                                         resource: T::resource().to_owned(),
                                         type_: manifest_catalog.type_.to_owned(),
                                         id: manifest_catalog.id.to_owned(),

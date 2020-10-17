@@ -6,7 +6,7 @@ use crate::models::common::{
 use crate::models::ctx::Ctx;
 use crate::runtime::msg::{Action, ActionLoad, ActionPlayer, Internal, Msg};
 use crate::runtime::{Effects, Env, UpdateWithCtx};
-use crate::types::addon::{AggrRequest, ResourceRef, ResourceRequest};
+use crate::types::addon::{AggrRequest, ResourcePath, ResourceRequest};
 use crate::types::library::{
     LibraryBucket, LibraryItem, LibraryItemBehaviorHints, LibraryItemState,
 };
@@ -23,7 +23,7 @@ pub struct Selected {
     #[serde(default)]
     pub meta_resource_request: Option<ResourceRequest>,
     #[serde(default)]
-    pub subtitles_resource_ref: Option<ResourceRef>,
+    pub subtitles_resource_ref: Option<ResourcePath>,
     #[serde(default)]
     pub video_id: Option<String>,
 }
