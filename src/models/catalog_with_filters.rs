@@ -221,9 +221,7 @@ fn selectable_update<T: CatalogResourceAdapter>(
                     },
                 })
         })
-        .dedup_by(|a, b| {
-            a.request.base == b.request.base && a.request.path.eq_no_extra(&b.request.path)
-        })
+        .dedup_by(|a, b| a.request.eq_no_extra(&b.request))
         .collect::<Vec<_>>();
     let (selectable_types, selectable_catalogs) = match T::selectable_priority() {
         SelectablePriority::Type => {
