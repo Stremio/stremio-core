@@ -55,8 +55,6 @@ impl Env for WebEnv {
                         resp.status(),
                     ))))
                 } else {
-                    // @TODO: optimize this, as this is basically deserializing in JS -> serializing in
-                    // JS -> deserializing in rust
                     Either::Left(
                         JsFuture::from(resp.json().unwrap())
                             .map_err(|error| EnvError::Fetch(js_error_message(error))),
