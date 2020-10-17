@@ -99,6 +99,7 @@ pub enum ManifestResource {
 }
 
 impl ManifestResource {
+    #[inline]
     fn name(&self) -> &str {
         match self {
             ManifestResource::Short(name) => name,

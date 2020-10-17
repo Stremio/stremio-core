@@ -28,9 +28,11 @@ pub struct LibraryItem {
 }
 
 impl LibraryItem {
+    #[inline]
     pub fn should_sync(&self) -> bool {
         !self.removed || self.state.overall_time_watched > 60_000
     }
+    #[inline]
     pub fn is_in_continue_watching(&self) -> bool {
         self.should_sync() && (!self.removed || self.temp) && self.state.time_offset > 0
     }

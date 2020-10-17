@@ -59,6 +59,7 @@ pub struct ResourcePath {
 }
 
 impl ResourcePath {
+    #[inline]
     pub fn without_extra(resource: &str, type_: &str, id: &str) -> Self {
         ResourcePath {
             resource: resource.to_owned(),
@@ -67,6 +68,7 @@ impl ResourcePath {
             extra: vec![],
         }
     }
+    #[inline]
     pub fn with_extra(resource: &str, type_: &str, id: &str, extra: &[ExtraValue]) -> Self {
         ResourcePath {
             resource: resource.to_owned(),
@@ -75,12 +77,14 @@ impl ResourcePath {
             extra: extra.to_owned(),
         }
     }
+    #[inline]
     pub fn get_extra_first_value(&self, name: &str) -> Option<&String> {
         self.extra
             .iter()
             .find(|extra_value| extra_value.name == name)
             .map(|extra_value| &extra_value.value)
     }
+    #[inline]
     pub fn eq_no_extra(&self, other: &ResourcePath) -> bool {
         self.resource == other.resource && self.type_ == other.type_ && self.id == other.id
     }
@@ -117,6 +121,7 @@ impl ResourceRequest {
     pub fn new(base: Url, path: ResourcePath) -> Self {
         ResourceRequest { base, path }
     }
+    #[inline]
     pub fn eq_no_extra(&self, other: &ResourceRequest) -> bool {
         self.base == other.base && self.path.eq_no_extra(&other.path)
     }
