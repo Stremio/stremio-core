@@ -24,10 +24,9 @@ impl InstalledAddonsWithFilters {
         let mut types = vec![];
         let effects = types_update(&mut types, &profile);
         (
-            InstalledAddonsWithFilters {
+            Self {
                 types,
-                selected: None,
-                addons: vec![],
+                ..Self::default()
             },
             effects.unchanged(),
         )

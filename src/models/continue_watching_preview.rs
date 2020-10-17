@@ -16,10 +16,7 @@ impl ContinueWatchingPreview {
     pub fn new(library: &LibraryBucket) -> (Self, Effects) {
         let mut library_items = vec![];
         let effects = library_items_update(&mut library_items, &library);
-        (
-            ContinueWatchingPreview { library_items },
-            effects.unchanged(),
-        )
+        (Self { library_items }, effects.unchanged())
     }
 }
 

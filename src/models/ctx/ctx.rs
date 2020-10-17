@@ -38,11 +38,10 @@ pub struct Ctx<E: Env> {
 
 impl<E: Env> Ctx<E> {
     pub fn new(profile: Profile, library: LibraryBucket) -> Self {
-        Ctx {
+        Self {
             profile,
             library,
-            status: CtxStatus::Ready,
-            env: PhantomData,
+            ..Self::default()
         }
     }
 }

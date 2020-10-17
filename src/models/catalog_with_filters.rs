@@ -13,6 +13,7 @@ use crate::types::addon::{
 use crate::types::profile::Profile;
 use crate::types::resource::MetaItemPreview;
 use boolinator::Boolinator;
+use derivative::Derivative;
 use itertools::Itertools;
 use serde::{Deserialize, Serialize};
 use std::convert::TryFrom;
@@ -102,7 +103,8 @@ pub struct Selectable {
     pub next_page: Option<ResourceRequest>,
 }
 
-#[derive(Default, Serialize)]
+#[derive(Derivative, Serialize)]
+#[derivative(Default(bound = ""))]
 pub struct CatalogWithFilters<T> {
     pub selected: Option<Selected>,
     pub selectable: Selectable,
@@ -115,10 +117,10 @@ impl<T: CatalogResourceAdapter> CatalogWithFilters<T> {
         let mut selectable = Selectable::default();
         let effects = selectable_update::<T>(&mut selectable, &catalog, &profile);
         (
-            CatalogWithFilters {
+            Self {
                 selectable,
                 catalog,
-                selected: None,
+                ..Self::default()
             },
             effects.unchanged(),
         )

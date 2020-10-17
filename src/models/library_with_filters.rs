@@ -74,7 +74,7 @@ pub struct Selectable {
 }
 
 #[derive(Derivative, Serialize)]
-#[derivative(Default)]
+#[derivative(Default(bound = ""))]
 pub struct LibraryWithFilters<F> {
     pub selected: Option<Selected>,
     pub selectable: Selectable,
@@ -88,11 +88,10 @@ impl<F: LibraryFilter> LibraryWithFilters<F> {
         let mut selectable = Selectable::default();
         let effects = selectable_update::<F>(&mut selectable, &selected, &library);
         (
-            LibraryWithFilters {
+            Self {
                 selectable,
                 selected,
-                library_items: vec![],
-                filter: PhantomData,
+                ..Self::default()
             },
             effects.unchanged(),
         )

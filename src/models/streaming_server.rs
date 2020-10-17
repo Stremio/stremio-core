@@ -42,7 +42,7 @@ impl StreamingServer {
             get_base_url::<E>(&selected),
         ]);
         (
-            StreamingServer {
+            Self {
                 selected,
                 settings: Loadable::Loading,
                 base_url: Loadable::Loading,
