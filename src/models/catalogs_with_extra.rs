@@ -17,7 +17,7 @@ pub struct Selected {
 #[derive(Default, Serialize)]
 pub struct CatalogsWithExtra {
     pub selected: Option<Selected>,
-    pub catalog_resources: Vec<ResourceLoadable<Vec<MetaItemPreview>>>,
+    pub catalogs: Vec<ResourceLoadable<Vec<MetaItemPreview>>>,
 }
 
 impl<E: Env + 'static> UpdateWithCtx<Ctx<E>> for CatalogsWithExtra {
@@ -26,7 +26,7 @@ impl<E: Env + 'static> UpdateWithCtx<Ctx<E>> for CatalogsWithExtra {
             Msg::Action(Action::Load(ActionLoad::CatalogsWithExtra(selected))) => {
                 let selected_effects = eq_update(&mut self.selected, Some(selected.to_owned()));
                 let catalogs_effects = resources_update_with_vector_content::<E, _>(
-                    &mut self.catalog_resources,
+                    &mut self.catalogs,
                     ResourcesAction::ResourcesRequested {
                         request: &AggrRequest::AllCatalogs {
                             extra: &selected.extra,
@@ -38,12 +38,12 @@ impl<E: Env + 'static> UpdateWithCtx<Ctx<E>> for CatalogsWithExtra {
             }
             Msg::Action(Action::Unload) => {
                 let selected_effects = eq_update(&mut self.selected, None);
-                let catalogs_effects = eq_update(&mut self.catalog_resources, vec![]);
+                let catalogs_effects = eq_update(&mut self.catalogs, vec![]);
                 selected_effects.join(catalogs_effects)
             }
             Msg::Internal(Internal::ResourceRequestResult(request, result)) => {
                 resources_update_with_vector_content::<E, _>(
-                    &mut self.catalog_resources,
+                    &mut self.catalogs,
                     ResourcesAction::ResourceRequestResult {
                         request,
                         result,
@@ -53,7 +53,7 @@ impl<E: Env + 'static> UpdateWithCtx<Ctx<E>> for CatalogsWithExtra {
             }
             Msg::Internal(Internal::ProfileChanged) => match &self.selected {
                 Some(selected) => resources_update_with_vector_content::<E, _>(
-                    &mut self.catalog_resources,
+                    &mut self.catalogs,
                     ResourcesAction::ResourcesRequested {
                         request: &AggrRequest::AllCatalogs {
                             extra: &selected.extra,
