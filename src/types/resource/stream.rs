@@ -19,25 +19,6 @@ pub struct Stream {
     pub behavior_hints: serde_json::Map<String, serde_json::Value>,
 }
 
-impl Stream {
-    pub fn is_web_ready(&self) -> bool {
-        if self.behavior_hints.get("notWebReady") == Some(&serde_json::Value::Bool(true)) {
-            return false;
-        }
-        match &self.source {
-            StreamSource::Url { url } => url.scheme() == "https",
-            _ => false,
-        }
-    }
-    pub fn is_p2p(&self) -> bool {
-        match &self.source {
-            StreamSource::Torrent { .. } => true,
-            StreamSource::Url { url } => url.scheme() == "magnet",
-            _ => false,
-        }
-    }
-}
-
 #[derive(Clone, PartialEq, Serialize, Deserialize)]
 #[cfg_attr(test, derive(Debug))]
 #[serde(untagged)]
