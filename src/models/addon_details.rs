@@ -73,10 +73,5 @@ fn local_addon_update(
             .find(|addon| addon.transport_url == selected.transport_url)
             .cloned()
     });
-    if *local_addon != next_local_addon {
-        *local_addon = next_local_addon;
-        Effects::none()
-    } else {
-        Effects::none().unchanged()
-    }
+    eq_update(local_addon, next_local_addon)
 }

@@ -1,4 +1,5 @@
 use crate::constants::CATALOG_PREVIEW_SIZE;
+use crate::models::common::eq_update;
 use crate::models::ctx::Ctx;
 use crate::runtime::msg::{Internal, Msg};
 use crate::runtime::{Effects, Env, UpdateWithCtx};
@@ -31,10 +32,5 @@ fn library_items_update(library_items: &mut Vec<LibraryItem>, library: &LibraryB
         .take(CATALOG_PREVIEW_SIZE)
         .cloned()
         .collect::<Vec<_>>();
-    if *library_items != next_library_items {
-        *library_items = next_library_items;
-        Effects::none()
-    } else {
-        Effects::none().unchanged()
-    }
+    eq_update(library_items, next_library_items)
 }

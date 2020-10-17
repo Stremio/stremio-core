@@ -221,12 +221,7 @@ fn next_video_update(
             .cloned(),
         _ => None,
     };
-    if video != &next_video {
-        *video = next_video;
-        Effects::none()
-    } else {
-        Effects::none().unchanged()
-    }
+    eq_update(video, next_video)
 }
 
 fn library_item_update<E: Env>(

@@ -105,10 +105,5 @@ fn addons_update(
             .collect::<Vec<_>>(),
         _ => vec![],
     };
-    if *addons != next_addons {
-        *addons = next_addons;
-        Effects::none()
-    } else {
-        Effects::none().unchanged()
-    }
+    eq_update(addons, next_addons)
 }

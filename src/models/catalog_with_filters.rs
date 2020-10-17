@@ -435,10 +435,5 @@ fn selectable_update<T: CatalogResourceAdapter>(
         prev_page,
         next_page,
     };
-    if *selectable != next_selectable {
-        *selectable = next_selectable;
-        Effects::none()
-    } else {
-        Effects::none().unchanged()
-    }
+    eq_update(selectable, next_selectable)
 }

@@ -198,12 +198,7 @@ fn selectable_update<F: LibraryFilter>(
         types: selectable_types,
         sorts: selectable_sorts,
     };
-    if *selectable != next_selectable {
-        *selectable = next_selectable;
-        Effects::none()
-    } else {
-        Effects::none().unchanged()
-    }
+    eq_update(selectable, next_selectable)
 }
 
 fn library_items_update<F: LibraryFilter>(
@@ -229,10 +224,5 @@ fn library_items_update<F: LibraryFilter>(
             .collect(),
         _ => vec![],
     };
-    if *library_items != next_library_items {
-        *library_items = next_library_items;
-        Effects::none()
-    } else {
-        Effects::none().unchanged()
-    }
+    eq_update(library_items, next_library_items)
 }
