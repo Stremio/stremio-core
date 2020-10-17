@@ -42,6 +42,8 @@ pub struct WebModel {
 
 impl WebModel {
     pub fn new(profile: Profile, library: LibraryBucket) -> (WebModel, Effects) {
+        let (continue_watching_preview, continue_watching_preview_effects) =
+            ContinueWatchingPreview::new(&library);
         let (discover, discover_effects) = CatalogWithFilters::<MetaItemPreview>::new(&profile);
         let (remote_addons, remote_addons_effects) =
             CatalogWithFilters::<DescriptorPreview>::new(&profile);
@@ -50,11 +52,11 @@ impl WebModel {
         let (streaming_server, streaming_server_effects) = StreamingServer::new::<WebEnv>(&profile);
         let model = WebModel {
             ctx: Ctx::new(profile, library),
+            continue_watching_preview,
             discover,
             remote_addons,
             installed_addons,
             streaming_server,
-            continue_watching_preview: Default::default(),
             board: Default::default(),
             library: Default::default(),
             continue_watching: Default::default(),
@@ -65,7 +67,8 @@ impl WebModel {
         };
         (
             model,
-            discover_effects
+            continue_watching_preview_effects
+                .join(discover_effects)
                 .join(remote_addons_effects)
                 .join(installed_addons_effects)
                 .join(streaming_server_effects),
