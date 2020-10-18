@@ -45,6 +45,9 @@ impl WebModel {
         let (continue_watching_preview, continue_watching_preview_effects) =
             ContinueWatchingPreview::new(&library);
         let (discover, discover_effects) = CatalogWithFilters::<MetaItemPreview>::new(&profile);
+        let (library_, library_effects) = LibraryWithFilters::<NotRemovedFilter>::new(&library);
+        let (continue_watching, continue_watching_effects) =
+            LibraryWithFilters::<ContinueWatchingFilter>::new(&library);
         let (remote_addons, remote_addons_effects) =
             CatalogWithFilters::<DescriptorPreview>::new(&profile);
         let (installed_addons, installed_addons_effects) =
@@ -55,20 +58,22 @@ impl WebModel {
             continue_watching_preview,
             board: Default::default(),
             discover,
-            remote_addons,
-            installed_addons,
-            streaming_server,
-            library: Default::default(),
-            continue_watching: Default::default(),
+            library: library_,
+            continue_watching,
             search: Default::default(),
             meta_details: Default::default(),
+            remote_addons,
+            installed_addons,
             addon_details: Default::default(),
+            streaming_server,
             player: Default::default(),
         };
         (
             model,
             continue_watching_preview_effects
                 .join(discover_effects)
+                .join(library_effects)
+                .join(continue_watching_effects)
                 .join(remote_addons_effects)
                 .join(installed_addons_effects)
                 .join(streaming_server_effects),
