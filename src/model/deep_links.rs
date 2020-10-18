@@ -5,7 +5,7 @@ use serde::Serialize;
 use std::borrow::Borrow;
 use std::io;
 use std::io::Write;
-use stremio_core::models::library_with_filters::Sort;
+use stremio_core::models::library_with_filters::LibraryRequest;
 use stremio_core::types::addon::{ExtraValue, ResourceRequest};
 use stremio_core::types::library::LibraryItem;
 use stremio_core::types::resource::{MetaItem, MetaItemPreview, Stream, Video};
@@ -241,20 +241,20 @@ impl From<&String> for LibraryDeepLinks {
     }
 }
 
-impl From<(&String, &Option<String>, &Sort)> for LibraryDeepLinks {
-    fn from((root, r#type, sort): (&String, &Option<String>, &Sort)) -> Self {
+impl From<(&String, &LibraryRequest)> for LibraryDeepLinks {
+    fn from((root, request): (&String, &LibraryRequest)) -> Self {
         LibraryDeepLinks {
-            library: match r#type {
+            library: match &request.r#type {
                 Some(r#type) => format!(
                     "#/{}/{}?{}",
                     root,
-                    utf8_percent_encode(r#type, URI_COMPONENT_ENCODE_SET),
-                    query_params_encode(&[("sort", serde_json::to_string(sort).unwrap())])
+                    utf8_percent_encode(&r#type, URI_COMPONENT_ENCODE_SET),
+                    query_params_encode(&[("sort", serde_json::to_string(&request.sort).unwrap())])
                 ),
                 _ => format!(
                     "#/{}?{}",
                     root,
-                    query_params_encode(&[("sort", serde_json::to_string(sort).unwrap())])
+                    query_params_encode(&[("sort", serde_json::to_string(&request.sort).unwrap())])
                 ),
             },
         }
