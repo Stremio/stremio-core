@@ -7,6 +7,7 @@ use crate::types::library::{LibraryBucket, LibraryItem};
 use derivative::Derivative;
 use itertools::Itertools;
 use serde::{Deserialize, Serialize};
+use std::iter;
 use std::marker::PhantomData;
 use strum::IntoEnumIterator;
 use strum_macros::EnumIter;
@@ -166,7 +167,23 @@ fn selectable_update<F: LibraryFilter>(
                 .map(|selected| selected.request.r#type == r#type)
                 .unwrap_or_default(),
         })
-        .collect();
+        .collect::<Vec<_>>();
+    let selectable_types = iter::once(SelectableType {
+        r#type: None,
+        request: LibraryRequest {
+            r#type: None,
+            sort: selected
+                .as_ref()
+                .map(|selected| selected.request.sort.to_owned())
+                .unwrap_or_default(),
+        },
+        selected: selected
+            .as_ref()
+            .map(|selected| selected.request.r#type.is_none())
+            .unwrap_or_default(),
+    })
+    .chain(selectable_types.into_iter())
+    .collect::<Vec<_>>();
     let selectable_sorts = Sort::iter()
         .map(|sort| SelectableSort {
             sort: sort.to_owned(),
