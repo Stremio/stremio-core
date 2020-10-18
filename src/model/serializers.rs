@@ -1,6 +1,7 @@
 use crate::env::WebEnv;
 use crate::model::deep_links::{
     LibraryDeepLinks, LibraryItemDeepLinks, MetaCatalogResourceDeepLinks, MetaItemDeepLinks,
+    StreamDeepLinks,
 };
 use serde::Serialize;
 use stremio_core::constants::{CATALOG_PAGE_SIZE, SKIP_EXTRA_NAME};
@@ -18,7 +19,7 @@ use stremio_core::models::library_with_filters::{
 };
 use stremio_core::types::addon::ResourceRequest;
 use stremio_core::types::library::LibraryItem;
-use stremio_core::types::resource::MetaItemPreview;
+use stremio_core::types::resource::{MetaItemPreview, Stream};
 use wasm_bindgen::JsValue;
 
 pub fn serialize_catalogs_with_extra(
@@ -26,9 +27,17 @@ pub fn serialize_catalogs_with_extra(
     ctx: &Ctx<WebEnv>,
 ) -> JsValue {
     #[derive(Serialize)]
+    struct _Stream<'a> {
+        #[serde(flatten)]
+        stream: &'a Stream,
+        deep_links: StreamDeepLinks,
+    }
+    #[derive(Serialize)]
     struct _MetaItemPreview<'a> {
         #[serde(flatten)]
         meta_item: &'a MetaItemPreview,
+        #[serde(rename = "trailerStreams")]
+        trailer_streams: Vec<_Stream<'a>>,
         deep_links: MetaItemDeepLinks,
     }
     #[derive(Serialize)]
@@ -56,6 +65,14 @@ pub fn serialize_catalogs_with_extra(
                             .iter()
                             .map(|meta_item| _MetaItemPreview {
                                 meta_item,
+                                trailer_streams: meta_item
+                                    .trailer_streams
+                                    .iter()
+                                    .map(|stream| _Stream {
+                                        stream,
+                                        deep_links: StreamDeepLinks::from(stream),
+                                    })
+                                    .collect::<Vec<_>>(),
                                 deep_links: MetaItemDeepLinks::from(meta_item),
                             })
                             .collect::<Vec<_>>(),
@@ -212,9 +229,17 @@ pub fn serialize_discover(
         next_page: Option<SelectablePage>,
     }
     #[derive(Serialize)]
+    struct _Stream<'a> {
+        #[serde(flatten)]
+        stream: &'a Stream,
+        deep_links: StreamDeepLinks,
+    }
+    #[derive(Serialize)]
     struct _MetaItemPreview<'a> {
         #[serde(flatten)]
         meta_item: &'a MetaItemPreview,
+        #[serde(rename = "trailerStreams")]
+        trailer_streams: Vec<_Stream<'a>>,
         deep_links: MetaItemDeepLinks,
     }
     #[derive(Serialize)]
@@ -294,6 +319,14 @@ pub fn serialize_discover(
                         .iter()
                         .map(|meta_item| _MetaItemPreview {
                             meta_item,
+                            trailer_streams: meta_item
+                                .trailer_streams
+                                .iter()
+                                .map(|stream| _Stream {
+                                    stream,
+                                    deep_links: StreamDeepLinks::from(stream),
+                                })
+                                .collect::<Vec<_>>(),
                             deep_links: MetaItemDeepLinks::from(meta_item),
                         })
                         .collect::<Vec<_>>(),
