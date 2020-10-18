@@ -78,7 +78,7 @@ pub struct Selectable {
 pub struct LibraryWithFilters<F> {
     pub selected: Option<Selected>,
     pub selectable: Selectable,
-    pub library_items: Vec<LibraryItem>,
+    pub catalog: Vec<LibraryItem>,
     pub filter: PhantomData<F>,
 }
 
@@ -109,37 +109,28 @@ where
                 let selected_effects = eq_update(&mut self.selected, Some(selected.to_owned()));
                 let selectable_effects =
                     selectable_update::<F>(&mut self.selectable, &self.selected, &ctx.library);
-                let library_items_effects = library_items_update::<F>(
-                    &mut self.library_items,
-                    &self.selected,
-                    &ctx.library,
-                );
+                let catalog_effects =
+                    catalog_update::<F>(&mut self.catalog, &self.selected, &ctx.library);
                 selected_effects
                     .join(selectable_effects)
-                    .join(library_items_effects)
+                    .join(catalog_effects)
             }
             Msg::Action(Action::Unload) => {
                 let selected_effects = eq_update(&mut self.selected, None);
                 let selectable_effects =
                     selectable_update::<F>(&mut self.selectable, &self.selected, &ctx.library);
-                let library_items_effects = library_items_update::<F>(
-                    &mut self.library_items,
-                    &self.selected,
-                    &ctx.library,
-                );
+                let catalog_effects =
+                    catalog_update::<F>(&mut self.catalog, &self.selected, &ctx.library);
                 selected_effects
                     .join(selectable_effects)
-                    .join(library_items_effects)
+                    .join(catalog_effects)
             }
             Msg::Internal(Internal::LibraryChanged(_)) => {
                 let selectable_effects =
                     selectable_update::<F>(&mut self.selectable, &self.selected, &ctx.library);
-                let library_items_effects = library_items_update::<F>(
-                    &mut self.library_items,
-                    &self.selected,
-                    &ctx.library,
-                );
-                selectable_effects.join(library_items_effects)
+                let catalog_effects =
+                    catalog_update::<F>(&mut self.catalog, &self.selected, &ctx.library);
+                selectable_effects.join(catalog_effects)
             }
             _ => Effects::none().unchanged(),
         }
@@ -198,12 +189,12 @@ fn selectable_update<F: LibraryFilter>(
     eq_update(selectable, next_selectable)
 }
 
-fn library_items_update<F: LibraryFilter>(
-    library_items: &mut Vec<LibraryItem>,
+fn catalog_update<F: LibraryFilter>(
+    catalog: &mut Vec<LibraryItem>,
     selected: &Option<Selected>,
     library: &LibraryBucket,
 ) -> Effects {
-    let next_library_items = match selected {
+    let next_catalog = match selected {
         Some(selected) => library
             .items
             .values()
@@ -221,5 +212,5 @@ fn library_items_update<F: LibraryFilter>(
             .collect(),
         _ => vec![],
     };
-    eq_update(library_items, next_library_items)
+    eq_update(catalog, next_catalog)
 }
