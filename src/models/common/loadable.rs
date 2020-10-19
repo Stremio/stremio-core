@@ -12,18 +12,21 @@ pub enum Loadable<R, E> {
 }
 
 impl<R, E> Loadable<R, E> {
+    #[inline]
     pub fn is_ready(&self) -> bool {
         match self {
             Loadable::Ready(_) => true,
             _ => false,
         }
     }
+    #[inline]
     pub fn is_err(&self) -> bool {
         match self {
             Loadable::Err(_) => true,
             _ => false,
         }
     }
+    #[inline]
     pub fn is_loading(&self) -> bool {
         match self {
             Loadable::Loading => true,

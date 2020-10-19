@@ -10,7 +10,7 @@ fn meta_item() {
         &vec![
             MetaItem {
                 id: "id".to_owned(),
-                type_: "type".to_owned(),
+                r#type: "type".to_owned(),
                 name: "name".to_owned(),
                 poster: Some("poster".to_owned()),
                 background: Some("background".to_owned()),
@@ -28,7 +28,7 @@ fn meta_item() {
             },
             MetaItem {
                 id: "id".to_owned(),
-                type_: "type".to_owned(),
+                r#type: "type".to_owned(),
                 name: "name".to_owned(),
                 poster: None,
                 background: None,
@@ -149,7 +149,7 @@ fn meta_item() {
     assert_de_tokens(
         &MetaItem {
             id: "id".to_owned(),
-            type_: "type".to_owned(),
+            r#type: "type".to_owned(),
             name: "".to_owned(),
             poster: None,
             background: None,

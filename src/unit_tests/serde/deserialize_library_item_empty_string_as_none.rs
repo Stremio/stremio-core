@@ -13,7 +13,7 @@ fn deserialize_library_item_empty_string_as_none() {
         mtime: Utc.ymd(2020, 1, 1).and_hms_milli(0, 0, 0, 0),
         state: LibraryItemState::default(),
         name: "name".to_owned(),
-        type_: "type".to_owned(),
+        r#type: "type".to_owned(),
         poster: None,
         poster_shape: PosterShape::Poster,
         behavior_hints: LibraryItemBehaviorHints::default(),

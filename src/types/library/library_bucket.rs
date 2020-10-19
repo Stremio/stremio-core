@@ -65,14 +65,14 @@ impl LibraryBucket {
 }
 
 #[derive(Serialize)]
-pub struct LibraryBucketBorrowed<'a> {
+pub struct LibraryBucketRef<'a> {
     pub uid: &'a UID,
     pub items: HashMap<&'a str, &'a LibraryItem>,
 }
 
-impl<'a> LibraryBucketBorrowed<'a> {
+impl<'a> LibraryBucketRef<'a> {
     pub fn new(uid: &'a UID, items: &[&'a LibraryItem]) -> Self {
-        LibraryBucketBorrowed {
+        LibraryBucketRef {
             uid,
             items: items.iter().map(|item| (item.id.as_str(), *item)).collect(),
         }

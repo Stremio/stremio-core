@@ -8,27 +8,44 @@ use itertools::Itertools;
 use serde::{Deserialize, Serialize};
 
 #[derive(Clone, PartialEq, Serialize, Deserialize)]
+pub struct InstalledAddonsRequest {
+    r#type: Option<String>,
+}
+
+#[derive(Clone, PartialEq, Serialize, Deserialize)]
 pub struct Selected {
-    #[serde(rename = "type")]
-    type_: Option<String>,
+    request: InstalledAddonsRequest,
+}
+
+#[derive(PartialEq, Serialize)]
+pub struct SelectableType {
+    pub r#type: Option<String>,
+    pub selected: bool,
+    pub request: InstalledAddonsRequest,
+}
+
+#[derive(Default, PartialEq, Serialize)]
+pub struct Selectable {
+    pub types: Vec<SelectableType>,
 }
 
 #[derive(Default, Serialize)]
 pub struct InstalledAddonsWithFilters {
     pub selected: Option<Selected>,
-    pub types: Vec<String>,
-    pub addons: Vec<DescriptorPreview>,
+    pub selectable: Selectable,
+    pub catalog: Vec<DescriptorPreview>,
 }
 
 impl InstalledAddonsWithFilters {
     pub fn new(profile: &Profile) -> (Self, Effects) {
-        let mut types = vec![];
-        let effects = types_update(&mut types, &profile);
+        let selected = None;
+        let mut selectable = Selectable::default();
+        let effects = selectable_update(&mut selectable, &selected, profile);
         (
-            InstalledAddonsWithFilters {
-                types,
-                selected: None,
-                addons: vec![],
+            Self {
+                selected,
+                selectable,
+                ..Self::default()
             },
             effects.unchanged(),
         )
@@ -43,51 +60,76 @@ where
         match msg {
             Msg::Action(Action::Load(ActionLoad::InstalledAddonsWithFilters(selected))) => {
                 let selected_effects = eq_update(&mut self.selected, Some(selected.to_owned()));
-                let addons_effects = addons_update(&mut self.addons, &self.selected, &ctx.profile);
-                selected_effects.join(addons_effects)
+                let selectable_effects =
+                    selectable_update(&mut self.selectable, &self.selected, &ctx.profile);
+                let catalog_effects =
+                    catalog_update(&mut self.catalog, &self.selected, &ctx.profile);
+                selected_effects
+                    .join(selectable_effects)
+                    .join(catalog_effects)
             }
             Msg::Action(Action::Unload) => {
                 let selected_effects = eq_update(&mut self.selected, None);
-                let addons_effects = addons_update(&mut self.addons, &self.selected, &ctx.profile);
-                selected_effects.join(addons_effects)
+                let selectable_effects =
+                    selectable_update(&mut self.selectable, &self.selected, &ctx.profile);
+                let catalog_effects =
+                    catalog_update(&mut self.catalog, &self.selected, &ctx.profile);
+                selected_effects
+                    .join(selectable_effects)
+                    .join(catalog_effects)
             }
             Msg::Internal(Internal::ProfileChanged) => {
-                let types_effects = types_update(&mut self.types, &ctx.profile);
-                let addons_effects = addons_update(&mut self.addons, &self.selected, &ctx.profile);
-                types_effects.join(addons_effects)
+                let selectable_effects =
+                    selectable_update(&mut self.selectable, &self.selected, &ctx.profile);
+                let catalog_effects =
+                    catalog_update(&mut self.catalog, &self.selected, &ctx.profile);
+                selectable_effects.join(catalog_effects)
             }
             _ => Effects::none().unchanged(),
         }
     }
 }
 
-fn types_update(types: &mut Vec<String>, profile: &Profile) -> Effects {
-    let next_types = profile
+fn selectable_update(
+    selectable: &mut Selectable,
+    selected: &Option<Selected>,
+    profile: &Profile,
+) -> Effects {
+    let selectable_types = profile
         .addons
         .iter()
         .flat_map(|addon| &addon.manifest.types)
         .unique()
         .cloned()
+        .map(|r#type| SelectableType {
+            r#type: Some(r#type.to_owned()),
+            selected: selected
+                .as_ref()
+                .and_then(|selected| selected.request.r#type.as_ref())
+                .map(|type_| *type_ == r#type)
+                .unwrap_or_default(),
+            request: InstalledAddonsRequest {
+                r#type: Some(r#type),
+            },
+        })
         .collect::<Vec<_>>();
-    if *types != next_types {
-        *types = next_types;
-        Effects::none()
-    } else {
-        Effects::none().unchanged()
-    }
+    let next_selectable = Selectable {
+        types: selectable_types,
+    };
+    eq_update(selectable, next_selectable)
 }
 
-fn addons_update(
-    addons: &mut Vec<DescriptorPreview>,
+fn catalog_update(
+    catalog: &mut Vec<DescriptorPreview>,
     selected: &Option<Selected>,
     profile: &Profile,
 ) -> Effects {
-    let next_addons = match selected {
+    let next_catalog = match selected {
         Some(selected) => profile
             .addons
             .iter()
-            .filter(|addon| match &selected.type_ {
-                Some(type_) => addon.manifest.types.contains(type_),
+            .filter(|addon| match &selected.request.r#type {
+                Some(r#type) => addon.manifest.types.contains(r#type),
                 None => true,
             })
             .map(|addon| DescriptorPreview {
@@ -105,10 +147,5 @@ fn addons_update(
             .collect::<Vec<_>>(),
         _ => vec![],
     };
-    if *addons != next_addons {
-        *addons = next_addons;
-        Effects::none()
-    } else {
-        Effects::none().unchanged()
-    }
+    eq_update(catalog, next_catalog)
 }

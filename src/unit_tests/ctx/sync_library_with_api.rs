@@ -2,9 +2,10 @@ use crate::constants::LIBRARY_RECENT_STORAGE_KEY;
 use crate::models::ctx::Ctx;
 use crate::runtime::msg::{Action, ActionCtx};
 use crate::runtime::{Effects, Env, EnvFuture, Runtime};
-use crate::types::api::{APIResult, LibraryItemModified, SuccessResponse, True};
+use crate::types::api::{APIResult, LibraryItemModified, SuccessResponse};
 use crate::types::library::{LibraryBucket, LibraryItem, LibraryItemState};
 use crate::types::profile::{Auth, AuthKey, GDPRConsent, Profile, User};
+use crate::types::True;
 use crate::unit_tests::{
     default_fetch_handler, Request, TestEnv, FETCH_HANDLER, REQUESTS, STORAGE,
 };
@@ -41,7 +42,7 @@ fn actionctx_synclibrarywithapi_with_user() {
     lazy_static! {
         static ref REMOTE_ONLY_ITEM: LibraryItem = LibraryItem {
             id: "id1".to_owned(),
-            type_: "type".to_owned(),
+            r#type: "type".to_owned(),
             name: "name".to_owned(),
             poster: None,
             poster_shape: Default::default(),
@@ -54,7 +55,7 @@ fn actionctx_synclibrarywithapi_with_user() {
         };
         static ref LOCAL_NEWER_ITEM: LibraryItem = LibraryItem {
             id: "id2".to_owned(),
-            type_: "type".to_owned(),
+            r#type: "type".to_owned(),
             name: "name".to_owned(),
             poster: None,
             poster_shape: Default::default(),
@@ -67,7 +68,7 @@ fn actionctx_synclibrarywithapi_with_user() {
         };
         static ref REMOTE_NEWER_ITEM: LibraryItem = LibraryItem {
             id: "id3".to_owned(),
-            type_: "type".to_owned(),
+            r#type: "type".to_owned(),
             name: "name".to_owned(),
             poster: None,
             poster_shape: Default::default(),
@@ -80,7 +81,7 @@ fn actionctx_synclibrarywithapi_with_user() {
         };
         static ref LOCAL_ONLY_ITEM: LibraryItem = LibraryItem {
             id: "id4".to_owned(),
-            type_: "type".to_owned(),
+            r#type: "type".to_owned(),
             name: "name".to_owned(),
             poster: None,
             poster_shape: Default::default(),
@@ -93,7 +94,7 @@ fn actionctx_synclibrarywithapi_with_user() {
         };
         static ref LOCAL_NOT_WATCHED_ITEM: LibraryItem = LibraryItem {
             id: "id5".to_owned(),
-            type_: "type".to_owned(),
+            r#type: "type".to_owned(),
             name: "name".to_owned(),
             poster: None,
             poster_shape: Default::default(),
@@ -106,7 +107,7 @@ fn actionctx_synclibrarywithapi_with_user() {
         };
         static ref LOCAL_WATCHED_ITEM: LibraryItem = LibraryItem {
             id: "id6".to_owned(),
-            type_: "type".to_owned(),
+            r#type: "type".to_owned(),
             name: "name".to_owned(),
             poster: None,
             poster_shape: Default::default(),

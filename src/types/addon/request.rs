@@ -1,9 +1,7 @@
 use crate::types::addon::{Descriptor, ExtraProp};
 use derive_more::{From, Into};
-use percent_encoding::{utf8_percent_encode, NON_ALPHANUMERIC};
 use serde::{Deserialize, Serialize};
-use std::fmt;
-use url::{form_urlencoded, Url};
+use url::Url;
 
 #[derive(Clone, From, Into, PartialEq, Serialize, Deserialize)]
 #[cfg_attr(test, derive(Debug))]
@@ -14,31 +12,34 @@ pub struct ExtraValue {
 }
 
 pub trait ExtraExt {
-    fn extend_one(self, prop: &ExtraProp, value: Option<ExtraValue>) -> Self;
+    fn extend_one(self, prop: &ExtraProp, value: Option<String>) -> Self;
 }
 
 impl ExtraExt for Vec<ExtraValue> {
-    fn extend_one(self, prop: &ExtraProp, value: Option<ExtraValue>) -> Self {
-        if value.as_ref().map(|ev| &ev.name) != Some(&prop.name) {
-            return self;
-        }
-
+    fn extend_one(self, prop: &ExtraProp, value: Option<String>) -> Self {
         let (extra, other_extra) = self
             .into_iter()
             .partition::<Vec<ExtraValue>, _>(|ev| ev.name == prop.name);
         let extra = match value {
-            Some(value) if *prop.options_limit == 1 => vec![value],
+            Some(value) if *prop.options_limit == 1 => vec![ExtraValue {
+                name: prop.name.to_owned(),
+                value,
+            }],
             Some(value) if *prop.options_limit > 1 => {
-                if extra.iter().any(|ev| ev.value == value.value) {
+                if extra.iter().any(|ev| ev.value == value) {
+                    extra.into_iter().filter(|ev| ev.value != value).collect()
+                } else {
                     extra
                         .into_iter()
-                        .filter(|ev| ev.value != value.value)
+                        .chain(vec![ExtraValue {
+                            name: prop.name.to_owned(),
+                            value,
+                        }])
                         .collect()
-                } else {
-                    extra.into_iter().chain(vec![value]).collect()
                 }
             }
             None if !prop.is_required => vec![],
+            _ if *prop.options_limit == 0 => vec![],
             _ => extra,
         };
         extra.into_iter().chain(other_extra).collect()
@@ -47,59 +48,42 @@ impl ExtraExt for Vec<ExtraValue> {
 
 #[derive(Clone, PartialEq, Serialize, Deserialize)]
 #[cfg_attr(test, derive(Debug))]
-pub struct ResourceRef {
+pub struct ResourcePath {
     pub resource: String,
-    #[serde(rename = "type")]
-    pub type_: String,
+    pub r#type: String,
     pub id: String,
     pub extra: Vec<ExtraValue>,
 }
 
-impl ResourceRef {
-    pub fn without_extra(resource: &str, type_: &str, id: &str) -> Self {
-        ResourceRef {
+impl ResourcePath {
+    #[inline]
+    pub fn without_extra(resource: &str, r#type: &str, id: &str) -> Self {
+        ResourcePath {
             resource: resource.to_owned(),
-            type_: type_.to_owned(),
+            r#type: r#type.to_owned(),
             id: id.to_owned(),
             extra: vec![],
         }
     }
-    pub fn with_extra(resource: &str, type_: &str, id: &str, extra: &[ExtraValue]) -> Self {
-        ResourceRef {
+    #[inline]
+    pub fn with_extra(resource: &str, r#type: &str, id: &str, extra: &[ExtraValue]) -> Self {
+        ResourcePath {
             resource: resource.to_owned(),
-            type_: type_.to_owned(),
+            r#type: r#type.to_owned(),
             id: id.to_owned(),
             extra: extra.to_owned(),
         }
     }
+    #[inline]
     pub fn get_extra_first_value(&self, name: &str) -> Option<&String> {
         self.extra
             .iter()
             .find(|extra_value| extra_value.name == name)
             .map(|extra_value| &extra_value.value)
     }
-    pub fn eq_no_extra(&self, other: &ResourceRef) -> bool {
-        self.resource == other.resource && self.type_ == other.type_ && self.id == other.id
-    }
-}
-
-impl fmt::Display for ResourceRef {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(
-            f,
-            "/{}/{}/{}",
-            &utf8_percent_encode(&self.resource, NON_ALPHANUMERIC),
-            &utf8_percent_encode(&self.type_, NON_ALPHANUMERIC),
-            &utf8_percent_encode(&self.id, NON_ALPHANUMERIC)
-        )?;
-        if !self.extra.is_empty() {
-            let mut extra_encoded = form_urlencoded::Serializer::new(String::new());
-            for ExtraValue { name, value } in self.extra.iter() {
-                extra_encoded.append_pair(&name, &value);
-            }
-            write!(f, "/{}", &extra_encoded.finish())?;
-        }
-        write!(f, ".json")
+    #[inline]
+    pub fn eq_no_extra(&self, other: &ResourcePath) -> bool {
+        self.resource == other.resource && self.r#type == other.r#type && self.id == other.id
     }
 }
 
@@ -107,13 +91,14 @@ impl fmt::Display for ResourceRef {
 #[cfg_attr(test, derive(Debug))]
 pub struct ResourceRequest {
     pub base: Url,
-    pub path: ResourceRef,
+    pub path: ResourcePath,
 }
 
 impl ResourceRequest {
-    pub fn new(base: Url, path: ResourceRef) -> Self {
+    pub fn new(base: Url, path: ResourcePath) -> Self {
         ResourceRequest { base, path }
     }
+    #[inline]
     pub fn eq_no_extra(&self, other: &ResourceRequest) -> bool {
         self.base == other.base && self.path.eq_no_extra(&other.path)
     }
@@ -123,7 +108,7 @@ impl ResourceRequest {
 #[cfg_attr(test, derive(Debug))]
 pub enum AggrRequest<'a> {
     AllCatalogs { extra: &'a Vec<ExtraValue> },
-    AllOfResource(ResourceRef),
+    AllOfResource(ResourcePath),
 }
 
 impl AggrRequest<'_> {
@@ -142,9 +127,9 @@ impl AggrRequest<'_> {
                                 addon,
                                 ResourceRequest::new(
                                     addon.transport_url.to_owned(),
-                                    ResourceRef::with_extra(
+                                    ResourcePath::with_extra(
                                         "catalog",
-                                        &catalog.type_,
+                                        &catalog.r#type,
                                         &catalog.id,
                                         extra,
                                     ),

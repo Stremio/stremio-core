@@ -10,8 +10,7 @@ pub struct LibraryItem {
     #[serde(rename = "_id")]
     pub id: String,
     pub name: String,
-    #[serde(rename = "type")]
-    pub type_: String,
+    pub r#type: String,
     #[serde(deserialize_with = "empty_string_as_none", default)]
     pub poster: Option<String>,
     #[serde(default)]
@@ -28,9 +27,11 @@ pub struct LibraryItem {
 }
 
 impl LibraryItem {
+    #[inline]
     pub fn should_sync(&self) -> bool {
         !self.removed || self.state.overall_time_watched > 60_000
     }
+    #[inline]
     pub fn is_in_continue_watching(&self) -> bool {
         self.should_sync() && (!self.removed || self.temp) && self.state.time_offset > 0
     }

@@ -1,6 +1,6 @@
 use crate::addon_transport::AddonTransport;
 use crate::runtime::{Env, EnvError, EnvFuture};
-use crate::types::addon::{Manifest, ResourceRef, ResourceResponse};
+use crate::types::addon::{Manifest, ResourcePath, ResourceResponse};
 use crate::types::resource::{MetaItem, MetaItemPreview, Stream, Subtitles};
 use futures::{future, FutureExt, TryFutureExt};
 use http::Request;
@@ -111,7 +111,7 @@ impl<'a, T: Env> AddonLegacyTransport<'a, T> {
 }
 
 impl<'a, T: Env> AddonTransport for AddonLegacyTransport<'a, T> {
-    fn resource(&self, path: &ResourceRef) -> EnvFuture<ResourceResponse> {
+    fn resource(&self, path: &ResourcePath) -> EnvFuture<ResourceResponse> {
         let fetch_req = match build_legacy_req(self.transport_url, path) {
             Ok(r) => r,
             Err(e) => return future::err(e).boxed_local(),
@@ -147,7 +147,7 @@ impl<'a, T: Env> AddonTransport for AddonLegacyTransport<'a, T> {
     }
 }
 
-fn build_legacy_req(transport_url: &Url, path: &ResourceRef) -> Result<Request<()>, EnvError> {
+fn build_legacy_req(transport_url: &Url, path: &ResourcePath) -> Result<Request<()>, EnvError> {
     // Limitations of this legacy adapter:
     // * does not support subtitles
     // * does not support searching (meta.search)
@@ -155,15 +155,15 @@ fn build_legacy_req(transport_url: &Url, path: &ResourceRef) -> Result<Request<(
     // They affect functionality very little - there are no subtitles add-ons using the legacy
     // protocol (other than OpenSubtitles, which will be ported) and there's only one
     // known legacy add-on that support search (Stremio/stremio #379)
-    let type_ = &path.type_;
+    let r#type = &path.r#type;
     let id = &path.id;
     let q_json = match &path.resource as &str {
         "catalog" => {
             let genre = path.get_extra_first_value("genre");
             let query = if let Some(genre) = genre {
-                json!({ "type": type_, "genre": genre })
+                json!({ "type": r#type, "genre": genre })
             } else {
-                json!({ "type": type_ })
+                json!({ "type": r#type })
             };
             // Just follows the convention set out by stremboard
             // L287 cffb94e4a9c57f5872e768eff25164b53f004a2b
@@ -195,7 +195,7 @@ fn build_legacy_req(transport_url: &Url, path: &ResourceRef) -> Result<Request<(
                     ))
                 }
             };
-            query.insert("type".into(), serde_json::Value::String(type_.to_owned()));
+            query.insert("type".into(), serde_json::Value::String(r#type.to_owned()));
             build_jsonrpc("stream.find", json!({ "query": query }))
         }
         "subtitles" => build_jsonrpc(
@@ -262,7 +262,7 @@ fn query_from_id(id: &str) -> serde_json::Value {
 #[cfg(test)]
 mod test {
     use super::*;
-    use crate::types::addon::ResourceRef;
+    use crate::types::addon::ResourcePath;
 
     // Those are a bit sensitive for now, but that's a good thing, since it will force us
     // to pay attention to minor details that might matter with the legacy system
@@ -271,7 +271,7 @@ mod test {
     fn catalog() {
         let transport_url = Url::parse("https://stremio-mixer.schneider.ax/stremioget/stremio/v1")
             .expect("url parse failed");
-        let path = ResourceRef::without_extra("catalog", "tv", "popularities.mixer");
+        let path = ResourcePath::without_extra("catalog", "tv", "popularities.mixer");
         assert_eq!(
             &build_legacy_req(&transport_url, &path).unwrap().uri().to_string(),
             "https://stremio-mixer.schneider.ax/stremioget/stremio/v1/q.json?b=eyJpZCI6MSwianNvbnJwYyI6IjIuMCIsIm1ldGhvZCI6Im1ldGEuZmluZCIsInBhcmFtcyI6W251bGwseyJsaW1pdCI6MTAwLCJxdWVyeSI6eyJ0eXBlIjoidHYifSwic2tpcCI6MCwic29ydCI6eyJwb3B1bGFyaXRpZXMubWl4ZXIiOi0xLCJwb3B1bGFyaXR5IjotMX19XX0=",
@@ -282,7 +282,7 @@ mod test {
     fn stream_imdb() {
         let transport_url =
             Url::parse("https://legacywatchhub.strem.io/stremio/v1").expect("url parse failed");
-        let path = ResourceRef::without_extra("stream", "series", "tt0386676:5:1");
+        let path = ResourcePath::without_extra("stream", "series", "tt0386676:5:1");
         assert_eq!(
             &build_legacy_req(&transport_url, &path).unwrap().uri().to_string(),
             "https://legacywatchhub.strem.io/stremio/v1/q.json?b=eyJpZCI6MSwianNvbnJwYyI6IjIuMCIsIm1ldGhvZCI6InN0cmVhbS5maW5kIiwicGFyYW1zIjpbbnVsbCx7InF1ZXJ5Ijp7ImVwaXNvZGUiOjEsImltZGJfaWQiOiJ0dDAzODY2NzYiLCJzZWFzb24iOjUsInR5cGUiOiJzZXJpZXMifX1dfQ=="

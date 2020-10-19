@@ -2,12 +2,13 @@ use crate::constants::{LIBRARY_RECENT_STORAGE_KEY, LIBRARY_STORAGE_KEY};
 use crate::models::ctx::Ctx;
 use crate::runtime::msg::{Action, ActionCtx};
 use crate::runtime::{Effects, Env, EnvFuture, Runtime};
-use crate::types::api::{APIResult, SuccessResponse, True};
+use crate::types::api::{APIResult, SuccessResponse};
 use crate::types::library::{
     LibraryBucket, LibraryItem, LibraryItemBehaviorHints, LibraryItemState,
 };
 use crate::types::profile::{Auth, AuthKey, GDPRConsent, Profile, User};
 use crate::types::resource::{MetaItemBehaviorHints, MetaItemPreview, PosterShape};
+use crate::types::True;
 use crate::unit_tests::{
     default_fetch_handler, Request, TestEnv, FETCH_HANDLER, NOW, REQUESTS, STORAGE,
 };
@@ -40,7 +41,7 @@ fn actionctx_addtolibrary() {
     }
     let meta_preview = MetaItemPreview {
         id: "id".to_owned(),
-        type_: "type".to_owned(),
+        r#type: "type".to_owned(),
         name: "name".to_owned(),
         poster: None,
         logo: None,
@@ -60,7 +61,7 @@ fn actionctx_addtolibrary() {
         mtime: Utc.ymd(2020, 1, 1).and_hms_milli(0, 0, 0, 0),
         state: Default::default(),
         name: "name".to_owned(),
-        type_: "type".to_owned(),
+        r#type: "type".to_owned(),
         poster: None,
         poster_shape: Default::default(),
         behavior_hints: Default::default(),
@@ -156,7 +157,7 @@ fn actionctx_addtolibrary_already_added() {
     }
     let meta_preview = MetaItemPreview {
         id: "id".to_owned(),
-        type_: "type".to_owned(),
+        r#type: "type".to_owned(),
         name: "name".to_owned(),
         poster: Some("poster".to_owned()),
         poster_shape: PosterShape::Square,
@@ -174,7 +175,7 @@ fn actionctx_addtolibrary_already_added() {
     };
     let library_item = LibraryItem {
         id: "id".to_owned(),
-        type_: "type".to_owned(),
+        r#type: "type".to_owned(),
         name: "name".to_owned(),
         poster: Some("poster".to_owned()),
         poster_shape: PosterShape::Square,
@@ -201,7 +202,7 @@ fn actionctx_addtolibrary_already_added() {
                         "id".to_owned(),
                         LibraryItem {
                             id: "id".to_owned(),
-                            type_: "typename_".to_owned(),
+                            r#type: "typename_".to_owned(),
                             name: "name_".to_owned(),
                             poster: None,
                             poster_shape: PosterShape::Poster,

@@ -1,6 +1,6 @@
 use crate::addon_transport::AddonTransport;
 use crate::runtime::{EnvError, EnvFuture};
-use crate::types::addon::{Manifest, ResourceRef, ResourceResponse};
+use crate::types::addon::{Manifest, ResourcePath, ResourceResponse};
 use futures::{future, FutureExt};
 use url::Url;
 
@@ -22,7 +22,7 @@ impl UnsupportedTransport {
 }
 
 impl AddonTransport for UnsupportedTransport {
-    fn resource(&self, _path: &ResourceRef) -> EnvFuture<ResourceResponse> {
+    fn resource(&self, _path: &ResourcePath) -> EnvFuture<ResourceResponse> {
         self.result::<ResourceResponse>()
     }
     fn manifest(&self) -> EnvFuture<Manifest> {

@@ -6,7 +6,7 @@ use crate::models::common::{
 use crate::models::ctx::Ctx;
 use crate::runtime::msg::{Action, ActionLoad, ActionPlayer, Internal, Msg};
 use crate::runtime::{Effects, Env, UpdateWithCtx};
-use crate::types::addon::{AggrRequest, ResourceRef, ResourceRequest};
+use crate::types::addon::{AggrRequest, ResourcePath, ResourceRequest};
 use crate::types::library::{
     LibraryBucket, LibraryItem, LibraryItemBehaviorHints, LibraryItemState,
 };
@@ -23,7 +23,7 @@ pub struct Selected {
     #[serde(default)]
     pub meta_resource_request: Option<ResourceRequest>,
     #[serde(default)]
-    pub subtitles_resource_ref: Option<ResourceRef>,
+    pub subtitles_resource_ref: Option<ResourcePath>,
     #[serde(default)]
     pub video_id: Option<String>,
 }
@@ -221,12 +221,7 @@ fn next_video_update(
             .cloned(),
         _ => None,
     };
-    if video != &next_video {
-        *video = next_video;
-        Effects::none()
-    } else {
-        Effects::none().unchanged()
-    }
+    eq_update(video, next_video)
 }
 
 fn library_item_update<E: Env>(
@@ -258,7 +253,7 @@ fn library_item_update<E: Env>(
                     mtime: library_item.mtime.to_owned(),
                     state: library_item.state.to_owned(),
                     name: meta_item.name.to_owned(),
-                    type_: meta_item.type_.to_owned(),
+                    r#type: meta_item.r#type.to_owned(),
                     poster: meta_item.poster.to_owned(),
                     poster_shape: meta_item.poster_shape.to_owned(),
                     behavior_hints: LibraryItemBehaviorHints {
@@ -273,7 +268,7 @@ fn library_item_update<E: Env>(
                     mtime: E::now(),
                     state: LibraryItemState::default(),
                     name: meta_item.name.to_owned(),
-                    type_: meta_item.type_.to_owned(),
+                    r#type: meta_item.r#type.to_owned(),
                     poster: meta_item.poster.to_owned(),
                     poster_shape: meta_item.poster_shape.to_owned(),
                     behavior_hints: LibraryItemBehaviorHints {

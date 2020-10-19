@@ -1,4 +1,5 @@
 use crate::constants::CATALOG_PREVIEW_SIZE;
+use crate::models::common::eq_update;
 use crate::models::ctx::Ctx;
 use crate::runtime::msg::{Internal, Msg};
 use crate::runtime::{Effects, Env, UpdateWithCtx};
@@ -9,6 +10,14 @@ use serde::Serialize;
 #[derive(Default, Serialize)]
 pub struct ContinueWatchingPreview {
     pub library_items: Vec<LibraryItem>,
+}
+
+impl ContinueWatchingPreview {
+    pub fn new(library: &LibraryBucket) -> (Self, Effects) {
+        let mut library_items = vec![];
+        let effects = library_items_update(&mut library_items, &library);
+        (Self { library_items }, effects.unchanged())
+    }
 }
 
 impl<E: Env + 'static> UpdateWithCtx<Ctx<E>> for ContinueWatchingPreview {
@@ -31,10 +40,5 @@ fn library_items_update(library_items: &mut Vec<LibraryItem>, library: &LibraryB
         .take(CATALOG_PREVIEW_SIZE)
         .cloned()
         .collect::<Vec<_>>();
-    if *library_items != next_library_items {
-        *library_items = next_library_items;
-        Effects::none()
-    } else {
-        Effects::none().unchanged()
-    }
+    eq_update(library_items, next_library_items)
 }

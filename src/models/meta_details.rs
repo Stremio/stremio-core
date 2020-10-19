@@ -6,14 +6,14 @@ use crate::models::common::{
 use crate::models::ctx::Ctx;
 use crate::runtime::msg::{Action, ActionLoad, Internal, Msg};
 use crate::runtime::{Effects, Env, UpdateWithCtx};
-use crate::types::addon::{AggrRequest, ResourceRef};
+use crate::types::addon::{AggrRequest, ResourcePath};
 use crate::types::resource::{MetaItem, Stream};
 use serde::{Deserialize, Serialize};
 
 #[derive(Clone, PartialEq, Serialize, Deserialize)]
 pub struct Selected {
-    pub meta_resource_ref: ResourceRef,
-    pub streams_resource_ref: Option<ResourceRef>,
+    pub meta_resource_ref: ResourcePath,
+    pub streams_resource_ref: Option<ResourcePath>,
 }
 
 #[derive(Default, Serialize)]

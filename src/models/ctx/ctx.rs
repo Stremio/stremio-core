@@ -11,8 +11,7 @@ use crate::types::profile::{Auth, AuthKey, Profile};
 use derivative::Derivative;
 use enclose::enclose;
 use futures::{future, FutureExt, TryFutureExt};
-use serde::ser::SerializeMap;
-use serde::{Serialize, Serializer};
+use serde::Serialize;
 use std::marker::PhantomData;
 
 #[derive(PartialEq, Serialize)]
@@ -28,8 +27,9 @@ pub struct Ctx<E: Env> {
     // TODO StreamsBucket
     // TODO SubtitlesBucket
     // TODO SearchesBucket
-    #[serde(serialize_with = "serialize_library")]
+    #[serde(skip)]
     pub library: LibraryBucket,
+    #[serde(skip)]
     #[derivative(Default(value = "CtxStatus::Ready"))]
     pub status: CtxStatus,
     #[serde(skip)]
@@ -38,11 +38,10 @@ pub struct Ctx<E: Env> {
 
 impl<E: Env> Ctx<E> {
     pub fn new(profile: Profile, library: LibraryBucket) -> Self {
-        Ctx {
+        Self {
             profile,
             library,
-            status: CtxStatus::Ready,
-            env: PhantomData,
+            ..Self::default()
         }
     }
 }
@@ -160,26 +159,4 @@ fn delete_session<E: Env + 'static>(auth_key: &AuthKey) -> Effect {
     }))
     .boxed_local()
     .into()
-}
-
-fn serialize_library<S>(library: &LibraryBucket, serializer: S) -> Result<S::Ok, S::Error>
-where
-    S: Serializer,
-{
-    #[derive(Serialize)]
-    struct LibraryItemProjection {
-        pub removed: bool,
-        pub temp: bool,
-    }
-    let mut state = serializer.serialize_map(Some(library.items.len()))?;
-    for item in library.items.values() {
-        state.serialize_entry(
-            &item.id,
-            &LibraryItemProjection {
-                removed: item.removed,
-                temp: item.temp,
-            },
-        )?;
-    }
-    state.end()
 }

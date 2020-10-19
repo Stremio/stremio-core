@@ -4,13 +4,13 @@ use crate::types::addon::{ManifestCatalog, ManifestExtra};
 fn deserialize_manifest_catalog() {
     let manifest_catalogs = vec![
         ManifestCatalog {
-            type_: "type".to_owned(),
+            r#type: "type".to_owned(),
             id: "id".to_owned(),
             name: Some("name".to_owned()),
             extra: ManifestExtra::Full { props: vec![] },
         },
         ManifestCatalog {
-            type_: "type".to_owned(),
+            r#type: "type".to_owned(),
             id: "id".to_owned(),
             name: None,
             extra: ManifestExtra::Full { props: vec![] },

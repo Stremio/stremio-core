@@ -2,9 +2,10 @@ use crate::constants::{LIBRARY_RECENT_STORAGE_KEY, LIBRARY_STORAGE_KEY};
 use crate::models::ctx::Ctx;
 use crate::runtime::msg::{Action, ActionCtx};
 use crate::runtime::{Effects, Env, EnvFuture, Runtime};
-use crate::types::api::{APIResult, SuccessResponse, True};
+use crate::types::api::{APIResult, SuccessResponse};
 use crate::types::library::{LibraryBucket, LibraryItem};
 use crate::types::profile::{Auth, AuthKey, GDPRConsent, Profile, User};
+use crate::types::True;
 use crate::unit_tests::{
     default_fetch_handler, Request, TestEnv, FETCH_HANDLER, NOW, REQUESTS, STORAGE,
 };
@@ -43,7 +44,7 @@ fn actionctx_removefromlibrary() {
         mtime: Utc.ymd(2020, 1, 1).and_hms_milli(0, 0, 0, 0),
         state: Default::default(),
         name: "name".to_owned(),
-        type_: "type".to_owned(),
+        r#type: "type".to_owned(),
         poster: None,
         poster_shape: Default::default(),
         behavior_hints: Default::default(),
@@ -155,7 +156,7 @@ fn actionctx_removefromlibrary_not_added() {
         mtime: Utc.ymd(2020, 1, 1).and_hms_milli(0, 0, 0, 0),
         state: Default::default(),
         name: "name".to_owned(),
-        type_: "type".to_owned(),
+        r#type: "type".to_owned(),
         poster: None,
         poster_shape: Default::default(),
         behavior_hints: Default::default(),
