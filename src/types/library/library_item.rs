@@ -40,7 +40,7 @@ impl LibraryItem {
 #[cfg_attr(test, derive(Debug))]
 #[serde(rename_all = "camelCase")]
 pub struct LibraryItemState {
-    #[serde(deserialize_with = "empty_string_as_none")]
+    #[serde(deserialize_with = "empty_string_as_none", default)]
     pub last_watched: Option<DateTime<Utc>>,
     pub time_watched: u64,
     pub time_offset: u64,
@@ -49,10 +49,10 @@ pub struct LibraryItemState {
     // @TODO: consider bool that can be deserialized from an integer
     pub flagged_watched: u32,
     pub duration: u64,
-    #[serde(rename = "video_id", deserialize_with = "empty_string_as_none")]
+    #[serde(rename = "video_id", deserialize_with = "empty_string_as_none", default)]
     pub video_id: Option<String>,
     // @TODO bitfield, special type
-    #[serde(deserialize_with = "empty_string_as_none")]
+    #[serde(deserialize_with = "empty_string_as_none", default)]
     pub watched: Option<String>,
     // release date of last observed video
     #[serde(deserialize_with = "empty_string_as_none", default)]
