@@ -249,12 +249,24 @@ impl From<(&String, &LibraryRequest)> for LibraryDeepLinks {
                     "#/{}/{}?{}",
                     root,
                     utf8_percent_encode(&r#type, URI_COMPONENT_ENCODE_SET),
-                    query_params_encode(&[("sort", serde_json::to_string(&request.sort).unwrap())])
+                    query_params_encode(&[(
+                        "sort",
+                        serde_json::to_value(&request.sort)
+                            .unwrap()
+                            .as_str()
+                            .unwrap()
+                    )])
                 ),
                 _ => format!(
                     "#/{}?{}",
                     root,
-                    query_params_encode(&[("sort", serde_json::to_string(&request.sort).unwrap())])
+                    query_params_encode(&[(
+                        "sort",
+                        serde_json::to_value(&request.sort)
+                            .unwrap()
+                            .as_str()
+                            .unwrap()
+                    )])
                 ),
             },
         }
