@@ -49,7 +49,11 @@ pub struct LibraryItemState {
     // @TODO: consider bool that can be deserialized from an integer
     pub flagged_watched: u32,
     pub duration: u64,
-    #[serde(rename = "video_id", deserialize_with = "empty_string_as_none", default)]
+    #[serde(
+        rename = "video_id",
+        deserialize_with = "empty_string_as_none",
+        default
+    )]
     pub video_id: Option<String>,
     // @TODO bitfield, special type
     #[serde(deserialize_with = "empty_string_as_none", default)]
