@@ -54,7 +54,7 @@ fn meta_item_behavior_hints() {
         &[
             Token::Struct {
                 name: "MetaItemBehaviorHints",
-                len: 2,
+                len: 0,
             },
             Token::StructEnd,
         ],
