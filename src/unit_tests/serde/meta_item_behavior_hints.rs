@@ -56,10 +56,6 @@ fn meta_item_behavior_hints() {
                 name: "MetaItemBehaviorHints",
                 len: 2,
             },
-            Token::Str("defaultVideoId"),
-            Token::None,
-            Token::Str("featuredVideoId"),
-            Token::None,
             Token::StructEnd,
         ],
     );
