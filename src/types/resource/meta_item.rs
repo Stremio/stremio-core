@@ -103,7 +103,9 @@ pub struct Link {
 #[cfg_attr(test, derive(Debug))]
 #[serde(rename_all = "camelCase")]
 pub struct MetaItemBehaviorHints {
+    #[serde(default)]
     pub default_video_id: Option<String>,
+    #[serde(default)]
     pub featured_video_id: Option<String>,
     #[serde(default)]
     pub has_scheduled_videos: bool,
