@@ -255,6 +255,7 @@ pub fn serialize_discover(
         #[serde(flatten)]
         meta_item: &'a MetaItemPreview,
         trailer_streams: Vec<_Stream<'a>>,
+        in_library: bool,
         deep_links: MetaItemDeepLinks,
     }
     #[derive(Serialize)]
@@ -344,6 +345,12 @@ pub fn serialize_discover(
                                     deep_links: StreamDeepLinks::from(stream),
                                 })
                                 .collect::<Vec<_>>(),
+                            in_library: ctx
+                                .library
+                                .items
+                                .get(&meta_item.id)
+                                .map(|library_item| !library_item.removed)
+                                .unwrap_or_default(),
                             deep_links: MetaItemDeepLinks::from(meta_item),
                         })
                         .collect::<Vec<_>>(),
