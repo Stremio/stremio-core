@@ -114,13 +114,12 @@ pub trait Env {
                         .await?;
                     schema_version = 1;
                 };
-                // TODO v2
-                // if schema_version == 1 {
-                //     migrate_storage_schema_to_v2::<Self>()
-                //         .map_err(|error| EnvError::StorageSchemaVersionUpgrade(Box::new(error)))
-                //         .await?;
-                //     schema_version = 2;
-                // };
+                if schema_version == 1 {
+                    migrate_storage_schema_to_v2::<Self>()
+                        .map_err(|error| EnvError::StorageSchemaVersionUpgrade(Box::new(error)))
+                        .await?;
+                    schema_version = 2;
+                };
                 if schema_version != SCHEMA_VERSION {
                     panic!(
                         "Storage schema version must be upgraded from {} to {}",
@@ -142,4 +141,73 @@ fn migrate_storage_schema_to_v1<E: Env>() -> EnvFuture<()> {
     ])
     .map_ok(|_| ())
     .boxed_local()
+}
+
+fn migrate_storage_schema_to_v2<E: Env>() -> EnvFuture<()> {
+    E::get_storage::<serde_json::Value>(PROFILE_STORAGE_KEY)
+        .and_then(|mut profile| {
+            match profile
+                .as_mut()
+                .and_then(|profile| profile.as_object_mut())
+                .and_then(|profile| profile.get_mut("settings"))
+                .and_then(|settings| settings.as_object_mut())
+                .map(|settings| {
+                    (
+                        settings.remove("interface_language"),
+                        settings.remove("streaming_server_url"),
+                        settings.remove("binge_watching"),
+                        settings.remove("play_in_background"),
+                        settings.remove("play_in_external_player"),
+                        settings.remove("hardware_decoding"),
+                        settings.remove("subtitles_language"),
+                        settings.remove("subtitles_size"),
+                        settings.remove("subtitles_font"),
+                        settings.remove("subtitles_bold"),
+                        settings.remove("subtitles_offset"),
+                        settings.remove("subtitles_text_color"),
+                        settings.remove("subtitles_background_color"),
+                        settings.remove("subtitles_outline_color"),
+                        settings,
+                    )
+                }) {
+                Some((
+                    Some(interface_language),
+                    Some(streaming_server_url),
+                    Some(binge_watching),
+                    Some(play_in_background),
+                    Some(play_in_external_player),
+                    Some(hardware_decoding),
+                    Some(subtitles_language),
+                    Some(subtitles_size),
+                    Some(subtitles_font),
+                    Some(subtitles_bold),
+                    Some(subtitles_offset),
+                    Some(subtitles_text_color),
+                    Some(subtitles_background_color),
+                    Some(subtitles_outline_color),
+                    settings,
+                )) => {
+                    settings.insert("interfaceLanguage".to_owned(), interface_language);
+                    settings.insert("streamingServerUrl".to_owned(), streaming_server_url);
+                    settings.insert("bingeWatching".to_owned(), binge_watching);
+                    settings.insert("playInBackground".to_owned(), play_in_background);
+                    settings.insert("playInExternalPlayer".to_owned(), play_in_external_player);
+                    settings.insert("hardwareDecoding".to_owned(), hardware_decoding);
+                    settings.insert("subtitlesLanguage".to_owned(), subtitles_language);
+                    settings.insert("subtitlesSize".to_owned(), subtitles_size);
+                    settings.insert("subtitlesFont".to_owned(), subtitles_font);
+                    settings.insert("subtitlesBold".to_owned(), subtitles_bold);
+                    settings.insert("subtitlesOffset".to_owned(), subtitles_offset);
+                    settings.insert("subtitlesTextColor".to_owned(), subtitles_text_color);
+                    settings.insert(
+                        "subtitlesBackgroundColor".to_owned(),
+                        subtitles_background_color,
+                    );
+                    settings.insert("subtitlesOutlineColor".to_owned(), subtitles_outline_color);
+                    E::set_storage(PROFILE_STORAGE_KEY, Some(&profile))
+                }
+                _ => E::set_storage::<()>(PROFILE_STORAGE_KEY, None),
+            }
+        })
+        .boxed_local()
 }

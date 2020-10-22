@@ -3,6 +3,7 @@ use serde::{Deserialize, Serialize};
 use url::Url;
 
 #[derive(Clone, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 #[cfg_attr(test, derive(Debug))]
 pub struct Settings {
     pub interface_language: String,
