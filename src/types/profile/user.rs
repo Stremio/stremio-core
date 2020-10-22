@@ -17,9 +17,9 @@ pub struct User {
     #[serde(rename = "_id")]
     pub id: String,
     pub email: String,
-    #[serde(deserialize_with = "empty_string_as_none")]
+    #[serde(deserialize_with = "empty_string_as_none", default)]
     pub fb_id: Option<String>,
-    #[serde(deserialize_with = "empty_string_as_none")]
+    #[serde(deserialize_with = "empty_string_as_none", default)]
     pub avatar: Option<String>,
     pub last_modified: DateTime<Utc>,
     pub date_registered: DateTime<Utc>,
