@@ -80,6 +80,7 @@ pub struct LibraryWithFilters<F> {
     pub selected: Option<Selected>,
     pub selectable: Selectable,
     pub catalog: Vec<LibraryItem>,
+    #[serde(skip)]
     pub filter: PhantomData<F>,
 }
 
