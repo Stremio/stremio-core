@@ -23,6 +23,7 @@ const URI_COMPONENT_ENCODE_SET: &AsciiSet = &NON_ALPHANUMERIC
     .remove(b')');
 
 #[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct LibraryItemDeepLinks {
     meta_details_videos: Option<String>,
     meta_details_streams: Option<String>,
@@ -61,6 +62,7 @@ impl From<&LibraryItem> for LibraryItemDeepLinks {
 }
 
 #[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct MetaItemDeepLinks {
     meta_details_videos: Option<String>,
     meta_details_streams: Option<String>,
@@ -125,6 +127,7 @@ impl From<&MetaItem> for MetaItemDeepLinks {
 }
 
 #[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct VideoDeepLinks {
     meta_details_streams: String,
     player: Option<String>,

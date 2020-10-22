@@ -27,20 +27,22 @@ pub fn serialize_catalogs_with_extra(
     ctx: &Ctx<WebEnv>,
 ) -> JsValue {
     #[derive(Serialize)]
+    #[serde(rename_all = "camelCase")]
     struct _Stream<'a> {
         #[serde(flatten)]
         stream: &'a Stream,
         deep_links: StreamDeepLinks,
     }
     #[derive(Serialize)]
+    #[serde(rename_all = "camelCase")]
     struct _MetaItemPreview<'a> {
         #[serde(flatten)]
         meta_item: &'a MetaItemPreview,
-        #[serde(rename = "trailerStreams")]
         trailer_streams: Vec<_Stream<'a>>,
         deep_links: MetaItemDeepLinks,
     }
     #[derive(Serialize)]
+    #[serde(rename_all = "camelCase")]
     struct _ResourceLoadable<'a> {
         request: &'a ResourceRequest,
         content: Loadable<Vec<_MetaItemPreview<'a>>, &'a ResourceError>,
@@ -48,6 +50,7 @@ pub fn serialize_catalogs_with_extra(
         deep_links: MetaCatalogResourceDeepLinks,
     }
     #[derive(Serialize)]
+    #[serde(rename_all = "camelCase")]
     struct _CatalogsWithExtra<'a> {
         selected: &'a Option<CatalogsWithExtraSelected>,
         catalogs: Vec<_ResourceLoadable<'a>>,
@@ -95,18 +98,21 @@ pub fn serialize_catalogs_with_extra(
 
 pub fn serialize_library<F>(library: &LibraryWithFilters<F>, root: String) -> JsValue {
     #[derive(Serialize)]
+    #[serde(rename_all = "camelCase")]
     struct _LibraryItem<'a> {
         #[serde(flatten)]
         library_item: &'a LibraryItem,
         deep_links: LibraryItemDeepLinks,
     }
     #[derive(Serialize)]
+    #[serde(rename_all = "camelCase")]
     struct _SelectableType<'a> {
         r#type: &'a Option<String>,
         selected: &'a bool,
         deep_links: LibraryDeepLinks,
     }
     #[derive(Serialize)]
+    #[serde(rename_all = "camelCase")]
     struct _SelectableSort<'a> {
         sort: &'a Sort,
         selected: &'a bool,
@@ -163,12 +169,14 @@ pub fn serialize_continue_watching_preview(
     continue_watching_preview: &ContinueWatchingPreview,
 ) -> JsValue {
     #[derive(Serialize)]
+    #[serde(rename_all = "camelCase")]
     struct _LibraryItem<'a> {
         #[serde(flatten)]
         library_item: &'a LibraryItem,
         deep_links: LibraryItemDeepLinks,
     }
     #[derive(Serialize)]
+    #[serde(rename_all = "camelCase")]
     struct _ContinueWatchingPreview<'a> {
         library_items: Vec<_LibraryItem<'a>>,
         deep_links: LibraryDeepLinks,
@@ -192,18 +200,21 @@ pub fn serialize_discover(
     ctx: &Ctx<WebEnv>,
 ) -> JsValue {
     #[derive(Serialize)]
+    #[serde(rename_all = "camelCase")]
     struct _SelectableExtraOption<'a> {
         value: &'a Option<String>,
         selected: &'a bool,
         deep_links: MetaCatalogResourceDeepLinks,
     }
     #[derive(Serialize)]
+    #[serde(rename_all = "camelCase")]
     struct _SelectableExtra<'a> {
         name: &'a String,
         is_required: &'a bool,
         options: Vec<_SelectableExtraOption<'a>>,
     }
     #[derive(Serialize)]
+    #[serde(rename_all = "camelCase")]
     struct _SelectableCatalog<'a> {
         catalog: &'a String,
         addon_name: &'a String,
@@ -211,16 +222,19 @@ pub fn serialize_discover(
         deep_links: MetaCatalogResourceDeepLinks,
     }
     #[derive(Serialize)]
+    #[serde(rename_all = "camelCase")]
     struct _SelectableType<'a> {
         r#type: &'a String,
         selected: &'a bool,
         deep_links: MetaCatalogResourceDeepLinks,
     }
     #[derive(Serialize)]
+    #[serde(rename_all = "camelCase")]
     struct SelectablePage {
         deep_links: MetaCatalogResourceDeepLinks,
     }
     #[derive(Serialize)]
+    #[serde(rename_all = "camelCase")]
     struct _Selectable<'a> {
         types: Vec<_SelectableType<'a>>,
         catalogs: Vec<_SelectableCatalog<'a>>,
@@ -229,25 +243,28 @@ pub fn serialize_discover(
         next_page: Option<SelectablePage>,
     }
     #[derive(Serialize)]
+    #[serde(rename_all = "camelCase")]
     struct _Stream<'a> {
         #[serde(flatten)]
         stream: &'a Stream,
         deep_links: StreamDeepLinks,
     }
     #[derive(Serialize)]
+    #[serde(rename_all = "camelCase")]
     struct _MetaItemPreview<'a> {
         #[serde(flatten)]
         meta_item: &'a MetaItemPreview,
-        #[serde(rename = "trailerStreams")]
         trailer_streams: Vec<_Stream<'a>>,
         deep_links: MetaItemDeepLinks,
     }
     #[derive(Serialize)]
+    #[serde(rename_all = "camelCase")]
     struct _ResourceLoadable<'a> {
         content: Loadable<Vec<_MetaItemPreview<'a>>, &'a ResourceError>,
         addon_name: Option<&'a String>,
     }
     #[derive(Serialize)]
+    #[serde(rename_all = "camelCase")]
     struct _CatalogWithFilters<'a> {
         selected: &'a Option<CatalogWithFiltersSelected>,
         selectable: _Selectable<'a>,
