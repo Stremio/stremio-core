@@ -3,7 +3,6 @@ use crate::model::serializers::{
     serialize_catalogs_with_extra, serialize_continue_watching_preview, serialize_discover,
     serialize_library,
 };
-use serde::Serialize;
 use stremio_core::models::addon_details::AddonDetails;
 use stremio_core::models::catalog_with_filters::CatalogWithFilters;
 use stremio_core::models::catalogs_with_extra::CatalogsWithExtra;
@@ -24,7 +23,7 @@ use stremio_core::types::resource::MetaItemPreview;
 use stremio_derive::Model;
 use wasm_bindgen::JsValue;
 
-#[derive(Model, Serialize)]
+#[derive(Model)]
 pub struct WebModel {
     pub ctx: Ctx<WebEnv>,
     pub continue_watching_preview: ContinueWatchingPreview,
