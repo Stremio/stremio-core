@@ -24,7 +24,7 @@ pub fn start() {
 }
 
 #[wasm_bindgen]
-pub async fn initialize_runtime(emit: js_sys::Function) {
+pub async fn initialize_runtime(emit: js_sys::Function) -> Result<(), JsValue> {
     if RUNTIME.read().expect("runtime read failed").is_some() {
         panic!("unable to initialize runtime multiple times");
     };
@@ -58,16 +58,20 @@ pub async fn initialize_runtime(emit: js_sys::Function) {
                     }));
                     *RUNTIME.write().expect("runtime write failed") =
                         Some(Loadable::Ready(runtime));
+                    Ok(())
                 }
                 Err(error) => {
-                    *RUNTIME.write().expect("runtime write failed") = Some(Loadable::Err(error));
+                    *RUNTIME.write().expect("runtime write failed") =
+                        Some(Loadable::Err(error.to_owned()));
+                    Err(JsValue::from_serde(&error).unwrap())
                 }
             }
         }
         Err(error) => {
-            *RUNTIME.write().expect("runtime write failed") = Some(Loadable::Err(error));
+            *RUNTIME.write().expect("runtime write failed") = Some(Loadable::Err(error.to_owned()));
+            Err(JsValue::from_serde(&error).unwrap())
         }
-    };
+    }
 }
 
 #[wasm_bindgen]
