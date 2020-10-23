@@ -1,7 +1,7 @@
 use crate::env::WebEnv;
 use crate::model::serializers::{
     serialize_catalogs_with_extra, serialize_continue_watching_preview, serialize_discover,
-    serialize_library,
+    serialize_library, serialize_remote_addons,
 };
 use stremio_core::models::addon_details::AddonDetails;
 use stremio_core::models::catalog_with_filters::CatalogWithFilters;
@@ -93,7 +93,7 @@ impl WebModel {
             }
             WebModelField::Search => serialize_catalogs_with_extra(&self.search, &self.ctx),
             WebModelField::MetaDetails => JsValue::from_serde(&self.meta_details).unwrap(),
-            WebModelField::RemoteAddons => JsValue::from_serde(&self.remote_addons).unwrap(),
+            WebModelField::RemoteAddons => serialize_remote_addons(&self.remote_addons, &self.ctx),
             WebModelField::InstalledAddons => JsValue::from_serde(&self.installed_addons).unwrap(),
             WebModelField::AddonDetails => JsValue::from_serde(&self.addon_details).unwrap(),
             WebModelField::StreamingServer => JsValue::from_serde(&self.streaming_server).unwrap(),
