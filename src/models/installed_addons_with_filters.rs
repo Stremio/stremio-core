@@ -1,4 +1,5 @@
-use crate::models::common::eq_update;
+use crate::constants::TYPE_PRIORITIES;
+use crate::models::common::{compare_with_priorities, eq_update};
 use crate::models::ctx::Ctx;
 use crate::runtime::msg::{Action, ActionLoad, Internal, Msg};
 use crate::runtime::{Effects, Env, UpdateWithCtx};
@@ -101,6 +102,8 @@ fn selectable_update(
         .flat_map(|addon| &addon.manifest.types)
         .unique()
         .cloned()
+        .sorted_by(|a, b| compare_with_priorities(a.as_ref(), b.as_ref(), &*TYPE_PRIORITIES))
+        .rev()
         .map(|r#type| SelectableType {
             r#type: Some(r#type.to_owned()),
             selected: selected
