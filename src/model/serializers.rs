@@ -1,7 +1,7 @@
 use crate::env::WebEnv;
 use crate::model::deep_links::{
-    DiscoverDeepLinks, LibraryDeepLinks, LibraryItemDeepLinks, MetaItemDeepLinks,
-    RemoteAddonsDeepLinks, StreamDeepLinks,
+    AddonsDeepLinks, DiscoverDeepLinks, LibraryDeepLinks, LibraryItemDeepLinks, MetaItemDeepLinks,
+    StreamDeepLinks,
 };
 use serde::Serialize;
 use stremio_core::constants::{CATALOG_PAGE_SIZE, SKIP_EXTRA_NAME};
@@ -14,6 +14,9 @@ use stremio_core::models::catalogs_with_extra::{
 use stremio_core::models::common::{Loadable, ResourceError};
 use stremio_core::models::continue_watching_preview::ContinueWatchingPreview;
 use stremio_core::models::ctx::Ctx;
+use stremio_core::models::installed_addons_with_filters::{
+    InstalledAddonsWithFilters, Selected as InstalledAddonsWithFiltersSelected,
+};
 use stremio_core::models::library_with_filters::{
     LibraryWithFilters, Selected as LibraryWithFiltersSelected, Sort,
 };
@@ -396,14 +399,14 @@ pub fn serialize_remote_addons(
         catalog: &'a String,
         addon_name: &'a String,
         selected: &'a bool,
-        deep_links: RemoteAddonsDeepLinks,
+        deep_links: AddonsDeepLinks,
     }
     #[derive(Serialize)]
     #[serde(rename_all = "camelCase")]
     struct _SelectableType<'a> {
         r#type: &'a String,
         selected: &'a bool,
-        deep_links: RemoteAddonsDeepLinks,
+        deep_links: AddonsDeepLinks,
     }
     #[derive(Serialize)]
     #[serde(rename_all = "camelCase")]
@@ -441,7 +444,7 @@ pub fn serialize_remote_addons(
                     catalog: &selectable_catalog.catalog,
                     addon_name: &selectable_catalog.addon_name,
                     selected: &selectable_catalog.selected,
-                    deep_links: RemoteAddonsDeepLinks::from(&selectable_catalog.request),
+                    deep_links: AddonsDeepLinks::from(&selectable_catalog.request),
                 })
                 .collect(),
             types: remote_addons
@@ -451,7 +454,7 @@ pub fn serialize_remote_addons(
                 .map(|selectable_type| _SelectableType {
                     r#type: &selectable_type.r#type,
                     selected: &selectable_type.selected,
-                    deep_links: RemoteAddonsDeepLinks::from(&selectable_type.request),
+                    deep_links: AddonsDeepLinks::from(&selectable_type.request),
                 })
                 .collect(),
         },
@@ -478,6 +481,59 @@ pub fn serialize_remote_addons(
                     Loadable::Err(error) => Loadable::Err(&error),
                 },
             }),
+    })
+    .unwrap()
+}
+
+pub fn serialize_installed_addons(installed_addons: &InstalledAddonsWithFilters) -> JsValue {
+    #[derive(Serialize)]
+    #[serde(rename_all = "camelCase")]
+    struct _DescriptorPreview<'a> {
+        #[serde(flatten)]
+        addon: &'a DescriptorPreview,
+        installed: bool,
+    }
+    #[derive(Serialize)]
+    #[serde(rename_all = "camelCase")]
+    struct _SelectableType<'a> {
+        r#type: &'a Option<String>,
+        selected: &'a bool,
+        deep_links: AddonsDeepLinks,
+    }
+    #[derive(Serialize)]
+    #[serde(rename_all = "camelCase")]
+    struct _Selectable<'a> {
+        types: Vec<_SelectableType<'a>>,
+    }
+    #[derive(Serialize)]
+    #[serde(rename_all = "camelCase")]
+    struct _InstalledAddonsWithFilters<'a> {
+        selected: &'a Option<InstalledAddonsWithFiltersSelected>,
+        selectable: _Selectable<'a>,
+        catalog: Vec<_DescriptorPreview<'a>>,
+    }
+    JsValue::from_serde(&_InstalledAddonsWithFilters {
+        selected: &installed_addons.selected,
+        selectable: _Selectable {
+            types: installed_addons
+                .selectable
+                .types
+                .iter()
+                .map(|selectable_type| _SelectableType {
+                    r#type: &selectable_type.r#type,
+                    selected: &selectable_type.selected,
+                    deep_links: AddonsDeepLinks::from(&selectable_type.request),
+                })
+                .collect(),
+        },
+        catalog: installed_addons
+            .catalog
+            .iter()
+            .map(|addon| _DescriptorPreview {
+                addon,
+                installed: true,
+            })
+            .collect(),
     })
     .unwrap()
 }

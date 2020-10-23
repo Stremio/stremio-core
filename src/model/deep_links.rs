@@ -5,6 +5,7 @@ use serde::Serialize;
 use std::borrow::Borrow;
 use std::io;
 use std::io::Write;
+use stremio_core::models::installed_addons_with_filters::InstalledAddonsRequest;
 use stremio_core::models::library_with_filters::LibraryRequest;
 use stremio_core::types::addon::{ExtraValue, ResourceRequest};
 use stremio_core::types::library::LibraryItem;
@@ -232,19 +233,36 @@ impl From<&ResourceRequest> for DiscoverDeepLinks {
 }
 
 #[derive(Serialize)]
-pub struct RemoteAddonsDeepLinks {
+pub struct AddonsDeepLinks {
     addons: String,
 }
 
-impl From<&ResourceRequest> for RemoteAddonsDeepLinks {
+impl From<&ResourceRequest> for AddonsDeepLinks {
     fn from(request: &ResourceRequest) -> Self {
-        RemoteAddonsDeepLinks {
+        AddonsDeepLinks {
             addons: format!(
                 "#/addons/{}/{}/{}",
                 utf8_percent_encode(&request.path.r#type, URI_COMPONENT_ENCODE_SET),
                 utf8_percent_encode(&request.base.as_str(), URI_COMPONENT_ENCODE_SET),
                 utf8_percent_encode(&request.path.id, URI_COMPONENT_ENCODE_SET),
             ),
+        }
+    }
+}
+
+impl From<&InstalledAddonsRequest> for AddonsDeepLinks {
+    fn from(request: &InstalledAddonsRequest) -> Self {
+        AddonsDeepLinks {
+            addons: request
+                .r#type
+                .as_ref()
+                .map(|r#type| {
+                    format!(
+                        "#/addons/{}",
+                        utf8_percent_encode(r#type, URI_COMPONENT_ENCODE_SET)
+                    )
+                })
+                .unwrap_or_else(|| "#/addons".to_owned()),
         }
     }
 }
