@@ -232,13 +232,13 @@ impl From<&ResourceRequest> for MetaCatalogDeepLinks {
 }
 
 #[derive(Serialize)]
-pub struct AddonCatalogDeepLinks {
+pub struct RemoteAddonsDeepLinks {
     addons: String,
 }
 
-impl From<&ResourceRequest> for AddonCatalogDeepLinks {
+impl From<&ResourceRequest> for RemoteAddonsDeepLinks {
     fn from(request: &ResourceRequest) -> Self {
-        AddonCatalogDeepLinks {
+        RemoteAddonsDeepLinks {
             addons: format!(
                 "#/addons/{}/{}/{}",
                 utf8_percent_encode(&request.path.r#type, URI_COMPONENT_ENCODE_SET),
