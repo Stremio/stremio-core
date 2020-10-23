@@ -7,6 +7,7 @@ use crate::types::addon::{DescriptorPreview, ManifestPreview};
 use crate::types::profile::Profile;
 use itertools::Itertools;
 use serde::{Deserialize, Serialize};
+use std::iter;
 
 #[derive(Clone, PartialEq, Serialize, Deserialize)]
 pub struct InstalledAddonsRequest {
@@ -116,6 +117,16 @@ fn selectable_update(
             },
         })
         .collect::<Vec<_>>();
+    let selectable_types = iter::once(SelectableType {
+        r#type: None,
+        request: InstalledAddonsRequest { r#type: None },
+        selected: selected
+            .as_ref()
+            .map(|selected| selected.request.r#type.is_none())
+            .unwrap_or_default(),
+    })
+    .chain(selectable_types.into_iter())
+    .collect::<Vec<_>>();
     let next_selectable = Selectable {
         types: selectable_types,
     };
