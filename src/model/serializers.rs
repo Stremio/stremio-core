@@ -1,6 +1,6 @@
 use crate::env::WebEnv;
 use crate::model::deep_links::{
-    LibraryDeepLinks, LibraryItemDeepLinks, MetaCatalogResourceDeepLinks, MetaItemDeepLinks,
+    LibraryDeepLinks, LibraryItemDeepLinks, MetaCatalogDeepLinks, MetaItemDeepLinks,
     StreamDeepLinks,
 };
 use serde::Serialize;
@@ -47,7 +47,7 @@ pub fn serialize_catalogs_with_extra(
         request: &'a ResourceRequest,
         content: Loadable<Vec<_MetaItemPreview<'a>>, &'a ResourceError>,
         addon_name: Option<&'a String>,
-        deep_links: MetaCatalogResourceDeepLinks,
+        deep_links: MetaCatalogDeepLinks,
     }
     #[derive(Serialize)]
     #[serde(rename_all = "camelCase")]
@@ -89,7 +89,7 @@ pub fn serialize_catalogs_with_extra(
                     .iter()
                     .find(|addon| addon.transport_url == catalog.request.base)
                     .map(|addon| &addon.manifest.name),
-                deep_links: MetaCatalogResourceDeepLinks::from(&catalog.request),
+                deep_links: MetaCatalogDeepLinks::from(&catalog.request),
             })
             .collect::<Vec<_>>(),
     })
@@ -204,7 +204,7 @@ pub fn serialize_discover(
     struct _SelectableExtraOption<'a> {
         value: &'a Option<String>,
         selected: &'a bool,
-        deep_links: MetaCatalogResourceDeepLinks,
+        deep_links: MetaCatalogDeepLinks,
     }
     #[derive(Serialize)]
     #[serde(rename_all = "camelCase")]
@@ -219,19 +219,19 @@ pub fn serialize_discover(
         catalog: &'a String,
         addon_name: &'a String,
         selected: &'a bool,
-        deep_links: MetaCatalogResourceDeepLinks,
+        deep_links: MetaCatalogDeepLinks,
     }
     #[derive(Serialize)]
     #[serde(rename_all = "camelCase")]
     struct _SelectableType<'a> {
         r#type: &'a String,
         selected: &'a bool,
-        deep_links: MetaCatalogResourceDeepLinks,
+        deep_links: MetaCatalogDeepLinks,
     }
     #[derive(Serialize)]
     #[serde(rename_all = "camelCase")]
     struct _SelectablePage {
-        deep_links: MetaCatalogResourceDeepLinks,
+        deep_links: MetaCatalogDeepLinks,
     }
     #[derive(Serialize)]
     #[serde(rename_all = "camelCase")]
@@ -283,7 +283,7 @@ pub fn serialize_discover(
                 .map(|selectable_type| _SelectableType {
                     r#type: &selectable_type.r#type,
                     selected: &selectable_type.selected,
-                    deep_links: MetaCatalogResourceDeepLinks::from(&selectable_type.request),
+                    deep_links: MetaCatalogDeepLinks::from(&selectable_type.request),
                 })
                 .collect(),
             catalogs: discover
@@ -294,7 +294,7 @@ pub fn serialize_discover(
                     catalog: &selectable_catalog.catalog,
                     addon_name: &selectable_catalog.addon_name,
                     selected: &selectable_catalog.selected,
-                    deep_links: MetaCatalogResourceDeepLinks::from(&selectable_catalog.request),
+                    deep_links: MetaCatalogDeepLinks::from(&selectable_catalog.request),
                 })
                 .collect(),
             extra: discover
@@ -310,7 +310,7 @@ pub fn serialize_discover(
                         .map(|option| _SelectableExtraOption {
                             value: &option.value,
                             selected: &option.selected,
-                            deep_links: MetaCatalogResourceDeepLinks::from(&option.request),
+                            deep_links: MetaCatalogDeepLinks::from(&option.request),
                         })
                         .collect(),
                 })
@@ -320,14 +320,14 @@ pub fn serialize_discover(
                 .prev_page
                 .as_ref()
                 .map(|prev_page| _SelectablePage {
-                    deep_links: MetaCatalogResourceDeepLinks::from(&prev_page.request),
+                    deep_links: MetaCatalogDeepLinks::from(&prev_page.request),
                 }),
             next_page: discover
                 .selectable
                 .next_page
                 .as_ref()
                 .map(|next_page| _SelectablePage {
-                    deep_links: MetaCatalogResourceDeepLinks::from(&next_page.request),
+                    deep_links: MetaCatalogDeepLinks::from(&next_page.request),
                 }),
         },
         catalog: discover.catalog.as_ref().map(|catalog| _ResourceLoadable {
