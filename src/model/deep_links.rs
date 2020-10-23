@@ -232,6 +232,24 @@ impl From<&ResourceRequest> for MetaCatalogDeepLinks {
 }
 
 #[derive(Serialize)]
+pub struct AddonCatalogDeepLinks {
+    addons: String,
+}
+
+impl From<&ResourceRequest> for AddonCatalogDeepLinks {
+    fn from(request: &ResourceRequest) -> Self {
+        AddonCatalogDeepLinks {
+            addons: format!(
+                "#/addons/{}/{}/{}",
+                utf8_percent_encode(&request.path.r#type, URI_COMPONENT_ENCODE_SET),
+                utf8_percent_encode(&request.base.as_str(), URI_COMPONENT_ENCODE_SET),
+                utf8_percent_encode(&request.path.id, URI_COMPONENT_ENCODE_SET),
+            ),
+        }
+    }
+}
+
+#[derive(Serialize)]
 pub struct LibraryDeepLinks {
     library: String,
 }
