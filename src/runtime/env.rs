@@ -209,5 +209,6 @@ fn migrate_storage_schema_to_v2<E: Env>() -> EnvFuture<()> {
                 _ => E::set_storage::<()>(PROFILE_STORAGE_KEY, None),
             }
         })
+        .and_then(|_| E::set_storage(SCHEMA_VERSION_STORAGE_KEY, Some(&2)))
         .boxed_local()
 }
