@@ -15,7 +15,8 @@ use stremio_core::models::common::{Loadable, ResourceError};
 use stremio_core::models::continue_watching_preview::ContinueWatchingPreview;
 use stremio_core::models::ctx::Ctx;
 use stremio_core::models::installed_addons_with_filters::{
-    InstalledAddonsWithFilters, Selected as InstalledAddonsWithFiltersSelected,
+    InstalledAddonsRequest, InstalledAddonsWithFilters,
+    Selected as InstalledAddonsWithFiltersSelected,
 };
 use stremio_core::models::library_with_filters::{
     LibraryWithFilters, Selected as LibraryWithFiltersSelected, Sort,
@@ -502,8 +503,16 @@ pub fn serialize_installed_addons(installed_addons: &InstalledAddonsWithFilters)
     }
     #[derive(Serialize)]
     #[serde(rename_all = "camelCase")]
+    struct _SelectableCatalog {
+        catalog: String,
+        selected: bool,
+        deep_links: AddonsDeepLinks,
+    }
+    #[derive(Serialize)]
+    #[serde(rename_all = "camelCase")]
     struct _Selectable<'a> {
         types: Vec<_SelectableType<'a>>,
+        catalogs: Vec<_SelectableCatalog>,
     }
     #[derive(Serialize)]
     #[serde(rename_all = "camelCase")]
@@ -525,6 +534,11 @@ pub fn serialize_installed_addons(installed_addons: &InstalledAddonsWithFilters)
                     deep_links: AddonsDeepLinks::from(&selectable_type.request),
                 })
                 .collect(),
+            catalogs: vec![_SelectableCatalog {
+                catalog: "Installed".to_owned(),
+                selected: installed_addons.selected.is_some(),
+                deep_links: AddonsDeepLinks::from(&InstalledAddonsRequest { r#type: None }),
+            }],
         },
         catalog: installed_addons
             .catalog
