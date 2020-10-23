@@ -9,12 +9,12 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Clone, PartialEq, Serialize, Deserialize)]
 pub struct InstalledAddonsRequest {
-    r#type: Option<String>,
+    pub r#type: Option<String>,
 }
 
 #[derive(Clone, PartialEq, Serialize, Deserialize)]
 pub struct Selected {
-    request: InstalledAddonsRequest,
+    pub request: InstalledAddonsRequest,
 }
 
 #[derive(PartialEq, Serialize)]
