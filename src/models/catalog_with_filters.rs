@@ -94,13 +94,18 @@ pub struct SelectableExtra {
     pub options: Vec<SelectableExtraOption>,
 }
 
+#[derive(PartialEq, Serialize)]
+pub struct SelectablePage {
+    pub request: ResourceRequest,
+}
+
 #[derive(Default, PartialEq, Serialize)]
 pub struct Selectable {
     pub types: Vec<SelectableType>,
     pub catalogs: Vec<SelectableCatalog>,
     pub extra: Vec<SelectableExtra>,
-    pub prev_page: Option<ResourceRequest>,
-    pub next_page: Option<ResourceRequest>,
+    pub prev_page: Option<SelectablePage>,
+    pub next_page: Option<SelectablePage>,
 }
 
 #[derive(Derivative, Serialize)]
@@ -382,40 +387,49 @@ fn selectable_update<T: CatalogResourceAdapter>(
                             .get_extra_first_value(SKIP_EXTRA_NAME)
                             .and_then(|value| value.parse::<u32>().ok())
                             .unwrap_or(0);
-                        let prev_page = (skip > 0).as_option().map(|_| ResourceRequest {
-                            base: catalog.request.base.to_owned(),
-                            path: ResourcePath {
-                                resource: T::resource().to_owned(),
-                                r#type: manifest_catalog.r#type.to_owned(),
-                                id: manifest_catalog.id.to_owned(),
-                                extra: catalog.request.path.extra.to_owned().extend_one(
-                                    &extra_prop,
-                                    Some(
-                                        ((skip.saturating_sub(page_size as u32)
-                                            / page_size as u32)
-                                            * page_size as u32)
-                                            .to_string(),
+                        let prev_page = (skip > 0).as_option().map(|_| SelectablePage {
+                            request: ResourceRequest {
+                                base: catalog.request.base.to_owned(),
+                                path: ResourcePath {
+                                    resource: T::resource().to_owned(),
+                                    r#type: manifest_catalog.r#type.to_owned(),
+                                    id: manifest_catalog.id.to_owned(),
+                                    extra: catalog.request.path.extra.to_owned().extend_one(
+                                        &extra_prop,
+                                        Some(
+                                            ((skip.saturating_sub(page_size as u32)
+                                                / page_size as u32)
+                                                * page_size as u32)
+                                                .to_string(),
+                                        ),
                                     ),
-                                ),
+                                },
                             },
                         });
                         let next_page = match &catalog.content {
                             Loadable::Ready(content) if content.len() == page_size => {
-                                Some(ResourceRequest {
-                                    base: catalog.request.base.to_owned(),
-                                    path: ResourcePath {
-                                        resource: T::resource().to_owned(),
-                                        r#type: manifest_catalog.r#type.to_owned(),
-                                        id: manifest_catalog.id.to_owned(),
-                                        extra: catalog.request.path.extra.to_owned().extend_one(
-                                            &extra_prop,
-                                            Some(
-                                                ((skip.saturating_add(page_size as u32)
-                                                    / page_size as u32)
-                                                    * page_size as u32)
-                                                    .to_string(),
-                                            ),
-                                        ),
+                                Some(SelectablePage {
+                                    request: ResourceRequest {
+                                        base: catalog.request.base.to_owned(),
+                                        path: ResourcePath {
+                                            resource: T::resource().to_owned(),
+                                            r#type: manifest_catalog.r#type.to_owned(),
+                                            id: manifest_catalog.id.to_owned(),
+                                            extra: catalog
+                                                .request
+                                                .path
+                                                .extra
+                                                .to_owned()
+                                                .extend_one(
+                                                    &extra_prop,
+                                                    Some(
+                                                        ((skip.saturating_add(page_size as u32)
+                                                            / page_size as u32)
+                                                            * page_size as u32)
+                                                            .to_string(),
+                                                    ),
+                                                ),
+                                        },
                                     },
                                 })
                             }
