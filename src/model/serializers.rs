@@ -230,7 +230,7 @@ pub fn serialize_discover(
     }
     #[derive(Serialize)]
     #[serde(rename_all = "camelCase")]
-    struct SelectablePage {
+    struct _SelectablePage {
         deep_links: MetaCatalogResourceDeepLinks,
     }
     #[derive(Serialize)]
@@ -239,8 +239,8 @@ pub fn serialize_discover(
         types: Vec<_SelectableType<'a>>,
         catalogs: Vec<_SelectableCatalog<'a>>,
         extra: Vec<_SelectableExtra<'a>>,
-        prev_page: Option<SelectablePage>,
-        next_page: Option<SelectablePage>,
+        prev_page: Option<_SelectablePage>,
+        next_page: Option<_SelectablePage>,
     }
     #[derive(Serialize)]
     #[serde(rename_all = "camelCase")]
@@ -319,15 +319,15 @@ pub fn serialize_discover(
                 .selectable
                 .prev_page
                 .as_ref()
-                .map(|request| SelectablePage {
-                    deep_links: MetaCatalogResourceDeepLinks::from(request),
+                .map(|prev_page| _SelectablePage {
+                    deep_links: MetaCatalogResourceDeepLinks::from(&prev_page.request),
                 }),
             next_page: discover
                 .selectable
                 .next_page
                 .as_ref()
-                .map(|request| SelectablePage {
-                    deep_links: MetaCatalogResourceDeepLinks::from(request),
+                .map(|next_page| _SelectablePage {
+                    deep_links: MetaCatalogResourceDeepLinks::from(&next_page.request),
                 }),
         },
         catalog: discover.catalog.as_ref().map(|catalog| _ResourceLoadable {
