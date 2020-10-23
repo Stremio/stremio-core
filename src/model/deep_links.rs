@@ -207,13 +207,13 @@ impl From<(&Stream, &ResourceRequest, &ResourceRequest)> for StreamDeepLinks {
 }
 
 #[derive(Serialize)]
-pub struct MetaCatalogDeepLinks {
+pub struct DiscoverDeepLinks {
     discover: String,
 }
 
-impl From<&ResourceRequest> for MetaCatalogDeepLinks {
+impl From<&ResourceRequest> for DiscoverDeepLinks {
     fn from(request: &ResourceRequest) -> Self {
-        MetaCatalogDeepLinks {
+        DiscoverDeepLinks {
             discover: format!(
                 "#/discover/{}/{}/{}?{}",
                 utf8_percent_encode(&request.base.as_str(), URI_COMPONENT_ENCODE_SET),
