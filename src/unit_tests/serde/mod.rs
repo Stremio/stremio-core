@@ -1,3 +1,4 @@
+mod auth_key;
 mod default_token_ext;
 mod descriptor;
 mod descriptor_flags;
