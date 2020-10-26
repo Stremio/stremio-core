@@ -29,5 +29,6 @@ mod poster_shape;
 mod profile;
 mod serialize_api_request;
 mod serialize_api_result;
+mod settings;
 mod subtitles;
 mod user;
