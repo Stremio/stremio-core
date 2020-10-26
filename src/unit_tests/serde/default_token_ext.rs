@@ -1,6 +1,6 @@
 use crate::types::addon::{DescriptorFlags, Manifest, ManifestPreview};
 use crate::types::library::{LibraryItemBehaviorHints, LibraryItemState};
-use crate::types::resource::{MetaItemBehaviorHints, PosterShape};
+use crate::types::resource::{MetaItem, MetaItemBehaviorHints, PosterShape};
 use serde_test::Token;
 
 pub trait DefaultTokens {
@@ -168,5 +168,57 @@ impl DefaultTokens for DescriptorFlags {
             Token::Bool(false),
             Token::StructEnd,
         ]
+    }
+}
+
+impl DefaultTokens for MetaItem {
+    fn default_token() -> Vec<Token> {
+        [
+            vec![
+                Token::Struct {
+                    name: "MetaItem",
+                    len: 16,
+                },
+                Token::Str("id"),
+                Token::Str(""),
+                Token::Str("type"),
+                Token::Str(""),
+                Token::Str("name"),
+                Token::Str(""),
+                Token::Str("poster"),
+                Token::None,
+                Token::Str("background"),
+                Token::None,
+                Token::Str("logo"),
+                Token::None,
+                Token::Str("popularity"),
+                Token::None,
+                Token::Str("description"),
+                Token::None,
+                Token::Str("releaseInfo"),
+                Token::None,
+                Token::Str("runtime"),
+                Token::None,
+                Token::Str("released"),
+                Token::None,
+                Token::Str("posterShape"),
+            ],
+            PosterShape::default_token(),
+            vec![
+                Token::Str("videos"),
+                Token::Seq { len: Some(0) },
+                Token::SeqEnd,
+                Token::Str("links"),
+                Token::Seq { len: Some(0) },
+                Token::SeqEnd,
+                Token::Str("trailerStreams"),
+                Token::Seq { len: Some(0) },
+                Token::SeqEnd,
+                Token::Str("behaviorHints"),
+            ],
+            MetaItemBehaviorHints::default_token(),
+            vec![Token::StructEnd],
+        ]
+        .concat()
     }
 }
