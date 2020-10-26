@@ -25,12 +25,14 @@ pub struct Settings {
     pub bt_min_peers_for_stable: u64,
 }
 
-#[derive(Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct Selected {
     pub transport_url: Url,
 }
 
 #[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct StreamingServer {
     pub selected: Selected,
     pub settings: Loadable<Settings, EnvError>,
