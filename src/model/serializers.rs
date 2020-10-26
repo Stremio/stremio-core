@@ -223,6 +223,7 @@ pub fn serialize_discover(
         catalog: &'a String,
         addon_name: &'a String,
         selected: &'a bool,
+        request: &'a ResourceRequest,
         deep_links: DiscoverDeepLinks,
     }
     #[derive(Serialize)]
@@ -230,6 +231,7 @@ pub fn serialize_discover(
     struct _SelectableType<'a> {
         r#type: &'a String,
         selected: &'a bool,
+        request: &'a ResourceRequest,
         deep_links: DiscoverDeepLinks,
     }
     #[derive(Serialize)]
@@ -287,6 +289,7 @@ pub fn serialize_discover(
                 .map(|selectable_type| _SelectableType {
                     r#type: &selectable_type.r#type,
                     selected: &selectable_type.selected,
+                    request: &selectable_type.request,
                     deep_links: DiscoverDeepLinks::from(&selectable_type.request),
                 })
                 .collect(),
@@ -298,6 +301,7 @@ pub fn serialize_discover(
                     catalog: &selectable_catalog.catalog,
                     addon_name: &selectable_catalog.addon_name,
                     selected: &selectable_catalog.selected,
+                    request: &selectable_catalog.request,
                     deep_links: DiscoverDeepLinks::from(&selectable_catalog.request),
                 })
                 .collect(),
@@ -400,6 +404,7 @@ pub fn serialize_remote_addons(
         catalog: &'a String,
         addon_name: &'a String,
         selected: &'a bool,
+        request: &'a ResourceRequest,
         deep_links: AddonsDeepLinks,
     }
     #[derive(Serialize)]
@@ -407,6 +412,7 @@ pub fn serialize_remote_addons(
     struct _SelectableType<'a> {
         r#type: &'a String,
         selected: &'a bool,
+        request: &'a ResourceRequest,
         deep_links: AddonsDeepLinks,
     }
     #[derive(Serialize)]
@@ -445,6 +451,7 @@ pub fn serialize_remote_addons(
                     catalog: &selectable_catalog.catalog,
                     addon_name: &selectable_catalog.addon_name,
                     selected: &selectable_catalog.selected,
+                    request: &selectable_catalog.request,
                     deep_links: AddonsDeepLinks::from(&selectable_catalog.request),
                 })
                 .collect(),
@@ -455,6 +462,7 @@ pub fn serialize_remote_addons(
                 .map(|selectable_type| _SelectableType {
                     r#type: &selectable_type.r#type,
                     selected: &selectable_type.selected,
+                    request: &selectable_type.request,
                     deep_links: AddonsDeepLinks::from(&selectable_type.request),
                 })
                 .collect(),
