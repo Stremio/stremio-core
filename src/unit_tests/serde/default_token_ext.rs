@@ -1,6 +1,6 @@
 use crate::types::addon::{DescriptorFlags, Manifest, ManifestPreview};
 use crate::types::library::{LibraryItemBehaviorHints, LibraryItemState};
-use crate::types::profile::{AuthKey, GDPRConsent, User};
+use crate::types::profile::{Auth, AuthKey, GDPRConsent, User};
 use crate::types::resource::{MetaItemBehaviorHints, PosterShape};
 use serde_test::Token;
 
@@ -219,6 +219,25 @@ impl DefaultTokens for User {
                 Token::Str("gdpr_consent"),
             ],
             GDPRConsent::default_token(),
+            vec![Token::StructEnd],
+        ]
+        .concat()
+    }
+}
+
+impl DefaultTokens for Auth {
+    fn default_token() -> Vec<Token> {
+        [
+            vec![
+                Token::Struct {
+                    name: "Auth",
+                    len: 2,
+                },
+                Token::Str("key"),
+            ],
+            AuthKey::default_token(),
+            vec![Token::Str("user")],
+            User::default_token(),
             vec![Token::StructEnd],
         ]
         .concat()
