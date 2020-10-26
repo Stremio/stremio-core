@@ -67,6 +67,7 @@ pub struct Selected {
 }
 
 #[derive(PartialEq, Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct SelectableCatalog {
     pub catalog: String,
     pub addon_name: String,
@@ -89,6 +90,7 @@ pub struct SelectableExtraOption {
 }
 
 #[derive(PartialEq, Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct SelectableExtra {
     pub name: String,
     pub is_required: bool,
@@ -101,6 +103,7 @@ pub struct SelectablePage {
 }
 
 #[derive(Default, PartialEq, Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct Selectable {
     pub types: Vec<SelectableType>,
     pub catalogs: Vec<SelectableCatalog>,

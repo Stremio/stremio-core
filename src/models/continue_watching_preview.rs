@@ -8,6 +8,7 @@ use lazysort::SortedBy;
 use serde::Serialize;
 
 #[derive(Default, Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct ContinueWatchingPreview {
     pub library_items: Vec<LibraryItem>,
 }
