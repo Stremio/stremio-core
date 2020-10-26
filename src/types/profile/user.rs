@@ -2,7 +2,7 @@ use crate::types::empty_string_as_none;
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 
-#[derive(Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Default, Clone, PartialEq, Serialize, Deserialize)]
 #[cfg_attr(test, derive(Debug))]
 pub struct GDPRConsent {
     pub tos: bool,

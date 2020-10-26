@@ -1,5 +1,6 @@
 use crate::types::addon::{DescriptorFlags, Manifest, ManifestPreview};
 use crate::types::library::{LibraryItemBehaviorHints, LibraryItemState};
+use crate::types::profile::GDPRConsent;
 use crate::types::resource::{MetaItemBehaviorHints, PosterShape};
 use serde_test::Token;
 
@@ -165,6 +166,24 @@ impl DefaultTokens for DescriptorFlags {
             Token::Str("official"),
             Token::Bool(false),
             Token::Str("protected"),
+            Token::Bool(false),
+            Token::StructEnd,
+        ]
+    }
+}
+
+impl DefaultTokens for GDPRConsent {
+    fn default_token() -> Vec<Token> {
+        vec![
+            Token::Struct {
+                name: "GDPRConsent",
+                len: 3,
+            },
+            Token::Str("tos"),
+            Token::Bool(false),
+            Token::Str("privacy"),
+            Token::Bool(false),
+            Token::Str("marketing"),
             Token::Bool(false),
             Token::StructEnd,
         ]
