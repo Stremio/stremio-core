@@ -5,7 +5,7 @@ use serde::{Deserialize, Serialize};
 #[cfg_attr(test, derive(Debug))]
 pub struct AuthKey(pub String);
 
-#[derive(Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Default, Clone, PartialEq, Serialize, Deserialize)]
 #[cfg_attr(test, derive(Debug))]
 pub struct Auth {
     pub key: AuthKey,
