@@ -1,6 +1,6 @@
 use crate::types::addon::{DescriptorFlags, Manifest, ManifestPreview};
 use crate::types::library::{LibraryItemBehaviorHints, LibraryItemState};
-use crate::types::profile::{Auth, AuthKey, GDPRConsent, User};
+use crate::types::profile::{Auth, AuthKey, GDPRConsent, Settings, User};
 use crate::types::resource::{MetaItemBehaviorHints, PosterShape};
 use serde_test::Token;
 
@@ -241,5 +241,45 @@ impl DefaultTokens for Auth {
             vec![Token::StructEnd],
         ]
         .concat()
+    }
+}
+
+impl DefaultTokens for Settings {
+    fn default_token() -> Vec<Token> {
+        vec![
+            Token::Struct {
+                name: "Settings",
+                len: 14,
+            },
+            Token::Str("interfaceLanguage"),
+            Token::Str("eng"),
+            Token::Str("streamingServerUrl"),
+            Token::Str("http://127.0.0.1:11470/"),
+            Token::Str("bingeWatching"),
+            Token::Bool(false),
+            Token::Str("playInBackground"),
+            Token::Bool(true),
+            Token::Str("playInExternalPlayer"),
+            Token::Bool(false),
+            Token::Str("hardwareDecoding"),
+            Token::Bool(false),
+            Token::Str("subtitlesLanguage"),
+            Token::Str("eng"),
+            Token::Str("subtitlesSize"),
+            Token::U8(100),
+            Token::Str("subtitlesFont"),
+            Token::Str("Roboto"),
+            Token::Str("subtitlesBold"),
+            Token::Bool(false),
+            Token::Str("subtitlesOffset"),
+            Token::U8(5),
+            Token::Str("subtitlesTextColor"),
+            Token::Str("#FFFFFFFF"),
+            Token::Str("subtitlesBackgroundColor"),
+            Token::Str("#00000000"),
+            Token::Str("subtitlesOutlineColor"),
+            Token::Str("#00000000"),
+            Token::StructEnd,
+        ]
     }
 }
