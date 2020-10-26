@@ -1,5 +1,7 @@
 use crate::types::empty_string_as_none;
+use chrono::offset::TimeZone;
 use chrono::{DateTime, Utc};
+use derivative::Derivative;
 use serde::{Deserialize, Serialize};
 
 #[derive(Default, Clone, PartialEq, Serialize, Deserialize)]
@@ -11,7 +13,8 @@ pub struct GDPRConsent {
 }
 
 #[derive(Clone, PartialEq, Serialize, Deserialize)]
-#[cfg_attr(test, derive(Debug))]
+#[cfg_attr(test, derive(Derivative, Debug))]
+#[cfg_attr(test, derivative(Default))]
 #[serde(rename_all = "camelCase")]
 pub struct User {
     #[serde(rename = "_id")]
@@ -21,7 +24,9 @@ pub struct User {
     pub fb_id: Option<String>,
     #[serde(deserialize_with = "empty_string_as_none", default)]
     pub avatar: Option<String>,
+    #[cfg_attr(test, derivative(Default(value = "Utc.timestamp(0, 0)")))]
     pub last_modified: DateTime<Utc>,
+    #[cfg_attr(test, derivative(Default(value = "Utc.timestamp(0, 0)")))]
     pub date_registered: DateTime<Utc>,
     #[serde(rename = "gdpr_consent")]
     pub gdpr_consent: GDPRConsent,

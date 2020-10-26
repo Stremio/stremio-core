@@ -1,6 +1,6 @@
 use crate::types::addon::{DescriptorFlags, Manifest, ManifestPreview};
 use crate::types::library::{LibraryItemBehaviorHints, LibraryItemState};
-use crate::types::profile::GDPRConsent;
+use crate::types::profile::{AuthKey, GDPRConsent, User};
 use crate::types::resource::{MetaItemBehaviorHints, PosterShape};
 use serde_test::Token;
 
@@ -187,5 +187,40 @@ impl DefaultTokens for GDPRConsent {
             Token::Bool(false),
             Token::StructEnd,
         ]
+    }
+}
+
+impl DefaultTokens for AuthKey {
+    fn default_token() -> Vec<Token> {
+        vec![Token::NewtypeStruct { name: "AuthKey" }, Token::Str("")]
+    }
+}
+
+impl DefaultTokens for User {
+    fn default_token() -> Vec<Token> {
+        [
+            vec![
+                Token::Struct {
+                    name: "User",
+                    len: 7,
+                },
+                Token::Str("_id"),
+                Token::Str(""),
+                Token::Str("email"),
+                Token::Str(""),
+                Token::Str("fbId"),
+                Token::None,
+                Token::Str("avatar"),
+                Token::None,
+                Token::Str("lastModified"),
+                Token::Str("1970-01-01T00:00:00Z"),
+                Token::Str("dateRegistered"),
+                Token::Str("1970-01-01T00:00:00Z"),
+                Token::Str("gdpr_consent"),
+            ],
+            GDPRConsent::default_token(),
+            vec![Token::StructEnd],
+        ]
+        .concat()
     }
 }
