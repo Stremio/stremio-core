@@ -1,6 +1,8 @@
 use crate::types::empty_string_as_none;
+#[cfg(test)]
 use chrono::offset::TimeZone;
 use chrono::{DateTime, Utc};
+#[cfg(test)]
 use derivative::Derivative;
 use serde::{Deserialize, Serialize};
 
