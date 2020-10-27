@@ -25,9 +25,14 @@ pub struct Settings {
     pub bt_min_peers_for_stable: u64,
 }
 
-pub type Selected = Url;
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct Selected {
+    pub transport_url: Url,
+}
 
 #[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct StreamingServer {
     pub selected: Selected,
     pub settings: Loadable<Settings, EnvError>,
@@ -36,14 +41,15 @@ pub struct StreamingServer {
 
 impl StreamingServer {
     pub fn new<E: Env + 'static>(profile: &Profile) -> (Self, Effects) {
-        let selected = profile.settings.streaming_server_url.to_owned();
         let effects = Effects::many(vec![
-            get_settings::<E>(&selected),
-            get_base_url::<E>(&selected),
+            get_settings::<E>(&profile.settings.streaming_server_url),
+            get_base_url::<E>(&profile.settings.streaming_server_url),
         ]);
         (
             Self {
-                selected,
+                selected: Selected {
+                    transport_url: profile.settings.streaming_server_url.to_owned(),
+                },
                 settings: Loadable::Loading,
                 base_url: Loadable::Loading,
             },
@@ -59,8 +65,8 @@ impl<E: Env + 'static> UpdateWithCtx<Ctx<E>> for StreamingServer {
                 let settings_effects = eq_update(&mut self.settings, Loadable::Loading);
                 let base_url_effects = eq_update(&mut self.base_url, Loadable::Loading);
                 Effects::many(vec![
-                    get_settings::<E>(&self.selected),
-                    get_base_url::<E>(&self.selected),
+                    get_settings::<E>(&self.selected.transport_url),
+                    get_base_url::<E>(&self.selected.transport_url),
                 ])
                 .unchanged()
                 .join(settings_effects)
@@ -71,23 +77,25 @@ impl<E: Env + 'static> UpdateWithCtx<Ctx<E>> for StreamingServer {
             ))) if self.settings.is_ready() => {
                 let settings_effects =
                     eq_update(&mut self.settings, Loadable::Ready(settings.to_owned()));
-                Effects::one(set_settings::<E>(&self.selected, settings))
+                Effects::one(set_settings::<E>(&self.selected.transport_url, settings))
                     .unchanged()
                     .join(settings_effects)
             }
             Msg::Internal(Internal::ProfileChanged)
-                if self.selected != ctx.profile.settings.streaming_server_url =>
+                if self.selected.transport_url != ctx.profile.settings.streaming_server_url =>
             {
-                self.selected = ctx.profile.settings.streaming_server_url.to_owned();
+                self.selected = Selected {
+                    transport_url: ctx.profile.settings.streaming_server_url.to_owned(),
+                };
                 self.settings = Loadable::Loading;
                 self.base_url = Loadable::Loading;
                 Effects::many(vec![
-                    get_settings::<E>(&self.selected),
-                    get_base_url::<E>(&self.selected),
+                    get_settings::<E>(&self.selected.transport_url),
+                    get_base_url::<E>(&self.selected.transport_url),
                 ])
             }
             Msg::Internal(Internal::StreamingServerSettingsResult(url, result))
-                if self.selected == *url && self.settings.is_loading() =>
+                if self.selected.transport_url == *url && self.settings.is_loading() =>
             {
                 eq_update(
                     &mut self.settings,
@@ -98,7 +106,7 @@ impl<E: Env + 'static> UpdateWithCtx<Ctx<E>> for StreamingServer {
                 )
             }
             Msg::Internal(Internal::StreamingServerBaseURLResult(url, result))
-                if self.selected == *url && self.base_url.is_loading() =>
+                if self.selected.transport_url == *url && self.base_url.is_loading() =>
             {
                 eq_update(
                     &mut self.base_url,
@@ -109,7 +117,7 @@ impl<E: Env + 'static> UpdateWithCtx<Ctx<E>> for StreamingServer {
                 )
             }
             Msg::Internal(Internal::StreamingServerUpdateSettingsResult(url, result))
-                if self.selected == *url =>
+                if self.selected.transport_url == *url =>
             {
                 match result {
                     Ok(_) => Effects::none().unchanged(),

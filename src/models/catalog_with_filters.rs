@@ -18,6 +18,7 @@ use itertools::Itertools;
 use serde::{Deserialize, Serialize};
 use std::convert::TryFrom;
 
+#[derive(PartialEq)]
 pub enum SelectablePriority {
     Type,
     Catalog,
@@ -66,6 +67,7 @@ pub struct Selected {
 }
 
 #[derive(PartialEq, Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct SelectableCatalog {
     pub catalog: String,
     pub addon_name: String,
@@ -88,6 +90,7 @@ pub struct SelectableExtraOption {
 }
 
 #[derive(PartialEq, Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct SelectableExtra {
     pub name: String,
     pub is_required: bool,
@@ -100,6 +103,7 @@ pub struct SelectablePage {
 }
 
 #[derive(Default, PartialEq, Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct Selectable {
     pub types: Vec<SelectableType>,
     pub catalogs: Vec<SelectableCatalog>,
@@ -212,7 +216,6 @@ fn selectable_update<T: CatalogResourceAdapter>(
                         .map(|catalog| {
                             catalog.request.base == addon.transport_url
                                 && catalog.request.path.id == manifest_catalog.id
-                                && catalog.request.path.r#type == manifest_catalog.r#type
                                 && catalog.request.path.resource == T::resource()
                         })
                         .unwrap_or_default(),
@@ -229,72 +232,49 @@ fn selectable_update<T: CatalogResourceAdapter>(
         })
         .dedup_by(|a, b| a.request.eq_no_extra(&b.request))
         .collect::<Vec<_>>();
-    let (selectable_types, selectable_catalogs) = match T::selectable_priority() {
-        SelectablePriority::Type => {
-            let selectable_types = selectable_catalogs
-                .iter()
-                .map(|selectable_catalog| &selectable_catalog.request)
-                .unique_by(|request| &request.path.r#type)
-                .cloned()
-                .map(|request| SelectableType {
-                    r#type: request.path.r#type.to_owned(),
-                    selected: catalog
-                        .as_ref()
-                        .map(|catalog| catalog.request.path.r#type == request.path.r#type)
-                        .unwrap_or_default(),
-                    request,
-                })
-                .collect::<Vec<_>>();
-            let selectable_catalogs = selectable_catalogs
-                .into_iter()
-                .filter(|selectable_catalog| match catalog {
-                    Some(catalog) => {
-                        selectable_catalog.request.path.r#type == catalog.request.path.r#type
-                    }
-                    None => true,
-                })
-                .collect::<Vec<_>>();
-            (selectable_types, selectable_catalogs)
-        }
-        SelectablePriority::Catalog => {
-            let selectable_types = selectable_catalogs
-                .iter()
-                .map(|selectable_catalog| &selectable_catalog.request)
-                .filter(|request| match catalog {
-                    Some(catalog) => {
-                        request.base == catalog.request.base
-                            && request.path.id == catalog.request.path.id
-                            && request.path.resource == catalog.request.path.resource
-                    }
-                    _ => true,
-                })
-                .unique_by(|request| &request.path.r#type)
-                .cloned()
-                .map(|request| SelectableType {
-                    r#type: request.path.r#type.to_owned(),
-                    selected: catalog
-                        .as_ref()
-                        .map(|catalog| catalog.request.path.r#type == request.path.r#type)
-                        .unwrap_or_default(),
-                    request,
-                })
-                .collect::<Vec<_>>();
-            let selectable_catalogs = selectable_catalogs
-                .into_iter()
-                .dedup_by(|a, b| {
-                    a.request.base == b.request.base && a.request.path.id == b.request.path.id
-                })
-                .collect::<Vec<_>>();
-            (selectable_types, selectable_catalogs)
-        }
-    };
-    let selectable_types = selectable_types
-        .into_iter()
+    let selectable_types = selectable_catalogs
+        .iter()
+        .map(|selectable_catalog| &selectable_catalog.request)
+        .filter(|request| match catalog {
+            Some(catalog) if T::selectable_priority() == SelectablePriority::Catalog => {
+                request.base == catalog.request.base
+                    && request.path.id == catalog.request.path.id
+                    && request.path.resource == catalog.request.path.resource
+            }
+            _ => true,
+        })
+        .unique_by(|request| &request.path.r#type)
+        .cloned()
+        .map(|request| SelectableType {
+            r#type: request.path.r#type.to_owned(),
+            selected: catalog
+                .as_ref()
+                .map(|catalog| catalog.request.path.r#type == request.path.r#type)
+                .unwrap_or_default(),
+            request,
+        })
         .sorted_by(|a, b| {
             compare_with_priorities(a.r#type.as_str(), b.r#type.as_str(), &*TYPE_PRIORITIES)
         })
         .rev()
         .collect::<Vec<_>>();
+    let selectable_catalogs = match T::selectable_priority() {
+        SelectablePriority::Type => selectable_catalogs
+            .into_iter()
+            .filter(|selectable_catalog| match catalog {
+                Some(catalog) => {
+                    selectable_catalog.request.path.r#type == catalog.request.path.r#type
+                }
+                _ => true,
+            })
+            .collect::<Vec<_>>(),
+        SelectablePriority::Catalog => selectable_catalogs
+            .into_iter()
+            .dedup_by(|a, b| {
+                a.request.base == b.request.base && a.request.path.id == b.request.path.id
+            })
+            .collect::<Vec<_>>(),
+    };
     let (selectable_extra, prev_page, next_page) = match catalog {
         Some(catalog) if catalog.request.path.resource == T::resource() => profile
             .addons

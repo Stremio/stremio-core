@@ -8,11 +8,13 @@ use serde::{Deserialize, Serialize};
 use url::Url;
 
 #[derive(Clone, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct Selected {
     pub transport_url: Url,
 }
 
 #[derive(Default, Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct AddonDetails {
     pub selected: Option<Selected>,
     pub local_addon: Option<Descriptor>,
