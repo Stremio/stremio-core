@@ -1,6 +1,6 @@
 use crate::types::addon::{DescriptorFlags, Manifest, ManifestPreview};
 use crate::types::library::{LibraryItemBehaviorHints, LibraryItemState};
-use crate::types::resource::{MetaItemBehaviorHints, PosterShape};
+use crate::types::resource::{MetaItemBehaviorHints, PosterShape, SeriesInfo};
 use serde_test::Token;
 
 pub trait DefaultTokens {
@@ -167,6 +167,17 @@ impl DefaultTokens for DescriptorFlags {
             Token::Str("protected"),
             Token::Bool(false),
             Token::StructEnd,
+        ]
+    }
+}
+
+impl DefaultTokens for SeriesInfo {
+    fn default_token() -> Vec<Token> {
+        vec![
+            Token::Str("season"),
+            Token::U32(0),
+            Token::Str("episode"),
+            Token::U32(0),
         ]
     }
 }
