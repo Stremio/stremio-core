@@ -1,8 +1,8 @@
 use crate::types::profile::User;
 use serde::{Deserialize, Serialize};
 
-#[derive(Default, Clone, PartialEq, Serialize, Deserialize)]
-#[cfg_attr(test, derive(Debug))]
+#[derive(Clone, PartialEq, Serialize, Deserialize)]
+#[cfg_attr(test, derive(Default, Debug))]
 pub struct AuthKey(pub String);
 
 #[derive(Clone, PartialEq, Serialize, Deserialize)]
