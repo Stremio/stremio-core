@@ -77,7 +77,8 @@ impl<E: Env + 'static> UpdateWithCtx<Ctx<E>> for Player {
                 let meta_item_effects = eq_update(&mut self.meta_item, None);
                 let subtitles_effects = eq_update(&mut self.subtitles, vec![]);
                 let next_video_effects = eq_update(&mut self.next_video, None);
-                let library_item_effects = eq_update(&mut self.library_item, None);
+                let library_item_effects =
+                    library_item_update::<E>(&mut self.library_item, &self.meta_item, &ctx.library);
                 selected_effects
                     .join(meta_item_effects)
                     .join(subtitles_effects)
@@ -109,11 +110,14 @@ impl<E: Env + 'static> UpdateWithCtx<Ctx<E>> for Player {
                         library_item.state.time_watched = 0;
                         library_item.state.flagged_watched = 0;
                     } else {
+                        let time_watched =
+                            cmp::min(1000, cmp::max(0, time - library_item.state.time_offset));
                         library_item.state.time_watched =
-                            library_item.state.time_watched.saturating_add(cmp::min(
-                                1000,
-                                cmp::max(0, time - library_item.state.time_offset),
-                            ));
+                            library_item.state.time_watched.saturating_add(time_watched);
+                        library_item.state.overall_time_watched = library_item
+                            .state
+                            .overall_time_watched
+                            .saturating_add(time_watched);
                     };
                     library_item.state.time_offset = time.to_owned();
                     library_item.state.duration = duration.to_owned();
