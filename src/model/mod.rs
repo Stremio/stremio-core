@@ -1,11 +1,13 @@
 mod deep_links;
-mod serializers;
 
 mod serialize_catalogs_with_extra;
 use serialize_catalogs_with_extra::*;
 
 mod serialize_continue_watching_preview;
 use serialize_continue_watching_preview::*;
+
+mod serialize_discover;
+use serialize_discover::*;
 
 mod serialize_installed_addons;
 use serialize_installed_addons::*;
