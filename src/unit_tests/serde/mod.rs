@@ -1,3 +1,4 @@
+mod api_request;
 mod auth;
 mod auth_key;
 mod auth_request;
@@ -29,7 +30,6 @@ mod meta_item_behavior_hints;
 mod meta_item_preview;
 mod poster_shape;
 mod profile;
-mod serialize_api_request;
 mod serialize_api_result;
 mod settings;
 mod subtitles;
