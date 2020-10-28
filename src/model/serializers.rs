@@ -14,10 +14,7 @@ use stremio_core::models::catalogs_with_extra::{
 use stremio_core::models::common::{Loadable, ResourceError};
 use stremio_core::models::continue_watching_preview::ContinueWatchingPreview;
 use stremio_core::models::ctx::Ctx;
-use stremio_core::models::installed_addons_with_filters::{
-    InstalledAddonsRequest, InstalledAddonsWithFilters,
-    Selected as InstalledAddonsWithFiltersSelected,
-};
+
 use stremio_core::models::library_with_filters::{
     LibraryWithFilters, Selected as LibraryWithFiltersSelected, Sort,
 };
@@ -490,72 +487,6 @@ pub fn serialize_remote_addons(
                     Loadable::Err(error) => Loadable::Err(&error),
                 },
             }),
-    })
-    .unwrap()
-}
-
-pub fn serialize_installed_addons(installed_addons: &InstalledAddonsWithFilters) -> JsValue {
-    #[derive(Serialize)]
-    #[serde(rename_all = "camelCase")]
-    struct _DescriptorPreview<'a> {
-        #[serde(flatten)]
-        addon: &'a DescriptorPreview,
-        installed: bool,
-    }
-    #[derive(Serialize)]
-    #[serde(rename_all = "camelCase")]
-    struct _SelectableType<'a> {
-        r#type: &'a Option<String>,
-        selected: &'a bool,
-        deep_links: AddonsDeepLinks,
-    }
-    #[derive(Serialize)]
-    #[serde(rename_all = "camelCase")]
-    struct _SelectableCatalog {
-        catalog: String,
-        selected: bool,
-        deep_links: AddonsDeepLinks,
-    }
-    #[derive(Serialize)]
-    #[serde(rename_all = "camelCase")]
-    struct _Selectable<'a> {
-        types: Vec<_SelectableType<'a>>,
-        catalogs: Vec<_SelectableCatalog>,
-    }
-    #[derive(Serialize)]
-    #[serde(rename_all = "camelCase")]
-    struct _InstalledAddonsWithFilters<'a> {
-        selected: &'a Option<InstalledAddonsWithFiltersSelected>,
-        selectable: _Selectable<'a>,
-        catalog: Vec<_DescriptorPreview<'a>>,
-    }
-    JsValue::from_serde(&_InstalledAddonsWithFilters {
-        selected: &installed_addons.selected,
-        selectable: _Selectable {
-            types: installed_addons
-                .selectable
-                .types
-                .iter()
-                .map(|selectable_type| _SelectableType {
-                    r#type: &selectable_type.r#type,
-                    selected: &selectable_type.selected,
-                    deep_links: AddonsDeepLinks::from(&selectable_type.request),
-                })
-                .collect(),
-            catalogs: vec![_SelectableCatalog {
-                catalog: "Installed".to_owned(),
-                selected: installed_addons.selected.is_some(),
-                deep_links: AddonsDeepLinks::from(&InstalledAddonsRequest { r#type: None }),
-            }],
-        },
-        catalog: installed_addons
-            .catalog
-            .iter()
-            .map(|addon| _DescriptorPreview {
-                addon,
-                installed: true,
-            })
-            .collect(),
     })
     .unwrap()
 }
