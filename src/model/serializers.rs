@@ -1,7 +1,5 @@
 use crate::env::WebEnv;
-use crate::model::deep_links::{
-    DiscoverDeepLinks, LibraryDeepLinks, LibraryItemDeepLinks, MetaItemDeepLinks, StreamDeepLinks,
-};
+use crate::model::deep_links::{DiscoverDeepLinks, MetaItemDeepLinks, StreamDeepLinks};
 use serde::Serialize;
 use stremio_core::constants::{CATALOG_PAGE_SIZE, SKIP_EXTRA_NAME};
 use stremio_core::models::catalog_with_filters::{
@@ -9,82 +7,9 @@ use stremio_core::models::catalog_with_filters::{
 };
 use stremio_core::models::common::{Loadable, ResourceError};
 use stremio_core::models::ctx::Ctx;
-use stremio_core::models::library_with_filters::{
-    LibraryWithFilters, Selected as LibraryWithFiltersSelected, Sort,
-};
 use stremio_core::types::addon::ResourceRequest;
-use stremio_core::types::library::LibraryItem;
 use stremio_core::types::resource::{MetaItemPreview, Stream};
 use wasm_bindgen::JsValue;
-
-pub fn serialize_library<F>(library: &LibraryWithFilters<F>, root: String) -> JsValue {
-    #[derive(Serialize)]
-    #[serde(rename_all = "camelCase")]
-    struct _LibraryItem<'a> {
-        #[serde(flatten)]
-        library_item: &'a LibraryItem,
-        deep_links: LibraryItemDeepLinks,
-    }
-    #[derive(Serialize)]
-    #[serde(rename_all = "camelCase")]
-    struct _SelectableType<'a> {
-        r#type: &'a Option<String>,
-        selected: &'a bool,
-        deep_links: LibraryDeepLinks,
-    }
-    #[derive(Serialize)]
-    #[serde(rename_all = "camelCase")]
-    struct _SelectableSort<'a> {
-        sort: &'a Sort,
-        selected: &'a bool,
-        deep_links: LibraryDeepLinks,
-    }
-    #[derive(Serialize)]
-    struct _Selectable<'a> {
-        types: Vec<_SelectableType<'a>>,
-        sorts: Vec<_SelectableSort<'a>>,
-    }
-    #[derive(Serialize)]
-    struct _LibraryWithFilters<'a> {
-        selected: &'a Option<LibraryWithFiltersSelected>,
-        selectable: _Selectable<'a>,
-        catalog: Vec<_LibraryItem<'a>>,
-    }
-    JsValue::from_serde(&_LibraryWithFilters {
-        selected: &library.selected,
-        selectable: _Selectable {
-            types: library
-                .selectable
-                .types
-                .iter()
-                .map(|selectable_type| _SelectableType {
-                    r#type: &selectable_type.r#type,
-                    selected: &selectable_type.selected,
-                    deep_links: LibraryDeepLinks::from((&root, &selectable_type.request)),
-                })
-                .collect(),
-            sorts: library
-                .selectable
-                .sorts
-                .iter()
-                .map(|selectable_sort| _SelectableSort {
-                    sort: &selectable_sort.sort,
-                    selected: &selectable_sort.selected,
-                    deep_links: LibraryDeepLinks::from((&root, &selectable_sort.request)),
-                })
-                .collect(),
-        },
-        catalog: library
-            .catalog
-            .iter()
-            .map(|library_item| _LibraryItem {
-                library_item,
-                deep_links: LibraryItemDeepLinks::from(library_item),
-            })
-            .collect(),
-    })
-    .unwrap()
-}
 
 pub fn serialize_discover(
     discover: &CatalogWithFilters<MetaItemPreview>,
