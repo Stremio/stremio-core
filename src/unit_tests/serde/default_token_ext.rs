@@ -213,9 +213,13 @@ impl DefaultTokens for User {
                 Token::Str("dateRegistered"),
                 Token::Str("1970-01-01T00:00:00Z"),
                 Token::Str("gdpr_consent"),
+                Token::Struct {
+                    name: "GDPRConsent",
+                    len: 3,
+                },
             ],
             GDPRConsent::default_token(),
-            vec![Token::StructEnd],
+            vec![Token::StructEnd, Token::StructEnd],
         ]
         .concat()
     }
