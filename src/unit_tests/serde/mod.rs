@@ -12,6 +12,7 @@ mod deserialize_stream_source;
 mod deserialize_video;
 mod extra_prop;
 mod gdpr_consent;
+mod gdpr_consent_request;
 mod library_bucket;
 mod library_item;
 mod library_item_behavior_hints;
