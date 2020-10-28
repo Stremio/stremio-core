@@ -4,7 +4,6 @@ use crate::types::profile::{AuthKey, GDPRConsent};
 #[cfg(test)]
 use chrono::offset::TimeZone;
 use chrono::{DateTime, Utc};
-#[cfg(test)]
 use derivative::Derivative;
 use serde::{Deserialize, Serialize};
 
@@ -45,14 +44,13 @@ impl APIMethodName for APIRequest {
     }
 }
 
-#[derive(Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Derivative, Clone, PartialEq, Serialize, Deserialize)]
+#[derivative(Default)]
 #[cfg_attr(test, derive(Debug))]
 #[serde(tag = "type")]
 pub enum AuthRequest {
-    Login {
-        email: String,
-        password: String,
-    },
+    #[derivative(Default)]
+    Login { email: String, password: String },
     Register {
         email: String,
         password: String,
