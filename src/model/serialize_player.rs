@@ -73,7 +73,7 @@ mod model {
         pub selected: &'a Option<Selected>,
         pub meta_item: Option<model::MetaItem<'a>>,
         pub subtitles: Vec<model::Subtitles<'a>>,
-        pub next_video_deep_links: Option<VideoDeepLinks>,
+        pub next_video: Option<Video<'a>>,
         pub library_item: Option<LibraryItem<'a>>,
         pub title: Option<String>,
         pub addon: Option<model::DescriptorPreview<'a>>,
@@ -137,12 +137,46 @@ pub fn serialize_player(player: &Player, ctx: &Ctx<WebEnv>) -> JsValue {
                 origin: &addon.manifest.name,
             })
             .collect(),
-        next_video_deep_links: player
+        next_video: player
             .selected
             .as_ref()
             .and_then(|selected| selected.meta_request.as_ref())
             .zip(player.next_video.as_ref())
-            .map(|(meta_request, next_video)| VideoDeepLinks::from((next_video, meta_request))),
+            .map(|(request, video)| model::Video {
+                video,
+                upcomming: player
+                    .meta_item
+                    .as_ref()
+                    .and_then(|meta_item| match meta_item {
+                        ResourceLoadable {
+                            content: Loadable::Ready(meta_item),
+                            ..
+                        } => Some(meta_item),
+                        _ => None,
+                    })
+                    .map(|meta_item| {
+                        meta_item.behavior_hints.has_scheduled_videos
+                            && meta_item
+                                .released
+                                .map(|released| released > WebEnv::now())
+                                .unwrap_or(true)
+                    })
+                    .unwrap_or_default(),
+                watched: false, // TODO use library
+                progress: None, // TODO use library,
+                scheduled: player
+                    .meta_item
+                    .as_ref()
+                    .and_then(|meta_item| match meta_item {
+                        ResourceLoadable {
+                            content: Loadable::Ready(meta_item),
+                            ..
+                        } => Some(meta_item.behavior_hints.has_scheduled_videos),
+                        _ => None,
+                    })
+                    .unwrap_or_default(),
+                deep_links: VideoDeepLinks::from((video, request)),
+            }),
         library_item: player
             .library_item
             .as_ref()
