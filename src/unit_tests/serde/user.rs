@@ -49,9 +49,14 @@ fn user() {
                 Token::Str("dateRegistered"),
                 Token::Str("2020-01-01T00:00:00Z"),
                 Token::Str("gdpr_consent"),
+                Token::Struct {
+                    name: "GDPRConsent",
+                    len: 3,
+                },
             ],
             GDPRConsent::default_token(),
             vec![
+                Token::StructEnd,
                 Token::StructEnd,
                 Token::Struct {
                     name: "User",
@@ -70,9 +75,13 @@ fn user() {
                 Token::Str("dateRegistered"),
                 Token::Str("2020-01-01T00:00:00Z"),
                 Token::Str("gdpr_consent"),
+                Token::Struct {
+                    name: "GDPRConsent",
+                    len: 3,
+                },
             ],
             GDPRConsent::default_token(),
-            vec![Token::StructEnd, Token::SeqEnd],
+            vec![Token::StructEnd, Token::StructEnd, Token::SeqEnd],
         ]
         .concat(),
     );
@@ -101,9 +110,13 @@ fn user() {
                 Token::Str("dateRegistered"),
                 Token::Str("2020-01-01T00:00:00Z"),
                 Token::Str("gdpr_consent"),
+                Token::Struct {
+                    name: "GDPRConsent",
+                    len: 3,
+                },
             ],
             GDPRConsent::default_token(),
-            vec![Token::StructEnd],
+            vec![Token::StructEnd, Token::StructEnd],
         ]
         .concat(),
     );

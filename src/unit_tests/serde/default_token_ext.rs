@@ -175,17 +175,12 @@ impl DefaultTokens for DescriptorFlags {
 impl DefaultTokens for GDPRConsent {
     fn default_token() -> Vec<Token> {
         vec![
-            Token::Struct {
-                name: "GDPRConsent",
-                len: 3,
-            },
             Token::Str("tos"),
             Token::Bool(false),
             Token::Str("privacy"),
             Token::Bool(false),
             Token::Str("marketing"),
             Token::Bool(false),
-            Token::StructEnd,
         ]
     }
 }
