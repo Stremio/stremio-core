@@ -7,9 +7,6 @@ use stremio_core::constants::{CATALOG_PAGE_SIZE, SKIP_EXTRA_NAME};
 use stremio_core::models::catalog_with_filters::{
     CatalogWithFilters, Selected as CatalogWithFiltersSelected,
 };
-use stremio_core::models::catalogs_with_extra::{
-    CatalogsWithExtra, Selected as CatalogsWithExtraSelected,
-};
 use stremio_core::models::common::{Loadable, ResourceError};
 use stremio_core::models::ctx::Ctx;
 use stremio_core::models::library_with_filters::{
@@ -19,80 +16,6 @@ use stremio_core::types::addon::ResourceRequest;
 use stremio_core::types::library::LibraryItem;
 use stremio_core::types::resource::{MetaItemPreview, Stream};
 use wasm_bindgen::JsValue;
-
-pub fn serialize_catalogs_with_extra(
-    catalogs_with_extra: &CatalogsWithExtra,
-    ctx: &Ctx<WebEnv>,
-) -> JsValue {
-    #[derive(Serialize)]
-    #[serde(rename_all = "camelCase")]
-    struct _Stream<'a> {
-        #[serde(flatten)]
-        stream: &'a Stream,
-        deep_links: StreamDeepLinks,
-    }
-    #[derive(Serialize)]
-    #[serde(rename_all = "camelCase")]
-    struct _MetaItemPreview<'a> {
-        #[serde(flatten)]
-        meta_item: &'a MetaItemPreview,
-        trailer_streams: Vec<_Stream<'a>>,
-        deep_links: MetaItemDeepLinks,
-    }
-    #[derive(Serialize)]
-    #[serde(rename_all = "camelCase")]
-    struct _ResourceLoadable<'a> {
-        request: &'a ResourceRequest,
-        content: Loadable<Vec<_MetaItemPreview<'a>>, &'a ResourceError>,
-        addon_name: Option<&'a String>,
-        deep_links: DiscoverDeepLinks,
-    }
-    #[derive(Serialize)]
-    #[serde(rename_all = "camelCase")]
-    struct _CatalogsWithExtra<'a> {
-        selected: &'a Option<CatalogsWithExtraSelected>,
-        catalogs: Vec<_ResourceLoadable<'a>>,
-    }
-    JsValue::from_serde(&_CatalogsWithExtra {
-        selected: &catalogs_with_extra.selected,
-        catalogs: catalogs_with_extra
-            .catalogs
-            .iter()
-            .map(|catalog| _ResourceLoadable {
-                request: &catalog.request,
-                content: match &catalog.content {
-                    Loadable::Ready(meta_items) => Loadable::Ready(
-                        meta_items
-                            .iter()
-                            .map(|meta_item| _MetaItemPreview {
-                                meta_item,
-                                trailer_streams: meta_item
-                                    .trailer_streams
-                                    .iter()
-                                    .map(|stream| _Stream {
-                                        stream,
-                                        deep_links: StreamDeepLinks::from(stream),
-                                    })
-                                    .collect::<Vec<_>>(),
-                                deep_links: MetaItemDeepLinks::from(meta_item),
-                            })
-                            .collect::<Vec<_>>(),
-                    ),
-                    Loadable::Loading => Loadable::Loading,
-                    Loadable::Err(error) => Loadable::Err(&error),
-                },
-                addon_name: ctx
-                    .profile
-                    .addons
-                    .iter()
-                    .find(|addon| addon.transport_url == catalog.request.base)
-                    .map(|addon| &addon.manifest.name),
-                deep_links: DiscoverDeepLinks::from(&catalog.request),
-            })
-            .collect::<Vec<_>>(),
-    })
-    .unwrap()
-}
 
 pub fn serialize_library<F>(library: &LibraryWithFilters<F>, root: String) -> JsValue {
     #[derive(Serialize)]
