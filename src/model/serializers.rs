@@ -11,9 +11,7 @@ use stremio_core::models::catalogs_with_extra::{
     CatalogsWithExtra, Selected as CatalogsWithExtraSelected,
 };
 use stremio_core::models::common::{Loadable, ResourceError};
-use stremio_core::models::continue_watching_preview::ContinueWatchingPreview;
 use stremio_core::models::ctx::Ctx;
-
 use stremio_core::models::library_with_filters::{
     LibraryWithFilters, Selected as LibraryWithFiltersSelected, Sort,
 };
@@ -161,36 +159,6 @@ pub fn serialize_library<F>(library: &LibraryWithFilters<F>, root: String) -> Js
                 deep_links: LibraryItemDeepLinks::from(library_item),
             })
             .collect(),
-    })
-    .unwrap()
-}
-
-pub fn serialize_continue_watching_preview(
-    continue_watching_preview: &ContinueWatchingPreview,
-) -> JsValue {
-    #[derive(Serialize)]
-    #[serde(rename_all = "camelCase")]
-    struct _LibraryItem<'a> {
-        #[serde(flatten)]
-        library_item: &'a LibraryItem,
-        deep_links: LibraryItemDeepLinks,
-    }
-    #[derive(Serialize)]
-    #[serde(rename_all = "camelCase")]
-    struct _ContinueWatchingPreview<'a> {
-        library_items: Vec<_LibraryItem<'a>>,
-        deep_links: LibraryDeepLinks,
-    }
-    JsValue::from_serde(&_ContinueWatchingPreview {
-        library_items: continue_watching_preview
-            .library_items
-            .iter()
-            .map(|library_item| _LibraryItem {
-                library_item,
-                deep_links: LibraryItemDeepLinks::from(library_item),
-            })
-            .collect::<Vec<_>>(),
-        deep_links: LibraryDeepLinks::from(&"continuewatching".to_owned()),
     })
     .unwrap()
 }
