@@ -1,4 +1,5 @@
 use crate::types::addon::{DescriptorFlags, Manifest, ManifestPreview};
+use crate::types::api::GDPRConsentRequest;
 use crate::types::library::{LibraryItemBehaviorHints, LibraryItemState};
 use crate::types::profile::{Auth, AuthKey, GDPRConsent, Settings, User};
 use crate::types::resource::{MetaItemBehaviorHints, PosterShape};
@@ -276,5 +277,22 @@ impl DefaultTokens for Settings {
             Token::Str("#00000000"),
             Token::StructEnd,
         ]
+    }
+}
+
+impl DefaultTokens for GDPRConsentRequest {
+    fn default_token() -> Vec<Token> {
+        [
+            vec![Token::Map { len: None }],
+            GDPRConsent::default_token(),
+            vec![
+                Token::Str("time"),
+                Token::Str("1970-01-01T00:00:00Z"),
+                Token::Str("from"),
+                Token::Str(""),
+                Token::MapEnd,
+            ],
+        ]
+        .concat()
     }
 }
