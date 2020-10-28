@@ -14,15 +14,15 @@ use serde::{Deserialize, Serialize};
 #[serde(rename_all = "camelCase")]
 pub struct Selected {
     pub meta_path: ResourcePath,
-    pub streams_path: Option<ResourcePath>,
+    pub stream_path: Option<ResourcePath>,
 }
 
 #[derive(Default, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct MetaDetails {
     pub selected: Option<Selected>,
-    pub meta_catalogs: Vec<ResourceLoadable<MetaItem>>,
-    pub streams_catalogs: Vec<ResourceLoadable<Vec<Stream>>>,
+    pub meta_items: Vec<ResourceLoadable<MetaItem>>,
+    pub streams: Vec<ResourceLoadable<Vec<Stream>>>,
 }
 
 impl<E: Env + 'static> UpdateWithCtx<Ctx<E>> for MetaDetails {
@@ -30,44 +30,48 @@ impl<E: Env + 'static> UpdateWithCtx<Ctx<E>> for MetaDetails {
         match msg {
             Msg::Action(Action::Load(ActionLoad::MetaDetails(selected))) => {
                 let selected_effects = eq_update(&mut self.selected, Some(selected.to_owned()));
-                let meta_effects = resources_update::<E, _>(
-                    &mut self.meta_catalogs,
+                let meta_items_effects = resources_update::<E, _>(
+                    &mut self.meta_items,
                     ResourcesAction::ResourcesRequested {
                         request: &AggrRequest::AllOfResource(selected.meta_path.to_owned()),
                         addons: &ctx.profile.addons,
                     },
                 );
-                let streams_effects = match &selected.streams_path {
-                    Some(streams_path) => {
-                        if let Some(streams_catalog) =
-                            streams_catalog_from_meta_catalog(&self.meta_catalogs, &streams_path.id)
+                let streams_effects = match &selected.stream_path {
+                    Some(stream_path) => {
+                        if let Some(streams) =
+                            streams_from_meta_items(&self.meta_items, &stream_path.id)
                         {
-                            eq_update(&mut self.streams_catalogs, vec![streams_catalog])
+                            eq_update(&mut self.streams, vec![streams])
                         } else {
                             resources_update_with_vector_content::<E, _>(
-                                &mut self.streams_catalogs,
+                                &mut self.streams,
                                 ResourcesAction::ResourcesRequested {
-                                    request: &AggrRequest::AllOfResource(streams_path.to_owned()),
+                                    request: &AggrRequest::AllOfResource(stream_path.to_owned()),
                                     addons: &ctx.profile.addons,
                                 },
                             )
                         }
                     }
-                    None => eq_update(&mut self.streams_catalogs, vec![]),
+                    None => eq_update(&mut self.streams, vec![]),
                 };
-                selected_effects.join(meta_effects).join(streams_effects)
+                selected_effects
+                    .join(meta_items_effects)
+                    .join(streams_effects)
             }
             Msg::Action(Action::Unload) => {
                 let selected_effects = eq_update(&mut self.selected, None);
-                let meta_effects = eq_update(&mut self.meta_catalogs, vec![]);
-                let streams_effects = eq_update(&mut self.streams_catalogs, vec![]);
-                selected_effects.join(meta_effects).join(streams_effects)
+                let meta_items_effects = eq_update(&mut self.meta_items, vec![]);
+                let streams_effects = eq_update(&mut self.streams, vec![]);
+                selected_effects
+                    .join(meta_items_effects)
+                    .join(streams_effects)
             }
             Msg::Internal(Internal::ResourceRequestResult(request, result))
                 if request.path.resource == META_RESOURCE_NAME =>
             {
-                let meta_effects = resources_update::<E, _>(
-                    &mut self.meta_catalogs,
+                let meta_items_effects = resources_update::<E, _>(
+                    &mut self.meta_items,
                     ResourcesAction::ResourceRequestResult {
                         request,
                         result,
@@ -76,26 +80,26 @@ impl<E: Env + 'static> UpdateWithCtx<Ctx<E>> for MetaDetails {
                 );
                 let streams_effects = match &self.selected {
                     Some(Selected {
-                        streams_path: Some(streams_path),
+                        stream_path: Some(stream_path),
                         ..
                     }) => {
-                        if let Some(streams_catalog) =
-                            streams_catalog_from_meta_catalog(&self.meta_catalogs, &streams_path.id)
+                        if let Some(streams) =
+                            streams_from_meta_items(&self.meta_items, &stream_path.id)
                         {
-                            eq_update(&mut self.streams_catalogs, vec![streams_catalog])
+                            eq_update(&mut self.streams, vec![streams])
                         } else {
                             Effects::none().unchanged()
                         }
                     }
                     _ => Effects::none().unchanged(),
                 };
-                meta_effects.join(streams_effects)
+                meta_items_effects.join(streams_effects)
             }
             Msg::Internal(Internal::ResourceRequestResult(request, result))
                 if request.path.resource == STREAM_RESOURCE_NAME =>
             {
                 resources_update_with_vector_content::<E, _>(
-                    &mut self.streams_catalogs,
+                    &mut self.streams,
                     ResourcesAction::ResourceRequestResult {
                         request,
                         result,
@@ -108,18 +112,21 @@ impl<E: Env + 'static> UpdateWithCtx<Ctx<E>> for MetaDetails {
     }
 }
 
-fn streams_catalog_from_meta_catalog(
-    meta_catalogs: &[ResourceLoadable<MetaItem>],
+fn streams_from_meta_items(
+    meta_items: &[ResourceLoadable<MetaItem>],
     video_id: &str,
 ) -> Option<ResourceLoadable<Vec<Stream>>> {
-    meta_catalogs
+    meta_items
         .iter()
-        .find_map(|catalog| match &catalog.content {
-            Loadable::Ready(meta_detail) => Some((&catalog.request, meta_detail)),
+        .find_map(|meta_item| match meta_item {
+            ResourceLoadable {
+                request,
+                content: Loadable::Ready(meta_item),
+            } => Some((request, meta_item)),
             _ => None,
         })
-        .and_then(|(request, meta_detail)| {
-            meta_detail
+        .and_then(|(request, meta_item)| {
+            meta_item
                 .videos
                 .iter()
                 .find(|video| video.id == video_id && !video.streams.is_empty())
