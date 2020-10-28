@@ -1,0 +1,112 @@
+use crate::env::WebEnv;
+use crate::model::deep_links::AddonsDeepLinks;
+use serde::Serialize;
+use stremio_core::models::catalog_with_filters::{CatalogWithFilters, Selected};
+use stremio_core::models::common::{Loadable, ResourceError};
+use stremio_core::models::ctx::Ctx;
+use stremio_core::types::addon::{DescriptorPreview, ResourceRequest};
+use wasm_bindgen::JsValue;
+
+mod model {
+    use super::*;
+    #[derive(Serialize)]
+    #[serde(rename_all = "camelCase")]
+    pub struct SelectableCatalog<'a> {
+        pub catalog: &'a String,
+        pub addon_name: &'a String,
+        pub selected: &'a bool,
+        pub request: &'a ResourceRequest,
+        pub deep_links: AddonsDeepLinks,
+    }
+    #[derive(Serialize)]
+    #[serde(rename_all = "camelCase")]
+    pub struct SelectableType<'a> {
+        pub r#type: &'a String,
+        pub selected: &'a bool,
+        pub request: &'a ResourceRequest,
+        pub deep_links: AddonsDeepLinks,
+    }
+    #[derive(Serialize)]
+    #[serde(rename_all = "camelCase")]
+    pub struct Selectable<'a> {
+        pub catalogs: Vec<SelectableCatalog<'a>>,
+        pub types: Vec<SelectableType<'a>>,
+    }
+    #[derive(Serialize)]
+    #[serde(rename_all = "camelCase")]
+    pub struct DescriptorPreview<'a> {
+        #[serde(flatten)]
+        pub addon: &'a stremio_core::types::addon::DescriptorPreview,
+        pub installed: bool,
+    }
+    #[derive(Serialize)]
+    #[serde(rename_all = "camelCase")]
+    pub struct ResourceLoadable<'a> {
+        pub content: Loadable<Vec<DescriptorPreview<'a>>, &'a ResourceError>,
+    }
+    #[derive(Serialize)]
+    #[serde(rename_all = "camelCase")]
+    pub struct CatalogWithFilters<'a> {
+        pub selected: &'a Option<Selected>,
+        pub selectable: Selectable<'a>,
+        pub catalog: Option<ResourceLoadable<'a>>,
+    }
+}
+
+pub fn serialize_remote_addons(
+    remote_addons: &CatalogWithFilters<DescriptorPreview>,
+    ctx: &Ctx<WebEnv>,
+) -> JsValue {
+    JsValue::from_serde(&model::CatalogWithFilters {
+        selected: &remote_addons.selected,
+        selectable: model::Selectable {
+            catalogs: remote_addons
+                .selectable
+                .catalogs
+                .iter()
+                .map(|selectable_catalog| model::SelectableCatalog {
+                    catalog: &selectable_catalog.catalog,
+                    addon_name: &selectable_catalog.addon_name,
+                    selected: &selectable_catalog.selected,
+                    request: &selectable_catalog.request,
+                    deep_links: AddonsDeepLinks::from(&selectable_catalog.request),
+                })
+                .collect(),
+            types: remote_addons
+                .selectable
+                .types
+                .iter()
+                .map(|selectable_type| model::SelectableType {
+                    r#type: &selectable_type.r#type,
+                    selected: &selectable_type.selected,
+                    request: &selectable_type.request,
+                    deep_links: AddonsDeepLinks::from(&selectable_type.request),
+                })
+                .collect(),
+        },
+        catalog: remote_addons
+            .catalog
+            .as_ref()
+            .map(|catalog| model::ResourceLoadable {
+                content: match &catalog.content {
+                    Loadable::Ready(addons) => Loadable::Ready(
+                        addons
+                            .iter()
+                            .map(|addon| model::DescriptorPreview {
+                                addon,
+                                installed: ctx
+                                    .profile
+                                    .addons
+                                    .iter()
+                                    .map(|addon| &addon.transport_url)
+                                    .any(|transport_url| *transport_url == addon.transport_url),
+                            })
+                            .collect::<Vec<_>>(),
+                    ),
+                    Loadable::Loading => Loadable::Loading,
+                    Loadable::Err(error) => Loadable::Err(&error),
+                },
+            }),
+    })
+    .unwrap()
+}

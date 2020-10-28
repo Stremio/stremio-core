@@ -1,7 +1,6 @@
 use crate::env::WebEnv;
 use crate::model::deep_links::{
-    AddonsDeepLinks, DiscoverDeepLinks, LibraryDeepLinks, LibraryItemDeepLinks, MetaItemDeepLinks,
-    StreamDeepLinks,
+    DiscoverDeepLinks, LibraryDeepLinks, LibraryItemDeepLinks, MetaItemDeepLinks, StreamDeepLinks,
 };
 use serde::Serialize;
 use stremio_core::constants::{CATALOG_PAGE_SIZE, SKIP_EXTRA_NAME};
@@ -18,7 +17,7 @@ use stremio_core::models::ctx::Ctx;
 use stremio_core::models::library_with_filters::{
     LibraryWithFilters, Selected as LibraryWithFiltersSelected, Sort,
 };
-use stremio_core::types::addon::{DescriptorPreview, ResourceRequest};
+use stremio_core::types::addon::ResourceRequest;
 use stremio_core::types::library::LibraryItem;
 use stremio_core::types::resource::{MetaItemPreview, Stream};
 use wasm_bindgen::JsValue;
@@ -387,106 +386,6 @@ pub fn serialize_discover(
                     .map(|skip| 1 + skip / CATALOG_PAGE_SIZE as u32)
             })
             .unwrap_or(1),
-    })
-    .unwrap()
-}
-
-pub fn serialize_remote_addons(
-    remote_addons: &CatalogWithFilters<DescriptorPreview>,
-    ctx: &Ctx<WebEnv>,
-) -> JsValue {
-    #[derive(Serialize)]
-    #[serde(rename_all = "camelCase")]
-    struct _SelectableCatalog<'a> {
-        catalog: &'a String,
-        addon_name: &'a String,
-        selected: &'a bool,
-        request: &'a ResourceRequest,
-        deep_links: AddonsDeepLinks,
-    }
-    #[derive(Serialize)]
-    #[serde(rename_all = "camelCase")]
-    struct _SelectableType<'a> {
-        r#type: &'a String,
-        selected: &'a bool,
-        request: &'a ResourceRequest,
-        deep_links: AddonsDeepLinks,
-    }
-    #[derive(Serialize)]
-    #[serde(rename_all = "camelCase")]
-    struct _Selectable<'a> {
-        catalogs: Vec<_SelectableCatalog<'a>>,
-        types: Vec<_SelectableType<'a>>,
-    }
-    #[derive(Serialize)]
-    #[serde(rename_all = "camelCase")]
-    struct _DescriptorPreview<'a> {
-        #[serde(flatten)]
-        addon: &'a DescriptorPreview,
-        installed: bool,
-    }
-    #[derive(Serialize)]
-    #[serde(rename_all = "camelCase")]
-    struct _ResourceLoadable<'a> {
-        content: Loadable<Vec<_DescriptorPreview<'a>>, &'a ResourceError>,
-    }
-    #[derive(Serialize)]
-    #[serde(rename_all = "camelCase")]
-    struct _CatalogWithFilters<'a> {
-        selected: &'a Option<CatalogWithFiltersSelected>,
-        selectable: _Selectable<'a>,
-        catalog: Option<_ResourceLoadable<'a>>,
-    }
-    JsValue::from_serde(&_CatalogWithFilters {
-        selected: &remote_addons.selected,
-        selectable: _Selectable {
-            catalogs: remote_addons
-                .selectable
-                .catalogs
-                .iter()
-                .map(|selectable_catalog| _SelectableCatalog {
-                    catalog: &selectable_catalog.catalog,
-                    addon_name: &selectable_catalog.addon_name,
-                    selected: &selectable_catalog.selected,
-                    request: &selectable_catalog.request,
-                    deep_links: AddonsDeepLinks::from(&selectable_catalog.request),
-                })
-                .collect(),
-            types: remote_addons
-                .selectable
-                .types
-                .iter()
-                .map(|selectable_type| _SelectableType {
-                    r#type: &selectable_type.r#type,
-                    selected: &selectable_type.selected,
-                    request: &selectable_type.request,
-                    deep_links: AddonsDeepLinks::from(&selectable_type.request),
-                })
-                .collect(),
-        },
-        catalog: remote_addons
-            .catalog
-            .as_ref()
-            .map(|catalog| _ResourceLoadable {
-                content: match &catalog.content {
-                    Loadable::Ready(addons) => Loadable::Ready(
-                        addons
-                            .iter()
-                            .map(|addon| _DescriptorPreview {
-                                addon,
-                                installed: ctx
-                                    .profile
-                                    .addons
-                                    .iter()
-                                    .map(|addon| &addon.transport_url)
-                                    .any(|transport_url| *transport_url == addon.transport_url),
-                            })
-                            .collect::<Vec<_>>(),
-                    ),
-                    Loadable::Loading => Loadable::Loading,
-                    Loadable::Err(error) => Loadable::Err(&error),
-                },
-            }),
     })
     .unwrap()
 }

@@ -1,9 +1,11 @@
 use crate::env::WebEnv;
 use crate::model::serializers::{
     serialize_catalogs_with_extra, serialize_continue_watching_preview, serialize_discover,
-    serialize_library, serialize_remote_addons,
+    serialize_library,
 };
-use crate::model::{serialize_installed_addons, serialize_meta_details, serialize_player};
+use crate::model::{
+    serialize_installed_addons, serialize_meta_details, serialize_player, serialize_remote_addons,
+};
 use stremio_core::models::addon_details::AddonDetails;
 use stremio_core::models::catalog_with_filters::CatalogWithFilters;
 use stremio_core::models::catalogs_with_extra::CatalogsWithExtra;
