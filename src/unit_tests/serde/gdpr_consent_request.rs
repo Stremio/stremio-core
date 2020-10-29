@@ -6,7 +6,7 @@ use chrono::Utc;
 use serde_test::{assert_tokens, Token};
 
 #[test]
-fn gdpr_consent() {
+fn gdpr_consent_request() {
     assert_tokens(
         &GDPRConsentRequest {
             gdpr_consent: GDPRConsent::default(),
