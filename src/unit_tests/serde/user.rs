@@ -1,5 +1,5 @@
 use crate::types::profile::{GDPRConsent, User};
-use crate::unit_tests::serde::default_token_ext::DefaultTokens;
+use crate::unit_tests::serde::default_tokens_ext::DefaultTokens;
 use chrono::prelude::TimeZone;
 use chrono::Utc;
 use serde_test::{assert_de_tokens, assert_tokens, Token};
@@ -50,7 +50,7 @@ fn user() {
                 Token::Str("2020-01-01T00:00:00Z"),
                 Token::Str("gdpr_consent"),
             ],
-            GDPRConsent::default_token(),
+            GDPRConsent::default_tokens(),
             vec![
                 Token::StructEnd,
                 Token::Struct {
@@ -71,7 +71,7 @@ fn user() {
                 Token::Str("2020-01-01T00:00:00Z"),
                 Token::Str("gdpr_consent"),
             ],
-            GDPRConsent::default_token(),
+            GDPRConsent::default_tokens(),
             vec![Token::StructEnd, Token::SeqEnd],
         ]
         .concat(),
@@ -102,7 +102,7 @@ fn user() {
                 Token::Str("2020-01-01T00:00:00Z"),
                 Token::Str("gdpr_consent"),
             ],
-            GDPRConsent::default_token(),
+            GDPRConsent::default_tokens(),
             vec![Token::StructEnd],
         ]
         .concat(),
