@@ -1,6 +1,6 @@
 use crate::types::api::GDPRConsentRequest;
 use crate::types::profile::GDPRConsent;
-use crate::unit_tests::serde::default_tokens_ext::DefaultTokens;
+use crate::unit_tests::serde::default_tokens_ext::DefaultFlattenTokens;
 use chrono::prelude::TimeZone;
 use chrono::Utc;
 use serde_test::{assert_tokens, Token};
@@ -15,7 +15,7 @@ fn gdpr_consent() {
         },
         &[
             vec![Token::Map { len: None }],
-            GDPRConsent::default_tokens(),
+            GDPRConsent::default_flatten_tokens(),
             vec![
                 Token::Str("time"),
                 Token::Str("2020-01-01T00:00:00Z"),
