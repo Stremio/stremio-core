@@ -1,5 +1,5 @@
 use crate::types::resource::{SeriesInfo, Video};
-use crate::unit_tests::serde::default_token_ext::DefaultTokens;
+use crate::unit_tests::serde::default_tokens_ext::DefaultTokens;
 use chrono::prelude::TimeZone;
 use chrono::Utc;
 use serde_test::{assert_de_tokens, assert_tokens, Token};
@@ -50,7 +50,7 @@ fn video() {
                 Token::Seq { len: Some(0) },
                 Token::SeqEnd,
             ],
-            SeriesInfo::default_token(),
+            SeriesInfo::default_tokens(),
             vec![
                 Token::Str("trailerStreams"),
                 Token::Seq { len: Some(0) },
