@@ -345,9 +345,9 @@ checksum = "60302e4db3a61da70c0cb7991976248362f30319e88850c487b9b95bbf059e00"
 
 [[package]]
 name = "memchr"
-version = "2.3.3"
+version = "2.3.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3728d817d99e5ac407411fa471ff9800a778d88a24685968b36824eaf4bee400"
+checksum = "0ee1c47aaa256ecabcaea351eae4a9b01ef39ed810004e298d2511ed284b1525"
 
 [[package]]
 name = "miniz_oxide"
@@ -554,7 +554,7 @@ dependencies = [
 [[package]]
 name = "stremio-core"
 version = "0.1.0"
-source = "git+https://github.com/Stremio/stremio-core?branch=development#b6f06065dab7e537d1be911418eb6d073747ab22"
+source = "git+https://github.com/Stremio/stremio-core?branch=development#a266ad44deb89e64e1a6419b47cc1c28be699661"
 dependencies = [
  "base64 0.12.3",
  "boolinator",
@@ -609,7 +609,7 @@ dependencies = [
 [[package]]
 name = "stremio-derive"
 version = "0.1.0"
-source = "git+https://github.com/Stremio/stremio-core?branch=development#b6f06065dab7e537d1be911418eb6d073747ab22"
+source = "git+https://github.com/Stremio/stremio-core?branch=development#a266ad44deb89e64e1a6419b47cc1c28be699661"
 dependencies = [
  "case",
  "proc-macro-crate",
@@ -621,9 +621,9 @@ dependencies = [
 
 [[package]]
 name = "stremio-official-addons"
-version = "2.0.5"
+version = "2.0.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e94b7011f93ccd04876543706bd81f321634a9cf9132f7c04cc32e8e5ed3bf2c"
+checksum = "e3ccb0926980465155ebd37d461e5bf6eafb24d6984767997e13d1771c4ca0c6"
 
 [[package]]
 name = "strum"
