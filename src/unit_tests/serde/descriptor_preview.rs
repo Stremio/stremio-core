@@ -18,7 +18,7 @@ fn descriptor_preview() {
                 },
                 Token::Str("manifest"),
             ],
-            ManifestPreview::default_token(),
+            ManifestPreview::default_tokens(),
             vec![
                 Token::Str("transportUrl"),
                 Token::Str("https://transport_url/"),

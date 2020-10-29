@@ -15,7 +15,7 @@ fn gdpr_consent() {
         },
         &[
             vec![Token::Map { len: None }],
-            GDPRConsent::default_token(),
+            GDPRConsent::default_tokens(),
             vec![
                 Token::Str("time"),
                 Token::Str("2020-01-01T00:00:00Z"),

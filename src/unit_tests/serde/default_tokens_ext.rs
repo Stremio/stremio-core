@@ -6,11 +6,11 @@ use crate::types::resource::{MetaItemBehaviorHints, PosterShape};
 use serde_test::Token;
 
 pub trait DefaultTokens {
-    fn default_token() -> Vec<Token>;
+    fn default_tokens() -> Vec<Token>;
 }
 
 impl DefaultTokens for LibraryItemState {
-    fn default_token() -> Vec<Token> {
+    fn default_tokens() -> Vec<Token> {
         vec![
             Token::Struct {
                 name: "LibraryItemState",
@@ -44,7 +44,7 @@ impl DefaultTokens for LibraryItemState {
 }
 
 impl DefaultTokens for LibraryItemBehaviorHints {
-    fn default_token() -> Vec<Token> {
+    fn default_tokens() -> Vec<Token> {
         vec![
             Token::Struct {
                 name: "LibraryItemBehaviorHints",
@@ -58,7 +58,7 @@ impl DefaultTokens for LibraryItemBehaviorHints {
 }
 
 impl DefaultTokens for MetaItemBehaviorHints {
-    fn default_token() -> Vec<Token> {
+    fn default_tokens() -> Vec<Token> {
         vec![
             Token::Struct {
                 name: "MetaItemBehaviorHints",
@@ -76,7 +76,7 @@ impl DefaultTokens for MetaItemBehaviorHints {
 }
 
 impl DefaultTokens for PosterShape {
-    fn default_token() -> Vec<Token> {
+    fn default_tokens() -> Vec<Token> {
         vec![
             Token::Enum {
                 name: "PosterShape",
@@ -88,7 +88,7 @@ impl DefaultTokens for PosterShape {
 }
 
 impl DefaultTokens for ManifestPreview {
-    fn default_token() -> Vec<Token> {
+    fn default_tokens() -> Vec<Token> {
         vec![
             Token::Struct {
                 name: "ManifestPreview",
@@ -115,7 +115,7 @@ impl DefaultTokens for ManifestPreview {
 }
 
 impl DefaultTokens for Manifest {
-    fn default_token() -> Vec<Token> {
+    fn default_tokens() -> Vec<Token> {
         vec![
             Token::Struct {
                 name: "Manifest",
@@ -158,7 +158,7 @@ impl DefaultTokens for Manifest {
 }
 
 impl DefaultTokens for DescriptorFlags {
-    fn default_token() -> Vec<Token> {
+    fn default_tokens() -> Vec<Token> {
         vec![
             Token::Struct {
                 name: "DescriptorFlags",
@@ -174,7 +174,7 @@ impl DefaultTokens for DescriptorFlags {
 }
 
 impl DefaultTokens for GDPRConsent {
-    fn default_token() -> Vec<Token> {
+    fn default_tokens() -> Vec<Token> {
         vec![
             Token::Str("tos"),
             Token::Bool(false),
@@ -187,13 +187,13 @@ impl DefaultTokens for GDPRConsent {
 }
 
 impl DefaultTokens for AuthKey {
-    fn default_token() -> Vec<Token> {
+    fn default_tokens() -> Vec<Token> {
         vec![Token::NewtypeStruct { name: "AuthKey" }, Token::Str("")]
     }
 }
 
 impl DefaultTokens for User {
-    fn default_token() -> Vec<Token> {
+    fn default_tokens() -> Vec<Token> {
         [
             vec![
                 Token::Struct {
@@ -218,7 +218,7 @@ impl DefaultTokens for User {
                     len: 3,
                 },
             ],
-            GDPRConsent::default_token(),
+            GDPRConsent::default_tokens(),
             vec![Token::StructEnd, Token::StructEnd],
         ]
         .concat()
@@ -226,7 +226,7 @@ impl DefaultTokens for User {
 }
 
 impl DefaultTokens for Auth {
-    fn default_token() -> Vec<Token> {
+    fn default_tokens() -> Vec<Token> {
         [
             vec![
                 Token::Struct {
@@ -235,9 +235,9 @@ impl DefaultTokens for Auth {
                 },
                 Token::Str("key"),
             ],
-            AuthKey::default_token(),
+            AuthKey::default_tokens(),
             vec![Token::Str("user")],
-            User::default_token(),
+            User::default_tokens(),
             vec![Token::StructEnd],
         ]
         .concat()
@@ -245,7 +245,7 @@ impl DefaultTokens for Auth {
 }
 
 impl DefaultTokens for Settings {
-    fn default_token() -> Vec<Token> {
+    fn default_tokens() -> Vec<Token> {
         vec![
             Token::Struct {
                 name: "Settings",
@@ -285,10 +285,10 @@ impl DefaultTokens for Settings {
 }
 
 impl DefaultTokens for GDPRConsentRequest {
-    fn default_token() -> Vec<Token> {
+    fn default_tokens() -> Vec<Token> {
         [
             vec![Token::Map { len: None }],
-            GDPRConsent::default_token(),
+            GDPRConsent::default_tokens(),
             vec![
                 Token::Str("time"),
                 Token::Str("1970-01-01T00:00:00Z"),
@@ -302,7 +302,7 @@ impl DefaultTokens for GDPRConsentRequest {
 }
 
 impl DefaultTokens for AuthRequest {
-    fn default_token() -> Vec<Token> {
+    fn default_tokens() -> Vec<Token> {
         vec![
             Token::Struct {
                 name: "AuthRequest",

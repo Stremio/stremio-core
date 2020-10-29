@@ -19,13 +19,13 @@ fn descriptor() {
                 },
                 Token::Str("manifest"),
             ],
-            Manifest::default_token(),
+            Manifest::default_tokens(),
             vec![
                 Token::Str("transportUrl"),
                 Token::Str("https://transport_url/"),
                 Token::Str("flags"),
             ],
-            DescriptorFlags::default_token(),
+            DescriptorFlags::default_tokens(),
             vec![Token::StructEnd],
         ]
         .concat(),
@@ -44,7 +44,7 @@ fn descriptor() {
                 },
                 Token::Str("manifest"),
             ],
-            Manifest::default_token(),
+            Manifest::default_tokens(),
             vec![
                 Token::Str("transportUrl"),
                 Token::Str("https://transport_url/"),

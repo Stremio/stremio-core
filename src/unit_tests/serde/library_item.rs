@@ -54,7 +54,7 @@ fn library_item() {
                 Token::Str("poster"),
                 Token::Str("posterShape"),
             ],
-            PosterShape::default_token(),
+            PosterShape::default_tokens(),
             vec![
                 Token::Str("removed"),
                 Token::Bool(true),
@@ -67,9 +67,9 @@ fn library_item() {
                 Token::Str("2020-01-01T00:00:00Z"),
                 Token::Str("state"),
             ],
-            LibraryItemState::default_token(),
+            LibraryItemState::default_tokens(),
             vec![Token::Str("behaviorHints")],
-            LibraryItemBehaviorHints::default_token(),
+            LibraryItemBehaviorHints::default_tokens(),
             vec![Token::StructEnd],
             vec![
                 Token::Struct {
@@ -86,7 +86,7 @@ fn library_item() {
                 Token::None,
                 Token::Str("posterShape"),
             ],
-            PosterShape::default_token(),
+            PosterShape::default_tokens(),
             vec![
                 Token::Str("removed"),
                 Token::Bool(false),
@@ -98,9 +98,9 @@ fn library_item() {
                 Token::Str("2020-01-01T00:00:00Z"),
                 Token::Str("state"),
             ],
-            LibraryItemState::default_token(),
+            LibraryItemState::default_tokens(),
             vec![Token::Str("behaviorHints")],
-            LibraryItemBehaviorHints::default_token(),
+            LibraryItemBehaviorHints::default_tokens(),
             vec![Token::StructEnd, Token::SeqEnd],
         ]
         .concat(),
@@ -139,7 +139,7 @@ fn library_item() {
                 Token::Str("2020-01-01T00:00:00Z"),
                 Token::Str("state"),
             ],
-            LibraryItemState::default_token(),
+            LibraryItemState::default_tokens(),
             vec![Token::StructEnd],
         ]
         .concat(),

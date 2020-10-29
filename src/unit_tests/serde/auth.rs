@@ -17,9 +17,9 @@ fn auth() {
                 },
                 Token::Str("key"),
             ],
-            AuthKey::default_token(),
+            AuthKey::default_tokens(),
             vec![Token::Str("user")],
-            User::default_token(),
+            User::default_tokens(),
             vec![Token::StructEnd],
         ]
         .concat(),

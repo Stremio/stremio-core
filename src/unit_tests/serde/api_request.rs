@@ -22,7 +22,7 @@ fn api_request() {
         ],
         &[
             vec![Token::Seq { len: Some(4) }],
-            AuthRequest::default_token(),
+            AuthRequest::default_tokens(),
             vec![
                 Token::Struct {
                     name: "APIRequest",
@@ -32,7 +32,7 @@ fn api_request() {
                 Token::Str("Logout"),
                 Token::Str("authKey"),
             ],
-            AuthKey::default_token(),
+            AuthKey::default_tokens(),
             vec![
                 Token::StructEnd,
                 Token::Struct {
@@ -43,7 +43,7 @@ fn api_request() {
                 Token::Str("AddonCollectionGet"),
                 Token::Str("authKey"),
             ],
-            AuthKey::default_token(),
+            AuthKey::default_tokens(),
             vec![
                 Token::Str("update"),
                 Token::Bool(true),
@@ -56,7 +56,7 @@ fn api_request() {
                 Token::Str("AddonCollectionSet"),
                 Token::Str("authKey"),
             ],
-            AuthKey::default_token(),
+            AuthKey::default_tokens(),
             vec![
                 Token::Str("addons"),
                 Token::Seq { len: Some(0) },

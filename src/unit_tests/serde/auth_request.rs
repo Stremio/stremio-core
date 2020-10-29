@@ -42,7 +42,7 @@ fn auth_request() {
                 Token::Str("password"),
                 Token::Str("gdpr_consent"),
             ],
-            GDPRConsentRequest::default_token(),
+            GDPRConsentRequest::default_tokens(),
             vec![Token::StructEnd, Token::SeqEnd],
         ]
         .concat(),

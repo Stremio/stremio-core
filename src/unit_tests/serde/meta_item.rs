@@ -84,7 +84,7 @@ fn meta_item() {
                 Token::Str("2020-01-01T00:00:00Z"),
                 Token::Str("posterShape"),
             ],
-            PosterShape::default_token(),
+            PosterShape::default_tokens(),
             vec![
                 Token::Str("videos"),
                 Token::Seq { len: Some(0) },
@@ -97,7 +97,7 @@ fn meta_item() {
                 Token::SeqEnd,
                 Token::Str("behaviorHints"),
             ],
-            MetaItemBehaviorHints::default_token(),
+            MetaItemBehaviorHints::default_tokens(),
             vec![Token::StructEnd],
             vec![
                 Token::Struct {
@@ -128,7 +128,7 @@ fn meta_item() {
                 Token::None,
                 Token::Str("posterShape"),
             ],
-            PosterShape::default_token(),
+            PosterShape::default_tokens(),
             vec![
                 Token::Str("videos"),
                 Token::Seq { len: Some(0) },
@@ -141,7 +141,7 @@ fn meta_item() {
                 Token::SeqEnd,
                 Token::Str("behaviorHints"),
             ],
-            MetaItemBehaviorHints::default_token(),
+            MetaItemBehaviorHints::default_tokens(),
             vec![Token::StructEnd, Token::SeqEnd],
         ]
         .concat(),

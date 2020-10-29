@@ -54,7 +54,7 @@ fn user() {
                     len: 3,
                 },
             ],
-            GDPRConsent::default_token(),
+            GDPRConsent::default_tokens(),
             vec![
                 Token::StructEnd,
                 Token::StructEnd,
@@ -80,7 +80,7 @@ fn user() {
                     len: 3,
                 },
             ],
-            GDPRConsent::default_token(),
+            GDPRConsent::default_tokens(),
             vec![Token::StructEnd, Token::StructEnd, Token::SeqEnd],
         ]
         .concat(),
@@ -115,7 +115,7 @@ fn user() {
                     len: 3,
                 },
             ],
-            GDPRConsent::default_token(),
+            GDPRConsent::default_tokens(),
             vec![Token::StructEnd, Token::StructEnd],
         ]
         .concat(),
