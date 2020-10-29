@@ -298,6 +298,7 @@ mod test {
         assert_eq!(query_from_id("UC2312"), json!({ "yt_id": "UC2312" }));
         assert_eq!(query_from_id("custom:test"), json!({ "custom": "test" }));
     }
+
     #[test]
     fn query_stream() {
         assert_eq!(
