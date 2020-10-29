@@ -4,6 +4,7 @@ use crate::types::profile::{AuthKey, GDPRConsent};
 #[cfg(test)]
 use chrono::offset::TimeZone;
 use chrono::{DateTime, Utc};
+#[cfg(test)]
 use derivative::Derivative;
 use serde::{Deserialize, Serialize};
 
