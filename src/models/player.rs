@@ -16,23 +16,20 @@ use serde::{Deserialize, Serialize};
 use std::cmp;
 
 #[derive(Clone, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct Selected {
     pub stream: Stream,
-    #[serde(default)]
-    pub stream_resource_request: Option<ResourceRequest>,
-    #[serde(default)]
-    pub meta_resource_request: Option<ResourceRequest>,
-    #[serde(default)]
-    pub subtitles_resource_ref: Option<ResourcePath>,
-    #[serde(default)]
-    pub video_id: Option<String>,
+    pub stream_request: Option<ResourceRequest>,
+    pub meta_request: Option<ResourceRequest>,
+    pub subtitles_path: Option<ResourcePath>,
 }
 
 #[derive(Default, Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct Player {
     pub selected: Option<Selected>,
-    pub meta_resource: Option<ResourceLoadable<MetaItem>>,
-    pub subtitles_resources: Vec<ResourceLoadable<Vec<Subtitles>>>,
+    pub meta_item: Option<ResourceLoadable<MetaItem>>,
+    pub subtitles: Vec<ResourceLoadable<Vec<Subtitles>>>,
     pub next_video: Option<Video>,
     pub library_item: Option<LibraryItem>,
 }
@@ -42,65 +39,48 @@ impl<E: Env + 'static> UpdateWithCtx<Ctx<E>> for Player {
         match msg {
             Msg::Action(Action::Load(ActionLoad::Player(selected))) => {
                 let selected_effects = eq_update(&mut self.selected, Some(selected.to_owned()));
-                let meta_effects = match &selected.meta_resource_request {
-                    Some(meta_resource_request) => resource_update::<E, _>(
-                        &mut self.meta_resource,
+                let meta_item_effects = match &selected.meta_request {
+                    Some(meta_request) => resource_update::<E, _>(
+                        &mut self.meta_item,
                         ResourceAction::ResourceRequested {
-                            request: meta_resource_request,
+                            request: meta_request,
                         },
                     ),
-                    _ => eq_update(&mut self.meta_resource, None),
+                    _ => eq_update(&mut self.meta_item, None),
                 };
-                let subtitles_effects = match &selected.subtitles_resource_ref {
-                    Some(subtitles_resource_ref) => resources_update_with_vector_content::<E, _>(
-                        &mut self.subtitles_resources,
+                let subtitles_effects = match &selected.subtitles_path {
+                    Some(subtitles_path) => resources_update_with_vector_content::<E, _>(
+                        &mut self.subtitles,
                         ResourcesAction::ResourcesRequested {
-                            request: &AggrRequest::AllOfResource(subtitles_resource_ref.to_owned()),
+                            request: &AggrRequest::AllOfResource(subtitles_path.to_owned()),
                             addons: &ctx.profile.addons,
                         },
                     ),
-                    _ => eq_update(&mut self.subtitles_resources, vec![]),
+                    _ => eq_update(&mut self.subtitles, vec![]),
                 };
                 let next_video_effects = next_video_update(
                     &mut self.next_video,
-                    &self.meta_resource,
-                    &self
-                        .selected
-                        .as_ref()
-                        .and_then(|selected| selected.video_id.to_owned()),
+                    &self.selected,
+                    &self.meta_item,
                     &ctx.profile.settings,
                 );
-                let library_item_effects = library_item_update::<E>(
-                    &mut self.library_item,
-                    &self.meta_resource,
-                    &ctx.library,
-                );
+                let library_item_effects =
+                    library_item_update::<E>(&mut self.library_item, &self.meta_item, &ctx.library);
                 selected_effects
-                    .join(meta_effects)
+                    .join(meta_item_effects)
                     .join(subtitles_effects)
                     .join(next_video_effects)
                     .join(library_item_effects)
             }
             Msg::Action(Action::Unload) => {
                 let selected_effects = eq_update(&mut self.selected, None);
-                let meta_effects = eq_update(&mut self.meta_resource, None);
-                let subtitles_effects = eq_update(&mut self.subtitles_resources, vec![]);
-                let next_video_effects = next_video_update(
-                    &mut self.next_video,
-                    &self.meta_resource,
-                    &self
-                        .selected
-                        .as_ref()
-                        .and_then(|selected| selected.video_id.to_owned()),
-                    &ctx.profile.settings,
-                );
-                let library_item_effects = library_item_update::<E>(
-                    &mut self.library_item,
-                    &self.meta_resource,
-                    &ctx.library,
-                );
+                let meta_item_effects = eq_update(&mut self.meta_item, None);
+                let subtitles_effects = eq_update(&mut self.subtitles, vec![]);
+                let next_video_effects = eq_update(&mut self.next_video, None);
+                let library_item_effects =
+                    library_item_update::<E>(&mut self.library_item, &self.meta_item, &ctx.library);
                 selected_effects
-                    .join(meta_effects)
+                    .join(meta_item_effects)
                     .join(subtitles_effects)
                     .join(next_video_effects)
                     .join(library_item_effects)
@@ -108,15 +88,18 @@ impl<E: Env + 'static> UpdateWithCtx<Ctx<E>> for Player {
             Msg::Action(Action::Player(ActionPlayer::UpdateLibraryItemState {
                 time,
                 duration,
-            })) => {
-                if let (
+            })) => match (&self.selected, &mut self.library_item) {
+                (
                     Some(Selected {
-                        video_id: Some(video_id),
+                        stream_request:
+                            Some(ResourceRequest {
+                                path: ResourcePath { id: video_id, .. },
+                                ..
+                            }),
                         ..
                     }),
                     Some(library_item),
-                ) = (&self.selected, &mut self.library_item)
-                {
+                ) => {
                     library_item.state.last_watched = Some(E::now());
                     if library_item.state.video_id != Some(video_id.to_owned()) {
                         library_item.state.video_id = Some(video_id.to_owned());
@@ -127,11 +110,14 @@ impl<E: Env + 'static> UpdateWithCtx<Ctx<E>> for Player {
                         library_item.state.time_watched = 0;
                         library_item.state.flagged_watched = 0;
                     } else {
+                        let time_watched =
+                            cmp::min(1000, cmp::max(0, time - library_item.state.time_offset));
                         library_item.state.time_watched =
-                            library_item.state.time_watched.saturating_add(cmp::min(
-                                1000,
-                                cmp::max(0, time - library_item.state.time_offset),
-                            ));
+                            library_item.state.time_watched.saturating_add(time_watched);
+                        library_item.state.overall_time_watched = library_item
+                            .state
+                            .overall_time_watched
+                            .saturating_add(time_watched);
                     };
                     library_item.state.time_offset = time.to_owned();
                     library_item.state.duration = duration.to_owned();
@@ -149,9 +135,10 @@ impl<E: Env + 'static> UpdateWithCtx<Ctx<E>> for Player {
                     if library_item.removed {
                         library_item.temp = true;
                     };
-                };
-                Effects::none()
-            }
+                    Effects::none()
+                }
+                _ => Effects::none().unchanged(),
+            },
             Msg::Action(Action::Player(ActionPlayer::PushToLibrary)) => match &self.library_item {
                 Some(library_item) => Effects::msg(Msg::Internal(Internal::UpdateLibraryItem(
                     library_item.to_owned(),
@@ -160,8 +147,8 @@ impl<E: Env + 'static> UpdateWithCtx<Ctx<E>> for Player {
                 _ => Effects::none().unchanged(),
             },
             Msg::Internal(Internal::ResourceRequestResult(request, result)) => {
-                let meta_effects = resource_update::<E, _>(
-                    &mut self.meta_resource,
+                let meta_item_effects = resource_update::<E, _>(
+                    &mut self.meta_item,
                     ResourceAction::ResourceRequestResult {
                         request,
                         result,
@@ -169,7 +156,7 @@ impl<E: Env + 'static> UpdateWithCtx<Ctx<E>> for Player {
                     },
                 );
                 let subtitles_effects = resources_update_with_vector_content::<E, _>(
-                    &mut self.subtitles_resources,
+                    &mut self.subtitles,
                     ResourcesAction::ResourceRequestResult {
                         request,
                         result,
@@ -178,19 +165,13 @@ impl<E: Env + 'static> UpdateWithCtx<Ctx<E>> for Player {
                 );
                 let next_video_effects = next_video_update(
                     &mut self.next_video,
-                    &self.meta_resource,
-                    &self
-                        .selected
-                        .as_ref()
-                        .and_then(|selected| selected.video_id.to_owned()),
+                    &self.selected,
+                    &self.meta_item,
                     &ctx.profile.settings,
                 );
-                let library_item_effects = library_item_update::<E>(
-                    &mut self.library_item,
-                    &self.meta_resource,
-                    &ctx.library,
-                );
-                meta_effects
+                let library_item_effects =
+                    library_item_update::<E>(&mut self.library_item, &self.meta_item, &ctx.library);
+                meta_item_effects
                     .join(subtitles_effects)
                     .join(next_video_effects)
                     .join(library_item_effects)
@@ -202,22 +183,29 @@ impl<E: Env + 'static> UpdateWithCtx<Ctx<E>> for Player {
 
 fn next_video_update(
     video: &mut Option<Video>,
-    meta_resource: &Option<ResourceLoadable<MetaItem>>,
-    video_id: &Option<String>,
+    selected: &Option<Selected>,
+    meta_item: &Option<ResourceLoadable<MetaItem>>,
     settings: &ProfileSettings,
 ) -> Effects {
-    let next_video = match (meta_resource, video_id) {
+    let next_video = match (selected, meta_item) {
         (
-            Some(ResourceLoadable {
-                content: Loadable::Ready(meta_detail),
+            Some(Selected {
+                stream_request:
+                    Some(ResourceRequest {
+                        path: ResourcePath { id: video_id, .. },
+                        ..
+                    }),
                 ..
             }),
-            Some(video_id),
-        ) if settings.binge_watching => meta_detail
+            Some(ResourceLoadable {
+                content: Loadable::Ready(meta_item),
+                ..
+            }),
+        ) if settings.binge_watching => meta_item
             .videos
             .iter()
-            .position(|video| video_id == &video.id)
-            .and_then(|position| meta_detail.videos.get(position + 1))
+            .position(|video| video.id == *video_id)
+            .and_then(|position| meta_item.videos.get(position + 1))
             .cloned(),
         _ => None,
     };
@@ -226,26 +214,24 @@ fn next_video_update(
 
 fn library_item_update<E: Env>(
     library_item: &mut Option<LibraryItem>,
-    meta_resource: &Option<ResourceLoadable<MetaItem>>,
+    meta_item: &Option<ResourceLoadable<MetaItem>>,
     library: &LibraryBucket,
 ) -> Effects {
-    let next_library_item = match meta_resource {
-        Some(meta_resource) => {
-            let meta_item = match meta_resource {
+    let next_library_item = match meta_item {
+        Some(meta_item) => {
+            let library_item = library_item
+                .as_ref()
+                .filter(|library_item| library_item.id == meta_item.request.path.id)
+                .or_else(|| library.items.get(&meta_item.request.path.id));
+            let meta_item = match meta_item {
                 ResourceLoadable {
                     content: Loadable::Ready(meta_item),
                     ..
                 } => Some(meta_item),
                 _ => None,
             };
-            let library_item = match library_item {
-                Some(LibraryItem { id, .. }) if id == &meta_resource.request.path.id => {
-                    library_item.as_ref()
-                }
-                _ => library.items.get(&meta_resource.request.path.id),
-            };
-            match (meta_item, library_item) {
-                (Some(meta_item), Some(library_item)) => Some(LibraryItem {
+            match (library_item, meta_item) {
+                (Some(library_item), Some(meta_item)) => Some(LibraryItem {
                     id: library_item.id.to_owned(),
                     removed: library_item.removed.to_owned(),
                     temp: library_item.temp.to_owned(),
@@ -260,7 +246,7 @@ fn library_item_update<E: Env>(
                         default_video_id: meta_item.behavior_hints.default_video_id.to_owned(),
                     },
                 }),
-                (Some(meta_item), None) => Some(LibraryItem {
+                (None, Some(meta_item)) => Some(LibraryItem {
                     id: meta_item.id.to_owned(),
                     removed: true,
                     temp: true,
@@ -275,13 +261,13 @@ fn library_item_update<E: Env>(
                         default_video_id: meta_item.behavior_hints.default_video_id.to_owned(),
                     },
                 }),
-                (None, Some(library_item)) => Some(library_item.to_owned()),
+                (Some(library_item), None) => Some(library_item.to_owned()),
                 _ => None,
             }
         }
         _ => None,
     };
-    if library_item != &next_library_item {
+    if *library_item != next_library_item {
         let update_library_item_effects = match library_item {
             Some(library_item) => Effects::msg(Msg::Internal(Internal::UpdateLibraryItem(
                 library_item.to_owned(),

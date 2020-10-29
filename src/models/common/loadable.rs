@@ -14,23 +14,14 @@ pub enum Loadable<R, E> {
 impl<R, E> Loadable<R, E> {
     #[inline]
     pub fn is_ready(&self) -> bool {
-        match self {
-            Loadable::Ready(_) => true,
-            _ => false,
-        }
+        matches!(self, Loadable::Ready(_))
     }
     #[inline]
     pub fn is_err(&self) -> bool {
-        match self {
-            Loadable::Err(_) => true,
-            _ => false,
-        }
+        matches!(self, Loadable::Err(_))
     }
     #[inline]
     pub fn is_loading(&self) -> bool {
-        match self {
-            Loadable::Loading => true,
-            _ => false,
-        }
+        matches!(self, Loadable::Loading)
     }
 }
