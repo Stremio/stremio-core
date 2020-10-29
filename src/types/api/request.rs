@@ -45,8 +45,8 @@ impl APIMethodName for APIRequest {
 }
 
 #[derive(Derivative, Clone, PartialEq, Serialize, Deserialize)]
-#[derivative(Default)]
 #[cfg_attr(test, derive(Debug))]
+#[cfg_attr(test, derivative(Default))]
 #[serde(tag = "type")]
 pub enum AuthRequest {
     #[derivative(Default)]
