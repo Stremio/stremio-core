@@ -1,5 +1,5 @@
 use crate::types::resource::{MetaItemBehaviorHints, MetaItemPreview, PosterShape};
-use crate::unit_tests::serde::default_token_ext::DefaultTokens;
+use crate::unit_tests::serde::default_tokens_ext::DefaultTokens;
 use chrono::prelude::TimeZone;
 use chrono::Utc;
 use serde_test::{assert_de_tokens, assert_tokens, Token};
@@ -70,14 +70,14 @@ fn meta_item_preview() {
                 Token::Str("2020-01-01T00:00:00Z"),
                 Token::Str("posterShape"),
             ],
-            PosterShape::default_token(),
+            PosterShape::default_tokens(),
             vec![
                 Token::Str("trailerStreams"),
                 Token::Seq { len: Some(0) },
                 Token::SeqEnd,
                 Token::Str("behaviorHints"),
             ],
-            MetaItemBehaviorHints::default_token(),
+            MetaItemBehaviorHints::default_tokens(),
             vec![
                 Token::StructEnd,
                 Token::Struct {
@@ -104,14 +104,14 @@ fn meta_item_preview() {
                 Token::None,
                 Token::Str("posterShape"),
             ],
-            PosterShape::default_token(),
+            PosterShape::default_tokens(),
             vec![
                 Token::Str("trailerStreams"),
                 Token::Seq { len: Some(0) },
                 Token::SeqEnd,
                 Token::Str("behaviorHints"),
             ],
-            MetaItemBehaviorHints::default_token(),
+            MetaItemBehaviorHints::default_tokens(),
             vec![Token::StructEnd, Token::SeqEnd],
         ]
         .concat(),

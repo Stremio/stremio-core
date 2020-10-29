@@ -1,5 +1,5 @@
 use crate::types::profile::{Auth, Profile, Settings};
-use crate::unit_tests::serde::default_token_ext::DefaultTokens;
+use crate::unit_tests::serde::default_tokens_ext::DefaultTokens;
 use serde_test::{assert_de_tokens, assert_tokens, Token};
 
 #[test]
@@ -27,14 +27,14 @@ fn profile() {
                 Token::Str("auth"),
                 Token::Some,
             ],
-            Auth::default_token(),
+            Auth::default_tokens(),
             vec![
                 Token::Str("addons"),
                 Token::Seq { len: Some(0) },
                 Token::SeqEnd,
                 Token::Str("settings"),
             ],
-            Settings::default_token(),
+            Settings::default_tokens(),
             vec![
                 Token::StructEnd,
                 Token::Struct {
@@ -48,7 +48,7 @@ fn profile() {
                 Token::SeqEnd,
                 Token::Str("settings"),
             ],
-            Settings::default_token(),
+            Settings::default_tokens(),
             vec![Token::StructEnd, Token::SeqEnd],
         ]
         .concat(),
@@ -70,7 +70,7 @@ fn profile() {
                 Token::SeqEnd,
                 Token::Str("settings"),
             ],
-            Settings::default_token(),
+            Settings::default_tokens(),
             vec![Token::StructEnd],
         ]
         .concat(),

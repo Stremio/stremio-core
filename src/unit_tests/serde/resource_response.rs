@@ -1,6 +1,6 @@
 use crate::types::addon::ResourceResponse;
 use crate::types::resource::MetaItem;
-use crate::unit_tests::serde::default_token_ext::DefaultTokens;
+use crate::unit_tests::serde::default_tokens_ext::DefaultTokens;
 use serde_test::{assert_tokens, Token};
 
 #[test]
@@ -43,7 +43,7 @@ fn resource_response() {
                 },
                 Token::Str("meta"),
             ],
-            MetaItem::default_token(),
+            MetaItem::default_tokens(),
             vec![
                 Token::StructEnd,
                 Token::Struct {

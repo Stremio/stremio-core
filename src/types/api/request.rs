@@ -1,7 +1,11 @@
 use crate::types::addon::Descriptor;
 use crate::types::library::LibraryItem;
 use crate::types::profile::{AuthKey, GDPRConsent};
+#[cfg(test)]
+use chrono::offset::TimeZone;
 use chrono::{DateTime, Utc};
+#[cfg(test)]
+use derivative::Derivative;
 use serde::{Deserialize, Serialize};
 
 pub trait APIMethodName {
@@ -42,13 +46,12 @@ impl APIMethodName for APIRequest {
 }
 
 #[derive(Clone, PartialEq, Serialize, Deserialize)]
-#[cfg_attr(test, derive(Debug))]
+#[cfg_attr(test, derive(Derivative, Debug))]
+#[cfg_attr(test, derivative(Default))]
 #[serde(tag = "type")]
 pub enum AuthRequest {
-    Login {
-        email: String,
-        password: String,
-    },
+    #[cfg_attr(test, derivative(Default))]
+    Login { email: String, password: String },
     Register {
         email: String,
         password: String,
@@ -57,10 +60,12 @@ pub enum AuthRequest {
 }
 
 #[derive(Clone, PartialEq, Serialize, Deserialize)]
-#[cfg_attr(test, derive(Debug))]
+#[cfg_attr(test, derive(Derivative, Debug))]
+#[cfg_attr(test, derivative(Default))]
 pub struct GDPRConsentRequest {
     #[serde(flatten)]
     pub gdpr_consent: GDPRConsent,
+    #[cfg_attr(test, derivative(Default(value = "Utc.timestamp(0, 0)")))]
     pub time: DateTime<Utc>,
     pub from: String,
 }
