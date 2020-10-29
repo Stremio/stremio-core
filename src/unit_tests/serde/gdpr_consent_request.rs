@@ -1,6 +1,6 @@
 use crate::types::api::GDPRConsentRequest;
 use crate::types::profile::GDPRConsent;
-use crate::unit_tests::serde::default_token_ext::DefaultTokens;
+use crate::unit_tests::serde::default_tokens_ext::DefaultTokens;
 use chrono::prelude::TimeZone;
 use chrono::Utc;
 use serde_test::{assert_tokens, Token};

@@ -2,7 +2,7 @@ mod api_request;
 mod auth;
 mod auth_key;
 mod auth_request;
-mod default_token_ext;
+mod default_tokens_ext;
 mod descriptor;
 mod descriptor_flags;
 mod descriptor_preview;

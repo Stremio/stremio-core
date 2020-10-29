@@ -1,5 +1,5 @@
 use crate::types::addon::{Descriptor, DescriptorFlags, Manifest};
-use crate::unit_tests::serde::default_token_ext::DefaultTokens;
+use crate::unit_tests::serde::default_tokens_ext::DefaultTokens;
 use serde_test::{assert_de_tokens, assert_tokens, Token};
 use url::Url;
 

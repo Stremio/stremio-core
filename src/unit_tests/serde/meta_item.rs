@@ -1,5 +1,5 @@
 use crate::types::resource::{MetaItem, MetaItemBehaviorHints, PosterShape};
-use crate::unit_tests::serde::default_token_ext::DefaultTokens;
+use crate::unit_tests::serde::default_tokens_ext::DefaultTokens;
 use chrono::prelude::TimeZone;
 use chrono::Utc;
 use serde_test::{assert_de_tokens, assert_tokens, Token};

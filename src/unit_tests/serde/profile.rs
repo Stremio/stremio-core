@@ -1,5 +1,5 @@
 use crate::types::profile::{Auth, Profile, Settings};
-use crate::unit_tests::serde::default_token_ext::DefaultTokens;
+use crate::unit_tests::serde::default_tokens_ext::DefaultTokens;
 use serde_test::{assert_de_tokens, assert_tokens, Token};
 
 #[test]
