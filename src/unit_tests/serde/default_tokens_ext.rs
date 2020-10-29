@@ -9,6 +9,10 @@ pub trait DefaultTokens {
     fn default_tokens() -> Vec<Token>;
 }
 
+pub trait DefaultFlattenTokens {
+    fn default_flatten_tokens() -> Vec<Token>;
+}
+
 impl DefaultTokens for LibraryItemState {
     fn default_tokens() -> Vec<Token> {
         vec![
@@ -228,6 +232,24 @@ impl DefaultTokens for MetaItem {
 impl DefaultTokens for GDPRConsent {
     fn default_tokens() -> Vec<Token> {
         vec![
+            Token::Struct {
+                name: "GDPRConsent",
+                len: 3,
+            },
+            Token::Str("tos"),
+            Token::Bool(false),
+            Token::Str("privacy"),
+            Token::Bool(false),
+            Token::Str("marketing"),
+            Token::Bool(false),
+            Token::StructEnd,
+        ]
+    }
+}
+
+impl DefaultFlattenTokens for GDPRConsent {
+    fn default_flatten_tokens() -> Vec<Token> {
+        vec![
             Token::Str("tos"),
             Token::Bool(false),
             Token::Str("privacy"),
@@ -265,13 +287,9 @@ impl DefaultTokens for User {
                 Token::Str("dateRegistered"),
                 Token::Str("1970-01-01T00:00:00Z"),
                 Token::Str("gdpr_consent"),
-                Token::Struct {
-                    name: "GDPRConsent",
-                    len: 3,
-                },
             ],
             GDPRConsent::default_tokens(),
-            vec![Token::StructEnd, Token::StructEnd],
+            vec![Token::StructEnd],
         ]
         .concat()
     }
@@ -340,7 +358,7 @@ impl DefaultTokens for GDPRConsentRequest {
     fn default_tokens() -> Vec<Token> {
         [
             vec![Token::Map { len: None }],
-            GDPRConsent::default_tokens(),
+            GDPRConsent::default_flatten_tokens(),
             vec![
                 Token::Str("time"),
                 Token::Str("1970-01-01T00:00:00Z"),
