@@ -44,12 +44,12 @@ impl APIMethodName for APIRequest {
     }
 }
 
-#[derive(Derivative, Clone, PartialEq, Serialize, Deserialize)]
-#[cfg_attr(test, derive(Debug))]
+#[derive(Clone, PartialEq, Serialize, Deserialize)]
+#[cfg_attr(test, derive(Derivative, Debug))]
 #[cfg_attr(test, derivative(Default))]
 #[serde(tag = "type")]
 pub enum AuthRequest {
-    #[derivative(Default)]
+    #[cfg_attr(test, derivative(Default))]
     Login { email: String, password: String },
     Register {
         email: String,
