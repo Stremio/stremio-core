@@ -177,8 +177,8 @@ impl DefaultTokens for DescriptorFlags {
     }
 }
 
-impl DefaultTokens for SeriesInfo {
-    fn default_tokens() -> Vec<Token> {
+impl DefaultFlattenTokens for SeriesInfo {
+    fn default_flatten_tokens() -> Vec<Token> {
         vec![
             Token::Str("season"),
             Token::U32(0),
