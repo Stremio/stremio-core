@@ -1,3 +1,4 @@
+mod api_error;
 mod api_request;
 mod auth;
 mod auth_key;
