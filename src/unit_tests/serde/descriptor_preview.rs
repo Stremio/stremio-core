@@ -1,5 +1,5 @@
 use crate::types::addon::{DescriptorPreview, ManifestPreview};
-use crate::unit_tests::serde::default_token_ext::DefaultTokens;
+use crate::unit_tests::serde::default_tokens_ext::DefaultTokens;
 use serde_test::{assert_tokens, Token};
 use url::Url;
 
@@ -18,7 +18,7 @@ fn descriptor_preview() {
                 },
                 Token::Str("manifest"),
             ],
-            ManifestPreview::default_token(),
+            ManifestPreview::default_tokens(),
             vec![
                 Token::Str("transportUrl"),
                 Token::Str("https://transport_url/"),
