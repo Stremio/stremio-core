@@ -15,6 +15,16 @@ mod model {
     use super::*;
     #[derive(Serialize)]
     #[serde(rename_all = "camelCase")]
+    pub struct ManifestPreview<'a> {
+        pub name: &'a String,
+    }
+    #[derive(Serialize)]
+    #[serde(rename_all = "camelCase")]
+    pub struct DescriptorPreview<'a> {
+        pub manifest: ManifestPreview<'a>,
+    }
+    #[derive(Serialize)]
+    #[serde(rename_all = "camelCase")]
     pub struct SelectableExtraOption<'a> {
         pub value: &'a Option<String>,
         pub selected: &'a bool,
@@ -30,10 +40,10 @@ mod model {
     #[derive(Serialize)]
     #[serde(rename_all = "camelCase")]
     pub struct SelectableCatalog<'a> {
-        pub catalog: &'a String,
-        pub addon_name: &'a String,
+        pub id: &'a String,
+        pub name: &'a String,
+        pub addon: DescriptorPreview<'a>,
         pub selected: &'a bool,
-        pub request: &'a ResourceRequest,
         pub deep_links: DiscoverDeepLinks,
     }
     #[derive(Serialize)]
@@ -104,7 +114,6 @@ pub fn serialize_discover(
                 .map(|selectable_type| model::SelectableType {
                     r#type: &selectable_type.r#type,
                     selected: &selectable_type.selected,
-                    request: &selectable_type.request,
                     deep_links: DiscoverDeepLinks::from(&selectable_type.request),
                 })
                 .collect(),
@@ -112,11 +121,22 @@ pub fn serialize_discover(
                 .selectable
                 .catalogs
                 .iter()
-                .map(|selectable_catalog| model::SelectableCatalog {
-                    catalog: &selectable_catalog.catalog,
-                    addon_name: &selectable_catalog.addon_name,
+                .filter_map(|selectable_catalog| {
+                    ctx.profile
+                        .addons
+                        .iter()
+                        .find(|addon| addon.transport_url == selectable_catalog.request.base)
+                        .map(|addon| (addon, selectable_catalog))
+                })
+                .map(|(addon, selectable_catalog)| model::SelectableCatalog {
+                    id: &selectable_catalog.request.path.id,
+                    name: &selectable_catalog.catalog,
+                    addon: model::DescriptorPreview {
+                        manifest: model::ManifestPreview {
+                            name: &addon.manifest.name,
+                        },
+                    },
                     selected: &selectable_catalog.selected,
-                    request: &selectable_catalog.request,
                     deep_links: DiscoverDeepLinks::from(&selectable_catalog.request),
                 })
                 .collect(),
