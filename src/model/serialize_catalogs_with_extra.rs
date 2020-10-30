@@ -2,7 +2,7 @@ use crate::env::WebEnv;
 use crate::model::deep_links::{DiscoverDeepLinks, MetaItemDeepLinks};
 use serde::Serialize;
 use stremio_core::models::catalogs_with_extra::{CatalogsWithExtra, Selected};
-use stremio_core::models::common::Loadable;
+use stremio_core::models::common::{Loadable, ResourceError};
 use stremio_core::models::ctx::Ctx;
 use stremio_core::types::resource::PosterShape;
 use wasm_bindgen::JsValue;
@@ -42,6 +42,9 @@ pub fn serialize_catalogs_with_extra(
         catalogs: catalogs_with_extra
             .catalogs
             .iter()
+            .filter(|catalog| {
+                !matches!(&catalog.content, Loadable::Err(ResourceError::EmptyContent))
+            })
             .filter_map(|catalog| {
                 ctx.profile
                     .addons
