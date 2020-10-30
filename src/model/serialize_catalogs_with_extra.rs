@@ -2,7 +2,7 @@ use crate::env::WebEnv;
 use crate::model::deep_links::{DiscoverDeepLinks, MetaItemDeepLinks};
 use serde::Serialize;
 use stremio_core::models::catalogs_with_extra::{CatalogsWithExtra, Selected};
-use stremio_core::models::common::{Loadable, ResourceError};
+use stremio_core::models::common::Loadable;
 use stremio_core::models::ctx::Ctx;
 use stremio_core::types::resource::PosterShape;
 use wasm_bindgen::JsValue;
@@ -22,7 +22,7 @@ mod model {
     #[serde(rename_all = "camelCase")]
     pub struct ResourceLoadable<'a> {
         pub title: String,
-        pub content: Loadable<Vec<MetaItemPreview<'a>>, &'a ResourceError>,
+        pub content: Loadable<Vec<MetaItemPreview<'a>>, String>,
         pub deep_links: DiscoverDeepLinks,
     }
     #[derive(Serialize)]
@@ -68,7 +68,7 @@ pub fn serialize_catalogs_with_extra(
                             .collect::<Vec<_>>(),
                     ),
                     Loadable::Loading => Loadable::Loading,
-                    Loadable::Err(error) => Loadable::Err(&error),
+                    Loadable::Err(error) => Loadable::Err(error.to_string()),
                 },
                 deep_links: DiscoverDeepLinks::from(&catalog.request),
             })
