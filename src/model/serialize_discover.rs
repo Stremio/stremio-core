@@ -78,7 +78,7 @@ mod model {
     #[serde(rename_all = "camelCase")]
     pub struct ResourceLoadable<'a> {
         pub content: Loadable<Vec<MetaItemPreview<'a>>, &'a ResourceError>,
-        pub addon_name: Option<&'a String>,
+        pub installed: bool,
     }
     #[derive(Serialize)]
     #[serde(rename_all = "camelCase")]
@@ -181,12 +181,11 @@ pub fn serialize_discover(
                     Loadable::Loading => Loadable::Loading,
                     Loadable::Err(error) => Loadable::Err(&error),
                 },
-                addon_name: ctx
+                installed: ctx
                     .profile
                     .addons
                     .iter()
-                    .find(|addon| addon.transport_url == catalog.request.base)
-                    .map(|addon| &addon.manifest.name),
+                    .any(|addon| addon.transport_url == catalog.request.base),
             }),
         default_request: discover
             .selectable
