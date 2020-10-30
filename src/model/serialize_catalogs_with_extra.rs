@@ -4,7 +4,6 @@ use serde::Serialize;
 use stremio_core::models::catalogs_with_extra::{CatalogsWithExtra, Selected};
 use stremio_core::models::common::{Loadable, ResourceError};
 use stremio_core::models::ctx::Ctx;
-use stremio_core::types::addon::ResourceRequest;
 use stremio_core::types::resource::PosterShape;
 use wasm_bindgen::JsValue;
 
@@ -22,9 +21,8 @@ mod model {
     #[derive(Serialize)]
     #[serde(rename_all = "camelCase")]
     pub struct ResourceLoadable<'a> {
-        pub request: &'a ResourceRequest,
+        pub title: String,
         pub content: Loadable<Vec<MetaItemPreview<'a>>, &'a ResourceError>,
-        pub addon_name: Option<&'a String>,
         pub deep_links: DiscoverDeepLinks,
     }
     #[derive(Serialize)]
@@ -44,8 +42,18 @@ pub fn serialize_catalogs_with_extra(
         catalogs: catalogs_with_extra
             .catalogs
             .iter()
-            .map(|catalog| model::ResourceLoadable {
-                request: &catalog.request,
+            .filter_map(|catalog| {
+                ctx.profile
+                    .addons
+                    .iter()
+                    .find(|addon| addon.transport_url == catalog.request.base)
+                    .map(|addon| (addon, catalog))
+            })
+            .map(|(addon, catalog)| model::ResourceLoadable {
+                title: format!(
+                    "{} - {} {}",
+                    &addon.manifest.name, &catalog.request.path.id, &catalog.request.path.r#type
+                ),
                 content: match &catalog.content {
                     Loadable::Ready(meta_items) => Loadable::Ready(
                         meta_items
@@ -62,12 +70,6 @@ pub fn serialize_catalogs_with_extra(
                     Loadable::Loading => Loadable::Loading,
                     Loadable::Err(error) => Loadable::Err(&error),
                 },
-                addon_name: ctx
-                    .profile
-                    .addons
-                    .iter()
-                    .find(|addon| addon.transport_url == catalog.request.base)
-                    .map(|addon| &addon.manifest.name),
                 deep_links: DiscoverDeepLinks::from(&catalog.request),
             })
             .collect::<Vec<_>>(),
