@@ -5,6 +5,7 @@ use stremio_core::models::catalogs_with_extra::{CatalogsWithExtra, Selected};
 use stremio_core::models::common::{Loadable, ResourceError};
 use stremio_core::models::ctx::Ctx;
 use stremio_core::types::addon::ResourceRequest;
+use stremio_core::types::resource::PosterShape;
 use wasm_bindgen::JsValue;
 
 mod model {
@@ -19,9 +20,10 @@ mod model {
     #[derive(Serialize)]
     #[serde(rename_all = "camelCase")]
     pub struct MetaItemPreview<'a> {
-        #[serde(flatten)]
-        pub meta_item: &'a stremio_core::types::resource::MetaItemPreview,
-        pub trailer_streams: Vec<Stream<'a>>,
+        pub r#type: &'a String,
+        pub name: &'a String,
+        pub poster: &'a Option<String>,
+        pub poster_shape: &'a PosterShape,
         pub deep_links: MetaItemDeepLinks,
     }
     #[derive(Serialize)]
@@ -56,15 +58,10 @@ pub fn serialize_catalogs_with_extra(
                         meta_items
                             .iter()
                             .map(|meta_item| model::MetaItemPreview {
-                                meta_item,
-                                trailer_streams: meta_item
-                                    .trailer_streams
-                                    .iter()
-                                    .map(|stream| model::Stream {
-                                        stream,
-                                        deep_links: StreamDeepLinks::from(stream),
-                                    })
-                                    .collect::<Vec<_>>(),
+                                r#type: &meta_item.r#type,
+                                name: &meta_item.name,
+                                poster: &meta_item.poster,
+                                poster_shape: &meta_items.first().unwrap().poster_shape,
                                 deep_links: MetaItemDeepLinks::from(meta_item),
                             })
                             .collect::<Vec<_>>(),
