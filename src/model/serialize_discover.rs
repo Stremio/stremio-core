@@ -41,7 +41,6 @@ mod model {
     pub struct SelectableType<'a> {
         pub r#type: &'a String,
         pub selected: &'a bool,
-        pub request: &'a ResourceRequest,
         pub deep_links: DiscoverDeepLinks,
     }
     #[derive(Serialize)]
