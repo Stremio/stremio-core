@@ -5,7 +5,7 @@ use stremio_core::constants::{CATALOG_PAGE_SIZE, SKIP_EXTRA_NAME};
 use stremio_core::models::catalog_with_filters::{
     CatalogWithFilters, Selected as CatalogWithFiltersSelected,
 };
-use stremio_core::models::common::{Loadable, ResourceError};
+use stremio_core::models::common::Loadable;
 use stremio_core::models::ctx::Ctx;
 use stremio_core::types::addon::ResourceRequest;
 use stremio_core::types::resource::MetaItemPreview;
