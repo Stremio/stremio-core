@@ -1,5 +1,5 @@
 use crate::env::WebEnv;
-use crate::model::deep_links::{DiscoverDeepLinks, MetaItemDeepLinks, StreamDeepLinks};
+use crate::model::deep_links::{DiscoverDeepLinks, MetaItemDeepLinks};
 use serde::Serialize;
 use stremio_core::models::catalogs_with_extra::{CatalogsWithExtra, Selected};
 use stremio_core::models::common::{Loadable, ResourceError};
@@ -10,13 +10,6 @@ use wasm_bindgen::JsValue;
 
 mod model {
     use super::*;
-    #[derive(Serialize)]
-    #[serde(rename_all = "camelCase")]
-    pub struct Stream<'a> {
-        #[serde(flatten)]
-        pub stream: &'a stremio_core::types::resource::Stream,
-        pub deep_links: StreamDeepLinks,
-    }
     #[derive(Serialize)]
     #[serde(rename_all = "camelCase")]
     pub struct MetaItemPreview<'a> {
