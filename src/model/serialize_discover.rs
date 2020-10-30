@@ -77,7 +77,7 @@ mod model {
     #[derive(Serialize)]
     #[serde(rename_all = "camelCase")]
     pub struct ResourceLoadable<'a> {
-        pub content: Loadable<Vec<MetaItemPreview<'a>>, &'a ResourceError>,
+        pub content: Loadable<Vec<MetaItemPreview<'a>>, String>,
         pub installed: bool,
     }
     #[derive(Serialize)]
@@ -179,7 +179,7 @@ pub fn serialize_discover(
                             .collect::<Vec<_>>(),
                     ),
                     Loadable::Loading => Loadable::Loading,
-                    Loadable::Err(error) => Loadable::Err(&error),
+                    Loadable::Err(error) => Loadable::Err(error.to_string()),
                 },
                 installed: ctx
                     .profile
