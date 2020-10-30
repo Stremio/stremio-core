@@ -24,7 +24,7 @@ mod model {
     #[derive(Serialize)]
     #[serde(rename_all = "camelCase")]
     pub struct SelectableCatalog {
-        pub catalog: String,
+        pub name: String,
         pub selected: bool,
         pub deep_links: AddonsDeepLinks,
     }
@@ -58,7 +58,7 @@ pub fn serialize_installed_addons(installed_addons: &InstalledAddonsWithFilters)
                 })
                 .collect(),
             catalogs: vec![model::SelectableCatalog {
-                catalog: "Installed".to_owned(),
+                name: "Installed".to_owned(),
                 selected: installed_addons.selected.is_some(),
                 deep_links: AddonsDeepLinks::from(&InstalledAddonsRequest { r#type: None }),
             }],

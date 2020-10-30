@@ -4,7 +4,7 @@ use serde::Serialize;
 use stremio_core::models::catalog_with_filters::{CatalogWithFilters, Selected};
 use stremio_core::models::common::{Loadable, ResourceError};
 use stremio_core::models::ctx::Ctx;
-use stremio_core::types::addon::{DescriptorPreview, ResourceRequest};
+use stremio_core::types::addon::DescriptorPreview;
 use wasm_bindgen::JsValue;
 
 mod model {
@@ -12,10 +12,9 @@ mod model {
     #[derive(Serialize)]
     #[serde(rename_all = "camelCase")]
     pub struct SelectableCatalog<'a> {
-        pub catalog: &'a String,
-        pub addon_name: &'a String,
+        pub id: &'a String,
+        pub name: &'a String,
         pub selected: &'a bool,
-        pub request: &'a ResourceRequest,
         pub deep_links: AddonsDeepLinks,
     }
     #[derive(Serialize)]
@@ -23,7 +22,6 @@ mod model {
     pub struct SelectableType<'a> {
         pub r#type: &'a String,
         pub selected: &'a bool,
-        pub request: &'a ResourceRequest,
         pub deep_links: AddonsDeepLinks,
     }
     #[derive(Serialize)]
@@ -65,10 +63,9 @@ pub fn serialize_remote_addons(
                 .catalogs
                 .iter()
                 .map(|selectable_catalog| model::SelectableCatalog {
-                    catalog: &selectable_catalog.catalog,
-                    addon_name: &selectable_catalog.addon_name,
+                    id: &selectable_catalog.request.path.id,
+                    name: &selectable_catalog.catalog,
                     selected: &selectable_catalog.selected,
-                    request: &selectable_catalog.request,
                     deep_links: AddonsDeepLinks::from(&selectable_catalog.request),
                 })
                 .collect(),
@@ -79,7 +76,6 @@ pub fn serialize_remote_addons(
                 .map(|selectable_type| model::SelectableType {
                     r#type: &selectable_type.r#type,
                     selected: &selectable_type.selected,
-                    request: &selectable_type.request,
                     deep_links: AddonsDeepLinks::from(&selectable_type.request),
                 })
                 .collect(),
