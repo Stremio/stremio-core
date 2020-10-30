@@ -2,7 +2,7 @@ use crate::env::WebEnv;
 use crate::model::deep_links::AddonsDeepLinks;
 use serde::Serialize;
 use stremio_core::models::catalog_with_filters::{CatalogWithFilters, Selected};
-use stremio_core::models::common::{Loadable, ResourceError};
+use stremio_core::models::common::Loadable;
 use stremio_core::models::ctx::Ctx;
 use stremio_core::types::addon::DescriptorPreview;
 use wasm_bindgen::JsValue;
@@ -40,7 +40,7 @@ mod model {
     #[derive(Serialize)]
     #[serde(rename_all = "camelCase")]
     pub struct ResourceLoadable<'a> {
-        pub content: Loadable<Vec<DescriptorPreview<'a>>, &'a ResourceError>,
+        pub content: Loadable<Vec<DescriptorPreview<'a>>, String>,
     }
     #[derive(Serialize)]
     #[serde(rename_all = "camelCase")]
@@ -100,7 +100,7 @@ pub fn serialize_remote_addons(
                             .collect::<Vec<_>>(),
                     ),
                     Loadable::Loading => Loadable::Loading,
-                    Loadable::Err(error) => Loadable::Err(&error),
+                    Loadable::Err(error) => Loadable::Err(error.to_string()),
                 },
             }),
     })
