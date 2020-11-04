@@ -2,7 +2,7 @@ use crate::types::addon::{DescriptorFlags, Manifest, ManifestPreview};
 use crate::types::api::{AuthRequest, GDPRConsentRequest};
 use crate::types::library::{LibraryItemBehaviorHints, LibraryItemState};
 use crate::types::profile::{Auth, AuthKey, GDPRConsent, Settings, User};
-use crate::types::resource::{MetaItem, MetaItemBehaviorHints, PosterShape};
+use crate::types::resource::{MetaItem, MetaItemBehaviorHints, PosterShape, StreamSource};
 use serde_test::Token;
 
 pub trait DefaultTokens {
@@ -388,5 +388,11 @@ impl DefaultTokens for AuthRequest {
             Token::Str(""),
             Token::StructEnd,
         ]
+    }
+}
+
+impl DefaultFlattenTokens for StreamSource {
+    fn default_flatten_tokens() -> Vec<Token> {
+        vec![Token::Str("ytId"), Token::Str("")]
     }
 }
