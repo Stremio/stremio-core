@@ -1,4 +1,6 @@
 use crate::types::resource::Subtitles;
+#[cfg(test)]
+use derivative::Derivative;
 use serde::{Deserialize, Serialize};
 use serde_hex::{SerHex, Strict};
 use url::Url;
@@ -20,12 +22,14 @@ pub struct Stream {
 }
 
 #[derive(Clone, PartialEq, Serialize, Deserialize)]
-#[cfg_attr(test, derive(Debug))]
+#[cfg_attr(test, derive(Derivative, Debug))]
+#[cfg_attr(test, derivative(Default))]
 #[serde(untagged)]
 pub enum StreamSource {
     Url {
         url: Url,
     },
+    #[cfg_attr(test, derivative(Default))]
     #[serde(rename_all = "camelCase")]
     YouTube {
         yt_id: String,
