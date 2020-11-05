@@ -17,7 +17,6 @@ mod library_bucket;
 mod library_item;
 mod library_item_behavior_hints;
 mod library_item_state;
-mod library_item_state_empty_string_as_none;
 mod link;
 mod manifest;
 mod manifest_catalog;
