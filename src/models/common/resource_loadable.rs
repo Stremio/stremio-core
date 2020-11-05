@@ -5,6 +5,7 @@ use crate::types::addon::{AggrRequest, Descriptor, ResourceRequest, ResourceResp
 use futures::FutureExt;
 use serde::Serialize;
 use std::convert::TryFrom;
+use std::fmt;
 
 #[derive(Clone, PartialEq, Serialize)]
 #[serde(tag = "type", content = "content")]
@@ -12,6 +13,18 @@ pub enum ResourceError {
     EmptyContent,
     UnexpectedResponse(String),
     Env(EnvError),
+}
+
+impl fmt::Display for ResourceError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match &self {
+            ResourceError::EmptyContent => write!(f, "EmptyContent"),
+            ResourceError::UnexpectedResponse(message) => {
+                write!(f, "UnexpectedResponse: {}", message)
+            }
+            ResourceError::Env(error) => write!(f, "Env: {}", error.message()),
+        }
+    }
 }
 
 #[derive(PartialEq, Serialize)]
