@@ -1,5 +1,5 @@
 use crate::types::addon::{DescriptorFlags, Manifest, ManifestPreview};
-use crate::types::api::{AuthRequest, GDPRConsentRequest};
+use crate::types::api::{APIError, AuthRequest, GDPRConsentRequest};
 use crate::types::library::{LibraryItemBehaviorHints, LibraryItemState};
 use crate::types::profile::{Auth, AuthKey, GDPRConsent, Settings, User};
 use crate::types::resource::{MetaItem, MetaItemBehaviorHints, PosterShape, SeriesInfo};
@@ -397,6 +397,22 @@ impl DefaultTokens for AuthRequest {
             Token::Str(""),
             Token::Str("password"),
             Token::Str(""),
+            Token::StructEnd,
+        ]
+    }
+}
+
+impl DefaultTokens for APIError {
+    fn default_tokens() -> Vec<Token> {
+        vec![
+            Token::Struct {
+                name: "APIError",
+                len: 2,
+            },
+            Token::Str("message"),
+            Token::Str(""),
+            Token::Str("code"),
+            Token::U64(0),
             Token::StructEnd,
         ]
     }

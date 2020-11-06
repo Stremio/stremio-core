@@ -14,7 +14,7 @@ pub enum APIResult<T> {
 }
 
 #[derive(Clone, Serialize, Deserialize)]
-#[cfg_attr(test, derive(Debug))]
+#[cfg_attr(test, derive(Default, Debug))]
 pub struct APIError {
     pub message: String,
     pub code: u64,
