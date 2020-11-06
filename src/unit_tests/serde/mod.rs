@@ -6,7 +6,6 @@ mod default_tokens_ext;
 mod descriptor;
 mod descriptor_flags;
 mod descriptor_preview;
-mod deserialize_library_item_empty_string_as_none;
 mod deserialize_library_item_state_empty_string_as_none;
 mod deserialize_stream;
 mod deserialize_stream_source;
