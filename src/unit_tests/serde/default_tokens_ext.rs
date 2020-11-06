@@ -1,8 +1,10 @@
 use crate::types::addon::{DescriptorFlags, Manifest, ManifestPreview};
-use crate::types::api::{AuthRequest, GDPRConsentRequest};
+use crate::types::api::{APIError, AuthRequest, GDPRConsentRequest};
 use crate::types::library::{LibraryItemBehaviorHints, LibraryItemState};
 use crate::types::profile::{Auth, AuthKey, GDPRConsent, Settings, User};
-use crate::types::resource::{MetaItem, MetaItemBehaviorHints, PosterShape, StreamSource};
+use crate::types::resource::{
+    MetaItem, MetaItemBehaviorHints, PosterShape, SeriesInfo, StreamSource,
+};
 use serde_test::Token;
 
 pub trait DefaultTokens {
@@ -173,6 +175,17 @@ impl DefaultTokens for DescriptorFlags {
             Token::Str("protected"),
             Token::Bool(false),
             Token::StructEnd,
+        ]
+    }
+}
+
+impl DefaultFlattenTokens for SeriesInfo {
+    fn default_flatten_tokens() -> Vec<Token> {
+        vec![
+            Token::Str("season"),
+            Token::U32(0),
+            Token::Str("episode"),
+            Token::U32(0),
         ]
     }
 }
@@ -394,5 +407,21 @@ impl DefaultTokens for AuthRequest {
 impl DefaultFlattenTokens for StreamSource {
     fn default_flatten_tokens() -> Vec<Token> {
         vec![Token::Str("ytId"), Token::Str("")]
+    }
+}
+
+impl DefaultTokens for APIError {
+    fn default_tokens() -> Vec<Token> {
+        vec![
+            Token::Struct {
+                name: "APIError",
+                len: 2,
+            },
+            Token::Str("message"),
+            Token::Str(""),
+            Token::Str("code"),
+            Token::U64(0),
+            Token::StructEnd,
+        ]
     }
 }
