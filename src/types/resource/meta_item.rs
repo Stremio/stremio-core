@@ -67,7 +67,7 @@ pub enum PosterShape {
 }
 
 #[derive(Clone, PartialEq, Serialize, Deserialize)]
-#[cfg_attr(test, derive(Debug))]
+#[cfg_attr(test, derive(Default, Debug))]
 pub struct SeriesInfo {
     pub season: u32,
     pub episode: u32,
