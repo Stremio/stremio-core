@@ -1,4 +1,4 @@
-use crate::types::addon::{DescriptorFlags, Manifest, ManifestPreview};
+use crate::types::addon::{DescriptorFlags, Manifest, ManifestPreview, ResourcePath};
 use crate::types::api::{APIError, AuthRequest, GDPRConsentRequest};
 use crate::types::library::{LibraryItemBehaviorHints, LibraryItemState};
 use crate::types::profile::{Auth, AuthKey, GDPRConsent, Settings, User};
@@ -421,6 +421,27 @@ impl DefaultTokens for APIError {
             Token::Str(""),
             Token::Str("code"),
             Token::U64(0),
+            Token::StructEnd,
+        ]
+    }
+}
+
+impl DefaultTokens for ResourcePath {
+    fn default_tokens() -> Vec<Token> {
+        vec![
+            Token::Struct {
+                name: "ResourcePath",
+                len: 4,
+            },
+            Token::Str("resource"),
+            Token::Str(""),
+            Token::Str("type"),
+            Token::Str(""),
+            Token::Str("id"),
+            Token::Str(""),
+            Token::Str("extra"),
+            Token::Seq { len: Some(0) },
+            Token::SeqEnd,
             Token::StructEnd,
         ]
     }
