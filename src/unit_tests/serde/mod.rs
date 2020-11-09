@@ -9,6 +9,7 @@ mod descriptor;
 mod descriptor_flags;
 mod descriptor_preview;
 mod extra_prop;
+mod extra_value;
 mod gdpr_consent;
 mod gdpr_consent_request;
 mod library_bucket;
