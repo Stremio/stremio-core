@@ -28,6 +28,7 @@ mod meta_item_preview;
 mod poster_shape;
 mod profile;
 mod resource_path;
+mod resource_request;
 mod resource_response;
 mod series_info;
 mod settings;
