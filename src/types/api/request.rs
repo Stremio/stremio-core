@@ -91,9 +91,11 @@ impl APIMethodName for DatastoreRequest {
 }
 
 #[derive(Clone, PartialEq, Serialize)]
-#[cfg_attr(test, derive(Debug))]
+#[cfg_attr(test, derive(Derivative, Debug))]
+#[cfg_attr(test, derivative(Default))]
 #[serde(untagged)]
 pub enum DatastoreCommand {
+    #[cfg_attr(test, derivative(Default))]
     Meta,
     Get {
         #[serde(default)]
