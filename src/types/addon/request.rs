@@ -47,7 +47,7 @@ impl ExtraExt for Vec<ExtraValue> {
 }
 
 #[derive(Clone, PartialEq, Serialize, Deserialize)]
-#[cfg_attr(test, derive(Debug))]
+#[cfg_attr(test, derive(Default, Debug))]
 pub struct ResourcePath {
     pub resource: String,
     pub r#type: String,
