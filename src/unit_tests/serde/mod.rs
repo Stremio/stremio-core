@@ -5,6 +5,7 @@ mod auth;
 mod auth_key;
 mod auth_request;
 mod auth_response;
+mod collection_response;
 mod datastore_command;
 mod datastore_request;
 mod default_tokens_ext;
