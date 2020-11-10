@@ -5,6 +5,8 @@ mod auth;
 mod auth_key;
 mod auth_request;
 mod auth_response;
+mod datastore_command;
+mod datastore_request;
 mod default_tokens_ext;
 mod descriptor;
 mod descriptor_flags;
