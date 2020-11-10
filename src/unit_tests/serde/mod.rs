@@ -33,5 +33,7 @@ mod settings;
 mod stream;
 mod stream_source;
 mod subtitles;
+mod success_response;
+mod r#true;
 mod user;
 mod video;

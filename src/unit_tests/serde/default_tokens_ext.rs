@@ -5,6 +5,7 @@ use crate::types::profile::{Auth, AuthKey, GDPRConsent, Settings, User};
 use crate::types::resource::{
     MetaItem, MetaItemBehaviorHints, PosterShape, SeriesInfo, StreamSource,
 };
+use crate::types::True;
 use serde_test::Token;
 
 pub trait DefaultTokens {
@@ -423,5 +424,11 @@ impl DefaultTokens for APIError {
             Token::U64(0),
             Token::StructEnd,
         ]
+    }
+}
+
+impl DefaultTokens for True {
+    fn default_tokens() -> Vec<Token> {
+        vec![Token::Bool(true)]
     }
 }
