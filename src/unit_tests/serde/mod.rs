@@ -18,6 +18,7 @@ mod gdpr_consent_request;
 mod library_bucket;
 mod library_item;
 mod library_item_behavior_hints;
+mod library_item_modified;
 mod library_item_state;
 mod link;
 mod manifest;
