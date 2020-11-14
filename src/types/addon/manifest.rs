@@ -212,3 +212,13 @@ impl Default for OptionsLimit {
         OptionsLimit(1)
     }
 }
+
+#[derive(Clone, PartialEq, Serialize, Deserialize)]
+#[cfg_attr(test, derive(Debug))]
+#[serde(rename_all = "camelCase")]
+pub struct ManifestBehaviorHints {
+    pub adult: bool,
+    pub p2p: bool,
+    pub configurable: bool,
+    pub configuration_required: bool,
+}

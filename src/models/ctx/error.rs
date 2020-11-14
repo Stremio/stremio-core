@@ -36,6 +36,7 @@ pub enum OtherError {
     AddonAlreadyInstalled,
     AddonNotInstalled,
     AddonIsProtected,
+    AddonRequiresConfiguration,
 }
 
 impl OtherError {
@@ -46,6 +47,7 @@ impl OtherError {
             OtherError::AddonAlreadyInstalled => "Addon is already installed".to_owned(),
             OtherError::AddonNotInstalled => "Addon is not installed".to_owned(),
             OtherError::AddonIsProtected => "Addon is protected".to_owned(),
+            OtherError::AddonRequiresConfiguration => "Addon requires configuration".to_owned(),
         }
     }
     pub fn code(&self) -> u64 {
@@ -55,6 +57,7 @@ impl OtherError {
             OtherError::AddonAlreadyInstalled => 3,
             OtherError::AddonNotInstalled => 4,
             OtherError::AddonIsProtected => 5,
+            OtherError::AddonRequiresConfiguration => 6,
         }
     }
 }
