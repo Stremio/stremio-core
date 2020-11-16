@@ -69,6 +69,11 @@ pub struct SelectableSort {
     pub request: LibraryRequest,
 }
 
+#[derive(PartialEq, Serialize)]
+pub struct SelectablePage {
+    pub request: LibraryRequest,
+}
+
 #[derive(Default, PartialEq, Serialize)]
 pub struct Selectable {
     pub types: Vec<SelectableType>,
