@@ -4,6 +4,7 @@ use crate::models::ctx::Ctx;
 use crate::runtime::msg::{Action, ActionLoad, Internal, Msg};
 use crate::runtime::{Effects, Env, UpdateWithCtx};
 use crate::types::library::{LibraryBucket, LibraryItem};
+use boolinator::Boolinator;
 use derivative::Derivative;
 use itertools::Itertools;
 use serde::{Deserialize, Serialize};
@@ -78,6 +79,8 @@ pub struct SelectablePage {
 pub struct Selectable {
     pub types: Vec<SelectableType>,
     pub sorts: Vec<SelectableSort>,
+    pub prev_page: Option<SelectablePage>,
+    pub next_page: Option<SelectablePage>,
 }
 
 #[derive(Derivative, Serialize)]
@@ -215,9 +218,35 @@ fn selectable_update<F: LibraryFilter>(
                 .unwrap_or_default(),
         })
         .collect();
+    let (prev_page, next_page) = match selected {
+        Some(selected) => {
+            let prev_page = (selected.request.page > 1)
+                .as_option()
+                .map(|_| SelectablePage {
+                    request: LibraryRequest {
+                        page: selected.request.page - 1,
+                        ..selected.request.to_owned()
+                    },
+                });
+            let total_pages = (library.items.values().len() as f32 / 100.0).ceil() as usize;
+            let next_page =
+                (selected.request.page < total_pages)
+                    .as_option()
+                    .map(|_| SelectablePage {
+                        request: LibraryRequest {
+                            page: selected.request.page + 1,
+                            ..selected.request.to_owned()
+                        },
+                    });
+            (prev_page, next_page)
+        }
+        _ => Default::default(),
+    };
     let next_selectable = Selectable {
         types: selectable_types,
         sorts: selectable_sorts,
+        prev_page,
+        next_page,
     };
     eq_update(selectable, next_selectable)
 }
