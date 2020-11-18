@@ -288,11 +288,15 @@ fn catalog_update<F: LibraryFilter>(
                 .collect();
             let library_items_len = library_items.len();
             let initial_page_element = if selected.request.page > 0 {
-                cmp::min((selected.request.page - 1) * CATALOG_PAGE_SIZE, library_items_len)
+                cmp::min(
+                    (selected.request.page - 1) * CATALOG_PAGE_SIZE,
+                    library_items_len,
+                )
             } else {
                 0
             };
-            let final_page_element = cmp::min(initial_page_element + CATALOG_PAGE_SIZE, library_items_len);
+            let final_page_element =
+                cmp::min(initial_page_element + CATALOG_PAGE_SIZE, library_items_len);
             library_items[initial_page_element..final_page_element].to_vec()
         }
         _ => vec![],
