@@ -238,8 +238,7 @@ fn selectable_update<F: LibraryFilter>(
                     None => true,
                 })
                 .cloned()
-                .collect::<Vec<_>>()
-                .len() as f32
+                .count() as f32
                 / CATALOG_PAGE_SIZE as f32)
                 .ceil() as usize;
             let next_page =
