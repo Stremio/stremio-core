@@ -270,7 +270,7 @@ fn catalog_update<F: LibraryFilter>(
 ) -> Effects {
     let next_catalog = match selected {
         Some(selected) => {
-            let library_items: Vec<_> = library
+            let library_items = library
                 .items
                 .values()
                 .filter(|library_item| F::predicate(library_item))
@@ -284,7 +284,7 @@ fn catalog_update<F: LibraryFilter>(
                     Sort::Name => a.name.to_lowercase().cmp(&b.name.to_lowercase()),
                 })
                 .cloned()
-                .collect();
+                .collect::<Vec<_>>();
             let library_items_len = library_items.len();
             let initial_page_element = if selected.request.page > 0 {
                 cmp::min(
