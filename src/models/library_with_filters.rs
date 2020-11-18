@@ -1,4 +1,4 @@
-use crate::constants::TYPE_PRIORITIES;
+use crate::constants::{CATALOG_PAGE_SIZE, TYPE_PRIORITIES};
 use crate::models::common::{compare_with_priorities, eq_update};
 use crate::models::ctx::Ctx;
 use crate::runtime::msg::{Action, ActionLoad, Internal, Msg};
@@ -8,6 +8,7 @@ use boolinator::Boolinator;
 use derivative::Derivative;
 use itertools::Itertools;
 use serde::{Deserialize, Serialize};
+use std::cmp;
 use std::iter;
 use std::marker::PhantomData;
 use strum::IntoEnumIterator;
@@ -228,7 +229,19 @@ fn selectable_update<F: LibraryFilter>(
                         ..selected.request.to_owned()
                     },
                 });
-            let total_pages = (library.items.values().len() as f32 / 100.0).ceil() as usize;
+            let total_pages = (library
+                .items
+                .values()
+                .filter(|library_item| F::predicate(library_item))
+                .filter(|library_item| match &selected.request.r#type {
+                    Some(r#type) => library_item.r#type == *r#type,
+                    None => true,
+                })
+                .cloned()
+                .collect::<Vec<_>>()
+                .len() as f32
+                / CATALOG_PAGE_SIZE as f32)
+                .ceil() as usize;
             let next_page =
                 (selected.request.page < total_pages)
                     .as_option()
@@ -257,21 +270,31 @@ fn catalog_update<F: LibraryFilter>(
     library: &LibraryBucket,
 ) -> Effects {
     let next_catalog = match selected {
-        Some(selected) => library
-            .items
-            .values()
-            .filter(|library_item| F::predicate(library_item))
-            .filter(|library_item| match &selected.request.r#type {
-                Some(r#type) => library_item.r#type == *r#type,
-                None => true,
-            })
-            .sorted_by(|a, b| match &selected.request.sort {
-                Sort::LastWatched => b.state.last_watched.cmp(&a.state.last_watched),
-                Sort::TimesWatched => b.state.times_watched.cmp(&a.state.times_watched),
-                Sort::Name => a.name.to_lowercase().cmp(&b.name.to_lowercase()),
-            })
-            .cloned()
-            .collect(),
+        Some(selected) => {
+            let library_items: Vec<_> = library
+                .items
+                .values()
+                .filter(|library_item| F::predicate(library_item))
+                .filter(|library_item| match &selected.request.r#type {
+                    Some(r#type) => library_item.r#type == *r#type,
+                    None => true,
+                })
+                .sorted_by(|a, b| match &selected.request.sort {
+                    Sort::LastWatched => b.state.last_watched.cmp(&a.state.last_watched),
+                    Sort::TimesWatched => b.state.times_watched.cmp(&a.state.times_watched),
+                    Sort::Name => a.name.to_lowercase().cmp(&b.name.to_lowercase()),
+                })
+                .cloned()
+                .collect();
+            let library_items_len = library_items.len();
+            let initial_page_element = if selected.request.page > 0 {
+                cmp::min((selected.request.page - 1) * CATALOG_PAGE_SIZE, library_items_len)
+            } else {
+                0
+            };
+            let final_page_element = cmp::min(initial_page_element + CATALOG_PAGE_SIZE, library_items_len);
+            library_items[initial_page_element..final_page_element].to_vec()
+        }
         _ => vec![],
     };
     eq_update(catalog, next_catalog)
