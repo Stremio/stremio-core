@@ -223,7 +223,7 @@ fn selectable_update<F: LibraryFilter>(
                         ..selected.request.to_owned()
                     },
                 });
-            let total_pages = (library
+            let next_page = library
                 .items
                 .values()
                 .filter(|library_item| F::predicate(library_item))
@@ -231,19 +231,15 @@ fn selectable_update<F: LibraryFilter>(
                     Some(r#type) => library_item.r#type == *r#type,
                     None => true,
                 })
-                .cloned()
-                .count() as f32
-                / CATALOG_PAGE_SIZE as f32)
-                .ceil() as usize;
-            let next_page =
-                (selected.request.page < total_pages)
-                    .as_option()
-                    .map(|_| SelectablePage {
-                        request: LibraryRequest {
-                            page: selected.request.page + 1,
-                            ..selected.request.to_owned()
-                        },
-                    });
+                .nth(selected.request.page * CATALOG_PAGE_SIZE)
+                .is_some()
+                .as_option()
+                .map(|_| SelectablePage {
+                    request: LibraryRequest {
+                        page: selected.request.page + 1,
+                        ..selected.request.to_owned()
+                    },
+                });
             (prev_page, next_page)
         }
         _ => Default::default(),
