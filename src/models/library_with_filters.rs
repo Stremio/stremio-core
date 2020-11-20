@@ -232,8 +232,6 @@ fn selectable_update<F: LibraryFilter>(
                     None => true,
                 })
                 .nth(selected.request.page * CATALOG_PAGE_SIZE)
-                .is_some()
-                .as_option()
                 .map(|_| SelectablePage {
                     request: LibraryRequest {
                         page: selected.request.page + 1,
