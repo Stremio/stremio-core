@@ -1,12 +1,14 @@
-use crate::constants::TYPE_PRIORITIES;
+use crate::constants::{CATALOG_PAGE_SIZE, TYPE_PRIORITIES};
 use crate::models::common::{compare_with_priorities, eq_update};
 use crate::models::ctx::Ctx;
 use crate::runtime::msg::{Action, ActionLoad, Internal, Msg};
 use crate::runtime::{Effects, Env, UpdateWithCtx};
 use crate::types::library::{LibraryBucket, LibraryItem};
+use boolinator::Boolinator;
 use derivative::Derivative;
 use itertools::Itertools;
 use serde::{Deserialize, Serialize};
+use std::cmp;
 use std::iter;
 use std::marker::PhantomData;
 use strum::IntoEnumIterator;
@@ -47,6 +49,7 @@ pub struct LibraryRequest {
     pub r#type: Option<String>,
     #[serde(default)]
     pub sort: Sort,
+    pub page: usize,
 }
 
 #[derive(Clone, PartialEq, Serialize, Deserialize)]
@@ -68,10 +71,17 @@ pub struct SelectableSort {
     pub request: LibraryRequest,
 }
 
+#[derive(PartialEq, Serialize)]
+pub struct SelectablePage {
+    pub request: LibraryRequest,
+}
+
 #[derive(Default, PartialEq, Serialize)]
 pub struct Selectable {
     pub types: Vec<SelectableType>,
     pub sorts: Vec<SelectableSort>,
+    pub prev_page: Option<SelectablePage>,
+    pub next_page: Option<SelectablePage>,
 }
 
 #[derive(Derivative, Serialize)]
@@ -162,6 +172,7 @@ fn selectable_update<F: LibraryFilter>(
                     .as_ref()
                     .map(|selected| selected.request.sort.to_owned())
                     .unwrap_or_default(),
+                page: 1,
             },
             selected: selected
                 .as_ref()
@@ -177,6 +188,7 @@ fn selectable_update<F: LibraryFilter>(
                 .as_ref()
                 .map(|selected| selected.request.sort.to_owned())
                 .unwrap_or_default(),
+            page: 1,
         },
         selected: selected
             .as_ref()
@@ -193,6 +205,7 @@ fn selectable_update<F: LibraryFilter>(
                     .as_ref()
                     .and_then(|selected| selected.request.r#type.to_owned()),
                 sort: sort.to_owned(),
+                page: 1,
             },
             selected: selected
                 .as_ref()
@@ -200,9 +213,40 @@ fn selectable_update<F: LibraryFilter>(
                 .unwrap_or_default(),
         })
         .collect();
+    let (prev_page, next_page) = match selected {
+        Some(selected) => {
+            let prev_page = (selected.request.page > 1)
+                .as_option()
+                .map(|_| SelectablePage {
+                    request: LibraryRequest {
+                        page: selected.request.page - 1,
+                        ..selected.request.to_owned()
+                    },
+                });
+            let next_page = library
+                .items
+                .values()
+                .filter(|library_item| F::predicate(library_item))
+                .filter(|library_item| match &selected.request.r#type {
+                    Some(r#type) => library_item.r#type == *r#type,
+                    None => true,
+                })
+                .nth(selected.request.page * CATALOG_PAGE_SIZE)
+                .map(|_| SelectablePage {
+                    request: LibraryRequest {
+                        page: selected.request.page + 1,
+                        ..selected.request.to_owned()
+                    },
+                });
+            (prev_page, next_page)
+        }
+        _ => Default::default(),
+    };
     let next_selectable = Selectable {
         types: selectable_types,
         sorts: selectable_sorts,
+        prev_page,
+        next_page,
     };
     eq_update(selectable, next_selectable)
 }
@@ -226,6 +270,8 @@ fn catalog_update<F: LibraryFilter>(
                 Sort::TimesWatched => b.state.times_watched.cmp(&a.state.times_watched),
                 Sort::Name => a.name.to_lowercase().cmp(&b.name.to_lowercase()),
             })
+            .skip(cmp::max(0, selected.request.page as isize - 1) as usize * CATALOG_PAGE_SIZE)
+            .take(CATALOG_PAGE_SIZE)
             .cloned()
             .collect(),
         _ => vec![],
