@@ -49,6 +49,7 @@ pub struct LibraryRequest {
     pub r#type: Option<String>,
     #[serde(default)]
     pub sort: Sort,
+    #[serde(default)]
     pub page: usize,
 }
 
