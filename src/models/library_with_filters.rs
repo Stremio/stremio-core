@@ -44,14 +44,17 @@ pub enum Sort {
     TimesWatched,
 }
 
-#[derive(Derivative, Clone, PartialEq, Serialize, Deserialize)]
-#[derivative(Default)]
+#[derive(Clone, PartialEq, Serialize, Deserialize)]
 pub struct LibraryRequest {
     pub r#type: Option<String>,
     #[serde(default)]
     pub sort: Sort,
-    #[derivative(Default(value = "NonZeroUsize::new(1).unwrap()"))]
+    #[serde(default = "default_page")]
     pub page: NonZeroUsize,
+}
+
+fn default_page() -> NonZeroUsize {
+    NonZeroUsize::new(1).unwrap()
 }
 
 #[derive(Clone, PartialEq, Serialize, Deserialize)]
