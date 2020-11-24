@@ -8,7 +8,6 @@ use boolinator::Boolinator;
 use derivative::Derivative;
 use itertools::Itertools;
 use serde::{Deserialize, Serialize};
-use std::cmp;
 use std::iter;
 use std::marker::PhantomData;
 use std::num::NonZeroUsize;
@@ -273,7 +272,7 @@ fn catalog_update<F: LibraryFilter>(
                 Sort::TimesWatched => b.state.times_watched.cmp(&a.state.times_watched),
                 Sort::Name => a.name.to_lowercase().cmp(&b.name.to_lowercase()),
             })
-            .skip(cmp::max(0, selected.request.page.get() - 1) * CATALOG_PAGE_SIZE)
+            .skip((selected.request.page.get() - 1) * CATALOG_PAGE_SIZE)
             .take(CATALOG_PAGE_SIZE)
             .cloned()
             .collect(),
