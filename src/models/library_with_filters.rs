@@ -271,9 +271,7 @@ fn catalog_update<F: LibraryFilter>(
                 Sort::TimesWatched => b.state.times_watched.cmp(&a.state.times_watched),
                 Sort::Name => a.name.to_lowercase().cmp(&b.name.to_lowercase()),
             })
-            .skip(
-                cmp::max(0, selected.request.page.get() as isize - 1) as usize * CATALOG_PAGE_SIZE,
-            )
+            .skip(cmp::max(0, selected.request.page.get() - 1) * CATALOG_PAGE_SIZE)
             .take(CATALOG_PAGE_SIZE)
             .cloned()
             .collect(),
