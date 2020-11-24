@@ -11,6 +11,7 @@ use serde::{Deserialize, Serialize};
 use std::cmp;
 use std::iter;
 use std::marker::PhantomData;
+use std::num::NonZeroUsize;
 use strum::IntoEnumIterator;
 use strum_macros::EnumIter;
 
@@ -49,8 +50,7 @@ pub struct LibraryRequest {
     pub r#type: Option<String>,
     #[serde(default)]
     pub sort: Sort,
-    #[serde(default)]
-    pub page: usize,
+    pub page: NonZeroUsize,
 }
 
 #[derive(Clone, PartialEq, Serialize, Deserialize)]
@@ -173,7 +173,7 @@ fn selectable_update<F: LibraryFilter>(
                     .as_ref()
                     .map(|selected| selected.request.sort.to_owned())
                     .unwrap_or_default(),
-                page: 1,
+                page: NonZeroUsize::new(1).unwrap(),
             },
             selected: selected
                 .as_ref()
@@ -189,7 +189,7 @@ fn selectable_update<F: LibraryFilter>(
                 .as_ref()
                 .map(|selected| selected.request.sort.to_owned())
                 .unwrap_or_default(),
-            page: 1,
+            page: NonZeroUsize::new(1).unwrap(),
         },
         selected: selected
             .as_ref()
@@ -206,7 +206,7 @@ fn selectable_update<F: LibraryFilter>(
                     .as_ref()
                     .and_then(|selected| selected.request.r#type.to_owned()),
                 sort: sort.to_owned(),
-                page: 1,
+                page: NonZeroUsize::new(1).unwrap(),
             },
             selected: selected
                 .as_ref()
@@ -216,11 +216,11 @@ fn selectable_update<F: LibraryFilter>(
         .collect();
     let (prev_page, next_page) = match selected {
         Some(selected) => {
-            let prev_page = (selected.request.page > 1)
+            let prev_page = (selected.request.page.get() > 1)
                 .as_option()
                 .map(|_| SelectablePage {
                     request: LibraryRequest {
-                        page: selected.request.page - 1,
+                        page: NonZeroUsize::new(selected.request.page.get() - 1).unwrap(),
                         ..selected.request.to_owned()
                     },
                 });
@@ -232,10 +232,10 @@ fn selectable_update<F: LibraryFilter>(
                     Some(r#type) => library_item.r#type == *r#type,
                     None => true,
                 })
-                .nth(selected.request.page * CATALOG_PAGE_SIZE)
+                .nth(selected.request.page.get() * CATALOG_PAGE_SIZE)
                 .map(|_| SelectablePage {
                     request: LibraryRequest {
-                        page: selected.request.page + 1,
+                        page: NonZeroUsize::new(selected.request.page.get() + 1).unwrap(),
                         ..selected.request.to_owned()
                     },
                 });
@@ -271,7 +271,9 @@ fn catalog_update<F: LibraryFilter>(
                 Sort::TimesWatched => b.state.times_watched.cmp(&a.state.times_watched),
                 Sort::Name => a.name.to_lowercase().cmp(&b.name.to_lowercase()),
             })
-            .skip(cmp::max(0, selected.request.page as isize - 1) as usize * CATALOG_PAGE_SIZE)
+            .skip(
+                cmp::max(0, selected.request.page.get() as isize - 1) as usize * CATALOG_PAGE_SIZE,
+            )
             .take(CATALOG_PAGE_SIZE)
             .cloned()
             .collect(),
