@@ -6,6 +6,7 @@ use crate::runtime::{Effects, Env, UpdateWithCtx};
 use crate::types::library::{LibraryBucket, LibraryItem};
 use boolinator::Boolinator;
 use derivative::Derivative;
+use derive_more::Deref;
 use itertools::Itertools;
 use serde::{Deserialize, Serialize};
 use std::iter;
@@ -49,12 +50,17 @@ pub struct LibraryRequest {
     pub r#type: Option<String>,
     #[serde(default)]
     pub sort: Sort,
-    #[serde(default = "default_page")]
-    pub page: NonZeroUsize,
+    #[serde(default)]
+    pub page: LibraryRequestPage,
 }
 
-fn default_page() -> NonZeroUsize {
-    NonZeroUsize::new(1).unwrap()
+#[derive(Clone, Deref, PartialEq, Serialize, Deserialize)]
+pub struct LibraryRequestPage(pub NonZeroUsize);
+
+impl Default for LibraryRequestPage {
+    fn default() -> LibraryRequestPage {
+        LibraryRequestPage(NonZeroUsize::new(1).unwrap())
+    }
 }
 
 #[derive(Clone, PartialEq, Serialize, Deserialize)]
@@ -177,7 +183,7 @@ fn selectable_update<F: LibraryFilter>(
                     .as_ref()
                     .map(|selected| selected.request.sort.to_owned())
                     .unwrap_or_default(),
-                page: NonZeroUsize::new(1).unwrap(),
+                page: LibraryRequestPage(NonZeroUsize::new(1).unwrap()),
             },
             selected: selected
                 .as_ref()
@@ -193,7 +199,7 @@ fn selectable_update<F: LibraryFilter>(
                 .as_ref()
                 .map(|selected| selected.request.sort.to_owned())
                 .unwrap_or_default(),
-            page: NonZeroUsize::new(1).unwrap(),
+            page: LibraryRequestPage(NonZeroUsize::new(1).unwrap()),
         },
         selected: selected
             .as_ref()
@@ -210,7 +216,7 @@ fn selectable_update<F: LibraryFilter>(
                     .as_ref()
                     .and_then(|selected| selected.request.r#type.to_owned()),
                 sort: sort.to_owned(),
-                page: NonZeroUsize::new(1).unwrap(),
+                page: LibraryRequestPage(NonZeroUsize::new(1).unwrap()),
             },
             selected: selected
                 .as_ref()
@@ -224,7 +230,9 @@ fn selectable_update<F: LibraryFilter>(
                 .as_option()
                 .map(|_| SelectablePage {
                     request: LibraryRequest {
-                        page: NonZeroUsize::new(selected.request.page.get() - 1).unwrap(),
+                        page: LibraryRequestPage(
+                            NonZeroUsize::new(selected.request.page.get() - 1).unwrap(),
+                        ),
                         ..selected.request.to_owned()
                     },
                 });
@@ -239,7 +247,9 @@ fn selectable_update<F: LibraryFilter>(
                 .nth(selected.request.page.get() * CATALOG_PAGE_SIZE)
                 .map(|_| SelectablePage {
                     request: LibraryRequest {
-                        page: NonZeroUsize::new(selected.request.page.get() + 1).unwrap(),
+                        page: LibraryRequestPage(
+                            NonZeroUsize::new(selected.request.page.get() + 1).unwrap(),
+                        ),
                         ..selected.request.to_owned()
                     },
                 });
