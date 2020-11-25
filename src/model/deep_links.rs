@@ -6,7 +6,7 @@ use std::borrow::Borrow;
 use std::io;
 use std::io::Write;
 use stremio_core::models::installed_addons_with_filters::InstalledAddonsRequest;
-use stremio_core::models::library_with_filters::{LibraryRequest, Sort};
+use stremio_core::models::library_with_filters::LibraryRequest;
 use stremio_core::types::addon::{ExtraValue, ResourceRequest};
 use stremio_core::types::library::LibraryItem;
 use stremio_core::types::resource::{MetaItem, MetaItemPreview, Stream, Video};
@@ -280,30 +280,12 @@ impl From<&String> for LibraryDeepLinks {
     }
 }
 
-impl From<&LibraryRequest> for LibraryDeepLinks {
-    fn from(request: &LibraryRequest) -> Self {
-        let sort = match &request.sort {
-            Sort::Name => "name".to_string(),
-            Sort::TimesWatched => "timeswatched".to_string(),
-            _ => "lastwatched".to_string(),
-        };
-        LibraryDeepLinks {
-            library: format!(
-                "#/library/{}?sort={}&page={}",
-                &request.r#type.as_ref().unwrap_or(&"".to_string()),
-                &sort,
-                &request.page.to_string(),
-            ),
-        }
-    }
-}
-
 impl From<(&String, &LibraryRequest)> for LibraryDeepLinks {
     fn from((root, request): (&String, &LibraryRequest)) -> Self {
         LibraryDeepLinks {
             library: match &request.r#type {
                 Some(r#type) => format!(
-                    "#/{}/{}?{}",
+                    "#/{}/{}?{}&{}",
                     root,
                     utf8_percent_encode(&r#type, URI_COMPONENT_ENCODE_SET),
                     query_params_encode(&[(
@@ -312,10 +294,11 @@ impl From<(&String, &LibraryRequest)> for LibraryDeepLinks {
                             .unwrap()
                             .as_str()
                             .unwrap()
-                    )])
+                    )]),
+                    query_params_encode(&[("page", &request.page.to_string())])
                 ),
                 _ => format!(
-                    "#/{}?{}",
+                    "#/{}?{}&{}",
                     root,
                     query_params_encode(&[(
                         "sort",
@@ -323,7 +306,8 @@ impl From<(&String, &LibraryRequest)> for LibraryDeepLinks {
                             .unwrap()
                             .as_str()
                             .unwrap()
-                    )])
+                    )]),
+                    query_params_encode(&[("page", &request.page.to_string())])
                 ),
             },
         }

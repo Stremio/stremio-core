@@ -79,12 +79,12 @@ pub fn serialize_library<F>(library: &LibraryWithFilters<F>, root: String) -> Js
                 .collect(),
             prev_page: library.selectable.prev_page.as_ref().map(|prev_page| {
                 model::SelectablePage {
-                    deep_links: LibraryDeepLinks::from(&prev_page.request),
+                    deep_links: LibraryDeepLinks::from((&root, &prev_page.request)),
                 }
             }),
             next_page: library.selectable.next_page.as_ref().map(|next_page| {
                 model::SelectablePage {
-                    deep_links: LibraryDeepLinks::from(&next_page.request),
+                    deep_links: LibraryDeepLinks::from((&root, &next_page.request)),
                 }
             }),
         },
