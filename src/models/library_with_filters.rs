@@ -183,7 +183,7 @@ fn selectable_update<F: LibraryFilter>(
                     .as_ref()
                     .map(|selected| selected.request.sort.to_owned())
                     .unwrap_or_default(),
-                page: LibraryRequestPage(NonZeroUsize::new(1).unwrap()),
+                page: LibraryRequestPage::default(),
             },
             selected: selected
                 .as_ref()
@@ -199,7 +199,7 @@ fn selectable_update<F: LibraryFilter>(
                 .as_ref()
                 .map(|selected| selected.request.sort.to_owned())
                 .unwrap_or_default(),
-            page: LibraryRequestPage(NonZeroUsize::new(1).unwrap()),
+            page: LibraryRequestPage::default(),
         },
         selected: selected
             .as_ref()
@@ -216,7 +216,7 @@ fn selectable_update<F: LibraryFilter>(
                     .as_ref()
                     .and_then(|selected| selected.request.r#type.to_owned()),
                 sort: sort.to_owned(),
-                page: LibraryRequestPage(NonZeroUsize::new(1).unwrap()),
+                page: LibraryRequestPage::default(),
             },
             selected: selected
                 .as_ref()
