@@ -285,29 +285,33 @@ impl From<(&String, &LibraryRequest)> for LibraryDeepLinks {
         LibraryDeepLinks {
             library: match &request.r#type {
                 Some(r#type) => format!(
-                    "#/{}/{}?{}&{}",
+                    "#/{}/{}?{}",
                     root,
                     utf8_percent_encode(&r#type, URI_COMPONENT_ENCODE_SET),
-                    query_params_encode(&[(
-                        "sort",
-                        serde_json::to_value(&request.sort)
-                            .unwrap()
-                            .as_str()
-                            .unwrap()
-                    )]),
-                    query_params_encode(&[("page", &request.page.to_string())])
+                    query_params_encode(&[
+                        (
+                            "sort",
+                            serde_json::to_value(&request.sort)
+                                .unwrap()
+                                .as_str()
+                                .unwrap()
+                        ),
+                        ("page", &request.page.to_string())
+                    ]),
                 ),
                 _ => format!(
-                    "#/{}?{}&{}",
+                    "#/{}?{}",
                     root,
-                    query_params_encode(&[(
-                        "sort",
-                        serde_json::to_value(&request.sort)
-                            .unwrap()
-                            .as_str()
-                            .unwrap()
-                    )]),
-                    query_params_encode(&[("page", &request.page.to_string())])
+                    query_params_encode(&[
+                        (
+                            "sort",
+                            serde_json::to_value(&request.sort)
+                                .unwrap()
+                                .as_str()
+                                .unwrap()
+                        ),
+                        ("page", &request.page.to_string())
+                    ]),
                 ),
             },
         }
