@@ -33,9 +33,17 @@ mod model {
         pub deep_links: LibraryDeepLinks,
     }
     #[derive(Serialize)]
+    #[serde(rename_all = "camelCase")]
+    pub struct SelectablePage {
+        pub deep_links: LibraryDeepLinks,
+    }
+    #[derive(Serialize)]
+    #[serde(rename_all = "camelCase")]
     pub struct Selectable<'a> {
         pub types: Vec<SelectableType<'a>>,
         pub sorts: Vec<SelectableSort<'a>>,
+        pub prev_page: Option<SelectablePage>,
+        pub next_page: Option<SelectablePage>,
     }
     #[derive(Serialize)]
     pub struct LibraryWithFilters<'a> {
@@ -69,6 +77,16 @@ pub fn serialize_library<F>(library: &LibraryWithFilters<F>, root: String) -> Js
                     deep_links: LibraryDeepLinks::from((&root, &selectable_sort.request)),
                 })
                 .collect(),
+            prev_page: library.selectable.prev_page.as_ref().map(|prev_page| {
+                model::SelectablePage {
+                    deep_links: LibraryDeepLinks::from((&root, &prev_page.request)),
+                }
+            }),
+            next_page: library.selectable.next_page.as_ref().map(|next_page| {
+                model::SelectablePage {
+                    deep_links: LibraryDeepLinks::from((&root, &next_page.request)),
+                }
+            }),
         },
         catalog: library
             .catalog
