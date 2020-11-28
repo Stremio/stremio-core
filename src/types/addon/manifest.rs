@@ -27,7 +27,7 @@ pub struct Manifest {
     #[serde(default)]
     pub addon_catalogs: Vec<ManifestCatalog>,
     #[serde(default)]
-    pub behavior_hints: serde_json::Map<String, serde_json::Value>,
+    pub behavior_hints:ManifestBehaviorHints,
 }
 
 impl Manifest {
@@ -213,7 +213,7 @@ impl Default for OptionsLimit {
     }
 }
 
-#[derive(Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Default, Clone, PartialEq, Serialize, Deserialize)]
 #[cfg_attr(test, derive(Debug))]
 #[serde(rename_all = "camelCase")]
 pub struct ManifestBehaviorHints {
