@@ -90,15 +90,7 @@ pub fn update_profile<E: Env + 'static>(
         }
         Msg::Action(Action::Ctx(ActionCtx::InstallAddon(addon))) => {
             if !profile.addons.contains(addon) {
-                if addon.manifest.behavior_hints.configuration_required {
-                    Effects::msg(Msg::Event(Event::Error {
-                        error: CtxError::from(OtherError::AddonConfigurationRequired),
-                        source: Box::new(Event::AddonInstalled {
-                            transport_url: addon.transport_url.to_owned(),
-                        }),
-                    }))
-                    .unchanged()
-                } else {
+                if !addon.manifest.behavior_hints.configuration_required {
                     let addon_position = profile
                         .addons
                         .iter()
@@ -122,6 +114,14 @@ pub fn update_profile<E: Env + 'static>(
                     }))
                     .join(push_to_api_effects)
                     .join(Effects::msg(Msg::Internal(Internal::ProfileChanged)))
+                } else {
+                    Effects::msg(Msg::Event(Event::Error {
+                        error: CtxError::from(OtherError::AddonConfigurationRequired),
+                        source: Box::new(Event::AddonInstalled {
+                            transport_url: addon.transport_url.to_owned(),
+                        }),
+                    }))
+                    .unchanged()
                 }
             } else {
                 Effects::msg(Msg::Event(Event::Error {
