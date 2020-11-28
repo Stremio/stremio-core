@@ -217,8 +217,12 @@ impl Default for OptionsLimit {
 #[cfg_attr(test, derive(Debug))]
 #[serde(rename_all = "camelCase")]
 pub struct ManifestBehaviorHints {
+    #[serde(default)]
     pub adult: bool,
+    #[serde(default)]
     pub p2p: bool,
+    #[serde(default)]
     pub configurable: bool,
+    #[serde(default)]
     pub configuration_required: bool,
 }
