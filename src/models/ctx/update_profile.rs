@@ -92,7 +92,7 @@ pub fn update_profile<E: Env + 'static>(
             if !profile.addons.contains(addon) {
                 if addon.manifest.behavior_hints.configuration_required {
                     Effects::msg(Msg::Event(Event::Error {
-                        error: CtxError::from(OtherError::AddonRequiresConfiguration),
+                        error: CtxError::from(OtherError::AddonConfigurationRequired),
                         source: Box::new(Event::AddonInstalled {
                             transport_url: addon.transport_url.to_owned(),
                         }),
