@@ -27,7 +27,7 @@ pub struct Manifest {
     #[serde(default)]
     pub addon_catalogs: Vec<ManifestCatalog>,
     #[serde(default)]
-    pub behavior_hints:ManifestBehaviorHints,
+    pub behavior_hints: ManifestBehaviorHints,
 }
 
 impl Manifest {

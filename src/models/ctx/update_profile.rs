@@ -89,40 +89,39 @@ pub fn update_profile<E: Env + 'static>(
             }
         }
         Msg::Action(Action::Ctx(ActionCtx::InstallAddon(addon))) => {
-            if !profile.addons.contains(addon) { 
-                if addon.manifest.behavior_hints.configuration_required
-                    {
-                        Effects::msg(Msg::Event(Event::Error {
-                            error: CtxError::from(OtherError::AddonRequiresConfiguration),
-                            source: Box::new(Event::AddonInstalled {
-                                transport_url: addon.transport_url.to_owned(),
-                            }),
-                        }))
-                        .unchanged()
-                    }
-                    else {
-                        let addon_position = profile
-                            .addons
-                            .iter()
-                            .map(|addon| &addon.transport_url)
-                            .position(|transport_url| *transport_url == addon.transport_url);
-                        if let Some(addon_position) = addon_position {
-                            profile.addons[addon_position] = addon.to_owned();
-                        } else {
-                            profile.addons.push(addon.to_owned());
-                        };
-                        let push_to_api_effects = match profile.auth_key() {
-                            Some(auth_key) => {
-                                Effects::one(push_addons_to_api::<E>(profile.addons.to_owned(), auth_key))
-                                    .unchanged()
-                            }
-                            _ => Effects::none().unchanged(),
-                        };
-                        Effects::msg(Msg::Event(Event::AddonInstalled {
+            if !profile.addons.contains(addon) {
+                if addon.manifest.behavior_hints.configuration_required {
+                    Effects::msg(Msg::Event(Event::Error {
+                        error: CtxError::from(OtherError::AddonRequiresConfiguration),
+                        source: Box::new(Event::AddonInstalled {
                             transport_url: addon.transport_url.to_owned(),
-                        }))
-                        .join(push_to_api_effects)
-                        .join(Effects::msg(Msg::Internal(Internal::ProfileChanged)))
+                        }),
+                    }))
+                    .unchanged()
+                } else {
+                    let addon_position = profile
+                        .addons
+                        .iter()
+                        .map(|addon| &addon.transport_url)
+                        .position(|transport_url| *transport_url == addon.transport_url);
+                    if let Some(addon_position) = addon_position {
+                        profile.addons[addon_position] = addon.to_owned();
+                    } else {
+                        profile.addons.push(addon.to_owned());
+                    };
+                    let push_to_api_effects = match profile.auth_key() {
+                        Some(auth_key) => Effects::one(push_addons_to_api::<E>(
+                            profile.addons.to_owned(),
+                            auth_key,
+                        ))
+                        .unchanged(),
+                        _ => Effects::none().unchanged(),
+                    };
+                    Effects::msg(Msg::Event(Event::AddonInstalled {
+                        transport_url: addon.transport_url.to_owned(),
+                    }))
+                    .join(push_to_api_effects)
+                    .join(Effects::msg(Msg::Internal(Internal::ProfileChanged)))
                 }
             } else {
                 Effects::msg(Msg::Event(Event::Error {
