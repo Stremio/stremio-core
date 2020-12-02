@@ -1,4 +1,6 @@
-use crate::types::addon::{DescriptorFlags, Manifest, ManifestPreview, ResourcePath};
+use crate::types::addon::{
+    DescriptorFlags, Manifest, ManifestBehaviorHints, ManifestPreview, ResourcePath,
+};
 use crate::types::api::{APIError, AuthRequest, GDPRConsentRequest};
 use crate::types::library::{LibraryItemBehaviorHints, LibraryItemState};
 use crate::types::profile::{Auth, AuthKey, GDPRConsent, Settings, User};
@@ -123,42 +125,64 @@ impl DefaultTokens for ManifestPreview {
 
 impl DefaultTokens for Manifest {
     fn default_tokens() -> Vec<Token> {
+        [
+            vec![
+                Token::Struct {
+                    name: "Manifest",
+                    len: 13,
+                },
+                Token::Str("id"),
+                Token::Str(""),
+                Token::Str("version"),
+                Token::Str("0.0.1"),
+                Token::Str("name"),
+                Token::Str(""),
+                Token::Str("contactEmail"),
+                Token::None,
+                Token::Str("description"),
+                Token::None,
+                Token::Str("logo"),
+                Token::None,
+                Token::Str("background"),
+                Token::None,
+                Token::Str("types"),
+                Token::Seq { len: Some(0) },
+                Token::SeqEnd,
+                Token::Str("resources"),
+                Token::Seq { len: Some(0) },
+                Token::SeqEnd,
+                Token::Str("idPrefixes"),
+                Token::None,
+                Token::Str("catalogs"),
+                Token::Seq { len: Some(0) },
+                Token::SeqEnd,
+                Token::Str("addonCatalogs"),
+                Token::Seq { len: Some(0) },
+                Token::SeqEnd,
+                Token::Str("behaviorHints"),
+            ],
+            ManifestBehaviorHints::default_tokens(),
+            vec![Token::StructEnd],
+        ]
+        .concat()
+    }
+}
+
+impl DefaultTokens for ManifestBehaviorHints {
+    fn default_tokens() -> Vec<Token> {
         vec![
             Token::Struct {
-                name: "Manifest",
-                len: 13,
+                name: "ManifestBehaviorHints",
+                len: 4,
             },
-            Token::Str("id"),
-            Token::Str(""),
-            Token::Str("version"),
-            Token::Str("0.0.1"),
-            Token::Str("name"),
-            Token::Str(""),
-            Token::Str("contactEmail"),
-            Token::None,
-            Token::Str("description"),
-            Token::None,
-            Token::Str("logo"),
-            Token::None,
-            Token::Str("background"),
-            Token::None,
-            Token::Str("types"),
-            Token::Seq { len: Some(0) },
-            Token::SeqEnd,
-            Token::Str("resources"),
-            Token::Seq { len: Some(0) },
-            Token::SeqEnd,
-            Token::Str("idPrefixes"),
-            Token::None,
-            Token::Str("catalogs"),
-            Token::Seq { len: Some(0) },
-            Token::SeqEnd,
-            Token::Str("addonCatalogs"),
-            Token::Seq { len: Some(0) },
-            Token::SeqEnd,
-            Token::Str("behaviorHints"),
-            Token::Map { len: Some(0) },
-            Token::MapEnd,
+            Token::Str("adult"),
+            Token::Bool(false),
+            Token::Str("p2p"),
+            Token::Bool(false),
+            Token::Str("configurable"),
+            Token::Bool(false),
+            Token::Str("configurationRequired"),
+            Token::Bool(false),
             Token::StructEnd,
         ]
     }

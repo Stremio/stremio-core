@@ -24,6 +24,7 @@ mod library_item_modified;
 mod library_item_state;
 mod link;
 mod manifest;
+mod manifest_behavior_hints;
 mod manifest_catalog;
 mod manifest_extra;
 mod manifest_preview;
