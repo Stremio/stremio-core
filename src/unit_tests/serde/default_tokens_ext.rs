@@ -3,7 +3,8 @@ use crate::types::api::{APIError, AuthRequest, GDPRConsentRequest};
 use crate::types::library::{LibraryItemBehaviorHints, LibraryItemState};
 use crate::types::profile::{Auth, AuthKey, GDPRConsent, Settings, User};
 use crate::types::resource::{
-    MetaItem, MetaItemBehaviorHints, PosterShape, SeriesInfo, StreamSource,
+    MetaItem, MetaItemBehaviorHints, PosterShape, SeriesInfo, StreamBehaviorHints, StreamSource,
+    Subtitles,
 };
 use crate::types::True;
 use serde_test::Token;
@@ -45,6 +46,36 @@ impl DefaultTokens for LibraryItemState {
             Token::None,
             Token::Str("noNotif"),
             Token::Bool(false),
+            Token::StructEnd,
+        ]
+    }
+}
+
+impl DefaultTokens for Subtitles {
+    fn default_tokens() -> Vec<Token> {
+        vec![
+            Token::Struct {
+                name: "Subtitles",
+                len: 3,
+            },
+            Token::Str("id"),
+            Token::Str(""),
+            Token::Str("lang"),
+            Token::Str(""),
+            Token::Str("url"),
+            Token::Str("protocol://host"),
+            Token::StructEnd,
+        ]
+    }
+}
+
+impl DefaultTokens for StreamBehaviorHints {
+    fn default_tokens() -> Vec<Token> {
+        vec![
+            Token::Struct {
+                name: "StreamBehaviorHints",
+                len: 0,
+            },
             Token::StructEnd,
         ]
     }
