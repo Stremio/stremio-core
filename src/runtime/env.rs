@@ -130,6 +130,7 @@ pub trait Env {
             })
             .boxed_local()
     }
+    fn analytics_context() -> serde_json::Value;
 }
 
 fn migrate_storage_schema_to_v1<E: Env>() -> EnvFuture<()> {
