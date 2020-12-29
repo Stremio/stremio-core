@@ -1,7 +1,7 @@
 use crate::constants::{LIBRARY_RECENT_STORAGE_KEY, LIBRARY_STORAGE_KEY};
 use crate::models::ctx::Ctx;
 use crate::runtime::msg::{Action, ActionCtx};
-use crate::runtime::{Effects, Env, EnvFuture, Runtime};
+use crate::runtime::{Effects, Env, EnvFuture, Runtime, RuntimeAction};
 use crate::types::api::{APIResult, SuccessResponse};
 use crate::types::library::{LibraryBucket, LibraryItem};
 use crate::types::profile::{Auth, AuthKey, GDPRConsent, Profile, User};
@@ -100,9 +100,10 @@ fn actionctx_removefromlibrary() {
         1000,
     );
     TestEnv::run(|| {
-        runtime.dispatch(Action::Ctx(ActionCtx::RemoveFromLibrary(
-            library_item.id.to_owned(),
-        )))
+        runtime.dispatch(RuntimeAction {
+            field: None,
+            action: Action::Ctx(ActionCtx::RemoveFromLibrary(library_item.id.to_owned())),
+        })
     });
     assert_eq!(
         runtime
@@ -181,7 +182,12 @@ fn actionctx_removefromlibrary_not_added() {
         Effects::none().unchanged(),
         1000,
     );
-    TestEnv::run(|| runtime.dispatch(Action::Ctx(ActionCtx::RemoveFromLibrary("id2".to_owned()))));
+    TestEnv::run(|| {
+        runtime.dispatch(RuntimeAction {
+            field: None,
+            action: Action::Ctx(ActionCtx::RemoveFromLibrary("id2".to_owned())),
+        })
+    });
     assert_eq!(
         runtime
             .model()

@@ -15,6 +15,11 @@ pub enum RuntimeEvent {
     Event(Event),
 }
 
+pub struct RuntimeAction<M: Model> {
+    pub field: Option<M::Field>,
+    pub action: Action,
+}
+
 #[derive(Derivative)]
 #[derivative(Clone(bound = ""))]
 pub struct Runtime<E: Env, M: Model> {
@@ -42,20 +47,17 @@ where
     pub fn model(&self) -> LockResult<RwLockReadGuard<M>> {
         self.model.read()
     }
-    pub fn dispatch(&self, action: Action) {
-        let effects = self
-            .model
-            .write()
-            .expect("model write failed")
-            .update(&Msg::Action(action));
-        self.handle_effects(effects);
-    }
-    pub fn dispatch_to_field(&self, action: Action, field: &M::Field) {
-        let effects = self
-            .model
-            .write()
-            .expect("model write failed")
-            .update_field(&Msg::Action(action), &field);
+    pub fn dispatch(&self, action: RuntimeAction<M>) {
+        let effects = {
+            let mut model = self.model.write().expect("model write failed");
+            match action {
+                RuntimeAction {
+                    field: Some(field),
+                    action,
+                } => model.update_field(&Msg::Action(action), &field),
+                RuntimeAction { action, .. } => model.update(&Msg::Action(action)),
+            }
+        };
         self.handle_effects(effects);
     }
     fn emit(&self, event: RuntimeEvent) {

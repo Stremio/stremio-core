@@ -1,7 +1,7 @@
 use crate::constants::{LIBRARY_RECENT_STORAGE_KEY, LIBRARY_STORAGE_KEY, PROFILE_STORAGE_KEY};
 use crate::models::ctx::Ctx;
 use crate::runtime::msg::{Action, ActionCtx};
-use crate::runtime::{Effects, Env, EnvFuture, Runtime};
+use crate::runtime::{Effects, Env, EnvFuture, Runtime, RuntimeAction};
 use crate::types::api::{
     APIResult, AuthRequest, AuthResponse, CollectionResponse, GDPRConsentRequest,
 };
@@ -79,10 +79,13 @@ fn actionctx_authenticate_login() {
     let (runtime, _rx) =
         Runtime::<TestEnv, _>::new(TestModel::default(), Effects::none().unchanged(), 1000);
     TestEnv::run(|| {
-        runtime.dispatch(Action::Ctx(ActionCtx::Authenticate(AuthRequest::Login {
-            email: "user_email".into(),
-            password: "user_password".into(),
-        })))
+        runtime.dispatch(RuntimeAction {
+            field: None,
+            action: Action::Ctx(ActionCtx::Authenticate(AuthRequest::Login {
+                email: "user_email".into(),
+                password: "user_password".into(),
+            })),
+        })
     });
     assert_eq!(
         runtime.model().unwrap().ctx.profile,
@@ -265,8 +268,9 @@ fn actionctx_authenticate_register() {
     let (runtime, _rx) =
         Runtime::<TestEnv, _>::new(TestModel::default(), Effects::none().unchanged(), 1000);
     TestEnv::run(|| {
-        runtime.dispatch(Action::Ctx(ActionCtx::Authenticate(
-            AuthRequest::Register {
+        runtime.dispatch(RuntimeAction {
+            field: None,
+            action: Action::Ctx(ActionCtx::Authenticate(AuthRequest::Register {
                 email: "user_email".into(),
                 password: "user_password".into(),
                 gdpr_consent: GDPRConsentRequest {
@@ -278,8 +282,8 @@ fn actionctx_authenticate_register() {
                     from: "tests".to_owned(),
                     time: Utc.ymd(2020, 1, 1).and_hms_milli(0, 0, 0, 0),
                 },
-            },
-        )))
+            })),
+        })
     });
     assert_eq!(
         runtime.model().unwrap().ctx.profile,

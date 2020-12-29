@@ -1,6 +1,6 @@
 use crate::models::ctx::Ctx;
 use crate::runtime::msg::{Action, ActionCtx};
-use crate::runtime::{Effects, Env, EnvFuture, Runtime};
+use crate::runtime::{Effects, Env, EnvFuture, Runtime, RuntimeAction};
 use crate::types::addon::{Descriptor, Manifest};
 use crate::types::api::{APIResult, SuccessResponse};
 use crate::types::profile::{Auth, AuthKey, GDPRConsent, Profile, User};
@@ -50,7 +50,12 @@ fn actionctx_pushaddonstoapi() {
         Effects::none().unchanged(),
         1000,
     );
-    TestEnv::run(|| runtime.dispatch(Action::Ctx(ActionCtx::PushAddonsToAPI)));
+    TestEnv::run(|| {
+        runtime.dispatch(RuntimeAction {
+            field: None,
+            action: Action::Ctx(ActionCtx::PushAddonsToAPI),
+        })
+    });
     assert!(
         REQUESTS.read().unwrap().is_empty(),
         "No requests have been sent"
@@ -127,7 +132,12 @@ fn actionctx_pushaddonstoapi_with_user() {
         Effects::none().unchanged(),
         1000,
     );
-    TestEnv::run(|| runtime.dispatch(Action::Ctx(ActionCtx::PushAddonsToAPI)));
+    TestEnv::run(|| {
+        runtime.dispatch(RuntimeAction {
+            field: None,
+            action: Action::Ctx(ActionCtx::PushAddonsToAPI),
+        })
+    });
     assert_eq!(
         REQUESTS.read().unwrap().len(),
         1,

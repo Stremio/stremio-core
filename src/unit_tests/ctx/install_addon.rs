@@ -1,7 +1,7 @@
 use crate::constants::PROFILE_STORAGE_KEY;
 use crate::models::ctx::Ctx;
 use crate::runtime::msg::{Action, ActionCtx};
-use crate::runtime::{Effects, Env, EnvFuture, Runtime};
+use crate::runtime::{Effects, Env, EnvFuture, Runtime, RuntimeAction};
 use crate::types::addon::{Descriptor, Manifest};
 use crate::types::api::{APIResult, SuccessResponse};
 use crate::types::profile::{Auth, AuthKey, GDPRConsent, Profile, User};
@@ -54,7 +54,12 @@ fn actionctx_installaddon_install() {
         Effects::none().unchanged(),
         1000,
     );
-    TestEnv::run(|| runtime.dispatch(Action::Ctx(ActionCtx::InstallAddon(addon.to_owned()))));
+    TestEnv::run(|| {
+        runtime.dispatch(RuntimeAction {
+            field: None,
+            action: Action::Ctx(ActionCtx::InstallAddon(addon.to_owned())),
+        })
+    });
     assert_eq!(
         runtime.model().unwrap().ctx.profile.addons,
         vec![addon.to_owned()],
@@ -147,7 +152,12 @@ fn actionctx_installaddon_install_with_user() {
         Effects::none().unchanged(),
         1000,
     );
-    TestEnv::run(|| runtime.dispatch(Action::Ctx(ActionCtx::InstallAddon(addon.to_owned()))));
+    TestEnv::run(|| {
+        runtime.dispatch(RuntimeAction {
+            field: None,
+            action: Action::Ctx(ActionCtx::InstallAddon(addon.to_owned())),
+        })
+    });
     assert_eq!(
         runtime.model().unwrap().ctx.profile.addons,
         vec![addon.to_owned()],
@@ -260,7 +270,12 @@ fn actionctx_installaddon_update() {
         Effects::none().unchanged(),
         1000,
     );
-    TestEnv::run(|| runtime.dispatch(Action::Ctx(ActionCtx::InstallAddon(addon.to_owned()))));
+    TestEnv::run(|| {
+        runtime.dispatch(RuntimeAction {
+            field: None,
+            action: Action::Ctx(ActionCtx::InstallAddon(addon.to_owned())),
+        })
+    });
     assert_eq!(
         runtime.model().unwrap().ctx.profile.addons,
         vec![addon.to_owned(), addon2.to_owned()],
@@ -327,7 +342,12 @@ fn actionctx_installaddon_already_installed() {
         Effects::none().unchanged(),
         1000,
     );
-    TestEnv::run(|| runtime.dispatch(Action::Ctx(ActionCtx::InstallAddon(addon.to_owned()))));
+    TestEnv::run(|| {
+        runtime.dispatch(RuntimeAction {
+            field: None,
+            action: Action::Ctx(ActionCtx::InstallAddon(addon.to_owned())),
+        })
+    });
     assert_eq!(
         runtime.model().unwrap().ctx.profile.addons,
         vec![addon.to_owned()],

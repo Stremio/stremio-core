@@ -1,7 +1,7 @@
 use crate::constants::PROFILE_STORAGE_KEY;
 use crate::models::ctx::Ctx;
 use crate::runtime::msg::{Action, ActionCtx};
-use crate::runtime::{Effects, Env, EnvFuture, Runtime};
+use crate::runtime::{Effects, Env, EnvFuture, Runtime, RuntimeAction};
 use crate::types::addon::{Descriptor, DescriptorFlags, Manifest};
 use crate::types::api::{APIResult, SuccessResponse};
 use crate::types::profile::{Auth, AuthKey, GDPRConsent, Profile, User};
@@ -59,9 +59,12 @@ fn actionctx_uninstalladdon() {
         1000,
     );
     TestEnv::run(|| {
-        runtime.dispatch(Action::Ctx(ActionCtx::UninstallAddon(
-            Url::parse("https://transport_url").unwrap(),
-        )))
+        runtime.dispatch(RuntimeAction {
+            field: None,
+            action: Action::Ctx(ActionCtx::UninstallAddon(
+                Url::parse("https://transport_url").unwrap(),
+            )),
+        })
     });
     assert!(
         runtime.model().unwrap().ctx.profile.addons.is_empty(),
@@ -162,9 +165,12 @@ fn actionctx_uninstalladdon_with_user() {
         1000,
     );
     TestEnv::run(|| {
-        runtime.dispatch(Action::Ctx(ActionCtx::UninstallAddon(
-            Url::parse("https://transport_url").unwrap(),
-        )))
+        runtime.dispatch(RuntimeAction {
+            field: None,
+            action: Action::Ctx(ActionCtx::UninstallAddon(
+                Url::parse("https://transport_url").unwrap(),
+            )),
+        })
     });
     assert!(
         runtime.model().unwrap().ctx.profile.addons.is_empty(),
@@ -249,9 +255,12 @@ fn actionctx_uninstalladdon_protected() {
         1000,
     );
     TestEnv::run(|| {
-        runtime.dispatch(Action::Ctx(ActionCtx::UninstallAddon(
-            Url::parse("https://transport_url").unwrap(),
-        )))
+        runtime.dispatch(RuntimeAction {
+            field: None,
+            action: Action::Ctx(ActionCtx::UninstallAddon(
+                Url::parse("https://transport_url").unwrap(),
+            )),
+        })
     });
     assert_eq!(
         runtime.model().unwrap().ctx.profile.addons,
@@ -319,9 +328,12 @@ fn actionctx_uninstalladdon_not_installed() {
         1000,
     );
     TestEnv::run(|| {
-        runtime.dispatch(Action::Ctx(ActionCtx::UninstallAddon(
-            Url::parse("https://transport_url2").unwrap(),
-        )))
+        runtime.dispatch(RuntimeAction {
+            field: None,
+            action: Action::Ctx(ActionCtx::UninstallAddon(
+                Url::parse("https://transport_url2").unwrap(),
+            )),
+        })
     });
     assert_eq!(
         runtime.model().unwrap().ctx.profile.addons,
