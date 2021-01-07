@@ -104,9 +104,6 @@ impl Env for TestEnv {
     fn log(message: String) {
         println!("{}", message)
     }
-    fn analytics_context() -> serde_json::Value {
-        serde_json::Value::Null
-    }
 }
 
 pub fn default_fetch_handler(request: Request) -> EnvFuture<Box<dyn Any>> {
