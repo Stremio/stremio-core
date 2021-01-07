@@ -40,5 +40,6 @@ features = [
 	'RequestInit',
 	'Response',
 	'Storage',
+	'Location',
 	'console'
 ]
