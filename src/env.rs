@@ -84,9 +84,6 @@ impl Env for WebEnv {
         let (secs, millis) = (millis / 1000, millis % 1000);
         Utc.timestamp(secs, millis as u32 * 1_000_000)
     }
-    fn analytics_context() -> serde_json::Value {
-        serde_json::Value::Null
-    }
     #[cfg(debug_assertions)]
     fn log(message: String) {
         web_sys::console::log_1(&JsValue::from(message));
