@@ -77,13 +77,13 @@ pub async fn initialize_runtime(emit: js_sys::Function) -> Result<(), JsValue> {
 #[wasm_bindgen]
 pub fn get_state(field: &JsValue) -> JsValue {
     match &*RUNTIME.read().expect("runtime read failed") {
-        Some(Loadable::Ready(runtime)) => {
-            let model = runtime.model().expect("model read failed");
-            match field.into_serde() {
-                Ok(field) => model.get_state(&field),
-                Err(_) => JsValue::NULL,
-            }
-        }
+        Some(Loadable::Ready(runtime)) => match field.into_serde() {
+            Ok(field) => runtime
+                .model()
+                .expect("model read failed")
+                .get_state(&field),
+            Err(error) => panic!("Failed to get state: {}", error.to_string()),
+        },
         _ => panic!("runtime is not ready"),
     }
 }
@@ -91,14 +91,14 @@ pub fn get_state(field: &JsValue) -> JsValue {
 #[wasm_bindgen]
 pub fn dispatch(action: &JsValue, field: &JsValue) {
     match &*RUNTIME.read().expect("runtime read failed") {
-        Some(Loadable::Ready(runtime)) => {
-            if let Ok(action) = action.into_serde() {
-                runtime.dispatch(RuntimeAction {
-                    action,
-                    field: field.into_serde().unwrap_or_default(),
-                });
-            };
-        }
+        Some(Loadable::Ready(runtime)) => match (action.into_serde(), field.into_serde()) {
+            (Ok(action), Ok(field)) => {
+                runtime.dispatch(RuntimeAction { action, field });
+            }
+            (Err(error), _) | (_, Err(error)) => {
+                panic!("Failed to dispatch action: {}", error.to_string());
+            }
+        },
         _ => panic!("runtime is not ready"),
     }
 }
