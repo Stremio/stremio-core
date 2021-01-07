@@ -12,8 +12,8 @@ lto = true
 opt-level = 's'
 
 [dependencies]
-stremio-core = { git = "https://github.com/Stremio/stremio-core", branch = "analytics_poc" }
-stremio-derive = { git = "https://github.com/Stremio/stremio-core", branch = "analytics_poc" }
+stremio-core = { git = "https://github.com/Stremio/stremio-core", branch = "development" }
+stremio-derive = { git = "https://github.com/Stremio/stremio-core", branch = "development" }
 serde = "1.0"
 serde_json = "1.0"
 url = { version = "2.2", features = ["serde"] }
