@@ -1,5 +1,8 @@
 #![allow(clippy::module_inception)]
 
-mod env;
+mod analytics;
 mod model;
+
+mod env;
 mod stremio_core_web;
+mod ui_event;

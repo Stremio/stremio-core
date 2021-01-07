@@ -1,21 +1,35 @@
+use crate::analytics::{Analytics, StremioEvent};
 use crate::env::WebEnv;
 use crate::model::WebModel;
 use futures::{future, StreamExt};
 use lazy_static::lazy_static;
-use std::sync::RwLock;
+use std::sync::{Mutex, RwLock};
 use stremio_core::constants::{
     LIBRARY_RECENT_STORAGE_KEY, LIBRARY_STORAGE_KEY, PROFILE_STORAGE_KEY,
 };
 use stremio_core::models::common::Loadable;
-use stremio_core::runtime::{Env, EnvError, Runtime, RuntimeAction};
+use stremio_core::runtime::{Env, EnvError, Runtime, RuntimeAction, RuntimeEvent};
 use stremio_core::types::library::LibraryBucket;
 use stremio_core::types::profile::Profile;
 use wasm_bindgen::prelude::wasm_bindgen;
 use wasm_bindgen::JsValue;
 
 lazy_static! {
+    static ref VISIT_ID: String = "visit_id".to_owned();
+    static ref ANALYTICS: Mutex<Analytics> = Mutex::new(Analytics::new(VISIT_ID.to_owned()));
     static ref RUNTIME: RwLock<Option<Loadable<Runtime<WebEnv, WebModel>, EnvError>>> =
         Default::default();
+}
+
+pub fn emit_to_analytics(event: StremioEvent) {
+    match &*RUNTIME.read().expect("runtime read failed") {
+        Some(Loadable::Ready(runtime)) => {
+            let mut analytics = ANALYTICS.lock().expect("analytics lock failed");
+            let model = runtime.model().expect("model read failed");
+            analytics.emit(event, &model.ctx);
+        }
+        _ => panic!("runtime is not ready"),
+    };
 }
 
 #[wasm_bindgen(start)]
@@ -24,7 +38,7 @@ pub fn start() {
 }
 
 #[wasm_bindgen]
-pub async fn initialize_runtime(emit: js_sys::Function) -> Result<(), JsValue> {
+pub async fn initialize_runtime(emit_to_js: js_sys::Function) -> Result<(), JsValue> {
     if RUNTIME.read().expect("runtime read failed").is_some() {
         panic!("unable to initialize runtime multiple times");
     };
@@ -51,9 +65,13 @@ pub async fn initialize_runtime(emit: js_sys::Function) -> Result<(), JsValue> {
                     };
                     let (model, effects) = WebModel::new(profile, library);
                     let (runtime, rx) = Runtime::<WebEnv, _>::new(model, effects, 1000);
-                    WebEnv::exec(rx.for_each(move |msg| {
-                        emit.call1(&JsValue::NULL, &JsValue::from_serde(&msg).unwrap())
+                    WebEnv::exec(rx.for_each(move |event| {
+                        emit_to_js
+                            .call1(&JsValue::NULL, &JsValue::from_serde(&event).unwrap())
                             .expect("emit event failed");
+                        if let RuntimeEvent::Event(event) = event {
+                            emit_to_analytics(StremioEvent::CoreEvent(event));
+                        };
                         future::ready(())
                     }));
                     *RUNTIME.write().expect("runtime write failed") =
@@ -75,30 +93,38 @@ pub async fn initialize_runtime(emit: js_sys::Function) -> Result<(), JsValue> {
 }
 
 #[wasm_bindgen]
-pub fn get_state(field: &JsValue) -> JsValue {
-    match &*RUNTIME.read().expect("runtime read failed") {
-        Some(Loadable::Ready(runtime)) => match field.into_serde() {
-            Ok(field) => runtime
+pub fn get_state(field: JsValue) -> JsValue {
+    match field.into_serde() {
+        Ok(field) => match &*RUNTIME.read().expect("runtime read failed") {
+            Some(Loadable::Ready(runtime)) => runtime
                 .model()
                 .expect("model read failed")
                 .get_state(&field),
-            Err(error) => panic!("Failed to get state: {}", error.to_string()),
+            _ => panic!("runtime is not ready"),
         },
-        _ => panic!("runtime is not ready"),
+        Err(error) => panic!("get state failed: {}", error.to_string()),
     }
 }
 
 #[wasm_bindgen]
-pub fn dispatch(action: &JsValue, field: &JsValue) {
-    match &*RUNTIME.read().expect("runtime read failed") {
-        Some(Loadable::Ready(runtime)) => match (action.into_serde(), field.into_serde()) {
-            (Ok(action), Ok(field)) => {
-                runtime.dispatch(RuntimeAction { action, field });
-            }
-            (Err(error), _) | (_, Err(error)) => {
-                panic!("Failed to dispatch action: {}", error.to_string());
-            }
-        },
-        _ => panic!("runtime is not ready"),
+pub fn dispatch(action: JsValue, field: JsValue) {
+    match (action.into_serde(), field.into_serde()) {
+        (Ok(action), Ok(field)) => {
+            match &*RUNTIME.read().expect("runtime read failed") {
+                Some(Loadable::Ready(runtime)) => runtime.dispatch(RuntimeAction { action, field }),
+                _ => panic!("runtime is not ready"),
+            };
+        }
+        (Err(error), _) | (_, Err(error)) => {
+            panic!("dispatch failed: {}", error.to_string());
+        }
+    };
+}
+
+#[wasm_bindgen]
+pub fn emit(event: JsValue) {
+    match event.into_serde() {
+        Ok(event) => emit_to_analytics(StremioEvent::UIEvent(event)),
+        Err(error) => panic!("emit failed: {}", error.to_string()),
     }
 }
