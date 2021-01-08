@@ -31,6 +31,11 @@ pub enum APIRequest {
         auth_key: AuthKey,
         addons: Vec<Descriptor>,
     },
+    #[serde(rename_all = "camelCase")]
+    Events {
+        auth_key: AuthKey,
+        events: Vec<serde_json::Value>,
+    },
 }
 
 impl APIMethodName for APIRequest {
@@ -41,6 +46,7 @@ impl APIMethodName for APIRequest {
             APIRequest::Logout { .. } => "logout",
             APIRequest::AddonCollectionGet { .. } => "addonCollectionGet",
             APIRequest::AddonCollectionSet { .. } => "addonCollectionSet",
+            APIRequest::Events { .. } => "events",
         }
     }
 }
