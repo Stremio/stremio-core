@@ -1,10 +1,12 @@
 use crate::constants::{
     LIBRARY_COLLECTION_NAME, LIBRARY_RECENT_COUNT, LIBRARY_RECENT_STORAGE_KEY, LIBRARY_STORAGE_KEY,
 };
-use crate::models::ctx::{fetch_api, CtxError, CtxStatus, OtherError};
+use crate::models::ctx::{CtxError, CtxStatus, OtherError};
 use crate::runtime::msg::{Action, ActionCtx, Event, Internal, Msg};
 use crate::runtime::{Effect, Effects, Env};
-use crate::types::api::{DatastoreCommand, DatastoreRequest, LibraryItemModified, SuccessResponse};
+use crate::types::api::{
+    fetch_api, APIResult, DatastoreCommand, DatastoreRequest, LibraryItemModified, SuccessResponse,
+};
 use crate::types::library::{
     LibraryBucket, LibraryBucketRef, LibraryItem, LibraryItemBehaviorHints, LibraryItemState,
 };
@@ -293,6 +295,11 @@ fn push_items_to_api<E: Env + 'static>(items: Vec<LibraryItem>, auth_key: &AuthK
         collection: LIBRARY_COLLECTION_NAME.to_owned(),
         command: DatastoreCommand::Put { changes: items },
     })
+    .map_err(CtxError::from)
+    .and_then(|result| match result {
+        APIResult::Ok { result } => future::ok(result),
+        APIResult::Err { error } => future::err(CtxError::from(error)),
+    })
     .map(move |result| match result {
         Ok(_) => Msg::Event(Event::LibraryItemsPushedToAPI { ids }),
         Err(error) => Msg::Event(Event::Error {
@@ -311,6 +318,11 @@ fn pull_items_from_api<E: Env + 'static>(ids: Vec<String>, auth_key: &AuthKey) -
         command: DatastoreCommand::Get { ids, all: false },
     };
     fetch_api::<E, _, _>(&request)
+        .map_err(CtxError::from)
+        .and_then(|result| match result {
+            APIResult::Ok { result } => future::ok(result),
+            APIResult::Err { error } => future::err(CtxError::from(error)),
+        })
         .map(move |result| Msg::Internal(Internal::LibraryPullResult(request, result)))
         .boxed_local()
         .into()
@@ -329,6 +341,11 @@ fn plan_sync_with_api<E: Env + 'static>(library: &LibraryBucket, auth_key: &Auth
         command: DatastoreCommand::Meta {},
     };
     fetch_api::<E, _, Vec<LibraryItemModified>>(&request)
+        .map_err(CtxError::from)
+        .and_then(|result| match result {
+            APIResult::Ok { result } => future::ok(result),
+            APIResult::Err { error } => future::err(CtxError::from(error)),
+        })
         .map_ok(|remote_mtimes| {
             remote_mtimes
                 .into_iter()

@@ -1,10 +1,10 @@
 use crate::constants::LIBRARY_COLLECTION_NAME;
-use crate::models::ctx::{fetch_api, update_library, update_profile};
+use crate::models::ctx::{update_library, update_profile, CtxError};
 use crate::runtime::msg::{Action, ActionCtx, Event, Internal, Msg};
 use crate::runtime::{Effect, Effects, Env, Update};
 use crate::types::api::{
-    APIRequest, AuthRequest, AuthResponse, CollectionResponse, DatastoreCommand, DatastoreRequest,
-    SuccessResponse,
+    fetch_api, APIRequest, APIResult, AuthRequest, AuthResponse, CollectionResponse,
+    DatastoreCommand, DatastoreRequest, SuccessResponse,
 };
 use crate::types::library::LibraryBucket;
 use crate::types::profile::{Auth, AuthKey, Profile};
@@ -120,12 +120,22 @@ impl<E: Env + 'static> Update for Ctx<E> {
 
 fn authenticate<E: Env + 'static>(auth_request: &AuthRequest) -> Effect {
     fetch_api::<E, _, _>(&APIRequest::Auth(auth_request.to_owned()))
+        .map_err(CtxError::from)
+        .and_then(|result| match result {
+            APIResult::Ok { result } => future::ok(result),
+            APIResult::Err { error } => future::err(CtxError::from(error)),
+        })
         .map_ok(|AuthResponse { key, user }| Auth { key, user })
         .and_then(|auth| {
             future::try_join(
                 fetch_api::<E, _, _>(&APIRequest::AddonCollectionGet {
                     auth_key: auth.key.to_owned(),
                     update: true,
+                })
+                .map_err(CtxError::from)
+                .and_then(|result| match result {
+                    APIResult::Ok { result } => future::ok(result),
+                    APIResult::Err { error } => future::err(CtxError::from(error)),
                 })
                 .map_ok(|CollectionResponse { addons, .. }| addons),
                 fetch_api::<E, _, _>(&DatastoreRequest {
@@ -135,6 +145,11 @@ fn authenticate<E: Env + 'static>(auth_request: &AuthRequest) -> Effect {
                         ids: vec![],
                         all: true,
                     },
+                })
+                .map_err(CtxError::from)
+                .and_then(|result| match result {
+                    APIResult::Ok { result } => future::ok(result),
+                    APIResult::Err { error } => future::err(CtxError::from(error)),
                 }),
             )
             .map_ok(move |(addons, library_items)| (auth, addons, library_items))
@@ -149,6 +164,11 @@ fn authenticate<E: Env + 'static>(auth_request: &AuthRequest) -> Effect {
 fn delete_session<E: Env + 'static>(auth_key: &AuthKey) -> Effect {
     fetch_api::<E, _, SuccessResponse>(&APIRequest::Logout {
         auth_key: auth_key.to_owned(),
+    })
+    .map_err(CtxError::from)
+    .and_then(|result| match result {
+        APIResult::Ok { result } => future::ok(result),
+        APIResult::Err { error } => future::err(CtxError::from(error)),
     })
     .map(enclose!((auth_key) move |result| match result {
         Ok(_) => Msg::Event(Event::SessionDeleted { auth_key }),

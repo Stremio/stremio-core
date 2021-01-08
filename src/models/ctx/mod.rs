@@ -1,6 +1,3 @@
-mod fetch_api;
-use fetch_api::*;
-
 mod update_library;
 use update_library::*;
 
