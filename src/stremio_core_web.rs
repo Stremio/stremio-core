@@ -24,7 +24,7 @@ lazy_static! {
 pub fn emit_to_analytics(event: StremioEvent) {
     match &*RUNTIME.read().expect("runtime read failed") {
         Some(Loadable::Ready(runtime)) => {
-            let mut analytics = ANALYTICS.lock().expect("analytics lock failed");
+            let analytics = ANALYTICS.lock().expect("analytics lock failed");
             let model = runtime.model().expect("model read failed");
             analytics.emit(event, &model.ctx);
         }
