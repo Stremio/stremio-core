@@ -1,5 +1,5 @@
 use crate::env::WebEnv;
-use crate::ui_event::UIEvent;
+use crate::event::WebEvent;
 use serde::Serialize;
 use std::sync::{Arc, RwLock};
 use stremio_core::models::ctx::Ctx;
@@ -7,11 +7,6 @@ use stremio_core::runtime::msg::Event;
 #[cfg(debug_assertions)]
 use stremio_core::runtime::Env;
 use stremio_core::types::profile::AuthKey;
-
-pub enum StremioEvent {
-    CoreEvent(Event),
-    UIEvent(UIEvent),
-}
 
 #[derive(Clone, Serialize)]
 pub struct AnalyticsContext {
@@ -45,13 +40,13 @@ impl Analytics {
             })),
         }
     }
-    pub fn emit(&self, event: StremioEvent, ctx: &Ctx<WebEnv>) {
-        let state = self.state.read().expect("analytics state read failed");
-        if state.auth_key.as_ref() != ctx.profile.auth_key() {
+    pub fn emit(&self, event: WebEvent, ctx: &Ctx<WebEnv>) {
+        let auth_key = ctx.profile.auth_key();
+        if self.auth_changed(auth_key) {
             self.flush();
         };
         let mut state = self.state.write().expect("analytics state write failed");
-        state.auth_key = ctx.profile.auth_key().cloned();
+        state.auth_key = auth_key.cloned();
         let context = AnalyticsContext {
             url: web_sys::window()
                 .expect("window is not available")
@@ -60,13 +55,17 @@ impl Analytics {
                 .expect("href is not available"),
         };
         let event = match event {
-            StremioEvent::CoreEvent(Event::UserAuthenticated { .. }) => AnalyticsEvent {
+            WebEvent::CoreEvent(Event::UserAuthenticated { .. }) => AnalyticsEvent {
                 name: "login".to_owned(),
                 context,
             },
             _ => return,
         };
         state.events.push(event);
+    }
+    fn auth_changed(&self, auth_key: Option<&AuthKey>) -> bool {
+        let state = self.state.read().expect("analytics state read failed");
+        state.auth_key.as_ref() != auth_key
     }
     fn flush(&self) {
         let mut state = self.state.write().expect("analytics state write failed");

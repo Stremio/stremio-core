@@ -1,5 +1,6 @@
-use crate::analytics::{Analytics, StremioEvent};
+use crate::analytics::Analytics;
 use crate::env::WebEnv;
+use crate::event::WebEvent;
 use crate::model::WebModel;
 use futures::{future, StreamExt};
 use lazy_static::lazy_static;
@@ -21,7 +22,7 @@ lazy_static! {
         Default::default();
 }
 
-pub fn emit_to_analytics(event: StremioEvent) {
+pub fn emit_to_analytics(event: WebEvent) {
     match &*RUNTIME.read().expect("runtime read failed") {
         Some(Loadable::Ready(runtime)) => {
             let analytics = ANALYTICS.lock().expect("analytics lock failed");
@@ -70,7 +71,7 @@ pub async fn initialize_runtime(emit_to_js: js_sys::Function) -> Result<(), JsVa
                             .call1(&JsValue::NULL, &JsValue::from_serde(&event).unwrap())
                             .expect("emit event failed");
                         if let RuntimeEvent::Event(event) = event {
-                            emit_to_analytics(StremioEvent::CoreEvent(event));
+                            emit_to_analytics(WebEvent::CoreEvent(event));
                         };
                         future::ready(())
                     }));
@@ -124,7 +125,7 @@ pub fn dispatch(action: JsValue, field: JsValue) {
 #[wasm_bindgen]
 pub fn emit(event: JsValue) {
     match event.into_serde() {
-        Ok(event) => emit_to_analytics(StremioEvent::UIEvent(event)),
+        Ok(event) => emit_to_analytics(WebEvent::UIEvent(event)),
         Err(error) => panic!("emit failed: {}", error.to_string()),
     }
 }
