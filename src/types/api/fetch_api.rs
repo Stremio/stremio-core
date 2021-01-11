@@ -1,13 +1,10 @@
 use crate::constants::API_URL;
-use crate::runtime::{Env, EnvError};
+use crate::runtime::{Env, EnvFuture};
 use crate::types::api::{APIMethodName, APIResult};
-use futures::Future;
 use http::Request;
 use serde::{Deserialize, Serialize};
 
-pub fn fetch_api<E, REQ, RESP>(
-    api_request: &REQ,
-) -> impl Future<Output = Result<APIResult<RESP>, EnvError>>
+pub fn fetch_api<E, REQ, RESP>(api_request: &REQ) -> EnvFuture<APIResult<RESP>>
 where
     E: Env,
     REQ: APIMethodName + Clone + Serialize,
