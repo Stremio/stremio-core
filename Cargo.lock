@@ -598,6 +598,7 @@ dependencies = [
  "chrono",
  "console_error_panic_hook",
  "either",
+ "enclose",
  "flate2",
  "futures",
  "http",

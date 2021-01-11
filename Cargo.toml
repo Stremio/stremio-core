@@ -25,6 +25,7 @@ flate2 = "1.0"
 chrono = "0.4"
 futures = "0.3"
 http = "0.2"
+enclose = "1.1"
 js-sys = "0.3"
 wasm-bindgen = { version = "0.2.67", features = ["serde-serialize"] }
 wasm-bindgen-futures = "0.4"
