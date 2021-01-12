@@ -22,7 +22,7 @@ mod serialize_player;
 use serialize_player::*;
 
 mod serialize_remote_addons;
-pub use serialize_remote_addons::*;
+use serialize_remote_addons::*;
 
 mod model;
 pub use model::*;
