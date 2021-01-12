@@ -3,6 +3,7 @@ use stremio_core::runtime::msg::Event;
 
 #[derive(Deserialize)]
 pub enum UIEvent {
+    FlushAnalytics,
     PlayerPaused,
 }
 
