@@ -3,11 +3,17 @@ use chrono::{DateTime, Utc};
 use futures::future::Either;
 use futures::{future, Future, FutureExt, TryFutureExt};
 use http::{Method, Request};
+use lazy_static::lazy_static;
 use serde::{Deserialize, Serialize};
+use serde_json::json;
 use std::collections::HashMap;
 use stremio_core::runtime::{Env, EnvError, EnvFuture};
 use wasm_bindgen::{JsCast, JsValue};
 use wasm_bindgen_futures::{spawn_local, JsFuture};
+
+lazy_static! {
+    static ref VISIT_ID: String = "visit_id".to_owned();
+}
 
 pub enum WebEnv {}
 
@@ -87,6 +93,16 @@ impl Env for WebEnv {
     #[cfg(debug_assertions)]
     fn log(message: String) {
         web_sys::console::log_1(&JsValue::from(message));
+    }
+    fn analytics_context() -> serde_json::Value {
+        json!({
+            "url":web_sys::window()
+            .expect("window is not available")
+            .location()
+            .href()
+            .expect("href is not available"),
+            "visit_id": &*VISIT_ID
+        })
     }
 }
 
