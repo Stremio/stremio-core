@@ -29,7 +29,7 @@ pub fn model_derive(input: TokenStream) -> TokenStream {
             let struct_ident = &input.ident;
             let env_ident = input
                 .attrs
-                .into_iter()
+                .iter()
                 .find(|attr| attr.path.is_ident("model"))
                 .expect("model attribute required")
                 .parse_args::<syn::Ident>()
