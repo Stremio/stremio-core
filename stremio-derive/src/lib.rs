@@ -49,23 +49,25 @@ pub fn model_derive(input: TokenStream) -> TokenStream {
                 .named
                 .iter()
                 .zip(field_enum_variant_idents.iter())
-                .filter(|(field, _)| field.ident.as_ref().unwrap() != "ctx")
                 .map(|(field, variant_ident)| {
-                    let field_ident = &field.ident;
-                    quote! {
-                        Self::Field::#variant_ident => #core_ident::runtime::UpdateWithCtx::<#env_ident>::update(&mut self.#field_ident, &msg, &self.ctx)
+                    let field_ident = field.ident.as_ref().unwrap();
+                    if field_ident == "ctx" {
+                        quote! {
+                            Self::Field::#variant_ident => #core_ident::runtime::Update::<#env_ident>::update(&mut self.#field_ident, &msg)
+                        }
+                    } else {
+                        quote! {
+                            Self::Field::#variant_ident => #core_ident::runtime::UpdateWithCtx::<#env_ident>::update(&mut self.#field_ident, &msg, &self.ctx)
+                        }
                     }
                 })
-                .chain(iter::once(quote! {
-                    Ctx => #core_ident::runtime::Update::<#env_ident>::update(&mut self.ctx, msg)
-                }))
                 .collect::<Vec<_>>();
             let field_updates = fields
                 .named
                 .iter()
                 .filter(|field| field.ident.as_ref().unwrap() != "ctx")
                 .map(|field| {
-                    let field_ident = &field.ident;
+                    let field_ident = field.ident.as_ref().unwrap();
                     quote! {
                         .join(#core_ident::runtime::UpdateWithCtx::<#env_ident>::update(&mut self.#field_ident, &msg, &self.ctx))
                     }
