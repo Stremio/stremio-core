@@ -123,7 +123,7 @@ pub fn dispatch(action: JsValue, field: JsValue) {
 }
 
 #[wasm_bindgen]
-pub fn emit(event: JsValue) {
+pub fn analytics(event: JsValue) {
     match event.into_serde() {
         Ok(event) => emit_to_analytics(WebEvent::UIEvent(event)),
         Err(error) => panic!("emit failed: {}", error.to_string()),
