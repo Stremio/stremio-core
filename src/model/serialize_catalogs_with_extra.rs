@@ -1,4 +1,3 @@
-use crate::env::WebEnv;
 use crate::model::deep_links::{DiscoverDeepLinks, MetaItemDeepLinks};
 use serde::Serialize;
 use stremio_core::models::catalogs_with_extra::{CatalogsWithExtra, Selected};
@@ -35,7 +34,7 @@ mod model {
 
 pub fn serialize_catalogs_with_extra(
     catalogs_with_extra: &CatalogsWithExtra,
-    ctx: &Ctx<WebEnv>,
+    ctx: &Ctx,
 ) -> JsValue {
     JsValue::from_serde(&model::CatalogsWithExtra {
         selected: &catalogs_with_extra.selected,

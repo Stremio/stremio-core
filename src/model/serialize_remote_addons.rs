@@ -1,4 +1,3 @@
-use crate::env::WebEnv;
 use crate::model::deep_links::AddonsDeepLinks;
 use serde::Serialize;
 use stremio_core::models::catalog_with_filters::{CatalogWithFilters, Selected};
@@ -53,7 +52,7 @@ mod model {
 
 pub fn serialize_remote_addons(
     remote_addons: &CatalogWithFilters<DescriptorPreview>,
-    ctx: &Ctx<WebEnv>,
+    ctx: &Ctx,
 ) -> JsValue {
     JsValue::from_serde(&model::CatalogWithFilters {
         selected: &remote_addons.selected,

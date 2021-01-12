@@ -1,4 +1,3 @@
-use crate::env::WebEnv;
 use crate::model::deep_links::{DiscoverDeepLinks, MetaItemDeepLinks, StreamDeepLinks};
 use serde::Serialize;
 use stremio_core::constants::{CATALOG_PAGE_SIZE, SKIP_EXTRA_NAME};
@@ -100,10 +99,7 @@ mod model {
     }
 }
 
-pub fn serialize_discover(
-    discover: &CatalogWithFilters<MetaItemPreview>,
-    ctx: &Ctx<WebEnv>,
-) -> JsValue {
+pub fn serialize_discover(discover: &CatalogWithFilters<MetaItemPreview>, ctx: &Ctx) -> JsValue {
     JsValue::from_serde(&model::CatalogWithFilters {
         selected: &discover.selected,
         selectable: model::Selectable {

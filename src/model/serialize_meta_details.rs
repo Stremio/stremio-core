@@ -79,7 +79,7 @@ mod model {
     }
 }
 
-pub fn serialize_meta_details(meta_details: &MetaDetails, ctx: &Ctx<WebEnv>) -> JsValue {
+pub fn serialize_meta_details(meta_details: &MetaDetails, ctx: &Ctx) -> JsValue {
     let meta_item = meta_details
         .meta_items
         .iter()

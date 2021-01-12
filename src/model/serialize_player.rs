@@ -80,7 +80,7 @@ mod model {
     }
 }
 
-pub fn serialize_player(player: &Player, ctx: &Ctx<WebEnv>) -> JsValue {
+pub fn serialize_player(player: &Player, ctx: &Ctx) -> JsValue {
     JsValue::from_serde(&model::Player {
         selected: &player.selected,
         meta_item: player

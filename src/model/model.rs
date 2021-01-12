@@ -25,8 +25,9 @@ use stremio_derive::Model;
 use wasm_bindgen::JsValue;
 
 #[derive(Model)]
+#[model(WebEnv)]
 pub struct WebModel {
-    pub ctx: Ctx<WebEnv>,
+    pub ctx: Ctx,
     pub continue_watching_preview: ContinueWatchingPreview,
     pub board: CatalogsWithExtra,
     pub discover: CatalogWithFilters<MetaItemPreview>,
