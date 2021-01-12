@@ -12,7 +12,7 @@ use std::sync::{Arc, LockResult, RwLock, RwLockReadGuard};
 #[serde(tag = "name", content = "args")]
 pub enum RuntimeEvent {
     NewState,
-    Event(Event),
+    CoreEvent(Event),
 }
 
 pub struct RuntimeAction<M: Model> {
@@ -85,7 +85,7 @@ where
     fn handle_effect_output(&self, msg: Msg) {
         match msg {
             Msg::Event(event) => {
-                self.emit(RuntimeEvent::Event(event));
+                self.emit(RuntimeEvent::CoreEvent(event));
             }
             Msg::Internal(_) => {
                 let effects = self.model.write().expect("model write failed").update(&msg);
