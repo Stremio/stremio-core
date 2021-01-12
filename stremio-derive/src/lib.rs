@@ -18,6 +18,13 @@ pub fn model_derive(input: TokenStream) -> TokenStream {
             fields: Fields::Named(fields),
             ..
         }) => {
+            assert!(
+                fields
+                    .named
+                    .iter()
+                    .any(|field| field.ident.as_ref().unwrap() == "ctx"),
+                "ctx field is required"
+            );
             let core_ident = get_core_ident().unwrap();
             let struct_ident = &input.ident;
             let env_ident = input
@@ -27,16 +34,6 @@ pub fn model_derive(input: TokenStream) -> TokenStream {
                 .expect("model attribute required")
                 .parse_args::<syn::Ident>()
                 .expect("model attribute parse failed");
-            assert!(
-                fields
-                    .named
-                    .first()
-                    .expect("at least one field is required")
-                    .ident
-                    .as_ref()
-                    .map_or(false, |name| name == "ctx"),
-                "first field must be named \"ctx\""
-            );
             let field_enum_ident = struct_ident.append("Field");
             let field_enum_variant_idents = fields
                 .named
@@ -52,7 +49,7 @@ pub fn model_derive(input: TokenStream) -> TokenStream {
                 .named
                 .iter()
                 .zip(field_enum_variant_idents.iter())
-                .skip(1)
+                .filter(|(field, _)| field.ident.as_ref().unwrap() != "ctx")
                 .map(|(field, variant_ident)| {
                     let field_ident = &field.ident;
                     quote! {
@@ -66,7 +63,7 @@ pub fn model_derive(input: TokenStream) -> TokenStream {
             let field_updates = fields
                 .named
                 .iter()
-                .skip(1)
+                .filter(|field| field.ident.as_ref().unwrap() != "ctx")
                 .map(|field| {
                     let field_ident = &field.ident;
                     quote! {
