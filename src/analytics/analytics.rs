@@ -1,142 +1,102 @@
-use crate::env::WebEnv;
-use crate::event::WebEvent;
+use derivative::Derivative;
 use enclose::enclose;
 use futures::FutureExt;
 use serde::Serialize;
 use std::collections::VecDeque;
+use std::marker::PhantomData;
 use std::sync::{Arc, Mutex};
 use stremio_core::models::ctx::Ctx;
-use stremio_core::runtime::msg::Event;
 use stremio_core::runtime::{Env, EnvError, EnvFuture};
 use stremio_core::types::api::{fetch_api, APIRequest, APIResult, SuccessResponse};
 use stremio_core::types::profile::AuthKey;
-use wasm_bindgen::closure::Closure;
-use wasm_bindgen::JsCast;
 
-#[derive(Serialize)]
-struct AnalyticsContext {
-    url: String,
-}
-
-#[derive(Serialize)]
+#[derive(Clone, PartialEq, Serialize)]
 struct AnalyticsEvent {
-    name: String,
-    context: AnalyticsContext,
+    #[serde(flatten)]
+    event: serde_json::Value,
+    context: serde_json::Value,
 }
 
+#[derive(Clone, PartialEq)]
 struct AnalyticsEventsBatch {
+    auth_key: AuthKey,
     events: Vec<AnalyticsEvent>,
-    auth_key: Option<AuthKey>,
 }
 
-pub struct Analytics {
+#[derive(Derivative)]
+#[derivative(Default, Clone(bound = ""))]
+pub struct Analytics<E: Env> {
     queue: Arc<Mutex<VecDeque<AnalyticsEventsBatch>>>,
-    flush_interval_id: i32,
+    pending: Arc<Mutex<Option<AnalyticsEventsBatch>>>,
+    env: PhantomData<E>,
 }
 
-impl Analytics {
-    pub fn new(_visit_id: String) -> Self {
-        let queue = Arc::new(Mutex::new(VecDeque::new()));
-        #[allow(clippy::mutex_atomic)]
-        let pending = Arc::new(Mutex::new(false));
-        let closure = Closure::wrap(Box::new(enclose!((queue, pending) move || {
-            flush_events(queue.clone(), pending.clone());
-        })) as Box<dyn FnMut()>);
-        let flush_interval_id = web_sys::window()
-            .expect("window is not available")
-            .set_interval_with_callback_and_timeout_and_arguments_0(
-                closure.as_ref().unchecked_ref(),
-                30 * 1000,
-            )
-            .expect("set_interval failed");
-        closure.forget();
-        Self {
-            queue,
-            flush_interval_id,
-        }
-    }
-    pub fn emit(&self, event: WebEvent, ctx: &Ctx<WebEnv>) {
-        let context = AnalyticsContext {
-            url: web_sys::window()
-                .expect("window is not available")
-                .location()
-                .href()
-                .expect("href is not available"),
-        };
-        let event = match event {
-            WebEvent::CoreEvent(Event::UserAuthenticated { .. }) => AnalyticsEvent {
-                name: "login".to_owned(),
-                context,
-            },
+impl<E: Env + 'static> Analytics<E> {
+    pub fn emit(&self, event: serde_json::Value, ctx: &Ctx) {
+        let auth_key = match ctx.profile.auth_key() {
+            Some(auth_key) => auth_key.to_owned(),
             _ => return,
         };
-        let mut queue_value = self.queue.lock().expect("queue lock failed");
-        let auth_key = ctx.profile.auth_key().cloned();
-        match queue_value.back_mut() {
-            Some(events_batch) if events_batch.auth_key == auth_key => {
-                events_batch.events.push(event);
+        let event = AnalyticsEvent {
+            event,
+            context: E::analytics_context(),
+        };
+        let mut queue = self.queue.lock().expect("queue lock failed");
+        match queue.back_mut() {
+            Some(batch) if batch.auth_key == auth_key => {
+                batch.events.push(event);
             }
-            _ => queue_value.push_back(AnalyticsEventsBatch {
+            _ => queue.push_back(AnalyticsEventsBatch {
                 auth_key,
                 events: vec![event],
             }),
         };
     }
-}
-
-impl Drop for Analytics {
-    fn drop(&mut self) {
-        web_sys::window()
-            .expect("window is not available")
-            .clear_interval_with_handle(self.flush_interval_id);
-    }
-}
-
-fn flush_events(queue: Arc<Mutex<VecDeque<AnalyticsEventsBatch>>>, pending: Arc<Mutex<bool>>) {
-    let mut pending_value = pending.lock().expect("pending lock failed");
-    if *pending_value {
-        return;
-    };
-    let mut queue_value = queue.lock().expect("queue lock failed");
-    if let Some(AnalyticsEventsBatch {
-        events,
-        auth_key: Some(auth_key),
-    }) = queue_value.pop_front()
-    {
-        if !events.is_empty() {
-            *pending_value = true;
-            drop(pending_value);
-            drop(queue_value);
-            WebEnv::exec(
-                send_events_to_api(&events, &auth_key)
+    pub fn flush_next_batch(&self) {
+        let mut pending = self.pending.lock().expect("pending lock failed");
+        if pending.is_some() {
+            return;
+        };
+        let mut queue = self.queue.lock().expect("queue lock failed");
+        if let Some(batch) = queue.pop_front() {
+            *pending = Some(batch.to_owned());
+            E::exec(
+                send_events_batch_to_api::<E>(&batch)
                     .map(|result| match result {
-                        Ok(APIResult::Err { error }) if error.code != 1 => Err(()), // session does not exist
+                        Ok(APIResult::Err { error }) if error.code != 1 => Err(()),
                         Err(EnvError::Fetch(_)) | Err(EnvError::Serde(_)) => Err(()),
                         _ => Ok(()),
                     })
-                    .then(enclose!((queue, pending) move |result| async move {
-                        let mut pending_value = pending.lock().expect("pending lock failed");
-                        *pending_value = false;
+                    .then(enclose!((self.clone() => analytics) move |result| async move {
+                        let mut pending = analytics.pending.lock().expect("pending lock failed");
+                        match &*pending {
+                            Some(pending_batch) if *pending_batch == batch => {
+                                *pending = None;
+                            },
+                            _ => {
+                                return;
+                            }
+                        };
                         if result.is_err() {
-                            let mut queue_value = queue.lock().expect("queue lock failed");
-                            queue_value.push_front(AnalyticsEventsBatch {
-                                events,
-                                auth_key: Some(auth_key)
-                            });
+                            let mut queue = analytics.queue.lock().expect("queue lock failed");
+                            queue.push_front(batch);
                         };
                     })),
             );
         };
-    };
+    }
+    pub fn flush_all(&self) {
+        //drop pending * flush next in loop
+    }
 }
 
-fn send_events_to_api(
-    events: &[AnalyticsEvent],
-    auth_key: &AuthKey,
+fn send_events_batch_to_api<E: Env>(
+    batch: &AnalyticsEventsBatch,
 ) -> EnvFuture<APIResult<SuccessResponse>> {
-    fetch_api::<WebEnv, _, _>(&APIRequest::Events {
-        auth_key: auth_key.to_owned(),
-        events: events
+    fetch_api::<E, _, _>(&APIRequest::Events {
+        auth_key: batch.auth_key.to_owned(),
+        events: batch
+            .events
             .iter()
             .map(|value| serde_json::to_value(value).unwrap())
             .collect(),
