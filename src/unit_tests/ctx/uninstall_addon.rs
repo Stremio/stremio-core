@@ -18,8 +18,9 @@ use url::Url;
 #[test]
 fn actionctx_uninstalladdon() {
     #[derive(Model, Default)]
+    #[model(TestEnv)]
     struct TestModel {
-        ctx: Ctx<TestEnv>,
+        ctx: Ctx,
     }
     let profile = Profile {
         addons: vec![Descriptor {
@@ -92,8 +93,9 @@ fn actionctx_uninstalladdon() {
 #[test]
 fn actionctx_uninstalladdon_with_user() {
     #[derive(Model, Default)]
+    #[model(TestEnv)]
     struct TestModel {
-        ctx: Ctx<TestEnv>,
+        ctx: Ctx,
     }
     fn fetch_handler(request: Request) -> EnvFuture<Box<dyn Any>> {
         match request {
@@ -210,8 +212,9 @@ fn actionctx_uninstalladdon_with_user() {
 #[test]
 fn actionctx_uninstalladdon_protected() {
     #[derive(Model, Default)]
+    #[model(TestEnv)]
     struct TestModel {
-        ctx: Ctx<TestEnv>,
+        ctx: Ctx,
     }
     let addon = Descriptor {
         manifest: Manifest {
@@ -286,8 +289,9 @@ fn actionctx_uninstalladdon_protected() {
 #[test]
 fn actionctx_uninstalladdon_not_installed() {
     #[derive(Model, Default)]
+    #[model(TestEnv)]
     struct TestModel {
-        ctx: Ctx<TestEnv>,
+        ctx: Ctx,
     }
     let addon = Descriptor {
         manifest: Manifest {

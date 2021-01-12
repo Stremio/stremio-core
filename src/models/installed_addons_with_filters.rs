@@ -54,11 +54,8 @@ impl InstalledAddonsWithFilters {
     }
 }
 
-impl<E> UpdateWithCtx<Ctx<E>> for InstalledAddonsWithFilters
-where
-    E: Env + 'static,
-{
-    fn update(&mut self, msg: &Msg, ctx: &Ctx<E>) -> Effects {
+impl<E: Env + 'static> UpdateWithCtx<E> for InstalledAddonsWithFilters {
+    fn update(&mut self, msg: &Msg, ctx: &Ctx) -> Effects {
         match msg {
             Msg::Action(Action::Load(ActionLoad::InstalledAddonsWithFilters(selected))) => {
                 let selected_effects = eq_update(&mut self.selected, Some(selected.to_owned()));

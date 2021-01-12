@@ -34,8 +34,8 @@ pub struct Player {
     pub library_item: Option<LibraryItem>,
 }
 
-impl<E: Env + 'static> UpdateWithCtx<Ctx<E>> for Player {
-    fn update(&mut self, msg: &Msg, ctx: &Ctx<E>) -> Effects {
+impl<E: Env + 'static> UpdateWithCtx<E> for Player {
+    fn update(&mut self, msg: &Msg, ctx: &Ctx) -> Effects {
         match msg {
             Msg::Action(Action::Load(ActionLoad::Player(selected))) => {
                 let selected_effects = eq_update(&mut self.selected, Some(selected.to_owned()));

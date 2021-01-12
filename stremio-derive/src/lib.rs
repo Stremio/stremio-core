@@ -10,7 +10,7 @@ use syn::{parse_macro_input, Data, DataStruct, DeriveInput, Fields, Ident};
 
 const CORE_CRATE_ORIGINAL_NAME: &str = "stremio-core";
 
-#[proc_macro_derive(Model)]
+#[proc_macro_derive(Model, attributes(model))]
 pub fn model_derive(input: TokenStream) -> TokenStream {
     let input = parse_macro_input!(input as DeriveInput);
     match input.data {
@@ -20,6 +20,13 @@ pub fn model_derive(input: TokenStream) -> TokenStream {
         }) => {
             let core_ident = get_core_ident().unwrap();
             let struct_ident = &input.ident;
+            let env_ident = input
+                .attrs
+                .into_iter()
+                .find(|attr| attr.path.is_ident("model"))
+                .expect("model attribute required")
+                .parse_args::<syn::Ident>()
+                .expect("model attribute parse failed");
             assert!(
                 fields
                     .named
@@ -49,11 +56,11 @@ pub fn model_derive(input: TokenStream) -> TokenStream {
                 .map(|(field, variant_ident)| {
                     let field_ident = &field.ident;
                     quote! {
-                        Self::Field::#variant_ident => #core_ident::runtime::UpdateWithCtx::update(&mut self.#field_ident, &msg, &self.ctx)
+                        Self::Field::#variant_ident => #core_ident::runtime::UpdateWithCtx::<#env_ident>::update(&mut self.#field_ident, &msg, &self.ctx)
                     }
                 })
                 .chain(iter::once(quote! {
-                    Ctx => #core_ident::runtime::Update::update(&mut self.ctx, msg)
+                    Ctx => #core_ident::runtime::Update::<#env_ident>::update(&mut self.ctx, msg)
                 }))
                 .collect::<Vec<_>>();
             let field_updates = fields
@@ -63,11 +70,11 @@ pub fn model_derive(input: TokenStream) -> TokenStream {
                 .map(|field| {
                     let field_ident = &field.ident;
                     quote! {
-                        .join(#core_ident::runtime::UpdateWithCtx::update(&mut self.#field_ident, &msg, &self.ctx))
+                        .join(#core_ident::runtime::UpdateWithCtx::<#env_ident>::update(&mut self.#field_ident, &msg, &self.ctx))
                     }
                 })
                 .chain(iter::once(quote! {
-                    #core_ident::runtime::Update::update(&mut self.ctx, msg)
+                    #core_ident::runtime::Update::<#env_ident>::update(&mut self.ctx, msg)
                 }))
                 .rev()
                 .collect::<Vec<_>>();
@@ -78,13 +85,13 @@ pub fn model_derive(input: TokenStream) -> TokenStream {
                     #(#field_enum_variant_idents),*
                 }
 
-                impl #core_ident::runtime::Update for #struct_ident {
+                impl #core_ident::runtime::Update<#env_ident> for #struct_ident {
                     fn update(&mut self, msg: &#core_ident::runtime::msg::Msg) -> #core_ident::runtime::Effects {
                         #(#field_updates)*
                     }
                 }
 
-                impl #core_ident::runtime::Model for #struct_ident {
+                impl #core_ident::runtime::Model<#env_ident> for #struct_ident {
                     type Field = #field_enum_ident;
                     fn update_field(&mut self, msg: &#core_ident::runtime::msg::Msg, field: &Self::Field) -> #core_ident::runtime::Effects {
                         match field {

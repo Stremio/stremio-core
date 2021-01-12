@@ -121,12 +121,8 @@ impl<F: LibraryFilter> LibraryWithFilters<F> {
     }
 }
 
-impl<E, F> UpdateWithCtx<Ctx<E>> for LibraryWithFilters<F>
-where
-    E: Env + 'static,
-    F: LibraryFilter,
-{
-    fn update(&mut self, msg: &Msg, ctx: &Ctx<E>) -> Effects {
+impl<E: Env + 'static, F: LibraryFilter> UpdateWithCtx<E> for LibraryWithFilters<F> {
+    fn update(&mut self, msg: &Msg, ctx: &Ctx) -> Effects {
         match msg {
             Msg::Action(Action::Load(ActionLoad::LibraryWithFilters(selected))) => {
                 let selected_effects = eq_update(&mut self.selected, Some(selected.to_owned()));

@@ -18,8 +18,9 @@ use stremio_derive::Model;
 #[test]
 fn actionctx_authenticate_login() {
     #[derive(Model, Default)]
+    #[model(TestEnv)]
     struct TestModel {
-        ctx: Ctx<TestEnv>,
+        ctx: Ctx,
     }
     fn fetch_handler(request: Request) -> EnvFuture<Box<dyn Any>> {
         match request {
@@ -207,8 +208,9 @@ fn actionctx_authenticate_login() {
 #[test]
 fn actionctx_authenticate_register() {
     #[derive(Model, Default)]
+    #[model(TestEnv)]
     struct TestModel {
-        ctx: Ctx<TestEnv>,
+        ctx: Ctx,
     }
     fn fetch_handler(request: Request) -> EnvFuture<Box<dyn Any>> {
         match request {

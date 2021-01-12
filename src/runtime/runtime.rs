@@ -15,14 +15,14 @@ pub enum RuntimeEvent {
     CoreEvent(Event),
 }
 
-pub struct RuntimeAction<M: Model> {
+pub struct RuntimeAction<E: Env, M: Model<E>> {
     pub field: Option<M::Field>,
     pub action: Action,
 }
 
 #[derive(Derivative)]
 #[derivative(Clone(bound = ""))]
-pub struct Runtime<E: Env, M: Model> {
+pub struct Runtime<E: Env, M: Model<E>> {
     model: Arc<RwLock<M>>,
     tx: Sender<RuntimeEvent>,
     env: PhantomData<E>,
@@ -31,7 +31,7 @@ pub struct Runtime<E: Env, M: Model> {
 impl<E, M> Runtime<E, M>
 where
     E: Env + 'static,
-    M: Model + 'static,
+    M: Model<E> + 'static,
 {
     pub fn new(model: M, effects: Effects, buffer: usize) -> (Self, Receiver<RuntimeEvent>) {
         let (tx, rx) = channel(buffer);
@@ -47,7 +47,7 @@ where
     pub fn model(&self) -> LockResult<RwLockReadGuard<M>> {
         self.model.read()
     }
-    pub fn dispatch(&self, action: RuntimeAction<M>) {
+    pub fn dispatch(&self, action: RuntimeAction<E, M>) {
         let effects = {
             let mut model = self.model.write().expect("model write failed");
             match action {

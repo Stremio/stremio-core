@@ -18,8 +18,9 @@ use url::Url;
 #[test]
 fn actionctx_installaddon_install() {
     #[derive(Model, Default)]
+    #[model(TestEnv)]
     struct TestModel {
-        ctx: Ctx<TestEnv>,
+        ctx: Ctx,
     }
     let addon = Descriptor {
         manifest: Manifest {
@@ -84,8 +85,9 @@ fn actionctx_installaddon_install() {
 #[test]
 fn actionctx_installaddon_install_with_user() {
     #[derive(Model, Default)]
+    #[model(TestEnv)]
     struct TestModel {
-        ctx: Ctx<TestEnv>,
+        ctx: Ctx,
     }
     fn fetch_handler(request: Request) -> EnvFuture<Box<dyn Any>> {
         match request {
@@ -194,8 +196,9 @@ fn actionctx_installaddon_install_with_user() {
 #[test]
 fn actionctx_installaddon_update() {
     #[derive(Model, Default)]
+    #[model(TestEnv)]
     struct TestModel {
-        ctx: Ctx<TestEnv>,
+        ctx: Ctx,
     }
     let addon = Descriptor {
         manifest: Manifest {
@@ -301,8 +304,9 @@ fn actionctx_installaddon_update() {
 #[test]
 fn actionctx_installaddon_already_installed() {
     #[derive(Model, Default)]
+    #[model(TestEnv)]
     struct TestModel {
-        ctx: Ctx<TestEnv>,
+        ctx: Ctx,
     }
     let addon = Descriptor {
         manifest: Manifest {

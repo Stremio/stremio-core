@@ -16,8 +16,9 @@ use stremio_derive::Model;
 #[test]
 fn actionctx_logout() {
     #[derive(Model, Default)]
+    #[model(TestEnv)]
     struct TestModel {
-        ctx: Ctx<TestEnv>,
+        ctx: Ctx,
     }
     fn fetch_handler(request: Request) -> EnvFuture<Box<dyn Any>> {
         match request {

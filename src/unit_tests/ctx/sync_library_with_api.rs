@@ -20,8 +20,9 @@ use stremio_derive::Model;
 #[test]
 fn actionctx_synclibrarywithapi() {
     #[derive(Model, Default)]
+    #[model(TestEnv)]
     struct TestModel {
-        ctx: Ctx<TestEnv>,
+        ctx: Ctx,
     }
     TestEnv::reset();
     let (runtime, _rx) =
@@ -41,8 +42,9 @@ fn actionctx_synclibrarywithapi() {
 #[test]
 fn actionctx_synclibrarywithapi_with_user() {
     #[derive(Model, Default)]
+    #[model(TestEnv)]
     struct TestModel {
-        ctx: Ctx<TestEnv>,
+        ctx: Ctx,
     }
     lazy_static! {
         static ref REMOTE_ONLY_ITEM: LibraryItem = LibraryItem {
@@ -341,8 +343,9 @@ fn actionctx_synclibrarywithapi_with_user() {
 #[test]
 fn actionctx_synclibrarywithapi_with_user_empty_library() {
     #[derive(Model, Default)]
+    #[model(TestEnv)]
     struct TestModel {
-        ctx: Ctx<TestEnv>,
+        ctx: Ctx,
     }
     fn fetch_handler(request: Request) -> EnvFuture<Box<dyn Any>> {
         match &request {

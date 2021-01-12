@@ -12,7 +12,6 @@ use derivative::Derivative;
 use enclose::enclose;
 use futures::{future, FutureExt, TryFutureExt};
 use serde::Serialize;
-use std::marker::PhantomData;
 
 #[derive(PartialEq, Serialize)]
 pub enum CtxStatus {
@@ -22,7 +21,7 @@ pub enum CtxStatus {
 
 #[derive(Derivative, Serialize)]
 #[derivative(Default)]
-pub struct Ctx<E: Env> {
+pub struct Ctx {
     pub profile: Profile,
     // TODO StreamsBucket
     // TODO SubtitlesBucket
@@ -32,11 +31,9 @@ pub struct Ctx<E: Env> {
     #[serde(skip)]
     #[derivative(Default(value = "CtxStatus::Ready"))]
     pub status: CtxStatus,
-    #[serde(skip)]
-    pub env: PhantomData<E>,
 }
 
-impl<E: Env> Ctx<E> {
+impl Ctx {
     pub fn new(profile: Profile, library: LibraryBucket) -> Self {
         Self {
             profile,
@@ -46,7 +43,7 @@ impl<E: Env> Ctx<E> {
     }
 }
 
-impl<E: Env + 'static> Update for Ctx<E> {
+impl<E: Env + 'static> Update<E> for Ctx {
     fn update(&mut self, msg: &Msg) -> Effects {
         match msg {
             Msg::Action(Action::Ctx(ActionCtx::Authenticate(auth_request))) => {

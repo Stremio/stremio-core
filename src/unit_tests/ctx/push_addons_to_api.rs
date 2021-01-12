@@ -15,8 +15,9 @@ use url::Url;
 #[test]
 fn actionctx_pushaddonstoapi() {
     #[derive(Model, Default)]
+    #[model(TestEnv)]
     struct TestModel {
-        ctx: Ctx<TestEnv>,
+        ctx: Ctx,
     }
     TestEnv::reset();
     let (runtime, _rx) = Runtime::<TestEnv, _>::new(
@@ -65,8 +66,9 @@ fn actionctx_pushaddonstoapi() {
 #[test]
 fn actionctx_pushaddonstoapi_with_user() {
     #[derive(Model, Default)]
+    #[model(TestEnv)]
     struct TestModel {
-        ctx: Ctx<TestEnv>,
+        ctx: Ctx,
     }
     fn fetch_handler(request: Request) -> EnvFuture<Box<dyn Any>> {
         match request {

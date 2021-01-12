@@ -18,8 +18,9 @@ use stremio_derive::Model;
 #[test]
 fn actionctx_rewindlibraryitem() {
     #[derive(Model, Default)]
+    #[model(TestEnv)]
     struct TestModel {
-        ctx: Ctx<TestEnv>,
+        ctx: Ctx,
     }
     fn fetch_handler(request: Request) -> EnvFuture<Box<dyn Any>> {
         match request {
@@ -152,8 +153,9 @@ fn actionctx_rewindlibraryitem() {
 #[test]
 fn actionctx_rewindlibraryitem_not_added() {
     #[derive(Model, Default)]
+    #[model(TestEnv)]
     struct TestModel {
-        ctx: Ctx<TestEnv>,
+        ctx: Ctx,
     }
     let library_item = LibraryItem {
         id: "id".to_owned(),

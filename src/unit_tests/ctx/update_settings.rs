@@ -9,8 +9,9 @@ use stremio_derive::Model;
 #[test]
 fn actionctx_updatesettings() {
     #[derive(Model, Default)]
+    #[model(TestEnv)]
     struct TestModel {
-        ctx: Ctx<TestEnv>,
+        ctx: Ctx,
     }
     let settings = Settings {
         subtitles_language: "bg".to_string(),
@@ -50,8 +51,9 @@ fn actionctx_updatesettings() {
 #[test]
 fn actionctx_updatesettings_not_changed() {
     #[derive(Model, Default)]
+    #[model(TestEnv)]
     struct TestModel {
-        ctx: Ctx<TestEnv>,
+        ctx: Ctx,
     }
     let settings = Settings {
         subtitles_language: "bg".to_string(),

@@ -17,8 +17,9 @@ use url::Url;
 #[test]
 fn actionctx_pulladdonsfromapi() {
     #[derive(Model, Default)]
+    #[model(TestEnv)]
     struct TestModel {
-        ctx: Ctx<TestEnv>,
+        ctx: Ctx,
     }
     let official_addon = OFFICIAL_ADDONS.first().unwrap();
     TestEnv::reset();
@@ -73,8 +74,9 @@ fn actionctx_pulladdonsfromapi() {
 #[test]
 fn actionctx_pulladdonsfromapi_with_user() {
     #[derive(Model, Default)]
+    #[model(TestEnv)]
     struct TestModel {
-        ctx: Ctx<TestEnv>,
+        ctx: Ctx,
     }
     fn fetch_handler(request: Request) -> EnvFuture<Box<dyn Any>> {
         match request {

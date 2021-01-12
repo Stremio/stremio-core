@@ -21,8 +21,9 @@ use stremio_derive::Model;
 #[test]
 fn actionctx_addtolibrary() {
     #[derive(Model, Default)]
+    #[model(TestEnv)]
     struct TestModel {
-        ctx: Ctx<TestEnv>,
+        ctx: Ctx,
     }
     fn fetch_handler(request: Request) -> EnvFuture<Box<dyn Any>> {
         match request {
@@ -153,8 +154,9 @@ fn actionctx_addtolibrary() {
 #[test]
 fn actionctx_addtolibrary_already_added() {
     #[derive(Model, Default)]
+    #[model(TestEnv)]
     struct TestModel {
-        ctx: Ctx<TestEnv>,
+        ctx: Ctx,
     }
     let meta_preview = MetaItemPreview {
         id: "id".to_owned(),

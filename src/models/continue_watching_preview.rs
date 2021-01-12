@@ -21,8 +21,8 @@ impl ContinueWatchingPreview {
     }
 }
 
-impl<E: Env + 'static> UpdateWithCtx<Ctx<E>> for ContinueWatchingPreview {
-    fn update(&mut self, msg: &Msg, ctx: &Ctx<E>) -> Effects {
+impl<E: Env + 'static> UpdateWithCtx<E> for ContinueWatchingPreview {
+    fn update(&mut self, msg: &Msg, ctx: &Ctx) -> Effects {
         match msg {
             Msg::Internal(Internal::LibraryChanged(_)) => {
                 library_items_update(&mut self.library_items, &ctx.library)
