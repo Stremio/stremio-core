@@ -43,6 +43,17 @@ pub fn emit_to_analytics(event: WebEvent) {
 #[wasm_bindgen(start)]
 pub fn start() {
     std::panic::set_hook(Box::new(console_error_panic_hook::hook));
+    let closure = Closure::wrap(Box::new(|| {
+        ANALYTICS.flush_next();
+    }) as Box<dyn FnMut()>);
+    web_sys::window()
+        .expect("window is not available")
+        .set_interval_with_callback_and_timeout_and_arguments_0(
+            closure.as_ref().unchecked_ref(),
+            30 * 1000,
+        )
+        .expect("set_interval failed");
+    closure.forget();
 }
 
 #[wasm_bindgen]
