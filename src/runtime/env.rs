@@ -86,6 +86,7 @@ pub trait Env {
     fn now() -> DateTime<Utc>;
     #[cfg(debug_assertions)]
     fn log(message: String);
+    fn analytics_context() -> serde_json::Value;
     fn addon_transport(transport_url: &Url) -> Box<dyn AddonTransport>
     where
         Self: Sized + 'static,
