@@ -62,7 +62,7 @@ pub fn model_derive(input: TokenStream) -> TokenStream {
                     }
                 })
                 .collect::<Vec<_>>();
-            let field_updates = fields
+            let field_updates_chain = fields
                 .named
                 .iter()
                 .filter(|field| field.ident.as_ref().unwrap() != "ctx")
@@ -86,7 +86,7 @@ pub fn model_derive(input: TokenStream) -> TokenStream {
 
                 impl #core_ident::runtime::Update<#env_ident> for #struct_ident {
                     fn update(&mut self, msg: &#core_ident::runtime::msg::Msg) -> #core_ident::runtime::Effects {
-                        #(#field_updates)*
+                        #(#field_updates_chain)*
                     }
                 }
 
