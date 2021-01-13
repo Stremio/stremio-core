@@ -24,4 +24,33 @@ impl<R, E> Loadable<R, E> {
     pub fn is_loading(&self) -> bool {
         matches!(self, Loadable::Loading)
     }
+    #[inline]
+    pub fn as_ref(&self) -> Loadable<&R, &E> {
+        match *self {
+            Loadable::Err(ref e) => Loadable::Err(e),
+            Loadable::Ready(ref r) => Loadable::Ready(r),
+            Loadable::Loading => Loadable::Loading,
+        }
+    }
+    #[inline]
+    pub fn expect(self, msg: &str) -> R {
+        match self {
+            Self::Ready(r) => r,
+            _ => panic!("{}", msg),
+        }
+    }
+    #[inline]
+    pub fn expect_err(self, msg: &str) -> E {
+        match self {
+            Self::Err(e) => e,
+            _ => panic!("{}", msg),
+        }
+    }
+    #[inline]
+    pub fn expect_loading(self, msg: &str) {
+        match self {
+            Self::Loading => {}
+            _ => panic!("{}", msg),
+        }
+    }
 }
