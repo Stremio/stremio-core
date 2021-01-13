@@ -52,7 +52,7 @@ impl<E: Env + 'static> Analytics<E> {
             }),
         };
     }
-    pub fn flush_next_batch(&self) {
+    pub fn flush_next(&self) {
         let mut pending = self.pending.lock().expect("pending lock failed");
         if pending.is_some() {
             return;
@@ -91,7 +91,7 @@ impl<E: Env + 'static> Analytics<E> {
                 let mut pending = self.pending.lock().expect("pending lock failed");
                 *pending = None;
             }
-            self.flush_next_batch();
+            self.flush_next();
             {
                 let queue = self.queue.lock().expect("queue lock failed");
                 if queue.is_empty() {
