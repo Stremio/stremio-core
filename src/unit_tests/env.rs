@@ -101,11 +101,14 @@ impl Env for TestEnv {
     fn now() -> DateTime<Utc> {
         *NOW.read().unwrap()
     }
-    fn log(message: String) {
-        println!("{}", message)
+    fn flush_analytics() -> EnvFuture<()> {
+        future::ok(()).boxed_local()
     }
     fn analytics_context() -> serde_json::Value {
         serde_json::Value::Null
+    }
+    fn log(message: String) {
+        println!("{}", message)
     }
 }
 

@@ -116,7 +116,10 @@ impl<E: Env + 'static> Update<E> for Ctx {
 }
 
 fn authenticate<E: Env + 'static>(auth_request: &AuthRequest) -> Effect {
-    fetch_api::<E, _, _>(&APIRequest::Auth(auth_request.to_owned()))
+    E::flush_analytics()
+        .then(enclose!((auth_request) move |_| {
+            fetch_api::<E, _, _>(&APIRequest::Auth(auth_request))
+        }))
         .map_err(CtxError::from)
         .and_then(|result| match result {
             APIResult::Ok { result } => future::ok(result),
@@ -159,21 +162,22 @@ fn authenticate<E: Env + 'static>(auth_request: &AuthRequest) -> Effect {
 }
 
 fn delete_session<E: Env + 'static>(auth_key: &AuthKey) -> Effect {
-    fetch_api::<E, _, SuccessResponse>(&APIRequest::Logout {
-        auth_key: auth_key.to_owned(),
-    })
-    .map_err(CtxError::from)
-    .and_then(|result| match result {
-        APIResult::Ok { result } => future::ok(result),
-        APIResult::Err { error } => future::err(CtxError::from(error)),
-    })
-    .map(enclose!((auth_key) move |result| match result {
-        Ok(_) => Msg::Event(Event::SessionDeleted { auth_key }),
-        Err(error) => Msg::Event(Event::Error {
-            error,
-            source: Box::new(Event::SessionDeleted { auth_key }),
-        }),
-    }))
-    .boxed_local()
-    .into()
+    E::flush_analytics()
+        .then(enclose!((auth_key) move |_| {
+            fetch_api::<E, _, SuccessResponse>(&APIRequest::Logout { auth_key })
+        }))
+        .map_err(CtxError::from)
+        .and_then(|result| match result {
+            APIResult::Ok { result } => future::ok(result),
+            APIResult::Err { error } => future::err(CtxError::from(error)),
+        })
+        .map(enclose!((auth_key) move |result| match result {
+            Ok(_) => Msg::Event(Event::SessionDeleted { auth_key }),
+            Err(error) => Msg::Event(Event::Error {
+                error,
+                source: Box::new(Event::SessionDeleted { auth_key }),
+            }),
+        }))
+        .boxed_local()
+        .into()
 }

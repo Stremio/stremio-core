@@ -84,9 +84,10 @@ pub trait Env {
     where
         F: Future<Output = ()> + 'static;
     fn now() -> DateTime<Utc>;
+    fn flush_analytics() -> EnvFuture<()>;
+    fn analytics_context() -> serde_json::Value;
     #[cfg(debug_assertions)]
     fn log(message: String);
-    fn analytics_context() -> serde_json::Value;
     fn addon_transport(transport_url: &Url) -> Box<dyn AddonTransport>
     where
         Self: Sized + 'static,
