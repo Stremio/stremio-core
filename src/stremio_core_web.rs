@@ -19,7 +19,7 @@ use wasm_bindgen::prelude::wasm_bindgen;
 use wasm_bindgen::{JsCast, JsValue};
 
 lazy_static! {
-    static ref ANALYTICS: Analytics<WebEnv> = Default::default();
+    static ref ANALYTICS: RwLock<Analytics<WebEnv>> = Default::default();
     static ref RUNTIME: RwLock<Option<Loadable<Runtime<WebEnv, WebModel>, EnvError>>> =
         Default::default();
 }
@@ -34,7 +34,8 @@ pub fn emit_to_analytics(event: WebEvent) {
                 }),
                 _ => return,
             };
-            ANALYTICS.emit(event, &model.ctx);
+            let mut analytics = ANALYTICS.write().expect("analytics write failed");
+            analytics.emit(event, &model.ctx);
         }
         _ => panic!("runtime is not ready"),
     };
@@ -44,7 +45,8 @@ pub fn emit_to_analytics(event: WebEvent) {
 pub fn start() {
     std::panic::set_hook(Box::new(console_error_panic_hook::hook));
     let closure = Closure::wrap(Box::new(|| {
-        ANALYTICS.flush_next();
+        let analytics = ANALYTICS.read().expect("analytics write failed");
+        analytics.flush_next();
     }) as Box<dyn FnMut()>);
     web_sys::window()
         .expect("window is not available")
@@ -54,7 +56,6 @@ pub fn start() {
         )
         .expect("set_interval failed");
     closure.forget();
-    ANALYTICS.flush_all();
 }
 
 #[wasm_bindgen]

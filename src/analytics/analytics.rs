@@ -14,6 +14,7 @@ use stremio_core::types::profile::AuthKey;
 struct AnalyticsEvent {
     #[serde(flatten)]
     event: serde_json::Value,
+    event_number: u64,
     context: serde_json::Value,
 }
 
@@ -28,17 +29,20 @@ struct AnalyticsEventsBatch {
 pub struct Analytics<E: Env> {
     queue: Arc<Mutex<VecDeque<AnalyticsEventsBatch>>>,
     pending: Arc<Mutex<Option<AnalyticsEventsBatch>>>,
+    event_number: u64,
     env: PhantomData<E>,
 }
 
 impl<E: Env + 'static> Analytics<E> {
-    pub fn emit(&self, event: serde_json::Value, ctx: &Ctx) {
+    pub fn emit(&mut self, event: serde_json::Value, ctx: &Ctx) {
         let auth_key = match ctx.profile.auth_key() {
             Some(auth_key) => auth_key.to_owned(),
             _ => return,
         };
+        self.event_number = self.event_number.wrapping_add(1);
         let event = AnalyticsEvent {
             event,
+            event_number: self.event_number,
             context: E::analytics_context(),
         };
         let mut queue = self.queue.lock().expect("queue lock failed");
