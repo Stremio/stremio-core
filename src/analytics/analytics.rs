@@ -86,7 +86,19 @@ impl<E: Env + 'static> Analytics<E> {
         };
     }
     pub fn flush_all(&self) {
-        //drop pending * flush next in loop
+        loop {
+            {
+                let mut pending = self.pending.lock().expect("pending lock failed");
+                *pending = None;
+            }
+            self.flush_next_batch();
+            {
+                let queue = self.queue.lock().expect("queue lock failed");
+                if queue.is_empty() {
+                    break;
+                }
+            }
+        }
     }
 }
 
