@@ -26,7 +26,7 @@ pub fn model_derive(input: TokenStream) -> TokenStream {
                 "ctx field is required"
             );
             let core_ident = get_core_ident().unwrap();
-            let struct_ident = &input.ident;
+            let struct_ident = input.ident;
             let env_ident = input
                 .attrs
                 .iter()
