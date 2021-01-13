@@ -32,7 +32,7 @@ pub fn model_derive(input: TokenStream) -> TokenStream {
                 .iter()
                 .find(|attr| attr.path.is_ident("model"))
                 .expect("model attribute required")
-                .parse_args::<syn::Ident>()
+                .parse_args::<Ident>()
                 .expect("model attribute parse failed");
             let field_enum_ident = struct_ident.append("Field");
             let field_enum_variant_idents = fields
