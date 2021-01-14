@@ -9,6 +9,8 @@ use serde::{Deserialize, Serialize};
 use serde_json::json;
 use std::collections::HashMap;
 use stremio_analytics::Analytics;
+use stremio_core::models::ctx::Ctx;
+use stremio_core::runtime::msg::Event;
 use stremio_core::runtime::{Env, EnvError, EnvFuture, TryEnvFuture};
 use wasm_bindgen::{JsCast, JsValue};
 use wasm_bindgen_futures::{spawn_local, JsFuture};
@@ -19,6 +21,24 @@ lazy_static! {
 }
 
 pub enum WebEnv {}
+
+impl WebEnv {
+    pub fn emit_to_analytics(event: WebEvent, ctx: &Ctx) {
+        let (name, data) = match event {
+            WebEvent::CoreEvent(Event::UserAuthenticated { .. }) => (
+                "login".to_owned(),
+                json!({
+                    "data": "data",
+                }),
+            ),
+            _ => return,
+        };
+        ANALYTICS.emit(name, data, ctx);
+    }
+    pub fn send_next_analytics_batch() -> impl Future<Output = ()> {
+        ANALYTICS.send_next_batch()
+    }
+}
 
 impl Env for WebEnv {
     fn fetch<IN, OUT>(request: Request<IN>) -> TryEnvFuture<OUT>
