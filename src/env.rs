@@ -1,3 +1,4 @@
+use crate::event::WebEvent;
 use chrono::offset::TimeZone;
 use chrono::{DateTime, Utc};
 use futures::future::Either;
@@ -7,21 +8,20 @@ use lazy_static::lazy_static;
 use serde::{Deserialize, Serialize};
 use serde_json::json;
 use std::collections::HashMap;
-use std::sync::RwLock;
 use stremio_analytics::Analytics;
-use stremio_core::runtime::{Env, EnvError, EnvFuture};
+use stremio_core::runtime::{Env, EnvError, EnvFuture, TryEnvFuture};
 use wasm_bindgen::{JsCast, JsValue};
 use wasm_bindgen_futures::{spawn_local, JsFuture};
 
 lazy_static! {
     static ref VISIT_ID: String = "visit_id".to_owned();
-    static ref ANALYTICS: RwLock<Analytics<WebEnv>> = Default::default();
+    static ref ANALYTICS: Analytics<WebEnv> = Default::default();
 }
 
 pub enum WebEnv {}
 
 impl Env for WebEnv {
-    fn fetch<IN, OUT>(request: Request<IN>) -> EnvFuture<OUT>
+    fn fetch<IN, OUT>(request: Request<IN>) -> TryEnvFuture<OUT>
     where
         IN: Serialize,
         for<'de> OUT: Deserialize<'de> + 'static,
@@ -73,13 +73,13 @@ impl Env for WebEnv {
             .and_then(|resp| future::ready(resp.into_serde().map_err(EnvError::from)))
             .boxed_local()
     }
-    fn get_storage<T>(key: &str) -> EnvFuture<Option<T>>
+    fn get_storage<T>(key: &str) -> TryEnvFuture<Option<T>>
     where
         for<'de> T: Deserialize<'de> + 'static,
     {
         future::ready(get_storage_sync(key)).boxed_local()
     }
-    fn set_storage<T: Serialize>(key: &str, value: Option<&T>) -> EnvFuture<()> {
+    fn set_storage<T: Serialize>(key: &str, value: Option<&T>) -> TryEnvFuture<()> {
         future::ready(set_storage_sync(key, value)).boxed_local()
     }
     fn exec<F>(future: F)
@@ -94,8 +94,7 @@ impl Env for WebEnv {
         Utc.timestamp(secs, millis as u32 * 1_000_000)
     }
     fn flush_analytics() -> EnvFuture<()> {
-        let analytics = ANALYTICS.read().expect("analytics read failed");
-        analytics.flush_all().boxed_local()
+        ANALYTICS.flush().boxed_local()
     }
     fn analytics_context() -> serde_json::Value {
         json!({
