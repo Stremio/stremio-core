@@ -14,17 +14,21 @@ use url::Url;
 #[derive(Clone, PartialEq)]
 #[cfg_attr(test, derive(Debug))]
 pub enum EnvError {
-    StorageUnavailable,
-    StorageSchemaVersionDowngrade(usize, usize),
-    StorageSchemaVersionUpgrade(Box<EnvError>),
     Fetch(String),
     AddonTransport(String),
     Serde(String),
+    StorageUnavailable,
+    StorageSchemaVersionDowngrade(usize, usize),
+    StorageSchemaVersionUpgrade(Box<EnvError>),
+    AnalyticsFlushFailed,
 }
 
 impl EnvError {
     pub fn message(&self) -> String {
         match &self {
+            EnvError::Fetch(message) => format!("Failed to fetch: {}", message),
+            EnvError::AddonTransport(message) => format!("Addon protocol violation: {}", message),
+            EnvError::Serde(message) => format!("Serialization error: {}", message),
             EnvError::StorageUnavailable => "Storage is not available.".to_owned(),
             EnvError::StorageSchemaVersionDowngrade(from, to) => format!(
                 "Downgrade storage schema version from {} to {} is not allowed.",
@@ -34,19 +38,18 @@ impl EnvError {
                 "Upgrade storage schema version failed caused by: {}",
                 source.message()
             ),
-            EnvError::Fetch(message) => format!("Failed to fetch: {}", message),
-            EnvError::AddonTransport(message) => format!("Addon protocol violation: {}", message),
-            EnvError::Serde(message) => format!("Serialization error: {}", message),
+            EnvError::AnalyticsFlushFailed => "Analytics flush failed.".to_owned(),
         }
     }
     pub fn code(&self) -> u64 {
         match &self {
-            EnvError::StorageUnavailable => 1,
-            EnvError::StorageSchemaVersionDowngrade(_, _) => 2,
-            EnvError::StorageSchemaVersionUpgrade(_) => 3,
-            EnvError::Fetch(_) => 4,
-            EnvError::AddonTransport(_) => 5,
-            EnvError::Serde(_) => 6,
+            EnvError::Fetch(_) => 1,
+            EnvError::AddonTransport(_) => 2,
+            EnvError::Serde(_) => 3,
+            EnvError::StorageUnavailable => 4,
+            EnvError::StorageSchemaVersionDowngrade(_, _) => 5,
+            EnvError::StorageSchemaVersionUpgrade(_) => 6,
+            EnvError::AnalyticsFlushFailed => 7,
         }
     }
 }
