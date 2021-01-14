@@ -1,6 +1,5 @@
 #![allow(clippy::module_inception)]
 
-mod analytics;
 mod model;
 
 mod env;
