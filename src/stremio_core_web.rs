@@ -11,9 +11,8 @@ use stremio_core::models::common::Loadable;
 use stremio_core::runtime::{Env, EnvError, Runtime, RuntimeAction, RuntimeEvent};
 use stremio_core::types::library::LibraryBucket;
 use stremio_core::types::profile::Profile;
-use wasm_bindgen::closure::Closure;
 use wasm_bindgen::prelude::wasm_bindgen;
-use wasm_bindgen::{JsCast, JsValue};
+use wasm_bindgen::JsValue;
 
 lazy_static! {
     static ref RUNTIME: RwLock<Option<Loadable<Runtime<WebEnv, WebModel>, EnvError>>> =
@@ -23,17 +22,10 @@ lazy_static! {
 #[wasm_bindgen(start)]
 pub fn start() {
     std::panic::set_hook(Box::new(console_error_panic_hook::hook));
-    let closure = Closure::wrap(Box::new(|| {
-        WebEnv::exec(WebEnv::send_next_analytics_batch());
-    }) as Box<dyn FnMut()>);
-    web_sys::window()
-        .expect("window is not available")
-        .set_interval_with_callback_and_timeout_and_arguments_0(
-            closure.as_ref().unchecked_ref(),
-            30 * 1000,
-        )
-        .expect("set interval failed");
-    closure.forget();
+    WebEnv::set_interval(
+        || WebEnv::exec(WebEnv::send_next_analytics_batch()),
+        30 * 1000,
+    );
 }
 
 #[wasm_bindgen]

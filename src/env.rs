@@ -12,6 +12,7 @@ use stremio_analytics::Analytics;
 use stremio_core::models::ctx::Ctx;
 use stremio_core::runtime::msg::Event;
 use stremio_core::runtime::{Env, EnvError, EnvFuture, TryEnvFuture};
+use wasm_bindgen::closure::Closure;
 use wasm_bindgen::{JsCast, JsValue};
 use wasm_bindgen_futures::{spawn_local, JsFuture};
 
@@ -37,6 +38,24 @@ impl WebEnv {
     }
     pub fn send_next_analytics_batch() -> impl Future<Output = ()> {
         ANALYTICS.send_next_batch()
+    }
+    pub fn set_interval<F: FnMut() + 'static>(func: F, timeout: i32) -> i32 {
+        let closure = Closure::wrap(Box::new(func) as Box<dyn FnMut()>);
+        let interval_id = web_sys::window()
+            .expect("window is not available")
+            .set_interval_with_callback_and_timeout_and_arguments_0(
+                closure.as_ref().unchecked_ref(),
+                timeout,
+            )
+            .expect("set interval failed");
+        closure.forget();
+        interval_id
+    }
+    #[allow(dead_code)]
+    pub fn clear_interval(id: i32) {
+        web_sys::window()
+            .expect("window is not available")
+            .clear_interval_with_handle(id);
     }
 }
 
