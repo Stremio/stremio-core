@@ -1,13 +1,13 @@
 use derivative::Derivative;
 use enclose::enclose;
 use futures::future::Either;
-use futures::{future, Future, FutureExt, TryFutureExt};
+use futures::{future, Future, FutureExt};
 use serde::Serialize;
 use std::collections::VecDeque;
 use std::marker::PhantomData;
 use std::sync::{Arc, Mutex};
 use stremio_core::models::ctx::Ctx;
-use stremio_core::runtime::{Env, EnvError, EnvFuture};
+use stremio_core::runtime::{Env, EnvError, TryEnvFuture};
 use stremio_core::types::api::{fetch_api, APIRequest, APIResult, SuccessResponse};
 use stremio_core::types::profile::AuthKey;
 
@@ -118,7 +118,7 @@ impl<E: Env + 'static> Analytics<E> {
         };
         Either::Right(future::ready(()))
     }
-    pub fn flush_all(&self) -> EnvFuture<()> {
+    pub fn flush_all(&self) -> impl Future<Output = ()> {
         let mut state = self.state.lock().expect("analytics state lock failed");
         state.pending = None;
         future::join_all(
@@ -127,13 +127,13 @@ impl<E: Env + 'static> Analytics<E> {
                 .drain(..)
                 .map(|batch| send_events_batch_to_api::<E>(&batch)),
         )
-        .map(|results| results.into_iter().collect::<Result<Vec<_>, _>>())
-        .map_ok(|_| ())
-        .boxed_local()
+        .map(|_| ())
     }
 }
 
-fn send_events_batch_to_api<E: Env>(batch: &EventsBatch) -> EnvFuture<APIResult<SuccessResponse>> {
+fn send_events_batch_to_api<E: Env>(
+    batch: &EventsBatch,
+) -> TryEnvFuture<APIResult<SuccessResponse>> {
     fetch_api::<E, _, _>(&APIRequest::Events {
         auth_key: batch.auth_key.to_owned(),
         events: batch

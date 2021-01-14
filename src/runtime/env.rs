@@ -72,17 +72,19 @@ impl From<serde_json::Error> for EnvError {
     }
 }
 
-pub type EnvFuture<T> = LocalBoxFuture<'static, Result<T, EnvError>>;
+pub type EnvFuture<T> = LocalBoxFuture<'static, T>;
+
+pub type TryEnvFuture<T> = EnvFuture<Result<T, EnvError>>;
 
 pub trait Env {
-    fn fetch<IN, OUT>(request: Request<IN>) -> EnvFuture<OUT>
+    fn fetch<IN, OUT>(request: Request<IN>) -> TryEnvFuture<OUT>
     where
         IN: Serialize,
         for<'de> OUT: Deserialize<'de> + 'static;
-    fn get_storage<T>(key: &str) -> EnvFuture<Option<T>>
+    fn get_storage<T>(key: &str) -> TryEnvFuture<Option<T>>
     where
         for<'de> T: Deserialize<'de> + 'static;
-    fn set_storage<T: Serialize>(key: &str, value: Option<&T>) -> EnvFuture<()>;
+    fn set_storage<T: Serialize>(key: &str, value: Option<&T>) -> TryEnvFuture<()>;
     fn exec<F>(future: F)
     where
         F: Future<Output = ()> + 'static;
@@ -100,7 +102,7 @@ pub trait Env {
             _ => Box::new(UnsupportedTransport::new(transport_url.to_owned())),
         }
     }
-    fn migrate_storage_schema() -> EnvFuture<()>
+    fn migrate_storage_schema() -> TryEnvFuture<()>
     where
         Self: Sized,
     {
@@ -137,7 +139,7 @@ pub trait Env {
     }
 }
 
-fn migrate_storage_schema_to_v1<E: Env>() -> EnvFuture<()> {
+fn migrate_storage_schema_to_v1<E: Env>() -> TryEnvFuture<()> {
     future::try_join_all(vec![
         E::set_storage(SCHEMA_VERSION_STORAGE_KEY, Some(&1)),
         E::set_storage::<()>(PROFILE_STORAGE_KEY, None),
@@ -148,7 +150,7 @@ fn migrate_storage_schema_to_v1<E: Env>() -> EnvFuture<()> {
     .boxed_local()
 }
 
-fn migrate_storage_schema_to_v2<E: Env>() -> EnvFuture<()> {
+fn migrate_storage_schema_to_v2<E: Env>() -> TryEnvFuture<()> {
     E::get_storage::<serde_json::Value>(PROFILE_STORAGE_KEY)
         .and_then(|mut profile| {
             match profile

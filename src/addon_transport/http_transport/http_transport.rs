@@ -1,7 +1,7 @@
 use crate::addon_transport::http_transport::legacy::AddonLegacyTransport;
 use crate::addon_transport::AddonTransport;
 use crate::constants::{ADDON_LEGACY_PATH, ADDON_MANIFEST_PATH};
-use crate::runtime::{Env, EnvError, EnvFuture};
+use crate::runtime::{Env, EnvError, TryEnvFuture};
 use crate::types::addon::{Manifest, ResourcePath, ResourceResponse};
 use futures::{future, FutureExt};
 use http::Request;
@@ -24,7 +24,7 @@ impl<E: Env> AddonHTTPTransport<E> {
 }
 
 impl<E: Env> AddonTransport for AddonHTTPTransport<E> {
-    fn resource(&self, path: &ResourcePath) -> EnvFuture<ResourceResponse> {
+    fn resource(&self, path: &ResourcePath) -> TryEnvFuture<ResourceResponse> {
         if self.transport_url.path().ends_with(ADDON_LEGACY_PATH) {
             return AddonLegacyTransport::<E>::new(&self.transport_url).resource(&path);
         }
@@ -60,7 +60,7 @@ impl<E: Env> AddonTransport for AddonHTTPTransport<E> {
         let request = Request::get(&url).body(()).expect("request builder failed");
         E::fetch(request)
     }
-    fn manifest(&self) -> EnvFuture<Manifest> {
+    fn manifest(&self) -> TryEnvFuture<Manifest> {
         if self.transport_url.path().ends_with(ADDON_LEGACY_PATH) {
             return AddonLegacyTransport::<E>::new(&self.transport_url).manifest();
         }
