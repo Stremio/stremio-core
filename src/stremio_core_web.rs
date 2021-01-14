@@ -1,16 +1,13 @@
-use crate::analytics::Analytics;
 use crate::env::WebEnv;
 use crate::event::WebEvent;
 use crate::model::WebModel;
 use futures::{future, StreamExt};
 use lazy_static::lazy_static;
-use serde_json::json;
 use std::sync::RwLock;
 use stremio_core::constants::{
     LIBRARY_RECENT_STORAGE_KEY, LIBRARY_STORAGE_KEY, PROFILE_STORAGE_KEY,
 };
 use stremio_core::models::common::Loadable;
-use stremio_core::runtime::msg::Event;
 use stremio_core::runtime::{Env, EnvError, Runtime, RuntimeAction, RuntimeEvent};
 use stremio_core::types::library::LibraryBucket;
 use stremio_core::types::profile::Profile;
@@ -19,34 +16,15 @@ use wasm_bindgen::prelude::wasm_bindgen;
 use wasm_bindgen::{JsCast, JsValue};
 
 lazy_static! {
-    static ref ANALYTICS: RwLock<Analytics<WebEnv>> = Default::default();
     static ref RUNTIME: RwLock<Option<Loadable<Runtime<WebEnv, WebModel>, EnvError>>> =
         Default::default();
-}
-
-pub fn emit_to_analytics(event: WebEvent) {
-    match &*RUNTIME.read().expect("runtime read failed") {
-        Some(Loadable::Ready(runtime)) => {
-            let model = runtime.model().expect("model read failed");
-            let event = match event {
-                WebEvent::CoreEvent(Event::UserAuthenticated { .. }) => json!({
-                    "name": "login",
-                }),
-                _ => return,
-            };
-            let mut analytics = ANALYTICS.write().expect("analytics write failed");
-            analytics.emit(event, &model.ctx);
-        }
-        _ => panic!("runtime is not ready"),
-    };
 }
 
 #[wasm_bindgen(start)]
 pub fn start() {
     std::panic::set_hook(Box::new(console_error_panic_hook::hook));
     let closure = Closure::wrap(Box::new(|| {
-        let analytics = ANALYTICS.read().expect("analytics write failed");
-        analytics.flush_next();
+        WebEnv::exec(WebEnv::send_next_analytics_batch());
     }) as Box<dyn FnMut()>);
     web_sys::window()
         .expect("window is not available")
@@ -54,12 +32,12 @@ pub fn start() {
             closure.as_ref().unchecked_ref(),
             30 * 1000,
         )
-        .expect("set_interval failed");
+        .expect("set interval failed");
     closure.forget();
 }
 
 #[wasm_bindgen]
-pub async fn initialize_runtime(emit_to_js: js_sys::Function) -> Result<(), JsValue> {
+pub async fn initialize_runtime(emit_to_ui: js_sys::Function) -> Result<(), JsValue> {
     if RUNTIME.read().expect("runtime read failed").is_some() {
         panic!("unable to initialize runtime multiple times");
     };
@@ -87,11 +65,19 @@ pub async fn initialize_runtime(emit_to_js: js_sys::Function) -> Result<(), JsVa
                     let (model, effects) = WebModel::new(profile, library);
                     let (runtime, rx) = Runtime::<WebEnv, _>::new(model, effects, 1000);
                     WebEnv::exec(rx.for_each(move |event| {
-                        emit_to_js
+                        emit_to_ui
                             .call1(&JsValue::NULL, &JsValue::from_serde(&event).unwrap())
                             .expect("emit event failed");
                         if let RuntimeEvent::CoreEvent(event) = event {
-                            emit_to_analytics(WebEvent::CoreEvent(event));
+                            let runtime = RUNTIME.read().expect("runtime read failed");
+                            let model = runtime
+                                .as_ref()
+                                .expect("runtime is not ready")
+                                .as_ref()
+                                .expect("runtime is not ready")
+                                .model()
+                                .expect("model read failed");
+                            WebEnv::emit_to_analytics(WebEvent::CoreEvent(event), &model.ctx);
                         };
                         future::ready(())
                     }));
@@ -144,8 +130,14 @@ pub fn dispatch(action: JsValue, field: JsValue) {
 
 #[wasm_bindgen]
 pub fn analytics(event: JsValue) {
-    match event.into_serde() {
-        Ok(event) => emit_to_analytics(WebEvent::UIEvent(event)),
-        Err(error) => panic!("emit failed: {}", error.to_string()),
-    }
+    let event = event.into_serde().expect("analytics failed");
+    let runtime = RUNTIME.read().expect("runtime read failed");
+    let model = runtime
+        .as_ref()
+        .expect("runtime is not ready")
+        .as_ref()
+        .expect("runtime is not ready")
+        .model()
+        .expect("model read failed");
+    WebEnv::emit_to_analytics(WebEvent::UIEvent(event), &model.ctx);
 }
