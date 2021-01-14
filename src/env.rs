@@ -7,12 +7,15 @@ use lazy_static::lazy_static;
 use serde::{Deserialize, Serialize};
 use serde_json::json;
 use std::collections::HashMap;
+use std::sync::RwLock;
+use stremio_analytics::Analytics;
 use stremio_core::runtime::{Env, EnvError, EnvFuture};
 use wasm_bindgen::{JsCast, JsValue};
 use wasm_bindgen_futures::{spawn_local, JsFuture};
 
 lazy_static! {
     static ref VISIT_ID: String = "visit_id".to_owned();
+    static ref ANALYTICS: RwLock<Analytics<WebEnv>> = Default::default();
 }
 
 pub enum WebEnv {}
@@ -90,9 +93,9 @@ impl Env for WebEnv {
         let (secs, millis) = (millis / 1000, millis % 1000);
         Utc.timestamp(secs, millis as u32 * 1_000_000)
     }
-    #[cfg(debug_assertions)]
-    fn log(message: String) {
-        web_sys::console::log_1(&JsValue::from(message));
+    fn flush_analytics() -> EnvFuture<()> {
+        let analytics = ANALYTICS.read().expect("analytics read failed");
+        analytics.flush_all().boxed_local()
     }
     fn analytics_context() -> serde_json::Value {
         json!({
@@ -103,6 +106,10 @@ impl Env for WebEnv {
             .expect("href is not available"),
             "visit_id": &*VISIT_ID
         })
+    }
+    #[cfg(debug_assertions)]
+    fn log(message: String) {
+        web_sys::console::log_1(&JsValue::from(message));
     }
 }
 
