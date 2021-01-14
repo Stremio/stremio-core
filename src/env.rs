@@ -109,9 +109,9 @@ impl Env for WebEnv {
         spawn_local(future)
     }
     fn now() -> DateTime<Utc> {
-        let millis = js_sys::Date::now() as i64;
-        let (secs, millis) = (millis / 1000, millis % 1000);
-        Utc.timestamp(secs, millis as u32 * 1_000_000)
+        let msecs = js_sys::Date::now() as i64;
+        let (secs, nsecs) = (msecs / 1000, msecs % 1000 * 1_000_000);
+        Utc.timestamp(secs, nsecs as u32)
     }
     fn flush_analytics() -> EnvFuture<()> {
         ANALYTICS.flush().boxed_local()
