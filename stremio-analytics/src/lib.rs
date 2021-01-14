@@ -120,11 +120,10 @@ impl<E: Env + 'static> Analytics<E> {
     pub fn flush_all(&self) -> EnvFuture<()> {
         let mut state = self.state.lock().expect("analytics state lock failed");
         state.pending = None;
-        let batches = state.queue.drain(..).collect::<Vec<_>>();
-        drop(state);
         future::join_all(
-            batches
-                .iter()
+            state
+                .queue
+                .drain(..)
                 .map(|batch| send_events_batch_to_api::<E>(&batch)),
         )
         .map(|results| results.into_iter().collect::<Result<Vec<_>, _>>())
