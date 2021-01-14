@@ -29,16 +29,16 @@ impl EnvError {
             EnvError::Fetch(message) => format!("Failed to fetch: {}", message),
             EnvError::AddonTransport(message) => format!("Addon protocol violation: {}", message),
             EnvError::Serde(message) => format!("Serialization error: {}", message),
-            EnvError::StorageUnavailable => "Storage is not available.".to_owned(),
+            EnvError::StorageUnavailable => "Storage is not available".to_owned(),
             EnvError::StorageSchemaVersionDowngrade(from, to) => format!(
-                "Downgrade storage schema version from {} to {} is not allowed.",
+                "Downgrade storage schema version from {} to {} is not allowed",
                 from, to
             ),
             EnvError::StorageSchemaVersionUpgrade(source) => format!(
                 "Upgrade storage schema version failed caused by: {}",
                 source.message()
             ),
-            EnvError::AnalyticsFlushFailed => "Analytics flush failed.".to_owned(),
+            EnvError::AnalyticsFlushFailed => "Analytics flush failed".to_owned(),
         }
     }
     pub fn code(&self) -> u64 {
