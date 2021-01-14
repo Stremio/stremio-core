@@ -87,7 +87,7 @@ impl<E: Env + 'static> Analytics<E> {
         };
         state.push_event(event, auth_key);
     }
-    pub fn flush_next(&self) -> impl Future<Output = ()> {
+    pub fn send_next_batch(&self) -> impl Future<Output = ()> {
         let mut state = self.state.lock().expect("analytics state lock failed");
         if state.pending.is_none() {
             let batch = state.pop_batch();
@@ -118,7 +118,7 @@ impl<E: Env + 'static> Analytics<E> {
         };
         Either::Right(future::ready(()))
     }
-    pub fn flush_all(&self) -> impl Future<Output = ()> {
+    pub fn flush(&self) -> impl Future<Output = ()> {
         let mut state = self.state.lock().expect("analytics state lock failed");
         state.pending = None;
         future::join_all(
