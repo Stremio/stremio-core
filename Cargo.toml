@@ -5,6 +5,7 @@ authors = ["Smart Code OOD"]
 edition = "2018"
 
 [workspace]
+members = ["stremio-derive", "stremio-analytics"]
 
 [lib]
 doctest = false
