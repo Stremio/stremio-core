@@ -62,13 +62,12 @@ pub async fn initialize_runtime(emit_to_ui: js_sys::Function) -> Result<(), JsVa
                             .expect("emit event failed");
                         if let RuntimeEvent::CoreEvent(event) = event {
                             let runtime = RUNTIME.read().expect("runtime read failed");
-                            let model = runtime
+                            let runtime = runtime
                                 .as_ref()
                                 .expect("runtime is not ready")
                                 .as_ref()
-                                .expect("runtime is not ready")
-                                .model()
-                                .expect("model read failed");
+                                .expect("runtime is not ready");
+                            let model = runtime.model().expect("model read failed");
                             WebEnv::emit_to_analytics(WebEvent::CoreEvent(event), &model.ctx);
                         };
                         future::ready(())
@@ -93,43 +92,39 @@ pub async fn initialize_runtime(emit_to_ui: js_sys::Function) -> Result<(), JsVa
 
 #[wasm_bindgen]
 pub fn get_state(field: JsValue) -> JsValue {
-    match field.into_serde() {
-        Ok(field) => match &*RUNTIME.read().expect("runtime read failed") {
-            Some(Loadable::Ready(runtime)) => runtime
-                .model()
-                .expect("model read failed")
-                .get_state(&field),
-            _ => panic!("runtime is not ready"),
-        },
-        Err(error) => panic!("get state failed: {}", error.to_string()),
-    }
+    let field = field.into_serde().expect("get state failed");
+    let runtime = RUNTIME.read().expect("runtime read failed");
+    let runtime = runtime
+        .as_ref()
+        .expect("runtime is not ready")
+        .as_ref()
+        .expect("runtime is not ready");
+    let model = runtime.model().expect("model read failed");
+    model.get_state(&field)
 }
 
 #[wasm_bindgen]
 pub fn dispatch(action: JsValue, field: JsValue) {
-    match (action.into_serde(), field.into_serde()) {
-        (Ok(action), Ok(field)) => {
-            match &*RUNTIME.read().expect("runtime read failed") {
-                Some(Loadable::Ready(runtime)) => runtime.dispatch(RuntimeAction { action, field }),
-                _ => panic!("runtime is not ready"),
-            };
-        }
-        (Err(error), _) | (_, Err(error)) => {
-            panic!("dispatch failed: {}", error.to_string());
-        }
-    };
+    let action = action.into_serde().expect("dispatch failed");
+    let field = field.into_serde().expect("dispatch failed");
+    let runtime = RUNTIME.read().expect("runtime read failed");
+    let runtime = runtime
+        .as_ref()
+        .expect("runtime is not ready")
+        .as_ref()
+        .expect("runtime is not ready");
+    runtime.dispatch(RuntimeAction { action, field });
 }
 
 #[wasm_bindgen]
 pub fn analytics(event: JsValue) {
     let event = event.into_serde().expect("analytics failed");
     let runtime = RUNTIME.read().expect("runtime read failed");
-    let model = runtime
+    let runtime = runtime
         .as_ref()
         .expect("runtime is not ready")
         .as_ref()
-        .expect("runtime is not ready")
-        .model()
-        .expect("model read failed");
+        .expect("runtime is not ready");
+    let model = runtime.model().expect("model read failed");
     WebEnv::emit_to_analytics(WebEvent::UIEvent(event), &model.ctx);
 }
