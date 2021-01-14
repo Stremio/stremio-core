@@ -1,6 +1,7 @@
 use derivative::Derivative;
 use enclose::enclose;
-use futures::{future, FutureExt, TryFutureExt};
+use futures::future::Either;
+use futures::{future, Future, FutureExt, TryFutureExt};
 use serde::Serialize;
 use std::collections::VecDeque;
 use std::marker::PhantomData;
@@ -86,36 +87,36 @@ impl<E: Env + 'static> Analytics<E> {
         };
         state.push_event(event, auth_key);
     }
-    pub async fn flush_next(&self) {
+    pub fn flush_next(&self) -> impl Future<Output = ()> {
         let mut state = self.state.lock().expect("analytics state lock failed");
-        if state.pending.is_some() {
-            return;
+        if state.pending.is_none() {
+            let batch = state.pop_batch();
+            if let Some(batch) = batch {
+                state.pending = Some(batch.to_owned());
+                return Either::Left(
+                    send_events_batch_to_api::<E>(&batch)
+                        .map(|result| match result {
+                            Ok(APIResult::Err { error }) if error.code != 1 => Err(()),
+                            Err(EnvError::Fetch(_)) | Err(EnvError::Serde(_)) => Err(()),
+                            _ => Ok(()),
+                        })
+                        .then(enclose!((self.state => state) move |result| async move {
+                            let mut state = state.lock().expect("analytics state lock failed");
+                            if state.pending == Some(batch) {
+                                match result {
+                                    Ok(_) => {
+                                        state.pending = None;
+                                    }
+                                    Err(_) => {
+                                        state.revert_pending();
+                                    }
+                                };
+                            };
+                        })),
+                );
+            };
         };
-        let batch = state.pop_batch();
-        if let Some(batch) = batch {
-            state.pending = Some(batch.to_owned());
-            drop(state);
-            send_events_batch_to_api::<E>(&batch)
-                .map(|result| match result {
-                    Ok(APIResult::Err { error }) if error.code != 1 => Err(()),
-                    Err(EnvError::Fetch(_)) | Err(EnvError::Serde(_)) => Err(()),
-                    _ => Ok(()),
-                })
-                .then(enclose!((self.state => state) move |result| async move {
-                    let mut state = state.lock().expect("analytics state lock failed");
-                    if state.pending == Some(batch) {
-                        match result {
-                            Ok(_) => {
-                                state.pending = None;
-                            }
-                            Err(_) => {
-                                state.revert_pending();
-                            }
-                        };
-                    };
-                }))
-                .await;
-        };
+        Either::Right(future::ready(()))
     }
     pub fn flush_all(&self) -> EnvFuture<()> {
         let mut state = self.state.lock().expect("analytics state lock failed");
