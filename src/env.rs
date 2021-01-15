@@ -13,12 +13,19 @@ use stremio_core::models::ctx::Ctx;
 use stremio_core::runtime::msg::Event;
 use stremio_core::runtime::{Env, EnvError, EnvFuture, TryEnvFuture};
 use wasm_bindgen::closure::Closure;
+use wasm_bindgen::prelude::wasm_bindgen;
 use wasm_bindgen::{JsCast, JsValue};
 use wasm_bindgen_futures::{spawn_local, JsFuture};
 
 lazy_static! {
     static ref VISIT_ID: String = "visit_id".to_owned();
     static ref ANALYTICS: Analytics<WebEnv> = Default::default();
+}
+
+#[wasm_bindgen]
+extern "C" {
+    #[wasm_bindgen(catch, js_namespace = window, js_name = sanitizedUrl)]
+    fn sanitized_url() -> Result<String, JsValue>;
 }
 
 pub enum WebEnv {}
@@ -137,11 +144,7 @@ impl Env for WebEnv {
     }
     fn analytics_context() -> serde_json::Value {
         json!({
-            "url":web_sys::window()
-            .expect("window is not available")
-            .location()
-            .href()
-            .expect("href is not available"),
+            "url": sanitized_url().expect("sanitize url failed"),
             "visit_id": &*VISIT_ID
         })
     }
