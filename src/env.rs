@@ -10,7 +10,7 @@ use serde_json::json;
 use std::collections::HashMap;
 use stremio_analytics::Analytics;
 use stremio_core::models::ctx::Ctx;
-use stremio_core::runtime::msg::Event;
+use stremio_core::runtime::msg::{Action, ActionCtx, Event};
 use stremio_core::runtime::{Env, EnvError, EnvFuture, TryEnvFuture};
 use wasm_bindgen::closure::Closure;
 use wasm_bindgen::prelude::wasm_bindgen;
@@ -35,6 +35,12 @@ impl WebEnv {
         let (name, data) = match event {
             WebEvent::CoreEvent(Event::UserAuthenticated { .. }) => (
                 "login".to_owned(),
+                json!({
+                    "data": "data",
+                }),
+            ),
+            WebEvent::CoreAction(Action::Ctx(ActionCtx::Logout)) => (
+                "logout".to_owned(),
                 json!({
                     "data": "data",
                 }),
