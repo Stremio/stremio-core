@@ -1,5 +1,5 @@
 use serde::Deserialize;
-use stremio_core::runtime::msg::Event;
+use stremio_core::runtime::msg::{Action, Event};
 
 #[derive(Deserialize)]
 pub enum UIEvent {
@@ -7,6 +7,7 @@ pub enum UIEvent {
 }
 
 pub enum WebEvent {
+    CoreAction(Action),
     CoreEvent(Event),
     UIEvent(UIEvent),
 }

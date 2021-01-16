@@ -8,6 +8,7 @@ use stremio_core::constants::{
     LIBRARY_RECENT_STORAGE_KEY, LIBRARY_STORAGE_KEY, PROFILE_STORAGE_KEY,
 };
 use stremio_core::models::common::Loadable;
+use stremio_core::runtime::msg::Action;
 use stremio_core::runtime::{Env, EnvError, Runtime, RuntimeAction, RuntimeEvent};
 use stremio_core::types::library::LibraryBucket;
 use stremio_core::types::profile::Profile;
@@ -105,7 +106,7 @@ pub fn get_state(field: JsValue) -> JsValue {
 
 #[wasm_bindgen]
 pub fn dispatch(action: JsValue, field: JsValue) {
-    let action = action.into_serde().expect("dispatch failed");
+    let action = action.into_serde::<Action>().expect("dispatch failed");
     let field = field.into_serde().expect("dispatch failed");
     let runtime = RUNTIME.read().expect("runtime read failed");
     let runtime = runtime
@@ -113,6 +114,10 @@ pub fn dispatch(action: JsValue, field: JsValue) {
         .expect("runtime is not ready")
         .as_ref()
         .expect("runtime is not ready");
+    {
+        let model = runtime.model().expect("model read failed");
+        WebEnv::emit_to_analytics(WebEvent::CoreAction(action.to_owned()), &model.ctx);
+    }
     runtime.dispatch(RuntimeAction { action, field });
 }
 
