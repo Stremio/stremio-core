@@ -1,5 +1,6 @@
 use flate2::write::ZlibEncoder;
 use flate2::Compression;
+use itertools::Itertools;
 use percent_encoding::{utf8_percent_encode, AsciiSet, NON_ALPHANUMERIC};
 use serde::Serialize;
 use std::borrow::Borrow;
@@ -143,26 +144,20 @@ impl From<(&Video, &ResourceRequest)> for VideoDeepLinks {
                 utf8_percent_encode(&request.path.id, URI_COMPONENT_ENCODE_SET),
                 utf8_percent_encode(&video.id, URI_COMPONENT_ENCODE_SET)
             ),
-            player: video
-                .streams
-                .first()
-                .filter(|_| video.streams.len() == 1)
-                .map(|stream| {
-                    format!(
-                        "#/player/{}/{}/{}/{}/{}/{}",
-                        utf8_percent_encode(
-                            &base64::encode(
-                                gz_encode(serde_json::to_string(stream).unwrap()).unwrap()
-                            ),
-                            URI_COMPONENT_ENCODE_SET
-                        ),
-                        utf8_percent_encode(&request.base.as_str(), URI_COMPONENT_ENCODE_SET),
-                        utf8_percent_encode(&request.base.as_str(), URI_COMPONENT_ENCODE_SET),
-                        utf8_percent_encode(&request.path.r#type, URI_COMPONENT_ENCODE_SET),
-                        utf8_percent_encode(&request.path.id, URI_COMPONENT_ENCODE_SET),
-                        utf8_percent_encode(&video.id, URI_COMPONENT_ENCODE_SET)
-                    )
-                }),
+            player: video.streams.iter().exactly_one().ok().map(|stream| {
+                format!(
+                    "#/player/{}/{}/{}/{}/{}/{}",
+                    utf8_percent_encode(
+                        &base64::encode(gz_encode(serde_json::to_string(stream).unwrap()).unwrap()),
+                        URI_COMPONENT_ENCODE_SET
+                    ),
+                    utf8_percent_encode(&request.base.as_str(), URI_COMPONENT_ENCODE_SET),
+                    utf8_percent_encode(&request.base.as_str(), URI_COMPONENT_ENCODE_SET),
+                    utf8_percent_encode(&request.path.r#type, URI_COMPONENT_ENCODE_SET),
+                    utf8_percent_encode(&request.path.id, URI_COMPONENT_ENCODE_SET),
+                    utf8_percent_encode(&video.id, URI_COMPONENT_ENCODE_SET)
+                )
+            }),
         }
     }
 }
