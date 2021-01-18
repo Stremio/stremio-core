@@ -9,6 +9,7 @@ use semver::Version;
 use serde::{Deserialize, Serialize};
 use serde_json::json;
 use std::collections::HashMap;
+use std::sync::RwLock;
 use stremio_analytics::Analytics;
 use stremio_core::models::ctx::Ctx;
 use stremio_core::runtime::msg::{Action, ActionCtx, Event};
@@ -18,15 +19,18 @@ use wasm_bindgen::prelude::wasm_bindgen;
 use wasm_bindgen::{JsCast, JsValue};
 use wasm_bindgen_futures::{spawn_local, JsFuture};
 
-lazy_static! {
-    static ref VISIT_ID: String = hex::encode(WebEnv::random_buffer(10));
-    static ref ANALYTICS: Analytics<WebEnv> = Default::default();
-}
+const INSTALLATION_ID_STORAGE_KEY: &str = "installation_id";
 
 #[wasm_bindgen]
 extern "C" {
     #[wasm_bindgen(catch, js_namespace = window, js_name = sanitizedUrl)]
     fn sanitized_url() -> Result<String, JsValue>;
+}
+
+lazy_static! {
+    static ref INSTALLATION_ID: RwLock<Option<String>> = Default::default();
+    static ref VISIT_ID: String = hex::encode(WebEnv::random_buffer(10));
+    static ref ANALYTICS: Analytics<WebEnv> = Default::default();
 }
 
 #[derive(Serialize)]
@@ -48,6 +52,22 @@ struct AnalyticsContext {
 pub enum WebEnv {}
 
 impl WebEnv {
+    pub fn init() -> TryEnvFuture<()> {
+        WebEnv::get_storage::<String>(INSTALLATION_ID_STORAGE_KEY)
+            .map_ok(|installation_id| {
+                installation_id.or_else(|| Some(hex::encode(WebEnv::random_buffer(10))))
+            })
+            .and_then(|installation_id| {
+                *INSTALLATION_ID
+                    .write()
+                    .expect("installation id write failed") = installation_id;
+                WebEnv::set_storage(
+                    INSTALLATION_ID_STORAGE_KEY,
+                    Some(&*INSTALLATION_ID.read().expect("installation id read failed")),
+                )
+            })
+            .boxed_local()
+    }
     pub fn emit_to_analytics(event: WebEvent, ctx: &Ctx) {
         let (name, data) = match event {
             WebEvent::CoreEvent(Event::UserAuthenticated { .. }) => (
