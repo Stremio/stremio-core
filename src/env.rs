@@ -53,7 +53,8 @@ pub enum WebEnv {}
 
 impl WebEnv {
     pub fn init() -> TryEnvFuture<()> {
-        WebEnv::get_storage::<String>(INSTALLATION_ID_STORAGE_KEY)
+        WebEnv::migrate_storage_schema()
+            .and_then(|_| WebEnv::get_storage::<String>(INSTALLATION_ID_STORAGE_KEY))
             .map_ok(|installation_id| {
                 installation_id.or_else(|| Some(hex::encode(WebEnv::random_buffer(10))))
             })

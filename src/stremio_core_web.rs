@@ -36,8 +36,8 @@ pub async fn initialize_runtime(emit_to_ui: js_sys::Function) -> Result<(), JsVa
     };
 
     *RUNTIME.write().expect("runtime write failed") = Some(Loadable::Loading);
-    let migration_result = WebEnv::migrate_storage_schema().await;
-    match migration_result {
+    let env_init_result = WebEnv::init().await;
+    match env_init_result {
         Ok(_) => {
             let storage_result = future::try_join3(
                 WebEnv::get_storage::<Profile>(PROFILE_STORAGE_KEY),
