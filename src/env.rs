@@ -18,7 +18,7 @@ use wasm_bindgen::{JsCast, JsValue};
 use wasm_bindgen_futures::{spawn_local, JsFuture};
 
 lazy_static! {
-    static ref VISIT_ID: String = "visit_id".to_owned();
+    static ref VISIT_ID: String = hex::encode(WebEnv::random_buffer(10));
     static ref ANALYTICS: Analytics<WebEnv> = Default::default();
 }
 
@@ -69,6 +69,11 @@ impl WebEnv {
         web_sys::window()
             .expect("window is not available")
             .clear_interval_with_handle(id);
+    }
+    pub fn random_buffer(len: usize) -> Vec<u8> {
+        let mut buffer = vec![0u8; len];
+        getrandom::getrandom(buffer.as_mut_slice()).expect("generate random buffer failed");
+        buffer
     }
 }
 
