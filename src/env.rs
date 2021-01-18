@@ -5,6 +5,7 @@ use futures::future::Either;
 use futures::{future, Future, FutureExt, TryFutureExt};
 use http::{Method, Request};
 use lazy_static::lazy_static;
+use semver::Version;
 use serde::{Deserialize, Serialize};
 use serde_json::json;
 use std::collections::HashMap;
@@ -26,6 +27,22 @@ lazy_static! {
 extern "C" {
     #[wasm_bindgen(catch, js_namespace = window, js_name = sanitizedUrl)]
     fn sanitized_url() -> Result<String, JsValue>;
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+struct AnalyticsContext {
+    app_type: String,
+    app_version: Version,
+    server_version: Option<Version>,
+    shell_version: Option<Version>,
+    system_language: String,
+    app_language: String,
+    #[serde(rename = "installationID")]
+    installation_id: String,
+    #[serde(rename = "visitID")]
+    visit_id: String,
+    url: String,
 }
 
 pub enum WebEnv {}
