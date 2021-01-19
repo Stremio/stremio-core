@@ -164,7 +164,14 @@ impl Env for WebEnv {
             .expect("window is not available")
             .fetch_with_request(&request);
         JsFuture::from(promise)
-            .map_err(|error| EnvError::Fetch(js_error_message(error)))
+            .map_err(|error| {
+                EnvError::Fetch(
+                    error
+                        .dyn_into::<js_sys::Error>()
+                        .map(|error| String::from(error.message()))
+                        .unwrap_or_else(|_| "Unknown Error".to_owned()),
+                )
+            })
             .and_then(|resp| {
                 let resp = resp.dyn_into::<web_sys::Response>().unwrap();
                 if resp.status() != 200 {
@@ -173,10 +180,14 @@ impl Env for WebEnv {
                         resp.status(),
                     ))))
                 } else {
-                    Either::Left(
-                        JsFuture::from(resp.json().unwrap())
-                            .map_err(|error| EnvError::Fetch(js_error_message(error))),
-                    )
+                    Either::Left(JsFuture::from(resp.json().unwrap()).map_err(|error| {
+                        EnvError::Fetch(
+                            error
+                                .dyn_into::<js_sys::Error>()
+                                .map(|error| String::from(error.message()))
+                                .unwrap_or_else(|_| "Unknown Error".to_owned()),
+                        )
+                    }))
                 }
             })
             .and_then(|resp| future::ready(resp.into_serde().map_err(EnvError::from)))
@@ -244,19 +255,15 @@ impl Env for WebEnv {
     }
 }
 
-fn local_storage() -> Result<web_sys::Storage, EnvError> {
-    web_sys::window()
-        .expect("window is not available")
-        .local_storage()
-        .map_err(|_| EnvError::StorageUnavailable)?
-        .ok_or(EnvError::StorageUnavailable)
-}
-
 fn get_storage_sync<T>(key: &str) -> Result<Option<T>, EnvError>
 where
     for<'de> T: Deserialize<'de> + 'static,
 {
-    let storage = local_storage()?;
+    let storage = web_sys::window()
+        .expect("window is not available")
+        .local_storage()
+        .map_err(|_| EnvError::StorageUnavailable)?
+        .ok_or(EnvError::StorageUnavailable)?;
     let value = storage
         .get_item(key)
         .map_err(|_| EnvError::StorageUnavailable)?;
@@ -267,7 +274,11 @@ where
 }
 
 fn set_storage_sync<T: Serialize>(key: &str, value: Option<&T>) -> Result<(), EnvError> {
-    let storage = local_storage()?;
+    let storage = web_sys::window()
+        .expect("window is not available")
+        .local_storage()
+        .map_err(|_| EnvError::StorageUnavailable)?
+        .ok_or(EnvError::StorageUnavailable)?;
     match value {
         Some(value) => {
             let serialized_value = serde_json::to_string(value)?;
@@ -280,11 +291,4 @@ fn set_storage_sync<T: Serialize>(key: &str, value: Option<&T>) -> Result<(), En
             .map_err(|_| EnvError::StorageUnavailable)?,
     };
     Ok(())
-}
-
-fn js_error_message(error: JsValue) -> String {
-    error
-        .dyn_into::<js_sys::Error>()
-        .map(|error| String::from(error.message()))
-        .unwrap_or_else(|_| "Unknown Error".to_owned())
 }
