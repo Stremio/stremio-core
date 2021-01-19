@@ -73,6 +73,12 @@ impl WebEnv {
                     Some(&*INSTALLATION_ID.read().expect("installation id read failed")),
                 )
             })
+            .inspect_ok(|_| {
+                WebEnv::set_interval(
+                    || WebEnv::exec(WebEnv::send_next_analytics_batch()),
+                    30 * 1000,
+                );
+            })
             .boxed_local()
     }
     pub fn emit_to_analytics(event: WebEvent, model: &WebModel) {

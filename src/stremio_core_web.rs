@@ -23,10 +23,6 @@ lazy_static! {
 #[wasm_bindgen(start)]
 pub fn start() {
     std::panic::set_hook(Box::new(console_error_panic_hook::hook));
-    WebEnv::set_interval(
-        || WebEnv::exec(WebEnv::send_next_analytics_batch()),
-        30 * 1000,
-    );
 }
 
 #[wasm_bindgen]
