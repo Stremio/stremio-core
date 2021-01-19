@@ -111,7 +111,7 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                         library_item.state.flagged_watched = 0;
                     } else {
                         let time_watched =
-                            cmp::min(1000, cmp::max(0, time - library_item.state.time_offset));
+                            cmp::min(1000, time.saturating_sub(library_item.state.time_offset));
                         library_item.state.time_watched =
                             library_item.state.time_watched.saturating_add(time_watched);
                         library_item.state.overall_time_watched = library_item
