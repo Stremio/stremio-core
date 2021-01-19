@@ -19,7 +19,7 @@ pub const CATALOG_PAGE_SIZE: usize = 100;
 pub const CATALOG_PREVIEW_SIZE: usize = 10;
 pub const LIBRARY_RECENT_COUNT: usize = 200;
 pub const WATCHED_THRESHOLD_COEF: f64 = 0.7;
-pub const SCHEMA_VERSION: usize = 2;
+pub const SCHEMA_VERSION: u32 = 2;
 
 lazy_static! {
     pub static ref API_URL: Url = Url::parse("https://api.strem.io").expect("API_URL parse failed");

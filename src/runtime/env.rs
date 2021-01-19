@@ -20,7 +20,7 @@ pub enum EnvError {
     AddonTransport(String),
     Serde(String),
     StorageUnavailable,
-    StorageSchemaVersionDowngrade(usize, usize),
+    StorageSchemaVersionDowngrade(u32, u32),
     StorageSchemaVersionUpgrade(Box<EnvError>),
 }
 
@@ -105,7 +105,7 @@ pub trait Env {
     where
         Self: Sized,
     {
-        Self::get_storage::<usize>(SCHEMA_VERSION_STORAGE_KEY)
+        Self::get_storage::<u32>(SCHEMA_VERSION_STORAGE_KEY)
             .and_then(|schema_version| async move {
                 let mut schema_version = schema_version.unwrap_or_default();
                 if schema_version > SCHEMA_VERSION {
