@@ -24,6 +24,8 @@ const INSTALLATION_ID_STORAGE_KEY: &str = "installation_id";
 #[wasm_bindgen]
 extern "C" {
     #[wasm_bindgen(catch, js_namespace = ["window", "core_imports"])]
+    static app_version: String;
+    #[wasm_bindgen(catch, js_namespace = ["window", "core_imports"])]
     fn sanitize_location_path(path: &str) -> Result<String, JsValue>;
 }
 
@@ -201,7 +203,8 @@ impl Env for WebEnv {
         let url = sanitize_location_path(hash_path).expect("sanitize location path failed");
         json!({
             "url": url,
-            "visit_id": &*VISIT_ID
+            "visit_id": &*VISIT_ID,
+            "app_version": &*app_version
         })
     }
     #[cfg(debug_assertions)]
