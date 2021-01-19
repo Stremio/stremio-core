@@ -9,6 +9,7 @@ fn auth_request() {
             AuthRequest::Login {
                 email: "email".to_owned(),
                 password: "password".to_owned(),
+                facebook: false,
             },
             AuthRequest::Register {
                 email: "email".to_owned(),
@@ -21,7 +22,7 @@ fn auth_request() {
                 Token::Seq { len: Some(2) },
                 Token::Struct {
                     name: "AuthRequest",
-                    len: 3,
+                    len: 4,
                 },
                 Token::Str("type"),
                 Token::Str("Login"),
@@ -29,6 +30,8 @@ fn auth_request() {
                 Token::Str("email"),
                 Token::Str("password"),
                 Token::Str("password"),
+                Token::Str("facebook"),
+                Token::Bool(false),
                 Token::StructEnd,
                 Token::Struct {
                     name: "AuthRequest",

@@ -445,7 +445,7 @@ impl DefaultTokens for AuthRequest {
         vec![
             Token::Struct {
                 name: "AuthRequest",
-                len: 4,
+                len: 5,
             },
             Token::Str("type"),
             Token::Str("Auth"),
@@ -455,6 +455,8 @@ impl DefaultTokens for AuthRequest {
             Token::Str(""),
             Token::Str("password"),
             Token::Str(""),
+            Token::Str("facebook"),
+            Token::Bool(false),
             Token::StructEnd,
         ]
     }

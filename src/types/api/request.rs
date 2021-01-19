@@ -57,7 +57,12 @@ impl APIMethodName for APIRequest {
 #[serde(tag = "type")]
 pub enum AuthRequest {
     #[cfg_attr(test, derivative(Default))]
-    Login { email: String, password: String },
+    Login {
+        email: String,
+        password: String,
+        #[serde(default)]
+        facebook: bool,
+    },
     Register {
         email: String,
         password: String,
