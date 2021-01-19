@@ -94,7 +94,7 @@ pub trait Env {
     fn flush_analytics() -> EnvFuture<()>;
     fn analytics_context(ctx: &Ctx, streaming_server: &StreamingServer) -> serde_json::Value;
     #[cfg(debug_assertions)]
-    fn log(message: String);
+    fn log(message: &str);
     fn addon_transport(transport_url: &Url) -> Box<dyn AddonTransport>
     where
         Self: Sized + 'static,
