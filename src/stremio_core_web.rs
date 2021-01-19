@@ -54,10 +54,7 @@ pub async fn initialize_runtime(emit_to_ui: js_sys::Function) -> Result<(), JsVa
                     let (model, effects) = WebModel::new(profile, library);
                     let (runtime, rx) = Runtime::<WebEnv, _>::new(model, effects, 1000);
                     WebEnv::exec(rx.for_each(move |event| {
-                        emit_to_ui
-                            .call1(&JsValue::NULL, &JsValue::from_serde(&event).unwrap())
-                            .expect("emit event failed");
-                        if let RuntimeEvent::CoreEvent(event) = event {
+                        if let RuntimeEvent::CoreEvent(event) = &event {
                             let runtime = RUNTIME.read().expect("runtime read failed");
                             let runtime = runtime
                                 .as_ref()
@@ -65,8 +62,14 @@ pub async fn initialize_runtime(emit_to_ui: js_sys::Function) -> Result<(), JsVa
                                 .as_ref()
                                 .expect("runtime is not ready");
                             let model = runtime.model().expect("model read failed");
-                            WebEnv::emit_to_analytics(WebEvent::CoreEvent(event), &model);
+                            WebEnv::emit_to_analytics(
+                                WebEvent::CoreEvent(event.to_owned()),
+                                &model,
+                            );
                         };
+                        emit_to_ui
+                            .call1(&JsValue::NULL, &JsValue::from_serde(&event).unwrap())
+                            .expect("emit event failed");
                         future::ready(())
                     }));
                     *RUNTIME.write().expect("runtime write failed") =
