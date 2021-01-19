@@ -23,8 +23,8 @@ const INSTALLATION_ID_STORAGE_KEY: &str = "installation_id";
 
 #[wasm_bindgen]
 extern "C" {
-    #[wasm_bindgen(catch, js_namespace = window, js_name = sanitizedUrl)]
-    fn sanitized_url() -> Result<String, JsValue>;
+    #[wasm_bindgen(catch, js_namespace = ["window", "core_imports"])]
+    fn sanitize_location_path(path: &str) -> Result<String, JsValue>;
 }
 
 lazy_static! {
@@ -192,8 +192,15 @@ impl Env for WebEnv {
         ANALYTICS.flush().boxed_local()
     }
     fn analytics_context() -> serde_json::Value {
+        let location_hash = web_sys::window()
+            .expect("window is not available")
+            .location()
+            .hash()
+            .expect("location hash is not available");
+        let hash_path = location_hash.split('#').last().unwrap_or_default();
+        let url = sanitize_location_path(hash_path).expect("sanitize location path failed");
         json!({
-            "url": sanitized_url().expect("sanitize url failed"),
+            "url": url,
             "visit_id": &*VISIT_ID
         })
     }
