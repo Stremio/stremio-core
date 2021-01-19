@@ -22,7 +22,6 @@ pub enum EnvError {
     StorageUnavailable,
     StorageSchemaVersionDowngrade(usize, usize),
     StorageSchemaVersionUpgrade(Box<EnvError>),
-    AnalyticsFlushFailed,
 }
 
 impl EnvError {
@@ -40,7 +39,6 @@ impl EnvError {
                 "Upgrade storage schema version failed caused by: {}",
                 source.message()
             ),
-            EnvError::AnalyticsFlushFailed => "Analytics flush failed".to_owned(),
         }
     }
     pub fn code(&self) -> u64 {
@@ -51,7 +49,6 @@ impl EnvError {
             EnvError::StorageUnavailable => 4,
             EnvError::StorageSchemaVersionDowngrade(_, _) => 5,
             EnvError::StorageSchemaVersionUpgrade(_) => 6,
-            EnvError::AnalyticsFlushFailed => 7,
         }
     }
 }
