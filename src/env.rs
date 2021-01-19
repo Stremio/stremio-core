@@ -1,17 +1,18 @@
 use crate::event::WebEvent;
+use crate::model::WebModel;
 use chrono::offset::TimeZone;
 use chrono::{DateTime, Utc};
 use futures::future::Either;
 use futures::{future, Future, FutureExt, TryFutureExt};
 use http::{Method, Request};
 use lazy_static::lazy_static;
-use semver::Version;
 use serde::{Deserialize, Serialize};
 use serde_json::json;
 use std::collections::HashMap;
 use std::sync::RwLock;
 use stremio_analytics::Analytics;
 use stremio_core::models::ctx::Ctx;
+use stremio_core::models::streaming_server::StreamingServer;
 use stremio_core::runtime::msg::{Action, ActionCtx, Event};
 use stremio_core::runtime::{Env, EnvError, EnvFuture, TryEnvFuture};
 use wasm_bindgen::closure::Closure;
@@ -26,6 +27,8 @@ extern "C" {
     #[wasm_bindgen(catch, js_namespace = ["window", "core_imports"])]
     static app_version: String;
     #[wasm_bindgen(catch, js_namespace = ["window", "core_imports"])]
+    static shell_version: Option<String>;
+    #[wasm_bindgen(catch, js_namespace = ["window", "core_imports"])]
     fn sanitize_location_path(path: &str) -> Result<String, JsValue>;
 }
 
@@ -39,16 +42,17 @@ lazy_static! {
 #[serde(rename_all = "camelCase")]
 struct AnalyticsContext {
     app_type: String,
-    app_version: Version,
-    server_version: Option<Version>,
-    shell_version: Option<Version>,
-    system_language: String,
+    app_version: String,
+    server_version: Option<String>,
+    shell_version: Option<String>,
+    system_language: Option<String>,
     app_language: String,
     #[serde(rename = "installationID")]
     installation_id: String,
     #[serde(rename = "visitID")]
     visit_id: String,
-    url: String,
+    #[serde(rename = "url")]
+    path: String,
 }
 
 pub enum WebEnv {}
@@ -71,7 +75,7 @@ impl WebEnv {
             })
             .boxed_local()
     }
-    pub fn emit_to_analytics(event: WebEvent, ctx: &Ctx) {
+    pub fn emit_to_analytics(event: WebEvent, model: &WebModel) {
         let (name, data) = match event {
             WebEvent::CoreEvent(Event::UserAuthenticated { .. }) => (
                 "login".to_owned(),
@@ -87,7 +91,7 @@ impl WebEnv {
             ),
             _ => return,
         };
-        ANALYTICS.emit(name, data, ctx);
+        ANALYTICS.emit(name, data, &model.ctx, &model.streaming_server);
     }
     pub fn send_next_analytics_batch() -> impl Future<Output = ()> {
         ANALYTICS.send_next_batch()
@@ -193,19 +197,38 @@ impl Env for WebEnv {
     fn flush_analytics() -> EnvFuture<()> {
         ANALYTICS.flush().boxed_local()
     }
-    fn analytics_context() -> serde_json::Value {
+    fn analytics_context(ctx: &Ctx, streaming_server: &StreamingServer) -> serde_json::Value {
         let location_hash = web_sys::window()
             .expect("window is not available")
             .location()
             .hash()
             .expect("location hash is not available");
-        let hash_path = location_hash.split('#').last().unwrap_or_default();
-        let url = sanitize_location_path(hash_path).expect("sanitize location path failed");
-        json!({
-            "url": url,
-            "visit_id": &*VISIT_ID,
-            "app_version": &*app_version
+        let path = location_hash.split('#').last().unwrap_or_default();
+        serde_json::to_value(AnalyticsContext {
+            app_type: "stremio-web".to_owned(),
+            app_version: app_version.to_owned(),
+            server_version: streaming_server
+                .settings
+                .as_ref()
+                .ready()
+                .map(|settings| settings.server_version.to_owned()),
+            shell_version: shell_version.to_owned(),
+            system_language: web_sys::window()
+                .expect("window is not available")
+                .navigator()
+                .language()
+                .map(|language| language.to_lowercase()),
+            app_language: ctx.profile.settings.interface_language.to_owned(),
+            installation_id: INSTALLATION_ID
+                .read()
+                .expect("installation id read failed")
+                .as_ref()
+                .expect("installation id not available")
+                .to_owned(),
+            visit_id: VISIT_ID.to_owned(),
+            path: sanitize_location_path(path).expect("sanitize location path failed"),
         })
+        .unwrap()
     }
     #[cfg(debug_assertions)]
     fn log(message: String) {
