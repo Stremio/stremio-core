@@ -44,5 +44,6 @@ features = [
 	'Response',
 	'Storage',
 	'Location',
+	'Navigator',
 	'console'
 ]
