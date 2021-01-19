@@ -7,6 +7,7 @@ use std::collections::VecDeque;
 use std::marker::PhantomData;
 use std::sync::{Arc, Mutex};
 use stremio_core::models::ctx::Ctx;
+use stremio_core::models::streaming_server::StreamingServer;
 use stremio_core::runtime::{Env, EnvError, TryEnvFuture};
 use stremio_core::types::api::{fetch_api, APIRequest, APIResult, SuccessResponse};
 use stremio_core::types::profile::AuthKey;
@@ -72,7 +73,13 @@ pub struct Analytics<E: Env> {
 }
 
 impl<E: Env + 'static> Analytics<E> {
-    pub fn emit(&self, name: String, data: serde_json::Value, ctx: &Ctx) {
+    pub fn emit(
+        &self,
+        name: String,
+        data: serde_json::Value,
+        ctx: &Ctx,
+        streaming_server: &StreamingServer,
+    ) {
         let mut state = self.state.lock().expect("analytics state lock failed");
         let auth_key = match ctx.profile.auth_key() {
             Some(auth_key) => auth_key.to_owned(),
@@ -83,7 +90,7 @@ impl<E: Env + 'static> Analytics<E> {
             data,
             number: state.next_number(),
             time: E::now().timestamp_millis(),
-            context: E::analytics_context(),
+            context: E::analytics_context(&ctx, &streaming_server),
         };
         state.push_event(event, auth_key);
     }

@@ -3,6 +3,8 @@ use crate::constants::{
     LIBRARY_RECENT_STORAGE_KEY, LIBRARY_STORAGE_KEY, PROFILE_STORAGE_KEY, SCHEMA_VERSION,
     SCHEMA_VERSION_STORAGE_KEY,
 };
+use crate::models::ctx::Ctx;
+use crate::models::streaming_server::StreamingServer;
 use chrono::{DateTime, Utc};
 use futures::future::LocalBoxFuture;
 use futures::{future, Future, FutureExt, TryFutureExt};
@@ -90,7 +92,7 @@ pub trait Env {
         F: Future<Output = ()> + 'static;
     fn now() -> DateTime<Utc>;
     fn flush_analytics() -> EnvFuture<()>;
-    fn analytics_context() -> serde_json::Value;
+    fn analytics_context(ctx: &Ctx, streaming_server: &StreamingServer) -> serde_json::Value;
     #[cfg(debug_assertions)]
     fn log(message: String);
     fn addon_transport(transport_url: &Url) -> Box<dyn AddonTransport>

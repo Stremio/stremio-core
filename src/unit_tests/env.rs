@@ -1,3 +1,5 @@
+use crate::models::ctx::Ctx;
+use crate::models::streaming_server::StreamingServer;
 use crate::runtime::{Env, EnvFuture, TryEnvFuture};
 use chrono::{DateTime, Utc};
 use futures::{future, Future, FutureExt, TryFutureExt};
@@ -104,7 +106,7 @@ impl Env for TestEnv {
     fn flush_analytics() -> EnvFuture<()> {
         future::ready(()).boxed_local()
     }
-    fn analytics_context() -> serde_json::Value {
+    fn analytics_context(_ctx: &Ctx, _streaming_server: &StreamingServer) -> serde_json::Value {
         serde_json::Value::Null
     }
     fn log(message: String) {
