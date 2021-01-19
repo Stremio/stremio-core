@@ -15,6 +15,7 @@ use stremio_core::models::ctx::Ctx;
 use stremio_core::models::streaming_server::StreamingServer;
 use stremio_core::runtime::msg::{Action, ActionCtx, Event};
 use stremio_core::runtime::{Env, EnvError, EnvFuture, TryEnvFuture};
+use stremio_core::types::api::AuthRequest;
 use wasm_bindgen::closure::Closure;
 use wasm_bindgen::prelude::wasm_bindgen;
 use wasm_bindgen::{JsCast, JsValue};
@@ -83,18 +84,19 @@ impl WebEnv {
     }
     pub fn emit_to_analytics(event: WebEvent, model: &WebModel) {
         let (name, data) = match event {
-            WebEvent::CoreEvent(Event::UserAuthenticated { .. }) => (
+            WebEvent::CoreEvent(Event::UserAuthenticated { auth_request }) => (
                 "login".to_owned(),
                 json!({
-                    "data": "data",
+                    "type": match auth_request {
+                        AuthRequest::Login { facebook, .. } if facebook => "facebook",
+                        AuthRequest::Login { .. } => "login",
+                        AuthRequest::Register { .. } => "register"
+                    },
                 }),
             ),
-            WebEvent::CoreAction(Action::Ctx(ActionCtx::Logout)) => (
-                "logout".to_owned(),
-                json!({
-                    "data": "data",
-                }),
-            ),
+            WebEvent::CoreAction(Action::Ctx(ActionCtx::Logout)) => {
+                ("logout".to_owned(), serde_json::Value::Null)
+            }
             _ => return,
         };
         ANALYTICS.emit(name, data, &model.ctx, &model.streaming_server);
