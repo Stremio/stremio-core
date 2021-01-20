@@ -2,7 +2,8 @@ use serde::de::Unexpected;
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
 
 #[derive(Clone, Copy, PartialEq)]
-#[cfg_attr(test, derive(Default, Debug))]
+#[cfg_attr(debug_assertions, derive(Debug))]
+#[cfg_attr(test, derive(Default))]
 pub struct True;
 
 impl<'de> Deserialize<'de> for True {

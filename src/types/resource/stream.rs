@@ -7,7 +7,7 @@ use std::collections::HashMap;
 use url::Url;
 
 #[derive(Clone, PartialEq, Serialize, Deserialize)]
-#[cfg_attr(test, derive(Debug))]
+#[cfg_attr(debug_assertions, derive(Debug))]
 #[serde(rename_all = "camelCase")]
 pub struct Stream {
     #[serde(flatten)]
@@ -23,7 +23,8 @@ pub struct Stream {
 }
 
 #[derive(Clone, PartialEq, Serialize, Deserialize)]
-#[cfg_attr(test, derive(Derivative, Debug))]
+#[cfg_attr(debug_assertions, derive(Debug))]
+#[cfg_attr(test, derive(Derivative))]
 #[cfg_attr(test, derivative(Default))]
 #[serde(untagged)]
 pub enum StreamSource {
@@ -54,7 +55,7 @@ pub enum StreamSource {
 }
 
 #[derive(Default, Clone, PartialEq, Serialize, Deserialize)]
-#[cfg_attr(test, derive(Debug))]
+#[cfg_attr(debug_assertions, derive(Debug))]
 #[serde(rename_all = "camelCase")]
 pub struct StreamBehaviorHints {
     #[serde(default, skip_serializing_if = "is_default_value")]

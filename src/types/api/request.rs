@@ -13,7 +13,7 @@ pub trait APIMethodName {
 }
 
 #[derive(Clone, PartialEq, Serialize)]
-#[cfg_attr(test, derive(Debug))]
+#[cfg_attr(debug_assertions, derive(Debug))]
 #[serde(tag = "type")]
 pub enum APIRequest {
     Auth(AuthRequest),
@@ -52,7 +52,8 @@ impl APIMethodName for APIRequest {
 }
 
 #[derive(Clone, PartialEq, Serialize, Deserialize)]
-#[cfg_attr(test, derive(Derivative, Debug))]
+#[cfg_attr(debug_assertions, derive(Debug))]
+#[cfg_attr(test, derive(Derivative))]
 #[cfg_attr(test, derivative(Default))]
 #[serde(tag = "type")]
 pub enum AuthRequest {
@@ -71,7 +72,8 @@ pub enum AuthRequest {
 }
 
 #[derive(Clone, PartialEq, Serialize, Deserialize)]
-#[cfg_attr(test, derive(Derivative, Debug))]
+#[cfg_attr(debug_assertions, derive(Debug))]
+#[cfg_attr(test, derive(Derivative))]
 #[cfg_attr(test, derivative(Default))]
 pub struct GDPRConsentRequest {
     #[serde(flatten)]
@@ -82,7 +84,7 @@ pub struct GDPRConsentRequest {
 }
 
 #[derive(Clone, PartialEq, Serialize)]
-#[cfg_attr(test, derive(Debug))]
+#[cfg_attr(debug_assertions, derive(Debug))]
 #[serde(rename_all = "camelCase")]
 pub struct DatastoreRequest {
     pub auth_key: AuthKey,
@@ -102,7 +104,8 @@ impl APIMethodName for DatastoreRequest {
 }
 
 #[derive(Clone, PartialEq, Serialize)]
-#[cfg_attr(test, derive(Derivative, Debug))]
+#[cfg_attr(debug_assertions, derive(Debug))]
+#[cfg_attr(test, derive(Derivative))]
 #[cfg_attr(test, derivative(Default))]
 #[serde(untagged)]
 pub enum DatastoreCommand {

@@ -6,7 +6,7 @@ use serde::{Deserialize, Serialize};
 pub type UID = Option<String>;
 
 #[derive(Clone, PartialEq, Serialize, Deserialize)]
-#[cfg_attr(test, derive(Debug))]
+#[cfg_attr(debug_assertions, derive(Debug))]
 pub struct Profile {
     pub auth: Option<Auth>,
     pub addons: Vec<Descriptor>,

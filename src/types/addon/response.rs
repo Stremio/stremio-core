@@ -4,7 +4,8 @@ use derive_more::TryInto;
 use serde::{Deserialize, Serialize};
 
 #[derive(Clone, TryInto, Serialize, Deserialize)]
-#[cfg_attr(test, derive(Debug, PartialEq))]
+#[cfg_attr(debug_assertions, derive(Debug))]
+#[cfg_attr(test, derive(PartialEq))]
 #[serde(untagged)]
 pub enum ResourceResponse {
     Metas {

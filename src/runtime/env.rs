@@ -14,7 +14,7 @@ use serde::{Deserialize, Serialize, Serializer};
 use url::Url;
 
 #[derive(Clone, PartialEq)]
-#[cfg_attr(test, derive(Debug))]
+#[cfg_attr(debug_assertions, derive(Debug))]
 pub enum EnvError {
     Fetch(String),
     AddonTransport(String),

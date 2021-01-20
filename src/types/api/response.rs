@@ -6,7 +6,7 @@ use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize)]
-#[cfg_attr(test, derive(Debug))]
+#[cfg_attr(debug_assertions, derive(Debug))]
 #[serde(untagged)]
 pub enum APIResult<T> {
     Err { error: APIError },
@@ -14,7 +14,8 @@ pub enum APIResult<T> {
 }
 
 #[derive(Clone, Serialize, Deserialize)]
-#[cfg_attr(test, derive(Default, Debug))]
+#[cfg_attr(debug_assertions, derive(Debug))]
+#[cfg_attr(test, derive(Default))]
 pub struct APIError {
     pub message: String,
     pub code: u64,
@@ -35,7 +36,7 @@ pub struct AuthResponse {
 }
 
 #[derive(PartialEq, Deserialize)]
-#[cfg_attr(test, derive(Debug))]
+#[cfg_attr(debug_assertions, derive(Debug))]
 pub struct LibraryItemModified(
     pub String,
     #[serde(with = "ts_milliseconds")] pub DateTime<Utc>,

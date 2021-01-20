@@ -4,7 +4,7 @@ use url::Url;
 
 #[derive(Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
-#[cfg_attr(test, derive(Debug))]
+#[cfg_attr(debug_assertions, derive(Debug))]
 pub struct Settings {
     pub interface_language: String,
     pub streaming_server_url: Url,

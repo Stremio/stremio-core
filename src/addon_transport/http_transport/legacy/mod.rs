@@ -22,7 +22,7 @@ const MANIFEST_REQUEST_PARAM: &str =
 //
 // Errors
 //
-#[cfg_attr(test, derive(Debug))]
+#[cfg_attr(debug_assertions, derive(Debug))]
 pub enum LegacyErr {
     JsonRPC(JsonRPCErr),
     UnsupportedResource,
@@ -43,7 +43,7 @@ impl Into<EnvError> for LegacyErr {
 // JSON RPC types
 //
 #[derive(Deserialize)]
-#[cfg_attr(test, derive(Debug))]
+#[cfg_attr(debug_assertions, derive(Debug))]
 pub struct JsonRPCErr {
     message: String,
     #[serde(default)]
