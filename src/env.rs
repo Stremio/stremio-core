@@ -112,6 +112,19 @@ impl WebEnv {
                     "addonID": id
                 }),
             ),
+            WebEvent::CoreAction(Action::Ctx(ActionCtx::AddToLibrary(meta_preview))) => {
+                let library_item = model.ctx.library.items.get(&meta_preview.id);
+                (
+                    "addToLib".to_owned(),
+                    json!({
+                        "libItemID":  &meta_preview.id,
+                        "libItemType": &meta_preview.r#type,
+                        "libItemName": &meta_preview.name,
+                        "wasTemp": library_item.map(|library_item| library_item.temp).unwrap_or_default(),
+                        "isReadded": library_item.map(|library_item| library_item.removed).unwrap_or_default(),
+                    }),
+                )
+            }
             WebEvent::CoreAction(Action::Ctx(ActionCtx::Logout)) => {
                 ("logout".to_owned(), serde_json::Value::Null)
             }
