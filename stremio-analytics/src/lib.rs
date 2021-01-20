@@ -11,6 +11,7 @@ use stremio_core::models::streaming_server::StreamingServer;
 use stremio_core::runtime::{Env, EnvError, TryEnvFuture};
 use stremio_core::types::api::{fetch_api, APIRequest, APIResult, SuccessResponse};
 use stremio_core::types::profile::AuthKey;
+use stremio_core::types::True;
 
 #[derive(Clone, PartialEq, Serialize)]
 struct Event {
@@ -141,6 +142,12 @@ impl<E: Env + 'static> Analytics<E> {
 fn send_events_batch_to_api<E: Env>(
     batch: &EventsBatch,
 ) -> TryEnvFuture<APIResult<SuccessResponse>> {
+    if cfg!(debug_assertions) {
+        return future::ok(APIResult::Ok {
+            result: SuccessResponse { success: True },
+        })
+        .boxed_local();
+    };
     fetch_api::<E, _, _>(&APIRequest::Events {
         auth_key: batch.auth_key.to_owned(),
         events: batch
