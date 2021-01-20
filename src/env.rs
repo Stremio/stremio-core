@@ -98,6 +98,13 @@ impl WebEnv {
                     },
                 }),
             ),
+            WebEvent::CoreEvent(Event::AddonInstalled { transport_url, id }) => (
+                "installAddon".to_owned(),
+                json!({
+                    "addonTransportUrl": transport_url,
+                    "addonID": id
+                }),
+            ),
             WebEvent::CoreAction(Action::Ctx(ActionCtx::Logout)) => {
                 ("logout".to_owned(), serde_json::Value::Null)
             }
