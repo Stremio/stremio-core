@@ -11,7 +11,6 @@ use crate::types::api::AuthRequest;
 use crate::types::profile::Settings as ProfileSettings;
 use crate::types::resource::MetaItemPreview;
 use serde::Deserialize;
-use url::Url;
 
 #[derive(Clone, Deserialize)]
 #[serde(tag = "action", content = "args")]
@@ -19,7 +18,7 @@ pub enum ActionCtx {
     Authenticate(AuthRequest),
     Logout,
     InstallAddon(Descriptor),
-    UninstallAddon(Url),
+    UninstallAddon(Descriptor),
     UpdateSettings(ProfileSettings),
     AddToLibrary(MetaItemPreview),
     RemoveFromLibrary(String),

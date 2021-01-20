@@ -133,11 +133,12 @@ pub fn update_profile<E: Env + 'static>(
                 .unchanged()
             }
         }
-        Msg::Action(Action::Ctx(ActionCtx::UninstallAddon(transport_url))) => {
+        Msg::Action(Action::Ctx(ActionCtx::UninstallAddon(addon))) => {
             let addon_position = profile
                 .addons
                 .iter()
-                .position(|addon| addon.transport_url == *transport_url);
+                .map(|addon| &addon.transport_url)
+                .position(|transport_url| *transport_url == addon.transport_url);
             if let Some(addon_position) = addon_position {
                 if !profile.addons[addon_position].flags.protected {
                     profile.addons.remove(addon_position);
@@ -150,7 +151,7 @@ pub fn update_profile<E: Env + 'static>(
                         _ => Effects::none().unchanged(),
                     };
                     Effects::msg(Msg::Event(Event::AddonUninstalled {
-                        transport_url: transport_url.to_owned(),
+                        transport_url: addon.transport_url.to_owned(),
                     }))
                     .join(push_to_api_effects)
                     .join(Effects::msg(Msg::Internal(Internal::ProfileChanged)))
@@ -158,7 +159,7 @@ pub fn update_profile<E: Env + 'static>(
                     Effects::msg(Msg::Event(Event::Error {
                         error: CtxError::from(OtherError::AddonIsProtected),
                         source: Box::new(Event::AddonUninstalled {
-                            transport_url: transport_url.to_owned(),
+                            transport_url: addon.transport_url.to_owned(),
                         }),
                     }))
                     .unchanged()
@@ -167,7 +168,7 @@ pub fn update_profile<E: Env + 'static>(
                 Effects::msg(Msg::Event(Event::Error {
                     error: CtxError::from(OtherError::AddonNotInstalled),
                     source: Box::new(Event::AddonUninstalled {
-                        transport_url: transport_url.to_owned(),
+                        transport_url: addon.transport_url.to_owned(),
                     }),
                 }))
                 .unchanged()
