@@ -105,15 +105,15 @@ impl WebEnv {
         ANALYTICS.send_next_batch()
     }
     pub fn set_interval<F: FnMut() + 'static>(func: F, timeout: i32) -> i32 {
-        let closure = Closure::wrap(Box::new(func) as Box<dyn FnMut()>);
+        let func = Closure::wrap(Box::new(func) as Box<dyn FnMut()>);
         let interval_id = web_sys::window()
             .expect("window is not available")
             .set_interval_with_callback_and_timeout_and_arguments_0(
-                closure.as_ref().unchecked_ref(),
+                func.as_ref().unchecked_ref(),
                 timeout,
             )
             .expect("set interval failed");
-        closure.forget();
+        func.forget();
         interval_id
     }
     #[allow(dead_code)]
