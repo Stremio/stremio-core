@@ -1,4 +1,4 @@
-use crate::event::WebEvent;
+use crate::event::{UIEvent, WebEvent};
 use crate::model::WebModel;
 use chrono::offset::TimeZone;
 use chrono::{DateTime, Utc};
@@ -84,6 +84,10 @@ impl WebEnv {
     }
     pub fn emit_to_analytics(event: WebEvent, model: &WebModel) {
         let (name, data) = match event {
+            WebEvent::UIEvent(UIEvent::LocationPathChanged { prev_path }) => (
+                "stateChange".to_owned(),
+                json!({ "previousURL": prev_path }),
+            ),
             WebEvent::CoreEvent(Event::UserAuthenticated { auth_request }) => (
                 "login".to_owned(),
                 json!({
