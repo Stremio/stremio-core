@@ -109,7 +109,7 @@ impl Env for TestEnv {
     fn analytics_context(_ctx: &Ctx, _streaming_server: &StreamingServer) -> serde_json::Value {
         serde_json::Value::Null
     }
-    fn log(message: &str) {
+    fn log(message: String) {
         println!("{}", message)
     }
 }
