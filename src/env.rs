@@ -126,8 +126,7 @@ impl WebEnv {
                 )
             }
             WebEvent::CoreAction(Action::Ctx(ActionCtx::RemoveFromLibrary(id))) => {
-                let library_item = model.ctx.library.items.get(&id);
-                match library_item {
+                match model.ctx.library.items.get(&id) {
                     Some(library_item) => (
                         "removeFromLib".to_owned(),
                         json!({
