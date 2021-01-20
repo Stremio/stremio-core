@@ -111,6 +111,7 @@ pub fn update_profile<E: Env + 'static>(
                     };
                     Effects::msg(Msg::Event(Event::AddonInstalled {
                         transport_url: addon.transport_url.to_owned(),
+                        id: addon.manifest.id.to_owned(),
                     }))
                     .join(push_to_api_effects)
                     .join(Effects::msg(Msg::Internal(Internal::ProfileChanged)))
@@ -119,6 +120,7 @@ pub fn update_profile<E: Env + 'static>(
                         error: CtxError::from(OtherError::AddonConfigurationRequired),
                         source: Box::new(Event::AddonInstalled {
                             transport_url: addon.transport_url.to_owned(),
+                            id: addon.manifest.id.to_owned(),
                         }),
                     }))
                     .unchanged()
@@ -128,6 +130,7 @@ pub fn update_profile<E: Env + 'static>(
                     error: CtxError::from(OtherError::AddonAlreadyInstalled),
                     source: Box::new(Event::AddonInstalled {
                         transport_url: addon.transport_url.to_owned(),
+                        id: addon.manifest.id.to_owned(),
                     }),
                 }))
                 .unchanged()
@@ -152,6 +155,7 @@ pub fn update_profile<E: Env + 'static>(
                     };
                     Effects::msg(Msg::Event(Event::AddonUninstalled {
                         transport_url: addon.transport_url.to_owned(),
+                        id: addon.manifest.id.to_owned(),
                     }))
                     .join(push_to_api_effects)
                     .join(Effects::msg(Msg::Internal(Internal::ProfileChanged)))
@@ -160,6 +164,7 @@ pub fn update_profile<E: Env + 'static>(
                         error: CtxError::from(OtherError::AddonIsProtected),
                         source: Box::new(Event::AddonUninstalled {
                             transport_url: addon.transport_url.to_owned(),
+                            id: addon.manifest.id.to_owned(),
                         }),
                     }))
                     .unchanged()
@@ -169,6 +174,7 @@ pub fn update_profile<E: Env + 'static>(
                     error: CtxError::from(OtherError::AddonNotInstalled),
                     source: Box::new(Event::AddonUninstalled {
                         transport_url: addon.transport_url.to_owned(),
+                        id: addon.manifest.id.to_owned(),
                     }),
                 }))
                 .unchanged()
