@@ -125,6 +125,20 @@ impl WebEnv {
                     }),
                 )
             }
+            WebEvent::CoreAction(Action::Ctx(ActionCtx::RemoveFromLibrary(id))) => {
+                let library_item = model.ctx.library.items.get(&id);
+                match library_item {
+                    Some(library_item) => (
+                        "removeFromLib".to_owned(),
+                        json!({
+                            "libItemID":  &library_item.id,
+                            "libItemType": &library_item.r#type,
+                            "libItemName": &library_item.name,
+                        }),
+                    ),
+                    _ => return,
+                }
+            }
             WebEvent::CoreAction(Action::Ctx(ActionCtx::Logout)) => {
                 ("logout".to_owned(), serde_json::Value::Null)
             }
