@@ -105,6 +105,13 @@ impl WebEnv {
                     "addonID": id
                 }),
             ),
+            WebEvent::CoreEvent(Event::AddonUninstalled { transport_url, id }) => (
+                "removeAddon".to_owned(),
+                json!({
+                    "addonTransportUrl": transport_url,
+                    "addonID": id
+                }),
+            ),
             WebEvent::CoreAction(Action::Ctx(ActionCtx::Logout)) => {
                 ("logout".to_owned(), serde_json::Value::Null)
             }
