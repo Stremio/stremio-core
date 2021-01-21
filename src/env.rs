@@ -82,7 +82,7 @@ impl WebEnv {
             })
             .boxed_local()
     }
-    pub fn emit_to_analytics(event: WebEvent, model: &WebModel) {
+    pub fn emit_to_analytics(event: &WebEvent, model: &WebModel) {
         let (name, data) = match event {
             WebEvent::UIEvent(UIEvent::LocationPathChanged { prev_path }) => (
                 "stateChange".to_owned(),
@@ -92,7 +92,7 @@ impl WebEnv {
                 "login".to_owned(),
                 json!({
                     "type": match auth_request {
-                        AuthRequest::Login { facebook, .. } if facebook => "facebook",
+                        AuthRequest::Login { facebook, .. } if *facebook => "facebook",
                         AuthRequest::Login { .. } => "login",
                         AuthRequest::Register { .. } => "register"
                     },
@@ -126,7 +126,7 @@ impl WebEnv {
                 )
             }
             WebEvent::CoreAction(Action::Ctx(ActionCtx::RemoveFromLibrary(id))) => {
-                match model.ctx.library.items.get(&id) {
+                match model.ctx.library.items.get(id) {
                     Some(library_item) => (
                         "removeFromLib".to_owned(),
                         json!({

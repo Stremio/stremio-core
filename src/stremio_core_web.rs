@@ -63,7 +63,7 @@ pub async fn initialize_runtime(emit_to_ui: js_sys::Function) -> Result<(), JsVa
                                 .expect("runtime is not ready");
                             let model = runtime.model().expect("model read failed");
                             WebEnv::emit_to_analytics(
-                                WebEvent::CoreEvent(event.to_owned()),
+                                &WebEvent::CoreEvent(event.to_owned()),
                                 &model,
                             );
                         };
@@ -115,7 +115,7 @@ pub fn dispatch(action: JsValue, field: JsValue) {
         .expect("runtime is not ready");
     {
         let model = runtime.model().expect("model read failed");
-        WebEnv::emit_to_analytics(WebEvent::CoreAction(action.to_owned()), &model);
+        WebEnv::emit_to_analytics(&WebEvent::CoreAction(action.to_owned()), &model);
     }
     runtime.dispatch(RuntimeAction { action, field });
 }
@@ -130,5 +130,5 @@ pub fn analytics(event: JsValue) {
         .as_ref()
         .expect("runtime is not ready");
     let model = runtime.model().expect("model read failed");
-    WebEnv::emit_to_analytics(WebEvent::UIEvent(event), &model);
+    WebEnv::emit_to_analytics(&WebEvent::UIEvent(event), &model);
 }
