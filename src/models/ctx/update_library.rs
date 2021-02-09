@@ -80,14 +80,14 @@ pub fn update_library<E: Env + 'static>(
                 let mut library_item = library_item.to_owned();
                 library_item.state.time_offset = 0;
                 Effects::msg(Msg::Internal(Internal::UpdateLibraryItem(library_item)))
-                    .join(Effects::msg(Msg::Event(Event::LibraryItemRewided {
+                    .join(Effects::msg(Msg::Event(Event::LibraryItemRewinded {
                         id: id.to_owned(),
                     })))
                     .unchanged()
             }
             _ => Effects::msg(Msg::Event(Event::Error {
                 error: CtxError::from(OtherError::LibraryItemNotFound),
-                source: Box::new(Event::LibraryItemRewided { id: id.to_owned() }),
+                source: Box::new(Event::LibraryItemRewinded { id: id.to_owned() }),
             }))
             .unchanged(),
         },
