@@ -27,6 +27,6 @@ pub enum Event {
     SettingsUpdated { settings: Settings },
     LibraryItemAdded { id: String },
     LibraryItemRemoved { id: String },
-    LibraryItemRewided { id: String },
+    LibraryItemRewinded { id: String },
     Error { error: CtxError, source: Box<Event> },
 }
