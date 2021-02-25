@@ -11,7 +11,7 @@ pub enum UIEvent {
     },
     Search {
         query: String,
-        rows: u32,
+        responses_count: u32,
     },
 }
 

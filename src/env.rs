@@ -88,9 +88,13 @@ impl WebEnv {
                 "stateChange".to_owned(),
                 json!({ "previousURL": prev_path }),
             ),
-            WebEvent::UIEvent(UIEvent::Search { query, rows }) => {
-                ("search".to_owned(), json!({ "query": query, "rows": rows }))
-            }
+            WebEvent::UIEvent(UIEvent::Search {
+                query,
+                responses_count,
+            }) => (
+                "search".to_owned(),
+                json!({ "query": query, "rows": responses_count }),
+            ),
             WebEvent::CoreEvent(Event::UserAuthenticated { auth_request }) => (
                 "login".to_owned(),
                 json!({
