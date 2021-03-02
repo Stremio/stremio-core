@@ -9,6 +9,10 @@ pub enum UIEvent {
     LocationPathChanged {
         prev_path: String,
     },
+    Search {
+        query: String,
+        responses_count: u32,
+    },
 }
 
 pub enum WebEvent {
