@@ -9,6 +9,7 @@ pub enum UIEvent {
     LocationPathChanged {
         prev_path: String,
     },
+    #[serde(rename_all = "camelCase")]
     Search {
         query: String,
         responses_count: u32,
