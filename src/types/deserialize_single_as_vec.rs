@@ -1,16 +1,16 @@
-use crate::types::resource::Stream;
 use serde::de::Deserializer;
 use serde::Deserialize;
 
-pub fn deserialize_video_streams<'de, D>(deserializer: D) -> Result<Vec<Stream>, D::Error>
+pub fn deserialize_single_as_vec<'de, D, T>(deserializer: D) -> Result<Vec<T>, D::Error>
 where
     D: Deserializer<'de>,
+    T: Deserialize<'de>,
 {
     #[derive(Deserialize)]
     #[serde(untagged)]
-    enum StreamOrStreams<Stream> {
-        Single(Stream),
-        Multiple(Vec<Stream>),
+    enum StreamOrStreams<T> {
+        Single(T),
+        Multiple(Vec<T>),
     }
     Ok(match StreamOrStreams::deserialize(deserializer)? {
         StreamOrStreams::Single(stream) => vec![stream],
