@@ -1,3 +1,4 @@
+use crate::types::deserialize_video_streams;
 use crate::types::resource::Stream;
 use chrono::{DateTime, Utc};
 use derivative::Derivative;
@@ -85,7 +86,11 @@ pub struct Video {
     pub released: Option<DateTime<Utc>>,
     pub overview: Option<String>,
     pub thumbnail: Option<String>,
-    #[serde(default)]
+    #[serde(
+        alias = "stream",
+        deserialize_with = "deserialize_video_streams",
+        default
+    )]
     pub streams: Vec<Stream>,
     #[serde(flatten)]
     pub series_info: Option<SeriesInfo>,
