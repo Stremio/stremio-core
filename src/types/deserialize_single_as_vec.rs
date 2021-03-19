@@ -8,12 +8,12 @@ where
 {
     #[derive(Deserialize)]
     #[serde(untagged)]
-    enum StreamOrStreams<T> {
+    enum SingleOrMultiple<T> {
         Single(T),
         Multiple(Vec<T>),
     }
-    Ok(match StreamOrStreams::deserialize(deserializer)? {
-        StreamOrStreams::Single(stream) => vec![stream],
-        StreamOrStreams::Multiple(streams) => streams,
+    Ok(match SingleOrMultiple::deserialize(deserializer)? {
+        SingleOrMultiple::Single(s) => vec![s],
+        SingleOrMultiple::Multiple(m) => m,
     })
 }
