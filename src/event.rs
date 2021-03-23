@@ -14,6 +14,10 @@ pub enum UIEvent {
         query: String,
         responses_count: u32,
     },
+    #[serde(rename_all = "camelCase")]
+    Share {
+        share_url: String,
+    },
 }
 
 pub enum WebEvent {
