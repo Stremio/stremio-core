@@ -95,8 +95,8 @@ impl WebEnv {
                 "search".to_owned(),
                 json!({ "query": query, "rows": responses_count }),
             ),
-            WebEvent::UIEvent(UIEvent::Share { share_url }) => {
-                ("share".to_owned(), json!({ "url": share_url }))
+            WebEvent::UIEvent(UIEvent::Share { url }) => {
+                ("share".to_owned(), json!({ "url": url }))
             }
             WebEvent::CoreEvent(Event::UserAuthenticated { auth_request }) => (
                 "login".to_owned(),

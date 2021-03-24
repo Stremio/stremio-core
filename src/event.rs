@@ -16,7 +16,7 @@ pub enum UIEvent {
     },
     #[serde(rename_all = "camelCase")]
     Share {
-        share_url: String,
+        url: String,
     },
 }
 
