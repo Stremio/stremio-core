@@ -14,6 +14,9 @@ pub enum UIEvent {
         query: String,
         responses_count: u32,
     },
+    Share {
+        url: String,
+    },
 }
 
 pub enum WebEvent {
