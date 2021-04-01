@@ -1,5 +1,6 @@
 use serde::Deserialize;
 use stremio_core::runtime::msg::{Action, Event};
+use stremio_core::types::resource::StreamSource;
 
 #[derive(Deserialize)]
 #[serde(tag = "event", content = "args")]
@@ -16,6 +17,9 @@ pub enum UIEvent {
     },
     Share {
         url: String,
+    },
+    StreamClicked {
+        stream: StreamSource,
     },
 }
 
