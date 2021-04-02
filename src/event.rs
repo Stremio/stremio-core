@@ -1,6 +1,6 @@
 use serde::Deserialize;
 use stremio_core::runtime::msg::{Action, Event};
-use stremio_core::types::resource::StreamSource;
+use stremio_core::types::resource::Stream;
 
 #[derive(Deserialize)]
 #[serde(tag = "event", content = "args")]
@@ -19,7 +19,7 @@ pub enum UIEvent {
         url: String,
     },
     StreamClicked {
-        stream: StreamSource,
+        stream: Stream,
     },
 }
 
