@@ -16,6 +16,7 @@ use stremio_core::models::streaming_server::StreamingServer;
 use stremio_core::runtime::msg::{Action, ActionCtx, Event};
 use stremio_core::runtime::{Env, EnvError, EnvFuture, TryEnvFuture};
 use stremio_core::types::api::AuthRequest;
+use stremio_core::types::resource::StreamSource;
 use wasm_bindgen::closure::Closure;
 use wasm_bindgen::prelude::wasm_bindgen;
 use wasm_bindgen::{JsCast, JsValue};
@@ -98,9 +99,18 @@ impl WebEnv {
             WebEvent::UIEvent(UIEvent::Share { url }) => {
                 ("share".to_owned(), json!({ "url": url }))
             }
-            WebEvent::UIEvent(UIEvent::StreamClicked { stream }) => {
-                ("streamClicked".to_owned(), json!({ "stream": stream }))
-            }
+            WebEvent::UIEvent(UIEvent::StreamClicked { stream }) => (
+                "streamClicked".to_owned(),
+                json!({
+                    "type": match &stream.source {
+                        StreamSource::Url { .. } => "Url",
+                        StreamSource::YouTube { .. } => "YouTube",
+                        StreamSource::Torrent { .. } => "Torrent",
+                        StreamSource::External { .. } => "External",
+                        StreamSource::PlayerFrame { .. } => "PlayerFrame"
+                    }
+                }),
+            ),
             WebEvent::CoreEvent(Event::UserAuthenticated { auth_request }) => (
                 "login".to_owned(),
                 json!({
