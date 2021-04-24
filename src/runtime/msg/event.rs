@@ -7,7 +7,7 @@ use url::Url;
 //
 // Those messages are meant to be dispatched by the stremio-core crate and hanled by the users of the stremio-core crate and by the stremio-core crate itself
 //
-#[derive(Serialize)]
+#[derive(Clone, Serialize)]
 #[serde(tag = "event", content = "args")]
 pub enum Event {
     ProfilePushedToStorage { uid: UID },
@@ -22,11 +22,11 @@ pub enum Event {
     UserAuthenticated { auth_request: AuthRequest },
     UserLoggedOut { uid: UID },
     SessionDeleted { auth_key: AuthKey },
-    AddonInstalled { transport_url: Url },
-    AddonUninstalled { transport_url: Url },
+    AddonInstalled { transport_url: Url, id: String },
+    AddonUninstalled { transport_url: Url, id: String },
     SettingsUpdated { settings: Settings },
     LibraryItemAdded { id: String },
     LibraryItemRemoved { id: String },
-    LibraryItemRewided { id: String },
+    LibraryItemRewinded { id: String },
     Error { error: CtxError, source: Box<Event> },
 }

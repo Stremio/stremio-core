@@ -11,15 +11,14 @@ use crate::types::api::AuthRequest;
 use crate::types::profile::Settings as ProfileSettings;
 use crate::types::resource::MetaItemPreview;
 use serde::Deserialize;
-use url::Url;
 
-#[derive(Deserialize)]
+#[derive(Clone, Deserialize)]
 #[serde(tag = "action", content = "args")]
 pub enum ActionCtx {
     Authenticate(AuthRequest),
     Logout,
     InstallAddon(Descriptor),
-    UninstallAddon(Url),
+    UninstallAddon(Descriptor),
     UpdateSettings(ProfileSettings),
     AddToLibrary(MetaItemPreview),
     RemoveFromLibrary(String),
@@ -31,21 +30,21 @@ pub enum ActionCtx {
     SyncLibraryWithAPI,
 }
 
-#[derive(Deserialize)]
+#[derive(Clone, Deserialize)]
 #[serde(tag = "action", content = "args")]
 pub enum ActionStreamingServer {
     Reload,
     UpdateSettings(StreamingServerSettings),
 }
 
-#[derive(Deserialize)]
+#[derive(Clone, Deserialize)]
 #[serde(tag = "action", content = "args")]
 pub enum ActionPlayer {
     UpdateLibraryItemState { time: u64, duration: u64 },
     PushToLibrary,
 }
 
-#[derive(Deserialize)]
+#[derive(Clone, Deserialize)]
 #[serde(tag = "model", content = "args")]
 pub enum ActionLoad {
     AddonDetails(AddonDetailsSelected),
@@ -61,7 +60,7 @@ pub enum ActionLoad {
 //
 // Those messages are meant to be dispatched only by the users of the stremio-core crate and handled by the stremio-core crate
 //
-#[derive(Deserialize)]
+#[derive(Clone, Deserialize)]
 #[serde(tag = "action", content = "args")]
 pub enum Action {
     Ctx(ActionCtx),

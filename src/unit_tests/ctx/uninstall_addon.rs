@@ -1,7 +1,7 @@
 use crate::constants::PROFILE_STORAGE_KEY;
 use crate::models::ctx::Ctx;
 use crate::runtime::msg::{Action, ActionCtx};
-use crate::runtime::{Effects, Env, EnvFuture, Runtime};
+use crate::runtime::{Effects, Env, Runtime, RuntimeAction, TryEnvFuture};
 use crate::types::addon::{Descriptor, DescriptorFlags, Manifest};
 use crate::types::api::{APIResult, SuccessResponse};
 use crate::types::profile::{Auth, AuthKey, GDPRConsent, Profile, User};
@@ -18,29 +18,31 @@ use url::Url;
 #[test]
 fn actionctx_uninstalladdon() {
     #[derive(Model, Default)]
+    #[model(TestEnv)]
     struct TestModel {
-        ctx: Ctx<TestEnv>,
+        ctx: Ctx,
     }
+    let addon = Descriptor {
+        manifest: Manifest {
+            id: "id".to_owned(),
+            version: Version::new(0, 0, 1),
+            name: "name".to_owned(),
+            contact_email: None,
+            description: None,
+            logo: None,
+            background: None,
+            types: vec![],
+            resources: vec![],
+            id_prefixes: None,
+            catalogs: vec![],
+            addon_catalogs: vec![],
+            behavior_hints: Default::default(),
+        },
+        transport_url: Url::parse("https://transport_url").unwrap(),
+        flags: Default::default(),
+    };
     let profile = Profile {
-        addons: vec![Descriptor {
-            manifest: Manifest {
-                id: "id".to_owned(),
-                version: Version::new(0, 0, 1),
-                name: "name".to_owned(),
-                contact_email: None,
-                description: None,
-                logo: None,
-                background: None,
-                types: vec![],
-                resources: vec![],
-                id_prefixes: None,
-                catalogs: vec![],
-                addon_catalogs: vec![],
-                behavior_hints: Default::default(),
-            },
-            transport_url: Url::parse("https://transport_url").unwrap(),
-            flags: Default::default(),
-        }],
+        addons: vec![addon.to_owned()],
         ..Default::default()
     };
     TestEnv::reset();
@@ -59,9 +61,10 @@ fn actionctx_uninstalladdon() {
         1000,
     );
     TestEnv::run(|| {
-        runtime.dispatch(Action::Ctx(ActionCtx::UninstallAddon(
-            Url::parse("https://transport_url").unwrap(),
-        )))
+        runtime.dispatch(RuntimeAction {
+            field: None,
+            action: Action::Ctx(ActionCtx::UninstallAddon(addon)),
+        })
     });
     assert!(
         runtime.model().unwrap().ctx.profile.addons.is_empty(),
@@ -89,10 +92,11 @@ fn actionctx_uninstalladdon() {
 #[test]
 fn actionctx_uninstalladdon_with_user() {
     #[derive(Model, Default)]
+    #[model(TestEnv)]
     struct TestModel {
-        ctx: Ctx<TestEnv>,
+        ctx: Ctx,
     }
-    fn fetch_handler(request: Request) -> EnvFuture<Box<dyn Any>> {
+    fn fetch_handler(request: Request) -> TryEnvFuture<Box<dyn Any>> {
         match request {
             Request {
                 url, method, body, ..
@@ -107,6 +111,25 @@ fn actionctx_uninstalladdon_with_user() {
             _ => default_fetch_handler(request),
         }
     }
+    let addon = Descriptor {
+        manifest: Manifest {
+            id: "id".to_owned(),
+            version: Version::new(0, 0, 1),
+            name: "name".to_owned(),
+            contact_email: None,
+            description: None,
+            logo: None,
+            background: None,
+            types: vec![],
+            resources: vec![],
+            id_prefixes: None,
+            catalogs: vec![],
+            addon_catalogs: vec![],
+            behavior_hints: Default::default(),
+        },
+        transport_url: Url::parse("https://transport_url").unwrap(),
+        flags: Default::default(),
+    };
     let profile = Profile {
         auth: Some(Auth {
             key: AuthKey("auth_key".to_owned()),
@@ -124,25 +147,7 @@ fn actionctx_uninstalladdon_with_user() {
                 },
             },
         }),
-        addons: vec![Descriptor {
-            manifest: Manifest {
-                id: "id".to_owned(),
-                version: Version::new(0, 0, 1),
-                name: "name".to_owned(),
-                contact_email: None,
-                description: None,
-                logo: None,
-                background: None,
-                types: vec![],
-                resources: vec![],
-                id_prefixes: None,
-                catalogs: vec![],
-                addon_catalogs: vec![],
-                behavior_hints: Default::default(),
-            },
-            transport_url: Url::parse("https://transport_url").unwrap(),
-            flags: Default::default(),
-        }],
+        addons: vec![addon.to_owned()],
         ..Default::default()
     };
     TestEnv::reset();
@@ -162,9 +167,10 @@ fn actionctx_uninstalladdon_with_user() {
         1000,
     );
     TestEnv::run(|| {
-        runtime.dispatch(Action::Ctx(ActionCtx::UninstallAddon(
-            Url::parse("https://transport_url").unwrap(),
-        )))
+        runtime.dispatch(RuntimeAction {
+            field: None,
+            action: Action::Ctx(ActionCtx::UninstallAddon(addon)),
+        })
     });
     assert!(
         runtime.model().unwrap().ctx.profile.addons.is_empty(),
@@ -204,8 +210,9 @@ fn actionctx_uninstalladdon_with_user() {
 #[test]
 fn actionctx_uninstalladdon_protected() {
     #[derive(Model, Default)]
+    #[model(TestEnv)]
     struct TestModel {
-        ctx: Ctx<TestEnv>,
+        ctx: Ctx,
     }
     let addon = Descriptor {
         manifest: Manifest {
@@ -249,9 +256,10 @@ fn actionctx_uninstalladdon_protected() {
         1000,
     );
     TestEnv::run(|| {
-        runtime.dispatch(Action::Ctx(ActionCtx::UninstallAddon(
-            Url::parse("https://transport_url").unwrap(),
-        )))
+        runtime.dispatch(RuntimeAction {
+            field: None,
+            action: Action::Ctx(ActionCtx::UninstallAddon(addon.to_owned())),
+        })
     });
     assert_eq!(
         runtime.model().unwrap().ctx.profile.addons,
@@ -277,8 +285,9 @@ fn actionctx_uninstalladdon_protected() {
 #[test]
 fn actionctx_uninstalladdon_not_installed() {
     #[derive(Model, Default)]
+    #[model(TestEnv)]
     struct TestModel {
-        ctx: Ctx<TestEnv>,
+        ctx: Ctx,
     }
     let addon = Descriptor {
         manifest: Manifest {
@@ -319,9 +328,13 @@ fn actionctx_uninstalladdon_not_installed() {
         1000,
     );
     TestEnv::run(|| {
-        runtime.dispatch(Action::Ctx(ActionCtx::UninstallAddon(
-            Url::parse("https://transport_url2").unwrap(),
-        )))
+        runtime.dispatch(RuntimeAction {
+            field: None,
+            action: Action::Ctx(ActionCtx::UninstallAddon(Descriptor {
+                transport_url: Url::parse("https://transport_url2").unwrap(),
+                ..addon.to_owned()
+            })),
+        })
     });
     assert_eq!(
         runtime.model().unwrap().ctx.profile.addons,

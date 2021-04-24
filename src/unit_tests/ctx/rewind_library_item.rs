@@ -1,7 +1,7 @@
 use crate::constants::{LIBRARY_RECENT_STORAGE_KEY, LIBRARY_STORAGE_KEY};
 use crate::models::ctx::Ctx;
 use crate::runtime::msg::{Action, ActionCtx};
-use crate::runtime::{Effects, Env, EnvFuture, Runtime};
+use crate::runtime::{Effects, Env, Runtime, RuntimeAction, TryEnvFuture};
 use crate::types::api::{APIResult, SuccessResponse};
 use crate::types::library::{LibraryBucket, LibraryItem, LibraryItemState};
 use crate::types::profile::{Auth, AuthKey, GDPRConsent, Profile, User};
@@ -18,10 +18,11 @@ use stremio_derive::Model;
 #[test]
 fn actionctx_rewindlibraryitem() {
     #[derive(Model, Default)]
+    #[model(TestEnv)]
     struct TestModel {
-        ctx: Ctx<TestEnv>,
+        ctx: Ctx,
     }
-    fn fetch_handler(request: Request) -> EnvFuture<Box<dyn Any>> {
+    fn fetch_handler(request: Request) -> TryEnvFuture<Box<dyn Any>> {
         match request {
             Request {
                 url, method, body, ..
@@ -106,9 +107,10 @@ fn actionctx_rewindlibraryitem() {
         1000,
     );
     TestEnv::run(|| {
-        runtime.dispatch(Action::Ctx(ActionCtx::RewindLibraryItem(
-            library_item.id.to_owned(),
-        )))
+        runtime.dispatch(RuntimeAction {
+            field: None,
+            action: Action::Ctx(ActionCtx::RewindLibraryItem(library_item.id.to_owned())),
+        })
     });
     assert_eq!(
         runtime
@@ -151,8 +153,9 @@ fn actionctx_rewindlibraryitem() {
 #[test]
 fn actionctx_rewindlibraryitem_not_added() {
     #[derive(Model, Default)]
+    #[model(TestEnv)]
     struct TestModel {
-        ctx: Ctx<TestEnv>,
+        ctx: Ctx,
     }
     let library_item = LibraryItem {
         id: "id".to_owned(),
@@ -190,7 +193,12 @@ fn actionctx_rewindlibraryitem_not_added() {
         Effects::none().unchanged(),
         1000,
     );
-    TestEnv::run(|| runtime.dispatch(Action::Ctx(ActionCtx::RewindLibraryItem("id2".to_owned()))));
+    TestEnv::run(|| {
+        runtime.dispatch(RuntimeAction {
+            field: None,
+            action: Action::Ctx(ActionCtx::RewindLibraryItem("id2".to_owned())),
+        })
+    });
     assert_eq!(
         runtime
             .model()

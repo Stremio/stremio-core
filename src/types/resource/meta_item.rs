@@ -1,3 +1,4 @@
+use crate::types::deserialize_single_as_vec;
 use crate::types::resource::Stream;
 use chrono::{DateTime, Utc};
 use derivative::Derivative;
@@ -5,7 +6,8 @@ use serde::{Deserialize, Serialize};
 use url::Url;
 
 #[derive(Clone, PartialEq, Serialize, Deserialize)]
-#[cfg_attr(test, derive(Debug, Default))]
+#[cfg_attr(debug_assertions, derive(Debug))]
+#[cfg_attr(test, derive(Default))]
 #[serde(rename_all = "camelCase")]
 pub struct MetaItem {
     pub id: String,
@@ -33,7 +35,7 @@ pub struct MetaItem {
 }
 
 #[derive(Clone, PartialEq, Serialize, Deserialize)]
-#[cfg_attr(test, derive(Debug))]
+#[cfg_attr(debug_assertions, derive(Debug))]
 #[serde(rename_all = "camelCase")]
 pub struct MetaItemPreview {
     pub id: String,
@@ -55,7 +57,7 @@ pub struct MetaItemPreview {
 }
 
 #[derive(Derivative, Clone, PartialEq, Serialize, Deserialize)]
-#[cfg_attr(test, derive(Debug))]
+#[cfg_attr(debug_assertions, derive(Debug))]
 #[derivative(Default)]
 #[serde(rename_all = "camelCase")]
 pub enum PosterShape {
@@ -67,14 +69,15 @@ pub enum PosterShape {
 }
 
 #[derive(Clone, PartialEq, Serialize, Deserialize)]
-#[cfg_attr(test, derive(Default, Debug))]
+#[cfg_attr(debug_assertions, derive(Debug))]
+#[cfg_attr(test, derive(Default))]
 pub struct SeriesInfo {
     pub season: u32,
     pub episode: u32,
 }
 
 #[derive(Clone, PartialEq, Serialize, Deserialize)]
-#[cfg_attr(test, derive(Debug))]
+#[cfg_attr(debug_assertions, derive(Debug))]
 #[serde(rename_all = "camelCase")]
 pub struct Video {
     pub id: String,
@@ -83,7 +86,11 @@ pub struct Video {
     pub released: Option<DateTime<Utc>>,
     pub overview: Option<String>,
     pub thumbnail: Option<String>,
-    #[serde(default)]
+    #[serde(
+        alias = "stream",
+        deserialize_with = "deserialize_single_as_vec",
+        default
+    )]
     pub streams: Vec<Stream>,
     #[serde(flatten)]
     pub series_info: Option<SeriesInfo>,
@@ -92,7 +99,7 @@ pub struct Video {
 }
 
 #[derive(Clone, PartialEq, Serialize, Deserialize)]
-#[cfg_attr(test, derive(Debug))]
+#[cfg_attr(debug_assertions, derive(Debug))]
 pub struct Link {
     pub name: String,
     pub category: String,
@@ -100,7 +107,7 @@ pub struct Link {
 }
 
 #[derive(Default, Clone, PartialEq, Serialize, Deserialize)]
-#[cfg_attr(test, derive(Debug))]
+#[cfg_attr(debug_assertions, derive(Debug))]
 #[serde(rename_all = "camelCase")]
 pub struct MetaItemBehaviorHints {
     #[serde(default)]

@@ -3,6 +3,8 @@ use crate::constants::{
     LIBRARY_RECENT_STORAGE_KEY, LIBRARY_STORAGE_KEY, PROFILE_STORAGE_KEY, SCHEMA_VERSION,
     SCHEMA_VERSION_STORAGE_KEY,
 };
+use crate::models::ctx::Ctx;
+use crate::models::streaming_server::StreamingServer;
 use chrono::{DateTime, Utc};
 use futures::future::LocalBoxFuture;
 use futures::{future, Future, FutureExt, TryFutureExt};
@@ -12,41 +14,41 @@ use serde::{Deserialize, Serialize, Serializer};
 use url::Url;
 
 #[derive(Clone, PartialEq)]
-#[cfg_attr(test, derive(Debug))]
+#[cfg_attr(debug_assertions, derive(Debug))]
 pub enum EnvError {
-    StorageUnavailable,
-    StorageSchemaVersionDowngrade(usize, usize),
-    StorageSchemaVersionUpgrade(Box<EnvError>),
     Fetch(String),
     AddonTransport(String),
     Serde(String),
+    StorageUnavailable,
+    StorageSchemaVersionDowngrade(u32, u32),
+    StorageSchemaVersionUpgrade(Box<EnvError>),
 }
 
 impl EnvError {
     pub fn message(&self) -> String {
         match &self {
-            EnvError::StorageUnavailable => "Storage is not available.".to_owned(),
+            EnvError::Fetch(message) => format!("Failed to fetch: {}", message),
+            EnvError::AddonTransport(message) => format!("Addon protocol violation: {}", message),
+            EnvError::Serde(message) => format!("Serialization error: {}", message),
+            EnvError::StorageUnavailable => "Storage is not available".to_owned(),
             EnvError::StorageSchemaVersionDowngrade(from, to) => format!(
-                "Downgrade storage schema version from {} to {} is not allowed.",
+                "Downgrade storage schema version from {} to {} is not allowed",
                 from, to
             ),
             EnvError::StorageSchemaVersionUpgrade(source) => format!(
                 "Upgrade storage schema version failed caused by: {}",
                 source.message()
             ),
-            EnvError::Fetch(message) => format!("Failed to fetch: {}", message),
-            EnvError::AddonTransport(message) => format!("Addon protocol violation: {}", message),
-            EnvError::Serde(message) => format!("Serialization error: {}", message),
         }
     }
     pub fn code(&self) -> u64 {
         match &self {
-            EnvError::StorageUnavailable => 1,
-            EnvError::StorageSchemaVersionDowngrade(_, _) => 2,
-            EnvError::StorageSchemaVersionUpgrade(_) => 3,
-            EnvError::Fetch(_) => 4,
-            EnvError::AddonTransport(_) => 5,
-            EnvError::Serde(_) => 6,
+            EnvError::Fetch(_) => 1,
+            EnvError::AddonTransport(_) => 2,
+            EnvError::Serde(_) => 3,
+            EnvError::StorageUnavailable => 4,
+            EnvError::StorageSchemaVersionDowngrade(_, _) => 5,
+            EnvError::StorageSchemaVersionUpgrade(_) => 6,
         }
     }
 }
@@ -69,21 +71,25 @@ impl From<serde_json::Error> for EnvError {
     }
 }
 
-pub type EnvFuture<T> = LocalBoxFuture<'static, Result<T, EnvError>>;
+pub type EnvFuture<T> = LocalBoxFuture<'static, T>;
+
+pub type TryEnvFuture<T> = EnvFuture<Result<T, EnvError>>;
 
 pub trait Env {
-    fn fetch<IN, OUT>(request: Request<IN>) -> EnvFuture<OUT>
+    fn fetch<IN, OUT>(request: Request<IN>) -> TryEnvFuture<OUT>
     where
         IN: Serialize,
         for<'de> OUT: Deserialize<'de> + 'static;
-    fn get_storage<T>(key: &str) -> EnvFuture<Option<T>>
+    fn get_storage<T>(key: &str) -> TryEnvFuture<Option<T>>
     where
         for<'de> T: Deserialize<'de> + 'static;
-    fn set_storage<T: Serialize>(key: &str, value: Option<&T>) -> EnvFuture<()>;
+    fn set_storage<T: Serialize>(key: &str, value: Option<&T>) -> TryEnvFuture<()>;
     fn exec<F>(future: F)
     where
         F: Future<Output = ()> + 'static;
     fn now() -> DateTime<Utc>;
+    fn flush_analytics() -> EnvFuture<()>;
+    fn analytics_context(ctx: &Ctx, streaming_server: &StreamingServer) -> serde_json::Value;
     #[cfg(debug_assertions)]
     fn log(message: String);
     fn addon_transport(transport_url: &Url) -> Box<dyn AddonTransport>
@@ -95,11 +101,11 @@ pub trait Env {
             _ => Box::new(UnsupportedTransport::new(transport_url.to_owned())),
         }
     }
-    fn migrate_storage_schema() -> EnvFuture<()>
+    fn migrate_storage_schema() -> TryEnvFuture<()>
     where
         Self: Sized,
     {
-        Self::get_storage::<usize>(SCHEMA_VERSION_STORAGE_KEY)
+        Self::get_storage::<u32>(SCHEMA_VERSION_STORAGE_KEY)
             .and_then(|schema_version| async move {
                 let mut schema_version = schema_version.unwrap_or_default();
                 if schema_version > SCHEMA_VERSION {
@@ -132,7 +138,7 @@ pub trait Env {
     }
 }
 
-fn migrate_storage_schema_to_v1<E: Env>() -> EnvFuture<()> {
+fn migrate_storage_schema_to_v1<E: Env>() -> TryEnvFuture<()> {
     future::try_join_all(vec![
         E::set_storage(SCHEMA_VERSION_STORAGE_KEY, Some(&1)),
         E::set_storage::<()>(PROFILE_STORAGE_KEY, None),
@@ -143,7 +149,7 @@ fn migrate_storage_schema_to_v1<E: Env>() -> EnvFuture<()> {
     .boxed_local()
 }
 
-fn migrate_storage_schema_to_v2<E: Env>() -> EnvFuture<()> {
+fn migrate_storage_schema_to_v2<E: Env>() -> TryEnvFuture<()> {
     E::get_storage::<serde_json::Value>(PROFILE_STORAGE_KEY)
         .and_then(|mut profile| {
             match profile

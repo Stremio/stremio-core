@@ -7,7 +7,7 @@ use std::cmp;
 use std::collections::{HashMap, HashSet};
 
 #[derive(Default, Clone, PartialEq, Serialize, Deserialize)]
-#[cfg_attr(test, derive(Debug))]
+#[cfg_attr(debug_assertions, derive(Debug))]
 pub struct LibraryBucket {
     pub uid: UID,
     pub items: HashMap<String, LibraryItem>,

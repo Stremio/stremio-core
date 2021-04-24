@@ -1,7 +1,7 @@
 use crate::constants::{LIBRARY_RECENT_STORAGE_KEY, LIBRARY_STORAGE_KEY, PROFILE_STORAGE_KEY};
 use crate::models::ctx::Ctx;
 use crate::runtime::msg::{Action, ActionCtx};
-use crate::runtime::{Effects, Env, EnvFuture, Runtime};
+use crate::runtime::{Effects, Env, Runtime, RuntimeAction, TryEnvFuture};
 use crate::types::api::{
     APIResult, AuthRequest, AuthResponse, CollectionResponse, GDPRConsentRequest,
 };
@@ -18,16 +18,17 @@ use stremio_derive::Model;
 #[test]
 fn actionctx_authenticate_login() {
     #[derive(Model, Default)]
+    #[model(TestEnv)]
     struct TestModel {
-        ctx: Ctx<TestEnv>,
+        ctx: Ctx,
     }
-    fn fetch_handler(request: Request) -> EnvFuture<Box<dyn Any>> {
+    fn fetch_handler(request: Request) -> TryEnvFuture<Box<dyn Any>> {
         match request {
             Request {
                 url, method, body, ..
             } if url == "https://api.strem.io/api/login"
                 && method == "POST"
-                && body == "{\"type\":\"Auth\",\"type\":\"Login\",\"email\":\"user_email\",\"password\":\"user_password\"}" =>
+                && body == "{\"type\":\"Auth\",\"type\":\"Login\",\"email\":\"user_email\",\"password\":\"user_password\",\"facebook\":false}" =>
             {
                 future::ok(Box::new(APIResult::Ok {
                     result: AuthResponse {
@@ -79,10 +80,14 @@ fn actionctx_authenticate_login() {
     let (runtime, _rx) =
         Runtime::<TestEnv, _>::new(TestModel::default(), Effects::none().unchanged(), 1000);
     TestEnv::run(|| {
-        runtime.dispatch(Action::Ctx(ActionCtx::Authenticate(AuthRequest::Login {
-            email: "user_email".into(),
-            password: "user_password".into(),
-        })))
+        runtime.dispatch(RuntimeAction {
+            field: None,
+            action: Action::Ctx(ActionCtx::Authenticate(AuthRequest::Login {
+                email: "user_email".into(),
+                password: "user_password".into(),
+                facebook: false,
+            })),
+        })
     });
     assert_eq!(
         runtime.model().unwrap().ctx.profile,
@@ -171,7 +176,7 @@ fn actionctx_authenticate_login() {
         Request {
             url: "https://api.strem.io/api/login".to_owned(),
             method: "POST".to_owned(),
-            body: "{\"type\":\"Auth\",\"type\":\"Login\",\"email\":\"user_email\",\"password\":\"user_password\"}".to_owned(),
+            body: "{\"type\":\"Auth\",\"type\":\"Login\",\"email\":\"user_email\",\"password\":\"user_password\",\"facebook\":false}".to_owned(),
             ..Default::default()
         },
         "Login request has been sent"
@@ -204,10 +209,11 @@ fn actionctx_authenticate_login() {
 #[test]
 fn actionctx_authenticate_register() {
     #[derive(Model, Default)]
+    #[model(TestEnv)]
     struct TestModel {
-        ctx: Ctx<TestEnv>,
+        ctx: Ctx,
     }
-    fn fetch_handler(request: Request) -> EnvFuture<Box<dyn Any>> {
+    fn fetch_handler(request: Request) -> TryEnvFuture<Box<dyn Any>> {
         match request {
             Request {
                 url, method, body, ..
@@ -265,8 +271,9 @@ fn actionctx_authenticate_register() {
     let (runtime, _rx) =
         Runtime::<TestEnv, _>::new(TestModel::default(), Effects::none().unchanged(), 1000);
     TestEnv::run(|| {
-        runtime.dispatch(Action::Ctx(ActionCtx::Authenticate(
-            AuthRequest::Register {
+        runtime.dispatch(RuntimeAction {
+            field: None,
+            action: Action::Ctx(ActionCtx::Authenticate(AuthRequest::Register {
                 email: "user_email".into(),
                 password: "user_password".into(),
                 gdpr_consent: GDPRConsentRequest {
@@ -278,8 +285,8 @@ fn actionctx_authenticate_register() {
                     from: "tests".to_owned(),
                     time: Utc.ymd(2020, 1, 1).and_hms_milli(0, 0, 0, 0),
                 },
-            },
-        )))
+            })),
+        })
     });
     assert_eq!(
         runtime.model().unwrap().ctx.profile,

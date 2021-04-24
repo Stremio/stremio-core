@@ -13,7 +13,7 @@ pub trait APIMethodName {
 }
 
 #[derive(Clone, PartialEq, Serialize)]
-#[cfg_attr(test, derive(Debug))]
+#[cfg_attr(debug_assertions, derive(Debug))]
 #[serde(tag = "type")]
 pub enum APIRequest {
     Auth(AuthRequest),
@@ -31,6 +31,11 @@ pub enum APIRequest {
         auth_key: AuthKey,
         addons: Vec<Descriptor>,
     },
+    #[serde(rename_all = "camelCase")]
+    Events {
+        auth_key: AuthKey,
+        events: Vec<serde_json::Value>,
+    },
 }
 
 impl APIMethodName for APIRequest {
@@ -41,17 +46,24 @@ impl APIMethodName for APIRequest {
             APIRequest::Logout { .. } => "logout",
             APIRequest::AddonCollectionGet { .. } => "addonCollectionGet",
             APIRequest::AddonCollectionSet { .. } => "addonCollectionSet",
+            APIRequest::Events { .. } => "events",
         }
     }
 }
 
 #[derive(Clone, PartialEq, Serialize, Deserialize)]
-#[cfg_attr(test, derive(Derivative, Debug))]
+#[cfg_attr(debug_assertions, derive(Debug))]
+#[cfg_attr(test, derive(Derivative))]
 #[cfg_attr(test, derivative(Default))]
 #[serde(tag = "type")]
 pub enum AuthRequest {
     #[cfg_attr(test, derivative(Default))]
-    Login { email: String, password: String },
+    Login {
+        email: String,
+        password: String,
+        #[serde(default)]
+        facebook: bool,
+    },
     Register {
         email: String,
         password: String,
@@ -60,7 +72,8 @@ pub enum AuthRequest {
 }
 
 #[derive(Clone, PartialEq, Serialize, Deserialize)]
-#[cfg_attr(test, derive(Derivative, Debug))]
+#[cfg_attr(debug_assertions, derive(Debug))]
+#[cfg_attr(test, derive(Derivative))]
 #[cfg_attr(test, derivative(Default))]
 pub struct GDPRConsentRequest {
     #[serde(flatten)]
@@ -71,7 +84,7 @@ pub struct GDPRConsentRequest {
 }
 
 #[derive(Clone, PartialEq, Serialize)]
-#[cfg_attr(test, derive(Debug))]
+#[cfg_attr(debug_assertions, derive(Debug))]
 #[serde(rename_all = "camelCase")]
 pub struct DatastoreRequest {
     pub auth_key: AuthKey,
@@ -91,7 +104,8 @@ impl APIMethodName for DatastoreRequest {
 }
 
 #[derive(Clone, PartialEq, Serialize)]
-#[cfg_attr(test, derive(Derivative, Debug))]
+#[cfg_attr(debug_assertions, derive(Debug))]
+#[cfg_attr(test, derive(Derivative))]
 #[cfg_attr(test, derivative(Default))]
 #[serde(untagged)]
 pub enum DatastoreCommand {

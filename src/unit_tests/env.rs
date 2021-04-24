@@ -1,4 +1,6 @@
-use crate::runtime::{Env, EnvFuture};
+use crate::models::ctx::Ctx;
+use crate::models::streaming_server::StreamingServer;
+use crate::runtime::{Env, EnvFuture, TryEnvFuture};
 use chrono::{DateTime, Utc};
 use futures::{future, Future, FutureExt, TryFutureExt};
 use lazy_static::lazy_static;
@@ -17,7 +19,7 @@ lazy_static! {
     pub static ref NOW: RwLock<DateTime<Utc>> = RwLock::new(Utc::now());
 }
 
-pub type FetchHandler = Box<dyn Fn(Request) -> EnvFuture<Box<dyn Any>> + Send + Sync + 'static>;
+pub type FetchHandler = Box<dyn Fn(Request) -> TryEnvFuture<Box<dyn Any>> + Send + Sync + 'static>;
 
 #[derive(Default, Debug, Clone, PartialEq)]
 pub struct Request {
@@ -60,7 +62,7 @@ impl TestEnv {
 }
 
 impl Env for TestEnv {
-    fn fetch<IN, OUT>(request: http::Request<IN>) -> EnvFuture<OUT>
+    fn fetch<IN, OUT>(request: http::Request<IN>) -> TryEnvFuture<OUT>
     where
         IN: Serialize,
         for<'de> OUT: Deserialize<'de> + 'static,
@@ -71,7 +73,7 @@ impl Env for TestEnv {
             .map_ok(|resp| *resp.downcast::<OUT>().unwrap())
             .boxed_local()
     }
-    fn get_storage<T>(key: &str) -> EnvFuture<Option<T>>
+    fn get_storage<T>(key: &str) -> TryEnvFuture<Option<T>>
     where
         for<'de> T: Deserialize<'de> + 'static,
     {
@@ -84,7 +86,7 @@ impl Env for TestEnv {
         )
         .boxed_local()
     }
-    fn set_storage<T: Serialize>(key: &str, value: Option<&T>) -> EnvFuture<()> {
+    fn set_storage<T: Serialize>(key: &str, value: Option<&T>) -> TryEnvFuture<()> {
         let mut storage = STORAGE.write().unwrap();
         match value {
             Some(v) => storage.insert(key.to_string(), serde_json::to_string(v).unwrap()),
@@ -101,11 +103,17 @@ impl Env for TestEnv {
     fn now() -> DateTime<Utc> {
         *NOW.read().unwrap()
     }
+    fn flush_analytics() -> EnvFuture<()> {
+        future::ready(()).boxed_local()
+    }
+    fn analytics_context(_ctx: &Ctx, _streaming_server: &StreamingServer) -> serde_json::Value {
+        serde_json::Value::Null
+    }
     fn log(message: String) {
         println!("{}", message)
     }
 }
 
-pub fn default_fetch_handler(request: Request) -> EnvFuture<Box<dyn Any>> {
+pub fn default_fetch_handler(request: Request) -> TryEnvFuture<Box<dyn Any>> {
     panic!("Unhandled fetch request: {:#?}", request)
 }

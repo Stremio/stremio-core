@@ -7,7 +7,8 @@ use derivative::Derivative;
 use serde::{Deserialize, Serialize};
 
 #[derive(Clone, PartialEq, Serialize, Deserialize)]
-#[cfg_attr(test, derive(Default, Debug))]
+#[cfg_attr(debug_assertions, derive(Debug))]
+#[cfg_attr(test, derive(Default))]
 pub struct GDPRConsent {
     pub tos: bool,
     pub privacy: bool,
@@ -15,7 +16,8 @@ pub struct GDPRConsent {
 }
 
 #[derive(Clone, PartialEq, Serialize, Deserialize)]
-#[cfg_attr(test, derive(Derivative, Debug))]
+#[cfg_attr(debug_assertions, derive(Debug))]
+#[cfg_attr(test, derive(Derivative))]
 #[cfg_attr(test, derivative(Default))]
 #[serde(rename_all = "camelCase")]
 pub struct User {

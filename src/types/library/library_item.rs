@@ -4,7 +4,7 @@ use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 
 #[derive(Clone, PartialEq, Serialize, Deserialize)]
-#[cfg_attr(test, derive(Debug))]
+#[cfg_attr(debug_assertions, derive(Debug))]
 #[serde(rename_all = "camelCase")]
 pub struct LibraryItem {
     #[serde(rename = "_id")]
@@ -38,7 +38,7 @@ impl LibraryItem {
 }
 
 #[derive(Default, Clone, PartialEq, Serialize, Deserialize)]
-#[cfg_attr(test, derive(Debug))]
+#[cfg_attr(debug_assertions, derive(Debug))]
 #[serde(rename_all = "camelCase")]
 pub struct LibraryItemState {
     #[serde(deserialize_with = "empty_string_as_none", default)]
@@ -66,7 +66,7 @@ pub struct LibraryItemState {
 }
 
 #[derive(Default, Clone, PartialEq, Serialize, Deserialize)]
-#[cfg_attr(test, derive(Debug))]
+#[cfg_attr(debug_assertions, derive(Debug))]
 #[serde(rename_all = "camelCase")]
 pub struct LibraryItemBehaviorHints {
     pub default_video_id: Option<String>,

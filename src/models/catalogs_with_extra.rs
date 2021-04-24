@@ -20,8 +20,8 @@ pub struct CatalogsWithExtra {
     pub catalogs: Vec<ResourceLoadable<Vec<MetaItemPreview>>>,
 }
 
-impl<E: Env + 'static> UpdateWithCtx<Ctx<E>> for CatalogsWithExtra {
-    fn update(&mut self, msg: &Msg, ctx: &Ctx<E>) -> Effects {
+impl<E: Env + 'static> UpdateWithCtx<E> for CatalogsWithExtra {
+    fn update(&mut self, msg: &Msg, ctx: &Ctx) -> Effects {
         match msg {
             Msg::Action(Action::Load(ActionLoad::CatalogsWithExtra(selected))) => {
                 let selected_effects = eq_update(&mut self.selected, Some(selected.to_owned()));

@@ -5,35 +5,36 @@ authors = ["Smart Code OOD"]
 edition = "2018"
 
 [workspace]
+members = ["stremio-derive", "stremio-analytics"]
 
 [lib]
 doctest = false
 
 [dependencies]
 stremio-derive = { path = "stremio-derive" }
-stremio-official-addons = "2.0.7"
-serde = "1.0"
-serde_json = "1.0"
-serde-hex = "0.1"
-futures = "0.3"
-http = "0.2"
-url = { version = "2.1", features = ["serde"] }
-percent-encoding = "2.1"
-chrono = { version = "0.4", features = ["serde"] }
-semver = { version = "0.10", features = ["serde"] }
-base64 = "0.12"
-either = "1.6"
-enclose = "1.1"
-derivative = "2.1"
-derive_more = "0.99"
-boolinator = "2.4"
-strum = "0.19"
-strum_macros = "0.19"
-lazysort = "0.2"
-lazy_static = "1.4"
-itertools = "0.9"
+stremio-official-addons = "=2.0.7"
+serde = "1.0.*"
+serde_json = "1.0.*"
+serde-hex = "0.1.*"
+futures = "0.3.*"
+http = "0.2.*"
+url = { version = "2.2.*", features = ["serde"] }
+percent-encoding = "2.1.*"
+chrono = { version = "0.4.*", features = ["serde"] }
+semver = { version = "0.11.*", features = ["serde"] }
+base64 = "0.13.*"
+either = "1.6.*"
+enclose = "1.1.*"
+derivative = "2.1.*"
+derive_more = "0.99.*"
+boolinator = "2.4.*"
+strum = "0.20.*"
+strum_macros = "0.20.*"
+lazysort = "0.2.*"
+lazy_static = "1.4.*"
+itertools = "0.10.*"
 
 [dev-dependencies]
-tokio = { version = "0.2", features = ["rt-core"] }
-tokio-current-thread = "0.2.0-alpha.1"
-serde_test = "1.0"
+tokio = { version = "0.2.*", features = ["rt-core"] }
+tokio-current-thread = "=0.2.0-alpha.1"
+serde_test = "1.0.*"

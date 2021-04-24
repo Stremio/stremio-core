@@ -10,7 +10,7 @@ use syn::{parse_macro_input, Data, DataStruct, DeriveInput, Fields, Ident};
 
 const CORE_CRATE_ORIGINAL_NAME: &str = "stremio-core";
 
-#[proc_macro_derive(Model)]
+#[proc_macro_derive(Model, attributes(model))]
 pub fn model_derive(input: TokenStream) -> TokenStream {
     let input = parse_macro_input!(input as DeriveInput);
     match input.data {
@@ -18,18 +18,22 @@ pub fn model_derive(input: TokenStream) -> TokenStream {
             fields: Fields::Named(fields),
             ..
         }) => {
-            let core_ident = get_core_ident().unwrap();
-            let struct_ident = &input.ident;
             assert!(
                 fields
                     .named
-                    .first()
-                    .expect("at least one field is required")
-                    .ident
-                    .as_ref()
-                    .map_or(false, |name| name == "ctx"),
-                "first field must be named \"ctx\""
+                    .iter()
+                    .any(|field| field.ident.as_ref().unwrap() == "ctx"),
+                "ctx field is required"
             );
+            let core_ident = get_core_ident().unwrap();
+            let struct_ident = input.ident;
+            let env_ident = input
+                .attrs
+                .iter()
+                .find(|attr| attr.path.is_ident("model"))
+                .expect("model attribute required")
+                .parse_args::<Ident>()
+                .expect("model attribute parse failed");
             let field_enum_ident = struct_ident.append("Field");
             let field_enum_variant_idents = fields
                 .named
@@ -45,29 +49,31 @@ pub fn model_derive(input: TokenStream) -> TokenStream {
                 .named
                 .iter()
                 .zip(field_enum_variant_idents.iter())
-                .skip(1)
                 .map(|(field, variant_ident)| {
-                    let field_ident = &field.ident;
-                    quote! {
-                        Self::Field::#variant_ident => #core_ident::runtime::UpdateWithCtx::update(&mut self.#field_ident, &msg, &self.ctx)
+                    let field_ident = field.ident.as_ref().unwrap();
+                    if field_ident == "ctx" {
+                        quote! {
+                            Self::Field::#variant_ident => #core_ident::runtime::Update::<#env_ident>::update(&mut self.#field_ident, &msg)
+                        }
+                    } else {
+                        quote! {
+                            Self::Field::#variant_ident => #core_ident::runtime::UpdateWithCtx::<#env_ident>::update(&mut self.#field_ident, &msg, &self.ctx)
+                        }
                     }
                 })
-                .chain(iter::once(quote! {
-                    Ctx => #core_ident::runtime::Update::update(&mut self.ctx, msg)
-                }))
                 .collect::<Vec<_>>();
-            let field_updates = fields
+            let field_updates_chain = fields
                 .named
                 .iter()
-                .skip(1)
+                .filter(|field| field.ident.as_ref().unwrap() != "ctx")
                 .map(|field| {
-                    let field_ident = &field.ident;
+                    let field_ident = field.ident.as_ref().unwrap();
                     quote! {
-                        .join(#core_ident::runtime::UpdateWithCtx::update(&mut self.#field_ident, &msg, &self.ctx))
+                        .join(#core_ident::runtime::UpdateWithCtx::<#env_ident>::update(&mut self.#field_ident, &msg, &self.ctx))
                     }
                 })
                 .chain(iter::once(quote! {
-                    #core_ident::runtime::Update::update(&mut self.ctx, msg)
+                    #core_ident::runtime::Update::<#env_ident>::update(&mut self.ctx, msg)
                 }))
                 .rev()
                 .collect::<Vec<_>>();
@@ -78,13 +84,13 @@ pub fn model_derive(input: TokenStream) -> TokenStream {
                     #(#field_enum_variant_idents),*
                 }
 
-                impl #core_ident::runtime::Update for #struct_ident {
+                impl #core_ident::runtime::Update<#env_ident> for #struct_ident {
                     fn update(&mut self, msg: &#core_ident::runtime::msg::Msg) -> #core_ident::runtime::Effects {
-                        #(#field_updates)*
+                        #(#field_updates_chain)*
                     }
                 }
 
-                impl #core_ident::runtime::Model for #struct_ident {
+                impl #core_ident::runtime::Model<#env_ident> for #struct_ident {
                     type Field = #field_enum_ident;
                     fn update_field(&mut self, msg: &#core_ident::runtime::msg::Msg, field: &Self::Field) -> #core_ident::runtime::Effects {
                         match field {

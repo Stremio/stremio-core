@@ -1,7 +1,7 @@
 use crate::constants::{OFFICIAL_ADDONS, PROFILE_STORAGE_KEY};
 use crate::models::ctx::Ctx;
 use crate::runtime::msg::{Action, ActionCtx};
-use crate::runtime::{Effects, Env, EnvFuture, Runtime};
+use crate::runtime::{Effects, Env, Runtime, RuntimeAction, TryEnvFuture};
 use crate::types::addon::{Descriptor, Manifest};
 use crate::types::api::{APIResult, CollectionResponse};
 use crate::types::profile::{Auth, AuthKey, GDPRConsent, Profile, User};
@@ -17,8 +17,9 @@ use url::Url;
 #[test]
 fn actionctx_pulladdonsfromapi() {
     #[derive(Model, Default)]
+    #[model(TestEnv)]
     struct TestModel {
-        ctx: Ctx<TestEnv>,
+        ctx: Ctx,
     }
     let official_addon = OFFICIAL_ADDONS.first().unwrap();
     TestEnv::reset();
@@ -42,7 +43,12 @@ fn actionctx_pulladdonsfromapi() {
         Effects::none().unchanged(),
         1000,
     );
-    TestEnv::run(|| runtime.dispatch(Action::Ctx(ActionCtx::PullAddonsFromAPI)));
+    TestEnv::run(|| {
+        runtime.dispatch(RuntimeAction {
+            field: None,
+            action: Action::Ctx(ActionCtx::PullAddonsFromAPI),
+        })
+    });
     assert_eq!(
         runtime.model().unwrap().ctx.profile.addons,
         vec![official_addon.to_owned()],
@@ -68,10 +74,11 @@ fn actionctx_pulladdonsfromapi() {
 #[test]
 fn actionctx_pulladdonsfromapi_with_user() {
     #[derive(Model, Default)]
+    #[model(TestEnv)]
     struct TestModel {
-        ctx: Ctx<TestEnv>,
+        ctx: Ctx,
     }
-    fn fetch_handler(request: Request) -> EnvFuture<Box<dyn Any>> {
+    fn fetch_handler(request: Request) -> TryEnvFuture<Box<dyn Any>> {
         match request {
             Request {
                 url, method, body, ..
@@ -138,7 +145,12 @@ fn actionctx_pulladdonsfromapi_with_user() {
         Effects::none().unchanged(),
         1000,
     );
-    TestEnv::run(|| runtime.dispatch(Action::Ctx(ActionCtx::PullAddonsFromAPI)));
+    TestEnv::run(|| {
+        runtime.dispatch(RuntimeAction {
+            field: None,
+            action: Action::Ctx(ActionCtx::PullAddonsFromAPI),
+        })
+    });
     assert_eq!(
         runtime.model().unwrap().ctx.profile.addons,
         OFFICIAL_ADDONS.to_owned(),

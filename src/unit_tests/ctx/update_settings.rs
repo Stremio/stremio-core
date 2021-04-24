@@ -1,7 +1,7 @@
 use crate::constants::PROFILE_STORAGE_KEY;
 use crate::models::ctx::Ctx;
 use crate::runtime::msg::{Action, ActionCtx};
-use crate::runtime::{Effects, Runtime};
+use crate::runtime::{Effects, Runtime, RuntimeAction};
 use crate::types::profile::{Profile, Settings};
 use crate::unit_tests::{TestEnv, REQUESTS, STORAGE};
 use stremio_derive::Model;
@@ -9,8 +9,9 @@ use stremio_derive::Model;
 #[test]
 fn actionctx_updatesettings() {
     #[derive(Model, Default)]
+    #[model(TestEnv)]
     struct TestModel {
-        ctx: Ctx<TestEnv>,
+        ctx: Ctx,
     }
     let settings = Settings {
         subtitles_language: "bg".to_string(),
@@ -20,7 +21,12 @@ fn actionctx_updatesettings() {
     TestEnv::reset();
     let (runtime, _rx) =
         Runtime::<TestEnv, _>::new(TestModel::default(), Effects::none().unchanged(), 1000);
-    TestEnv::run(|| runtime.dispatch(Action::Ctx(ActionCtx::UpdateSettings(settings.to_owned()))));
+    TestEnv::run(|| {
+        runtime.dispatch(RuntimeAction {
+            field: None,
+            action: Action::Ctx(ActionCtx::UpdateSettings(settings.to_owned())),
+        })
+    });
     assert_eq!(
         runtime.model().unwrap().ctx.profile.settings,
         settings,
@@ -45,8 +51,9 @@ fn actionctx_updatesettings() {
 #[test]
 fn actionctx_updatesettings_not_changed() {
     #[derive(Model, Default)]
+    #[model(TestEnv)]
     struct TestModel {
-        ctx: Ctx<TestEnv>,
+        ctx: Ctx,
     }
     let settings = Settings {
         subtitles_language: "bg".to_string(),
@@ -72,7 +79,12 @@ fn actionctx_updatesettings_not_changed() {
         Effects::none().unchanged(),
         1000,
     );
-    TestEnv::run(|| runtime.dispatch(Action::Ctx(ActionCtx::UpdateSettings(settings.to_owned()))));
+    TestEnv::run(|| {
+        runtime.dispatch(RuntimeAction {
+            field: None,
+            action: Action::Ctx(ActionCtx::UpdateSettings(settings.to_owned())),
+        })
+    });
     assert_eq!(
         runtime.model().unwrap().ctx.profile.settings,
         settings,

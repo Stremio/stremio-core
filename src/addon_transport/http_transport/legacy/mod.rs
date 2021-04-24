@@ -1,5 +1,5 @@
 use crate::addon_transport::AddonTransport;
-use crate::runtime::{Env, EnvError, EnvFuture};
+use crate::runtime::{Env, EnvError, TryEnvFuture};
 use crate::types::addon::{Manifest, ResourcePath, ResourceResponse};
 use crate::types::resource::{MetaItem, MetaItemPreview, Stream, Subtitles};
 use futures::{future, FutureExt, TryFutureExt};
@@ -22,7 +22,7 @@ const MANIFEST_REQUEST_PARAM: &str =
 //
 // Errors
 //
-#[cfg_attr(test, derive(Debug))]
+#[cfg_attr(debug_assertions, derive(Debug))]
 pub enum LegacyErr {
     JsonRPC(JsonRPCErr),
     UnsupportedResource,
@@ -43,7 +43,7 @@ impl Into<EnvError> for LegacyErr {
 // JSON RPC types
 //
 #[derive(Deserialize)]
-#[cfg_attr(test, derive(Debug))]
+#[cfg_attr(debug_assertions, derive(Debug))]
 pub struct JsonRPCErr {
     message: String,
     #[serde(default)]
@@ -86,7 +86,7 @@ impl From<SubtitlesResult> for ResourceResponse {
     }
 }
 
-fn map_response<T: 'static + Sized>(resp: JsonRPCResp<T>) -> EnvFuture<T> {
+fn map_response<T: 'static + Sized>(resp: JsonRPCResp<T>) -> TryEnvFuture<T> {
     match resp {
         JsonRPCResp::Result { result } => future::ok(result).boxed_local(),
         JsonRPCResp::Error { error } => future::err(LegacyErr::JsonRPC(error).into()).boxed_local(),
@@ -111,7 +111,7 @@ impl<'a, T: Env> AddonLegacyTransport<'a, T> {
 }
 
 impl<'a, T: Env> AddonTransport for AddonLegacyTransport<'a, T> {
-    fn resource(&self, path: &ResourcePath) -> EnvFuture<ResourceResponse> {
+    fn resource(&self, path: &ResourcePath) -> TryEnvFuture<ResourceResponse> {
         let fetch_req = match build_legacy_req(self.transport_url, path) {
             Ok(r) => r,
             Err(e) => return future::err(e).boxed_local(),
@@ -137,7 +137,7 @@ impl<'a, T: Env> AddonTransport for AddonLegacyTransport<'a, T> {
             _ => future::err(LegacyErr::UnsupportedResource.into()).boxed_local(),
         }
     }
-    fn manifest(&self) -> EnvFuture<Manifest> {
+    fn manifest(&self) -> TryEnvFuture<Manifest> {
         let url = format!("{}/q.json?b={}", self.transport_url, MANIFEST_REQUEST_PARAM);
         let r = Request::get(url).body(()).expect("request builder failed");
         T::fetch::<_, JsonRPCResp<LegacyManifestResp>>(r)

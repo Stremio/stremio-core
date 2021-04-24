@@ -19,8 +19,8 @@ const LAST_VID_IDS: &str = "lastVideosIds";
 pub struct Notifications {
     pub groups: Vec<ResourceLoadable<Vec<MetaItem>>>,
 }
-impl<E: Env + 'static> UpdateWithCtx<Ctx<E>> for Notifications {
-    fn update(&mut self, msg: &Msg, ctx: &Ctx<E>) -> Effects {
+impl<E: Env + 'static> UpdateWithCtx<E> for Notifications {
+    fn update(&mut self, msg: &Msg, ctx: &Ctx) -> Effects {
         match msg {
             Msg::Action(Action::Load(ActionLoad::Notifications)) => {
                 let library = &ctx.library;

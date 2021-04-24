@@ -7,7 +7,8 @@ use serde::{Deserialize, Serialize};
 use std::borrow::Cow;
 
 #[derive(Clone, PartialEq, Serialize, Deserialize)]
-#[cfg_attr(test, derive(Derivative, Debug))]
+#[cfg_attr(debug_assertions, derive(Debug))]
+#[cfg_attr(test, derive(Derivative))]
 #[cfg_attr(test, derivative(Default))]
 #[serde(rename_all = "camelCase")]
 pub struct Manifest {
@@ -27,7 +28,7 @@ pub struct Manifest {
     #[serde(default)]
     pub addon_catalogs: Vec<ManifestCatalog>,
     #[serde(default)]
-    pub behavior_hints: serde_json::Map<String, serde_json::Value>,
+    pub behavior_hints: ManifestBehaviorHints,
 }
 
 impl Manifest {
@@ -71,7 +72,8 @@ impl Manifest {
 }
 
 #[derive(Clone, PartialEq, Serialize, Deserialize)]
-#[cfg_attr(test, derive(Derivative, Debug))]
+#[cfg_attr(debug_assertions, derive(Debug))]
+#[cfg_attr(test, derive(Derivative))]
 #[cfg_attr(test, derivative(Default))]
 #[serde(rename_all = "camelCase")]
 pub struct ManifestPreview {
@@ -86,7 +88,7 @@ pub struct ManifestPreview {
 }
 
 #[derive(Clone, PartialEq, Serialize, Deserialize)]
-#[cfg_attr(test, derive(Debug))]
+#[cfg_attr(debug_assertions, derive(Debug))]
 #[serde(untagged)]
 pub enum ManifestResource {
     Short(String),
@@ -109,7 +111,7 @@ impl ManifestResource {
 }
 
 #[derive(Clone, PartialEq, Serialize, Deserialize)]
-#[cfg_attr(test, derive(Debug))]
+#[cfg_attr(debug_assertions, derive(Debug))]
 #[serde(rename_all = "camelCase")]
 pub struct ManifestCatalog {
     pub r#type: String,
@@ -157,7 +159,7 @@ impl ManifestCatalog {
 
 #[derive(Derivative, Clone, PartialEq, Serialize, Deserialize)]
 #[derivative(Default)]
-#[cfg_attr(test, derive(Debug))]
+#[cfg_attr(debug_assertions, derive(Debug))]
 #[serde(untagged)]
 pub enum ManifestExtra {
     #[derivative(Default)]
@@ -192,7 +194,7 @@ impl ManifestExtra {
 }
 
 #[derive(Default, Clone, PartialEq, Serialize, Deserialize)]
-#[cfg_attr(test, derive(Debug))]
+#[cfg_attr(debug_assertions, derive(Debug))]
 #[serde(rename_all = "camelCase")]
 pub struct ExtraProp {
     pub name: String,
@@ -204,7 +206,7 @@ pub struct ExtraProp {
 }
 
 #[derive(Clone, Deref, PartialEq, Serialize, Deserialize)]
-#[cfg_attr(test, derive(Debug))]
+#[cfg_attr(debug_assertions, derive(Debug))]
 pub struct OptionsLimit(pub usize);
 
 impl Default for OptionsLimit {
@@ -213,12 +215,16 @@ impl Default for OptionsLimit {
     }
 }
 
-#[derive(Clone, PartialEq, Serialize, Deserialize)]
-#[cfg_attr(test, derive(Debug))]
+#[derive(Default, Clone, PartialEq, Serialize, Deserialize)]
+#[cfg_attr(debug_assertions, derive(Debug))]
 #[serde(rename_all = "camelCase")]
 pub struct ManifestBehaviorHints {
+    #[serde(default)]
     pub adult: bool,
+    #[serde(default)]
     pub p2p: bool,
+    #[serde(default)]
     pub configurable: bool,
+    #[serde(default)]
     pub configuration_required: bool,
 }

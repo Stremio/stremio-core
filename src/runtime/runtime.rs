@@ -12,12 +12,17 @@ use std::sync::{Arc, LockResult, RwLock, RwLockReadGuard};
 #[serde(tag = "name", content = "args")]
 pub enum RuntimeEvent {
     NewState,
-    Event(Event),
+    CoreEvent(Event),
+}
+
+pub struct RuntimeAction<E: Env, M: Model<E>> {
+    pub field: Option<M::Field>,
+    pub action: Action,
 }
 
 #[derive(Derivative)]
 #[derivative(Clone(bound = ""))]
-pub struct Runtime<E: Env, M: Model> {
+pub struct Runtime<E: Env, M: Model<E>> {
     model: Arc<RwLock<M>>,
     tx: Sender<RuntimeEvent>,
     env: PhantomData<E>,
@@ -26,7 +31,7 @@ pub struct Runtime<E: Env, M: Model> {
 impl<E, M> Runtime<E, M>
 where
     E: Env + 'static,
-    M: Model + 'static,
+    M: Model<E> + 'static,
 {
     pub fn new(model: M, effects: Effects, buffer: usize) -> (Self, Receiver<RuntimeEvent>) {
         let (tx, rx) = channel(buffer);
@@ -42,20 +47,17 @@ where
     pub fn model(&self) -> LockResult<RwLockReadGuard<M>> {
         self.model.read()
     }
-    pub fn dispatch(&self, action: Action) {
-        let effects = self
-            .model
-            .write()
-            .expect("model write failed")
-            .update(&Msg::Action(action));
-        self.handle_effects(effects);
-    }
-    pub fn dispatch_to_field(&self, action: Action, field: &M::Field) {
-        let effects = self
-            .model
-            .write()
-            .expect("model write failed")
-            .update_field(&Msg::Action(action), &field);
+    pub fn dispatch(&self, action: RuntimeAction<E, M>) {
+        let effects = {
+            let mut model = self.model.write().expect("model write failed");
+            match action {
+                RuntimeAction {
+                    field: Some(field),
+                    action,
+                } => model.update_field(&Msg::Action(action), &field),
+                RuntimeAction { action, .. } => model.update(&Msg::Action(action)),
+            }
+        };
         self.handle_effects(effects);
     }
     fn emit(&self, event: RuntimeEvent) {
@@ -83,7 +85,7 @@ where
     fn handle_effect_output(&self, msg: Msg) {
         match msg {
             Msg::Event(event) => {
-                self.emit(RuntimeEvent::Event(event));
+                self.emit(RuntimeEvent::CoreEvent(event));
             }
             Msg::Internal(_) => {
                 let effects = self.model.write().expect("model write failed").update(&msg);

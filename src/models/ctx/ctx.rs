@@ -1,10 +1,10 @@
 use crate::constants::LIBRARY_COLLECTION_NAME;
-use crate::models::ctx::{fetch_api, update_library, update_profile};
+use crate::models::ctx::{update_library, update_profile, CtxError};
 use crate::runtime::msg::{Action, ActionCtx, Event, Internal, Msg};
 use crate::runtime::{Effect, Effects, Env, Update};
 use crate::types::api::{
-    APIRequest, AuthRequest, AuthResponse, CollectionResponse, DatastoreCommand, DatastoreRequest,
-    SuccessResponse,
+    fetch_api, APIRequest, APIResult, AuthRequest, AuthResponse, CollectionResponse,
+    DatastoreCommand, DatastoreRequest, SuccessResponse,
 };
 use crate::types::library::LibraryBucket;
 use crate::types::profile::{Auth, AuthKey, Profile};
@@ -12,7 +12,6 @@ use derivative::Derivative;
 use enclose::enclose;
 use futures::{future, FutureExt, TryFutureExt};
 use serde::Serialize;
-use std::marker::PhantomData;
 
 #[derive(PartialEq, Serialize)]
 pub enum CtxStatus {
@@ -22,7 +21,7 @@ pub enum CtxStatus {
 
 #[derive(Derivative, Serialize)]
 #[derivative(Default)]
-pub struct Ctx<E: Env> {
+pub struct Ctx {
     pub profile: Profile,
     // TODO StreamsBucket
     // TODO SubtitlesBucket
@@ -32,11 +31,9 @@ pub struct Ctx<E: Env> {
     #[serde(skip)]
     #[derivative(Default(value = "CtxStatus::Ready"))]
     pub status: CtxStatus,
-    #[serde(skip)]
-    pub env: PhantomData<E>,
 }
 
-impl<E: Env> Ctx<E> {
+impl Ctx {
     pub fn new(profile: Profile, library: LibraryBucket) -> Self {
         Self {
             profile,
@@ -46,7 +43,7 @@ impl<E: Env> Ctx<E> {
     }
 }
 
-impl<E: Env + 'static> Update for Ctx<E> {
+impl<E: Env + 'static> Update<E> for Ctx {
     fn update(&mut self, msg: &Msg) -> Effects {
         match msg {
             Msg::Action(Action::Ctx(ActionCtx::Authenticate(auth_request))) => {
@@ -119,13 +116,26 @@ impl<E: Env + 'static> Update for Ctx<E> {
 }
 
 fn authenticate<E: Env + 'static>(auth_request: &AuthRequest) -> Effect {
-    fetch_api::<E, _, _>(&APIRequest::Auth(auth_request.to_owned()))
+    E::flush_analytics()
+        .then(enclose!((auth_request) move |_| {
+            fetch_api::<E, _, _>(&APIRequest::Auth(auth_request))
+        }))
+        .map_err(CtxError::from)
+        .and_then(|result| match result {
+            APIResult::Ok { result } => future::ok(result),
+            APIResult::Err { error } => future::err(CtxError::from(error)),
+        })
         .map_ok(|AuthResponse { key, user }| Auth { key, user })
         .and_then(|auth| {
             future::try_join(
                 fetch_api::<E, _, _>(&APIRequest::AddonCollectionGet {
                     auth_key: auth.key.to_owned(),
                     update: true,
+                })
+                .map_err(CtxError::from)
+                .and_then(|result| match result {
+                    APIResult::Ok { result } => future::ok(result),
+                    APIResult::Err { error } => future::err(CtxError::from(error)),
                 })
                 .map_ok(|CollectionResponse { addons, .. }| addons),
                 fetch_api::<E, _, _>(&DatastoreRequest {
@@ -135,6 +145,11 @@ fn authenticate<E: Env + 'static>(auth_request: &AuthRequest) -> Effect {
                         ids: vec![],
                         all: true,
                     },
+                })
+                .map_err(CtxError::from)
+                .and_then(|result| match result {
+                    APIResult::Ok { result } => future::ok(result),
+                    APIResult::Err { error } => future::err(CtxError::from(error)),
                 }),
             )
             .map_ok(move |(addons, library_items)| (auth, addons, library_items))
@@ -147,16 +162,22 @@ fn authenticate<E: Env + 'static>(auth_request: &AuthRequest) -> Effect {
 }
 
 fn delete_session<E: Env + 'static>(auth_key: &AuthKey) -> Effect {
-    fetch_api::<E, _, SuccessResponse>(&APIRequest::Logout {
-        auth_key: auth_key.to_owned(),
-    })
-    .map(enclose!((auth_key) move |result| match result {
-        Ok(_) => Msg::Event(Event::SessionDeleted { auth_key }),
-        Err(error) => Msg::Event(Event::Error {
-            error,
-            source: Box::new(Event::SessionDeleted { auth_key }),
-        }),
-    }))
-    .boxed_local()
-    .into()
+    E::flush_analytics()
+        .then(enclose!((auth_key) move |_| {
+            fetch_api::<E, _, SuccessResponse>(&APIRequest::Logout { auth_key })
+        }))
+        .map_err(CtxError::from)
+        .and_then(|result| match result {
+            APIResult::Ok { result } => future::ok(result),
+            APIResult::Err { error } => future::err(CtxError::from(error)),
+        })
+        .map(enclose!((auth_key) move |result| match result {
+            Ok(_) => Msg::Event(Event::SessionDeleted { auth_key }),
+            Err(error) => Msg::Event(Event::Error {
+                error,
+                source: Box::new(Event::SessionDeleted { auth_key }),
+            }),
+        }))
+        .boxed_local()
+        .into()
 }
