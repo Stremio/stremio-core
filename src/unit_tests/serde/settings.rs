@@ -20,11 +20,13 @@ fn settings() {
             subtitles_text_color: "subtitles_text_color".to_owned(),
             subtitles_background_color: "subtitles_background_color".to_owned(),
             subtitles_outline_color: "subtitles_outline_color".to_owned(),
+            seek_time_duration: 1,
+            seek_time_shift_duration: 1,
         },
         &[
             Token::Struct {
                 name: "Settings",
-                len: 14,
+                len: 16,
             },
             Token::Str("interfaceLanguage"),
             Token::Str("interface_language"),
@@ -54,6 +56,10 @@ fn settings() {
             Token::Str("subtitles_background_color"),
             Token::Str("subtitlesOutlineColor"),
             Token::Str("subtitles_outline_color"),
+            Token::Str("seekTimeDuration"),
+            Token::U8(1),
+            Token::Str("seekTimeShiftDuration"),
+            Token::U8(1),
             Token::StructEnd,
         ],
     );
