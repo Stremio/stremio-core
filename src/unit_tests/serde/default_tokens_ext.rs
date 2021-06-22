@@ -388,7 +388,7 @@ impl DefaultTokens for Settings {
         vec![
             Token::Struct {
                 name: "Settings",
-                len: 14,
+                len: 15,
             },
             Token::Str("interfaceLanguage"),
             Token::Str("eng"),
@@ -418,6 +418,8 @@ impl DefaultTokens for Settings {
             Token::Str("#00000000"),
             Token::Str("subtitlesOutlineColor"),
             Token::Str("#00000000"),
+            Token::Str("serverNotification"),
+            Token::Str("2021-01-01T00:00:00Z"),
             Token::StructEnd,
         ]
     }
