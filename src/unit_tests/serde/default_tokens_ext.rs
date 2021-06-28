@@ -418,7 +418,7 @@ impl DefaultTokens for Settings {
             Token::Str("#00000000"),
             Token::Str("subtitlesOutlineColor"),
             Token::Str("#00000000"),
-            Token::Str("serverNotification"),
+            Token::Str("streamingServerWarningDismissed"),
             Token::None,
             Token::StructEnd,
         ]

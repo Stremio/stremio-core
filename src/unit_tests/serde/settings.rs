@@ -22,7 +22,7 @@ fn settings() {
             subtitles_text_color: "subtitles_text_color".to_owned(),
             subtitles_background_color: "subtitles_background_color".to_owned(),
             subtitles_outline_color: "subtitles_outline_color".to_owned(),
-            server_notification: Some(Utc.ymd(2021, 1, 1).and_hms_milli(0, 0, 0, 0)),
+            streaming_server_warning_dismissed: Some(Utc.ymd(2021, 1, 1).and_hms_milli(0, 0, 0, 0)),
         },
         &[
             Token::Struct {
@@ -57,7 +57,7 @@ fn settings() {
             Token::Str("subtitles_background_color"),
             Token::Str("subtitlesOutlineColor"),
             Token::Str("subtitles_outline_color"),
-            Token::Str("serverNotification"),
+            Token::Str("streamingServerWarningDismissed"),
             Token::Some,
             Token::Str("2021-01-01T00:00:00Z"),
             Token::StructEnd,

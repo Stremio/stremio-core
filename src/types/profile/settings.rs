@@ -21,7 +21,7 @@ pub struct Settings {
     pub subtitles_text_color: String,
     pub subtitles_background_color: String,
     pub subtitles_outline_color: String,
-    pub server_notification: Option<DateTime<Utc>>,
+    pub streaming_server_warning_dismissed: Option<DateTime<Utc>>,
 }
 
 impl Default for Settings {
@@ -41,7 +41,7 @@ impl Default for Settings {
             subtitles_text_color: "#FFFFFFFF".to_owned(),
             subtitles_background_color: "#00000000".to_owned(),
             subtitles_outline_color: "#00000000".to_owned(),
-            server_notification: None,
+            streaming_server_warning_dismissed: None,
         }
     }
 }
