@@ -1,5 +1,4 @@
 use crate::constants::STREAMING_SERVER_URL;
-use chrono::TimeZone;
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use url::Url;
@@ -22,7 +21,7 @@ pub struct Settings {
     pub subtitles_text_color: String,
     pub subtitles_background_color: String,
     pub subtitles_outline_color: String,
-    pub server_notification: DateTime<Utc>,
+    pub server_notification: Option<DateTime<Utc>>,
 }
 
 impl Default for Settings {
@@ -42,7 +41,7 @@ impl Default for Settings {
             subtitles_text_color: "#FFFFFFFF".to_owned(),
             subtitles_background_color: "#00000000".to_owned(),
             subtitles_outline_color: "#00000000".to_owned(),
-            server_notification: Utc.ymd(2021, 1, 1).and_hms_milli(0, 0, 0, 0),
+            server_notification: None,
         }
     }
 }
