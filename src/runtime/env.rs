@@ -212,7 +212,10 @@ fn migrate_storage_schema_to_v2<E: Env>() -> TryEnvFuture<()> {
                         subtitles_background_color,
                     );
                     settings.insert("subtitlesOutlineColor".to_owned(), subtitles_outline_color);
-                    settings.insert("streamingServerWarningDismissed".to_owned(), streaming_server_warning_dismissed);
+                    settings.insert(
+                        "streamingServerWarningDismissed".to_owned(),
+                        streaming_server_warning_dismissed,
+                    );
                     E::set_storage(PROFILE_STORAGE_KEY, Some(&profile))
                 }
                 _ => E::set_storage::<()>(PROFILE_STORAGE_KEY, None),
