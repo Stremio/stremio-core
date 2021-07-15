@@ -132,6 +132,12 @@ pub trait Env {
                         .await?;
                     schema_version = 3;
                 };
+                if schema_version == 3 {
+                    migrate_storage_schema_to_v4::<Self>()
+                        .map_err(|error| EnvError::StorageSchemaVersionUpgrade(Box::new(error)))
+                        .await?;
+                    schema_version = 4;
+                };
                 if schema_version != SCHEMA_VERSION {
                     panic!(
                         "Storage schema version must be upgraded from {} to {}",
@@ -245,5 +251,32 @@ fn migrate_storage_schema_to_v3<E: Env>() -> TryEnvFuture<()> {
             }
         })
         .and_then(|_| E::set_storage(SCHEMA_VERSION_STORAGE_KEY, Some(&3)))
+        .boxed_local()
+}
+
+fn migrate_storage_schema_to_v4<E: Env>() -> TryEnvFuture<()> {
+    E::get_storage::<serde_json::Value>(PROFILE_STORAGE_KEY)
+        .and_then(|mut profile| {
+            match profile
+                .as_mut()
+                .and_then(|profile| profile.as_object_mut())
+                .and_then(|profile| profile.get_mut("settings"))
+                .and_then(|settings| settings.as_object_mut())
+            {
+                Some(settings) => {
+                    settings.insert(
+                        "seekTimeDuration".to_owned(),
+                        serde_json::Value::Number(serde_json::Number::from(20)),
+                    );
+                    settings.insert(
+                        "seekTimeShiftDuration".to_owned(),
+                        serde_json::Value::Number(serde_json::Number::from(10)),
+                    );
+                    E::set_storage(PROFILE_STORAGE_KEY, Some(&profile))
+                }
+                _ => E::set_storage::<()>(PROFILE_STORAGE_KEY, None),
+            }
+        })
+        .and_then(|_| E::set_storage(SCHEMA_VERSION_STORAGE_KEY, Some(&4)))
         .boxed_local()
 }
