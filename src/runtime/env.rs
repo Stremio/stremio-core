@@ -179,7 +179,6 @@ fn migrate_storage_schema_to_v2<E: Env>() -> TryEnvFuture<()> {
                         settings.remove("subtitles_text_color"),
                         settings.remove("subtitles_background_color"),
                         settings.remove("subtitles_outline_color"),
-                        settings.remove("streaming_server_warning_dismissed"),
                         settings,
                     )
                 }) {
@@ -198,7 +197,6 @@ fn migrate_storage_schema_to_v2<E: Env>() -> TryEnvFuture<()> {
                     Some(subtitles_text_color),
                     Some(subtitles_background_color),
                     Some(subtitles_outline_color),
-                    Some(streaming_server_warning_dismissed),
                     settings,
                 )) => {
                     settings.insert("interfaceLanguage".to_owned(), interface_language);
@@ -218,10 +216,6 @@ fn migrate_storage_schema_to_v2<E: Env>() -> TryEnvFuture<()> {
                         subtitles_background_color,
                     );
                     settings.insert("subtitlesOutlineColor".to_owned(), subtitles_outline_color);
-                    settings.insert(
-                        "streamingServerWarningDismissed".to_owned(),
-                        streaming_server_warning_dismissed,
-                    );
                     E::set_storage(PROFILE_STORAGE_KEY, Some(&profile))
                 }
                 _ => E::set_storage::<()>(PROFILE_STORAGE_KEY, None),
@@ -232,5 +226,24 @@ fn migrate_storage_schema_to_v2<E: Env>() -> TryEnvFuture<()> {
 }
 
 fn migrate_storage_schema_to_v3<E: Env>() -> TryEnvFuture<()> {
-    
+    E::get_storage::<serde_json::Value>(PROFILE_STORAGE_KEY)
+        .and_then(|mut profile| {
+            match profile
+                .as_mut()
+                .and_then(|profile| profile.as_object_mut())
+                .and_then(|profile| profile.get_mut("settings"))
+                .and_then(|settings| settings.as_object_mut())
+            {
+                Some(settings) => {
+                    settings.insert(
+                        "streamingServerWarningDismissed".to_owned(),
+                        serde_json::Value::Null,
+                    );
+                    E::set_storage(PROFILE_STORAGE_KEY, Some(&profile))
+                }
+                _ => E::set_storage::<()>(PROFILE_STORAGE_KEY, None),
+            }
+        })
+        .and_then(|_| E::set_storage(SCHEMA_VERSION_STORAGE_KEY, Some(&3)))
+        .boxed_local()
 }
