@@ -126,6 +126,12 @@ pub trait Env {
                         .await?;
                     schema_version = 2;
                 };
+                if schema_version == 2 {
+                    migrate_storage_schema_to_v3::<Self>()
+                        .map_err(|error| EnvError::StorageSchemaVersionUpgrade(Box::new(error)))
+                        .await?;
+                    schema_version = 3;
+                };
                 if schema_version != SCHEMA_VERSION {
                     panic!(
                         "Storage schema version must be upgraded from {} to {}",
@@ -223,4 +229,8 @@ fn migrate_storage_schema_to_v2<E: Env>() -> TryEnvFuture<()> {
         })
         .and_then(|_| E::set_storage(SCHEMA_VERSION_STORAGE_KEY, Some(&2)))
         .boxed_local()
+}
+
+fn migrate_storage_schema_to_v3<E: Env>() -> TryEnvFuture<()> {
+    
 }
