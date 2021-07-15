@@ -1,4 +1,5 @@
 use crate::constants::STREAMING_SERVER_URL;
+use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use url::Url;
 
@@ -22,6 +23,7 @@ pub struct Settings {
     pub subtitles_outline_color: String,
     pub seek_time_duration: u8,
     pub seek_time_shift_duration: u8,
+    pub streaming_server_warning_dismissed: Option<DateTime<Utc>>,
 }
 
 impl Default for Settings {
@@ -43,6 +45,7 @@ impl Default for Settings {
             subtitles_outline_color: "#00000000".to_owned(),
             seek_time_duration: 20,
             seek_time_shift_duration: 10,
+            streaming_server_warning_dismissed: None,
         }
     }
 }
