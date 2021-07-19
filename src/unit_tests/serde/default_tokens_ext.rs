@@ -419,7 +419,7 @@ impl DefaultTokens for Settings {
             Token::Str("subtitlesOutlineColor"),
             Token::Str("#00000000"),
             Token::Str("seekTimeDuration"),
-            Token::U8(20),
+            Token::U32(20000),
             Token::Str("streamingServerWarningDismissed"),
             Token::None,
             Token::StructEnd,

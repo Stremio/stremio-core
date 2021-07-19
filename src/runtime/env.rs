@@ -266,7 +266,7 @@ fn migrate_storage_schema_to_v4<E: Env>() -> TryEnvFuture<()> {
                 Some(settings) => {
                     settings.insert(
                         "seekTimeDuration".to_owned(),
-                        serde_json::Value::Number(serde_json::Number::from(20)),
+                        serde_json::Value::Number(serde_json::Number::from(20000)),
                     );
                     E::set_storage(PROFILE_STORAGE_KEY, Some(&profile))
                 }

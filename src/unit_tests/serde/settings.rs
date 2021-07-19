@@ -59,7 +59,7 @@ fn settings() {
             Token::Str("subtitlesOutlineColor"),
             Token::Str("subtitles_outline_color"),
             Token::Str("seekTimeDuration"),
-            Token::U8(1),
+            Token::U32(1),
             Token::Str("streamingServerWarningDismissed"),
             Token::Some,
             Token::Str("2021-01-01T00:00:00Z"),
