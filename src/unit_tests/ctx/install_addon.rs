@@ -304,7 +304,7 @@ fn actionctx_installaddon_update() {
 #[test]
 fn actionctx_installaddon_upgrade() {
     #[derive(Model, Default)]
-    #[model(TestEnv)]   
+    #[model(TestEnv)]
     struct TestModel {
         ctx: Ctx,
     }
@@ -366,7 +366,7 @@ fn actionctx_installaddon_upgrade() {
             action: Action::Ctx(ActionCtx::UpgradeAddon(addon2.to_owned())),
         })
     });
-    
+
     assert_eq!(
         runtime.model().unwrap().ctx.profile.addons,
         vec![addon2.to_owned()],
@@ -378,8 +378,7 @@ fn actionctx_installaddon_upgrade() {
             .unwrap()
             .get(PROFILE_STORAGE_KEY)
             .map_or(false, |data| {
-                serde_json::from_str::<Profile>(&data).unwrap().addons
-                    == vec![addon2.to_owned()]
+                serde_json::from_str::<Profile>(&data).unwrap().addons == vec![addon2.to_owned()]
             }),
         "addon upgrade successfully in storage"
     );

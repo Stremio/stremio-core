@@ -90,7 +90,7 @@ pub fn update_profile<E: Env + 'static>(
         }
         Msg::Action(Action::Ctx(ActionCtx::InstallAddon(addon))) => {
             if !profile.addons.contains(addon) {
-                if !addon.manifest.behavior_hints.configuration_required { 
+                if !addon.manifest.behavior_hints.configuration_required {
                     let addon_position = profile
                         .addons
                         .iter()
@@ -127,7 +127,7 @@ pub fn update_profile<E: Env + 'static>(
                 }
             } else {
                 Effects::msg(Msg::Event(Event::Error {
-                    error: CtxError::from(OtherError::AddonNotInstalled),
+                    error: CtxError::from(OtherError::AddonAlreadyInstalled),
                     source: Box::new(Event::AddonInstalled {
                         transport_url: addon.transport_url.to_owned(),
                         id: addon.manifest.id.to_owned(),
@@ -139,13 +139,17 @@ pub fn update_profile<E: Env + 'static>(
         Msg::Action(Action::Ctx(ActionCtx::UpgradeAddon(addon))) => {
             if !profile.addons.contains(addon) {
                 if !addon.manifest.behavior_hints.configuration_required {
-                    let addon_positions = profile
+                    let addon_positions: std::vec::Vec<usize> = profile
                         .addons
                         .iter()
                         .map(|addon| &addon.manifest.id)
-                        .position(|id| *id == addon.manifest.id);
-                    for item in &addon_positions {
-                        profile.addons.remove(*item);
+                        .enumerate()
+                        .filter(|&(_, manifest_id)| *manifest_id == addon.manifest.id)
+                        .map(|(idx, _)| idx)
+                        .collect();
+
+                    for idx in addon_positions {
+                        profile.addons.remove(idx);
                     }
 
                     profile.addons.push(addon.to_owned());
