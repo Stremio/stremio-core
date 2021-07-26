@@ -139,21 +139,18 @@ pub fn update_profile<E: Env + 'static>(
         Msg::Action(Action::Ctx(ActionCtx::UpgradeAddon(addon))) => {
             if !profile.addons.contains(addon) {
                 if !addon.manifest.behavior_hints.configuration_required {
-                    let addon_positions: std::vec::Vec<usize> = profile
+                    let addon_positions = profile
                         .addons
                         .iter()
                         .map(|addon| &addon.manifest.id)
                         .enumerate()
-                        .filter(|&(_, manifest_id)| *manifest_id == addon.manifest.id)
-                        .map(|(idx, _)| idx)
-                        .collect();
-
-                    for idx in addon_positions {
-                        profile.addons.remove(idx);
+                        .filter(|(_, id)| **id == addon.manifest.id)
+                        .map(|(position, _)| position)
+                        .collect::<Vec<_>>();
+                    for position in addon_positions {
+                        profile.addons.remove(position);
                     }
-
                     profile.addons.push(addon.to_owned());
-
                     let push_to_api_effects = match profile.auth_key() {
                         Some(auth_key) => Effects::one(push_addons_to_api::<E>(
                             profile.addons.to_owned(),
