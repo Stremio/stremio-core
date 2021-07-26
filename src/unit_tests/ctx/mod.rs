@@ -9,3 +9,4 @@ mod rewind_library_item;
 mod sync_library_with_api;
 mod uninstall_addon;
 mod update_settings;
+mod upgrade_addon;
