@@ -23,6 +23,7 @@ pub enum Event {
     UserLoggedOut { uid: UID },
     SessionDeleted { auth_key: AuthKey },
     AddonInstalled { transport_url: Url, id: String },
+    AddonUpgraded { transport_url: Url, id: String },
     AddonUninstalled { transport_url: Url, id: String },
     SettingsUpdated { settings: Settings },
     LibraryItemAdded { id: String },

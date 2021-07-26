@@ -136,6 +136,59 @@ pub fn update_profile<E: Env + 'static>(
                 .unchanged()
             }
         }
+        Msg::Action(Action::Ctx(ActionCtx::UpgradeAddon(addon))) => {
+            if !profile.addons.contains(addon) {
+                if !addon.manifest.behavior_hints.configuration_required {
+                    let addon_positions: std::vec::Vec<usize> = profile
+                        .addons
+                        .iter()
+                        .map(|addon| &addon.manifest.id)
+                        .enumerate()
+                        .filter(|&(_, manifest_id)| *manifest_id == addon.manifest.id)
+                        .map(|(idx, _)| idx)
+                        .collect();
+
+                    for idx in addon_positions {
+                        profile.addons.remove(idx);
+                    }
+
+                    profile.addons.push(addon.to_owned());
+
+                    let push_to_api_effects = match profile.auth_key() {
+                        Some(auth_key) => Effects::one(push_addons_to_api::<E>(
+                            profile.addons.to_owned(),
+                            auth_key,
+                        ))
+                        .unchanged(),
+                        _ => Effects::none().unchanged(),
+                    };
+                    Effects::msg(Msg::Event(Event::AddonUpgraded {
+                        transport_url: addon.transport_url.to_owned(),
+                        id: addon.manifest.id.to_owned(),
+                    }))
+                    .join(push_to_api_effects)
+                    .join(Effects::msg(Msg::Internal(Internal::ProfileChanged)))
+                } else {
+                    Effects::msg(Msg::Event(Event::Error {
+                        error: CtxError::from(OtherError::AddonConfigurationRequired),
+                        source: Box::new(Event::AddonUpgraded {
+                            transport_url: addon.transport_url.to_owned(),
+                            id: addon.manifest.id.to_owned(),
+                        }),
+                    }))
+                    .unchanged()
+                }
+            } else {
+                Effects::msg(Msg::Event(Event::Error {
+                    error: CtxError::from(OtherError::AddonAlreadyInstalled),
+                    source: Box::new(Event::AddonUpgraded {
+                        transport_url: addon.transport_url.to_owned(),
+                        id: addon.manifest.id.to_owned(),
+                    }),
+                }))
+                .unchanged()
+            }
+        }
         Msg::Action(Action::Ctx(ActionCtx::UninstallAddon(addon))) => {
             let addon_position = profile
                 .addons
