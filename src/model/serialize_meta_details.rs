@@ -8,6 +8,7 @@ use stremio_core::constants::META_RESOURCE_NAME;
 use stremio_core::models::common::{Loadable, ResourceError, ResourceLoadable};
 use stremio_core::models::ctx::Ctx;
 use stremio_core::models::meta_details::{MetaDetails, Selected as MetaDetailsSelected};
+use stremio_core::models::streaming_server::StreamingServer;
 use stremio_core::runtime::Env;
 use url::Url;
 use wasm_bindgen::JsValue;
@@ -79,7 +80,7 @@ mod model {
     }
 }
 
-pub fn serialize_meta_details(meta_details: &MetaDetails, ctx: &Ctx) -> JsValue {
+pub fn serialize_meta_details(meta_details: &MetaDetails, ctx: &Ctx, streaming_server: &StreamingServer) -> JsValue {
     let meta_item = meta_details
         .meta_items
         .iter()
@@ -136,7 +137,7 @@ pub fn serialize_meta_details(meta_details: &MetaDetails, ctx: &Ctx) -> JsValue 
                             .iter()
                             .map(|stream| model::Stream {
                                 stream,
-                                deep_links: StreamDeepLinks::from(stream),
+                                deep_links: StreamDeepLinks::from((stream, streaming_server)),
                             })
                             .collect::<Vec<_>>(),
                         in_library: ctx
@@ -186,9 +187,9 @@ pub fn serialize_meta_details(meta_details: &MetaDetails, ctx: &Ctx) -> JsValue 
                             .map(|stream| model::Stream {
                                 stream,
                                 deep_links: meta_item.map_or_else(
-                                    || StreamDeepLinks::from(stream),
+                                    || StreamDeepLinks::from((stream, streaming_server)),
                                     |meta_item| {
-                                        StreamDeepLinks::from((stream, request, &meta_item.request))
+                                        StreamDeepLinks::from((stream, request, &meta_item.request, streaming_server))
                                     },
                                 ),
                             })
