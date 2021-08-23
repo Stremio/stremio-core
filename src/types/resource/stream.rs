@@ -33,7 +33,7 @@ impl Stream {
             } => Some(Magnet {
                 dn: self.title.to_owned(),
                 hash_type: Some("btih".to_string()),
-                xt: Some(hex::encode(info_hash).to_string()),
+                xt: Some(hex::encode(info_hash)),
                 xl: Some(0),
                 tr: announce
                     .iter()
