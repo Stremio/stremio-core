@@ -1,11 +1,11 @@
 use crate::types::resource::Subtitles;
 #[cfg(test)]
 use derivative::Derivative;
+use magnet_url::Magnet;
 use serde::{Deserialize, Serialize};
 use serde_hex::{SerHex, Strict};
 use std::collections::HashMap;
 use url::Url;
-use magnet_url::Magnet;
 
 #[derive(Clone, PartialEq, Serialize, Deserialize)]
 #[cfg_attr(debug_assertions, derive(Debug))]
@@ -26,25 +26,27 @@ pub struct Stream {
 impl Stream {
     pub fn magnet_url(&self) -> Option<Magnet> {
         match &self.source {
-            StreamSource::Torrent { info_hash, announce, .. } => {
-                Some(Magnet {
-                    dn: self.title.to_owned(),
-                    hash_type: Some("btih".to_string()),
-                    xt: Some(hex::encode(info_hash).to_string()),
-                    xl: Some(0),
-                    tr: announce
-                        .iter()
-                        .filter(|source| source.starts_with("tracker:"))
-                        .map(|tracker| tracker.replace("tracker:", ""))
-                        .collect::<Vec<String>>(),
-                    kt: Some(String::new()),
-                    ws: Some(String::new()),
-                    acceptable_source: Some(String::new()),
-                    mt: Some(String::new()),
-                    xs: Some(String::new()),
-                })
-            },
-            _ => None
+            StreamSource::Torrent {
+                info_hash,
+                announce,
+                ..
+            } => Some(Magnet {
+                dn: self.title.to_owned(),
+                hash_type: Some("btih".to_string()),
+                xt: Some(hex::encode(info_hash).to_string()),
+                xl: Some(0),
+                tr: announce
+                    .iter()
+                    .filter(|source| source.starts_with("tracker:"))
+                    .map(|tracker| tracker.replace("tracker:", ""))
+                    .collect::<Vec<String>>(),
+                kt: Some(String::new()),
+                ws: Some(String::new()),
+                acceptable_source: Some(String::new()),
+                mt: Some(String::new()),
+                xs: Some(String::new()),
+            }),
+            _ => None,
         }
     }
 }
