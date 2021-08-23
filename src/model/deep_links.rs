@@ -166,7 +166,7 @@ impl From<(&Video, &ResourceRequest)> for VideoDeepLinks {
 #[derive(Serialize)]
 pub struct StreamDeepLinks {
     player: String,
-    external: String,
+    external: Option<String>,
 }
 
 impl From<(&Stream, &StreamingServer)> for StreamDeepLinks {
@@ -180,17 +180,10 @@ impl From<(&Stream, &StreamingServer)> for StreamDeepLinks {
                 ),
             ),
             external: match &stream.source {
-                StreamSource::Torrent { .. } => {
-                    if !streaming_server.settings.is_ready() { 
-                        stream_to_magnet_uri(stream)
-                    } else {
-                        "".to_owned()
-                    }
-                },
-                StreamSource::External { external_url } => {
-                    external_url.as_str().to_owned()
-                },
-                _ => "".to_owned()
+                StreamSource::Torrent { .. } if !streaming_server.settings.is_ready() => stream.magnet_url().map(|magnet_url| magnet_url.to_string()),
+                StreamSource::Url { url } if !streaming_server.settings.is_ready() && url.scheme() == "magnet" => stream.magnet_url().map(|magnet_url| magnet_url.to_string()),
+                StreamSource::External { external_url } => Some(external_url.as_str().to_owned()),
+                _ => None
             }
         }
     }
@@ -214,17 +207,10 @@ impl From<(&Stream, &ResourceRequest, &ResourceRequest, &StreamingServer)> for S
                 utf8_percent_encode(&stream_request.path.id, URI_COMPONENT_ENCODE_SET)
             ),
             external: match &stream.source {
-                StreamSource::Torrent { .. } => {
-                    if !streaming_server.settings.is_ready() { 
-                        stream_to_magnet_uri(stream)
-                    } else {
-                        "".to_owned()
-                    }
-                },
-                StreamSource::External { external_url } => {
-                    external_url.as_str().to_owned()
-                },
-                _ => "".to_owned()
+                StreamSource::Torrent { .. } if !streaming_server.settings.is_ready() => stream.magnet_url().map(|magnet_url| magnet_url.to_string()),
+                StreamSource::Url { url } if !streaming_server.settings.is_ready() && url.scheme() == "magnet" => stream.magnet_url().map(|magnet_url| magnet_url.to_string()),
+                StreamSource::External { external_url } => Some(external_url.as_str().to_owned()),
+                _ => None
             }
         }
     }
@@ -338,25 +324,6 @@ impl From<(&String, &LibraryRequest)> for LibraryDeepLinks {
                 ),
             },
         }
-    }
-}
-
-fn stream_to_magnet_uri(stream: &Stream) -> String {
-    match &stream.source {
-        StreamSource::Torrent { info_hash, announce, .. } => {
-            format!(
-                "magnet:?dn={}&xt=urn:btih:{}{}",
-                utf8_percent_encode(stream.title.as_deref().unwrap_or(""), URI_COMPONENT_ENCODE_SET),
-                utf8_percent_encode(&hex::encode(info_hash), URI_COMPONENT_ENCODE_SET),
-                &announce
-                    .iter()
-                    .filter(|source| source.starts_with("tracker:"))
-                    .map(|tracker| format!("&tr={}", utf8_percent_encode(&tracker.replace("tracker:", ""), URI_COMPONENT_ENCODE_SET)))
-                    .collect::<Vec<String>>()
-                    .join("")
-            )
-        },
-        _ => "".to_owned()
     }
 }
 
