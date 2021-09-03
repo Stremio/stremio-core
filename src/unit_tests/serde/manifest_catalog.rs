@@ -6,14 +6,14 @@ fn manifest_catalog() {
     assert_tokens(
         &vec![
             ManifestCatalog {
-                r#type: "type".to_owned(),
                 id: "id".to_owned(),
+                r#type: "type".to_owned(),
                 name: Some("name".to_owned()),
                 extra: ManifestExtra::default(),
             },
             ManifestCatalog {
-                r#type: "type".to_owned(),
                 id: "id".to_owned(),
+                r#type: "type".to_owned(),
                 name: None,
                 extra: ManifestExtra::default(),
             },
@@ -21,10 +21,10 @@ fn manifest_catalog() {
         &[
             Token::Seq { len: Some(2) },
             Token::Map { len: None },
-            Token::Str("type"),
-            Token::Str("type"),
             Token::Str("id"),
             Token::Str("id"),
+            Token::Str("type"),
+            Token::Str("type"),
             Token::Str("name"),
             Token::Some,
             Token::Str("name"),
@@ -33,10 +33,10 @@ fn manifest_catalog() {
             Token::SeqEnd,
             Token::MapEnd,
             Token::Map { len: None },
-            Token::Str("type"),
-            Token::Str("type"),
             Token::Str("id"),
             Token::Str("id"),
+            Token::Str("type"),
+            Token::Str("type"),
             Token::Str("name"),
             Token::None,
             Token::Str("extra"),
@@ -48,17 +48,17 @@ fn manifest_catalog() {
     );
     assert_de_tokens(
         &ManifestCatalog {
-            r#type: "type".to_owned(),
             id: "id".to_owned(),
+            r#type: "type".to_owned(),
             name: None,
             extra: ManifestExtra::default(),
         },
         &[
             Token::Map { len: None },
-            Token::Str("type"),
-            Token::Str("type"),
             Token::Str("id"),
             Token::Str("id"),
+            Token::Str("type"),
+            Token::Str("type"),
             Token::Str("extra"),
             Token::Seq { len: Some(0) },
             Token::SeqEnd,

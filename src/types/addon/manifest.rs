@@ -114,8 +114,8 @@ impl ManifestResource {
 #[cfg_attr(debug_assertions, derive(Debug))]
 #[serde(rename_all = "camelCase")]
 pub struct ManifestCatalog {
-    pub r#type: String,
     pub id: String,
+    pub r#type: String,
     pub name: Option<String>,
     #[serde(flatten)]
     pub extra: ManifestExtra,
