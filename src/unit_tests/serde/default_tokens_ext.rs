@@ -58,10 +58,8 @@ impl DefaultTokens for Subtitles {
         vec![
             Token::Struct {
                 name: "Subtitles",
-                len: 3,
+                len: 2,
             },
-            Token::Str("id"),
-            Token::Str(""),
             Token::Str("lang"),
             Token::Str(""),
             Token::Str("url"),
