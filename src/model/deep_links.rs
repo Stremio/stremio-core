@@ -8,7 +8,6 @@ use std::io;
 use std::io::Write;
 use stremio_core::models::installed_addons_with_filters::InstalledAddonsRequest;
 use stremio_core::models::library_with_filters::LibraryRequest;
-use stremio_core::models::streaming_server::StreamingServer;
 use stremio_core::types::addon::{ExtraValue, ResourceRequest};
 use stremio_core::types::library::LibraryItem;
 use stremio_core::types::resource::{MetaItem, MetaItemPreview, Stream, StreamSource, Video};
@@ -26,11 +25,85 @@ const URI_COMPONENT_ENCODE_SET: &AsciiSet = &NON_ALPHANUMERIC
     .remove(b')');
 
 #[derive(Serialize)]
+pub struct PlayerFallbackLink(String, serde_json::Map<String, serde_json::Value>);
+
+impl From<&Stream> for PlayerFallbackLink {
+    fn from(stream: &Stream) -> Self {
+        match &stream.source {
+            StreamSource::Url { url } if url.scheme() == "magnet" => PlayerFallbackLink(
+                url.as_str().to_owned(),
+                vec![(
+                    "target".to_owned(),
+                    serde_json::Value::String("_blank".to_owned()),
+                )]
+                .into_iter()
+                .collect::<serde_json::Map<_, _>>(),
+            ),
+            StreamSource::Url { url } => PlayerFallbackLink(
+                format!(
+                    "data:application/octet-stream;charset=utf-8;base64,{}",
+                    base64::encode(format!("#EXTM3U\n#EXTINF:0\n{}", url))
+                ),
+                vec![(
+                    "download".to_owned(),
+                    serde_json::Value::String("playlist.m3u".to_owned()),
+                )]
+                .into_iter()
+                .collect::<serde_json::Map<_, _>>(),
+            ),
+            StreamSource::Torrent { .. } => PlayerFallbackLink(
+                stream
+                    .magnet_url()
+                    .map(|magnet_url| magnet_url.to_string())
+                    .expect("Failed to build magnet url for torrent"),
+                vec![(
+                    "target".to_owned(),
+                    serde_json::Value::String("_blank".to_owned()),
+                )]
+                .into_iter()
+                .collect::<serde_json::Map<_, _>>(),
+            ),
+            StreamSource::External { external_url } => PlayerFallbackLink(
+                external_url.as_str().to_owned(),
+                vec![(
+                    "target".to_owned(),
+                    serde_json::Value::String("_blank".to_owned()),
+                )]
+                .into_iter()
+                .collect::<serde_json::Map<_, _>>(),
+            ),
+            StreamSource::YouTube { yt_id } => PlayerFallbackLink(
+                format!(
+                    "https://www.youtube.com/watch?v={}",
+                    utf8_percent_encode(yt_id, URI_COMPONENT_ENCODE_SET)
+                ),
+                vec![(
+                    "target".to_owned(),
+                    serde_json::Value::String("_blank".to_owned()),
+                )]
+                .into_iter()
+                .collect::<serde_json::Map<_, _>>(),
+            ),
+            StreamSource::PlayerFrame { player_frame_url } => PlayerFallbackLink(
+                player_frame_url.as_str().to_owned(),
+                vec![(
+                    "target".to_owned(),
+                    serde_json::Value::String("_blank".to_owned()),
+                )]
+                .into_iter()
+                .collect::<serde_json::Map<_, _>>(),
+            ),
+        }
+    }
+}
+
+#[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct LibraryItemDeepLinks {
     meta_details_videos: Option<String>,
     meta_details_streams: Option<String>,
     player: Option<String>,
+    player_fallback: Option<PlayerFallbackLink>,
 }
 
 impl From<&LibraryItem> for LibraryItemDeepLinks {
@@ -59,7 +132,8 @@ impl From<&LibraryItem> for LibraryItemDeepLinks {
                         utf8_percent_encode(&video_id, URI_COMPONENT_ENCODE_SET)
                     )
                 }),
-            player: None, // TODO use StreamsBucket
+            player: None,          // TODO use StreamsBucket
+            player_fallback: None, // TODO use StreamsBucket
         }
     }
 }
@@ -134,6 +208,7 @@ impl From<&MetaItem> for MetaItemDeepLinks {
 pub struct VideoDeepLinks {
     meta_details_streams: String,
     player: Option<String>,
+    player_fallback: Option<PlayerFallbackLink>,
 }
 
 impl From<(&Video, &ResourceRequest)> for VideoDeepLinks {
@@ -159,6 +234,12 @@ impl From<(&Video, &ResourceRequest)> for VideoDeepLinks {
                     utf8_percent_encode(&video.id, URI_COMPONENT_ENCODE_SET)
                 )
             }),
+            player_fallback: video
+                .streams
+                .iter()
+                .exactly_one()
+                .ok()
+                .map(PlayerFallbackLink::from),
         }
     }
 }
@@ -166,11 +247,11 @@ impl From<(&Video, &ResourceRequest)> for VideoDeepLinks {
 #[derive(Serialize)]
 pub struct StreamDeepLinks {
     player: String,
-    external: Option<String>,
+    player_fallback: PlayerFallbackLink,
 }
 
-impl From<(&Stream, &StreamingServer)> for StreamDeepLinks {
-    fn from((stream, streaming_server): (&Stream, &StreamingServer)) -> Self {
+impl From<&Stream> for StreamDeepLinks {
+    fn from(stream: &Stream) -> Self {
         StreamDeepLinks {
             player: format!(
                 "#/player/{}",
@@ -179,19 +260,14 @@ impl From<(&Stream, &StreamingServer)> for StreamDeepLinks {
                     URI_COMPONENT_ENCODE_SET
                 ),
             ),
-            external: match &stream.source {
-                StreamSource::Torrent { .. } if !streaming_server.settings.is_ready() => stream.magnet_url().map(|magnet_url| magnet_url.to_string()),
-                StreamSource::Url { url } if !streaming_server.settings.is_ready() && url.scheme() == "magnet" => stream.magnet_url().map(|magnet_url| magnet_url.to_string()),
-                StreamSource::External { external_url } => Some(external_url.as_str().to_owned()),
-                _ => None
-            }
+            player_fallback: PlayerFallbackLink::from(stream),
         }
     }
 }
 
-impl From<(&Stream, &ResourceRequest, &ResourceRequest, &StreamingServer)> for StreamDeepLinks {
+impl From<(&Stream, &ResourceRequest, &ResourceRequest)> for StreamDeepLinks {
     fn from(
-        (stream, stream_request, meta_request, streaming_server): (&Stream, &ResourceRequest, &ResourceRequest, &StreamingServer),
+        (stream, stream_request, meta_request): (&Stream, &ResourceRequest, &ResourceRequest),
     ) -> Self {
         StreamDeepLinks {
             player: format!(
@@ -206,12 +282,7 @@ impl From<(&Stream, &ResourceRequest, &ResourceRequest, &StreamingServer)> for S
                 utf8_percent_encode(&meta_request.path.id, URI_COMPONENT_ENCODE_SET),
                 utf8_percent_encode(&stream_request.path.id, URI_COMPONENT_ENCODE_SET)
             ),
-            external: match &stream.source {
-                StreamSource::Torrent { .. } if !streaming_server.settings.is_ready() => stream.magnet_url().map(|magnet_url| magnet_url.to_string()),
-                StreamSource::Url { url } if !streaming_server.settings.is_ready() && url.scheme() == "magnet" => stream.magnet_url().map(|magnet_url| magnet_url.to_string()),
-                StreamSource::External { external_url } => Some(external_url.as_str().to_owned()),
-                _ => None
-            }
+            player_fallback: PlayerFallbackLink::from(stream),
         }
     }
 }

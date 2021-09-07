@@ -1,16 +1,24 @@
 use crate::env::WebEnv;
-use crate::model::deep_links::VideoDeepLinks;
+use crate::model::deep_links::{StreamDeepLinks, VideoDeepLinks};
 use semver::Version;
 use serde::Serialize;
 use stremio_core::models::common::{Loadable, ResourceLoadable};
 use stremio_core::models::ctx::Ctx;
-use stremio_core::models::player::{Player, Selected};
+use stremio_core::models::player::Player;
 use stremio_core::runtime::Env;
+use stremio_core::types::addon::{ResourcePath, ResourceRequest};
 use url::Url;
 use wasm_bindgen::JsValue;
 
 mod model {
     use super::*;
+    #[derive(Serialize)]
+    #[serde(rename_all = "camelCase")]
+    pub struct Stream<'a> {
+        #[serde(flatten)]
+        pub stream: &'a stremio_core::types::resource::Stream,
+        pub deep_links: StreamDeepLinks,
+    }
     #[derive(Serialize)]
     #[serde(rename_all = "camelCase")]
     pub struct ManifestPreview<'a> {
@@ -69,8 +77,16 @@ mod model {
     }
     #[derive(Serialize)]
     #[serde(rename_all = "camelCase")]
+    pub struct Selected<'a> {
+        pub stream: Stream<'a>,
+        pub stream_request: &'a Option<ResourceRequest>,
+        pub meta_request: &'a Option<ResourceRequest>,
+        pub subtitles_path: &'a Option<ResourcePath>,
+    }
+    #[derive(Serialize)]
+    #[serde(rename_all = "camelCase")]
     pub struct Player<'a> {
-        pub selected: &'a Option<Selected>,
+        pub selected: Option<Selected<'a>>,
         pub meta_item: Option<model::MetaItem<'a>>,
         pub subtitles: Vec<model::Subtitles<'a>>,
         pub next_video: Option<Video<'a>>,
@@ -82,7 +98,15 @@ mod model {
 
 pub fn serialize_player(player: &Player, ctx: &Ctx) -> JsValue {
     JsValue::from_serde(&model::Player {
-        selected: &player.selected,
+        selected: player.selected.as_ref().map(|selected| model::Selected {
+            stream: model::Stream {
+                stream: &selected.stream,
+                deep_links: StreamDeepLinks::from(&selected.stream),
+            },
+            stream_request: &selected.stream_request,
+            meta_request: &selected.meta_request,
+            subtitles_path: &selected.subtitles_path,
+        }),
         meta_item: player
             .meta_item
             .as_ref()
