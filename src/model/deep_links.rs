@@ -8,9 +8,10 @@ use std::io;
 use std::io::Write;
 use stremio_core::models::installed_addons_with_filters::InstalledAddonsRequest;
 use stremio_core::models::library_with_filters::LibraryRequest;
+use stremio_core::models::streaming_server::StreamingServer;
 use stremio_core::types::addon::{ExtraValue, ResourceRequest};
 use stremio_core::types::library::LibraryItem;
-use stremio_core::types::resource::{MetaItem, MetaItemPreview, Stream, Video};
+use stremio_core::types::resource::{MetaItem, MetaItemPreview, Stream, StreamSource, Video};
 use url::form_urlencoded;
 
 const URI_COMPONENT_ENCODE_SET: &AsciiSet = &NON_ALPHANUMERIC
@@ -165,10 +166,11 @@ impl From<(&Video, &ResourceRequest)> for VideoDeepLinks {
 #[derive(Serialize)]
 pub struct StreamDeepLinks {
     player: String,
+    external: Option<String>,
 }
 
-impl From<&Stream> for StreamDeepLinks {
-    fn from(stream: &Stream) -> Self {
+impl From<(&Stream, &StreamingServer)> for StreamDeepLinks {
+    fn from((stream, streaming_server): (&Stream, &StreamingServer)) -> Self {
         StreamDeepLinks {
             player: format!(
                 "#/player/{}",
@@ -177,13 +179,19 @@ impl From<&Stream> for StreamDeepLinks {
                     URI_COMPONENT_ENCODE_SET
                 ),
             ),
+            external: match &stream.source {
+                StreamSource::Torrent { .. } if !streaming_server.settings.is_ready() => stream.magnet_url().map(|magnet_url| magnet_url.to_string()),
+                StreamSource::Url { url } if !streaming_server.settings.is_ready() && url.scheme() == "magnet" => stream.magnet_url().map(|magnet_url| magnet_url.to_string()),
+                StreamSource::External { external_url } => Some(external_url.as_str().to_owned()),
+                _ => None
+            }
         }
     }
 }
 
-impl From<(&Stream, &ResourceRequest, &ResourceRequest)> for StreamDeepLinks {
+impl From<(&Stream, &ResourceRequest, &ResourceRequest, &StreamingServer)> for StreamDeepLinks {
     fn from(
-        (stream, stream_request, meta_request): (&Stream, &ResourceRequest, &ResourceRequest),
+        (stream, stream_request, meta_request, streaming_server): (&Stream, &ResourceRequest, &ResourceRequest, &StreamingServer),
     ) -> Self {
         StreamDeepLinks {
             player: format!(
@@ -198,6 +206,12 @@ impl From<(&Stream, &ResourceRequest, &ResourceRequest)> for StreamDeepLinks {
                 utf8_percent_encode(&meta_request.path.id, URI_COMPONENT_ENCODE_SET),
                 utf8_percent_encode(&stream_request.path.id, URI_COMPONENT_ENCODE_SET)
             ),
+            external: match &stream.source {
+                StreamSource::Torrent { .. } if !streaming_server.settings.is_ready() => stream.magnet_url().map(|magnet_url| magnet_url.to_string()),
+                StreamSource::Url { url } if !streaming_server.settings.is_ready() && url.scheme() == "magnet" => stream.magnet_url().map(|magnet_url| magnet_url.to_string()),
+                StreamSource::External { external_url } => Some(external_url.as_str().to_owned()),
+                _ => None
+            }
         }
     }
 }
