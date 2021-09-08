@@ -35,12 +35,7 @@ impl From<&Stream> for ExternalPlayerLink {
         match &stream.source {
             StreamSource::Url { url } if url.scheme() == "magnet" => ExternalPlayerLink {
                 href: url.as_str().to_owned(),
-                props: vec![(
-                    "target".to_owned(),
-                    serde_json::Value::String("_blank".to_owned()),
-                )]
-                .into_iter()
-                .collect::<serde_json::Map<_, _>>(),
+                props: Default::default(),
             },
             StreamSource::Url { url } => ExternalPlayerLink {
                 href: format!(
@@ -59,42 +54,22 @@ impl From<&Stream> for ExternalPlayerLink {
                     .magnet_url()
                     .map(|magnet_url| magnet_url.to_string())
                     .expect("Failed to build magnet url for torrent"),
-                props: vec![(
-                    "target".to_owned(),
-                    serde_json::Value::String("_blank".to_owned()),
-                )]
-                .into_iter()
-                .collect::<serde_json::Map<_, _>>(),
+                props: Default::default(),
             },
             StreamSource::External { external_url } => ExternalPlayerLink {
                 href: external_url.as_str().to_owned(),
-                props: vec![(
-                    "target".to_owned(),
-                    serde_json::Value::String("_blank".to_owned()),
-                )]
-                .into_iter()
-                .collect::<serde_json::Map<_, _>>(),
+                props: Default::default(),
             },
             StreamSource::YouTube { yt_id } => ExternalPlayerLink {
                 href: format!(
                     "https://www.youtube.com/watch?v={}",
                     utf8_percent_encode(yt_id, URI_COMPONENT_ENCODE_SET)
                 ),
-                props: vec![(
-                    "target".to_owned(),
-                    serde_json::Value::String("_blank".to_owned()),
-                )]
-                .into_iter()
-                .collect::<serde_json::Map<_, _>>(),
+                props: Default::default(),
             },
             StreamSource::PlayerFrame { player_frame_url } => ExternalPlayerLink {
                 href: player_frame_url.as_str().to_owned(),
-                props: vec![(
-                    "target".to_owned(),
-                    serde_json::Value::String("_blank".to_owned()),
-                )]
-                .into_iter()
-                .collect::<serde_json::Map<_, _>>(),
+                props: Default::default(),
             },
         }
     }
