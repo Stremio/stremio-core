@@ -399,7 +399,7 @@ impl From<(&String, &LibraryRequest)> for LibraryDeepLinks {
 }
 
 fn gz_encode(value: String) -> io::Result<Vec<u8>> {
-    let mut encoder = ZlibEncoder::new(Vec::new(), Compression::default());
+    let mut encoder = ZlibEncoder::new(Vec::new(), Compression::none());
     encoder.write_all(value.as_bytes())?;
     Ok(encoder.finish()?)
 }

@@ -178,6 +178,7 @@ pub fn serialize_discover(discover: &CatalogWithFilters<MetaItemPreview>, ctx: &
                                 trailer_streams: meta_item
                                     .trailer_streams
                                     .iter()
+                                    .take(1)
                                     .map(|stream| model::Stream {
                                         stream,
                                         deep_links: StreamDeepLinks::from(stream),
