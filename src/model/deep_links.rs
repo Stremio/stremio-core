@@ -245,6 +245,7 @@ impl From<(&Video, &ResourceRequest)> for VideoDeepLinks {
 }
 
 #[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct StreamDeepLinks {
     player: String,
     player_fallback: PlayerFallbackLink,
@@ -288,6 +289,7 @@ impl From<(&Stream, &ResourceRequest, &ResourceRequest)> for StreamDeepLinks {
 }
 
 #[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct DiscoverDeepLinks {
     discover: String,
 }
@@ -313,6 +315,7 @@ impl From<&ResourceRequest> for DiscoverDeepLinks {
 }
 
 #[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct AddonsDeepLinks {
     addons: String,
 }
@@ -348,6 +351,7 @@ impl From<&InstalledAddonsRequest> for AddonsDeepLinks {
 }
 
 #[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct LibraryDeepLinks {
     library: String,
 }
