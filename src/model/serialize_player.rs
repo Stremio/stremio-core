@@ -59,6 +59,7 @@ mod model {
     pub struct Subtitles<'a> {
         #[serde(flatten)]
         pub subtitles: &'a stremio_core::types::resource::Subtitles,
+        pub id: String,
         pub origin: &'a String,
     }
     #[derive(Serialize)]
@@ -154,11 +155,14 @@ pub fn serialize_player(player: &Player, ctx: &Ctx) -> JsValue {
                 _ => None,
             })
             .flat_map(|(addon, subtitles)| {
-                subtitles.iter().map(move |subtitles| (addon, subtitles))
-            })
-            .map(|(addon, subtitles)| model::Subtitles {
-                subtitles,
-                origin: &addon.manifest.name,
+                subtitles
+                    .iter()
+                    .enumerate()
+                    .map(move |(position, subtitles)| model::Subtitles {
+                        subtitles,
+                        id: format!("{}_{}", addon.transport_url, position),
+                        origin: &addon.manifest.name,
+                    })
             })
             .collect(),
         next_video: player
