@@ -1,10 +1,10 @@
-use crate::types::empty_string_as_none;
 #[cfg(test)]
 use chrono::offset::TimeZone;
 use chrono::{DateTime, Utc};
 #[cfg(test)]
 use derivative::Derivative;
 use serde::{Deserialize, Serialize};
+use serde_with::{serde_as, DefaultOnNull, NoneAsEmptyString};
 
 #[derive(Clone, PartialEq, Serialize, Deserialize)]
 #[cfg_attr(debug_assertions, derive(Debug))]
@@ -15,18 +15,21 @@ pub struct GDPRConsent {
     pub marketing: bool,
 }
 
+#[serde_as]
+#[serde(rename_all = "camelCase")]
 #[derive(Clone, PartialEq, Serialize, Deserialize)]
 #[cfg_attr(debug_assertions, derive(Debug))]
 #[cfg_attr(test, derive(Derivative))]
 #[cfg_attr(test, derivative(Default))]
-#[serde(rename_all = "camelCase")]
 pub struct User {
     #[serde(rename = "_id")]
     pub id: String,
     pub email: String,
-    #[serde(deserialize_with = "empty_string_as_none", default)]
+    #[serde(default)]
+    #[serde_as(deserialize_as = "DefaultOnNull<NoneAsEmptyString>")]
     pub fb_id: Option<String>,
-    #[serde(deserialize_with = "empty_string_as_none", default)]
+    #[serde(default)]
+    #[serde_as(deserialize_as = "DefaultOnNull<NoneAsEmptyString>")]
     pub avatar: Option<String>,
     #[cfg_attr(test, derivative(Default(value = "Utc.timestamp(0, 0)")))]
     pub last_modified: DateTime<Utc>,
