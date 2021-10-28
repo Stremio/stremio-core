@@ -38,6 +38,6 @@ magnet-url = "2.0.*"
 hex = "0.4.*"
 
 [dev-dependencies]
-tokio = { version = "0.2.*", features = ["rt-core"] }
+tokio = { version = "1.12.*", features = ["rt"] }
 tokio-current-thread = "=0.2.0-alpha.1"
 serde_test = "1.0.*"
