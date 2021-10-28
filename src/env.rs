@@ -257,7 +257,32 @@ impl Env for WebEnv {
                     }))
                 }
             })
-            .and_then(|resp| future::ready(resp.into_serde().map_err(EnvError::from)))
+            .and_then(|resp| {
+                cfg_if::cfg_if! {
+                    if #[cfg(debug_assertions)] {
+                        future::ready(
+                            js_sys::JSON::stringify(&resp)
+                                .map_err(|error| {
+                                    EnvError::Fetch(
+                                        error
+                                            .dyn_into::<js_sys::Error>()
+                                            .map(|error| String::from(error.message()))
+                                            .unwrap_or_else(|_| "Unknown Error".to_owned()),
+                                    )
+                                })
+                                .and_then(|resp| {
+                                    let resp = Into::<String>::into(resp);
+                                    let mut deserializer =
+                                        serde_json::Deserializer::from_str(resp.as_str());
+                                    serde_path_to_error::deserialize::<_, OUT>(&mut deserializer)
+                                        .map_err(|error| EnvError::Fetch(error.to_string()))
+                                }),
+                        )
+                    } else {
+                        future::ready(resp.into_serde().map_err(EnvError::from))
+                    }
+                }
+            })
             .boxed_local()
     }
     fn get_storage<T>(key: &str) -> TryEnvFuture<Option<T>>

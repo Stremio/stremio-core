@@ -34,6 +34,8 @@ wasm-bindgen-futures = "0.4.*"
 console_error_panic_hook = "0.1.*"
 js-sys = "0.3.*"
 getrandom = { version = "0.2.*", features = ["js"] }
+cfg-if = "0.1.*"
+serde_path_to_error = "0.1.*"
 
 [dependencies.web-sys]
 version = "0.3.*"
