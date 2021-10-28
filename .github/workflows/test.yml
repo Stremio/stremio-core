@@ -8,8 +8,6 @@ jobs:
     steps:
     - name: Checkout
       uses: actions/checkout@v2
-    - name: Init git submodules
-      run: git submodule update --init --recursive
     - name: Install rust toolchain
       run: rustup toolchain install 1.47.0
     - name: Set default rust toolchain
