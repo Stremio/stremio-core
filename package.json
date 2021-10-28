@@ -13,13 +13,13 @@
         "build": "./scripts/build.sh"
     },
     "dependencies": {
-        "@babel/runtime": "7.10.0"
+        "@babel/runtime": "7.15.4"
     },
     "devDependencies": {
-        "@babel/cli": "7.10.0",
-        "@babel/core": "7.10.0",
-        "@babel/plugin-transform-runtime": "7.10.0",
-        "@babel/preset-env": "7.10.0",
+        "@babel/cli": "7.15.7",
+        "@babel/core": "7.15.8",
+        "@babel/plugin-transform-runtime": "7.15.8",
+        "@babel/preset-env": "7.15.8",
         "babel-plugin-bundled-import-meta": "0.3.2"
     }
 }
