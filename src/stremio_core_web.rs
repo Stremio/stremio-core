@@ -91,6 +91,19 @@ pub async fn initialize_runtime(emit_to_ui: js_sys::Function) -> Result<(), JsVa
 }
 
 #[wasm_bindgen]
+#[cfg(debug_assertions)]
+pub fn get_debug_state() -> JsValue {
+    let runtime = RUNTIME.read().expect("runtime read failed");
+    let runtime = runtime
+        .as_ref()
+        .expect("runtime is not ready")
+        .as_ref()
+        .expect("runtime is not ready");
+    let model = runtime.model().expect("model read failed");
+    JsValue::from_serde(&*model).unwrap()
+}
+
+#[wasm_bindgen]
 pub fn get_state(field: JsValue) -> JsValue {
     let field = field.into_serde().expect("get state failed");
     let runtime = RUNTIME.read().expect("runtime read failed");

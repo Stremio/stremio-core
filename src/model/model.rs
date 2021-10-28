@@ -4,6 +4,8 @@ use crate::model::{
     serialize_installed_addons, serialize_library, serialize_meta_details, serialize_player,
     serialize_remote_addons,
 };
+#[cfg(debug_assertions)]
+use serde::Serialize;
 use stremio_core::models::addon_details::AddonDetails;
 use stremio_core::models::catalog_with_filters::CatalogWithFilters;
 use stremio_core::models::catalogs_with_extra::CatalogsWithExtra;
@@ -25,6 +27,7 @@ use stremio_derive::Model;
 use wasm_bindgen::JsValue;
 
 #[derive(Model)]
+#[cfg_attr(debug_assertions, derive(Serialize))]
 #[model(WebEnv)]
 pub struct WebModel {
     pub ctx: Ctx,
