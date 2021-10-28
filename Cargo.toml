@@ -29,7 +29,7 @@ flate2 = "1.0.*"
 either = "1.6.*"
 lazy_static = "1.4.*"
 itertools = "0.10.*"
-wasm-bindgen = { version = "=0.2.69", features = ["serde-serialize"] }
+wasm-bindgen = { version = "=0.2.78", features = ["serde-serialize"] }
 wasm-bindgen-futures = "0.4.*"
 console_error_panic_hook = "0.1.*"
 js-sys = "0.3.*"
