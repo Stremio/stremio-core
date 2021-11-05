@@ -28,7 +28,7 @@ pub fn start() {
 #[wasm_bindgen]
 pub async fn initialize_runtime(emit_to_ui: js_sys::Function) -> Result<(), JsValue> {
     if RUNTIME.read().expect("runtime read failed").is_some() {
-        panic!("unable to initialize runtime multiple times");
+        panic!("runtime initialization has already started");
     };
 
     *RUNTIME.write().expect("runtime write failed") = Some(Loadable::Loading);
