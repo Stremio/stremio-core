@@ -107,6 +107,9 @@ impl From<LegacyManifest> for Manifest {
         if m.methods.iter().any(|x| x == "stream.find") {
             resources.push(ManifestResource::Short("stream".into()))
         }
+        if m.methods.iter().any(|x| x == "subtitles.get") {
+            resources.push(ManifestResource::Short("subtitles".into()))
+        }
 
         Manifest {
             id: m.id,
