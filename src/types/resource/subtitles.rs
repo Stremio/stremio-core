@@ -8,7 +8,6 @@ use url::Url;
 #[cfg_attr(test, derive(Derivative))]
 #[cfg_attr(test, derivative(Default))]
 pub struct Subtitles {
-    // @TODO: ISO 639-2
     pub lang: String,
     #[cfg_attr(
         test,

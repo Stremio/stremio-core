@@ -53,7 +53,6 @@ pub fn update_profile<E: Env + 'static>(
             match profile.auth_key() {
                 Some(auth_key) => Effects::one(pull_addons_from_api::<E>(auth_key)).unchanged(),
                 _ => {
-                    // TODO Does this code needs to be moved ?
                     let next_addons = profile
                         .addons
                         .iter()
