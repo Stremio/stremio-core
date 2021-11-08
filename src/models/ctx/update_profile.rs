@@ -144,7 +144,7 @@ pub fn update_profile<E: Env + 'static>(
                         .iter()
                         .map(|addon| &addon.manifest.id)
                         .enumerate()
-                        .filter(|(_, id)| **id == addon.manifest.id)
+                        .filter(|(_, id)| **id == addon.manifest.id && !addon.flags.protected)
                         .map(|(position, _)| position)
                         .collect::<Vec<_>>();
                     for position in addon_positions {
