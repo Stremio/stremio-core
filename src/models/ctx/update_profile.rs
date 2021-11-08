@@ -49,44 +49,42 @@ pub fn update_profile<E: Env + 'static>(
             }))
             .unchanged(),
         },
-        Msg::Action(Action::Ctx(ActionCtx::PullAddonsFromAPI)) => {
-            match profile.auth_key() {
-                Some(auth_key) => Effects::one(pull_addons_from_api::<E>(auth_key)).unchanged(),
-                _ => {
-                    let next_addons = profile
-                        .addons
-                        .iter()
-                        .map(|profile_addon| {
-                            OFFICIAL_ADDONS
-                                .iter()
-                                .find(|Descriptor { manifest, .. }| {
-                                    manifest.id == profile_addon.manifest.id
-                                        && manifest.version > profile_addon.manifest.version
-                                })
-                                .map(|official_addon| Descriptor {
-                                    transport_url: official_addon.transport_url.to_owned(),
-                                    manifest: official_addon.manifest.to_owned(),
-                                    flags: profile_addon.flags.to_owned(),
-                                })
-                                .unwrap_or_else(|| profile_addon.to_owned())
-                        })
-                        .collect::<Vec<_>>();
-                    let transport_urls = next_addons
-                        .iter()
-                        .map(|addon| &addon.transport_url)
-                        .cloned()
-                        .collect();
-                    if profile.addons != next_addons {
-                        profile.addons = next_addons;
-                        Effects::msg(Msg::Event(Event::AddonsPulledFromAPI { transport_urls }))
-                            .join(Effects::msg(Msg::Internal(Internal::ProfileChanged)))
-                    } else {
-                        Effects::msg(Msg::Event(Event::AddonsPulledFromAPI { transport_urls }))
-                            .unchanged()
-                    }
+        Msg::Action(Action::Ctx(ActionCtx::PullAddonsFromAPI)) => match profile.auth_key() {
+            Some(auth_key) => Effects::one(pull_addons_from_api::<E>(auth_key)).unchanged(),
+            _ => {
+                let next_addons = profile
+                    .addons
+                    .iter()
+                    .map(|profile_addon| {
+                        OFFICIAL_ADDONS
+                            .iter()
+                            .find(|Descriptor { manifest, .. }| {
+                                manifest.id == profile_addon.manifest.id
+                                    && manifest.version > profile_addon.manifest.version
+                            })
+                            .map(|official_addon| Descriptor {
+                                transport_url: official_addon.transport_url.to_owned(),
+                                manifest: official_addon.manifest.to_owned(),
+                                flags: profile_addon.flags.to_owned(),
+                            })
+                            .unwrap_or_else(|| profile_addon.to_owned())
+                    })
+                    .collect::<Vec<_>>();
+                let transport_urls = next_addons
+                    .iter()
+                    .map(|addon| &addon.transport_url)
+                    .cloned()
+                    .collect();
+                if profile.addons != next_addons {
+                    profile.addons = next_addons;
+                    Effects::msg(Msg::Event(Event::AddonsPulledFromAPI { transport_urls }))
+                        .join(Effects::msg(Msg::Internal(Internal::ProfileChanged)))
+                } else {
+                    Effects::msg(Msg::Event(Event::AddonsPulledFromAPI { transport_urls }))
+                        .unchanged()
                 }
             }
-        }
+        },
         Msg::Action(Action::Ctx(ActionCtx::InstallAddon(addon))) => {
             if !profile.addons.contains(addon) {
                 if !addon.manifest.behavior_hints.configuration_required {
