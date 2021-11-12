@@ -34,17 +34,17 @@ impl Stream {
                 dn: self.title.to_owned(),
                 hash_type: Some("btih".to_string()),
                 xt: Some(hex::encode(info_hash)),
-                xl: Some(0),
+                xl: None,
                 tr: announce
                     .iter()
                     .filter(|source| source.starts_with("tracker:"))
                     .map(|tracker| tracker.replace("tracker:", ""))
                     .collect::<Vec<String>>(),
-                kt: Some(String::new()),
-                ws: Some(String::new()),
-                acceptable_source: Some(String::new()),
-                mt: Some(String::new()),
-                xs: Some(String::new()),
+                kt: None,
+                ws: None,
+                acceptable_source: None,
+                mt: None,
+                xs: None,
             }),
             _ => None,
         }
