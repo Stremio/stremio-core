@@ -1,7 +1,7 @@
 use crate::constants::LIBRARY_COLLECTION_NAME;
 use crate::models::ctx::{update_library, update_profile, CtxError};
 use crate::runtime::msg::{Action, ActionCtx, Event, Internal, Msg};
-use crate::runtime::{Effect, Effects, Env, Update};
+use crate::runtime::{Effect, Effects, Env, EnvFutureExt, Update};
 use crate::types::api::{
     fetch_api, APIRequest, APIResult, AuthRequest, AuthResponse, CollectionResponse,
     DatastoreCommand, DatastoreRequest, SuccessResponse,
@@ -157,7 +157,7 @@ fn authenticate<E: Env + 'static>(auth_request: &AuthRequest) -> Effect {
         .map(enclose!((auth_request) move |result| {
             Msg::Internal(Internal::CtxAuthResult(auth_request, result))
         }))
-        .boxed_local()
+        .boxed_env()
         .into()
 }
 
@@ -178,6 +178,6 @@ fn delete_session<E: Env + 'static>(auth_key: &AuthKey) -> Effect {
                 source: Box::new(Event::SessionDeleted { auth_key }),
             }),
         }))
-        .boxed_local()
+        .boxed_env()
         .into()
 }

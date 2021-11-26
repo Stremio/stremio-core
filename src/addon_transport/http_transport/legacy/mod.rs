@@ -1,8 +1,8 @@
 use crate::addon_transport::AddonTransport;
-use crate::runtime::{Env, EnvError, TryEnvFuture};
+use crate::runtime::{Env, EnvError, EnvFutureExt, TryEnvFuture};
 use crate::types::addon::{Manifest, ResourcePath, ResourceResponse};
 use crate::types::resource::{MetaItem, MetaItemPreview, Stream, Subtitles};
-use futures::{future, FutureExt, TryFutureExt};
+use futures::{future, TryFutureExt};
 use http::Request;
 use serde::Deserialize;
 use serde_json::json;
@@ -86,10 +86,15 @@ impl From<SubtitlesResult> for ResourceResponse {
     }
 }
 
-fn map_response<T: 'static + Sized>(resp: JsonRPCResp<T>) -> TryEnvFuture<T> {
+fn map_response<
+    #[cfg(target_arch = "wasm32")] T: Sized + 'static,
+    #[cfg(not(target_arch = "wasm32"))] T: Sized + Send + 'static,
+>(
+    resp: JsonRPCResp<T>,
+) -> TryEnvFuture<T> {
     match resp {
-        JsonRPCResp::Result { result } => future::ok(result).boxed_local(),
-        JsonRPCResp::Error { error } => future::err(LegacyErr::JsonRPC(error).into()).boxed_local(),
+        JsonRPCResp::Result { result } => future::ok(result).boxed_env(),
+        JsonRPCResp::Error { error } => future::err(LegacyErr::JsonRPC(error).into()).boxed_env(),
     }
 }
 
@@ -114,27 +119,27 @@ impl<'a, T: Env> AddonTransport for AddonLegacyTransport<'a, T> {
     fn resource(&self, path: &ResourcePath) -> TryEnvFuture<ResourceResponse> {
         let fetch_req = match build_legacy_req(self.transport_url, path) {
             Ok(r) => r,
-            Err(e) => return future::err(e).boxed_local(),
+            Err(e) => return future::err(e).boxed_env(),
         };
 
         match &path.resource as &str {
             "catalog" => T::fetch::<_, JsonRPCResp<Vec<MetaItemPreview>>>(fetch_req)
                 .and_then(map_response)
                 .map_ok(Into::into)
-                .boxed_local(),
+                .boxed_env(),
             "meta" => T::fetch::<_, JsonRPCResp<MetaItem>>(fetch_req)
                 .and_then(map_response)
                 .map_ok(Into::into)
-                .boxed_local(),
+                .boxed_env(),
             "stream" => T::fetch::<_, JsonRPCResp<Vec<Stream>>>(fetch_req)
                 .and_then(map_response)
                 .map_ok(Into::into)
-                .boxed_local(),
+                .boxed_env(),
             "subtitles" => T::fetch::<_, JsonRPCResp<SubtitlesResult>>(fetch_req)
                 .and_then(map_response)
                 .map_ok(Into::into)
-                .boxed_local(),
-            _ => future::err(LegacyErr::UnsupportedResource.into()).boxed_local(),
+                .boxed_env(),
+            _ => future::err(LegacyErr::UnsupportedResource.into()).boxed_env(),
         }
     }
     fn manifest(&self) -> TryEnvFuture<Manifest> {
@@ -143,7 +148,7 @@ impl<'a, T: Env> AddonTransport for AddonLegacyTransport<'a, T> {
         T::fetch::<_, JsonRPCResp<LegacyManifestResp>>(r)
             .and_then(map_response)
             .map_ok(Into::into)
-            .boxed_local()
+            .boxed_env()
     }
 }
 

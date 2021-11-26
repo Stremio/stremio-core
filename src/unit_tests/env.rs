@@ -1,8 +1,8 @@
 use crate::models::ctx::Ctx;
 use crate::models::streaming_server::StreamingServer;
-use crate::runtime::{Env, EnvFuture, TryEnvFuture};
+use crate::runtime::{Env, EnvFuture, EnvFutureExt, TryEnvFuture};
 use chrono::{DateTime, Utc};
-use futures::{future, Future, FutureExt, TryFutureExt};
+use futures::{future, Future, TryFutureExt};
 use lazy_static::lazy_static;
 use serde::{Deserialize, Serialize};
 use std::any::Any;
@@ -19,7 +19,8 @@ lazy_static! {
     pub static ref NOW: RwLock<DateTime<Utc>> = RwLock::new(Utc::now());
 }
 
-pub type FetchHandler = Box<dyn Fn(Request) -> TryEnvFuture<Box<dyn Any>> + Send + Sync + 'static>;
+pub type FetchHandler =
+    Box<dyn Fn(Request) -> TryEnvFuture<Box<dyn Any + Send>> + Send + Sync + 'static>;
 
 #[derive(Default, Debug, Clone, PartialEq)]
 pub struct Request {
@@ -71,12 +72,14 @@ impl Env for TestEnv {
         REQUESTS.write().unwrap().push(request.to_owned());
         FETCH_HANDLER.read().unwrap()(request)
             .map_ok(|resp| *resp.downcast::<OUT>().unwrap())
-            .boxed_local()
+            .boxed_env()
     }
-    fn get_storage<T>(key: &str) -> TryEnvFuture<Option<T>>
-    where
-        for<'de> T: Deserialize<'de> + 'static,
-    {
+    fn get_storage<
+        #[cfg(target_arch = "wasm32")] T: for<'de> Deserialize<'de> + 'static,
+        #[cfg(not(target_arch = "wasm32"))] T: for<'de> Deserialize<'de> + Send + 'static,
+    >(
+        key: &str,
+    ) -> TryEnvFuture<Option<T>> {
         future::ok(
             STORAGE
                 .read()
@@ -84,7 +87,7 @@ impl Env for TestEnv {
                 .get(key)
                 .map(|data| serde_json::from_str(&data).unwrap()),
         )
-        .boxed_local()
+        .boxed_env()
     }
     fn set_storage<T: Serialize>(key: &str, value: Option<&T>) -> TryEnvFuture<()> {
         let mut storage = STORAGE.write().unwrap();
@@ -92,19 +95,16 @@ impl Env for TestEnv {
             Some(v) => storage.insert(key.to_string(), serde_json::to_string(v).unwrap()),
             None => storage.remove(key),
         };
-        future::ok(()).boxed_local()
+        future::ok(()).boxed_env()
     }
-    fn exec<F>(future: F)
-    where
-        F: Future<Output = ()> + 'static,
-    {
+    fn exec<F: Future<Output = ()> + 'static>(future: F) {
         tokio_current_thread::spawn(future);
     }
     fn now() -> DateTime<Utc> {
         *NOW.read().unwrap()
     }
     fn flush_analytics() -> EnvFuture<()> {
-        future::ready(()).boxed_local()
+        future::ready(()).boxed_env()
     }
     fn analytics_context(_ctx: &Ctx, _streaming_server: &StreamingServer) -> serde_json::Value {
         serde_json::Value::Null
@@ -114,6 +114,6 @@ impl Env for TestEnv {
     }
 }
 
-pub fn default_fetch_handler(request: Request) -> TryEnvFuture<Box<dyn Any>> {
+pub fn default_fetch_handler(request: Request) -> TryEnvFuture<Box<dyn Any + Send>> {
     panic!("Unhandled fetch request: {:#?}", request)
 }

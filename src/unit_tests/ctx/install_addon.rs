@@ -1,7 +1,7 @@
 use crate::constants::PROFILE_STORAGE_KEY;
 use crate::models::ctx::Ctx;
 use crate::runtime::msg::{Action, ActionCtx};
-use crate::runtime::{Effects, Env, Runtime, RuntimeAction, TryEnvFuture};
+use crate::runtime::{Effects, Env, EnvFutureExt, Runtime, RuntimeAction, TryEnvFuture};
 use crate::types::addon::{Descriptor, Manifest};
 use crate::types::api::{APIResult, SuccessResponse};
 use crate::types::profile::{Auth, AuthKey, GDPRConsent, Profile, User};
@@ -9,7 +9,7 @@ use crate::types::True;
 use crate::unit_tests::{
     default_fetch_handler, Request, TestEnv, FETCH_HANDLER, REQUESTS, STORAGE,
 };
-use futures::{future, FutureExt};
+use futures::future;
 use semver::Version;
 use std::any::Any;
 use stremio_derive::Model;
@@ -89,7 +89,7 @@ fn actionctx_installaddon_install_with_user() {
     struct TestModel {
         ctx: Ctx,
     }
-    fn fetch_handler(request: Request) -> TryEnvFuture<Box<dyn Any>> {
+    fn fetch_handler(request: Request) -> TryEnvFuture<Box<dyn Any + Send>> {
         match request {
             Request {
                 url, method, body, ..
@@ -99,7 +99,7 @@ fn actionctx_installaddon_install_with_user() {
             {
                 future::ok(Box::new(APIResult::Ok {
                     result: SuccessResponse { success: True {} },
-                }) as Box<dyn Any>).boxed_local()
+                }) as Box<dyn Any + Send>).boxed_env()
             }
             _ => default_fetch_handler(request),
         }

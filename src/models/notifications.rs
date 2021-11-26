@@ -91,7 +91,7 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Notifications {
                                                     Box::new(result),
                                                 ))
                                             })
-                                            .boxed_local()
+                                            .boxed_env()
                                             .into(),
                                     )
                                 })

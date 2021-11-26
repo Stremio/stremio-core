@@ -1,9 +1,9 @@
 use crate::addon_transport::http_transport::legacy::AddonLegacyTransport;
 use crate::addon_transport::AddonTransport;
 use crate::constants::{ADDON_LEGACY_PATH, ADDON_MANIFEST_PATH};
-use crate::runtime::{Env, EnvError, TryEnvFuture};
+use crate::runtime::{Env, EnvError, EnvFutureExt, TryEnvFuture};
 use crate::types::addon::{Manifest, ResourcePath, ResourceResponse};
-use futures::{future, FutureExt};
+use futures::future;
 use http::Request;
 use percent_encoding::{utf8_percent_encode, NON_ALPHANUMERIC};
 use std::marker::PhantomData;
@@ -33,7 +33,7 @@ impl<E: Env> AddonTransport for AddonHTTPTransport<E> {
                 "addon http transport url must ends with {}",
                 ADDON_MANIFEST_PATH
             )))
-            .boxed_local();
+            .boxed_env();
         }
         let path = if path.extra.is_empty() {
             format!(
