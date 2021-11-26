@@ -30,8 +30,8 @@ pub struct Runtime<E: Env, M: Model<E>> {
 
 impl<E, M> Runtime<E, M>
 where
-    E: Env + 'static,
-    M: Model<E> + 'static,
+    E: Env + Send + 'static,
+    M: Model<E> + Send + Sync + 'static,
 {
     pub fn new(model: M, effects: Effects, buffer: usize) -> (Self, Receiver<RuntimeEvent>) {
         let (tx, rx) = channel(buffer);

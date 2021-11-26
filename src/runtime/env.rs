@@ -113,7 +113,12 @@ pub trait Env {
         key: &str,
     ) -> TryEnvFuture<Option<T>>;
     fn set_storage<T: Serialize>(key: &str, value: Option<&T>) -> TryEnvFuture<()>;
-    fn exec<F: Future<Output = ()> + 'static>(future: F);
+    fn exec<
+        #[cfg(target_arch = "wasm32")] F: Future<Output = ()> + 'static,
+        #[cfg(not(target_arch = "wasm32"))] F: Future<Output = ()> + Send + 'static,
+    >(
+        future: F,
+    );
     fn now() -> DateTime<Utc>;
     fn flush_analytics() -> EnvFuture<()>;
     fn analytics_context(ctx: &Ctx, streaming_server: &StreamingServer) -> serde_json::Value;
