@@ -3,7 +3,7 @@ use crate::constants::{
 };
 use crate::models::ctx::{CtxError, CtxStatus, OtherError};
 use crate::runtime::msg::{Action, ActionCtx, Event, Internal, Msg};
-use crate::runtime::{Effect, Effects, Env};
+use crate::runtime::{Effect, Effects, Env, EnvFutureExt};
 use crate::types::api::{
     fetch_api, APIResult, DatastoreCommand, DatastoreRequest, LibraryItemModified, SuccessResponse,
 };
@@ -260,7 +260,7 @@ fn update_and_push_items_to_storage<E: Env + 'static>(
                 source: Box::new(Event::LibraryItemsPushedToStorage { ids }),
             }),
         })
-        .boxed_local()
+        .boxed_env()
         .into()
 }
 
@@ -284,7 +284,7 @@ fn push_library_to_storage<E: Env + 'static>(library: &LibraryBucket) -> Effect 
             source: Box::new(Event::LibraryItemsPushedToStorage { ids }),
         }),
     })
-    .boxed_local()
+    .boxed_env()
     .into()
 }
 
@@ -307,7 +307,7 @@ fn push_items_to_api<E: Env + 'static>(items: Vec<LibraryItem>, auth_key: &AuthK
             source: Box::new(Event::LibraryItemsPushedToAPI { ids }),
         }),
     })
-    .boxed_local()
+    .boxed_env()
     .into()
 }
 
@@ -324,7 +324,7 @@ fn pull_items_from_api<E: Env + 'static>(ids: Vec<String>, auth_key: &AuthKey) -
             APIResult::Err { error } => future::err(CtxError::from(error)),
         })
         .map(move |result| Msg::Internal(Internal::LibraryPullResult(request, result)))
-        .boxed_local()
+        .boxed_env()
         .into()
 }
 
@@ -376,6 +376,6 @@ fn plan_sync_with_api<E: Env + 'static>(library: &LibraryBucket, auth_key: &Auth
             (pull_ids, push_ids)
         })
         .map(move |result| Msg::Internal(Internal::LibrarySyncPlanResult(request, result)))
-        .boxed_local()
+        .boxed_env()
         .into()
 }

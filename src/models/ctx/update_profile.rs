@@ -1,7 +1,7 @@
 use crate::constants::{OFFICIAL_ADDONS, PROFILE_STORAGE_KEY};
 use crate::models::ctx::{CtxError, CtxStatus, OtherError};
 use crate::runtime::msg::{Action, ActionCtx, Event, Internal, Msg};
-use crate::runtime::{Effect, Effects, Env};
+use crate::runtime::{Effect, Effects, Env, EnvFutureExt};
 use crate::types::addon::Descriptor;
 use crate::types::api::{fetch_api, APIRequest, APIResult, CollectionResponse, SuccessResponse};
 use crate::types::profile::{AuthKey, Profile, Settings};
@@ -316,7 +316,7 @@ fn push_addons_to_api<E: Env + 'static>(addons: Vec<Descriptor>, auth_key: &Auth
                 source: Box::new(Event::AddonsPushedToAPI { transport_urls }),
             }),
         })
-        .boxed_local()
+        .boxed_env()
         .into()
 }
 
@@ -333,7 +333,7 @@ fn pull_addons_from_api<E: Env + 'static>(auth_key: &AuthKey) -> Effect {
         })
         .map_ok(|CollectionResponse { addons, .. }| addons)
         .map(move |result| Msg::Internal(Internal::AddonsAPIResult(request, result)))
-        .boxed_local()
+        .boxed_env()
         .into()
 }
 
@@ -346,6 +346,6 @@ fn push_profile_to_storage<E: Env + 'static>(profile: &Profile) -> Effect {
                 source: Box::new(Event::ProfilePushedToStorage { uid }),
             })
         }))
-        .boxed_local()
+        .boxed_env()
         .into()
 }

@@ -1,7 +1,7 @@
 use crate::models::common::{eq_update, Loadable};
 use crate::models::ctx::Ctx;
 use crate::runtime::msg::{Action, ActionStreamingServer, Internal, Msg};
-use crate::runtime::{Effect, Effects, Env, EnvError, UpdateWithCtx};
+use crate::runtime::{Effect, Effects, Env, EnvError, EnvFutureExt, UpdateWithCtx};
 use crate::types::api::SuccessResponse;
 use crate::types::profile::Profile;
 use enclose::enclose;
@@ -148,7 +148,7 @@ fn get_settings<E: Env + 'static>(url: &Url) -> Effect {
                 url, result,
             ))
         }))
-        .boxed_local()
+        .boxed_env()
         .into()
 }
 
@@ -167,7 +167,7 @@ fn get_base_url<E: Env + 'static>(url: &Url) -> Effect {
         .map(enclose!((url) move |result|
             Msg::Internal(Internal::StreamingServerBaseURLResult(url, result))
         ))
-        .boxed_local()
+        .boxed_env()
         .into()
 }
 
@@ -204,6 +204,6 @@ fn set_settings<E: Env + 'static>(url: &Url, settings: &Settings) -> Effect {
                 url, result,
             ))
         }))
-        .boxed_local()
+        .boxed_env()
         .into()
 }

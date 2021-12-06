@@ -1,7 +1,7 @@
 use crate::constants::LIBRARY_RECENT_STORAGE_KEY;
 use crate::models::ctx::Ctx;
 use crate::runtime::msg::{Action, ActionCtx};
-use crate::runtime::{Effects, Env, Runtime, RuntimeAction, TryEnvFuture};
+use crate::runtime::{Effects, Env, EnvFutureExt, Runtime, RuntimeAction, TryEnvFuture};
 use crate::types::api::{APIResult, LibraryItemModified, SuccessResponse};
 use crate::types::library::{LibraryBucket, LibraryItem, LibraryItemState};
 use crate::types::profile::{Auth, AuthKey, GDPRConsent, Profile, User};
@@ -11,7 +11,7 @@ use crate::unit_tests::{
 };
 use chrono::prelude::TimeZone;
 use chrono::{Duration, Utc};
-use futures::{future, FutureExt};
+use futures::future;
 use lazy_static::lazy_static;
 use serde::Deserialize;
 use std::any::Any;
@@ -129,7 +129,7 @@ fn actionctx_synclibrarywithapi_with_user() {
             behavior_hints: Default::default(),
         };
     }
-    fn fetch_handler(request: Request) -> TryEnvFuture<Box<dyn Any>> {
+    fn fetch_handler(request: Request) -> TryEnvFuture<Box<dyn Any + Send>> {
         match &request {
             Request {
                 url, method, body, ..
@@ -152,8 +152,8 @@ fn actionctx_synclibrarywithapi_with_user() {
                             REMOTE_NEWER_ITEM.mtime.to_owned(),
                         ),
                     ],
-                }) as Box<dyn Any>)
-                .boxed_local()
+                }) as Box<dyn Any + Send>)
+                .boxed_env()
             }
             Request {
                 url, method, body, ..
@@ -176,8 +176,8 @@ fn actionctx_synclibrarywithapi_with_user() {
                     {
                         future::ok(Box::new(APIResult::Ok {
                             result: SuccessResponse { success: True {} },
-                        }) as Box<dyn Any>)
-                        .boxed_local()
+                        }) as Box<dyn Any + Send>)
+                        .boxed_env()
                     }
                     _ => default_fetch_handler(request),
                 }
@@ -204,8 +204,8 @@ fn actionctx_synclibrarywithapi_with_user() {
                     {
                         future::ok(Box::new(APIResult::Ok {
                             result: vec![REMOTE_ONLY_ITEM.to_owned(), REMOTE_NEWER_ITEM.to_owned()],
-                        }) as Box<dyn Any>)
-                        .boxed_local()
+                        }) as Box<dyn Any + Send>)
+                        .boxed_env()
                     }
                     _ => default_fetch_handler(request),
                 }
@@ -347,7 +347,7 @@ fn actionctx_synclibrarywithapi_with_user_empty_library() {
     struct TestModel {
         ctx: Ctx,
     }
-    fn fetch_handler(request: Request) -> TryEnvFuture<Box<dyn Any>> {
+    fn fetch_handler(request: Request) -> TryEnvFuture<Box<dyn Any + Send>> {
         match &request {
             Request {
                 url, method, body, ..
@@ -357,8 +357,8 @@ fn actionctx_synclibrarywithapi_with_user_empty_library() {
             {
                 future::ok(Box::new(APIResult::Ok {
                     result: Vec::<LibraryItemModified>::new(),
-                }) as Box<dyn Any>)
-                .boxed_local()
+                }) as Box<dyn Any + Send>)
+                .boxed_env()
             }
             _ => default_fetch_handler(request),
         }

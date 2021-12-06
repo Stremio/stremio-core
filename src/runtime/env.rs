@@ -6,7 +6,6 @@ use crate::constants::{
 use crate::models::ctx::Ctx;
 use crate::models::streaming_server::StreamingServer;
 use chrono::{DateTime, Utc};
-use futures::future::LocalBoxFuture;
 use futures::{future, Future, FutureExt, TryFutureExt};
 use http::Request;
 use serde::ser::SerializeStruct;
@@ -71,22 +70,55 @@ impl From<serde_json::Error> for EnvError {
     }
 }
 
-pub type EnvFuture<T> = LocalBoxFuture<'static, T>;
+#[cfg(target_arch = "wasm32")]
+pub type EnvFuture<T> = futures::future::LocalBoxFuture<'static, T>;
+
+#[cfg(not(target_arch = "wasm32"))]
+pub type EnvFuture<T> = futures::future::BoxFuture<'static, T>;
+
+impl<T: ?Sized> EnvFutureExt for T where T: Future {}
+
+pub trait EnvFutureExt: Future {
+    #[cfg(target_arch = "wasm32")]
+    fn boxed_env<'a>(self) -> futures::future::LocalBoxFuture<'a, Self::Output>
+    where
+        Self: Sized + 'a,
+    {
+        self.boxed_local()
+    }
+
+    #[cfg(not(target_arch = "wasm32"))]
+    fn boxed_env<'a>(self) -> futures::future::BoxFuture<'a, Self::Output>
+    where
+        Self: Sized + Send + 'a,
+    {
+        self.boxed()
+    }
+}
 
 pub type TryEnvFuture<T> = EnvFuture<Result<T, EnvError>>;
 
 pub trait Env {
-    fn fetch<IN, OUT>(request: Request<IN>) -> TryEnvFuture<OUT>
-    where
+    fn fetch<
         IN: Serialize,
-        for<'de> OUT: Deserialize<'de> + 'static;
-    fn get_storage<T>(key: &str) -> TryEnvFuture<Option<T>>
-    where
-        for<'de> T: Deserialize<'de> + 'static;
+        #[cfg(target_arch = "wasm32")] OUT: for<'de> Deserialize<'de> + 'static,
+        #[cfg(not(target_arch = "wasm32"))] OUT: for<'de> Deserialize<'de> + Send + 'static,
+    >(
+        request: Request<IN>,
+    ) -> TryEnvFuture<OUT>;
+    fn get_storage<
+        #[cfg(target_arch = "wasm32")] T: for<'de> Deserialize<'de> + 'static,
+        #[cfg(not(target_arch = "wasm32"))] T: for<'de> Deserialize<'de> + Send + 'static,
+    >(
+        key: &str,
+    ) -> TryEnvFuture<Option<T>>;
     fn set_storage<T: Serialize>(key: &str, value: Option<&T>) -> TryEnvFuture<()>;
-    fn exec<F>(future: F)
-    where
-        F: Future<Output = ()> + 'static;
+    fn exec<
+        #[cfg(target_arch = "wasm32")] F: Future<Output = ()> + 'static,
+        #[cfg(not(target_arch = "wasm32"))] F: Future<Output = ()> + Send + 'static,
+    >(
+        future: F,
+    );
     fn now() -> DateTime<Utc>;
     fn flush_analytics() -> EnvFuture<()>;
     fn analytics_context(ctx: &Ctx, streaming_server: &StreamingServer) -> serde_json::Value;
@@ -146,7 +178,7 @@ pub trait Env {
                 };
                 Ok(())
             })
-            .boxed_local()
+            .boxed_env()
     }
 }
 
@@ -158,7 +190,7 @@ fn migrate_storage_schema_to_v1<E: Env>() -> TryEnvFuture<()> {
         E::set_storage::<()>(LIBRARY_STORAGE_KEY, None),
     ])
     .map_ok(|_| ())
-    .boxed_local()
+    .boxed_env()
 }
 
 fn migrate_storage_schema_to_v2<E: Env>() -> TryEnvFuture<()> {
@@ -228,7 +260,7 @@ fn migrate_storage_schema_to_v2<E: Env>() -> TryEnvFuture<()> {
             }
         })
         .and_then(|_| E::set_storage(SCHEMA_VERSION_STORAGE_KEY, Some(&2)))
-        .boxed_local()
+        .boxed_env()
 }
 
 fn migrate_storage_schema_to_v3<E: Env>() -> TryEnvFuture<()> {
@@ -251,7 +283,7 @@ fn migrate_storage_schema_to_v3<E: Env>() -> TryEnvFuture<()> {
             }
         })
         .and_then(|_| E::set_storage(SCHEMA_VERSION_STORAGE_KEY, Some(&3)))
-        .boxed_local()
+        .boxed_env()
 }
 
 fn migrate_storage_schema_to_v4<E: Env>() -> TryEnvFuture<()> {
@@ -274,5 +306,5 @@ fn migrate_storage_schema_to_v4<E: Env>() -> TryEnvFuture<()> {
             }
         })
         .and_then(|_| E::set_storage(SCHEMA_VERSION_STORAGE_KEY, Some(&4)))
-        .boxed_local()
+        .boxed_env()
 }

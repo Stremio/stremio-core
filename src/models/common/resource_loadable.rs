@@ -1,6 +1,6 @@
 use crate::models::common::Loadable;
 use crate::runtime::msg::{Internal, Msg};
-use crate::runtime::{Effects, Env, EnvError};
+use crate::runtime::{Effects, Env, EnvError, EnvFutureExt};
 use crate::types::addon::{AggrRequest, Descriptor, ResourceRequest, ResourceResponse};
 use futures::FutureExt;
 use serde::Serialize;
@@ -81,7 +81,7 @@ where
                                 Box::new(result),
                             ))
                         })
-                        .boxed_local(),
+                        .boxed_env(),
                 )
             } else {
                 Effects::none().unchanged()
@@ -159,7 +159,7 @@ where
                                         Box::new(result),
                                     ))
                                 })
-                                .boxed_local()
+                                .boxed_env()
                                 .into(),
                         )
                     })

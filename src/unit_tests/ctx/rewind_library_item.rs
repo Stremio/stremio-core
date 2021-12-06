@@ -1,7 +1,7 @@
 use crate::constants::{LIBRARY_RECENT_STORAGE_KEY, LIBRARY_STORAGE_KEY};
 use crate::models::ctx::Ctx;
 use crate::runtime::msg::{Action, ActionCtx};
-use crate::runtime::{Effects, Env, Runtime, RuntimeAction, TryEnvFuture};
+use crate::runtime::{Effects, Env, EnvFutureExt, Runtime, RuntimeAction, TryEnvFuture};
 use crate::types::api::{APIResult, SuccessResponse};
 use crate::types::library::{LibraryBucket, LibraryItem, LibraryItemState};
 use crate::types::profile::{Auth, AuthKey, GDPRConsent, Profile, User};
@@ -11,7 +11,7 @@ use crate::unit_tests::{
 };
 use chrono::prelude::TimeZone;
 use chrono::Utc;
-use futures::{future, FutureExt};
+use futures::future;
 use std::any::Any;
 use stremio_derive::Model;
 
@@ -22,7 +22,7 @@ fn actionctx_rewindlibraryitem() {
     struct TestModel {
         ctx: Ctx,
     }
-    fn fetch_handler(request: Request) -> TryEnvFuture<Box<dyn Any>> {
+    fn fetch_handler(request: Request) -> TryEnvFuture<Box<dyn Any + Send>> {
         match request {
             Request {
                 url, method, body, ..
@@ -32,7 +32,7 @@ fn actionctx_rewindlibraryitem() {
             {
                 future::ok(Box::new(APIResult::Ok {
                     result: SuccessResponse { success: True {} },
-                }) as Box<dyn Any>).boxed_local()
+                }) as Box<dyn Any + Send>).boxed_env()
             }
             _ => default_fetch_handler(request),
         }

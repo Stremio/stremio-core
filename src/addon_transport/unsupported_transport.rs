@@ -1,7 +1,7 @@
 use crate::addon_transport::AddonTransport;
-use crate::runtime::{EnvError, TryEnvFuture};
+use crate::runtime::{EnvError, EnvFutureExt, TryEnvFuture};
 use crate::types::addon::{Manifest, ResourcePath, ResourceResponse};
-use futures::{future, FutureExt};
+use futures::future;
 use url::Url;
 
 pub struct UnsupportedTransport {
@@ -12,12 +12,17 @@ impl UnsupportedTransport {
     pub fn new(transport_url: Url) -> Self {
         UnsupportedTransport { transport_url }
     }
-    fn result<T: 'static>(&self) -> TryEnvFuture<T> {
+    fn result<
+        #[cfg(target_arch = "wasm32")] T: Sized + 'static,
+        #[cfg(not(target_arch = "wasm32"))] T: Sized + Send + 'static,
+    >(
+        &self,
+    ) -> TryEnvFuture<T> {
         future::err(EnvError::AddonTransport(format!(
             "Unsupported addon transport: {}",
             self.transport_url.scheme()
         )))
-        .boxed_local()
+        .boxed_env()
     }
 }
 

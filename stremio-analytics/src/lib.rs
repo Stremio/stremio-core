@@ -8,7 +8,7 @@ use std::marker::PhantomData;
 use std::sync::{Arc, Mutex};
 use stremio_core::models::ctx::Ctx;
 use stremio_core::models::streaming_server::StreamingServer;
-use stremio_core::runtime::{Env, EnvError, TryEnvFuture};
+use stremio_core::runtime::{Env, EnvError, EnvFutureExt, TryEnvFuture};
 use stremio_core::types::api::{fetch_api, APIRequest, APIResult, SuccessResponse};
 use stremio_core::types::profile::AuthKey;
 #[cfg(debug_assertions)]
@@ -151,7 +151,7 @@ fn send_events_batch_to_api<E: Env>(
         return future::ok(APIResult::Ok {
             result: SuccessResponse { success: True },
         })
-        .boxed_local();
+        .boxed_env();
     };
     fetch_api::<E, _, _>(&APIRequest::Events {
         auth_key: batch.auth_key.to_owned(),

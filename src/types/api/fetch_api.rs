@@ -4,12 +4,14 @@ use crate::types::api::{APIMethodName, APIResult};
 use http::Request;
 use serde::{Deserialize, Serialize};
 
-pub fn fetch_api<E, REQ, RESP>(api_request: &REQ) -> TryEnvFuture<APIResult<RESP>>
-where
+pub fn fetch_api<
     E: Env,
     REQ: APIMethodName + Clone + Serialize,
-    for<'de> RESP: Deserialize<'de> + 'static,
-{
+    #[cfg(target_arch = "wasm32")] RESP: for<'de> Deserialize<'de> + 'static,
+    #[cfg(not(target_arch = "wasm32"))] RESP: for<'de> Deserialize<'de> + Send + 'static,
+>(
+    api_request: &REQ,
+) -> TryEnvFuture<APIResult<RESP>> {
     let url = API_URL
         .join("api/")
         .expect("url builder failed")
