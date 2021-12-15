@@ -21,6 +21,8 @@ pub enum EnvError {
     StorageUnavailable,
     StorageSchemaVersionDowngrade(u32, u32),
     StorageSchemaVersionUpgrade(Box<EnvError>),
+    StorageReadError(String),
+    StorageWriteError(String),
 }
 
 impl EnvError {
@@ -38,6 +40,8 @@ impl EnvError {
                 "Upgrade storage schema version failed caused by: {}",
                 source.message()
             ),
+            EnvError::StorageReadError(message) => format!("Storage read error: {}", message),
+            EnvError::StorageWriteError(message) => format!("Storage write error: {}", message),
         }
     }
     pub fn code(&self) -> u64 {
@@ -48,6 +52,8 @@ impl EnvError {
             EnvError::StorageUnavailable => 4,
             EnvError::StorageSchemaVersionDowngrade(_, _) => 5,
             EnvError::StorageSchemaVersionUpgrade(_) => 6,
+            EnvError::StorageReadError(_) => 7,
+            EnvError::StorageWriteError(_) => 8,
         }
     }
 }
