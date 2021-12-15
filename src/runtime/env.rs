@@ -44,7 +44,7 @@ impl EnvError {
             EnvError::StorageWriteError(message) => format!("Storage write error: {}", message),
         }
     }
-    pub fn code(&self) -> u64 {
+    pub fn code(&self) -> u32 {
         match &self {
             EnvError::Fetch(_) => 1,
             EnvError::AddonTransport(_) => 2,
