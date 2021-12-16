@@ -23,6 +23,7 @@ pub enum EnvError {
     StorageSchemaVersionUpgrade(Box<EnvError>),
     StorageReadError(String),
     StorageWriteError(String),
+    Other(String),
 }
 
 impl EnvError {
@@ -42,6 +43,7 @@ impl EnvError {
             ),
             EnvError::StorageReadError(message) => format!("Storage read error: {}", message),
             EnvError::StorageWriteError(message) => format!("Storage write error: {}", message),
+            EnvError::Other(message) => format!("Other error: {}", message),
         }
     }
     pub fn code(&self) -> u32 {
@@ -54,6 +56,7 @@ impl EnvError {
             EnvError::StorageSchemaVersionUpgrade(_) => 6,
             EnvError::StorageReadError(_) => 7,
             EnvError::StorageWriteError(_) => 8,
+            EnvError::Other(_) => 1001,
         }
     }
 }
