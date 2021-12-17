@@ -1,6 +1,6 @@
 use crate::models::common::Loadable;
 use crate::runtime::msg::{Internal, Msg};
-use crate::runtime::{Effects, Env, EnvError, EnvFutureExt};
+use crate::runtime::{EffectFuture, Effects, Env, EnvError, EnvFutureExt};
 use crate::types::addon::{AggrRequest, Descriptor, ResourceRequest, ResourceResponse};
 use futures::FutureExt;
 use serde::Serialize;
@@ -72,7 +72,7 @@ where
                     request: request.to_owned(),
                     content: Loadable::Loading,
                 });
-                Effects::future(
+                Effects::future(EffectFuture::Concurrent(
                     E::addon_transport(&request.base)
                         .resource(&request.path)
                         .map(move |result| {
@@ -82,7 +82,7 @@ where
                             ))
                         })
                         .boxed_env(),
-                )
+                ))
             } else {
                 Effects::none().unchanged()
             }
@@ -151,16 +151,18 @@ where
                                 request: request.to_owned(),
                                 content: Loadable::Loading,
                             },
-                            E::addon_transport(&request.base)
-                                .resource(&request.path)
-                                .map(move |result| {
-                                    Msg::Internal(Internal::ResourceRequestResult(
-                                        request,
-                                        Box::new(result),
-                                    ))
-                                })
-                                .boxed_env()
-                                .into(),
+                            EffectFuture::Concurrent(
+                                E::addon_transport(&request.base)
+                                    .resource(&request.path)
+                                    .map(move |result| {
+                                        Msg::Internal(Internal::ResourceRequestResult(
+                                            request,
+                                            Box::new(result),
+                                        ))
+                                    })
+                                    .boxed_env(),
+                            )
+                            .into(),
                         )
                     })
                     .unzip::<_, _, Vec<_>, Vec<_>>();

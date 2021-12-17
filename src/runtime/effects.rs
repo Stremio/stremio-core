@@ -2,10 +2,15 @@ use crate::runtime::msg::Msg;
 use derive_more::{From, IntoIterator};
 
 #[cfg(target_arch = "wasm32")]
-pub type EffectFuture = futures::future::LocalBoxFuture<'static, Msg>;
+type Future = futures::future::LocalBoxFuture<'static, Msg>;
 
 #[cfg(not(target_arch = "wasm32"))]
-pub type EffectFuture = futures::future::BoxFuture<'static, Msg>;
+type Future = futures::future::BoxFuture<'static, Msg>;
+
+pub enum EffectFuture {
+    Concurrent(Future),
+    Sequential(Future),
+}
 
 #[derive(From)]
 pub enum Effect {

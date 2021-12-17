@@ -83,16 +83,18 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Notifications {
                                             request: addon_req.to_owned(),
                                             content: Loadable::Loading,
                                         },
-                                        E::addon_transport(&addon_req.base)
-                                            .resource(&addon_req.path)
-                                            .map(move |result| {
-                                                Msg::Internal(Internal::ResourceRequestResult(
-                                                    addon_req,
-                                                    Box::new(result),
-                                                ))
-                                            })
-                                            .boxed_env()
-                                            .into(),
+                                        EffectFuture::Concurrent(
+                                            E::addon_transport(&addon_req.base)
+                                                .resource(&addon_req.path)
+                                                .map(move |result| {
+                                                    Msg::Internal(Internal::ResourceRequestResult(
+                                                        addon_req,
+                                                        Box::new(result),
+                                                    ))
+                                                })
+                                                .boxed_env(),
+                                        )
+                                        .into(),
                                     )
                                 })
                                 .collect::<Vec<_>>()

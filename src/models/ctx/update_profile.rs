@@ -1,7 +1,7 @@
 use crate::constants::{OFFICIAL_ADDONS, PROFILE_STORAGE_KEY};
 use crate::models::ctx::{CtxError, CtxStatus, OtherError};
 use crate::runtime::msg::{Action, ActionCtx, Event, Internal, Msg};
-use crate::runtime::{Effect, Effects, Env, EnvFutureExt};
+use crate::runtime::{Effect, EffectFuture, Effects, Env, EnvFutureExt};
 use crate::types::addon::Descriptor;
 use crate::types::api::{fetch_api, APIRequest, APIResult, CollectionResponse, SuccessResponse};
 use crate::types::profile::{AuthKey, Profile, Settings};
@@ -303,21 +303,23 @@ fn push_addons_to_api<E: Env + 'static>(addons: Vec<Descriptor>, auth_key: &Auth
         auth_key: auth_key.to_owned(),
         addons,
     };
-    fetch_api::<E, _, SuccessResponse>(&request)
-        .map_err(CtxError::from)
-        .and_then(|result| match result {
-            APIResult::Ok { result } => future::ok(result),
-            APIResult::Err { error } => future::err(CtxError::from(error)),
-        })
-        .map(move |result| match result {
-            Ok(_) => Msg::Event(Event::AddonsPushedToAPI { transport_urls }),
-            Err(error) => Msg::Event(Event::Error {
-                error,
-                source: Box::new(Event::AddonsPushedToAPI { transport_urls }),
-            }),
-        })
-        .boxed_env()
-        .into()
+    EffectFuture::Concurrent(
+        fetch_api::<E, _, SuccessResponse>(&request)
+            .map_err(CtxError::from)
+            .and_then(|result| match result {
+                APIResult::Ok { result } => future::ok(result),
+                APIResult::Err { error } => future::err(CtxError::from(error)),
+            })
+            .map(move |result| match result {
+                Ok(_) => Msg::Event(Event::AddonsPushedToAPI { transport_urls }),
+                Err(error) => Msg::Event(Event::Error {
+                    error,
+                    source: Box::new(Event::AddonsPushedToAPI { transport_urls }),
+                }),
+            })
+            .boxed_env(),
+    )
+    .into()
 }
 
 fn pull_addons_from_api<E: Env + 'static>(auth_key: &AuthKey) -> Effect {
@@ -325,27 +327,31 @@ fn pull_addons_from_api<E: Env + 'static>(auth_key: &AuthKey) -> Effect {
         auth_key: auth_key.to_owned(),
         update: true,
     };
-    fetch_api::<E, _, _>(&request)
-        .map_err(CtxError::from)
-        .and_then(|result| match result {
-            APIResult::Ok { result } => future::ok(result),
-            APIResult::Err { error } => future::err(CtxError::from(error)),
-        })
-        .map_ok(|CollectionResponse { addons, .. }| addons)
-        .map(move |result| Msg::Internal(Internal::AddonsAPIResult(request, result)))
-        .boxed_env()
-        .into()
+    EffectFuture::Concurrent(
+        fetch_api::<E, _, _>(&request)
+            .map_err(CtxError::from)
+            .and_then(|result| match result {
+                APIResult::Ok { result } => future::ok(result),
+                APIResult::Err { error } => future::err(CtxError::from(error)),
+            })
+            .map_ok(|CollectionResponse { addons, .. }| addons)
+            .map(move |result| Msg::Internal(Internal::AddonsAPIResult(request, result)))
+            .boxed_env(),
+    )
+    .into()
 }
 
 fn push_profile_to_storage<E: Env + 'static>(profile: &Profile) -> Effect {
-    E::set_storage(PROFILE_STORAGE_KEY, Some(profile))
-        .map(enclose!((profile.uid() => uid) move |result| match result {
-            Ok(_) => Msg::Event(Event::ProfilePushedToStorage { uid }),
-            Err(error) => Msg::Event(Event::Error {
-                error: CtxError::from(error),
-                source: Box::new(Event::ProfilePushedToStorage { uid }),
-            })
-        }))
-        .boxed_env()
-        .into()
+    EffectFuture::Sequential(
+        E::set_storage(PROFILE_STORAGE_KEY, Some(profile))
+            .map(enclose!((profile.uid() => uid) move |result| match result {
+                Ok(_) => Msg::Event(Event::ProfilePushedToStorage { uid }),
+                Err(error) => Msg::Event(Event::Error {
+                    error: CtxError::from(error),
+                    source: Box::new(Event::ProfilePushedToStorage { uid }),
+                })
+            }))
+            .boxed_env(),
+    )
+    .into()
 }

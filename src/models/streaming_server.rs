@@ -1,7 +1,7 @@
 use crate::models::common::{eq_update, Loadable};
 use crate::models::ctx::Ctx;
 use crate::runtime::msg::{Action, ActionStreamingServer, Internal, Msg};
-use crate::runtime::{Effect, Effects, Env, EnvError, EnvFutureExt, UpdateWithCtx};
+use crate::runtime::{Effect, EffectFuture, Effects, Env, EnvError, EnvFutureExt, UpdateWithCtx};
 use crate::types::api::SuccessResponse;
 use crate::types::profile::Profile;
 use enclose::enclose;
@@ -141,15 +141,17 @@ fn get_settings<E: Env + 'static>(url: &Url) -> Effect {
     let request = Request::get(endpoint.as_str())
         .body(())
         .expect("request builder failed");
-    E::fetch::<_, Resp>(request)
-        .map_ok(|resp| resp.values)
-        .map(enclose!((url) move |result| {
-            Msg::Internal(Internal::StreamingServerSettingsResult(
-                url, result,
-            ))
-        }))
-        .boxed_env()
-        .into()
+    EffectFuture::Concurrent(
+        E::fetch::<_, Resp>(request)
+            .map_ok(|resp| resp.values)
+            .map(enclose!((url) move |result| {
+                Msg::Internal(Internal::StreamingServerSettingsResult(
+                    url, result,
+                ))
+            }))
+            .boxed_env(),
+    )
+    .into()
 }
 
 fn get_base_url<E: Env + 'static>(url: &Url) -> Effect {
@@ -162,13 +164,15 @@ fn get_base_url<E: Env + 'static>(url: &Url) -> Effect {
     let request = Request::get(endpoint.as_str())
         .body(())
         .expect("request builder failed");
-    E::fetch::<_, Resp>(request)
-        .map_ok(|resp| resp.base_url)
-        .map(enclose!((url) move |result|
-            Msg::Internal(Internal::StreamingServerBaseURLResult(url, result))
-        ))
-        .boxed_env()
-        .into()
+    EffectFuture::Concurrent(
+        E::fetch::<_, Resp>(request)
+            .map_ok(|resp| resp.base_url)
+            .map(enclose!((url) move |result|
+                Msg::Internal(Internal::StreamingServerBaseURLResult(url, result))
+            ))
+            .boxed_env(),
+    )
+    .into()
 }
 
 fn set_settings<E: Env + 'static>(url: &Url, settings: &Settings) -> Effect {
@@ -197,13 +201,15 @@ fn set_settings<E: Env + 'static>(url: &Url, settings: &Settings) -> Effect {
         .header(http::header::CONTENT_TYPE, "application/json")
         .body(body)
         .expect("request builder failed");
-    E::fetch::<_, SuccessResponse>(request)
-        .map_ok(|_| ())
-        .map(enclose!((url) move |result| {
-            Msg::Internal(Internal::StreamingServerUpdateSettingsResult(
-                url, result,
-            ))
-        }))
-        .boxed_env()
-        .into()
+    EffectFuture::Concurrent(
+        E::fetch::<_, SuccessResponse>(request)
+            .map_ok(|_| ())
+            .map(enclose!((url) move |result| {
+                Msg::Internal(Internal::StreamingServerUpdateSettingsResult(
+                    url, result,
+                ))
+            }))
+            .boxed_env(),
+    )
+    .into()
 }

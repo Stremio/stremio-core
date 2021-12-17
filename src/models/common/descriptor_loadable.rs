@@ -1,7 +1,7 @@
 use crate::constants::OFFICIAL_ADDONS;
 use crate::models::common::Loadable;
 use crate::runtime::msg::{Internal, Msg};
-use crate::runtime::{Effects, Env, EnvError, EnvFutureExt};
+use crate::runtime::{EffectFuture, Effects, Env, EnvError, EnvFutureExt};
 use crate::types::addon::{Descriptor, Manifest};
 use futures::FutureExt;
 use serde::Serialize;
@@ -39,14 +39,14 @@ pub fn descriptor_update<E: Env + 'static>(
                     transport_url: transport_url.to_owned(),
                     content: Loadable::Loading,
                 });
-                Effects::future(
+                Effects::future(EffectFuture::Concurrent(
                     E::addon_transport(&transport_url)
                         .manifest()
                         .map(move |result| {
                             Msg::Internal(Internal::ManifestRequestResult(transport_url, result))
                         })
                         .boxed_env(),
-                )
+                ))
             } else {
                 Effects::none().unchanged()
             }

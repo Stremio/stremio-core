@@ -3,7 +3,7 @@ use crate::constants::{
 };
 use crate::models::ctx::{CtxError, CtxStatus, OtherError};
 use crate::runtime::msg::{Action, ActionCtx, Event, Internal, Msg};
-use crate::runtime::{Effect, Effects, Env, EnvFutureExt};
+use crate::runtime::{Effect, EffectFuture, Effects, Env, EnvFutureExt};
 use crate::types::api::{
     fetch_api, APIResult, DatastoreCommand, DatastoreRequest, LibraryItemModified, SuccessResponse,
 };
@@ -252,7 +252,34 @@ fn update_and_push_items_to_storage<E: Env + 'static>(
             ))
         }
     };
-    push_to_storage_future
+    EffectFuture::Sequential(
+        push_to_storage_future
+            .map(move |result| match result {
+                Ok(_) => Msg::Event(Event::LibraryItemsPushedToStorage { ids }),
+                Err(error) => Msg::Event(Event::Error {
+                    error: CtxError::from(error),
+                    source: Box::new(Event::LibraryItemsPushedToStorage { ids }),
+                }),
+            })
+            .boxed_env(),
+    )
+    .into()
+}
+
+fn push_library_to_storage<E: Env + 'static>(library: &LibraryBucket) -> Effect {
+    let ids = library.items.keys().cloned().collect();
+    let (recent_items, other_items) = library.split_items_by_recent();
+    EffectFuture::Sequential(
+        future::try_join_all(vec![
+            E::set_storage(
+                LIBRARY_RECENT_STORAGE_KEY,
+                Some(&LibraryBucketRef::new(&library.uid, &recent_items)),
+            ),
+            E::set_storage(
+                LIBRARY_STORAGE_KEY,
+                Some(&LibraryBucketRef::new(&library.uid, &other_items)),
+            ),
+        ])
         .map(move |result| match result {
             Ok(_) => Msg::Event(Event::LibraryItemsPushedToStorage { ids }),
             Err(error) => Msg::Event(Event::Error {
@@ -260,54 +287,33 @@ fn update_and_push_items_to_storage<E: Env + 'static>(
                 source: Box::new(Event::LibraryItemsPushedToStorage { ids }),
             }),
         })
-        .boxed_env()
-        .into()
-}
-
-fn push_library_to_storage<E: Env + 'static>(library: &LibraryBucket) -> Effect {
-    let ids = library.items.keys().cloned().collect();
-    let (recent_items, other_items) = library.split_items_by_recent();
-    future::try_join_all(vec![
-        E::set_storage(
-            LIBRARY_RECENT_STORAGE_KEY,
-            Some(&LibraryBucketRef::new(&library.uid, &recent_items)),
-        ),
-        E::set_storage(
-            LIBRARY_STORAGE_KEY,
-            Some(&LibraryBucketRef::new(&library.uid, &other_items)),
-        ),
-    ])
-    .map(move |result| match result {
-        Ok(_) => Msg::Event(Event::LibraryItemsPushedToStorage { ids }),
-        Err(error) => Msg::Event(Event::Error {
-            error: CtxError::from(error),
-            source: Box::new(Event::LibraryItemsPushedToStorage { ids }),
-        }),
-    })
-    .boxed_env()
+        .boxed_env(),
+    )
     .into()
 }
 
 fn push_items_to_api<E: Env + 'static>(items: Vec<LibraryItem>, auth_key: &AuthKey) -> Effect {
     let ids = items.iter().map(|item| &item.id).cloned().collect();
-    fetch_api::<E, _, SuccessResponse>(&DatastoreRequest {
-        auth_key: auth_key.to_owned(),
-        collection: LIBRARY_COLLECTION_NAME.to_owned(),
-        command: DatastoreCommand::Put { changes: items },
-    })
-    .map_err(CtxError::from)
-    .and_then(|result| match result {
-        APIResult::Ok { result } => future::ok(result),
-        APIResult::Err { error } => future::err(CtxError::from(error)),
-    })
-    .map(move |result| match result {
-        Ok(_) => Msg::Event(Event::LibraryItemsPushedToAPI { ids }),
-        Err(error) => Msg::Event(Event::Error {
-            error,
-            source: Box::new(Event::LibraryItemsPushedToAPI { ids }),
-        }),
-    })
-    .boxed_env()
+    EffectFuture::Concurrent(
+        fetch_api::<E, _, SuccessResponse>(&DatastoreRequest {
+            auth_key: auth_key.to_owned(),
+            collection: LIBRARY_COLLECTION_NAME.to_owned(),
+            command: DatastoreCommand::Put { changes: items },
+        })
+        .map_err(CtxError::from)
+        .and_then(|result| match result {
+            APIResult::Ok { result } => future::ok(result),
+            APIResult::Err { error } => future::err(CtxError::from(error)),
+        })
+        .map(move |result| match result {
+            Ok(_) => Msg::Event(Event::LibraryItemsPushedToAPI { ids }),
+            Err(error) => Msg::Event(Event::Error {
+                error,
+                source: Box::new(Event::LibraryItemsPushedToAPI { ids }),
+            }),
+        })
+        .boxed_env(),
+    )
     .into()
 }
 
@@ -317,15 +323,17 @@ fn pull_items_from_api<E: Env + 'static>(ids: Vec<String>, auth_key: &AuthKey) -
         collection: LIBRARY_COLLECTION_NAME.to_owned(),
         command: DatastoreCommand::Get { ids, all: false },
     };
-    fetch_api::<E, _, _>(&request)
-        .map_err(CtxError::from)
-        .and_then(|result| match result {
-            APIResult::Ok { result } => future::ok(result),
-            APIResult::Err { error } => future::err(CtxError::from(error)),
-        })
-        .map(move |result| Msg::Internal(Internal::LibraryPullResult(request, result)))
-        .boxed_env()
-        .into()
+    EffectFuture::Concurrent(
+        fetch_api::<E, _, _>(&request)
+            .map_err(CtxError::from)
+            .and_then(|result| match result {
+                APIResult::Ok { result } => future::ok(result),
+                APIResult::Err { error } => future::err(CtxError::from(error)),
+            })
+            .map(move |result| Msg::Internal(Internal::LibraryPullResult(request, result)))
+            .boxed_env(),
+    )
+    .into()
 }
 
 fn plan_sync_with_api<E: Env + 'static>(library: &LibraryBucket, auth_key: &AuthKey) -> Effect {
@@ -340,42 +348,44 @@ fn plan_sync_with_api<E: Env + 'static>(library: &LibraryBucket, auth_key: &Auth
         collection: LIBRARY_COLLECTION_NAME.to_owned(),
         command: DatastoreCommand::Meta {},
     };
-    fetch_api::<E, _, Vec<LibraryItemModified>>(&request)
-        .map_err(CtxError::from)
-        .and_then(|result| match result {
-            APIResult::Ok { result } => future::ok(result),
-            APIResult::Err { error } => future::err(CtxError::from(error)),
-        })
-        .map_ok(|remote_mtimes| {
-            remote_mtimes
-                .into_iter()
-                .map(|LibraryItemModified(id, mtime)| (id, mtime))
-                .collect::<HashMap<_, _>>()
-        })
-        .map_ok(move |remote_mtimes| {
-            let pull_ids = remote_mtimes
-                .iter()
-                .filter(|(id, remote_mtime)| {
-                    local_mtimes
-                        .get(*id)
-                        .map_or(true, |local_mtime| local_mtime < remote_mtime)
-                })
-                .map(|(id, _)| id)
-                .cloned()
-                .collect();
-            let push_ids = local_mtimes
-                .iter()
-                .filter(|(id, local_mtime)| {
-                    remote_mtimes
-                        .get(*id)
-                        .map_or(true, |remote_mtime| remote_mtime < local_mtime)
-                })
-                .map(|(id, _)| id)
-                .cloned()
-                .collect();
-            (pull_ids, push_ids)
-        })
-        .map(move |result| Msg::Internal(Internal::LibrarySyncPlanResult(request, result)))
-        .boxed_env()
-        .into()
+    EffectFuture::Concurrent(
+        fetch_api::<E, _, Vec<LibraryItemModified>>(&request)
+            .map_err(CtxError::from)
+            .and_then(|result| match result {
+                APIResult::Ok { result } => future::ok(result),
+                APIResult::Err { error } => future::err(CtxError::from(error)),
+            })
+            .map_ok(|remote_mtimes| {
+                remote_mtimes
+                    .into_iter()
+                    .map(|LibraryItemModified(id, mtime)| (id, mtime))
+                    .collect::<HashMap<_, _>>()
+            })
+            .map_ok(move |remote_mtimes| {
+                let pull_ids = remote_mtimes
+                    .iter()
+                    .filter(|(id, remote_mtime)| {
+                        local_mtimes
+                            .get(*id)
+                            .map_or(true, |local_mtime| local_mtime < remote_mtime)
+                    })
+                    .map(|(id, _)| id)
+                    .cloned()
+                    .collect();
+                let push_ids = local_mtimes
+                    .iter()
+                    .filter(|(id, local_mtime)| {
+                        remote_mtimes
+                            .get(*id)
+                            .map_or(true, |remote_mtime| remote_mtime < local_mtime)
+                    })
+                    .map(|(id, _)| id)
+                    .cloned()
+                    .collect();
+                (pull_ids, push_ids)
+            })
+            .map(move |result| Msg::Internal(Internal::LibrarySyncPlanResult(request, result)))
+            .boxed_env(),
+    )
+    .into()
 }

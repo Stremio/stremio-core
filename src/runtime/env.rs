@@ -122,7 +122,13 @@ pub trait Env {
         key: &str,
     ) -> TryEnvFuture<Option<T>>;
     fn set_storage<T: Serialize>(key: &str, value: Option<&T>) -> TryEnvFuture<()>;
-    fn exec<
+    fn exec_concurrent<
+        #[cfg(target_arch = "wasm32")] F: Future<Output = ()> + 'static,
+        #[cfg(not(target_arch = "wasm32"))] F: Future<Output = ()> + Send + 'static,
+    >(
+        future: F,
+    );
+    fn exec_sequential<
         #[cfg(target_arch = "wasm32")] F: Future<Output = ()> + 'static,
         #[cfg(not(target_arch = "wasm32"))] F: Future<Output = ()> + Send + 'static,
     >(

@@ -1,7 +1,7 @@
 use crate::constants::LIBRARY_COLLECTION_NAME;
 use crate::models::ctx::{update_library, update_profile, CtxError};
 use crate::runtime::msg::{Action, ActionCtx, Event, Internal, Msg};
-use crate::runtime::{Effect, Effects, Env, EnvFutureExt, Update};
+use crate::runtime::{Effect, EffectFuture, Effects, Env, EnvFutureExt, Update};
 use crate::types::api::{
     fetch_api, APIRequest, APIResult, AuthRequest, AuthResponse, CollectionResponse,
     DatastoreCommand, DatastoreRequest, SuccessResponse,
@@ -116,68 +116,72 @@ impl<E: Env + 'static> Update<E> for Ctx {
 }
 
 fn authenticate<E: Env + 'static>(auth_request: &AuthRequest) -> Effect {
-    E::flush_analytics()
-        .then(enclose!((auth_request) move |_| {
-            fetch_api::<E, _, _>(&APIRequest::Auth(auth_request))
-        }))
-        .map_err(CtxError::from)
-        .and_then(|result| match result {
-            APIResult::Ok { result } => future::ok(result),
-            APIResult::Err { error } => future::err(CtxError::from(error)),
-        })
-        .map_ok(|AuthResponse { key, user }| Auth { key, user })
-        .and_then(|auth| {
-            future::try_join(
-                fetch_api::<E, _, _>(&APIRequest::AddonCollectionGet {
-                    auth_key: auth.key.to_owned(),
-                    update: true,
-                })
-                .map_err(CtxError::from)
-                .and_then(|result| match result {
-                    APIResult::Ok { result } => future::ok(result),
-                    APIResult::Err { error } => future::err(CtxError::from(error)),
-                })
-                .map_ok(|CollectionResponse { addons, .. }| addons),
-                fetch_api::<E, _, _>(&DatastoreRequest {
-                    auth_key: auth.key.to_owned(),
-                    collection: LIBRARY_COLLECTION_NAME.to_owned(),
-                    command: DatastoreCommand::Get {
-                        ids: vec![],
-                        all: true,
-                    },
-                })
-                .map_err(CtxError::from)
-                .and_then(|result| match result {
-                    APIResult::Ok { result } => future::ok(result),
-                    APIResult::Err { error } => future::err(CtxError::from(error)),
-                }),
-            )
-            .map_ok(move |(addons, library_items)| (auth, addons, library_items))
-        })
-        .map(enclose!((auth_request) move |result| {
-            Msg::Internal(Internal::CtxAuthResult(auth_request, result))
-        }))
-        .boxed_env()
-        .into()
+    EffectFuture::Concurrent(
+        E::flush_analytics()
+            .then(enclose!((auth_request) move |_| {
+                fetch_api::<E, _, _>(&APIRequest::Auth(auth_request))
+            }))
+            .map_err(CtxError::from)
+            .and_then(|result| match result {
+                APIResult::Ok { result } => future::ok(result),
+                APIResult::Err { error } => future::err(CtxError::from(error)),
+            })
+            .map_ok(|AuthResponse { key, user }| Auth { key, user })
+            .and_then(|auth| {
+                future::try_join(
+                    fetch_api::<E, _, _>(&APIRequest::AddonCollectionGet {
+                        auth_key: auth.key.to_owned(),
+                        update: true,
+                    })
+                    .map_err(CtxError::from)
+                    .and_then(|result| match result {
+                        APIResult::Ok { result } => future::ok(result),
+                        APIResult::Err { error } => future::err(CtxError::from(error)),
+                    })
+                    .map_ok(|CollectionResponse { addons, .. }| addons),
+                    fetch_api::<E, _, _>(&DatastoreRequest {
+                        auth_key: auth.key.to_owned(),
+                        collection: LIBRARY_COLLECTION_NAME.to_owned(),
+                        command: DatastoreCommand::Get {
+                            ids: vec![],
+                            all: true,
+                        },
+                    })
+                    .map_err(CtxError::from)
+                    .and_then(|result| match result {
+                        APIResult::Ok { result } => future::ok(result),
+                        APIResult::Err { error } => future::err(CtxError::from(error)),
+                    }),
+                )
+                .map_ok(move |(addons, library_items)| (auth, addons, library_items))
+            })
+            .map(enclose!((auth_request) move |result| {
+                Msg::Internal(Internal::CtxAuthResult(auth_request, result))
+            }))
+            .boxed_env(),
+    )
+    .into()
 }
 
 fn delete_session<E: Env + 'static>(auth_key: &AuthKey) -> Effect {
-    E::flush_analytics()
-        .then(enclose!((auth_key) move |_| {
-            fetch_api::<E, _, SuccessResponse>(&APIRequest::Logout { auth_key })
-        }))
-        .map_err(CtxError::from)
-        .and_then(|result| match result {
-            APIResult::Ok { result } => future::ok(result),
-            APIResult::Err { error } => future::err(CtxError::from(error)),
-        })
-        .map(enclose!((auth_key) move |result| match result {
-            Ok(_) => Msg::Event(Event::SessionDeleted { auth_key }),
-            Err(error) => Msg::Event(Event::Error {
-                error,
-                source: Box::new(Event::SessionDeleted { auth_key }),
-            }),
-        }))
-        .boxed_env()
-        .into()
+    EffectFuture::Concurrent(
+        E::flush_analytics()
+            .then(enclose!((auth_key) move |_| {
+                fetch_api::<E, _, SuccessResponse>(&APIRequest::Logout { auth_key })
+            }))
+            .map_err(CtxError::from)
+            .and_then(|result| match result {
+                APIResult::Ok { result } => future::ok(result),
+                APIResult::Err { error } => future::err(CtxError::from(error)),
+            })
+            .map(enclose!((auth_key) move |result| match result {
+                Ok(_) => Msg::Event(Event::SessionDeleted { auth_key }),
+                Err(error) => Msg::Event(Event::Error {
+                    error,
+                    source: Box::new(Event::SessionDeleted { auth_key }),
+                }),
+            }))
+            .boxed_env(),
+    )
+    .into()
 }

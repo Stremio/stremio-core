@@ -1,5 +1,5 @@
 use crate::runtime::msg::{Action, Event, Msg};
-use crate::runtime::{Effect, Effects, Env, Model};
+use crate::runtime::{Effect, EffectFuture, Effects, Env, Model};
 use derivative::Derivative;
 use enclose::enclose;
 use futures::channel::mpsc::{channel, Receiver, Sender};
@@ -74,8 +74,13 @@ where
                     Effect::Msg(msg) => {
                         runtime.handle_effect_output(msg);
                     }
-                    Effect::Future(future) => {
-                        E::exec(future.then(enclose!((runtime) move |msg| async move {
+                    Effect::Future(EffectFuture::Sequential(future)) => {
+                        E::exec_sequential(future.then(enclose!((runtime) move |msg| async move {
+                            runtime.handle_effect_output(msg);
+                        })))
+                    },
+                    Effect::Future(EffectFuture::Concurrent(future)) => {
+                        E::exec_concurrent(future.then(enclose!((runtime) move |msg| async move {
                             runtime.handle_effect_output(msg);
                         })))
                     }

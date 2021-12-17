@@ -97,7 +97,10 @@ impl Env for TestEnv {
         };
         future::ok(()).boxed_env()
     }
-    fn exec<F: Future<Output = ()> + 'static>(future: F) {
+    fn exec_concurrent<F: Future<Output = ()> + 'static>(future: F) {
+        tokio_current_thread::spawn(future);
+    }
+    fn exec_sequential<F: Future<Output = ()> + 'static>(future: F) {
         tokio_current_thread::spawn(future);
     }
     fn now() -> DateTime<Utc> {
