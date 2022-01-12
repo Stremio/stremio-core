@@ -43,6 +43,7 @@ pub struct MetaItemPreview {
     #[serde(default)]
     pub name: String,
     pub poster: Option<String>,
+    pub background: Option<String>,
     pub logo: Option<String>,
     pub description: Option<String>,
     pub release_info: Option<String>,
@@ -50,6 +51,8 @@ pub struct MetaItemPreview {
     pub released: Option<DateTime<Utc>>,
     #[serde(default)]
     pub poster_shape: PosterShape,
+    #[serde(default)]
+    pub links: Vec<Link>,
     #[serde(default)]
     pub trailer_streams: Vec<Stream>,
     #[serde(default)]
