@@ -1,4 +1,3 @@
-use crate::model::deep_links::{DiscoverDeepLinks, MetaItemDeepLinks, StreamDeepLinks};
 use serde::Serialize;
 use stremio_core::constants::{CATALOG_PAGE_SIZE, SKIP_EXTRA_NAME};
 use stremio_core::models::catalog_with_filters::{
@@ -8,6 +7,7 @@ use stremio_core::models::common::Loadable;
 use stremio_core::models::ctx::Ctx;
 use stremio_core::types::addon::ResourceRequest;
 use stremio_core::types::resource::MetaItemPreview;
+use stremio_deeplinks::{DiscoverDeepLinks, MetaItemDeepLinks, StreamDeepLinks};
 use wasm_bindgen::JsValue;
 
 mod model {

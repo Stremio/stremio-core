@@ -1,5 +1,4 @@
 use crate::env::WebEnv;
-use crate::model::deep_links::{MetaItemDeepLinks, StreamDeepLinks, VideoDeepLinks};
 use either::Either;
 use itertools::Itertools;
 use serde::Serialize;
@@ -9,6 +8,7 @@ use stremio_core::models::common::{Loadable, ResourceError, ResourceLoadable};
 use stremio_core::models::ctx::Ctx;
 use stremio_core::models::meta_details::{MetaDetails, Selected as MetaDetailsSelected};
 use stremio_core::runtime::Env;
+use stremio_deeplinks::{MetaItemDeepLinks, StreamDeepLinks, VideoDeepLinks};
 use url::Url;
 use wasm_bindgen::JsValue;
 

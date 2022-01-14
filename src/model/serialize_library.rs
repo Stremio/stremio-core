@@ -1,7 +1,7 @@
-use crate::model::deep_links::{LibraryDeepLinks, LibraryItemDeepLinks};
 use serde::Serialize;
 use stremio_core::models::library_with_filters::{LibraryWithFilters, Selected, Sort};
 use stremio_core::types::resource::PosterShape;
+use stremio_deeplinks::{LibraryDeepLinks, LibraryItemDeepLinks};
 use wasm_bindgen::JsValue;
 
 mod model {

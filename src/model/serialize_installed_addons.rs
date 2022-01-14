@@ -1,8 +1,8 @@
-use crate::model::deep_links::AddonsDeepLinks;
 use serde::Serialize;
 use stremio_core::models::installed_addons_with_filters::{
     InstalledAddonsRequest, InstalledAddonsWithFilters, Selected,
 };
+use stremio_deeplinks::AddonsDeepLinks;
 use wasm_bindgen::JsValue;
 
 mod model {

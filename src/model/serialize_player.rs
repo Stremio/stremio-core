@@ -1,5 +1,4 @@
 use crate::env::WebEnv;
-use crate::model::deep_links::{StreamDeepLinks, VideoDeepLinks};
 use semver::Version;
 use serde::Serialize;
 use stremio_core::models::common::{Loadable, ResourceLoadable};
@@ -7,6 +6,7 @@ use stremio_core::models::ctx::Ctx;
 use stremio_core::models::player::Player;
 use stremio_core::runtime::Env;
 use stremio_core::types::addon::{ResourcePath, ResourceRequest};
+use stremio_deeplinks::{StreamDeepLinks, VideoDeepLinks};
 use url::Url;
 use wasm_bindgen::JsValue;
 
