@@ -53,7 +53,7 @@ pub async fn initialize_runtime(emit_to_ui: js_sys::Function) -> Result<(), JsVa
                     };
                     let (model, effects) = WebModel::new(profile, library);
                     let (runtime, rx) = Runtime::<WebEnv, _>::new(model, effects, 1000);
-                    WebEnv::exec(rx.for_each(move |event| {
+                    WebEnv::exec_concurrent(rx.for_each(move |event| {
                         if let RuntimeEvent::CoreEvent(event) = &event {
                             let runtime = RUNTIME.read().expect("runtime read failed");
                             let runtime = runtime

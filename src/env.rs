@@ -77,7 +77,7 @@ impl WebEnv {
             })
             .inspect_ok(|_| {
                 WebEnv::set_interval(
-                    || WebEnv::exec(WebEnv::send_next_analytics_batch()),
+                    || WebEnv::exec_concurrent(WebEnv::send_next_analytics_batch()),
                     30 * 1000,
                 );
             })
@@ -294,7 +294,13 @@ impl Env for WebEnv {
     fn set_storage<T: Serialize>(key: &str, value: Option<&T>) -> TryEnvFuture<()> {
         future::ready(set_storage_sync(key, value)).boxed_local()
     }
-    fn exec<F>(future: F)
+    fn exec_concurrent<F>(future: F)
+    where
+        F: Future<Output = ()> + 'static,
+    {
+        spawn_local(future)
+    }
+    fn exec_sequential<F>(future: F)
     where
         F: Future<Output = ()> + 'static,
     {
