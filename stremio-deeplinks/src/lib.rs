@@ -26,8 +26,8 @@ const URI_COMPONENT_ENCODE_SET: &AsciiSet = &NON_ALPHANUMERIC
 
 #[derive(Serialize)]
 pub struct ExternalPlayerLink {
-    href: String,
-    download: Option<String>,
+    pub href: String,
+    pub download: Option<String>,
 }
 
 impl From<&Stream> for ExternalPlayerLink {
@@ -73,10 +73,10 @@ impl From<&Stream> for ExternalPlayerLink {
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct LibraryItemDeepLinks {
-    meta_details_videos: Option<String>,
-    meta_details_streams: Option<String>,
-    player: Option<String>,
-    external_player: Option<ExternalPlayerLink>,
+    pub meta_details_videos: Option<String>,
+    pub meta_details_streams: Option<String>,
+    pub player: Option<String>,
+    pub external_player: Option<ExternalPlayerLink>,
 }
 
 impl From<&LibraryItem> for LibraryItemDeepLinks {
@@ -114,8 +114,8 @@ impl From<&LibraryItem> for LibraryItemDeepLinks {
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct MetaItemDeepLinks {
-    meta_details_videos: Option<String>,
-    meta_details_streams: Option<String>,
+    pub meta_details_videos: Option<String>,
+    pub meta_details_streams: Option<String>,
 }
 
 impl From<&MetaItemPreview> for MetaItemDeepLinks {
@@ -179,9 +179,9 @@ impl From<&MetaItem> for MetaItemDeepLinks {
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct VideoDeepLinks {
-    meta_details_streams: String,
-    player: Option<String>,
-    external_player: Option<ExternalPlayerLink>,
+    pub meta_details_streams: String,
+    pub player: Option<String>,
+    pub external_player: Option<ExternalPlayerLink>,
 }
 
 impl From<(&Video, &ResourceRequest)> for VideoDeepLinks {
@@ -220,8 +220,8 @@ impl From<(&Video, &ResourceRequest)> for VideoDeepLinks {
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct StreamDeepLinks {
-    player: String,
-    external_player: ExternalPlayerLink,
+    pub player: String,
+    pub external_player: ExternalPlayerLink,
 }
 
 impl From<&Stream> for StreamDeepLinks {
@@ -264,7 +264,7 @@ impl From<(&Stream, &ResourceRequest, &ResourceRequest)> for StreamDeepLinks {
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct DiscoverDeepLinks {
-    discover: String,
+    pub discover: String,
 }
 
 impl From<&ResourceRequest> for DiscoverDeepLinks {
@@ -290,7 +290,7 @@ impl From<&ResourceRequest> for DiscoverDeepLinks {
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct AddonsDeepLinks {
-    addons: String,
+    pub addons: String,
 }
 
 impl From<&ResourceRequest> for AddonsDeepLinks {
@@ -326,7 +326,7 @@ impl From<&InstalledAddonsRequest> for AddonsDeepLinks {
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct LibraryDeepLinks {
-    library: String,
+    pub library: String,
 }
 
 impl From<&String> for LibraryDeepLinks {
