@@ -14,7 +14,9 @@ pub struct Stream {
     #[serde(flatten)]
     pub source: StreamSource,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub title: Option<String>,
+    pub name: Option<String>,
+    #[serde(alias = "title", skip_serializing_if = "Option::is_none")]
+    pub description: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub thumbnail: Option<String>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -31,7 +33,7 @@ impl Stream {
                 announce,
                 ..
             } => Some(Magnet {
-                dn: self.title.to_owned(),
+                dn: self.name.to_owned(),
                 hash_type: Some("btih".to_string()),
                 xt: Some(hex::encode(info_hash)),
                 xl: None,

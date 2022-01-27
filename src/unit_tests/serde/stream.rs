@@ -8,14 +8,16 @@ fn stream() {
         &vec![
             Stream {
                 source: StreamSource::default(),
-                title: None,
+                name: None,
+                description: None,
                 thumbnail: None,
                 subtitles: vec![],
                 behavior_hints: StreamBehaviorHints::default(),
             },
             Stream {
                 source: StreamSource::default(),
-                title: Some("title".to_owned()),
+                name: Some("name".to_owned()),
+                description: Some("description".to_owned()),
                 thumbnail: Some("thumbnail".to_owned()),
                 subtitles: vec![Subtitles::default()],
                 behavior_hints: StreamBehaviorHints {
@@ -30,9 +32,12 @@ fn stream() {
             vec![Token::MapEnd, Token::Map { len: None }],
             StreamSource::default_flatten_tokens(),
             vec![
-                Token::Str("title"),
+                Token::Str("name"),
                 Token::Some,
-                Token::Str("title"),
+                Token::Str("name"),
+                Token::Str("description"),
+                Token::Some,
+                Token::Str("description"),
                 Token::Str("thumbnail"),
                 Token::Some,
                 Token::Str("thumbnail"),
@@ -59,7 +64,8 @@ fn stream() {
     assert_de_tokens(
         &Stream {
             source: StreamSource::default(),
-            title: None,
+            name: None,
+            description: None,
             thumbnail: None,
             subtitles: vec![],
             behavior_hints: StreamBehaviorHints::default(),
@@ -68,7 +74,9 @@ fn stream() {
             vec![Token::Map { len: None }],
             StreamSource::default_flatten_tokens(),
             vec![
-                Token::Str("title"),
+                Token::Str("name"),
+                Token::None,
+                Token::Str("description"),
                 Token::None,
                 Token::Str("thumbnail"),
                 Token::None,

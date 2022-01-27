@@ -100,7 +100,8 @@ fn video() {
                 thumbnail: None,
                 streams: vec![Stream {
                     source: StreamSource::default(),
-                    title: None,
+                    name: None,
+                    description: None,
                     thumbnail: None,
                     subtitles: vec![],
                     behavior_hints: StreamBehaviorHints::default(),
@@ -116,7 +117,8 @@ fn video() {
                 thumbnail: None,
                 streams: vec![Stream {
                     source: StreamSource::default(),
-                    title: None,
+                    name: None,
+                    description: None,
                     thumbnail: None,
                     subtitles: vec![],
                     behavior_hints: StreamBehaviorHints::default(),
@@ -148,7 +150,9 @@ fn video() {
             ],
             StreamSource::default_flatten_tokens(),
             vec![
-                Token::Str("title"),
+                Token::Str("name"),
+                Token::None,
+                Token::Str("description"),
                 Token::None,
                 Token::Str("thumbnail"),
                 Token::None,
@@ -181,7 +185,9 @@ fn video() {
             ],
             StreamSource::default_flatten_tokens(),
             vec![
-                Token::Str("title"),
+                Token::Str("name"),
+                Token::None,
+                Token::Str("description"),
                 Token::None,
                 Token::Str("thumbnail"),
                 Token::None,
