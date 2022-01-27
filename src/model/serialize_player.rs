@@ -248,7 +248,7 @@ pub fn serialize_player(player: &Player, ctx: &Ctx) -> JsValue {
                         _ => meta_item.name.to_owned(),
                     }
                 })
-                .or_else(|| selected.stream.title.to_owned())
+                .or_else(|| selected.stream.name.to_owned())
         }),
         addon: player
             .selected
