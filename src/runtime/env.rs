@@ -10,6 +10,7 @@ use futures::{future, Future, FutureExt, TryFutureExt};
 use http::Request;
 use serde::ser::SerializeStruct;
 use serde::{Deserialize, Serialize, Serializer};
+use std::fmt;
 use url::Url;
 
 #[derive(Clone, PartialEq)]
@@ -58,6 +59,12 @@ impl EnvError {
             EnvError::StorageWriteError(_) => 8,
             EnvError::Other(_) => 1001,
         }
+    }
+}
+
+impl fmt::Display for EnvError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.message())
     }
 }
 
