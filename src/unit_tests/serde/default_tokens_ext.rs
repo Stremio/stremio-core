@@ -250,7 +250,7 @@ impl DefaultTokens for MetaItem {
             vec![
                 Token::Struct {
                     name: "MetaItem",
-                    len: 16,
+                    len: 15,
                 },
                 Token::Str("id"),
                 Token::Str(""),
@@ -263,8 +263,6 @@ impl DefaultTokens for MetaItem {
                 Token::Str("background"),
                 Token::None,
                 Token::Str("logo"),
-                Token::None,
-                Token::Str("popularity"),
                 Token::None,
                 Token::Str("description"),
                 Token::None,

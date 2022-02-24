@@ -17,7 +17,6 @@ pub struct MetaItem {
     pub poster: Option<String>,
     pub background: Option<String>,
     pub logo: Option<String>,
-    pub popularity: Option<f64>,
     pub description: Option<String>,
     pub release_info: Option<String>,
     pub runtime: Option<String>,
