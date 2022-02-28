@@ -42,6 +42,7 @@ impl APIMethodName for APIRequest {
     fn method_name(&self) -> &str {
         match self {
             APIRequest::Auth(AuthRequest::Login { .. }) => "login",
+            APIRequest::Auth(AuthRequest::LoginWithToken { .. }) => "loginWithToken",
             APIRequest::Auth(AuthRequest::Register { .. }) => "register",
             APIRequest::Logout { .. } => "logout",
             APIRequest::AddonCollectionGet { .. } => "addonCollectionGet",
@@ -68,6 +69,9 @@ pub enum AuthRequest {
         email: String,
         password: String,
         gdpr_consent: GDPRConsentRequest,
+    },
+    LoginWithToken {
+        token: String,
     },
 }
 
