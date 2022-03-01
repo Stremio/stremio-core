@@ -54,7 +54,7 @@ pub struct LinkCodeResponse {
     pub code: String,
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Clone, Serialize, Deserialize)]
 #[cfg_attr(debug_assertions, derive(Debug))]
 #[cfg_attr(test, derive(PartialEq))]
 #[serde(untagged)]

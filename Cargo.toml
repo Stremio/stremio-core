@@ -15,6 +15,7 @@ stremio-derive = { path = "stremio-derive" }
 stremio-official-addons = "=2.0.9"
 serde = "1.0.*"
 serde_json = "1.0.*"
+serde_url_params = "0.2.*"
 serde-hex = "0.1.*"
 serde_with = { version = "1.11.*", features = ["macros"] }
 futures = "0.3.*"
