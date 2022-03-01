@@ -21,7 +21,7 @@ pub enum Event {
     LibraryItemsPulledFromAPI { ids: Vec<String> },
     UserAuthenticated { auth_request: AuthRequest },
     LinkCodeCreated { code: Option<String> },
-    LinkTokenReceived { token: Option<String> },
+    LinkAuthKeyReceived { auth_key: Option<String> },
     UserLoggedOut { uid: UID },
     SessionDeleted { auth_key: AuthKey },
     AddonInstalled { transport_url: Url, id: String },
