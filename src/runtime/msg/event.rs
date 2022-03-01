@@ -20,6 +20,8 @@ pub enum Event {
     LibraryItemsPushedToAPI { ids: Vec<String> },
     LibraryItemsPulledFromAPI { ids: Vec<String> },
     UserAuthenticated { auth_request: AuthRequest },
+    LinkCodeCreated { code: Option<String> },
+    LinkTokenReceived { token: Option<String> },
     UserLoggedOut { uid: UID },
     SessionDeleted { auth_key: AuthKey },
     AddonInstalled { transport_url: Url, id: String },
