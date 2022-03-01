@@ -295,7 +295,7 @@ fn push_library_to_storage<E: Env + 'static>(library: &LibraryBucket) -> Effect 
 fn push_items_to_api<E: Env + 'static>(items: Vec<LibraryItem>, auth_key: &AuthKey) -> Effect {
     let ids = items.iter().map(|item| &item.id).cloned().collect();
     EffectFuture::Concurrent(
-        fetch_api::<E, _, SuccessResponse>(&DatastoreRequest {
+        fetch_api::<E, _, _, SuccessResponse>(&DatastoreRequest {
             auth_key: auth_key.to_owned(),
             collection: LIBRARY_COLLECTION_NAME.to_owned(),
             command: DatastoreCommand::Put { changes: items },
@@ -324,7 +324,7 @@ fn pull_items_from_api<E: Env + 'static>(ids: Vec<String>, auth_key: &AuthKey) -
         command: DatastoreCommand::Get { ids, all: false },
     };
     EffectFuture::Concurrent(
-        fetch_api::<E, _, _>(&request)
+        fetch_api::<E, _, _, _>(&request)
             .map_err(CtxError::from)
             .and_then(|result| match result {
                 APIResult::Ok { result } => future::ok(result),
@@ -349,7 +349,7 @@ fn plan_sync_with_api<E: Env + 'static>(library: &LibraryBucket, auth_key: &Auth
         command: DatastoreCommand::Meta {},
     };
     EffectFuture::Concurrent(
-        fetch_api::<E, _, Vec<LibraryItemModified>>(&request)
+        fetch_api::<E, _, _, Vec<LibraryItemModified>>(&request)
             .map_err(CtxError::from)
             .and_then(|result| match result {
                 APIResult::Ok { result } => future::ok(result),

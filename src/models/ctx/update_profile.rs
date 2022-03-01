@@ -304,7 +304,7 @@ fn push_addons_to_api<E: Env + 'static>(addons: Vec<Descriptor>, auth_key: &Auth
         addons,
     };
     EffectFuture::Concurrent(
-        fetch_api::<E, _, SuccessResponse>(&request)
+        fetch_api::<E, _, _, SuccessResponse>(&request)
             .map_err(CtxError::from)
             .and_then(|result| match result {
                 APIResult::Ok { result } => future::ok(result),
@@ -328,7 +328,7 @@ fn pull_addons_from_api<E: Env + 'static>(auth_key: &AuthKey) -> Effect {
         update: true,
     };
     EffectFuture::Concurrent(
-        fetch_api::<E, _, _>(&request)
+        fetch_api::<E, _, _, _>(&request)
             .map_err(CtxError::from)
             .and_then(|result| match result {
                 APIResult::Ok { result } => future::ok(result),

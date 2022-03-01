@@ -119,7 +119,7 @@ fn authenticate<E: Env + 'static>(auth_request: &AuthRequest) -> Effect {
     EffectFuture::Concurrent(
         E::flush_analytics()
             .then(enclose!((auth_request) move |_| {
-                fetch_api::<E, _, _>(&APIRequest::Auth(auth_request))
+                fetch_api::<E, _, _, _>(&APIRequest::Auth(auth_request))
             }))
             .map_err(CtxError::from)
             .and_then(|result| match result {
@@ -129,7 +129,7 @@ fn authenticate<E: Env + 'static>(auth_request: &AuthRequest) -> Effect {
             .map_ok(|AuthResponse { key, user }| Auth { key, user })
             .and_then(|auth| {
                 future::try_join(
-                    fetch_api::<E, _, _>(&APIRequest::AddonCollectionGet {
+                    fetch_api::<E, _, _, _>(&APIRequest::AddonCollectionGet {
                         auth_key: auth.key.to_owned(),
                         update: true,
                     })
@@ -139,7 +139,7 @@ fn authenticate<E: Env + 'static>(auth_request: &AuthRequest) -> Effect {
                         APIResult::Err { error } => future::err(CtxError::from(error)),
                     })
                     .map_ok(|CollectionResponse { addons, .. }| addons),
-                    fetch_api::<E, _, _>(&DatastoreRequest {
+                    fetch_api::<E, _, _, _>(&DatastoreRequest {
                         auth_key: auth.key.to_owned(),
                         collection: LIBRARY_COLLECTION_NAME.to_owned(),
                         command: DatastoreCommand::Get {
@@ -167,7 +167,7 @@ fn delete_session<E: Env + 'static>(auth_key: &AuthKey) -> Effect {
     EffectFuture::Concurrent(
         E::flush_analytics()
             .then(enclose!((auth_key) move |_| {
-                fetch_api::<E, _, SuccessResponse>(&APIRequest::Logout { auth_key })
+                fetch_api::<E, _, _, SuccessResponse>(&APIRequest::Logout { auth_key })
             }))
             .map_err(CtxError::from)
             .and_then(|result| match result {

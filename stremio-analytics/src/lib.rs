@@ -153,7 +153,7 @@ fn send_events_batch_to_api<E: Env>(
         })
         .boxed_env();
     };
-    fetch_api::<E, _, _>(&APIRequest::Events {
+    fetch_api::<E, _, _, _>(&APIRequest::Events {
         auth_key: batch.auth_key.to_owned(),
         events: batch
             .events

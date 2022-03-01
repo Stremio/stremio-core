@@ -46,3 +46,14 @@ pub struct LibraryItemModified(
 pub struct SuccessResponse {
     pub success: True,
 }
+
+#[derive(Serialize, Deserialize)]
+pub struct LinkCodeResponse {
+    pub code: String,
+}
+
+#[derive(Serialize, Deserialize)]
+pub struct LinkTokenResponse {
+    #[serde(alias = "authKey")]
+    pub token: String,
+}

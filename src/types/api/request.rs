@@ -1,3 +1,4 @@
+use crate::constants::{API_URL, LINK_API_URL};
 use crate::types::addon::Descriptor;
 use crate::types::library::LibraryItem;
 use crate::types::profile::{AuthKey, GDPRConsent};
@@ -6,10 +7,16 @@ use chrono::offset::TimeZone;
 use chrono::{DateTime, Utc};
 #[cfg(test)]
 use derivative::Derivative;
+use http::Method;
 use serde::{Deserialize, Serialize};
+use url::Url;
 
-pub trait APIMethodName {
-    fn method_name(&self) -> &str;
+pub trait FetchRequestParams<T> {
+    fn endpoint(&self) -> Url;
+    fn method(&self) -> Method;
+    fn path(&self) -> String;
+    fn query(&self) -> Option<String>;
+    fn body(self) -> T;
 }
 
 #[derive(Clone, PartialEq, Serialize)]
@@ -38,17 +45,29 @@ pub enum APIRequest {
     },
 }
 
-impl APIMethodName for APIRequest {
-    fn method_name(&self) -> &str {
+impl FetchRequestParams<APIRequest> for APIRequest {
+    fn endpoint(&self) -> Url {
+        API_URL.to_owned()
+    }
+    fn method(&self) -> Method {
+        Method::POST
+    }
+    fn path(&self) -> String {
         match self {
-            APIRequest::Auth(AuthRequest::Login { .. }) => "login",
-            APIRequest::Auth(AuthRequest::LoginWithToken { .. }) => "loginWithToken",
-            APIRequest::Auth(AuthRequest::Register { .. }) => "register",
-            APIRequest::Logout { .. } => "logout",
-            APIRequest::AddonCollectionGet { .. } => "addonCollectionGet",
-            APIRequest::AddonCollectionSet { .. } => "addonCollectionSet",
-            APIRequest::Events { .. } => "events",
+            APIRequest::Auth(AuthRequest::Login { .. }) => "login".to_owned(),
+            APIRequest::Auth(AuthRequest::LoginWithToken { .. }) => "loginWithToken".to_owned(),
+            APIRequest::Auth(AuthRequest::Register { .. }) => "register".to_owned(),
+            APIRequest::Logout { .. } => "logout".to_owned(),
+            APIRequest::AddonCollectionGet { .. } => "addonCollectionGet".to_owned(),
+            APIRequest::AddonCollectionSet { .. } => "addonCollectionSet".to_owned(),
+            APIRequest::Events { .. } => "events".to_owned(),
         }
+    }
+    fn query(&self) -> Option<String> {
+        None
+    }
+    fn body(self) -> APIRequest {
+        self
     }
 }
 
@@ -79,6 +98,38 @@ pub enum AuthRequest {
 #[cfg_attr(debug_assertions, derive(Debug))]
 #[cfg_attr(test, derive(Derivative))]
 #[cfg_attr(test, derivative(Default))]
+#[serde(tag = "type")]
+pub enum LinkRequest {
+    #[cfg_attr(test, derivative(Default))]
+    Create,
+    Read {
+        code: String,
+    },
+}
+
+impl FetchRequestParams<()> for LinkRequest {
+    fn endpoint(&self) -> Url {
+        LINK_API_URL.to_owned()
+    }
+    fn method(&self) -> Method {
+        Method::GET
+    }
+    fn path(&self) -> String {
+        match self {
+            LinkRequest::Create => "create".to_owned(),
+            LinkRequest::Read { .. } => "read".to_owned(),
+        }
+    }
+    fn query(&self) -> Option<String> {
+        Some(serde_url_params::to_string(&self).expect("Serialize query params failed"))
+    }
+    fn body(self) {}
+}
+
+#[derive(Clone, PartialEq, Serialize, Deserialize)]
+#[cfg_attr(debug_assertions, derive(Debug))]
+#[cfg_attr(test, derive(Derivative))]
+#[cfg_attr(test, derivative(Default))]
 pub struct GDPRConsentRequest {
     #[serde(flatten)]
     pub gdpr_consent: GDPRConsent,
@@ -97,13 +148,25 @@ pub struct DatastoreRequest {
     pub command: DatastoreCommand,
 }
 
-impl APIMethodName for DatastoreRequest {
-    fn method_name(&self) -> &str {
+impl FetchRequestParams<DatastoreRequest> for DatastoreRequest {
+    fn endpoint(&self) -> Url {
+        API_URL.to_owned()
+    }
+    fn method(&self) -> Method {
+        Method::POST
+    }
+    fn path(&self) -> String {
         match &self.command {
-            DatastoreCommand::Meta => "datastoreMeta",
-            DatastoreCommand::Get { .. } => "datastoreGet",
-            DatastoreCommand::Put { .. } => "datastorePut",
+            DatastoreCommand::Meta => "datastoreMeta".to_owned(),
+            DatastoreCommand::Get { .. } => "datastoreGet".to_owned(),
+            DatastoreCommand::Put { .. } => "datastorePut".to_owned(),
         }
+    }
+    fn query(&self) -> Option<String> {
+        None
+    }
+    fn body(self) -> DatastoreRequest {
+        self
     }
 }
 
