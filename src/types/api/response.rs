@@ -48,12 +48,17 @@ pub struct SuccessResponse {
 }
 
 #[derive(Serialize, Deserialize)]
+#[cfg_attr(debug_assertions, derive(Debug))]
+#[cfg_attr(test, derive(PartialEq))]
 pub struct LinkCodeResponse {
     pub code: String,
 }
 
 #[derive(Serialize, Deserialize)]
-pub struct LinkTokenResponse {
-    #[serde(alias = "authKey")]
-    pub token: String,
+#[cfg_attr(debug_assertions, derive(Debug))]
+#[cfg_attr(test, derive(PartialEq))]
+#[serde(untagged)]
+pub enum LinkDataResponse {
+    #[serde(rename_all = "camelCase")]
+    AuthKey { auth_key: String },
 }
