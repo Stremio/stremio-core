@@ -16,6 +16,8 @@ use serde::Deserialize;
 #[serde(tag = "action", content = "args")]
 pub enum ActionCtx {
     Authenticate(AuthRequest),
+    CreateLinkCode,
+    GetLinkToken(String),
     Logout,
     InstallAddon(Descriptor),
     UpgradeAddon(Descriptor),
