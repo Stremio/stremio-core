@@ -60,5 +60,9 @@ pub struct LinkCodeResponse {
 #[serde(untagged)]
 pub enum LinkDataResponse {
     #[serde(rename_all = "camelCase")]
-    AuthKey { auth_key: String },
+    AuthKey {
+        auth_key: String,
+        link: String,
+        qrcode: String,
+    },
 }
