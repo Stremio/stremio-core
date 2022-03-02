@@ -5,6 +5,7 @@ mod install_addon;
 mod logout;
 mod pull_addons_from_api;
 mod push_addons_to_api;
+mod read_link_data;
 mod remove_from_library;
 mod rewind_library_item;
 mod sync_library_with_api;
