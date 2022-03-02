@@ -25,6 +25,8 @@ fn create_link_code() {
                 future::ok(Box::new(APIResult::Ok {
                     result: LinkCodeResponse {
                         code: "CODE".to_owned(),
+                        link: "LINK".to_owned(),
+                        qrcode: "QRCODE".to_owned(),
                     },
                 }) as Box<dyn Any + Send>)
                 .boxed_env()

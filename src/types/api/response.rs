@@ -52,6 +52,8 @@ pub struct SuccessResponse {
 #[cfg_attr(test, derive(PartialEq))]
 pub struct LinkCodeResponse {
     pub code: String,
+    pub link: String,
+    pub qrcode: String,
 }
 
 #[derive(Clone, Serialize, Deserialize)]
@@ -60,9 +62,5 @@ pub struct LinkCodeResponse {
 #[serde(untagged)]
 pub enum LinkDataResponse {
     #[serde(rename_all = "camelCase")]
-    AuthKey {
-        auth_key: String,
-        link: String,
-        qrcode: String,
-    },
+    AuthKey { auth_key: String },
 }
