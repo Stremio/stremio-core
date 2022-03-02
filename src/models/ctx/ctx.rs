@@ -192,7 +192,7 @@ fn create_link_code<E: Env + 'static>() -> Effect {
     .into()
 }
 
-fn read_link_code<E: Env + 'static>(code: &String) -> Effect {
+fn read_link_code<E: Env + 'static>(code: &str) -> Effect {
     EffectFuture::Concurrent(
         fetch_api::<E, _, _, LinkDataResponse>(&LinkRequest::Read {
             code: code.to_owned(),
@@ -202,18 +202,20 @@ fn read_link_code<E: Env + 'static>(code: &String) -> Effect {
             APIResult::Ok { result } => future::ok(result),
             APIResult::Err { error } => future::err(CtxError::from(error)),
         })
-        .map(enclose!((code) move |result| match result {
-            Ok(data) => {
-                Msg::Event(Event::LinkCodeRead {
-                    code,
-                    data: Some(data)
-                })
-            }
-            Err(error) => Msg::Event(Event::Error {
-                error,
-                source: Box::new(Event::LinkCodeRead { code, data: None }),
+        .map(
+            enclose!((code.to_owned() => code) move |result| match result {
+                Ok(data) => {
+                    Msg::Event(Event::LinkCodeRead {
+                        code,
+                        data: Some(data)
+                    })
+                }
+                Err(error) => Msg::Event(Event::Error {
+                    error,
+                    source: Box::new(Event::LinkCodeRead { code, data: None }),
+                }),
             }),
-        }))
+        )
         .boxed_env(),
     )
     .into()
