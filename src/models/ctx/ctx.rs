@@ -181,10 +181,16 @@ fn create_link_code<E: Env + 'static>() -> Effect {
             .map(|result| match result {
                 Ok(resp) => Msg::Event(Event::LinkCodeCreated {
                     code: Some(resp.code),
+                    link: Some(resp.link),
+                    qrcode: Some(resp.qrcode),
                 }),
                 Err(error) => Msg::Event(Event::Error {
                     error,
-                    source: Box::new(Event::LinkCodeCreated { code: None }),
+                    source: Box::new(Event::LinkCodeCreated {
+                        code: None,
+                        link: None,
+                        qrcode: None,
+                    }),
                 }),
             })
             .boxed_env(),

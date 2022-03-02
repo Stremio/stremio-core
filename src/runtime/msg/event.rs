@@ -45,6 +45,8 @@ pub enum Event {
     },
     LinkCodeCreated {
         code: Option<String>,
+        link: Option<String>,
+        qrcode: Option<String>,
     },
     LinkCodeRead {
         code: String,
