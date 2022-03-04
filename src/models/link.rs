@@ -53,6 +53,11 @@ where
                 }
                 _ => Effects::none().unchanged(),
             },
+            Msg::Action(Action::Unload) => {
+                let code_effects = eq_update(&mut self.code, None);
+                let data_effects = eq_update(&mut self.data, None);
+                code_effects.join(data_effects)
+            }
             Msg::Internal(Internal::LinkCodeResult(result))
                 if self
                     .code
