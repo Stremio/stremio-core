@@ -21,8 +21,11 @@ pub struct MetaItem {
     pub release_info: Option<String>,
     pub runtime: Option<String>,
     pub released: Option<DateTime<Utc>>,
+    pub imdb_rating: Option<String>,
     #[serde(default)]
     pub poster_shape: PosterShape,
+    #[serde(default)]
+    pub genres: Vec<String>,
     #[serde(default)]
     pub videos: Vec<Video>,
     #[serde(default)]
