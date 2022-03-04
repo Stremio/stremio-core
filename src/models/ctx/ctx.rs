@@ -4,8 +4,7 @@ use crate::runtime::msg::{Action, ActionCtx, Event, Internal, Msg};
 use crate::runtime::{Effect, EffectFuture, Effects, Env, EnvFutureExt, Update};
 use crate::types::api::{
     fetch_api, APIRequest, APIResult, AuthRequest, AuthResponse, CollectionResponse,
-    DatastoreCommand, DatastoreRequest, LinkCodeResponse, LinkDataResponse, LinkRequest,
-    SuccessResponse,
+    DatastoreCommand, DatastoreRequest, SuccessResponse,
 };
 use crate::types::library::LibraryBucket;
 use crate::types::profile::{Auth, AuthKey, Profile};
@@ -70,12 +69,6 @@ impl<E: Env + 'static> Update<E> for Ctx {
                     .join(session_effects)
                     .join(profile_effects)
                     .join(library_effects)
-            }
-            Msg::Action(Action::Ctx(ActionCtx::CreateLinkCode)) => {
-                Effects::one(create_link_code::<E>()).unchanged()
-            }
-            Msg::Action(Action::Ctx(ActionCtx::ReadLinkCode(code))) => {
-                Effects::one(read_link_code::<E>(code)).unchanged()
             }
             Msg::Internal(Internal::CtxAuthResult(auth_request, result)) => {
                 let profile_effects = update_profile::<E>(&mut self.profile, &self.status, msg);
@@ -166,63 +159,6 @@ fn authenticate<E: Env + 'static>(auth_request: &AuthRequest) -> Effect {
                 Msg::Internal(Internal::CtxAuthResult(auth_request, result))
             }))
             .boxed_env(),
-    )
-    .into()
-}
-
-fn create_link_code<E: Env + 'static>() -> Effect {
-    EffectFuture::Concurrent(
-        fetch_api::<E, _, _, LinkCodeResponse>(&LinkRequest::Create)
-            .map_err(CtxError::from)
-            .and_then(|result| match result {
-                APIResult::Ok { result } => future::ok(result),
-                APIResult::Err { error } => future::err(CtxError::from(error)),
-            })
-            .map(|result| match result {
-                Ok(resp) => Msg::Event(Event::LinkCodeCreated {
-                    code: Some(resp.code),
-                    link: Some(resp.link),
-                    qrcode: Some(resp.qrcode),
-                }),
-                Err(error) => Msg::Event(Event::Error {
-                    error,
-                    source: Box::new(Event::LinkCodeCreated {
-                        code: None,
-                        link: None,
-                        qrcode: None,
-                    }),
-                }),
-            })
-            .boxed_env(),
-    )
-    .into()
-}
-
-fn read_link_code<E: Env + 'static>(code: &str) -> Effect {
-    EffectFuture::Concurrent(
-        fetch_api::<E, _, _, LinkDataResponse>(&LinkRequest::Read {
-            code: code.to_owned(),
-        })
-        .map_err(CtxError::from)
-        .and_then(|result| match result {
-            APIResult::Ok { result } => future::ok(result),
-            APIResult::Err { error } => future::err(CtxError::from(error)),
-        })
-        .map(
-            enclose!((code.to_owned() => code) move |result| match result {
-                Ok(data) => {
-                    Msg::Event(Event::LinkCodeRead {
-                        code,
-                        data: Some(data)
-                    })
-                }
-                Err(error) => Msg::Event(Event::Error {
-                    error,
-                    source: Box::new(Event::LinkCodeRead { code, data: None }),
-                }),
-            }),
-        )
-        .boxed_env(),
     )
     .into()
 }

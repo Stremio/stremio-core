@@ -17,8 +17,6 @@ use serde::Deserialize;
 pub enum ActionCtx {
     Authenticate(AuthRequest),
     Logout,
-    CreateLinkCode,
-    ReadLinkCode(String),
     InstallAddon(Descriptor),
     UpgradeAddon(Descriptor),
     UninstallAddon(Descriptor),
@@ -38,6 +36,13 @@ pub enum ActionCtx {
 pub enum ActionStreamingServer {
     Reload,
     UpdateSettings(StreamingServerSettings),
+}
+
+#[derive(Clone, Deserialize)]
+#[serde(tag = "action", content = "args")]
+pub enum ActionLink {
+    CreateCode,
+    ReadData,
 }
 
 #[derive(Clone, Deserialize)]
@@ -67,6 +72,7 @@ pub enum ActionLoad {
 #[serde(tag = "action", content = "args")]
 pub enum Action {
     Ctx(ActionCtx),
+    Link(ActionLink),
     StreamingServer(ActionStreamingServer),
     Player(ActionPlayer),
     Load(ActionLoad),

@@ -1,8 +1,11 @@
 use crate::models::ctx::CtxError;
+use crate::models::link::LinkError;
 use crate::models::streaming_server::Settings as StreamingServerSettings;
 use crate::runtime::EnvError;
 use crate::types::addon::{Descriptor, Manifest, ResourceRequest, ResourceResponse};
-use crate::types::api::{APIRequest, AuthRequest, DatastoreRequest};
+use crate::types::api::{
+    APIRequest, AuthRequest, DatastoreRequest, LinkCodeResponse, LinkDataResponse,
+};
 use crate::types::library::{LibraryBucket, LibraryItem};
 use crate::types::profile::{Auth, Profile};
 use url::Url;
@@ -35,6 +38,10 @@ pub enum Internal {
     ProfileChanged,
     // Dispatched when library changes with a flag if its already persisted.
     LibraryChanged(bool),
+    // Result for loading link code.
+    LinkCodeResult(Result<LinkCodeResponse, LinkError>),
+    // Result for loading link data.
+    LinkDataResult(String, Result<LinkDataResponse, LinkError>),
     // Result for loading streaming server settings.
     StreamingServerSettingsResult(Url, Result<StreamingServerSettings, EnvError>),
     // Result for loading streaming server base url.

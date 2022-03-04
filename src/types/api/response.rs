@@ -3,6 +3,7 @@ use crate::types::profile::{AuthKey, User};
 use crate::types::True;
 use chrono::serde::ts_milliseconds;
 use chrono::{DateTime, Utc};
+use derive_more::TryInto;
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize)]
@@ -13,7 +14,7 @@ pub enum APIResult<T> {
     Ok { result: T },
 }
 
-#[derive(Clone, Serialize, Deserialize)]
+#[derive(Clone, PartialEq, Serialize, Deserialize)]
 #[cfg_attr(debug_assertions, derive(Debug))]
 #[cfg_attr(test, derive(Default))]
 pub struct APIError {
@@ -47,9 +48,8 @@ pub struct SuccessResponse {
     pub success: True,
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Clone, PartialEq, Serialize, Deserialize)]
 #[cfg_attr(debug_assertions, derive(Debug))]
-#[cfg_attr(test, derive(PartialEq))]
 pub struct LinkCodeResponse {
     pub code: String,
     pub link: String,
@@ -59,8 +59,15 @@ pub struct LinkCodeResponse {
 #[derive(Clone, Serialize, Deserialize)]
 #[cfg_attr(debug_assertions, derive(Debug))]
 #[cfg_attr(test, derive(PartialEq))]
+#[serde(rename_all = "camelCase")]
+pub struct LinkAuthKey {
+    pub auth_key: String,
+}
+
+#[derive(Clone, TryInto, Serialize, Deserialize)]
+#[cfg_attr(debug_assertions, derive(Debug))]
+#[cfg_attr(test, derive(PartialEq))]
 #[serde(untagged)]
 pub enum LinkDataResponse {
-    #[serde(rename_all = "camelCase")]
-    AuthKey { auth_key: String },
+    AuthKey(LinkAuthKey),
 }
