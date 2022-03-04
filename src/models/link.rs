@@ -1,6 +1,6 @@
 use crate::models::common::{eq_update, Loadable};
 use crate::models::ctx::Ctx;
-use crate::runtime::msg::{Action, ActionLink, Internal, Msg};
+use crate::runtime::msg::{Action, ActionLink, ActionLoad, Internal, Msg};
 use crate::runtime::{Effect, EffectFuture, Effects, Env, EnvError, EnvFutureExt, UpdateWithCtx};
 use crate::types::api::{
     fetch_api, APIError, APIResult, LinkCodeResponse, LinkDataResponse, LinkRequest,
@@ -36,7 +36,7 @@ where
 {
     fn update(&mut self, msg: &Msg, _: &Ctx) -> Effects {
         match msg {
-            Msg::Action(Action::Link(ActionLink::CreateCode)) => {
+            Msg::Action(Action::Load(ActionLoad::Link)) => {
                 let code_effects = eq_update(&mut self.code, Some(Loadable::Loading));
                 let data_effects = eq_update(&mut self.data, None);
                 Effects::one(create_code::<E>())

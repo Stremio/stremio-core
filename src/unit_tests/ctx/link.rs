@@ -1,7 +1,7 @@
 use crate::models::common::Loadable;
 use crate::models::ctx::Ctx;
 use crate::models::link::Link;
-use crate::runtime::msg::{Action, ActionLink};
+use crate::runtime::msg::{Action, ActionLink, ActionLoad};
 use crate::runtime::{Effects, EnvFutureExt, Runtime, RuntimeAction, TryEnvFuture};
 use crate::types::api::{APIResult, LinkAuthKey, LinkCodeResponse, LinkDataResponse};
 use crate::unit_tests::{default_fetch_handler, Request, TestEnv, FETCH_HANDLER, REQUESTS};
@@ -57,7 +57,7 @@ fn create_link_code() {
     TestEnv::run(|| {
         runtime.dispatch(RuntimeAction {
             field: None,
-            action: Action::Link(ActionLink::CreateCode),
+            action: Action::Load(ActionLoad::Link),
         })
     });
     assert_eq!(

@@ -41,7 +41,6 @@ pub enum ActionStreamingServer {
 #[derive(Clone, Deserialize)]
 #[serde(tag = "action", content = "args")]
 pub enum ActionLink {
-    CreateCode,
     ReadData,
 }
 
@@ -62,6 +61,7 @@ pub enum ActionLoad {
     LibraryWithFilters(LibraryWithFiltersSelected),
     MetaDetails(MetaDetailsSelected),
     Player(PlayerSelected),
+    Link,
     Notifications,
 }
 
