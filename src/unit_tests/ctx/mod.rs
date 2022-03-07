@@ -1,7 +1,6 @@
 mod add_to_library;
 mod authenticate;
 mod install_addon;
-mod link;
 mod logout;
 mod pull_addons_from_api;
 mod push_addons_to_api;
