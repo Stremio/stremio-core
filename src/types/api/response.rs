@@ -56,9 +56,8 @@ pub struct LinkCodeResponse {
     pub qrcode: String,
 }
 
-#[derive(Clone, Serialize, Deserialize)]
+#[derive(Clone, PartialEq, Serialize, Deserialize)]
 #[cfg_attr(debug_assertions, derive(Debug))]
-#[cfg_attr(test, derive(PartialEq))]
 #[serde(rename_all = "camelCase")]
 pub struct LinkAuthKey {
     pub auth_key: String,
