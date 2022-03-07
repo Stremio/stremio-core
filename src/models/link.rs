@@ -11,6 +11,7 @@ use enclose::enclose;
 use futures::{future, FutureExt, TryFutureExt};
 use serde::Serialize;
 use std::convert::TryFrom;
+use std::fmt;
 
 #[derive(Clone, PartialEq, From, Serialize)]
 #[cfg_attr(debug_assertions, derive(Debug))]
@@ -19,6 +20,16 @@ pub enum LinkError {
     API(APIError),
     Env(EnvError),
     UnexpectedResponse(String),
+}
+
+impl fmt::Display for LinkError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match &self {
+            LinkError::API(error) => write!(f, "API: {}", error.message),
+            LinkError::Env(error) => write!(f, "Env: {}", error.message()),
+            LinkError::UnexpectedResponse(message) => write!(f, "UnexpectedResponse: {}", message),
+        }
+    }
 }
 
 #[derive(Derivative, Serialize)]
