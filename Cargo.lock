@@ -662,6 +662,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "serde_url_params"
+version = "0.2.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "2c43307d0640738af32fe8d01e47119bc0fc8a686be470a44a586caff76dfb34"
+dependencies = [
+ "serde",
+ "url",
+]
+
+[[package]]
 name = "serde_with"
 version = "1.11.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -702,7 +712,7 @@ dependencies = [
 [[package]]
 name = "stremio-analytics"
 version = "0.1.0"
-source = "git+https://github.com/Stremio/stremio-core?branch=development#4bd5b3617b19e0fbd174c26b0bf14dc618f2e0ee"
+source = "git+https://github.com/Stremio/stremio-core?branch=development#22985972228eb3c96e9a06982d3042730156be9d"
 dependencies = [
  "derivative",
  "enclose",
@@ -715,7 +725,7 @@ dependencies = [
 [[package]]
 name = "stremio-core"
 version = "0.1.0"
-source = "git+https://github.com/Stremio/stremio-core?branch=development#4bd5b3617b19e0fbd174c26b0bf14dc618f2e0ee"
+source = "git+https://github.com/Stremio/stremio-core?branch=development#22985972228eb3c96e9a06982d3042730156be9d"
 dependencies = [
  "base64",
  "boolinator",
@@ -736,6 +746,7 @@ dependencies = [
  "serde",
  "serde-hex",
  "serde_json",
+ "serde_url_params",
  "serde_with",
  "stremio-derive",
  "stremio-official-addons",
@@ -779,7 +790,7 @@ dependencies = [
 [[package]]
 name = "stremio-deeplinks"
 version = "0.1.0"
-source = "git+https://github.com/Stremio/stremio-core?branch=development#4bd5b3617b19e0fbd174c26b0bf14dc618f2e0ee"
+source = "git+https://github.com/Stremio/stremio-core?branch=development#22985972228eb3c96e9a06982d3042730156be9d"
 dependencies = [
  "base64",
  "flate2",
@@ -794,7 +805,7 @@ dependencies = [
 [[package]]
 name = "stremio-derive"
 version = "0.1.0"
-source = "git+https://github.com/Stremio/stremio-core?branch=development#4bd5b3617b19e0fbd174c26b0bf14dc618f2e0ee"
+source = "git+https://github.com/Stremio/stremio-core?branch=development#22985972228eb3c96e9a06982d3042730156be9d"
 dependencies = [
  "case",
  "proc-macro-crate",

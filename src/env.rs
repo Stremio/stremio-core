@@ -117,7 +117,8 @@ impl WebEnv {
                     "type": match auth_request {
                         AuthRequest::Login { facebook, .. } if *facebook => "facebook",
                         AuthRequest::Login { .. } => "login",
-                        AuthRequest::Register { .. } => "register"
+                        AuthRequest::LoginWithToken { .. } => "loginWithToken",
+                        AuthRequest::Register { .. } => "register",
                     },
                 }),
             ),
