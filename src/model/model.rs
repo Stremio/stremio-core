@@ -15,11 +15,13 @@ use stremio_core::models::installed_addons_with_filters::InstalledAddonsWithFilt
 use stremio_core::models::library_with_filters::{
     ContinueWatchingFilter, LibraryWithFilters, NotRemovedFilter,
 };
+use stremio_core::models::link::Link;
 use stremio_core::models::meta_details::MetaDetails;
 use stremio_core::models::player::Player;
 use stremio_core::models::streaming_server::StreamingServer;
 use stremio_core::runtime::Effects;
 use stremio_core::types::addon::DescriptorPreview;
+use stremio_core::types::api::LinkAuthKey;
 use stremio_core::types::library::LibraryBucket;
 use stremio_core::types::profile::Profile;
 use stremio_core::types::resource::MetaItemPreview;
@@ -31,6 +33,7 @@ use wasm_bindgen::JsValue;
 #[model(WebEnv)]
 pub struct WebModel {
     pub ctx: Ctx,
+    pub auth_link: Link<LinkAuthKey>,
     pub continue_watching_preview: ContinueWatchingPreview,
     pub board: CatalogsWithExtra,
     pub discover: CatalogWithFilters<MetaItemPreview>,
@@ -60,6 +63,7 @@ impl WebModel {
         let (streaming_server, streaming_server_effects) = StreamingServer::new::<WebEnv>(&profile);
         let model = WebModel {
             ctx: Ctx::new(profile, library),
+            auth_link: Default::default(),
             continue_watching_preview,
             board: Default::default(),
             discover,
@@ -87,6 +91,7 @@ impl WebModel {
     pub fn get_state(&self, field: &WebModelField) -> JsValue {
         match field {
             WebModelField::Ctx => JsValue::from_serde(&self.ctx).unwrap(),
+            WebModelField::AuthLink => JsValue::from_serde(&self.auth_link).unwrap(),
             WebModelField::ContinueWatchingPreview => {
                 serialize_continue_watching_preview(&self.continue_watching_preview)
             }
