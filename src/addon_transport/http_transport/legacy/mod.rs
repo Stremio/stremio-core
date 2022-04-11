@@ -205,7 +205,7 @@ fn build_legacy_req(transport_url: &Url, path: &ResourcePath) -> Result<Request<
         }
         "subtitles" => build_jsonrpc(
             "subtitles.find",
-            json!({ "query": json!({ "itemHash": id }) }),
+            json!({ "query": json!({ "itemHash": id.replace(":", " ") }) }),
         ),
         _ => return Err(LegacyErr::UnsupportedRequest.into()),
     };
