@@ -12,6 +12,7 @@ mod model {
     #[serde(rename_all = "camelCase")]
     pub struct MetaItemPreview<'a> {
         pub r#type: &'a String,
+        pub id: &'a String,
         pub name: &'a String,
         pub poster: &'a Option<String>,
         pub poster_shape: &'a PosterShape,
@@ -62,6 +63,7 @@ pub fn serialize_catalogs_with_extra(
                             .iter()
                             .map(|meta_item| model::MetaItemPreview {
                                 r#type: &meta_item.r#type,
+                                id: &meta_item.id,
                                 name: &meta_item.name,
                                 poster: &meta_item.poster,
                                 poster_shape: &meta_items.first().unwrap().poster_shape,
