@@ -91,6 +91,7 @@ mod model {
         pub meta_item: Option<model::MetaItem<'a>>,
         pub subtitles: Vec<model::Subtitles<'a>>,
         pub next_video: Option<Video<'a>>,
+        pub series_info: Option<&'a stremio_core::types::resource::SeriesInfo>,
         pub library_item: Option<LibraryItem<'a>>,
         pub title: Option<String>,
         pub addon: Option<model::DescriptorPreview<'a>>,
@@ -205,6 +206,7 @@ pub fn serialize_player(player: &Player, ctx: &Ctx) -> JsValue {
                     .unwrap_or_default(),
                 deep_links: VideoDeepLinks::from((video, request)),
             }),
+        series_info: player.series_info.as_ref(),
         library_item: player
             .library_item
             .as_ref()
