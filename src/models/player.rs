@@ -11,7 +11,7 @@ use crate::types::library::{
     LibraryBucket, LibraryItem, LibraryItemBehaviorHints, LibraryItemState,
 };
 use crate::types::profile::Settings as ProfileSettings;
-use crate::types::resource::{MetaItem, Stream, Subtitles, Video};
+use crate::types::resource::{MetaItem, SeriesInfo, Stream, Subtitles, Video};
 use serde::{Deserialize, Serialize};
 use std::cmp;
 
@@ -31,6 +31,7 @@ pub struct Player {
     pub meta_item: Option<ResourceLoadable<MetaItem>>,
     pub subtitles: Vec<ResourceLoadable<Vec<Subtitles>>>,
     pub next_video: Option<Video>,
+    pub series_info: Option<SeriesInfo>,
     pub library_item: Option<LibraryItem>,
 }
 
@@ -64,12 +65,15 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                     &self.meta_item,
                     &ctx.profile.settings,
                 );
+                let series_info_effects =
+                    series_info_update(&mut self.series_info, &self.selected, &self.meta_item);
                 let library_item_effects =
                     library_item_update::<E>(&mut self.library_item, &self.meta_item, &ctx.library);
                 selected_effects
                     .join(meta_item_effects)
                     .join(subtitles_effects)
                     .join(next_video_effects)
+                    .join(series_info_effects)
                     .join(library_item_effects)
             }
             Msg::Action(Action::Unload) => {
@@ -77,12 +81,14 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                 let meta_item_effects = eq_update(&mut self.meta_item, None);
                 let subtitles_effects = eq_update(&mut self.subtitles, vec![]);
                 let next_video_effects = eq_update(&mut self.next_video, None);
+                let series_info_effects = eq_update(&mut self.series_info, None);
                 let library_item_effects =
                     library_item_update::<E>(&mut self.library_item, &self.meta_item, &ctx.library);
                 selected_effects
                     .join(meta_item_effects)
                     .join(subtitles_effects)
                     .join(next_video_effects)
+                    .join(series_info_effects)
                     .join(library_item_effects)
             }
             Msg::Action(Action::Player(ActionPlayer::UpdateLibraryItemState {
@@ -169,11 +175,14 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                     &self.meta_item,
                     &ctx.profile.settings,
                 );
+                let series_info_effects =
+                    series_info_update(&mut self.series_info, &self.selected, &self.meta_item);
                 let library_item_effects =
                     library_item_update::<E>(&mut self.library_item, &self.meta_item, &ctx.library);
                 meta_item_effects
                     .join(subtitles_effects)
                     .join(next_video_effects)
+                    .join(series_info_effects)
                     .join(library_item_effects)
             }
             _ => Effects::none().unchanged(),
@@ -210,6 +219,36 @@ fn next_video_update(
         _ => None,
     };
     eq_update(video, next_video)
+}
+
+fn series_info_update(
+    series_info: &mut Option<SeriesInfo>,
+    selected: &Option<Selected>,
+    meta_item: &Option<ResourceLoadable<MetaItem>>,
+) -> Effects {
+    let next_series_info = match (selected, meta_item) {
+        (
+            Some(Selected {
+                stream_request:
+                    Some(ResourceRequest {
+                        path: ResourcePath { id: video_id, .. },
+                        ..
+                    }),
+                ..
+            }),
+            Some(ResourceLoadable {
+                content: Loadable::Ready(meta_item),
+                ..
+            }),
+        ) => meta_item
+            .videos
+            .iter()
+            .find(|video| video.id == *video_id)
+            .and_then(|video| video.series_info.as_ref())
+            .cloned(),
+        _ => None,
+    };
+    eq_update(series_info, next_series_info)
 }
 
 fn library_item_update<E: Env>(
