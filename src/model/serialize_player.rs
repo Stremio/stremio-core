@@ -1,7 +1,7 @@
 use crate::env::WebEnv;
 use semver::Version;
 use serde::Serialize;
-use stremio_core::models::common::{Loadable, ResourceLoadable};
+use stremio_core::models::common::{Loadable, ResourceError, ResourceLoadable};
 use stremio_core::models::ctx::Ctx;
 use stremio_core::models::player::Player;
 use stremio_core::runtime::Env;
@@ -88,7 +88,7 @@ mod model {
     #[serde(rename_all = "camelCase")]
     pub struct Player<'a> {
         pub selected: Option<Selected<'a>>,
-        pub meta_item: Option<model::MetaItem<'a>>,
+        pub meta_item: Option<Loadable<model::MetaItem<'a>, &'a ResourceError>>,
         pub subtitles: Vec<model::Subtitles<'a>>,
         pub next_video: Option<Video<'a>>,
         pub series_info: Option<&'a stremio_core::types::resource::SeriesInfo>,
@@ -112,31 +112,30 @@ pub fn serialize_player(player: &Player, ctx: &Ctx) -> JsValue {
         meta_item: player
             .meta_item
             .as_ref()
-            .and_then(|meta_item| match meta_item {
-                ResourceLoadable {
-                    request,
-                    content: Loadable::Ready(meta_item),
-                } => Some((request, meta_item)),
-                _ => None,
-            })
-            .map(|(request, meta_item)| model::MetaItem {
-                meta_item,
-                videos: meta_item
-                    .videos
-                    .iter()
-                    .map(|video| model::Video {
-                        video,
-                        upcomming: meta_item.behavior_hints.has_scheduled_videos
-                            && meta_item
-                                .released
-                                .map(|released| released > WebEnv::now())
-                                .unwrap_or(true),
-                        watched: false, // TODO use library
-                        progress: None, // TODO use library,
-                        scheduled: meta_item.behavior_hints.has_scheduled_videos,
-                        deep_links: VideoDeepLinks::from((video, request)),
+            .map(|ResourceLoadable { request, content }| match &content {
+                Loadable::Loading => Loadable::Loading,
+                Loadable::Err(error) => Loadable::Err(error),
+                Loadable::Ready(meta_item) => {
+                    Loadable::Ready(model::MetaItem {
+                        meta_item,
+                        videos: meta_item
+                            .videos
+                            .iter()
+                            .map(|video| model::Video {
+                                video,
+                                upcomming: meta_item.behavior_hints.has_scheduled_videos
+                                    && meta_item
+                                        .released
+                                        .map(|released| released > WebEnv::now())
+                                        .unwrap_or(true),
+                                watched: false, // TODO use library
+                                progress: None, // TODO use library,
+                                scheduled: meta_item.behavior_hints.has_scheduled_videos,
+                                deep_links: VideoDeepLinks::from((video, request)),
+                            })
+                            .collect(),
                     })
-                    .collect(),
+                }
             }),
         subtitles: player
             .subtitles
