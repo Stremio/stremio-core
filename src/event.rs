@@ -19,7 +19,7 @@ pub enum UIEvent {
         url: String,
     },
     StreamClicked {
-        stream: Stream,
+        stream: Box<Stream>,
     },
 }
 
