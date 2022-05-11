@@ -40,6 +40,7 @@ pub fn update_library<E: Env + 'static>(
                 poster_shape: meta_preview.poster_shape.to_owned(),
                 behavior_hints: LibraryItemBehaviorHints {
                     default_video_id: meta_preview.behavior_hints.default_video_id.to_owned(),
+                    other: Default::default(),
                 },
                 removed: false,
                 temp: false,

@@ -3,6 +3,7 @@ use crate::types::resource::Stream;
 use chrono::{DateTime, Utc};
 use derivative::Derivative;
 use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
 use url::Url;
 
 #[derive(Clone, PartialEq, Serialize, Deserialize)]
@@ -118,4 +119,6 @@ pub struct MetaItemBehaviorHints {
     pub featured_video_id: Option<String>,
     #[serde(default)]
     pub has_scheduled_videos: bool,
+    #[serde(flatten)]
+    pub other: HashMap<String, serde_json::Value>,
 }

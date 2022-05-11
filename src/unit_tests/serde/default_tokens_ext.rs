@@ -71,26 +71,17 @@ impl DefaultTokens for Subtitles {
 
 impl DefaultTokens for StreamBehaviorHints {
     fn default_tokens() -> Vec<Token> {
-        vec![
-            Token::Struct {
-                name: "StreamBehaviorHints",
-                len: 0,
-            },
-            Token::StructEnd,
-        ]
+        vec![Token::Map { len: None }, Token::MapEnd]
     }
 }
 
 impl DefaultTokens for LibraryItemBehaviorHints {
     fn default_tokens() -> Vec<Token> {
         vec![
-            Token::Struct {
-                name: "LibraryItemBehaviorHints",
-                len: 1,
-            },
+            Token::Map { len: None },
             Token::Str("defaultVideoId"),
             Token::None,
-            Token::StructEnd,
+            Token::MapEnd,
         ]
     }
 }
@@ -98,17 +89,14 @@ impl DefaultTokens for LibraryItemBehaviorHints {
 impl DefaultTokens for MetaItemBehaviorHints {
     fn default_tokens() -> Vec<Token> {
         vec![
-            Token::Struct {
-                name: "MetaItemBehaviorHints",
-                len: 3,
-            },
+            Token::Map { len: None },
             Token::Str("defaultVideoId"),
             Token::None,
             Token::Str("featuredVideoId"),
             Token::None,
             Token::Str("hasScheduledVideos"),
             Token::Bool(false),
-            Token::StructEnd,
+            Token::MapEnd,
         ]
     }
 }

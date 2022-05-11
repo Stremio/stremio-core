@@ -178,6 +178,7 @@ fn actionctx_addtolibrary_already_added() {
             default_video_id: Some("video_id2".to_owned()),
             featured_video_id: None,
             has_scheduled_videos: false,
+            other: Default::default(),
         },
     };
     let library_item = LibraryItem {
@@ -196,6 +197,7 @@ fn actionctx_addtolibrary_already_added() {
         },
         behavior_hints: LibraryItemBehaviorHints {
             default_video_id: Some("video_id2".to_owned()),
+            other: Default::default(),
         },
     };
     TestEnv::reset();

@@ -97,6 +97,8 @@ pub struct StreamBehaviorHints {
     pub country_whitelist: Option<Vec<String>>,
     #[serde(default, skip_serializing_if = "HashMap::is_empty")]
     pub headers: HashMap<String, String>,
+    #[serde(flatten)]
+    pub other: HashMap<String, serde_json::Value>,
 }
 
 fn is_default_value<T: Default + PartialEq>(value: &T) -> bool {

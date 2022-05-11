@@ -48,13 +48,10 @@ fn stream() {
             vec![
                 Token::SeqEnd,
                 Token::Str("behaviorHints"),
-                Token::Struct {
-                    name: "StreamBehaviorHints",
-                    len: 1,
-                },
+                Token::Map { len: None },
                 Token::Str("notWebReady"),
                 Token::Bool(true),
-                Token::StructEnd,
+                Token::MapEnd,
                 Token::MapEnd,
                 Token::SeqEnd,
             ],

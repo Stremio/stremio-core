@@ -283,6 +283,7 @@ fn library_item_update<E: Env>(
                     poster_shape: meta_item.poster_shape.to_owned(),
                     behavior_hints: LibraryItemBehaviorHints {
                         default_video_id: meta_item.behavior_hints.default_video_id.to_owned(),
+                        other: Default::default(),
                     },
                 }),
                 (None, Some(meta_item)) => Some(LibraryItem {
@@ -298,6 +299,7 @@ fn library_item_update<E: Env>(
                     poster_shape: meta_item.poster_shape.to_owned(),
                     behavior_hints: LibraryItemBehaviorHints {
                         default_video_id: meta_item.behavior_hints.default_video_id.to_owned(),
+                        other: Default::default(),
                     },
                 }),
                 (Some(library_item), None) => Some(library_item.to_owned()),

@@ -7,28 +7,24 @@ fn library_item_behavior_hints() {
         &vec![
             LibraryItemBehaviorHints {
                 default_video_id: Some("default_video_id".to_owned()),
+                other: Default::default(),
             },
             LibraryItemBehaviorHints {
                 default_video_id: None,
+                other: Default::default(),
             },
         ],
         &[
             Token::Seq { len: Some(2) },
-            Token::Struct {
-                name: "LibraryItemBehaviorHints",
-                len: 1,
-            },
+            Token::Map { len: None },
             Token::Str("defaultVideoId"),
             Token::Some,
             Token::Str("default_video_id"),
-            Token::StructEnd,
-            Token::Struct {
-                name: "LibraryItemBehaviorHints",
-                len: 1,
-            },
+            Token::MapEnd,
+            Token::Map { len: None },
             Token::Str("defaultVideoId"),
             Token::None,
-            Token::StructEnd,
+            Token::MapEnd,
             Token::SeqEnd,
         ],
     );

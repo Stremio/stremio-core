@@ -2,6 +2,7 @@ use crate::types::resource::PosterShape;
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use serde_with::{serde_as, DefaultOnNull, NoneAsEmptyString};
+use std::collections::HashMap;
 
 #[serde_as]
 #[serde(rename_all = "camelCase")]
@@ -74,4 +75,6 @@ pub struct LibraryItemState {
 #[serde(rename_all = "camelCase")]
 pub struct LibraryItemBehaviorHints {
     pub default_video_id: Option<String>,
+    #[serde(flatten)]
+    pub other: HashMap<String, serde_json::Value>,
 }
