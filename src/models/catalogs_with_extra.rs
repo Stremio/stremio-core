@@ -32,6 +32,7 @@ impl<E: Env + 'static> UpdateWithCtx<E> for CatalogsWithExtra {
                             extra: &selected.extra,
                         },
                         addons: &ctx.profile.addons,
+                        range: None,
                     },
                 );
                 selected_effects.join(catalogs_effects)
@@ -47,7 +48,7 @@ impl<E: Env + 'static> UpdateWithCtx<E> for CatalogsWithExtra {
                     ResourcesAction::ResourceRequestResult {
                         request,
                         result,
-                        limit: &Some(CATALOG_PREVIEW_SIZE),
+                        limit: Some(CATALOG_PREVIEW_SIZE),
                     },
                 )
             }
@@ -59,6 +60,7 @@ impl<E: Env + 'static> UpdateWithCtx<E> for CatalogsWithExtra {
                             extra: &selected.extra,
                         },
                         addons: &ctx.profile.addons,
+                        range: None,
                     },
                 ),
                 _ => Effects::none().unchanged(),

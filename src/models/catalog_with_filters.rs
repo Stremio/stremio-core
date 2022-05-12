@@ -172,7 +172,7 @@ where
                     ResourceAction::ResourceRequestResult {
                         request,
                         result,
-                        limit: &T::page_size(),
+                        limit: T::page_size(),
                     },
                 );
                 let selectable_effects =

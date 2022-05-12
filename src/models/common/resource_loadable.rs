@@ -1,4 +1,4 @@
-use crate::models::common::Loadable;
+use crate::models::common::{eq_update, Loadable};
 use crate::runtime::msg::{Internal, Msg};
 use crate::runtime::{EffectFuture, Effects, Env, EnvError, EnvFutureExt};
 use crate::types::addon::{AggrRequest, Descriptor, ResourceRequest, ResourceResponse};
@@ -6,6 +6,7 @@ use futures::FutureExt;
 use serde::Serialize;
 use std::convert::TryFrom;
 use std::fmt;
+use std::ops::Range;
 
 #[derive(Clone, PartialEq, Serialize)]
 #[serde(tag = "type", content = "content")]
@@ -27,7 +28,7 @@ impl fmt::Display for ResourceError {
     }
 }
 
-#[derive(PartialEq, Serialize)]
+#[derive(Clone, PartialEq, Serialize)]
 pub struct ResourceLoadable<T> {
     pub request: ResourceRequest,
     pub content: Loadable<T, ResourceError>,
@@ -40,7 +41,7 @@ pub enum ResourceAction<'a> {
     ResourceRequestResult {
         request: &'a ResourceRequest,
         result: &'a Result<ResourceResponse, EnvError>,
-        limit: &'a Option<usize>,
+        limit: Option<usize>,
     },
 }
 
@@ -48,11 +49,12 @@ pub enum ResourcesAction<'a> {
     ResourcesRequested {
         request: &'a AggrRequest<'a>,
         addons: &'a [Descriptor],
+        range: Option<Range<usize>>,
     },
     ResourceRequestResult {
         request: &'a ResourceRequest,
         result: &'a Result<ResourceResponse, EnvError>,
-        limit: &'a Option<usize>,
+        limit: Option<usize>,
     },
 }
 
@@ -129,48 +131,62 @@ pub fn resources_update<E, T>(
 ) -> Effects
 where
     E: Env + 'static,
-    T: TryFrom<ResourceResponse, Error = &'static str>,
+    T: TryFrom<ResourceResponse, Error = &'static str> + Clone + PartialEq,
 {
     match action {
-        ResourcesAction::ResourcesRequested { request, addons } => {
-            let requests = request
+        ResourcesAction::ResourcesRequested {
+            request,
+            addons,
+            range,
+        } => {
+            let (next_resources, effects) = request
                 .plan(&addons)
                 .into_iter()
                 .map(|(_, request)| request)
-                .collect::<Vec<_>>();
-            if requests
-                .iter()
-                .ne(resources.iter().map(|resource| &resource.request))
-            {
-                let (next_resources, effects) = requests
-                    .iter()
-                    .cloned()
-                    .map(|request| {
-                        (
-                            ResourceLoadable {
-                                request: request.to_owned(),
-                                content: Loadable::Loading,
-                            },
-                            EffectFuture::Concurrent(
-                                E::addon_transport(&request.base)
-                                    .resource(&request.path)
-                                    .map(move |result| {
-                                        Msg::Internal(Internal::ResourceRequestResult(
-                                            request,
-                                            Box::new(result),
-                                        ))
-                                    })
-                                    .boxed_env(),
+                .enumerate()
+                .map(|(index, request)| {
+                    resources
+                        .get(index)
+                        .and_then(|resource| {
+                            let is_in_range = range
+                                .as_ref()
+                                .map(|range| range.start <= index && index <= range.end)
+                                .unwrap_or(true);
+                            if resource.request == request
+                                && (!resource.content.is_loading() || !is_in_range)
+                            {
+                                Some((resource.to_owned(), None))
+                            } else {
+                                None
+                            }
+                        })
+                        .unwrap_or_else(|| {
+                            (
+                                ResourceLoadable {
+                                    request: request.to_owned(),
+                                    content: Loadable::Loading,
+                                },
+                                Some(
+                                    EffectFuture::Concurrent(
+                                        E::addon_transport(&request.base)
+                                            .resource(&request.path)
+                                            .map(|result| {
+                                                Msg::Internal(Internal::ResourceRequestResult(
+                                                    request,
+                                                    Box::new(result),
+                                                ))
+                                            })
+                                            .boxed_env(),
+                                    )
+                                    .into(),
+                                ),
                             )
-                            .into(),
-                        )
-                    })
-                    .unzip::<_, _, Vec<_>, Vec<_>>();
-                *resources = next_resources;
-                Effects::many(effects)
-            } else {
-                Effects::none().unchanged()
-            }
+                        })
+                })
+                .unzip::<_, _, Vec<_>, Vec<_>>();
+            Effects::many(effects.into_iter().filter_map(|effect| effect).collect())
+                .unchanged()
+                .join(eq_update(resources, next_resources))
         }
         ResourcesAction::ResourceRequestResult {
             request, result, ..
@@ -195,6 +211,7 @@ pub fn resources_update_with_vector_content<E, T>(
 ) -> Effects
 where
     E: Env + 'static,
+    T: Clone + PartialEq,
     Vec<T>: TryFrom<ResourceResponse, Error = &'static str>,
 {
     match action {
@@ -236,7 +253,7 @@ where
 
 fn resource_vector_content_from_result<T>(
     result: &Result<ResourceResponse, EnvError>,
-    limit: &Option<usize>,
+    limit: Option<usize>,
 ) -> Loadable<Vec<T>, ResourceError>
 where
     Vec<T>: TryFrom<ResourceResponse, Error = &'static str>,
@@ -247,7 +264,7 @@ where
                 if content.is_empty() {
                     Loadable::Err(ResourceError::EmptyContent)
                 } else if let Some(limit) = limit {
-                    Loadable::Ready(content.into_iter().take(limit.to_owned()).collect())
+                    Loadable::Ready(content.into_iter().take(limit).collect())
                 } else {
                     Loadable::Ready(content)
                 }
