@@ -112,7 +112,7 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Notifications {
                         ResourcesAction::ResourceRequestResult {
                             request: req,
                             result,
-                            limit: None,
+                            limit: &None,
                         },
                     );
                     // Modify all the items so that only the new videos are left

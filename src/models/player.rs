@@ -55,7 +55,7 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                         ResourcesAction::ResourcesRequested {
                             request: &AggrRequest::AllOfResource(subtitles_path.to_owned()),
                             addons: &ctx.profile.addons,
-                            range: None,
+                            range: &None,
                         },
                     ),
                     _ => eq_update(&mut self.subtitles, vec![]),
@@ -159,7 +159,7 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                     ResourceAction::ResourceRequestResult {
                         request,
                         result,
-                        limit: None,
+                        limit: &None,
                     },
                 );
                 let subtitles_effects = resources_update_with_vector_content::<E, _>(
@@ -167,7 +167,7 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                     ResourcesAction::ResourceRequestResult {
                         request,
                         result,
-                        limit: None,
+                        limit: &None,
                     },
                 );
                 let next_video_effects = next_video_update(

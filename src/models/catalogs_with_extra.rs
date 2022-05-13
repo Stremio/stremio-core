@@ -8,10 +8,12 @@ use crate::runtime::{Effects, Env, UpdateWithCtx};
 use crate::types::addon::{AggrRequest, ExtraValue};
 use crate::types::resource::MetaItemPreview;
 use serde::{Deserialize, Serialize};
+use std::ops::Range;
 
 #[derive(Clone, PartialEq, Serialize, Deserialize)]
 pub struct Selected {
     pub extra: Vec<ExtraValue>,
+    pub initial_range: Option<Range<usize>>,
 }
 
 #[derive(Default, Serialize)]
@@ -31,8 +33,8 @@ impl<E: Env + 'static> UpdateWithCtx<E> for CatalogsWithExtra {
                         request: &AggrRequest::AllCatalogs {
                             extra: &selected.extra,
                         },
+                        range: &selected.initial_range,
                         addons: &ctx.profile.addons,
-                        range: None,
                     },
                 );
                 selected_effects.join(catalogs_effects)
@@ -48,7 +50,7 @@ impl<E: Env + 'static> UpdateWithCtx<E> for CatalogsWithExtra {
                     ResourcesAction::ResourceRequestResult {
                         request,
                         result,
-                        limit: Some(CATALOG_PREVIEW_SIZE),
+                        limit: &Some(CATALOG_PREVIEW_SIZE),
                     },
                 )
             }
@@ -59,8 +61,8 @@ impl<E: Env + 'static> UpdateWithCtx<E> for CatalogsWithExtra {
                         request: &AggrRequest::AllCatalogs {
                             extra: &selected.extra,
                         },
+                        range: &selected.initial_range,
                         addons: &ctx.profile.addons,
-                        range: None,
                     },
                 ),
                 _ => Effects::none().unchanged(),

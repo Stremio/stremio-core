@@ -35,7 +35,7 @@ impl<E: Env + 'static> UpdateWithCtx<E> for MetaDetails {
                     ResourcesAction::ResourcesRequested {
                         request: &AggrRequest::AllOfResource(selected.meta_path.to_owned()),
                         addons: &ctx.profile.addons,
-                        range: None,
+                        range: &None,
                     },
                 );
                 let streams_effects = match &selected.stream_path {
@@ -50,7 +50,7 @@ impl<E: Env + 'static> UpdateWithCtx<E> for MetaDetails {
                                 ResourcesAction::ResourcesRequested {
                                     request: &AggrRequest::AllOfResource(stream_path.to_owned()),
                                     addons: &ctx.profile.addons,
-                                    range: None,
+                                    range: &None,
                                 },
                             )
                         }
@@ -77,7 +77,7 @@ impl<E: Env + 'static> UpdateWithCtx<E> for MetaDetails {
                     ResourcesAction::ResourceRequestResult {
                         request,
                         result,
-                        limit: None,
+                        limit: &None,
                     },
                 );
                 let streams_effects = match &self.selected {
@@ -105,7 +105,7 @@ impl<E: Env + 'static> UpdateWithCtx<E> for MetaDetails {
                     ResourcesAction::ResourceRequestResult {
                         request,
                         result,
-                        limit: None,
+                        limit: &None,
                     },
                 )
             }

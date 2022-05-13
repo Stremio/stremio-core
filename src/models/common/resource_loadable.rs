@@ -41,7 +41,7 @@ pub enum ResourceAction<'a> {
     ResourceRequestResult {
         request: &'a ResourceRequest,
         result: &'a Result<ResourceResponse, EnvError>,
-        limit: Option<usize>,
+        limit: &'a Option<usize>,
     },
 }
 
@@ -49,12 +49,12 @@ pub enum ResourcesAction<'a> {
     ResourcesRequested {
         request: &'a AggrRequest<'a>,
         addons: &'a [Descriptor],
-        range: Option<Range<usize>>,
+        range: &'a Option<Range<usize>>,
     },
     ResourceRequestResult {
         request: &'a ResourceRequest,
         result: &'a Result<ResourceResponse, EnvError>,
-        limit: Option<usize>,
+        limit: &'a Option<usize>,
     },
 }
 
@@ -253,7 +253,7 @@ where
 
 fn resource_vector_content_from_result<T>(
     result: &Result<ResourceResponse, EnvError>,
-    limit: Option<usize>,
+    limit: &Option<usize>,
 ) -> Loadable<Vec<T>, ResourceError>
 where
     Vec<T>: TryFrom<ResourceResponse, Error = &'static str>,
@@ -264,7 +264,7 @@ where
                 if content.is_empty() {
                     Loadable::Err(ResourceError::EmptyContent)
                 } else if let Some(limit) = limit {
-                    Loadable::Ready(content.into_iter().take(limit).collect())
+                    Loadable::Ready(content.into_iter().take(limit.to_owned()).collect())
                 } else {
                     Loadable::Ready(content)
                 }
