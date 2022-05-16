@@ -11,6 +11,7 @@ use crate::types::api::AuthRequest;
 use crate::types::profile::Settings as ProfileSettings;
 use crate::types::resource::MetaItemPreview;
 use serde::Deserialize;
+use std::ops::Range;
 
 #[derive(Clone, Deserialize)]
 #[serde(tag = "action", content = "args")]
@@ -29,6 +30,12 @@ pub enum ActionCtx {
     PushAddonsToAPI,
     PullAddonsFromAPI,
     SyncLibraryWithAPI,
+}
+
+#[derive(Clone, Deserialize)]
+#[serde(tag = "action", content = "args")]
+pub enum ActionCatalogsWithExtra {
+    LoadRange(Option<Range<usize>>),
 }
 
 #[derive(Clone, Deserialize)]
@@ -73,6 +80,7 @@ pub enum ActionLoad {
 pub enum Action {
     Ctx(ActionCtx),
     Link(ActionLink),
+    CatalogsWithExtra(ActionCatalogsWithExtra),
     StreamingServer(ActionStreamingServer),
     Player(ActionPlayer),
     Load(ActionLoad),
