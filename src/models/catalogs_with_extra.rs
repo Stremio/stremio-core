@@ -31,7 +31,7 @@ impl<E: Env + 'static> UpdateWithCtx<E> for CatalogsWithExtra {
                         request: &AggrRequest::AllCatalogs {
                             extra: &selected.extra,
                         },
-                        range: &Some(0..0),
+                        range: &None,
                         addons: &ctx.profile.addons,
                     },
                 );
@@ -50,7 +50,7 @@ impl<E: Env + 'static> UpdateWithCtx<E> for CatalogsWithExtra {
                             request: &AggrRequest::AllCatalogs {
                                 extra: &selected.extra,
                             },
-                            range,
+                            range: &Some(range.to_owned()),
                             addons: &ctx.profile.addons,
                         },
                     ),
@@ -74,7 +74,7 @@ impl<E: Env + 'static> UpdateWithCtx<E> for CatalogsWithExtra {
                         request: &AggrRequest::AllCatalogs {
                             extra: &selected.extra,
                         },
-                        range: &Some(0..0),
+                        range: &None,
                         addons: &ctx.profile.addons,
                     },
                 ),

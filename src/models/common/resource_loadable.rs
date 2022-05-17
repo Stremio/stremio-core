@@ -157,24 +157,25 @@ where
                                     request: request.to_owned(),
                                     content: Loadable::Loading,
                                 },
-                                match range
-                                    .as_ref()
-                                    .map(|range| range.start <= index && index <= range.end)
-                                {
-                                    None | Some(true) => Some(
-                                        EffectFuture::Concurrent(
-                                            E::addon_transport(&request.base)
-                                                .resource(&request.path)
-                                                .map(|result| {
-                                                    Msg::Internal(Internal::ResourceRequestResult(
-                                                        request,
-                                                        Box::new(result),
-                                                    ))
-                                                })
-                                                .boxed_env(),
+                                match range.as_ref() {
+                                    Some(range) if range.start <= index && index <= range.end => {
+                                        Some(
+                                            EffectFuture::Concurrent(
+                                                E::addon_transport(&request.base)
+                                                    .resource(&request.path)
+                                                    .map(|result| {
+                                                        Msg::Internal(
+                                                            Internal::ResourceRequestResult(
+                                                                request,
+                                                                Box::new(result),
+                                                            ),
+                                                        )
+                                                    })
+                                                    .boxed_env(),
+                                            )
+                                            .into(),
                                         )
-                                        .into(),
-                                    ),
+                                    }
                                     _ => None,
                                 },
                             )

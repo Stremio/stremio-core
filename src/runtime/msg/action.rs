@@ -35,7 +35,7 @@ pub enum ActionCtx {
 #[derive(Clone, Deserialize)]
 #[serde(tag = "action", content = "args")]
 pub enum ActionCatalogsWithExtra {
-    LoadRange(Option<Range<usize>>),
+    LoadRange(Range<usize>),
 }
 
 #[derive(Clone, Deserialize)]
