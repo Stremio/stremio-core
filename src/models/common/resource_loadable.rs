@@ -146,40 +146,37 @@ where
                 .enumerate()
                 .map(|(index, request)| {
                     resources
-                        .get(index)
-                        .and_then(|resource| {
-                            let is_in_range = range
-                                .as_ref()
-                                .map(|range| range.start <= index && index <= range.end)
-                                .unwrap_or(true);
-                            if resource.request == request
-                                && (!resource.content.is_loading() || !is_in_range)
-                            {
-                                Some((resource.to_owned(), None))
-                            } else {
-                                None
-                            }
+                        .iter()
+                        .find(|resource| {
+                            resource.request == request && !resource.content.is_loading()
                         })
+                        .map(|resource| (resource.to_owned(), None))
                         .unwrap_or_else(|| {
                             (
                                 ResourceLoadable {
                                     request: request.to_owned(),
                                     content: Loadable::Loading,
                                 },
-                                Some(
-                                    EffectFuture::Concurrent(
-                                        E::addon_transport(&request.base)
-                                            .resource(&request.path)
-                                            .map(|result| {
-                                                Msg::Internal(Internal::ResourceRequestResult(
-                                                    request,
-                                                    Box::new(result),
-                                                ))
-                                            })
-                                            .boxed_env(),
-                                    )
-                                    .into(),
-                                ),
+                                match range
+                                    .as_ref()
+                                    .map(|range| range.start <= index && index <= range.end)
+                                {
+                                    None | Some(true) => Some(
+                                        EffectFuture::Concurrent(
+                                            E::addon_transport(&request.base)
+                                                .resource(&request.path)
+                                                .map(|result| {
+                                                    Msg::Internal(Internal::ResourceRequestResult(
+                                                        request,
+                                                        Box::new(result),
+                                                    ))
+                                                })
+                                                .boxed_env(),
+                                        )
+                                        .into(),
+                                    ),
+                                    _ => None,
+                                },
                             )
                         })
                 })
