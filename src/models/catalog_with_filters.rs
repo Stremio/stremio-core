@@ -385,7 +385,7 @@ fn selectable_update<T: CatalogResourceAdapter>(
                             },
                         });
                         let next_page = match &catalog.content {
-                            Loadable::Ready(content) if content.len() == page_size => {
+                            Some(Loadable::Ready(content)) if content.len() == page_size => {
                                 Some(SelectablePage {
                                     request: ResourceRequest {
                                         base: catalog.request.base.to_owned(),

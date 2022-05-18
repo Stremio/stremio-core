@@ -123,7 +123,7 @@ fn streams_from_meta_items(
         .find_map(|meta_item| match meta_item {
             ResourceLoadable {
                 request,
-                content: Loadable::Ready(meta_item),
+                content: Some(Loadable::Ready(meta_item)),
             } => Some((request, meta_item)),
             _ => None,
         })
@@ -136,6 +136,6 @@ fn streams_from_meta_items(
         })
         .map(|(request, streams)| ResourceLoadable {
             request: request.to_owned(),
-            content: Loadable::Ready(streams.to_owned()),
+            content: Some(Loadable::Ready(streams.to_owned())),
         })
 }

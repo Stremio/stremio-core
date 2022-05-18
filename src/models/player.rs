@@ -208,7 +208,7 @@ fn next_video_update(
                 ..
             }),
             Some(ResourceLoadable {
-                content: Loadable::Ready(meta_item),
+                content: Some(Loadable::Ready(meta_item)),
                 ..
             }),
         ) if settings.binge_watching => meta_item
@@ -238,7 +238,7 @@ fn series_info_update(
                 ..
             }),
             Some(ResourceLoadable {
-                content: Loadable::Ready(meta_item),
+                content: Some(Loadable::Ready(meta_item)),
                 ..
             }),
         ) => meta_item
@@ -265,7 +265,7 @@ fn library_item_update<E: Env>(
                 .or_else(|| library.items.get(&meta_item.request.path.id));
             let meta_item = match meta_item {
                 ResourceLoadable {
-                    content: Loadable::Ready(meta_item),
+                    content: Some(Loadable::Ready(meta_item)),
                     ..
                 } => Some(meta_item),
                 _ => None,

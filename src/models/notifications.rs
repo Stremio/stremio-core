@@ -81,7 +81,7 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Notifications {
                                     (
                                         ResourceLoadable {
                                             request: addon_req.to_owned(),
-                                            content: Loadable::Loading,
+                                            content: Some(Loadable::Loading),
                                         },
                                         EffectFuture::Concurrent(
                                             E::addon_transport(&addon_req.base)
@@ -116,7 +116,7 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Notifications {
                         },
                     );
                     // Modify all the items so that only the new videos are left
-                    if let Loadable::Ready(ref mut meta_items) = self.groups[idx].content {
+                    if let Some(Loadable::Ready(ref mut meta_items)) = self.groups[idx].content {
                         for item in meta_items {
                             if let Some(library_item) = ctx.library.items.get(&item.id) {
                                 item.videos
