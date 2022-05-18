@@ -1,6 +1,7 @@
 use crate::constants::CATALOG_PREVIEW_SIZE;
 use crate::models::common::{
     eq_update, resources_update_with_vector_content, ResourceLoadable, ResourcesAction,
+    ResourcesRequestRange,
 };
 use crate::models::ctx::Ctx;
 use crate::runtime::msg::{Action, ActionCatalogsWithExtra, ActionLoad, Internal, Msg};
@@ -50,7 +51,7 @@ impl<E: Env + 'static> UpdateWithCtx<E> for CatalogsWithExtra {
                             request: &AggrRequest::AllCatalogs {
                                 extra: &selected.extra,
                             },
-                            range: &Some(range.to_owned()),
+                            range: &Some(ResourcesRequestRange::Range(range.to_owned())),
                             addons: &ctx.profile.addons,
                         },
                     ),

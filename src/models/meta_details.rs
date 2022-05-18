@@ -1,7 +1,7 @@
 use crate::constants::{META_RESOURCE_NAME, STREAM_RESOURCE_NAME};
 use crate::models::common::{
     eq_update, resources_update, resources_update_with_vector_content, Loadable, ResourceLoadable,
-    ResourcesAction,
+    ResourcesAction, ResourcesRequestRange,
 };
 use crate::models::ctx::Ctx;
 use crate::runtime::msg::{Action, ActionLoad, Internal, Msg};
@@ -35,7 +35,7 @@ impl<E: Env + 'static> UpdateWithCtx<E> for MetaDetails {
                     ResourcesAction::ResourcesRequested {
                         request: &AggrRequest::AllOfResource(selected.meta_path.to_owned()),
                         addons: &ctx.profile.addons,
-                        range: &None,
+                        range: &Some(ResourcesRequestRange::All),
                     },
                 );
                 let streams_effects = match &selected.stream_path {
@@ -50,7 +50,7 @@ impl<E: Env + 'static> UpdateWithCtx<E> for MetaDetails {
                                 ResourcesAction::ResourcesRequested {
                                     request: &AggrRequest::AllOfResource(stream_path.to_owned()),
                                     addons: &ctx.profile.addons,
-                                    range: &None,
+                                    range: &Some(ResourcesRequestRange::All),
                                 },
                             )
                         }

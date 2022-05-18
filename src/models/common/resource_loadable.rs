@@ -45,11 +45,16 @@ pub enum ResourceAction<'a> {
     },
 }
 
+pub enum ResourcesRequestRange {
+    All,
+    Range(Range<usize>),
+}
+
 pub enum ResourcesAction<'a> {
     ResourcesRequested {
         request: &'a AggrRequest<'a>,
         addons: &'a [Descriptor],
-        range: &'a Option<Range<usize>>,
+        range: &'a Option<ResourcesRequestRange>,
     },
     ResourceRequestResult {
         request: &'a ResourceRequest,
@@ -150,11 +155,20 @@ where
                         .find(|resource| resource.request == request && resource.content.is_some())
                         .map(|resource| (resource.to_owned(), None))
                         .unwrap_or_else(|| {
-                            match range
-                                .as_ref()
-                                .map(|range| range.start <= index && index <= range.end)
-                            {
-                                None | Some(true) => (
+                            match range.as_ref().map(|range| match range {
+                                ResourcesRequestRange::All => true,
+                                ResourcesRequestRange::Range(range) => {
+                                    range.start <= index && index <= range.end
+                                }
+                            }) {
+                                None | Some(false) => (
+                                    ResourceLoadable {
+                                        request,
+                                        content: None,
+                                    },
+                                    None,
+                                ),
+                                _ => (
                                     ResourceLoadable {
                                         request: request.to_owned(),
                                         content: Some(Loadable::Loading),
@@ -173,13 +187,6 @@ where
                                         )
                                         .into(),
                                     ),
-                                ),
-                                _ => (
-                                    ResourceLoadable {
-                                        request,
-                                        content: None,
-                                    },
-                                    None,
                                 ),
                             }
                         })

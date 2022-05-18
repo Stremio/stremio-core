@@ -1,7 +1,7 @@
 use crate::constants::WATCHED_THRESHOLD_COEF;
 use crate::models::common::{
     eq_update, resource_update, resources_update_with_vector_content, Loadable, ResourceAction,
-    ResourceLoadable, ResourcesAction,
+    ResourceLoadable, ResourcesAction, ResourcesRequestRange,
 };
 use crate::models::ctx::Ctx;
 use crate::runtime::msg::{Action, ActionLoad, ActionPlayer, Internal, Msg};
@@ -55,7 +55,7 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                         ResourcesAction::ResourcesRequested {
                             request: &AggrRequest::AllOfResource(subtitles_path.to_owned()),
                             addons: &ctx.profile.addons,
-                            range: &None,
+                            range: &Some(ResourcesRequestRange::All),
                         },
                     ),
                     _ => eq_update(&mut self.subtitles, vec![]),
