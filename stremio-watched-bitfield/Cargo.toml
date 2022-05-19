@@ -1,0 +1,11 @@
+[package]
+name = "stremio-watched-bitfield-rs"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+doctest = false
+
+[dependencies]
+base64 = "0.13.0"
+flate2 = "1.0.*"
