@@ -8,7 +8,9 @@ use std::marker::PhantomData;
 use std::sync::{Arc, Mutex};
 use stremio_core::models::ctx::Ctx;
 use stremio_core::models::streaming_server::StreamingServer;
-use stremio_core::runtime::{Env, EnvError, EnvFutureExt, TryEnvFuture};
+#[cfg(debug_assertions)]
+use stremio_core::runtime::EnvFutureExt;
+use stremio_core::runtime::{Env, EnvError, TryEnvFuture};
 use stremio_core::types::api::{fetch_api, APIRequest, APIResult, SuccessResponse};
 use stremio_core::types::profile::AuthKey;
 #[cfg(debug_assertions)]
