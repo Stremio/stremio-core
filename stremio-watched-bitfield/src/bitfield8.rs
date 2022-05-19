@@ -1,8 +1,8 @@
-use std::io::Write;
-use std::io::Read;
 use flate2::read::ZlibDecoder;
 use flate2::write::ZlibEncoder;
 use flate2::Compression;
+use std::io::Read;
+use std::io::Write;
 
 #[derive(Debug, Clone)]
 pub struct BitField8 {
