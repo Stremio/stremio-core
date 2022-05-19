@@ -83,19 +83,19 @@ pub fn serialize_meta_details(meta_details: &MetaDetails, ctx: &Ctx) -> JsValue 
     let meta_item = meta_details
         .meta_items
         .iter()
-        .find(|meta_item| meta_item.content.is_ready())
+        .find(|meta_item| matches!(&meta_item.content, Some(Loadable::Ready(_))))
         .or_else(|| {
             if meta_details
                 .meta_items
                 .iter()
-                .all(|meta_item| meta_item.content.is_err())
+                .all(|meta_item| matches!(&meta_item.content, Some(Loadable::Err(_))))
             {
                 meta_details.meta_items.first()
             } else {
                 meta_details
                     .meta_items
                     .iter()
-                    .find(|catalog| catalog.content.is_loading())
+                    .find(|meta_item| matches!(&meta_item.content, Some(Loadable::Loading)))
             }
         });
     JsValue::from_serde(&model::MetaDetails {
@@ -112,7 +112,7 @@ pub fn serialize_meta_details(meta_details: &MetaDetails, ctx: &Ctx) -> JsValue 
                 content: match &meta_item {
                     ResourceLoadable {
                         request,
-                        content: Loadable::Ready(meta_item),
+                        content: Some(Loadable::Ready(meta_item)),
                     } => Loadable::Ready(model::MetaItem {
                         meta_item,
                         videos: meta_item
@@ -148,11 +148,12 @@ pub fn serialize_meta_details(meta_details: &MetaDetails, ctx: &Ctx) -> JsValue 
                         deep_links: MetaItemDeepLinks::from(meta_item),
                     }),
                     ResourceLoadable {
-                        content: Loadable::Loading,
+                        content: Some(Loadable::Loading),
                         ..
-                    } => Loadable::Loading,
+                    }
+                    | ResourceLoadable { content: None, .. } => Loadable::Loading,
                     ResourceLoadable {
-                        content: Loadable::Err(error),
+                        content: Some(Loadable::Err(error)),
                         ..
                     } => Loadable::Err(&error),
                 },
@@ -179,7 +180,7 @@ pub fn serialize_meta_details(meta_details: &MetaDetails, ctx: &Ctx) -> JsValue 
                 content: match streams {
                     ResourceLoadable {
                         request,
-                        content: Loadable::Ready(streams),
+                        content: Some(Loadable::Ready(streams)),
                     } => Loadable::Ready(
                         streams
                             .iter()
@@ -195,11 +196,12 @@ pub fn serialize_meta_details(meta_details: &MetaDetails, ctx: &Ctx) -> JsValue 
                             .collect::<Vec<_>>(),
                     ),
                     ResourceLoadable {
-                        content: Loadable::Loading,
+                        content: Some(Loadable::Loading),
                         ..
-                    } => Loadable::Loading,
+                    }
+                    | ResourceLoadable { content: None, .. } => Loadable::Loading,
                     ResourceLoadable {
-                        content: Loadable::Err(error),
+                        content: Some(Loadable::Err(error)),
                         ..
                     } => Loadable::Err(&error),
                 },
@@ -225,7 +227,7 @@ pub fn serialize_meta_details(meta_details: &MetaDetails, ctx: &Ctx) -> JsValue 
             })
             .flat_map(|(meta_item, addon)| match meta_item {
                 ResourceLoadable {
-                    content: Loadable::Ready(meta_item),
+                    content: Some(Loadable::Ready(meta_item)),
                     ..
                 } => Either::Left(
                     meta_item
@@ -254,7 +256,7 @@ pub fn serialize_meta_details(meta_details: &MetaDetails, ctx: &Ctx) -> JsValue 
             .as_ref()
             .and_then(|meta_item| match meta_item {
                 ResourceLoadable {
-                    content: Loadable::Ready(meta_item),
+                    content: Some(Loadable::Ready(meta_item)),
                     ..
                 } => Some(meta_item),
                 _ => None,

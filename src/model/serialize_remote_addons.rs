@@ -84,7 +84,7 @@ pub fn serialize_remote_addons(
             .as_ref()
             .map(|catalog| model::ResourceLoadable {
                 content: match &catalog.content {
-                    Loadable::Ready(addons) => Loadable::Ready(
+                    Some(Loadable::Ready(addons)) => Loadable::Ready(
                         addons
                             .iter()
                             .map(|addon| model::DescriptorPreview {
@@ -98,8 +98,8 @@ pub fn serialize_remote_addons(
                             })
                             .collect::<Vec<_>>(),
                     ),
-                    Loadable::Loading => Loadable::Loading,
-                    Loadable::Err(error) => Loadable::Err(error.to_string()),
+                    Some(Loadable::Loading) | None => Loadable::Loading,
+                    Some(Loadable::Err(error)) => Loadable::Err(error.to_string()),
                 },
             }),
     })

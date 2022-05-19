@@ -22,7 +22,7 @@ mod model {
     #[serde(rename_all = "camelCase")]
     pub struct ResourceLoadable<'a> {
         pub title: String,
-        pub content: Loadable<Vec<MetaItemPreview<'a>>, String>,
+        pub content: Option<Loadable<Vec<MetaItemPreview<'a>>, String>>,
         pub deep_links: DiscoverDeepLinks,
     }
     #[derive(Serialize)]
@@ -43,7 +43,10 @@ pub fn serialize_catalogs_with_extra(
             .catalogs
             .iter()
             .filter(|catalog| {
-                !matches!(&catalog.content, Loadable::Err(ResourceError::EmptyContent))
+                !matches!(
+                    &catalog.content,
+                    Some(Loadable::Err(ResourceError::EmptyContent))
+                )
             })
             .filter_map(|catalog| {
                 ctx.profile
@@ -58,7 +61,7 @@ pub fn serialize_catalogs_with_extra(
                     &addon.manifest.name, &catalog.request.path.id, &catalog.request.path.r#type
                 ),
                 content: match &catalog.content {
-                    Loadable::Ready(meta_items) => Loadable::Ready(
+                    Some(Loadable::Ready(meta_items)) => Some(Loadable::Ready(
                         meta_items
                             .iter()
                             .map(|meta_item| model::MetaItemPreview {
@@ -70,9 +73,10 @@ pub fn serialize_catalogs_with_extra(
                                 deep_links: MetaItemDeepLinks::from(meta_item),
                             })
                             .collect::<Vec<_>>(),
-                    ),
-                    Loadable::Loading => Loadable::Loading,
-                    Loadable::Err(error) => Loadable::Err(error.to_string()),
+                    )),
+                    Some(Loadable::Loading) => Some(Loadable::Loading),
+                    Some(Loadable::Err(error)) => Some(Loadable::Err(error.to_string())),
+                    None => None,
                 },
                 deep_links: DiscoverDeepLinks::from(&catalog.request),
             })

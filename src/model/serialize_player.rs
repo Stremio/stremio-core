@@ -113,9 +113,9 @@ pub fn serialize_player(player: &Player, ctx: &Ctx) -> JsValue {
             .meta_item
             .as_ref()
             .map(|ResourceLoadable { request, content }| match &content {
-                Loadable::Loading => Loadable::Loading,
-                Loadable::Err(error) => Loadable::Err(error),
-                Loadable::Ready(meta_item) => {
+                Some(Loadable::Loading) | None => Loadable::Loading,
+                Some(Loadable::Err(error)) => Loadable::Err(error),
+                Some(Loadable::Ready(meta_item)) => {
                     Loadable::Ready(model::MetaItem {
                         meta_item,
                         videos: meta_item
@@ -149,7 +149,7 @@ pub fn serialize_player(player: &Player, ctx: &Ctx) -> JsValue {
             })
             .filter_map(|(addon, subtitles)| match subtitles {
                 ResourceLoadable {
-                    content: Loadable::Ready(subtitles),
+                    content: Some(Loadable::Ready(subtitles)),
                     ..
                 } => Some((addon, subtitles)),
                 _ => None,
@@ -177,7 +177,7 @@ pub fn serialize_player(player: &Player, ctx: &Ctx) -> JsValue {
                     .as_ref()
                     .and_then(|meta_item| match meta_item {
                         ResourceLoadable {
-                            content: Loadable::Ready(meta_item),
+                            content: Some(Loadable::Ready(meta_item)),
                             ..
                         } => Some(meta_item),
                         _ => None,
@@ -197,7 +197,7 @@ pub fn serialize_player(player: &Player, ctx: &Ctx) -> JsValue {
                     .as_ref()
                     .and_then(|meta_item| match meta_item {
                         ResourceLoadable {
-                            content: Loadable::Ready(meta_item),
+                            content: Some(Loadable::Ready(meta_item)),
                             ..
                         } => Some(meta_item.behavior_hints.has_scheduled_videos),
                         _ => None,
@@ -222,7 +222,7 @@ pub fn serialize_player(player: &Player, ctx: &Ctx) -> JsValue {
                 .as_ref()
                 .and_then(|meta_item| match meta_item {
                     ResourceLoadable {
-                        content: Loadable::Ready(meta_item),
+                        content: Some(Loadable::Ready(meta_item)),
                         ..
                     } => Some(meta_item),
                     _ => None,

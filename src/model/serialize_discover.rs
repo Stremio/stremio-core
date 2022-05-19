@@ -170,7 +170,7 @@ pub fn serialize_discover(discover: &CatalogWithFilters<MetaItemPreview>, ctx: &
             .as_ref()
             .map(|catalog| model::ResourceLoadable {
                 content: match &catalog.content {
-                    Loadable::Ready(meta_items) => Loadable::Ready(
+                    Some(Loadable::Ready(meta_items)) => Loadable::Ready(
                         meta_items
                             .iter()
                             .map(|meta_item| model::MetaItemPreview {
@@ -194,8 +194,8 @@ pub fn serialize_discover(discover: &CatalogWithFilters<MetaItemPreview>, ctx: &
                             })
                             .collect::<Vec<_>>(),
                     ),
-                    Loadable::Loading => Loadable::Loading,
-                    Loadable::Err(error) => Loadable::Err(error.to_string()),
+                    Some(Loadable::Loading) | None => Loadable::Loading,
+                    Some(Loadable::Err(error)) => Loadable::Err(error.to_string()),
                 },
                 installed: ctx
                     .profile
