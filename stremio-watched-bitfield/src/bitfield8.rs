@@ -1,8 +1,7 @@
 use flate2::read::ZlibDecoder;
 use flate2::write::ZlibEncoder;
 use flate2::Compression;
-use std::io::Read;
-use std::io::Write;
+use std::io::{Read, Write};
 
 #[derive(Debug, Clone)]
 pub struct BitField8 {
@@ -37,7 +36,7 @@ impl BitField8 {
     pub fn to_packed(&self) -> Vec<u8> {
         let mut e = ZlibEncoder::new(Vec::new(), Compression::new(6));
         e.write_all(&self.values).ok();
-        e.finish().unwrap()
+        e.finish().expect("flate2 should compress")
     }
 
     pub fn get(&self, i: usize) -> bool {

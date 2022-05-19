@@ -41,7 +41,7 @@ impl WatchedBitField {
 
         // in case of an previous empty array, this will be 0
         // We can shift the bitmap in any direction, as long as we can find the anchor video
-        let anchor_length = components.pop().expect("No field").parse::<i32>().unwrap();
+        let anchor_length = components.pop().expect("No field").parse::<i32>().map_err(|e| e.to_string())?;
         let anchor_video_id = components.join(":");
 
         // We can shift the bitmap in any direction, as long as we can find the anchor video
