@@ -385,7 +385,7 @@ impl DefaultTokens for Settings {
             Token::Str("playInExternalPlayer"),
             Token::Bool(false),
             Token::Str("hardwareDecoding"),
-            Token::Bool(false),
+            Token::Bool(true),
             Token::Str("subtitlesLanguage"),
             Token::Str("eng"),
             Token::Str("subtitlesSize"),
