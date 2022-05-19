@@ -1,7 +1,7 @@
 use crate::constants::{META_RESOURCE_NAME, STREAM_RESOURCE_NAME};
 use crate::models::common::{
     eq_update, resources_update, resources_update_with_vector_content, Loadable, ResourceLoadable,
-    ResourcesAction,
+    ResourcesAction, ResourcesRequestRange,
 };
 use crate::models::ctx::Ctx;
 use crate::runtime::msg::{Action, ActionLoad, Internal, Msg};
@@ -35,6 +35,7 @@ impl<E: Env + 'static> UpdateWithCtx<E> for MetaDetails {
                     ResourcesAction::ResourcesRequested {
                         request: &AggrRequest::AllOfResource(selected.meta_path.to_owned()),
                         addons: &ctx.profile.addons,
+                        range: &Some(ResourcesRequestRange::All),
                     },
                 );
                 let streams_effects = match &selected.stream_path {
@@ -49,6 +50,7 @@ impl<E: Env + 'static> UpdateWithCtx<E> for MetaDetails {
                                 ResourcesAction::ResourcesRequested {
                                     request: &AggrRequest::AllOfResource(stream_path.to_owned()),
                                     addons: &ctx.profile.addons,
+                                    range: &Some(ResourcesRequestRange::All),
                                 },
                             )
                         }
@@ -121,7 +123,7 @@ fn streams_from_meta_items(
         .find_map(|meta_item| match meta_item {
             ResourceLoadable {
                 request,
-                content: Loadable::Ready(meta_item),
+                content: Some(Loadable::Ready(meta_item)),
             } => Some((request, meta_item)),
             _ => None,
         })
@@ -134,6 +136,6 @@ fn streams_from_meta_items(
         })
         .map(|(request, streams)| ResourceLoadable {
             request: request.to_owned(),
-            content: Loadable::Ready(streams.to_owned()),
+            content: Some(Loadable::Ready(streams.to_owned())),
         })
 }

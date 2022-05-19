@@ -1,9 +1,10 @@
 use crate::constants::CATALOG_PREVIEW_SIZE;
 use crate::models::common::{
     eq_update, resources_update_with_vector_content, ResourceLoadable, ResourcesAction,
+    ResourcesRequestRange,
 };
 use crate::models::ctx::Ctx;
-use crate::runtime::msg::{Action, ActionLoad, Internal, Msg};
+use crate::runtime::msg::{Action, ActionCatalogsWithExtra, ActionLoad, Internal, Msg};
 use crate::runtime::{Effects, Env, UpdateWithCtx};
 use crate::types::addon::{AggrRequest, ExtraValue};
 use crate::types::resource::MetaItemPreview;
@@ -31,6 +32,7 @@ impl<E: Env + 'static> UpdateWithCtx<E> for CatalogsWithExtra {
                         request: &AggrRequest::AllCatalogs {
                             extra: &selected.extra,
                         },
+                        range: &None,
                         addons: &ctx.profile.addons,
                     },
                 );
@@ -40,6 +42,21 @@ impl<E: Env + 'static> UpdateWithCtx<E> for CatalogsWithExtra {
                 let selected_effects = eq_update(&mut self.selected, None);
                 let catalogs_effects = eq_update(&mut self.catalogs, vec![]);
                 selected_effects.join(catalogs_effects)
+            }
+            Msg::Action(Action::CatalogsWithExtra(ActionCatalogsWithExtra::LoadRange(range))) => {
+                match &self.selected {
+                    Some(selected) => resources_update_with_vector_content::<E, _>(
+                        &mut self.catalogs,
+                        ResourcesAction::ResourcesRequested {
+                            request: &AggrRequest::AllCatalogs {
+                                extra: &selected.extra,
+                            },
+                            range: &Some(ResourcesRequestRange::Range(range.to_owned())),
+                            addons: &ctx.profile.addons,
+                        },
+                    ),
+                    _ => Effects::none().unchanged(),
+                }
             }
             Msg::Internal(Internal::ResourceRequestResult(request, result)) => {
                 resources_update_with_vector_content::<E, _>(
@@ -58,6 +75,7 @@ impl<E: Env + 'static> UpdateWithCtx<E> for CatalogsWithExtra {
                         request: &AggrRequest::AllCatalogs {
                             extra: &selected.extra,
                         },
+                        range: &None,
                         addons: &ctx.profile.addons,
                     },
                 ),

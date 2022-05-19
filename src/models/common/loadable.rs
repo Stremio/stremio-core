@@ -1,7 +1,7 @@
 use derivative::Derivative;
 use serde::Serialize;
 
-#[derive(Derivative, PartialEq, Serialize)]
+#[derive(Derivative, Clone, PartialEq, Serialize)]
 #[cfg_attr(debug_assertions, derive(Debug))]
 #[derivative(Default)]
 #[serde(tag = "type", content = "content")]

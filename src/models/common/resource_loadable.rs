@@ -1,4 +1,4 @@
-use crate::models::common::Loadable;
+use crate::models::common::{eq_update, Loadable};
 use crate::runtime::msg::{Internal, Msg};
 use crate::runtime::{EffectFuture, Effects, Env, EnvError, EnvFutureExt};
 use crate::types::addon::{AggrRequest, Descriptor, ResourceRequest, ResourceResponse};
@@ -6,6 +6,7 @@ use futures::FutureExt;
 use serde::Serialize;
 use std::convert::TryFrom;
 use std::fmt;
+use std::ops::Range;
 
 #[derive(Clone, PartialEq, Serialize)]
 #[serde(tag = "type", content = "content")]
@@ -27,10 +28,10 @@ impl fmt::Display for ResourceError {
     }
 }
 
-#[derive(PartialEq, Serialize)]
+#[derive(Clone, PartialEq, Serialize)]
 pub struct ResourceLoadable<T> {
     pub request: ResourceRequest,
-    pub content: Loadable<T, ResourceError>,
+    pub content: Option<Loadable<T, ResourceError>>,
 }
 
 pub enum ResourceAction<'a> {
@@ -44,10 +45,16 @@ pub enum ResourceAction<'a> {
     },
 }
 
+pub enum ResourcesRequestRange {
+    All,
+    Range(Range<usize>),
+}
+
 pub enum ResourcesAction<'a> {
     ResourcesRequested {
         request: &'a AggrRequest<'a>,
         addons: &'a [Descriptor],
+        range: &'a Option<ResourcesRequestRange>,
     },
     ResourceRequestResult {
         request: &'a ResourceRequest,
@@ -70,7 +77,7 @@ where
                 let request = request.to_owned();
                 *resource = Some(ResourceLoadable {
                     request: request.to_owned(),
-                    content: Loadable::Loading,
+                    content: Some(Loadable::Loading),
                 });
                 Effects::future(EffectFuture::Concurrent(
                     E::addon_transport(&request.base)
@@ -91,7 +98,7 @@ where
             request, result, ..
         } => match resource {
             Some(resource) if resource.request == *request => {
-                resource.content = resource_content_from_result(result);
+                resource.content = Some(resource_content_from_result(result));
                 Effects::none()
             }
             _ => Effects::none().unchanged(),
@@ -114,7 +121,7 @@ where
             limit,
         } => match resource {
             Some(resource) if resource.request == *request => {
-                resource.content = resource_vector_content_from_result(result, limit);
+                resource.content = Some(resource_vector_content_from_result(result, limit));
                 Effects::none()
             }
             _ => Effects::none().unchanged(),
@@ -129,48 +136,65 @@ pub fn resources_update<E, T>(
 ) -> Effects
 where
     E: Env + 'static,
-    T: TryFrom<ResourceResponse, Error = &'static str>,
+    T: TryFrom<ResourceResponse, Error = &'static str> + Clone + PartialEq,
 {
     match action {
-        ResourcesAction::ResourcesRequested { request, addons } => {
-            let requests = request
+        ResourcesAction::ResourcesRequested {
+            request,
+            addons,
+            range,
+        } => {
+            let (next_resources, effects) = request
                 .plan(&addons)
                 .into_iter()
                 .map(|(_, request)| request)
-                .collect::<Vec<_>>();
-            if requests
-                .iter()
-                .ne(resources.iter().map(|resource| &resource.request))
-            {
-                let (next_resources, effects) = requests
-                    .iter()
-                    .cloned()
-                    .map(|request| {
-                        (
-                            ResourceLoadable {
-                                request: request.to_owned(),
-                                content: Loadable::Loading,
-                            },
-                            EffectFuture::Concurrent(
-                                E::addon_transport(&request.base)
-                                    .resource(&request.path)
-                                    .map(move |result| {
-                                        Msg::Internal(Internal::ResourceRequestResult(
-                                            request,
-                                            Box::new(result),
-                                        ))
-                                    })
-                                    .boxed_env(),
-                            )
-                            .into(),
-                        )
-                    })
-                    .unzip::<_, _, Vec<_>, Vec<_>>();
-                *resources = next_resources;
-                Effects::many(effects)
-            } else {
-                Effects::none().unchanged()
-            }
+                .enumerate()
+                .map(|(index, request)| {
+                    resources
+                        .iter()
+                        .find(|resource| resource.request == request && resource.content.is_some())
+                        .map(|resource| (resource.to_owned(), None))
+                        .unwrap_or_else(|| {
+                            match range.as_ref().map(|range| match range {
+                                ResourcesRequestRange::All => true,
+                                ResourcesRequestRange::Range(range) => {
+                                    range.start <= index && index <= range.end
+                                }
+                            }) {
+                                None | Some(false) => (
+                                    ResourceLoadable {
+                                        request,
+                                        content: None,
+                                    },
+                                    None,
+                                ),
+                                _ => (
+                                    ResourceLoadable {
+                                        request: request.to_owned(),
+                                        content: Some(Loadable::Loading),
+                                    },
+                                    Some(
+                                        EffectFuture::Concurrent(
+                                            E::addon_transport(&request.base)
+                                                .resource(&request.path)
+                                                .map(|result| {
+                                                    Msg::Internal(Internal::ResourceRequestResult(
+                                                        request,
+                                                        Box::new(result),
+                                                    ))
+                                                })
+                                                .boxed_env(),
+                                        )
+                                        .into(),
+                                    ),
+                                ),
+                            }
+                        })
+                })
+                .unzip::<_, _, Vec<_>, Vec<_>>();
+            Effects::many(effects.into_iter().filter_map(|effect| effect).collect())
+                .unchanged()
+                .join(eq_update(resources, next_resources))
         }
         ResourcesAction::ResourceRequestResult {
             request, result, ..
@@ -180,7 +204,7 @@ where
                 .position(|resource| resource.request == *request)
             {
                 Some(position) => {
-                    resources[position].content = resource_content_from_result(result);
+                    resources[position].content = Some(resource_content_from_result(result));
                     Effects::none()
                 }
                 _ => Effects::none().unchanged(),
@@ -195,6 +219,7 @@ pub fn resources_update_with_vector_content<E, T>(
 ) -> Effects
 where
     E: Env + 'static,
+    T: Clone + PartialEq,
     Vec<T>: TryFrom<ResourceResponse, Error = &'static str>,
 {
     match action {
@@ -209,7 +234,7 @@ where
             {
                 Some(position) => {
                     resources[position].content =
-                        resource_vector_content_from_result(result, limit);
+                        Some(resource_vector_content_from_result(result, limit));
                     Effects::none()
                 }
                 _ => Effects::none().unchanged(),
