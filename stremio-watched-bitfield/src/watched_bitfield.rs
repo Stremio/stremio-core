@@ -41,7 +41,7 @@ impl WatchedBitField {
 
         let anchor_length = components
             .pop()
-            .expect("No length field")
+            .ok_or("Cannot obtain the length field")?
             .parse::<i32>()
             .map_err(|e| e.to_string())?;
         let anchor_video_id = components.join(":");
