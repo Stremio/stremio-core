@@ -11,7 +11,7 @@ pub struct WatchedBitField {
 
 impl WatchedBitField {
     pub fn construct_from_array(arr: Vec<bool>, video_ids: Vec<String>) -> WatchedBitField {
-        let mut bitfield = BitField8::from_size(video_ids.len());
+        let mut bitfield = BitField8::new(video_ids.len());
         for (i, val) in arr.iter().enumerate() {
             bitfield.set(i, *val);
         }
@@ -58,7 +58,7 @@ impl WatchedBitField {
             if offset != 0 {
                 // Resize the buffer
                 let mut resized_wbf = WatchedBitField {
-                    bitfield: BitField8::from_size(video_ids.len()),
+                    bitfield: BitField8::new(video_ids.len()),
                     video_ids: video_ids.clone(),
                 };
                 // rewrite the old buf into the new one, applying the offset
@@ -78,7 +78,7 @@ impl WatchedBitField {
         } else {
             // videoId could not be found, return a totally blank buf
             Ok(WatchedBitField {
-                bitfield: BitField8::from_size(video_ids.len()),
+                bitfield: BitField8::new(video_ids.len()),
                 video_ids,
             })
         }

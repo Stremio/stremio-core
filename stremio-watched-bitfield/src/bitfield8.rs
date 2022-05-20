@@ -8,9 +8,10 @@ pub struct BitField8 {
     pub length: usize,
     values: Vec<u8>,
 }
+
 impl BitField8 {
-    pub fn from_size(len: usize) -> BitField8 {
-        let length = (len as f64 / 8.0).ceil() as usize;
+    pub fn new(length: usize) -> BitField8 {
+        let length = (length as f64 / 8.0).ceil() as usize;
         BitField8 {
             length,
             values: vec![0; length],
