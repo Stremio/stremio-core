@@ -19,7 +19,6 @@ impl WatchedBitField {
             bitfield,
             video_ids,
         }
-        // Err("Not implemented".to_string())
     }
     pub fn construct_and_resize(
         serialized: &str,
