@@ -1,6 +1,10 @@
 mod bitfield8;
-pub mod watched_bitfield;
-pub use watched_bitfield::WatchedBitField;
+
+mod error;
+pub use error::*;
+
+mod watched_bitfield;
+pub use watched_bitfield::*;
 
 #[cfg(test)]
 mod tests {
