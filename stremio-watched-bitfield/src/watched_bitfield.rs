@@ -2,6 +2,7 @@ use base64::{decode, encode};
 use std::fmt;
 
 use crate::bitfield8::BitField8;
+use std::convert::TryFrom;
 
 #[derive(Debug, Clone)]
 pub struct WatchedBitField {
@@ -11,7 +12,7 @@ pub struct WatchedBitField {
 
 impl WatchedBitField {
     pub fn construct_from_array(arr: Vec<bool>, video_ids: Vec<String>) -> WatchedBitField {
-        let mut bitfield = BitField8::from_size(video_ids.len());
+        let mut bitfield = BitField8::new(video_ids.len());
         for (i, val) in arr.iter().enumerate() {
             bitfield.set(i, *val);
         }
@@ -49,16 +50,17 @@ impl WatchedBitField {
         // We can shift the bitmap in any direction, as long as we can find the anchor video
         if let Some(anchor_video_idx) = video_ids.iter().position(|s| *s == anchor_video_id) {
             let offset = anchor_length - anchor_video_idx as i32 - 1;
-            let bitfield = BitField8::from_packed(
+            let bitfield = BitField8::try_from((
                 decode(serialized_buf).map_err(|e| e.to_string())?,
                 Some(video_ids.len()),
-            )?;
+            ))
+            .map_err(|e| e.to_string())?;
 
             // in case of an previous empty array, this will be 0
             if offset != 0 {
                 // Resize the buffer
                 let mut resized_wbf = WatchedBitField {
-                    bitfield: BitField8::from_size(video_ids.len()),
+                    bitfield: BitField8::new(video_ids.len()),
                     video_ids: video_ids.clone(),
                 };
                 // rewrite the old buf into the new one, applying the offset
@@ -78,7 +80,7 @@ impl WatchedBitField {
         } else {
             // videoId could not be found, return a totally blank buf
             Ok(WatchedBitField {
-                bitfield: BitField8::from_size(video_ids.len()),
+                bitfield: BitField8::new(video_ids.len()),
                 video_ids,
             })
         }

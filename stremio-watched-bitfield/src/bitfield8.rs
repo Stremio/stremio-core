@@ -1,6 +1,7 @@
 use flate2::read::ZlibDecoder;
 use flate2::write::ZlibEncoder;
 use flate2::Compression;
+use std::convert::TryFrom;
 use std::io::{Read, Write};
 
 #[derive(Debug, Clone)]
@@ -8,31 +9,15 @@ pub struct BitField8 {
     pub length: usize,
     values: Vec<u8>,
 }
+
 impl BitField8 {
-    pub fn from_size(len: usize) -> BitField8 {
-        let length = (len as f64 / 8.0).ceil() as usize;
+    pub fn new(length: usize) -> BitField8 {
+        let length = (length as f64 / 8.0).ceil() as usize;
         BitField8 {
             length,
             values: vec![0; length],
         }
     }
-    pub fn from_packed(compressed: Vec<u8>, len: Option<usize>) -> Result<BitField8, String> {
-        let mut values = vec![];
-        let mut z = ZlibDecoder::new(&compressed[..]);
-        z.read_to_end(&mut values).map_err(|e| e.to_string())?;
-
-        let length = if let Some(len) = len {
-            len
-        } else {
-            values.len()
-        };
-        let bytes = (length as f64 / 8.0).ceil() as usize;
-        if bytes > values.len() {
-            values = [values.clone(), vec![0; bytes - values.len()]].concat();
-        }
-        Ok(BitField8 { length, values })
-    }
-
     pub fn to_packed(&self) -> Vec<u8> {
         let mut e = ZlibEncoder::new(Vec::new(), Compression::new(6));
         e.write_all(&self.values).ok();
@@ -72,5 +57,20 @@ impl BitField8 {
             }
         }
         None
+    }
+}
+
+impl TryFrom<(Vec<u8>, Option<usize>)> for BitField8 {
+    type Error = std::io::Error;
+    fn try_from((compressed, length): (Vec<u8>, Option<usize>)) -> Result<Self, Self::Error> {
+        let mut values = vec![];
+        let mut decoded = ZlibDecoder::new(&compressed[..]);
+        decoded.read_to_end(&mut values)?;
+        let length = length.unwrap_or_else(|| values.len() * 8);
+        let bytes = (length as f64 / 8.0).ceil() as usize;
+        if bytes > values.len() {
+            values.extend(vec![0; bytes - values.len()]);
+        }
+        Ok(BitField8 { length, values })
     }
 }
