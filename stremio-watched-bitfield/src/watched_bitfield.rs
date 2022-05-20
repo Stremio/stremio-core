@@ -1,18 +1,7 @@
-use std::convert::TryFrom;
-use std::error::Error;
-use std::fmt;
-
 use crate::bitfield8::BitField8;
-
-#[derive(Debug)]
-pub struct WatchedBitFieldError(String);
-impl fmt::Display for WatchedBitFieldError {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{}", self.0)
-    }
-}
-
-impl Error for WatchedBitFieldError {}
+use crate::error::Error;
+use std::convert::TryFrom;
+use std::fmt;
 
 #[derive(Debug, Clone)]
 pub struct WatchedBitField {
@@ -34,7 +23,7 @@ impl WatchedBitField {
     pub fn construct_and_resize(
         serialized: &str,
         video_ids: Vec<String>,
-    ) -> Result<WatchedBitField, Box<dyn std::error::Error>> {
+    ) -> Result<WatchedBitField, Error> {
         // note: videoIds.length could only be >= from serialized lastLength
         // should we assert?
         // we might also wanna assert that the bitfield.length for the returned wb is the same sa videoIds.length
@@ -43,9 +32,7 @@ impl WatchedBitField {
         let mut components = serialized.split(':').collect::<Vec<&str>>();
 
         if components.len() < 3 {
-            return Err(Box::new(WatchedBitFieldError(
-                "Not enough components".to_string(),
-            )));
+            return Err(Error("Not enough components".to_string()));
         }
         let serialized_buf = components
             .pop()

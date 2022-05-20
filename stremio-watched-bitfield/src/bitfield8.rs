@@ -1,3 +1,4 @@
+use crate::error::Error;
 use base64::{decode, encode};
 use flate2::read::ZlibDecoder;
 use flate2::write::ZlibEncoder;
@@ -58,7 +59,7 @@ impl BitField8 {
 }
 
 impl TryFrom<(String, Option<usize>)> for BitField8 {
-    type Error = Box<dyn std::error::Error>;
+    type Error = Error;
     fn try_from((encoded, length): (String, Option<usize>)) -> Result<Self, Self::Error> {
         let compressed = decode(encoded)?;
         let mut values = vec![];
