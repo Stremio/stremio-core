@@ -2,6 +2,7 @@ use base64::{decode, encode};
 use std::fmt;
 
 use crate::bitfield8::BitField8;
+use std::convert::TryFrom;
 
 #[derive(Debug, Clone)]
 pub struct WatchedBitField {
@@ -49,10 +50,11 @@ impl WatchedBitField {
         // We can shift the bitmap in any direction, as long as we can find the anchor video
         if let Some(anchor_video_idx) = video_ids.iter().position(|s| *s == anchor_video_id) {
             let offset = anchor_length - anchor_video_idx as i32 - 1;
-            let bitfield = BitField8::from_packed(
+            let bitfield = BitField8::try_from((
                 decode(serialized_buf).map_err(|e| e.to_string())?,
                 Some(video_ids.len()),
-            )?;
+            ))
+            .map_err(|e| e.to_string())?;
 
             // in case of an previous empty array, this will be 0
             if offset != 0 {
