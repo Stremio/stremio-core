@@ -73,10 +73,9 @@ impl BitField8 {
     }
 }
 
-
 #[cfg(test)]
 mod tests {
-use crate::bitfield8::BitField8;
+    use crate::bitfield8::BitField8;
     use base64::decode;
 
     #[test]
@@ -88,5 +87,5 @@ use crate::bitfield8::BitField8;
         // If the value is not provided the length is rounded tpwards the next byte
         let bf = BitField8::from_packed(watched.clone(), None).unwrap();
         assert_eq!(bf.length, 16);
-    } 
+    }
 }
