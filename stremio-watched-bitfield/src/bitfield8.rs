@@ -6,7 +6,7 @@ use flate2::Compression;
 use std::convert::TryFrom;
 use std::io::{Read, Write};
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct BitField8 {
     pub length: usize,
     values: Vec<u8>,
