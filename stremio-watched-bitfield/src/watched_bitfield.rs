@@ -51,7 +51,7 @@ impl WatchedBitField {
         if let Some(anchor_video_idx) = video_ids.iter().position(|s| *s == anchor_video_id) {
             let offset = anchor_length - anchor_video_idx as i32 - 1;
             let bitfield = BitField8::try_from((
-                &decode(serialized_buf).map_err(|e| e.to_string())?,
+                decode(serialized_buf).map_err(|e| e.to_string())?,
                 Some(video_ids.len()),
             ))
             .map_err(|e| e.to_string())?;

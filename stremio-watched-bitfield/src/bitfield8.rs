@@ -55,9 +55,9 @@ impl BitField8 {
     }
 }
 
-impl TryFrom<(&Vec<u8>, Option<usize>)> for BitField8 {
+impl TryFrom<(Vec<u8>, Option<usize>)> for BitField8 {
     type Error = std::io::Error;
-    fn try_from((compressed, length): (&Vec<u8>, Option<usize>)) -> Result<Self, Self::Error> {
+    fn try_from((compressed, length): (Vec<u8>, Option<usize>)) -> Result<Self, Self::Error> {
         let mut values = vec![];
         let mut decoded = ZlibDecoder::new(&compressed[..]);
         decoded.read_to_end(&mut values)?;
@@ -88,11 +88,11 @@ mod tests {
     #[test]
     fn parse_length() {
         let watched = decode("eJyTZwAAAEAAIA==").unwrap();
-        let bf = BitField8::try_from((&watched, Some(9))).unwrap();
+        let bf = BitField8::try_from((watched.clone(), Some(9))).unwrap();
         assert_eq!(bf.length, 9);
 
         // If the value is not provided the length is rounded tpwards the next byte
-        let bf = BitField8::try_from((&watched, None)).unwrap();
+        let bf = BitField8::try_from((watched, None)).unwrap();
         assert_eq!(bf.length, 16);
     }
 }
