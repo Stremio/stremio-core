@@ -108,21 +108,30 @@ impl ResourceRequest {
 #[derive(Clone)]
 #[cfg_attr(debug_assertions, derive(Debug))]
 pub enum AggrRequest<'a> {
-    AllCatalogs { extra: &'a Vec<ExtraValue> },
+    AllCatalogs {
+        extra: &'a Vec<ExtraValue>,
+        r#type: &'a Option<String>,
+    },
     AllOfResource(ResourcePath),
 }
 
 impl AggrRequest<'_> {
     pub fn plan<'a>(&self, addons: &'a [Descriptor]) -> Vec<(&'a Descriptor, ResourceRequest)> {
         match &self {
-            AggrRequest::AllCatalogs { extra } => addons
+            AggrRequest::AllCatalogs { extra, r#type } => addons
                 .iter()
                 .map(|addon| {
                     addon
                         .manifest
                         .catalogs
                         .iter()
-                        .filter(|catalog| catalog.is_extra_supported(&extra))
+                        .filter(|catalog| {
+                            catalog.is_extra_supported(&extra)
+                                && r#type
+                                    .as_ref()
+                                    .map(|r#type| catalog.r#type == *r#type)
+                                    .unwrap_or(true)
+                        })
                         .map(move |catalog| {
                             (
                                 addon,

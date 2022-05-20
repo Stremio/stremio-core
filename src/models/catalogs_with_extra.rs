@@ -12,6 +12,8 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Clone, PartialEq, Serialize, Deserialize)]
 pub struct Selected {
+    pub r#type: Option<String>,
+    #[serde(default)]
     pub extra: Vec<ExtraValue>,
 }
 
@@ -31,6 +33,7 @@ impl<E: Env + 'static> UpdateWithCtx<E> for CatalogsWithExtra {
                     ResourcesAction::ResourcesRequested {
                         request: &AggrRequest::AllCatalogs {
                             extra: &selected.extra,
+                            r#type: &selected.r#type,
                         },
                         range: &None,
                         addons: &ctx.profile.addons,
@@ -50,6 +53,7 @@ impl<E: Env + 'static> UpdateWithCtx<E> for CatalogsWithExtra {
                         ResourcesAction::ResourcesRequested {
                             request: &AggrRequest::AllCatalogs {
                                 extra: &selected.extra,
+                                r#type: &selected.r#type,
                             },
                             range: &Some(ResourcesRequestRange::Range(range.to_owned())),
                             addons: &ctx.profile.addons,
@@ -74,6 +78,7 @@ impl<E: Env + 'static> UpdateWithCtx<E> for CatalogsWithExtra {
                     ResourcesAction::ResourcesRequested {
                         request: &AggrRequest::AllCatalogs {
                             extra: &selected.extra,
+                            r#type: &selected.r#type,
                         },
                         range: &None,
                         addons: &ctx.profile.addons,
