@@ -72,9 +72,9 @@ impl TryFrom<(Vec<u8>, Option<usize>)> for BitField8 {
 
 impl TryFrom<&BitField8> for Vec<u8> {
     type Error = std::io::Error;
-    fn try_from(compressed: &BitField8) -> Result<Self, Self::Error> {
+    fn try_from(bit_field: &BitField8) -> Result<Self, Self::Error> {
         let mut encoder = ZlibEncoder::new(Vec::new(), Compression::new(6));
-        encoder.write_all(&compressed.values)?;
+        encoder.write_all(&bit_field.values)?;
         encoder.finish()
     }
 }
