@@ -1,4 +1,5 @@
 use base64::{decode, encode};
+use std::convert::TryFrom;
 use std::fmt;
 
 use crate::bitfield8::BitField8;
@@ -49,10 +50,10 @@ impl WatchedBitField {
         // We can shift the bitmap in any direction, as long as we can find the anchor video
         if let Some(anchor_video_idx) = video_ids.iter().position(|s| *s == anchor_video_id) {
             let offset = anchor_length - anchor_video_idx as i32 - 1;
-            let bitfield = BitField8::from_packed(
-                decode(serialized_buf).map_err(|e| e.to_string())?,
+            let bitfield = BitField8::try_from((
+                &decode(serialized_buf).map_err(|e| e.to_string())?,
                 Some(video_ids.len()),
-            )
+            ))
             .map_err(|e| e.to_string())?;
 
             // in case of an previous empty array, this will be 0
@@ -110,10 +111,7 @@ impl WatchedBitField {
 
 impl fmt::Display for WatchedBitField {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        let packed = self
-            .bitfield
-            .to_packed()
-            .expect("bitfield failed to compress");
+        let packed = Vec::<u8>::try_from(&self.bitfield).expect("bitfield failed to compress");
         let last_id = self.bitfield.last_index_of(true).unwrap_or(0);
         write!(
             f,
