@@ -110,8 +110,10 @@ impl WatchedBitField {
 
 impl fmt::Display for WatchedBitField {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        let packed = self.bitfield.clone().to_packed();
-
+        let packed = self
+            .bitfield
+            .to_packed()
+            .expect("bitfield failed to compress");
         let last_id = self.bitfield.last_index_of(true).unwrap_or(0);
         write!(
             f,

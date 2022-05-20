@@ -17,6 +17,7 @@ impl BitField8 {
             values: vec![0; length],
         }
     }
+
     pub fn from_packed(
         compressed: Vec<u8>,
         length: Option<usize>,
@@ -31,10 +32,11 @@ impl BitField8 {
         }
         Ok(BitField8 { length, values })
     }
-    pub fn to_packed(&self) -> Vec<u8> {
-        let mut e = ZlibEncoder::new(Vec::new(), Compression::new(6));
-        e.write_all(&self.values).ok();
-        e.finish().expect("flate2 should compress")
+
+    pub fn to_packed(&self) -> Result<Vec<u8>, std::io::Error> {
+        let mut encoder = ZlibEncoder::new(Vec::new(), Compression::new(6));
+        encoder.write_all(&self.values)?;
+        encoder.finish()
     }
 
     pub fn get(&self, i: usize) -> bool {
