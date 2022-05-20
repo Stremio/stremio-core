@@ -7,8 +7,10 @@ use crate::models::ctx::Ctx;
 use crate::runtime::msg::{Action, ActionLoad, Internal, Msg};
 use crate::runtime::{Effects, Env, UpdateWithCtx};
 use crate::types::addon::{AggrRequest, ResourcePath};
+use crate::types::library::{LibraryBucket, LibraryItem, LibraryItemState};
 use crate::types::resource::{MetaItem, Stream};
 use serde::{Deserialize, Serialize};
+use stremio_watched_bitfield::WatchedBitField;
 
 #[derive(Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -23,6 +25,9 @@ pub struct MetaDetails {
     pub selected: Option<Selected>,
     pub meta_items: Vec<ResourceLoadable<MetaItem>>,
     pub streams: Vec<ResourceLoadable<Vec<Stream>>>,
+    pub library_item: Option<LibraryItem>,
+    #[serde(skip_serializing)]
+    pub watched: Vec<Option<WatchedBitField>>,
 }
 
 impl<E: Env + 'static> UpdateWithCtx<E> for MetaDetails {
@@ -57,17 +62,27 @@ impl<E: Env + 'static> UpdateWithCtx<E> for MetaDetails {
                     }
                     None => eq_update(&mut self.streams, vec![]),
                 };
+                let library_item_effects =
+                    library_item_update(&mut self.library_item, &self.selected, &ctx.library);
+                let watched_effects =
+                    watched_update::<E>(&mut self.watched, &self.meta_items, &self.library_item);
                 selected_effects
                     .join(meta_items_effects)
                     .join(streams_effects)
+                    .join(library_item_effects)
+                    .join(watched_effects)
             }
             Msg::Action(Action::Unload) => {
                 let selected_effects = eq_update(&mut self.selected, None);
                 let meta_items_effects = eq_update(&mut self.meta_items, vec![]);
                 let streams_effects = eq_update(&mut self.streams, vec![]);
+                let library_item_effects = eq_update(&mut self.library_item, None);
+                let watched_effects = eq_update(&mut self.watched, vec![]);
                 selected_effects
                     .join(meta_items_effects)
                     .join(streams_effects)
+                    .join(library_item_effects)
+                    .join(watched_effects)
             }
             Msg::Internal(Internal::ResourceRequestResult(request, result))
                 if request.path.resource == META_RESOURCE_NAME =>
@@ -95,7 +110,11 @@ impl<E: Env + 'static> UpdateWithCtx<E> for MetaDetails {
                     }
                     _ => Effects::none().unchanged(),
                 };
-                meta_items_effects.join(streams_effects)
+                let watched_effects =
+                    watched_update::<E>(&mut self.watched, &self.meta_items, &self.library_item);
+                meta_items_effects
+                    .join(streams_effects)
+                    .join(watched_effects)
             }
             Msg::Internal(Internal::ResourceRequestResult(request, result))
                 if request.path.resource == STREAM_RESOURCE_NAME =>
@@ -109,9 +128,68 @@ impl<E: Env + 'static> UpdateWithCtx<E> for MetaDetails {
                     },
                 )
             }
+            Msg::Internal(Internal::LibraryChanged(_)) => {
+                let library_item_effects =
+                    library_item_update(&mut self.library_item, &self.selected, &ctx.library);
+                let watched_effects =
+                    watched_update::<E>(&mut self.watched, &self.meta_items, &self.library_item);
+                library_item_effects.join(watched_effects)
+            }
             _ => Effects::none().unchanged(),
         }
     }
+}
+
+fn library_item_update(
+    library_item: &mut Option<LibraryItem>,
+    selected: &Option<Selected>,
+    library: &LibraryBucket,
+) -> Effects {
+    let next_library_item = match selected {
+        Some(selected) => library.items.get(&selected.meta_path.id).cloned(),
+        _ => None,
+    };
+    eq_update(library_item, next_library_item)
+}
+
+fn watched_update<E: Env>(
+    watched: &mut Vec<Option<WatchedBitField>>,
+    meta_items: &[ResourceLoadable<MetaItem>],
+    library_item: &Option<LibraryItem>,
+) -> Effects {
+    let next_watched = meta_items
+        .iter()
+        .map(|meta_item| match (&meta_item.content, library_item) {
+            (
+                Some(Loadable::Ready(meta_item)),
+                Some(LibraryItem {
+                    state:
+                        LibraryItemState {
+                            watched: Some(watched),
+                            ..
+                        },
+                    ..
+                }),
+            ) => {
+                let video_ids = meta_item
+                    .videos
+                    .iter()
+                    .map(|video| &video.id)
+                    .cloned()
+                    .collect::<Vec<_>>();
+                match WatchedBitField::construct_and_resize(watched, video_ids) {
+                    Ok(watched) => Some(watched),
+                    Err(error) => {
+                        #[cfg(debug_assertions)]
+                        E::log(error.to_string());
+                        None
+                    }
+                }
+            }
+            _ => None,
+        })
+        .collect::<Vec<_>>();
+    eq_update(watched, next_watched)
 }
 
 fn streams_from_meta_items(
