@@ -1,4 +1,5 @@
 use base64::{decode, encode};
+use std::fmt;
 
 use crate::bitfield8::BitField8;
 
@@ -84,18 +85,6 @@ impl WatchedBitField {
         }
     }
 
-    pub fn serialize(&self) -> String {
-        let packed = self.bitfield.clone().to_packed();
-
-        let last_id = self.bitfield.last_index_of(true).unwrap_or(0);
-        format!(
-            "{}:{}:{}",
-            self.video_ids[last_id],
-            last_id + 1,
-            encode(packed)
-        )
-    }
-
     pub fn get(&self, idx: usize) -> bool {
         self.bitfield.get(idx)
     }
@@ -116,5 +105,20 @@ impl WatchedBitField {
         if let Some(pos) = self.video_ids.iter().position(|s| *s == video_id) {
             self.bitfield.set(pos, v);
         }
+    }
+}
+
+impl fmt::Display for WatchedBitField {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        let packed = self.bitfield.clone().to_packed();
+
+        let last_id = self.bitfield.last_index_of(true).unwrap_or(0);
+        write!(
+            f,
+            "{}:{}:{}",
+            self.video_ids[last_id],
+            last_id + 1,
+            encode(packed)
+        )
     }
 }

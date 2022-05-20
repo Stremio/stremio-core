@@ -28,7 +28,7 @@ mod tests {
         assert_eq!(wb.get_video("tt2934286:1:5".to_string()), true);
         assert_eq!(wb.get_video("tt2934286:1:6".to_string()), false);
 
-        assert_eq!(watched, wb.serialize());
+        assert_eq!(watched, wb.to_string());
 
         wb.set_video("tt2934286:1:6".to_string(), true);
         assert_eq!(wb.get_video("tt2934286:1:6".to_string()), true);
@@ -54,7 +54,7 @@ mod tests {
         }
 
         // Serialize and deserialize to new structure
-        let watched = wb.serialize();
+        let watched = wb.to_string();
         let wb2 = WatchedBitField::construct_and_resize(
             &watched,
             video_ids.iter().map(|v| v.to_string()).collect(),
