@@ -52,7 +52,10 @@ impl WatchedBitField {
             .ok_or("Cannot obtain the serialized data")?
             .to_string();
 
-        let anchor_length = components.pop().expect("No length field").parse::<i32>()?;
+        let anchor_length = components
+            .pop()
+            .ok_or("Cannot obtain the length field")?
+            .parse::<i32>()?;
         let anchor_video_id = components.join(":");
 
         // We can shift the bitmap in any direction, as long as we can find the anchor video

@@ -36,9 +36,10 @@ impl BitField8 {
         let mask = 1 << (i % 8);
 
         if index >= self.values.len() {
-            self.values = [self.values.clone(), vec![0; index - self.values.len() + 1]].concat();
+            self.values.extend(vec![0; index - self.values.len() + 1]);
+            self.length = self.values.len() * 8;
         }
-        self.length = self.values.len() * 8;
+
         if val {
             self.values[index] |= mask;
         } else {
