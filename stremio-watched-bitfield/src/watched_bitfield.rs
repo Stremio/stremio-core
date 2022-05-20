@@ -1,7 +1,18 @@
-use base64::{decode, encode};
+use std::convert::TryFrom;
+use std::error::Error;
 use std::fmt;
 
 use crate::bitfield8::BitField8;
+
+#[derive(Debug)]
+pub struct WatchedBitFieldError(String);
+impl fmt::Display for WatchedBitFieldError {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{}", self.0)
+    }
+}
+
+impl Error for WatchedBitFieldError {}
 
 #[derive(Debug, Clone)]
 pub struct WatchedBitField {
@@ -23,7 +34,7 @@ impl WatchedBitField {
     pub fn construct_and_resize(
         serialized: &str,
         video_ids: Vec<String>,
-    ) -> Result<WatchedBitField, String> {
+    ) -> Result<WatchedBitField, Box<dyn std::error::Error>> {
         // note: videoIds.length could only be >= from serialized lastLength
         // should we assert?
         // we might also wanna assert that the bitfield.length for the returned wb is the same sa videoIds.length
@@ -32,7 +43,9 @@ impl WatchedBitField {
         let mut components = serialized.split(':').collect::<Vec<&str>>();
 
         if components.len() < 3 {
-            return Err("Not enough components".to_string());
+            return Err(Box::new(WatchedBitFieldError(
+                "Not enough components".to_string(),
+            )));
         }
         let serialized_buf = components
             .pop()
@@ -42,18 +55,13 @@ impl WatchedBitField {
         let anchor_length = components
             .pop()
             .ok_or("Cannot obtain the length field")?
-            .parse::<i32>()
-            .map_err(|e| e.to_string())?;
+            .parse::<i32>()?;
         let anchor_video_id = components.join(":");
 
         // We can shift the bitmap in any direction, as long as we can find the anchor video
         if let Some(anchor_video_idx) = video_ids.iter().position(|s| *s == anchor_video_id) {
             let offset = anchor_length - anchor_video_idx as i32 - 1;
-            let bitfield = BitField8::from_packed(
-                decode(serialized_buf).map_err(|e| e.to_string())?,
-                Some(video_ids.len()),
-            )
-            .map_err(|e| e.to_string())?;
+            let bitfield = BitField8::try_from((serialized_buf, Some(video_ids.len())))?;
 
             // in case of an previous empty array, this will be 0
             if offset != 0 {
@@ -110,17 +118,8 @@ impl WatchedBitField {
 
 impl fmt::Display for WatchedBitField {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        let packed = self
-            .bitfield
-            .to_packed()
-            .expect("bitfield failed to compress");
+        let packed = String::try_from(&self.bitfield).expect("bitfield failed to compress");
         let last_id = self.bitfield.last_index_of(true).unwrap_or(0);
-        write!(
-            f,
-            "{}:{}:{}",
-            self.video_ids[last_id],
-            last_id + 1,
-            encode(packed)
-        )
+        write!(f, "{}:{}:{}", self.video_ids[last_id], last_id + 1, packed)
     }
 }

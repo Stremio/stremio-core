@@ -1,6 +1,8 @@
+use base64::{decode, encode};
 use flate2::read::ZlibDecoder;
 use flate2::write::ZlibEncoder;
 use flate2::Compression;
+use std::convert::TryFrom;
 use std::io::{Read, Write};
 
 #[derive(Debug, Clone)]
@@ -16,27 +18,6 @@ impl BitField8 {
             length,
             values: vec![0; length],
         }
-    }
-
-    pub fn from_packed(
-        compressed: Vec<u8>,
-        length: Option<usize>,
-    ) -> Result<BitField8, std::io::Error> {
-        let mut values = vec![];
-        let mut decoded = ZlibDecoder::new(&compressed[..]);
-        decoded.read_to_end(&mut values)?;
-        let length = length.unwrap_or_else(|| values.len() * 8);
-        let bytes = (length as f64 / 8.0).ceil() as usize;
-        if bytes > values.len() {
-            values.extend(vec![0; bytes - values.len()]);
-        }
-        Ok(BitField8 { length, values })
-    }
-
-    pub fn to_packed(&self) -> Result<Vec<u8>, std::io::Error> {
-        let mut encoder = ZlibEncoder::new(Vec::new(), Compression::new(6));
-        encoder.write_all(&self.values)?;
-        encoder.finish()
     }
 
     pub fn get(&self, i: usize) -> bool {
@@ -76,19 +57,44 @@ impl BitField8 {
     }
 }
 
+impl TryFrom<(String, Option<usize>)> for BitField8 {
+    type Error = Box<dyn std::error::Error>;
+    fn try_from((encoded, length): (String, Option<usize>)) -> Result<Self, Self::Error> {
+        let compressed = decode(encoded)?;
+        let mut values = vec![];
+        let mut decoded = ZlibDecoder::new(&compressed[..]);
+        decoded.read_to_end(&mut values)?;
+        let length = length.unwrap_or_else(|| values.len() * 8);
+        let bytes = (length as f64 / 8.0).ceil() as usize;
+        if bytes > values.len() {
+            values.extend(vec![0; bytes - values.len()]);
+        }
+        Ok(BitField8 { length, values })
+    }
+}
+
+impl TryFrom<&BitField8> for String {
+    type Error = std::io::Error;
+    fn try_from(bit_field: &BitField8) -> Result<Self, Self::Error> {
+        let mut encoder = ZlibEncoder::new(Vec::new(), Compression::new(6));
+        encoder.write_all(&bit_field.values)?;
+        Ok(encode(encoder.finish()?))
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use crate::bitfield8::BitField8;
-    use base64::decode;
+    use std::convert::TryFrom;
 
     #[test]
     fn parse_length() {
-        let watched = decode("eJyTZwAAAEAAIA==").unwrap();
-        let bf = BitField8::from_packed(watched.clone(), Some(9)).unwrap();
+        let watched = "eJyTZwAAAEAAIA==".to_string();
+        let bf = BitField8::try_from((watched.clone(), Some(9))).unwrap();
         assert_eq!(bf.length, 9);
 
         // If the value is not provided the length is rounded tpwards the next byte
-        let bf = BitField8::from_packed(watched.clone(), None).unwrap();
+        let bf = BitField8::try_from((watched, None)).unwrap();
         assert_eq!(bf.length, 16);
     }
 }
