@@ -372,7 +372,7 @@ impl DefaultTokens for Settings {
         vec![
             Token::Struct {
                 name: "Settings",
-                len: 16,
+                len: 18,
             },
             Token::Str("interfaceLanguage"),
             Token::Str("eng"),
@@ -386,6 +386,10 @@ impl DefaultTokens for Settings {
             Token::Bool(false),
             Token::Str("hardwareDecoding"),
             Token::Bool(true),
+            Token::Str("audioPassthrough"),
+            Token::Bool(false),
+            Token::Str("audioLanguage"),
+            Token::Str("eng"),
             Token::Str("subtitlesLanguage"),
             Token::Str("eng"),
             Token::Str("subtitlesSize"),

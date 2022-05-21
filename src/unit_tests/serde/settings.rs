@@ -14,6 +14,8 @@ fn settings() {
             play_in_background: true,
             play_in_external_player: true,
             hardware_decoding: true,
+            audio_passthrough: true,
+            audio_language: "audio_language".to_owned(),
             subtitles_language: "subtitles_language".to_owned(),
             subtitles_size: 1,
             subtitles_font: "subtitles_font".to_owned(),
@@ -28,7 +30,7 @@ fn settings() {
         &[
             Token::Struct {
                 name: "Settings",
-                len: 16,
+                len: 18,
             },
             Token::Str("interfaceLanguage"),
             Token::Str("interface_language"),
@@ -42,6 +44,10 @@ fn settings() {
             Token::Bool(true),
             Token::Str("hardwareDecoding"),
             Token::Bool(true),
+            Token::Str("audioPassthrough"),
+            Token::Bool(true),
+            Token::Str("audioLanguage"),
+            Token::Str("audio_language"),
             Token::Str("subtitlesLanguage"),
             Token::Str("subtitles_language"),
             Token::Str("subtitlesSize"),
