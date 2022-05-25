@@ -136,8 +136,9 @@ pub fn serialize_meta_details(meta_details: &MetaDetails, ctx: &Ctx) -> JsValue 
                             .iter()
                             .map(|video| model::Video {
                                 video,
-                                upcomming: meta_item.behavior_hints.has_scheduled_videos
+                                upcomming: meta_item.preview.behavior_hints.has_scheduled_videos
                                     && meta_item
+                                        .preview
                                         .released
                                         .map(|released| released > WebEnv::now())
                                         .unwrap_or(true),
@@ -145,11 +146,12 @@ pub fn serialize_meta_details(meta_details: &MetaDetails, ctx: &Ctx) -> JsValue 
                                     .map(|watched| watched.get_video(&video.id))
                                     .unwrap_or_default(),
                                 progress: None, // TODO use library,
-                                scheduled: meta_item.behavior_hints.has_scheduled_videos,
+                                scheduled: meta_item.preview.behavior_hints.has_scheduled_videos,
                                 deep_links: VideoDeepLinks::from((video, request)),
                             })
                             .collect::<Vec<_>>(),
                         trailer_streams: meta_item
+                            .preview
                             .trailer_streams
                             .iter()
                             .map(|stream| model::Stream {
@@ -160,7 +162,7 @@ pub fn serialize_meta_details(meta_details: &MetaDetails, ctx: &Ctx) -> JsValue 
                         in_library: ctx
                             .library
                             .items
-                            .get(&meta_item.id)
+                            .get(&meta_item.preview.id)
                             .map(|library_item| !library_item.removed)
                             .unwrap_or_default(),
                         deep_links: MetaItemDeepLinks::from(meta_item),
@@ -249,6 +251,7 @@ pub fn serialize_meta_details(meta_details: &MetaDetails, ctx: &Ctx) -> JsValue 
                     ..
                 } => Either::Left(
                     meta_item
+                        .preview
                         .links
                         .iter()
                         .filter(|link| link.category == META_RESOURCE_NAME)
@@ -290,22 +293,27 @@ pub fn serialize_meta_details(meta_details: &MetaDetails, ctx: &Ctx) -> JsValue 
                             .iter()
                             .find(|video| video.id == stream_path.id)
                         {
-                            Some(video) if meta_item.behavior_hints.default_video_id.is_none() => {
+                            Some(video)
+                                if meta_item.preview.behavior_hints.default_video_id.is_none() =>
+                            {
                                 match &video.series_info {
                                     Some(series_info) => Some(format!(
                                         "{} - {} ({}x{})",
-                                        &meta_item.name,
+                                        &meta_item.preview.name,
                                         &video.title,
                                         &series_info.season,
                                         &series_info.episode
                                     )),
-                                    _ => Some(format!("{} - {}", &meta_item.name, &video.title)),
+                                    _ => Some(format!(
+                                        "{} - {}",
+                                        &meta_item.preview.name, &video.title
+                                    )),
                                 }
                             }
                             _ => None,
                         }
                     })
-                    .unwrap_or_else(|| meta_item.name.to_owned())
+                    .unwrap_or_else(|| meta_item.preview.name.to_owned())
             }),
     })
     .unwrap()

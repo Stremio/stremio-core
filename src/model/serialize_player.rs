@@ -123,14 +123,15 @@ pub fn serialize_player(player: &Player, ctx: &Ctx) -> JsValue {
                             .iter()
                             .map(|video| model::Video {
                                 video,
-                                upcomming: meta_item.behavior_hints.has_scheduled_videos
+                                upcomming: meta_item.preview.behavior_hints.has_scheduled_videos
                                     && meta_item
+                                        .preview
                                         .released
                                         .map(|released| released > WebEnv::now())
                                         .unwrap_or(true),
                                 watched: false, // TODO use library
                                 progress: None, // TODO use library,
-                                scheduled: meta_item.behavior_hints.has_scheduled_videos,
+                                scheduled: meta_item.preview.behavior_hints.has_scheduled_videos,
                                 deep_links: VideoDeepLinks::from((video, request)),
                             })
                             .collect(),
@@ -183,8 +184,9 @@ pub fn serialize_player(player: &Player, ctx: &Ctx) -> JsValue {
                         _ => None,
                     })
                     .map(|meta_item| {
-                        meta_item.behavior_hints.has_scheduled_videos
+                        meta_item.preview.behavior_hints.has_scheduled_videos
                             && meta_item
+                                .preview
                                 .released
                                 .map(|released| released > WebEnv::now())
                                 .unwrap_or(true)
@@ -199,7 +201,7 @@ pub fn serialize_player(player: &Player, ctx: &Ctx) -> JsValue {
                         ResourceLoadable {
                             content: Some(Loadable::Ready(meta_item)),
                             ..
-                        } => Some(meta_item.behavior_hints.has_scheduled_videos),
+                        } => Some(meta_item.preview.behavior_hints.has_scheduled_videos),
                         _ => None,
                     })
                     .unwrap_or_default(),
@@ -234,19 +236,21 @@ pub fn serialize_player(player: &Player, ctx: &Ctx) -> JsValue {
                         .iter()
                         .find(|video| video.id == stream_request.path.id)
                     {
-                        Some(video) if meta_item.behavior_hints.default_video_id.is_none() => {
+                        Some(video)
+                            if meta_item.preview.behavior_hints.default_video_id.is_none() =>
+                        {
                             match &video.series_info {
                                 Some(series_info) => format!(
                                     "{} - {} ({}x{})",
-                                    &meta_item.name,
+                                    &meta_item.preview.name,
                                     &video.title,
                                     &series_info.season,
                                     &series_info.episode
                                 ),
-                                _ => format!("{} - {}", &meta_item.name, &video.title),
+                                _ => format!("{} - {}", &meta_item.preview.name, &video.title),
                             }
                         }
-                        _ => meta_item.name.to_owned(),
+                        _ => meta_item.preview.name.to_owned(),
                     }
                 })
                 .or_else(|| selected.stream.name.to_owned())
