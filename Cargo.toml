@@ -5,13 +5,19 @@ authors = ["Smart Code OOD"]
 edition = "2018"
 
 [workspace]
-members = ["stremio-derive", "stremio-analytics", "stremio-deeplinks", "stremio-watched-bitfield"]
+members = [
+    "stremio-derive",
+    "stremio-analytics",
+    "stremio-deeplinks",
+    "stremio-watched-bitfield",
+]
 
 [lib]
 doctest = false
 
 [dependencies]
 stremio-derive = { path = "stremio-derive" }
+stremio-watched-bitfield = { path = "stremio-watched-bitfield" }
 stremio-official-addons = "=2.0.9"
 serde = "1.0.*"
 serde_json = "1.0.*"
