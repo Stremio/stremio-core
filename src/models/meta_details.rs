@@ -4,7 +4,7 @@ use crate::models::common::{
     ResourcesAction, ResourcesRequestRange,
 };
 use crate::models::ctx::Ctx;
-use crate::runtime::msg::{Action, ActionLoad, Internal, Msg};
+use crate::runtime::msg::{Action, ActionLoad, ActionMetaDetails, Internal, Msg};
 use crate::runtime::{Effects, Env, UpdateWithCtx};
 use crate::types::addon::{AggrRequest, ResourcePath};
 use crate::types::library::{LibraryBucket, LibraryItem, LibraryItemState};
@@ -83,6 +83,29 @@ impl<E: Env + 'static> UpdateWithCtx<E> for MetaDetails {
                     .join(streams_effects)
                     .join(library_item_effects)
                     .join(watched_effects)
+            }
+            Msg::Action(Action::MetaDetails(ActionMetaDetails::MarkAsWatched(
+                video_id,
+                is_watched,
+            ))) => {
+                let watched = self
+                    .meta_items
+                    .iter()
+                    .zip(self.watched.iter())
+                    .find(|(meta_item, _)| matches!(&meta_item.content, Some(Loadable::Ready(_))))
+                    .map(|(_, watched)| watched.as_ref())
+                    .flatten();
+                match (&self.library_item, watched) {
+                    (Some(library_item), Some(watched)) => {
+                        let mut library_item = library_item.to_owned();
+                        let mut watched = watched.to_owned();
+                        watched.set_video(video_id, *is_watched);
+                        library_item.state.watched = Some(watched.to_string());
+                        Effects::msg(Msg::Internal(Internal::UpdateLibraryItem(library_item)))
+                            .unchanged()
+                    }
+                    _ => Effects::none().unchanged(),
+                }
             }
             Msg::Internal(Internal::ResourceRequestResult(request, result))
                 if request.path.resource == META_RESOURCE_NAME =>
