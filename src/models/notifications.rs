@@ -118,7 +118,7 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Notifications {
                     // Modify all the items so that only the new videos are left
                     if let Some(Loadable::Ready(ref mut meta_items)) = self.groups[idx].content {
                         for item in meta_items {
-                            if let Some(library_item) = ctx.library.items.get(&item.id) {
+                            if let Some(library_item) = ctx.library.items.get(&item.preview.id) {
                                 item.videos
                                     // It's not gonna be a notification if we don't have the
                                     // released date of the last watched video

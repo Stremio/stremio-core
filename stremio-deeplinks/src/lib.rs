@@ -149,30 +149,7 @@ impl From<&MetaItemPreview> for MetaItemDeepLinks {
 
 impl From<&MetaItem> for MetaItemDeepLinks {
     fn from(item: &MetaItem) -> Self {
-        MetaItemDeepLinks {
-            meta_details_videos: item
-                .behavior_hints
-                .default_video_id
-                .as_ref()
-                .cloned()
-                .xor(Some(format!(
-                    "#/metadetails/{}/{}",
-                    utf8_percent_encode(&item.r#type, URI_COMPONENT_ENCODE_SET),
-                    utf8_percent_encode(&item.id, URI_COMPONENT_ENCODE_SET)
-                ))),
-            meta_details_streams: item
-                .behavior_hints
-                .default_video_id
-                .as_ref()
-                .map(|video_id| {
-                    format!(
-                        "#/metadetails/{}/{}/{}",
-                        utf8_percent_encode(&item.r#type, URI_COMPONENT_ENCODE_SET),
-                        utf8_percent_encode(&item.id, URI_COMPONENT_ENCODE_SET),
-                        utf8_percent_encode(&video_id, URI_COMPONENT_ENCODE_SET)
-                    )
-                }),
-        }
+        MetaItemDeepLinks::from(&item.preview)
     }
 }
 

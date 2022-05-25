@@ -1,5 +1,7 @@
 use crate::types::resource::Stream;
-use crate::types::resource::{MetaItem, SeriesInfo, StreamBehaviorHints, StreamSource, Video};
+use crate::types::resource::{
+    MetaItem, MetaItemPreview, SeriesInfo, StreamBehaviorHints, StreamSource, Video,
+};
 use crate::unit_tests::serde::default_tokens_ext::{DefaultFlattenTokens, DefaultTokens};
 use chrono::prelude::TimeZone;
 use chrono::Utc;
@@ -215,9 +217,12 @@ fn video() {
 fn videos_minimal() {
     assert_de_tokens(
         &MetaItem {
-            id: "id".to_owned(),
-            r#type: "type".to_owned(),
-            name: "".to_owned(),
+            preview: MetaItemPreview {
+                id: "id".to_owned(),
+                r#type: "type".to_owned(),
+                name: "".to_owned(),
+                ..Default::default()
+            },
             // Nothing to sort against. The ordering is from the addon
             videos: vec![
                 Video {
@@ -286,9 +291,12 @@ fn videos_minimal() {
 fn videos_released_equal() {
     assert_de_tokens(
         &MetaItem {
-            id: "id".to_owned(),
-            r#type: "type".to_owned(),
-            name: "".to_owned(),
+            preview: MetaItemPreview {
+                id: "id".to_owned(),
+                r#type: "type".to_owned(),
+                name: "".to_owned(),
+                ..Default::default()
+            },
             // All have same date. The ordering is from the addon
             videos: vec![
                 Video {
@@ -366,9 +374,12 @@ fn videos_released_equal() {
 fn videos_released_sequal() {
     assert_de_tokens(
         &MetaItem {
-            id: "id".to_owned(),
-            r#type: "type".to_owned(),
-            name: "".to_owned(),
+            preview: MetaItemPreview {
+                id: "id".to_owned(),
+                r#type: "type".to_owned(),
+                name: "".to_owned(),
+                ..Default::default()
+            },
             // There is no series_info. Order by date descending.
             // If no date - at the end and the order is defined by addon
             videos: vec![
@@ -475,9 +486,12 @@ fn videos_released_sequal() {
 fn various_videos_deserialization() {
     assert_de_tokens(
         &MetaItem {
-            id: "id".to_owned(),
-            r#type: "type".to_owned(),
-            name: "".to_owned(),
+            preview: MetaItemPreview {
+                id: "id".to_owned(),
+                r#type: "type".to_owned(),
+                name: "".to_owned(),
+                ..Default::default()
+            },
             // Sort by season, then episode. Special at the end.
             // If no series_info sort by date ascending
             // If no date - sort to the end. Preserve order from addon
