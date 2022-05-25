@@ -712,7 +712,7 @@ dependencies = [
 [[package]]
 name = "stremio-analytics"
 version = "0.1.0"
-source = "git+https://github.com/Stremio/stremio-core?branch=development#27a519867ccda9d5f84bf18c28350535937dc3ce"
+source = "git+https://github.com/Stremio/stremio-core?branch=development#38a146d064015414374b6a85adfdca71a0a611e6"
 dependencies = [
  "derivative",
  "enclose",
@@ -725,7 +725,7 @@ dependencies = [
 [[package]]
 name = "stremio-core"
 version = "0.1.0"
-source = "git+https://github.com/Stremio/stremio-core?branch=development#27a519867ccda9d5f84bf18c28350535937dc3ce"
+source = "git+https://github.com/Stremio/stremio-core?branch=development#38a146d064015414374b6a85adfdca71a0a611e6"
 dependencies = [
  "base64",
  "boolinator",
@@ -750,6 +750,7 @@ dependencies = [
  "serde_with",
  "stremio-derive",
  "stremio-official-addons",
+ "stremio-watched-bitfield",
  "strum",
  "strum_macros",
  "url",
@@ -790,7 +791,7 @@ dependencies = [
 [[package]]
 name = "stremio-deeplinks"
 version = "0.1.0"
-source = "git+https://github.com/Stremio/stremio-core?branch=development#27a519867ccda9d5f84bf18c28350535937dc3ce"
+source = "git+https://github.com/Stremio/stremio-core?branch=development#38a146d064015414374b6a85adfdca71a0a611e6"
 dependencies = [
  "base64",
  "flate2",
@@ -805,7 +806,7 @@ dependencies = [
 [[package]]
 name = "stremio-derive"
 version = "0.1.0"
-source = "git+https://github.com/Stremio/stremio-core?branch=development#27a519867ccda9d5f84bf18c28350535937dc3ce"
+source = "git+https://github.com/Stremio/stremio-core?branch=development#38a146d064015414374b6a85adfdca71a0a611e6"
 dependencies = [
  "case",
  "proc-macro-crate",
@@ -820,6 +821,15 @@ name = "stremio-official-addons"
 version = "2.0.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8859744c7cd12c43f821b12f02090bae91c61124778c833dcafc978614e131b0"
+
+[[package]]
+name = "stremio-watched-bitfield"
+version = "0.1.0"
+source = "git+https://github.com/Stremio/stremio-core?branch=development#38a146d064015414374b6a85adfdca71a0a611e6"
+dependencies = [
+ "base64",
+ "flate2",
+]
 
 [[package]]
 name = "strsim"
