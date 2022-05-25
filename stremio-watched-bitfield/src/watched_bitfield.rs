@@ -84,7 +84,7 @@ impl WatchedBitField {
         self.bitfield.get(idx)
     }
 
-    pub fn get_video(&self, video_id: String) -> bool {
+    pub fn get_video(&self, video_id: &str) -> bool {
         if let Some(pos) = self.video_ids.iter().position(|s| *s == video_id) {
             self.bitfield.get(pos)
         } else {
@@ -96,7 +96,7 @@ impl WatchedBitField {
         self.bitfield.set(idx, v);
     }
 
-    pub fn set_video(&mut self, video_id: String, v: bool) {
+    pub fn set_video(&mut self, video_id: &str, v: bool) {
         if let Some(pos) = self.video_ids.iter().position(|s| *s == video_id) {
             self.bitfield.set(pos, v);
         }
