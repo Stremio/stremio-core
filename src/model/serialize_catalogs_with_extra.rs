@@ -11,10 +11,8 @@ mod model {
     #[derive(Serialize)]
     #[serde(rename_all = "camelCase")]
     pub struct MetaItemPreview<'a> {
-        pub r#type: &'a String,
-        pub id: &'a String,
-        pub name: &'a String,
-        pub poster: &'a Option<String>,
+        #[serde(flatten)]
+        pub meta_item: &'a stremio_core::types::resource::MetaItemPreview,
         pub poster_shape: &'a PosterShape,
         pub deep_links: MetaItemDeepLinks,
     }
@@ -65,10 +63,7 @@ pub fn serialize_catalogs_with_extra(
                         meta_items
                             .iter()
                             .map(|meta_item| model::MetaItemPreview {
-                                r#type: &meta_item.r#type,
-                                id: &meta_item.id,
-                                name: &meta_item.name,
-                                poster: &meta_item.poster,
+                                meta_item,
                                 poster_shape: &meta_items.first().unwrap().poster_shape,
                                 deep_links: MetaItemDeepLinks::from(meta_item),
                             })
