@@ -236,10 +236,7 @@ impl DefaultTokens for MetaItem {
     fn default_tokens() -> Vec<Token> {
         [
             vec![
-                Token::Struct {
-                    name: "MetaItem",
-                    len: 15,
-                },
+                Token::Map { len: None },
                 Token::Str("id"),
                 Token::Str(""),
                 Token::Str("type"),
@@ -264,9 +261,6 @@ impl DefaultTokens for MetaItem {
             ],
             PosterShape::default_tokens(),
             vec![
-                Token::Str("videos"),
-                Token::Seq { len: Some(0) },
-                Token::SeqEnd,
                 Token::Str("links"),
                 Token::Seq { len: Some(0) },
                 Token::SeqEnd,
@@ -276,7 +270,12 @@ impl DefaultTokens for MetaItem {
                 Token::Str("behaviorHints"),
             ],
             MetaItemBehaviorHints::default_tokens(),
-            vec![Token::StructEnd],
+            vec![
+                Token::Str("videos"),
+                Token::Seq { len: Some(0) },
+                Token::SeqEnd,
+                Token::MapEnd,
+            ],
         ]
         .concat()
     }

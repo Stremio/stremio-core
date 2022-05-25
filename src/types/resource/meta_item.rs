@@ -45,33 +45,6 @@ where
 #[cfg_attr(debug_assertions, derive(Debug))]
 #[cfg_attr(test, derive(Default))]
 #[serde(rename_all = "camelCase")]
-pub struct MetaItem {
-    pub id: String,
-    pub r#type: String,
-    #[serde(default)]
-    pub name: String,
-    pub poster: Option<String>,
-    pub background: Option<String>,
-    pub logo: Option<String>,
-    pub description: Option<String>,
-    pub release_info: Option<String>,
-    pub runtime: Option<String>,
-    pub released: Option<DateTime<Utc>>,
-    #[serde(default)]
-    pub poster_shape: PosterShape,
-    #[serde(default, deserialize_with = "deserialize_and_sort_videos")]
-    pub videos: Vec<Video>,
-    #[serde(default)]
-    pub links: Vec<Link>,
-    #[serde(default)]
-    pub trailer_streams: Vec<Stream>,
-    #[serde(default)]
-    pub behavior_hints: MetaItemBehaviorHints,
-}
-
-#[derive(Clone, PartialEq, Serialize, Deserialize)]
-#[cfg_attr(debug_assertions, derive(Debug))]
-#[serde(rename_all = "camelCase")]
 pub struct MetaItemPreview {
     pub id: String,
     pub r#type: String,
@@ -92,6 +65,17 @@ pub struct MetaItemPreview {
     pub trailer_streams: Vec<Stream>,
     #[serde(default)]
     pub behavior_hints: MetaItemBehaviorHints,
+}
+
+#[derive(Clone, PartialEq, Serialize, Deserialize)]
+#[cfg_attr(debug_assertions, derive(Debug))]
+#[cfg_attr(test, derive(Default))]
+#[serde(rename_all = "camelCase")]
+pub struct MetaItem {
+    #[serde(flatten)]
+    pub preview: MetaItemPreview,
+    #[serde(default, deserialize_with = "deserialize_and_sort_videos")]
+    pub videos: Vec<Video>,
 }
 
 #[derive(Derivative, Clone, PartialEq, Serialize, Deserialize)]

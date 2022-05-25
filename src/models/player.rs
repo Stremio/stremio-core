@@ -278,28 +278,36 @@ fn library_item_update<E: Env>(
                     ctime: library_item.ctime.to_owned(),
                     mtime: library_item.mtime.to_owned(),
                     state: library_item.state.to_owned(),
-                    name: meta_item.name.to_owned(),
-                    r#type: meta_item.r#type.to_owned(),
-                    poster: meta_item.poster.to_owned(),
-                    poster_shape: meta_item.poster_shape.to_owned(),
+                    name: meta_item.preview.name.to_owned(),
+                    r#type: meta_item.preview.r#type.to_owned(),
+                    poster: meta_item.preview.poster.to_owned(),
+                    poster_shape: meta_item.preview.poster_shape.to_owned(),
                     behavior_hints: LibraryItemBehaviorHints {
-                        default_video_id: meta_item.behavior_hints.default_video_id.to_owned(),
+                        default_video_id: meta_item
+                            .preview
+                            .behavior_hints
+                            .default_video_id
+                            .to_owned(),
                         other: Default::default(),
                     },
                 }),
                 (None, Some(meta_item)) => Some(LibraryItem {
-                    id: meta_item.id.to_owned(),
+                    id: meta_item.preview.id.to_owned(),
                     removed: true,
                     temp: true,
                     ctime: Some(E::now()),
                     mtime: E::now(),
                     state: LibraryItemState::default(),
-                    name: meta_item.name.to_owned(),
-                    r#type: meta_item.r#type.to_owned(),
-                    poster: meta_item.poster.to_owned(),
-                    poster_shape: meta_item.poster_shape.to_owned(),
+                    name: meta_item.preview.name.to_owned(),
+                    r#type: meta_item.preview.r#type.to_owned(),
+                    poster: meta_item.preview.poster.to_owned(),
+                    poster_shape: meta_item.preview.poster_shape.to_owned(),
                     behavior_hints: LibraryItemBehaviorHints {
-                        default_video_id: meta_item.behavior_hints.default_video_id.to_owned(),
+                        default_video_id: meta_item
+                            .preview
+                            .behavior_hints
+                            .default_video_id
+                            .to_owned(),
                         other: Default::default(),
                     },
                 }),
