@@ -182,31 +182,31 @@ fn watched_update<E: Env>(
 ) -> Effects {
     let next_watched = meta_items
         .iter()
-        .map(|meta_item| match (&meta_item.content, library_item) {
-            (
-                Some(Loadable::Ready(meta_item)),
-                Some(LibraryItem {
-                    state:
-                        LibraryItemState {
-                            watched: Some(watched),
-                            ..
-                        },
-                    ..
-                }),
-            ) => {
+        .map(|meta_item| match &meta_item.content {
+            Some(Loadable::Ready(meta_item)) => {
                 let video_ids = meta_item
                     .videos
                     .iter()
                     .map(|video| &video.id)
                     .cloned()
                     .collect::<Vec<_>>();
-                match WatchedBitField::construct_and_resize(watched, video_ids) {
-                    Ok(watched) => Some(watched),
-                    Err(error) => {
-                        #[cfg(debug_assertions)]
-                        E::log(error.to_string());
-                        None
-                    }
+                match library_item {
+                    Some(LibraryItem {
+                        state:
+                            LibraryItemState {
+                                watched: Some(watched),
+                                ..
+                            },
+                        ..
+                    }) => match WatchedBitField::construct_and_resize(watched, video_ids) {
+                        Ok(watched) => Some(watched),
+                        Err(error) => {
+                            #[cfg(debug_assertions)]
+                            E::log(error.to_string());
+                            None
+                        }
+                    },
+                    _ => Some(WatchedBitField::construct_from_array(vec![], video_ids)),
                 }
             }
             _ => None,
