@@ -1,3 +1,4 @@
+use boolinator::Boolinator;
 use flate2::write::ZlibEncoder;
 use flate2::Compression;
 use itertools::Itertools;
@@ -147,44 +148,43 @@ impl From<(&MetaItemPreview, &ResourceRequest)> for MetaItemDeepLinks {
                         utf8_percent_encode(video_id, URI_COMPONENT_ENCODE_SET)
                     )
                 }),
-            player: if item.id.starts_with(YOUTUBE_PREFIX) {
-                Some(())
-            } else {
-                None
-            }
-            .zip(item.behavior_hints.default_video_id.clone())
-            .and_then(|(_, default_video_id)| {
-                // video id are formed like that: yt_id:YT_CHANNEL_ID:YT_VIDEO_ID
-                default_video_id.split(':').nth(2).map(|video_id| {
-                    format!(
-                        "#/player/{}/{}/{}/{}/{}/{}",
-                        utf8_percent_encode(
-                            &base64::encode(
-                                gz_encode(
-                                    serde_json::to_string(&Stream {
-                                        source: StreamSource::YouTube {
-                                            yt_id: video_id.to_string()
-                                        },
-                                        name: None,
-                                        description: None,
-                                        thumbnail: None,
-                                        subtitles: vec![],
-                                        behavior_hints: StreamBehaviorHints::default(),
-                                    })
+            player: item
+                .id
+                .starts_with(YOUTUBE_PREFIX)
+                .as_option()
+                .map(item.behavior_hints.default_video_id.to_owned())
+                .and_then(|(_, default_video_id)| {
+                    // video id are formed like that: yt_id:YT_CHANNEL_ID:YT_VIDEO_ID
+                    default_video_id.split(':').nth(2).map(|video_id| {
+                        format!(
+                            "#/player/{}/{}/{}/{}/{}/{}",
+                            utf8_percent_encode(
+                                &base64::encode(
+                                    gz_encode(
+                                        serde_json::to_string(&Stream {
+                                            source: StreamSource::YouTube {
+                                                yt_id: video_id.to_string()
+                                            },
+                                            name: None,
+                                            description: None,
+                                            thumbnail: None,
+                                            subtitles: vec![],
+                                            behavior_hints: StreamBehaviorHints::default(),
+                                        })
+                                        .unwrap()
+                                    )
                                     .unwrap()
-                                )
-                                .unwrap()
+                                ),
+                                URI_COMPONENT_ENCODE_SET
                             ),
-                            URI_COMPONENT_ENCODE_SET
-                        ),
-                        utf8_percent_encode(request.base.as_str(), URI_COMPONENT_ENCODE_SET),
-                        utf8_percent_encode(request.base.as_str(), URI_COMPONENT_ENCODE_SET),
-                        utf8_percent_encode(&request.path.r#type, URI_COMPONENT_ENCODE_SET),
-                        utf8_percent_encode(&request.path.id, URI_COMPONENT_ENCODE_SET),
-                        utf8_percent_encode(&default_video_id, URI_COMPONENT_ENCODE_SET),
-                    )
-                })
-            }),
+                            utf8_percent_encode(request.base.as_str(), URI_COMPONENT_ENCODE_SET),
+                            utf8_percent_encode(request.base.as_str(), URI_COMPONENT_ENCODE_SET),
+                            utf8_percent_encode(&request.path.r#type, URI_COMPONENT_ENCODE_SET),
+                            utf8_percent_encode(&request.path.id, URI_COMPONENT_ENCODE_SET),
+                            utf8_percent_encode(&default_video_id, URI_COMPONENT_ENCODE_SET),
+                        )
+                    })
+                }),
         }
     }
 }
