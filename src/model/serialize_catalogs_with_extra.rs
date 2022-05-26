@@ -65,7 +65,7 @@ pub fn serialize_catalogs_with_extra(
                             .map(|meta_item| model::MetaItemPreview {
                                 meta_item,
                                 poster_shape: &meta_items.first().unwrap().poster_shape,
-                                deep_links: MetaItemDeepLinks::from(meta_item),
+                                deep_links: MetaItemDeepLinks::from((meta_item, &catalog.request)),
                             })
                             .collect::<Vec<_>>(),
                     )),

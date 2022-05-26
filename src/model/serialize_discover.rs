@@ -190,7 +190,7 @@ pub fn serialize_discover(discover: &CatalogWithFilters<MetaItemPreview>, ctx: &
                                     .get(&meta_item.id)
                                     .map(|library_item| !library_item.removed)
                                     .unwrap_or_default(),
-                                deep_links: MetaItemDeepLinks::from(meta_item),
+                                deep_links: MetaItemDeepLinks::from((meta_item, &catalog.request)),
                             })
                             .collect::<Vec<_>>(),
                     ),

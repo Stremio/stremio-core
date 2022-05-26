@@ -165,7 +165,7 @@ pub fn serialize_meta_details(meta_details: &MetaDetails, ctx: &Ctx) -> JsValue 
                             .get(&meta_item.preview.id)
                             .map(|library_item| !library_item.removed)
                             .unwrap_or_default(),
-                        deep_links: MetaItemDeepLinks::from(meta_item),
+                        deep_links: MetaItemDeepLinks::from((meta_item, request)),
                     }),
                     ResourceLoadable {
                         content: Some(Loadable::Loading),
