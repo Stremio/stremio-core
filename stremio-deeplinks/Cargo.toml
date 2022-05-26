@@ -7,7 +7,7 @@ edition = "2018"
 doctest = false
 
 [dependencies]
-stremio-core = { path="../" }
+stremio-core = { path = "../" }
 serde = "1.0.*"
 serde_json = "1.0.*"
 flate2 = "1.0.*"
@@ -15,3 +15,4 @@ itertools = "0.10.*"
 url = { version = "2.2.*", features = ["serde"] }
 percent-encoding = "2.1.*"
 base64 = "0.13.*"
+boolinator = "2.4.*"
