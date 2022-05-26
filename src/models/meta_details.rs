@@ -198,14 +198,16 @@ fn watched_update<E: Env>(
                                 ..
                             },
                         ..
-                    }) => match WatchedBitField::construct_and_resize(watched, video_ids) {
-                        Ok(watched) => Some(watched),
-                        Err(error) => {
-                            #[cfg(debug_assertions)]
-                            E::log(error.to_string());
-                            None
+                    }) => {
+                        match WatchedBitField::construct_and_resize(watched, video_ids.to_owned()) {
+                            Ok(watched) => Some(watched),
+                            Err(error) => {
+                                #[cfg(debug_assertions)]
+                                E::log(error.to_string());
+                                Some(WatchedBitField::construct_from_array(vec![], video_ids))
+                            }
                         }
-                    },
+                    }
                     _ => Some(WatchedBitField::construct_from_array(vec![], video_ids)),
                 }
             }
