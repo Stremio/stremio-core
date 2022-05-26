@@ -10,9 +10,12 @@ use stremio_core::models::installed_addons_with_filters::InstalledAddonsRequest;
 use stremio_core::models::library_with_filters::LibraryRequest;
 use stremio_core::types::addon::{ExtraValue, ResourceRequest};
 use stremio_core::types::library::LibraryItem;
-use stremio_core::types::resource::{MetaItem, MetaItemPreview, Stream, StreamSource, Video};
+use stremio_core::types::resource::{
+    MetaItem, MetaItemPreview, Stream, StreamBehaviorHints, StreamSource, Video,
+};
 use url::form_urlencoded;
 
+const YOUTUBE_PREFIX: &str = "yt_id:";
 const URI_COMPONENT_ENCODE_SET: &AsciiSet = &NON_ALPHANUMERIC
     .remove(b'-')
     .remove(b'_')
@@ -96,13 +99,13 @@ impl From<&LibraryItem> for LibraryItemDeepLinks {
                 .state
                 .video_id
                 .as_ref()
-                .or_else(|| item.behavior_hints.default_video_id.as_ref())
+                .or(item.behavior_hints.default_video_id.as_ref())
                 .map(|video_id| {
                     format!(
                         "#/metadetails/{}/{}/{}",
                         utf8_percent_encode(&item.r#type, URI_COMPONENT_ENCODE_SET),
                         utf8_percent_encode(&item.id, URI_COMPONENT_ENCODE_SET),
-                        utf8_percent_encode(&video_id, URI_COMPONENT_ENCODE_SET)
+                        utf8_percent_encode(video_id, URI_COMPONENT_ENCODE_SET)
                     )
                 }),
             player: None,          // TODO use StreamsBucket
@@ -116,10 +119,11 @@ impl From<&LibraryItem> for LibraryItemDeepLinks {
 pub struct MetaItemDeepLinks {
     pub meta_details_videos: Option<String>,
     pub meta_details_streams: Option<String>,
+    pub player: Option<String>,
 }
 
-impl From<&MetaItemPreview> for MetaItemDeepLinks {
-    fn from(item: &MetaItemPreview) -> Self {
+impl From<(&MetaItemPreview, &ResourceRequest)> for MetaItemDeepLinks {
+    fn from((item, request): (&MetaItemPreview, &ResourceRequest)) -> Self {
         MetaItemDeepLinks {
             meta_details_videos: item
                 .behavior_hints
@@ -140,16 +144,53 @@ impl From<&MetaItemPreview> for MetaItemDeepLinks {
                         "#/metadetails/{}/{}/{}",
                         utf8_percent_encode(&item.r#type, URI_COMPONENT_ENCODE_SET),
                         utf8_percent_encode(&item.id, URI_COMPONENT_ENCODE_SET),
-                        utf8_percent_encode(&video_id, URI_COMPONENT_ENCODE_SET)
+                        utf8_percent_encode(video_id, URI_COMPONENT_ENCODE_SET)
                     )
+                }),
+            player: item
+                .id
+                .starts_with(YOUTUBE_PREFIX)
+                .then(|| ())
+                .zip(item.behavior_hints.default_video_id.clone())
+                .and_then(|(_, default_video_id)| {
+                    // video id are formed like that: yt_id:YT_CHANNEL_ID:YT_VIDEO_ID
+                    default_video_id.split(':').nth(2).map(|video_id| {
+                        format!(
+                            "#/player/{}/{}/{}/{}/{}/{}",
+                            utf8_percent_encode(
+                                &base64::encode(
+                                    gz_encode(
+                                        serde_json::to_string(&Stream {
+                                            source: StreamSource::YouTube {
+                                                yt_id: video_id.to_string()
+                                            },
+                                            name: None,
+                                            description: None,
+                                            thumbnail: None,
+                                            subtitles: vec![],
+                                            behavior_hints: StreamBehaviorHints::default(),
+                                        })
+                                        .unwrap()
+                                    )
+                                    .unwrap()
+                                ),
+                                URI_COMPONENT_ENCODE_SET
+                            ),
+                            utf8_percent_encode(request.base.as_str(), URI_COMPONENT_ENCODE_SET),
+                            utf8_percent_encode(request.base.as_str(), URI_COMPONENT_ENCODE_SET),
+                            utf8_percent_encode(&request.path.r#type, URI_COMPONENT_ENCODE_SET),
+                            utf8_percent_encode(&request.path.id, URI_COMPONENT_ENCODE_SET),
+                            utf8_percent_encode(&default_video_id, URI_COMPONENT_ENCODE_SET),
+                        )
+                    })
                 }),
         }
     }
 }
 
-impl From<&MetaItem> for MetaItemDeepLinks {
-    fn from(item: &MetaItem) -> Self {
-        MetaItemDeepLinks::from(&item.preview)
+impl From<(&MetaItem, &ResourceRequest)> for MetaItemDeepLinks {
+    fn from((item, request): (&MetaItem, &ResourceRequest)) -> Self {
+        MetaItemDeepLinks::from((&item.preview, request))
     }
 }
 
@@ -177,8 +218,8 @@ impl From<(&Video, &ResourceRequest)> for VideoDeepLinks {
                         &base64::encode(gz_encode(serde_json::to_string(stream).unwrap()).unwrap()),
                         URI_COMPONENT_ENCODE_SET
                     ),
-                    utf8_percent_encode(&request.base.as_str(), URI_COMPONENT_ENCODE_SET),
-                    utf8_percent_encode(&request.base.as_str(), URI_COMPONENT_ENCODE_SET),
+                    utf8_percent_encode(request.base.as_str(), URI_COMPONENT_ENCODE_SET),
+                    utf8_percent_encode(request.base.as_str(), URI_COMPONENT_ENCODE_SET),
                     utf8_percent_encode(&request.path.r#type, URI_COMPONENT_ENCODE_SET),
                     utf8_percent_encode(&request.path.id, URI_COMPONENT_ENCODE_SET),
                     utf8_percent_encode(&video.id, URI_COMPONENT_ENCODE_SET)
@@ -227,8 +268,8 @@ impl From<(&Stream, &ResourceRequest, &ResourceRequest)> for StreamDeepLinks {
                     &base64::encode(gz_encode(serde_json::to_string(stream).unwrap()).unwrap()),
                     URI_COMPONENT_ENCODE_SET
                 ),
-                utf8_percent_encode(&stream_request.base.as_str(), URI_COMPONENT_ENCODE_SET),
-                utf8_percent_encode(&meta_request.base.as_str(), URI_COMPONENT_ENCODE_SET),
+                utf8_percent_encode(stream_request.base.as_str(), URI_COMPONENT_ENCODE_SET),
+                utf8_percent_encode(meta_request.base.as_str(), URI_COMPONENT_ENCODE_SET),
                 utf8_percent_encode(&meta_request.path.r#type, URI_COMPONENT_ENCODE_SET),
                 utf8_percent_encode(&meta_request.path.id, URI_COMPONENT_ENCODE_SET),
                 utf8_percent_encode(&stream_request.path.id, URI_COMPONENT_ENCODE_SET)
@@ -249,7 +290,7 @@ impl From<&ResourceRequest> for DiscoverDeepLinks {
         DiscoverDeepLinks {
             discover: format!(
                 "#/discover/{}/{}/{}?{}",
-                utf8_percent_encode(&request.base.as_str(), URI_COMPONENT_ENCODE_SET),
+                utf8_percent_encode(request.base.as_str(), URI_COMPONENT_ENCODE_SET),
                 utf8_percent_encode(&request.path.r#type, URI_COMPONENT_ENCODE_SET),
                 utf8_percent_encode(&request.path.id, URI_COMPONENT_ENCODE_SET),
                 query_params_encode(
@@ -276,7 +317,7 @@ impl From<&ResourceRequest> for AddonsDeepLinks {
             addons: format!(
                 "#/addons/{}/{}/{}",
                 utf8_percent_encode(&request.path.r#type, URI_COMPONENT_ENCODE_SET),
-                utf8_percent_encode(&request.base.as_str(), URI_COMPONENT_ENCODE_SET),
+                utf8_percent_encode(request.base.as_str(), URI_COMPONENT_ENCODE_SET),
                 utf8_percent_encode(&request.path.id, URI_COMPONENT_ENCODE_SET),
             ),
         }
@@ -321,7 +362,7 @@ impl From<(&String, &LibraryRequest)> for LibraryDeepLinks {
                 Some(r#type) => format!(
                     "#/{}/{}?{}",
                     root,
-                    utf8_percent_encode(&r#type, URI_COMPONENT_ENCODE_SET),
+                    utf8_percent_encode(r#type, URI_COMPONENT_ENCODE_SET),
                     query_params_encode(&[
                         (
                             "sort",
@@ -355,7 +396,7 @@ impl From<(&String, &LibraryRequest)> for LibraryDeepLinks {
 fn gz_encode(value: String) -> io::Result<Vec<u8>> {
     let mut encoder = ZlibEncoder::new(Vec::new(), Compression::none());
     encoder.write_all(value.as_bytes())?;
-    Ok(encoder.finish()?)
+    encoder.finish()
 }
 
 fn query_params_encode<I, K, V>(query_params: I) -> String
