@@ -123,7 +123,7 @@ impl<T: CatalogResourceAdapter> CatalogWithFilters<T> {
     pub fn new(profile: &Profile) -> (Self, Effects) {
         let catalog = None;
         let mut selectable = Selectable::default();
-        let effects = selectable_update::<T>(&mut selectable, &catalog, &profile);
+        let effects = selectable_update::<T>(&mut selectable, &catalog, profile);
         (
             Self {
                 selectable,

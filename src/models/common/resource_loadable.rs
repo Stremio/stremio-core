@@ -145,7 +145,7 @@ where
             range,
         } => {
             let (next_resources, effects) = request
-                .plan(&addons)
+                .plan(addons)
                 .into_iter()
                 .map(|(_, request)| request)
                 .enumerate()
@@ -192,7 +192,7 @@ where
                         })
                 })
                 .unzip::<_, _, Vec<_>, Vec<_>>();
-            Effects::many(effects.into_iter().filter_map(|effect| effect).collect())
+            Effects::many(effects.into_iter().flatten().collect())
                 .unchanged()
                 .join(eq_update(resources, next_resources))
         }

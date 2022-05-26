@@ -91,7 +91,7 @@ impl From<LegacyManifest> for Manifest {
                 LegacyIdProperty::Many(m) => m,
             };
             all.iter()
-                .map(|p| match &p as &str {
+                .map(|p| match p as &str {
                     "imdb_id" => "tt".to_owned(),
                     "yt_id" => "UC".to_owned(),
                     id => format!("{}:", id),

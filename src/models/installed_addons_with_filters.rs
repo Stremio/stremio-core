@@ -112,8 +112,7 @@ fn selectable_update(
             request: InstalledAddonsRequest {
                 r#type: Some(r#type),
             },
-        })
-        .collect::<Vec<_>>();
+        });
     let selectable_types = iter::once(SelectableType {
         r#type: None,
         request: InstalledAddonsRequest { r#type: None },

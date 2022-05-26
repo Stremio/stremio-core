@@ -26,7 +26,7 @@ impl<E: Env> AddonHTTPTransport<E> {
 impl<E: Env> AddonTransport for AddonHTTPTransport<E> {
     fn resource(&self, path: &ResourcePath) -> TryEnvFuture<ResourceResponse> {
         if self.transport_url.path().ends_with(ADDON_LEGACY_PATH) {
-            return AddonLegacyTransport::<E>::new(&self.transport_url).resource(&path);
+            return AddonLegacyTransport::<E>::new(&self.transport_url).resource(path);
         }
         if !self.transport_url.path().ends_with(ADDON_MANIFEST_PATH) {
             return future::err(EnvError::AddonTransport(format!(

@@ -4,7 +4,7 @@ use chrono::{DateTime, Utc};
 #[cfg(test)]
 use derivative::Derivative;
 use serde::{Deserialize, Serialize};
-use serde_with::{serde_as, DefaultOnNull, NoneAsEmptyString};
+use serde_with::serde_as;
 
 #[derive(Clone, PartialEq, Serialize, Deserialize)]
 #[cfg_attr(debug_assertions, derive(Debug))]
@@ -15,9 +15,9 @@ pub struct GDPRConsent {
     pub marketing: bool,
 }
 
-#[serde_as]
-#[serde(rename_all = "camelCase")]
 #[derive(Clone, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+#[serde_as]
 #[cfg_attr(debug_assertions, derive(Debug))]
 #[cfg_attr(test, derive(Derivative))]
 #[cfg_attr(test, derivative(Default))]
