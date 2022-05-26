@@ -1,3 +1,4 @@
+use crate::runtime::Env;
 use crate::types::resource::{MetaItemBehaviorHints, MetaItemPreview, PosterShape};
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
@@ -37,6 +38,21 @@ impl LibraryItem {
     #[inline]
     pub fn is_in_continue_watching(&self) -> bool {
         self.should_sync() && (!self.removed || self.temp) && self.state.time_offset > 0
+    }
+    pub fn from<E: Env + 'static>(meta_item: &MetaItemPreview) -> Self {
+        LibraryItem {
+            id: meta_item.id.to_owned(),
+            removed: true,
+            temp: true,
+            ctime: Some(E::now()),
+            mtime: E::now(),
+            state: LibraryItemState::default(),
+            name: meta_item.name.to_owned(),
+            r#type: meta_item.r#type.to_owned(),
+            poster: meta_item.poster.to_owned(),
+            poster_shape: meta_item.poster_shape.to_owned(),
+            behavior_hints: meta_item.behavior_hints.to_owned(),
+        }
     }
 }
 
