@@ -152,8 +152,8 @@ impl From<(&MetaItemPreview, &ResourceRequest)> for MetaItemDeepLinks {
                 .id
                 .starts_with(YOUTUBE_PREFIX)
                 .as_option()
-                .map(item.behavior_hints.default_video_id.to_owned())
-                .and_then(|(_, default_video_id)| {
+                .and_then(|_| item.behavior_hints.default_video_id.to_owned())
+                .and_then(|default_video_id| {
                     // video id are formed like that: yt_id:YT_CHANNEL_ID:YT_VIDEO_ID
                     default_video_id.split(':').nth(2).map(|video_id| {
                         format!(
@@ -163,7 +163,7 @@ impl From<(&MetaItemPreview, &ResourceRequest)> for MetaItemDeepLinks {
                                     gz_encode(
                                         serde_json::to_string(&Stream {
                                             source: StreamSource::YouTube {
-                                                yt_id: video_id.to_string()
+                                                yt_id: video_id.to_owned()
                                             },
                                             name: None,
                                             description: None,
