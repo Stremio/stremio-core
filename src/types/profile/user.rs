@@ -4,7 +4,7 @@ use chrono::{DateTime, Utc};
 #[cfg(test)]
 use derivative::Derivative;
 use serde::{Deserialize, Serialize};
-use serde_with::{serde_as, NoneAsEmptyString, DefaultOnNull};
+use serde_with::{serde_as, DefaultOnNull, NoneAsEmptyString};
 
 #[derive(Clone, PartialEq, Serialize, Deserialize)]
 #[cfg_attr(debug_assertions, derive(Debug))]
