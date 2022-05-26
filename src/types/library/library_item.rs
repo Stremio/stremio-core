@@ -38,7 +38,7 @@ impl LibraryItem {
     }
     #[inline]
     pub fn is_in_continue_watching(&self) -> bool {
-        (!self.removed || self.temp) && self.state.time_offset > 0
+        self.r#type != "other" && (!self.removed || self.temp) && self.state.time_offset > 0
     }
 }
 
