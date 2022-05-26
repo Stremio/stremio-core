@@ -7,9 +7,7 @@ use crate::runtime::{Effect, EffectFuture, Effects, Env, EnvFutureExt};
 use crate::types::api::{
     fetch_api, APIResult, DatastoreCommand, DatastoreRequest, LibraryItemModified, SuccessResponse,
 };
-use crate::types::library::{
-    LibraryBucket, LibraryBucketRef, LibraryItem, LibraryItemBehaviorHints, LibraryItemState,
-};
+use crate::types::library::{LibraryBucket, LibraryBucketRef, LibraryItem, LibraryItemState};
 use crate::types::profile::AuthKey;
 use futures::future::Either;
 use futures::{future, FutureExt, TryFutureExt};
@@ -38,10 +36,7 @@ pub fn update_library<E: Env + 'static>(
                 name: meta_preview.name.to_owned(),
                 poster: meta_preview.poster.to_owned(),
                 poster_shape: meta_preview.poster_shape.to_owned(),
-                behavior_hints: LibraryItemBehaviorHints {
-                    default_video_id: meta_preview.behavior_hints.default_video_id.to_owned(),
-                    other: Default::default(),
-                },
+                behavior_hints: meta_preview.behavior_hints.to_owned(),
                 removed: false,
                 temp: false,
                 mtime: E::now(),

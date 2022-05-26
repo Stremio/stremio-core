@@ -1,8 +1,7 @@
-use crate::types::resource::PosterShape;
+use crate::types::resource::{MetaItemBehaviorHints, PosterShape};
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use serde_with::{serde_as, DefaultOnNull, NoneAsEmptyString};
-use std::collections::HashMap;
 
 #[serde_as]
 #[serde(rename_all = "camelCase")]
@@ -27,7 +26,7 @@ pub struct LibraryItem {
     pub mtime: DateTime<Utc>,
     pub state: LibraryItemState,
     #[serde(default)]
-    pub behavior_hints: LibraryItemBehaviorHints,
+    pub behavior_hints: MetaItemBehaviorHints,
 }
 
 impl LibraryItem {
@@ -68,13 +67,4 @@ pub struct LibraryItemState {
     #[serde_as(deserialize_as = "DefaultOnNull<NoneAsEmptyString>")]
     pub last_vid_released: Option<DateTime<Utc>>,
     pub no_notif: bool,
-}
-
-#[derive(Default, Clone, PartialEq, Serialize, Deserialize)]
-#[cfg_attr(debug_assertions, derive(Debug))]
-#[serde(rename_all = "camelCase")]
-pub struct LibraryItemBehaviorHints {
-    pub default_video_id: Option<String>,
-    #[serde(flatten)]
-    pub other: HashMap<String, serde_json::Value>,
 }

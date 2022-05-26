@@ -2,7 +2,7 @@ use crate::types::addon::{
     DescriptorFlags, Manifest, ManifestBehaviorHints, ManifestPreview, ResourcePath,
 };
 use crate::types::api::{APIError, AuthRequest, GDPRConsentRequest};
-use crate::types::library::{LibraryItemBehaviorHints, LibraryItemState};
+use crate::types::library::LibraryItemState;
 use crate::types::profile::{Auth, AuthKey, GDPRConsent, Settings, User};
 use crate::types::resource::{
     MetaItem, MetaItemBehaviorHints, PosterShape, SeriesInfo, StreamBehaviorHints, StreamSource,
@@ -72,17 +72,6 @@ impl DefaultTokens for Subtitles {
 impl DefaultTokens for StreamBehaviorHints {
     fn default_tokens() -> Vec<Token> {
         vec![Token::Map { len: None }, Token::MapEnd]
-    }
-}
-
-impl DefaultTokens for LibraryItemBehaviorHints {
-    fn default_tokens() -> Vec<Token> {
-        vec![
-            Token::Map { len: None },
-            Token::Str("defaultVideoId"),
-            Token::None,
-            Token::MapEnd,
-        ]
     }
 }
 

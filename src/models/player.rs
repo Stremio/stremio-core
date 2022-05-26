@@ -7,9 +7,7 @@ use crate::models::ctx::Ctx;
 use crate::runtime::msg::{Action, ActionLoad, ActionPlayer, Internal, Msg};
 use crate::runtime::{Effects, Env, UpdateWithCtx};
 use crate::types::addon::{AggrRequest, ResourcePath, ResourceRequest};
-use crate::types::library::{
-    LibraryBucket, LibraryItem, LibraryItemBehaviorHints, LibraryItemState,
-};
+use crate::types::library::{LibraryBucket, LibraryItem, LibraryItemState};
 use crate::types::profile::Settings as ProfileSettings;
 use crate::types::resource::{MetaItem, SeriesInfo, Stream, Subtitles, Video};
 use serde::{Deserialize, Serialize};
@@ -282,14 +280,7 @@ fn library_item_update<E: Env>(
                     r#type: meta_item.preview.r#type.to_owned(),
                     poster: meta_item.preview.poster.to_owned(),
                     poster_shape: meta_item.preview.poster_shape.to_owned(),
-                    behavior_hints: LibraryItemBehaviorHints {
-                        default_video_id: meta_item
-                            .preview
-                            .behavior_hints
-                            .default_video_id
-                            .to_owned(),
-                        other: Default::default(),
-                    },
+                    behavior_hints: meta_item.preview.behavior_hints.to_owned(),
                 }),
                 (None, Some(meta_item)) => Some(LibraryItem {
                     id: meta_item.preview.id.to_owned(),
@@ -302,14 +293,7 @@ fn library_item_update<E: Env>(
                     r#type: meta_item.preview.r#type.to_owned(),
                     poster: meta_item.preview.poster.to_owned(),
                     poster_shape: meta_item.preview.poster_shape.to_owned(),
-                    behavior_hints: LibraryItemBehaviorHints {
-                        default_video_id: meta_item
-                            .preview
-                            .behavior_hints
-                            .default_video_id
-                            .to_owned(),
-                        other: Default::default(),
-                    },
+                    behavior_hints: meta_item.preview.behavior_hints.to_owned(),
                 }),
                 (Some(library_item), None) => Some(library_item.to_owned()),
                 _ => None,
