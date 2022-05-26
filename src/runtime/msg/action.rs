@@ -40,6 +40,12 @@ pub enum ActionCatalogsWithExtra {
 
 #[derive(Clone, Deserialize)]
 #[serde(tag = "action", content = "args")]
+pub enum ActionMetaDetails {
+    MarkAsWatched(String, bool),
+}
+
+#[derive(Clone, Deserialize)]
+#[serde(tag = "action", content = "args")]
 pub enum ActionStreamingServer {
     Reload,
     UpdateSettings(StreamingServerSettings),
@@ -81,6 +87,7 @@ pub enum Action {
     Ctx(ActionCtx),
     Link(ActionLink),
     CatalogsWithExtra(ActionCatalogsWithExtra),
+    MetaDetails(ActionMetaDetails),
     StreamingServer(ActionStreamingServer),
     Player(ActionPlayer),
     Load(ActionLoad),
