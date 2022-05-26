@@ -3,6 +3,7 @@ use crate::types::resource::{MetaItemBehaviorHints, MetaItemPreview, PosterShape
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use serde_with::{serde_as, DefaultOnNull, NoneAsEmptyString};
+use std::marker::PhantomData;
 
 #[serde_as]
 #[serde(rename_all = "camelCase")]
@@ -39,7 +40,10 @@ impl LibraryItem {
     pub fn is_in_continue_watching(&self) -> bool {
         self.should_sync() && (!self.removed || self.temp) && self.state.time_offset > 0
     }
-    pub fn from<E: Env + 'static>(meta_item: &MetaItemPreview) -> Self {
+}
+
+impl<E: Env + 'static> From<(&MetaItemPreview, PhantomData<E>)> for LibraryItem {
+    fn from((meta_item, _): (&MetaItemPreview, PhantomData<E>)) -> Self {
         LibraryItem {
             id: meta_item.id.to_owned(),
             removed: true,
