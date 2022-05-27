@@ -129,10 +129,17 @@ impl<E: Env + 'static> UpdateWithCtx<E> for MetaDetails {
                     }
                     _ => Effects::none().unchanged(),
                 };
+                let library_item_effects = library_item_update::<E>(
+                    &mut self.library_item,
+                    &self.selected,
+                    &self.meta_items,
+                    &ctx.library,
+                );
                 let watched_effects =
                     watched_update::<E>(&mut self.watched, &self.meta_items, &self.library_item);
                 meta_items_effects
                     .join(streams_effects)
+                    .join(library_item_effects)
                     .join(watched_effects)
             }
             Msg::Internal(Internal::ResourceRequestResult(request, result))
