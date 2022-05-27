@@ -1,5 +1,5 @@
-use crate::types::library::{LibraryItem, LibraryItemBehaviorHints, LibraryItemState};
-use crate::types::resource::PosterShape;
+use crate::types::library::{LibraryItem, LibraryItemState};
+use crate::types::resource::{MetaItemBehaviorHints, PosterShape};
 use crate::unit_tests::serde::default_tokens_ext::DefaultTokens;
 use chrono::prelude::TimeZone;
 use chrono::Utc;
@@ -20,7 +20,7 @@ fn library_item() {
                 ctime: Some(Utc.ymd(2020, 1, 1).and_hms_milli(0, 0, 0, 0)),
                 mtime: Utc.ymd(2020, 1, 1).and_hms_milli(0, 0, 0, 0),
                 state: LibraryItemState::default(),
-                behavior_hints: LibraryItemBehaviorHints::default(),
+                behavior_hints: MetaItemBehaviorHints::default(),
             },
             LibraryItem {
                 id: "id".to_owned(),
@@ -33,7 +33,7 @@ fn library_item() {
                 ctime: None,
                 mtime: Utc.ymd(2020, 1, 1).and_hms_milli(0, 0, 0, 0),
                 state: LibraryItemState::default(),
-                behavior_hints: LibraryItemBehaviorHints::default(),
+                behavior_hints: MetaItemBehaviorHints::default(),
             },
         ],
         &[
@@ -69,7 +69,7 @@ fn library_item() {
             ],
             LibraryItemState::default_tokens(),
             vec![Token::Str("behaviorHints")],
-            LibraryItemBehaviorHints::default_tokens(),
+            MetaItemBehaviorHints::default_tokens(),
             vec![Token::StructEnd],
             vec![
                 Token::Struct {
@@ -100,7 +100,7 @@ fn library_item() {
             ],
             LibraryItemState::default_tokens(),
             vec![Token::Str("behaviorHints")],
-            LibraryItemBehaviorHints::default_tokens(),
+            MetaItemBehaviorHints::default_tokens(),
             vec![Token::StructEnd, Token::SeqEnd],
         ]
         .concat(),
@@ -118,7 +118,7 @@ fn library_item() {
                 ctime: None,
                 mtime: Utc.ymd(2020, 1, 1).and_hms_milli(0, 0, 0, 0),
                 state: LibraryItemState::default(),
-                behavior_hints: LibraryItemBehaviorHints::default(),
+                behavior_hints: MetaItemBehaviorHints::default(),
             },
             LibraryItem {
                 id: "id".to_owned(),
@@ -131,7 +131,7 @@ fn library_item() {
                 ctime: None,
                 mtime: Utc.ymd(2020, 1, 1).and_hms_milli(0, 0, 0, 0),
                 state: LibraryItemState::default(),
-                behavior_hints: LibraryItemBehaviorHints::default(),
+                behavior_hints: MetaItemBehaviorHints::default(),
             },
         ],
         &[
@@ -188,7 +188,7 @@ fn library_item() {
             ],
             LibraryItemState::default_tokens(),
             vec![Token::Str("behaviorHints")],
-            LibraryItemBehaviorHints::default_tokens(),
+            MetaItemBehaviorHints::default_tokens(),
             vec![Token::StructEnd, Token::SeqEnd],
         ]
         .concat(),

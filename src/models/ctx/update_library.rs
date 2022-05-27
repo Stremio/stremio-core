@@ -7,13 +7,12 @@ use crate::runtime::{Effect, EffectFuture, Effects, Env, EnvFutureExt};
 use crate::types::api::{
     fetch_api, APIResult, DatastoreCommand, DatastoreRequest, LibraryItemModified, SuccessResponse,
 };
-use crate::types::library::{
-    LibraryBucket, LibraryBucketRef, LibraryItem, LibraryItemBehaviorHints, LibraryItemState,
-};
+use crate::types::library::{LibraryBucket, LibraryBucketRef, LibraryItem};
 use crate::types::profile::AuthKey;
 use futures::future::Either;
 use futures::{future, FutureExt, TryFutureExt};
 use std::collections::HashMap;
+use std::marker::PhantomData;
 
 pub fn update_library<E: Env + 'static>(
     library: &mut LibraryBucket,
@@ -32,28 +31,12 @@ pub fn update_library<E: Env + 'static>(
             }
         }
         Msg::Action(Action::Ctx(ActionCtx::AddToLibrary(meta_preview))) => {
-            let mut library_item = LibraryItem {
-                id: meta_preview.id.to_owned(),
-                r#type: meta_preview.r#type.to_owned(),
-                name: meta_preview.name.to_owned(),
-                poster: meta_preview.poster.to_owned(),
-                poster_shape: meta_preview.poster_shape.to_owned(),
-                behavior_hints: LibraryItemBehaviorHints {
-                    default_video_id: meta_preview.behavior_hints.default_video_id.to_owned(),
-                    other: Default::default(),
-                },
-                removed: false,
-                temp: false,
-                mtime: E::now(),
-                ctime: Some(E::now()),
-                state: LibraryItemState::default(),
+            let mut library_item = match library.items.get(&meta_preview.id) {
+                Some(library_item) => LibraryItem::from((meta_preview, library_item)),
+                _ => LibraryItem::from((meta_preview, PhantomData::<E>)),
             };
-            if let Some(LibraryItem { ctime, state, .. }) = library.items.get(&meta_preview.id) {
-                library_item.state = state.to_owned();
-                if let Some(ctime) = ctime {
-                    library_item.ctime = Some(ctime.to_owned());
-                };
-            };
+            library_item.removed = false;
+            library_item.temp = false;
             Effects::msg(Msg::Internal(Internal::UpdateLibraryItem(library_item)))
                 .join(Effects::msg(Msg::Event(Event::LibraryItemAdded {
                     id: meta_preview.id.to_owned(),
@@ -64,6 +47,7 @@ pub fn update_library<E: Env + 'static>(
             Some(library_item) => {
                 let mut library_item = library_item.to_owned();
                 library_item.removed = true;
+                library_item.temp = false;
                 Effects::msg(Msg::Internal(Internal::UpdateLibraryItem(library_item)))
                     .join(Effects::msg(Msg::Event(Event::LibraryItemRemoved {
                         id: id.to_owned(),

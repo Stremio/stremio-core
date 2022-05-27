@@ -1,8 +1,9 @@
-use crate::types::resource::PosterShape;
+use crate::runtime::Env;
+use crate::types::resource::{MetaItemBehaviorHints, MetaItemPreview, PosterShape};
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use serde_with::{serde_as, DefaultOnNull, NoneAsEmptyString};
-use std::collections::HashMap;
+use std::marker::PhantomData;
 
 #[serde_as]
 #[serde(rename_all = "camelCase")]
@@ -27,7 +28,7 @@ pub struct LibraryItem {
     pub mtime: DateTime<Utc>,
     pub state: LibraryItemState,
     #[serde(default)]
-    pub behavior_hints: LibraryItemBehaviorHints,
+    pub behavior_hints: MetaItemBehaviorHints,
 }
 
 impl LibraryItem {
@@ -38,6 +39,42 @@ impl LibraryItem {
     #[inline]
     pub fn is_in_continue_watching(&self) -> bool {
         self.should_sync() && (!self.removed || self.temp) && self.state.time_offset > 0
+    }
+}
+
+impl<E: Env + 'static> From<(&MetaItemPreview, PhantomData<E>)> for LibraryItem {
+    fn from((meta_item, _): (&MetaItemPreview, PhantomData<E>)) -> Self {
+        LibraryItem {
+            id: meta_item.id.to_owned(),
+            removed: true,
+            temp: true,
+            ctime: Some(E::now()),
+            mtime: E::now(),
+            state: LibraryItemState::default(),
+            name: meta_item.name.to_owned(),
+            r#type: meta_item.r#type.to_owned(),
+            poster: meta_item.poster.to_owned(),
+            poster_shape: meta_item.poster_shape.to_owned(),
+            behavior_hints: meta_item.behavior_hints.to_owned(),
+        }
+    }
+}
+
+impl From<(&MetaItemPreview, &LibraryItem)> for LibraryItem {
+    fn from((meta_item, library_item): (&MetaItemPreview, &LibraryItem)) -> Self {
+        LibraryItem {
+            id: meta_item.id.to_owned(),
+            name: meta_item.name.to_owned(),
+            r#type: meta_item.r#type.to_owned(),
+            poster: meta_item.poster.to_owned(),
+            poster_shape: meta_item.poster_shape.to_owned(),
+            behavior_hints: meta_item.behavior_hints.to_owned(),
+            removed: library_item.removed,
+            temp: library_item.temp,
+            ctime: library_item.ctime.to_owned(),
+            mtime: library_item.mtime.to_owned(),
+            state: library_item.state.to_owned(),
+        }
     }
 }
 
@@ -68,13 +105,4 @@ pub struct LibraryItemState {
     #[serde_as(deserialize_as = "DefaultOnNull<NoneAsEmptyString>")]
     pub last_vid_released: Option<DateTime<Utc>>,
     pub no_notif: bool,
-}
-
-#[derive(Default, Clone, PartialEq, Serialize, Deserialize)]
-#[cfg_attr(debug_assertions, derive(Debug))]
-#[serde(rename_all = "camelCase")]
-pub struct LibraryItemBehaviorHints {
-    pub default_video_id: Option<String>,
-    #[serde(flatten)]
-    pub other: HashMap<String, serde_json::Value>,
 }
