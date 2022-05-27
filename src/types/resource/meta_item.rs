@@ -1,11 +1,25 @@
 use crate::types::deserialize_single_as_vec;
-use crate::types::resource::Stream;
+use crate::types::resource::{Stream, StreamBehaviorHints, StreamSource};
 use chrono::{DateTime, Utc};
 use derivative::Derivative;
+use percent_encoding::{utf8_percent_encode, AsciiSet, NON_ALPHANUMERIC};
 use serde::de::Deserializer;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
+use std::convert::TryFrom;
 use url::Url;
+
+const TRANSPORT_URL: &str = "https://v3-cinemeta.strem.io/manifest.json";
+const URI_COMPONENT_ENCODE_SET: &AsciiSet = &NON_ALPHANUMERIC
+    .remove(b'-')
+    .remove(b'_')
+    .remove(b'.')
+    .remove(b'!')
+    .remove(b'~')
+    .remove(b'*')
+    .remove(b'\'')
+    .remove(b'(')
+    .remove(b')');
 
 fn deserialize_and_sort_videos<'de, D>(deserializer: D) -> Result<Vec<Video>, D::Error>
 where
@@ -41,14 +55,53 @@ where
     Ok(videos)
 }
 
-#[derive(Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, PartialEq, Deserialize)]
+#[cfg_attr(debug_assertions, derive(Debug))]
+#[cfg_attr(test, derive(Default))]
+struct Trailer {
+    source: String,
+    #[serde(rename = "type")]
+    trailer_type: String,
+}
+
+#[derive(Clone, PartialEq, Deserialize)]
 #[cfg_attr(debug_assertions, derive(Debug))]
 #[cfg_attr(test, derive(Default))]
 #[serde(rename_all = "camelCase")]
+struct MetaItemLegacyPreview {
+    id: String,
+    r#type: String,
+    #[serde(default)]
+    name: String,
+    poster: Option<String>,
+    background: Option<String>,
+    logo: Option<String>,
+    description: Option<String>,
+    release_info: Option<String>,
+    runtime: Option<String>,
+    released: Option<DateTime<Utc>>,
+    #[serde(default)]
+    poster_shape: PosterShape,
+    imdb_rating: Option<String>,
+    #[serde(default)]
+    genres: Vec<String>,
+    #[serde(default)]
+    links: Vec<Link>,
+    #[serde(default)]
+    trailers: Vec<Trailer>,
+    #[serde(default)]
+    trailer_streams: Vec<Stream>,
+    #[serde(default)]
+    behavior_hints: MetaItemBehaviorHints,
+}
+
+#[derive(Clone, PartialEq, Serialize, Deserialize)]
+#[cfg_attr(debug_assertions, derive(Debug))]
+#[cfg_attr(test, derive(Default))]
+#[serde(rename_all = "camelCase", try_from = "MetaItemLegacyPreview")]
 pub struct MetaItemPreview {
     pub id: String,
     pub r#type: String,
-    #[serde(default)]
     pub name: String,
     pub poster: Option<String>,
     pub background: Option<String>,
@@ -57,14 +110,81 @@ pub struct MetaItemPreview {
     pub release_info: Option<String>,
     pub runtime: Option<String>,
     pub released: Option<DateTime<Utc>>,
-    #[serde(default)]
     pub poster_shape: PosterShape,
-    #[serde(default)]
     pub links: Vec<Link>,
-    #[serde(default)]
     pub trailer_streams: Vec<Stream>,
-    #[serde(default)]
     pub behavior_hints: MetaItemBehaviorHints,
+}
+
+impl TryFrom<MetaItemLegacyPreview> for MetaItemPreview {
+    type Error = url::ParseError;
+    fn try_from(legacy_item: MetaItemLegacyPreview) -> Result<Self, Self::Error> {
+        let item_id = legacy_item.id.clone();
+        let item_type = legacy_item.r#type.clone();
+        let imdb_link: Result<Vec<Link>, url::ParseError> =
+            legacy_item.imdb_rating.map_or(Ok(vec![]), |rating| {
+                let enc_item_id = utf8_percent_encode(&item_id, URI_COMPONENT_ENCODE_SET);
+                Ok(vec![Link {
+                    name: rating,
+                    category: "imdb".to_owned(),
+                    url: Url::parse(format!("https://imdb.com/title/{}", enc_item_id).as_ref())?,
+                }])
+            });
+        let genres_links: Result<Vec<Link>, url::ParseError> = legacy_item
+            .genres
+            .iter()
+            .map(|genre| {
+                let enc_transport = utf8_percent_encode(TRANSPORT_URL, URI_COMPONENT_ENCODE_SET);
+                let enc_item_type = utf8_percent_encode(&item_type, URI_COMPONENT_ENCODE_SET);
+                let enc_genre = utf8_percent_encode(&genre, URI_COMPONENT_ENCODE_SET);
+                Ok(Link {
+                    name: genre.to_owned(),
+                    category: "Genres".to_owned(),
+                    url: Url::parse(
+                        format!(
+                            "stremio:///discover/{}/{}/top?genre={}",
+                            enc_transport, enc_item_type, enc_genre
+                        )
+                        .as_ref(),
+                    )?,
+                })
+            })
+            .collect();
+        Ok(Self {
+            id: legacy_item.id,
+            r#type: legacy_item.r#type,
+            name: legacy_item.name,
+            poster: legacy_item.poster,
+            background: legacy_item.background,
+            logo: legacy_item.logo,
+            description: legacy_item.description,
+            release_info: legacy_item.release_info,
+            runtime: legacy_item.runtime,
+            released: legacy_item.released,
+            poster_shape: legacy_item.poster_shape,
+            // TODO: deduplicate links?
+            links: [imdb_link?, genres_links?, legacy_item.links].concat(),
+            trailer_streams: [
+                legacy_item
+                    .trailers
+                    .into_iter()
+                    .map(|trailer| Stream {
+                        source: StreamSource::YouTube {
+                            yt_id: trailer.source,
+                        },
+                        name: None,
+                        description: None,
+                        thumbnail: None,
+                        subtitles: vec![],
+                        behavior_hints: StreamBehaviorHints::default(),
+                    })
+                    .collect(),
+                legacy_item.trailer_streams,
+            ]
+            .concat(),
+            behavior_hints: legacy_item.behavior_hints,
+        })
+    }
 }
 
 #[derive(Clone, PartialEq, Serialize, Deserialize)]

@@ -1,12 +1,16 @@
-use crate::types::resource::{MetaItemBehaviorHints, MetaItemPreview, PosterShape};
+use crate::types::resource::{
+    Link, MetaItemBehaviorHints, MetaItemPreview, PosterShape, Stream, StreamBehaviorHints,
+    StreamSource,
+};
 use crate::unit_tests::serde::default_tokens_ext::DefaultTokens;
 use chrono::prelude::TimeZone;
 use chrono::Utc;
-use serde_test::{assert_de_tokens, assert_tokens, Token};
+use serde_test::{assert_de_tokens, assert_ser_tokens, Token};
+use url::Url;
 
 #[test]
 fn meta_item_preview() {
-    assert_tokens(
+    assert_ser_tokens(
         &vec![
             MetaItemPreview {
                 id: "id".to_owned(),
@@ -131,6 +135,133 @@ fn meta_item_preview() {
         ]
         .concat(),
     );
+
+    // MetaItemPreview deserializes to MetaItemLegacyPreview and then it is converted from it
+    assert_de_tokens(
+        &vec![
+            MetaItemPreview {
+                id: "id".to_owned(),
+                r#type: "type".to_owned(),
+                name: "name".to_owned(),
+                poster: Some("poster".to_owned()),
+                background: Some("background".to_owned()),
+                logo: Some("logo".to_owned()),
+                description: Some("description".to_owned()),
+                release_info: Some("release_info".to_owned()),
+                runtime: Some("runtime".to_owned()),
+                released: Some(Utc.ymd(2020, 1, 1).and_hms_milli(0, 0, 0, 0)),
+                poster_shape: PosterShape::default(),
+                links: vec![],
+                trailer_streams: vec![],
+                behavior_hints: MetaItemBehaviorHints::default(),
+            },
+            MetaItemPreview {
+                id: "id".to_owned(),
+                r#type: "type".to_owned(),
+                name: "name".to_owned(),
+                poster: None,
+                background: None,
+                logo: None,
+                description: None,
+                release_info: None,
+                runtime: None,
+                released: None,
+                poster_shape: PosterShape::default(),
+                links: vec![],
+                trailer_streams: vec![],
+                behavior_hints: MetaItemBehaviorHints::default(),
+            },
+        ],
+        &[
+            vec![
+                Token::Seq { len: Some(2) },
+                Token::Struct {
+                    name: "MetaItemLegacyPreview",
+                    len: 14,
+                },
+                Token::Str("id"),
+                Token::Str("id"),
+                Token::Str("type"),
+                Token::Str("type"),
+                Token::Str("name"),
+                Token::Str("name"),
+                Token::Str("poster"),
+                Token::Some,
+                Token::Str("poster"),
+                Token::Str("background"),
+                Token::Some,
+                Token::Str("background"),
+                Token::Str("logo"),
+                Token::Some,
+                Token::Str("logo"),
+                Token::Str("description"),
+                Token::Some,
+                Token::Str("description"),
+                Token::Str("releaseInfo"),
+                Token::Some,
+                Token::Str("release_info"),
+                Token::Str("runtime"),
+                Token::Some,
+                Token::Str("runtime"),
+                Token::Str("released"),
+                Token::Some,
+                Token::Str("2020-01-01T00:00:00Z"),
+                Token::Str("posterShape"),
+            ],
+            PosterShape::default_tokens(),
+            vec![
+                Token::Str("links"),
+                Token::Seq { len: Some(0) },
+                Token::SeqEnd,
+                Token::Str("trailerStreams"),
+                Token::Seq { len: Some(0) },
+                Token::SeqEnd,
+                Token::Str("behaviorHints"),
+            ],
+            MetaItemBehaviorHints::default_tokens(),
+            vec![
+                Token::StructEnd,
+                Token::Struct {
+                    name: "MetaItemLegacyPreview",
+                    len: 14,
+                },
+                Token::Str("id"),
+                Token::Str("id"),
+                Token::Str("type"),
+                Token::Str("type"),
+                Token::Str("name"),
+                Token::Str("name"),
+                Token::Str("poster"),
+                Token::None,
+                Token::Str("background"),
+                Token::None,
+                Token::Str("logo"),
+                Token::None,
+                Token::Str("description"),
+                Token::None,
+                Token::Str("releaseInfo"),
+                Token::None,
+                Token::Str("runtime"),
+                Token::None,
+                Token::Str("released"),
+                Token::None,
+                Token::Str("posterShape"),
+            ],
+            PosterShape::default_tokens(),
+            vec![
+                Token::Str("links"),
+                Token::Seq { len: Some(0) },
+                Token::SeqEnd,
+                Token::Str("trailerStreams"),
+                Token::Seq { len: Some(0) },
+                Token::SeqEnd,
+                Token::Str("behaviorHints"),
+            ],
+            MetaItemBehaviorHints::default_tokens(),
+            vec![Token::StructEnd, Token::SeqEnd],
+        ]
+        .concat(),
+    );
     assert_de_tokens(
         &MetaItemPreview {
             id: "id".to_owned(),
@@ -150,13 +281,77 @@ fn meta_item_preview() {
         },
         &[
             Token::Struct {
-                name: "MetaItemPreview",
+                name: "MetaItemLegacyPreview",
                 len: 2,
             },
             Token::Str("id"),
             Token::Str("id"),
             Token::Str("type"),
             Token::Str("type"),
+            Token::StructEnd,
+        ],
+    );
+    assert_de_tokens(
+        &MetaItemPreview {
+            id: "id".to_owned(),
+            r#type: "type".to_owned(),
+            name: "".to_owned(),
+            poster: None,
+            background: None,
+            logo: None,
+            description: None,
+            release_info: None,
+            runtime: None,
+            released: None,
+            poster_shape: PosterShape::default(),
+            links: vec![Link {
+                name: "5.1".to_owned(),
+                category: "imdb".to_owned(),
+                url: Url::parse("https://imdb.com/title/id").unwrap(),
+            },
+            Link {
+                name: "Action".to_owned(),
+                category: "Genres".to_owned(),
+                url: Url::parse("stremio:///discover/https%3A%2F%2Fv3-cinemeta.strem.io%2Fmanifest.json/type/top?genre=Action").unwrap(),
+            }
+            ],
+            trailer_streams: vec![Stream {
+                source: StreamSource::YouTube {
+                    yt_id: "source".to_owned(),
+                },
+                name: None,
+                description: None,
+                thumbnail: None,
+                subtitles: vec![],
+                behavior_hints: StreamBehaviorHints::default(),
+            }],
+            behavior_hints: MetaItemBehaviorHints::default(),
+        },
+        &[
+            Token::Struct {
+                name: "MetaItemLegacyPreview",
+                len: 2,
+            },
+            Token::Str("id"),
+            Token::Str("id"),
+            Token::Str("type"),
+            Token::Str("type"),
+            Token::Str("imdbRating"),
+            Token::Some,
+            Token::Str("5.1"),
+            Token::Str("genres"),
+            Token::Seq { len: Some(1) },
+            Token::Str("Action"),
+            Token::SeqEnd,
+            Token::Str("trailers"),
+            Token::Seq { len: Some(1) },
+            Token::Map{ len: None },
+            Token::Str("source"),
+            Token::Str("source"),
+            Token::Str("type"),
+            Token::Str("type"),
+            Token::MapEnd,
+            Token::SeqEnd,
             Token::StructEnd,
         ],
     );
