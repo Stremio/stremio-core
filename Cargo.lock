@@ -712,7 +712,7 @@ dependencies = [
 [[package]]
 name = "stremio-analytics"
 version = "0.1.0"
-source = "git+https://github.com/Stremio/stremio-core?branch=development#ada1799a24040bcf3907ea14af650be97ef6a5c6"
+source = "git+https://github.com/Stremio/stremio-core?branch=development#2995366c1dfaa4f0b666ab72ae88ea583f296b27"
 dependencies = [
  "derivative",
  "enclose",
@@ -725,7 +725,7 @@ dependencies = [
 [[package]]
 name = "stremio-core"
 version = "0.1.0"
-source = "git+https://github.com/Stremio/stremio-core?branch=development#ada1799a24040bcf3907ea14af650be97ef6a5c6"
+source = "git+https://github.com/Stremio/stremio-core?branch=development#2995366c1dfaa4f0b666ab72ae88ea583f296b27"
 dependencies = [
  "base64",
  "boolinator",
@@ -791,7 +791,7 @@ dependencies = [
 [[package]]
 name = "stremio-deeplinks"
 version = "0.1.0"
-source = "git+https://github.com/Stremio/stremio-core?branch=development#ada1799a24040bcf3907ea14af650be97ef6a5c6"
+source = "git+https://github.com/Stremio/stremio-core?branch=development#2995366c1dfaa4f0b666ab72ae88ea583f296b27"
 dependencies = [
  "base64",
  "boolinator",
@@ -807,7 +807,7 @@ dependencies = [
 [[package]]
 name = "stremio-derive"
 version = "0.1.0"
-source = "git+https://github.com/Stremio/stremio-core?branch=development#ada1799a24040bcf3907ea14af650be97ef6a5c6"
+source = "git+https://github.com/Stremio/stremio-core?branch=development#2995366c1dfaa4f0b666ab72ae88ea583f296b27"
 dependencies = [
  "case",
  "proc-macro-crate",
@@ -826,7 +826,7 @@ checksum = "8859744c7cd12c43f821b12f02090bae91c61124778c833dcafc978614e131b0"
 [[package]]
 name = "stremio-watched-bitfield"
 version = "0.1.0"
-source = "git+https://github.com/Stremio/stremio-core?branch=development#ada1799a24040bcf3907ea14af650be97ef6a5c6"
+source = "git+https://github.com/Stremio/stremio-core?branch=development#2995366c1dfaa4f0b666ab72ae88ea583f296b27"
 dependencies = [
  "base64",
  "flate2",

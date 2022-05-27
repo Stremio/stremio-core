@@ -80,40 +80,24 @@ mod model {
 }
 
 pub fn serialize_meta_details(meta_details: &MetaDetails, ctx: &Ctx) -> JsValue {
-    let (meta_item, watched) = meta_details
+    let meta_item = meta_details
         .meta_items
         .iter()
-        .enumerate()
-        .find(|(_, meta_item)| matches!(&meta_item.content, Some(Loadable::Ready(_))))
+        .find(|meta_item| matches!(&meta_item.content, Some(Loadable::Ready(_))))
         .or_else(|| {
             if meta_details
                 .meta_items
                 .iter()
                 .all(|meta_item| matches!(&meta_item.content, Some(Loadable::Err(_))))
             {
-                meta_details
-                    .meta_items
-                    .first()
-                    .map(|meta_item| (0, meta_item))
+                meta_details.meta_items.first()
             } else {
                 meta_details
                     .meta_items
                     .iter()
-                    .enumerate()
-                    .find(|(_, meta_item)| matches!(&meta_item.content, Some(Loadable::Loading)))
+                    .find(|meta_item| matches!(&meta_item.content, Some(Loadable::Loading)))
             }
-        })
-        .map(|(index, meta_item)| {
-            (
-                Some(meta_item),
-                meta_details
-                    .watched
-                    .get(index)
-                    .map(|watched| watched.as_ref())
-                    .flatten(),
-            )
-        })
-        .unwrap_or_default();
+        });
     JsValue::from_serde(&model::MetaDetails {
         selected: &meta_details.selected,
         meta_item: meta_item
@@ -142,7 +126,9 @@ pub fn serialize_meta_details(meta_details: &MetaDetails, ctx: &Ctx) -> JsValue 
                                         .released
                                         .map(|released| released > WebEnv::now())
                                         .unwrap_or(true),
-                                watched: watched
+                                watched: meta_details
+                                    .watched
+                                    .as_ref()
                                     .map(|watched| watched.get_video(&video.id))
                                     .unwrap_or_default(),
                                 progress: None, // TODO use library,
