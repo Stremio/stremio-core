@@ -7,11 +7,12 @@ use crate::models::ctx::Ctx;
 use crate::runtime::msg::{Action, ActionLoad, ActionPlayer, Internal, Msg};
 use crate::runtime::{Effects, Env, UpdateWithCtx};
 use crate::types::addon::{AggrRequest, ResourcePath, ResourceRequest};
-use crate::types::library::{LibraryBucket, LibraryItem, LibraryItemState};
+use crate::types::library::{LibraryBucket, LibraryItem};
 use crate::types::profile::Settings as ProfileSettings;
 use crate::types::resource::{MetaItem, SeriesInfo, Stream, Subtitles, Video};
 use serde::{Deserialize, Serialize};
 use std::cmp;
+use std::marker::PhantomData;
 
 #[derive(Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -66,8 +67,12 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                 );
                 let series_info_effects =
                     series_info_update(&mut self.series_info, &self.selected, &self.meta_item);
-                let library_item_effects =
-                    library_item_update::<E>(&mut self.library_item, &self.meta_item, &ctx.library);
+                let library_item_effects = library_item_update::<E>(
+                    &mut self.library_item,
+                    &self.selected,
+                    &self.meta_item,
+                    &ctx.library,
+                );
                 selected_effects
                     .join(meta_item_effects)
                     .join(subtitles_effects)
@@ -81,8 +86,7 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                 let subtitles_effects = eq_update(&mut self.subtitles, vec![]);
                 let next_video_effects = eq_update(&mut self.next_video, None);
                 let series_info_effects = eq_update(&mut self.series_info, None);
-                let library_item_effects =
-                    library_item_update::<E>(&mut self.library_item, &self.meta_item, &ctx.library);
+                let library_item_effects = eq_update(&mut self.library_item, None);
                 selected_effects
                     .join(meta_item_effects)
                     .join(subtitles_effects)
@@ -176,8 +180,12 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                 );
                 let series_info_effects =
                     series_info_update(&mut self.series_info, &self.selected, &self.meta_item);
-                let library_item_effects =
-                    library_item_update::<E>(&mut self.library_item, &self.meta_item, &ctx.library);
+                let library_item_effects = library_item_update::<E>(
+                    &mut self.library_item,
+                    &self.selected,
+                    &self.meta_item,
+                    &ctx.library,
+                );
                 meta_item_effects
                     .join(subtitles_effects)
                     .join(next_video_effects)
@@ -250,51 +258,35 @@ fn series_info_update(
     eq_update(series_info, next_series_info)
 }
 
-fn library_item_update<E: Env>(
+fn library_item_update<E: Env + 'static>(
     library_item: &mut Option<LibraryItem>,
+    selected: &Option<Selected>,
     meta_item: &Option<ResourceLoadable<MetaItem>>,
     library: &LibraryBucket,
 ) -> Effects {
-    let next_library_item = match meta_item {
-        Some(meta_item) => {
+    let next_library_item = match selected {
+        Some(Selected {
+            meta_request: Some(meta_request),
+            ..
+        }) => {
             let library_item = library_item
                 .as_ref()
-                .filter(|library_item| library_item.id == meta_item.request.path.id)
-                .or_else(|| library.items.get(&meta_item.request.path.id));
-            let meta_item = match meta_item {
+                .filter(|library_item| library_item.id == meta_request.path.id)
+                .or_else(|| library.items.get(&meta_request.path.id));
+            let meta_item = meta_item.as_ref().and_then(|meta_item| match meta_item {
                 ResourceLoadable {
                     content: Some(Loadable::Ready(meta_item)),
                     ..
                 } => Some(meta_item),
                 _ => None,
-            };
+            });
             match (library_item, meta_item) {
-                (Some(library_item), Some(meta_item)) => Some(LibraryItem {
-                    id: library_item.id.to_owned(),
-                    removed: library_item.removed.to_owned(),
-                    temp: library_item.temp.to_owned(),
-                    ctime: library_item.ctime.to_owned(),
-                    mtime: library_item.mtime.to_owned(),
-                    state: library_item.state.to_owned(),
-                    name: meta_item.preview.name.to_owned(),
-                    r#type: meta_item.preview.r#type.to_owned(),
-                    poster: meta_item.preview.poster.to_owned(),
-                    poster_shape: meta_item.preview.poster_shape.to_owned(),
-                    behavior_hints: meta_item.preview.behavior_hints.to_owned(),
-                }),
-                (None, Some(meta_item)) => Some(LibraryItem {
-                    id: meta_item.preview.id.to_owned(),
-                    removed: true,
-                    temp: true,
-                    ctime: Some(E::now()),
-                    mtime: E::now(),
-                    state: LibraryItemState::default(),
-                    name: meta_item.preview.name.to_owned(),
-                    r#type: meta_item.preview.r#type.to_owned(),
-                    poster: meta_item.preview.poster.to_owned(),
-                    poster_shape: meta_item.preview.poster_shape.to_owned(),
-                    behavior_hints: meta_item.preview.behavior_hints.to_owned(),
-                }),
+                (Some(library_item), Some(meta_item)) => {
+                    Some(LibraryItem::from((&meta_item.preview, library_item)))
+                }
+                (None, Some(meta_item)) => {
+                    Some(LibraryItem::from((&meta_item.preview, PhantomData::<E>)))
+                }
                 (Some(library_item), None) => Some(library_item.to_owned()),
                 _ => None,
             }
