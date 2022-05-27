@@ -37,7 +37,6 @@ pub fn update_library<E: Env + 'static>(
             };
             library_item.removed = false;
             library_item.temp = false;
-            library_item.mtime = E::now();
             Effects::msg(Msg::Internal(Internal::UpdateLibraryItem(library_item)))
                 .join(Effects::msg(Msg::Event(Event::LibraryItemAdded {
                     id: meta_preview.id.to_owned(),
@@ -49,7 +48,6 @@ pub fn update_library<E: Env + 'static>(
                 let mut library_item = library_item.to_owned();
                 library_item.removed = true;
                 library_item.temp = false;
-                library_item.mtime = E::now();
                 Effects::msg(Msg::Internal(Internal::UpdateLibraryItem(library_item)))
                     .join(Effects::msg(Msg::Event(Event::LibraryItemRemoved {
                         id: id.to_owned(),
