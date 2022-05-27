@@ -7,7 +7,7 @@ use crate::runtime::{Effect, EffectFuture, Effects, Env, EnvFutureExt};
 use crate::types::api::{
     fetch_api, APIResult, DatastoreCommand, DatastoreRequest, LibraryItemModified, SuccessResponse,
 };
-use crate::types::library::{LibraryBucket, LibraryBucketRef, LibraryItem, LibraryItemState};
+use crate::types::library::{LibraryBucket, LibraryBucketRef, LibraryItem};
 use crate::types::profile::AuthKey;
 use futures::future::Either;
 use futures::{future, FutureExt, TryFutureExt};
