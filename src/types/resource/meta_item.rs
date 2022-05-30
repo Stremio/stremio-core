@@ -49,8 +49,6 @@ where
 #[cfg_attr(test, derive(Default))]
 struct Trailer {
     source: String,
-    #[serde(rename = "type")]
-    trailer_type: String,
 }
 
 #[derive(Clone, PartialEq, Deserialize)]
