@@ -1,5 +1,6 @@
 use crate::types::addon::Descriptor;
 use lazy_static::lazy_static;
+use percent_encoding::{AsciiSet, NON_ALPHANUMERIC};
 use std::collections::HashMap;
 use url::Url;
 
@@ -20,8 +21,20 @@ pub const CATALOG_PREVIEW_SIZE: usize = 10;
 pub const LIBRARY_RECENT_COUNT: usize = 200;
 pub const WATCHED_THRESHOLD_COEF: f64 = 0.7;
 pub const SCHEMA_VERSION: u32 = 5;
+pub const URI_COMPONENT_ENCODE_SET: &AsciiSet = &NON_ALPHANUMERIC
+    .remove(b'-')
+    .remove(b'_')
+    .remove(b'.')
+    .remove(b'!')
+    .remove(b'~')
+    .remove(b'*')
+    .remove(b'\'')
+    .remove(b'(')
+    .remove(b')');
 
 lazy_static! {
+    pub static ref CINEMETA_URL: Url = Url::parse("https://v3-cinemeta.strem.io/manifest.json")
+        .expect("CINEMETA_URL parse failed");
     pub static ref API_URL: Url = Url::parse("https://api.strem.io").expect("API_URL parse failed");
     pub static ref LINK_API_URL: Url =
         Url::parse("https://link.stremio.com").expect("LINK_API_URL parse failed");

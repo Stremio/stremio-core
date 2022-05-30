@@ -1,25 +1,14 @@
+use crate::constants::{CINEMETA_URL, URI_COMPONENT_ENCODE_SET};
 use crate::types::deserialize_single_as_vec;
 use crate::types::resource::{Stream, StreamBehaviorHints, StreamSource};
 use chrono::{DateTime, Utc};
 use derivative::Derivative;
-use percent_encoding::{utf8_percent_encode, AsciiSet, NON_ALPHANUMERIC};
+use percent_encoding::utf8_percent_encode;
 use serde::de::Deserializer;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::convert::TryFrom;
 use url::Url;
-
-const TRANSPORT_URL: &str = "https://v3-cinemeta.strem.io/manifest.json";
-const URI_COMPONENT_ENCODE_SET: &AsciiSet = &NON_ALPHANUMERIC
-    .remove(b'-')
-    .remove(b'_')
-    .remove(b'.')
-    .remove(b'!')
-    .remove(b'~')
-    .remove(b'*')
-    .remove(b'\'')
-    .remove(b'(')
-    .remove(b')');
 
 fn deserialize_and_sort_videos<'de, D>(deserializer: D) -> Result<Vec<Video>, D::Error>
 where
@@ -134,7 +123,8 @@ impl TryFrom<MetaItemLegacyPreview> for MetaItemPreview {
             .genres
             .iter()
             .map(|genre| {
-                let enc_transport = utf8_percent_encode(TRANSPORT_URL, URI_COMPONENT_ENCODE_SET);
+                let enc_transport =
+                    utf8_percent_encode(CINEMETA_URL.as_str(), URI_COMPONENT_ENCODE_SET);
                 let enc_item_type = utf8_percent_encode(&item_type, URI_COMPONENT_ENCODE_SET);
                 let enc_genre = utf8_percent_encode(&genre, URI_COMPONENT_ENCODE_SET);
                 Ok(Link {
