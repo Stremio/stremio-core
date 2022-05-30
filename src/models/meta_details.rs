@@ -227,11 +227,13 @@ fn watched_update<E: Env>(
                 Some(watched) => {
                     match WatchedBitField::construct_and_resize(watched, video_ids.to_owned()) {
                         Ok(watched) => watched,
+                        #[cfg(debug_assertions)]
                         Err(error) => {
-                            #[cfg(debug_assertions)]
                             E::log(error.to_string());
                             WatchedBitField::construct_from_array(vec![], video_ids)
                         }
+                        #[cfg(not(debug_assertions))]
+                        Err(_) => WatchedBitField::construct_from_array(vec![], video_ids),
                     }
                 }
                 _ => WatchedBitField::construct_from_array(vec![], video_ids),
