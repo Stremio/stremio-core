@@ -1,8 +1,9 @@
 use crate::constants::{
-    CINEMETA_TOP_CATALOG_ID, CINEMETA_URL, GENRES_LINK_CATEGORY, IMDB_LINK_CATEGORY,
-    IMDB_TITLE_PATH, IMDB_URL, URI_COMPONENT_ENCODE_SET,
+    CATALOG_RESOURCE_NAME, CINEMETA_TOP_CATALOG_ID, CINEMETA_URL, GENRES_LINK_CATEGORY,
+    IMDB_LINK_CATEGORY, IMDB_TITLE_PATH, IMDB_URL, URI_COMPONENT_ENCODE_SET,
 };
 use crate::deep_links::DiscoverDeepLinks;
+use crate::types::addon::{ExtraValue, ResourcePath, ResourceRequest};
 use crate::types::deserialize_single_as_vec;
 use crate::types::resource::{Stream, StreamSource};
 use chrono::{DateTime, Utc};
@@ -121,12 +122,18 @@ impl From<MetaItemPreviewLegacy> for MetaItemPreview {
                         .expect("IMDB url build failed"),
                 });
                 let genres_links = legacy_item.genres.into_iter().map(|genre| {
-                    let deep_links = DiscoverDeepLinks::from((
-                        CINEMETA_URL.as_str(),
-                        r#type.as_str(),
-                        CINEMETA_TOP_CATALOG_ID,
-                        vec![("genre", genre.as_str())].as_slice(),
-                    ));
+                    let deep_links = DiscoverDeepLinks::from(&ResourceRequest {
+                        base: CINEMETA_URL.to_owned(),
+                        path: ResourcePath {
+                            id: CINEMETA_TOP_CATALOG_ID.to_owned(),
+                            resource: CATALOG_RESOURCE_NAME.to_owned(),
+                            r#type: r#type.to_owned(),
+                            extra: vec![ExtraValue {
+                                name: "genre".to_owned(),
+                                value: genre.to_owned(),
+                            }],
+                        },
+                    });
                     Link {
                         name: genre,
                         category: GENRES_LINK_CATEGORY.to_owned(),

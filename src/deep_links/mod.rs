@@ -279,32 +279,19 @@ pub struct DiscoverDeepLinks {
 
 impl From<&ResourceRequest> for DiscoverDeepLinks {
     fn from(request: &ResourceRequest) -> Self {
-        DiscoverDeepLinks::from((
-            request.base.as_str(),
-            request.path.r#type.as_str(),
-            request.path.id.as_str(),
-            request
-                .path
-                .extra
-                .iter()
-                .map(|ExtraValue { name, value }| (name.as_str(), value.as_str()))
-                .collect::<Vec<_>>()
-                .as_slice(),
-        ))
-    }
-}
-
-impl<'a> From<(&'a str, &'a str, &'a str, &'a [(&'a str, &'a str)])> for DiscoverDeepLinks {
-    fn from(
-        (base, r#type, id, query_params): (&'a str, &'a str, &'a str, &'a [(&'a str, &'a str)]),
-    ) -> Self {
         DiscoverDeepLinks {
             discover: format!(
                 "stremio:///discover/{}/{}/{}?{}",
-                utf8_percent_encode(base, URI_COMPONENT_ENCODE_SET),
-                utf8_percent_encode(r#type, URI_COMPONENT_ENCODE_SET),
-                utf8_percent_encode(id, URI_COMPONENT_ENCODE_SET),
-                query_params_encode(query_params)
+                utf8_percent_encode(request.base.as_str(), URI_COMPONENT_ENCODE_SET),
+                utf8_percent_encode(&request.path.r#type, URI_COMPONENT_ENCODE_SET),
+                utf8_percent_encode(&request.path.id, URI_COMPONENT_ENCODE_SET),
+                query_params_encode(
+                    request
+                        .path
+                        .extra
+                        .iter()
+                        .map(|ExtraValue { name, value }| (name, value))
+                )
             ),
         }
     }
