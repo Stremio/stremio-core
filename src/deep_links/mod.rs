@@ -1,32 +1,23 @@
+use crate::constants::URI_COMPONENT_ENCODE_SET;
+use crate::models::installed_addons_with_filters::InstalledAddonsRequest;
+use crate::models::library_with_filters::LibraryRequest;
+use crate::types::addon::{ExtraValue, ResourceRequest};
+use crate::types::library::LibraryItem;
+use crate::types::resource::{
+    MetaItem, MetaItemPreview, Stream, StreamBehaviorHints, StreamSource, Video,
+};
 use boolinator::Boolinator;
 use flate2::write::ZlibEncoder;
 use flate2::Compression;
 use itertools::Itertools;
-use percent_encoding::{utf8_percent_encode, AsciiSet, NON_ALPHANUMERIC};
+use percent_encoding::utf8_percent_encode;
 use serde::Serialize;
 use std::borrow::Borrow;
 use std::io;
 use std::io::Write;
-use stremio_core::models::installed_addons_with_filters::InstalledAddonsRequest;
-use stremio_core::models::library_with_filters::LibraryRequest;
-use stremio_core::types::addon::{ExtraValue, ResourceRequest};
-use stremio_core::types::library::LibraryItem;
-use stremio_core::types::resource::{
-    MetaItem, MetaItemPreview, Stream, StreamBehaviorHints, StreamSource, Video,
-};
 use url::form_urlencoded;
 
 const YOUTUBE_PREFIX: &str = "yt_id:";
-const URI_COMPONENT_ENCODE_SET: &AsciiSet = &NON_ALPHANUMERIC
-    .remove(b'-')
-    .remove(b'_')
-    .remove(b'.')
-    .remove(b'!')
-    .remove(b'~')
-    .remove(b'*')
-    .remove(b'\'')
-    .remove(b'(')
-    .remove(b')');
 
 #[derive(Serialize)]
 pub struct ExternalPlayerLink {
@@ -92,7 +83,7 @@ impl From<&LibraryItem> for LibraryItemDeepLinks {
                 .as_ref()
                 .cloned()
                 .xor(Some(format!(
-                    "#/metadetails/{}/{}",
+                    "stremio:///metadetails/{}/{}",
                     utf8_percent_encode(&item.r#type, URI_COMPONENT_ENCODE_SET),
                     utf8_percent_encode(&item.id, URI_COMPONENT_ENCODE_SET)
                 ))),
@@ -103,7 +94,7 @@ impl From<&LibraryItem> for LibraryItemDeepLinks {
                 .or_else(|| item.behavior_hints.default_video_id.as_ref())
                 .map(|video_id| {
                     format!(
-                        "#/metadetails/{}/{}/{}",
+                        "stremio:///metadetails/{}/{}/{}",
                         utf8_percent_encode(&item.r#type, URI_COMPONENT_ENCODE_SET),
                         utf8_percent_encode(&item.id, URI_COMPONENT_ENCODE_SET),
                         utf8_percent_encode(video_id, URI_COMPONENT_ENCODE_SET)
@@ -132,7 +123,7 @@ impl From<(&MetaItemPreview, &ResourceRequest)> for MetaItemDeepLinks {
                 .as_ref()
                 .cloned()
                 .xor(Some(format!(
-                    "#/metadetails/{}/{}",
+                    "stremio:///metadetails/{}/{}",
                     utf8_percent_encode(&item.r#type, URI_COMPONENT_ENCODE_SET),
                     utf8_percent_encode(&item.id, URI_COMPONENT_ENCODE_SET)
                 ))),
@@ -142,7 +133,7 @@ impl From<(&MetaItemPreview, &ResourceRequest)> for MetaItemDeepLinks {
                 .as_ref()
                 .map(|video_id| {
                     format!(
-                        "#/metadetails/{}/{}/{}",
+                        "stremio:///metadetails/{}/{}/{}",
                         utf8_percent_encode(&item.r#type, URI_COMPONENT_ENCODE_SET),
                         utf8_percent_encode(&item.id, URI_COMPONENT_ENCODE_SET),
                         utf8_percent_encode(video_id, URI_COMPONENT_ENCODE_SET)
@@ -157,7 +148,7 @@ impl From<(&MetaItemPreview, &ResourceRequest)> for MetaItemDeepLinks {
                     // video id are formed like that: yt_id:YT_CHANNEL_ID:YT_VIDEO_ID
                     default_video_id.split(':').nth(2).map(|video_id| {
                         format!(
-                            "#/player/{}/{}/{}/{}/{}/{}",
+                            "stremio:///player/{}/{}/{}/{}/{}/{}",
                             utf8_percent_encode(
                                 &base64::encode(
                                     gz_encode(
@@ -207,14 +198,14 @@ impl From<(&Video, &ResourceRequest)> for VideoDeepLinks {
     fn from((video, request): (&Video, &ResourceRequest)) -> Self {
         VideoDeepLinks {
             meta_details_streams: format!(
-                "#/metadetails/{}/{}/{}",
+                "stremio:///metadetails/{}/{}/{}",
                 utf8_percent_encode(&request.path.r#type, URI_COMPONENT_ENCODE_SET),
                 utf8_percent_encode(&request.path.id, URI_COMPONENT_ENCODE_SET),
                 utf8_percent_encode(&video.id, URI_COMPONENT_ENCODE_SET)
             ),
             player: video.streams.iter().exactly_one().ok().map(|stream| {
                 format!(
-                    "#/player/{}/{}/{}/{}/{}/{}",
+                    "stremio:///player/{}/{}/{}/{}/{}/{}",
                     utf8_percent_encode(
                         &base64::encode(gz_encode(serde_json::to_string(stream).unwrap()).unwrap()),
                         URI_COMPONENT_ENCODE_SET
@@ -247,7 +238,7 @@ impl From<&Stream> for StreamDeepLinks {
     fn from(stream: &Stream) -> Self {
         StreamDeepLinks {
             player: format!(
-                "#/player/{}",
+                "stremio:///player/{}",
                 utf8_percent_encode(
                     &base64::encode(gz_encode(serde_json::to_string(stream).unwrap()).unwrap()),
                     URI_COMPONENT_ENCODE_SET
@@ -264,7 +255,7 @@ impl From<(&Stream, &ResourceRequest, &ResourceRequest)> for StreamDeepLinks {
     ) -> Self {
         StreamDeepLinks {
             player: format!(
-                "#/player/{}/{}/{}/{}/{}/{}",
+                "stremio:///player/{}/{}/{}/{}/{}/{}",
                 utf8_percent_encode(
                     &base64::encode(gz_encode(serde_json::to_string(stream).unwrap()).unwrap()),
                     URI_COMPONENT_ENCODE_SET
@@ -290,7 +281,7 @@ impl From<&ResourceRequest> for DiscoverDeepLinks {
     fn from(request: &ResourceRequest) -> Self {
         DiscoverDeepLinks {
             discover: format!(
-                "#/discover/{}/{}/{}?{}",
+                "stremio:///discover/{}/{}/{}?{}",
                 utf8_percent_encode(request.base.as_str(), URI_COMPONENT_ENCODE_SET),
                 utf8_percent_encode(&request.path.r#type, URI_COMPONENT_ENCODE_SET),
                 utf8_percent_encode(&request.path.id, URI_COMPONENT_ENCODE_SET),
@@ -316,7 +307,7 @@ impl From<&ResourceRequest> for AddonsDeepLinks {
     fn from(request: &ResourceRequest) -> Self {
         AddonsDeepLinks {
             addons: format!(
-                "#/addons/{}/{}/{}",
+                "stremio:///addons/{}/{}/{}",
                 utf8_percent_encode(&request.path.r#type, URI_COMPONENT_ENCODE_SET),
                 utf8_percent_encode(request.base.as_str(), URI_COMPONENT_ENCODE_SET),
                 utf8_percent_encode(&request.path.id, URI_COMPONENT_ENCODE_SET),
@@ -333,11 +324,11 @@ impl From<&InstalledAddonsRequest> for AddonsDeepLinks {
                 .as_ref()
                 .map(|r#type| {
                     format!(
-                        "#/addons/{}",
+                        "stremio:///addons/{}",
                         utf8_percent_encode(r#type, URI_COMPONENT_ENCODE_SET)
                     )
                 })
-                .unwrap_or_else(|| "#/addons".to_owned()),
+                .unwrap_or_else(|| "stremio:///addons".to_owned()),
         }
     }
 }
@@ -351,7 +342,7 @@ pub struct LibraryDeepLinks {
 impl From<&String> for LibraryDeepLinks {
     fn from(root: &String) -> Self {
         LibraryDeepLinks {
-            library: format!("#/{}", root),
+            library: format!("stremio:///{}", root),
         }
     }
 }
@@ -361,7 +352,7 @@ impl From<(&String, &LibraryRequest)> for LibraryDeepLinks {
         LibraryDeepLinks {
             library: match &request.r#type {
                 Some(r#type) => format!(
-                    "#/{}/{}?{}",
+                    "stremio:///{}/{}?{}",
                     root,
                     utf8_percent_encode(r#type, URI_COMPONENT_ENCODE_SET),
                     query_params_encode(&[
@@ -376,7 +367,7 @@ impl From<(&String, &LibraryRequest)> for LibraryDeepLinks {
                     ]),
                 ),
                 _ => format!(
-                    "#/{}?{}",
+                    "stremio:///{}?{}",
                     root,
                     query_params_encode(&[
                         (
