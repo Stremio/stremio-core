@@ -53,6 +53,7 @@ where
 #[cfg_attr(test, derive(Default))]
 struct Trailer {
     source: String,
+    r#type: String,
 }
 
 #[derive(Clone, PartialEq, Deserialize)]
@@ -148,6 +149,7 @@ impl From<MetaItemPreviewLegacy> for MetaItemPreview {
             _ => legacy_item
                 .trailers
                 .into_iter()
+                .filter(|trailer| trailer.r#type == "Trailer")
                 .map(|trailer| Stream {
                     source: StreamSource::YouTube {
                         yt_id: trailer.source,
