@@ -1,9 +1,9 @@
+use crate::model::deep_links::{DiscoverDeepLinks, MetaItemDeepLinks};
 use serde::Serialize;
 use stremio_core::models::catalogs_with_extra::{CatalogsWithExtra, Selected};
 use stremio_core::models::common::{Loadable, ResourceError};
 use stremio_core::models::ctx::Ctx;
 use stremio_core::types::resource::PosterShape;
-use stremio_deeplinks::{DiscoverDeepLinks, MetaItemDeepLinks};
 use wasm_bindgen::JsValue;
 
 mod model {

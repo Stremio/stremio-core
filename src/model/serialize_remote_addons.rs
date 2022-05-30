@@ -1,9 +1,9 @@
+use crate::model::deep_links::AddonsDeepLinks;
 use serde::Serialize;
 use stremio_core::models::catalog_with_filters::{CatalogWithFilters, Selected};
 use stremio_core::models::common::Loadable;
 use stremio_core::models::ctx::Ctx;
 use stremio_core::types::addon::DescriptorPreview;
-use stremio_deeplinks::AddonsDeepLinks;
 use wasm_bindgen::JsValue;
 
 mod model {

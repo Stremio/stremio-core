@@ -1,7 +1,7 @@
+use crate::model::deep_links::{LibraryDeepLinks, LibraryItemDeepLinks};
 use serde::Serialize;
 use stremio_core::models::continue_watching_preview::ContinueWatchingPreview;
 use stremio_core::types::resource::PosterShape;
-use stremio_deeplinks::{LibraryDeepLinks, LibraryItemDeepLinks};
 use wasm_bindgen::JsValue;
 
 mod model {

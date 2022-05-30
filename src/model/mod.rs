@@ -1,3 +1,5 @@
+pub mod deep_links;
+
 mod serialize_catalogs_with_extra;
 use serialize_catalogs_with_extra::*;
 
