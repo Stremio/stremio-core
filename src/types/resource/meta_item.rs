@@ -130,8 +130,7 @@ impl From<MetaItemPreviewLegacy> for MetaItemPreview {
                     Link {
                         name: genre,
                         category: GENRES_LINK_CATEGORY.to_owned(),
-                        url: Url::parse(&deep_links.discover.replace("#", "stremio://"))
-                            .expect("Link url parse failed"),
+                        url: Url::parse(&deep_links.discover).expect("Link url parse failed"),
                     }
                 });
                 imdb_link.into_iter().chain(genres_links).collect()
