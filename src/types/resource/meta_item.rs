@@ -1,8 +1,10 @@
 use crate::constants::{
-    CINEMETA_URL, GENRES_LINK_CATEGORY, IMDB_LINK_CATEGORY, URI_COMPONENT_ENCODE_SET,
+    CINEMETA_TOP_CATALOG_ID, CINEMETA_URL, GENRES_LINK_CATEGORY, IMDB_LINK_CATEGORY,
+    IMDB_TITLE_PATH, IMDB_URL, URI_COMPONENT_ENCODE_SET,
 };
+use crate::deep_links::DiscoverDeepLinks;
 use crate::types::deserialize_single_as_vec;
-use crate::types::resource::{Stream, StreamBehaviorHints, StreamSource};
+use crate::types::resource::{Stream, StreamSource};
 use chrono::{DateTime, Utc};
 use derivative::Derivative;
 use percent_encoding::utf8_percent_encode;
@@ -56,7 +58,7 @@ struct Trailer {
 #[cfg_attr(debug_assertions, derive(Debug))]
 #[cfg_attr(test, derive(Default))]
 #[serde(rename_all = "camelCase")]
-struct LegacyMetaItemPreview {
+struct MetaItemPreviewLegacy {
     id: String,
     r#type: String,
     #[serde(default)]
@@ -84,7 +86,7 @@ struct LegacyMetaItemPreview {
 #[derive(Clone, PartialEq, Serialize, Deserialize)]
 #[cfg_attr(debug_assertions, derive(Debug))]
 #[cfg_attr(test, derive(Default))]
-#[serde(rename_all = "camelCase", try_from = "LegacyMetaItemPreview")]
+#[serde(rename_all = "camelCase", try_from = "MetaItemPreviewLegacy")]
 pub struct MetaItemPreview {
     pub id: String,
     pub r#type: String,
@@ -102,37 +104,36 @@ pub struct MetaItemPreview {
     pub behavior_hints: MetaItemBehaviorHints,
 }
 
-impl From<LegacyMetaItemPreview> for MetaItemPreview {
-    fn from(legacy_item: LegacyMetaItemPreview) -> Self {
+impl From<MetaItemPreviewLegacy> for MetaItemPreview {
+    fn from(legacy_item: MetaItemPreviewLegacy) -> Self {
         let links = match legacy_item.links {
             Some(links) => links,
             _ => {
-                let imdb_link = match legacy_item.imdb_rating {
-                    Some(imdb_rating) => Some(Link {
-                        name: imdb_rating,
-                        category: IMDB_LINK_CATEGORY.to_owned(),
-                        url: Url::parse(&format!(
-                            "https://imdb.com/title/{}",
-                            utf8_percent_encode(&legacy_item.id, URI_COMPONENT_ENCODE_SET)
-                        ))
-                        .expect("Link::url parse failed"),
-                    }),
-                    _ => None,
-                };
-                let mut genres_links = vec![];
-                for genre in legacy_item.genres.into_iter() {
-                    genres_links.push(Link {
-                        url: Url::parse(&format!(
-                            "stremio:///discover/{}/{}/top?genre={}",
-                            utf8_percent_encode(CINEMETA_URL.as_str(), URI_COMPONENT_ENCODE_SET),
-                            utf8_percent_encode(&legacy_item.r#type, URI_COMPONENT_ENCODE_SET),
-                            utf8_percent_encode(&genre, URI_COMPONENT_ENCODE_SET)
-                        ))
-                        .expect("Link::url parse failed"),
+                let id = legacy_item.id.to_owned();
+                let r#type = legacy_item.r#type.to_owned();
+                let imdb_link = legacy_item.imdb_rating.map(|imdb_rating| Link {
+                    name: imdb_rating,
+                    category: IMDB_LINK_CATEGORY.to_owned(),
+                    url: IMDB_URL
+                        .join(&format!("{}/", IMDB_TITLE_PATH))
+                        .expect("IMDB url build failed")
+                        .join(&utf8_percent_encode(&id, URI_COMPONENT_ENCODE_SET).to_string())
+                        .expect("IMDB url build failed"),
+                });
+                let genres_links = legacy_item.genres.into_iter().map(|genre| {
+                    let deep_links = DiscoverDeepLinks::from((
+                        CINEMETA_URL.as_str(),
+                        r#type.as_str(),
+                        CINEMETA_TOP_CATALOG_ID,
+                        vec![("genre", genre.as_str())].as_slice(),
+                    ));
+                    Link {
                         name: genre,
                         category: GENRES_LINK_CATEGORY.to_owned(),
-                    });
-                }
+                        url: Url::parse(&deep_links.discover.replace("#", "stremio://"))
+                            .expect("Link url parse failed"),
+                    }
+                });
                 imdb_link.into_iter().chain(genres_links).collect()
             }
         };
@@ -149,7 +150,7 @@ impl From<LegacyMetaItemPreview> for MetaItemPreview {
                     description: None,
                     thumbnail: None,
                     subtitles: vec![],
-                    behavior_hints: StreamBehaviorHints::default(),
+                    behavior_hints: Default::default(),
                 })
                 .collect(),
         };

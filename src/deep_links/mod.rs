@@ -1,32 +1,23 @@
+use crate::constants::URI_COMPONENT_ENCODE_SET;
+use crate::models::installed_addons_with_filters::InstalledAddonsRequest;
+use crate::models::library_with_filters::LibraryRequest;
+use crate::types::addon::{ExtraValue, ResourceRequest};
+use crate::types::library::LibraryItem;
+use crate::types::resource::{
+    MetaItem, MetaItemPreview, Stream, StreamBehaviorHints, StreamSource, Video,
+};
 use boolinator::Boolinator;
 use flate2::write::ZlibEncoder;
 use flate2::Compression;
 use itertools::Itertools;
-use percent_encoding::{utf8_percent_encode, AsciiSet, NON_ALPHANUMERIC};
+use percent_encoding::utf8_percent_encode;
 use serde::Serialize;
 use std::borrow::Borrow;
 use std::io;
 use std::io::Write;
-use stremio_core::models::installed_addons_with_filters::InstalledAddonsRequest;
-use stremio_core::models::library_with_filters::LibraryRequest;
-use stremio_core::types::addon::{ExtraValue, ResourceRequest};
-use stremio_core::types::library::LibraryItem;
-use stremio_core::types::resource::{
-    MetaItem, MetaItemPreview, Stream, StreamBehaviorHints, StreamSource, Video,
-};
 use url::form_urlencoded;
 
 const YOUTUBE_PREFIX: &str = "yt_id:";
-const URI_COMPONENT_ENCODE_SET: &AsciiSet = &NON_ALPHANUMERIC
-    .remove(b'-')
-    .remove(b'_')
-    .remove(b'.')
-    .remove(b'!')
-    .remove(b'~')
-    .remove(b'*')
-    .remove(b'\'')
-    .remove(b'(')
-    .remove(b')');
 
 #[derive(Serialize)]
 pub struct ExternalPlayerLink {
@@ -288,19 +279,32 @@ pub struct DiscoverDeepLinks {
 
 impl From<&ResourceRequest> for DiscoverDeepLinks {
     fn from(request: &ResourceRequest) -> Self {
+        DiscoverDeepLinks::from((
+            request.base.as_str(),
+            request.path.r#type.as_str(),
+            request.path.id.as_str(),
+            request
+                .path
+                .extra
+                .iter()
+                .map(|ExtraValue { name, value }| (name.as_str(), value.as_str()))
+                .collect::<Vec<_>>()
+                .as_slice(),
+        ))
+    }
+}
+
+impl<'a> From<(&'a str, &'a str, &'a str, &'a [(&'a str, &'a str)])> for DiscoverDeepLinks {
+    fn from(
+        (base, r#type, id, query_params): (&'a str, &'a str, &'a str, &'a [(&'a str, &'a str)]),
+    ) -> Self {
         DiscoverDeepLinks {
             discover: format!(
                 "#/discover/{}/{}/{}?{}",
-                utf8_percent_encode(request.base.as_str(), URI_COMPONENT_ENCODE_SET),
-                utf8_percent_encode(&request.path.r#type, URI_COMPONENT_ENCODE_SET),
-                utf8_percent_encode(&request.path.id, URI_COMPONENT_ENCODE_SET),
-                query_params_encode(
-                    request
-                        .path
-                        .extra
-                        .iter()
-                        .map(|ExtraValue { name, value }| (name, value))
-                )
+                utf8_percent_encode(base, URI_COMPONENT_ENCODE_SET),
+                utf8_percent_encode(r#type, URI_COMPONENT_ENCODE_SET),
+                utf8_percent_encode(id, URI_COMPONENT_ENCODE_SET),
+                query_params_encode(query_params)
             ),
         }
     }

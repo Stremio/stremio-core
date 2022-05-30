@@ -135,8 +135,6 @@ fn meta_item_preview() {
         ]
         .concat(),
     );
-
-    // MetaItemPreview deserializes to MetaItemLegacyPreview and then it is converted from it
     assert_de_tokens(
         &vec![
             MetaItemPreview {
@@ -176,7 +174,7 @@ fn meta_item_preview() {
             vec![
                 Token::Seq { len: Some(2) },
                 Token::Struct {
-                    name: "MetaItemLegacyPreview",
+                    name: "MetaItemPreviewLegacy",
                     len: 14,
                 },
                 Token::Str("id"),
@@ -211,9 +209,11 @@ fn meta_item_preview() {
             PosterShape::default_tokens(),
             vec![
                 Token::Str("links"),
+                Token::Some,
                 Token::Seq { len: Some(0) },
                 Token::SeqEnd,
                 Token::Str("trailerStreams"),
+                Token::Some,
                 Token::Seq { len: Some(0) },
                 Token::SeqEnd,
                 Token::Str("behaviorHints"),
@@ -222,7 +222,7 @@ fn meta_item_preview() {
             vec![
                 Token::StructEnd,
                 Token::Struct {
-                    name: "MetaItemLegacyPreview",
+                    name: "MetaItemPreviewLegacy",
                     len: 14,
                 },
                 Token::Str("id"),
@@ -250,9 +250,11 @@ fn meta_item_preview() {
             PosterShape::default_tokens(),
             vec![
                 Token::Str("links"),
+                Token::Some,
                 Token::Seq { len: Some(0) },
                 Token::SeqEnd,
                 Token::Str("trailerStreams"),
+                Token::Some,
                 Token::Seq { len: Some(0) },
                 Token::SeqEnd,
                 Token::Str("behaviorHints"),
@@ -281,7 +283,7 @@ fn meta_item_preview() {
         },
         &[
             Token::Struct {
-                name: "MetaItemLegacyPreview",
+                name: "MetaItemPreviewLegacy",
                 len: 2,
             },
             Token::Str("id"),
@@ -329,7 +331,7 @@ fn meta_item_preview() {
         },
         &[
             Token::Struct {
-                name: "MetaItemLegacyPreview",
+                name: "MetaItemPreviewLegacy",
                 len: 2,
             },
             Token::Str("id"),
@@ -348,11 +350,70 @@ fn meta_item_preview() {
             Token::Map{ len: None },
             Token::Str("source"),
             Token::Str("source"),
-            Token::Str("type"),
-            Token::Str("type"),
             Token::MapEnd,
             Token::SeqEnd,
             Token::StructEnd,
         ],
     );
+    // assert_de_tokens(
+    //     &MetaItemPreview {
+    //         id: "id".to_owned(),
+    //         r#type: "type".to_owned(),
+    //         name: "".to_owned(),
+    //         poster: None,
+    //         background: None,
+    //         logo: None,
+    //         description: None,
+    //         release_info: None,
+    //         runtime: None,
+    //         released: None,
+    //         poster_shape: PosterShape::default(),
+    //         links: vec![Link {
+    //             name: "5.1".to_owned(),
+    //             category: "imdb".to_owned(),
+    //             url: Url::parse("https://imdb.com/title/id").unwrap(),
+    //         },
+    //         Link {
+    //             name: "Action".to_owned(),
+    //             category: "Genres".to_owned(),
+    //             url: Url::parse("stremio:///discover/https%3A%2F%2Fv3-cinemeta.strem.io%2Fmanifest.json/type/top?genre=Action").unwrap(),
+    //         }],
+    //         trailer_streams: vec![Stream {
+    //             source: StreamSource::YouTube {
+    //                 yt_id: "source".to_owned(),
+    //             },
+    //             name: None,
+    //             description: None,
+    //             thumbnail: None,
+    //             subtitles: vec![],
+    //             behavior_hints: StreamBehaviorHints::default(),
+    //         }],
+    //         behavior_hints: MetaItemBehaviorHints::default(),
+    //     },
+    //     &[
+    //         Token::Struct {
+    //             name: "MetaItemPreviewLegacy",
+    //             len: 2,
+    //         },
+    //         Token::Str("id"),
+    //         Token::Str("id"),
+    //         Token::Str("type"),
+    //         Token::Str("type"),
+    //         Token::Str("imdbRating"),
+    //         Token::Some,
+    //         Token::Str("10"),
+    //         Token::Str("genres"),
+    //         Token::Seq { len: Some(1) },
+    //         Token::Str("Drama"),
+    //         Token::SeqEnd,
+    //         Token::Str("trailers"),
+    //         Token::Seq { len: Some(1) },
+    //         Token::Map{ len: None },
+    //         Token::Str("source"),
+    //         Token::Str("trailer"),
+    //         Token::MapEnd,
+    //         Token::SeqEnd,
+    //         Token::StructEnd,
+    //     ],
+    // );
 }
