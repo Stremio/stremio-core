@@ -1,4 +1,6 @@
-use crate::constants::{CINEMETA_URL, URI_COMPONENT_ENCODE_SET};
+use crate::constants::{
+    CINEMETA_URL, GENRES_LINK_CATEGORY, IMDB_LINK_CATEGORY, URI_COMPONENT_ENCODE_SET,
+};
 use crate::types::deserialize_single_as_vec;
 use crate::types::resource::{Stream, StreamBehaviorHints, StreamSource};
 use chrono::{DateTime, Utc};
@@ -7,7 +9,6 @@ use percent_encoding::utf8_percent_encode;
 use serde::de::Deserializer;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
-use std::convert::TryFrom;
 use url::Url;
 
 fn deserialize_and_sort_videos<'de, D>(deserializer: D) -> Result<Vec<Video>, D::Error>
@@ -55,7 +56,7 @@ struct Trailer {
 #[cfg_attr(debug_assertions, derive(Debug))]
 #[cfg_attr(test, derive(Default))]
 #[serde(rename_all = "camelCase")]
-struct MetaItemLegacyPreview {
+struct LegacyMetaItemPreview {
     id: String,
     r#type: String,
     #[serde(default)]
@@ -72,12 +73,10 @@ struct MetaItemLegacyPreview {
     imdb_rating: Option<String>,
     #[serde(default)]
     genres: Vec<String>,
-    #[serde(default)]
-    links: Vec<Link>,
+    links: Option<Vec<Link>>,
     #[serde(default)]
     trailers: Vec<Trailer>,
-    #[serde(default)]
-    trailer_streams: Vec<Stream>,
+    trailer_streams: Option<Vec<Stream>>,
     #[serde(default)]
     behavior_hints: MetaItemBehaviorHints,
 }
@@ -85,7 +84,7 @@ struct MetaItemLegacyPreview {
 #[derive(Clone, PartialEq, Serialize, Deserialize)]
 #[cfg_attr(debug_assertions, derive(Debug))]
 #[cfg_attr(test, derive(Default))]
-#[serde(rename_all = "camelCase", try_from = "MetaItemLegacyPreview")]
+#[serde(rename_all = "camelCase", try_from = "LegacyMetaItemPreview")]
 pub struct MetaItemPreview {
     pub id: String,
     pub r#type: String,
@@ -103,42 +102,58 @@ pub struct MetaItemPreview {
     pub behavior_hints: MetaItemBehaviorHints,
 }
 
-impl TryFrom<MetaItemLegacyPreview> for MetaItemPreview {
-    type Error = url::ParseError;
-    fn try_from(legacy_item: MetaItemLegacyPreview) -> Result<Self, Self::Error> {
-        let item_id = legacy_item.id.clone();
-        let item_type = legacy_item.r#type.clone();
-        let imdb_link: Result<Vec<Link>, url::ParseError> =
-            legacy_item.imdb_rating.map_or(Ok(vec![]), |rating| {
-                let enc_item_id = utf8_percent_encode(&item_id, URI_COMPONENT_ENCODE_SET);
-                Ok(vec![Link {
-                    name: rating,
-                    category: "imdb".to_owned(),
-                    url: Url::parse(format!("https://imdb.com/title/{}", enc_item_id).as_ref())?,
-                }])
-            });
-        let genres_links: Result<Vec<Link>, url::ParseError> = legacy_item
-            .genres
-            .iter()
-            .map(|genre| {
-                let enc_transport =
-                    utf8_percent_encode(CINEMETA_URL.as_str(), URI_COMPONENT_ENCODE_SET);
-                let enc_item_type = utf8_percent_encode(&item_type, URI_COMPONENT_ENCODE_SET);
-                let enc_genre = utf8_percent_encode(&genre, URI_COMPONENT_ENCODE_SET);
-                Ok(Link {
-                    name: genre.to_owned(),
-                    category: "Genres".to_owned(),
-                    url: Url::parse(
-                        format!(
+impl From<LegacyMetaItemPreview> for MetaItemPreview {
+    fn from(legacy_item: LegacyMetaItemPreview) -> Self {
+        let links = match legacy_item.links {
+            Some(links) => links,
+            _ => {
+                let imdb_link = match legacy_item.imdb_rating {
+                    Some(imdb_rating) => Some(Link {
+                        name: imdb_rating,
+                        category: IMDB_LINK_CATEGORY.to_owned(),
+                        url: Url::parse(&format!(
+                            "https://imdb.com/title/{}",
+                            utf8_percent_encode(&legacy_item.id, URI_COMPONENT_ENCODE_SET)
+                        ))
+                        .expect("Link::url parse failed"),
+                    }),
+                    _ => None,
+                };
+                let mut genres_links = vec![];
+                for genre in legacy_item.genres.into_iter() {
+                    genres_links.push(Link {
+                        url: Url::parse(&format!(
                             "stremio:///discover/{}/{}/top?genre={}",
-                            enc_transport, enc_item_type, enc_genre
-                        )
-                        .as_ref(),
-                    )?,
+                            utf8_percent_encode(CINEMETA_URL.as_str(), URI_COMPONENT_ENCODE_SET),
+                            utf8_percent_encode(&legacy_item.r#type, URI_COMPONENT_ENCODE_SET),
+                            utf8_percent_encode(&genre, URI_COMPONENT_ENCODE_SET)
+                        ))
+                        .expect("Link::url parse failed"),
+                        name: genre,
+                        category: GENRES_LINK_CATEGORY.to_owned(),
+                    });
+                }
+                imdb_link.into_iter().chain(genres_links).collect()
+            }
+        };
+        let trailer_streams = match legacy_item.trailer_streams {
+            Some(trailer_streams) => trailer_streams,
+            _ => legacy_item
+                .trailers
+                .into_iter()
+                .map(|trailer| Stream {
+                    source: StreamSource::YouTube {
+                        yt_id: trailer.source,
+                    },
+                    name: None,
+                    description: None,
+                    thumbnail: None,
+                    subtitles: vec![],
+                    behavior_hints: StreamBehaviorHints::default(),
                 })
-            })
-            .collect();
-        Ok(Self {
+                .collect(),
+        };
+        Self {
             id: legacy_item.id,
             r#type: legacy_item.r#type,
             name: legacy_item.name,
@@ -150,28 +165,10 @@ impl TryFrom<MetaItemLegacyPreview> for MetaItemPreview {
             runtime: legacy_item.runtime,
             released: legacy_item.released,
             poster_shape: legacy_item.poster_shape,
-            // TODO: deduplicate links?
-            links: [imdb_link?, genres_links?, legacy_item.links].concat(),
-            trailer_streams: [
-                legacy_item
-                    .trailers
-                    .into_iter()
-                    .map(|trailer| Stream {
-                        source: StreamSource::YouTube {
-                            yt_id: trailer.source,
-                        },
-                        name: None,
-                        description: None,
-                        thumbnail: None,
-                        subtitles: vec![],
-                        behavior_hints: StreamBehaviorHints::default(),
-                    })
-                    .collect(),
-                legacy_item.trailer_streams,
-            ]
-            .concat(),
+            links,
+            trailer_streams,
             behavior_hints: legacy_item.behavior_hints,
-        })
+        }
     }
 }
 
