@@ -61,7 +61,7 @@ impl<E: Env + 'static> Update<E> for Ctx {
                     &mut self.library,
                     self.profile.auth_key(),
                     &self.status,
-                    &msg,
+                    msg,
                 );
                 self.status = CtxStatus::Ready;
                 Effects::msg(Msg::Event(Event::UserLoggedOut { uid }))
@@ -102,12 +102,12 @@ impl<E: Env + 'static> Update<E> for Ctx {
                 profile_effects.join(library_effects).join(ctx_effects)
             }
             _ => {
-                let profile_effects = update_profile::<E>(&mut self.profile, &self.status, &msg);
+                let profile_effects = update_profile::<E>(&mut self.profile, &self.status, msg);
                 let library_effects = update_library::<E>(
                     &mut self.library,
                     self.profile.auth_key(),
                     &self.status,
-                    &msg,
+                    msg,
                 );
                 profile_effects.join(library_effects)
             }

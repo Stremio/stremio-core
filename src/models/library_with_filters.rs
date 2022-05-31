@@ -109,7 +109,7 @@ impl<F: LibraryFilter> LibraryWithFilters<F> {
     pub fn new(library: &LibraryBucket) -> (Self, Effects) {
         let selected = None;
         let mut selectable = Selectable::default();
-        let effects = selectable_update::<F>(&mut selectable, &selected, &library);
+        let effects = selectable_update::<F>(&mut selectable, &selected, library);
         (
             Self {
                 selectable,
@@ -185,8 +185,7 @@ fn selectable_update<F: LibraryFilter>(
                 .as_ref()
                 .map(|selected| selected.request.r#type == r#type)
                 .unwrap_or_default(),
-        })
-        .collect::<Vec<_>>();
+        });
     let selectable_types = iter::once(SelectableType {
         r#type: None,
         request: LibraryRequest {

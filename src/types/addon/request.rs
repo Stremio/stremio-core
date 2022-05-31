@@ -126,7 +126,7 @@ impl AggrRequest<'_> {
                         .catalogs
                         .iter()
                         .filter(|catalog| {
-                            catalog.is_extra_supported(&extra)
+                            catalog.is_extra_supported(extra)
                                 && r#type
                                     .as_ref()
                                     .map(|r#type| catalog.r#type == *r#type)
@@ -151,7 +151,7 @@ impl AggrRequest<'_> {
                 .collect(),
             AggrRequest::AllOfResource(path) => addons
                 .iter()
-                .filter(|addon| addon.manifest.is_resource_supported(&path))
+                .filter(|addon| addon.manifest.is_resource_supported(path))
                 .map(|addon| {
                     (
                         addon,

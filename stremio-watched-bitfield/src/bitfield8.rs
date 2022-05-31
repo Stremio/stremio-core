@@ -65,7 +65,7 @@ impl TryFrom<(String, Option<usize>)> for BitField8 {
         let mut values = vec![];
         let mut decoded = ZlibDecoder::new(&compressed[..]);
         decoded.read_to_end(&mut values)?;
-        let length = length.unwrap_or_else(|| values.len() * 8);
+        let length = length.unwrap_or(values.len() * 8);
         let bytes = (length as f64 / 8.0).ceil() as usize;
         if bytes > values.len() {
             values.extend(vec![0; bytes - values.len()]);

@@ -16,8 +16,8 @@ pub struct GDPRConsent {
 }
 
 #[serde_as]
-#[serde(rename_all = "camelCase")]
 #[derive(Clone, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 #[cfg_attr(debug_assertions, derive(Debug))]
 #[cfg_attr(test, derive(Derivative))]
 #[cfg_attr(test, derivative(Default))]

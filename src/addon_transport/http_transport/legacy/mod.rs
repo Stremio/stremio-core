@@ -29,9 +29,9 @@ pub enum LegacyErr {
     UnsupportedRequest,
 }
 
-impl Into<EnvError> for LegacyErr {
-    fn into(self) -> EnvError {
-        EnvError::AddonTransport(match self {
+impl From<LegacyErr> for EnvError {
+    fn from(err: LegacyErr) -> EnvError {
+        EnvError::AddonTransport(match err {
             LegacyErr::JsonRPC(error) => format!("rpc error {}: {}", error.code, error.message),
             LegacyErr::UnsupportedResource => "legacy transport: unsupported resource".to_owned(),
             LegacyErr::UnsupportedRequest => "legacy transport: unsupported request".to_owned(),
@@ -205,7 +205,7 @@ fn build_legacy_req(transport_url: &Url, path: &ResourcePath) -> Result<Request<
         }
         "subtitles" => build_jsonrpc(
             "subtitles.find",
-            json!({ "query": json!({ "itemHash": id.replace(":", " ") }) }),
+            json!({ "query": json!({ "itemHash": id.replace(':', " ") }) }),
         ),
         _ => return Err(LegacyErr::UnsupportedRequest.into()),
     };
