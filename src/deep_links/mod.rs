@@ -145,7 +145,7 @@ impl From<(&MetaItemPreview, &ResourceRequest)> for MetaItemDeepLinks {
                 .as_option()
                 .and_then(|_| item.behavior_hints.default_video_id.to_owned())
                 .and_then(|default_video_id| {
-                    // video id are formed like that: yt_id:YT_CHANNEL_ID:YT_VIDEO_ID
+                    // video id is in format: yt_id:YT_CHANNEL_ID:YT_VIDEO_ID
                     default_video_id.split(':').nth(2).map(|video_id| {
                         format!(
                             "stremio:///player/{}/{}/{}/{}/{}/{}",
@@ -170,8 +170,8 @@ impl From<(&MetaItemPreview, &ResourceRequest)> for MetaItemDeepLinks {
                             ),
                             utf8_percent_encode(request.base.as_str(), URI_COMPONENT_ENCODE_SET),
                             utf8_percent_encode(request.base.as_str(), URI_COMPONENT_ENCODE_SET),
-                            utf8_percent_encode(&request.path.r#type, URI_COMPONENT_ENCODE_SET),
-                            utf8_percent_encode(&request.path.id, URI_COMPONENT_ENCODE_SET),
+                            utf8_percent_encode(&item.r#type, URI_COMPONENT_ENCODE_SET),
+                            utf8_percent_encode(&item.id, URI_COMPONENT_ENCODE_SET),
                             utf8_percent_encode(&default_video_id, URI_COMPONENT_ENCODE_SET),
                         )
                     })
