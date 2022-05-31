@@ -72,7 +72,7 @@ where
             .for_each(enclose!((self.clone() => runtime) move |effect| {
                 match effect {
                     Effect::Msg(msg) => {
-                        runtime.handle_effect_output(msg);
+                        runtime.handle_effect_output(*msg);
                     }
                     Effect::Future(EffectFuture::Sequential(future)) => {
                         E::exec_sequential(future.then(enclose!((runtime) move |msg| async move {

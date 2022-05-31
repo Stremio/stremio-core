@@ -91,7 +91,7 @@ impl From<&LibraryItem> for LibraryItemDeepLinks {
                 .state
                 .video_id
                 .as_ref()
-                .or_else(|| item.behavior_hints.default_video_id.as_ref())
+                .or(item.behavior_hints.default_video_id.as_ref())
                 .map(|video_id| {
                     format!(
                         "stremio:///metadetails/{}/{}/{}",

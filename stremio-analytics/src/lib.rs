@@ -96,7 +96,7 @@ impl<E: Env + 'static> Analytics<E> {
             data,
             number: state.next_number(),
             time: E::now().timestamp_millis(),
-            context: E::analytics_context(&ctx, &streaming_server),
+            context: E::analytics_context(ctx, streaming_server),
         };
         state.push_event(event, auth_key);
     }

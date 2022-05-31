@@ -120,7 +120,7 @@ impl AggrRequest<'_> {
         match &self {
             AggrRequest::AllCatalogs { extra, r#type } => addons
                 .iter()
-                .map(|addon| {
+                .flat_map(|addon| {
                     addon
                         .manifest
                         .catalogs
@@ -147,7 +147,6 @@ impl AggrRequest<'_> {
                             )
                         })
                 })
-                .flatten()
                 .collect(),
             AggrRequest::AllOfResource(path) => addons
                 .iter()

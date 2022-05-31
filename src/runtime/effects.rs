@@ -14,7 +14,7 @@ pub enum EffectFuture {
 
 #[derive(From)]
 pub enum Effect {
-    Msg(Msg),
+    Msg(Box<Msg>),
     Future(EffectFuture),
 }
 
@@ -45,13 +45,13 @@ impl Effects {
         }
     }
     pub fn msg(msg: Msg) -> Self {
-        Effects::one(Effect::Msg(msg))
+        Effects::one(Effect::Msg(Box::new(msg)))
     }
     pub fn future(future: EffectFuture) -> Self {
         Effects::one(Effect::Future(future))
     }
     pub fn msgs(msgs: Vec<Msg>) -> Self {
-        Effects::many(msgs.into_iter().map(Effect::from).collect())
+        Effects::many(msgs.into_iter().map(Box::new).map(Effect::from).collect())
     }
     pub fn futures(futures: Vec<EffectFuture>) -> Self {
         Effects::many(futures.into_iter().map(Effect::from).collect())

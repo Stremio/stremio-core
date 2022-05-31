@@ -6,8 +6,8 @@ use serde_with::{serde_as, DefaultOnNull, NoneAsEmptyString};
 use std::marker::PhantomData;
 
 #[serde_as]
-#[serde(rename_all = "camelCase")]
 #[derive(Clone, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 #[cfg_attr(debug_assertions, derive(Debug))]
 pub struct LibraryItem {
     #[serde(rename = "_id")]
@@ -79,8 +79,8 @@ impl From<(&MetaItemPreview, &LibraryItem)> for LibraryItem {
 }
 
 #[serde_as]
-#[serde(rename_all = "camelCase")]
 #[derive(Default, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 #[cfg_attr(debug_assertions, derive(Debug))]
 pub struct LibraryItemState {
     #[serde(default)]
