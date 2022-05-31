@@ -161,7 +161,7 @@ pub fn serialize_meta_details(meta_details: &MetaDetails, ctx: &Ctx) -> JsValue 
                     ResourceLoadable {
                         content: Some(Loadable::Err(error)),
                         ..
-                    } => Loadable::Err(&error),
+                    } => Loadable::Err(error),
                 },
                 addon: model::DescriptorPreview {
                     transport_url: &addon.transport_url,
@@ -209,7 +209,7 @@ pub fn serialize_meta_details(meta_details: &MetaDetails, ctx: &Ctx) -> JsValue 
                     ResourceLoadable {
                         content: Some(Loadable::Err(error)),
                         ..
-                    } => Loadable::Err(&error),
+                    } => Loadable::Err(error),
                 },
                 addon: model::DescriptorPreview {
                     transport_url: &addon.transport_url,

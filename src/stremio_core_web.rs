@@ -128,7 +128,7 @@ pub fn dispatch(action: JsValue, field: JsValue) {
         .expect("runtime is not ready");
     {
         let model = runtime.model().expect("model read failed");
-        WebEnv::emit_to_analytics(&WebEvent::CoreAction(action.to_owned()), &model);
+        WebEnv::emit_to_analytics(&WebEvent::CoreAction(Box::new(action.to_owned())), &model);
     }
     runtime.dispatch(RuntimeAction { action, field });
 }

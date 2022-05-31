@@ -136,35 +136,36 @@ impl WebEnv {
                     "addonID": id
                 }),
             ),
-            WebEvent::CoreAction(Action::Ctx(ActionCtx::AddToLibrary(meta_preview))) => {
-                let library_item = model.ctx.library.items.get(&meta_preview.id);
-                (
-                    "addToLib".to_owned(),
-                    json!({
-                        "libItemID":  &meta_preview.id,
-                        "libItemType": &meta_preview.r#type,
-                        "libItemName": &meta_preview.name,
-                        "wasTemp": library_item.map(|library_item| library_item.temp).unwrap_or_default(),
-                        "isReadded": library_item.map(|library_item| library_item.removed).unwrap_or_default(),
-                    }),
-                )
-            }
-            WebEvent::CoreAction(Action::Ctx(ActionCtx::RemoveFromLibrary(id))) => {
-                match model.ctx.library.items.get(id) {
-                    Some(library_item) => (
-                        "removeFromLib".to_owned(),
+            WebEvent::CoreAction(core_action) => match core_action.as_ref() {
+                Action::Ctx(ActionCtx::AddToLibrary(meta_preview)) => {
+                    let library_item = model.ctx.library.items.get(&meta_preview.id);
+                    (
+                        "addToLib".to_owned(),
                         json!({
-                            "libItemID":  &library_item.id,
-                            "libItemType": &library_item.r#type,
-                            "libItemName": &library_item.name,
+                            "libItemID":  &meta_preview.id,
+                            "libItemType": &meta_preview.r#type,
+                            "libItemName": &meta_preview.name,
+                            "wasTemp": library_item.map(|library_item| library_item.temp).unwrap_or_default(),
+                            "isReadded": library_item.map(|library_item| library_item.removed).unwrap_or_default(),
                         }),
-                    ),
-                    _ => return,
+                    )
                 }
-            }
-            WebEvent::CoreAction(Action::Ctx(ActionCtx::Logout)) => {
-                ("logout".to_owned(), serde_json::Value::Null)
-            }
+                Action::Ctx(ActionCtx::RemoveFromLibrary(id)) => {
+                    match model.ctx.library.items.get(id) {
+                        Some(library_item) => (
+                            "removeFromLib".to_owned(),
+                            json!({
+                                "libItemID":  &library_item.id,
+                                "libItemType": &library_item.r#type,
+                                "libItemName": &library_item.name,
+                            }),
+                        ),
+                        _ => return,
+                    }
+                }
+                Action::Ctx(ActionCtx::Logout) => ("logout".to_owned(), serde_json::Value::Null),
+                _ => return,
+            },
             _ => return,
         };
         ANALYTICS.emit(name, data, &model.ctx, &model.streaming_server);
@@ -217,7 +218,7 @@ impl Env for WebEnv {
         };
         let body = match serde_json::to_string(&body) {
             Ok(ref body) if body != "null" && parts.method != Method::GET => {
-                Some(JsValue::from_str(&body))
+                Some(JsValue::from_str(body))
             }
             _ => None,
         };

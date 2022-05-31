@@ -24,7 +24,7 @@ pub enum UIEvent {
 }
 
 pub enum WebEvent {
-    CoreAction(Action),
+    CoreAction(Box<Action>),
     CoreEvent(Event),
     UIEvent(UIEvent),
 }
