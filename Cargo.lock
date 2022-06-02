@@ -766,7 +766,7 @@ dependencies = [
 
 [[package]]
 name = "stremio-core-web"
-version = "0.41.0"
+version = "0.42.0"
 dependencies = [
  "base64",
  "cfg-if 0.1.10",
