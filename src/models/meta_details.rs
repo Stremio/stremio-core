@@ -6,7 +6,7 @@ use crate::models::common::{
 use crate::models::ctx::Ctx;
 use crate::runtime::msg::{Action, ActionLoad, ActionMetaDetails, Internal, Msg};
 use crate::runtime::{Effects, Env, UpdateWithCtx};
-use crate::types::addon::{AggrRequest, ResourcePath};
+use crate::types::addon::{AggrRequest, ResourcePath, ResourceRequest};
 use crate::types::library::{LibraryBucket, LibraryItem};
 use crate::types::resource::{MetaItem, Stream};
 use serde::{Deserialize, Serialize};
@@ -273,7 +273,15 @@ fn streams_from_meta_items(
                 .map(|streams| (request, streams))
         })
         .map(|(request, streams)| ResourceLoadable {
-            request: request.to_owned(),
+            request: ResourceRequest {
+                base: request.base.to_owned(),
+                path: ResourcePath {
+                    resource: STREAM_RESOURCE_NAME.to_owned(),
+                    r#type: request.path.r#type.to_owned(),
+                    id: video_id.to_owned(),
+                    extra: request.path.extra.to_owned(),
+                },
+            },
             content: Some(Loadable::Ready(streams.into_owned())),
         })
 }
