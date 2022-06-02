@@ -141,7 +141,7 @@ impl From<(&MetaItemPreview, &ResourceRequest)> for MetaItemDeepLinks {
                 .id
                 .starts_with(YOUTUBE_ADDON_ID_PREFIX)
                 .as_option()
-                .and_then(|_| item.behavior_hints.default_video_id.as_ref())
+                .and(item.behavior_hints.default_video_id.as_ref())
                 .and_then(|default_video_id| {
                     // video id is in format: yt_id:YT_CHANNEL_ID:YT_VIDEO_ID
                     default_video_id.split(':').nth(2).map(|video_id| {
@@ -170,7 +170,7 @@ impl From<(&MetaItemPreview, &ResourceRequest)> for MetaItemDeepLinks {
                             utf8_percent_encode(request.base.as_str(), URI_COMPONENT_ENCODE_SET),
                             utf8_percent_encode(&item.r#type, URI_COMPONENT_ENCODE_SET),
                             utf8_percent_encode(&item.id, URI_COMPONENT_ENCODE_SET),
-                            utf8_percent_encode(&default_video_id, URI_COMPONENT_ENCODE_SET),
+                            utf8_percent_encode(default_video_id, URI_COMPONENT_ENCODE_SET),
                         )
                     })
                 }),
