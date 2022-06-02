@@ -1,12 +1,9 @@
-use crate::constants::{URI_COMPONENT_ENCODE_SET, YOUTUBE_ADDON_ID_PREFIX};
+use crate::constants::URI_COMPONENT_ENCODE_SET;
 use crate::models::installed_addons_with_filters::InstalledAddonsRequest;
 use crate::models::library_with_filters::LibraryRequest;
 use crate::types::addon::{ExtraValue, ResourceRequest};
 use crate::types::library::LibraryItem;
-use crate::types::resource::{
-    MetaItem, MetaItemPreview, Stream, StreamBehaviorHints, StreamSource, Video,
-};
-use boolinator::Boolinator;
+use crate::types::resource::{MetaItem, MetaItemPreview, Stream, StreamSource, Video};
 use flate2::write::ZlibEncoder;
 use flate2::Compression;
 use itertools::Itertools;
@@ -138,41 +135,27 @@ impl From<(&MetaItemPreview, &ResourceRequest)> for MetaItemDeepLinks {
                     )
                 }),
             player: item
-                .id
-                .starts_with(YOUTUBE_ADDON_ID_PREFIX)
-                .as_option()
-                .and(item.behavior_hints.default_video_id.as_ref())
+                .behavior_hints
+                .default_video_id
+                .as_deref()
                 .and_then(|default_video_id| {
-                    // video id is in format: yt_id:YT_CHANNEL_ID:YT_VIDEO_ID
-                    default_video_id.split(':').nth(2).map(|video_id| {
-                        format!(
-                            "stremio:///player/{}/{}/{}/{}/{}/{}",
-                            utf8_percent_encode(
-                                &base64::encode(
-                                    gz_encode(
-                                        serde_json::to_string(&Stream {
-                                            source: StreamSource::YouTube {
-                                                yt_id: video_id.to_owned()
-                                            },
-                                            name: None,
-                                            description: None,
-                                            thumbnail: None,
-                                            subtitles: vec![],
-                                            behavior_hints: StreamBehaviorHints::default(),
-                                        })
-                                        .unwrap()
-                                    )
-                                    .unwrap()
-                                ),
-                                URI_COMPONENT_ENCODE_SET
+                    Stream::youtube(default_video_id).map(|stream| (default_video_id, stream))
+                })
+                .map(|(default_video_id, stream)| {
+                    format!(
+                        "stremio:///player/{}/{}/{}/{}/{}/{}",
+                        utf8_percent_encode(
+                            &base64::encode(
+                                gz_encode(serde_json::to_string(&stream).unwrap()).unwrap()
                             ),
-                            utf8_percent_encode(request.base.as_str(), URI_COMPONENT_ENCODE_SET),
-                            utf8_percent_encode(request.base.as_str(), URI_COMPONENT_ENCODE_SET),
-                            utf8_percent_encode(&item.r#type, URI_COMPONENT_ENCODE_SET),
-                            utf8_percent_encode(&item.id, URI_COMPONENT_ENCODE_SET),
-                            utf8_percent_encode(default_video_id, URI_COMPONENT_ENCODE_SET),
-                        )
-                    })
+                            URI_COMPONENT_ENCODE_SET
+                        ),
+                        utf8_percent_encode(request.base.as_str(), URI_COMPONENT_ENCODE_SET),
+                        utf8_percent_encode(request.base.as_str(), URI_COMPONENT_ENCODE_SET),
+                        utf8_percent_encode(&item.r#type, URI_COMPONENT_ENCODE_SET),
+                        utf8_percent_encode(&item.id, URI_COMPONENT_ENCODE_SET),
+                        utf8_percent_encode(default_video_id, URI_COMPONENT_ENCODE_SET),
+                    )
                 }),
         }
     }
@@ -207,25 +190,7 @@ impl From<(&Video, &ResourceRequest)> for VideoDeepLinks {
                 .exactly_one()
                 .ok()
                 .map(Cow::Borrowed)
-                .or_else(|| {
-                    video
-                        .id
-                        .starts_with(YOUTUBE_ADDON_ID_PREFIX)
-                        .as_option()
-                        // video id is in format: yt_id:YT_CHANNEL_ID:YT_VIDEO_ID
-                        .and_then(|_| video.id.split(':').nth(2))
-                        .map(|yt_id| Stream {
-                            source: StreamSource::YouTube {
-                                yt_id: yt_id.to_owned(),
-                            },
-                            name: None,
-                            description: None,
-                            thumbnail: None,
-                            subtitles: vec![],
-                            behavior_hints: StreamBehaviorHints::default(),
-                        })
-                        .map(Cow::Owned)
-                })
+                .or_else(|| Stream::youtube(&video.id).map(Cow::Owned))
                 .map(|stream| {
                     format!(
                         "stremio:///player/{}/{}/{}/{}/{}/{}",
