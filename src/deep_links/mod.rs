@@ -177,6 +177,13 @@ pub struct VideoDeepLinks {
 
 impl From<(&Video, &ResourceRequest)> for VideoDeepLinks {
     fn from((video, request): (&Video, &ResourceRequest)) -> Self {
+        let stream = video
+            .streams
+            .iter()
+            .exactly_one()
+            .ok()
+            .map(Cow::Borrowed)
+            .or_else(|| Stream::youtube(&video.id).map(Cow::Owned));
         VideoDeepLinks {
             meta_details_streams: format!(
                 "stremio:///metadetails/{}/{}/{}",
@@ -184,35 +191,25 @@ impl From<(&Video, &ResourceRequest)> for VideoDeepLinks {
                 utf8_percent_encode(&request.path.id, URI_COMPONENT_ENCODE_SET),
                 utf8_percent_encode(&video.id, URI_COMPONENT_ENCODE_SET)
             ),
-            player: video
-                .streams
-                .iter()
-                .exactly_one()
-                .ok()
-                .map(Cow::Borrowed)
-                .or_else(|| Stream::youtube(&video.id).map(Cow::Owned))
-                .map(|stream| {
-                    format!(
-                        "stremio:///player/{}/{}/{}/{}/{}/{}",
-                        utf8_percent_encode(
-                            &base64::encode(
-                                gz_encode(serde_json::to_string(stream.as_ref()).unwrap()).unwrap()
-                            ),
-                            URI_COMPONENT_ENCODE_SET
+            player: stream.as_ref().map(|stream| {
+                format!(
+                    "stremio:///player/{}/{}/{}/{}/{}/{}",
+                    utf8_percent_encode(
+                        &base64::encode(
+                            gz_encode(serde_json::to_string(stream.as_ref()).unwrap()).unwrap()
                         ),
-                        utf8_percent_encode(request.base.as_str(), URI_COMPONENT_ENCODE_SET),
-                        utf8_percent_encode(request.base.as_str(), URI_COMPONENT_ENCODE_SET),
-                        utf8_percent_encode(&request.path.r#type, URI_COMPONENT_ENCODE_SET),
-                        utf8_percent_encode(&request.path.id, URI_COMPONENT_ENCODE_SET),
-                        utf8_percent_encode(&video.id, URI_COMPONENT_ENCODE_SET)
-                    )
-                }),
-            external_player: video
-                .streams
-                .iter()
-                .exactly_one()
-                .ok()
-                .map(ExternalPlayerLink::from),
+                        URI_COMPONENT_ENCODE_SET
+                    ),
+                    utf8_percent_encode(request.base.as_str(), URI_COMPONENT_ENCODE_SET),
+                    utf8_percent_encode(request.base.as_str(), URI_COMPONENT_ENCODE_SET),
+                    utf8_percent_encode(&request.path.r#type, URI_COMPONENT_ENCODE_SET),
+                    utf8_percent_encode(&request.path.id, URI_COMPONENT_ENCODE_SET),
+                    utf8_percent_encode(&video.id, URI_COMPONENT_ENCODE_SET)
+                )
+            }),
+            external_player: stream
+                .as_ref()
+                .map(|stream| ExternalPlayerLink::from(stream.as_ref())),
         }
     }
 }
