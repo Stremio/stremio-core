@@ -183,7 +183,13 @@ impl From<(&Video, &ResourceRequest)> for VideoDeepLinks {
             .exactly_one()
             .ok()
             .map(Cow::Borrowed)
-            .or_else(|| Stream::youtube(&video.id).map(Cow::Owned));
+            .or_else(|| {
+                if video.streams.is_empty() {
+                    Stream::youtube(&video.id).map(Cow::Owned)
+                } else {
+                    None
+                }
+            });
         VideoDeepLinks {
             meta_details_streams: format!(
                 "stremio:///metadetails/{}/{}/{}",
