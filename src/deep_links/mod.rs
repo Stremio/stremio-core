@@ -12,7 +12,7 @@ use flate2::Compression;
 use itertools::Itertools;
 use percent_encoding::utf8_percent_encode;
 use serde::Serialize;
-use std::borrow::Borrow;
+use std::borrow::{Borrow, Cow};
 use std::io;
 use std::io::Write;
 use url::form_urlencoded;
@@ -143,7 +143,7 @@ impl From<(&MetaItemPreview, &ResourceRequest)> for MetaItemDeepLinks {
                 .id
                 .starts_with(YOUTUBE_PREFIX)
                 .as_option()
-                .and_then(|_| item.behavior_hints.default_video_id.to_owned())
+                .and_then(|_| item.behavior_hints.default_video_id.as_ref())
                 .and_then(|default_video_id| {
                     // video id is in format: yt_id:YT_CHANNEL_ID:YT_VIDEO_ID
                     default_video_id.split(':').nth(2).map(|video_id| {
@@ -203,20 +203,47 @@ impl From<(&Video, &ResourceRequest)> for VideoDeepLinks {
                 utf8_percent_encode(&request.path.id, URI_COMPONENT_ENCODE_SET),
                 utf8_percent_encode(&video.id, URI_COMPONENT_ENCODE_SET)
             ),
-            player: video.streams.iter().exactly_one().ok().map(|stream| {
-                format!(
-                    "stremio:///player/{}/{}/{}/{}/{}/{}",
-                    utf8_percent_encode(
-                        &base64::encode(gz_encode(serde_json::to_string(stream).unwrap()).unwrap()),
-                        URI_COMPONENT_ENCODE_SET
-                    ),
-                    utf8_percent_encode(request.base.as_str(), URI_COMPONENT_ENCODE_SET),
-                    utf8_percent_encode(request.base.as_str(), URI_COMPONENT_ENCODE_SET),
-                    utf8_percent_encode(&request.path.r#type, URI_COMPONENT_ENCODE_SET),
-                    utf8_percent_encode(&request.path.id, URI_COMPONENT_ENCODE_SET),
-                    utf8_percent_encode(&video.id, URI_COMPONENT_ENCODE_SET)
-                )
-            }),
+            player: video
+                .streams
+                .iter()
+                .exactly_one()
+                .ok()
+                .map(Cow::Borrowed)
+                .or_else(|| {
+                    video
+                        .id
+                        .starts_with(YOUTUBE_PREFIX)
+                        .as_option()
+                        // video id is in format: yt_id:YT_CHANNEL_ID:YT_VIDEO_ID
+                        .and_then(|_| video.id.split(':').nth(2))
+                        .map(|yt_id| Stream {
+                            source: StreamSource::YouTube {
+                                yt_id: yt_id.to_owned(),
+                            },
+                            name: None,
+                            description: None,
+                            thumbnail: None,
+                            subtitles: vec![],
+                            behavior_hints: StreamBehaviorHints::default(),
+                        })
+                        .map(Cow::Owned)
+                })
+                .map(|stream| {
+                    format!(
+                        "stremio:///player/{}/{}/{}/{}/{}/{}",
+                        utf8_percent_encode(
+                            &base64::encode(
+                                gz_encode(serde_json::to_string(stream.as_ref()).unwrap()).unwrap()
+                            ),
+                            URI_COMPONENT_ENCODE_SET
+                        ),
+                        utf8_percent_encode(request.base.as_str(), URI_COMPONENT_ENCODE_SET),
+                        utf8_percent_encode(request.base.as_str(), URI_COMPONENT_ENCODE_SET),
+                        utf8_percent_encode(&request.path.r#type, URI_COMPONENT_ENCODE_SET),
+                        utf8_percent_encode(&request.path.id, URI_COMPONENT_ENCODE_SET),
+                        utf8_percent_encode(&video.id, URI_COMPONENT_ENCODE_SET)
+                    )
+                }),
             external_player: video
                 .streams
                 .iter()
