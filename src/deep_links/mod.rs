@@ -1,4 +1,4 @@
-use crate::constants::URI_COMPONENT_ENCODE_SET;
+use crate::constants::{URI_COMPONENT_ENCODE_SET, YOUTUBE_ADDON_ID_PREFIX};
 use crate::models::installed_addons_with_filters::InstalledAddonsRequest;
 use crate::models::library_with_filters::LibraryRequest;
 use crate::types::addon::{ExtraValue, ResourceRequest};
@@ -16,8 +16,6 @@ use std::borrow::{Borrow, Cow};
 use std::io;
 use std::io::Write;
 use url::form_urlencoded;
-
-const YOUTUBE_PREFIX: &str = "yt_id:";
 
 #[derive(Serialize)]
 pub struct ExternalPlayerLink {
@@ -141,7 +139,7 @@ impl From<(&MetaItemPreview, &ResourceRequest)> for MetaItemDeepLinks {
                 }),
             player: item
                 .id
-                .starts_with(YOUTUBE_PREFIX)
+                .starts_with(YOUTUBE_ADDON_ID_PREFIX)
                 .as_option()
                 .and_then(|_| item.behavior_hints.default_video_id.as_ref())
                 .and_then(|default_video_id| {
@@ -212,7 +210,7 @@ impl From<(&Video, &ResourceRequest)> for VideoDeepLinks {
                 .or_else(|| {
                     video
                         .id
-                        .starts_with(YOUTUBE_PREFIX)
+                        .starts_with(YOUTUBE_ADDON_ID_PREFIX)
                         .as_option()
                         // video id is in format: yt_id:YT_CHANNEL_ID:YT_VIDEO_ID
                         .and_then(|_| video.id.split(':').nth(2))
