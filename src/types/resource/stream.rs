@@ -3,10 +3,13 @@ use crate::types::resource::Subtitles;
 use boolinator::Boolinator;
 #[cfg(test)]
 use derivative::Derivative;
+use flate2::write::{ZlibDecoder, ZlibEncoder};
+use flate2::Compression;
 use magnet_url::Magnet;
 use serde::{Deserialize, Serialize};
 use serde_hex::{SerHex, Strict};
 use std::collections::HashMap;
+use std::io::Write;
 use url::Url;
 
 #[derive(Clone, PartialEq, Serialize, Deserialize)]
@@ -52,6 +55,24 @@ impl Stream {
             }),
             _ => None,
         }
+    }
+    pub fn encode(&self) -> Result<String, anyhow::Error> {
+        let mut encoder = ZlibEncoder::new(Vec::new(), Compression::none());
+        let stream = serde_json::to_string(&self)?;
+        encoder.write_all(stream.as_bytes())?;
+        let stream = encoder.finish()?;
+        let stream = base64::encode(stream);
+        Ok(stream)
+    }
+    pub fn decode(stream: String) -> Result<Self, anyhow::Error> {
+        let stream = base64::decode(stream)?;
+        let mut writer = Vec::new();
+        let mut decoder = ZlibDecoder::new(writer);
+        decoder.write_all(&stream)?;
+        writer = decoder.finish()?;
+        let stream = String::from_utf8(writer)?;
+        let stream = serde_json::from_str(&stream)?;
+        Ok(stream)
     }
     pub fn youtube(video_id: &str) -> Option<Self> {
         video_id
