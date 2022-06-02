@@ -10,6 +10,7 @@ use crate::types::addon::{AggrRequest, ResourcePath};
 use crate::types::library::{LibraryBucket, LibraryItem};
 use crate::types::resource::{MetaItem, Stream};
 use serde::{Deserialize, Serialize};
+use std::borrow::Cow;
 use std::marker::PhantomData;
 use stremio_watched_bitfield::WatchedBitField;
 
@@ -259,11 +260,20 @@ fn streams_from_meta_items(
             meta_item
                 .videos
                 .iter()
-                .find(|video| video.id == video_id && !video.streams.is_empty())
-                .map(|video| (request, &video.streams))
+                .find(|video| video.id == video_id)
+                .and_then(|video| {
+                    if !video.streams.is_empty() {
+                        Some(Cow::Borrowed(&video.streams))
+                    } else {
+                        Stream::youtube(&video.id)
+                            .map(|stream| vec![stream])
+                            .map(Cow::Owned)
+                    }
+                })
+                .map(|streams| (request, streams))
         })
         .map(|(request, streams)| ResourceLoadable {
             request: request.to_owned(),
-            content: Some(Loadable::Ready(streams.to_owned())),
+            content: Some(Loadable::Ready(streams.into_owned())),
         })
 }

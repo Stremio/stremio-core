@@ -3,21 +3,16 @@ use crate::models::installed_addons_with_filters::InstalledAddonsRequest;
 use crate::models::library_with_filters::LibraryRequest;
 use crate::types::addon::{ExtraValue, ResourceRequest};
 use crate::types::library::LibraryItem;
-use crate::types::resource::{
-    MetaItem, MetaItemPreview, Stream, StreamBehaviorHints, StreamSource, Video,
-};
-use boolinator::Boolinator;
+use crate::types::resource::{MetaItem, MetaItemPreview, Stream, StreamSource, Video};
 use flate2::write::ZlibEncoder;
 use flate2::Compression;
 use itertools::Itertools;
 use percent_encoding::utf8_percent_encode;
 use serde::Serialize;
-use std::borrow::Borrow;
+use std::borrow::{Borrow, Cow};
 use std::io;
 use std::io::Write;
 use url::form_urlencoded;
-
-const YOUTUBE_PREFIX: &str = "yt_id:";
 
 #[derive(Serialize)]
 pub struct ExternalPlayerLink {
@@ -140,41 +135,27 @@ impl From<(&MetaItemPreview, &ResourceRequest)> for MetaItemDeepLinks {
                     )
                 }),
             player: item
-                .id
-                .starts_with(YOUTUBE_PREFIX)
-                .as_option()
-                .and_then(|_| item.behavior_hints.default_video_id.to_owned())
+                .behavior_hints
+                .default_video_id
+                .as_deref()
                 .and_then(|default_video_id| {
-                    // video id is in format: yt_id:YT_CHANNEL_ID:YT_VIDEO_ID
-                    default_video_id.split(':').nth(2).map(|video_id| {
-                        format!(
-                            "stremio:///player/{}/{}/{}/{}/{}/{}",
-                            utf8_percent_encode(
-                                &base64::encode(
-                                    gz_encode(
-                                        serde_json::to_string(&Stream {
-                                            source: StreamSource::YouTube {
-                                                yt_id: video_id.to_owned()
-                                            },
-                                            name: None,
-                                            description: None,
-                                            thumbnail: None,
-                                            subtitles: vec![],
-                                            behavior_hints: StreamBehaviorHints::default(),
-                                        })
-                                        .unwrap()
-                                    )
-                                    .unwrap()
-                                ),
-                                URI_COMPONENT_ENCODE_SET
+                    Stream::youtube(default_video_id).map(|stream| (default_video_id, stream))
+                })
+                .map(|(default_video_id, stream)| {
+                    format!(
+                        "stremio:///player/{}/{}/{}/{}/{}/{}",
+                        utf8_percent_encode(
+                            &base64::encode(
+                                gz_encode(serde_json::to_string(&stream).unwrap()).unwrap()
                             ),
-                            utf8_percent_encode(request.base.as_str(), URI_COMPONENT_ENCODE_SET),
-                            utf8_percent_encode(request.base.as_str(), URI_COMPONENT_ENCODE_SET),
-                            utf8_percent_encode(&item.r#type, URI_COMPONENT_ENCODE_SET),
-                            utf8_percent_encode(&item.id, URI_COMPONENT_ENCODE_SET),
-                            utf8_percent_encode(&default_video_id, URI_COMPONENT_ENCODE_SET),
-                        )
-                    })
+                            URI_COMPONENT_ENCODE_SET
+                        ),
+                        utf8_percent_encode(request.base.as_str(), URI_COMPONENT_ENCODE_SET),
+                        utf8_percent_encode(request.base.as_str(), URI_COMPONENT_ENCODE_SET),
+                        utf8_percent_encode(&item.r#type, URI_COMPONENT_ENCODE_SET),
+                        utf8_percent_encode(&item.id, URI_COMPONENT_ENCODE_SET),
+                        utf8_percent_encode(default_video_id, URI_COMPONENT_ENCODE_SET),
+                    )
                 }),
         }
     }
@@ -196,6 +177,19 @@ pub struct VideoDeepLinks {
 
 impl From<(&Video, &ResourceRequest)> for VideoDeepLinks {
     fn from((video, request): (&Video, &ResourceRequest)) -> Self {
+        let stream = video
+            .streams
+            .iter()
+            .exactly_one()
+            .ok()
+            .map(Cow::Borrowed)
+            .or_else(|| {
+                if video.streams.is_empty() {
+                    Stream::youtube(&video.id).map(Cow::Owned)
+                } else {
+                    None
+                }
+            });
         VideoDeepLinks {
             meta_details_streams: format!(
                 "stremio:///metadetails/{}/{}/{}",
@@ -203,11 +197,13 @@ impl From<(&Video, &ResourceRequest)> for VideoDeepLinks {
                 utf8_percent_encode(&request.path.id, URI_COMPONENT_ENCODE_SET),
                 utf8_percent_encode(&video.id, URI_COMPONENT_ENCODE_SET)
             ),
-            player: video.streams.iter().exactly_one().ok().map(|stream| {
+            player: stream.as_ref().map(|stream| {
                 format!(
                     "stremio:///player/{}/{}/{}/{}/{}/{}",
                     utf8_percent_encode(
-                        &base64::encode(gz_encode(serde_json::to_string(stream).unwrap()).unwrap()),
+                        &base64::encode(
+                            gz_encode(serde_json::to_string(stream.as_ref()).unwrap()).unwrap()
+                        ),
                         URI_COMPONENT_ENCODE_SET
                     ),
                     utf8_percent_encode(request.base.as_str(), URI_COMPONENT_ENCODE_SET),
@@ -217,12 +213,9 @@ impl From<(&Video, &ResourceRequest)> for VideoDeepLinks {
                     utf8_percent_encode(&video.id, URI_COMPONENT_ENCODE_SET)
                 )
             }),
-            external_player: video
-                .streams
-                .iter()
-                .exactly_one()
-                .ok()
-                .map(ExternalPlayerLink::from),
+            external_player: stream
+                .as_ref()
+                .map(|stream| ExternalPlayerLink::from(stream.as_ref())),
         }
     }
 }

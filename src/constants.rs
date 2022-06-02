@@ -26,6 +26,7 @@ pub const IMDB_LINK_CATEGORY: &str = "imdb";
 pub const GENRES_LINK_CATEGORY: &str = "Genres";
 pub const CINEMETA_TOP_CATALOG_ID: &str = "top";
 pub const IMDB_TITLE_PATH: &str = "title";
+pub const YOUTUBE_ADDON_ID_PREFIX: &str = "yt_id:";
 pub const URI_COMPONENT_ENCODE_SET: &AsciiSet = &NON_ALPHANUMERIC
     .remove(b'-')
     .remove(b'_')
