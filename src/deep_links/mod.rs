@@ -4,14 +4,10 @@ use crate::models::library_with_filters::LibraryRequest;
 use crate::types::addon::{ExtraValue, ResourceRequest};
 use crate::types::library::LibraryItem;
 use crate::types::resource::{MetaItem, MetaItemPreview, Stream, StreamSource, Video};
-use flate2::write::ZlibEncoder;
-use flate2::Compression;
 use itertools::Itertools;
 use percent_encoding::utf8_percent_encode;
 use serde::Serialize;
 use std::borrow::{Borrow, Cow};
-use std::io;
-use std::io::Write;
 use url::form_urlencoded;
 
 #[derive(Serialize)]
@@ -144,12 +140,7 @@ impl From<(&MetaItemPreview, &ResourceRequest)> for MetaItemDeepLinks {
                 .map(|(default_video_id, stream)| {
                     format!(
                         "stremio:///player/{}/{}/{}/{}/{}/{}",
-                        utf8_percent_encode(
-                            &base64::encode(
-                                gz_encode(serde_json::to_string(&stream).unwrap()).unwrap()
-                            ),
-                            URI_COMPONENT_ENCODE_SET
-                        ),
+                        utf8_percent_encode(&stream.encode().unwrap(), URI_COMPONENT_ENCODE_SET),
                         utf8_percent_encode(request.base.as_str(), URI_COMPONENT_ENCODE_SET),
                         utf8_percent_encode(request.base.as_str(), URI_COMPONENT_ENCODE_SET),
                         utf8_percent_encode(&item.r#type, URI_COMPONENT_ENCODE_SET),
@@ -200,12 +191,7 @@ impl From<(&Video, &ResourceRequest)> for VideoDeepLinks {
             player: stream.as_ref().map(|stream| {
                 format!(
                     "stremio:///player/{}/{}/{}/{}/{}/{}",
-                    utf8_percent_encode(
-                        &base64::encode(
-                            gz_encode(serde_json::to_string(stream.as_ref()).unwrap()).unwrap()
-                        ),
-                        URI_COMPONENT_ENCODE_SET
-                    ),
+                    utf8_percent_encode(&stream.encode().unwrap(), URI_COMPONENT_ENCODE_SET),
                     utf8_percent_encode(request.base.as_str(), URI_COMPONENT_ENCODE_SET),
                     utf8_percent_encode(request.base.as_str(), URI_COMPONENT_ENCODE_SET),
                     utf8_percent_encode(&request.path.r#type, URI_COMPONENT_ENCODE_SET),
@@ -232,10 +218,7 @@ impl From<&Stream> for StreamDeepLinks {
         StreamDeepLinks {
             player: format!(
                 "stremio:///player/{}",
-                utf8_percent_encode(
-                    &base64::encode(gz_encode(serde_json::to_string(stream).unwrap()).unwrap()),
-                    URI_COMPONENT_ENCODE_SET
-                ),
+                utf8_percent_encode(&stream.encode().unwrap(), URI_COMPONENT_ENCODE_SET),
             ),
             external_player: ExternalPlayerLink::from(stream),
         }
@@ -249,10 +232,7 @@ impl From<(&Stream, &ResourceRequest, &ResourceRequest)> for StreamDeepLinks {
         StreamDeepLinks {
             player: format!(
                 "stremio:///player/{}/{}/{}/{}/{}/{}",
-                utf8_percent_encode(
-                    &base64::encode(gz_encode(serde_json::to_string(stream).unwrap()).unwrap()),
-                    URI_COMPONENT_ENCODE_SET
-                ),
+                utf8_percent_encode(&stream.encode().unwrap(), URI_COMPONENT_ENCODE_SET),
                 utf8_percent_encode(stream_request.base.as_str(), URI_COMPONENT_ENCODE_SET),
                 utf8_percent_encode(meta_request.base.as_str(), URI_COMPONENT_ENCODE_SET),
                 utf8_percent_encode(&meta_request.path.r#type, URI_COMPONENT_ENCODE_SET),
@@ -376,12 +356,6 @@ impl From<(&String, &LibraryRequest)> for LibraryDeepLinks {
             },
         }
     }
-}
-
-fn gz_encode(value: String) -> io::Result<Vec<u8>> {
-    let mut encoder = ZlibEncoder::new(Vec::new(), Compression::none());
-    encoder.write_all(value.as_bytes())?;
-    encoder.finish()
 }
 
 fn query_params_encode<I, K, V>(query_params: I) -> String
