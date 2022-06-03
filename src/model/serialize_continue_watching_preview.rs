@@ -16,6 +16,7 @@ mod model {
         pub poster: &'a Option<String>,
         pub poster_shape: &'a PosterShape,
         pub progress: f64,
+        pub last_watched_video: Option<&'a String>,
         pub deep_links: LibraryItemDeepLinks,
     }
     #[derive(Serialize)]
@@ -48,6 +49,7 @@ pub fn serialize_continue_watching_preview(
                 } else {
                     0.0
                 },
+                last_watched_video: library_item.state.video_id.as_ref(),
                 deep_links: LibraryItemDeepLinks::from(library_item),
             })
             .collect::<Vec<_>>(),
