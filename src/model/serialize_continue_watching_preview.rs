@@ -8,6 +8,11 @@ mod model {
     use super::*;
     #[derive(Serialize)]
     #[serde(rename_all = "camelCase")]
+    pub struct LibraryItemState<'a> {
+        video_id: Option<&'a String>
+    }
+    #[derive(Serialize)]
+    #[serde(rename_all = "camelCase")]
     pub struct LibraryItem<'a> {
         #[serde(rename = "_id")]
         pub id: &'a String,
@@ -16,8 +21,8 @@ mod model {
         pub poster: &'a Option<String>,
         pub poster_shape: &'a PosterShape,
         pub progress: f64,
-        pub last_watched_video: Option<&'a String>,
         pub deep_links: LibraryItemDeepLinks,
+        pub state: LibraryItemState<'a>,
     }
     #[derive(Serialize)]
     #[serde(rename_all = "camelCase")]
@@ -49,8 +54,10 @@ pub fn serialize_continue_watching_preview(
                 } else {
                     0.0
                 },
-                last_watched_video: library_item.state.video_id.as_ref(),
                 deep_links: LibraryItemDeepLinks::from(library_item),
+                state: model::LibraryItemState {
+                    video_id: library_item.state.video_id.as_ref()
+                },
             })
             .collect::<Vec<_>>(),
         deep_links: LibraryDeepLinks::from(&"continuewatching".to_owned()),
