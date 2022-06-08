@@ -8,9 +8,11 @@ use crate::types::deserialize_single_as_vec;
 use crate::types::resource::{Stream, StreamSource};
 use chrono::{DateTime, Utc};
 use derivative::Derivative;
+use itertools::Itertools;
 use percent_encoding::utf8_percent_encode;
 use serde::de::Deserializer;
 use serde::{Deserialize, Serialize};
+use std::borrow::Cow;
 use std::collections::HashMap;
 use url::Url;
 
@@ -232,6 +234,23 @@ pub struct Video {
     pub series_info: Option<SeriesInfo>,
     #[serde(default)]
     pub trailer_streams: Vec<Stream>,
+}
+
+impl Video {
+    pub fn stream(&self) -> Option<Cow<Stream>> {
+        self.streams
+            .iter()
+            .exactly_one()
+            .ok()
+            .map(Cow::Borrowed)
+            .or_else(|| {
+                if self.streams.is_empty() {
+                    Stream::youtube(&self.id).map(Cow::Owned)
+                } else {
+                    None
+                }
+            })
+    }
 }
 
 #[derive(Clone, PartialEq, Serialize, Deserialize)]

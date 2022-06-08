@@ -4,10 +4,9 @@ use crate::models::library_with_filters::LibraryRequest;
 use crate::types::addon::{ExtraValue, ResourceRequest};
 use crate::types::library::LibraryItem;
 use crate::types::resource::{MetaItem, MetaItemPreview, Stream, StreamSource, Video};
-use itertools::Itertools;
 use percent_encoding::utf8_percent_encode;
 use serde::Serialize;
-use std::borrow::{Borrow, Cow};
+use std::borrow::Borrow;
 use url::form_urlencoded;
 
 #[derive(Serialize)]
@@ -168,19 +167,7 @@ pub struct VideoDeepLinks {
 
 impl From<(&Video, &ResourceRequest)> for VideoDeepLinks {
     fn from((video, request): (&Video, &ResourceRequest)) -> Self {
-        let stream = video
-            .streams
-            .iter()
-            .exactly_one()
-            .ok()
-            .map(Cow::Borrowed)
-            .or_else(|| {
-                if video.streams.is_empty() {
-                    Stream::youtube(&video.id).map(Cow::Owned)
-                } else {
-                    None
-                }
-            });
+        let stream = video.stream();
         VideoDeepLinks {
             meta_details_streams: format!(
                 "stremio:///metadetails/{}/{}/{}",
