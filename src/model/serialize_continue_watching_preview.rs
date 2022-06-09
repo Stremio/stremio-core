@@ -9,7 +9,7 @@ mod model {
     #[derive(Serialize)]
     #[serde(rename_all = "camelCase")]
     pub struct LibraryItemState<'a> {
-        video_id: Option<&'a String>
+        pub video_id: Option<&'a String>
     }
     #[derive(Serialize)]
     #[serde(rename_all = "camelCase")]
