@@ -5,7 +5,7 @@ use serde::{Deserialize, Serialize};
 
 pub fn fetch_api<
     E: Env,
-    BODY: Serialize,
+    BODY: Serialize + Send + 'static,
     REQ: FetchRequestParams<BODY> + Clone + Serialize,
     #[cfg(target_arch = "wasm32")] RESP: for<'de> Deserialize<'de> + 'static,
     #[cfg(not(target_arch = "wasm32"))] RESP: for<'de> Deserialize<'de> + Send + 'static,

@@ -116,7 +116,7 @@ pub type TryEnvFuture<T> = EnvFuture<Result<T, EnvError>>;
 
 pub trait Env {
     fn fetch<
-        IN: Serialize,
+        IN: Serialize + Send + 'static,
         #[cfg(target_arch = "wasm32")] OUT: for<'de> Deserialize<'de> + 'static,
         #[cfg(not(target_arch = "wasm32"))] OUT: for<'de> Deserialize<'de> + Send + 'static,
     >(
