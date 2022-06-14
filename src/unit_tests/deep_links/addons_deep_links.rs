@@ -7,15 +7,9 @@ use url::Url;
 
 #[test]
 fn addons_deep_links_installed_addons_request_no_type() {
-    let request = InstalledAddonsRequest {
-        r#type: None,
-    };
+    let request = InstalledAddonsRequest { r#type: None };
     let adl = AddonsDeepLinks::try_from(&request).unwrap();
-    assert_eq!(
-        adl.addons,
-        "stremio:///addons"
-            .to_string()
-    );
+    assert_eq!(adl.addons, "stremio:///addons".to_string());
 }
 
 #[test]
@@ -24,11 +18,7 @@ fn addons_deep_links_installed_addons_request_type() {
         r#type: Some("movie".to_string()),
     };
     let adl = AddonsDeepLinks::try_from(&request).unwrap();
-    assert_eq!(
-        adl.addons,
-        "stremio:///addons/movie"
-            .to_string()
-    );
+    assert_eq!(adl.addons, "stremio:///addons/movie".to_string());
 }
 
 #[test]
