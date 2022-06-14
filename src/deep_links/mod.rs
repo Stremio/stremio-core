@@ -11,6 +11,7 @@ use std::convert::TryFrom;
 use url::form_urlencoded;
 
 #[derive(Serialize)]
+#[cfg_attr(debug_assertions, derive(Debug, PartialEq))]
 pub struct ExternalPlayerLink {
     pub href: String,
     pub download: Option<String>,
@@ -98,6 +99,7 @@ impl From<&LibraryItem> for LibraryItemDeepLinks {
 }
 
 #[derive(Serialize)]
+#[cfg_attr(debug_assertions, derive(Debug, PartialEq))]
 #[serde(rename_all = "camelCase")]
 pub struct MetaItemDeepLinks {
     pub meta_details_videos: Option<String>,
