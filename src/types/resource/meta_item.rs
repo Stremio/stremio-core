@@ -12,7 +12,7 @@ use percent_encoding::utf8_percent_encode;
 use serde::de::Deserializer;
 use serde::{Deserialize, Serialize};
 use serde_with::formats::PreferMany;
-use serde_with::{serde_as, OneOrMany};
+use serde_with::{serde_as, DefaultOnError, OneOrMany};
 use std::borrow::Cow;
 use std::collections::HashMap;
 use url::Url;
@@ -25,6 +25,7 @@ struct Trailer {
     r#type: String,
 }
 
+#[serde_as]
 #[derive(Clone, PartialEq, Deserialize)]
 #[cfg_attr(debug_assertions, derive(Debug))]
 #[cfg_attr(test, derive(Default))]
@@ -34,9 +35,15 @@ struct MetaItemPreviewLegacy {
     r#type: String,
     #[serde(default)]
     name: String,
-    poster: Option<String>,
-    background: Option<String>,
-    logo: Option<String>,
+    #[serde(default)]
+    #[serde_as(deserialize_as = "DefaultOnError")]
+    poster: Option<Url>,
+    #[serde(default)]
+    #[serde_as(deserialize_as = "DefaultOnError")]
+    background: Option<Url>,
+    #[serde(default)]
+    #[serde_as(deserialize_as = "DefaultOnError")]
+    logo: Option<Url>,
     description: Option<String>,
     release_info: Option<String>,
     runtime: Option<String>,
@@ -62,9 +69,9 @@ pub struct MetaItemPreview {
     pub id: String,
     pub r#type: String,
     pub name: String,
-    pub poster: Option<String>,
-    pub background: Option<String>,
-    pub logo: Option<String>,
+    pub poster: Option<Url>,
+    pub background: Option<Url>,
+    pub logo: Option<Url>,
     pub description: Option<String>,
     pub release_info: Option<String>,
     pub runtime: Option<String>,

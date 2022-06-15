@@ -4,6 +4,7 @@ use crate::unit_tests::serde::default_tokens_ext::DefaultTokens;
 use chrono::prelude::TimeZone;
 use chrono::Utc;
 use serde_test::{assert_de_tokens, assert_tokens, Token};
+use url::Url;
 
 #[test]
 fn library_item() {
@@ -13,7 +14,7 @@ fn library_item() {
                 id: "id".to_owned(),
                 name: "name".to_owned(),
                 r#type: "type".to_owned(),
-                poster: Some("poster".to_owned()),
+                poster: Some(Url::parse("http://poster/").unwrap()),
                 poster_shape: PosterShape::default(),
                 removed: true,
                 temp: true,
@@ -51,7 +52,7 @@ fn library_item() {
                 Token::Str("type"),
                 Token::Str("poster"),
                 Token::Some,
-                Token::Str("poster"),
+                Token::Str("http://poster/"),
                 Token::Str("posterShape"),
             ],
             PosterShape::default_tokens(),

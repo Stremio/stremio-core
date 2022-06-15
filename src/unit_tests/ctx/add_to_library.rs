@@ -15,6 +15,7 @@ use chrono::Utc;
 use futures::future;
 use std::any::Any;
 use stremio_derive::Model;
+use url::Url;
 
 #[test]
 fn actionctx_addtolibrary() {
@@ -162,7 +163,7 @@ fn actionctx_addtolibrary_already_added() {
         id: "id".to_owned(),
         r#type: "type".to_owned(),
         name: "name".to_owned(),
-        poster: Some("poster".to_owned()),
+        poster: Some(Url::parse("http://poster").unwrap()),
         background: None,
         poster_shape: PosterShape::Square,
         logo: None,
@@ -183,7 +184,7 @@ fn actionctx_addtolibrary_already_added() {
         id: "id".to_owned(),
         r#type: "type".to_owned(),
         name: "name".to_owned(),
-        poster: Some("poster".to_owned()),
+        poster: Some(Url::parse("http://poster").unwrap()),
         poster_shape: PosterShape::Square,
         removed: false,
         temp: false,
