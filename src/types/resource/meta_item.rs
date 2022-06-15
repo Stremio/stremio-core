@@ -56,6 +56,7 @@ struct MetaItemPreviewLegacy {
     genres: Vec<String>,
     links: Option<Vec<Link>>,
     #[serde(default)]
+    #[serde_as(deserialize_as = "DefaultOnNull")]
     trailers: Vec<Trailer>,
     trailer_streams: Option<Vec<Stream>>,
     #[serde(default)]
