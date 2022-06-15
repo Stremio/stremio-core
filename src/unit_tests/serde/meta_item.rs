@@ -178,7 +178,7 @@ fn meta_item() {
 }
 
 #[test]
-fn meta_item_de_urls_none_when_invalid() {
+fn meta_item_de_urls_none_when_empty() {
     assert_de_tokens(
         &MetaItem {
             preview: MetaItemPreview {
@@ -210,13 +210,13 @@ fn meta_item_de_urls_none_when_invalid() {
             Token::Str("type"),
             Token::Str("poster"),
             Token::Some,
-            Token::Str("poster"),
+            Token::Str(""),
             Token::Str("background"),
             Token::Some,
-            Token::Str("background"),
+            Token::Str(""),
             Token::Str("logo"),
             Token::Some,
-            Token::Str("logo"),
+            Token::Str(""),
             Token::StructEnd,
         ],
     );

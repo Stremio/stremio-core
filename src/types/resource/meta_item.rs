@@ -12,7 +12,7 @@ use percent_encoding::utf8_percent_encode;
 use serde::de::Deserializer;
 use serde::{Deserialize, Serialize};
 use serde_with::formats::PreferMany;
-use serde_with::{serde_as, DefaultOnError, DefaultOnNull, OneOrMany};
+use serde_with::{serde_as, DefaultOnNull, NoneAsEmptyString, OneOrMany};
 use std::borrow::Cow;
 use std::collections::HashMap;
 use url::Url;
@@ -36,13 +36,13 @@ struct MetaItemPreviewLegacy {
     #[serde(default)]
     name: String,
     #[serde(default)]
-    #[serde_as(deserialize_as = "DefaultOnError")]
+    #[serde_as(deserialize_as = "DefaultOnNull<NoneAsEmptyString>")]
     poster: Option<Url>,
     #[serde(default)]
-    #[serde_as(deserialize_as = "DefaultOnError")]
+    #[serde_as(deserialize_as = "DefaultOnNull<NoneAsEmptyString>")]
     background: Option<Url>,
     #[serde(default)]
-    #[serde_as(deserialize_as = "DefaultOnError")]
+    #[serde_as(deserialize_as = "DefaultOnNull<NoneAsEmptyString>")]
     logo: Option<Url>,
     description: Option<String>,
     release_info: Option<String>,
