@@ -304,6 +304,46 @@ fn meta_item_preview_de_minimal() {
 }
 
 #[test]
+fn meta_item_preview_de_numeric_imdb() {
+    assert_de_tokens(
+        &MetaItemPreview {
+            id: "id".to_owned(),
+            r#type: "type".to_owned(),
+            name: "".to_owned(),
+            poster: None,
+            background: None,
+            logo: None,
+            description: None,
+            release_info: None,
+            runtime: None,
+            released: None,
+            poster_shape: PosterShape::default(),
+            links: vec![Link {
+                name: "5.1".to_owned(),
+                category: "imdb".to_owned(),
+                url: Url::parse("https://imdb.com/title/id").unwrap(),
+            }],
+            trailer_streams: vec![],
+            behavior_hints: MetaItemBehaviorHints::default(),
+        },
+        &[
+            Token::Struct {
+                name: "MetaItemPreviewLegacy",
+                len: 2,
+            },
+            Token::Str("id"),
+            Token::Str("id"),
+            Token::Str("type"),
+            Token::Str("type"),
+            Token::Str("imdbRating"),
+            Token::Some,
+            Token::F64(5.1),
+            Token::StructEnd,
+        ],
+    );
+}
+
+#[test]
 fn meta_item_preview_de_legacy_links() {
     assert_de_tokens(
         &MetaItemPreview {
