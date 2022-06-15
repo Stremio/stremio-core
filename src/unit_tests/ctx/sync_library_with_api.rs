@@ -3,7 +3,7 @@ use crate::models::ctx::Ctx;
 use crate::runtime::msg::{Action, ActionCtx};
 use crate::runtime::{Effects, Env, EnvFutureExt, Runtime, RuntimeAction, TryEnvFuture};
 use crate::types::api::{APIResult, LibraryItemModified, SuccessResponse};
-use crate::types::library::{LibraryBucket, LibraryItem, LibraryItemState};
+use crate::types::library::{LibraryBucket, LibraryItem};
 use crate::types::profile::{Auth, AuthKey, GDPRConsent, Profile, User};
 use crate::types::True;
 use crate::unit_tests::{
@@ -99,7 +99,7 @@ fn actionctx_synclibrarywithapi_with_user() {
             state: Default::default(),
             behavior_hints: Default::default(),
         };
-        static ref LOCAL_NOT_WATCHED_ITEM: LibraryItem = LibraryItem {
+        static ref LOCAL_OLD_REMOVED_ITEM: LibraryItem = LibraryItem {
             id: "id5".to_owned(),
             r#type: "type".to_owned(),
             name: "name".to_owned(),
@@ -108,11 +108,11 @@ fn actionctx_synclibrarywithapi_with_user() {
             removed: true,
             temp: false,
             ctime: Some(Utc.ymd(2020, 1, 1).and_hms_milli(0, 0, 0, 0)),
-            mtime: Utc.ymd(2020, 1, 1).and_hms_milli(0, 0, 0, 0),
+            mtime: Utc::now() - Duration::days(367),
             state: Default::default(),
             behavior_hints: Default::default(),
         };
-        static ref LOCAL_WATCHED_ITEM: LibraryItem = LibraryItem {
+        static ref LOCAL_NEW_REMOVED_ITEM: LibraryItem = LibraryItem {
             id: "id6".to_owned(),
             r#type: "type".to_owned(),
             name: "name".to_owned(),
@@ -121,11 +121,21 @@ fn actionctx_synclibrarywithapi_with_user() {
             removed: true,
             temp: false,
             ctime: Some(Utc.ymd(2020, 1, 1).and_hms_milli(0, 0, 0, 0)),
-            mtime: Utc.ymd(2020, 1, 1).and_hms_milli(0, 0, 0, 0),
-            state: LibraryItemState {
-                overall_time_watched: 60001,
-                ..LibraryItemState::default()
-            },
+            mtime: Utc::now() - Duration::days(3),
+            state: Default::default(),
+            behavior_hints: Default::default(),
+        };
+        static ref LOCAL_OTHER_TYPE_ITEM: LibraryItem = LibraryItem {
+            id: "id7".to_owned(),
+            r#type: "other".to_owned(),
+            name: "name".to_owned(),
+            poster: None,
+            poster_shape: Default::default(),
+            removed: false,
+            temp: false,
+            ctime: Some(Utc.ymd(2020, 1, 1).and_hms_milli(0, 0, 0, 0)),
+            mtime: Utc::now(),
+            state: Default::default(),
             behavior_hints: Default::default(),
         };
     }
@@ -172,7 +182,7 @@ fn actionctx_synclibrarywithapi_with_user() {
                             && body.changes.len() == 3
                             && body.changes.contains(&LOCAL_NEWER_ITEM)
                             && body.changes.contains(&LOCAL_ONLY_ITEM)
-                            && body.changes.contains(&LOCAL_WATCHED_ITEM) =>
+                            && body.changes.contains(&LOCAL_NEW_REMOVED_ITEM) =>
                     {
                         future::ok(Box::new(APIResult::Ok {
                             result: SuccessResponse { success: True {} },
@@ -250,12 +260,16 @@ fn actionctx_synclibrarywithapi_with_user() {
                             },
                         ),
                         (
-                            LOCAL_NOT_WATCHED_ITEM.id.to_owned(),
-                            LOCAL_NOT_WATCHED_ITEM.to_owned(),
+                            LOCAL_OLD_REMOVED_ITEM.id.to_owned(),
+                            LOCAL_OLD_REMOVED_ITEM.to_owned(),
                         ),
                         (
-                            LOCAL_WATCHED_ITEM.id.to_owned(),
-                            LOCAL_WATCHED_ITEM.to_owned(),
+                            LOCAL_NEW_REMOVED_ITEM.id.to_owned(),
+                            LOCAL_NEW_REMOVED_ITEM.to_owned(),
+                        ),
+                        (
+                            LOCAL_OTHER_TYPE_ITEM.id.to_owned(),
+                            LOCAL_OTHER_TYPE_ITEM.to_owned(),
                         ),
                     ]
                     .into_iter()
@@ -286,12 +300,16 @@ fn actionctx_synclibrarywithapi_with_user() {
                 ),
                 (REMOTE_ONLY_ITEM.id.to_owned(), REMOTE_ONLY_ITEM.to_owned()),
                 (
-                    LOCAL_NOT_WATCHED_ITEM.id.to_owned(),
-                    LOCAL_NOT_WATCHED_ITEM.to_owned()
+                    LOCAL_OLD_REMOVED_ITEM.id.to_owned(),
+                    LOCAL_OLD_REMOVED_ITEM.to_owned()
                 ),
                 (
-                    LOCAL_WATCHED_ITEM.id.to_owned(),
-                    LOCAL_WATCHED_ITEM.to_owned()
+                    LOCAL_NEW_REMOVED_ITEM.id.to_owned(),
+                    LOCAL_NEW_REMOVED_ITEM.to_owned()
+                ),
+                (
+                    LOCAL_OTHER_TYPE_ITEM.id.to_owned(),
+                    LOCAL_OTHER_TYPE_ITEM.to_owned(),
                 ),
             ]
             .into_iter()
@@ -312,8 +330,9 @@ fn actionctx_synclibrarywithapi_with_user() {
                 LOCAL_ONLY_ITEM.to_owned(),
                 REMOTE_NEWER_ITEM.to_owned(),
                 LOCAL_NEWER_ITEM.to_owned(),
-                LOCAL_NOT_WATCHED_ITEM.to_owned(),
-                LOCAL_WATCHED_ITEM.to_owned(),
+                LOCAL_OLD_REMOVED_ITEM.to_owned(),
+                LOCAL_NEW_REMOVED_ITEM.to_owned(),
+                LOCAL_OTHER_TYPE_ITEM.to_owned(),
             ]
         )),
         "Library recent slot updated successfully in storage"

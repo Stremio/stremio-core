@@ -325,7 +325,7 @@ fn plan_sync_with_api<E: Env + 'static>(library: &LibraryBucket, auth_key: &Auth
     let local_mtimes = library
         .items
         .iter()
-        .filter(|(_, item)| item.should_sync())
+        .filter(|(_, item)| item.should_sync::<E>())
         .map(|(id, item)| (id.to_owned(), item.mtime.to_owned()))
         .collect::<HashMap<_, _>>();
     let request = DatastoreRequest {
