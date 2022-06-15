@@ -12,7 +12,7 @@ use percent_encoding::utf8_percent_encode;
 use serde::de::Deserializer;
 use serde::{Deserialize, Serialize};
 use serde_with::formats::PreferMany;
-use serde_with::{serde_as, DefaultOnError, OneOrMany};
+use serde_with::{serde_as, DefaultOnError, DefaultOnNull, OneOrMany};
 use std::borrow::Cow;
 use std::collections::HashMap;
 use url::Url;
@@ -52,6 +52,7 @@ struct MetaItemPreviewLegacy {
     poster_shape: PosterShape,
     imdb_rating: Option<String>,
     #[serde(default)]
+    #[serde_as(deserialize_as = "DefaultOnNull")]
     genres: Vec<String>,
     links: Option<Vec<Link>>,
     #[serde(default)]
