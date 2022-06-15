@@ -1,13 +1,12 @@
 use crate::types::addon::{ExtraValue, ResourcePath};
-use crate::types::Unique;
+use crate::types::{UniqueBy, UniqueByAdapter};
 use derivative::Derivative;
-use derive_more::{Deref, From, Into};
+use derive_more::Deref;
 use either::Either;
 use semver::Version;
-use serde::{Deserialize, Deserializer, Serialize, Serializer};
-use serde_with::{serde_as, DeserializeAs, SerializeAs};
+use serde::{Deserialize, Serialize};
+use serde_with::serde_as;
 use std::borrow::Cow;
-use std::hash::{Hash, Hasher};
 
 #[serde_as]
 #[derive(Clone, PartialEq, Serialize, Deserialize)]
@@ -28,7 +27,7 @@ pub struct Manifest {
     pub resources: Vec<ManifestResource>,
     pub id_prefixes: Option<Vec<String>>,
     #[serde(default)]
-    #[serde_as(as = "Unique<ManifestCatalogUnique>")]
+    #[serde_as(as = "UniqueBy<ManifestCatalog, (String, String), ManifestCatalogUniqueByAdapter>")]
     pub catalogs: Vec<ManifestCatalog>,
     #[serde(default)]
     pub addon_catalogs: Vec<ManifestCatalog>,
@@ -162,39 +161,11 @@ impl ManifestCatalog {
     }
 }
 
-#[derive(Clone, From, Into, Deserialize, Serialize)]
-struct ManifestCatalogUnique(ManifestCatalog);
+struct ManifestCatalogUniqueByAdapter;
 
-impl Hash for ManifestCatalogUnique {
-    fn hash<H: Hasher>(&self, state: &mut H) {
-        self.0.id.hash(state);
-        self.0.r#type.hash(state);
-    }
-}
-
-impl PartialEq for ManifestCatalogUnique {
-    fn eq(&self, other: &Self) -> bool {
-        self.0.id == other.0.id && self.0.r#type == other.0.r#type
-    }
-}
-
-impl Eq for ManifestCatalogUnique {}
-
-impl<'de> DeserializeAs<'de, ManifestCatalog> for ManifestCatalogUnique {
-    fn deserialize_as<D>(deserializer: D) -> Result<ManifestCatalog, D::Error>
-    where
-        D: Deserializer<'de>,
-    {
-        Ok(ManifestCatalogUnique::deserialize(deserializer)?.into())
-    }
-}
-
-impl SerializeAs<ManifestCatalog> for ManifestCatalogUnique {
-    fn serialize_as<S>(source: &ManifestCatalog, serializer: S) -> Result<S::Ok, S::Error>
-    where
-        S: Serializer,
-    {
-        ManifestCatalogUnique::from(source.to_owned()).serialize(serializer)
+impl UniqueByAdapter<ManifestCatalog, (String, String)> for ManifestCatalogUniqueByAdapter {
+    fn call(value: &ManifestCatalog) -> (String, String) {
+        (value.id.to_owned(), value.r#type.to_owned())
     }
 }
 
