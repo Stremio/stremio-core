@@ -4,7 +4,6 @@ use crate::constants::{
 };
 use crate::deep_links::DiscoverDeepLinks;
 use crate::types::addon::{ExtraValue, ResourcePath, ResourceRequest};
-use crate::types::deserialize_single_as_vec;
 use crate::types::resource::{Stream, StreamSource};
 use chrono::{DateTime, Utc};
 use derivative::Derivative;
@@ -12,6 +11,8 @@ use itertools::Itertools;
 use percent_encoding::utf8_percent_encode;
 use serde::de::Deserializer;
 use serde::{Deserialize, Serialize};
+use serde_with::formats::PreferMany;
+use serde_with::{serde_as, OneOrMany};
 use std::borrow::Cow;
 use std::collections::HashMap;
 use url::Url;
@@ -180,6 +181,7 @@ pub struct SeriesInfo {
     pub episode: u32,
 }
 
+#[serde_as]
 #[derive(Clone, PartialEq, Serialize, Deserialize)]
 #[cfg_attr(debug_assertions, derive(Debug))]
 #[serde(rename_all = "camelCase")]
@@ -190,11 +192,8 @@ pub struct Video {
     pub released: Option<DateTime<Utc>>,
     pub overview: Option<String>,
     pub thumbnail: Option<String>,
-    #[serde(
-        alias = "stream",
-        deserialize_with = "deserialize_single_as_vec",
-        default
-    )]
+    #[serde(alias = "stream", default)]
+    #[serde_as(deserialize_as = "OneOrMany<_, PreferMany>")]
     pub streams: Vec<Stream>,
     #[serde(flatten)]
     pub series_info: Option<SeriesInfo>,
