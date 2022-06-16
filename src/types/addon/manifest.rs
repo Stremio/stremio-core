@@ -32,6 +32,9 @@ pub struct Manifest {
     )]
     pub catalogs: Vec<ManifestCatalog>,
     #[serde(default)]
+    #[serde_as(
+        as = "UniqueVec<ManifestCatalog, (String, String), ManifestCatalogUniqueVecAdapter>"
+    )]
     pub addon_catalogs: Vec<ManifestCatalog>,
     #[serde(default)]
     pub behavior_hints: ManifestBehaviorHints,
