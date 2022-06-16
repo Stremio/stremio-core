@@ -1,5 +1,5 @@
 use crate::types::addon::{ExtraValue, ResourcePath};
-use crate::types::{UniqueBy, UniqueByAdapter};
+use crate::types::{UniqueVec, UniqueVecAdapter};
 use derivative::Derivative;
 use derive_more::Deref;
 use either::Either;
@@ -27,7 +27,9 @@ pub struct Manifest {
     pub resources: Vec<ManifestResource>,
     pub id_prefixes: Option<Vec<String>>,
     #[serde(default)]
-    #[serde_as(as = "UniqueBy<ManifestCatalog, (String, String), ManifestCatalogUniqueByAdapter>")]
+    #[serde_as(
+        as = "UniqueVec<ManifestCatalog, (String, String), ManifestCatalogUniqueVecAdapter>"
+    )]
     pub catalogs: Vec<ManifestCatalog>,
     #[serde(default)]
     pub addon_catalogs: Vec<ManifestCatalog>,
@@ -161,10 +163,10 @@ impl ManifestCatalog {
     }
 }
 
-struct ManifestCatalogUniqueByAdapter;
+struct ManifestCatalogUniqueVecAdapter;
 
-impl UniqueByAdapter<ManifestCatalog, (String, String)> for ManifestCatalogUniqueByAdapter {
-    fn call(value: &ManifestCatalog) -> (String, String) {
+impl UniqueVecAdapter<ManifestCatalog, (String, String)> for ManifestCatalogUniqueVecAdapter {
+    fn hash(value: &ManifestCatalog) -> (String, String) {
         (value.id.to_owned(), value.r#type.to_owned())
     }
 }
