@@ -13,7 +13,7 @@ pub type UID = Option<String>;
 #[cfg_attr(debug_assertions, derive(Debug))]
 pub struct Profile {
     pub auth: Option<Auth>,
-    #[serde_as(as = "UniqueVec<Descriptor, Url, DescriptorUniqueVecAdapter>")]
+    #[serde_as(as = "UniqueVec<DescriptorUniqueVecAdapter>")]
     pub addons: Vec<Descriptor>,
     pub settings: Settings,
 }
@@ -39,8 +39,10 @@ impl Profile {
 
 struct DescriptorUniqueVecAdapter;
 
-impl UniqueVecAdapter<Descriptor, Url> for DescriptorUniqueVecAdapter {
-    fn hash(value: &Descriptor) -> Url {
-        value.transport_url.to_owned()
+impl UniqueVecAdapter for DescriptorUniqueVecAdapter {
+    type Input = Descriptor;
+    type Output = Url;
+    fn hash(descriptor: &Descriptor) -> Url {
+        descriptor.transport_url.to_owned()
     }
 }

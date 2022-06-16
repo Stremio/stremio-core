@@ -27,14 +27,10 @@ pub struct Manifest {
     pub resources: Vec<ManifestResource>,
     pub id_prefixes: Option<Vec<String>>,
     #[serde(default)]
-    #[serde_as(
-        as = "UniqueVec<ManifestCatalog, (String, String), ManifestCatalogUniqueVecAdapter>"
-    )]
+    #[serde_as(as = "UniqueVec<ManifestCatalogUniqueVecAdapter>")]
     pub catalogs: Vec<ManifestCatalog>,
     #[serde(default)]
-    #[serde_as(
-        as = "UniqueVec<ManifestCatalog, (String, String), ManifestCatalogUniqueVecAdapter>"
-    )]
+    #[serde_as(as = "UniqueVec<ManifestCatalogUniqueVecAdapter>")]
     pub addon_catalogs: Vec<ManifestCatalog>,
     #[serde(default)]
     pub behavior_hints: ManifestBehaviorHints,
@@ -168,9 +164,11 @@ impl ManifestCatalog {
 
 struct ManifestCatalogUniqueVecAdapter;
 
-impl UniqueVecAdapter<ManifestCatalog, (String, String)> for ManifestCatalogUniqueVecAdapter {
-    fn hash(value: &ManifestCatalog) -> (String, String) {
-        (value.id.to_owned(), value.r#type.to_owned())
+impl UniqueVecAdapter for ManifestCatalogUniqueVecAdapter {
+    type Input = ManifestCatalog;
+    type Output = (String, String);
+    fn hash(catalog: &ManifestCatalog) -> (String, String) {
+        (catalog.id.to_owned(), catalog.r#type.to_owned())
     }
 }
 
