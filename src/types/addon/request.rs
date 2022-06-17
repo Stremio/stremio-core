@@ -29,13 +29,14 @@ impl ExtraExt for Vec<ExtraValue> {
                 if extra.iter().any(|ev| ev.value == value) {
                     extra.into_iter().filter(|ev| ev.value != value).collect()
                 } else {
-                    extra
-                        .into_iter()
-                        .chain(vec![ExtraValue {
-                            name: prop.name.to_owned(),
-                            value,
-                        }])
-                        .collect()
+                    vec![ExtraValue {
+                        name: prop.name.to_owned(),
+                        value,
+                    }]
+                    .into_iter()
+                    .chain(extra)
+                    .take(*prop.options_limit)
+                    .collect()
                 }
             }
             None if !prop.is_required => vec![],
