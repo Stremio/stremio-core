@@ -149,14 +149,10 @@ impl ManifestCatalog {
             .iter()
             .filter(|extra| extra.is_required)
             .map(|extra| {
-                extra
-                    .options
-                    .as_ref()
-                    .and_then(|options| options.first())
-                    .map(|first_option| ExtraValue {
-                        name: extra.name.to_owned(),
-                        value: first_option.to_owned(),
-                    })
+                extra.options.first().map(|first_option| ExtraValue {
+                    name: extra.name.to_owned(),
+                    value: first_option.to_owned(),
+                })
             })
             .collect::<Option<Vec<_>>>()
     }
@@ -215,7 +211,8 @@ pub struct ExtraProp {
     pub name: String,
     #[serde(default)]
     pub is_required: bool,
-    pub options: Option<Vec<String>>,
+    #[serde(default)]
+    pub options: Vec<String>,
     #[serde(default)]
     pub options_limit: OptionsLimit,
 }
