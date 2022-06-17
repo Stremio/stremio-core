@@ -163,11 +163,12 @@ struct ManifestCatalogUniqueVecAdapter;
 impl UniqueVecAdapter for ManifestCatalogUniqueVecAdapter {
     type Input = ManifestCatalog;
     type Output = (String, String);
-    fn hash(catalog: &ManifestCatalog) -> (String, String) {
+    fn hash(catalog: &Self::Input) -> Self::Output {
         (catalog.id.to_owned(), catalog.r#type.to_owned())
     }
 }
 
+#[serde_as]
 #[derive(Derivative, Clone, PartialEq, Serialize, Deserialize)]
 #[derivative(Default)]
 #[cfg_attr(debug_assertions, derive(Debug))]
@@ -176,12 +177,15 @@ pub enum ManifestExtra {
     #[derivative(Default)]
     Full {
         #[serde(rename = "extra")]
+        #[serde_as(as = "UniqueVec<ExtraPropFullUniqueVecAdapter>")]
         props: Vec<ExtraProp>,
     },
     Short {
         #[serde(default, rename = "extraRequired")]
+        #[serde_as(as = "UniqueVec<ExtraPropShortUniqueVecAdapter>")]
         required: Vec<String>,
         #[serde(default, rename = "extraSupported")]
+        #[serde_as(as = "UniqueVec<ExtraPropShortUniqueVecAdapter>")]
         supported: Vec<String>,
     },
 }
@@ -215,6 +219,26 @@ pub struct ExtraProp {
     pub options: Vec<String>,
     #[serde(default)]
     pub options_limit: OptionsLimit,
+}
+
+struct ExtraPropFullUniqueVecAdapter;
+
+impl UniqueVecAdapter for ExtraPropFullUniqueVecAdapter {
+    type Input = ExtraProp;
+    type Output = String;
+    fn hash(extra_prop: &Self::Input) -> Self::Output {
+        extra_prop.name.to_owned()
+    }
+}
+
+struct ExtraPropShortUniqueVecAdapter;
+
+impl UniqueVecAdapter for ExtraPropShortUniqueVecAdapter {
+    type Input = String;
+    type Output = String;
+    fn hash(name: &Self::Input) -> Self::Output {
+        name.to_owned()
+    }
 }
 
 #[derive(Clone, Deref, PartialEq, Serialize, Deserialize)]
