@@ -4,7 +4,7 @@ use crate::models::common::{
     ResourceLoadable,
 };
 use crate::models::ctx::Ctx;
-use crate::runtime::msg::{Action, ActionLoad, Internal, Msg};
+use crate::runtime::msg::{Action, ActionCatalogWithFilters, ActionLoad, Internal, Msg};
 use crate::runtime::{Effects, Env, UpdateWithCtx};
 use crate::types::addon::{
     DescriptorPreview, ExtraExt, Manifest, ManifestCatalog, ResourcePath, ResourceRequest,
@@ -173,6 +173,22 @@ where
                 selected_effects
                     .join(catalog_effects)
                     .join(selectable_effects)
+            }
+            Msg::Action(Action::CatalogWithFilters(ActionCatalogWithFilters::LoadNextPage)) => {
+                let catalog_effects = catalog_update::<E, _>(
+                    &mut self.catalog,
+                    self.selectable
+                        .next_page
+                        .as_ref()
+                        .map(|next_page| (CatalogPageRequest::Next, &next_page.request)),
+                );
+                let selectable_effects = selectable_update(
+                    &mut self.selectable,
+                    &self.selected,
+                    &self.catalog,
+                    &ctx.profile,
+                );
+                catalog_effects.join(selectable_effects)
             }
             Msg::Internal(Internal::ResourceRequestResult(request, result)) => self
                 .catalog
