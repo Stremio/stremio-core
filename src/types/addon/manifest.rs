@@ -201,14 +201,15 @@ impl ManifestExtra {
                 Cow::Owned(ExtraProp {
                     name: name.to_owned(),
                     is_required: required.contains(name),
-                    ..Default::default()
+                    options: vec![],
+                    options_limit: OptionsLimit::default(),
                 })
             })),
         }
     }
 }
 
-#[derive(Default, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, PartialEq, Serialize, Deserialize)]
 #[cfg_attr(debug_assertions, derive(Debug))]
 #[serde(rename_all = "camelCase")]
 pub struct ExtraProp {
