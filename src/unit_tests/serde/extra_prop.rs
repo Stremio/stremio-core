@@ -8,13 +8,13 @@ fn extra_prop() {
             ExtraProp {
                 name: "name".to_owned(),
                 is_required: true,
-                options: Some(vec!["option".to_owned()]),
+                options: vec!["option".to_owned()],
                 options_limit: OptionsLimit(2),
             },
             ExtraProp {
                 name: "name".to_owned(),
                 is_required: false,
-                options: None,
+                options: vec![],
                 options_limit: OptionsLimit(1),
             },
         ],
@@ -29,7 +29,6 @@ fn extra_prop() {
             Token::Str("isRequired"),
             Token::Bool(true),
             Token::Str("options"),
-            Token::Some,
             Token::Seq { len: Some(1) },
             Token::Str("option"),
             Token::SeqEnd,
@@ -48,7 +47,8 @@ fn extra_prop() {
             Token::Str("isRequired"),
             Token::Bool(false),
             Token::Str("options"),
-            Token::None,
+            Token::Seq { len: Some(0) },
+            Token::SeqEnd,
             Token::Str("optionsLimit"),
             Token::NewtypeStruct {
                 name: "OptionsLimit",
@@ -62,7 +62,7 @@ fn extra_prop() {
         &ExtraProp {
             name: "name".to_owned(),
             is_required: false,
-            options: None,
+            options: vec![],
             options_limit: OptionsLimit::default(),
         },
         &[
