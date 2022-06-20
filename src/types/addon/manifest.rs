@@ -1,11 +1,12 @@
+use crate::constants::SKIP_EXTRA_PROP;
 use crate::types::addon::{ExtraValue, ResourcePath};
 use crate::types::{UniqueVec, UniqueVecAdapter};
 use derivative::Derivative;
 use derive_more::Deref;
 use either::Either;
 use semver::Version;
-use serde::{Deserialize, Serialize};
-use serde_with::serde_as;
+use serde::{Deserialize, Deserializer, Serialize, Serializer};
+use serde_with::{serde_as, DeserializeAs, SerializeAs};
 use std::borrow::Cow;
 
 #[serde_as]
@@ -27,10 +28,10 @@ pub struct Manifest {
     pub resources: Vec<ManifestResource>,
     pub id_prefixes: Option<Vec<String>>,
     #[serde(default)]
-    #[serde_as(as = "UniqueVec<ManifestCatalogUniqueVecAdapter>")]
+    #[serde_as(as = "UniqueVec<Vec<_>, ManifestCatalogUniqueVecAdapter>")]
     pub catalogs: Vec<ManifestCatalog>,
     #[serde(default)]
-    #[serde_as(as = "UniqueVec<ManifestCatalogUniqueVecAdapter>")]
+    #[serde_as(as = "UniqueVec<Vec<_>, ManifestCatalogUniqueVecAdapter>")]
     pub addon_catalogs: Vec<ManifestCatalog>,
     #[serde(default)]
     pub behavior_hints: ManifestBehaviorHints,
@@ -177,15 +178,15 @@ pub enum ManifestExtra {
     #[derivative(Default)]
     Full {
         #[serde(rename = "extra")]
-        #[serde_as(as = "UniqueVec<ExtraPropFullUniqueVecAdapter>")]
+        #[serde_as(as = "UniqueVec<Vec<ExtraPropValid>, ExtraPropFullUniqueVecAdapter>")]
         props: Vec<ExtraProp>,
     },
     Short {
         #[serde(default, rename = "extraRequired")]
-        #[serde_as(as = "UniqueVec<ExtraPropShortUniqueVecAdapter>")]
+        #[serde_as(as = "UniqueVec<Vec<_>, ExtraPropShortUniqueVecAdapter>")]
         required: Vec<String>,
         #[serde(default, rename = "extraSupported")]
-        #[serde_as(as = "UniqueVec<ExtraPropShortUniqueVecAdapter>")]
+        #[serde_as(as = "UniqueVec<Vec<_>, ExtraPropShortUniqueVecAdapter>")]
         supported: Vec<String>,
     },
 }
@@ -239,6 +240,33 @@ impl UniqueVecAdapter for ExtraPropShortUniqueVecAdapter {
     type Output = String;
     fn hash(name: &Self::Input) -> Self::Output {
         name.to_owned()
+    }
+}
+
+struct ExtraPropValid;
+
+impl SerializeAs<ExtraProp> for ExtraPropValid {
+    fn serialize_as<S>(source: &ExtraProp, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        let source = match source {
+            ExtraProp { name, .. } if *name == SKIP_EXTRA_PROP.name => &*SKIP_EXTRA_PROP,
+            extra_prop => extra_prop,
+        };
+        source.serialize(serializer)
+    }
+}
+
+impl<'de> DeserializeAs<'de, ExtraProp> for ExtraPropValid {
+    fn deserialize_as<D>(deserializer: D) -> Result<ExtraProp, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        Ok(match ExtraProp::deserialize(deserializer)? {
+            ExtraProp { name, .. } if name == SKIP_EXTRA_PROP.name => SKIP_EXTRA_PROP.to_owned(),
+            extra_prop => extra_prop,
+        })
     }
 }
 

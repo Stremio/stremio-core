@@ -13,7 +13,7 @@ pub type UID = Option<String>;
 #[cfg_attr(debug_assertions, derive(Debug))]
 pub struct Profile {
     pub auth: Option<Auth>,
-    #[serde_as(as = "UniqueVec<DescriptorUniqueVecAdapter>")]
+    #[serde_as(as = "UniqueVec<Vec<_>, DescriptorUniqueVecAdapter>")]
     pub addons: Vec<Descriptor>,
     pub settings: Settings,
 }

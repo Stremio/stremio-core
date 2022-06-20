@@ -12,37 +12,40 @@ pub trait UniqueVecAdapter {
 }
 
 #[derive(Copy, Clone, Debug, Default)]
-pub struct UniqueVec<A>(PhantomData<A>);
+pub struct UniqueVec<V, A>(PhantomData<(V, A)>);
 
-impl<'de, T, U, A> DeserializeAs<'de, Vec<T>> for UniqueVec<A>
+impl<'de, T, U, V, A> DeserializeAs<'de, Vec<T>> for UniqueVec<V, A>
 where
     T: Deserialize<'de>,
     U: Eq + Hash,
+    V: DeserializeAs<'de, Vec<T>>,
     A: UniqueVecAdapter<Input = T, Output = U>,
 {
     fn deserialize_as<D>(deserializer: D) -> Result<Vec<T>, D::Error>
     where
         D: Deserializer<'de>,
     {
-        let values = Vec::<T>::deserialize(deserializer)?;
+        let values = V::deserialize_as(deserializer)?;
         Ok(values.into_iter().unique_by(|item| A::hash(item)).collect())
     }
 }
 
-impl<T, U, A> SerializeAs<Vec<T>> for UniqueVec<A>
+impl<T, U, V, A> SerializeAs<Vec<T>> for UniqueVec<V, A>
 where
-    T: Serialize,
+    T: Clone + Serialize,
     U: Eq + Hash,
+    V: SerializeAs<Vec<T>>,
     A: UniqueVecAdapter<Input = T, Output = U>,
 {
     fn serialize_as<S>(source: &Vec<T>, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: Serializer,
     {
-        source
+        let source = source
             .iter()
             .unique_by(|item| A::hash(item))
-            .collect::<Vec<_>>()
-            .serialize(serializer)
+            .cloned()
+            .collect::<Vec<_>>();
+        V::serialize_as(&source, serializer)
     }
 }
