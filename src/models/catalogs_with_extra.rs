@@ -1,4 +1,3 @@
-use crate::constants::CATALOG_PREVIEW_SIZE;
 use crate::models::common::{
     eq_update, resources_update_with_vector_content, ResourceLoadable, ResourcesAction,
     ResourcesRequestRange,
@@ -65,11 +64,7 @@ impl<E: Env + 'static> UpdateWithCtx<E> for CatalogsWithExtra {
             Msg::Internal(Internal::ResourceRequestResult(request, result)) => {
                 resources_update_with_vector_content::<E, _>(
                     &mut self.catalogs,
-                    ResourcesAction::ResourceRequestResult {
-                        request,
-                        result,
-                        limit: &Some(CATALOG_PREVIEW_SIZE),
-                    },
+                    ResourcesAction::ResourceRequestResult { request, result },
                 )
             }
             Msg::Internal(Internal::ProfileChanged) => match &self.selected {

@@ -109,11 +109,7 @@ impl<E: Env + 'static> UpdateWithCtx<E> for MetaDetails {
             {
                 let meta_items_effects = resources_update::<E, _>(
                     &mut self.meta_items,
-                    ResourcesAction::ResourceRequestResult {
-                        request,
-                        result,
-                        limit: &None,
-                    },
+                    ResourcesAction::ResourceRequestResult { request, result },
                 );
                 let streams_effects = match &self.selected {
                     Some(Selected {
@@ -148,11 +144,7 @@ impl<E: Env + 'static> UpdateWithCtx<E> for MetaDetails {
             {
                 resources_update_with_vector_content::<E, _>(
                     &mut self.streams,
-                    ResourcesAction::ResourceRequestResult {
-                        request,
-                        result,
-                        limit: &None,
-                    },
+                    ResourcesAction::ResourceRequestResult { request, result },
                 )
             }
             Msg::Internal(Internal::LibraryChanged(_)) => {
