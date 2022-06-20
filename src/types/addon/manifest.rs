@@ -5,8 +5,8 @@ use derivative::Derivative;
 use derive_more::Deref;
 use either::Either;
 use semver::Version;
-use serde::{Deserialize, Deserializer, Serialize, Serializer};
-use serde_with::{serde_as, DeserializeAs, SerializeAs};
+use serde::{Deserialize, Deserializer, Serialize};
+use serde_with::{serde_as, DeserializeAs};
 use std::borrow::Cow;
 
 #[serde_as]
@@ -28,10 +28,10 @@ pub struct Manifest {
     pub resources: Vec<ManifestResource>,
     pub id_prefixes: Option<Vec<String>>,
     #[serde(default)]
-    #[serde_as(as = "UniqueVec<Vec<_>, ManifestCatalogUniqueVecAdapter>")]
+    #[serde_as(deserialize_as = "UniqueVec<Vec<_>, ManifestCatalogUniqueVecAdapter>")]
     pub catalogs: Vec<ManifestCatalog>,
     #[serde(default)]
-    #[serde_as(as = "UniqueVec<Vec<_>, ManifestCatalogUniqueVecAdapter>")]
+    #[serde_as(deserialize_as = "UniqueVec<Vec<_>, ManifestCatalogUniqueVecAdapter>")]
     pub addon_catalogs: Vec<ManifestCatalog>,
     #[serde(default)]
     pub behavior_hints: ManifestBehaviorHints,
@@ -178,15 +178,17 @@ pub enum ManifestExtra {
     #[derivative(Default)]
     Full {
         #[serde(rename = "extra")]
-        #[serde_as(as = "UniqueVec<Vec<ExtraPropValid>, ExtraPropFullUniqueVecAdapter>")]
+        #[serde_as(
+            deserialize_as = "UniqueVec<Vec<ExtraPropValid>, ExtraPropFullUniqueVecAdapter>"
+        )]
         props: Vec<ExtraProp>,
     },
     Short {
         #[serde(default, rename = "extraRequired")]
-        #[serde_as(as = "UniqueVec<Vec<_>, ExtraPropShortUniqueVecAdapter>")]
+        #[serde_as(deserialize_as = "UniqueVec<Vec<_>, ExtraPropShortUniqueVecAdapter>")]
         required: Vec<String>,
         #[serde(default, rename = "extraSupported")]
-        #[serde_as(as = "UniqueVec<Vec<_>, ExtraPropShortUniqueVecAdapter>")]
+        #[serde_as(deserialize_as = "UniqueVec<Vec<_>, ExtraPropShortUniqueVecAdapter>")]
         supported: Vec<String>,
     },
 }
@@ -244,19 +246,6 @@ impl UniqueVecAdapter for ExtraPropShortUniqueVecAdapter {
 }
 
 struct ExtraPropValid;
-
-impl SerializeAs<ExtraProp> for ExtraPropValid {
-    fn serialize_as<S>(source: &ExtraProp, serializer: S) -> Result<S::Ok, S::Error>
-    where
-        S: Serializer,
-    {
-        let source = match source {
-            ExtraProp { name, .. } if *name == SKIP_EXTRA_PROP.name => &*SKIP_EXTRA_PROP,
-            extra_prop => extra_prop,
-        };
-        source.serialize(serializer)
-    }
-}
 
 impl<'de> DeserializeAs<'de, ExtraProp> for ExtraPropValid {
     fn deserialize_as<D>(deserializer: D) -> Result<ExtraProp, D::Error>
