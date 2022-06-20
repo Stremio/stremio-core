@@ -9,7 +9,7 @@ use std::any::Any;
 use std::collections::BTreeMap;
 use std::collections::HashMap;
 use std::ops::Fn;
-use std::sync::RwLock;
+use std::sync::{Arc, LockResult, Mutex, MutexGuard, RwLock};
 
 lazy_static! {
     pub static ref FETCH_HANDLER: RwLock<FetchHandler> =
@@ -17,6 +17,7 @@ lazy_static! {
     pub static ref REQUESTS: RwLock<Vec<Request>> = Default::default();
     pub static ref STORAGE: RwLock<BTreeMap<String, String>> = Default::default();
     pub static ref NOW: RwLock<DateTime<Utc>> = RwLock::new(Utc::now());
+    pub static ref ENV_MUTEX: Arc<Mutex<()>> = Default::default();
 }
 
 pub type FetchHandler =
@@ -49,11 +50,13 @@ impl<T: Serialize> From<http::Request<T>> for Request {
 pub enum TestEnv {}
 
 impl TestEnv {
-    pub fn reset() {
+    pub fn reset() -> LockResult<MutexGuard<'static, ()>> {
+        let env_mutex = ENV_MUTEX.lock();
         *FETCH_HANDLER.write().unwrap() = Box::new(default_fetch_handler);
         *REQUESTS.write().unwrap() = vec![];
         *STORAGE.write().unwrap() = BTreeMap::new();
         *NOW.write().unwrap() = Utc::now();
+        env_mutex
     }
     pub fn run<F: FnOnce()>(runnable: F) {
         tokio_current_thread::block_on_all(future::lazy(|_| {

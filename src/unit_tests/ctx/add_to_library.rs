@@ -67,7 +67,7 @@ fn actionctx_addtolibrary() {
         poster_shape: Default::default(),
         behavior_hints: Default::default(),
     };
-    TestEnv::reset();
+    let _env_mutex = TestEnv::reset();
     *FETCH_HANDLER.write().unwrap() = Box::new(fetch_handler);
     *NOW.write().unwrap() = Utc.ymd(2020, 1, 1).and_hms_milli(0, 0, 0, 0);
     let (runtime, _rx) = Runtime::<TestEnv, _>::new(
@@ -200,7 +200,7 @@ fn actionctx_addtolibrary_already_added() {
             other: Default::default(),
         },
     };
-    TestEnv::reset();
+    let _env_mutex = TestEnv::reset();
     *NOW.write().unwrap() = Utc.ymd(2020, 1, 2).and_hms_milli(0, 0, 0, 0);
     let (runtime, _rx) = Runtime::<TestEnv, _>::new(
         TestModel {

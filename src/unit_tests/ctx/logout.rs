@@ -59,7 +59,7 @@ fn actionctx_logout() {
         uid: profile.uid(),
         ..Default::default()
     };
-    TestEnv::reset();
+    let _env_mutex = TestEnv::reset();
     *FETCH_HANDLER.write().unwrap() = Box::new(fetch_handler);
     STORAGE.write().unwrap().insert(
         PROFILE_STORAGE_KEY.to_owned(),
