@@ -12,13 +12,13 @@ pub struct ExtraValue {
 }
 
 pub trait ExtraExt {
-    fn remove_all(self, prop_name: &str) -> Self;
+    fn remove_all(self, prop: &ExtraProp) -> Self;
     fn extend_one(self, prop: &ExtraProp, value: Option<String>) -> Self;
 }
 
 impl ExtraExt for Vec<ExtraValue> {
-    fn remove_all(self, name: &str) -> Self {
-        self.into_iter().filter(|ev| ev.name != name).collect()
+    fn remove_all(self, prop: &ExtraProp) -> Self {
+        self.into_iter().filter(|ev| ev.name != prop.name).collect()
     }
     fn extend_one(self, prop: &ExtraProp, value: Option<String>) -> Self {
         let (extra, other_extra) = self
