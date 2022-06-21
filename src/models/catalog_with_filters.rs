@@ -61,6 +61,7 @@ pub struct Selected {
 }
 
 #[derive(PartialEq, Serialize)]
+#[cfg_attr(test, derive(Clone))]
 #[serde(rename_all = "camelCase")]
 pub struct SelectableCatalog {
     pub catalog: String,
@@ -69,6 +70,7 @@ pub struct SelectableCatalog {
 }
 
 #[derive(PartialEq, Serialize)]
+#[cfg_attr(test, derive(Clone))]
 pub struct SelectableType {
     pub r#type: String,
     pub selected: bool,
@@ -76,6 +78,7 @@ pub struct SelectableType {
 }
 
 #[derive(PartialEq, Serialize)]
+#[cfg_attr(test, derive(Clone))]
 pub struct SelectableExtraOption {
     pub value: Option<String>,
     pub selected: bool,
@@ -83,6 +86,7 @@ pub struct SelectableExtraOption {
 }
 
 #[derive(PartialEq, Serialize)]
+#[cfg_attr(test, derive(Clone))]
 #[serde(rename_all = "camelCase")]
 pub struct SelectableExtra {
     pub name: String,
@@ -91,11 +95,13 @@ pub struct SelectableExtra {
 }
 
 #[derive(PartialEq, Serialize)]
+#[cfg_attr(test, derive(Clone))]
 pub struct SelectablePage {
     pub request: ResourceRequest,
 }
 
 #[derive(Default, PartialEq, Serialize)]
+#[cfg_attr(test, derive(Clone))]
 #[serde(rename_all = "camelCase")]
 pub struct Selectable {
     pub types: Vec<SelectableType>,
@@ -114,6 +120,7 @@ pub type CatalogPage<T> = ResourceLoadable<Vec<T>>;
 pub type Catalog<T> = Vec<CatalogPage<T>>;
 
 #[derive(Derivative, Serialize)]
+#[cfg_attr(test, derive(Clone))]
 #[derivative(Default(bound = ""))]
 pub struct CatalogWithFilters<T> {
     pub selected: Option<Selected>,
