@@ -6,7 +6,7 @@ use derive_more::Deref;
 use either::Either;
 use semver::Version;
 use serde::{Deserialize, Deserializer, Serialize};
-use serde_with::{serde_as, DeserializeAs};
+use serde_with::{serde_as, DefaultOnNull, DeserializeAs};
 use std::borrow::Cow;
 
 #[serde_as]
@@ -212,6 +212,7 @@ impl ManifestExtra {
     }
 }
 
+#[serde_as]
 #[derive(Clone, PartialEq, Serialize, Deserialize)]
 #[cfg_attr(debug_assertions, derive(Debug))]
 #[serde(rename_all = "camelCase")]
@@ -220,6 +221,7 @@ pub struct ExtraProp {
     #[serde(default)]
     pub is_required: bool,
     #[serde(default)]
+    #[serde_as(deserialize_as = "DefaultOnNull")]
     pub options: Vec<String>,
     #[serde(default)]
     pub options_limit: OptionsLimit,
