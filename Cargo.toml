@@ -14,6 +14,9 @@ members = [
 [lib]
 doctest = false
 
+[features]
+env-future-send = []
+
 [dependencies]
 stremio-derive = { path = "stremio-derive" }
 stremio-watched-bitfield = { path = "stremio-watched-bitfield" }

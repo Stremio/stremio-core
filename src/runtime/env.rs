@@ -86,16 +86,16 @@ impl From<serde_json::Error> for EnvError {
     }
 }
 
-#[cfg(target_arch = "wasm32")]
+#[cfg(not(feature = "env-future-send"))]
 pub type EnvFuture<T> = futures::future::LocalBoxFuture<'static, T>;
 
-#[cfg(not(target_arch = "wasm32"))]
+#[cfg(feature = "env-future-send")]
 pub type EnvFuture<T> = futures::future::BoxFuture<'static, T>;
 
 impl<T: ?Sized> EnvFutureExt for T where T: Future {}
 
 pub trait EnvFutureExt: Future {
-    #[cfg(target_arch = "wasm32")]
+    #[cfg(not(feature = "env-future-send"))]
     fn boxed_env<'a>(self) -> futures::future::LocalBoxFuture<'a, Self::Output>
     where
         Self: Sized + 'a,
@@ -103,7 +103,7 @@ pub trait EnvFutureExt: Future {
         self.boxed_local()
     }
 
-    #[cfg(not(target_arch = "wasm32"))]
+    #[cfg(feature = "env-future-send")]
     fn boxed_env<'a>(self) -> futures::future::BoxFuture<'a, Self::Output>
     where
         Self: Sized + Send + 'a,
@@ -116,28 +116,29 @@ pub type TryEnvFuture<T> = EnvFuture<Result<T, EnvError>>;
 
 pub trait Env {
     fn fetch<
-        IN: Serialize + Send + 'static,
-        #[cfg(target_arch = "wasm32")] OUT: for<'de> Deserialize<'de> + 'static,
-        #[cfg(not(target_arch = "wasm32"))] OUT: for<'de> Deserialize<'de> + Send + 'static,
+        #[cfg(not(feature = "env-future-send"))] IN: Serialize + 'static,
+        #[cfg(feature = "env-future-send")] IN: Serialize + Send + 'static,
+        #[cfg(not(feature = "env-future-send"))] OUT: for<'de> Deserialize<'de> + 'static,
+        #[cfg(feature = "env-future-send")] OUT: for<'de> Deserialize<'de> + Send + 'static,
     >(
         request: Request<IN>,
     ) -> TryEnvFuture<OUT>;
     fn get_storage<
-        #[cfg(target_arch = "wasm32")] T: for<'de> Deserialize<'de> + 'static,
-        #[cfg(not(target_arch = "wasm32"))] T: for<'de> Deserialize<'de> + Send + 'static,
+        #[cfg(not(feature = "env-future-send"))] T: for<'de> Deserialize<'de> + 'static,
+        #[cfg(feature = "env-future-send")] T: for<'de> Deserialize<'de> + Send + 'static,
     >(
         key: &str,
     ) -> TryEnvFuture<Option<T>>;
     fn set_storage<T: Serialize>(key: &str, value: Option<&T>) -> TryEnvFuture<()>;
     fn exec_concurrent<
-        #[cfg(target_arch = "wasm32")] F: Future<Output = ()> + 'static,
-        #[cfg(not(target_arch = "wasm32"))] F: Future<Output = ()> + Send + 'static,
+        #[cfg(not(feature = "env-future-send"))] F: Future<Output = ()> + 'static,
+        #[cfg(feature = "env-future-send")] F: Future<Output = ()> + Send + 'static,
     >(
         future: F,
     );
     fn exec_sequential<
-        #[cfg(target_arch = "wasm32")] F: Future<Output = ()> + 'static,
-        #[cfg(not(target_arch = "wasm32"))] F: Future<Output = ()> + Send + 'static,
+        #[cfg(not(feature = "env-future-send"))] F: Future<Output = ()> + 'static,
+        #[cfg(feature = "env-future-send")] F: Future<Output = ()> + Send + 'static,
     >(
         future: F,
     );

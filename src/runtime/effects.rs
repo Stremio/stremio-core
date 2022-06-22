@@ -1,10 +1,10 @@
 use crate::runtime::msg::Msg;
 use derive_more::{From, IntoIterator};
 
-#[cfg(target_arch = "wasm32")]
+#[cfg(not(feature = "env-future-send"))]
 type Future = futures::future::LocalBoxFuture<'static, Msg>;
 
-#[cfg(not(target_arch = "wasm32"))]
+#[cfg(feature = "env-future-send")]
 type Future = futures::future::BoxFuture<'static, Msg>;
 
 pub enum EffectFuture {
