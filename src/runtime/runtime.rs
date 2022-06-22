@@ -11,6 +11,7 @@ use std::marker::PhantomData;
 use std::sync::{Arc, LockResult, RwLock, RwLockReadGuard};
 
 #[derive(Serialize)]
+#[cfg_attr(debug_assertions, derive(Debug, PartialEq))]
 #[serde(tag = "name", content = "args")]
 pub enum RuntimeEvent {
     NewState,

@@ -11,6 +11,7 @@ use std::fmt;
 use std::ops::Range;
 
 #[derive(Clone, PartialEq, Serialize)]
+#[cfg_attr(debug_assertions, derive(Debug))]
 #[serde(tag = "type", content = "content")]
 pub enum ResourceError {
     EmptyContent,
@@ -31,6 +32,7 @@ impl fmt::Display for ResourceError {
 }
 
 #[derive(Clone, PartialEq, Serialize)]
+#[cfg_attr(debug_assertions, derive(Debug))]
 pub struct ResourceLoadable<T> {
     pub request: ResourceRequest,
     pub content: Option<Loadable<T, ResourceError>>,
