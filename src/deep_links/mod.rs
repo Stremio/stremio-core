@@ -7,9 +7,11 @@ use crate::types::resource::{MetaItem, MetaItemPreview, Stream, StreamSource, Vi
 use percent_encoding::utf8_percent_encode;
 use serde::Serialize;
 use std::borrow::Borrow;
+use std::convert::TryFrom;
 use url::form_urlencoded;
 
 #[derive(Serialize)]
+#[cfg_attr(debug_assertions, derive(Debug, PartialEq))]
 pub struct ExternalPlayerLink {
     pub href: String,
     pub download: Option<String>,
@@ -97,6 +99,7 @@ impl From<&LibraryItem> for LibraryItemDeepLinks {
 }
 
 #[derive(Serialize)]
+#[cfg_attr(debug_assertions, derive(Debug, PartialEq))]
 #[serde(rename_all = "camelCase")]
 pub struct MetaItemDeepLinks {
     pub meta_details_videos: Option<String>,
@@ -104,9 +107,12 @@ pub struct MetaItemDeepLinks {
     pub player: Option<String>,
 }
 
-impl From<(&MetaItemPreview, &ResourceRequest)> for MetaItemDeepLinks {
-    fn from((item, request): (&MetaItemPreview, &ResourceRequest)) -> Self {
-        MetaItemDeepLinks {
+impl TryFrom<(&MetaItemPreview, &ResourceRequest)> for MetaItemDeepLinks {
+    type Error = anyhow::Error;
+    fn try_from(
+        (item, request): (&MetaItemPreview, &ResourceRequest),
+    ) -> Result<Self, Self::Error> {
+        Ok(MetaItemDeepLinks {
             meta_details_videos: item
                 .behavior_hints
                 .default_video_id
@@ -137,23 +143,25 @@ impl From<(&MetaItemPreview, &ResourceRequest)> for MetaItemDeepLinks {
                     Stream::youtube(default_video_id).map(|stream| (default_video_id, stream))
                 })
                 .map(|(default_video_id, stream)| {
-                    format!(
+                    Ok::<_, Self::Error>(format!(
                         "stremio:///player/{}/{}/{}/{}/{}/{}",
-                        utf8_percent_encode(&stream.encode().unwrap(), URI_COMPONENT_ENCODE_SET),
+                        utf8_percent_encode(&stream.encode()?, URI_COMPONENT_ENCODE_SET),
                         utf8_percent_encode(request.base.as_str(), URI_COMPONENT_ENCODE_SET),
                         utf8_percent_encode(request.base.as_str(), URI_COMPONENT_ENCODE_SET),
                         utf8_percent_encode(&item.r#type, URI_COMPONENT_ENCODE_SET),
                         utf8_percent_encode(&item.id, URI_COMPONENT_ENCODE_SET),
                         utf8_percent_encode(default_video_id, URI_COMPONENT_ENCODE_SET),
-                    )
-                }),
-        }
+                    ))
+                })
+                .transpose()?,
+        })
     }
 }
 
-impl From<(&MetaItem, &ResourceRequest)> for MetaItemDeepLinks {
-    fn from((item, request): (&MetaItem, &ResourceRequest)) -> Self {
-        MetaItemDeepLinks::from((&item.preview, request))
+impl TryFrom<(&MetaItem, &ResourceRequest)> for MetaItemDeepLinks {
+    type Error = anyhow::Error;
+    fn try_from((item, request): (&MetaItem, &ResourceRequest)) -> Result<Self, Self::Error> {
+        MetaItemDeepLinks::try_from((&item.preview, request))
     }
 }
 
@@ -165,31 +173,35 @@ pub struct VideoDeepLinks {
     pub external_player: Option<ExternalPlayerLink>,
 }
 
-impl From<(&Video, &ResourceRequest)> for VideoDeepLinks {
-    fn from((video, request): (&Video, &ResourceRequest)) -> Self {
+impl TryFrom<(&Video, &ResourceRequest)> for VideoDeepLinks {
+    type Error = anyhow::Error;
+    fn try_from((video, request): (&Video, &ResourceRequest)) -> Result<Self, Self::Error> {
         let stream = video.stream();
-        VideoDeepLinks {
+        Ok(VideoDeepLinks {
             meta_details_streams: format!(
                 "stremio:///metadetails/{}/{}/{}",
                 utf8_percent_encode(&request.path.r#type, URI_COMPONENT_ENCODE_SET),
                 utf8_percent_encode(&request.path.id, URI_COMPONENT_ENCODE_SET),
                 utf8_percent_encode(&video.id, URI_COMPONENT_ENCODE_SET)
             ),
-            player: stream.as_ref().map(|stream| {
-                format!(
-                    "stremio:///player/{}/{}/{}/{}/{}/{}",
-                    utf8_percent_encode(&stream.encode().unwrap(), URI_COMPONENT_ENCODE_SET),
-                    utf8_percent_encode(request.base.as_str(), URI_COMPONENT_ENCODE_SET),
-                    utf8_percent_encode(request.base.as_str(), URI_COMPONENT_ENCODE_SET),
-                    utf8_percent_encode(&request.path.r#type, URI_COMPONENT_ENCODE_SET),
-                    utf8_percent_encode(&request.path.id, URI_COMPONENT_ENCODE_SET),
-                    utf8_percent_encode(&video.id, URI_COMPONENT_ENCODE_SET)
-                )
-            }),
+            player: stream
+                .as_ref()
+                .map(|stream| {
+                    Ok::<_, Self::Error>(format!(
+                        "stremio:///player/{}/{}/{}/{}/{}/{}",
+                        utf8_percent_encode(&stream.encode()?, URI_COMPONENT_ENCODE_SET),
+                        utf8_percent_encode(request.base.as_str(), URI_COMPONENT_ENCODE_SET),
+                        utf8_percent_encode(request.base.as_str(), URI_COMPONENT_ENCODE_SET),
+                        utf8_percent_encode(&request.path.r#type, URI_COMPONENT_ENCODE_SET),
+                        utf8_percent_encode(&request.path.id, URI_COMPONENT_ENCODE_SET),
+                        utf8_percent_encode(&video.id, URI_COMPONENT_ENCODE_SET)
+                    ))
+                })
+                .transpose()?,
             external_player: stream
                 .as_ref()
                 .map(|stream| ExternalPlayerLink::from(stream.as_ref())),
-        }
+        })
     }
 }
 
@@ -200,26 +212,28 @@ pub struct StreamDeepLinks {
     pub external_player: ExternalPlayerLink,
 }
 
-impl From<&Stream> for StreamDeepLinks {
-    fn from(stream: &Stream) -> Self {
-        StreamDeepLinks {
+impl TryFrom<&Stream> for StreamDeepLinks {
+    type Error = anyhow::Error;
+    fn try_from(stream: &Stream) -> Result<Self, Self::Error> {
+        Ok(StreamDeepLinks {
             player: format!(
                 "stremio:///player/{}",
-                utf8_percent_encode(&stream.encode().unwrap(), URI_COMPONENT_ENCODE_SET),
+                utf8_percent_encode(&stream.encode()?, URI_COMPONENT_ENCODE_SET),
             ),
             external_player: ExternalPlayerLink::from(stream),
-        }
+        })
     }
 }
 
-impl From<(&Stream, &ResourceRequest, &ResourceRequest)> for StreamDeepLinks {
-    fn from(
+impl TryFrom<(&Stream, &ResourceRequest, &ResourceRequest)> for StreamDeepLinks {
+    type Error = anyhow::Error;
+    fn try_from(
         (stream, stream_request, meta_request): (&Stream, &ResourceRequest, &ResourceRequest),
-    ) -> Self {
-        StreamDeepLinks {
+    ) -> Result<Self, Self::Error> {
+        Ok(StreamDeepLinks {
             player: format!(
                 "stremio:///player/{}/{}/{}/{}/{}/{}",
-                utf8_percent_encode(&stream.encode().unwrap(), URI_COMPONENT_ENCODE_SET),
+                utf8_percent_encode(&stream.encode()?, URI_COMPONENT_ENCODE_SET),
                 utf8_percent_encode(stream_request.base.as_str(), URI_COMPONENT_ENCODE_SET),
                 utf8_percent_encode(meta_request.base.as_str(), URI_COMPONENT_ENCODE_SET),
                 utf8_percent_encode(&meta_request.path.r#type, URI_COMPONENT_ENCODE_SET),
@@ -227,7 +241,7 @@ impl From<(&Stream, &ResourceRequest, &ResourceRequest)> for StreamDeepLinks {
                 utf8_percent_encode(&stream_request.path.id, URI_COMPONENT_ENCODE_SET)
             ),
             external_player: ExternalPlayerLink::from(stream),
-        }
+        })
     }
 }
 
@@ -307,41 +321,30 @@ impl From<&String> for LibraryDeepLinks {
     }
 }
 
-impl From<(&String, &LibraryRequest)> for LibraryDeepLinks {
-    fn from((root, request): (&String, &LibraryRequest)) -> Self {
-        LibraryDeepLinks {
+impl TryFrom<(&String, &LibraryRequest)> for LibraryDeepLinks {
+    type Error = anyhow::Error;
+    fn try_from((root, request): (&String, &LibraryRequest)) -> Result<Self, Self::Error> {
+        Ok(LibraryDeepLinks {
             library: match &request.r#type {
                 Some(r#type) => format!(
                     "stremio:///{}/{}?{}",
                     root,
                     utf8_percent_encode(r#type, URI_COMPONENT_ENCODE_SET),
                     query_params_encode(&[
-                        (
-                            "sort",
-                            serde_json::to_value(&request.sort)
-                                .unwrap()
-                                .as_str()
-                                .unwrap()
-                        ),
-                        ("page", &request.page.to_string())
+                        ("sort", serde_json::to_value(&request.sort)?.to_string()),
+                        ("page", request.page.to_string())
                     ]),
                 ),
                 _ => format!(
                     "stremio:///{}?{}",
                     root,
                     query_params_encode(&[
-                        (
-                            "sort",
-                            serde_json::to_value(&request.sort)
-                                .unwrap()
-                                .as_str()
-                                .unwrap()
-                        ),
-                        ("page", &request.page.to_string())
+                        ("sort", serde_json::to_value(&request.sort)?.to_string()),
+                        ("page", request.page.to_string())
                     ]),
                 ),
             },
-        }
+        })
     }
 }
 
