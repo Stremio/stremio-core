@@ -1,8 +1,9 @@
 use serde::Serialize;
+use std::convert::TryFrom;
 use stremio_core::types::addon::ResourceRequest;
 use stremio_core::types::resource::{MetaItem, MetaItemPreview};
 
-#[derive(Serialize)]
+#[derive(Default, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct MetaItemDeepLinks {
     pub meta_details_videos: Option<String>,
@@ -12,17 +13,17 @@ pub struct MetaItemDeepLinks {
 
 impl From<(&MetaItem, &ResourceRequest)> for MetaItemDeepLinks {
     fn from((item, request): (&MetaItem, &ResourceRequest)) -> Self {
-        MetaItemDeepLinks::from(stremio_core::deep_links::MetaItemDeepLinks::from((
-            item, request,
-        )))
+        stremio_core::deep_links::MetaItemDeepLinks::try_from((item, request))
+            .ok()
+            .map_or_else(Default::default, MetaItemDeepLinks::from)
     }
 }
 
 impl From<(&MetaItemPreview, &ResourceRequest)> for MetaItemDeepLinks {
     fn from((item, request): (&MetaItemPreview, &ResourceRequest)) -> Self {
-        MetaItemDeepLinks::from(stremio_core::deep_links::MetaItemDeepLinks::from((
-            item, request,
-        )))
+        stremio_core::deep_links::MetaItemDeepLinks::try_from((item, request))
+            .ok()
+            .map_or_else(Default::default, MetaItemDeepLinks::from)
     }
 }
 

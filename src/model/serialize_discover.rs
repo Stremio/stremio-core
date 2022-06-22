@@ -1,6 +1,5 @@
 use crate::model::deep_links::{DiscoverDeepLinks, MetaItemDeepLinks, StreamDeepLinks};
 use serde::Serialize;
-use stremio_core::constants::{CATALOG_PAGE_SIZE, SKIP_EXTRA_NAME};
 use stremio_core::models::catalog_with_filters::{
     CatalogWithFilters, Selected as CatalogWithFiltersSelected,
 };
@@ -54,17 +53,11 @@ mod model {
     }
     #[derive(Serialize)]
     #[serde(rename_all = "camelCase")]
-    pub struct SelectablePage {
-        pub deep_links: DiscoverDeepLinks,
-    }
-    #[derive(Serialize)]
-    #[serde(rename_all = "camelCase")]
     pub struct Selectable<'a> {
         pub types: Vec<SelectableType<'a>>,
         pub catalogs: Vec<SelectableCatalog<'a>>,
         pub extra: Vec<SelectableExtra<'a>>,
-        pub prev_page: Option<SelectablePage>,
-        pub next_page: Option<SelectablePage>,
+        pub next_page: bool,
     }
     #[derive(Serialize)]
     #[serde(rename_all = "camelCase")]
@@ -93,9 +86,8 @@ mod model {
     pub struct CatalogWithFilters<'a> {
         pub selected: &'a Option<CatalogWithFiltersSelected>,
         pub selectable: Selectable<'a>,
-        pub catalog: Option<ResourceLoadable<'a>>,
+        pub catalog: Vec<ResourceLoadable<'a>>,
         pub default_request: Option<&'a ResourceRequest>,
-        pub page: u32,
     }
 }
 
@@ -154,20 +146,11 @@ pub fn serialize_discover(discover: &CatalogWithFilters<MetaItemPreview>, ctx: &
                         .collect(),
                 })
                 .collect(),
-            prev_page: discover.selectable.prev_page.as_ref().map(|prev_page| {
-                model::SelectablePage {
-                    deep_links: DiscoverDeepLinks::from(&prev_page.request),
-                }
-            }),
-            next_page: discover.selectable.next_page.as_ref().map(|next_page| {
-                model::SelectablePage {
-                    deep_links: DiscoverDeepLinks::from(&next_page.request),
-                }
-            }),
+            next_page: discover.selectable.next_page.is_some(),
         },
         catalog: discover
             .catalog
-            .as_ref()
+            .iter()
             .map(|catalog| model::ResourceLoadable {
                 content: match &catalog.content {
                     Some(Loadable::Ready(meta_items)) => Loadable::Ready(
@@ -202,24 +185,13 @@ pub fn serialize_discover(discover: &CatalogWithFilters<MetaItemPreview>, ctx: &
                     .addons
                     .iter()
                     .any(|addon| addon.transport_url == catalog.request.base),
-            }),
+            })
+            .collect::<Vec<_>>(),
         default_request: discover
             .selectable
             .types
             .first()
             .map(|first_type| &first_type.request),
-        page: discover
-            .selected
-            .as_ref()
-            .and_then(|selected| {
-                selected
-                    .request
-                    .path
-                    .get_extra_first_value(SKIP_EXTRA_NAME)
-                    .and_then(|value| value.parse::<u32>().ok())
-                    .map(|skip| 1 + skip / CATALOG_PAGE_SIZE as u32)
-            })
-            .unwrap_or(1),
     })
     .unwrap()
 }

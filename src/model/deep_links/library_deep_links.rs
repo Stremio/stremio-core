@@ -1,7 +1,8 @@
 use serde::Serialize;
+use std::convert::TryFrom;
 use stremio_core::models::library_with_filters::LibraryRequest;
 
-#[derive(Serialize)]
+#[derive(Default, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct LibraryDeepLinks {
     pub library: String,
@@ -15,9 +16,9 @@ impl From<&String> for LibraryDeepLinks {
 
 impl From<(&String, &LibraryRequest)> for LibraryDeepLinks {
     fn from((root, request): (&String, &LibraryRequest)) -> Self {
-        LibraryDeepLinks::from(stremio_core::deep_links::LibraryDeepLinks::from((
-            root, request,
-        )))
+        stremio_core::deep_links::LibraryDeepLinks::try_from((root, request))
+            .ok()
+            .map_or_else(Default::default, LibraryDeepLinks::from)
     }
 }
 

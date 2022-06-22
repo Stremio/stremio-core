@@ -81,7 +81,7 @@ pub fn serialize_remote_addons(
         },
         catalog: remote_addons
             .catalog
-            .as_ref()
+            .first()
             .map(|catalog| model::ResourceLoadable {
                 content: match &catalog.content {
                     Some(Loadable::Ready(addons)) => Loadable::Ready(
