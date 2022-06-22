@@ -80,12 +80,18 @@ impl TestEnv {
                     let runtime = runtime.read().expect("runtime read failed");
                     let state = runtime.model().expect("model read failed");
                     let mut states = STATES.write().expect("states write failed");
-                    states.push(Box::new(state.to_owned()) as Box<dyn Any + Send + Sync>)
+                    states.push(Box::new(state.to_owned()) as Box<dyn Any + Send + Sync>);
                 };
                 let mut events = EVENTS.write().expect("events write failed");
                 events.push(event);
                 future::ready(())
             })));
+            {
+                let runtime = runtime.read().expect("runtime read failed");
+                let state = runtime.model().expect("model read failed");
+                let mut states = STATES.write().expect("states write failed");
+                states.push(Box::new(state.to_owned()) as Box<dyn Any + Send + Sync>);
+            }
             runnable();
             TestEnv::exec_concurrent(enclose!((runtime) async move {
                 let mut runtime = runtime.write().expect("runtime read failed");
