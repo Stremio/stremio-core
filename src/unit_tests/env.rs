@@ -1,7 +1,10 @@
 use crate::models::ctx::Ctx;
 use crate::models::streaming_server::StreamingServer;
-use crate::runtime::{Env, EnvFuture, EnvFutureExt, TryEnvFuture};
+use crate::runtime::{Env, EnvFuture, EnvFutureExt, Model, Runtime, RuntimeEvent, TryEnvFuture};
 use chrono::{DateTime, Utc};
+use enclose::enclose;
+use futures::channel::mpsc::Receiver;
+use futures::StreamExt;
 use futures::{future, Future, TryFutureExt};
 use lazy_static::lazy_static;
 use serde::{Deserialize, Serialize};
@@ -16,6 +19,7 @@ lazy_static! {
         RwLock::new(Box::new(default_fetch_handler));
     pub static ref REQUESTS: RwLock<Vec<Request>> = Default::default();
     pub static ref STORAGE: RwLock<BTreeMap<String, String>> = Default::default();
+    pub static ref EVENTS: RwLock<Vec<RuntimeEvent>> = Default::default();
     pub static ref NOW: RwLock<DateTime<Utc>> = RwLock::new(Utc::now());
     pub static ref ENV_MUTEX: Arc<Mutex<()>> = Default::default();
 }
@@ -55,6 +59,7 @@ impl TestEnv {
         *FETCH_HANDLER.write().unwrap() = Box::new(default_fetch_handler);
         *REQUESTS.write().unwrap() = vec![];
         *STORAGE.write().unwrap() = BTreeMap::new();
+        *EVENTS.write().unwrap() = vec![];
         *NOW.write().unwrap() = Utc::now();
         env_mutex
     }
@@ -63,14 +68,38 @@ impl TestEnv {
             runnable();
         }))
     }
+    pub fn run2<M: Model<TestEnv> + Send + Sync + 'static, F: FnOnce()>(
+        rx: Receiver<RuntimeEvent>,
+        runtime: Arc<RwLock<Runtime<TestEnv, M>>>,
+        runnable: F,
+    ) {
+        tokio_current_thread::block_on_all(future::lazy(|_| {
+            TestEnv::exec_concurrent(rx.for_each(move |event| {
+                if let RuntimeEvent::NewState = event {
+                    // TODO push state
+                };
+                let mut events = EVENTS.write().expect("events write failed");
+                events.push(event);
+                future::ready(())
+            }));
+            runnable();
+            TestEnv::exec_concurrent(enclose!((runtime) async move {
+                let mut runtime = runtime.write().expect("runtime read failed");
+                runtime.close().await.unwrap();
+            }));
+        }))
+    }
 }
 
 impl Env for TestEnv {
-    fn fetch<IN, OUT>(request: http::Request<IN>) -> TryEnvFuture<OUT>
-    where
-        IN: Serialize,
-        for<'de> OUT: Deserialize<'de> + 'static,
-    {
+    fn fetch<
+        #[cfg(not(feature = "env-future-send"))] IN: Serialize + 'static,
+        #[cfg(feature = "env-future-send")] IN: Serialize + Send + 'static,
+        #[cfg(not(feature = "env-future-send"))] OUT: for<'de> Deserialize<'de> + 'static,
+        #[cfg(feature = "env-future-send")] OUT: for<'de> Deserialize<'de> + Send + 'static,
+    >(
+        request: http::Request<IN>,
+    ) -> TryEnvFuture<OUT> {
         let request = Request::from(request);
         REQUESTS.write().unwrap().push(request.to_owned());
         FETCH_HANDLER.read().unwrap()(request)
@@ -78,8 +107,8 @@ impl Env for TestEnv {
             .boxed_env()
     }
     fn get_storage<
-        #[cfg(target_arch = "wasm32")] T: for<'de> Deserialize<'de> + 'static,
-        #[cfg(not(target_arch = "wasm32"))] T: for<'de> Deserialize<'de> + Send + 'static,
+        #[cfg(not(feature = "env-future-send"))] T: for<'de> Deserialize<'de> + 'static,
+        #[cfg(feature = "env-future-send")] T: for<'de> Deserialize<'de> + Send + 'static,
     >(
         key: &str,
     ) -> TryEnvFuture<Option<T>> {
@@ -100,10 +129,20 @@ impl Env for TestEnv {
         };
         future::ok(()).boxed_env()
     }
-    fn exec_concurrent<F: Future<Output = ()> + 'static>(future: F) {
+    fn exec_concurrent<
+        #[cfg(not(feature = "env-future-send"))] F: Future<Output = ()> + 'static,
+        #[cfg(feature = "env-future-send")] F: Future<Output = ()> + Send + 'static,
+    >(
+        future: F,
+    ) {
         tokio_current_thread::spawn(future);
     }
-    fn exec_sequential<F: Future<Output = ()> + 'static>(future: F) {
+    fn exec_sequential<
+        #[cfg(not(feature = "env-future-send"))] F: Future<Output = ()> + 'static,
+        #[cfg(feature = "env-future-send")] F: Future<Output = ()> + Send + 'static,
+    >(
+        future: F,
+    ) {
         tokio_current_thread::spawn(future);
     }
     fn now() -> DateTime<Utc> {
