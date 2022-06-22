@@ -21,4 +21,4 @@ jobs:
     - name: Lint code
       run: cargo clippy --all -- -D warnings
     - name: Test
-      run: cargo test unit_tests -- --test-threads=1
+      run: cargo test
