@@ -20,6 +20,7 @@ lazy_static! {
     pub static ref REQUESTS: RwLock<Vec<Request>> = Default::default();
     pub static ref STORAGE: RwLock<BTreeMap<String, String>> = Default::default();
     pub static ref EVENTS: RwLock<Vec<RuntimeEvent>> = Default::default();
+    pub static ref STATES: RwLock<Vec<Box<dyn Any + Send + Sync + 'static>>> = Default::default();
     pub static ref NOW: RwLock<DateTime<Utc>> = RwLock::new(Utc::now());
     pub static ref ENV_MUTEX: Arc<Mutex<()>> = Default::default();
 }
@@ -68,20 +69,23 @@ impl TestEnv {
             runnable();
         }))
     }
-    pub fn run2<M: Model<TestEnv> + Send + Sync + 'static, F: FnOnce()>(
+    pub fn run2<M: Model<TestEnv> + Clone + Send + Sync + 'static, F: FnOnce()>(
         rx: Receiver<RuntimeEvent>,
         runtime: Arc<RwLock<Runtime<TestEnv, M>>>,
         runnable: F,
     ) {
         tokio_current_thread::block_on_all(future::lazy(|_| {
-            TestEnv::exec_concurrent(rx.for_each(move |event| {
+            TestEnv::exec_concurrent(rx.for_each(enclose!((runtime) move |event| {
                 if let RuntimeEvent::NewState = event {
-                    // TODO push state
+                    let runtime = runtime.read().expect("runtime read failed");
+                    let state = runtime.model().expect("model read failed");
+                    let mut states = STATES.write().expect("states write failed");
+                    states.push(Box::new(state.to_owned()) as Box<dyn Any + Send + Sync>)
                 };
                 let mut events = EVENTS.write().expect("events write failed");
                 events.push(event);
                 future::ready(())
-            }));
+            })));
             runnable();
             TestEnv::exec_concurrent(enclose!((runtime) async move {
                 let mut runtime = runtime.write().expect("runtime read failed");
