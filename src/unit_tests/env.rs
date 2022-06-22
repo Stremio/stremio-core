@@ -69,7 +69,7 @@ impl TestEnv {
             runnable();
         }))
     }
-    pub fn run2<M: Model<TestEnv> + Clone + Send + Sync + 'static, F: FnOnce()>(
+    pub fn run_with_runtime<M: Model<TestEnv> + Clone + Send + Sync + 'static, F: FnOnce()>(
         rx: Receiver<RuntimeEvent>,
         runtime: Arc<RwLock<Runtime<TestEnv, M>>>,
         runnable: F,
