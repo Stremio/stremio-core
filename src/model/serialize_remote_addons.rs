@@ -1,5 +1,6 @@
-use crate::model::deep_links::AddonsDeepLinks;
+use crate::model::deep_links_ext::DeepLinksExt;
 use serde::Serialize;
+use stremio_core::deep_links::AddonsDeepLinks;
 use stremio_core::models::catalog_with_filters::{CatalogWithFilters, Selected};
 use stremio_core::models::common::Loadable;
 use stremio_core::models::ctx::Ctx;
@@ -65,7 +66,8 @@ pub fn serialize_remote_addons(
                     id: &selectable_catalog.request.path.id,
                     name: &selectable_catalog.catalog,
                     selected: &selectable_catalog.selected,
-                    deep_links: AddonsDeepLinks::from(&selectable_catalog.request),
+                    deep_links: AddonsDeepLinks::from(&selectable_catalog.request)
+                        .into_web_deep_links(),
                 })
                 .collect(),
             types: remote_addons
@@ -75,7 +77,8 @@ pub fn serialize_remote_addons(
                 .map(|selectable_type| model::SelectableType {
                     r#type: &selectable_type.r#type,
                     selected: &selectable_type.selected,
-                    deep_links: AddonsDeepLinks::from(&selectable_type.request),
+                    deep_links: AddonsDeepLinks::from(&selectable_type.request)
+                        .into_web_deep_links(),
                 })
                 .collect(),
         },

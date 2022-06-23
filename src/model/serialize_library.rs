@@ -1,5 +1,6 @@
-use crate::model::deep_links::{LibraryDeepLinks, LibraryItemDeepLinks};
+use crate::model::deep_links_ext::DeepLinksExt;
 use serde::Serialize;
+use stremio_core::deep_links::{LibraryDeepLinks, LibraryItemDeepLinks};
 use stremio_core::models::library_with_filters::{LibraryWithFilters, Selected, Sort};
 use stremio_core::types::resource::PosterShape;
 use wasm_bindgen::JsValue;
@@ -64,7 +65,8 @@ pub fn serialize_library<F>(library: &LibraryWithFilters<F>, root: String) -> Js
                 .map(|selectable_type| model::SelectableType {
                     r#type: &selectable_type.r#type,
                     selected: &selectable_type.selected,
-                    deep_links: LibraryDeepLinks::from((&root, &selectable_type.request)),
+                    deep_links: LibraryDeepLinks::from((&root, &selectable_type.request))
+                        .into_web_deep_links(),
                 })
                 .collect(),
             sorts: library
@@ -74,17 +76,20 @@ pub fn serialize_library<F>(library: &LibraryWithFilters<F>, root: String) -> Js
                 .map(|selectable_sort| model::SelectableSort {
                     sort: &selectable_sort.sort,
                     selected: &selectable_sort.selected,
-                    deep_links: LibraryDeepLinks::from((&root, &selectable_sort.request)),
+                    deep_links: LibraryDeepLinks::from((&root, &selectable_sort.request))
+                        .into_web_deep_links(),
                 })
                 .collect(),
             prev_page: library.selectable.prev_page.as_ref().map(|prev_page| {
                 model::SelectablePage {
-                    deep_links: LibraryDeepLinks::from((&root, &prev_page.request)),
+                    deep_links: LibraryDeepLinks::from((&root, &prev_page.request))
+                        .into_web_deep_links(),
                 }
             }),
             next_page: library.selectable.next_page.as_ref().map(|next_page| {
                 model::SelectablePage {
-                    deep_links: LibraryDeepLinks::from((&root, &next_page.request)),
+                    deep_links: LibraryDeepLinks::from((&root, &next_page.request))
+                        .into_web_deep_links(),
                 }
             }),
         },
@@ -106,7 +111,7 @@ pub fn serialize_library<F>(library: &LibraryWithFilters<F>, root: String) -> Js
                 } else {
                     0.0
                 },
-                deep_links: LibraryItemDeepLinks::from(library_item),
+                deep_links: LibraryItemDeepLinks::from(library_item).into_web_deep_links(),
             })
             .collect(),
     })

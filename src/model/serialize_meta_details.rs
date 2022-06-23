@@ -1,10 +1,11 @@
 use crate::env::WebEnv;
-use crate::model::deep_links::{MetaItemDeepLinks, StreamDeepLinks, VideoDeepLinks};
+use crate::model::deep_links_ext::DeepLinksExt;
 use either::Either;
 use itertools::Itertools;
 use serde::Serialize;
 use std::iter;
 use stremio_core::constants::META_RESOURCE_NAME;
+use stremio_core::deep_links::{MetaItemDeepLinks, StreamDeepLinks, VideoDeepLinks};
 use stremio_core::models::common::{Loadable, ResourceError, ResourceLoadable};
 use stremio_core::models::ctx::Ctx;
 use stremio_core::models::meta_details::{MetaDetails, Selected as MetaDetailsSelected};
@@ -133,7 +134,8 @@ pub fn serialize_meta_details(meta_details: &MetaDetails, ctx: &Ctx) -> JsValue 
                                     .unwrap_or_default(),
                                 progress: None, // TODO use library,
                                 scheduled: meta_item.preview.behavior_hints.has_scheduled_videos,
-                                deep_links: VideoDeepLinks::from((video, request)),
+                                deep_links: VideoDeepLinks::from((video, request))
+                                    .into_web_deep_links(),
                             })
                             .collect::<Vec<_>>(),
                         trailer_streams: meta_item
@@ -142,7 +144,7 @@ pub fn serialize_meta_details(meta_details: &MetaDetails, ctx: &Ctx) -> JsValue 
                             .iter()
                             .map(|stream| model::Stream {
                                 stream,
-                                deep_links: StreamDeepLinks::from(stream),
+                                deep_links: StreamDeepLinks::from(stream).into_web_deep_links(),
                             })
                             .collect::<Vec<_>>(),
                         in_library: ctx
@@ -151,7 +153,8 @@ pub fn serialize_meta_details(meta_details: &MetaDetails, ctx: &Ctx) -> JsValue 
                             .get(&meta_item.preview.id)
                             .map(|library_item| !library_item.removed)
                             .unwrap_or_default(),
-                        deep_links: MetaItemDeepLinks::from((meta_item, request)),
+                        deep_links: MetaItemDeepLinks::from((meta_item, request))
+                            .into_web_deep_links(),
                     }),
                     ResourceLoadable {
                         content: Some(Loadable::Loading),
@@ -192,12 +195,18 @@ pub fn serialize_meta_details(meta_details: &MetaDetails, ctx: &Ctx) -> JsValue 
                             .iter()
                             .map(|stream| model::Stream {
                                 stream,
-                                deep_links: meta_item.map_or_else(
-                                    || StreamDeepLinks::from(stream),
-                                    |meta_item| {
-                                        StreamDeepLinks::from((stream, request, &meta_item.request))
-                                    },
-                                ),
+                                deep_links: meta_item
+                                    .map_or_else(
+                                        || StreamDeepLinks::from(stream),
+                                        |meta_item| {
+                                            StreamDeepLinks::from((
+                                                stream,
+                                                request,
+                                                &meta_item.request,
+                                            ))
+                                        },
+                                    )
+                                    .into_web_deep_links(),
                             })
                             .collect::<Vec<_>>(),
                     ),

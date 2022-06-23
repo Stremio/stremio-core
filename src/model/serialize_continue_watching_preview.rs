@@ -1,5 +1,6 @@
-use crate::model::deep_links::{LibraryDeepLinks, LibraryItemDeepLinks};
+use crate::model::deep_links_ext::DeepLinksExt;
 use serde::Serialize;
+use stremio_core::deep_links::{LibraryDeepLinks, LibraryItemDeepLinks};
 use stremio_core::models::continue_watching_preview::ContinueWatchingPreview;
 use stremio_core::types::resource::PosterShape;
 use wasm_bindgen::JsValue;
@@ -48,10 +49,10 @@ pub fn serialize_continue_watching_preview(
                 } else {
                     0.0
                 },
-                deep_links: LibraryItemDeepLinks::from(library_item),
+                deep_links: LibraryItemDeepLinks::from(library_item).into_web_deep_links(),
             })
             .collect::<Vec<_>>(),
-        deep_links: LibraryDeepLinks::from(&"continuewatching".to_owned()),
+        deep_links: LibraryDeepLinks::from(&"continuewatching".to_owned()).into_web_deep_links(),
     })
     .unwrap()
 }

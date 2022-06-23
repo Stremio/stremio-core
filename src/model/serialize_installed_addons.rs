@@ -1,5 +1,6 @@
-use crate::model::deep_links::AddonsDeepLinks;
+use crate::model::deep_links_ext::DeepLinksExt;
 use serde::Serialize;
+use stremio_core::deep_links::AddonsDeepLinks;
 use stremio_core::models::installed_addons_with_filters::{
     InstalledAddonsRequest, InstalledAddonsWithFilters, Selected,
 };
@@ -54,13 +55,15 @@ pub fn serialize_installed_addons(installed_addons: &InstalledAddonsWithFilters)
                 .map(|selectable_type| model::SelectableType {
                     r#type: &selectable_type.r#type,
                     selected: &selectable_type.selected,
-                    deep_links: AddonsDeepLinks::from(&selectable_type.request),
+                    deep_links: AddonsDeepLinks::from(&selectable_type.request)
+                        .into_web_deep_links(),
                 })
                 .collect(),
             catalogs: vec![model::SelectableCatalog {
                 name: "Installed".to_owned(),
                 selected: installed_addons.selected.is_some(),
-                deep_links: AddonsDeepLinks::from(&InstalledAddonsRequest { r#type: None }),
+                deep_links: AddonsDeepLinks::from(&InstalledAddonsRequest { r#type: None })
+                    .into_web_deep_links(),
             }],
         },
         catalog: installed_addons

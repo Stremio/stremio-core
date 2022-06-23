@@ -1,5 +1,6 @@
-use crate::model::deep_links::{DiscoverDeepLinks, MetaItemDeepLinks, StreamDeepLinks};
+use crate::model::deep_links_ext::DeepLinksExt;
 use serde::Serialize;
+use stremio_core::deep_links::{DiscoverDeepLinks, MetaItemDeepLinks, StreamDeepLinks};
 use stremio_core::models::catalog_with_filters::{
     CatalogWithFilters, Selected as CatalogWithFiltersSelected,
 };
@@ -102,7 +103,8 @@ pub fn serialize_discover(discover: &CatalogWithFilters<MetaItemPreview>, ctx: &
                 .map(|selectable_type| model::SelectableType {
                     r#type: &selectable_type.r#type,
                     selected: &selectable_type.selected,
-                    deep_links: DiscoverDeepLinks::from(&selectable_type.request),
+                    deep_links: DiscoverDeepLinks::from(&selectable_type.request)
+                        .into_web_deep_links(),
                 })
                 .collect(),
             catalogs: discover
@@ -125,7 +127,8 @@ pub fn serialize_discover(discover: &CatalogWithFilters<MetaItemPreview>, ctx: &
                         },
                     },
                     selected: &selectable_catalog.selected,
-                    deep_links: DiscoverDeepLinks::from(&selectable_catalog.request),
+                    deep_links: DiscoverDeepLinks::from(&selectable_catalog.request)
+                        .into_web_deep_links(),
                 })
                 .collect(),
             extra: discover
@@ -141,7 +144,8 @@ pub fn serialize_discover(discover: &CatalogWithFilters<MetaItemPreview>, ctx: &
                         .map(|option| model::SelectableExtraOption {
                             value: &option.value,
                             selected: &option.selected,
-                            deep_links: DiscoverDeepLinks::from(&option.request),
+                            deep_links: DiscoverDeepLinks::from(&option.request)
+                                .into_web_deep_links(),
                         })
                         .collect(),
                 })
@@ -164,7 +168,8 @@ pub fn serialize_discover(discover: &CatalogWithFilters<MetaItemPreview>, ctx: &
                                     .take(1)
                                     .map(|stream| model::Stream {
                                         stream,
-                                        deep_links: StreamDeepLinks::from(stream),
+                                        deep_links: StreamDeepLinks::from(stream)
+                                            .into_web_deep_links(),
                                     })
                                     .collect::<Vec<_>>(),
                                 in_library: ctx
@@ -173,7 +178,8 @@ pub fn serialize_discover(discover: &CatalogWithFilters<MetaItemPreview>, ctx: &
                                     .get(&meta_item.id)
                                     .map(|library_item| !library_item.removed)
                                     .unwrap_or_default(),
-                                deep_links: MetaItemDeepLinks::from((meta_item, &catalog.request)),
+                                deep_links: MetaItemDeepLinks::from((meta_item, &catalog.request))
+                                    .into_web_deep_links(),
                             })
                             .collect::<Vec<_>>(),
                     ),
