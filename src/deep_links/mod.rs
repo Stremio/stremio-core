@@ -1,7 +1,9 @@
 mod error_link;
+mod query_params_encode;
 
 use crate::constants::URI_COMPONENT_ENCODE_SET;
 use crate::deep_links::error_link::ErrorLink;
+use crate::deep_links::query_params_encode::query_params_encode;
 use crate::models::installed_addons_with_filters::InstalledAddonsRequest;
 use crate::models::library_with_filters::LibraryRequest;
 use crate::types::addon::{ExtraValue, ResourceRequest};
@@ -9,8 +11,6 @@ use crate::types::library::LibraryItem;
 use crate::types::resource::{MetaItem, MetaItemPreview, Stream, StreamSource, Video};
 use percent_encoding::utf8_percent_encode;
 use serde::Serialize;
-use std::borrow::Borrow;
-use url::form_urlencoded;
 
 #[derive(Serialize)]
 #[cfg_attr(debug_assertions, derive(Debug, PartialEq))]
@@ -352,16 +352,4 @@ impl From<(&String, &LibraryRequest)> for LibraryDeepLinks {
             },
         }
     }
-}
-
-fn query_params_encode<I, K, V>(query_params: I) -> String
-where
-    I: IntoIterator,
-    I::Item: Borrow<(K, V)>,
-    K: AsRef<str>,
-    V: AsRef<str>,
-{
-    form_urlencoded::Serializer::new(String::new())
-        .extend_pairs(query_params)
-        .finish()
 }
