@@ -22,7 +22,7 @@ lazy_static! {
     pub static ref EVENTS: RwLock<Vec<RuntimeEvent>> = Default::default();
     pub static ref STATES: RwLock<Vec<Box<dyn Any + Send + Sync + 'static>>> = Default::default();
     pub static ref NOW: RwLock<DateTime<Utc>> = RwLock::new(Utc::now());
-    pub static ref ENV_MUTEX: Arc<Mutex<()>> = Default::default();
+    pub static ref ENV_MUTEX: Mutex<()> = Default::default();
 }
 
 pub type FetchHandler =
