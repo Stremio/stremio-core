@@ -163,7 +163,7 @@ pub fn serialize_discover(discover: &CatalogWithFilters<MetaItemPreview>, ctx: &
                             .iter()
                             .filter_map(|page| page.content.as_ref())
                             .filter_map(|page_content| page_content.ready())
-                            .map(|meta_items| {
+                            .flat_map(|meta_items| {
                                 meta_items.iter().map(|meta_item| model::MetaItemPreview {
                                     meta_item,
                                     trailer_streams: meta_item
@@ -189,7 +189,6 @@ pub fn serialize_discover(discover: &CatalogWithFilters<MetaItemPreview>, ctx: &
                                     .into_web_deep_links(),
                                 })
                             })
-                            .flatten()
                             .collect::<Vec<_>>(),
                     ),
                     Some(Loadable::Loading) | None => Loadable::Loading,
