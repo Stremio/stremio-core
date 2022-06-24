@@ -61,6 +61,7 @@ impl TestEnv {
         *REQUESTS.write().unwrap() = vec![];
         *STORAGE.write().unwrap() = BTreeMap::new();
         *EVENTS.write().unwrap() = vec![];
+        *STATES.write().unwrap() = vec![];
         *NOW.write().unwrap() = Utc::now();
         env_mutex
     }
