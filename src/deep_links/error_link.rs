@@ -23,7 +23,7 @@ mod tests {
     use super::ErrorLink;
 
     #[test]
-    fn load_action() {
+    fn error_link() {
         let link = ErrorLink::from(anyhow::Error::msg("message"));
         assert_eq!(
             link,
