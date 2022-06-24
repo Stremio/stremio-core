@@ -12,9 +12,9 @@ impl From<anyhow::Error> for ErrorLink {
     }
 }
 
-impl Into<String> for ErrorLink {
-    fn into(self) -> String {
-        self.0
+impl From<ErrorLink> for String {
+    fn from(error_link: ErrorLink) -> String {
+        error_link.0
     }
 }
 
