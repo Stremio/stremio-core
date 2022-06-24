@@ -21,4 +21,4 @@ jobs:
     - name: Lint code
       run: cargo clippy --all -- -D warnings
     - name: Test
-      run: cargo test
+      run: cargo test --lib
