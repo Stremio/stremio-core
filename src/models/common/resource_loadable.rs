@@ -2,7 +2,6 @@ use crate::models::common::{eq_update, Loadable};
 use crate::runtime::msg::{Internal, Msg};
 use crate::runtime::{EffectFuture, Effects, Env, EnvError, EnvFutureExt};
 use crate::types::addon::{AggrRequest, Descriptor, ResourceRequest, ResourceResponse};
-use crate::types::OptionExt;
 use enclose::enclose;
 use futures::FutureExt;
 use serde::Serialize;
@@ -88,7 +87,7 @@ where
         ResourceAction::ResourceRequestResult {
             request, result, ..
         } if resource.request == *request
-            && resource.content.is_some_and(|content| content.is_loading()) =>
+            && matches!(resource.content, Some(Loadable::Loading)) =>
         {
             resource.content = Some(resource_content_from_result(result));
             Effects::none()
@@ -108,7 +107,7 @@ where
     match action {
         ResourceAction::ResourceRequestResult { request, result }
             if resource.request == *request
-                && resource.content.is_some_and(|content| content.is_loading()) =>
+                && matches!(resource.content, Some(Loadable::Loading)) =>
         {
             resource.content = Some(resource_vector_content_from_result(result));
             Effects::none()
@@ -187,8 +186,7 @@ where
             request, result, ..
         } => {
             match resources.iter_mut().find(|resource| {
-                resource.request == *request
-                    && resource.content.is_some_and(|content| content.is_loading())
+                resource.request == *request && matches!(resource.content, Some(Loadable::Loading))
             }) {
                 Some(resource) => {
                     resource.content = Some(resource_content_from_result(result));
@@ -212,8 +210,7 @@ where
     match action {
         ResourcesAction::ResourceRequestResult { request, result } => {
             match resources.iter_mut().find(|resource| {
-                resource.request == *request
-                    && resource.content.is_some_and(|content| content.is_loading())
+                resource.request == *request && matches!(resource.content, Some(Loadable::Loading))
             }) {
                 Some(resource) => {
                     resource.content = Some(resource_vector_content_from_result(result));
