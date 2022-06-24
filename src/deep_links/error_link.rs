@@ -1,27 +1,33 @@
-use crate::constants::URI_COMPONENT_ENCODE_SET;
-use lazy_static::lazy_static;
-use percent_encoding::utf8_percent_encode;
-use url::Url;
+use crate::deep_links::query_params_encode::query_params_encode;
 
-lazy_static! {
-    static ref BASE: Url = Url::parse("stremio:///error").expect("ErrorLink BASE parse failed");
-}
-
+#[cfg_attr(debug_assertions, derive(Debug, PartialEq))]
 pub struct ErrorLink(String);
 
 impl From<anyhow::Error> for ErrorLink {
     fn from(error: anyhow::Error) -> Self {
-        let query = utf8_percent_encode(
-            &format!("?message={}", error.to_string()),
-            URI_COMPONENT_ENCODE_SET,
-        )
-        .to_string();
-        Self(BASE.join(&query).unwrap().as_str().to_owned())
+        Self(format!(
+            "stremio:///error?{}",
+            query_params_encode(&[("message", error.to_string())]),
+        ))
     }
 }
 
 impl Into<String> for ErrorLink {
     fn into(self) -> String {
         self.0
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::ErrorLink;
+
+    #[test]
+    fn load_action() {
+        let link = ErrorLink::from(anyhow::Error::msg("message"));
+        assert_eq!(
+            link,
+            ErrorLink("stremio:///error?message=message".to_owned())
+        );
     }
 }
