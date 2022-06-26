@@ -49,3 +49,25 @@ where
         V::serialize_as(&source, serializer)
     }
 }
+
+#[derive(Copy, Clone, Debug, Default)]
+pub struct NumberAsString;
+
+impl<'de> DeserializeAs<'de, String> for NumberAsString {
+    fn deserialize_as<D>(deserializer: D) -> Result<String, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        #[derive(Deserialize)]
+        #[serde(untagged)]
+        enum Helper {
+            Number(f64),
+            String(String),
+        }
+
+        Ok(match Helper::deserialize(deserializer)? {
+            Helper::Number(value) => value.to_string(),
+            Helper::String(value) => value,
+        })
+    }
+}

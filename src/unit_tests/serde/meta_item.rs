@@ -3,6 +3,7 @@ use crate::unit_tests::serde::default_tokens_ext::DefaultTokens;
 use chrono::prelude::TimeZone;
 use chrono::Utc;
 use serde_test::{assert_de_tokens, assert_tokens, Token};
+use url::Url;
 
 #[test]
 fn meta_item() {
@@ -13,9 +14,9 @@ fn meta_item() {
                     id: "id".to_owned(),
                     r#type: "type".to_owned(),
                     name: "name".to_owned(),
-                    poster: Some("poster".to_owned()),
-                    background: Some("background".to_owned()),
-                    logo: Some("logo".to_owned()),
+                    poster: Some(Url::parse("http://poster/").unwrap()),
+                    background: Some(Url::parse("http://background/").unwrap()),
+                    logo: Some(Url::parse("http://logo/").unwrap()),
                     description: Some("description".to_owned()),
                     release_info: Some("release_info".to_owned()),
                     runtime: Some("runtime".to_owned()),
@@ -59,13 +60,13 @@ fn meta_item() {
                 Token::Str("name"),
                 Token::Str("poster"),
                 Token::Some,
-                Token::Str("poster"),
+                Token::Str("http://poster/"),
                 Token::Str("background"),
                 Token::Some,
-                Token::Str("background"),
+                Token::Str("http://background/"),
                 Token::Str("logo"),
                 Token::Some,
-                Token::Str("logo"),
+                Token::Str("http://logo/"),
                 Token::Str("description"),
                 Token::Some,
                 Token::Str("description"),
@@ -171,6 +172,51 @@ fn meta_item() {
             Token::Str("id"),
             Token::Str("type"),
             Token::Str("type"),
+            Token::StructEnd,
+        ],
+    );
+}
+
+#[test]
+fn meta_item_de_urls_none_when_empty() {
+    assert_de_tokens(
+        &MetaItem {
+            preview: MetaItemPreview {
+                id: "id".to_owned(),
+                r#type: "type".to_owned(),
+                name: "".to_owned(),
+                poster: None,
+                background: None,
+                logo: None,
+                description: None,
+                release_info: None,
+                runtime: None,
+                released: None,
+                poster_shape: PosterShape::default(),
+                links: vec![],
+                trailer_streams: vec![],
+                behavior_hints: MetaItemBehaviorHints::default(),
+            },
+            videos: vec![],
+        },
+        &[
+            Token::Struct {
+                name: "MetaItem",
+                len: 2,
+            },
+            Token::Str("id"),
+            Token::Str("id"),
+            Token::Str("type"),
+            Token::Str("type"),
+            Token::Str("poster"),
+            Token::Some,
+            Token::Str(""),
+            Token::Str("background"),
+            Token::Some,
+            Token::Str(""),
+            Token::Str("logo"),
+            Token::Some,
+            Token::Str(""),
             Token::StructEnd,
         ],
     );

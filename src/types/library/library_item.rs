@@ -4,6 +4,7 @@ use chrono::{DateTime, Duration, Utc};
 use serde::{Deserialize, Serialize};
 use serde_with::{serde_as, DefaultOnNull, NoneAsEmptyString};
 use std::marker::PhantomData;
+use url::Url;
 
 #[serde_as]
 #[derive(Clone, PartialEq, Serialize, Deserialize)]
@@ -16,7 +17,7 @@ pub struct LibraryItem {
     pub r#type: String,
     #[serde(default)]
     #[serde_as(deserialize_as = "DefaultOnNull<NoneAsEmptyString>")]
-    pub poster: Option<String>,
+    pub poster: Option<Url>,
     #[serde(default)]
     pub poster_shape: PosterShape,
     pub removed: bool,

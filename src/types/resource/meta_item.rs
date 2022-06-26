@@ -5,6 +5,7 @@ use crate::constants::{
 use crate::deep_links::DiscoverDeepLinks;
 use crate::types::addon::{ExtraValue, ResourcePath, ResourceRequest};
 use crate::types::resource::{Stream, StreamSource};
+use crate::types::NumberAsString;
 use chrono::{DateTime, Utc};
 use derivative::Derivative;
 use itertools::Itertools;
@@ -12,7 +13,7 @@ use percent_encoding::utf8_percent_encode;
 use serde::de::Deserializer;
 use serde::{Deserialize, Serialize};
 use serde_with::formats::PreferMany;
-use serde_with::{serde_as, OneOrMany};
+use serde_with::{serde_as, DefaultOnNull, NoneAsEmptyString, OneOrMany};
 use std::borrow::Cow;
 use std::collections::HashMap;
 use url::Url;
@@ -25,6 +26,7 @@ struct Trailer {
     r#type: String,
 }
 
+#[serde_as]
 #[derive(Clone, PartialEq, Deserialize)]
 #[cfg_attr(debug_assertions, derive(Debug))]
 #[cfg_attr(test, derive(Default))]
@@ -34,20 +36,30 @@ struct MetaItemPreviewLegacy {
     r#type: String,
     #[serde(default)]
     name: String,
-    poster: Option<String>,
-    background: Option<String>,
-    logo: Option<String>,
+    #[serde(default)]
+    #[serde_as(deserialize_as = "DefaultOnNull<NoneAsEmptyString>")]
+    poster: Option<Url>,
+    #[serde(default)]
+    #[serde_as(deserialize_as = "DefaultOnNull<NoneAsEmptyString>")]
+    background: Option<Url>,
+    #[serde(default)]
+    #[serde_as(deserialize_as = "DefaultOnNull<NoneAsEmptyString>")]
+    logo: Option<Url>,
     description: Option<String>,
     release_info: Option<String>,
     runtime: Option<String>,
     released: Option<DateTime<Utc>>,
     #[serde(default)]
     poster_shape: PosterShape,
+    #[serde(default)]
+    #[serde_as(deserialize_as = "Option<NumberAsString>")]
     imdb_rating: Option<String>,
     #[serde(default)]
+    #[serde_as(deserialize_as = "DefaultOnNull")]
     genres: Vec<String>,
     links: Option<Vec<Link>>,
     #[serde(default)]
+    #[serde_as(deserialize_as = "DefaultOnNull")]
     trailers: Vec<Trailer>,
     trailer_streams: Option<Vec<Stream>>,
     #[serde(default)]
@@ -62,9 +74,9 @@ pub struct MetaItemPreview {
     pub id: String,
     pub r#type: String,
     pub name: String,
-    pub poster: Option<String>,
-    pub background: Option<String>,
-    pub logo: Option<String>,
+    pub poster: Option<Url>,
+    pub background: Option<Url>,
+    pub logo: Option<Url>,
     pub description: Option<String>,
     pub release_info: Option<String>,
     pub runtime: Option<String>,

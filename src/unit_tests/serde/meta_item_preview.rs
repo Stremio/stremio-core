@@ -9,16 +9,16 @@ use serde_test::{assert_de_tokens, assert_ser_tokens, Token};
 use url::Url;
 
 #[test]
-fn meta_item_preview() {
+fn meta_item_preview_serizlize() {
     assert_ser_tokens(
         &vec![
             MetaItemPreview {
                 id: "id".to_owned(),
                 r#type: "type".to_owned(),
                 name: "name".to_owned(),
-                poster: Some("poster".to_owned()),
-                background: Some("background".to_owned()),
-                logo: Some("logo".to_owned()),
+                poster: Some(Url::parse("http://poster/").unwrap()),
+                background: Some(Url::parse("http://background/").unwrap()),
+                logo: Some(Url::parse("http://logo/").unwrap()),
                 description: Some("description".to_owned()),
                 release_info: Some("release_info".to_owned()),
                 runtime: Some("runtime".to_owned()),
@@ -60,13 +60,13 @@ fn meta_item_preview() {
                 Token::Str("name"),
                 Token::Str("poster"),
                 Token::Some,
-                Token::Str("poster"),
+                Token::Str("http://poster/"),
                 Token::Str("background"),
                 Token::Some,
-                Token::Str("background"),
+                Token::Str("http://background/"),
                 Token::Str("logo"),
                 Token::Some,
-                Token::Str("logo"),
+                Token::Str("http://logo/"),
                 Token::Str("description"),
                 Token::Some,
                 Token::Str("description"),
@@ -135,15 +135,19 @@ fn meta_item_preview() {
         ]
         .concat(),
     );
+}
+
+#[test]
+fn meta_item_preview_de() {
     assert_de_tokens(
         &vec![
             MetaItemPreview {
                 id: "id".to_owned(),
                 r#type: "type".to_owned(),
                 name: "name".to_owned(),
-                poster: Some("poster".to_owned()),
-                background: Some("background".to_owned()),
-                logo: Some("logo".to_owned()),
+                poster: Some(Url::parse("http://poster/").unwrap()),
+                background: Some(Url::parse("http://background/").unwrap()),
+                logo: Some(Url::parse("http://logo/").unwrap()),
                 description: Some("description".to_owned()),
                 release_info: Some("release_info".to_owned()),
                 runtime: Some("runtime".to_owned()),
@@ -185,13 +189,13 @@ fn meta_item_preview() {
                 Token::Str("name"),
                 Token::Str("poster"),
                 Token::Some,
-                Token::Str("poster"),
+                Token::Str("http://poster/"),
                 Token::Str("background"),
                 Token::Some,
-                Token::Str("background"),
+                Token::Str("http://background/"),
                 Token::Str("logo"),
                 Token::Some,
-                Token::Str("logo"),
+                Token::Str("http://logo/"),
                 Token::Str("description"),
                 Token::Some,
                 Token::Str("description"),
@@ -264,6 +268,10 @@ fn meta_item_preview() {
         ]
         .concat(),
     );
+}
+
+#[test]
+fn meta_item_preview_de_minimal() {
     assert_de_tokens(
         &MetaItemPreview {
             id: "id".to_owned(),
@@ -293,6 +301,50 @@ fn meta_item_preview() {
             Token::StructEnd,
         ],
     );
+}
+
+#[test]
+fn meta_item_preview_de_numeric_imdb() {
+    assert_de_tokens(
+        &MetaItemPreview {
+            id: "id".to_owned(),
+            r#type: "type".to_owned(),
+            name: "".to_owned(),
+            poster: None,
+            background: None,
+            logo: None,
+            description: None,
+            release_info: None,
+            runtime: None,
+            released: None,
+            poster_shape: PosterShape::default(),
+            links: vec![Link {
+                name: "5.1".to_owned(),
+                category: "imdb".to_owned(),
+                url: Url::parse("https://imdb.com/title/id").unwrap(),
+            }],
+            trailer_streams: vec![],
+            behavior_hints: MetaItemBehaviorHints::default(),
+        },
+        &[
+            Token::Struct {
+                name: "MetaItemPreviewLegacy",
+                len: 2,
+            },
+            Token::Str("id"),
+            Token::Str("id"),
+            Token::Str("type"),
+            Token::Str("type"),
+            Token::Str("imdbRating"),
+            Token::Some,
+            Token::F64(5.1),
+            Token::StructEnd,
+        ],
+    );
+}
+
+#[test]
+fn meta_item_preview_de_legacy_links() {
     assert_de_tokens(
         &MetaItemPreview {
             id: "id".to_owned(),
@@ -342,10 +394,12 @@ fn meta_item_preview() {
             Token::Some,
             Token::Str("5.1"),
             Token::Str("genres"),
+            Token::Some,
             Token::Seq { len: Some(1) },
             Token::Str("Action"),
             Token::SeqEnd,
             Token::Str("trailers"),
+            Token::Some,
             Token::Seq { len: Some(1) },
             Token::Map{ len: None },
             Token::Str("source"),
@@ -363,6 +417,10 @@ fn meta_item_preview() {
             Token::StructEnd,
         ],
     );
+}
+
+#[test]
+fn meta_item_preview_de_ignore_legacy_when_links() {
     assert_de_tokens(
         &MetaItemPreview {
             id: "id".to_owned(),
@@ -411,10 +469,12 @@ fn meta_item_preview() {
             Token::Some,
             Token::Str("10"),
             Token::Str("genres"),
+            Token::Some,
             Token::Seq { len: Some(1) },
             Token::Str("Drama"),
             Token::SeqEnd,
             Token::Str("trailers"),
+            Token::Some,
             Token::Seq { len: Some(1) },
             Token::Map{ len: None },
             Token::Str("source"),
