@@ -5,6 +5,7 @@ use crate::constants::{
 use crate::deep_links::DiscoverDeepLinks;
 use crate::types::addon::{ExtraValue, ResourcePath, ResourceRequest};
 use crate::types::resource::{Stream, StreamSource};
+use crate::types::NumberAsString;
 use chrono::{DateTime, Utc};
 use derivative::Derivative;
 use itertools::Itertools;
@@ -50,10 +51,8 @@ struct MetaItemPreviewLegacy {
     released: Option<DateTime<Utc>>,
     #[serde(default)]
     poster_shape: PosterShape,
-    #[serde(
-        default,
-        deserialize_with = "deserialize_number_or_text_to_some_string"
-    )]
+    #[serde(default)]
+    #[serde_as(deserialize_as = "Option<NumberAsString>")]
     imdb_rating: Option<String>,
     #[serde(default)]
     #[serde_as(deserialize_as = "DefaultOnNull")]
@@ -285,23 +284,4 @@ where
     });
 
     Ok(videos)
-}
-
-#[derive(Deserialize)]
-#[serde(untagged)]
-enum NumberOrText {
-    Number(f64),
-    Text(String),
-}
-fn deserialize_number_or_text_to_some_string<'de, D>(
-    deserializer: D,
-) -> Result<Option<String>, D::Error>
-where
-    D: Deserializer<'de>,
-{
-    Option::<NumberOrText>::deserialize(deserializer).map(|nos| match nos {
-        Some(NumberOrText::Number(n)) => Some(format!("{}", n)),
-        Some(NumberOrText::Text(t)) => Some(t),
-        None => None,
-    })
 }
