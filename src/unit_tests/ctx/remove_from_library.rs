@@ -55,7 +55,7 @@ fn actionctx_removefromlibrary() {
         mtime: Utc.ymd(2020, 1, 2).and_hms_milli(0, 0, 0, 0),
         ..library_item.to_owned()
     };
-    TestEnv::reset();
+    let _env_mutex = TestEnv::reset();
     *FETCH_HANDLER.write().unwrap() = Box::new(fetch_handler);
     *NOW.write().unwrap() = Utc.ymd(2020, 1, 2).and_hms_milli(0, 0, 0, 0);
     STORAGE.write().unwrap().insert(
@@ -164,7 +164,7 @@ fn actionctx_removefromlibrary_not_added() {
         poster_shape: Default::default(),
         behavior_hints: Default::default(),
     };
-    TestEnv::reset();
+    let _env_mutex = TestEnv::reset();
     STORAGE.write().unwrap().insert(
         LIBRARY_RECENT_STORAGE_KEY.to_owned(),
         serde_json::to_string(&LibraryBucket::new(None, vec![library_item.to_owned()])).unwrap(),

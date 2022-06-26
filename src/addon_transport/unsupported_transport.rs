@@ -13,8 +13,8 @@ impl UnsupportedTransport {
         UnsupportedTransport { transport_url }
     }
     fn result<
-        #[cfg(target_arch = "wasm32")] T: Sized + 'static,
-        #[cfg(not(target_arch = "wasm32"))] T: Sized + Send + 'static,
+        #[cfg(not(feature = "env-future-send"))] T: Sized + 'static,
+        #[cfg(feature = "env-future-send")] T: Sized + Send + 'static,
     >(
         &self,
     ) -> TryEnvFuture<T> {

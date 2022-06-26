@@ -8,6 +8,7 @@ use url::Url;
 // Those messages are meant to be dispatched by the stremio-core crate and hanled by the users of the stremio-core crate and by the stremio-core crate itself
 //
 #[derive(Clone, Serialize)]
+#[cfg_attr(debug_assertions, derive(Debug, PartialEq))]
 #[serde(tag = "event", content = "args")]
 pub enum Event {
     ProfilePushedToStorage { uid: UID },

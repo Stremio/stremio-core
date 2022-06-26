@@ -1,11 +1,15 @@
+use crate::constants::SKIP_EXTRA_PROP;
 use crate::types::addon::{ExtraValue, ResourcePath};
+use crate::types::{UniqueVec, UniqueVecAdapter};
 use derivative::Derivative;
 use derive_more::Deref;
 use either::Either;
 use semver::Version;
-use serde::{Deserialize, Serialize};
+use serde::{Deserialize, Deserializer, Serialize};
+use serde_with::{serde_as, DefaultOnNull, DeserializeAs};
 use std::borrow::Cow;
 
+#[serde_as]
 #[derive(Clone, PartialEq, Serialize, Deserialize)]
 #[cfg_attr(debug_assertions, derive(Debug))]
 #[cfg_attr(test, derive(Derivative))]
@@ -24,8 +28,10 @@ pub struct Manifest {
     pub resources: Vec<ManifestResource>,
     pub id_prefixes: Option<Vec<String>>,
     #[serde(default)]
+    #[serde_as(deserialize_as = "UniqueVec<Vec<_>, ManifestCatalogUniqueVecAdapter>")]
     pub catalogs: Vec<ManifestCatalog>,
     #[serde(default)]
+    #[serde_as(deserialize_as = "UniqueVec<Vec<_>, ManifestCatalogUniqueVecAdapter>")]
     pub addon_catalogs: Vec<ManifestCatalog>,
     #[serde(default)]
     pub behavior_hints: ManifestBehaviorHints,
@@ -144,19 +150,26 @@ impl ManifestCatalog {
             .iter()
             .filter(|extra| extra.is_required)
             .map(|extra| {
-                extra
-                    .options
-                    .as_ref()
-                    .and_then(|options| options.first())
-                    .map(|first_option| ExtraValue {
-                        name: extra.name.to_owned(),
-                        value: first_option.to_owned(),
-                    })
+                extra.options.first().map(|first_option| ExtraValue {
+                    name: extra.name.to_owned(),
+                    value: first_option.to_owned(),
+                })
             })
             .collect::<Option<Vec<_>>>()
     }
 }
 
+struct ManifestCatalogUniqueVecAdapter;
+
+impl UniqueVecAdapter for ManifestCatalogUniqueVecAdapter {
+    type Input = ManifestCatalog;
+    type Output = (String, String);
+    fn hash(catalog: &Self::Input) -> Self::Output {
+        (catalog.id.to_owned(), catalog.r#type.to_owned())
+    }
+}
+
+#[serde_as]
 #[derive(Derivative, Clone, PartialEq, Serialize, Deserialize)]
 #[derivative(Default)]
 #[cfg_attr(debug_assertions, derive(Debug))]
@@ -165,12 +178,17 @@ pub enum ManifestExtra {
     #[derivative(Default)]
     Full {
         #[serde(rename = "extra")]
+        #[serde_as(
+            deserialize_as = "UniqueVec<Vec<ExtraPropValid>, ExtraPropFullUniqueVecAdapter>"
+        )]
         props: Vec<ExtraProp>,
     },
     Short {
         #[serde(default, rename = "extraRequired")]
+        #[serde_as(deserialize_as = "UniqueVec<Vec<_>, ExtraPropShortUniqueVecAdapter>")]
         required: Vec<String>,
         #[serde(default, rename = "extraSupported")]
+        #[serde_as(deserialize_as = "UniqueVec<Vec<_>, ExtraPropShortUniqueVecAdapter>")]
         supported: Vec<String>,
     },
 }
@@ -186,23 +204,61 @@ impl ManifestExtra {
                 Cow::Owned(ExtraProp {
                     name: name.to_owned(),
                     is_required: required.contains(name),
-                    ..Default::default()
+                    options: vec![],
+                    options_limit: OptionsLimit::default(),
                 })
             })),
         }
     }
 }
 
-#[derive(Default, Clone, PartialEq, Serialize, Deserialize)]
+#[serde_as]
+#[derive(Clone, PartialEq, Serialize, Deserialize)]
 #[cfg_attr(debug_assertions, derive(Debug))]
 #[serde(rename_all = "camelCase")]
 pub struct ExtraProp {
     pub name: String,
     #[serde(default)]
     pub is_required: bool,
-    pub options: Option<Vec<String>>,
+    #[serde(default)]
+    #[serde_as(deserialize_as = "DefaultOnNull")]
+    pub options: Vec<String>,
     #[serde(default)]
     pub options_limit: OptionsLimit,
+}
+
+struct ExtraPropFullUniqueVecAdapter;
+
+impl UniqueVecAdapter for ExtraPropFullUniqueVecAdapter {
+    type Input = ExtraProp;
+    type Output = String;
+    fn hash(extra_prop: &Self::Input) -> Self::Output {
+        extra_prop.name.to_owned()
+    }
+}
+
+struct ExtraPropShortUniqueVecAdapter;
+
+impl UniqueVecAdapter for ExtraPropShortUniqueVecAdapter {
+    type Input = String;
+    type Output = String;
+    fn hash(name: &Self::Input) -> Self::Output {
+        name.to_owned()
+    }
+}
+
+struct ExtraPropValid;
+
+impl<'de> DeserializeAs<'de, ExtraProp> for ExtraPropValid {
+    fn deserialize_as<D>(deserializer: D) -> Result<ExtraProp, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        Ok(match ExtraProp::deserialize(deserializer)? {
+            ExtraProp { name, .. } if name == SKIP_EXTRA_PROP.name => SKIP_EXTRA_PROP.to_owned(),
+            extra_prop => extra_prop,
+        })
+    }
 }
 
 #[derive(Clone, Deref, PartialEq, Serialize, Deserialize)]

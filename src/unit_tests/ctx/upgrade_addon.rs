@@ -54,7 +54,7 @@ fn actionctx_installaddon_upgrade() {
         transport_url: Url::parse("https://transport_url2").unwrap(),
         flags: Default::default(),
     };
-    TestEnv::reset();
+    let _env_mutex = TestEnv::reset();
     let (runtime, _rx) = Runtime::<TestEnv, _>::new(
         TestModel {
             ctx: Ctx {

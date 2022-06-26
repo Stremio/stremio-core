@@ -1,6 +1,7 @@
 mod env;
 use env::*;
 
+mod catalog_with_filters;
 mod ctx;
 mod serde;
 

@@ -34,6 +34,12 @@ pub enum ActionCtx {
 
 #[derive(Clone, Deserialize)]
 #[serde(tag = "action", content = "args")]
+pub enum ActionCatalogWithFilters {
+    LoadNextPage,
+}
+
+#[derive(Clone, Deserialize)]
+#[serde(tag = "action", content = "args")]
 pub enum ActionCatalogsWithExtra {
     LoadRange(Range<usize>),
 }
@@ -86,6 +92,7 @@ pub enum ActionLoad {
 pub enum Action {
     Ctx(ActionCtx),
     Link(ActionLink),
+    CatalogWithFilters(ActionCatalogWithFilters),
     CatalogsWithExtra(ActionCatalogsWithExtra),
     MetaDetails(ActionMetaDetails),
     StreamingServer(ActionStreamingServer),

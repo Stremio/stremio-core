@@ -12,10 +12,14 @@ pub struct ExtraValue {
 }
 
 pub trait ExtraExt {
+    fn remove_all(self, prop: &ExtraProp) -> Self;
     fn extend_one(self, prop: &ExtraProp, value: Option<String>) -> Self;
 }
 
 impl ExtraExt for Vec<ExtraValue> {
+    fn remove_all(self, prop: &ExtraProp) -> Self {
+        self.into_iter().filter(|ev| ev.name != prop.name).collect()
+    }
     fn extend_one(self, prop: &ExtraProp, value: Option<String>) -> Self {
         let (extra, other_extra) = self
             .into_iter()
@@ -29,13 +33,14 @@ impl ExtraExt for Vec<ExtraValue> {
                 if extra.iter().any(|ev| ev.value == value) {
                     extra.into_iter().filter(|ev| ev.value != value).collect()
                 } else {
-                    extra
-                        .into_iter()
-                        .chain(vec![ExtraValue {
-                            name: prop.name.to_owned(),
-                            value,
-                        }])
-                        .collect()
+                    vec![ExtraValue {
+                        name: prop.name.to_owned(),
+                        value,
+                    }]
+                    .into_iter()
+                    .chain(extra)
+                    .take(*prop.options_limit)
+                    .collect()
                 }
             }
             None if !prop.is_required => vec![],

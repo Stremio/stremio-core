@@ -41,7 +41,7 @@ fn actionctx_installaddon_install() {
         transport_url: Url::parse("https://transport_url").unwrap(),
         flags: Default::default(),
     };
-    TestEnv::reset();
+    let _env_mutex = TestEnv::reset();
     let (runtime, _rx) = Runtime::<TestEnv, _>::new(
         TestModel {
             ctx: Ctx {
@@ -123,7 +123,7 @@ fn actionctx_installaddon_install_with_user() {
         transport_url: Url::parse("https://transport_url").unwrap(),
         flags: Default::default(),
     };
-    TestEnv::reset();
+    let _env_mutex = TestEnv::reset();
     *FETCH_HANDLER.write().unwrap() = Box::new(fetch_handler);
     let (runtime, _rx) = Runtime::<TestEnv, _>::new(
         TestModel {
@@ -238,7 +238,7 @@ fn actionctx_installaddon_update() {
         transport_url: Url::parse("https://transport_url2").unwrap(),
         flags: Default::default(),
     };
-    TestEnv::reset();
+    let _env_mutex = TestEnv::reset();
     let (runtime, _rx) = Runtime::<TestEnv, _>::new(
         TestModel {
             ctx: Ctx {
@@ -331,7 +331,7 @@ fn actionctx_installaddon_already_installed() {
         addons: vec![addon.to_owned()],
         ..Default::default()
     };
-    TestEnv::reset();
+    let _env_mutex = TestEnv::reset();
     STORAGE.write().unwrap().insert(
         PROFILE_STORAGE_KEY.to_owned(),
         serde_json::to_string(&profile).unwrap(),

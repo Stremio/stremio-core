@@ -19,7 +19,7 @@ fn actionctx_pushaddonstoapi() {
     struct TestModel {
         ctx: Ctx,
     }
-    TestEnv::reset();
+    let _env_mutex = TestEnv::reset();
     let (runtime, _rx) = Runtime::<TestEnv, _>::new(
         TestModel {
             ctx: Ctx {
@@ -85,7 +85,7 @@ fn actionctx_pushaddonstoapi_with_user() {
             _ => default_fetch_handler(request),
         }
     }
-    TestEnv::reset();
+    let _env_mutex = TestEnv::reset();
     *FETCH_HANDLER.write().unwrap() = Box::new(fetch_handler);
     let (runtime, _rx) = Runtime::<TestEnv, _>::new(
         TestModel {

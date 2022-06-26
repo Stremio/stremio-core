@@ -18,7 +18,7 @@ fn actionctx_updatesettings() {
         subtitles_size: 150,
         ..Settings::default()
     };
-    TestEnv::reset();
+    let _env_mutex = TestEnv::reset();
     let (runtime, _rx) =
         Runtime::<TestEnv, _>::new(TestModel::default(), Effects::none().unchanged(), 1000);
     TestEnv::run(|| {
@@ -64,7 +64,7 @@ fn actionctx_updatesettings_not_changed() {
         settings: settings.to_owned(),
         ..Default::default()
     };
-    TestEnv::reset();
+    let _env_mutex = TestEnv::reset();
     STORAGE.write().unwrap().insert(
         PROFILE_STORAGE_KEY.to_owned(),
         serde_json::to_string(&profile).unwrap(),

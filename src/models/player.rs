@@ -40,12 +40,28 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
             Msg::Action(Action::Load(ActionLoad::Player(selected))) => {
                 let selected_effects = eq_update(&mut self.selected, Some(selected.to_owned()));
                 let meta_item_effects = match &selected.meta_request {
-                    Some(meta_request) => resource_update::<E, _>(
-                        &mut self.meta_item,
-                        ResourceAction::ResourceRequested {
-                            request: meta_request,
-                        },
-                    ),
+                    Some(meta_request) => match &mut self.meta_item {
+                        Some(meta_item) => resource_update::<E, _>(
+                            meta_item,
+                            ResourceAction::ResourceRequested {
+                                request: meta_request,
+                            },
+                        ),
+                        _ => {
+                            let mut meta_item = ResourceLoadable {
+                                request: meta_request.to_owned(),
+                                content: None,
+                            };
+                            let meta_item_effects = resource_update::<E, _>(
+                                &mut meta_item,
+                                ResourceAction::ResourceRequested {
+                                    request: meta_request,
+                                },
+                            );
+                            self.meta_item = Some(meta_item);
+                            meta_item_effects
+                        }
+                    },
                     _ => eq_update(&mut self.meta_item, None),
                 };
                 let subtitles_effects = match &selected.subtitles_path {
@@ -156,21 +172,16 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                 _ => Effects::none().unchanged(),
             },
             Msg::Internal(Internal::ResourceRequestResult(request, result)) => {
-                let meta_item_effects = resource_update::<E, _>(
-                    &mut self.meta_item,
-                    ResourceAction::ResourceRequestResult {
-                        request,
-                        result,
-                        limit: &None,
-                    },
-                );
+                let meta_item_effects = match &mut self.meta_item {
+                    Some(meta_item) => resource_update::<E, _>(
+                        meta_item,
+                        ResourceAction::ResourceRequestResult { request, result },
+                    ),
+                    _ => Effects::none().unchanged(),
+                };
                 let subtitles_effects = resources_update_with_vector_content::<E, _>(
                     &mut self.subtitles,
-                    ResourcesAction::ResourceRequestResult {
-                        request,
-                        result,
-                        limit: &None,
-                    },
+                    ResourcesAction::ResourceRequestResult { request, result },
                 );
                 let next_video_effects = next_video_update(
                     &mut self.next_video,

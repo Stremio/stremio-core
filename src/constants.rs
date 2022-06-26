@@ -1,4 +1,4 @@
-use crate::types::addon::Descriptor;
+use crate::types::addon::{Descriptor, ExtraProp, OptionsLimit};
 use lazy_static::lazy_static;
 use percent_encoding::{AsciiSet, NON_ALPHANUMERIC};
 use std::collections::HashMap;
@@ -9,7 +9,6 @@ pub const PROFILE_STORAGE_KEY: &str = "profile";
 pub const LIBRARY_STORAGE_KEY: &str = "library";
 pub const LIBRARY_RECENT_STORAGE_KEY: &str = "library_recent";
 pub const LIBRARY_COLLECTION_NAME: &str = "libraryItem";
-pub const SKIP_EXTRA_NAME: &str = "skip";
 pub const SEARCH_EXTRA_NAME: &str = "search";
 pub const META_RESOURCE_NAME: &str = "meta";
 pub const STREAM_RESOURCE_NAME: &str = "stream";
@@ -50,6 +49,12 @@ lazy_static! {
     pub static ref OFFICIAL_ADDONS: Vec<Descriptor> =
         serde_json::from_slice(stremio_official_addons::ADDONS)
             .expect("OFFICIAL_ADDONS parse failed");
+    pub static ref SKIP_EXTRA_PROP: ExtraProp = ExtraProp {
+        name: "skip".to_owned(),
+        is_required: false,
+        options: vec![],
+        options_limit: OptionsLimit::default(),
+    };
     pub static ref TYPE_PRIORITIES: HashMap<&'static str, i32> = vec![
         ("movie", 4),
         ("series", 3),

@@ -24,7 +24,7 @@ fn actionctx_synclibrarywithapi() {
     struct TestModel {
         ctx: Ctx,
     }
-    TestEnv::reset();
+    let _env_mutex = TestEnv::reset();
     let (runtime, _rx) =
         Runtime::<TestEnv, _>::new(TestModel::default(), Effects::none().unchanged(), 1000);
     TestEnv::run(|| {
@@ -223,7 +223,7 @@ fn actionctx_synclibrarywithapi_with_user() {
             _ => default_fetch_handler(request),
         }
     }
-    TestEnv::reset();
+    let _env_mutex = TestEnv::reset();
     *FETCH_HANDLER.write().unwrap() = Box::new(fetch_handler);
     let (runtime, _rx) = Runtime::<TestEnv, _>::new(
         TestModel {
@@ -382,7 +382,7 @@ fn actionctx_synclibrarywithapi_with_user_empty_library() {
             _ => default_fetch_handler(request),
         }
     }
-    TestEnv::reset();
+    let _env_mutex = TestEnv::reset();
     *FETCH_HANDLER.write().unwrap() = Box::new(fetch_handler);
     let (runtime, _rx) = Runtime::<TestEnv, _>::new(
         TestModel {
