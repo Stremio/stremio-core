@@ -1,10 +1,10 @@
-use crate::constants::{CATALOG_PAGE_SIZE, SKIP_EXTRA_NAME, TYPE_PRIORITIES};
+use crate::constants::{SKIP_EXTRA_PROP, TYPE_PRIORITIES};
 use crate::models::common::{
-    compare_with_priorities, eq_update, resource_update_with_vector_content, Loadable,
-    ResourceAction, ResourceLoadable,
+    compare_with_priorities, eq_update, resource_update_with_vector_content, ResourceAction,
+    ResourceLoadable,
 };
 use crate::models::ctx::Ctx;
-use crate::runtime::msg::{Action, ActionLoad, Internal, Msg};
+use crate::runtime::msg::{Action, ActionCatalogWithFilters, ActionLoad, Internal, Msg};
 use crate::runtime::{Effects, Env, UpdateWithCtx};
 use crate::types::addon::{
     DescriptorPreview, ExtraExt, Manifest, ManifestCatalog, ResourcePath, ResourceRequest,
@@ -17,6 +17,7 @@ use derivative::Derivative;
 use itertools::Itertools;
 use serde::{Deserialize, Serialize};
 use std::convert::TryFrom;
+use std::ops::Add;
 
 #[derive(PartialEq)]
 pub enum SelectablePriority {
@@ -28,7 +29,6 @@ pub trait CatalogResourceAdapter {
     fn resource() -> &'static str;
     fn catalogs(manifest: &Manifest) -> &[ManifestCatalog];
     fn selectable_priority() -> SelectablePriority;
-    fn page_size() -> Option<usize>;
 }
 
 impl CatalogResourceAdapter for MetaItemPreview {
@@ -40,9 +40,6 @@ impl CatalogResourceAdapter for MetaItemPreview {
     }
     fn selectable_priority() -> SelectablePriority {
         SelectablePriority::Type
-    }
-    fn page_size() -> Option<usize> {
-        Some(CATALOG_PAGE_SIZE)
     }
 }
 
@@ -56,9 +53,6 @@ impl CatalogResourceAdapter for DescriptorPreview {
     fn selectable_priority() -> SelectablePriority {
         SelectablePriority::Catalog
     }
-    fn page_size() -> Option<usize> {
-        None
-    }
 }
 
 #[derive(Clone, PartialEq, Serialize, Deserialize)]
@@ -67,6 +61,7 @@ pub struct Selected {
 }
 
 #[derive(PartialEq, Serialize)]
+#[cfg_attr(debug_assertions, derive(Clone))]
 #[serde(rename_all = "camelCase")]
 pub struct SelectableCatalog {
     pub catalog: String,
@@ -75,6 +70,7 @@ pub struct SelectableCatalog {
 }
 
 #[derive(PartialEq, Serialize)]
+#[cfg_attr(debug_assertions, derive(Clone))]
 pub struct SelectableType {
     pub r#type: String,
     pub selected: bool,
@@ -82,6 +78,7 @@ pub struct SelectableType {
 }
 
 #[derive(PartialEq, Serialize)]
+#[cfg_attr(debug_assertions, derive(Clone))]
 pub struct SelectableExtraOption {
     pub value: Option<String>,
     pub selected: bool,
@@ -89,6 +86,7 @@ pub struct SelectableExtraOption {
 }
 
 #[derive(PartialEq, Serialize)]
+#[cfg_attr(debug_assertions, derive(Clone))]
 #[serde(rename_all = "camelCase")]
 pub struct SelectableExtra {
     pub name: String,
@@ -97,41 +95,50 @@ pub struct SelectableExtra {
 }
 
 #[derive(PartialEq, Serialize)]
+#[cfg_attr(debug_assertions, derive(Clone))]
 pub struct SelectablePage {
     pub request: ResourceRequest,
 }
 
 #[derive(Default, PartialEq, Serialize)]
+#[cfg_attr(debug_assertions, derive(Clone))]
 #[serde(rename_all = "camelCase")]
 pub struct Selectable {
     pub types: Vec<SelectableType>,
     pub catalogs: Vec<SelectableCatalog>,
     pub extra: Vec<SelectableExtra>,
-    pub prev_page: Option<SelectablePage>,
     pub next_page: Option<SelectablePage>,
 }
 
+pub enum CatalogPageRequest {
+    First,
+    Next,
+}
+
+pub type CatalogPage<T> = ResourceLoadable<Vec<T>>;
+
+pub type Catalog<T> = Vec<CatalogPage<T>>;
+
 #[derive(Derivative, Serialize)]
+#[cfg_attr(debug_assertions, derive(Clone))]
 #[derivative(Default(bound = ""))]
 pub struct CatalogWithFilters<T> {
     pub selected: Option<Selected>,
     pub selectable: Selectable,
-    pub catalog: Option<ResourceLoadable<Vec<T>>>,
+    pub catalog: Catalog<T>,
 }
 
 impl<T: CatalogResourceAdapter> CatalogWithFilters<T> {
     pub fn new(profile: &Profile) -> (Self, Effects) {
-        let catalog = None;
-        let mut selectable = Selectable::default();
-        let effects = selectable_update::<T>(&mut selectable, &catalog, profile);
-        (
-            Self {
-                selectable,
-                catalog,
-                ..Self::default()
-            },
-            effects.unchanged(),
+        let mut model = CatalogWithFilters::<T>::default();
+        let selectable_effects = selectable_update(
+            &mut model.selectable,
+            &model.selected,
+            &model.catalog,
+            profile,
         )
+        .unchanged();
+        (model, selectable_effects)
     }
 }
 
@@ -144,52 +151,126 @@ where
     fn update(&mut self, msg: &Msg, ctx: &Ctx) -> Effects {
         match msg {
             Msg::Action(Action::Load(ActionLoad::CatalogWithFilters(selected))) => {
-                let selected_effects = eq_update(&mut self.selected, Some(selected.to_owned()));
-                let catalog_effects = resource_update_with_vector_content::<E, _>(
+                let selected_effects = selected_update(&mut self.selected, selected);
+                let catalog_effects = catalog_update::<E, _>(
                     &mut self.catalog,
-                    ResourceAction::ResourceRequested {
-                        request: &selected.request,
-                    },
+                    self.selected
+                        .as_ref()
+                        .map(|selected| (CatalogPageRequest::First, &selected.request)),
                 );
-                let selectable_effects =
-                    selectable_update(&mut self.selectable, &self.catalog, &ctx.profile);
+                let selectable_effects = selectable_update(
+                    &mut self.selectable,
+                    &self.selected,
+                    &self.catalog,
+                    &ctx.profile,
+                );
                 selected_effects
                     .join(catalog_effects)
                     .join(selectable_effects)
             }
             Msg::Action(Action::Unload) => {
                 let selected_effects = eq_update(&mut self.selected, None);
-                let catalog_effects = eq_update(&mut self.catalog, None);
-                let selectable_effects =
-                    selectable_update(&mut self.selectable, &self.catalog, &ctx.profile);
+                let catalog_effects = eq_update(&mut self.catalog, vec![]);
+                let selectable_effects = selectable_update(
+                    &mut self.selectable,
+                    &self.selected,
+                    &self.catalog,
+                    &ctx.profile,
+                );
                 selected_effects
                     .join(catalog_effects)
                     .join(selectable_effects)
             }
-            Msg::Internal(Internal::ResourceRequestResult(request, result)) => {
-                let catalog_effects = resource_update_with_vector_content::<E, _>(
+            Msg::Action(Action::CatalogWithFilters(ActionCatalogWithFilters::LoadNextPage)) => {
+                let catalog_effects = catalog_update::<E, _>(
                     &mut self.catalog,
-                    ResourceAction::ResourceRequestResult {
-                        request,
-                        result,
-                        limit: &T::page_size(),
-                    },
+                    self.selectable
+                        .next_page
+                        .as_ref()
+                        .map(|next_page| (CatalogPageRequest::Next, &next_page.request)),
                 );
-                let selectable_effects =
-                    selectable_update(&mut self.selectable, &self.catalog, &ctx.profile);
+                let selectable_effects = selectable_update(
+                    &mut self.selectable,
+                    &self.selected,
+                    &self.catalog,
+                    &ctx.profile,
+                );
                 catalog_effects.join(selectable_effects)
             }
-            Msg::Internal(Internal::ProfileChanged) => {
-                selectable_update(&mut self.selectable, &self.catalog, &ctx.profile)
-            }
+            Msg::Internal(Internal::ResourceRequestResult(request, result)) => self
+                .catalog
+                .iter_mut()
+                .find(|page| page.request == *request)
+                .map(|page| {
+                    resource_update_with_vector_content::<E, _>(
+                        page,
+                        ResourceAction::ResourceRequestResult { request, result },
+                    )
+                })
+                .map(|catalog_effects| {
+                    let selectable_effects = selectable_update(
+                        &mut self.selectable,
+                        &self.selected,
+                        &self.catalog,
+                        &ctx.profile,
+                    );
+                    catalog_effects.join(selectable_effects)
+                })
+                .unwrap_or_else(|| Effects::none().unchanged()),
+            Msg::Internal(Internal::ProfileChanged) => selectable_update(
+                &mut self.selectable,
+                &self.selected,
+                &self.catalog,
+                &ctx.profile,
+            ),
             _ => Effects::none().unchanged(),
         }
     }
 }
 
+fn selected_update(selected: &mut Option<Selected>, next_selected: &Selected) -> Effects {
+    let mut next_selected = next_selected.to_owned();
+    next_selected.request.path.extra = next_selected
+        .request
+        .path
+        .extra
+        .remove_all(&SKIP_EXTRA_PROP);
+    eq_update(selected, Some(next_selected))
+}
+
+fn catalog_update<E, T>(
+    catalog: &mut Catalog<T>,
+    request: Option<(CatalogPageRequest, &ResourceRequest)>,
+) -> Effects
+where
+    E: Env + 'static,
+    T: CatalogResourceAdapter + PartialEq,
+    Vec<T>: TryFrom<ResourceResponse, Error = &'static str>,
+{
+    match request {
+        Some((page_request, request)) => {
+            let mut page = ResourceLoadable {
+                request: request.to_owned(),
+                content: None,
+            };
+            let effects = resource_update_with_vector_content::<E, _>(
+                &mut page,
+                ResourceAction::ResourceRequested { request },
+            );
+            match page_request {
+                CatalogPageRequest::First => *catalog = vec![page],
+                CatalogPageRequest::Next => catalog.extend(vec![page]),
+            };
+            effects
+        }
+        _ => eq_update(catalog, vec![]),
+    }
+}
+
 fn selectable_update<T: CatalogResourceAdapter>(
     selectable: &mut Selectable,
-    catalog: &Option<ResourceLoadable<Vec<T>>>,
+    selected: &Option<Selected>,
+    catalog: &Catalog<T>,
     profile: &Profile,
 ) -> Effects {
     let selectable_catalogs = profile
@@ -201,43 +282,44 @@ fn selectable_update<T: CatalogResourceAdapter>(
                 .map(move |manifest_catalog| (addon, manifest_catalog))
         })
         .filter_map(|(addon, manifest_catalog)| {
-            manifest_catalog
-                .default_required_extra()
-                .map(|default_required_extra| SelectableCatalog {
-                    catalog: manifest_catalog
-                        .name
-                        .as_ref()
-                        .unwrap_or(&manifest_catalog.id)
-                        .to_owned(),
-                    selected: catalog
-                        .as_ref()
-                        .map(|catalog| {
-                            catalog.request.base == addon.transport_url
-                                && catalog.request.path.id == manifest_catalog.id
-                                && catalog.request.path.resource == T::resource()
-                        })
-                        .unwrap_or_default(),
-                    request: ResourceRequest {
-                        base: addon.transport_url.to_owned(),
-                        path: ResourcePath {
-                            resource: T::resource().to_owned(),
-                            r#type: manifest_catalog.r#type.to_owned(),
-                            id: manifest_catalog.id.to_owned(),
-                            extra: default_required_extra,
-                        },
+            manifest_catalog.default_required_extra().map(|extra| {
+                let request = ResourceRequest {
+                    base: addon.transport_url.to_owned(),
+                    path: ResourcePath {
+                        id: manifest_catalog.id.to_owned(),
+                        r#type: manifest_catalog.r#type.to_owned(),
+                        resource: T::resource().to_owned(),
+                        extra,
                     },
-                })
+                };
+                (manifest_catalog, request)
+            })
         })
-        .dedup_by(|a, b| a.request.eq_no_extra(&b.request))
+        .map(|(manifest_catalog, request)| SelectableCatalog {
+            catalog: manifest_catalog
+                .name
+                .as_ref()
+                .unwrap_or(&manifest_catalog.id)
+                .to_owned(),
+            selected: selected
+                .as_ref()
+                .map(|selected| {
+                    selected.request.base == request.base
+                        && selected.request.path.id == request.path.id
+                        && selected.request.path.resource == request.path.resource
+                })
+                .unwrap_or_default(),
+            request,
+        })
         .collect::<Vec<_>>();
     let selectable_types = selectable_catalogs
         .iter()
         .map(|selectable_catalog| &selectable_catalog.request)
-        .filter(|request| match catalog {
-            Some(catalog) if T::selectable_priority() == SelectablePriority::Catalog => {
-                request.base == catalog.request.base
-                    && request.path.id == catalog.request.path.id
-                    && request.path.resource == catalog.request.path.resource
+        .filter(|request| match selected {
+            Some(selected) if T::selectable_priority() == SelectablePriority::Catalog => {
+                request.base == selected.request.base
+                    && request.path.id == selected.request.path.id
+                    && request.path.resource == selected.request.path.resource
             }
             _ => true,
         })
@@ -245,9 +327,12 @@ fn selectable_update<T: CatalogResourceAdapter>(
         .cloned()
         .map(|request| SelectableType {
             r#type: request.path.r#type.to_owned(),
-            selected: catalog
+            selected: selected
                 .as_ref()
-                .map(|catalog| catalog.request.path.r#type == request.path.r#type)
+                .map(|selected| {
+                    selected.request.path.r#type == request.path.r#type
+                        && selected.request.path.resource == request.path.resource
+                })
                 .unwrap_or_default(),
             request,
         })
@@ -259,173 +344,147 @@ fn selectable_update<T: CatalogResourceAdapter>(
     let selectable_catalogs = match T::selectable_priority() {
         SelectablePriority::Type => selectable_catalogs
             .into_iter()
-            .filter(|selectable_catalog| match catalog {
-                Some(catalog) => {
-                    selectable_catalog.request.path.r#type == catalog.request.path.r#type
+            .filter(|selectable_catalog| match selected {
+                Some(selected) => {
+                    selectable_catalog.request.path.r#type == selected.request.path.r#type
                 }
                 _ => true,
             })
             .collect::<Vec<_>>(),
         SelectablePriority::Catalog => selectable_catalogs
             .into_iter()
-            .dedup_by(|a, b| {
-                a.request.base == b.request.base && a.request.path.id == b.request.path.id
+            .unique_by(|selectable_catalog| {
+                (
+                    selectable_catalog.request.base.to_owned(),
+                    selectable_catalog.request.path.id.to_owned(),
+                )
             })
             .collect::<Vec<_>>(),
     };
-    let (selectable_extra, prev_page, next_page) = match catalog {
-        Some(catalog) if catalog.request.path.resource == T::resource() => profile
-            .addons
-            .iter()
-            .find(|addon| addon.transport_url == catalog.request.base)
-            .iter()
-            .flat_map(|addon| T::catalogs(&addon.manifest))
-            .find(|ManifestCatalog { id, r#type, .. }| {
-                *id == catalog.request.path.id && *r#type == catalog.request.path.r#type
-            })
-            .map(|manifest_catalog| {
-                let selectable_extra = manifest_catalog
-                    .extra
-                    .iter()
-                    .filter_map(|extra_prop| {
-                        extra_prop
-                            .options
-                            .as_ref()
-                            .filter(|options| !options.is_empty())
-                            .map(|options| {
-                                let none_option =
-                                    (!extra_prop.is_required).as_option().map(|_| {
-                                        SelectableExtraOption {
-                                            value: None,
-                                            selected: catalog.request.path.extra.iter().all(
-                                                |extra_value| extra_value.name != extra_prop.name,
-                                            ),
-                                            request: ResourceRequest {
-                                                base: catalog.request.base.to_owned(),
-                                                path: ResourcePath {
-                                                    resource: T::resource().to_owned(),
-                                                    r#type: manifest_catalog.r#type.to_owned(),
-                                                    id: manifest_catalog.id.to_owned(),
-                                                    extra: catalog
-                                                        .request
-                                                        .path
-                                                        .extra
-                                                        .to_owned()
-                                                        .extend_one(&extra_prop, None),
-                                                },
-                                            },
-                                        }
-                                    });
-                                let options = options
+    let (selectable_extra, next_page) = selected
+        .as_ref()
+        .filter(|selected| selected.request.path.resource == T::resource())
+        .and_then(|selected| {
+            profile
+                .addons
+                .iter()
+                .find(|addon| addon.transport_url == selected.request.base)
+                .map(|addon| (selected, addon))
+        })
+        .and_then(|(selected, addon)| {
+            T::catalogs(&addon.manifest)
+                .iter()
+                .find(|manifest_catalog| {
+                    manifest_catalog.id == selected.request.path.id
+                        && manifest_catalog.r#type == selected.request.path.r#type
+                })
+                .map(|manifest_catalog| (selected, manifest_catalog))
+        })
+        .map(|(selected, manifest_catalog)| {
+            let selectable_extra = manifest_catalog
+                .extra
+                .iter()
+                .filter(|extra_prop| {
+                    extra_prop.name != SKIP_EXTRA_PROP.name && !extra_prop.options.is_empty()
+                })
+                .map(|extra_prop| {
+                    let none_option =
+                        (!extra_prop.is_required)
+                            .as_option()
+                            .map(|_| SelectableExtraOption {
+                                value: None,
+                                selected: selected
+                                    .request
+                                    .path
+                                    .extra
                                     .iter()
-                                    .map(|value| SelectableExtraOption {
-                                        value: Some(value.to_owned()),
-                                        selected: catalog.request.path.extra.iter().any(
-                                            |extra_value| {
-                                                extra_value.name == extra_prop.name
-                                                    && extra_value.value == *value
-                                            },
-                                        ),
-                                        request: ResourceRequest {
-                                            base: catalog.request.base.to_owned(),
-                                            path: ResourcePath {
-                                                resource: T::resource().to_owned(),
-                                                r#type: manifest_catalog.r#type.to_owned(),
-                                                id: manifest_catalog.id.to_owned(),
-                                                extra: catalog
-                                                    .request
-                                                    .path
-                                                    .extra
-                                                    .to_owned()
-                                                    .extend_one(
-                                                        &extra_prop,
-                                                        Some(value.to_owned()),
-                                                    ),
-                                            },
-                                        },
-                                    })
-                                    .collect::<Vec<_>>();
-                                SelectableExtra {
-                                    name: extra_prop.name.to_owned(),
-                                    is_required: extra_prop.is_required.to_owned(),
-                                    options: none_option.into_iter().chain(options).collect(),
-                                }
-                            })
-                    })
-                    .collect();
-                let (prev_page, next_page) = manifest_catalog
-                    .extra
-                    .iter()
-                    .find(|extra_prop| extra_prop.name == SKIP_EXTRA_NAME)
-                    .and_then(|extra_prop| T::page_size().map(|page_size| (extra_prop, page_size)))
-                    .map(|(extra_prop, page_size)| {
-                        let skip = catalog
-                            .request
-                            .path
-                            .get_extra_first_value(SKIP_EXTRA_NAME)
-                            .and_then(|value| value.parse::<u32>().ok())
-                            .unwrap_or(0);
-                        let prev_page = (skip > 0).as_option().map(|_| SelectablePage {
+                                    .all(|extra_value| extra_value.name != extra_prop.name),
+                                request: ResourceRequest {
+                                    base: selected.request.base.to_owned(),
+                                    path: ResourcePath {
+                                        id: manifest_catalog.id.to_owned(),
+                                        r#type: manifest_catalog.r#type.to_owned(),
+                                        resource: selected.request.path.resource.to_owned(),
+                                        extra: selected
+                                            .request
+                                            .path
+                                            .extra
+                                            .to_owned()
+                                            .extend_one(&extra_prop, None),
+                                    },
+                                },
+                            });
+                    let options = extra_prop
+                        .options
+                        .iter()
+                        .map(|value| SelectableExtraOption {
+                            value: Some(value.to_owned()),
+                            selected: selected.request.path.extra.iter().any(|extra_value| {
+                                extra_value.name == extra_prop.name && extra_value.value == *value
+                            }),
                             request: ResourceRequest {
-                                base: catalog.request.base.to_owned(),
+                                base: selected.request.base.to_owned(),
                                 path: ResourcePath {
-                                    resource: T::resource().to_owned(),
-                                    r#type: manifest_catalog.r#type.to_owned(),
                                     id: manifest_catalog.id.to_owned(),
-                                    extra: catalog.request.path.extra.to_owned().extend_one(
-                                        &extra_prop,
-                                        Some(
-                                            ((skip.saturating_sub(page_size as u32)
-                                                / page_size as u32)
-                                                * page_size as u32)
-                                                .to_string(),
-                                        ),
-                                    ),
+                                    r#type: manifest_catalog.r#type.to_owned(),
+                                    resource: selected.request.path.resource.to_owned(),
+                                    extra: selected
+                                        .request
+                                        .path
+                                        .extra
+                                        .to_owned()
+                                        .extend_one(&extra_prop, Some(value.to_owned())),
                                 },
                             },
-                        });
-                        let next_page = match &catalog.content {
-                            Some(Loadable::Ready(content)) if content.len() == page_size => {
-                                Some(SelectablePage {
-                                    request: ResourceRequest {
-                                        base: catalog.request.base.to_owned(),
-                                        path: ResourcePath {
-                                            resource: T::resource().to_owned(),
-                                            r#type: manifest_catalog.r#type.to_owned(),
-                                            id: manifest_catalog.id.to_owned(),
-                                            extra: catalog
-                                                .request
-                                                .path
-                                                .extra
-                                                .to_owned()
-                                                .extend_one(
-                                                    &extra_prop,
-                                                    Some(
-                                                        ((skip.saturating_add(page_size as u32)
-                                                            / page_size as u32)
-                                                            * page_size as u32)
-                                                            .to_string(),
-                                                    ),
-                                                ),
-                                        },
-                                    },
-                                })
-                            }
-                            _ => None,
-                        };
-                        (prev_page, next_page)
-                    })
-                    .unwrap_or_default();
-                (selectable_extra, prev_page, next_page)
-            })
-            .unwrap_or_default(),
-        _ => Default::default(),
-    };
+                        })
+                        .collect::<Vec<_>>();
+                    SelectableExtra {
+                        name: extra_prop.name.to_owned(),
+                        is_required: extra_prop.is_required.to_owned(),
+                        options: none_option.into_iter().chain(options).collect(),
+                    }
+                })
+                .collect();
+            let next_page = manifest_catalog
+                .extra
+                .iter()
+                .find(|extra_prop| extra_prop.name == SKIP_EXTRA_PROP.name)
+                .and_then(|_| {
+                    catalog
+                        .iter()
+                        .map(|page| {
+                            page.content
+                                .as_ref()
+                                .and_then(|content| content.ready())
+                                .filter(|content| !content.is_empty())
+                                .map(|content| content.len())
+                        })
+                        .collect::<Option<Vec<_>>>()
+                        .map(|page_sizes| page_sizes.into_iter().fold(0, Add::add))
+                })
+                .map(|skip| SelectablePage {
+                    request: ResourceRequest {
+                        base: selected.request.base.to_owned(),
+                        path: ResourcePath {
+                            id: manifest_catalog.id.to_owned(),
+                            r#type: manifest_catalog.r#type.to_owned(),
+                            resource: selected.request.path.resource.to_owned(),
+                            extra: selected
+                                .request
+                                .path
+                                .extra
+                                .to_owned()
+                                .extend_one(&SKIP_EXTRA_PROP, Some(skip.to_string())),
+                        },
+                    },
+                });
+            (selectable_extra, next_page)
+        })
+        .unwrap_or_default();
     let next_selectable = Selectable {
         types: selectable_types,
         catalogs: selectable_catalogs,
         extra: selectable_extra,
-        prev_page,
         next_page,
     };
     eq_update(selectable, next_selectable)

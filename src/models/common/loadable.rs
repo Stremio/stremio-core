@@ -34,14 +34,14 @@ impl<R, E> Loadable<R, E> {
         }
     }
     #[inline]
-    pub fn ready(self) -> Option<R> {
+    pub fn ready(&self) -> Option<&R> {
         match self {
             Loadable::Ready(r) => Some(r),
             _ => None,
         }
     }
     #[inline]
-    pub fn err(self) -> Option<E> {
+    pub fn err(&self) -> Option<&E> {
         match self {
             Loadable::Err(e) => Some(e),
             _ => None,

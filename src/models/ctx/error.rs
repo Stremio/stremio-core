@@ -4,6 +4,7 @@ use serde::ser::{SerializeStruct, Serializer};
 use serde::Serialize;
 
 #[derive(Clone, Serialize)]
+#[cfg_attr(debug_assertions, derive(Debug, PartialEq))]
 #[serde(tag = "type")]
 pub enum CtxError {
     API(APIError),
@@ -30,6 +31,7 @@ impl From<OtherError> for CtxError {
 }
 
 #[derive(Clone)]
+#[cfg_attr(debug_assertions, derive(Debug, PartialEq))]
 pub enum OtherError {
     UserNotLoggedIn,
     LibraryItemNotFound,

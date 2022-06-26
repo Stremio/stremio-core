@@ -45,7 +45,7 @@ fn actionctx_uninstalladdon() {
         addons: vec![addon.to_owned()],
         ..Default::default()
     };
-    TestEnv::reset();
+    let _env_mutex = TestEnv::reset();
     STORAGE.write().unwrap().insert(
         PROFILE_STORAGE_KEY.to_owned(),
         serde_json::to_string(&profile).unwrap(),
@@ -150,7 +150,7 @@ fn actionctx_uninstalladdon_with_user() {
         addons: vec![addon.to_owned()],
         ..Default::default()
     };
-    TestEnv::reset();
+    let _env_mutex = TestEnv::reset();
     *FETCH_HANDLER.write().unwrap() = Box::new(fetch_handler);
     STORAGE.write().unwrap().insert(
         PROFILE_STORAGE_KEY.to_owned(),
@@ -240,7 +240,7 @@ fn actionctx_uninstalladdon_protected() {
         addons: vec![addon.to_owned()],
         ..Default::default()
     };
-    TestEnv::reset();
+    let _env_mutex = TestEnv::reset();
     STORAGE.write().unwrap().insert(
         PROFILE_STORAGE_KEY.to_owned(),
         serde_json::to_string(&profile).unwrap(),
@@ -312,7 +312,7 @@ fn actionctx_uninstalladdon_not_installed() {
         addons: vec![addon.to_owned()],
         ..Default::default()
     };
-    TestEnv::reset();
+    let _env_mutex = TestEnv::reset();
     STORAGE.write().unwrap().insert(
         PROFILE_STORAGE_KEY.to_owned(),
         serde_json::to_string(&profile).unwrap(),

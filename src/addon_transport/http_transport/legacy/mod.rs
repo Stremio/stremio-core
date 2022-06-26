@@ -87,8 +87,8 @@ impl From<SubtitlesResult> for ResourceResponse {
 }
 
 fn map_response<
-    #[cfg(target_arch = "wasm32")] T: Sized + 'static,
-    #[cfg(not(target_arch = "wasm32"))] T: Sized + Send + 'static,
+    #[cfg(not(feature = "env-future-send"))] T: Sized + 'static,
+    #[cfg(feature = "env-future-send")] T: Sized + Send + 'static,
 >(
     resp: JsonRPCResp<T>,
 ) -> TryEnvFuture<T> {

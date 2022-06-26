@@ -14,12 +14,14 @@ use futures::{future, FutureExt, TryFutureExt};
 use serde::Serialize;
 
 #[derive(PartialEq, Serialize)]
+#[cfg_attr(debug_assertions, derive(Clone))]
 pub enum CtxStatus {
     Loading(AuthRequest),
     Ready,
 }
 
 #[derive(Derivative, Serialize)]
+#[cfg_attr(debug_assertions, derive(Clone))]
 #[derivative(Default)]
 pub struct Ctx {
     pub profile: Profile,

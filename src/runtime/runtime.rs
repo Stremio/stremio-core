@@ -4,11 +4,14 @@ use derivative::Derivative;
 use enclose::enclose;
 use futures::channel::mpsc::{channel, Receiver, Sender};
 use futures::FutureExt;
+#[cfg(test)]
+use futures::SinkExt;
 use serde::Serialize;
 use std::marker::PhantomData;
 use std::sync::{Arc, LockResult, RwLock, RwLockReadGuard};
 
 #[derive(Serialize)]
+#[cfg_attr(debug_assertions, derive(Debug, PartialEq))]
 #[serde(tag = "name", content = "args")]
 pub enum RuntimeEvent {
     NewState,
@@ -59,6 +62,12 @@ where
             }
         };
         self.handle_effects(effects);
+    }
+    #[cfg(test)]
+    pub async fn close(&mut self) -> Result<(), anyhow::Error> {
+        self.tx.flush().await?;
+        self.tx.close_channel();
+        Ok(())
     }
     fn emit(&self, event: RuntimeEvent) {
         self.tx.clone().try_send(event).expect("emit event failed");

@@ -5,10 +5,11 @@ use serde::{Deserialize, Serialize};
 
 pub fn fetch_api<
     E: Env,
-    BODY: Serialize + Send + 'static,
+    #[cfg(not(feature = "env-future-send"))] BODY: Serialize + 'static,
+    #[cfg(feature = "env-future-send")] BODY: Serialize + Send + 'static,
     REQ: FetchRequestParams<BODY> + Clone + Serialize,
-    #[cfg(target_arch = "wasm32")] RESP: for<'de> Deserialize<'de> + 'static,
-    #[cfg(not(target_arch = "wasm32"))] RESP: for<'de> Deserialize<'de> + Send + 'static,
+    #[cfg(not(feature = "env-future-send"))] RESP: for<'de> Deserialize<'de> + 'static,
+    #[cfg(feature = "env-future-send")] RESP: for<'de> Deserialize<'de> + Send + 'static,
 >(
     api_request: &REQ,
 ) -> TryEnvFuture<APIResult<RESP>> {
