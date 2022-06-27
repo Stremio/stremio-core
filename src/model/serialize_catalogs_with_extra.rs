@@ -1,5 +1,6 @@
-use crate::model::deep_links::{DiscoverDeepLinks, MetaItemDeepLinks};
+use crate::model::deep_links_ext::DeepLinksExt;
 use serde::Serialize;
+use stremio_core::deep_links::{DiscoverDeepLinks, MetaItemDeepLinks};
 use stremio_core::models::catalogs_with_extra::{CatalogsWithExtra, Selected};
 use stremio_core::models::common::Loadable;
 use stremio_core::models::ctx::Ctx;
@@ -59,7 +60,8 @@ pub fn serialize_catalogs_with_extra(
                             .map(|meta_item| model::MetaItemPreview {
                                 meta_item,
                                 poster_shape: &meta_items.first().unwrap().poster_shape,
-                                deep_links: MetaItemDeepLinks::from((meta_item, &catalog.request)),
+                                deep_links: MetaItemDeepLinks::from((meta_item, &catalog.request))
+                                    .into_web_deep_links(),
                             })
                             .collect::<Vec<_>>(),
                     )),
@@ -67,7 +69,7 @@ pub fn serialize_catalogs_with_extra(
                     Some(Loadable::Err(error)) => Some(Loadable::Err(error.to_string())),
                     None => None,
                 },
-                deep_links: DiscoverDeepLinks::from(&catalog.request),
+                deep_links: DiscoverDeepLinks::from(&catalog.request).into_web_deep_links(),
             })
             .collect::<Vec<_>>(),
     })

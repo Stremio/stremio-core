@@ -1,6 +1,7 @@
-use crate::model::deep_links::{DiscoverDeepLinks, MetaItemDeepLinks, StreamDeepLinks};
+use crate::model::deep_links_ext::DeepLinksExt;
+use boolinator::Boolinator;
 use serde::Serialize;
-use stremio_core::constants::{CATALOG_PAGE_SIZE, SKIP_EXTRA_NAME};
+use stremio_core::deep_links::{DiscoverDeepLinks, MetaItemDeepLinks, StreamDeepLinks};
 use stremio_core::models::catalog_with_filters::{
     CatalogWithFilters, Selected as CatalogWithFiltersSelected,
 };
@@ -54,17 +55,11 @@ mod model {
     }
     #[derive(Serialize)]
     #[serde(rename_all = "camelCase")]
-    pub struct SelectablePage {
-        pub deep_links: DiscoverDeepLinks,
-    }
-    #[derive(Serialize)]
-    #[serde(rename_all = "camelCase")]
     pub struct Selectable<'a> {
         pub types: Vec<SelectableType<'a>>,
         pub catalogs: Vec<SelectableCatalog<'a>>,
         pub extra: Vec<SelectableExtra<'a>>,
-        pub prev_page: Option<SelectablePage>,
-        pub next_page: Option<SelectablePage>,
+        pub next_page: bool,
     }
     #[derive(Serialize)]
     #[serde(rename_all = "camelCase")]
@@ -95,7 +90,6 @@ mod model {
         pub selectable: Selectable<'a>,
         pub catalog: Option<ResourceLoadable<'a>>,
         pub default_request: Option<&'a ResourceRequest>,
-        pub page: u32,
     }
 }
 
@@ -110,7 +104,8 @@ pub fn serialize_discover(discover: &CatalogWithFilters<MetaItemPreview>, ctx: &
                 .map(|selectable_type| model::SelectableType {
                     r#type: &selectable_type.r#type,
                     selected: &selectable_type.selected,
-                    deep_links: DiscoverDeepLinks::from(&selectable_type.request),
+                    deep_links: DiscoverDeepLinks::from(&selectable_type.request)
+                        .into_web_deep_links(),
                 })
                 .collect(),
             catalogs: discover
@@ -133,7 +128,8 @@ pub fn serialize_discover(discover: &CatalogWithFilters<MetaItemPreview>, ctx: &
                         },
                     },
                     selected: &selectable_catalog.selected,
-                    deep_links: DiscoverDeepLinks::from(&selectable_catalog.request),
+                    deep_links: DiscoverDeepLinks::from(&selectable_catalog.request)
+                        .into_web_deep_links(),
                 })
                 .collect(),
             extra: discover
@@ -149,48 +145,49 @@ pub fn serialize_discover(discover: &CatalogWithFilters<MetaItemPreview>, ctx: &
                         .map(|option| model::SelectableExtraOption {
                             value: &option.value,
                             selected: &option.selected,
-                            deep_links: DiscoverDeepLinks::from(&option.request),
+                            deep_links: DiscoverDeepLinks::from(&option.request)
+                                .into_web_deep_links(),
                         })
                         .collect(),
                 })
                 .collect(),
-            prev_page: discover.selectable.prev_page.as_ref().map(|prev_page| {
-                model::SelectablePage {
-                    deep_links: DiscoverDeepLinks::from(&prev_page.request),
-                }
-            }),
-            next_page: discover.selectable.next_page.as_ref().map(|next_page| {
-                model::SelectablePage {
-                    deep_links: DiscoverDeepLinks::from(&next_page.request),
-                }
-            }),
+            next_page: discover.selectable.next_page.is_some(),
         },
-        catalog: discover
-            .catalog
-            .as_ref()
-            .map(|catalog| model::ResourceLoadable {
-                content: match &catalog.content {
-                    Some(Loadable::Ready(meta_items)) => Loadable::Ready(
-                        meta_items
+        catalog: (!discover.catalog.is_empty()).as_option().map(|_| {
+            let first_page = discover.catalog.first().unwrap();
+            model::ResourceLoadable {
+                content: match &first_page.content {
+                    Some(Loadable::Ready(_)) => Loadable::Ready(
+                        discover
+                            .catalog
                             .iter()
-                            .map(|meta_item| model::MetaItemPreview {
-                                meta_item,
-                                trailer_streams: meta_item
-                                    .trailer_streams
-                                    .iter()
-                                    .take(1)
-                                    .map(|stream| model::Stream {
-                                        stream,
-                                        deep_links: StreamDeepLinks::from(stream),
-                                    })
-                                    .collect::<Vec<_>>(),
-                                in_library: ctx
-                                    .library
-                                    .items
-                                    .get(&meta_item.id)
-                                    .map(|library_item| !library_item.removed)
-                                    .unwrap_or_default(),
-                                deep_links: MetaItemDeepLinks::from((meta_item, &catalog.request)),
+                            .filter_map(|page| page.content.as_ref())
+                            .filter_map(|page_content| page_content.ready())
+                            .flat_map(|meta_items| {
+                                meta_items.iter().map(|meta_item| model::MetaItemPreview {
+                                    meta_item,
+                                    trailer_streams: meta_item
+                                        .trailer_streams
+                                        .iter()
+                                        .take(1)
+                                        .map(|stream| model::Stream {
+                                            stream,
+                                            deep_links: StreamDeepLinks::from(stream)
+                                                .into_web_deep_links(),
+                                        })
+                                        .collect::<Vec<_>>(),
+                                    in_library: ctx
+                                        .library
+                                        .items
+                                        .get(&meta_item.id)
+                                        .map(|library_item| !library_item.removed)
+                                        .unwrap_or_default(),
+                                    deep_links: MetaItemDeepLinks::from((
+                                        meta_item,
+                                        &first_page.request,
+                                    ))
+                                    .into_web_deep_links(),
+                                })
                             })
                             .collect::<Vec<_>>(),
                     ),
@@ -201,25 +198,14 @@ pub fn serialize_discover(discover: &CatalogWithFilters<MetaItemPreview>, ctx: &
                     .profile
                     .addons
                     .iter()
-                    .any(|addon| addon.transport_url == catalog.request.base),
-            }),
+                    .any(|addon| addon.transport_url == first_page.request.base),
+            }
+        }),
         default_request: discover
             .selectable
             .types
             .first()
             .map(|first_type| &first_type.request),
-        page: discover
-            .selected
-            .as_ref()
-            .and_then(|selected| {
-                selected
-                    .request
-                    .path
-                    .get_extra_first_value(SKIP_EXTRA_NAME)
-                    .and_then(|value| value.parse::<u32>().ok())
-                    .map(|skip| 1 + skip / CATALOG_PAGE_SIZE as u32)
-            })
-            .unwrap_or(1),
     })
     .unwrap()
 }

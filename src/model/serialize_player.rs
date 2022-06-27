@@ -1,7 +1,8 @@
 use crate::env::WebEnv;
-use crate::model::deep_links::{StreamDeepLinks, VideoDeepLinks};
+use crate::model::deep_links_ext::DeepLinksExt;
 use semver::Version;
 use serde::Serialize;
+use stremio_core::deep_links::{StreamDeepLinks, VideoDeepLinks};
 use stremio_core::models::common::{Loadable, ResourceError, ResourceLoadable};
 use stremio_core::models::ctx::Ctx;
 use stremio_core::models::player::Player;
@@ -103,7 +104,7 @@ pub fn serialize_player(player: &Player, ctx: &Ctx) -> JsValue {
         selected: player.selected.as_ref().map(|selected| model::Selected {
             stream: model::Stream {
                 stream: &selected.stream,
-                deep_links: StreamDeepLinks::from(&selected.stream),
+                deep_links: StreamDeepLinks::from(&selected.stream).into_web_deep_links(),
             },
             stream_request: &selected.stream_request,
             meta_request: &selected.meta_request,
@@ -132,7 +133,8 @@ pub fn serialize_player(player: &Player, ctx: &Ctx) -> JsValue {
                                 watched: false, // TODO use library
                                 progress: None, // TODO use library,
                                 scheduled: meta_item.preview.behavior_hints.has_scheduled_videos,
-                                deep_links: VideoDeepLinks::from((video, request)),
+                                deep_links: VideoDeepLinks::from((video, request))
+                                    .into_web_deep_links(),
                             })
                             .collect(),
                     })
@@ -205,7 +207,7 @@ pub fn serialize_player(player: &Player, ctx: &Ctx) -> JsValue {
                         _ => None,
                     })
                     .unwrap_or_default(),
-                deep_links: VideoDeepLinks::from((video, request)),
+                deep_links: VideoDeepLinks::from((video, request)).into_web_deep_links(),
             }),
         series_info: player.series_info.as_ref(),
         library_item: player

@@ -1,7 +1,9 @@
-use crate::model::deep_links::{LibraryDeepLinks, LibraryItemDeepLinks};
+use crate::model::deep_links_ext::DeepLinksExt;
 use serde::Serialize;
+use stremio_core::deep_links::{LibraryDeepLinks, LibraryItemDeepLinks};
 use stremio_core::models::continue_watching_preview::ContinueWatchingPreview;
 use stremio_core::types::resource::PosterShape;
+use url::Url;
 use wasm_bindgen::JsValue;
 
 mod model {
@@ -9,7 +11,7 @@ mod model {
     #[derive(Serialize)]
     #[serde(rename_all = "camelCase")]
     pub struct LibraryItemState<'a> {
-        pub video_id: Option<&'a String>
+        pub video_id: Option<&'a String>,
     }
     #[derive(Serialize)]
     #[serde(rename_all = "camelCase")]
@@ -18,7 +20,7 @@ mod model {
         pub id: &'a String,
         pub name: &'a String,
         pub r#type: &'a String,
-        pub poster: &'a Option<String>,
+        pub poster: &'a Option<Url>,
         pub poster_shape: &'a PosterShape,
         pub progress: f64,
         pub deep_links: LibraryItemDeepLinks,
@@ -54,13 +56,13 @@ pub fn serialize_continue_watching_preview(
                 } else {
                     0.0
                 },
-                deep_links: LibraryItemDeepLinks::from(library_item),
+                deep_links: LibraryItemDeepLinks::from(library_item).into_web_deep_links(),
                 state: model::LibraryItemState {
-                    video_id: library_item.state.video_id.as_ref()
+                    video_id: library_item.state.video_id.as_ref(),
                 },
             })
             .collect::<Vec<_>>(),
-        deep_links: LibraryDeepLinks::from(&"continuewatching".to_owned()),
+        deep_links: LibraryDeepLinks::from(&"continuewatching".to_owned()).into_web_deep_links(),
     })
     .unwrap()
 }
