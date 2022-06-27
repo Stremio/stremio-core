@@ -12,6 +12,7 @@ use stremio_core::runtime::msg::Action;
 use stremio_core::runtime::{Env, EnvError, Runtime, RuntimeAction, RuntimeEvent};
 use stremio_core::types::library::LibraryBucket;
 use stremio_core::types::profile::Profile;
+use stremio_core::types::resource::Stream;
 use wasm_bindgen::prelude::wasm_bindgen;
 use wasm_bindgen::JsValue;
 
@@ -144,4 +145,13 @@ pub fn analytics(event: JsValue) {
         .expect("runtime is not ready");
     let model = runtime.model().expect("model read failed");
     WebEnv::emit_to_analytics(&WebEvent::UIEvent(event), &model);
+}
+
+#[wasm_bindgen]
+pub fn decode_stream(stream: JsValue) -> JsValue {
+    let stream = stream.as_string().map(Stream::decode);
+    match stream {
+        Some(Ok(stream)) => JsValue::from_serde(&stream).unwrap(),
+        _ => JsValue::NULL,
+    }
 }
