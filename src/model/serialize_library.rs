@@ -3,6 +3,7 @@ use serde::Serialize;
 use stremio_core::deep_links::{LibraryDeepLinks, LibraryItemDeepLinks};
 use stremio_core::models::library_with_filters::{LibraryWithFilters, Selected, Sort};
 use stremio_core::types::resource::PosterShape;
+use url::Url;
 use wasm_bindgen::JsValue;
 
 mod model {
@@ -14,7 +15,7 @@ mod model {
         pub id: &'a String,
         pub name: &'a String,
         pub r#type: &'a String,
-        pub poster: &'a Option<String>,
+        pub poster: &'a Option<Url>,
         pub poster_shape: &'a PosterShape,
         pub progress: f64,
         pub deep_links: LibraryItemDeepLinks,

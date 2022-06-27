@@ -586,12 +586,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "rustversion"
-version = "1.0.7"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a0a5f7c728f5d284929a1cccb5bc19884422bfe6ef4d6c409da2c41838983fcf"
-
-[[package]]
 name = "ryu"
 version = "1.0.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -679,11 +673,10 @@ dependencies = [
 
 [[package]]
 name = "serde_with"
-version = "1.11.0"
+version = "1.14.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ad6056b4cb69b6e43e3a0f055def223380baecc99da683884f205bf347f7c4b3"
+checksum = "678b5a069e50bf00ecd22d0cd8ddf7c236f68581b03db652061ed5eb13a312ff"
 dependencies = [
- "rustversion",
  "serde",
  "serde_with_macros",
 ]
@@ -718,7 +711,7 @@ dependencies = [
 [[package]]
 name = "stremio-analytics"
 version = "0.1.0"
-source = "git+https://github.com/Stremio/stremio-core?branch=development#6e333f0a8a69b641edb4c02a3ee45df411590224"
+source = "git+https://github.com/Stremio/stremio-core?branch=development#6a5994fea05ad4294ef08ea3483a03c62bab8884"
 dependencies = [
  "derivative",
  "enclose",
@@ -731,7 +724,7 @@ dependencies = [
 [[package]]
 name = "stremio-core"
 version = "0.1.0"
-source = "git+https://github.com/Stremio/stremio-core?branch=development#6e333f0a8a69b641edb4c02a3ee45df411590224"
+source = "git+https://github.com/Stremio/stremio-core?branch=development#6a5994fea05ad4294ef08ea3483a03c62bab8884"
 dependencies = [
  "anyhow",
  "base64",
@@ -799,7 +792,7 @@ dependencies = [
 [[package]]
 name = "stremio-derive"
 version = "0.1.0"
-source = "git+https://github.com/Stremio/stremio-core?branch=development#6e333f0a8a69b641edb4c02a3ee45df411590224"
+source = "git+https://github.com/Stremio/stremio-core?branch=development#6a5994fea05ad4294ef08ea3483a03c62bab8884"
 dependencies = [
  "case",
  "proc-macro-crate",
@@ -818,7 +811,7 @@ checksum = "8859744c7cd12c43f821b12f02090bae91c61124778c833dcafc978614e131b0"
 [[package]]
 name = "stremio-watched-bitfield"
 version = "0.1.0"
-source = "git+https://github.com/Stremio/stremio-core?branch=development#6e333f0a8a69b641edb4c02a3ee45df411590224"
+source = "git+https://github.com/Stremio/stremio-core?branch=development#6a5994fea05ad4294ef08ea3483a03c62bab8884"
 dependencies = [
  "base64",
  "flate2",
