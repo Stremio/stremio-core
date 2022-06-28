@@ -8,21 +8,20 @@ jobs:
   publish:
     runs-on: ubuntu-latest
     steps:
-    - name: Setup NodeJS
-      uses: actions/setup-node@v1
-      with:
-        node-version: 10
-        registry-url: https://registry.npmjs.org/
     - name: Checkout
       uses: actions/checkout@v2
-    - name: Install rust toolchain
-      run: rustup toolchain install 1.61.0
+    - name: Setup NodeJS
+      uses: actions/setup-node@v3
+      with:
+        node-version: 12
+        cache: 'npm'
+        registry-url: https://registry.npmjs.org/
     - name: Set default rust toolchain
       run: rustup default 1.61.0
     - name: Install wasm-pack
       run: cargo install --version 0.10.2 wasm-pack
     - name: Install NPM dependencies
-      run: npm install
+      run: npm ci
     - name: Build
       run: npm run build
     - name: Publish to NPM
