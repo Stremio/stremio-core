@@ -1,13 +1,16 @@
+use crate::constants::SKIP_EXTRA_PROP;
 use crate::models::common::{
-    eq_update, resources_update_with_vector_content, ResourceLoadable, ResourcesAction,
-    ResourcesRequestRange,
+    eq_update, resources_update_with_vector_content, Loadable, ResourceLoadable, ResourcesAction,
 };
 use crate::models::ctx::Ctx;
 use crate::runtime::msg::{Action, ActionCatalogsWithExtra, ActionLoad, Internal, Msg};
-use crate::runtime::{Effects, Env, UpdateWithCtx};
-use crate::types::addon::{AggrRequest, ExtraValue};
+use crate::runtime::{EffectFuture, Effects, Env, EnvFutureExt, UpdateWithCtx};
+use crate::types::addon::{AggrRequest, ExtraExt, ExtraValue, ResourcePath, ResourceRequest};
+use crate::types::profile::Profile;
 use crate::types::resource::MetaItemPreview;
+use futures::FutureExt;
 use serde::{Deserialize, Serialize};
+use std::ops::Range;
 
 #[derive(Clone, PartialEq, Serialize, Deserialize)]
 pub struct Selected {
@@ -16,28 +19,23 @@ pub struct Selected {
     pub extra: Vec<ExtraValue>,
 }
 
+pub type CatalogPage<T> = ResourceLoadable<Vec<T>>;
+
+pub type Catalog<T> = Vec<CatalogPage<T>>;
+
 #[derive(Default, Serialize)]
 pub struct CatalogsWithExtra {
     pub selected: Option<Selected>,
-    pub catalogs: Vec<ResourceLoadable<Vec<MetaItemPreview>>>,
+    pub catalogs: Vec<Catalog<MetaItemPreview>>,
 }
 
 impl<E: Env + 'static> UpdateWithCtx<E> for CatalogsWithExtra {
     fn update(&mut self, msg: &Msg, ctx: &Ctx) -> Effects {
         match msg {
             Msg::Action(Action::Load(ActionLoad::CatalogsWithExtra(selected))) => {
-                let selected_effects = eq_update(&mut self.selected, Some(selected.to_owned()));
-                let catalogs_effects = resources_update_with_vector_content::<E, _>(
-                    &mut self.catalogs,
-                    ResourcesAction::ResourcesRequested {
-                        request: &AggrRequest::AllCatalogs {
-                            extra: &selected.extra,
-                            r#type: &selected.r#type,
-                        },
-                        range: &None,
-                        addons: &ctx.profile.addons,
-                    },
-                );
+                let selected_effects = selected_update(&mut self.selected, selected);
+                let catalogs_effects =
+                    catalogs_update::<E>(&mut self.catalogs, &self.selected, None, &ctx.profile);
                 selected_effects.join(catalogs_effects)
             }
             Msg::Action(Action::Unload) => {
@@ -46,42 +44,154 @@ impl<E: Env + 'static> UpdateWithCtx<E> for CatalogsWithExtra {
                 selected_effects.join(catalogs_effects)
             }
             Msg::Action(Action::CatalogsWithExtra(ActionCatalogsWithExtra::LoadRange(range))) => {
-                match &self.selected {
-                    Some(selected) => resources_update_with_vector_content::<E, _>(
-                        &mut self.catalogs,
-                        ResourcesAction::ResourcesRequested {
-                            request: &AggrRequest::AllCatalogs {
-                                extra: &selected.extra,
-                                r#type: &selected.r#type,
-                            },
-                            range: &Some(ResourcesRequestRange::Range(range.to_owned())),
-                            addons: &ctx.profile.addons,
-                        },
-                    ),
-                    _ => Effects::none().unchanged(),
-                }
-            }
-            Msg::Internal(Internal::ResourceRequestResult(request, result)) => {
-                resources_update_with_vector_content::<E, _>(
+                catalogs_update::<E>(
                     &mut self.catalogs,
-                    ResourcesAction::ResourceRequestResult { request, result },
+                    &self.selected,
+                    Some(range),
+                    &ctx.profile,
                 )
             }
-            Msg::Internal(Internal::ProfileChanged) => match &self.selected {
-                Some(selected) => resources_update_with_vector_content::<E, _>(
-                    &mut self.catalogs,
-                    ResourcesAction::ResourcesRequested {
-                        request: &AggrRequest::AllCatalogs {
-                            extra: &selected.extra,
-                            r#type: &selected.r#type,
-                        },
-                        range: &None,
-                        addons: &ctx.profile.addons,
-                    },
-                ),
+            Msg::Action(Action::CatalogsWithExtra(ActionCatalogsWithExtra::LoadNextPage(
+                index,
+            ))) => match self.catalogs.get_mut(*index) {
+                Some(catalog) => match catalog.last() {
+                    Some(ResourceLoadable {
+                        content: Some(Loadable::Ready(items)),
+                        request,
+                    }) => {
+                        let skip = request
+                            .path
+                            .extra
+                            .iter()
+                            .find(|extra_prop| extra_prop.name == SKIP_EXTRA_PROP.name)
+                            .and_then(|extra_prop| extra_prop.value.parse::<usize>().ok())
+                            .unwrap_or_default();
+                        let skip = skip + items.len();
+                        let request = ResourceRequest {
+                            base: request.base.to_owned(),
+                            path: ResourcePath {
+                                id: request.path.id.to_owned(),
+                                r#type: request.path.r#type.to_owned(),
+                                resource: request.path.resource.to_owned(),
+                                extra: request
+                                    .path
+                                    .extra
+                                    .to_owned()
+                                    .extend_one(&SKIP_EXTRA_PROP, Some(skip.to_string())),
+                            },
+                        };
+                        catalog.push(ResourceLoadable {
+                            request: request.to_owned(),
+                            content: Some(Loadable::Loading),
+                        });
+                        Effects::one(
+                            EffectFuture::Concurrent(
+                                E::addon_transport(&request.base)
+                                    .resource(&request.path)
+                                    .map(|result| {
+                                        Msg::Internal(Internal::ResourceRequestResult(
+                                            request,
+                                            Box::new(result),
+                                        ))
+                                    })
+                                    .boxed_env(),
+                            )
+                            .into(),
+                        )
+                    }
+                    _ => Effects::none().unchanged(),
+                },
                 _ => Effects::none().unchanged(),
             },
+            Msg::Internal(Internal::ResourceRequestResult(request, result)) => self
+                .catalogs
+                .iter_mut()
+                .find(|catalog| {
+                    catalog
+                        .first()
+                        .map(|page| page.request.eq_no_extra(request))
+                        .unwrap_or_default()
+                })
+                .map(|catalog| {
+                    resources_update_with_vector_content::<E, _>(
+                        catalog,
+                        ResourcesAction::ResourceRequestResult { request, result },
+                    )
+                })
+                .unwrap_or_else(|| Effects::none().unchanged()),
+            Msg::Internal(Internal::ProfileChanged) => {
+                catalogs_update::<E>(&mut self.catalogs, &self.selected, None, &ctx.profile)
+            }
             _ => Effects::none().unchanged(),
         }
     }
+}
+
+fn selected_update(selected: &mut Option<Selected>, next_selected: &Selected) -> Effects {
+    let mut next_selected = next_selected.to_owned();
+    next_selected.extra = next_selected.extra.remove_all(&SKIP_EXTRA_PROP);
+    eq_update(selected, Some(next_selected))
+}
+
+fn catalogs_update<E: Env + 'static>(
+    catalogs: &mut Vec<Catalog<MetaItemPreview>>,
+    selected: &Option<Selected>,
+    range: Option<&Range<usize>>,
+    profile: &Profile,
+) -> Effects {
+    let (next_catalogs, effects) = match selected {
+        Some(selected) => {
+            let request = AggrRequest::AllCatalogs {
+                extra: &selected.extra,
+                r#type: &selected.r#type,
+            };
+            request
+                .plan(&profile.addons)
+                .into_iter()
+                .map(|(_, request)| request)
+                .enumerate()
+                .map(|(index, request)| {
+                    catalogs
+                        .iter()
+                        .find(|catalog| {
+                            matches!(catalog.first(), Some(resource) if resource.request == request && resource.content.is_some())
+                        })
+                        .map(|catalog| (catalog.to_owned(), None))
+                        .unwrap_or_else(|| match range {
+                            Some(range) if range.start <= index && index <= range.end => (
+                                vec![ResourceLoadable {
+                                    request: request.to_owned(),
+                                    content: Some(Loadable::Loading),
+                                }],
+                                Some(
+                                    EffectFuture::Concurrent(
+                                        E::addon_transport(&request.base)
+                                            .resource(&request.path)
+                                            .map(|result| {
+                                                Msg::Internal(Internal::ResourceRequestResult(
+                                                    request,
+                                                    Box::new(result),
+                                                ))
+                                            })
+                                            .boxed_env(),
+                                    )
+                                    .into(),
+                                ),
+                            ),
+                            _ => (
+                                vec![ResourceLoadable {
+                                    request,
+                                    content: None,
+                                }],
+                                None,
+                            ),
+                        })
+                })
+                .unzip::<_, _, Vec<_>, Vec<_>>()
+        }
+        _ => Default::default(),
+    };
+    Effects::many(effects.into_iter().flatten().collect())
+        .unchanged()
+        .join(eq_update(catalogs, next_catalogs))
 }
