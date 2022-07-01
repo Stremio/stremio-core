@@ -711,7 +711,7 @@ dependencies = [
 [[package]]
 name = "stremio-analytics"
 version = "0.1.0"
-source = "git+https://github.com/Stremio/stremio-core?branch=development#d99f527e7ebbeab9e9523aecb8651d50506eef3e"
+source = "git+https://github.com/Stremio/stremio-core?branch=development#fbcec4e278041a7c1f9cd63111b45185b17c7579"
 dependencies = [
  "derivative",
  "enclose",
@@ -724,7 +724,7 @@ dependencies = [
 [[package]]
 name = "stremio-core"
 version = "0.1.0"
-source = "git+https://github.com/Stremio/stremio-core?branch=development#d99f527e7ebbeab9e9523aecb8651d50506eef3e"
+source = "git+https://github.com/Stremio/stremio-core?branch=development#fbcec4e278041a7c1f9cd63111b45185b17c7579"
 dependencies = [
  "anyhow",
  "base64",
@@ -761,13 +761,11 @@ dependencies = [
 name = "stremio-core-web"
 version = "0.43.0"
 dependencies = [
- "base64",
  "boolinator",
  "cfg-if 0.1.10",
  "chrono",
  "console_error_panic_hook",
  "either",
- "flate2",
  "futures",
  "getrandom",
  "hex",
@@ -775,7 +773,6 @@ dependencies = [
  "itertools",
  "js-sys",
  "lazy_static",
- "percent-encoding",
  "semver",
  "serde",
  "serde_json",
@@ -792,7 +789,7 @@ dependencies = [
 [[package]]
 name = "stremio-derive"
 version = "0.1.0"
-source = "git+https://github.com/Stremio/stremio-core?branch=development#d99f527e7ebbeab9e9523aecb8651d50506eef3e"
+source = "git+https://github.com/Stremio/stremio-core?branch=development#fbcec4e278041a7c1f9cd63111b45185b17c7579"
 dependencies = [
  "case",
  "proc-macro-crate",
@@ -811,7 +808,7 @@ checksum = "f85866d77a26e83d3774dfcbb3871540b3e5e4fc753e26bdd5e8e4aa3bb9f9be"
 [[package]]
 name = "stremio-watched-bitfield"
 version = "0.1.0"
-source = "git+https://github.com/Stremio/stremio-core?branch=development#d99f527e7ebbeab9e9523aecb8651d50506eef3e"
+source = "git+https://github.com/Stremio/stremio-core?branch=development#fbcec4e278041a7c1f9cd63111b45185b17c7579"
 dependencies = [
  "base64",
  "flate2",
