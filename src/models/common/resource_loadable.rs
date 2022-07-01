@@ -7,7 +7,6 @@ use futures::FutureExt;
 use serde::Serialize;
 use std::convert::TryFrom;
 use std::fmt;
-use std::ops::Range;
 
 #[derive(Clone, PartialEq, Serialize)]
 #[cfg_attr(debug_assertions, derive(Debug))]
@@ -47,16 +46,10 @@ pub enum ResourceAction<'a> {
     },
 }
 
-pub enum ResourcesRequestRange {
-    All,
-    Range(Range<usize>),
-}
-
 pub enum ResourcesAction<'a> {
     ResourcesRequested {
         request: &'a AggrRequest<'a>,
         addons: &'a [Descriptor],
-        range: &'a Option<ResourcesRequestRange>,
     },
     ResourceRequestResult {
         request: &'a ResourceRequest,
@@ -125,56 +118,36 @@ where
     T: TryFrom<ResourceResponse, Error = &'static str> + Clone + PartialEq,
 {
     match action {
-        ResourcesAction::ResourcesRequested {
-            request,
-            addons,
-            range,
-        } => {
+        ResourcesAction::ResourcesRequested { request, addons } => {
             let (next_resources, effects) = request
                 .plan(addons)
                 .into_iter()
-                .map(|(_, request)| request)
-                .enumerate()
-                .map(|(index, request)| {
+                .map(|(_, request)| {
                     resources
                         .iter()
                         .find(|resource| resource.request == request && resource.content.is_some())
                         .map(|resource| (resource.to_owned(), None))
                         .unwrap_or_else(|| {
-                            match range.as_ref().map(|range| match range {
-                                ResourcesRequestRange::All => true,
-                                ResourcesRequestRange::Range(range) => {
-                                    range.start <= index && index <= range.end
-                                }
-                            }) {
-                                None | Some(false) => (
-                                    ResourceLoadable {
-                                        request,
-                                        content: None,
-                                    },
-                                    None,
+                            (
+                                ResourceLoadable {
+                                    request: request.to_owned(),
+                                    content: Some(Loadable::Loading),
+                                },
+                                Some(
+                                    EffectFuture::Concurrent(
+                                        E::addon_transport(&request.base)
+                                            .resource(&request.path)
+                                            .map(|result| {
+                                                Msg::Internal(Internal::ResourceRequestResult(
+                                                    request,
+                                                    Box::new(result),
+                                                ))
+                                            })
+                                            .boxed_env(),
+                                    )
+                                    .into(),
                                 ),
-                                _ => (
-                                    ResourceLoadable {
-                                        request: request.to_owned(),
-                                        content: Some(Loadable::Loading),
-                                    },
-                                    Some(
-                                        EffectFuture::Concurrent(
-                                            E::addon_transport(&request.base)
-                                                .resource(&request.path)
-                                                .map(|result| {
-                                                    Msg::Internal(Internal::ResourceRequestResult(
-                                                        request,
-                                                        Box::new(result),
-                                                    ))
-                                                })
-                                                .boxed_env(),
-                                        )
-                                        .into(),
-                                    ),
-                                ),
-                            }
+                            )
                         })
                 })
                 .unzip::<_, _, Vec<_>, Vec<_>>();

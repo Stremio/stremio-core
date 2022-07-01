@@ -42,6 +42,7 @@ pub enum ActionCatalogWithFilters {
 #[serde(tag = "action", content = "args")]
 pub enum ActionCatalogsWithExtra {
     LoadRange(Range<usize>),
+    LoadNextPage(usize),
 }
 
 #[derive(Clone, Deserialize)]
