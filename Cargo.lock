@@ -711,7 +711,7 @@ dependencies = [
 [[package]]
 name = "stremio-analytics"
 version = "0.1.0"
-source = "git+https://github.com/Stremio/stremio-core?branch=development#6a5994fea05ad4294ef08ea3483a03c62bab8884"
+source = "git+https://github.com/Stremio/stremio-core?branch=development#fbcec4e278041a7c1f9cd63111b45185b17c7579"
 dependencies = [
  "derivative",
  "enclose",
@@ -724,7 +724,7 @@ dependencies = [
 [[package]]
 name = "stremio-core"
 version = "0.1.0"
-source = "git+https://github.com/Stremio/stremio-core?branch=development#6a5994fea05ad4294ef08ea3483a03c62bab8884"
+source = "git+https://github.com/Stremio/stremio-core?branch=development#fbcec4e278041a7c1f9cd63111b45185b17c7579"
 dependencies = [
  "anyhow",
  "base64",
@@ -761,13 +761,11 @@ dependencies = [
 name = "stremio-core-web"
 version = "0.43.0"
 dependencies = [
- "base64",
  "boolinator",
  "cfg-if 0.1.10",
  "chrono",
  "console_error_panic_hook",
  "either",
- "flate2",
  "futures",
  "getrandom",
  "hex",
@@ -775,7 +773,6 @@ dependencies = [
  "itertools",
  "js-sys",
  "lazy_static",
- "percent-encoding",
  "semver",
  "serde",
  "serde_json",
@@ -792,7 +789,7 @@ dependencies = [
 [[package]]
 name = "stremio-derive"
 version = "0.1.0"
-source = "git+https://github.com/Stremio/stremio-core?branch=development#6a5994fea05ad4294ef08ea3483a03c62bab8884"
+source = "git+https://github.com/Stremio/stremio-core?branch=development#fbcec4e278041a7c1f9cd63111b45185b17c7579"
 dependencies = [
  "case",
  "proc-macro-crate",
@@ -804,14 +801,14 @@ dependencies = [
 
 [[package]]
 name = "stremio-official-addons"
-version = "2.0.9"
+version = "2.0.10"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8859744c7cd12c43f821b12f02090bae91c61124778c833dcafc978614e131b0"
+checksum = "f85866d77a26e83d3774dfcbb3871540b3e5e4fc753e26bdd5e8e4aa3bb9f9be"
 
 [[package]]
 name = "stremio-watched-bitfield"
 version = "0.1.0"
-source = "git+https://github.com/Stremio/stremio-core?branch=development#6a5994fea05ad4294ef08ea3483a03c62bab8884"
+source = "git+https://github.com/Stremio/stremio-core?branch=development#fbcec4e278041a7c1f9cd63111b45185b17c7579"
 dependencies = [
  "base64",
  "flate2",
