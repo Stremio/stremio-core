@@ -1,6 +1,6 @@
 use crate::constants::SKIP_EXTRA_PROP;
 use crate::models::common::{
-    eq_update, resources_update_with_vector_content, Loadable, ResourceLoadable, ResourcesAction,
+    eq_update, resource_update_with_vector_content, Loadable, ResourceAction, ResourceLoadable,
 };
 use crate::models::ctx::Ctx;
 use crate::runtime::msg::{Action, ActionCatalogsWithExtra, ActionLoad, Internal, Msg};
@@ -106,16 +106,11 @@ impl<E: Env + 'static> UpdateWithCtx<E> for CatalogsWithExtra {
             Msg::Internal(Internal::ResourceRequestResult(request, result)) => self
                 .catalogs
                 .iter_mut()
-                .find(|catalog| {
-                    catalog
-                        .first()
-                        .map(|page| page.request.eq_no_extra(request))
-                        .unwrap_or_default()
-                })
-                .map(|catalog| {
-                    resources_update_with_vector_content::<E, _>(
-                        catalog,
-                        ResourcesAction::ResourceRequestResult { request, result },
+                .find_map(|catalog| catalog.last_mut().filter(|page| page.request == *request))
+                .map(|page| {
+                    resource_update_with_vector_content::<E, _>(
+                        page,
+                        ResourceAction::ResourceRequestResult { request, result },
                     )
                 })
                 .unwrap_or_else(|| Effects::none().unchanged()),
