@@ -192,7 +192,7 @@ fn library_item_update<E: Env + 'static>(
     eq_update(library_item, next_library_item)
 }
 
-fn watched_update<E: Env>(
+pub fn watched_update<E: Env>(
     watched: &mut Option<WatchedBitField>,
     meta_items: &[ResourceLoadable<MetaItem>],
     library_item: &Option<LibraryItem>,
