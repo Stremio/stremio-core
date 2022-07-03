@@ -103,6 +103,11 @@ fn stream_source() {
             },
             StreamSource::Torrent {
                 info_hash: [1; 20],
+                file_idx: Some(1),
+                announce: vec!["announce".to_owned()],
+            },
+            StreamSource::Torrent {
+                info_hash: [1; 20],
                 file_idx: None,
                 announce: vec![],
             },
@@ -119,7 +124,7 @@ fn stream_source() {
             },
         ],
         &[
-            Token::Seq { len: Some(7) },
+            Token::Seq { len: Some(8) },
             Token::Struct {
                 name: "StreamSource",
                 len: 1,
@@ -144,6 +149,20 @@ fn stream_source() {
             Token::Some,
             Token::U16(1),
             Token::Str("announce"),
+            Token::Seq { len: Some(1) },
+            Token::Str("announce"),
+            Token::SeqEnd,
+            Token::StructEnd,
+            Token::Struct {
+                name: "StreamSource",
+                len: 3,
+            },
+            Token::Str("infoHash"),
+            Token::BorrowedBytes(b"0101010101010101010101010101010101010101"),
+            Token::Str("fileIdx"),
+            Token::Some,
+            Token::U16(1),
+            Token::Str("sources"),
             Token::Seq { len: Some(1) },
             Token::Str("announce"),
             Token::SeqEnd,
