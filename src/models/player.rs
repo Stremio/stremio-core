@@ -99,7 +99,7 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                     .map(core::slice::from_ref)
                     .unwrap_or_default();
                 let watched_effects =
-                    watched_update::<E>(&mut self.watched, &meta_items, &self.library_item);
+                    watched_update::<E>(&mut self.watched, meta_items, &self.library_item);
                 selected_effects
                     .join(meta_item_effects)
                     .join(subtitles_effects)
@@ -167,13 +167,10 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                         library_item.state.flagged_watched = 1;
                         library_item.state.times_watched =
                             library_item.state.times_watched.saturating_add(1);
-                        match &self.watched {
-                            Some(watched) => {
-                                let mut watched = watched.to_owned();
-                                watched.set_video(video_id, true);
-                                library_item.state.watched = Some(watched.to_string());
-                            }
-                            _ => {}
+                        if let Some(watched) = &self.watched {
+                            let mut watched = watched.to_owned();
+                            watched.set_video(video_id, true);
+                            library_item.state.watched = Some(watched.to_string());
                         }
                     };
                     if library_item.temp && library_item.state.times_watched == 0 {
