@@ -112,7 +112,7 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                 let watched_effects = eq_update(&mut self.watched, None);
                 let library_item_state_effects = match &mut self.library_item {
                     Some(library_item) => {
-                        if library_item.state.time_watched as f64
+                        if library_item.state.time_offset as f64
                             > library_item.state.duration as f64 * CREDITS_THRESHOLD_COEF
                         {
                             library_item.state.time_offset = 0;
