@@ -2,7 +2,7 @@ use crate::runtime::Env;
 use crate::types::resource::{MetaItemBehaviorHints, MetaItemPreview, PosterShape};
 use chrono::{DateTime, Duration, Utc};
 use serde::{Deserialize, Serialize};
-use serde_with::{serde_as, DefaultOnNull, NoneAsEmptyString};
+use serde_with::{serde_as, DefaultOnError, DefaultOnNull, NoneAsEmptyString};
 use std::marker::PhantomData;
 use url::Url;
 
@@ -16,7 +16,7 @@ pub struct LibraryItem {
     pub name: String,
     pub r#type: String,
     #[serde(default)]
-    #[serde_as(deserialize_as = "DefaultOnNull<NoneAsEmptyString>")]
+    #[serde_as(deserialize_as = "DefaultOnError<NoneAsEmptyString>")]
     pub poster: Option<Url>,
     #[serde(default)]
     pub poster_shape: PosterShape,
