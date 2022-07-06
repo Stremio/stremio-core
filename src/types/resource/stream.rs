@@ -112,7 +112,7 @@ pub enum StreamSource {
         #[serde(with = "SerHex::<Strict>")]
         info_hash: [u8; 20],
         file_idx: Option<u16>,
-        #[serde(default)]
+        #[serde(default, alias = "sources")]
         announce: Vec<String>,
     },
     #[serde(rename_all = "camelCase")]
