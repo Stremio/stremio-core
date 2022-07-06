@@ -7,7 +7,6 @@ use stremio_core::models::catalog_with_filters::{
 };
 use stremio_core::models::common::Loadable;
 use stremio_core::models::ctx::Ctx;
-use stremio_core::types::addon::ResourceRequest;
 use stremio_core::types::resource::MetaItemPreview;
 use wasm_bindgen::JsValue;
 
@@ -89,7 +88,6 @@ mod model {
         pub selected: &'a Option<CatalogWithFiltersSelected>,
         pub selectable: Selectable<'a>,
         pub catalog: Option<ResourceLoadable<'a>>,
-        pub default_request: Option<&'a ResourceRequest>,
     }
 }
 
@@ -201,11 +199,6 @@ pub fn serialize_discover(discover: &CatalogWithFilters<MetaItemPreview>, ctx: &
                     .any(|addon| addon.transport_url == first_page.request.base),
             }
         }),
-        default_request: discover
-            .selectable
-            .types
-            .first()
-            .map(|first_type| &first_type.request),
     })
     .unwrap()
 }
