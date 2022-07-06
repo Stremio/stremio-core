@@ -48,19 +48,9 @@ fn load_action() {
         runtime.clone(),
         enclose!((runtime) move || {
             let runtime = runtime.read().unwrap();
-            let request = runtime
-                .model()
-                .unwrap()
-                .discover
-                .selectable
-                .catalogs
-                .first()
-                .unwrap()
-                .request
-                .to_owned();
             runtime.dispatch(RuntimeAction {
                 field: None,
-                action: Action::Load(ActionLoad::CatalogWithFilters(Selected { request })),
+                action: Action::Load(ActionLoad::CatalogWithFilters(None)),
             });
         }),
     );
@@ -75,6 +65,7 @@ fn load_action() {
         .collect::<Vec<_>>();
     assert_eq!(states.len(), 3);
     assert!(states[1].discover.selectable.next_page.is_none());
+    assert_matches!(&states[1].discover.selected, Some(Selected { request }) if *request == states[0].discover.selectable.types.first().unwrap().request);
     assert_matches!(
         states[1].discover.catalog.first(),
         Some(ResourceLoadable {

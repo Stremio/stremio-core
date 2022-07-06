@@ -56,6 +56,7 @@ impl CatalogResourceAdapter for DescriptorPreview {
 }
 
 #[derive(Clone, PartialEq, Serialize, Deserialize)]
+#[cfg_attr(debug_assertions, derive(Debug))]
 pub struct Selected {
     pub request: ResourceRequest,
 }
@@ -151,7 +152,8 @@ where
     fn update(&mut self, msg: &Msg, ctx: &Ctx) -> Effects {
         match msg {
             Msg::Action(Action::Load(ActionLoad::CatalogWithFilters(selected))) => {
-                let selected_effects = selected_update(&mut self.selected, selected);
+                let selected_effects =
+                    selected_update::<T>(&mut self.selected, &self.selectable, selected);
                 let catalog_effects = catalog_update::<E, _>(
                     &mut self.catalog,
                     self.selected
@@ -228,14 +230,36 @@ where
     }
 }
 
-fn selected_update(selected: &mut Option<Selected>, next_selected: &Selected) -> Effects {
-    let mut next_selected = next_selected.to_owned();
-    next_selected.request.path.extra = next_selected
-        .request
-        .path
-        .extra
-        .remove_all(&SKIP_EXTRA_PROP);
-    eq_update(selected, Some(next_selected))
+fn selected_update<T: CatalogResourceAdapter>(
+    selected: &mut Option<Selected>,
+    selectable: &Selectable,
+    next_selected: &Option<Selected>,
+) -> Effects {
+    let next_selected = next_selected
+        .as_ref()
+        .map(|next_selected| {
+            let mut next_selected = next_selected.to_owned();
+            next_selected.request.path.extra = next_selected
+                .request
+                .path
+                .extra
+                .remove_all(&SKIP_EXTRA_PROP);
+            next_selected
+        })
+        .or_else(|| match T::selectable_priority() {
+            SelectablePriority::Type => selectable.types.first().map(|selectable_type| Selected {
+                request: selectable_type.request.to_owned(),
+            }),
+            SelectablePriority::Catalog => {
+                selectable
+                    .catalogs
+                    .first()
+                    .map(|selectable_catalog| Selected {
+                        request: selectable_catalog.request.to_owned(),
+                    })
+            }
+        });
+    eq_update(selected, next_selected)
 }
 
 fn catalog_update<E, T>(

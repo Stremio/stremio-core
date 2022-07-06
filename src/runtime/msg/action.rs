@@ -75,7 +75,7 @@ pub enum ActionPlayer {
 #[serde(tag = "model", content = "args")]
 pub enum ActionLoad {
     AddonDetails(AddonDetailsSelected),
-    CatalogWithFilters(CatalogWithFiltersSelected),
+    CatalogWithFilters(Option<CatalogWithFiltersSelected>),
     CatalogsWithExtra(CatalogsWithExtraSelected),
     InstalledAddonsWithFilters(InstalledAddonsWithFiltersSelected),
     LibraryWithFilters(LibraryWithFiltersSelected),
