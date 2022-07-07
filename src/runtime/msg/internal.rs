@@ -38,6 +38,8 @@ pub enum Internal {
     ProfileChanged,
     // Dispatched when library changes with a flag if its already persisted.
     LibraryChanged(bool),
+    // Dispatched when streams bucket changes with a flag if its already persisted.
+    StreamsChanged(bool),
     // Result for loading link code.
     LinkCodeResult(Result<LinkCodeResponse, LinkError>),
     // Result for loading link data.

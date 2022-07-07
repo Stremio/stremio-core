@@ -13,6 +13,7 @@ use url::Url;
 pub enum Event {
     ProfilePushedToStorage { uid: UID },
     LibraryItemsPushedToStorage { ids: Vec<String> },
+    StreamsPushedToStorage { uid: UID },
     UserPulledFromAPI { uid: UID },
     UserPushedToAPI { uid: UID },
     AddonsPulledFromAPI { transport_urls: Vec<Url> },

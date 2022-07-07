@@ -248,13 +248,13 @@ pub fn update_profile<E: Env + 'static>(
             (CtxStatus::Loading(loading_auth_request), Ok((auth, addons, _)))
                 if loading_auth_request == auth_request =>
             {
-                let next_proifle = Profile {
+                let next_profile = Profile {
                     auth: Some(auth.to_owned()),
                     addons: addons.to_owned(),
                     settings: Settings::default(),
                 };
-                if *profile != next_proifle {
-                    *profile = next_proifle;
+                if *profile != next_profile {
+                    *profile = next_profile;
                     Effects::msg(Msg::Internal(Internal::ProfileChanged))
                 } else {
                     Effects::none().unchanged()

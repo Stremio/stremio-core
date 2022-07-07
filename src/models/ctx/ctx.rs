@@ -1,4 +1,10 @@
+use derivative::Derivative;
+use enclose::enclose;
+use futures::{future, FutureExt, TryFutureExt};
+use serde::Serialize;
+
 use crate::constants::LIBRARY_COLLECTION_NAME;
+use crate::models::ctx::update_streams::update_streams;
 use crate::models::ctx::{update_library, update_profile, CtxError};
 use crate::runtime::msg::{Action, ActionCtx, Event, Internal, Msg};
 use crate::runtime::{Effect, EffectFuture, Effects, Env, EnvFutureExt, Update};
@@ -6,12 +12,8 @@ use crate::types::api::{
     fetch_api, APIRequest, APIResult, AuthRequest, AuthResponse, CollectionResponse,
     DatastoreCommand, DatastoreRequest, SuccessResponse,
 };
-use crate::types::library::LibraryBucket;
+use crate::types::library::{LibraryBucket, StreamsBucket};
 use crate::types::profile::{Auth, AuthKey, Profile};
-use derivative::Derivative;
-use enclose::enclose;
-use futures::{future, FutureExt, TryFutureExt};
-use serde::Serialize;
 
 #[derive(PartialEq, Serialize)]
 #[cfg_attr(debug_assertions, derive(Clone))]
@@ -25,21 +27,23 @@ pub enum CtxStatus {
 #[derivative(Default)]
 pub struct Ctx {
     pub profile: Profile,
-    // TODO StreamsBucket
     // TODO SubtitlesBucket
     // TODO SearchesBucket
     #[serde(skip)]
     pub library: LibraryBucket,
+    #[serde(skip)]
+    pub streams: StreamsBucket,
     #[serde(skip)]
     #[derivative(Default(value = "CtxStatus::Ready"))]
     pub status: CtxStatus,
 }
 
 impl Ctx {
-    pub fn new(profile: Profile, library: LibraryBucket) -> Self {
+    pub fn new(profile: Profile, library: LibraryBucket, streams: StreamsBucket) -> Self {
         Self {
             profile,
             library,
+            streams,
             ..Self::default()
         }
     }
@@ -65,12 +69,14 @@ impl<E: Env + 'static> Update<E> for Ctx {
                     &self.status,
                     msg,
                 );
+                let streams_effects = update_streams::<E>(&mut self.streams, &self.status, msg);
                 self.status = CtxStatus::Ready;
                 Effects::msg(Msg::Event(Event::UserLoggedOut { uid }))
                     .unchanged()
                     .join(session_effects)
                     .join(profile_effects)
                     .join(library_effects)
+                    .join(streams_effects)
             }
             Msg::Internal(Internal::CtxAuthResult(auth_request, result)) => {
                 let profile_effects = update_profile::<E>(&mut self.profile, &self.status, msg);
@@ -80,6 +86,7 @@ impl<E: Env + 'static> Update<E> for Ctx {
                     &self.status,
                     msg,
                 );
+                let streams_effects = update_streams::<E>(&mut self.streams, &self.status, msg);
                 let ctx_effects = match &self.status {
                     CtxStatus::Loading(loading_auth_request)
                         if loading_auth_request == auth_request =>
@@ -101,7 +108,10 @@ impl<E: Env + 'static> Update<E> for Ctx {
                     }
                     _ => Effects::none().unchanged(),
                 };
-                profile_effects.join(library_effects).join(ctx_effects)
+                profile_effects
+                    .join(library_effects)
+                    .join(streams_effects)
+                    .join(ctx_effects)
             }
             _ => {
                 let profile_effects = update_profile::<E>(&mut self.profile, &self.status, msg);
@@ -111,7 +121,8 @@ impl<E: Env + 'static> Update<E> for Ctx {
                     &self.status,
                     msg,
                 );
-                profile_effects.join(library_effects)
+                let streams_effects = update_streams::<E>(&mut self.streams, &self.status, msg);
+                profile_effects.join(library_effects).join(streams_effects)
             }
         }
     }
