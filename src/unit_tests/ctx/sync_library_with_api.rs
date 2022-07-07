@@ -1,7 +1,7 @@
 use crate::constants::LIBRARY_RECENT_STORAGE_KEY;
 use crate::models::ctx::Ctx;
 use crate::runtime::msg::{Action, ActionCtx};
-use crate::runtime::{Effects, Env, EnvFutureExt, Runtime, RuntimeAction, TryEnvFuture};
+use crate::runtime::{Env, EnvFutureExt, Runtime, RuntimeAction, TryEnvFuture};
 use crate::types::api::{APIResult, LibraryItemModified, SuccessResponse};
 use crate::types::library::{LibraryBucket, LibraryItem};
 use crate::types::profile::{Auth, AuthKey, GDPRConsent, Profile, User};
@@ -25,8 +25,7 @@ fn actionctx_synclibrarywithapi() {
         ctx: Ctx,
     }
     let _env_mutex = TestEnv::reset();
-    let (runtime, _rx) =
-        Runtime::<TestEnv, _>::new(TestModel::default(), Effects::none().unchanged(), 1000);
+    let (runtime, _rx) = Runtime::<TestEnv, _>::new(TestModel::default(), vec![], 1000);
     TestEnv::run(|| {
         runtime.dispatch(RuntimeAction {
             field: None,
@@ -278,7 +277,7 @@ fn actionctx_synclibrarywithapi_with_user() {
                 ..Default::default()
             },
         },
-        Effects::none().unchanged(),
+        vec![],
         1000,
     );
     TestEnv::run(|| {
@@ -409,7 +408,7 @@ fn actionctx_synclibrarywithapi_with_user_empty_library() {
                 ..Default::default()
             },
         },
-        Effects::none().unchanged(),
+        vec![],
         1000,
     );
     TestEnv::run(|| {

@@ -2,7 +2,7 @@ use crate::models::common::Loadable;
 use crate::models::ctx::Ctx;
 use crate::models::link::Link;
 use crate::runtime::msg::{Action, ActionLink, ActionLoad};
-use crate::runtime::{Effects, EnvFutureExt, Runtime, RuntimeAction, TryEnvFuture};
+use crate::runtime::{EnvFutureExt, Runtime, RuntimeAction, TryEnvFuture};
 use crate::types::api::{APIResult, LinkAuthKey, LinkCodeResponse, LinkDataResponse};
 use crate::unit_tests::{default_fetch_handler, Request, TestEnv, FETCH_HANDLER, REQUESTS};
 use futures::future;
@@ -52,8 +52,7 @@ fn create_link_code() {
     }
     let _env_mutex = TestEnv::reset();
     *FETCH_HANDLER.write().unwrap() = Box::new(fetch_handler);
-    let (runtime, _rx) =
-        Runtime::<TestEnv, _>::new(TestModel::default(), Effects::none().unchanged(), 1000);
+    let (runtime, _rx) = Runtime::<TestEnv, _>::new(TestModel::default(), vec![], 1000);
     TestEnv::run(|| {
         runtime.dispatch(RuntimeAction {
             field: None,

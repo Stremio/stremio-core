@@ -1,7 +1,7 @@
 use crate::constants::{LIBRARY_RECENT_STORAGE_KEY, LIBRARY_STORAGE_KEY, PROFILE_STORAGE_KEY};
 use crate::models::ctx::Ctx;
 use crate::runtime::msg::{Action, ActionCtx};
-use crate::runtime::{Effects, Env, EnvFutureExt, Runtime, RuntimeAction, TryEnvFuture};
+use crate::runtime::{Env, EnvFutureExt, Runtime, RuntimeAction, TryEnvFuture};
 use crate::types::api::{APIResult, SuccessResponse};
 use crate::types::library::LibraryBucket;
 use crate::types::profile::{Auth, AuthKey, GDPRConsent, Profile, User};
@@ -81,7 +81,7 @@ fn actionctx_logout() {
                 ..Default::default()
             },
         },
-        Effects::none().unchanged(),
+        vec![],
         1000,
     );
     TestEnv::run(|| {

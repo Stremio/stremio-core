@@ -1,7 +1,7 @@
 use crate::constants::{LIBRARY_RECENT_STORAGE_KEY, LIBRARY_STORAGE_KEY, PROFILE_STORAGE_KEY};
 use crate::models::ctx::Ctx;
 use crate::runtime::msg::{Action, ActionCtx};
-use crate::runtime::{Effects, Env, EnvFutureExt, Runtime, RuntimeAction, TryEnvFuture};
+use crate::runtime::{Env, EnvFutureExt, Runtime, RuntimeAction, TryEnvFuture};
 use crate::types::api::{
     APIResult, AuthRequest, AuthResponse, CollectionResponse, GDPRConsentRequest,
 };
@@ -77,8 +77,7 @@ fn actionctx_authenticate_login() {
     }
     let _env_mutex = TestEnv::reset();
     *FETCH_HANDLER.write().unwrap() = Box::new(fetch_handler);
-    let (runtime, _rx) =
-        Runtime::<TestEnv, _>::new(TestModel::default(), Effects::none().unchanged(), 1000);
+    let (runtime, _rx) = Runtime::<TestEnv, _>::new(TestModel::default(), vec![], 1000);
     TestEnv::run(|| {
         runtime.dispatch(RuntimeAction {
             field: None,
@@ -268,8 +267,7 @@ fn actionctx_authenticate_login_with_token() {
     }
     let _env_mutex = TestEnv::reset();
     *FETCH_HANDLER.write().unwrap() = Box::new(fetch_handler);
-    let (runtime, _rx) =
-        Runtime::<TestEnv, _>::new(TestModel::default(), Effects::none().unchanged(), 1000);
+    let (runtime, _rx) = Runtime::<TestEnv, _>::new(TestModel::default(), vec![], 1000);
     TestEnv::run(|| {
         runtime.dispatch(RuntimeAction {
             field: None,
@@ -458,8 +456,7 @@ fn actionctx_authenticate_register() {
     }
     let _env_mutex = TestEnv::reset();
     *FETCH_HANDLER.write().unwrap() = Box::new(fetch_handler);
-    let (runtime, _rx) =
-        Runtime::<TestEnv, _>::new(TestModel::default(), Effects::none().unchanged(), 1000);
+    let (runtime, _rx) = Runtime::<TestEnv, _>::new(TestModel::default(), vec![], 1000);
     TestEnv::run(|| {
         runtime.dispatch(RuntimeAction {
             field: None,

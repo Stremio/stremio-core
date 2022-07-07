@@ -1,5 +1,5 @@
 use crate::runtime::msg::{Action, Event, Msg};
-use crate::runtime::{Effect, EffectFuture, Effects, Env, Model};
+use crate::runtime::{Effect, EffectFuture, Env, Model};
 use derivative::Derivative;
 use enclose::enclose;
 use futures::channel::mpsc::{channel, Receiver, Sender};
@@ -13,8 +13,8 @@ use std::sync::{Arc, LockResult, RwLock, RwLockReadGuard};
 #[derive(Serialize)]
 #[cfg_attr(debug_assertions, derive(Debug, PartialEq))]
 #[serde(tag = "name", content = "args")]
-pub enum RuntimeEvent {
-    NewState,
+pub enum RuntimeEvent<E: Env, M: Model<E>> {
+    NewState(Vec<M::Field>),
     CoreEvent(Event),
 }
 
@@ -27,7 +27,7 @@ pub struct RuntimeAction<E: Env, M: Model<E>> {
 #[derivative(Clone(bound = ""))]
 pub struct Runtime<E: Env, M: Model<E>> {
     model: Arc<RwLock<M>>,
-    tx: Sender<RuntimeEvent>,
+    tx: Sender<RuntimeEvent<E, M>>,
     env: PhantomData<E>,
 }
 
@@ -36,7 +36,11 @@ where
     E: Env + Send + 'static,
     M: Model<E> + Send + Sync + 'static,
 {
-    pub fn new(model: M, effects: Effects, buffer: usize) -> (Self, Receiver<RuntimeEvent>) {
+    pub fn new(
+        model: M,
+        effects: Vec<Effect>,
+        buffer: usize,
+    ) -> (Self, Receiver<RuntimeEvent<E, M>>) {
         let (tx, rx) = channel(buffer);
         let model = Arc::new(RwLock::new(model));
         let runtime = Runtime {
@@ -44,14 +48,14 @@ where
             tx,
             env: PhantomData,
         };
-        runtime.handle_effects(effects);
+        runtime.handle_effects(effects, vec![]);
         (runtime, rx)
     }
     pub fn model(&self) -> LockResult<RwLockReadGuard<M>> {
         self.model.read()
     }
     pub fn dispatch(&self, action: RuntimeAction<E, M>) {
-        let effects = {
+        let (effects, fields) = {
             let mut model = self.model.write().expect("model write failed");
             match action {
                 RuntimeAction {
@@ -61,7 +65,7 @@ where
                 RuntimeAction { action, .. } => model.update(&Msg::Action(action)),
             }
         };
-        self.handle_effects(effects);
+        self.handle_effects(effects, fields);
     }
     #[cfg(test)]
     pub async fn close(&mut self) -> Result<(), anyhow::Error> {
@@ -69,12 +73,12 @@ where
         self.tx.close_channel();
         Ok(())
     }
-    fn emit(&self, event: RuntimeEvent) {
+    fn emit(&self, event: RuntimeEvent<E, M>) {
         self.tx.clone().try_send(event).expect("emit event failed");
     }
-    fn handle_effects(&self, effects: Effects) {
-        if effects.has_changed {
-            self.emit(RuntimeEvent::NewState);
+    fn handle_effects(&self, effects: Vec<Effect>, fields: Vec<M::Field>) {
+        if !fields.is_empty() {
+            self.emit(RuntimeEvent::<E, M>::NewState(fields));
         };
         effects
             .into_iter()
@@ -102,8 +106,9 @@ where
                 self.emit(RuntimeEvent::CoreEvent(event));
             }
             Msg::Internal(_) => {
-                let effects = self.model.write().expect("model write failed").update(&msg);
-                self.handle_effects(effects);
+                let (effects, fields) =
+                    self.model.write().expect("model write failed").update(&msg);
+                self.handle_effects(effects, fields);
             }
             Msg::Action(_) => {
                 panic!("effects are not allowed to resolve with action");

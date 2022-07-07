@@ -17,7 +17,7 @@ use stremio_derive::Model;
 
 #[test]
 fn load_action() {
-    #[derive(Model, Default, Clone)]
+    #[derive(Model, Default, Debug, Clone)]
     #[model(TestEnv)]
     struct TestModel {
         ctx: Ctx,
@@ -41,7 +41,11 @@ fn load_action() {
     *FETCH_HANDLER.write().unwrap() = Box::new(fetch_handler);
     let ctx = Ctx::default();
     let (discover, effects) = CatalogWithFilters::<MetaItemPreview>::new(&ctx.profile);
-    let (runtime, rx) = Runtime::<TestEnv, _>::new(TestModel { ctx, discover }, effects, 1000);
+    let (runtime, rx) = Runtime::<TestEnv, _>::new(
+        TestModel { ctx, discover },
+        effects.into_iter().collect::<Vec<_>>(),
+        1000,
+    );
     let runtime = Arc::new(RwLock::new(runtime));
     TestEnv::run_with_runtime(
         rx,
@@ -56,8 +60,18 @@ fn load_action() {
     );
     let events = EVENTS.read().unwrap();
     assert_eq!(events.len(), 2);
-    assert_eq!(events[0], RuntimeEvent::NewState);
-    assert_eq!(events[1], RuntimeEvent::NewState);
+    assert_matches!(
+        events[0]
+            .downcast_ref::<RuntimeEvent<TestEnv, TestModel>>()
+            .unwrap(),
+        RuntimeEvent::NewState(fields) if fields.len() == 1 && *fields.first().unwrap() == TestModelField::Discover
+    );
+    assert_matches!(
+        events[1]
+            .downcast_ref::<RuntimeEvent<TestEnv, TestModel>>()
+            .unwrap(),
+        RuntimeEvent::NewState(fields) if fields.len() == 1 && *fields.first().unwrap() == TestModelField::Discover
+    );
     let states = STATES.read().unwrap();
     let states = states
         .iter()

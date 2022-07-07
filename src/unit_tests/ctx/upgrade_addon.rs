@@ -1,7 +1,7 @@
 use crate::constants::PROFILE_STORAGE_KEY;
 use crate::models::ctx::Ctx;
 use crate::runtime::msg::{Action, ActionCtx};
-use crate::runtime::{Effects, Runtime, RuntimeAction};
+use crate::runtime::{Runtime, RuntimeAction};
 use crate::types::addon::{Descriptor, Manifest};
 use crate::types::profile::Profile;
 use crate::unit_tests::{TestEnv, REQUESTS, STORAGE};
@@ -65,7 +65,7 @@ fn actionctx_installaddon_upgrade() {
                 ..Default::default()
             },
         },
-        Effects::none().unchanged(),
+        vec![],
         1000,
     );
     TestEnv::run(|| {
