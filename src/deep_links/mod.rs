@@ -77,7 +77,7 @@ impl From<&LibraryItem> for LibraryItemDeepLinks {
                 .as_ref()
                 .cloned()
                 .xor(Some(format!(
-                    "stremio:///metadetails/{}/{}",
+                    "stremio:///detail/{}/{}",
                     utf8_percent_encode(&item.r#type, URI_COMPONENT_ENCODE_SET),
                     utf8_percent_encode(&item.id, URI_COMPONENT_ENCODE_SET)
                 ))),
@@ -88,7 +88,7 @@ impl From<&LibraryItem> for LibraryItemDeepLinks {
                 .or(item.behavior_hints.default_video_id.as_ref())
                 .map(|video_id| {
                     format!(
-                        "stremio:///metadetails/{}/{}/{}",
+                        "stremio:///detail/{}/{}/{}",
                         utf8_percent_encode(&item.r#type, URI_COMPONENT_ENCODE_SET),
                         utf8_percent_encode(&item.id, URI_COMPONENT_ENCODE_SET),
                         utf8_percent_encode(video_id, URI_COMPONENT_ENCODE_SET)
@@ -118,7 +118,7 @@ impl From<(&MetaItemPreview, &ResourceRequest)> for MetaItemDeepLinks {
                 .as_ref()
                 .cloned()
                 .xor(Some(format!(
-                    "stremio:///metadetails/{}/{}",
+                    "stremio:///detail/{}/{}",
                     utf8_percent_encode(&item.r#type, URI_COMPONENT_ENCODE_SET),
                     utf8_percent_encode(&item.id, URI_COMPONENT_ENCODE_SET)
                 ))),
@@ -128,7 +128,7 @@ impl From<(&MetaItemPreview, &ResourceRequest)> for MetaItemDeepLinks {
                 .as_ref()
                 .map(|video_id| {
                     format!(
-                        "stremio:///metadetails/{}/{}/{}",
+                        "stremio:///detail/{}/{}/{}",
                         utf8_percent_encode(&item.r#type, URI_COMPONENT_ENCODE_SET),
                         utf8_percent_encode(&item.id, URI_COMPONENT_ENCODE_SET),
                         utf8_percent_encode(video_id, URI_COMPONENT_ENCODE_SET)
@@ -177,7 +177,7 @@ impl From<(&Video, &ResourceRequest)> for VideoDeepLinks {
         let stream = video.stream();
         VideoDeepLinks {
             meta_details_streams: format!(
-                "stremio:///metadetails/{}/{}/{}",
+                "stremio:///detail/{}/{}/{}",
                 utf8_percent_encode(&request.path.r#type, URI_COMPONENT_ENCODE_SET),
                 utf8_percent_encode(&request.path.id, URI_COMPONENT_ENCODE_SET),
                 utf8_percent_encode(&video.id, URI_COMPONENT_ENCODE_SET)

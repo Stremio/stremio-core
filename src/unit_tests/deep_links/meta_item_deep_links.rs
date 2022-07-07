@@ -37,7 +37,7 @@ fn meta_item_deep_links() {
     assert_eq!(preview_midl, midl);
     assert_eq!(
         midl.meta_details_videos,
-        Some("stremio:///metadetails/movie/tt1254207".to_string())
+        Some("stremio:///detail/movie/tt1254207".to_string())
     );
     assert_eq!(midl.meta_details_streams, None);
     assert_eq!(midl.player, None);
@@ -81,7 +81,7 @@ fn meta_item_deep_links_behavior_hints() {
     assert_eq!(midl.meta_details_videos, None);
     assert_eq!(
         midl.meta_details_streams,
-        Some("stremio:///metadetails/movie/tt1254207/bh_video_id".to_string())
+        Some("stremio:///detail/movie/tt1254207/bh_video_id".to_string())
     );
     assert_eq!(midl.player, None);
 }
@@ -125,7 +125,7 @@ fn meta_item_deep_links_behavior_hints_yt_id() {
     assert_eq!(
         midl.meta_details_streams,
         Some(
-            "stremio:///metadetails/movie/tt1254207/yt_id%3AUCSMOQeBJ2RAnuFungnQOxLg%3Aaqz-KE-bpKQ"
+            "stremio:///detail/movie/tt1254207/yt_id%3AUCSMOQeBJ2RAnuFungnQOxLg%3Aaqz-KE-bpKQ"
                 .to_string()
         )
     );
