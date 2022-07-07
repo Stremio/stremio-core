@@ -434,6 +434,7 @@ fn selectable_update<T: CatalogResourceAdapter>(
                                             .path
                                             .extra
                                             .to_owned()
+                                            .remove_all(&SKIP_EXTRA_PROP)
                                             .extend_one(&extra_prop, None),
                                     },
                                 },
@@ -457,6 +458,7 @@ fn selectable_update<T: CatalogResourceAdapter>(
                                         .path
                                         .extra
                                         .to_owned()
+                                        .remove_all(&SKIP_EXTRA_PROP)
                                         .extend_one(&extra_prop, Some(value.to_owned())),
                                 },
                             },
