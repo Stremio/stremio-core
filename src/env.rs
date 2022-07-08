@@ -178,7 +178,7 @@ impl WebEnv {
             },
             _ => return,
         };
-        ANALYTICS.emit(name, data, &model.ctx, &model.streaming_server);
+        WebEnv::exec_concurrent(ANALYTICS.emit(name, data, &model.ctx, &model.streaming_server));
     }
     pub fn send_next_analytics_batch() -> impl Future<Output = ()> {
         ANALYTICS.send_next_batch()
@@ -375,8 +375,7 @@ impl Env for WebEnv {
         get_location_hash()
             .map(|hash| {
                 hash.ok()
-                    .map(|hash| hash.as_string())
-                    .flatten()
+                    .and_then(|hash| hash.as_string())
                     .unwrap_or_default()
             })
             .map(|hash| {
