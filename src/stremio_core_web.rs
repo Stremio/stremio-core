@@ -53,7 +53,11 @@ pub async fn initialize_runtime(emit_to_ui: js_sys::Function) -> Result<(), JsVa
                         library.merge_bucket(other_bucket);
                     };
                     let (model, effects) = WebModel::new(profile, library);
-                    let (runtime, rx) = Runtime::<WebEnv, _>::new(model, effects, 1000);
+                    let (runtime, rx) = Runtime::<WebEnv, _>::new(
+                        model,
+                        effects.into_iter().collect::<Vec<_>>(),
+                        1000,
+                    );
                     WebEnv::exec_concurrent(rx.for_each(move |event| {
                         if let RuntimeEvent::CoreEvent(event) = &event {
                             let runtime = RUNTIME.read().expect("runtime read failed");
