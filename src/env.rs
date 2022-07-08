@@ -21,17 +21,27 @@ use wasm_bindgen::closure::Closure;
 use wasm_bindgen::prelude::wasm_bindgen;
 use wasm_bindgen::{JsCast, JsValue};
 use wasm_bindgen_futures::{spawn_local, JsFuture};
+use web_sys::WorkerGlobalScope;
 
+const UNKNOWN_ERROR: &str = "Unknown Error";
 const INSTALLATION_ID_STORAGE_KEY: &str = "installation_id";
 
 #[wasm_bindgen]
 extern "C" {
-    #[wasm_bindgen(catch, js_namespace = ["window", "core_imports"])]
+    #[wasm_bindgen(catch, js_namespace = ["self"])]
     static app_version: String;
-    #[wasm_bindgen(catch, js_namespace = ["window", "core_imports"])]
+    #[wasm_bindgen(catch, js_namespace = ["self"])]
     static shell_version: Option<String>;
-    #[wasm_bindgen(catch, js_namespace = ["window", "core_imports"])]
+    #[wasm_bindgen(catch, js_namespace = ["self"])]
     fn sanitize_location_path(path: &str) -> Result<String, JsValue>;
+    #[wasm_bindgen(catch, js_namespace = ["self"])]
+    async fn local_storage_get_item(key: String) -> Result<JsValue, JsValue>;
+    #[wasm_bindgen(catch, js_namespace = ["self"])]
+    async fn local_storage_set_item(key: String, value: String) -> Result<(), JsValue>;
+    #[wasm_bindgen(catch, js_namespace = ["self"])]
+    async fn local_storage_remove_item(key: String) -> Result<(), JsValue>;
+    #[wasm_bindgen(catch, js_namespace = ["self"])]
+    async fn get_location_hash(key: String) -> Result<JsValue, JsValue>;
 }
 
 lazy_static! {
@@ -175,8 +185,7 @@ impl WebEnv {
     }
     pub fn set_interval<F: FnMut() + 'static>(func: F, timeout: i32) -> i32 {
         let func = Closure::wrap(Box::new(func) as Box<dyn FnMut()>);
-        let interval_id = web_sys::window()
-            .expect("window is not available")
+        let interval_id = global()
             .set_interval_with_callback_and_timeout_and_arguments_0(
                 func.as_ref().unchecked_ref(),
                 timeout,
@@ -187,9 +196,7 @@ impl WebEnv {
     }
     #[allow(dead_code)]
     pub fn clear_interval(id: i32) {
-        web_sys::window()
-            .expect("window is not available")
-            .clear_interval_with_handle(id);
+        global().clear_interval_with_handle(id);
     }
     pub fn random_buffer(len: usize) -> Vec<u8> {
         let mut buffer = vec![0u8; len];
@@ -229,16 +236,14 @@ impl Env for WebEnv {
             .body(body.as_ref());
         let request = web_sys::Request::new_with_str_and_init(&url, &request_options)
             .expect("request builder failed");
-        let promise = web_sys::window()
-            .expect("window is not available")
-            .fetch_with_request(&request);
+        let promise = global().fetch_with_request(&request);
         JsFuture::from(promise)
             .map_err(|error| {
                 EnvError::Fetch(
                     error
                         .dyn_into::<js_sys::Error>()
                         .map(|error| String::from(error.message()))
-                        .unwrap_or_else(|_| "Unknown Error".to_owned()),
+                        .unwrap_or_else(|_| UNKNOWN_ERROR.to_owned()),
                 )
             })
             .and_then(|resp| {
@@ -254,7 +259,7 @@ impl Env for WebEnv {
                             error
                                 .dyn_into::<js_sys::Error>()
                                 .map(|error| String::from(error.message()))
-                                .unwrap_or_else(|_| "Unknown Error".to_owned()),
+                                .unwrap_or_else(|_| UNKNOWN_ERROR.to_owned()),
                         )
                     }))
                 }
@@ -269,7 +274,7 @@ impl Env for WebEnv {
                                         error
                                             .dyn_into::<js_sys::Error>()
                                             .map(|error| String::from(error.message()))
-                                            .unwrap_or_else(|_| "Unknown Error".to_owned()),
+                                            .unwrap_or_else(|_| UNKNOWN_ERROR.to_owned()),
                                     )
                                 })
                                 .and_then(|resp| {
@@ -291,10 +296,51 @@ impl Env for WebEnv {
     where
         for<'de> T: Deserialize<'de> + 'static,
     {
-        future::ready(get_storage_sync(key)).boxed_local()
+        local_storage_get_item(key.to_owned())
+            .map_err(|error| {
+                EnvError::StorageReadError(
+                    error
+                        .dyn_into::<js_sys::Error>()
+                        .map(|error| String::from(error.message()))
+                        .unwrap_or_else(|_| UNKNOWN_ERROR.to_owned()),
+                )
+            })
+            .and_then(|value| async move {
+                value
+                    .as_string()
+                    .map(|value| serde_json::from_str(&value))
+                    .transpose()
+                    .map_err(EnvError::from)
+            })
+            .boxed_local()
     }
     fn set_storage<T: Serialize>(key: &str, value: Option<&T>) -> TryEnvFuture<()> {
-        future::ready(set_storage_sync(key, value)).boxed_local()
+        let key = key.to_owned();
+        match value {
+            Some(value) => future::ready(serde_json::to_string(value))
+                .map_err(EnvError::from)
+                .and_then(|value| {
+                    local_storage_set_item(key, value).map_err(|error| {
+                        EnvError::StorageWriteError(
+                            error
+                                .dyn_into::<js_sys::Error>()
+                                .map(|error| String::from(error.message()))
+                                .unwrap_or_else(|_| UNKNOWN_ERROR.to_owned()),
+                        )
+                    })
+                })
+                .boxed_local(),
+            None => local_storage_remove_item(key)
+                .map_err(|error| {
+                    EnvError::StorageWriteError(
+                        error
+                            .dyn_into::<js_sys::Error>()
+                            .map(|error| String::from(error.message()))
+                            .unwrap_or_else(|_| UNKNOWN_ERROR.to_owned()),
+                    )
+                })
+                .boxed_local(),
+        }
     }
     fn exec_concurrent<F>(future: F)
     where
@@ -317,11 +363,13 @@ impl Env for WebEnv {
         ANALYTICS.flush().boxed_local()
     }
     fn analytics_context(ctx: &Ctx, streaming_server: &StreamingServer) -> serde_json::Value {
-        let location_hash = web_sys::window()
-            .expect("window is not available")
-            .location()
-            .hash()
-            .expect("location hash is not available");
+        // TODO async
+        // let location_hash = web_sys::window()
+        //     .expect("window is not available")
+        //     .location()
+        //     .hash()
+        //     .expect("location hash is not available");
+        let location_hash = "".to_owned();
         let path = location_hash.split('#').last().unwrap_or_default();
         serde_json::to_value(AnalyticsContext {
             app_type: "stremio-web".to_owned(),
@@ -332,8 +380,7 @@ impl Env for WebEnv {
                 .ready()
                 .map(|settings| settings.server_version.to_owned()),
             shell_version: shell_version.to_owned(),
-            system_language: web_sys::window()
-                .expect("window is not available")
+            system_language: global()
                 .navigator()
                 .language()
                 .map(|language| language.to_lowercase()),
@@ -355,40 +402,8 @@ impl Env for WebEnv {
     }
 }
 
-fn get_storage_sync<T>(key: &str) -> Result<Option<T>, EnvError>
-where
-    for<'de> T: Deserialize<'de> + 'static,
-{
-    let storage = web_sys::window()
-        .expect("window is not available")
-        .local_storage()
-        .map_err(|_| EnvError::StorageUnavailable)?
-        .ok_or(EnvError::StorageUnavailable)?;
-    let value = storage
-        .get_item(key)
-        .map_err(|_| EnvError::StorageUnavailable)?;
-    Ok(match value {
-        Some(value) => Some(serde_json::from_str(&value)?),
-        None => None,
-    })
-}
-
-fn set_storage_sync<T: Serialize>(key: &str, value: Option<&T>) -> Result<(), EnvError> {
-    let storage = web_sys::window()
-        .expect("window is not available")
-        .local_storage()
-        .map_err(|_| EnvError::StorageUnavailable)?
-        .ok_or(EnvError::StorageUnavailable)?;
-    match value {
-        Some(value) => {
-            let serialized_value = serde_json::to_string(value)?;
-            storage
-                .set_item(key, &serialized_value)
-                .map_err(|_| EnvError::StorageUnavailable)?;
-        }
-        None => storage
-            .remove_item(key)
-            .map_err(|_| EnvError::StorageUnavailable)?,
-    };
-    Ok(())
+fn global() -> WorkerGlobalScope {
+    js_sys::global()
+        .dyn_into::<WorkerGlobalScope>()
+        .expect("worker global scope is not available")
 }
