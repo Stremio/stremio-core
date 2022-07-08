@@ -10,7 +10,7 @@ use stremio_core::models::ctx::Ctx;
 use stremio_core::models::streaming_server::StreamingServer;
 #[cfg(debug_assertions)]
 use stremio_core::runtime::EnvFutureExt;
-use stremio_core::runtime::{Env, EnvError, TryEnvFuture};
+use stremio_core::runtime::{Env, EnvError, EnvFuture, TryEnvFuture};
 use stremio_core::types::api::{fetch_api, APIRequest, APIResult, SuccessResponse};
 use stremio_core::types::profile::AuthKey;
 #[cfg(debug_assertions)]
@@ -85,20 +85,24 @@ impl<E: Env + 'static> Analytics<E> {
         data: serde_json::Value,
         ctx: &Ctx,
         streaming_server: &StreamingServer,
-    ) {
-        let mut state = self.state.lock().expect("analytics state lock failed");
+    ) -> EnvFuture<()> {
         let auth_key = match ctx.profile.auth_key() {
             Some(auth_key) => auth_key.to_owned(),
-            _ => return,
+            _ => return future::ready(()).boxed_env(),
         };
-        let event = Event {
-            name,
-            data,
-            number: state.next_number(),
-            time: E::now().timestamp_millis(),
-            context: E::analytics_context(ctx, streaming_server),
-        };
-        state.push_event(event, auth_key);
+        E::analytics_context(ctx, streaming_server)
+            .then(enclose!((self.state => state) move |context| async move {
+                let mut state = state.lock().expect("analytics state lock failed");
+                let event = Event {
+                    name,
+                    data,
+                    number: state.next_number(),
+                    time: E::now().timestamp_millis(),
+                    context,
+                };
+                state.push_event(event, auth_key);
+            }))
+            .boxed_env()
     }
     pub fn send_next_batch(&self) -> impl Future<Output = ()> {
         let mut state = self.state.lock().expect("analytics state lock failed");

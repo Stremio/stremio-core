@@ -144,7 +144,10 @@ pub trait Env {
     );
     fn now() -> DateTime<Utc>;
     fn flush_analytics() -> EnvFuture<()>;
-    fn analytics_context(ctx: &Ctx, streaming_server: &StreamingServer) -> serde_json::Value;
+    fn analytics_context(
+        ctx: &Ctx,
+        streaming_server: &StreamingServer,
+    ) -> EnvFuture<serde_json::Value>;
     #[cfg(debug_assertions)]
     fn log(message: String);
     fn addon_transport(transport_url: &Url) -> Box<dyn AddonTransport>
