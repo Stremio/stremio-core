@@ -154,12 +154,14 @@ where
             Msg::Action(Action::Load(ActionLoad::CatalogWithFilters(selected))) => {
                 let selected_effects =
                     selected_update::<T>(&mut self.selected, &self.selectable, selected);
-                let catalog_effects = catalog_update::<E, _>(
-                    &mut self.catalog,
-                    self.selected
-                        .as_ref()
-                        .map(|selected| (CatalogPageRequest::First, &selected.request)),
-                );
+                let catalog_effects = match self.selected.as_ref() {
+                    Some(selected) => catalog_update::<E, _>(
+                        &mut self.catalog,
+                        CatalogPageRequest::First,
+                        &selected.request,
+                    ),
+                    _ => Effects::none().unchanged(),
+                };
                 let selectable_effects = selectable_update(
                     &mut self.selectable,
                     &self.selected,
@@ -184,20 +186,23 @@ where
                     .join(selectable_effects)
             }
             Msg::Action(Action::CatalogWithFilters(ActionCatalogWithFilters::LoadNextPage)) => {
-                let catalog_effects = catalog_update::<E, _>(
-                    &mut self.catalog,
-                    self.selectable
-                        .next_page
-                        .as_ref()
-                        .map(|next_page| (CatalogPageRequest::Next, &next_page.request)),
-                );
-                let selectable_effects = selectable_update(
-                    &mut self.selectable,
-                    &self.selected,
-                    &self.catalog,
-                    &ctx.profile,
-                );
-                catalog_effects.join(selectable_effects)
+                match self.selectable.next_page.as_ref() {
+                    Some(next_page) => {
+                        let catalog_effects = catalog_update::<E, _>(
+                            &mut self.catalog,
+                            CatalogPageRequest::Next,
+                            &next_page.request,
+                        );
+                        let selectable_effects = selectable_update(
+                            &mut self.selectable,
+                            &self.selected,
+                            &self.catalog,
+                            &ctx.profile,
+                        );
+                        catalog_effects.join(selectable_effects)
+                    }
+                    _ => Effects::none().unchanged(),
+                }
             }
             Msg::Internal(Internal::ResourceRequestResult(request, result)) => self
                 .catalog
@@ -264,31 +269,27 @@ fn selected_update<T: CatalogResourceAdapter>(
 
 fn catalog_update<E, T>(
     catalog: &mut Catalog<T>,
-    request: Option<(CatalogPageRequest, &ResourceRequest)>,
+    page_request: CatalogPageRequest,
+    request: &ResourceRequest,
 ) -> Effects
 where
     E: Env + 'static,
     T: CatalogResourceAdapter + PartialEq,
     Vec<T>: TryFrom<ResourceResponse, Error = &'static str>,
 {
-    match request {
-        Some((page_request, request)) => {
-            let mut page = ResourceLoadable {
-                request: request.to_owned(),
-                content: None,
-            };
-            let effects = resource_update_with_vector_content::<E, _>(
-                &mut page,
-                ResourceAction::ResourceRequested { request },
-            );
-            match page_request {
-                CatalogPageRequest::First => *catalog = vec![page],
-                CatalogPageRequest::Next => catalog.extend(vec![page]),
-            };
-            effects
-        }
-        _ => eq_update(catalog, vec![]),
-    }
+    let mut page = ResourceLoadable {
+        request: request.to_owned(),
+        content: None,
+    };
+    let effects = resource_update_with_vector_content::<E, _>(
+        &mut page,
+        ResourceAction::ResourceRequested { request },
+    );
+    match page_request {
+        CatalogPageRequest::First => *catalog = vec![page],
+        CatalogPageRequest::Next => catalog.extend(vec![page]),
+    };
+    effects
 }
 
 fn selectable_update<T: CatalogResourceAdapter>(
