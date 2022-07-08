@@ -163,7 +163,11 @@ impl Env for TestEnv {
     fn flush_analytics() -> EnvFuture<()> {
         future::ready(()).boxed_env()
     }
-    fn analytics_context(_ctx: &Ctx, _streaming_server: &StreamingServer) -> serde_json::Value {
+    fn analytics_context(
+        _ctx: &Ctx,
+        _streaming_server: &StreamingServer,
+        _path: &str,
+    ) -> serde_json::Value {
         serde_json::Value::Null
     }
     fn log(message: String) {
