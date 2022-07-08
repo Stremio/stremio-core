@@ -14,7 +14,7 @@ use stremio_analytics::Analytics;
 use stremio_core::models::ctx::Ctx;
 use stremio_core::models::streaming_server::StreamingServer;
 use stremio_core::runtime::msg::{Action, ActionCtx, Event};
-use stremio_core::runtime::{Env, EnvError, EnvFuture, TryEnvFuture};
+use stremio_core::runtime::{Env, EnvError, EnvFuture, EnvFutureExt, TryEnvFuture};
 use stremio_core::types::api::AuthRequest;
 use stremio_core::types::resource::StreamSource;
 use wasm_bindgen::closure::Closure;
@@ -35,13 +35,13 @@ extern "C" {
     #[wasm_bindgen(catch, js_namespace = ["self"])]
     fn sanitize_location_path(path: &str) -> Result<String, JsValue>;
     #[wasm_bindgen(catch, js_namespace = ["self"])]
+    async fn get_location_hash() -> Result<JsValue, JsValue>;
+    #[wasm_bindgen(catch, js_namespace = ["self"])]
     async fn local_storage_get_item(key: String) -> Result<JsValue, JsValue>;
     #[wasm_bindgen(catch, js_namespace = ["self"])]
     async fn local_storage_set_item(key: String, value: String) -> Result<(), JsValue>;
     #[wasm_bindgen(catch, js_namespace = ["self"])]
     async fn local_storage_remove_item(key: String) -> Result<(), JsValue>;
-    #[wasm_bindgen(catch, js_namespace = ["self"])]
-    async fn get_location_hash(key: String) -> Result<JsValue, JsValue>;
 }
 
 lazy_static! {
@@ -93,7 +93,16 @@ impl WebEnv {
             })
             .boxed_local()
     }
-    pub fn emit_to_analytics(event: &WebEvent, model: &WebModel) {
+    pub fn get_location_hash() -> EnvFuture<String> {
+        get_location_hash()
+            .map(|hash| {
+                hash.ok()
+                    .and_then(|hash| hash.as_string())
+                    .unwrap_or_default()
+            })
+            .boxed_env()
+    }
+    pub fn emit_to_analytics(event: &WebEvent, model: &WebModel, path: &str) {
         let (name, data) = match event {
             WebEvent::UIEvent(UIEvent::LocationPathChanged { prev_path }) => (
                 "stateChange".to_owned(),
@@ -178,7 +187,7 @@ impl WebEnv {
             },
             _ => return,
         };
-        ANALYTICS.emit(name, data, &model.ctx, &model.streaming_server);
+        ANALYTICS.emit(name, data, &model.ctx, &model.streaming_server, path);
     }
     pub fn send_next_analytics_batch() -> impl Future<Output = ()> {
         ANALYTICS.send_next_batch()
@@ -362,15 +371,11 @@ impl Env for WebEnv {
     fn flush_analytics() -> EnvFuture<()> {
         ANALYTICS.flush().boxed_local()
     }
-    fn analytics_context(ctx: &Ctx, streaming_server: &StreamingServer) -> serde_json::Value {
-        // TODO async
-        // let location_hash = web_sys::window()
-        //     .expect("window is not available")
-        //     .location()
-        //     .hash()
-        //     .expect("location hash is not available");
-        let location_hash = "".to_owned();
-        let path = location_hash.split('#').last().unwrap_or_default();
+    fn analytics_context(
+        ctx: &Ctx,
+        streaming_server: &StreamingServer,
+        path: &str,
+    ) -> serde_json::Value {
         serde_json::to_value(AnalyticsContext {
             app_type: "stremio-web".to_owned(),
             app_version: app_version.to_owned(),

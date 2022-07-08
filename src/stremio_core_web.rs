@@ -1,7 +1,8 @@
 use crate::env::WebEnv;
 use crate::event::WebEvent;
 use crate::model::WebModel;
-use futures::{future, StreamExt};
+use enclose::enclose;
+use futures::{future, FutureExt, StreamExt};
 use lazy_static::lazy_static;
 use std::sync::RwLock;
 use stremio_core::constants::{
@@ -60,17 +61,23 @@ pub async fn initialize_runtime(emit_to_ui: js_sys::Function) -> Result<(), JsVa
                     );
                     WebEnv::exec_concurrent(rx.for_each(move |event| {
                         if let RuntimeEvent::CoreEvent(event) = &event {
-                            let runtime = RUNTIME.read().expect("runtime read failed");
-                            let runtime = runtime
-                                .as_ref()
-                                .expect("runtime is not ready")
-                                .as_ref()
-                                .expect("runtime is not ready");
-                            let model = runtime.model().expect("model read failed");
-                            WebEnv::emit_to_analytics(
-                                &WebEvent::CoreEvent(event.to_owned()),
-                                &model,
-                            );
+                            WebEnv::exec_concurrent(WebEnv::get_location_hash().then(
+                                enclose!((event) move |hash| async move {
+                                    let runtime = RUNTIME.read().expect("runtime read failed");
+                                    let runtime = runtime
+                                        .as_ref()
+                                        .expect("runtime is not ready")
+                                        .as_ref()
+                                        .expect("runtime is not ready");
+                                    let model = runtime.model().expect("model read failed");
+                                    let path = hash.split('#').last().map(|path| path.to_owned()).unwrap_or_default();
+                                    WebEnv::emit_to_analytics(
+                                        &WebEvent::CoreEvent(event.to_owned()),
+                                        &model,
+                                        &path
+                                    );
+                                }),
+                            ));
                         };
                         emit_to_ui
                             .call1(&JsValue::NULL, &JsValue::from_serde(&event).unwrap())
@@ -122,7 +129,7 @@ pub fn get_state(field: JsValue) -> JsValue {
 }
 
 #[wasm_bindgen]
-pub fn dispatch(action: JsValue, field: JsValue) {
+pub fn dispatch(action: JsValue, field: JsValue, hash: JsValue) {
     let action = action.into_serde::<Action>().expect("dispatch failed");
     let field = field.into_serde().expect("dispatch failed");
     let runtime = RUNTIME.read().expect("runtime read failed");
@@ -133,13 +140,21 @@ pub fn dispatch(action: JsValue, field: JsValue) {
         .expect("runtime is not ready");
     {
         let model = runtime.model().expect("model read failed");
-        WebEnv::emit_to_analytics(&WebEvent::CoreAction(Box::new(action.to_owned())), &model);
+        let path = hash
+            .as_string()
+            .and_then(|hash| hash.split('#').last().map(|path| path.to_owned()))
+            .unwrap_or_default();
+        WebEnv::emit_to_analytics(
+            &WebEvent::CoreAction(Box::new(action.to_owned())),
+            &model,
+            &path,
+        );
     }
     runtime.dispatch(RuntimeAction { action, field });
 }
 
 #[wasm_bindgen]
-pub fn analytics(event: JsValue) {
+pub fn analytics(event: JsValue, hash: JsValue) {
     let event = event.into_serde().expect("analytics failed");
     let runtime = RUNTIME.read().expect("runtime read failed");
     let runtime = runtime
@@ -148,7 +163,11 @@ pub fn analytics(event: JsValue) {
         .as_ref()
         .expect("runtime is not ready");
     let model = runtime.model().expect("model read failed");
-    WebEnv::emit_to_analytics(&WebEvent::UIEvent(event), &model);
+    let path = hash
+        .as_string()
+        .and_then(|hash| hash.split('#').last().map(|path| path.to_owned()))
+        .unwrap_or_default();
+    WebEnv::emit_to_analytics(&WebEvent::UIEvent(event), &model, &path);
 }
 
 #[wasm_bindgen]
