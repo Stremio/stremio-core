@@ -14,7 +14,7 @@ use stremio_analytics::Analytics;
 use stremio_core::models::ctx::Ctx;
 use stremio_core::models::streaming_server::StreamingServer;
 use stremio_core::runtime::msg::{Action, ActionCtx, Event};
-use stremio_core::runtime::{Env, EnvError, EnvFuture, EnvFutureExt, TryEnvFuture};
+use stremio_core::runtime::{Env, EnvError, EnvFuture, TryEnvFuture};
 use stremio_core::types::api::AuthRequest;
 use stremio_core::types::resource::StreamSource;
 use wasm_bindgen::closure::Closure;
@@ -35,13 +35,13 @@ extern "C" {
     #[wasm_bindgen(catch, js_namespace = ["self"])]
     fn sanitize_location_path(path: &str) -> Result<String, JsValue>;
     #[wasm_bindgen(catch, js_namespace = ["self"])]
-    async fn get_location_hash() -> Result<JsValue, JsValue>;
-    #[wasm_bindgen(catch, js_namespace = ["self"])]
     async fn local_storage_get_item(key: String) -> Result<JsValue, JsValue>;
     #[wasm_bindgen(catch, js_namespace = ["self"])]
     async fn local_storage_set_item(key: String, value: String) -> Result<(), JsValue>;
     #[wasm_bindgen(catch, js_namespace = ["self"])]
     async fn local_storage_remove_item(key: String) -> Result<(), JsValue>;
+    #[wasm_bindgen(catch, js_namespace = ["self"])]
+    async fn get_location_hash(key: String) -> Result<JsValue, JsValue>;
 }
 
 lazy_static! {
@@ -362,50 +362,39 @@ impl Env for WebEnv {
     fn flush_analytics() -> EnvFuture<()> {
         ANALYTICS.flush().boxed_local()
     }
-    fn analytics_context(
-        ctx: &Ctx,
-        streaming_server: &StreamingServer,
-    ) -> EnvFuture<serde_json::Value> {
-        let app_language = ctx.profile.settings.interface_language.to_owned();
-        let server_version = streaming_server
-            .settings
-            .as_ref()
-            .ready()
-            .map(|settings| settings.server_version.to_owned());
-        get_location_hash()
-            .map(|hash| {
-                hash.ok()
-                    .map(|hash| hash.as_string())
-                    .flatten()
-                    .unwrap_or_default()
-            })
-            .map(|hash| {
-                let path = hash.split('#').last().unwrap_or_default();
-                sanitize_location_path(path).ok().unwrap_or_default()
-            })
-            .map(|path| {
-                serde_json::to_value(AnalyticsContext {
-                    app_type: "stremio-web".to_owned(),
-                    app_version: app_version.to_owned(),
-                    shell_version: shell_version.to_owned(),
-                    server_version,
-                    app_language,
-                    system_language: global()
-                        .navigator()
-                        .language()
-                        .map(|language| language.to_lowercase()),
-                    installation_id: INSTALLATION_ID
-                        .read()
-                        .expect("installation id read failed")
-                        .as_ref()
-                        .expect("installation id not available")
-                        .to_owned(),
-                    visit_id: VISIT_ID.to_owned(),
-                    path,
-                })
-                .unwrap()
-            })
-            .boxed_env()
+    fn analytics_context(ctx: &Ctx, streaming_server: &StreamingServer) -> serde_json::Value {
+        // TODO async
+        // let location_hash = web_sys::window()
+        //     .expect("window is not available")
+        //     .location()
+        //     .hash()
+        //     .expect("location hash is not available");
+        let location_hash = "".to_owned();
+        let path = location_hash.split('#').last().unwrap_or_default();
+        serde_json::to_value(AnalyticsContext {
+            app_type: "stremio-web".to_owned(),
+            app_version: app_version.to_owned(),
+            server_version: streaming_server
+                .settings
+                .as_ref()
+                .ready()
+                .map(|settings| settings.server_version.to_owned()),
+            shell_version: shell_version.to_owned(),
+            system_language: global()
+                .navigator()
+                .language()
+                .map(|language| language.to_lowercase()),
+            app_language: ctx.profile.settings.interface_language.to_owned(),
+            installation_id: INSTALLATION_ID
+                .read()
+                .expect("installation id read failed")
+                .as_ref()
+                .expect("installation id not available")
+                .to_owned(),
+            visit_id: VISIT_ID.to_owned(),
+            path: sanitize_location_path(path).expect("sanitize location path failed"),
+        })
+        .unwrap()
     }
     #[cfg(debug_assertions)]
     fn log(message: String) {
