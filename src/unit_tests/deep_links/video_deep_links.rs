@@ -22,7 +22,7 @@ fn video_deep_links() {
         path: ResourcePath::without_extra("meta", "movie", "yt_id:aqz-KE-bpKQ"),
     };
     let vdl = VideoDeepLinks::try_from((&video, &request)).unwrap();
-    assert_eq!(vdl.meta_details_streams, "stremio:///metadetails/movie/yt_id%3Aaqz-KE-bpKQ/yt_id%3AUCSMOQeBJ2RAnuFungnQOxLg%3Aaqz-KE-bpKQ".to_string());
+    assert_eq!(vdl.meta_details_streams, "stremio:///detail/movie/yt_id%3Aaqz-KE-bpKQ/yt_id%3AUCSMOQeBJ2RAnuFungnQOxLg%3Aaqz-KE-bpKQ".to_string());
     assert_eq!(vdl.player, Some("stremio:///player/eAEBFgDp%2F3sieXRJZCI6ImFxei1LRS1icEtRIn1RRQb5/http%3A%2F%2Fdomain.root%2F/http%3A%2F%2Fdomain.root%2F/movie/yt_id%3Aaqz-KE-bpKQ/yt_id%3AUCSMOQeBJ2RAnuFungnQOxLg%3Aaqz-KE-bpKQ".to_string()));
     assert_eq!(
         vdl.external_player,

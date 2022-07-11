@@ -5,7 +5,7 @@ use crate::types::resource::{MetaItemBehaviorHints, PosterShape};
 use chrono::Utc;
 use std::convert::TryFrom;
 
-const META_DETAILS_VIDEOS: &str = "stremio:///metadetails/movie/tt1254207";
+const META_DETAILS_VIDEOS: &str = "stremio:///detail/movie/tt1254207";
 
 #[test]
 fn library_item_deep_links() {
@@ -79,7 +79,7 @@ fn library_item_deep_links_state_video_id() {
     );
     assert_eq!(
         lidl.meta_details_streams,
-        Some("stremio:///metadetails/movie/tt1254207/video_id".to_string())
+        Some("stremio:///detail/movie/tt1254207/video_id".to_string())
     );
     assert_eq!(lidl.player, None);
     assert_eq!(lidl.external_player, None);
@@ -121,7 +121,7 @@ fn library_item_deep_links_behavior_hints_default_video_id() {
     assert_eq!(lidl.meta_details_videos, None);
     assert_eq!(
         lidl.meta_details_streams,
-        Some("stremio:///metadetails/movie/tt1254207/bh_video_id".to_string())
+        Some("stremio:///detail/movie/tt1254207/bh_video_id".to_string())
     );
     assert_eq!(lidl.player, None);
     assert_eq!(lidl.external_player, None);
@@ -163,7 +163,7 @@ fn library_item_deep_links_state_and_behavior_hints_default_video_id() {
     assert_eq!(lidl.meta_details_videos, None);
     assert_eq!(
         lidl.meta_details_streams,
-        Some("stremio:///metadetails/movie/tt1254207/video_id".to_string())
+        Some("stremio:///detail/movie/tt1254207/video_id".to_string())
     );
     assert_eq!(lidl.player, None);
     assert_eq!(lidl.external_player, None);
