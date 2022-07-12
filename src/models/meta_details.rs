@@ -9,6 +9,7 @@ use crate::runtime::{Effects, Env, UpdateWithCtx};
 use crate::types::addon::{AggrRequest, ResourcePath, ResourceRequest};
 use crate::types::library::{LibraryBucket, LibraryItem};
 use crate::types::resource::{MetaItem, Stream};
+use itertools::Itertools;
 use serde::{Deserialize, Serialize};
 use std::borrow::Cow;
 use std::marker::PhantomData;
@@ -211,6 +212,42 @@ fn watched_update<E: Env>(
             let video_ids = meta_item
                 .videos
                 .iter()
+                .sorted_by(|a, b| {
+                    a.series_info
+                        .as_ref()
+                        .map(|info| info.season as i64)
+                        .unwrap_or(i64::MIN)
+                        .cmp(
+                            &b.series_info
+                                .as_ref()
+                                .map(|info| info.season as i64)
+                                .unwrap_or(i64::MIN),
+                        )
+                        .then(
+                            a.series_info
+                                .as_ref()
+                                .map(|info| info.episode as i64)
+                                .unwrap_or(i64::MIN)
+                                .cmp(
+                                    &b.series_info
+                                        .as_ref()
+                                        .map(|info| info.episode as i64)
+                                        .unwrap_or(i64::MIN),
+                                ),
+                        )
+                        .then(
+                            a.released
+                                .as_ref()
+                                .map(|released| released.timestamp_millis())
+                                .unwrap_or(i64::MIN)
+                                .cmp(
+                                    &b.released
+                                        .as_ref()
+                                        .map(|released| released.timestamp_millis())
+                                        .unwrap_or(i64::MIN),
+                                ),
+                        )
+                })
                 .map(|video| &video.id)
                 .cloned()
                 .collect::<Vec<_>>();

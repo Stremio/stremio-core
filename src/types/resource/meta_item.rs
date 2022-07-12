@@ -249,40 +249,23 @@ struct VideoSortedVecAdapter;
 impl SortedVecAdapter for VideoSortedVecAdapter {
     type Input = Video;
     fn cmp(a: &Self::Input, b: &Self::Input) -> Ordering {
-        a.series_info
-            .as_ref()
-            .map(|info| info.season as i64)
-            .unwrap_or(i64::MIN)
-            .cmp(
-                &b.series_info
-                    .as_ref()
-                    .map(|info| info.season as i64)
-                    .unwrap_or(i64::MIN),
-            )
-            .then(
-                a.series_info
-                    .as_ref()
-                    .map(|info| info.episode as i64)
-                    .unwrap_or(i64::MIN)
-                    .cmp(
-                        &b.series_info
-                            .as_ref()
-                            .map(|info| info.episode as i64)
-                            .unwrap_or(i64::MIN),
-                    ),
-            )
-            .then(
-                a.released
-                    .as_ref()
-                    .map(|released| released.timestamp_millis())
-                    .unwrap_or(i64::MIN)
-                    .cmp(
-                        &b.released
-                            .as_ref()
-                            .map(|released| released.timestamp_millis())
-                            .unwrap_or(i64::MIN),
-                    ),
-            )
+        if let (Some(a), Some(b)) = (a.series_info.as_ref(), b.series_info.as_ref()) {
+            let a_season = if a.season == 0 { u32::MAX } else { a.season };
+            let b_season = if b.season == 0 { u32::MAX } else { b.season };
+            a_season.cmp(&b_season).then(a.episode.cmp(&b.episode))
+        } else if a.series_info.is_some() {
+            std::cmp::Ordering::Less
+        } else if b.series_info.is_some() {
+            std::cmp::Ordering::Greater
+        } else if let (Some(a), Some(b)) = (a.released, b.released) {
+            b.cmp(&a)
+        } else if a.released.is_some() {
+            std::cmp::Ordering::Less
+        } else if b.released.is_some() {
+            std::cmp::Ordering::Greater
+        } else {
+            std::cmp::Ordering::Equal
+        }
     }
 }
 
