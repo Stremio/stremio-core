@@ -272,12 +272,12 @@ impl SortedVecAdapter for VideoSortedVecAdapter {
                     ),
             )
             .then(
-                b.released
+                a.released
                     .as_ref()
                     .map(|released| released.timestamp_millis())
                     .unwrap_or(i64::MIN)
                     .cmp(
-                        &a.released
+                        &b.released
                             .as_ref()
                             .map(|released| released.timestamp_millis())
                             .unwrap_or(i64::MIN),

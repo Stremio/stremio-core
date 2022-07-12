@@ -384,9 +384,9 @@ fn videos_released_sequal() {
             // If no date - at the end and the order is defined by addon
             videos: vec![
                 Video {
-                    id: "3".to_owned(),
+                    id: "nd1".to_owned(),
                     title: "".to_owned(),
-                    released: Some(Utc.ymd(2020, 3, 1).and_hms_milli(0, 0, 0, 0)),
+                    released: None,
                     overview: None,
                     thumbnail: None,
                     streams: vec![],
@@ -394,9 +394,9 @@ fn videos_released_sequal() {
                     trailer_streams: vec![],
                 },
                 Video {
-                    id: "2".to_owned(),
+                    id: "nd2".to_owned(),
                     title: "".to_owned(),
-                    released: Some(Utc.ymd(2020, 2, 1).and_hms_milli(0, 0, 0, 0)),
+                    released: None,
                     overview: None,
                     thumbnail: None,
                     streams: vec![],
@@ -414,9 +414,9 @@ fn videos_released_sequal() {
                     trailer_streams: vec![],
                 },
                 Video {
-                    id: "nd1".to_owned(),
+                    id: "2".to_owned(),
                     title: "".to_owned(),
-                    released: None,
+                    released: Some(Utc.ymd(2020, 2, 1).and_hms_milli(0, 0, 0, 0)),
                     overview: None,
                     thumbnail: None,
                     streams: vec![],
@@ -424,9 +424,9 @@ fn videos_released_sequal() {
                     trailer_streams: vec![],
                 },
                 Video {
-                    id: "nd2".to_owned(),
+                    id: "3".to_owned(),
                     title: "".to_owned(),
-                    released: None,
+                    released: Some(Utc.ymd(2020, 3, 1).and_hms_milli(0, 0, 0, 0)),
                     overview: None,
                     thumbnail: None,
                     streams: vec![],
@@ -497,9 +497,19 @@ fn various_videos_deserialization() {
             // If no date - sort to the end. Preserve order from addon
             videos: vec![
                 Video {
-                    id: "M2".to_owned(),
+                    id: "nd1".to_owned(),
                     title: "".to_owned(),
-                    released: Some(Utc.ymd(2020, 2, 1).and_hms_milli(0, 0, 0, 0)),
+                    released: None,
+                    overview: None,
+                    thumbnail: None,
+                    streams: vec![],
+                    series_info: None,
+                    trailer_streams: vec![],
+                },
+                Video {
+                    id: "nd2".to_owned(),
+                    title: "".to_owned(),
+                    released: None,
                     overview: None,
                     thumbnail: None,
                     streams: vec![],
@@ -517,19 +527,9 @@ fn various_videos_deserialization() {
                     trailer_streams: vec![],
                 },
                 Video {
-                    id: "nd1".to_owned(),
+                    id: "M2".to_owned(),
                     title: "".to_owned(),
-                    released: None,
-                    overview: None,
-                    thumbnail: None,
-                    streams: vec![],
-                    series_info: None,
-                    trailer_streams: vec![],
-                },
-                Video {
-                    id: "nd2".to_owned(),
-                    title: "".to_owned(),
-                    released: None,
+                    released: Some(Utc.ymd(2020, 2, 1).and_hms_milli(0, 0, 0, 0)),
                     overview: None,
                     thumbnail: None,
                     streams: vec![],
