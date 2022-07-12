@@ -5,12 +5,12 @@ use crate::constants::{
 use crate::deep_links::DiscoverDeepLinks;
 use crate::types::addon::{ExtraValue, ResourcePath, ResourceRequest};
 use crate::types::resource::{Stream, StreamSource};
-use crate::types::NumberAsString;
+use crate::types::{NumberAsString, SortedVec, SortedVecAdapter, UniqueVec, UniqueVecAdapter};
 use chrono::{DateTime, Utc};
+use core::cmp::Ordering;
 use derivative::Derivative;
 use itertools::Itertools;
 use percent_encoding::utf8_percent_encode;
-use serde::de::Deserializer;
 use serde::{Deserialize, Serialize};
 use serde_with::formats::PreferMany;
 use serde_with::{serde_as, DefaultOnNull, NoneAsEmptyString, OneOrMany};
@@ -162,6 +162,7 @@ impl From<MetaItemPreviewLegacy> for MetaItemPreview {
     }
 }
 
+#[serde_as]
 #[derive(Clone, PartialEq, Serialize, Deserialize)]
 #[cfg_attr(debug_assertions, derive(Debug))]
 #[cfg_attr(test, derive(Default))]
@@ -169,7 +170,10 @@ impl From<MetaItemPreviewLegacy> for MetaItemPreview {
 pub struct MetaItem {
     #[serde(flatten)]
     pub preview: MetaItemPreview,
-    #[serde(default, deserialize_with = "deserialize_and_sort_videos")]
+    #[serde(default)]
+    #[serde_as(
+        deserialize_as = "SortedVec<UniqueVec<Vec<_>, VideoUniqueVecAdapter>, VideoSortedVecAdapter>"
+    )]
     pub videos: Vec<Video>,
 }
 
@@ -230,6 +234,51 @@ impl Video {
     }
 }
 
+struct VideoUniqueVecAdapter;
+
+impl UniqueVecAdapter for VideoUniqueVecAdapter {
+    type Input = Video;
+    type Output = String;
+
+    fn hash(video: &Self::Input) -> Self::Output {
+        video.id.to_owned()
+    }
+}
+
+struct VideoSortedVecAdapter;
+
+impl SortedVecAdapter for VideoSortedVecAdapter {
+    type Input = Video;
+    type Args = bool;
+
+    fn args(videos: &[Video]) -> Self::Args {
+        videos.iter().any(|video| video.series_info.is_some())
+    }
+    fn cmp(a: &Self::Input, b: &Self::Input, is_series: &Self::Args) -> Ordering {
+        if let (Some(a), Some(b)) = (a.series_info.as_ref(), b.series_info.as_ref()) {
+            let a_season = if a.season == 0 { u32::MAX } else { a.season };
+            let b_season = if b.season == 0 { u32::MAX } else { b.season };
+            a_season.cmp(&b_season).then(a.episode.cmp(&b.episode))
+        } else if a.series_info.is_some() {
+            std::cmp::Ordering::Less
+        } else if b.series_info.is_some() {
+            std::cmp::Ordering::Greater
+        } else if let (Some(a), Some(b)) = (a.released, b.released) {
+            if *is_series {
+                a.cmp(&b)
+            } else {
+                b.cmp(&a)
+            }
+        } else if a.released.is_some() {
+            std::cmp::Ordering::Less
+        } else if b.released.is_some() {
+            std::cmp::Ordering::Greater
+        } else {
+            std::cmp::Ordering::Equal
+        }
+    }
+}
+
 #[derive(Clone, PartialEq, Serialize, Deserialize)]
 #[cfg_attr(debug_assertions, derive(Debug))]
 pub struct Link {
@@ -250,38 +299,4 @@ pub struct MetaItemBehaviorHints {
     pub has_scheduled_videos: bool,
     #[serde(flatten)]
     pub other: HashMap<String, serde_json::Value>,
-}
-
-fn deserialize_and_sort_videos<'de, D>(deserializer: D) -> Result<Vec<Video>, D::Error>
-where
-    D: Deserializer<'de>,
-{
-    let mut videos: Vec<Video> = Vec::<Video>::deserialize(deserializer)?;
-    let some_sessons = videos.iter().any(|v| v.series_info.is_some());
-
-    videos.sort_by(|a, b| {
-        if let (Some(a), Some(b)) = (a.series_info.as_ref(), b.series_info.as_ref()) {
-            let a_season = if a.season == 0 { u32::MAX } else { a.season };
-            let b_season = if b.season == 0 { u32::MAX } else { b.season };
-            a_season.cmp(&b_season).then(a.episode.cmp(&b.episode))
-        } else if a.series_info.is_some() {
-            std::cmp::Ordering::Less
-        } else if b.series_info.is_some() {
-            std::cmp::Ordering::Greater
-        } else if let (Some(a), Some(b)) = (a.released, b.released) {
-            if some_sessons {
-                a.cmp(&b)
-            } else {
-                b.cmp(&a)
-            }
-        } else if a.released.is_some() {
-            std::cmp::Ordering::Less
-        } else if b.released.is_some() {
-            std::cmp::Ordering::Greater
-        } else {
-            std::cmp::Ordering::Equal
-        }
-    });
-
-    Ok(videos)
 }
