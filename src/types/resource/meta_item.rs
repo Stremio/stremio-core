@@ -239,6 +239,7 @@ struct VideoUniqueVecAdapter;
 impl UniqueVecAdapter for VideoUniqueVecAdapter {
     type Input = Video;
     type Output = String;
+
     fn hash(video: &Self::Input) -> Self::Output {
         video.id.to_owned()
     }
@@ -248,7 +249,12 @@ struct VideoSortedVecAdapter;
 
 impl SortedVecAdapter for VideoSortedVecAdapter {
     type Input = Video;
-    fn cmp(a: &Self::Input, b: &Self::Input) -> Ordering {
+    type Args = bool;
+
+    fn args(videos: &[Video]) -> Self::Args {
+        videos.iter().any(|video| video.series_info.is_some())
+    }
+    fn cmp(a: &Self::Input, b: &Self::Input, is_series: &Self::Args) -> Ordering {
         if let (Some(a), Some(b)) = (a.series_info.as_ref(), b.series_info.as_ref()) {
             let a_season = if a.season == 0 { u32::MAX } else { a.season };
             let b_season = if b.season == 0 { u32::MAX } else { b.season };
@@ -258,7 +264,11 @@ impl SortedVecAdapter for VideoSortedVecAdapter {
         } else if b.series_info.is_some() {
             std::cmp::Ordering::Greater
         } else if let (Some(a), Some(b)) = (a.released, b.released) {
-            b.cmp(&a)
+            if *is_series {
+                a.cmp(&b)
+            } else {
+                b.cmp(&a)
+            }
         } else if a.released.is_some() {
             std::cmp::Ordering::Less
         } else if b.released.is_some() {

@@ -7,8 +7,10 @@ use std::hash::Hash;
 
 pub trait SortedVecAdapter {
     type Input;
+    type Args;
 
-    fn cmp(a: &Self::Input, b: &Self::Input) -> Ordering;
+    fn args(values: &[Self::Input]) -> Self::Args;
+    fn cmp(a: &Self::Input, b: &Self::Input, args: &Self::Args) -> Ordering;
 }
 
 #[derive(Copy, Clone, Debug, Default)]
@@ -25,7 +27,11 @@ where
         D: Deserializer<'de>,
     {
         let values = V::deserialize_as(deserializer)?;
-        Ok(values.into_iter().sorted_by(|a, b| A::cmp(a, b)).collect())
+        let args = A::args(&values);
+        Ok(values
+            .into_iter()
+            .sorted_by(|a, b| A::cmp(a, b, &args))
+            .collect())
     }
 }
 

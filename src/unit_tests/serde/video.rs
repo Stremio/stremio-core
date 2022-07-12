@@ -562,9 +562,9 @@ fn various_videos_deserialization() {
                     trailer_streams: vec![],
                 },
                 Video {
-                    id: "M2".to_owned(),
+                    id: "M1".to_owned(),
                     title: "".to_owned(),
-                    released: Some(Utc.ymd(2020, 2, 1).and_hms_milli(0, 0, 0, 0)),
+                    released: Some(Utc.ymd(2020, 1, 1).and_hms_milli(0, 0, 0, 0)),
                     overview: None,
                     thumbnail: None,
                     streams: vec![],
@@ -572,9 +572,9 @@ fn various_videos_deserialization() {
                     trailer_streams: vec![],
                 },
                 Video {
-                    id: "M1".to_owned(),
+                    id: "M2".to_owned(),
                     title: "".to_owned(),
-                    released: Some(Utc.ymd(2020, 1, 1).and_hms_milli(0, 0, 0, 0)),
+                    released: Some(Utc.ymd(2020, 2, 1).and_hms_milli(0, 0, 0, 0)),
                     overview: None,
                     thumbnail: None,
                     streams: vec![],
