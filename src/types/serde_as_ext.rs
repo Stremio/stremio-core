@@ -1,8 +1,33 @@
+use core::cmp::Ordering;
 use core::marker::PhantomData;
 use itertools::Itertools;
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
 use serde_with::{DeserializeAs, SerializeAs};
 use std::hash::Hash;
+
+pub trait SortedVecAdapter {
+    type Input;
+
+    fn cmp(a: &Self::Input, b: &Self::Input) -> Ordering;
+}
+
+#[derive(Copy, Clone, Debug, Default)]
+pub struct SortedVec<V, A>(PhantomData<(V, A)>);
+
+impl<'de, T, V, A> DeserializeAs<'de, Vec<T>> for SortedVec<V, A>
+where
+    T: Deserialize<'de>,
+    V: DeserializeAs<'de, Vec<T>>,
+    A: SortedVecAdapter<Input = T>,
+{
+    fn deserialize_as<D>(deserializer: D) -> Result<Vec<T>, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let values = V::deserialize_as(deserializer)?;
+        Ok(values.into_iter().sorted_by(|a, b| A::cmp(a, b)).collect())
+    }
+}
 
 pub trait UniqueVecAdapter {
     type Input;

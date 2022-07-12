@@ -10,6 +10,7 @@ use crate::types::addon::{AggrRequest, ResourcePath, ResourceRequest};
 use crate::types::library::{LibraryBucket, LibraryItem};
 use crate::types::profile::Settings as ProfileSettings;
 use crate::types::resource::{MetaItem, SeriesInfo, Stream, Subtitles, Video};
+use itertools::Itertools;
 use serde::{Deserialize, Serialize};
 use std::cmp;
 use std::marker::PhantomData;
