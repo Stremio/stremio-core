@@ -14,6 +14,7 @@ use itertools::Itertools;
 use serde::{Deserialize, Serialize};
 use std::cmp;
 use std::marker::PhantomData;
+use stremio_watched_bitfield::WatchedBitField;
 
 #[derive(Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -33,6 +34,8 @@ pub struct Player {
     pub next_video: Option<Video>,
     pub series_info: Option<SeriesInfo>,
     pub library_item: Option<LibraryItem>,
+    #[serde(skip_serializing)]
+    pub watched: Option<WatchedBitField>,
 }
 
 impl<E: Env + 'static> UpdateWithCtx<E> for Player {
@@ -89,12 +92,15 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                     &self.meta_item,
                     &ctx.library,
                 );
+                let watched_effects =
+                    watched_update::<E>(&mut self.watched, &self.meta_item, &self.library_item);
                 selected_effects
                     .join(meta_item_effects)
                     .join(subtitles_effects)
                     .join(next_video_effects)
                     .join(series_info_effects)
                     .join(library_item_effects)
+                    .join(watched_effects)
             }
             Msg::Action(Action::Unload) => {
                 let selected_effects = eq_update(&mut self.selected, None);
@@ -103,12 +109,14 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                 let next_video_effects = eq_update(&mut self.next_video, None);
                 let series_info_effects = eq_update(&mut self.series_info, None);
                 let library_item_effects = eq_update(&mut self.library_item, None);
+                let watched_effects = eq_update(&mut self.watched, None);
                 selected_effects
                     .join(meta_item_effects)
                     .join(subtitles_effects)
                     .join(next_video_effects)
                     .join(series_info_effects)
                     .join(library_item_effects)
+                    .join(watched_effects)
             }
             Msg::Action(Action::Player(ActionPlayer::UpdateLibraryItemState {
                 time,
@@ -153,6 +161,11 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                         library_item.state.flagged_watched = 1;
                         library_item.state.times_watched =
                             library_item.state.times_watched.saturating_add(1);
+                        if let Some(watched) = &self.watched {
+                            let mut watched = watched.to_owned();
+                            watched.set_video(video_id, true);
+                            library_item.state.watched = Some(watched.to_string());
+                        }
                     };
                     if library_item.temp && library_item.state.times_watched == 0 {
                         library_item.removed = true;
@@ -197,11 +210,14 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                     &self.meta_item,
                     &ctx.library,
                 );
+                let watched_effects =
+                    watched_update::<E>(&mut self.watched, &self.meta_item, &self.library_item);
                 meta_item_effects
                     .join(subtitles_effects)
                     .join(next_video_effects)
                     .join(series_info_effects)
                     .join(library_item_effects)
+                    .join(watched_effects)
             }
             _ => Effects::none().unchanged(),
         }
@@ -336,4 +352,24 @@ fn library_item_update<E: Env + 'static>(
     } else {
         Effects::none().unchanged()
     }
+}
+
+fn watched_update<E: Env>(
+    watched: &mut Option<WatchedBitField>,
+    meta_item: &Option<ResourceLoadable<MetaItem>>,
+    library_item: &Option<LibraryItem>,
+) -> Effects {
+    let next_watched = meta_item
+        .as_ref()
+        .and_then(|meta_item| match &meta_item.content {
+            Some(Loadable::Ready(meta_item)) => Some(meta_item),
+            _ => None,
+        })
+        .and_then(|meta_item| {
+            library_item
+                .as_ref()
+                .map(|library_item| (meta_item, library_item))
+        })
+        .map(|(meta_item, library_item)| library_item.state.watched_bitfield(&meta_item.videos));
+    eq_update(watched, next_watched)
 }
