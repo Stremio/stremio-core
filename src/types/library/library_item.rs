@@ -1,9 +1,11 @@
 use crate::runtime::Env;
-use crate::types::resource::{MetaItemBehaviorHints, MetaItemPreview, PosterShape};
+use crate::types::resource::{MetaItemBehaviorHints, MetaItemPreview, PosterShape, Video};
 use chrono::{DateTime, Duration, Utc};
+use itertools::Itertools;
 use serde::{Deserialize, Serialize};
 use serde_with::{serde_as, DefaultOnError, DefaultOnNull, NoneAsEmptyString};
 use std::marker::PhantomData;
+use stremio_watched_bitfield::WatchedBitField;
 use url::Url;
 
 #[serde_as]
@@ -108,4 +110,59 @@ pub struct LibraryItemState {
     #[serde_as(deserialize_as = "DefaultOnNull<NoneAsEmptyString>")]
     pub last_vid_released: Option<DateTime<Utc>>,
     pub no_notif: bool,
+}
+
+impl LibraryItemState {
+    pub fn watched_bitfield(&self, videos: &[Video]) -> WatchedBitField {
+        let video_ids = videos
+            .iter()
+            .sorted_by(|a, b| {
+                a.series_info
+                    .as_ref()
+                    .map(|info| info.season as i64)
+                    .unwrap_or(i64::MIN)
+                    .cmp(
+                        &b.series_info
+                            .as_ref()
+                            .map(|info| info.season as i64)
+                            .unwrap_or(i64::MIN),
+                    )
+                    .then(
+                        a.series_info
+                            .as_ref()
+                            .map(|info| info.episode as i64)
+                            .unwrap_or(i64::MIN)
+                            .cmp(
+                                &b.series_info
+                                    .as_ref()
+                                    .map(|info| info.episode as i64)
+                                    .unwrap_or(i64::MIN),
+                            ),
+                    )
+                    .then(
+                        a.released
+                            .as_ref()
+                            .map(|released| released.timestamp_millis())
+                            .unwrap_or(i64::MIN)
+                            .cmp(
+                                &b.released
+                                    .as_ref()
+                                    .map(|released| released.timestamp_millis())
+                                    .unwrap_or(i64::MIN),
+                            ),
+                    )
+            })
+            .map(|video| &video.id)
+            .cloned()
+            .collect::<Vec<_>>();
+        match &self.watched {
+            Some(watched) => {
+                match WatchedBitField::construct_and_resize(watched, video_ids.to_owned()) {
+                    Ok(watched) => watched,
+                    Err(_) => WatchedBitField::construct_from_array(vec![], video_ids),
+                }
+            }
+            _ => WatchedBitField::construct_from_array(vec![], video_ids),
+        }
+    }
 }
