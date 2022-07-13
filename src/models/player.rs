@@ -4,7 +4,6 @@ use crate::models::common::{
     ResourceLoadable, ResourcesAction,
 };
 use crate::models::ctx::Ctx;
-use crate::models::meta_details::watched_update;
 use crate::runtime::msg::{Action, ActionLoad, ActionPlayer, Internal, Msg};
 use crate::runtime::{Effects, Env, UpdateWithCtx};
 use crate::types::addon::{AggrRequest, ResourcePath, ResourceRequest};
@@ -93,13 +92,8 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                     &self.meta_item,
                     &ctx.library,
                 );
-                let meta_items: &[ResourceLoadable<MetaItem>] = self
-                    .meta_item
-                    .as_ref()
-                    .map(core::slice::from_ref)
-                    .unwrap_or_default();
                 let watched_effects =
-                    watched_update::<E>(&mut self.watched, meta_items, &self.library_item);
+                    watched_update::<E>(&mut self.watched, &self.meta_item, &self.library_item);
                 selected_effects
                     .join(meta_item_effects)
                     .join(subtitles_effects)
@@ -216,11 +210,14 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                     &self.meta_item,
                     &ctx.library,
                 );
+                let watched_effects =
+                    watched_update::<E>(&mut self.watched, &self.meta_item, &self.library_item);
                 meta_item_effects
                     .join(subtitles_effects)
                     .join(next_video_effects)
                     .join(series_info_effects)
                     .join(library_item_effects)
+                    .join(watched_effects)
             }
             _ => Effects::none().unchanged(),
         }
@@ -355,4 +352,24 @@ fn library_item_update<E: Env + 'static>(
     } else {
         Effects::none().unchanged()
     }
+}
+
+fn watched_update<E: Env>(
+    watched: &mut Option<WatchedBitField>,
+    meta_item: &Option<ResourceLoadable<MetaItem>>,
+    library_item: &Option<LibraryItem>,
+) -> Effects {
+    let next_watched = meta_item
+        .as_ref()
+        .and_then(|meta_item| match &meta_item.content {
+            Some(Loadable::Ready(meta_item)) => Some(meta_item),
+            _ => None,
+        })
+        .and_then(|meta_item| {
+            library_item
+                .as_ref()
+                .map(|library_item| (meta_item, library_item))
+        })
+        .map(|(meta_item, library_item)| library_item.state.watched_bitfield(&meta_item.videos));
+    eq_update(watched, next_watched)
 }

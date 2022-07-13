@@ -9,7 +9,6 @@ use crate::runtime::{Effects, Env, UpdateWithCtx};
 use crate::types::addon::{AggrRequest, ResourcePath, ResourceRequest};
 use crate::types::library::{LibraryBucket, LibraryItem};
 use crate::types::resource::{MetaItem, Stream};
-use itertools::Itertools;
 use serde::{Deserialize, Serialize};
 use std::borrow::Cow;
 use std::marker::PhantomData;
@@ -192,7 +191,7 @@ fn library_item_update<E: Env + 'static>(
     eq_update(library_item, next_library_item)
 }
 
-pub fn watched_update<E: Env>(
+fn watched_update<E: Env>(
     watched: &mut Option<WatchedBitField>,
     meta_items: &[ResourceLoadable<MetaItem>],
     library_item: &Option<LibraryItem>,
@@ -206,67 +205,9 @@ pub fn watched_update<E: Env>(
         .and_then(|meta_item| {
             library_item
                 .as_ref()
-                .map(|library_item| (meta_item, &library_item.state.watched))
+                .map(|library_item| (meta_item, library_item))
         })
-        .map(|(meta_item, watched)| {
-            let video_ids = meta_item
-                .videos
-                .iter()
-                .sorted_by(|a, b| {
-                    a.series_info
-                        .as_ref()
-                        .map(|info| info.season as i64)
-                        .unwrap_or(i64::MIN)
-                        .cmp(
-                            &b.series_info
-                                .as_ref()
-                                .map(|info| info.season as i64)
-                                .unwrap_or(i64::MIN),
-                        )
-                        .then(
-                            a.series_info
-                                .as_ref()
-                                .map(|info| info.episode as i64)
-                                .unwrap_or(i64::MIN)
-                                .cmp(
-                                    &b.series_info
-                                        .as_ref()
-                                        .map(|info| info.episode as i64)
-                                        .unwrap_or(i64::MIN),
-                                ),
-                        )
-                        .then(
-                            a.released
-                                .as_ref()
-                                .map(|released| released.timestamp_millis())
-                                .unwrap_or(i64::MIN)
-                                .cmp(
-                                    &b.released
-                                        .as_ref()
-                                        .map(|released| released.timestamp_millis())
-                                        .unwrap_or(i64::MIN),
-                                ),
-                        )
-                })
-                .map(|video| &video.id)
-                .cloned()
-                .collect::<Vec<_>>();
-            match watched {
-                Some(watched) => {
-                    match WatchedBitField::construct_and_resize(watched, video_ids.to_owned()) {
-                        Ok(watched) => watched,
-                        #[cfg(debug_assertions)]
-                        Err(error) => {
-                            E::log(error.to_string());
-                            WatchedBitField::construct_from_array(vec![], video_ids)
-                        }
-                        #[cfg(not(debug_assertions))]
-                        Err(_) => WatchedBitField::construct_from_array(vec![], video_ids),
-                    }
-                }
-                _ => WatchedBitField::construct_from_array(vec![], video_ids),
-            }
-        });
+        .map(|(meta_item, library_item)| library_item.state.watched_bitfield(&meta_item.videos));
     eq_update(watched, next_watched)
 }
 
