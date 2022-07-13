@@ -103,6 +103,8 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                     .join(watched_effects)
             }
             Msg::Action(Action::Unload) => {
+                let switch_to_next_video_effects =
+                    switch_to_next_video(&mut self.library_item, &self.next_video);
                 let selected_effects = eq_update(&mut self.selected, None);
                 let meta_item_effects = eq_update(&mut self.meta_item, None);
                 let subtitles_effects = eq_update(&mut self.subtitles, vec![]);
@@ -110,38 +112,14 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                 let series_info_effects = eq_update(&mut self.series_info, None);
                 let library_item_effects = eq_update(&mut self.library_item, None);
                 let watched_effects = eq_update(&mut self.watched, None);
-                let library_item_state_effects = match &mut self.library_item {
-                    Some(library_item) => {
-                        if library_item.state.time_offset as f64
-                            > library_item.state.duration as f64 * CREDITS_THRESHOLD_COEF
-                        {
-                            library_item.state.time_offset = 0;
-                            if let Some(next_video) = &self.next_video {
-                                library_item.state.video_id = Some(next_video.id.to_owned());
-                                library_item.state.overall_time_watched = library_item
-                                    .state
-                                    .overall_time_watched
-                                    .saturating_add(library_item.state.time_watched);
-                                library_item.state.time_watched = 0;
-                                library_item.state.flagged_watched = 0;
-                                library_item.state.time_offset = 1;
-                            }
-                        }
-                        Effects::msg(Msg::Internal(Internal::UpdateLibraryItem(
-                            library_item.to_owned(),
-                        )))
-                        .unchanged()
-                    }
-                    _ => Effects::none().unchanged(),
-                };
-                selected_effects
+                switch_to_next_video_effects
+                    .join(selected_effects)
                     .join(meta_item_effects)
                     .join(subtitles_effects)
                     .join(next_video_effects)
                     .join(series_info_effects)
                     .join(library_item_effects)
                     .join(watched_effects)
-                    .join(library_item_state_effects)
             }
             Msg::Action(Action::Player(ActionPlayer::UpdateLibraryItemState {
                 time,
@@ -246,6 +224,35 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
             }
             _ => Effects::none().unchanged(),
         }
+    }
+}
+
+fn switch_to_next_video(
+    library_item: &mut Option<LibraryItem>,
+    next_video: &Option<Video>,
+) -> Effects {
+    match library_item {
+        Some(library_item)
+            if library_item.state.time_offset as f64
+                > library_item.state.duration as f64 * CREDITS_THRESHOLD_COEF =>
+        {
+            library_item.state.time_offset = 0;
+            if let Some(next_video) = next_video {
+                library_item.state.video_id = Some(next_video.id.to_owned());
+                library_item.state.overall_time_watched = library_item
+                    .state
+                    .overall_time_watched
+                    .saturating_add(library_item.state.time_watched);
+                library_item.state.time_watched = 0;
+                library_item.state.flagged_watched = 0;
+                library_item.state.time_offset = 1;
+            };
+            Effects::msg(Msg::Internal(Internal::UpdateLibraryItem(
+                library_item.to_owned(),
+            )))
+            .unchanged()
+        }
+        _ => Effects::none().unchanged(),
     }
 }
 
