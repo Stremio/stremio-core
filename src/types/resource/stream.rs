@@ -118,6 +118,9 @@ pub enum StreamSource {
     #[serde(rename_all = "camelCase")]
     External {
         external_url: Url,
+        android_url: Option<Url>,
+        tizen_url: Option<Url>,
+        webos_url: Option<Url>,
     },
     #[serde(rename_all = "camelCase")]
     PlayerFrame {
