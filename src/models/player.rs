@@ -42,6 +42,20 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
     fn update(&mut self, msg: &Msg, ctx: &Ctx) -> Effects {
         match msg {
             Msg::Action(Action::Load(ActionLoad::Player(selected))) => {
+                let switch_to_next_video_effects = if self
+                    .selected
+                    .as_ref()
+                    .and_then(|selected| selected.meta_request.as_ref())
+                    .map(|meta_request| &meta_request.path.id)
+                    != selected
+                        .meta_request
+                        .as_ref()
+                        .map(|meta_request| &meta_request.path.id)
+                {
+                    switch_to_next_video(&mut self.library_item, &self.next_video)
+                } else {
+                    Effects::none().unchanged()
+                };
                 let selected_effects = eq_update(&mut self.selected, Some(selected.to_owned()));
                 let meta_item_effects = match &selected.meta_request {
                     Some(meta_request) => match &mut self.meta_item {
@@ -94,7 +108,8 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                 );
                 let watched_effects =
                     watched_update::<E>(&mut self.watched, &self.meta_item, &self.library_item);
-                selected_effects
+                switch_to_next_video_effects
+                    .join(selected_effects)
                     .join(meta_item_effects)
                     .join(subtitles_effects)
                     .join(next_video_effects)
