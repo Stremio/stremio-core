@@ -42,7 +42,7 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
     fn update(&mut self, msg: &Msg, ctx: &Ctx) -> Effects {
         match msg {
             Msg::Action(Action::Load(ActionLoad::Player(selected))) => {
-                let selected_effects = eq_update(&mut self.selected, Some(selected.to_owned()));
+                let selected_effects = eq_update(&mut self.selected, Some(*selected.to_owned()));
                 let meta_item_effects = match &selected.meta_request {
                     Some(meta_request) => match &mut self.meta_item {
                         Some(meta_item) => resource_update::<E, _>(
