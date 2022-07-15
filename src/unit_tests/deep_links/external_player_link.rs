@@ -20,7 +20,7 @@ fn external_player_link_magnet() {
         behavior_hints: Default::default(),
     };
     let epl = ExternalPlayerLink::try_from(&stream).unwrap();
-    assert_eq!(epl.href, MAGNET_STR_URL);
+    assert_eq!(epl.href, Some(MAGNET_STR_URL.to_owned()));
     assert_eq!(epl.download, None);
 }
 
@@ -37,7 +37,7 @@ fn external_player_link_http() {
         behavior_hints: Default::default(),
     };
     let epl = ExternalPlayerLink::try_from(&stream).unwrap();
-    assert_eq!(epl.href, BASE64_HTTP_URL);
+    assert_eq!(epl.href, Some(BASE64_HTTP_URL.to_owned()));
     assert_eq!(epl.download, Some("playlist.m3u".to_string()));
 }
 
@@ -59,7 +59,7 @@ fn external_player_link_torrent() {
         behavior_hints: Default::default(),
     };
     let epl = ExternalPlayerLink::try_from(&stream).unwrap();
-    assert_eq!(epl.href, MAGNET_STR_URL);
+    assert_eq!(epl.href, Some(MAGNET_STR_URL.to_owned()));
     assert_eq!(epl.download, None);
 }
 
@@ -67,7 +67,10 @@ fn external_player_link_torrent() {
 fn external_player_link_external() {
     let stream = Stream {
         source: StreamSource::External {
-            external_url: Url::from_str(HTTP_STR_URL).unwrap(),
+            external_url: Some(Url::from_str(HTTP_STR_URL).unwrap()),
+            android_url: None,
+            tizen_url: None,
+            webos_url: None,
         },
         name: None,
         description: None,
@@ -76,7 +79,7 @@ fn external_player_link_external() {
         behavior_hints: Default::default(),
     };
     let epl = ExternalPlayerLink::try_from(&stream).unwrap();
-    assert_eq!(epl.href, HTTP_STR_URL);
+    assert_eq!(epl.href, Some(HTTP_STR_URL.to_owned()));
     assert_eq!(epl.download, None);
 }
 
@@ -95,7 +98,7 @@ fn external_player_link_youtube() {
     let epl = ExternalPlayerLink::try_from(&stream).unwrap();
     assert_eq!(
         epl.href,
-        "https://www.youtube.com/watch?v=aqz-KE-bpKQ".to_string()
+        Some("https://www.youtube.com/watch?v=aqz-KE-bpKQ".to_string())
     );
     assert_eq!(epl.download, None);
 }
@@ -113,6 +116,6 @@ fn external_player_link_player_frame() {
         behavior_hints: Default::default(),
     };
     let epl = ExternalPlayerLink::try_from(&stream).unwrap();
-    assert_eq!(epl.href, HTTP_STR_URL);
+    assert_eq!(epl.href, Some(HTTP_STR_URL.to_owned()));
     assert_eq!(epl.download, None);
 }

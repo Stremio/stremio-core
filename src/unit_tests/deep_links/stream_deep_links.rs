@@ -23,7 +23,7 @@ fn stream_deep_links_magnet() {
     };
     let sdl = StreamDeepLinks::try_from(&stream).unwrap();
     assert_eq!(sdl.player, "stremio:///player/eAEBRgC5%2F3sidXJsIjoibWFnbmV0Oj94dD11cm46YnRpaDpkZDgyNTVlY2RjN2NhNTVmYjBiYmY4MTMyM2Q4NzA2MmRiMWY2ZDFjIn0%2BMhZF".to_string());
-    assert_eq!(sdl.external_player.href, MAGNET_STR_URL);
+    assert_eq!(sdl.external_player.href, Some(MAGNET_STR_URL.to_owned()));
     assert_eq!(sdl.external_player.download, None);
 }
 
@@ -45,7 +45,7 @@ fn stream_deep_links_http() {
         "stremio:///player/eAEBIQDe%2F3sidXJsIjoiaHR0cDovL2RvbWFpbi5yb290L3BhdGgifcEEC6w%3D"
             .to_string()
     );
-    assert_eq!(sdl.external_player.href, BASE64_HTTP_URL);
+    assert_eq!(sdl.external_player.href, Some(BASE64_HTTP_URL.to_owned()));
     assert_eq!(
         sdl.external_player.download,
         Some("playlist.m3u".to_string())
@@ -71,7 +71,7 @@ fn stream_deep_links_torrent() {
     };
     let sdl = StreamDeepLinks::try_from(&stream).unwrap();
     assert_eq!(sdl.player, "stremio:///player/eAEBVACr%2F3siaW5mb0hhc2giOiJkZDgyNTVlY2RjN2NhNTVmYjBiYmY4MTMyM2Q4NzA2MmRiMWY2ZDFjIiwiZmlsZUlkeCI6bnVsbCwiYW5ub3VuY2UiOltdfVAyGnc%3D".to_string());
-    assert_eq!(sdl.external_player.href, MAGNET_STR_URL);
+    assert_eq!(sdl.external_player.href, Some(MAGNET_STR_URL.to_owned()));
     assert_eq!(sdl.external_player.download, None);
 }
 
@@ -79,7 +79,10 @@ fn stream_deep_links_torrent() {
 fn stream_deep_links_external() {
     let stream = Stream {
         source: StreamSource::External {
-            external_url: Url::from_str(HTTP_STR_URL).unwrap(),
+            external_url: Some(Url::from_str(HTTP_STR_URL).unwrap()),
+            android_url: None,
+            tizen_url: None,
+            webos_url: None,
         },
         name: None,
         description: None,
@@ -89,7 +92,7 @@ fn stream_deep_links_external() {
     };
     let sdl = StreamDeepLinks::try_from(&stream).unwrap();
     assert_eq!(sdl.player, "stremio:///player/eAEBKQDW%2F3siZXh0ZXJuYWxVcmwiOiJodHRwOi8vZG9tYWluLnJvb3QvcGF0aCJ9OoEO7w%3D%3D".to_string());
-    assert_eq!(sdl.external_player.href, HTTP_STR_URL);
+    assert_eq!(sdl.external_player.href, Some(HTTP_STR_URL.to_owned()));
     assert_eq!(sdl.external_player.download, None);
 }
 
@@ -112,7 +115,7 @@ fn stream_deep_links_youtube() {
     );
     assert_eq!(
         sdl.external_player.href,
-        "https://www.youtube.com/watch?v=aqz-KE-bpKQ".to_string()
+        Some("https://www.youtube.com/watch?v=aqz-KE-bpKQ".to_string())
     );
     assert_eq!(sdl.external_player.download, None);
 }
@@ -131,7 +134,7 @@ fn stream_deep_links_player_frame() {
     };
     let sdl = StreamDeepLinks::try_from(&stream).unwrap();
     assert_eq!(sdl.player, "stremio:///player/eAEBLADT%2F3sicGxheWVyRnJhbWVVcmwiOiJodHRwOi8vZG9tYWluLnJvb3QvcGF0aCJ9abUQBA%3D%3D".to_string());
-    assert_eq!(sdl.external_player.href, HTTP_STR_URL);
+    assert_eq!(sdl.external_player.href, Some(HTTP_STR_URL.to_owned()));
     assert_eq!(sdl.external_player.download, None);
 }
 
@@ -160,7 +163,7 @@ fn stream_deep_links_requests() {
     assert_eq!(sdl.player, "stremio:///player/eAEBFgDp%2F3sieXRJZCI6ImFxei1LRS1icEtRIn1RRQb5/http%3A%2F%2Fdomain.root%2F/http%3A%2F%2Fdomain.root%2F/movie/yt_id%3Aaqz-KE-bpKQ/yt_id%3Aaqz-KE-bpKQ".to_string());
     assert_eq!(
         sdl.external_player.href,
-        "https://www.youtube.com/watch?v=aqz-KE-bpKQ".to_string()
+        Some("https://www.youtube.com/watch?v=aqz-KE-bpKQ".to_string())
     );
     assert_eq!(sdl.external_player.download, None);
 }

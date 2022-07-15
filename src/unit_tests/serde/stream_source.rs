@@ -1,5 +1,5 @@
 use crate::types::resource::StreamSource;
-use serde_test::{assert_de_tokens, assert_ser_tokens, Token};
+use serde_test::{assert_de_tokens, assert_de_tokens_error, assert_ser_tokens, Token};
 use url::Url;
 
 #[test]
@@ -23,7 +23,10 @@ fn stream_source() {
                 announce: vec![],
             },
             StreamSource::External {
-                external_url: Url::parse("https://external_url").unwrap(),
+                external_url: Some(Url::parse("https://external_url").unwrap()),
+                android_url: None,
+                tizen_url: None,
+                webos_url: None,
             },
             StreamSource::PlayerFrame {
                 player_frame_url: Url::parse("https://player_frame_url").unwrap(),
@@ -76,6 +79,7 @@ fn stream_source() {
                 len: 1,
             },
             Token::Str("externalUrl"),
+            Token::Some,
             Token::Str("https://external_url/"),
             Token::StructEnd,
             Token::Struct {
@@ -117,7 +121,10 @@ fn stream_source() {
                 announce: vec![],
             },
             StreamSource::External {
-                external_url: Url::parse("https://external_url").unwrap(),
+                external_url: Some(Url::parse("https://external_url").unwrap()),
+                android_url: None,
+                tizen_url: None,
+                webos_url: None,
             },
             StreamSource::PlayerFrame {
                 player_frame_url: Url::parse("https://player_frame_url").unwrap(),
@@ -202,5 +209,17 @@ fn stream_source() {
             Token::StructEnd,
             Token::SeqEnd,
         ],
+    );
+    assert_de_tokens_error::<StreamSource>(
+        &[
+            Token::Struct {
+                name: "StreamSource",
+                len: 1,
+            },
+            Token::Str("externalUrl"),
+            Token::None,
+            Token::StructEnd,
+        ],
+        "data did not match any variant of untagged enum StreamSource",
     );
 }
