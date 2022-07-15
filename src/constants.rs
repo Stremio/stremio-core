@@ -20,6 +20,7 @@ pub const CATALOG_PAGE_SIZE: usize = 100;
 pub const CATALOG_PREVIEW_SIZE: usize = 10;
 pub const LIBRARY_RECENT_COUNT: usize = 200;
 pub const WATCHED_THRESHOLD_COEF: f64 = 0.7;
+pub const CREDITS_THRESHOLD_COEF: f64 = 0.9;
 pub const SCHEMA_VERSION: u32 = 5;
 pub const IMDB_LINK_CATEGORY: &str = "imdb";
 pub const GENRES_LINK_CATEGORY: &str = "Genres";
