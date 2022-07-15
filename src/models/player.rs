@@ -1,4 +1,4 @@
-use crate::constants::WATCHED_THRESHOLD_COEF;
+use crate::constants::{CREDITS_THRESHOLD_COEF, WATCHED_THRESHOLD_COEF};
 use crate::models::common::{
     eq_update, resource_update, resources_update_with_vector_content, Loadable, ResourceAction,
     ResourceLoadable, ResourcesAction,
@@ -10,9 +10,11 @@ use crate::types::addon::{AggrRequest, ResourcePath, ResourceRequest};
 use crate::types::library::{LibraryBucket, LibraryItem};
 use crate::types::profile::Settings as ProfileSettings;
 use crate::types::resource::{MetaItem, SeriesInfo, Stream, Subtitles, Video};
+use itertools::Itertools;
 use serde::{Deserialize, Serialize};
 use std::cmp;
 use std::marker::PhantomData;
+use stremio_watched_bitfield::WatchedBitField;
 
 #[derive(Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -32,13 +34,29 @@ pub struct Player {
     pub next_video: Option<Video>,
     pub series_info: Option<SeriesInfo>,
     pub library_item: Option<LibraryItem>,
+    #[serde(skip_serializing)]
+    pub watched: Option<WatchedBitField>,
 }
 
 impl<E: Env + 'static> UpdateWithCtx<E> for Player {
     fn update(&mut self, msg: &Msg, ctx: &Ctx) -> Effects {
         match msg {
             Msg::Action(Action::Load(ActionLoad::Player(selected))) => {
-                let selected_effects = eq_update(&mut self.selected, Some(selected.to_owned()));
+                let switch_to_next_video_effects = if self
+                    .selected
+                    .as_ref()
+                    .and_then(|selected| selected.meta_request.as_ref())
+                    .map(|meta_request| &meta_request.path.id)
+                    != selected
+                        .meta_request
+                        .as_ref()
+                        .map(|meta_request| &meta_request.path.id)
+                {
+                    switch_to_next_video(&mut self.library_item, &self.next_video)
+                } else {
+                    Effects::none().unchanged()
+                };
+                let selected_effects = eq_update(&mut self.selected, Some(*selected.to_owned()));
                 let meta_item_effects = match &selected.meta_request {
                     Some(meta_request) => match &mut self.meta_item {
                         Some(meta_item) => resource_update::<E, _>(
@@ -88,26 +106,35 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                     &self.meta_item,
                     &ctx.library,
                 );
-                selected_effects
+                let watched_effects =
+                    watched_update::<E>(&mut self.watched, &self.meta_item, &self.library_item);
+                switch_to_next_video_effects
+                    .join(selected_effects)
                     .join(meta_item_effects)
                     .join(subtitles_effects)
                     .join(next_video_effects)
                     .join(series_info_effects)
                     .join(library_item_effects)
+                    .join(watched_effects)
             }
             Msg::Action(Action::Unload) => {
+                let switch_to_next_video_effects =
+                    switch_to_next_video(&mut self.library_item, &self.next_video);
                 let selected_effects = eq_update(&mut self.selected, None);
                 let meta_item_effects = eq_update(&mut self.meta_item, None);
                 let subtitles_effects = eq_update(&mut self.subtitles, vec![]);
                 let next_video_effects = eq_update(&mut self.next_video, None);
                 let series_info_effects = eq_update(&mut self.series_info, None);
                 let library_item_effects = eq_update(&mut self.library_item, None);
-                selected_effects
+                let watched_effects = eq_update(&mut self.watched, None);
+                switch_to_next_video_effects
+                    .join(selected_effects)
                     .join(meta_item_effects)
                     .join(subtitles_effects)
                     .join(next_video_effects)
                     .join(series_info_effects)
                     .join(library_item_effects)
+                    .join(watched_effects)
             }
             Msg::Action(Action::Player(ActionPlayer::UpdateLibraryItemState {
                 time,
@@ -152,6 +179,11 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                         library_item.state.flagged_watched = 1;
                         library_item.state.times_watched =
                             library_item.state.times_watched.saturating_add(1);
+                        if let Some(watched) = &self.watched {
+                            let mut watched = watched.to_owned();
+                            watched.set_video(video_id, true);
+                            library_item.state.watched = Some(watched.to_string());
+                        }
                     };
                     if library_item.temp && library_item.state.times_watched == 0 {
                         library_item.removed = true;
@@ -196,14 +228,46 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                     &self.meta_item,
                     &ctx.library,
                 );
+                let watched_effects =
+                    watched_update::<E>(&mut self.watched, &self.meta_item, &self.library_item);
                 meta_item_effects
                     .join(subtitles_effects)
                     .join(next_video_effects)
                     .join(series_info_effects)
                     .join(library_item_effects)
+                    .join(watched_effects)
             }
             _ => Effects::none().unchanged(),
         }
+    }
+}
+
+fn switch_to_next_video(
+    library_item: &mut Option<LibraryItem>,
+    next_video: &Option<Video>,
+) -> Effects {
+    match library_item {
+        Some(library_item)
+            if library_item.state.time_offset as f64
+                > library_item.state.duration as f64 * CREDITS_THRESHOLD_COEF =>
+        {
+            library_item.state.time_offset = 0;
+            if let Some(next_video) = next_video {
+                library_item.state.video_id = Some(next_video.id.to_owned());
+                library_item.state.overall_time_watched = library_item
+                    .state
+                    .overall_time_watched
+                    .saturating_add(library_item.state.time_watched);
+                library_item.state.time_watched = 0;
+                library_item.state.flagged_watched = 0;
+                library_item.state.time_offset = 1;
+            };
+            Effects::msg(Msg::Internal(Internal::UpdateLibraryItem(
+                library_item.to_owned(),
+            )))
+            .unchanged()
+        }
+        _ => Effects::none().unchanged(),
     }
 }
 
@@ -230,8 +294,27 @@ fn next_video_update(
         ) if settings.binge_watching => meta_item
             .videos
             .iter()
-            .position(|video| video.id == *video_id)
-            .and_then(|position| meta_item.videos.get(position + 1))
+            .find_position(|video| video.id == *video_id)
+            .and_then(|(position, current_video)| {
+                meta_item
+                    .videos
+                    .get(position + 1)
+                    .map(|next_video| (current_video, next_video))
+            })
+            .filter(|(current_video, next_video)| {
+                let current_season = current_video
+                    .series_info
+                    .as_ref()
+                    .map(|info| info.season)
+                    .unwrap_or_default();
+                let next_season = next_video
+                    .series_info
+                    .as_ref()
+                    .map(|info| info.season)
+                    .unwrap_or_default();
+                next_season != 0 || current_season == next_season
+            })
+            .map(|(_, next_video)| next_video)
             .cloned(),
         _ => None,
     };
@@ -316,4 +399,24 @@ fn library_item_update<E: Env + 'static>(
     } else {
         Effects::none().unchanged()
     }
+}
+
+fn watched_update<E: Env>(
+    watched: &mut Option<WatchedBitField>,
+    meta_item: &Option<ResourceLoadable<MetaItem>>,
+    library_item: &Option<LibraryItem>,
+) -> Effects {
+    let next_watched = meta_item
+        .as_ref()
+        .and_then(|meta_item| match &meta_item.content {
+            Some(Loadable::Ready(meta_item)) => Some(meta_item),
+            _ => None,
+        })
+        .and_then(|meta_item| {
+            library_item
+                .as_ref()
+                .map(|library_item| (meta_item, library_item))
+        })
+        .map(|(meta_item, library_item)| library_item.state.watched_bitfield(&meta_item.videos));
+    eq_update(watched, next_watched)
 }

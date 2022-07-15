@@ -80,7 +80,7 @@ pub enum ActionLoad {
     InstalledAddonsWithFilters(InstalledAddonsWithFiltersSelected),
     LibraryWithFilters(LibraryWithFiltersSelected),
     MetaDetails(MetaDetailsSelected),
-    Player(PlayerSelected),
+    Player(Box<PlayerSelected>),
     Link,
     Notifications,
 }

@@ -205,31 +205,9 @@ fn watched_update<E: Env>(
         .and_then(|meta_item| {
             library_item
                 .as_ref()
-                .map(|library_item| (meta_item, &library_item.state.watched))
+                .map(|library_item| (meta_item, library_item))
         })
-        .map(|(meta_item, watched)| {
-            let video_ids = meta_item
-                .videos
-                .iter()
-                .map(|video| &video.id)
-                .cloned()
-                .collect::<Vec<_>>();
-            match watched {
-                Some(watched) => {
-                    match WatchedBitField::construct_and_resize(watched, video_ids.to_owned()) {
-                        Ok(watched) => watched,
-                        #[cfg(debug_assertions)]
-                        Err(error) => {
-                            E::log(error.to_string());
-                            WatchedBitField::construct_from_array(vec![], video_ids)
-                        }
-                        #[cfg(not(debug_assertions))]
-                        Err(_) => WatchedBitField::construct_from_array(vec![], video_ids),
-                    }
-                }
-                _ => WatchedBitField::construct_from_array(vec![], video_ids),
-            }
-        });
+        .map(|(meta_item, library_item)| library_item.state.watched_bitfield(&meta_item.videos));
     eq_update(watched, next_watched)
 }
 
