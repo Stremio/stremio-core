@@ -144,11 +144,28 @@ fn deserialize_stream_source_external<'de, D>(
 where
     D: Deserializer<'de>,
 {
-    let source = ExternalStreamSource::deserialize(deserializer)?;
-    if source.0.is_none() && source.1.is_none() && source.2.is_none() && source.3.is_none() {
+    #[derive(Serialize, Deserialize)]
+    #[serde(rename_all = "camelCase")]
+    struct Helper {
+        external_url: Option<Url>,
+        android_url: Option<Url>,
+        tizen_url: Option<Url>,
+        webos_url: Option<Url>,
+    }
+    let source = Helper::deserialize(deserializer)?;
+    if source.external_url.is_none()
+        && source.android_url.is_none()
+        && source.tizen_url.is_none()
+        && source.webos_url.is_none()
+    {
         return Err(D::Error::custom("Invalid StreamSource::External"));
     };
-    Ok(source)
+    Ok((
+        source.external_url,
+        source.android_url,
+        source.tizen_url,
+        source.webos_url,
+    ))
 }
 
 #[derive(Default, Clone, PartialEq, Serialize, Deserialize)]
