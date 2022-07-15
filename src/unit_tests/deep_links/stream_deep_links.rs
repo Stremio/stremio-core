@@ -1,6 +1,6 @@
 use crate::deep_links::StreamDeepLinks;
 use crate::types::addon::{ResourcePath, ResourceRequest};
-use crate::types::resource::{Stream, StreamSource, StreamSourceExternal};
+use crate::types::resource::{Stream, StreamSource};
 use std::convert::TryFrom;
 use std::str::FromStr;
 use url::Url;
@@ -78,10 +78,12 @@ fn stream_deep_links_torrent() {
 #[test]
 fn stream_deep_links_external() {
     let stream = Stream {
-        source: StreamSource::External(StreamSourceExternal {
+        source: StreamSource::External {
             external_url: Some(Url::from_str(HTTP_STR_URL).unwrap()),
-            ..Default::default()
-        }),
+            android_url: None,
+            tizen_url: None,
+            webos_url: None,
+        },
         name: None,
         description: None,
         thumbnail: None,

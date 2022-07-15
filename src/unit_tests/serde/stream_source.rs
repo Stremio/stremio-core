@@ -1,4 +1,4 @@
-use crate::types::resource::{StreamSource, StreamSourceExternal};
+use crate::types::resource::StreamSource;
 use serde_test::{assert_de_tokens, assert_de_tokens_error, assert_ser_tokens, Token};
 use url::Url;
 
@@ -22,10 +22,12 @@ fn stream_source() {
                 file_idx: None,
                 announce: vec![],
             },
-            StreamSource::External(StreamSourceExternal {
+            StreamSource::External {
                 external_url: Some(Url::parse("https://external_url").unwrap()),
-                ..Default::default()
-            }),
+                android_url: None,
+                tizen_url: None,
+                webos_url: None,
+            },
             StreamSource::PlayerFrame {
                 player_frame_url: Url::parse("https://player_frame_url").unwrap(),
             },
@@ -73,7 +75,7 @@ fn stream_source() {
             Token::SeqEnd,
             Token::StructEnd,
             Token::Struct {
-                name: "StreamSourceExternal",
+                name: "StreamSource",
                 len: 1,
             },
             Token::Str("externalUrl"),
@@ -118,10 +120,12 @@ fn stream_source() {
                 file_idx: None,
                 announce: vec![],
             },
-            StreamSource::External(StreamSourceExternal {
+            StreamSource::External {
                 external_url: Some(Url::parse("https://external_url").unwrap()),
-                ..Default::default()
-            }),
+                android_url: None,
+                tizen_url: None,
+                webos_url: None,
+            },
             StreamSource::PlayerFrame {
                 player_frame_url: Url::parse("https://player_frame_url").unwrap(),
             },

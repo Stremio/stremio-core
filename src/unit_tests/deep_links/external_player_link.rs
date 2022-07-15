@@ -1,5 +1,5 @@
 use crate::deep_links::ExternalPlayerLink;
-use crate::types::resource::{Stream, StreamSource, StreamSourceExternal};
+use crate::types::resource::{Stream, StreamSource};
 use std::convert::TryFrom;
 use std::str::FromStr;
 use url::Url;
@@ -66,10 +66,12 @@ fn external_player_link_torrent() {
 #[test]
 fn external_player_link_external() {
     let stream = Stream {
-        source: StreamSource::External(StreamSourceExternal {
+        source: StreamSource::External {
             external_url: Some(Url::from_str(HTTP_STR_URL).unwrap()),
-            ..Default::default()
-        }),
+            android_url: None,
+            tizen_url: None,
+            webos_url: None,
+        },
         name: None,
         description: None,
         thumbnail: None,

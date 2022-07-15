@@ -8,9 +8,7 @@ use crate::models::installed_addons_with_filters::InstalledAddonsRequest;
 use crate::models::library_with_filters::LibraryRequest;
 use crate::types::addon::{ExtraValue, ResourceRequest};
 use crate::types::library::LibraryItem;
-use crate::types::resource::{
-    MetaItem, MetaItemPreview, Stream, StreamSource, StreamSourceExternal, Video,
-};
+use crate::types::resource::{MetaItem, MetaItemPreview, Stream, StreamSource, Video};
 use percent_encoding::utf8_percent_encode;
 use serde::Serialize;
 
@@ -48,12 +46,12 @@ impl From<&Stream> for ExternalPlayerLink {
                 ),
                 ..Default::default()
             },
-            StreamSource::External(StreamSourceExternal {
+            StreamSource::External {
                 external_url,
                 android_url,
                 tizen_url,
                 webos_url,
-            }) => ExternalPlayerLink {
+            } => ExternalPlayerLink {
                 href: external_url.as_ref().map(|url| url.as_str().to_owned()),
                 android: android_url.as_ref().map(|url| url.as_str().to_owned()),
                 tizen: tizen_url.as_ref().map(|url| url.as_str().to_owned()),

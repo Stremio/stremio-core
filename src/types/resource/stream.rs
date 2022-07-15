@@ -95,20 +95,6 @@ impl Stream {
 }
 
 #[derive(Clone, PartialEq, Serialize, Deserialize)]
-#[cfg_attr(debug_assertions, derive(Debug, Default))]
-#[serde(rename_all = "camelCase")]
-pub struct StreamSourceExternal {
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub external_url: Option<Url>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub android_url: Option<Url>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub tizen_url: Option<Url>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub webos_url: Option<Url>,
-}
-
-#[derive(Clone, PartialEq, Serialize, Deserialize)]
 #[cfg_attr(debug_assertions, derive(Debug))]
 #[cfg_attr(test, derive(Derivative))]
 #[cfg_attr(test, derivative(Default))]
@@ -138,22 +124,29 @@ pub enum StreamSource {
         rename_all = "camelCase",
         deserialize_with = "deserialize_stream_source_external"
     )]
-    External(StreamSourceExternal),
+    External {
+        #[serde(skip_serializing_if = "Option::is_none")]
+        external_url: Option<Url>,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        android_url: Option<Url>,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        tizen_url: Option<Url>,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        webos_url: Option<Url>,
+    },
 }
+
+type ExternalStreamSource = (Option<Url>, Option<Url>, Option<Url>, Option<Url>);
 
 fn deserialize_stream_source_external<'de, D>(
     deserializer: D,
-) -> Result<StreamSourceExternal, D::Error>
+) -> Result<ExternalStreamSource, D::Error>
 where
     D: Deserializer<'de>,
 {
-    let source = StreamSourceExternal::deserialize(deserializer)?;
-    if source.external_url.is_none()
-        && source.android_url.is_none()
-        && source.tizen_url.is_none()
-        && source.webos_url.is_none()
-    {
-        return Err(D::Error::custom("Invalid StreamSourceExternal"));
+    let source = ExternalStreamSource::deserialize(deserializer)?;
+    if source.0.is_none() && source.1.is_none() && source.2.is_none() && source.3.is_none() {
+        return Err(D::Error::custom("Invalid StreamSource::External"));
     };
     Ok(source)
 }
