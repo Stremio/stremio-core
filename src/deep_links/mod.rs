@@ -8,14 +8,16 @@ use crate::models::installed_addons_with_filters::InstalledAddonsRequest;
 use crate::models::library_with_filters::LibraryRequest;
 use crate::types::addon::{ExtraValue, ResourceRequest};
 use crate::types::library::LibraryItem;
-use crate::types::resource::{MetaItem, MetaItemPreview, Stream, StreamSource, Video};
+use crate::types::resource::{
+    MetaItem, MetaItemPreview, Stream, StreamSource, StreamSourceExternal, Video,
+};
 use percent_encoding::utf8_percent_encode;
 use serde::Serialize;
 
 #[derive(Serialize)]
 #[cfg_attr(debug_assertions, derive(Debug, PartialEq))]
 pub struct ExternalPlayerLink {
-    pub href: String,
+    pub href: Option<String>,
     pub download: Option<String>,
 }
 
@@ -23,36 +25,42 @@ impl From<&Stream> for ExternalPlayerLink {
     fn from(stream: &Stream) -> Self {
         match &stream.source {
             StreamSource::Url { url } if url.scheme() == "magnet" => ExternalPlayerLink {
-                href: url.as_str().to_owned(),
+                href: Some(url.as_str().to_owned()),
                 download: None,
             },
             StreamSource::Url { url } => ExternalPlayerLink {
-                href: format!(
+                href: Some(format!(
                     "data:application/octet-stream;charset=utf-8;base64,{}",
                     base64::encode(format!("#EXTM3U\n#EXTINF:0\n{}", url))
-                ),
+                )),
                 download: Some("playlist.m3u".to_owned()),
             },
             StreamSource::Torrent { .. } => ExternalPlayerLink {
-                href: stream
-                    .magnet_url()
-                    .map(|magnet_url| magnet_url.to_string())
-                    .expect("Failed to build magnet url for torrent"),
-                download: None,
-            },
-            StreamSource::External { external_url } => ExternalPlayerLink {
-                href: external_url.as_str().to_owned(),
-                download: None,
-            },
-            StreamSource::YouTube { yt_id } => ExternalPlayerLink {
-                href: format!(
-                    "https://www.youtube.com/watch?v={}",
-                    utf8_percent_encode(yt_id, URI_COMPONENT_ENCODE_SET)
+                href: Some(
+                    stream
+                        .magnet_url()
+                        .map(|magnet_url| magnet_url.to_string())
+                        .expect("Failed to build magnet url for torrent"),
                 ),
                 download: None,
             },
+            StreamSource::External(StreamSourceExternal { external_url, .. }) => {
+                ExternalPlayerLink {
+                    href: external_url
+                        .as_ref()
+                        .map(|external_url| external_url.as_str().to_owned()),
+                    download: None,
+                }
+            }
+            StreamSource::YouTube { yt_id } => ExternalPlayerLink {
+                href: Some(format!(
+                    "https://www.youtube.com/watch?v={}",
+                    utf8_percent_encode(yt_id, URI_COMPONENT_ENCODE_SET)
+                )),
+                download: None,
+            },
             StreamSource::PlayerFrame { player_frame_url } => ExternalPlayerLink {
-                href: player_frame_url.as_str().to_owned(),
+                href: Some(player_frame_url.as_str().to_owned()),
                 download: None,
             },
         }

@@ -27,7 +27,7 @@ fn video_deep_links() {
     assert_eq!(
         vdl.external_player,
         Some(ExternalPlayerLink {
-            href: "https://www.youtube.com/watch?v=aqz-KE-bpKQ".to_string(),
+            href: Some("https://www.youtube.com/watch?v=aqz-KE-bpKQ".to_string()),
             download: None
         })
     );

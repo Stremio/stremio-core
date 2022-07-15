@@ -6,7 +6,8 @@ use derivative::Derivative;
 use flate2::write::{ZlibDecoder, ZlibEncoder};
 use flate2::Compression;
 use magnet_url::Magnet;
-use serde::{Deserialize, Serialize};
+use serde::de::Error;
+use serde::{Deserialize, Deserializer, Serialize};
 use serde_hex::{SerHex, Strict};
 use std::collections::HashMap;
 use std::io::Write;
@@ -94,6 +95,20 @@ impl Stream {
 }
 
 #[derive(Clone, PartialEq, Serialize, Deserialize)]
+#[cfg_attr(debug_assertions, derive(Debug, Default))]
+#[serde(rename_all = "camelCase")]
+pub struct StreamSourceExternal {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub external_url: Option<Url>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub android_url: Option<Url>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub tizen_url: Option<Url>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub webos_url: Option<Url>,
+}
+
+#[derive(Clone, PartialEq, Serialize, Deserialize)]
 #[cfg_attr(debug_assertions, derive(Debug))]
 #[cfg_attr(test, derive(Derivative))]
 #[cfg_attr(test, derivative(Default))]
@@ -116,16 +131,31 @@ pub enum StreamSource {
         announce: Vec<String>,
     },
     #[serde(rename_all = "camelCase")]
-    External {
-        external_url: Url,
-        android_url: Option<Url>,
-        tizen_url: Option<Url>,
-        webos_url: Option<Url>,
-    },
-    #[serde(rename_all = "camelCase")]
     PlayerFrame {
         player_frame_url: Url,
     },
+    #[serde(
+        rename_all = "camelCase",
+        deserialize_with = "deserialize_stream_source_external"
+    )]
+    External(StreamSourceExternal),
+}
+
+fn deserialize_stream_source_external<'de, D>(
+    deserializer: D,
+) -> Result<StreamSourceExternal, D::Error>
+where
+    D: Deserializer<'de>,
+{
+    let source = StreamSourceExternal::deserialize(deserializer)?;
+    if source.external_url.is_none()
+        && source.android_url.is_none()
+        && source.tizen_url.is_none()
+        && source.webos_url.is_none()
+    {
+        return Err(D::Error::custom("Invalid StreamSourceExternal"));
+    };
+    Ok(source)
 }
 
 #[derive(Default, Clone, PartialEq, Serialize, Deserialize)]
