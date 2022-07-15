@@ -28,7 +28,7 @@ fn video_deep_links() {
         vdl.external_player,
         Some(ExternalPlayerLink {
             href: Some("https://www.youtube.com/watch?v=aqz-KE-bpKQ".to_string()),
-            download: None
+            ..Default::default()
         })
     );
 }
