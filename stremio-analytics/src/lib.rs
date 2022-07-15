@@ -85,6 +85,7 @@ impl<E: Env + 'static> Analytics<E> {
         data: serde_json::Value,
         ctx: &Ctx,
         streaming_server: &StreamingServer,
+        path: &str,
     ) {
         let mut state = self.state.lock().expect("analytics state lock failed");
         let auth_key = match ctx.profile.auth_key() {
@@ -96,7 +97,7 @@ impl<E: Env + 'static> Analytics<E> {
             data,
             number: state.next_number(),
             time: E::now().timestamp_millis(),
-            context: E::analytics_context(ctx, streaming_server),
+            context: E::analytics_context(ctx, streaming_server, path),
         };
         state.push_event(event, auth_key);
     }

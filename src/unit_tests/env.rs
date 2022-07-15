@@ -19,7 +19,7 @@ lazy_static! {
         RwLock::new(Box::new(default_fetch_handler));
     pub static ref REQUESTS: RwLock<Vec<Request>> = Default::default();
     pub static ref STORAGE: RwLock<BTreeMap<String, String>> = Default::default();
-    pub static ref EVENTS: RwLock<Vec<RuntimeEvent>> = Default::default();
+    pub static ref EVENTS: RwLock<Vec<Box<dyn Any + Send + Sync + 'static>>> = Default::default();
     pub static ref STATES: RwLock<Vec<Box<dyn Any + Send + Sync + 'static>>> = Default::default();
     pub static ref NOW: RwLock<DateTime<Utc>> = RwLock::new(Utc::now());
     pub static ref ENV_MUTEX: Mutex<()> = Default::default();
@@ -52,6 +52,7 @@ impl<T: Serialize> From<http::Request<T>> for Request {
     }
 }
 
+#[derive(Debug)]
 pub enum TestEnv {}
 
 impl TestEnv {
@@ -71,20 +72,20 @@ impl TestEnv {
         }))
     }
     pub fn run_with_runtime<M: Model<TestEnv> + Clone + Send + Sync + 'static, F: FnOnce()>(
-        rx: Receiver<RuntimeEvent>,
+        rx: Receiver<RuntimeEvent<TestEnv, M>>,
         runtime: Arc<RwLock<Runtime<TestEnv, M>>>,
         runnable: F,
     ) {
         tokio_current_thread::block_on_all(future::lazy(|_| {
             TestEnv::exec_concurrent(rx.for_each(enclose!((runtime) move |event| {
-                if let RuntimeEvent::NewState = event {
+                if let RuntimeEvent::NewState(_) = event {
                     let runtime = runtime.read().expect("runtime read failed");
                     let state = runtime.model().expect("model read failed");
                     let mut states = STATES.write().expect("states write failed");
                     states.push(Box::new(state.to_owned()) as Box<dyn Any + Send + Sync>);
                 };
                 let mut events = EVENTS.write().expect("events write failed");
-                events.push(event);
+                events.push(Box::new(event) as Box<dyn Any + Send + Sync>);
                 future::ready(())
             })));
             {
@@ -162,7 +163,11 @@ impl Env for TestEnv {
     fn flush_analytics() -> EnvFuture<()> {
         future::ready(()).boxed_env()
     }
-    fn analytics_context(_ctx: &Ctx, _streaming_server: &StreamingServer) -> serde_json::Value {
+    fn analytics_context(
+        _ctx: &Ctx,
+        _streaming_server: &StreamingServer,
+        _path: &str,
+    ) -> serde_json::Value {
         serde_json::Value::Null
     }
     fn log(message: String) {
