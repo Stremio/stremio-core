@@ -144,7 +144,7 @@ fn deserialize_stream_source_external<'de, D>(
 where
     D: Deserializer<'de>,
 {
-    #[derive(Serialize, Deserialize)]
+    #[derive(Deserialize)]
     #[serde(rename_all = "camelCase")]
     struct Helper {
         external_url: Option<Url>,
