@@ -1,4 +1,4 @@
-use crate::constants::WATCHED_THRESHOLD_COEF;
+use crate::constants::{CREDITS_THRESHOLD_COEF, WATCHED_THRESHOLD_COEF};
 use crate::models::common::{
     eq_update, resource_update, resources_update_with_vector_content, Loadable, ResourceAction,
     ResourceLoadable, ResourcesAction,
@@ -42,6 +42,20 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
     fn update(&mut self, msg: &Msg, ctx: &Ctx) -> Effects {
         match msg {
             Msg::Action(Action::Load(ActionLoad::Player(selected))) => {
+                let switch_to_next_video_effects = if self
+                    .selected
+                    .as_ref()
+                    .and_then(|selected| selected.meta_request.as_ref())
+                    .map(|meta_request| &meta_request.path.id)
+                    != selected
+                        .meta_request
+                        .as_ref()
+                        .map(|meta_request| &meta_request.path.id)
+                {
+                    switch_to_next_video(&mut self.library_item, &self.next_video)
+                } else {
+                    Effects::none().unchanged()
+                };
                 let selected_effects = eq_update(&mut self.selected, Some(selected.to_owned()));
                 let meta_item_effects = match &selected.meta_request {
                     Some(meta_request) => match &mut self.meta_item {
@@ -94,7 +108,8 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                 );
                 let watched_effects =
                     watched_update::<E>(&mut self.watched, &self.meta_item, &self.library_item);
-                selected_effects
+                switch_to_next_video_effects
+                    .join(selected_effects)
                     .join(meta_item_effects)
                     .join(subtitles_effects)
                     .join(next_video_effects)
@@ -103,6 +118,8 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                     .join(watched_effects)
             }
             Msg::Action(Action::Unload) => {
+                let switch_to_next_video_effects =
+                    switch_to_next_video(&mut self.library_item, &self.next_video);
                 let selected_effects = eq_update(&mut self.selected, None);
                 let meta_item_effects = eq_update(&mut self.meta_item, None);
                 let subtitles_effects = eq_update(&mut self.subtitles, vec![]);
@@ -110,7 +127,8 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                 let series_info_effects = eq_update(&mut self.series_info, None);
                 let library_item_effects = eq_update(&mut self.library_item, None);
                 let watched_effects = eq_update(&mut self.watched, None);
-                selected_effects
+                switch_to_next_video_effects
+                    .join(selected_effects)
                     .join(meta_item_effects)
                     .join(subtitles_effects)
                     .join(next_video_effects)
@@ -221,6 +239,35 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
             }
             _ => Effects::none().unchanged(),
         }
+    }
+}
+
+fn switch_to_next_video(
+    library_item: &mut Option<LibraryItem>,
+    next_video: &Option<Video>,
+) -> Effects {
+    match library_item {
+        Some(library_item)
+            if library_item.state.time_offset as f64
+                > library_item.state.duration as f64 * CREDITS_THRESHOLD_COEF =>
+        {
+            library_item.state.time_offset = 0;
+            if let Some(next_video) = next_video {
+                library_item.state.video_id = Some(next_video.id.to_owned());
+                library_item.state.overall_time_watched = library_item
+                    .state
+                    .overall_time_watched
+                    .saturating_add(library_item.state.time_watched);
+                library_item.state.time_watched = 0;
+                library_item.state.flagged_watched = 0;
+                library_item.state.time_offset = 1;
+            };
+            Effects::msg(Msg::Internal(Internal::UpdateLibraryItem(
+                library_item.to_owned(),
+            )))
+            .unchanged()
+        }
+        _ => Effects::none().unchanged(),
     }
 }
 
