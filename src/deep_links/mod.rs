@@ -99,6 +99,7 @@ impl From<&LibraryItem> for LibraryItemDeepLinks {
                 .state
                 .video_id
                 .as_ref()
+                .filter(|_video_id| item.state.time_offset > 0)
                 .or(item.behavior_hints.default_video_id.as_ref())
                 .map(|video_id| {
                     format!(
