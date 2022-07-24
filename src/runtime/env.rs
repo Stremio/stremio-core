@@ -90,7 +90,7 @@ impl From<serde_json::Error> for EnvError {
 pub type EnvFuture<T> = futures::future::LocalBoxFuture<'static, T>;
 
 #[cfg(feature = "env-future-send")]
-pub type EnvFuture<T> = futures::future::BoxFuture<'static, T>;
+pub type EnvFuture<T> = future::BoxFuture<'static, T>;
 
 impl<T: ?Sized> EnvFutureExt for T where T: Future {}
 
@@ -104,7 +104,7 @@ pub trait EnvFutureExt: Future {
     }
 
     #[cfg(feature = "env-future-send")]
-    fn boxed_env<'a>(self) -> futures::future::BoxFuture<'a, Self::Output>
+    fn boxed_env<'a>(self) -> future::BoxFuture<'a, Self::Output>
     where
         Self: Sized + Send + 'a,
     {
@@ -202,6 +202,12 @@ pub trait Env {
                         .map_err(|error| EnvError::StorageSchemaVersionUpgrade(Box::new(error)))
                         .await?;
                     schema_version = 5;
+                };
+                if schema_version == 5 {
+                    migrate_storage_schema_to_v6::<Self>()
+                        .map_err(|error| EnvError::StorageSchemaVersionUpgrade(Box::new(error)))
+                        .await?;
+                    schema_version = 6;
                 };
                 if schema_version != SCHEMA_VERSION {
                     panic!(
@@ -359,6 +365,33 @@ fn migrate_storage_schema_to_v5<E: Env>() -> TryEnvFuture<()> {
                     settings.insert(
                         "audioPassthrough".to_owned(),
                         serde_json::Value::Bool(false),
+                    );
+                    E::set_storage(PROFILE_STORAGE_KEY, Some(&profile))
+                }
+                _ => E::set_storage::<()>(PROFILE_STORAGE_KEY, None),
+            }
+        })
+        .and_then(|_| E::set_storage(SCHEMA_VERSION_STORAGE_KEY, Some(&5)))
+        .boxed_env()
+}
+
+fn migrate_storage_schema_to_v6<E: Env>() -> TryEnvFuture<()> {
+    E::get_storage::<serde_json::Value>(PROFILE_STORAGE_KEY)
+        .and_then(|mut profile| {
+            match profile
+                .as_mut()
+                .and_then(|profile| profile.as_object_mut())
+                .and_then(|profile| profile.get_mut("settings"))
+                .and_then(|settings| settings.as_object_mut())
+            {
+                Some(settings) => {
+                    settings.insert(
+                        "secondaryAudioLanguage".to_owned(),
+                        serde_json::Value::String("".to_owned()),
+                    );
+                    settings.insert(
+                        "secondarySubtitlesLanguage".to_owned(),
+                        serde_json::Value::String("".to_owned()),
                     );
                     E::set_storage(PROFILE_STORAGE_KEY, Some(&profile))
                 }
