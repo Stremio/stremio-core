@@ -1,7 +1,7 @@
 use crate::types::profile::Settings;
 use chrono::prelude::TimeZone;
 use chrono::Utc;
-use serde_test::{assert_tokens, Token};
+use serde_test::{assert_de_tokens, assert_tokens, Token};
 use url::Url;
 
 #[test]
@@ -16,7 +16,9 @@ fn settings() {
             hardware_decoding: true,
             audio_passthrough: true,
             audio_language: "audio_language".to_owned(),
+            secondary_audio_language: Some("secondary_audio_language".to_owned()),
             subtitles_language: "subtitles_language".to_owned(),
+            secondary_subtitles_language: Some("secondary_subtitles_language".to_owned()),
             subtitles_size: 1,
             subtitles_font: "subtitles_font".to_owned(),
             subtitles_bold: true,
@@ -30,7 +32,7 @@ fn settings() {
         &[
             Token::Struct {
                 name: "Settings",
-                len: 18,
+                len: 20,
             },
             Token::Str("interfaceLanguage"),
             Token::Str("interface_language"),
@@ -48,8 +50,14 @@ fn settings() {
             Token::Bool(true),
             Token::Str("audioLanguage"),
             Token::Str("audio_language"),
+            Token::Str("secondaryAudioLanguage"),
+            Token::Some,
+            Token::Str("secondary_audio_language"),
             Token::Str("subtitlesLanguage"),
             Token::Str("subtitles_language"),
+            Token::Str("secondarySubtitlesLanguage"),
+            Token::Some,
+            Token::Str("secondary_subtitles_language"),
             Token::Str("subtitlesSize"),
             Token::U8(1),
             Token::Str("subtitlesFont"),
@@ -69,6 +77,56 @@ fn settings() {
             Token::Str("streamingServerWarningDismissed"),
             Token::Some,
             Token::Str("2021-01-01T00:00:00Z"),
+            Token::StructEnd,
+        ],
+    );
+}
+
+#[test]
+fn settings_de() {
+    assert_de_tokens(
+        &Settings::default(),
+        &[
+            Token::Struct {
+                name: "Settings",
+                len: 18,
+            },
+            Token::Str("interfaceLanguage"),
+            Token::Str("eng"),
+            Token::Str("streamingServerUrl"),
+            Token::Str("http://127.0.0.1:11470/"),
+            Token::Str("bingeWatching"),
+            Token::Bool(false),
+            Token::Str("playInBackground"),
+            Token::Bool(true),
+            Token::Str("playInExternalPlayer"),
+            Token::Bool(false),
+            Token::Str("hardwareDecoding"),
+            Token::Bool(true),
+            Token::Str("audioPassthrough"),
+            Token::Bool(false),
+            Token::Str("audioLanguage"),
+            Token::Str("eng"),
+            Token::Str("subtitlesLanguage"),
+            Token::Str("eng"),
+            Token::Str("subtitlesSize"),
+            Token::U8(100),
+            Token::Str("subtitlesFont"),
+            Token::Str("Roboto"),
+            Token::Str("subtitlesBold"),
+            Token::Bool(false),
+            Token::Str("subtitlesOffset"),
+            Token::U8(5),
+            Token::Str("subtitlesTextColor"),
+            Token::Str("#FFFFFFFF"),
+            Token::Str("subtitlesBackgroundColor"),
+            Token::Str("#00000000"),
+            Token::Str("subtitlesOutlineColor"),
+            Token::Str("#00000000"),
+            Token::Str("seekTimeDuration"),
+            Token::U32(20000),
+            Token::Str("streamingServerWarningDismissed"),
+            Token::None,
             Token::StructEnd,
         ],
     );

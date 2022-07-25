@@ -90,7 +90,7 @@ impl From<serde_json::Error> for EnvError {
 pub type EnvFuture<T> = futures::future::LocalBoxFuture<'static, T>;
 
 #[cfg(feature = "env-future-send")]
-pub type EnvFuture<T> = futures::future::BoxFuture<'static, T>;
+pub type EnvFuture<T> = future::BoxFuture<'static, T>;
 
 impl<T: ?Sized> EnvFutureExt for T where T: Future {}
 
@@ -104,7 +104,7 @@ pub trait EnvFutureExt: Future {
     }
 
     #[cfg(feature = "env-future-send")]
-    fn boxed_env<'a>(self) -> futures::future::BoxFuture<'a, Self::Output>
+    fn boxed_env<'a>(self) -> future::BoxFuture<'a, Self::Output>
     where
         Self: Sized + Send + 'a,
     {
