@@ -54,8 +54,8 @@ impl From<&Stream> for ExternalPlayerLink {
             } => ExternalPlayerLink {
                 href: external_url.as_ref().map(|url| url.as_str().to_owned()),
                 android_tv: android_tv_url.as_ref().map(|url| url.as_str().to_owned()),
-                tizen: tizen_url.as_ref().map(|url| url.as_str().to_owned()),
-                webos: webos_url.as_ref().map(|url| url.as_str().to_owned()),
+                tizen: tizen_url.to_owned(),
+                webos: webos_url.to_owned(),
                 ..Default::default()
             },
             StreamSource::YouTube { yt_id } => ExternalPlayerLink {
