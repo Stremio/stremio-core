@@ -58,7 +58,25 @@ impl<E: Env + 'static> UpdateWithCtx<E> for CatalogsWithExtra {
                     Some(ResourceLoadable {
                         content: Some(Loadable::Ready(items)),
                         request,
-                    }) => {
+                    }) if ctx
+                        .profile
+                        .addons
+                        .iter()
+                        .find(|addon| addon.transport_url == request.base)
+                        .and_then(|addon| {
+                            addon.manifest.catalogs.iter().find(|manifest_catalog| {
+                                manifest_catalog.id == request.path.id
+                                    && manifest_catalog.r#type == request.path.r#type
+                            })
+                        })
+                        .map(|manifest_catalog| {
+                            manifest_catalog
+                                .extra
+                                .iter()
+                                .any(|extra_prop| extra_prop.name == SKIP_EXTRA_PROP.name)
+                        })
+                        .unwrap_or_default() =>
+                    {
                         let skip = request
                             .path
                             .extra
