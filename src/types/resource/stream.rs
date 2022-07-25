@@ -128,7 +128,7 @@ pub enum StreamSource {
         #[serde(skip_serializing_if = "Option::is_none")]
         external_url: Option<Url>,
         #[serde(skip_serializing_if = "Option::is_none")]
-        android_url: Option<Url>,
+        android_tv_url: Option<Url>,
         #[serde(skip_serializing_if = "Option::is_none")]
         tizen_url: Option<Url>,
         #[serde(skip_serializing_if = "Option::is_none")]
@@ -148,13 +148,13 @@ where
     #[serde(rename_all = "camelCase")]
     struct Helper {
         external_url: Option<Url>,
-        android_url: Option<Url>,
+        android_tv_url: Option<Url>,
         tizen_url: Option<Url>,
         webos_url: Option<Url>,
     }
     let source = Helper::deserialize(deserializer)?;
     if source.external_url.is_none()
-        && source.android_url.is_none()
+        && source.android_tv_url.is_none()
         && source.tizen_url.is_none()
         && source.webos_url.is_none()
     {
@@ -162,7 +162,7 @@ where
     };
     Ok((
         source.external_url,
-        source.android_url,
+        source.android_tv_url,
         source.tizen_url,
         source.webos_url,
     ))
