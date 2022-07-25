@@ -2,6 +2,7 @@ use crate::models::addon_details::Selected as AddonDetailsSelected;
 use crate::models::catalog_with_filters::Selected as CatalogWithFiltersSelected;
 use crate::models::catalogs_with_extra::Selected as CatalogsWithExtraSelected;
 use crate::models::installed_addons_with_filters::Selected as InstalledAddonsWithFiltersSelected;
+use crate::models::library_by_type::Selected as LibraryByTypeSelected;
 use crate::models::library_with_filters::Selected as LibraryWithFiltersSelected;
 use crate::models::meta_details::Selected as MetaDetailsSelected;
 use crate::models::player::Selected as PlayerSelected;
@@ -47,6 +48,12 @@ pub enum ActionCatalogsWithExtra {
 
 #[derive(Clone, Deserialize)]
 #[serde(tag = "action", content = "args")]
+pub enum ActionLibraryByType {
+    LoadNextPage(usize),
+}
+
+#[derive(Clone, Deserialize)]
+#[serde(tag = "action", content = "args")]
 pub enum ActionMetaDetails {
     MarkAsWatched(String, bool),
 }
@@ -79,6 +86,7 @@ pub enum ActionLoad {
     CatalogsWithExtra(CatalogsWithExtraSelected),
     InstalledAddonsWithFilters(InstalledAddonsWithFiltersSelected),
     LibraryWithFilters(LibraryWithFiltersSelected),
+    LibraryByType(LibraryByTypeSelected),
     MetaDetails(MetaDetailsSelected),
     Player(Box<PlayerSelected>),
     Link,
@@ -95,6 +103,7 @@ pub enum Action {
     Link(ActionLink),
     CatalogWithFilters(ActionCatalogWithFilters),
     CatalogsWithExtra(ActionCatalogsWithExtra),
+    LibraryByType(ActionLibraryByType),
     MetaDetails(ActionMetaDetails),
     StreamingServer(ActionStreamingServer),
     Player(ActionPlayer),
