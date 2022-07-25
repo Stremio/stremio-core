@@ -24,7 +24,7 @@ fn stream_source() {
             },
             StreamSource::External {
                 external_url: Some(Url::parse("https://external_url").unwrap()),
-                android_url: None,
+                android_tv_url: None,
                 tizen_url: None,
                 webos_url: None,
             },
@@ -122,7 +122,7 @@ fn stream_source() {
             },
             StreamSource::External {
                 external_url: Some(Url::parse("https://external_url").unwrap()),
-                android_url: None,
+                android_tv_url: None,
                 tizen_url: None,
                 webos_url: None,
             },

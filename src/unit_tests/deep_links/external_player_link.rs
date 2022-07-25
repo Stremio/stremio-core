@@ -68,7 +68,7 @@ fn external_player_link_external() {
     let stream = Stream {
         source: StreamSource::External {
             external_url: Some(Url::from_str(HTTP_STR_URL).unwrap()),
-            android_url: None,
+            android_tv_url: None,
             tizen_url: None,
             webos_url: None,
         },

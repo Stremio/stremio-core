@@ -16,7 +16,7 @@ use serde::Serialize;
 #[cfg_attr(debug_assertions, derive(Debug, PartialEq))]
 pub struct ExternalPlayerLink {
     pub href: Option<String>,
-    pub android: Option<String>,
+    pub android_tv: Option<String>,
     pub tizen: Option<String>,
     pub webos: Option<String>,
     pub download: Option<String>,
@@ -48,14 +48,14 @@ impl From<&Stream> for ExternalPlayerLink {
             },
             StreamSource::External {
                 external_url,
-                android_url,
+                android_tv_url,
                 tizen_url,
                 webos_url,
             } => ExternalPlayerLink {
                 href: external_url.as_ref().map(|url| url.as_str().to_owned()),
-                android: android_url.as_ref().map(|url| url.as_str().to_owned()),
-                tizen: tizen_url.as_ref().map(|url| url.as_str().to_owned()),
-                webos: webos_url.as_ref().map(|url| url.as_str().to_owned()),
+                android_tv: android_tv_url.as_ref().map(|url| url.as_str().to_owned()),
+                tizen: tizen_url.to_owned(),
+                webos: webos_url.to_owned(),
                 ..Default::default()
             },
             StreamSource::YouTube { yt_id } => ExternalPlayerLink {
