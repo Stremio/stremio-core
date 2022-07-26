@@ -8,6 +8,7 @@ use crate::types::library::{LibraryBucket, LibraryItem};
 use derivative::Derivative;
 use itertools::Itertools;
 use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
 use std::marker::PhantomData;
 use strum::IntoEnumIterator;
 
@@ -128,36 +129,34 @@ fn catalogs_update<F: LibraryFilter>(
     library: &LibraryBucket,
 ) -> Effects {
     let next_catalogs = match selected {
-        Some(selected) => {
-            let library_items = library
-                .items
-                .values()
-                .filter(|library_item| F::predicate(library_item))
-                .collect::<Vec<_>>();
-            library_items
-                .iter()
-                .map(|library_item| &library_item.r#type)
-                .unique()
-                .sorted_by(|a, b| {
-                    compare_with_priorities(a.as_str(), b.as_str(), &*TYPE_PRIORITIES)
-                })
-                .rev()
-                .map(|r#type| {
-                    library_items
-                        .iter()
-                        .filter(|library_item| library_item.r#type == *r#type)
-                        .sorted_by(|a, b| match &selected.sort {
-                            Sort::LastWatched => b.state.last_watched.cmp(&a.state.last_watched),
-                            Sort::TimesWatched => b.state.times_watched.cmp(&a.state.times_watched),
-                            Sort::Name => a.name.to_lowercase().cmp(&b.name.to_lowercase()),
-                        })
-                        .take(CATALOG_PAGE_SIZE)
-                        .map(|library_item| (*library_item).to_owned())
-                        .collect::<Vec<_>>()
-                })
-                .map(|page| vec![page])
-                .collect::<Vec<_>>()
-        }
+        Some(selected) => library
+            .items
+            .values()
+            .filter(|library_item| F::predicate(library_item))
+            .fold(HashMap::new(), |mut map, library_item| {
+                map.entry(&library_item.r#type)
+                    .or_insert_with(Vec::new)
+                    .push(library_item.to_owned());
+                map
+            })
+            .into_iter()
+            .sorted_by(|(a_type, _), (b_type, _)| {
+                compare_with_priorities(a_type.as_str(), b_type.as_str(), &*TYPE_PRIORITIES)
+            })
+            .rev()
+            .map(|(_, library_items)| {
+                library_items
+                    .into_iter()
+                    .sorted_by(|a, b| match &selected.sort {
+                        Sort::LastWatched => b.state.last_watched.cmp(&a.state.last_watched),
+                        Sort::TimesWatched => b.state.times_watched.cmp(&a.state.times_watched),
+                        Sort::Name => a.name.to_lowercase().cmp(&b.name.to_lowercase()),
+                    })
+                    .take(CATALOG_PAGE_SIZE)
+                    .collect()
+            })
+            .map(|page| vec![page])
+            .collect::<Vec<_>>(),
         _ => vec![],
     };
     eq_update(catalogs, next_catalogs)
