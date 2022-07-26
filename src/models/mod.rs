@@ -6,6 +6,7 @@ pub mod catalog_with_filters;
 pub mod catalogs_with_extra;
 pub mod continue_watching_preview;
 pub mod installed_addons_with_filters;
+pub mod library_by_type;
 pub mod library_with_filters;
 pub mod link;
 pub mod meta_details;
