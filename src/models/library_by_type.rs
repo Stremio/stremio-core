@@ -128,23 +128,35 @@ fn catalogs_update<F: LibraryFilter>(
     selected: &Option<Selected>,
     library: &LibraryBucket,
 ) -> Effects {
+    let catalogs_size = catalogs.iter().fold(HashMap::new(), |mut result, catalog| {
+        let r#type = catalog
+            .first()
+            .and_then(|first_page| first_page.first())
+            .map(|library_item| &library_item.r#type)
+            .expect("first page of library catalog is empty");
+        let size = catalog.iter().fold(0, |result, page| result + page.len());
+        result.insert(r#type, size);
+        result
+    });
     let next_catalogs = match selected {
         Some(selected) => library
             .items
             .values()
             .filter(|library_item| F::predicate(library_item))
-            .fold(HashMap::new(), |mut map, library_item| {
-                map.entry(&library_item.r#type)
+            .fold(HashMap::new(), |mut result, library_item| {
+                result
+                    .entry(&library_item.r#type)
                     .or_insert_with(Vec::new)
                     .push(library_item.to_owned());
-                map
+                result
             })
             .into_iter()
             .sorted_by(|(a_type, _), (b_type, _)| {
                 compare_with_priorities(a_type.as_str(), b_type.as_str(), &*TYPE_PRIORITIES)
             })
             .rev()
-            .map(|(_, library_items)| {
+            .map(|(r#type, library_items)| {
+                let take = catalogs_size.get(r#type).unwrap_or(&CATALOG_PAGE_SIZE);
                 library_items
                     .into_iter()
                     .sorted_by(|a, b| match &selected.sort {
@@ -152,7 +164,7 @@ fn catalogs_update<F: LibraryFilter>(
                         Sort::TimesWatched => b.state.times_watched.cmp(&a.state.times_watched),
                         Sort::Name => a.name.to_lowercase().cmp(&b.name.to_lowercase()),
                     })
-                    .take(CATALOG_PAGE_SIZE)
+                    .take(*take)
                     .collect()
             })
             .map(|page| vec![page])
