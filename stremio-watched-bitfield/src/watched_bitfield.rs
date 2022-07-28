@@ -107,6 +107,35 @@ impl fmt::Display for WatchedBitField {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         let packed = String::try_from(&self.bitfield).expect("bitfield failed to compress");
         let last_id = self.bitfield.last_index_of(true).unwrap_or(0);
-        write!(f, "{}:{}:{}", self.video_ids[last_id], last_id + 1, packed)
+        let last_video_id = self
+            .video_ids
+            .get(last_id)
+            .map_or("undefined", |id| id.as_str());
+        write!(f, "{}:{}:{}", last_video_id, last_id + 1, packed)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::bitfield8::BitField8;
+    use crate::WatchedBitField;
+
+    #[test]
+    fn serialize_empty() {
+        let watched = WatchedBitField::construct_from_array(vec![], vec![]);
+        let serialized = watched.to_string();
+        assert_eq!(serialized, "undefined:1:eJwDAAAAAAE=");
+    }
+
+    #[test]
+    fn deserialize_empty() {
+        let watched = WatchedBitField::construct_and_resize("undefined:1:eJwDAAAAAAE=", vec![]);
+        assert_eq!(
+            watched,
+            Ok(WatchedBitField {
+                bitfield: BitField8::new(0),
+                video_ids: vec![]
+            })
+        );
     }
 }
