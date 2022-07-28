@@ -49,7 +49,7 @@ impl BitField8 {
     }
 
     pub fn last_index_of(&self, val: bool) -> Option<usize> {
-        for i in (0..self.length - 1).rev() {
+        for i in (0..self.length.saturating_sub(1)).rev() {
             if self.get(i) == val {
                 return Some(i);
             }
