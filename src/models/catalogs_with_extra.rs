@@ -13,6 +13,7 @@ use serde::{Deserialize, Serialize};
 use std::ops::Range;
 
 #[derive(Clone, PartialEq, Serialize, Deserialize)]
+#[cfg_attr(debug_assertions, derive(Debug))]
 pub struct Selected {
     pub r#type: Option<String>,
     #[serde(default)]
@@ -24,6 +25,7 @@ pub type CatalogPage<T> = ResourceLoadable<Vec<T>>;
 pub type Catalog<T> = Vec<CatalogPage<T>>;
 
 #[derive(Default, Serialize)]
+#[cfg_attr(debug_assertions, derive(Debug))]
 pub struct CatalogsWithExtra {
     pub selected: Option<Selected>,
     pub catalogs: Vec<Catalog<MetaItemPreview>>,

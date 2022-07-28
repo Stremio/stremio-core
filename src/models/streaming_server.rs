@@ -11,6 +11,7 @@ use serde::{Deserialize, Serialize};
 use url::Url;
 
 #[derive(Clone, PartialEq, Serialize, Deserialize)]
+#[cfg_attr(debug_assertions, derive(Debug))]
 #[serde(rename_all = "camelCase")]
 pub struct Settings {
     pub app_path: String,
@@ -26,12 +27,14 @@ pub struct Settings {
 }
 
 #[derive(Serialize)]
+#[cfg_attr(debug_assertions, derive(Debug))]
 #[serde(rename_all = "camelCase")]
 pub struct Selected {
     pub transport_url: Url,
 }
 
 #[derive(Serialize)]
+#[cfg_attr(debug_assertions, derive(Debug))]
 #[serde(rename_all = "camelCase")]
 pub struct StreamingServer {
     pub selected: Selected,

@@ -19,6 +19,7 @@ pub trait LibraryFilter {
     fn predicate(library_item: &LibraryItem) -> bool;
 }
 
+#[cfg_attr(debug_assertions, derive(Debug))]
 pub enum ContinueWatchingFilter {}
 
 impl LibraryFilter for ContinueWatchingFilter {
@@ -27,6 +28,7 @@ impl LibraryFilter for ContinueWatchingFilter {
     }
 }
 
+#[cfg_attr(debug_assertions, derive(Debug))]
 pub enum NotRemovedFilter {}
 
 impl LibraryFilter for NotRemovedFilter {
@@ -36,6 +38,7 @@ impl LibraryFilter for NotRemovedFilter {
 }
 
 #[derive(Derivative, Clone, PartialEq, EnumIter, Serialize, Deserialize)]
+#[cfg_attr(debug_assertions, derive(Debug))]
 #[derivative(Default)]
 #[serde(rename_all = "lowercase")]
 pub enum Sort {
@@ -46,6 +49,7 @@ pub enum Sort {
 }
 
 #[derive(Clone, PartialEq, Serialize, Deserialize)]
+#[cfg_attr(debug_assertions, derive(Debug))]
 pub struct LibraryRequest {
     pub r#type: Option<String>,
     #[serde(default)]
@@ -55,6 +59,7 @@ pub struct LibraryRequest {
 }
 
 #[derive(Clone, Deref, PartialEq, Serialize, Deserialize)]
+#[cfg_attr(debug_assertions, derive(Debug))]
 pub struct LibraryRequestPage(pub NonZeroUsize);
 
 impl Default for LibraryRequestPage {
@@ -64,11 +69,13 @@ impl Default for LibraryRequestPage {
 }
 
 #[derive(Clone, PartialEq, Serialize, Deserialize)]
+#[cfg_attr(debug_assertions, derive(Debug))]
 pub struct Selected {
     pub request: LibraryRequest,
 }
 
 #[derive(PartialEq, Serialize)]
+#[cfg_attr(debug_assertions, derive(Debug))]
 pub struct SelectableType {
     pub r#type: Option<String>,
     pub selected: bool,
@@ -76,6 +83,7 @@ pub struct SelectableType {
 }
 
 #[derive(PartialEq, Serialize)]
+#[cfg_attr(debug_assertions, derive(Debug))]
 pub struct SelectableSort {
     pub sort: Sort,
     pub selected: bool,
@@ -83,11 +91,13 @@ pub struct SelectableSort {
 }
 
 #[derive(PartialEq, Serialize)]
+#[cfg_attr(debug_assertions, derive(Debug))]
 pub struct SelectablePage {
     pub request: LibraryRequest,
 }
 
 #[derive(Default, PartialEq, Serialize)]
+#[cfg_attr(debug_assertions, derive(Debug))]
 pub struct Selectable {
     pub types: Vec<SelectableType>,
     pub sorts: Vec<SelectableSort>,
@@ -96,6 +106,7 @@ pub struct Selectable {
 }
 
 #[derive(Derivative, Serialize)]
+#[cfg_attr(debug_assertions, derive(Debug))]
 #[derivative(Default(bound = ""))]
 pub struct LibraryWithFilters<F> {
     pub selected: Option<Selected>,

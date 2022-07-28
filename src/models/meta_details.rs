@@ -15,6 +15,7 @@ use std::marker::PhantomData;
 use stremio_watched_bitfield::WatchedBitField;
 
 #[derive(Clone, PartialEq, Serialize, Deserialize)]
+#[cfg_attr(debug_assertions, derive(Debug))]
 #[serde(rename_all = "camelCase")]
 pub struct Selected {
     pub meta_path: ResourcePath,
@@ -22,6 +23,7 @@ pub struct Selected {
 }
 
 #[derive(Default, Serialize)]
+#[cfg_attr(debug_assertions, derive(Debug))]
 #[serde(rename_all = "camelCase")]
 pub struct MetaDetails {
     pub selected: Option<Selected>,

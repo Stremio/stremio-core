@@ -15,6 +15,7 @@ use serde::Deserialize;
 use std::ops::Range;
 
 #[derive(Clone, Deserialize)]
+#[cfg_attr(debug_assertions, derive(Debug))]
 #[serde(tag = "action", content = "args")]
 pub enum ActionCtx {
     Authenticate(AuthRequest),
@@ -34,12 +35,14 @@ pub enum ActionCtx {
 }
 
 #[derive(Clone, Deserialize)]
+#[cfg_attr(debug_assertions, derive(Debug))]
 #[serde(tag = "action", content = "args")]
 pub enum ActionCatalogWithFilters {
     LoadNextPage,
 }
 
 #[derive(Clone, Deserialize)]
+#[cfg_attr(debug_assertions, derive(Debug))]
 #[serde(tag = "action", content = "args")]
 pub enum ActionCatalogsWithExtra {
     LoadRange(Range<usize>),
@@ -47,18 +50,21 @@ pub enum ActionCatalogsWithExtra {
 }
 
 #[derive(Clone, Deserialize)]
+#[cfg_attr(debug_assertions, derive(Debug))]
 #[serde(tag = "action", content = "args")]
 pub enum ActionLibraryByType {
     LoadNextPage(usize),
 }
 
 #[derive(Clone, Deserialize)]
+#[cfg_attr(debug_assertions, derive(Debug))]
 #[serde(tag = "action", content = "args")]
 pub enum ActionMetaDetails {
     MarkAsWatched(String, bool),
 }
 
 #[derive(Clone, Deserialize)]
+#[cfg_attr(debug_assertions, derive(Debug))]
 #[serde(tag = "action", content = "args")]
 pub enum ActionStreamingServer {
     Reload,
@@ -66,12 +72,14 @@ pub enum ActionStreamingServer {
 }
 
 #[derive(Clone, Deserialize)]
+#[cfg_attr(debug_assertions, derive(Debug))]
 #[serde(tag = "action", content = "args")]
 pub enum ActionLink {
     ReadData,
 }
 
 #[derive(Clone, Deserialize)]
+#[cfg_attr(debug_assertions, derive(Debug))]
 #[serde(tag = "action", content = "args")]
 pub enum ActionPlayer {
     UpdateLibraryItemState { time: u64, duration: u64 },
@@ -79,6 +87,7 @@ pub enum ActionPlayer {
 }
 
 #[derive(Clone, Deserialize)]
+#[cfg_attr(debug_assertions, derive(Debug))]
 #[serde(tag = "model", content = "args")]
 pub enum ActionLoad {
     AddonDetails(AddonDetailsSelected),
@@ -97,6 +106,7 @@ pub enum ActionLoad {
 // Those messages are meant to be dispatched only by the users of the stremio-core crate and handled by the stremio-core crate
 //
 #[derive(Clone, Deserialize)]
+#[cfg_attr(debug_assertions, derive(Debug))]
 #[serde(tag = "action", content = "args")]
 pub enum Action {
     Ctx(ActionCtx),

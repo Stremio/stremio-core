@@ -18,6 +18,7 @@ pub enum RuntimeEvent<E: Env, M: Model<E>> {
     CoreEvent(Event),
 }
 
+#[cfg_attr(debug_assertions, derive(Debug))]
 pub struct RuntimeAction<E: Env, M: Model<E>> {
     pub field: Option<M::Field>,
     pub action: Action,
