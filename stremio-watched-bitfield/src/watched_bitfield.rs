@@ -117,6 +117,7 @@ impl fmt::Display for WatchedBitField {
 
 #[cfg(test)]
 mod tests {
+    use crate::bitfield8::BitField8;
     use crate::WatchedBitField;
 
     #[test]
@@ -124,5 +125,17 @@ mod tests {
         let watched = WatchedBitField::construct_from_array(vec![], vec![]);
         let serialized = watched.to_string();
         assert_eq!(serialized, "undefined:1:eJwDAAAAAAE=");
+    }
+
+    #[test]
+    fn deserialize_empty() {
+        let watched = WatchedBitField::construct_and_resize("undefined:1:eJwDAAAAAAE=", vec![]);
+        assert_eq!(
+            watched,
+            Ok(WatchedBitField {
+                bitfield: BitField8::new(0),
+                video_ids: vec![]
+            })
+        );
     }
 }
