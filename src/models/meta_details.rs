@@ -158,6 +158,53 @@ impl<E: Env + 'static> UpdateWithCtx<E> for MetaDetails {
                     watched_update::<E>(&mut self.watched, &self.meta_items, &self.library_item);
                 library_item_effects.join(watched_effects)
             }
+            Msg::Internal(Internal::ProfileChanged) => match &self.selected {
+                Some(selected) => {
+                    let meta_items_effects = resources_update::<E, _>(
+                        &mut self.meta_items,
+                        ResourcesAction::ResourcesRequested {
+                            request: &AggrRequest::AllOfResource(selected.meta_path.to_owned()),
+                            addons: &ctx.profile.addons,
+                        },
+                    );
+                    let streams_effects = match &selected.stream_path {
+                        Some(stream_path) => {
+                            if let Some(streams) =
+                                streams_from_meta_items(&self.meta_items, &stream_path.id)
+                            {
+                                eq_update(&mut self.streams, vec![streams])
+                            } else {
+                                resources_update_with_vector_content::<E, _>(
+                                    &mut self.streams,
+                                    ResourcesAction::ResourcesRequested {
+                                        request: &AggrRequest::AllOfResource(
+                                            stream_path.to_owned(),
+                                        ),
+                                        addons: &ctx.profile.addons,
+                                    },
+                                )
+                            }
+                        }
+                        None => eq_update(&mut self.streams, vec![]),
+                    };
+                    let library_item_effects = library_item_update::<E>(
+                        &mut self.library_item,
+                        &self.selected,
+                        &self.meta_items,
+                        &ctx.library,
+                    );
+                    let watched_effects = watched_update::<E>(
+                        &mut self.watched,
+                        &self.meta_items,
+                        &self.library_item,
+                    );
+                    meta_items_effects
+                        .join(streams_effects)
+                        .join(library_item_effects)
+                        .join(watched_effects)
+                }
+                _ => Effects::none().unchanged(),
+            },
             _ => Effects::none().unchanged(),
         }
     }
