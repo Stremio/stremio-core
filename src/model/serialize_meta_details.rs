@@ -99,6 +99,11 @@ pub fn serialize_meta_details(meta_details: &MetaDetails, ctx: &Ctx) -> JsValue 
                     .find(|meta_item| matches!(&meta_item.content, Some(Loadable::Loading)))
             }
         });
+    let streams = if meta_details.meta_streams.is_empty() {
+        meta_details.streams.iter()
+    } else {
+        meta_details.meta_streams.iter()
+    };
     JsValue::from_serde(&model::MetaDetails {
         selected: &meta_details.selected,
         meta_item: meta_item
@@ -175,9 +180,7 @@ pub fn serialize_meta_details(meta_details: &MetaDetails, ctx: &Ctx) -> JsValue 
                     },
                 },
             }),
-        streams: meta_details
-            .streams
-            .iter()
+        streams: streams
             .filter_map(|streams| {
                 ctx.profile
                     .addons
