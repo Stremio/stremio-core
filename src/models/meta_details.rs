@@ -8,6 +8,7 @@ use crate::runtime::msg::{Action, ActionLoad, ActionMetaDetails, Internal, Msg};
 use crate::runtime::{Effects, Env, UpdateWithCtx};
 use crate::types::addon::{AggrRequest, ResourcePath, ResourceRequest};
 use crate::types::library::{LibraryBucket, LibraryItem};
+use crate::types::profile::Profile;
 use crate::types::resource::{MetaItem, Stream};
 use serde::{Deserialize, Serialize};
 use std::borrow::Cow;
@@ -46,24 +47,12 @@ impl<E: Env + 'static> UpdateWithCtx<E> for MetaDetails {
                         addons: &ctx.profile.addons,
                     },
                 );
-                let streams_effects = match &selected.stream_path {
-                    Some(stream_path) => {
-                        if let Some(streams) =
-                            streams_from_meta_items(&self.meta_items, &stream_path.id)
-                        {
-                            eq_update(&mut self.streams, vec![streams])
-                        } else {
-                            resources_update_with_vector_content::<E, _>(
-                                &mut self.streams,
-                                ResourcesAction::ResourcesRequested {
-                                    request: &AggrRequest::AllOfResource(stream_path.to_owned()),
-                                    addons: &ctx.profile.addons,
-                                },
-                            )
-                        }
-                    }
-                    None => eq_update(&mut self.streams, vec![]),
-                };
+                let streams_effects = streams_update::<E>(
+                    &mut self.streams,
+                    &self.selected,
+                    &self.meta_items,
+                    &ctx.profile,
+                );
                 let library_item_effects = library_item_update::<E>(
                     &mut self.library_item,
                     &self.selected,
@@ -167,26 +156,13 @@ impl<E: Env + 'static> UpdateWithCtx<E> for MetaDetails {
                             addons: &ctx.profile.addons,
                         },
                     );
-                    let streams_effects = match &selected.stream_path {
-                        Some(stream_path) => {
-                            if let Some(streams) =
-                                streams_from_meta_items(&self.meta_items, &stream_path.id)
-                            {
-                                eq_update(&mut self.streams, vec![streams])
-                            } else {
-                                resources_update_with_vector_content::<E, _>(
-                                    &mut self.streams,
-                                    ResourcesAction::ResourcesRequested {
-                                        request: &AggrRequest::AllOfResource(
-                                            stream_path.to_owned(),
-                                        ),
-                                        addons: &ctx.profile.addons,
-                                    },
-                                )
-                            }
-                        }
-                        None => eq_update(&mut self.streams, vec![]),
-                    };
+                    let streams_effects = streams_update::<E>(
+                        &mut self.streams,
+                        &self.selected,
+                        &self.meta_items,
+                        &ctx.profile,
+                    );
+
                     let library_item_effects = library_item_update::<E>(
                         &mut self.library_item,
                         &self.selected,
@@ -258,6 +234,33 @@ fn watched_update<E: Env>(
         })
         .map(|(meta_item, library_item)| library_item.state.watched_bitfield(&meta_item.videos));
     eq_update(watched, next_watched)
+}
+
+fn streams_update<E: Env + 'static>(
+    streams: &mut Vec<ResourceLoadable<Vec<Stream>>>,
+    selected: &Option<Selected>,
+    meta_items: &[ResourceLoadable<MetaItem>],
+    profile: &Profile,
+) -> Effects {
+    match selected {
+        Some(Selected {
+            stream_path: Some(stream_path),
+            ..
+        }) => {
+            if let Some(meta_streams) = streams_from_meta_items(meta_items, &stream_path.id) {
+                eq_update(streams, vec![meta_streams])
+            } else {
+                resources_update_with_vector_content::<E, _>(
+                    streams,
+                    ResourcesAction::ResourcesRequested {
+                        request: &AggrRequest::AllOfResource(stream_path.to_owned()),
+                        addons: &profile.addons,
+                    },
+                )
+            }
+        }
+        _ => eq_update(streams, vec![]),
+    }
 }
 
 fn streams_from_meta_items(
