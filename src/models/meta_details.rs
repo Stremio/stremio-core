@@ -47,7 +47,6 @@ impl<E: Env + 'static> UpdateWithCtx<E> for MetaDetails {
                     &mut self.meta_streams,
                     &self.selected,
                     &self.meta_items,
-                    &ctx.profile,
                 );
                 let streams_effects =
                     streams_update::<E>(&mut self.streams, &self.selected, &ctx.profile);
@@ -105,7 +104,6 @@ impl<E: Env + 'static> UpdateWithCtx<E> for MetaDetails {
                     &mut self.meta_streams,
                     &self.selected,
                     &self.meta_items,
-                    &ctx.profile,
                 );
                 let library_item_effects = library_item_update::<E>(
                     &mut self.library_item,
@@ -146,7 +144,6 @@ impl<E: Env + 'static> UpdateWithCtx<E> for MetaDetails {
                     &mut self.meta_streams,
                     &self.selected,
                     &self.meta_items,
-                    &ctx.profile,
                 );
                 let streams_effects =
                     streams_update::<E>(&mut self.streams, &self.selected, &ctx.profile);
@@ -190,7 +187,6 @@ fn meta_streams_update<E: Env + 'static>(
     meta_streams: &mut Vec<ResourceLoadable<Vec<Stream>>>,
     selected: &Option<Selected>,
     meta_items: &[ResourceLoadable<MetaItem>],
-    profile: &Profile,
 ) -> Effects {
     match selected {
         Some(Selected {
