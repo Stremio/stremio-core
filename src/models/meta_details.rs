@@ -29,6 +29,7 @@ pub struct Selected {
 pub struct MetaDetails {
     pub selected: Option<Selected>,
     pub meta_items: Vec<ResourceLoadable<MetaItem>>,
+    pub meta_streams: Vec<ResourceLoadable<Vec<Stream>>>,
     pub streams: Vec<ResourceLoadable<Vec<Stream>>>,
     pub library_item: Option<LibraryItem>,
     #[serde(skip_serializing)]
@@ -42,12 +43,14 @@ impl<E: Env + 'static> UpdateWithCtx<E> for MetaDetails {
                 let selected_effects = eq_update(&mut self.selected, Some(selected.to_owned()));
                 let meta_items_effects =
                     meta_items_update::<E>(&mut self.meta_items, &self.selected, &ctx.profile);
-                let streams_effects = streams_update::<E>(
-                    &mut self.streams,
+                let meta_streams_effects = meta_streams_update::<E>(
+                    &mut self.meta_streams,
                     &self.selected,
                     &self.meta_items,
                     &ctx.profile,
                 );
+                let streams_effects =
+                    streams_update::<E>(&mut self.streams, &self.selected, &ctx.profile);
                 let library_item_effects = library_item_update::<E>(
                     &mut self.library_item,
                     &self.selected,
@@ -58,6 +61,7 @@ impl<E: Env + 'static> UpdateWithCtx<E> for MetaDetails {
                     watched_update::<E>(&mut self.watched, &self.meta_items, &self.library_item);
                 selected_effects
                     .join(meta_items_effects)
+                    .join(meta_streams_effects)
                     .join(streams_effects)
                     .join(library_item_effects)
                     .join(watched_effects)
@@ -65,11 +69,13 @@ impl<E: Env + 'static> UpdateWithCtx<E> for MetaDetails {
             Msg::Action(Action::Unload) => {
                 let selected_effects = eq_update(&mut self.selected, None);
                 let meta_items_effects = eq_update(&mut self.meta_items, vec![]);
+                let meta_streams_effects = eq_update(&mut self.meta_streams, vec![]);
                 let streams_effects = eq_update(&mut self.streams, vec![]);
                 let library_item_effects = eq_update(&mut self.library_item, None);
                 let watched_effects = eq_update(&mut self.watched, None);
                 selected_effects
                     .join(meta_items_effects)
+                    .join(meta_streams_effects)
                     .join(streams_effects)
                     .join(library_item_effects)
                     .join(watched_effects)
@@ -95,21 +101,12 @@ impl<E: Env + 'static> UpdateWithCtx<E> for MetaDetails {
                     &mut self.meta_items,
                     ResourcesAction::ResourceRequestResult { request, result },
                 );
-                let streams_effects = match &self.selected {
-                    Some(Selected {
-                        stream_path: Some(stream_path),
-                        ..
-                    }) => {
-                        if let Some(streams) =
-                            streams_from_meta_items(&self.meta_items, &stream_path.id)
-                        {
-                            eq_update(&mut self.streams, vec![streams])
-                        } else {
-                            Effects::none().unchanged()
-                        }
-                    }
-                    _ => Effects::none().unchanged(),
-                };
+                let meta_streams_effects = meta_streams_update::<E>(
+                    &mut self.meta_streams,
+                    &self.selected,
+                    &self.meta_items,
+                    &ctx.profile,
+                );
                 let library_item_effects = library_item_update::<E>(
                     &mut self.library_item,
                     &self.selected,
@@ -119,7 +116,7 @@ impl<E: Env + 'static> UpdateWithCtx<E> for MetaDetails {
                 let watched_effects =
                     watched_update::<E>(&mut self.watched, &self.meta_items, &self.library_item);
                 meta_items_effects
-                    .join(streams_effects)
+                    .join(meta_streams_effects)
                     .join(library_item_effects)
                     .join(watched_effects)
             }
@@ -145,13 +142,14 @@ impl<E: Env + 'static> UpdateWithCtx<E> for MetaDetails {
             Msg::Internal(Internal::ProfileChanged) => {
                 let meta_items_effects =
                     meta_items_update::<E>(&mut self.meta_items, &self.selected, &ctx.profile);
-                let streams_effects = streams_update::<E>(
-                    &mut self.streams,
+                let meta_streams_effects = meta_streams_update::<E>(
+                    &mut self.meta_streams,
                     &self.selected,
                     &self.meta_items,
                     &ctx.profile,
                 );
-
+                let streams_effects =
+                    streams_update::<E>(&mut self.streams, &self.selected, &ctx.profile);
                 let library_item_effects = library_item_update::<E>(
                     &mut self.library_item,
                     &self.selected,
@@ -161,6 +159,7 @@ impl<E: Env + 'static> UpdateWithCtx<E> for MetaDetails {
                 let watched_effects =
                     watched_update::<E>(&mut self.watched, &self.meta_items, &self.library_item);
                 meta_items_effects
+                    .join(meta_streams_effects)
                     .join(streams_effects)
                     .join(library_item_effects)
                     .join(watched_effects)
@@ -187,8 +186,8 @@ fn meta_items_update<E: Env + 'static>(
     }
 }
 
-fn streams_update<E: Env + 'static>(
-    streams: &mut Vec<ResourceLoadable<Vec<Stream>>>,
+fn meta_streams_update<E: Env + 'static>(
+    meta_streams: &mut Vec<ResourceLoadable<Vec<Stream>>>,
     selected: &Option<Selected>,
     meta_items: &[ResourceLoadable<MetaItem>],
     profile: &Profile,
@@ -198,18 +197,67 @@ fn streams_update<E: Env + 'static>(
             stream_path: Some(stream_path),
             ..
         }) => {
-            if let Some(meta_streams) = streams_from_meta_items(meta_items, &stream_path.id) {
-                eq_update(streams, vec![meta_streams])
-            } else {
-                resources_update_with_vector_content::<E, _>(
-                    streams,
-                    ResourcesAction::ResourcesRequested {
-                        request: &AggrRequest::AllOfResource(stream_path.to_owned()),
-                        addons: &profile.addons,
+            let next_meta_streams = meta_items
+                .iter()
+                .find_map(|meta_item| match meta_item {
+                    ResourceLoadable {
+                        request,
+                        content: Some(Loadable::Ready(meta_item)),
+                    } => Some((request, meta_item)),
+                    _ => None,
+                })
+                .and_then(|(request, meta_item)| {
+                    meta_item
+                        .videos
+                        .iter()
+                        .find(|video| video.id == stream_path.id)
+                        .and_then(|video| {
+                            if !video.streams.is_empty() {
+                                Some(Cow::Borrowed(&video.streams))
+                            } else {
+                                Stream::youtube(&video.id)
+                                    .map(|stream| vec![stream])
+                                    .map(Cow::Owned)
+                            }
+                        })
+                        .map(|streams| (request, streams))
+                })
+                .map(|(request, streams)| ResourceLoadable {
+                    request: ResourceRequest {
+                        base: request.base.to_owned(),
+                        path: ResourcePath {
+                            resource: STREAM_RESOURCE_NAME.to_owned(),
+                            r#type: request.path.r#type.to_owned(),
+                            id: stream_path.id.to_owned(),
+                            extra: request.path.extra.to_owned(),
+                        },
                     },
-                )
-            }
+                    content: Some(Loadable::Ready(streams.into_owned())),
+                })
+                .into_iter()
+                .collect();
+            eq_update(meta_streams, next_meta_streams)
         }
+        _ => Effects::none().unchanged(),
+    }
+}
+
+fn streams_update<E: Env + 'static>(
+    streams: &mut Vec<ResourceLoadable<Vec<Stream>>>,
+    selected: &Option<Selected>,
+    profile: &Profile,
+) -> Effects {
+    match selected {
+        Some(Selected {
+            stream_path: Some(stream_path),
+            ..
+        }) => resources_update_with_vector_content::<E, _>(
+            streams,
+            ResourcesAction::ResourcesRequested {
+                request: &AggrRequest::AllOfResource(stream_path.to_owned()),
+                addons: &profile.addons,
+            },
+        ),
         _ => eq_update(streams, vec![]),
     }
 }
@@ -262,47 +310,4 @@ fn watched_update<E: Env>(
         })
         .map(|(meta_item, library_item)| library_item.state.watched_bitfield(&meta_item.videos));
     eq_update(watched, next_watched)
-}
-
-fn streams_from_meta_items(
-    meta_items: &[ResourceLoadable<MetaItem>],
-    video_id: &str,
-) -> Option<ResourceLoadable<Vec<Stream>>> {
-    meta_items
-        .iter()
-        .find_map(|meta_item| match meta_item {
-            ResourceLoadable {
-                request,
-                content: Some(Loadable::Ready(meta_item)),
-            } => Some((request, meta_item)),
-            _ => None,
-        })
-        .and_then(|(request, meta_item)| {
-            meta_item
-                .videos
-                .iter()
-                .find(|video| video.id == video_id)
-                .and_then(|video| {
-                    if !video.streams.is_empty() {
-                        Some(Cow::Borrowed(&video.streams))
-                    } else {
-                        Stream::youtube(&video.id)
-                            .map(|stream| vec![stream])
-                            .map(Cow::Owned)
-                    }
-                })
-                .map(|streams| (request, streams))
-        })
-        .map(|(request, streams)| ResourceLoadable {
-            request: ResourceRequest {
-                base: request.base.to_owned(),
-                path: ResourcePath {
-                    resource: STREAM_RESOURCE_NAME.to_owned(),
-                    r#type: request.path.r#type.to_owned(),
-                    id: video_id.to_owned(),
-                    extra: request.path.extra.to_owned(),
-                },
-            },
-            content: Some(Loadable::Ready(streams.into_owned())),
-        })
 }
