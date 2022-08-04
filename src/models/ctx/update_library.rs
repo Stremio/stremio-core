@@ -325,8 +325,12 @@ fn plan_sync_with_api<E: Env + 'static>(library: &LibraryBucket, auth_key: &Auth
     let local_mtimes = library
         .items
         .iter()
-        .filter(|(_, item)| item.should_sync::<E>())
-        .map(|(id, item)| (id.to_owned(), item.mtime.to_owned()))
+        .map(|(id, item)| {
+            (
+                id.to_owned(),
+                (item.mtime.to_owned(), item.should_sync::<E>()),
+            )
+        })
         .collect::<HashMap<_, _>>();
     let request = DatastoreRequest {
         auth_key: auth_key.to_owned(),
@@ -350,19 +354,20 @@ fn plan_sync_with_api<E: Env + 'static>(library: &LibraryBucket, auth_key: &Auth
                 let pull_ids = remote_mtimes
                     .iter()
                     .filter(|(id, remote_mtime)| {
-                        local_mtimes
-                            .get(*id)
-                            .map_or(true, |local_mtime| local_mtime < remote_mtime)
+                        local_mtimes.get(*id).map_or(true, |(local_mtime, _)| {
+                            local_mtime.timestamp() < remote_mtime.timestamp()
+                        })
                     })
                     .map(|(id, _)| id)
                     .cloned()
                     .collect();
                 let push_ids = local_mtimes
                     .iter()
-                    .filter(|(id, local_mtime)| {
-                        remote_mtimes
-                            .get(*id)
-                            .map_or(true, |remote_mtime| remote_mtime < local_mtime)
+                    .filter(|(id, (local_mtime, should_sync))| {
+                        *should_sync
+                            && remote_mtimes.get(*id).map_or(true, |remote_mtime| {
+                                remote_mtime.timestamp() < local_mtime.timestamp()
+                            })
                     })
                     .map(|(id, _)| id)
                     .cloned()
