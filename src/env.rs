@@ -6,6 +6,7 @@ use futures::future::Either;
 use futures::{future, Future, FutureExt, TryFutureExt};
 use http::{Method, Request};
 use lazy_static::lazy_static;
+use regex::Regex;
 use serde::{Deserialize, Serialize};
 use serde_json::json;
 use std::collections::HashMap;
@@ -17,6 +18,7 @@ use stremio_core::runtime::msg::{Action, ActionCtx, Event};
 use stremio_core::runtime::{Env, EnvError, EnvFuture, EnvFutureExt, TryEnvFuture};
 use stremio_core::types::api::AuthRequest;
 use stremio_core::types::resource::StreamSource;
+use url::Url;
 use wasm_bindgen::closure::Closure;
 use wasm_bindgen::prelude::wasm_bindgen;
 use wasm_bindgen::{JsCast, JsValue};
@@ -33,8 +35,6 @@ extern "C" {
     #[wasm_bindgen(catch, js_namespace = ["self"])]
     static shell_version: Option<String>;
     #[wasm_bindgen(catch, js_namespace = ["self"])]
-    fn sanitize_location_path(path: &str) -> Result<String, JsValue>;
-    #[wasm_bindgen(catch, js_namespace = ["self"])]
     async fn get_location_hash() -> Result<JsValue, JsValue>;
     #[wasm_bindgen(catch, js_namespace = ["self"])]
     async fn local_storage_get_item(key: String) -> Result<JsValue, JsValue>;
@@ -48,6 +48,8 @@ lazy_static! {
     static ref INSTALLATION_ID: RwLock<Option<String>> = Default::default();
     static ref VISIT_ID: String = hex::encode(WebEnv::random_buffer(10));
     static ref ANALYTICS: Analytics<WebEnv> = Default::default();
+    static ref PLAYER_REGEX: Regex =
+        Regex::new(r"^/player/([^/]*)(?:/([^/]*)/([^/]*)/([^/]*)/([^/]*)/([^/]*))?$").unwrap();
 }
 
 #[derive(Serialize)]
@@ -397,13 +399,46 @@ impl Env for WebEnv {
                 .expect("installation id not available")
                 .to_owned(),
             visit_id: VISIT_ID.to_owned(),
-            path: sanitize_location_path(path).expect("sanitize location path failed"),
+            path: sanitize_location_path(path),
         })
         .unwrap()
     }
     #[cfg(debug_assertions)]
     fn log(message: String) {
         web_sys::console::log_1(&JsValue::from(message));
+    }
+}
+
+fn sanitize_location_path(path: &str) -> String {
+    match Url::parse(&format!("stremio://{}", path)) {
+        Ok(url) => {
+            let query = url
+                .query()
+                .map(|query| format!("?{}", query))
+                .unwrap_or_default();
+            let path = match PLAYER_REGEX.captures(url.path()) {
+                Some(captures) => {
+                    if captures.get(3).is_some()
+                        && captures.get(4).is_some()
+                        && captures.get(5).is_some()
+                        && captures.get(6).is_some()
+                    {
+                        format!(
+                            "/player/***/***/{}/{}/{}/{}",
+                            captures.get(3).unwrap().as_str(),
+                            captures.get(4).unwrap().as_str(),
+                            captures.get(5).unwrap().as_str(),
+                            captures.get(6).unwrap().as_str(),
+                        )
+                    } else {
+                        "/player/***".to_owned()
+                    }
+                }
+                _ => url.path().to_owned(),
+            };
+            format!("{}{}", path, query)
+        }
+        _ => path.to_owned(),
     }
 }
 
