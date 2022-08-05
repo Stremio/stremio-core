@@ -14,7 +14,7 @@ self.init = async ({ appVersion, shellVersion }) => {
     self.local_storage_get_item = async (key) => bridge.call(['localStorage', 'getItem'], [key]);
     self.local_storage_set_item = async (key, value) => bridge.call(['localStorage', 'setItem'], [key, value]);
     self.local_storage_remove_item = async (key) => bridge.call(['localStorage', 'removeItem'], [key]);
-    const { default: initialize_api, initialize_runtime, get_state, get_debug_state, dispatch, analytics, decode_stream } = require('../stremio_core_web.js');
+    const { default: initialize_api, initialize_runtime, get_state, get_debug_state, dispatch, analytics, decode_stream } = require('./stremio_core_web.js');
     self.getState = get_state;
     self.getDebugState = get_debug_state;
     self.dispatch = dispatch;
