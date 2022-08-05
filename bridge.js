@@ -2,8 +2,8 @@ function getId() {
     return Math.random().toString(32).slice(2);
 }
 
-function Bridge(context, scope) {
-    context.addEventListener('message', async ({ data: { request } }) => {
+function Bridge(scope, handler) {
+    handler.addEventListener('message', async ({ data: { request } }) => {
         if (!request) return;
 
         const { id, path, args } = request;
@@ -17,9 +17,9 @@ function Bridge(context, scope) {
                 data = await object;
             }
 
-            context.postMessage({ response: { id, result: { data } } });
+            handler.postMessage({ response: { id, result: { data } } });
         } catch (error) {
-            context.postMessage({ response: { id, result: { error } } });
+            handler.postMessage({ response: { id, result: { error } } });
         }
     });
 
@@ -29,15 +29,15 @@ function Bridge(context, scope) {
             const onMessage = ({ data: { response } }) => {
                 if (!response || response.id !== id) return;
 
-                context.removeEventListener('message', onMessage);
+                handler.removeEventListener('message', onMessage);
                 if ('error' in response.result) {
                     reject(response.result.error);
                 } else {
                     resolve(response.result.data);
                 }
             };
-            context.addEventListener('message', onMessage);
-            context.postMessage({ request: { id, path, args } });
+            handler.addEventListener('message', onMessage);
+            handler.postMessage({ request: { id, path, args } });
         });
     };
 }
