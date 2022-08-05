@@ -97,9 +97,10 @@ impl WebEnv {
     }
     pub fn get_location_hash() -> EnvFuture<String> {
         get_location_hash()
-            .map(|hash| {
-                hash.ok()
-                    .and_then(|hash| hash.as_string())
+            .map(|location_hash| {
+                location_hash
+                    .ok()
+                    .and_then(|location_hash| location_hash.as_string())
                     .unwrap_or_default()
             })
             .boxed_env()

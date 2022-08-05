@@ -62,7 +62,7 @@ pub async fn initialize_runtime(emit_to_ui: js_sys::Function) -> Result<(), JsVa
                     WebEnv::exec_concurrent(rx.for_each(move |event| {
                         if let RuntimeEvent::CoreEvent(event) = &event {
                             WebEnv::exec_concurrent(WebEnv::get_location_hash().then(
-                                enclose!((event) move |hash| async move {
+                                enclose!((event) move |location_hash| async move {
                                     let runtime = RUNTIME.read().expect("runtime read failed");
                                     let runtime = runtime
                                         .as_ref()
@@ -70,7 +70,7 @@ pub async fn initialize_runtime(emit_to_ui: js_sys::Function) -> Result<(), JsVa
                                         .as_ref()
                                         .expect("runtime is not ready");
                                     let model = runtime.model().expect("model read failed");
-                                    let path = hash.split('#').last().map(|path| path.to_owned()).unwrap_or_default();
+                                    let path = location_hash.split('#').last().map(|path| path.to_owned()).unwrap_or_default();
                                     WebEnv::emit_to_analytics(
                                         &WebEvent::CoreEvent(event.to_owned()),
                                         &model,
@@ -129,7 +129,7 @@ pub fn get_state(field: JsValue) -> JsValue {
 }
 
 #[wasm_bindgen]
-pub fn dispatch(action: JsValue, field: JsValue, hash: JsValue) {
+pub fn dispatch(action: JsValue, field: JsValue, location_hash: JsValue) {
     let action = action.into_serde::<Action>().expect("dispatch failed");
     let field = field.into_serde().expect("dispatch failed");
     let runtime = RUNTIME.read().expect("runtime read failed");
@@ -140,9 +140,9 @@ pub fn dispatch(action: JsValue, field: JsValue, hash: JsValue) {
         .expect("runtime is not ready");
     {
         let model = runtime.model().expect("model read failed");
-        let path = hash
+        let path = location_hash
             .as_string()
-            .and_then(|hash| hash.split('#').last().map(|path| path.to_owned()))
+            .and_then(|location_hash| location_hash.split('#').last().map(|path| path.to_owned()))
             .unwrap_or_default();
         WebEnv::emit_to_analytics(
             &WebEvent::CoreAction(Box::new(action.to_owned())),
@@ -154,7 +154,7 @@ pub fn dispatch(action: JsValue, field: JsValue, hash: JsValue) {
 }
 
 #[wasm_bindgen]
-pub fn analytics(event: JsValue, hash: JsValue) {
+pub fn analytics(event: JsValue, location_hash: JsValue) {
     let event = event.into_serde().expect("analytics failed");
     let runtime = RUNTIME.read().expect("runtime read failed");
     let runtime = runtime
@@ -163,9 +163,9 @@ pub fn analytics(event: JsValue, hash: JsValue) {
         .as_ref()
         .expect("runtime is not ready");
     let model = runtime.model().expect("model read failed");
-    let path = hash
+    let path = location_hash
         .as_string()
-        .and_then(|hash| hash.split('#').last().map(|path| path.to_owned()))
+        .and_then(|location_hash| location_hash.split('#').last().map(|path| path.to_owned()))
         .unwrap_or_default();
     WebEnv::emit_to_analytics(&WebEvent::UIEvent(event), &model, &path);
 }
