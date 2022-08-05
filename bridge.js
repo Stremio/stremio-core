@@ -8,13 +8,13 @@ function Bridge(scope, handler) {
 
         const { id, path, args } = request;
         try {
-            const object = path.reduce((obj, prop) => obj[prop], scope);
+            const value = path.reduce((value, prop) => value[prop], scope);
             let data;
-            if (typeof object === 'function') {
-                const thisArg = path.slice(0, path.length - 1).reduce((obj, prop) => obj[prop], scope);
-                data = await object.apply(thisArg, args);
+            if (typeof value === 'function') {
+                const thisArg = path.slice(0, path.length - 1).reduce((value, prop) => value[prop], scope);
+                data = await value.apply(thisArg, args);
             } else {
-                data = await object;
+                data = await value;
             }
 
             handler.postMessage({ response: { id, result: { data } } });
