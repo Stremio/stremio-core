@@ -2,8 +2,12 @@ const Bridge = require('./bridge');
 
 const bridge = new Bridge(self, self);
 
-self.init = async ({ baseURI, appVersion, shellVersion }) => {
-    self.document = { baseURI };
+self.init = async ({ appVersion, shellVersion }) => {
+    // TODO remove the document shim when this PR is merged
+    // https://github.com/cfware/babel-plugin-bundled-import-meta/pull/26
+    self.document = {
+        baseURI: self.location.href
+    };
     self.app_version = appVersion;
     self.shell_version = shellVersion;
     self.get_location_hash = async () => bridge.call(['location', 'hash'], []);
