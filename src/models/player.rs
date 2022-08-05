@@ -239,6 +239,10 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                     .join(library_item_effects)
                     .join(watched_effects)
             }
+            Msg::Internal(Internal::ProfileChanged) => {
+                // TODO react to ProfileChanged
+                Effects::none().unchanged()
+            }
             _ => Effects::none().unchanged(),
         }
     }
