@@ -169,9 +169,11 @@ fn catalogs_update<F: LibraryFilter>(
                         Sort::Name => a.name.to_lowercase().cmp(&b.name.to_lowercase()),
                     })
                     .take(*take)
-                    .collect()
+                    .collect::<Vec<_>>()
+                    .chunks(CATALOG_PAGE_SIZE)
+                    .map(|page| page.into())
+                    .collect::<Vec<_>>()
             })
-            .map(|page| vec![page])
             .collect::<Vec<_>>(),
         _ => vec![],
     };
