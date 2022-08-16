@@ -168,7 +168,10 @@ fn catalogs_update<F: LibraryFilter>(
                         Sort::TimesWatched => b.state.times_watched.cmp(&a.state.times_watched),
                         Sort::Name => a.name.to_lowercase().cmp(&b.name.to_lowercase()),
                     })
-                    .take(*take)
+                    .take(
+                        (*take as f64 / CATALOG_PAGE_SIZE as f64).ceil() as usize
+                            * CATALOG_PAGE_SIZE,
+                    )
                     .collect::<Vec<_>>()
                     .chunks(CATALOG_PAGE_SIZE)
                     .map(|page| page.into())
