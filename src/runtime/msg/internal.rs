@@ -7,7 +7,7 @@ use crate::types::api::{
     APIRequest, AuthRequest, DatastoreRequest, LinkCodeResponse, LinkDataResponse,
 };
 use crate::types::library::{LibraryBucket, LibraryItem};
-use crate::types::profile::{Auth, Profile};
+use crate::types::profile::{Auth, Profile, User};
 use url::Url;
 
 pub type CtxStorageResponse = (
@@ -28,6 +28,8 @@ pub enum Internal {
     CtxAuthResult(AuthRequest, Result<AuthResponse, CtxError>),
     // Result for pull addons from API.
     AddonsAPIResult(APIRequest, Result<Vec<Descriptor>, CtxError>),
+    // Result for pull user from API.
+    UserAPIResult(APIRequest, Result<User, CtxError>),
     // Result for library sync plan with API.
     LibrarySyncPlanResult(DatastoreRequest, Result<LibraryPlanResponse, CtxError>),
     // Result for pull library items from API.

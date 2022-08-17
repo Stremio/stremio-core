@@ -27,10 +27,14 @@ pub fn update_profile<E: Env + 'static>(
             // TODO implement
             Effects::msg(Msg::Event(Event::UserPushedToAPI { uid: profile.uid() })).unchanged()
         }
-        Msg::Action(Action::Ctx(ActionCtx::PullUserFromAPI)) => {
-            // TODO implement
-            Effects::msg(Msg::Event(Event::UserPulledFromAPI { uid: profile.uid() })).unchanged()
-        }
+        Msg::Action(Action::Ctx(ActionCtx::PullUserFromAPI)) => match profile.auth_key() {
+            Some(auth_key) => Effects::one(pull_user_from_api::<E>(auth_key)).unchanged(),
+            _ => Effects::msg(Msg::Event(Event::Error {
+                error: CtxError::from(OtherError::UserNotLoggedIn),
+                source: Box::new(Event::UserPulledFromAPI { uid: profile.uid() }),
+            }))
+            .unchanged(),
+        },
         Msg::Action(Action::Ctx(ActionCtx::PushAddonsToAPI)) => match profile.auth_key() {
             Some(auth_key) => {
                 Effects::one(push_addons_to_api::<E>(profile.addons.to_owned(), auth_key))
@@ -289,6 +293,26 @@ pub fn update_profile<E: Env + 'static>(
             }))
             .unchanged(),
         },
+        Msg::Internal(Internal::UserAPIResult(APIRequest::GetUser { auth_key }, result))
+            if profile.auth_key() == Some(auth_key) =>
+        {
+            match result {
+                Ok(user) => match &mut profile.auth {
+                    Some(auth) if auth.user != *user => {
+                        auth.user = user.to_owned();
+                        Effects::msg(Msg::Event(Event::UserPulledFromAPI { uid: profile.uid() }))
+                            .join(Effects::msg(Msg::Internal(Internal::ProfileChanged)))
+                    }
+                    _ => Effects::msg(Msg::Event(Event::UserPulledFromAPI { uid: profile.uid() }))
+                        .unchanged(),
+                },
+                Err(error) => Effects::msg(Msg::Event(Event::Error {
+                    error: error.to_owned(),
+                    source: Box::new(Event::UserPulledFromAPI { uid: profile.uid() }),
+                }))
+                .unchanged(),
+            }
+        }
         _ => Effects::none().unchanged(),
     }
 }
@@ -317,6 +341,23 @@ fn push_addons_to_api<E: Env + 'static>(addons: Vec<Descriptor>, auth_key: &Auth
                     source: Box::new(Event::AddonsPushedToAPI { transport_urls }),
                 }),
             })
+            .boxed_env(),
+    )
+    .into()
+}
+
+fn pull_user_from_api<E: Env + 'static>(auth_key: &AuthKey) -> Effect {
+    let request = APIRequest::GetUser {
+        auth_key: auth_key.to_owned(),
+    };
+    EffectFuture::Concurrent(
+        fetch_api::<E, _, _, _>(&request)
+            .map_err(CtxError::from)
+            .and_then(|result| match result {
+                APIResult::Ok { result } => future::ok(result),
+                APIResult::Err { error } => future::err(CtxError::from(error)),
+            })
+            .map(move |result| Msg::Internal(Internal::UserAPIResult(request, result)))
             .boxed_env(),
     )
     .into()

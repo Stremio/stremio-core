@@ -36,6 +36,10 @@ pub enum APIRequest {
         addons: Vec<Descriptor>,
     },
     #[serde(rename_all = "camelCase")]
+    GetUser {
+        auth_key: AuthKey,
+    },
+    #[serde(rename_all = "camelCase")]
     Events {
         auth_key: AuthKey,
         events: Vec<serde_json::Value>,
@@ -57,6 +61,7 @@ impl FetchRequestParams<APIRequest> for APIRequest {
             APIRequest::Logout { .. } => "logout".to_owned(),
             APIRequest::AddonCollectionGet { .. } => "addonCollectionGet".to_owned(),
             APIRequest::AddonCollectionSet { .. } => "addonCollectionSet".to_owned(),
+            APIRequest::GetUser { .. } => "getUser".to_owned(),
             APIRequest::Events { .. } => "events".to_owned(),
         }
     }
