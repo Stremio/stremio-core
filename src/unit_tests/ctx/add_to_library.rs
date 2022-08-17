@@ -30,7 +30,7 @@ fn actionctx_addtolibrary() {
                 url, method, body, ..
             } if url == "https://api.strem.io/api/datastorePut"
                 && method == "POST"
-                && body == "{\"authKey\":\"auth_key\",\"collection\":\"libraryItem\",\"changes\":[{\"_id\":\"id\",\"name\":\"name\",\"type\":\"type\",\"poster\":null,\"posterShape\":\"poster\",\"removed\":false,\"temp\":false,\"_ctime\":\"2020-01-01T00:00:00Z\",\"_mtime\":\"2020-01-01T00:00:00Z\",\"state\":{\"lastWatched\":null,\"timeWatched\":0,\"timeOffset\":0,\"overallTimeWatched\":0,\"timesWatched\":0,\"flaggedWatched\":0,\"duration\":0,\"video_id\":null,\"watched\":null,\"lastVidReleased\":null,\"noNotif\":false},\"behaviorHints\":{\"defaultVideoId\":null,\"featuredVideoId\":null,\"hasScheduledVideos\":false}}]}" =>
+                && body == "{\"authKey\":\"auth_key\",\"collection\":\"libraryItem\",\"changes\":[{\"_id\":\"id\",\"name\":\"name\",\"type\":\"type\",\"poster\":null,\"posterShape\":\"poster\",\"removed\":false,\"temp\":false,\"_ctime\":\"2020-01-01T00:00:00Z\",\"_mtime\":\"2020-01-01T00:00:00Z\",\"state\":{\"lastWatched\":\"2020-01-01T00:00:00Z\",\"timeWatched\":0,\"timeOffset\":0,\"overallTimeWatched\":0,\"timesWatched\":0,\"flaggedWatched\":0,\"duration\":0,\"video_id\":null,\"watched\":null,\"lastVidReleased\":null,\"noNotif\":false},\"behaviorHints\":{\"defaultVideoId\":null,\"featuredVideoId\":null,\"hasScheduledVideos\":false}}]}" =>
             {
                 future::ok(Box::new(APIResult::Ok {
                     result: SuccessResponse { success: True {} },
@@ -61,7 +61,10 @@ fn actionctx_addtolibrary() {
         temp: false,
         ctime: Some(Utc.ymd(2020, 1, 1).and_hms_milli(0, 0, 0, 0)),
         mtime: Utc.ymd(2020, 1, 1).and_hms_milli(0, 0, 0, 0),
-        state: Default::default(),
+        state: LibraryItemState {
+            last_watched: Some(Utc.ymd(2020, 1, 1).and_hms_milli(0, 0, 0, 0)),
+            ..Default::default()
+        },
         name: "name".to_owned(),
         r#type: "type".to_owned(),
         poster: None,

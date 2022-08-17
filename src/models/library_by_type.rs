@@ -160,7 +160,13 @@ fn catalogs_update<F: LibraryFilter>(
             })
             .rev()
             .map(|(r#type, library_items)| {
-                let take = catalogs_size.get(r#type).unwrap_or(&CATALOG_PAGE_SIZE);
+                let take = catalogs_size
+                    .get(r#type)
+                    .map(|catalog_size| {
+                        (*catalog_size as f64 / CATALOG_PAGE_SIZE as f64).ceil() as usize
+                            * CATALOG_PAGE_SIZE
+                    })
+                    .unwrap_or(CATALOG_PAGE_SIZE);
                 library_items
                     .into_iter()
                     .sorted_by(|a, b| match &selected.sort {
@@ -168,10 +174,12 @@ fn catalogs_update<F: LibraryFilter>(
                         Sort::TimesWatched => b.state.times_watched.cmp(&a.state.times_watched),
                         Sort::Name => a.name.to_lowercase().cmp(&b.name.to_lowercase()),
                     })
-                    .take(*take)
-                    .collect()
+                    .take(take)
+                    .collect::<Vec<_>>()
+                    .chunks(CATALOG_PAGE_SIZE)
+                    .map(|page| page.into())
+                    .collect::<Vec<_>>()
             })
-            .map(|page| vec![page])
             .collect::<Vec<_>>(),
         _ => vec![],
     };

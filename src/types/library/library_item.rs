@@ -55,7 +55,10 @@ impl<E: Env + 'static> From<(&MetaItemPreview, PhantomData<E>)> for LibraryItem 
             temp: true,
             ctime: Some(E::now()),
             mtime: E::now(),
-            state: LibraryItemState::default(),
+            state: LibraryItemState {
+                last_watched: Some(E::now()),
+                ..LibraryItemState::default()
+            },
             name: meta_item.name.to_owned(),
             r#type: meta_item.r#type.to_owned(),
             poster: meta_item.poster.to_owned(),
