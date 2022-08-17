@@ -89,6 +89,7 @@ fn actionctx_rewindlibraryitem() {
                                 tos: true,
                                 privacy: true,
                                 marketing: true,
+                                from: Some("tests".to_owned()),
                             },
                         },
                     }),

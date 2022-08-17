@@ -91,6 +91,7 @@ fn actionctx_addtolibrary() {
                                 tos: true,
                                 privacy: true,
                                 marketing: true,
+                                from: Some("tests".to_owned()),
                             },
                         },
                     }),

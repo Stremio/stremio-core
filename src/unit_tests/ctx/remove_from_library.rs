@@ -83,6 +83,7 @@ fn actionctx_removefromlibrary() {
                                 tos: true,
                                 privacy: true,
                                 marketing: true,
+                                from: Some("tests".to_owned()),
                             },
                         },
                     }),

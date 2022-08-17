@@ -8,11 +8,12 @@ fn gdpr_consent() {
             tos: true,
             privacy: true,
             marketing: true,
+            from: Some("tests".to_owned()),
         },
         &[
             Token::Struct {
                 name: "GDPRConsent",
-                len: 3,
+                len: 4,
             },
             Token::Str("tos"),
             Token::Bool(true),
@@ -20,6 +21,9 @@ fn gdpr_consent() {
             Token::Bool(true),
             Token::Str("marketing"),
             Token::Bool(true),
+            Token::Str("from"),
+            Token::Some,
+            Token::Str("tests"),
             Token::StructEnd,
         ],
     );

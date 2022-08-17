@@ -1,7 +1,7 @@
 use crate::types::addon::{
     DescriptorFlags, Manifest, ManifestBehaviorHints, ManifestPreview, ResourcePath,
 };
-use crate::types::api::{APIError, AuthRequest, GDPRConsentRequest};
+use crate::types::api::{APIError, AuthRequest};
 use crate::types::library::LibraryItemState;
 use crate::types::profile::{Auth, AuthKey, GDPRConsent, Settings, User};
 use crate::types::resource::{
@@ -275,7 +275,7 @@ impl DefaultTokens for GDPRConsent {
         vec![
             Token::Struct {
                 name: "GDPRConsent",
-                len: 3,
+                len: 4,
             },
             Token::Str("tos"),
             Token::Bool(false),
@@ -283,6 +283,8 @@ impl DefaultTokens for GDPRConsent {
             Token::Bool(false),
             Token::Str("marketing"),
             Token::Bool(false),
+            Token::Str("from"),
+            Token::None,
             Token::StructEnd,
         ]
     }
@@ -297,6 +299,8 @@ impl DefaultFlattenTokens for GDPRConsent {
             Token::Bool(false),
             Token::Str("marketing"),
             Token::Bool(false),
+            Token::Str("from"),
+            Token::None,
         ]
     }
 }
@@ -404,23 +408,6 @@ impl DefaultTokens for Settings {
             Token::None,
             Token::StructEnd,
         ]
-    }
-}
-
-impl DefaultTokens for GDPRConsentRequest {
-    fn default_tokens() -> Vec<Token> {
-        [
-            vec![Token::Map { len: None }],
-            GDPRConsent::default_flatten_tokens(),
-            vec![
-                Token::Str("time"),
-                Token::Str("1970-01-01T00:00:00Z"),
-                Token::Str("from"),
-                Token::Str(""),
-                Token::MapEnd,
-            ],
-        ]
-        .concat()
     }
 }
 

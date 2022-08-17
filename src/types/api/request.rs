@@ -3,9 +3,6 @@ use crate::types::addon::Descriptor;
 use crate::types::library::LibraryItem;
 use crate::types::profile::{AuthKey, GDPRConsent};
 #[cfg(test)]
-use chrono::offset::TimeZone;
-use chrono::{DateTime, Utc};
-#[cfg(test)]
 use derivative::Derivative;
 use http::Method;
 use serde::{Deserialize, Serialize};
@@ -87,7 +84,7 @@ pub enum AuthRequest {
     Register {
         email: String,
         password: String,
-        gdpr_consent: GDPRConsentRequest,
+        gdpr_consent: GDPRConsent,
     },
     LoginWithToken {
         token: String,
@@ -124,18 +121,6 @@ impl FetchRequestParams<()> for LinkRequest {
         Some(serde_url_params::to_string(&self).expect("Serialize query params failed"))
     }
     fn body(self) {}
-}
-
-#[derive(Clone, PartialEq, Serialize, Deserialize)]
-#[cfg_attr(debug_assertions, derive(Debug))]
-#[cfg_attr(test, derive(Derivative))]
-#[cfg_attr(test, derivative(Default))]
-pub struct GDPRConsentRequest {
-    #[serde(flatten)]
-    pub gdpr_consent: GDPRConsent,
-    #[cfg_attr(test, derivative(Default(value = "Utc.timestamp(0, 0)")))]
-    pub time: DateTime<Utc>,
-    pub from: String,
 }
 
 #[derive(Clone, PartialEq, Serialize)]

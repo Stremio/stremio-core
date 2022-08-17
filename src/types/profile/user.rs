@@ -13,6 +13,7 @@ pub struct GDPRConsent {
     pub tos: bool,
     pub privacy: bool,
     pub marketing: bool,
+    pub from: Option<String>,
 }
 
 #[serde_as]

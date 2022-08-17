@@ -104,6 +104,7 @@ fn actionctx_pushaddonstoapi_with_user() {
                                 tos: true,
                                 privacy: true,
                                 marketing: true,
+                                from: Some("tests".to_owned()),
                             },
                         },
                     }),
