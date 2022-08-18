@@ -317,7 +317,7 @@ impl DefaultTokens for User {
             vec![
                 Token::Struct {
                     name: "User",
-                    len: 8,
+                    len: 9,
                 },
                 Token::Str("_id"),
                 Token::Str(""),
@@ -331,6 +331,8 @@ impl DefaultTokens for User {
                 Token::Str("1970-01-01T00:00:00Z"),
                 Token::Str("dateRegistered"),
                 Token::Str("1970-01-01T00:00:00Z"),
+                Token::Str("trakt"),
+                Token::None,
                 Token::Str("premium_expire"),
                 Token::None,
                 Token::Str("gdpr_consent"),

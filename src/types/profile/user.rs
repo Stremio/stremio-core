@@ -4,7 +4,18 @@ use chrono::{DateTime, Utc};
 #[cfg(test)]
 use derivative::Derivative;
 use serde::{Deserialize, Serialize};
-use serde_with::{serde_as, DefaultOnNull, NoneAsEmptyString};
+use serde_with::{serde_as, DefaultOnError, DefaultOnNull, NoneAsEmptyString};
+
+#[derive(Clone, PartialEq, Serialize, Deserialize)]
+#[cfg_attr(debug_assertions, derive(Debug))]
+#[cfg_attr(test, derive(Derivative))]
+#[cfg_attr(test, derivative(Default))]
+pub struct TraktInfo {
+    pub created_at: u64,
+    pub expires_in: u64,
+    #[cfg_attr(test, derivative(Default(value = r#"String::from("token")"#)))]
+    pub access_token: String,
+}
 
 #[derive(Clone, PartialEq, Serialize, Deserialize)]
 #[cfg_attr(debug_assertions, derive(Debug))]
@@ -36,6 +47,9 @@ pub struct User {
     pub last_modified: DateTime<Utc>,
     #[cfg_attr(test, derivative(Default(value = "Utc.timestamp(0, 0)")))]
     pub date_registered: DateTime<Utc>,
+    #[serde(default)]
+    #[serde_as(deserialize_as = "DefaultOnError")]
+    pub trakt: Option<TraktInfo>,
     #[serde(rename = "premium_expire")]
     pub premium_expire: Option<DateTime<Utc>>,
     #[serde(rename = "gdpr_consent")]

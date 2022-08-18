@@ -140,6 +140,7 @@ fn actionctx_uninstalladdon_with_user() {
                 avatar: None,
                 last_modified: TestEnv::now(),
                 date_registered: TestEnv::now(),
+                trakt: None,
                 premium_expire: None,
                 gdpr_consent: GDPRConsent {
                     tos: true,

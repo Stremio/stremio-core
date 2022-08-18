@@ -37,6 +37,7 @@ fn actionctx_authenticate_login() {
                             avatar: None,
                             last_modified: TestEnv::now(),
                             date_registered: TestEnv::now(),
+                            trakt: None,
                             premium_expire: None,
                             gdpr_consent: GDPRConsent {
                                 tos: true,
@@ -99,6 +100,7 @@ fn actionctx_authenticate_login() {
                     avatar: None,
                     last_modified: TestEnv::now(),
                     date_registered: TestEnv::now(),
+                    trakt: None,
                     premium_expire: None,
                     gdpr_consent: GDPRConsent {
                         tos: true,
@@ -134,6 +136,7 @@ fn actionctx_authenticate_login() {
                     avatar: None,
                     last_modified: TestEnv::now(),
                     date_registered: TestEnv::now(),
+                    trakt: None,
                     premium_expire: None,
                     gdpr_consent: GDPRConsent {
                         tos: true,
@@ -233,6 +236,7 @@ fn actionctx_authenticate_login_with_token() {
                             avatar: None,
                             last_modified: TestEnv::now(),
                             date_registered: TestEnv::now(),
+                            trakt: None,
                             premium_expire: None,
                             gdpr_consent: GDPRConsent {
                                 tos: true,
@@ -293,6 +297,7 @@ fn actionctx_authenticate_login_with_token() {
                     avatar: None,
                     last_modified: TestEnv::now(),
                     date_registered: TestEnv::now(),
+                    trakt: None,
                     premium_expire: None,
                     gdpr_consent: GDPRConsent {
                         tos: true,
@@ -328,6 +333,7 @@ fn actionctx_authenticate_login_with_token() {
                     avatar: None,
                     last_modified: TestEnv::now(),
                     date_registered: TestEnv::now(),
+                    trakt: None,
                     premium_expire: None,
                     gdpr_consent: GDPRConsent {
                         tos: true,
@@ -428,6 +434,7 @@ fn actionctx_authenticate_register() {
                             avatar: None,
                             last_modified: TestEnv::now(),
                             date_registered: TestEnv::now(),
+                            trakt: None,
                             premium_expire: None,
                             gdpr_consent: GDPRConsent {
                                 tos: true,
@@ -495,6 +502,7 @@ fn actionctx_authenticate_register() {
                     avatar: None,
                     last_modified: TestEnv::now(),
                     date_registered: TestEnv::now(),
+                    trakt: None,
                     premium_expire: None,
                     gdpr_consent: GDPRConsent {
                         tos: true,
@@ -530,6 +538,7 @@ fn actionctx_authenticate_register() {
                     avatar: None,
                     last_modified: TestEnv::now(),
                     date_registered: TestEnv::now(),
+                    trakt: None,
                     premium_expire: None,
                     gdpr_consent: GDPRConsent {
                         tos: true,
