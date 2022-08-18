@@ -1,18 +1,23 @@
 #[cfg(test)]
 use chrono::offset::TimeZone;
-use chrono::{DateTime, Utc};
+use chrono::serde::ts_seconds;
+use chrono::{DateTime, Duration, Utc};
 #[cfg(test)]
 use derivative::Derivative;
 use serde::{Deserialize, Serialize};
-use serde_with::{serde_as, DefaultOnError, DefaultOnNull, NoneAsEmptyString};
+use serde_with::{serde_as, DefaultOnError, DefaultOnNull, DurationSeconds, NoneAsEmptyString};
 
+#[serde_as]
 #[derive(Clone, PartialEq, Serialize, Deserialize)]
 #[cfg_attr(debug_assertions, derive(Debug))]
 #[cfg_attr(test, derive(Derivative))]
 #[cfg_attr(test, derivative(Default))]
 pub struct TraktInfo {
-    pub created_at: u64,
-    pub expires_in: u64,
+    #[serde(with = "ts_seconds")]
+    pub created_at: DateTime<Utc>,
+    #[serde_as(as = "DurationSeconds<i64>")]
+    #[cfg_attr(test, derivative(Default(value = "Duration::zero()")))]
+    pub expires_in: Duration,
     #[cfg_attr(test, derivative(Default(value = r#"String::from("token")"#)))]
     pub access_token: String,
 }
