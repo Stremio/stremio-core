@@ -87,6 +87,7 @@ fn actionctx_addtolibrary() {
                             avatar: None,
                             last_modified: TestEnv::now(),
                             date_registered: TestEnv::now(),
+                            premium_expire: None,
                             gdpr_consent: GDPRConsent {
                                 tos: true,
                                 privacy: true,

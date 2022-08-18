@@ -100,6 +100,7 @@ fn actionctx_pushaddonstoapi_with_user() {
                             avatar: None,
                             last_modified: TestEnv::now(),
                             date_registered: TestEnv::now(),
+                            premium_expire: None,
                             gdpr_consent: GDPRConsent {
                                 tos: true,
                                 privacy: true,

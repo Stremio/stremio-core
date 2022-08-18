@@ -36,6 +36,8 @@ pub struct User {
     pub last_modified: DateTime<Utc>,
     #[cfg_attr(test, derivative(Default(value = "Utc.timestamp(0, 0)")))]
     pub date_registered: DateTime<Utc>,
+    #[serde(rename = "premium_expire")]
+    pub premium_expire: Option<DateTime<Utc>>,
     #[serde(rename = "gdpr_consent")]
     pub gdpr_consent: GDPRConsent,
 }
