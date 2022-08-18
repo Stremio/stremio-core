@@ -82,7 +82,11 @@ pub enum ActionLink {
 #[cfg_attr(debug_assertions, derive(Debug))]
 #[serde(tag = "action", content = "args")]
 pub enum ActionPlayer {
-    UpdateLibraryItemState { time: u64, duration: u64 },
+    TimeUpdate {
+        time: u64,
+        duration: u64,
+        device: String,
+    },
     PushToLibrary,
 }
 
