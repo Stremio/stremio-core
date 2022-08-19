@@ -69,6 +69,8 @@ pub struct Player {
     pub load_time: Option<DateTime<Utc>>,
     #[serde(skip_serializing)]
     pub player_playing_emitted: bool,
+    #[serde(skip_serializing)]
+    pub ended: bool,
 }
 
 impl<E: Env + 'static> UpdateWithCtx<E> for Player {
@@ -167,6 +169,7 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                 });
                 self.load_time = Some(E::now());
                 self.player_playing_emitted = false;
+                self.ended = false;
                 switch_to_next_video_effects
                     .join(selected_effects)
                     .join(meta_item_effects)
@@ -189,6 +192,7 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                 self.analytics_context = None;
                 self.load_time = None;
                 self.player_playing_emitted = false;
+                self.ended = false;
                 switch_to_next_video_effects
                     .join(selected_effects)
                     .join(meta_item_effects)
@@ -276,13 +280,18 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                 }
                 _ => Effects::none().unchanged(),
             },
-            Msg::Action(Action::Player(ActionPlayer::PushToLibrary)) => match &self.library_item {
-                Some(library_item) => Effects::msg(Msg::Internal(Internal::UpdateLibraryItem(
-                    library_item.to_owned(),
-                )))
-                .unchanged(),
-                _ => Effects::none().unchanged(),
-            },
+            Msg::Action(Action::Player(ActionPlayer::PushToLibrary { ended })) => {
+                if *ended {
+                    self.ended = true;
+                };
+                match &self.library_item {
+                    Some(library_item) => Effects::msg(Msg::Internal(Internal::UpdateLibraryItem(
+                        library_item.to_owned(),
+                    )))
+                    .unchanged(),
+                    _ => Effects::none().unchanged(),
+                }
+            }
             Msg::Internal(Internal::ResourceRequestResult(request, result)) => {
                 let meta_item_effects = match &mut self.meta_item {
                     Some(meta_item) => resource_update::<E, _>(

@@ -87,7 +87,9 @@ pub enum ActionPlayer {
         duration: u64,
         device: String,
     },
-    PushToLibrary,
+    PushToLibrary {
+        ended: bool,
+    },
 }
 
 #[derive(Clone, Deserialize)]
