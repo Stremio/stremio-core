@@ -300,7 +300,12 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                 if self.selected.is_some() {
                     self.ended = true;
                 };
-                Effects::none().unchanged()
+                Effects::msg(Msg::Event(Event::PlayerEnded {
+                    context: self.analytics_context.as_ref().cloned().unwrap_or_default(),
+                    is_binge_enabled: ctx.profile.settings.binge_watching,
+                    is_playing_next_video: self.next_video.is_some(),
+                }))
+                .unchanged()
             }
             Msg::Internal(Internal::ResourceRequestResult(request, result)) => {
                 let meta_item_effects = match &mut self.meta_item {
