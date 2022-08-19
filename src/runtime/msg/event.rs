@@ -1,5 +1,5 @@
 use crate::models::ctx::CtxError;
-use crate::models::player::PlayerContext;
+use crate::models::player::AnalyticsContext as PlayerAnalyticsContext;
 use crate::types::api::AuthRequest;
 use crate::types::profile::{AuthKey, Settings, UID};
 use serde::Serialize;
@@ -13,8 +13,11 @@ use url::Url;
 #[serde(tag = "event", content = "args")]
 pub enum Event {
     PlayerPlaying {
-        context: PlayerContext,
+        context: PlayerAnalyticsContext,
         load_time: i64,
+    },
+    PlayerStopped {
+        context: PlayerAnalyticsContext,
     },
     ProfilePushedToStorage {
         uid: UID,

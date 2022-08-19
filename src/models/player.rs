@@ -8,7 +8,7 @@ use crate::runtime::msg::{Action, ActionLoad, ActionPlayer, Event, Internal, Msg
 use crate::runtime::{Effects, Env, UpdateWithCtx};
 use crate::types::addon::{AggrRequest, ResourcePath, ResourceRequest};
 use crate::types::library::{LibraryBucket, LibraryItem};
-use crate::types::profile::Settings as ProfileSettings;
+use crate::types::profile::{Profile, Settings as ProfileSettings};
 use crate::types::resource::{MetaItem, SeriesInfo, Stream, Subtitles, Video};
 use chrono::{DateTime, Utc};
 use itertools::Itertools;
@@ -17,25 +17,25 @@ use std::cmp;
 use std::marker::PhantomData;
 use stremio_watched_bitfield::WatchedBitField;
 
-#[derive(Clone, Serialize, Deserialize)]
-#[cfg_attr(debug_assertions, derive(Debug, PartialEq))]
+#[derive(Clone, Default, PartialEq, Serialize, Deserialize)]
+#[cfg_attr(debug_assertions, derive(Debug))]
 #[serde(rename_all = "camelCase")]
-pub struct PlayerContext {
+pub struct AnalyticsContext {
     #[serde(rename = "libItemID")]
-    pub id: String,
+    pub id: Option<String>,
     #[serde(rename = "libItemType")]
-    pub r#type: String,
+    pub r#type: Option<String>,
     #[serde(rename = "libItemName")]
-    pub name: String,
+    pub name: Option<String>,
     #[serde(rename = "libItemVideoID")]
-    pub video_id: String,
+    pub video_id: Option<String>,
     #[serde(rename = "libItemTimeOffset")]
-    pub time: u64,
+    pub time: Option<u64>,
     #[serde(rename = "libItemTimeDuration")]
-    pub duration: u64,
-    #[serde(rename = "deviceName")]
-    pub device: String,
-    pub player_duration: u64,
+    pub duration: Option<u64>,
+    pub device_type: Option<String>,
+    pub device_name: Option<String>,
+    pub player_duration: Option<u64>,
     pub player_video_width: u64,
     pub player_video_height: u64,
     pub has_trakt: bool,
@@ -64,6 +64,8 @@ pub struct Player {
     #[serde(skip_serializing)]
     pub watched: Option<WatchedBitField>,
     #[serde(skip_serializing)]
+    pub analytics_context: Option<AnalyticsContext>,
+    #[serde(skip_serializing)]
     pub load_time: Option<DateTime<Utc>>,
     #[serde(skip_serializing)]
     pub player_playing_emitted: bool,
@@ -73,8 +75,6 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
     fn update(&mut self, msg: &Msg, ctx: &Ctx) -> Effects {
         match msg {
             Msg::Action(Action::Load(ActionLoad::Player(selected))) => {
-                self.load_time = Some(E::now());
-                self.player_playing_emitted = false;
                 let switch_to_next_video_effects = if self
                     .selected
                     .as_ref()
@@ -141,6 +141,14 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                 );
                 let watched_effects =
                     watched_update::<E>(&mut self.watched, &self.meta_item, &self.library_item);
+                update_analytics_context::<E>(
+                    &mut self.analytics_context,
+                    &msg,
+                    &ctx.profile,
+                    &self.library_item,
+                );
+                self.load_time = Some(E::now());
+                self.player_playing_emitted = false;
                 switch_to_next_video_effects
                     .join(selected_effects)
                     .join(meta_item_effects)
@@ -151,8 +159,6 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                     .join(watched_effects)
             }
             Msg::Action(Action::Unload) => {
-                self.load_time = None;
-                self.player_playing_emitted = false;
                 let switch_to_next_video_effects =
                     switch_to_next_video(&mut self.library_item, &self.next_video);
                 let selected_effects = eq_update(&mut self.selected, None);
@@ -162,6 +168,9 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                 let series_info_effects = eq_update(&mut self.series_info, None);
                 let library_item_effects = eq_update(&mut self.library_item, None);
                 let watched_effects = eq_update(&mut self.watched, None);
+                self.analytics_context = None;
+                self.load_time = None;
+                self.player_playing_emitted = false;
                 switch_to_next_video_effects
                     .join(selected_effects)
                     .join(meta_item_effects)
@@ -171,101 +180,87 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                     .join(library_item_effects)
                     .join(watched_effects)
             }
-            Msg::Action(Action::Player(ActionPlayer::TimeUpdate {
-                time,
-                duration,
-                device,
-            })) => match (&self.selected, &mut self.library_item) {
-                (
-                    Some(Selected {
-                        stream_request:
-                            Some(ResourceRequest {
-                                path: ResourcePath { id: video_id, .. },
-                                ..
-                            }),
-                        ..
-                    }),
-                    Some(library_item),
-                ) => {
-                    library_item.state.last_watched = Some(E::now());
-                    if library_item.state.video_id != Some(video_id.to_owned()) {
-                        library_item.state.video_id = Some(video_id.to_owned());
-                        library_item.state.overall_time_watched = library_item
-                            .state
-                            .overall_time_watched
-                            .saturating_add(library_item.state.time_watched);
-                        library_item.state.time_watched = 0;
-                        library_item.state.flagged_watched = 0;
-                    } else {
-                        let time_watched =
-                            cmp::min(1000, time.saturating_sub(library_item.state.time_offset));
-                        library_item.state.time_watched =
-                            library_item.state.time_watched.saturating_add(time_watched);
-                        library_item.state.overall_time_watched = library_item
-                            .state
-                            .overall_time_watched
-                            .saturating_add(time_watched);
-                    };
-                    library_item.state.time_offset = time.to_owned();
-                    library_item.state.duration = duration.to_owned();
-                    if library_item.state.flagged_watched == 0
-                        && library_item.state.time_watched as f64
-                            > library_item.state.duration as f64 * WATCHED_THRESHOLD_COEF
-                    {
-                        library_item.state.flagged_watched = 1;
-                        library_item.state.times_watched =
-                            library_item.state.times_watched.saturating_add(1);
-                        if let Some(watched) = &self.watched {
-                            let mut watched = watched.to_owned();
-                            watched.set_video(video_id, true);
-                            library_item.state.watched = Some(watched.to_string());
-                        }
-                    };
-                    if library_item.temp && library_item.state.times_watched == 0 {
-                        library_item.removed = true;
-                    };
-                    if library_item.removed {
-                        library_item.temp = true;
-                    };
-                    if !self.player_playing_emitted {
-                        self.player_playing_emitted = true;
-                        Effects::msg(Msg::Event(Event::PlayerPlaying {
-                            load_time: self
-                                .load_time
-                                .map(|load_time| {
-                                    E::now().timestamp_millis() - load_time.timestamp_millis()
-                                })
-                                .unwrap_or(-1),
-                            context: PlayerContext {
-                                id: library_item.id.to_owned(),
-                                r#type: library_item.r#type.to_owned(),
-                                name: library_item.name.to_owned(),
-                                video_id: library_item
-                                    .state
-                                    .video_id
-                                    .to_owned()
-                                    .unwrap_or_default(),
-                                time: library_item.state.time_offset,
-                                duration: library_item.state.duration,
-                                device: device.to_owned(),
-                                player_duration: duration.to_owned(),
-                                player_video_width: 0,
-                                player_video_height: 0,
-                                has_trakt: ctx
-                                    .profile
-                                    .auth
+            Msg::Action(Action::Player(ActionPlayer::TimeUpdate { time, duration, .. })) => {
+                match (&self.selected, &mut self.library_item) {
+                    (
+                        Some(Selected {
+                            stream_request:
+                                Some(ResourceRequest {
+                                    path: ResourcePath { id: video_id, .. },
+                                    ..
+                                }),
+                            ..
+                        }),
+                        Some(library_item),
+                    ) => {
+                        library_item.state.last_watched = Some(E::now());
+                        if library_item.state.video_id != Some(video_id.to_owned()) {
+                            library_item.state.video_id = Some(video_id.to_owned());
+                            library_item.state.overall_time_watched = library_item
+                                .state
+                                .overall_time_watched
+                                .saturating_add(library_item.state.time_watched);
+                            library_item.state.time_watched = 0;
+                            library_item.state.flagged_watched = 0;
+                        } else {
+                            let time_watched =
+                                cmp::min(1000, time.saturating_sub(library_item.state.time_offset));
+                            library_item.state.time_watched =
+                                library_item.state.time_watched.saturating_add(time_watched);
+                            library_item.state.overall_time_watched = library_item
+                                .state
+                                .overall_time_watched
+                                .saturating_add(time_watched);
+                        };
+                        library_item.state.time_offset = time.to_owned();
+                        library_item.state.duration = duration.to_owned();
+                        if library_item.state.flagged_watched == 0
+                            && library_item.state.time_watched as f64
+                                > library_item.state.duration as f64 * WATCHED_THRESHOLD_COEF
+                        {
+                            library_item.state.flagged_watched = 1;
+                            library_item.state.times_watched =
+                                library_item.state.times_watched.saturating_add(1);
+                            if let Some(watched) = &self.watched {
+                                let mut watched = watched.to_owned();
+                                watched.set_video(video_id, true);
+                                library_item.state.watched = Some(watched.to_string());
+                            }
+                        };
+                        if library_item.temp && library_item.state.times_watched == 0 {
+                            library_item.removed = true;
+                        };
+                        if library_item.removed {
+                            library_item.temp = true;
+                        };
+                        update_analytics_context::<E>(
+                            &mut self.analytics_context,
+                            &msg,
+                            &ctx.profile,
+                            &self.library_item,
+                        );
+                        if !self.player_playing_emitted {
+                            self.player_playing_emitted = true;
+                            Effects::msg(Msg::Event(Event::PlayerPlaying {
+                                load_time: self
+                                    .load_time
+                                    .map(|load_time| {
+                                        E::now().timestamp_millis() - load_time.timestamp_millis()
+                                    })
+                                    .unwrap_or(-1),
+                                context: self
+                                    .analytics_context
                                     .as_ref()
-                                    .and_then(|auth| auth.user.trakt.as_ref())
-                                    .map(|trakt| E::now() < trakt.created_at + trakt.expires_in)
+                                    .cloned()
                                     .unwrap_or_default(),
-                            },
-                        }))
-                    } else {
-                        Effects::none()
+                            }))
+                        } else {
+                            Effects::none()
+                        }
                     }
+                    _ => Effects::none().unchanged(),
                 }
-                _ => Effects::none().unchanged(),
-            },
+            }
             Msg::Action(Action::Player(ActionPlayer::PushToLibrary)) => match &self.library_item {
                 Some(library_item) => Effects::msg(Msg::Internal(Internal::UpdateLibraryItem(
                     library_item.to_owned(),
@@ -494,4 +489,39 @@ fn watched_update<E: Env>(
         })
         .map(|(meta_item, library_item)| library_item.state.watched_bitfield(&meta_item.videos));
     eq_update(watched, next_watched)
+}
+
+fn update_analytics_context<E: Env>(
+    analytics_context: &mut Option<AnalyticsContext>,
+    msg: &Msg,
+    profile: &Profile,
+    library_item: &Option<LibraryItem>,
+) {
+    match msg {
+        Msg::Action(Action::Load(ActionLoad::Player(_))) => {
+            let library_item = library_item.as_ref();
+            *analytics_context = Some(AnalyticsContext {
+                id: library_item.map(|item| &item.id).cloned(),
+                r#type: library_item.map(|item| &item.r#type).cloned(),
+                name: library_item.map(|item| &item.name).cloned(),
+                video_id: library_item
+                    .and_then(|item| item.state.video_id.as_ref())
+                    .cloned(),
+                time: library_item.map(|item| item.state.time_offset),
+                duration: library_item.map(|item| item.state.duration),
+                has_trakt: profile.has_trakt::<E>(),
+                ..Default::default()
+            });
+        }
+        Msg::Action(Action::Player(ActionPlayer::TimeUpdate {
+            duration, device, ..
+        })) => {
+            if let Some(analytics_context) = analytics_context {
+                analytics_context.device_type = Some(device.to_owned());
+                analytics_context.device_name = Some(device.to_owned());
+                analytics_context.player_duration = Some(duration.to_owned());
+            }
+        }
+        _ => {}
+    }
 }
