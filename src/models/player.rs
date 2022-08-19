@@ -33,8 +33,8 @@ pub struct PlayerContext {
     pub time: u64,
     #[serde(rename = "libItemTimeDuration")]
     pub duration: u64,
-    pub device_type: String,
-    pub device_name: String,
+    #[serde(rename = "deviceName")]
+    pub device: String,
     pub player_duration: u64,
     pub player_video_width: u64,
     pub player_video_height: u64,
@@ -247,8 +247,7 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                                     .unwrap_or_default(),
                                 time: library_item.state.time_offset,
                                 duration: library_item.state.duration,
-                                device_type: device.to_owned(),
-                                device_name: device.to_owned(),
+                                device: device.to_owned(),
                                 player_duration: duration.to_owned(),
                                 player_video_width: 0,
                                 player_video_height: 0,
