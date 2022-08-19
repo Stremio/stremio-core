@@ -165,6 +165,9 @@ impl WebEnv {
                     "player": context
                 }),
             ),
+            WebEvent::CoreEvent(Event::PlayerStopped { context }) => {
+                ("playerStopped".to_owned(), json!({ "player": context }))
+            }
             WebEvent::CoreAction(core_action) => match core_action.as_ref() {
                 Action::Ctx(ActionCtx::AddToLibrary(meta_preview)) => {
                     let library_item = model.ctx.library.items.get(&meta_preview.id);
