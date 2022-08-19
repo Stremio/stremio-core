@@ -229,7 +229,7 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                     };
                     if !self.player_playing_emitted {
                         self.player_playing_emitted = true;
-                        Effects::msg(Msg::Event(Event::Play {
+                        Effects::msg(Msg::Event(Event::PlayerPlaying {
                             load_time: self
                                 .load_time
                                 .map(|load_time| {

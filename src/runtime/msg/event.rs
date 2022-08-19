@@ -12,7 +12,7 @@ use url::Url;
 #[cfg_attr(debug_assertions, derive(Debug, PartialEq))]
 #[serde(tag = "event", content = "args")]
 pub enum Event {
-    Play {
+    PlayerPlaying {
         context: PlayerContext,
         load_time: i64,
     },
