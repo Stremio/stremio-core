@@ -109,7 +109,7 @@ impl WebEnv {
         let (name, data) = match event {
             WebEvent::UIEvent(UIEvent::LocationPathChanged { prev_path }) => (
                 "stateChange".to_owned(),
-                json!({ "previousURL": prev_path }),
+                json!({ "previousURL": sanitize_location_path(prev_path) }),
             ),
             WebEvent::UIEvent(UIEvent::Search {
                 query,
