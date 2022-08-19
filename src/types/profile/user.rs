@@ -48,6 +48,9 @@ pub struct User {
     #[serde(default)]
     #[serde_as(deserialize_as = "DefaultOnNull<NoneAsEmptyString>")]
     pub avatar: Option<String>,
+    #[serde(default)]
+    #[serde_as(deserialize_as = "DefaultOnNull<NoneAsEmptyString>")]
+    pub lang: Option<String>,
     #[cfg_attr(test, derivative(Default(value = "Utc.timestamp(0, 0)")))]
     pub last_modified: DateTime<Utc>,
     #[cfg_attr(test, derivative(Default(value = "Utc.timestamp(0, 0)")))]
