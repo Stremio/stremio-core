@@ -8,7 +8,7 @@ use crate::runtime::msg::{Action, ActionLoad, ActionPlayer, Event, Internal, Msg
 use crate::runtime::{Effects, Env, UpdateWithCtx};
 use crate::types::addon::{AggrRequest, ResourcePath, ResourceRequest};
 use crate::types::library::{LibraryBucket, LibraryItem};
-use crate::types::profile::{Profile, Settings as ProfileSettings};
+use crate::types::profile::Settings as ProfileSettings;
 use crate::types::resource::{MetaItem, SeriesInfo, Stream, Subtitles, Video};
 use chrono::{DateTime, Utc};
 use itertools::Itertools;
@@ -180,6 +180,14 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                     .join(watched_effects)
             }
             Msg::Action(Action::Unload) => {
+                let ended_effects = if !self.ended {
+                    Effects::msg(Msg::Event(Event::PlayerStopped {
+                        context: self.analytics_context.as_ref().cloned().unwrap_or_default(),
+                    }))
+                    .unchanged()
+                } else {
+                    Effects::none().unchanged()
+                };
                 let switch_to_next_video_effects =
                     switch_to_next_video(&mut self.library_item, &self.next_video);
                 let selected_effects = eq_update(&mut self.selected, None);
@@ -201,6 +209,7 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                     .join(series_info_effects)
                     .join(library_item_effects)
                     .join(watched_effects)
+                    .join(ended_effects)
             }
             Msg::Action(Action::Player(ActionPlayer::TimeUpdate {
                 time,
