@@ -158,6 +158,13 @@ impl WebEnv {
                     "addonID": id
                 }),
             ),
+            WebEvent::CoreEvent(Event::PlayerPlaying { load_time, context }) => (
+                "playerPlaying".to_owned(),
+                json!({
+                    "loadTime": load_time,
+                    "player": context
+                }),
+            ),
             WebEvent::CoreAction(core_action) => match core_action.as_ref() {
                 Action::Ctx(ActionCtx::AddToLibrary(meta_preview)) => {
                     let library_item = model.ctx.library.items.get(&meta_preview.id);
