@@ -289,17 +289,18 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                 }
                 _ => Effects::none().unchanged(),
             },
-            Msg::Action(Action::Player(ActionPlayer::PushToLibrary { ended })) => {
-                if *ended {
+            Msg::Action(Action::Player(ActionPlayer::PushToLibrary)) => match &self.library_item {
+                Some(library_item) => Effects::msg(Msg::Internal(Internal::UpdateLibraryItem(
+                    library_item.to_owned(),
+                )))
+                .unchanged(),
+                _ => Effects::none().unchanged(),
+            },
+            Msg::Action(Action::Player(ActionPlayer::Ended)) => {
+                if self.selected.is_some() {
                     self.ended = true;
                 };
-                match &self.library_item {
-                    Some(library_item) => Effects::msg(Msg::Internal(Internal::UpdateLibraryItem(
-                        library_item.to_owned(),
-                    )))
-                    .unchanged(),
-                    _ => Effects::none().unchanged(),
-                }
+                Effects::none().unchanged()
             }
             Msg::Internal(Internal::ResourceRequestResult(request, result)) => {
                 let meta_item_effects = match &mut self.meta_item {
