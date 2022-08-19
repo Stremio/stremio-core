@@ -168,6 +168,18 @@ impl WebEnv {
             WebEvent::CoreEvent(Event::PlayerStopped { context }) => {
                 ("playerStopped".to_owned(), json!({ "player": context }))
             }
+            WebEvent::CoreEvent(Event::PlayerEnded {
+                context,
+                is_binge_enabled,
+                is_playing_next_video,
+            }) => (
+                "playerEnded".to_owned(),
+                json!({
+                   "player": context,
+                   "isBingeEnabled": is_binge_enabled,
+                   "isPlayingNextVideo": is_playing_next_video
+                }),
+            ),
             WebEvent::CoreAction(core_action) => match core_action.as_ref() {
                 Action::Ctx(ActionCtx::AddToLibrary(meta_preview)) => {
                     let library_item = model.ctx.library.items.get(&meta_preview.id);
