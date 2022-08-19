@@ -304,7 +304,12 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                     .join(watched_effects)
             }
             Msg::Internal(Internal::ProfileChanged) => {
-                // TODO react to ProfileChanged
+                update_analytics_context::<E>(
+                    &mut self.analytics_context,
+                    &msg,
+                    &ctx.profile,
+                    &self.library_item,
+                );
                 Effects::none().unchanged()
             }
             _ => Effects::none().unchanged(),
@@ -520,6 +525,11 @@ fn update_analytics_context<E: Env>(
                 analytics_context.device_type = Some(device.to_owned());
                 analytics_context.device_name = Some(device.to_owned());
                 analytics_context.player_duration = Some(duration.to_owned());
+            }
+        }
+        Msg::Internal(Internal::ProfileChanged) => {
+            if let Some(analytics_context) = analytics_context {
+                analytics_context.has_trakt = profile.has_trakt::<E>();
             }
         }
         _ => {}
