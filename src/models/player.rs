@@ -71,6 +71,8 @@ pub struct Player {
     pub loaded: bool,
     #[serde(skip_serializing)]
     pub ended: bool,
+    #[serde(skip_serializing)]
+    pub paused: Option<bool>,
 }
 
 impl<E: Env + 'static> UpdateWithCtx<E> for Player {
@@ -170,6 +172,7 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                 self.load_time = Some(E::now());
                 self.loaded = false;
                 self.ended = false;
+                self.paused = None;
                 switch_to_next_video_effects
                     .join(selected_effects)
                     .join(meta_item_effects)
@@ -201,6 +204,7 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                 self.load_time = None;
                 self.loaded = false;
                 self.ended = false;
+                self.paused = None;
                 switch_to_next_video_effects
                     .join(selected_effects)
                     .join(meta_item_effects)
@@ -227,6 +231,7 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                     }),
                     Some(library_item),
                 ) => {
+                    let seeking = library_item.state.time_offset.abs_diff(*time) > 1000;
                     library_item.state.last_watched = Some(E::now());
                     if library_item.state.video_id != Some(video_id.to_owned()) {
                         library_item.state.video_id = Some(video_id.to_owned());
@@ -275,13 +280,36 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                         analytics_context.device_name = Some(device.to_owned());
                         analytics_context.player_duration = Some(duration.to_owned());
                     };
-                    Effects::none()
+                    if seeking && self.loaded && self.paused.is_some() {
+                        if self.paused.expect("paused is None") {
+                            Effects::msg(Msg::Event(Event::TraktPaused {
+                                context: self
+                                    .analytics_context
+                                    .as_ref()
+                                    .cloned()
+                                    .unwrap_or_default(),
+                            }))
+                            .unchanged()
+                        } else {
+                            Effects::msg(Msg::Event(Event::TraktPlaying {
+                                context: self
+                                    .analytics_context
+                                    .as_ref()
+                                    .cloned()
+                                    .unwrap_or_default(),
+                            }))
+                            .unchanged()
+                        }
+                    } else {
+                        Effects::none()
+                    }
                 }
                 _ => Effects::none().unchanged(),
             },
             Msg::Action(Action::Player(ActionPlayer::PausedChanged { paused }))
                 if self.selected.is_some() =>
             {
+                self.paused = Some(*paused);
                 if !self.loaded {
                     self.loaded = true;
                     Effects::msg(Msg::Event(Event::PlayerPlaying {
