@@ -268,6 +268,9 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                         library_item.temp = true;
                     };
                     if let Some(analytics_context) = &mut self.analytics_context {
+                        analytics_context.video_id = library_item.state.video_id.to_owned();
+                        analytics_context.time = Some(library_item.state.time_offset);
+                        analytics_context.duration = Some(library_item.state.duration);
                         analytics_context.device_type = Some(device.to_owned());
                         analytics_context.device_name = Some(device.to_owned());
                         analytics_context.player_duration = Some(duration.to_owned());
