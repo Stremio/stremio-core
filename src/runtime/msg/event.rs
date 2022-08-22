@@ -24,6 +24,12 @@ pub enum Event {
         is_binge_enabled: bool,
         is_playing_next_video: bool,
     },
+    TraktPlaying {
+        context: PlayerAnalyticsContext,
+    },
+    TraktPaused {
+        context: PlayerAnalyticsContext,
+    },
     ProfilePushedToStorage {
         uid: UID,
     },

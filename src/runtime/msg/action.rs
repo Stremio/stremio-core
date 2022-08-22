@@ -87,6 +87,9 @@ pub enum ActionPlayer {
         duration: u64,
         device: String,
     },
+    PausedChanged {
+        paused: bool,
+    },
     Ended,
     PushToLibrary,
 }

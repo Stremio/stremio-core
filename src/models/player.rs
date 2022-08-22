@@ -68,7 +68,7 @@ pub struct Player {
     #[serde(skip_serializing)]
     pub load_time: Option<DateTime<Utc>>,
     #[serde(skip_serializing)]
-    pub player_playing_emitted: bool,
+    pub loaded: bool,
     #[serde(skip_serializing)]
     pub ended: bool,
 }
@@ -168,7 +168,7 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                     ..Default::default()
                 });
                 self.load_time = Some(E::now());
-                self.player_playing_emitted = false;
+                self.loaded = false;
                 self.ended = false;
                 switch_to_next_video_effects
                     .join(selected_effects)
@@ -199,7 +199,7 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                 let watched_effects = eq_update(&mut self.watched, None);
                 self.analytics_context = None;
                 self.load_time = None;
-                self.player_playing_emitted = false;
+                self.loaded = false;
                 self.ended = false;
                 switch_to_next_video_effects
                     .join(selected_effects)
@@ -272,20 +272,7 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                         analytics_context.device_name = Some(device.to_owned());
                         analytics_context.player_duration = Some(duration.to_owned());
                     };
-                    if !self.player_playing_emitted {
-                        self.player_playing_emitted = true;
-                        Effects::msg(Msg::Event(Event::PlayerPlaying {
-                            load_time: self
-                                .load_time
-                                .map(|load_time| {
-                                    E::now().timestamp_millis() - load_time.timestamp_millis()
-                                })
-                                .unwrap_or(-1),
-                            context: self.analytics_context.as_ref().cloned().unwrap_or_default(),
-                        }))
-                    } else {
-                        Effects::none()
-                    }
+                    Effects::none()
                 }
                 _ => Effects::none().unchanged(),
             },
@@ -296,6 +283,30 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                 .unchanged(),
                 _ => Effects::none().unchanged(),
             },
+            Msg::Action(Action::Player(ActionPlayer::PausedChanged { paused })) => {
+                if !self.loaded {
+                    self.loaded = true;
+                    Effects::msg(Msg::Event(Event::PlayerPlaying {
+                        load_time: self
+                            .load_time
+                            .map(|load_time| {
+                                E::now().timestamp_millis() - load_time.timestamp_millis()
+                            })
+                            .unwrap_or(-1),
+                        context: self.analytics_context.as_ref().cloned().unwrap_or_default(),
+                    }))
+                } else {
+                    if *paused {
+                        Effects::msg(Msg::Event(Event::TraktPlaying {
+                            context: self.analytics_context.as_ref().cloned().unwrap_or_default(),
+                        }))
+                    } else {
+                        Effects::msg(Msg::Event(Event::TraktPaused {
+                            context: self.analytics_context.as_ref().cloned().unwrap_or_default(),
+                        }))
+                    }
+                }
+            }
             Msg::Action(Action::Player(ActionPlayer::Ended)) => {
                 if self.selected.is_some() {
                     self.ended = true;
