@@ -276,7 +276,9 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                 }
                 _ => Effects::none().unchanged(),
             },
-            Msg::Action(Action::Player(ActionPlayer::PausedChanged { paused })) => {
+            Msg::Action(Action::Player(ActionPlayer::PausedChanged { paused }))
+                if self.selected.is_some() =>
+            {
                 if !self.loaded {
                     self.loaded = true;
                     Effects::msg(Msg::Event(Event::PlayerPlaying {
