@@ -347,6 +347,28 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                 );
                 let watched_effects =
                     watched_update::<E>(&mut self.watched, &self.meta_item, &self.library_item);
+                let (id, r#type, name, video_id, time, duration) = self
+                    .library_item
+                    .as_ref()
+                    .map(|library_item| {
+                        (
+                            Some(library_item.id.to_owned()),
+                            Some(library_item.r#type.to_owned()),
+                            Some(library_item.name.to_owned()),
+                            library_item.state.video_id.to_owned(),
+                            Some(library_item.state.time_offset),
+                            Some(library_item.state.duration),
+                        )
+                    })
+                    .unwrap_or_default();
+                if let Some(analytics_context) = &mut self.analytics_context {
+                    analytics_context.id = id;
+                    analytics_context.r#type = r#type;
+                    analytics_context.name = name;
+                    analytics_context.video_id = video_id;
+                    analytics_context.time = time;
+                    analytics_context.duration = duration;
+                };
                 meta_item_effects
                     .join(subtitles_effects)
                     .join(next_video_effects)
