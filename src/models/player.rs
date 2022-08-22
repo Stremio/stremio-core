@@ -276,13 +276,6 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                 }
                 _ => Effects::none().unchanged(),
             },
-            Msg::Action(Action::Player(ActionPlayer::PushToLibrary)) => match &self.library_item {
-                Some(library_item) => Effects::msg(Msg::Internal(Internal::UpdateLibraryItem(
-                    library_item.to_owned(),
-                )))
-                .unchanged(),
-                _ => Effects::none().unchanged(),
-            },
             Msg::Action(Action::Player(ActionPlayer::PausedChanged { paused })) => {
                 if !self.loaded {
                     self.loaded = true;
@@ -295,16 +288,17 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                             .unwrap_or(-1),
                         context: self.analytics_context.as_ref().cloned().unwrap_or_default(),
                     }))
+                    .unchanged()
+                } else if *paused {
+                    Effects::msg(Msg::Event(Event::TraktPaused {
+                        context: self.analytics_context.as_ref().cloned().unwrap_or_default(),
+                    }))
+                    .unchanged()
                 } else {
-                    if *paused {
-                        Effects::msg(Msg::Event(Event::TraktPlaying {
-                            context: self.analytics_context.as_ref().cloned().unwrap_or_default(),
-                        }))
-                    } else {
-                        Effects::msg(Msg::Event(Event::TraktPaused {
-                            context: self.analytics_context.as_ref().cloned().unwrap_or_default(),
-                        }))
-                    }
+                    Effects::msg(Msg::Event(Event::TraktPlaying {
+                        context: self.analytics_context.as_ref().cloned().unwrap_or_default(),
+                    }))
+                    .unchanged()
                 }
             }
             Msg::Action(Action::Player(ActionPlayer::Ended)) => {
@@ -318,6 +312,13 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                 }))
                 .unchanged()
             }
+            Msg::Action(Action::Player(ActionPlayer::PushToLibrary)) => match &self.library_item {
+                Some(library_item) => Effects::msg(Msg::Internal(Internal::UpdateLibraryItem(
+                    library_item.to_owned(),
+                )))
+                .unchanged(),
+                _ => Effects::none().unchanged(),
+            },
             Msg::Internal(Internal::ResourceRequestResult(request, result)) => {
                 let meta_item_effects = match &mut self.meta_item {
                     Some(meta_item) => resource_update::<E, _>(
