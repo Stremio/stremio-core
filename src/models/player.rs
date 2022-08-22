@@ -303,10 +303,8 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                     .unchanged()
                 }
             }
-            Msg::Action(Action::Player(ActionPlayer::Ended)) => {
-                if self.selected.is_some() {
-                    self.ended = true;
-                };
+            Msg::Action(Action::Player(ActionPlayer::Ended)) if self.selected.is_some() => {
+                self.ended = true;
                 Effects::msg(Msg::Event(Event::PlayerEnded {
                     context: self.analytics_context.as_ref().cloned().unwrap_or_default(),
                     is_binge_enabled: ctx.profile.settings.binge_watching,
