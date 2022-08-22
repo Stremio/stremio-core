@@ -211,7 +211,7 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                     .join(watched_effects)
                     .join(ended_effects)
             }
-            Msg::Action(Action::Player(ActionPlayer::TimeUpdate {
+            Msg::Action(Action::Player(ActionPlayer::TimeChanged {
                 time,
                 duration,
                 device,
