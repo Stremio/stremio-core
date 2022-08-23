@@ -1,4 +1,5 @@
 use crate::constants::OFFICIAL_ADDONS;
+use crate::runtime::Env;
 use crate::types::addon::Descriptor;
 use crate::types::profile::{Auth, AuthKey, Settings};
 use crate::types::{UniqueVec, UniqueVecAdapter};
@@ -34,6 +35,13 @@ impl Profile {
     }
     pub fn auth_key(&self) -> Option<&AuthKey> {
         self.auth.as_ref().map(|auth| &auth.key)
+    }
+    pub fn has_trakt<E: Env>(&self) -> bool {
+        self.auth
+            .as_ref()
+            .and_then(|auth| auth.user.trakt.as_ref())
+            .map(|trakt| E::now() < trakt.created_at + trakt.expires_in)
+            .unwrap_or_default()
     }
 }
 

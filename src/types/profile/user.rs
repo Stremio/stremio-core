@@ -1,10 +1,26 @@
 #[cfg(test)]
 use chrono::offset::TimeZone;
-use chrono::{DateTime, Utc};
+use chrono::serde::ts_seconds;
+use chrono::{DateTime, Duration, Utc};
 #[cfg(test)]
 use derivative::Derivative;
 use serde::{Deserialize, Serialize};
-use serde_with::{serde_as, DefaultOnNull, NoneAsEmptyString};
+use serde_with::{serde_as, DefaultOnError, DefaultOnNull, DurationSeconds, NoneAsEmptyString};
+
+#[serde_as]
+#[derive(Clone, PartialEq, Serialize, Deserialize)]
+#[cfg_attr(debug_assertions, derive(Debug))]
+#[cfg_attr(test, derive(Derivative))]
+#[cfg_attr(test, derivative(Default))]
+pub struct TraktInfo {
+    #[serde(with = "ts_seconds")]
+    pub created_at: DateTime<Utc>,
+    #[serde_as(as = "DurationSeconds<i64>")]
+    #[cfg_attr(test, derivative(Default(value = "Duration::zero()")))]
+    pub expires_in: Duration,
+    #[cfg_attr(test, derivative(Default(value = r#"String::from("token")"#)))]
+    pub access_token: String,
+}
 
 #[derive(Clone, PartialEq, Serialize, Deserialize)]
 #[cfg_attr(debug_assertions, derive(Debug))]
@@ -13,6 +29,7 @@ pub struct GDPRConsent {
     pub tos: bool,
     pub privacy: bool,
     pub marketing: bool,
+    pub from: Option<String>,
 }
 
 #[serde_as]
@@ -35,6 +52,11 @@ pub struct User {
     pub last_modified: DateTime<Utc>,
     #[cfg_attr(test, derivative(Default(value = "Utc.timestamp(0, 0)")))]
     pub date_registered: DateTime<Utc>,
+    #[serde(default)]
+    #[serde_as(deserialize_as = "DefaultOnError")]
+    pub trakt: Option<TraktInfo>,
+    #[serde(rename = "premium_expire")]
+    pub premium_expire: Option<DateTime<Utc>>,
     #[serde(rename = "gdpr_consent")]
     pub gdpr_consent: GDPRConsent,
 }

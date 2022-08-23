@@ -1,10 +1,7 @@
 use crate::constants::{API_URL, LINK_API_URL};
 use crate::types::addon::Descriptor;
 use crate::types::library::LibraryItem;
-use crate::types::profile::{AuthKey, GDPRConsent};
-#[cfg(test)]
-use chrono::offset::TimeZone;
-use chrono::{DateTime, Utc};
+use crate::types::profile::{AuthKey, GDPRConsent, User};
 #[cfg(test)]
 use derivative::Derivative;
 use http::Method;
@@ -39,6 +36,16 @@ pub enum APIRequest {
         addons: Vec<Descriptor>,
     },
     #[serde(rename_all = "camelCase")]
+    GetUser {
+        auth_key: AuthKey,
+    },
+    #[serde(rename_all = "camelCase")]
+    SaveUser {
+        auth_key: AuthKey,
+        #[serde(flatten)]
+        user: User,
+    },
+    #[serde(rename_all = "camelCase")]
     Events {
         auth_key: AuthKey,
         events: Vec<serde_json::Value>,
@@ -60,6 +67,8 @@ impl FetchRequestParams<APIRequest> for APIRequest {
             APIRequest::Logout { .. } => "logout".to_owned(),
             APIRequest::AddonCollectionGet { .. } => "addonCollectionGet".to_owned(),
             APIRequest::AddonCollectionSet { .. } => "addonCollectionSet".to_owned(),
+            APIRequest::GetUser { .. } => "getUser".to_owned(),
+            APIRequest::SaveUser { .. } => "saveUser".to_owned(),
             APIRequest::Events { .. } => "events".to_owned(),
         }
     }
@@ -87,7 +96,7 @@ pub enum AuthRequest {
     Register {
         email: String,
         password: String,
-        gdpr_consent: GDPRConsentRequest,
+        gdpr_consent: GDPRConsent,
     },
     LoginWithToken {
         token: String,
@@ -124,18 +133,6 @@ impl FetchRequestParams<()> for LinkRequest {
         Some(serde_url_params::to_string(&self).expect("Serialize query params failed"))
     }
     fn body(self) {}
-}
-
-#[derive(Clone, PartialEq, Serialize, Deserialize)]
-#[cfg_attr(debug_assertions, derive(Debug))]
-#[cfg_attr(test, derive(Derivative))]
-#[cfg_attr(test, derivative(Default))]
-pub struct GDPRConsentRequest {
-    #[serde(flatten)]
-    pub gdpr_consent: GDPRConsent,
-    #[cfg_attr(test, derivative(Default(value = "Utc.timestamp(0, 0)")))]
-    pub time: DateTime<Utc>,
-    pub from: String,
 }
 
 #[derive(Clone, PartialEq, Serialize)]

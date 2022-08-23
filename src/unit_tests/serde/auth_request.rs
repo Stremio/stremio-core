@@ -1,4 +1,5 @@
-use crate::types::api::{AuthRequest, GDPRConsentRequest};
+use crate::types::api::AuthRequest;
+use crate::types::profile::GDPRConsent;
 use crate::unit_tests::serde::default_tokens_ext::DefaultTokens;
 use serde_test::{assert_tokens, Token};
 
@@ -17,7 +18,7 @@ fn auth_request() {
             AuthRequest::Register {
                 email: "email".to_owned(),
                 password: "password".to_owned(),
-                gdpr_consent: GDPRConsentRequest::default(),
+                gdpr_consent: GDPRConsent::default(),
             },
         ],
         &[
@@ -57,7 +58,7 @@ fn auth_request() {
                 Token::Str("password"),
                 Token::Str("gdpr_consent"),
             ],
-            GDPRConsentRequest::default_tokens(),
+            GDPRConsent::default_tokens(),
             vec![Token::StructEnd, Token::SeqEnd],
         ]
         .concat(),
