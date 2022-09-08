@@ -46,7 +46,11 @@ struct MetaItemPreviewLegacy {
     #[serde_as(deserialize_as = "DefaultOnNull<NoneAsEmptyString>")]
     logo: Option<Url>,
     description: Option<String>,
+    #[serde(default)]
+    #[serde_as(deserialize_as = "Option<NumberAsString>")]
     release_info: Option<String>,
+    #[serde(default)]
+    #[serde_as(deserialize_as = "Option<NumberAsString>")]
     runtime: Option<String>,
     released: Option<DateTime<Utc>>,
     #[serde(default)]
