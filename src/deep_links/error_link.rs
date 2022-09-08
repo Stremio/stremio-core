@@ -1,4 +1,4 @@
-use crate::deep_links::query_params_encode::query_params_encode;
+use crate::types::query_params_encode;
 
 #[cfg_attr(debug_assertions, derive(Debug, PartialEq))]
 pub struct ErrorLink(String);

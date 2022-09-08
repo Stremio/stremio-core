@@ -4,6 +4,9 @@ pub mod library;
 pub mod profile;
 pub mod resource;
 
+mod query_params_encode;
+pub use query_params_encode::*;
+
 mod serde_as_ext;
 pub use serde_as_ext::*;
 
