@@ -1,5 +1,6 @@
+use crate::constants::URI_COMPONENT_ENCODE_SET;
+use percent_encoding::utf8_percent_encode;
 use std::borrow::Borrow;
-use url::form_urlencoded;
 
 pub fn query_params_encode<I, K, V>(query_params: I) -> String
 where
@@ -8,7 +9,16 @@ where
     K: AsRef<str>,
     V: AsRef<str>,
 {
-    form_urlencoded::Serializer::new(String::new())
-        .extend_pairs(query_params)
-        .finish()
+    query_params
+        .into_iter()
+        .map(|pair| {
+            let (key, value) = pair.borrow();
+            format!(
+                "{}={}",
+                utf8_percent_encode(key.as_ref(), URI_COMPONENT_ENCODE_SET),
+                utf8_percent_encode(value.as_ref(), URI_COMPONENT_ENCODE_SET)
+            )
+        })
+        .collect::<Vec<_>>()
+        .join("&")
 }
