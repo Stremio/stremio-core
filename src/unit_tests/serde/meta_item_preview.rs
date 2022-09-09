@@ -369,16 +369,28 @@ fn meta_item_preview_de_legacy_links() {
                 url: Url::parse("stremio:///discover/https%3A%2F%2Fv3-cinemeta.strem.io%2Fmanifest.json/type/top?genre=Action").unwrap(),
             }
             ],
-            trailer_streams: vec![Stream {
-                source: StreamSource::YouTube {
-                    yt_id: "source1".to_owned(),
+            trailer_streams: vec![
+                Stream {
+                    source: StreamSource::YouTube {
+                        yt_id: "source1".to_owned(),
+                    },
+                    name: None,
+                    description: None,
+                    thumbnail: None,
+                    subtitles: vec![],
+                    behavior_hints: StreamBehaviorHints::default(),
                 },
-                name: None,
-                description: None,
-                thumbnail: None,
-                subtitles: vec![],
-                behavior_hints: StreamBehaviorHints::default(),
-            }],
+                Stream {
+                    source: StreamSource::YouTube {
+                        yt_id: "source3".to_owned(),
+                    },
+                    name: None,
+                    description: None,
+                    thumbnail: None,
+                    subtitles: vec![],
+                    behavior_hints: StreamBehaviorHints::default(),
+                }
+            ],
             behavior_hints: MetaItemBehaviorHints::default(),
         },
         &[
@@ -400,18 +412,22 @@ fn meta_item_preview_de_legacy_links() {
             Token::SeqEnd,
             Token::Str("trailers"),
             Token::Some,
-            Token::Seq { len: Some(1) },
+            Token::Seq { len: Some(3) },
             Token::Map{ len: None },
             Token::Str("source"),
             Token::Str("source1"),
             Token::Str("type"),
             Token::Str("Trailer"),
             Token::MapEnd,
-            Token::Map{ len: None },
+            Token::Map { len: None },
             Token::Str("source"),
             Token::Str("source2"),
             Token::Str("type"),
             Token::Str("NotTrailer"),
+            Token::MapEnd,
+            Token::Map { len: None },
+            Token::Str("ytId"), 
+            Token::Str("source3"),
             Token::MapEnd,
             Token::SeqEnd,
             Token::StructEnd,
