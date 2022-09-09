@@ -14,7 +14,8 @@ use percent_encoding::utf8_percent_encode;
 use serde::{Deserialize, Serialize};
 use serde_with::formats::PreferMany;
 use serde_with::{
-    serde_as, DefaultOnNull, NoneAsEmptyString, OneOrMany, PickFirst, TimestampMilliSeconds,
+    serde_as, DefaultOnNull, DeserializeAs, NoneAsEmptyString, OneOrMany, PickFirst,
+    TimestampMilliSeconds,
 };
 use std::borrow::Cow;
 use std::collections::HashMap;
@@ -26,6 +27,22 @@ use url::Url;
 struct Trailer {
     source: String,
     r#type: String,
+}
+
+impl<'de> DeserializeAs<'de, Trailer> for Stream {
+    fn deserialize_as<D>(deserializer: D) -> Result<Trailer, D::Error>
+    where
+        D: serde::Deserializer<'de>,
+    {
+        let stream = Stream::deserialize(deserializer)?;
+        match &stream.source {
+            StreamSource::YouTube { yt_id } => Ok(Trailer {
+                source: yt_id.to_owned(),
+                r#type: "Trailer".to_owned(),
+            }),
+            _ => Err(serde::de::Error::custom("Unsuported Trailer StreamSource")),
+        }
+    }
 }
 
 #[serde_as]
@@ -67,7 +84,7 @@ struct MetaItemPreviewLegacy {
     genres: Vec<String>,
     links: Option<Vec<Link>>,
     #[serde(default)]
-    #[serde_as(deserialize_as = "DefaultOnNull")]
+    #[serde_as(deserialize_as = "DefaultOnNull<Vec<PickFirst<(_, Stream)>>>")]
     trailers: Vec<Trailer>,
     trailer_streams: Option<Vec<Stream>>,
     #[serde(default)]
