@@ -13,7 +13,9 @@ use itertools::Itertools;
 use percent_encoding::utf8_percent_encode;
 use serde::{Deserialize, Serialize};
 use serde_with::formats::PreferMany;
-use serde_with::{serde_as, DefaultOnNull, NoneAsEmptyString, OneOrMany};
+use serde_with::{
+    serde_as, DefaultOnNull, NoneAsEmptyString, OneOrMany, PickFirst, TimestampMilliSeconds,
+};
 use std::borrow::Cow;
 use std::collections::HashMap;
 use url::Url;
@@ -52,6 +54,8 @@ struct MetaItemPreviewLegacy {
     #[serde(default)]
     #[serde_as(deserialize_as = "Option<NumberAsString>")]
     runtime: Option<String>,
+    #[serde(default)]
+    #[serde_as(deserialize_as = "PickFirst<(_, Option<TimestampMilliSeconds<i64>>)>")]
     released: Option<DateTime<Utc>>,
     #[serde(default)]
     poster_shape: PosterShape,
