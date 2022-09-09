@@ -1,13 +1,12 @@
 mod error_link;
-mod query_params_encode;
 
 use crate::constants::URI_COMPONENT_ENCODE_SET;
 use crate::deep_links::error_link::ErrorLink;
-use crate::deep_links::query_params_encode::query_params_encode;
 use crate::models::installed_addons_with_filters::InstalledAddonsRequest;
 use crate::models::library_with_filters::LibraryRequest;
 use crate::types::addon::{ExtraValue, ResourceRequest};
 use crate::types::library::LibraryItem;
+use crate::types::query_params_encode;
 use crate::types::resource::{MetaItem, MetaItemPreview, Stream, StreamSource, Video};
 use percent_encoding::utf8_percent_encode;
 use serde::Serialize;
