@@ -38,7 +38,11 @@ impl<'de> Deserialize<'de> for ResourceResponse {
         let value = serde_json::Value::deserialize(deserializer)?;
         let mut value = match value {
             serde_json::Value::Object(value) => value,
-            _ => return Err(serde::de::Error::custom("Expected JSON object")),
+            _ => {
+                return Err(serde::de::Error::custom(
+                    "Cannot deserialize as ResourceResponse",
+                ))
+            }
         };
         if let Some(value) = value.get_mut("metas") {
             Ok(ResourceResponse::Metas {
