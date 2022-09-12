@@ -109,7 +109,7 @@ impl WebEnv {
         let (name, data) = match event {
             WebEvent::UIEvent(UIEvent::LocationPathChanged { prev_path }) => (
                 "stateChange".to_owned(),
-                json!({ "previousURL": prev_path }),
+                json!({ "previousURL": sanitize_location_path(prev_path) }),
             ),
             WebEvent::UIEvent(UIEvent::Search {
                 query,
@@ -158,6 +158,34 @@ impl WebEnv {
                     "addonID": id
                 }),
             ),
+            WebEvent::CoreEvent(Event::PlayerPlaying { load_time, context }) => (
+                "playerPlaying".to_owned(),
+                json!({
+                    "loadTime": load_time,
+                    "player": context
+                }),
+            ),
+            WebEvent::CoreEvent(Event::PlayerStopped { context }) => {
+                ("playerStopped".to_owned(), json!({ "player": context }))
+            }
+            WebEvent::CoreEvent(Event::PlayerEnded {
+                context,
+                is_binge_enabled,
+                is_playing_next_video,
+            }) => (
+                "playerEnded".to_owned(),
+                json!({
+                   "player": context,
+                   "isBingeEnabled": is_binge_enabled,
+                   "isPlayingNextVideo": is_playing_next_video
+                }),
+            ),
+            WebEvent::CoreEvent(Event::TraktPlaying { context }) => {
+                ("traktPlaying".to_owned(), json!({ "player": context }))
+            }
+            WebEvent::CoreEvent(Event::TraktPaused { context }) => {
+                ("traktPaused".to_owned(), json!({ "player": context }))
+            }
             WebEvent::CoreAction(core_action) => match core_action.as_ref() {
                 Action::Ctx(ActionCtx::AddToLibrary(meta_preview)) => {
                     let library_item = model.ctx.library.items.get(&meta_preview.id);
