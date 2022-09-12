@@ -5,7 +5,6 @@ use stremio_core::types::resource::Stream;
 #[derive(Deserialize)]
 #[serde(tag = "event", content = "args")]
 pub enum UIEvent {
-    PlayerPaused,
     #[serde(rename_all = "camelCase")]
     LocationPathChanged {
         prev_path: String,

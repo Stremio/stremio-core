@@ -2,4 +2,6 @@
 /node_modules
 /wasm_build
 stremio_core_web.js
+bridge.js
+worker.js
 stremio_core_web_bg.wasm
