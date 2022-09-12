@@ -760,7 +760,7 @@ dependencies = [
 
 [[package]]
 name = "stremio-core-web"
-version = "0.43.0"
+version = "0.44.0-rc.1"
 dependencies = [
  "boolinator",
  "cfg-if 0.1.10",
