@@ -1,6 +1,6 @@
 [package]
 name = "stremio-core-web"
-version = "0.44.0-rc.1"
+version = "0.44.0"
 authors = ["Smart Code OOD"]
 edition = "2018"
 
