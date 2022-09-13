@@ -3,6 +3,24 @@ use serde_test::{assert_de_tokens, assert_de_tokens_error, assert_ser_tokens, To
 use url::Url;
 
 #[test]
+fn stream_source_from_json() {
+    assert_matches::assert_matches!(
+        serde_json::from_str::<StreamSource>(
+            "{\"infoHash\": \"0101010101010101010101010101010101010101\"}",
+        ),
+        Ok(_)
+    );
+
+    // But the following does not pass:
+    // assert_matches::assert_matches!(
+    //     serde_json::from_value::<StreamSource>(serde_json::json!(
+    //         { "infoHash": "0101010101010101010101010101010101010101" }
+    //     )),
+    //     Ok(_)
+    // );
+}
+
+#[test]
 fn stream_source() {
     assert_ser_tokens(
         &vec![
