@@ -11,13 +11,12 @@ fn stream_source_from_json() {
         Ok(_)
     );
 
-    // But the following does not pass:
-    // assert_matches::assert_matches!(
-    //     serde_json::from_value::<StreamSource>(serde_json::json!(
-    //         { "infoHash": "0101010101010101010101010101010101010101" }
-    //     )),
-    //     Ok(_)
-    // );
+    assert_matches::assert_matches!(
+        serde_json::from_value::<StreamSource>(serde_json::json!(
+            { "infoHash": "0101010101010101010101010101010101010101" }
+        )),
+        Ok(_)
+    );
 }
 
 #[test]

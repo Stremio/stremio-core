@@ -8,9 +8,9 @@ use flate2::Compression;
 use magnet_url::Magnet;
 use serde::de::Error;
 use serde::{Deserialize, Deserializer, Serialize};
-use serde_hex::{SerHex, Strict};
 use std::collections::HashMap;
 use std::io::Write;
+use stremio_serde_hex::{SerHex, Strict};
 use url::Url;
 
 #[derive(Clone, PartialEq, Serialize, Deserialize)]
