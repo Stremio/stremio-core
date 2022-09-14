@@ -620,17 +620,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "serde-hex"
-version = "0.1.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ca37e3e4d1b39afd7ff11ee4e947efae85adfddf4841787bfa47c470e96dc26d"
-dependencies = [
- "array-init",
- "serde",
- "smallvec",
-]
-
-[[package]]
 name = "serde_derive"
 version = "1.0.130"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -712,7 +701,7 @@ dependencies = [
 [[package]]
 name = "stremio-analytics"
 version = "0.1.0"
-source = "git+https://github.com/Stremio/stremio-core?branch=development#7c687e928c24aaac8d2de1049cc927de93230fea"
+source = "git+https://github.com/Stremio/stremio-core?branch=development#244bd99a82e26ef36362553f704662ddd5656a45"
 dependencies = [
  "derivative",
  "enclose",
@@ -725,7 +714,7 @@ dependencies = [
 [[package]]
 name = "stremio-core"
 version = "0.1.0"
-source = "git+https://github.com/Stremio/stremio-core?branch=development#7c687e928c24aaac8d2de1049cc927de93230fea"
+source = "git+https://github.com/Stremio/stremio-core?branch=development#244bd99a82e26ef36362553f704662ddd5656a45"
 dependencies = [
  "anyhow",
  "base64",
@@ -746,12 +735,12 @@ dependencies = [
  "percent-encoding",
  "semver",
  "serde",
- "serde-hex",
  "serde_json",
  "serde_url_params",
  "serde_with",
  "stremio-derive",
  "stremio-official-addons",
+ "stremio-serde-hex",
  "stremio-watched-bitfield",
  "strum",
  "strum_macros",
@@ -792,7 +781,7 @@ dependencies = [
 [[package]]
 name = "stremio-derive"
 version = "0.1.0"
-source = "git+https://github.com/Stremio/stremio-core?branch=development#7c687e928c24aaac8d2de1049cc927de93230fea"
+source = "git+https://github.com/Stremio/stremio-core?branch=development#244bd99a82e26ef36362553f704662ddd5656a45"
 dependencies = [
  "case",
  "proc-macro-crate",
@@ -809,9 +798,20 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f85866d77a26e83d3774dfcbb3871540b3e5e4fc753e26bdd5e8e4aa3bb9f9be"
 
 [[package]]
+name = "stremio-serde-hex"
+version = "0.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "5a5600c4d6b97a1e6b4c0a9fa6e14d94eba885f2aa7610fc52a1557a9a140e69"
+dependencies = [
+ "array-init",
+ "serde",
+ "smallvec",
+]
+
+[[package]]
 name = "stremio-watched-bitfield"
 version = "0.1.0"
-source = "git+https://github.com/Stremio/stremio-core?branch=development#7c687e928c24aaac8d2de1049cc927de93230fea"
+source = "git+https://github.com/Stremio/stremio-core?branch=development#244bd99a82e26ef36362553f704662ddd5656a45"
 dependencies = [
  "base64",
  "flate2",
