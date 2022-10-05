@@ -1,4 +1,5 @@
 use crate::model::deep_links_ext::DeepLinksExt;
+use inflector::Inflector;
 use serde::Serialize;
 use stremio_core::deep_links::{DiscoverDeepLinks, MetaItemDeepLinks};
 use stremio_core::models::catalogs_with_extra::{CatalogsWithExtra, Selected};
@@ -66,8 +67,9 @@ pub fn serialize_catalogs_with_extra(
                         &manifest_catalog
                             .name
                             .as_ref()
-                            .unwrap_or(&addon.manifest.name),
-                        &manifest_catalog.r#type,
+                            .unwrap_or(&addon.manifest.name)
+                            .to_title_case(),
+                        &manifest_catalog.r#type.to_title_case(),
                     ),
                     content: match &catalog.content {
                         Some(Loadable::Ready(meta_items)) => {
