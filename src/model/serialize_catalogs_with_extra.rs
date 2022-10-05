@@ -56,44 +56,47 @@ pub fn serialize_catalogs_with_extra(
                                 manifest_catalog.id == catalog.request.path.id
                                     && manifest_catalog.r#type == catalog.request.path.r#type
                             })
-                            .map(|manifest_catalog| (manifest_catalog, catalog))
+                            .map(|manifest_catalog| (addon, manifest_catalog, catalog))
                     })
             })
-            .map(|(manifest_catalog, catalog)| model::ResourceLoadable {
-                title: format!(
-                    "{} - {}",
-                    &manifest_catalog
-                        .name
-                        .as_ref()
-                        .unwrap_or(&manifest_catalog.id),
-                    &manifest_catalog.r#type,
-                ),
-                content: match &catalog.content {
-                    Some(Loadable::Ready(meta_items)) => {
-                        let poster_shape =
-                            meta_items.first().map(|meta_item| &meta_item.poster_shape);
-                        Some(Loadable::Ready(
-                            meta_items
-                                .iter()
-                                .take(10)
-                                .map(|meta_item| model::MetaItemPreview {
-                                    meta_item,
-                                    poster_shape: poster_shape.unwrap_or(&meta_item.poster_shape),
-                                    deep_links: MetaItemDeepLinks::from((
+            .map(
+                |(addon, manifest_catalog, catalog)| model::ResourceLoadable {
+                    title: format!(
+                        "{} - {}",
+                        &manifest_catalog
+                            .name
+                            .as_ref()
+                            .unwrap_or(&addon.manifest.name),
+                        &manifest_catalog.r#type,
+                    ),
+                    content: match &catalog.content {
+                        Some(Loadable::Ready(meta_items)) => {
+                            let poster_shape =
+                                meta_items.first().map(|meta_item| &meta_item.poster_shape);
+                            Some(Loadable::Ready(
+                                meta_items
+                                    .iter()
+                                    .take(10)
+                                    .map(|meta_item| model::MetaItemPreview {
                                         meta_item,
-                                        &catalog.request,
-                                    ))
-                                    .into_web_deep_links(),
-                                })
-                                .collect::<Vec<_>>(),
-                        ))
-                    }
-                    Some(Loadable::Loading) => Some(Loadable::Loading),
-                    Some(Loadable::Err(error)) => Some(Loadable::Err(error.to_string())),
-                    None => None,
+                                        poster_shape: poster_shape
+                                            .unwrap_or(&meta_item.poster_shape),
+                                        deep_links: MetaItemDeepLinks::from((
+                                            meta_item,
+                                            &catalog.request,
+                                        ))
+                                        .into_web_deep_links(),
+                                    })
+                                    .collect::<Vec<_>>(),
+                            ))
+                        }
+                        Some(Loadable::Loading) => Some(Loadable::Loading),
+                        Some(Loadable::Err(error)) => Some(Loadable::Err(error.to_string())),
+                        None => None,
+                    },
+                    deep_links: DiscoverDeepLinks::from(&catalog.request).into_web_deep_links(),
                 },
-                deep_links: DiscoverDeepLinks::from(&catalog.request).into_web_deep_links(),
-            })
+            )
             .collect::<Vec<_>>(),
     })
     .unwrap()
