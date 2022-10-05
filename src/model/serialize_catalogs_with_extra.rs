@@ -41,37 +41,47 @@ pub fn serialize_catalogs_with_extra(
         catalogs: catalogs_with_extra
             .catalogs
             .iter()
+            .filter_map(|catalog| catalog.first())
             .filter_map(|catalog| {
                 ctx.profile
                     .addons
                     .iter()
-                    .find(|addon| addon.transport_url == catalog.first().unwrap().request.base)
-                    .map(|addon| (addon, catalog))
+                    .find(|addon| addon.transport_url == catalog.request.base)
+                    .and_then(|addon| {
+                        addon
+                            .manifest
+                            .catalogs
+                            .iter()
+                            .find(|manifest_catalog| {
+                                manifest_catalog.id == catalog.request.path.id
+                                    && manifest_catalog.r#type == catalog.request.path.r#type
+                            })
+                            .map(|manifest_catalog| (manifest_catalog, catalog))
+                    })
             })
-            .map(|(addon, catalog)| model::ResourceLoadable {
+            .map(|(manifest_catalog, catalog)| model::ResourceLoadable {
                 title: format!(
-                    "{} - {} {}",
-                    &addon.manifest.name,
-                    &catalog.first().unwrap().request.path.id,
-                    &catalog.first().unwrap().request.path.r#type
+                    "{} - {}",
+                    &manifest_catalog
+                        .name
+                        .as_ref()
+                        .unwrap_or(&manifest_catalog.id),
+                    &manifest_catalog.r#type,
                 ),
-                content: match &catalog.first().unwrap().content {
+                content: match &catalog.content {
                     Some(Loadable::Ready(meta_items)) => {
                         let poster_shape =
                             meta_items.first().map(|meta_item| &meta_item.poster_shape);
                         Some(Loadable::Ready(
-                            catalog
+                            meta_items
                                 .iter()
-                                .filter_map(|page| page.content.as_ref())
-                                .filter_map(|page_content| page_content.ready())
-                                .flatten()
                                 .take(10)
                                 .map(|meta_item| model::MetaItemPreview {
                                     meta_item,
                                     poster_shape: poster_shape.unwrap_or(&meta_item.poster_shape),
                                     deep_links: MetaItemDeepLinks::from((
                                         meta_item,
-                                        &catalog.first().unwrap().request,
+                                        &catalog.request,
                                     ))
                                     .into_web_deep_links(),
                                 })
@@ -82,8 +92,7 @@ pub fn serialize_catalogs_with_extra(
                     Some(Loadable::Err(error)) => Some(Loadable::Err(error.to_string())),
                     None => None,
                 },
-                deep_links: DiscoverDeepLinks::from(&catalog.first().unwrap().request)
-                    .into_web_deep_links(),
+                deep_links: DiscoverDeepLinks::from(&catalog.request).into_web_deep_links(),
             })
             .collect::<Vec<_>>(),
     })
