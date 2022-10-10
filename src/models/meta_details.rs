@@ -79,7 +79,21 @@ impl<E: Env + 'static> UpdateWithCtx<E> for MetaDetails {
                     .join(library_item_effects)
                     .join(watched_effects)
             }
-            Msg::Action(Action::MetaDetails(ActionMetaDetails::MarkAsWatched(
+            Msg::Action(Action::MetaDetails(ActionMetaDetails::MarkAsWatched(is_watched))) => {
+                match &self.library_item {
+                    Some(library_item) => {
+                        let mut library_item = library_item.to_owned();
+                        library_item.state.times_watched = match *is_watched {
+                            true => library_item.state.times_watched + 1,
+                            false => 0,
+                        };
+                        Effects::msg(Msg::Internal(Internal::UpdateLibraryItem(library_item)))
+                            .unchanged()
+                    }
+                    _ => Effects::none().unchanged(),
+                }
+            }
+            Msg::Action(Action::MetaDetails(ActionMetaDetails::MarkVideoAsWatched(
                 video_id,
                 is_watched,
             ))) => match (&self.library_item, &self.watched) {

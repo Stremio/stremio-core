@@ -60,7 +60,8 @@ pub enum ActionLibraryByType {
 #[cfg_attr(debug_assertions, derive(Debug))]
 #[serde(tag = "action", content = "args")]
 pub enum ActionMetaDetails {
-    MarkAsWatched(String, bool),
+    MarkAsWatched(bool),
+    MarkVideoAsWatched(String, bool),
 }
 
 #[derive(Clone, Deserialize)]
