@@ -21,7 +21,7 @@ pub fn update_library<E: Env + 'static>(
     msg: &Msg,
 ) -> Effects {
     match msg {
-        Msg::Action(Action::Ctx(ActionCtx::Logout)) => {
+        Msg::Action(Action::Ctx(ActionCtx::Logout)) | Msg::Internal(Internal::Logout) => {
             let next_library = LibraryBucket::default();
             if *library != next_library {
                 *library = next_library;

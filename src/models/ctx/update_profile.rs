@@ -3,7 +3,9 @@ use crate::models::ctx::{CtxError, CtxStatus, OtherError};
 use crate::runtime::msg::{Action, ActionCtx, Event, Internal, Msg};
 use crate::runtime::{Effect, EffectFuture, Effects, Env, EnvFutureExt};
 use crate::types::addon::Descriptor;
-use crate::types::api::{fetch_api, APIRequest, APIResult, CollectionResponse, SuccessResponse};
+use crate::types::api::{
+    fetch_api, APIError, APIRequest, APIResult, CollectionResponse, SuccessResponse,
+};
 use crate::types::profile::{Auth, AuthKey, Profile, Settings, User};
 use enclose::enclose;
 use futures::{future, FutureExt, TryFutureExt};
@@ -14,7 +16,7 @@ pub fn update_profile<E: Env + 'static>(
     msg: &Msg,
 ) -> Effects {
     match msg {
-        Msg::Action(Action::Ctx(ActionCtx::Logout)) => {
+        Msg::Action(Action::Ctx(ActionCtx::Logout)) | Msg::Internal(Internal::Logout) => {
             let next_profile = Profile::default();
             if *profile != next_profile {
                 *profile = next_profile;
@@ -312,11 +314,20 @@ pub fn update_profile<E: Env + 'static>(
                     _ => Effects::msg(Msg::Event(Event::UserPulledFromAPI { uid: profile.uid() }))
                         .unchanged(),
                 },
-                Err(error) => Effects::msg(Msg::Event(Event::Error {
-                    error: error.to_owned(),
-                    source: Box::new(Event::UserPulledFromAPI { uid: profile.uid() }),
-                }))
-                .unchanged(),
+                Err(error) => {
+                    let session_expired_effects = match error {
+                        CtxError::API(APIError { code, .. }) if *code == 1 => {
+                            Effects::msg(Msg::Internal(Internal::Logout)).unchanged()
+                        }
+                        _ => Effects::none().unchanged(),
+                    };
+                    Effects::msg(Msg::Event(Event::Error {
+                        error: error.to_owned(),
+                        source: Box::new(Event::UserPulledFromAPI { uid: profile.uid() }),
+                    }))
+                    .unchanged()
+                    .join(session_expired_effects)
+                }
             }
         }
         _ => Effects::none().unchanged(),

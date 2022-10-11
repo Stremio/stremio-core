@@ -34,6 +34,8 @@ pub enum Internal {
     LibrarySyncPlanResult(DatastoreRequest, Result<LibraryPlanResponse, CtxError>),
     // Result for pull library items from API.
     LibraryPullResult(DatastoreRequest, Result<Vec<LibraryItem>, CtxError>),
+    // Dispatched when expired session is detected
+    Logout,
     // Dispatched when library item needs to be updated in the memory, storage and API.
     UpdateLibraryItem(LibraryItem),
     // Dispatched when some of auth, addons or settings changed.
