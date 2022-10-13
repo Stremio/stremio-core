@@ -10,7 +10,7 @@ use crate::models::streaming_server::Settings as StreamingServerSettings;
 use crate::types::addon::Descriptor;
 use crate::types::api::AuthRequest;
 use crate::types::profile::Settings as ProfileSettings;
-use crate::types::resource::MetaItemPreview;
+use crate::types::resource::{MetaItemPreview, Torrent};
 use serde::Deserialize;
 use std::ops::Range;
 
@@ -70,6 +70,7 @@ pub enum ActionMetaDetails {
 pub enum ActionStreamingServer {
     Reload,
     UpdateSettings(StreamingServerSettings),
+    CreateTorrent(Torrent),
 }
 
 #[derive(Clone, Deserialize)]

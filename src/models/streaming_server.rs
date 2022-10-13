@@ -1,13 +1,18 @@
+use crate::constants::URI_COMPONENT_ENCODE_SET;
 use crate::models::common::{eq_update, Loadable};
 use crate::models::ctx::Ctx;
 use crate::runtime::msg::{Action, ActionStreamingServer, Internal, Msg};
 use crate::runtime::{Effect, EffectFuture, Effects, Env, EnvError, EnvFutureExt, UpdateWithCtx};
 use crate::types::api::SuccessResponse;
 use crate::types::profile::Profile;
+use crate::types::resource::Torrent;
 use enclose::enclose;
 use futures::{FutureExt, TryFutureExt};
 use http::request::Request;
+use itertools::Itertools;
+use percent_encoding::utf8_percent_encode;
 use serde::{Deserialize, Serialize};
+use std::iter;
 use url::Url;
 
 #[derive(Clone, PartialEq, Serialize, Deserialize)]
@@ -40,6 +45,7 @@ pub struct StreamingServer {
     pub selected: Selected,
     pub settings: Loadable<Settings, EnvError>,
     pub base_url: Loadable<Url, EnvError>,
+    pub torrent: Option<(Torrent, Loadable<(), EnvError>)>,
 }
 
 impl StreamingServer {
@@ -55,6 +61,7 @@ impl StreamingServer {
                 },
                 settings: Loadable::Loading,
                 base_url: Loadable::Loading,
+                torrent: None,
             },
             effects.unchanged(),
         )
@@ -83,6 +90,15 @@ impl<E: Env + 'static> UpdateWithCtx<E> for StreamingServer {
                 Effects::one(set_settings::<E>(&self.selected.transport_url, settings))
                     .unchanged()
                     .join(settings_effects)
+            }
+            Msg::Action(Action::StreamingServer(ActionStreamingServer::CreateTorrent(torrent))) => {
+                let torrent_effects = eq_update(
+                    &mut self.torrent,
+                    Some((torrent.to_owned(), Loadable::Loading)),
+                );
+                Effects::one(create_torrent::<E>(&self.selected.transport_url, torrent))
+                    .unchanged()
+                    .join(torrent_effects)
             }
             Msg::Internal(Internal::ProfileChanged)
                 if self.selected.transport_url != ctx.profile.settings.streaming_server_url =>
@@ -130,6 +146,21 @@ impl<E: Env + 'static> UpdateWithCtx<E> for StreamingServer {
                     }
                 }
             }
+            Msg::Internal(Internal::StreamingServerCreateTorrentResult(
+                loading_torrent,
+                result,
+            )) => match &mut self.torrent {
+                Some((torrent, loadable))
+                    if torrent == loading_torrent && loadable.is_loading() =>
+                {
+                    *loadable = match result {
+                        Ok(_) => Loadable::Ready(()),
+                        Err(error) => Loadable::Err(error.to_owned()),
+                    };
+                    Effects::none()
+                }
+                _ => Effects::none().unchanged(),
+            },
             _ => Effects::none().unchanged(),
         }
     }
@@ -210,6 +241,60 @@ fn set_settings<E: Env + 'static>(url: &Url, settings: &Settings) -> Effect {
             .map(enclose!((url) move |result| {
                 Msg::Internal(Internal::StreamingServerUpdateSettingsResult(
                     url, result,
+                ))
+            }))
+            .boxed_env(),
+    )
+    .into()
+}
+
+fn create_torrent<E: Env + 'static>(url: &Url, torrent: &Torrent) -> Effect {
+    #[derive(Serialize)]
+    #[serde(rename_all = "camelCase")]
+    struct PeerSearch {
+        sources: Vec<String>,
+        min: u32,
+        max: u32,
+    }
+    #[derive(Serialize)]
+    #[serde(rename_all = "camelCase")]
+    struct Body {
+        torrent: Torrent,
+        peer_search: Option<PeerSearch>,
+        guess_file_idx: bool,
+    }
+    let encoded_info_hash = hex::encode(&torrent.info_hash);
+    let endpoint = url
+        .join(&format!("{}/", encoded_info_hash))
+        .expect("url builder failed")
+        .join("create")
+        .expect("url builder failed");
+    let body = Body {
+        torrent: torrent.to_owned(),
+        peer_search: if torrent.announce.len() > 0 {
+            Some(PeerSearch {
+                sources: iter::once(&format!("dht:{}", encoded_info_hash))
+                    .chain(torrent.announce.iter())
+                    .cloned()
+                    .unique()
+                    .collect(),
+                min: 40,
+                max: 200,
+            })
+        } else {
+            None
+        },
+        guess_file_idx: false,
+    };
+    let request = Request::post(endpoint.as_str())
+        .header(http::header::CONTENT_TYPE, "application/json")
+        .body(body)
+        .expect("request builder failed");
+    EffectFuture::Concurrent(
+        E::fetch::<_, ()>(request)
+            .map(enclose!((torrent) move |result| {
+                Msg::Internal(Internal::StreamingServerCreateTorrentResult(
+                    torrent, result,
                 ))
             }))
             .boxed_env(),
