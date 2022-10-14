@@ -1,4 +1,3 @@
-use crate::constants::URI_COMPONENT_ENCODE_SET;
 use crate::models::common::{eq_update, Loadable};
 use crate::models::ctx::Ctx;
 use crate::runtime::msg::{Action, ActionStreamingServer, Internal, Msg};
@@ -10,7 +9,6 @@ use enclose::enclose;
 use futures::{FutureExt, TryFutureExt};
 use http::request::Request;
 use itertools::Itertools;
-use percent_encoding::utf8_percent_encode;
 use serde::{Deserialize, Serialize};
 use std::iter;
 use url::Url;
@@ -271,7 +269,7 @@ fn create_torrent<E: Env + 'static>(url: &Url, torrent: &Torrent) -> Effect {
         .expect("url builder failed");
     let body = Body {
         torrent: torrent.to_owned(),
-        peer_search: if torrent.announce.len() > 0 {
+        peer_search: if !torrent.announce.is_empty() {
             Some(PeerSearch {
                 sources: iter::once(&format!("dht:{}", encoded_info_hash))
                     .chain(torrent.announce.iter())
