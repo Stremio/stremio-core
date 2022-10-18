@@ -10,16 +10,14 @@ use wasm_bindgen::JsValue;
 
 mod model {
     use super::*;
+    type TorrentLoadable<'a> = Loadable<(&'a ResourcePath, MetaItemDeepLinks), &'a EnvError>;
     #[derive(Serialize)]
     #[serde(rename_all = "camelCase")]
     pub struct StreamingServer<'a> {
         pub selected: &'a Selected,
         pub settings: &'a Loadable<Settings, EnvError>,
         pub base_url: &'a Loadable<Url, EnvError>,
-        pub torrent: Option<(
-            &'a String,
-            Loadable<(&'a ResourcePath, MetaItemDeepLinks), &'a EnvError>,
-        )>,
+        pub torrent: Option<(&'a String, TorrentLoadable<'a>)>,
     }
 }
 
