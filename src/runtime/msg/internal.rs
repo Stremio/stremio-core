@@ -8,7 +8,6 @@ use crate::types::api::{
 };
 use crate::types::library::{LibraryBucket, LibraryItem};
 use crate::types::profile::{Auth, Profile, User};
-use crate::types::resource::Torrent;
 use url::Url;
 
 pub type CtxStorageResponse = (
@@ -54,7 +53,7 @@ pub enum Internal {
     // Result for updating streaming server settings.
     StreamingServerUpdateSettingsResult(Url, Result<(), EnvError>),
     // Result for creating a torrent.
-    StreamingServerCreateTorrentResult(Torrent, Result<(), EnvError>),
+    StreamingServerCreateTorrentResult(String, Result<(), EnvError>),
     // Result for fetching resource from addons.
     ResourceRequestResult(ResourceRequest, Box<Result<ResourceResponse, EnvError>>),
     // Result for fetching manifest from addon.

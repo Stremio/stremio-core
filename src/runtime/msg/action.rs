@@ -10,9 +10,10 @@ use crate::models::streaming_server::Settings as StreamingServerSettings;
 use crate::types::addon::Descriptor;
 use crate::types::api::AuthRequest;
 use crate::types::profile::Settings as ProfileSettings;
-use crate::types::resource::{MetaItemPreview, Torrent};
+use crate::types::resource::MetaItemPreview;
 use serde::Deserialize;
 use std::ops::Range;
+use url::Url;
 
 #[derive(Clone, Deserialize)]
 #[cfg_attr(debug_assertions, derive(Debug))]
@@ -66,11 +67,19 @@ pub enum ActionMetaDetails {
 
 #[derive(Clone, Deserialize)]
 #[cfg_attr(debug_assertions, derive(Debug))]
+#[serde(untagged)]
+pub enum CreateTorrentArgs {
+    File(Vec<u8>),
+    Magnet(Url),
+}
+
+#[derive(Clone, Deserialize)]
+#[cfg_attr(debug_assertions, derive(Debug))]
 #[serde(tag = "action", content = "args")]
 pub enum ActionStreamingServer {
     Reload,
     UpdateSettings(StreamingServerSettings),
-    CreateTorrent(Torrent),
+    CreateTorrent(CreateTorrentArgs),
 }
 
 #[derive(Clone, Deserialize)]

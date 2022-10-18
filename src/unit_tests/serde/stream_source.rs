@@ -1,4 +1,4 @@
-use crate::types::resource::{StreamSource, Torrent};
+use crate::types::resource::StreamSource;
 use serde_test::{assert_de_tokens, assert_de_tokens_error, assert_ser_tokens, Token};
 use url::Url;
 
@@ -29,16 +29,16 @@ fn stream_source() {
             StreamSource::YouTube {
                 yt_id: "yt_id".to_owned(),
             },
-            StreamSource::Torrent(Torrent {
+            StreamSource::Torrent {
                 info_hash: [1; 20],
                 file_idx: Some(1),
                 announce: vec!["announce".to_owned()],
-            }),
-            StreamSource::Torrent(Torrent {
+            },
+            StreamSource::Torrent {
                 info_hash: [1; 20],
                 file_idx: None,
                 announce: vec![],
-            }),
+            },
             StreamSource::External {
                 external_url: Some(Url::parse("https://external_url").unwrap()),
                 android_tv_url: None,
@@ -66,7 +66,7 @@ fn stream_source() {
             Token::Str("yt_id"),
             Token::StructEnd,
             Token::Struct {
-                name: "Torrent",
+                name: "StreamSource",
                 len: 3,
             },
             Token::Str("infoHash"),
@@ -80,7 +80,7 @@ fn stream_source() {
             Token::SeqEnd,
             Token::StructEnd,
             Token::Struct {
-                name: "Torrent",
+                name: "StreamSource",
                 len: 3,
             },
             Token::Str("infoHash"),
@@ -117,26 +117,26 @@ fn stream_source() {
             StreamSource::YouTube {
                 yt_id: "yt_id".to_owned(),
             },
-            StreamSource::Torrent(Torrent {
+            StreamSource::Torrent {
                 info_hash: [1; 20],
                 file_idx: Some(1),
                 announce: vec!["announce".to_owned()],
-            }),
-            StreamSource::Torrent(Torrent {
+            },
+            StreamSource::Torrent {
                 info_hash: [1; 20],
                 file_idx: Some(1),
                 announce: vec!["announce".to_owned()],
-            }),
-            StreamSource::Torrent(Torrent {
+            },
+            StreamSource::Torrent {
                 info_hash: [1; 20],
                 file_idx: None,
                 announce: vec![],
-            }),
-            StreamSource::Torrent(Torrent {
+            },
+            StreamSource::Torrent {
                 info_hash: [1; 20],
                 file_idx: None,
                 announce: vec![],
-            }),
+            },
             StreamSource::External {
                 external_url: Some(Url::parse("https://external_url").unwrap()),
                 android_tv_url: None,
