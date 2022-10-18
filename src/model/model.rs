@@ -2,7 +2,7 @@ use crate::env::WebEnv;
 use crate::model::{
     serialize_catalogs_with_extra, serialize_continue_watching_preview, serialize_discover,
     serialize_installed_addons, serialize_library, serialize_meta_details, serialize_player,
-    serialize_remote_addons,
+    serialize_remote_addons, serialize_streaming_server,
 };
 #[cfg(debug_assertions)]
 use serde::Serialize;
@@ -106,7 +106,7 @@ impl WebModel {
             WebModelField::RemoteAddons => serialize_remote_addons(&self.remote_addons, &self.ctx),
             WebModelField::InstalledAddons => serialize_installed_addons(&self.installed_addons),
             WebModelField::AddonDetails => JsValue::from_serde(&self.addon_details).unwrap(),
-            WebModelField::StreamingServer => JsValue::from_serde(&self.streaming_server).unwrap(),
+            WebModelField::StreamingServer => serialize_streaming_server(&self.streaming_server),
             WebModelField::Player => serialize_player(&self.player, &self.ctx),
         }
     }
