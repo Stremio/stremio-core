@@ -1,3 +1,4 @@
+use crate::model::deep_links_ext::DeepLinksExt;
 use serde::Serialize;
 use stremio_core::deep_links::MetaItemDeepLinks;
 use stremio_core::models::common::Loadable;
@@ -32,9 +33,10 @@ pub fn serialize_streaming_server(streaming_server: &StreamingServer) -> JsValue
             .as_ref()
             .map(|(info_hash, loadable)| {
                 let loadable = match loadable {
-                    Loadable::Ready(resource_path) => {
-                        Loadable::Ready((resource_path, MetaItemDeepLinks::from(resource_path)))
-                    }
+                    Loadable::Ready(resource_path) => Loadable::Ready((
+                        resource_path,
+                        MetaItemDeepLinks::from(resource_path).into_web_deep_links(),
+                    )),
                     Loadable::Loading => Loadable::Loading,
                     Loadable::Err(error) => Loadable::Err(error),
                 };
