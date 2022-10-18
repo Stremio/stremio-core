@@ -3,6 +3,7 @@ use crate::types::api::APIError;
 use serde::ser::{SerializeStruct, Serializer};
 use serde::Serialize;
 
+// TODO move this to runtime::msg::Error and rename it
 #[derive(Clone, Serialize)]
 #[cfg_attr(debug_assertions, derive(Debug, PartialEq))]
 #[serde(tag = "type")]

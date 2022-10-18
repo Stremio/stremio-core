@@ -13,6 +13,7 @@ use crate::types::profile::Settings as ProfileSettings;
 use crate::types::resource::MetaItemPreview;
 use serde::Deserialize;
 use std::ops::Range;
+use url::Url;
 
 #[derive(Clone, Deserialize)]
 #[cfg_attr(debug_assertions, derive(Debug))]
@@ -66,10 +67,19 @@ pub enum ActionMetaDetails {
 
 #[derive(Clone, Deserialize)]
 #[cfg_attr(debug_assertions, derive(Debug))]
+#[serde(untagged)]
+pub enum CreateTorrentArgs {
+    File(Vec<u8>),
+    Magnet(Url),
+}
+
+#[derive(Clone, Deserialize)]
+#[cfg_attr(debug_assertions, derive(Debug))]
 #[serde(tag = "action", content = "args")]
 pub enum ActionStreamingServer {
     Reload,
     UpdateSettings(StreamingServerSettings),
+    CreateTorrent(CreateTorrentArgs),
 }
 
 #[derive(Clone, Deserialize)]

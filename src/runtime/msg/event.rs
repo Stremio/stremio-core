@@ -90,6 +90,12 @@ pub enum Event {
     LibraryItemRewinded {
         id: String,
     },
+    MagnetParsed {
+        magnet: Url,
+    },
+    TorrentParsed {
+        torrent: Vec<u8>,
+    },
     Error {
         error: CtxError,
         source: Box<Event>,

@@ -1,13 +1,18 @@
+use crate::constants::META_RESOURCE_NAME;
 use crate::models::common::{eq_update, Loadable};
-use crate::models::ctx::Ctx;
-use crate::runtime::msg::{Action, ActionStreamingServer, Internal, Msg};
+use crate::models::ctx::{Ctx, CtxError};
+use crate::runtime::msg::{Action, ActionStreamingServer, CreateTorrentArgs, Event, Internal, Msg};
 use crate::runtime::{Effect, EffectFuture, Effects, Env, EnvError, EnvFutureExt, UpdateWithCtx};
+use crate::types::addon::ResourcePath;
 use crate::types::api::SuccessResponse;
 use crate::types::profile::Profile;
 use enclose::enclose;
 use futures::{FutureExt, TryFutureExt};
 use http::request::Request;
+use magnet_url::{Magnet, MagnetError};
 use serde::{Deserialize, Serialize};
+use sha1::{Digest, Sha1};
+use std::iter;
 use url::Url;
 
 #[derive(Clone, PartialEq, Serialize, Deserialize)]
@@ -40,6 +45,7 @@ pub struct StreamingServer {
     pub selected: Selected,
     pub settings: Loadable<Settings, EnvError>,
     pub base_url: Loadable<Url, EnvError>,
+    pub torrent: Option<(String, Loadable<ResourcePath, EnvError>)>,
 }
 
 impl StreamingServer {
@@ -55,6 +61,7 @@ impl StreamingServer {
                 },
                 settings: Loadable::Loading,
                 base_url: Loadable::Loading,
+                torrent: None,
             },
             effects.unchanged(),
         )
@@ -84,6 +91,69 @@ impl<E: Env + 'static> UpdateWithCtx<E> for StreamingServer {
                     .unchanged()
                     .join(settings_effects)
             }
+            Msg::Action(Action::StreamingServer(ActionStreamingServer::CreateTorrent(
+                CreateTorrentArgs::Magnet(magnet),
+            ))) => match parse_magnet(magnet) {
+                Ok((info_hash, announce)) => {
+                    let torrent_effects = eq_update(
+                        &mut self.torrent,
+                        Some((info_hash.to_owned(), Loadable::Loading)),
+                    );
+                    Effects::many(vec![
+                        create_magnet::<E>(&self.selected.transport_url, &info_hash, &announce),
+                        Effect::Msg(Box::new(Msg::Event(Event::MagnetParsed {
+                            magnet: magnet.to_owned(),
+                        }))),
+                    ])
+                    .unchanged()
+                    .join(torrent_effects)
+                }
+                Err(_) => {
+                    let torrent_effects = eq_update(&mut self.torrent, None);
+                    Effects::msg(Msg::Event(Event::Error {
+                        error: CtxError::Env(EnvError::Other(
+                            "Failed to parse magnet url".to_owned(),
+                        )),
+                        source: Box::new(Event::MagnetParsed {
+                            magnet: magnet.to_owned(),
+                        }),
+                    }))
+                    .unchanged()
+                    .join(torrent_effects)
+                }
+            },
+            Msg::Action(Action::StreamingServer(ActionStreamingServer::CreateTorrent(
+                CreateTorrentArgs::File(torrent),
+            ))) => match parse_torrent(torrent) {
+                Ok((info_hash, _)) => {
+                    let torrent_effects = eq_update(
+                        &mut self.torrent,
+                        Some((info_hash.to_owned(), Loadable::Loading)),
+                    );
+                    Effects::many(vec![
+                        create_torrent::<E>(&self.selected.transport_url, &info_hash, torrent),
+                        Effect::Msg(Box::new(Msg::Event(Event::TorrentParsed {
+                            torrent: torrent.to_owned(),
+                        }))),
+                    ])
+                    .unchanged()
+                    .join(torrent_effects)
+                }
+                Err(error) => {
+                    let torrent_effects = eq_update(&mut self.torrent, None);
+                    Effects::msg(Msg::Event(Event::Error {
+                        error: CtxError::Env(EnvError::Other(format!(
+                            "Failed to parse torrent file: {}",
+                            error
+                        ))),
+                        source: Box::new(Event::TorrentParsed {
+                            torrent: torrent.to_owned(),
+                        }),
+                    }))
+                    .unchanged()
+                    .join(torrent_effects)
+                }
+            },
             Msg::Internal(Internal::ProfileChanged)
                 if self.selected.transport_url != ctx.profile.settings.streaming_server_url =>
             {
@@ -92,6 +162,7 @@ impl<E: Env + 'static> UpdateWithCtx<E> for StreamingServer {
                 };
                 self.settings = Loadable::Loading;
                 self.base_url = Loadable::Loading;
+                self.torrent = None;
                 Effects::many(vec![
                     get_settings::<E>(&self.selected.transport_url),
                     get_base_url::<E>(&self.selected.transport_url),
@@ -100,24 +171,40 @@ impl<E: Env + 'static> UpdateWithCtx<E> for StreamingServer {
             Msg::Internal(Internal::StreamingServerSettingsResult(url, result))
                 if self.selected.transport_url == *url && self.settings.is_loading() =>
             {
-                eq_update(
-                    &mut self.settings,
-                    match result {
-                        Ok(settings) => Loadable::Ready(settings.to_owned()),
-                        Err(error) => Loadable::Err(error.to_owned()),
-                    },
-                )
+                match result {
+                    Ok(settings) => {
+                        eq_update(&mut self.settings, Loadable::Ready(settings.to_owned()))
+                    }
+                    Err(error) => {
+                        let base_url_effects =
+                            eq_update(&mut self.base_url, Loadable::Err(error.to_owned()));
+                        let settings_effects =
+                            eq_update(&mut self.settings, Loadable::Err(error.to_owned()));
+                        let torrent_effects = eq_update(&mut self.torrent, None);
+                        base_url_effects
+                            .join(settings_effects)
+                            .join(torrent_effects)
+                    }
+                }
             }
             Msg::Internal(Internal::StreamingServerBaseURLResult(url, result))
                 if self.selected.transport_url == *url && self.base_url.is_loading() =>
             {
-                eq_update(
-                    &mut self.base_url,
-                    match result {
-                        Ok(base_url) => Loadable::Ready(base_url.to_owned()),
-                        Err(error) => Loadable::Err(error.to_owned()),
-                    },
-                )
+                match result {
+                    Ok(base_url) => {
+                        eq_update(&mut self.base_url, Loadable::Ready(base_url.to_owned()))
+                    }
+                    Err(error) => {
+                        let base_url_effects =
+                            eq_update(&mut self.base_url, Loadable::Err(error.to_owned()));
+                        let settings_effects =
+                            eq_update(&mut self.settings, Loadable::Err(error.to_owned()));
+                        let torrent_effects = eq_update(&mut self.torrent, None);
+                        base_url_effects
+                            .join(settings_effects)
+                            .join(torrent_effects)
+                    }
+                }
             }
             Msg::Internal(Internal::StreamingServerUpdateSettingsResult(url, result))
                 if self.selected.transport_url == *url =>
@@ -125,11 +212,37 @@ impl<E: Env + 'static> UpdateWithCtx<E> for StreamingServer {
                 match result {
                     Ok(_) => Effects::none().unchanged(),
                     Err(error) => {
-                        self.settings = Loadable::Err(error.to_owned());
-                        Effects::none()
+                        let base_url_effects =
+                            eq_update(&mut self.base_url, Loadable::Err(error.to_owned()));
+                        let settings_effects =
+                            eq_update(&mut self.settings, Loadable::Err(error.to_owned()));
+                        let torrent_effects = eq_update(&mut self.torrent, None);
+                        base_url_effects
+                            .join(settings_effects)
+                            .join(torrent_effects)
                     }
                 }
             }
+            Msg::Internal(Internal::StreamingServerCreateTorrentResult(
+                loading_info_hash,
+                result,
+            )) => match &mut self.torrent {
+                Some((info_hash, loadable))
+                    if info_hash == loading_info_hash && loadable.is_loading() =>
+                {
+                    *loadable = match result {
+                        Ok(_) => Loadable::Ready(ResourcePath {
+                            resource: META_RESOURCE_NAME.to_owned(),
+                            r#type: "other".to_owned(),
+                            id: format!("bt:{}", info_hash),
+                            extra: vec![],
+                        }),
+                        Err(error) => Loadable::Err(error.to_owned()),
+                    };
+                    Effects::none()
+                }
+                _ => Effects::none().unchanged(),
+            },
             _ => Effects::none().unchanged(),
         }
     }
@@ -215,4 +328,124 @@ fn set_settings<E: Env + 'static>(url: &Url, settings: &Settings) -> Effect {
             .boxed_env(),
     )
     .into()
+}
+
+fn create_magnet<E: Env + 'static>(url: &Url, info_hash: &str, announce: &[String]) -> Effect {
+    #[derive(Serialize)]
+    #[serde(rename_all = "camelCase")]
+    struct PeerSearch {
+        sources: Vec<String>,
+        min: u32,
+        max: u32,
+    }
+    #[derive(Serialize)]
+    #[serde(rename_all = "camelCase")]
+    struct Torrent {
+        info_hash: String,
+    }
+    #[derive(Serialize)]
+    #[serde(rename_all = "camelCase")]
+    struct Body {
+        torrent: Torrent,
+        peer_search: Option<PeerSearch>,
+    }
+    let info_hash = info_hash.to_owned();
+    let endpoint = url
+        .join(&format!("{}/", info_hash))
+        .expect("url builder failed")
+        .join("create")
+        .expect("url builder failed");
+    let body = Body {
+        torrent: Torrent {
+            info_hash: info_hash.to_owned(),
+        },
+        peer_search: if !announce.is_empty() {
+            Some(PeerSearch {
+                sources: iter::once(&format!("dht:{}", info_hash))
+                    .chain(announce.iter())
+                    .cloned()
+                    .collect(),
+                min: 40,
+                max: 200,
+            })
+        } else {
+            None
+        },
+    };
+    let request = Request::post(endpoint.as_str())
+        .header(http::header::CONTENT_TYPE, "application/json")
+        .body(body)
+        .expect("request builder failed");
+    EffectFuture::Concurrent(
+        E::fetch::<_, serde_json::Value>(request)
+            .map_ok(|_| ())
+            .map(enclose!((info_hash) move |result| {
+                Msg::Internal(Internal::StreamingServerCreateTorrentResult(
+                    info_hash, result,
+                ))
+            }))
+            .boxed_env(),
+    )
+    .into()
+}
+
+fn create_torrent<E: Env + 'static>(url: &Url, info_hash: &str, torrent: &[u8]) -> Effect {
+    #[derive(Serialize)]
+    struct Body {
+        blob: String,
+    }
+    let info_hash = info_hash.to_owned();
+    let endpoint = url.join("/create").expect("url builder failed");
+    let request = Request::post(endpoint.as_str())
+        .header(http::header::CONTENT_TYPE, "application/json")
+        .body(Body {
+            blob: hex::encode(torrent),
+        })
+        .expect("request builder failed");
+    EffectFuture::Concurrent(
+        E::fetch::<_, serde_json::Value>(request)
+            .map_ok(|_| ())
+            .map(enclose!((info_hash) move |result| {
+                Msg::Internal(Internal::StreamingServerCreateTorrentResult(
+                    info_hash, result,
+                ))
+            }))
+            .boxed_env(),
+    )
+    .into()
+}
+
+fn parse_magnet(magnet: &Url) -> Result<(String, Vec<String>), MagnetError> {
+    let magnet = Magnet::new(magnet.as_str())?;
+    let info_hash = magnet.xt.ok_or(MagnetError::NotAMagnetURL)?;
+    let announce = magnet.tr;
+    Ok((info_hash, announce))
+}
+
+fn parse_torrent(torrent: &[u8]) -> Result<(String, Vec<String>), serde_bencode::Error> {
+    #[derive(Deserialize)]
+    struct TorrentFile {
+        info: serde_bencode::value::Value,
+        #[serde(default)]
+        announce: Option<String>,
+        #[serde(default)]
+        #[serde(rename = "announce-list")]
+        announce_list: Option<Vec<Vec<String>>>,
+    }
+    let torrent_file = serde_bencode::from_bytes::<TorrentFile>(torrent)?;
+    let info_bytes = serde_bencode::to_bytes(&torrent_file.info)?;
+    let mut hasher = Sha1::new();
+    hasher.update(info_bytes);
+    let info_hash = hex::encode(hasher.finalize());
+    let mut announce = vec![];
+    if let Some(announce_entry) = torrent_file.announce {
+        announce.push(announce_entry);
+    };
+    if let Some(announce_lists) = torrent_file.announce_list {
+        for announce_list in announce_lists {
+            announce.extend(announce_list.into_iter());
+        }
+    };
+    announce.dedup();
+    Ok((info_hash, announce))
 }

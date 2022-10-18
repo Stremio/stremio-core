@@ -4,7 +4,7 @@ use crate::constants::URI_COMPONENT_ENCODE_SET;
 use crate::deep_links::error_link::ErrorLink;
 use crate::models::installed_addons_with_filters::InstalledAddonsRequest;
 use crate::models::library_with_filters::LibraryRequest;
-use crate::types::addon::{ExtraValue, ResourceRequest};
+use crate::types::addon::{ExtraValue, ResourcePath, ResourceRequest};
 use crate::types::library::LibraryItem;
 use crate::types::query_params_encode;
 use crate::types::resource::{MetaItem, MetaItemPreview, Stream, StreamSource, Video};
@@ -121,6 +121,20 @@ pub struct MetaItemDeepLinks {
     pub meta_details_videos: Option<String>,
     pub meta_details_streams: Option<String>,
     pub player: Option<String>,
+}
+
+impl From<&ResourcePath> for MetaItemDeepLinks {
+    fn from(resource_path: &ResourcePath) -> Self {
+        MetaItemDeepLinks {
+            meta_details_videos: Some(format!(
+                "stremio:///detail/{}/{}",
+                utf8_percent_encode(&resource_path.r#type, URI_COMPONENT_ENCODE_SET),
+                utf8_percent_encode(&resource_path.id, URI_COMPONENT_ENCODE_SET)
+            )),
+            meta_details_streams: None,
+            player: None,
+        }
+    }
 }
 
 impl From<(&MetaItemPreview, &ResourceRequest)> for MetaItemDeepLinks {

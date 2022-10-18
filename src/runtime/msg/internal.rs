@@ -52,6 +52,8 @@ pub enum Internal {
     StreamingServerBaseURLResult(Url, Result<Url, EnvError>),
     // Result for updating streaming server settings.
     StreamingServerUpdateSettingsResult(Url, Result<(), EnvError>),
+    // Result for creating a torrent.
+    StreamingServerCreateTorrentResult(String, Result<(), EnvError>),
     // Result for fetching resource from addons.
     ResourceRequestResult(ResourceRequest, Box<Result<ResourceResponse, EnvError>>),
     // Result for fetching manifest from addon.
