@@ -54,6 +54,7 @@ mod model {
         pub videos: Vec<Video<'a>>,
         pub trailer_streams: Vec<Stream<'a>>,
         pub in_library: bool,
+        pub watched: bool,
         pub deep_links: MetaItemDeepLinks,
     }
     #[derive(Serialize)]
@@ -157,6 +158,12 @@ pub fn serialize_meta_details(meta_details: &MetaDetails, ctx: &Ctx) -> JsValue 
                             .items
                             .get(&meta_item.preview.id)
                             .map(|library_item| !library_item.removed)
+                            .unwrap_or_default(),
+                        watched: ctx
+                            .library
+                            .items
+                            .get(&meta_item.preview.id)
+                            .map(|library_item| library_item.state.times_watched > 0)
                             .unwrap_or_default(),
                         deep_links: MetaItemDeepLinks::from((meta_item, request))
                             .into_web_deep_links(),
