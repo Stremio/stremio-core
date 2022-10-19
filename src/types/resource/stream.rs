@@ -34,11 +34,11 @@ pub struct Stream {
 impl Stream {
     pub fn magnet_url(&self) -> Option<Magnet> {
         match &self.source {
-            StreamSource::Torrent {
+            StreamSource::Torrent(TorrentStreamSource {
                 info_hash,
                 announce,
                 ..
-            } => Some(Magnet {
+            }) => Some(Magnet {
                 dn: self.name.to_owned(),
                 hash_type: Some("btih".to_string()),
                 xt: Some(hex::encode(info_hash)),
@@ -96,6 +96,17 @@ impl Stream {
 
 #[derive(Clone, PartialEq, Serialize, Deserialize)]
 #[cfg_attr(debug_assertions, derive(Debug))]
+#[serde(rename_all = "camelCase")]
+pub struct TorrentStreamSource {
+    #[serde(with = "SerHex::<Strict>")]
+    pub info_hash: [u8; 20],
+    pub file_idx: Option<u16>,
+    #[serde(default, alias = "sources")]
+    pub announce: Vec<String>,
+}
+
+#[derive(Clone, PartialEq, Serialize, Deserialize)]
+#[cfg_attr(debug_assertions, derive(Debug))]
 #[cfg_attr(test, derive(Derivative))]
 #[cfg_attr(test, derivative(Default))]
 #[serde(untagged)]
@@ -108,14 +119,7 @@ pub enum StreamSource {
     YouTube {
         yt_id: String,
     },
-    #[serde(rename_all = "camelCase")]
-    Torrent {
-        #[serde(with = "SerHex::<Strict>")]
-        info_hash: [u8; 20],
-        file_idx: Option<u16>,
-        #[serde(default, alias = "sources")]
-        announce: Vec<String>,
-    },
+    Torrent(TorrentStreamSource),
     #[serde(rename_all = "camelCase")]
     PlayerFrame {
         player_frame_url: Url,

@@ -1,6 +1,6 @@
 use crate::deep_links::StreamDeepLinks;
 use crate::types::addon::{ResourcePath, ResourceRequest};
-use crate::types::resource::{Stream, StreamSource};
+use crate::types::resource::{Stream, StreamSource, TorrentStreamSource};
 use std::convert::TryFrom;
 use std::str::FromStr;
 use url::Url;
@@ -55,14 +55,14 @@ fn stream_deep_links_http() {
 #[test]
 fn stream_deep_links_torrent() {
     let stream = Stream {
-        source: StreamSource::Torrent {
+        source: StreamSource::Torrent(TorrentStreamSource {
             info_hash: [
                 0xdd, 0x82, 0x55, 0xec, 0xdc, 0x7c, 0xa5, 0x5f, 0xb0, 0xbb, 0xf8, 0x13, 0x23, 0xd8,
                 0x70, 0x62, 0xdb, 0x1f, 0x6d, 0x1c,
             ],
             file_idx: None,
             announce: vec![],
-        },
+        }),
         name: None,
         description: None,
         thumbnail: None,
