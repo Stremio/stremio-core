@@ -8,6 +8,7 @@ use flate2::Compression;
 use magnet_url::Magnet;
 use serde::de::Error;
 use serde::{Deserialize, Deserializer, Serialize};
+use serde_with::{serde_as, DefaultOnNull};
 use std::collections::HashMap;
 use std::io::Write;
 use stremio_serde_hex::{SerHex, Strict};
@@ -94,6 +95,7 @@ impl Stream {
     }
 }
 
+#[serde_as]
 #[derive(Clone, PartialEq, Serialize, Deserialize)]
 #[cfg_attr(debug_assertions, derive(Debug))]
 #[cfg_attr(test, derive(Derivative))]
@@ -113,6 +115,7 @@ pub enum StreamSource {
         #[serde(with = "SerHex::<Strict>")]
         info_hash: [u8; 20],
         file_idx: Option<u16>,
+        #[serde_as(deserialize_as = "DefaultOnNull")]
         #[serde(default, alias = "sources")]
         announce: Vec<String>,
     },
