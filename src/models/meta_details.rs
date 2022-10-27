@@ -1,4 +1,4 @@
-use crate::constants::{META_RESOURCE_NAME, STREAM_RESOURCE_NAME};
+use crate::constants::{LIBRARY_COLLECTION_NAME, META_RESOURCE_NAME, STREAM_RESOURCE_NAME};
 use crate::models::common::{
     eq_update, resources_update, resources_update_with_vector_content, Loadable, ResourceLoadable,
     ResourcesAction,
@@ -7,6 +7,7 @@ use crate::models::ctx::Ctx;
 use crate::runtime::msg::{Action, ActionLoad, ActionMetaDetails, Internal, Msg};
 use crate::runtime::{Effects, Env, UpdateWithCtx};
 use crate::types::addon::{AggrRequest, ResourcePath, ResourceRequest};
+use crate::types::api::{DatastoreCommand, DatastoreRequest};
 use crate::types::library::{LibraryBucket, LibraryItem};
 use crate::types::profile::Profile;
 use crate::types::resource::{MetaItem, Stream};
@@ -58,7 +59,9 @@ impl<E: Env + 'static> UpdateWithCtx<E> for MetaDetails {
                 );
                 let watched_effects =
                     watched_update::<E>(&mut self.watched, &self.meta_items, &self.library_item);
-                selected_effects
+                let libraty_item_sync_effects = library_item_sync(&self.library_item, &ctx.profile);
+                libraty_item_sync_effects
+                    .join(selected_effects)
                     .join(meta_items_effects)
                     .join(meta_streams_effects)
                     .join(streams_effects)
@@ -177,6 +180,23 @@ impl<E: Env + 'static> UpdateWithCtx<E> for MetaDetails {
             }
             _ => Effects::none().unchanged(),
         }
+    }
+}
+
+fn library_item_sync(library_item: &Option<LibraryItem>, profile: &Profile) -> Effects {
+    match (library_item, profile.auth_key()) {
+        (Some(library_item), Some(auth_key)) => {
+            Effects::msg(Msg::Internal(Internal::LibrarySyncPlanResult(
+                DatastoreRequest {
+                    auth_key: auth_key.to_owned(),
+                    collection: LIBRARY_COLLECTION_NAME.to_owned(),
+                    command: DatastoreCommand::Meta {},
+                },
+                Ok((vec![library_item.id.to_owned()], vec![])),
+            )))
+            .unchanged()
+        }
+        _ => Effects::none().unchanged(),
     }
 }
 
