@@ -1,6 +1,7 @@
 use crate::types::addon::{Manifest, ManifestCatalog, ManifestResource};
 use semver::Version;
 use serde::Deserialize;
+use url::Url;
 
 //
 // Manifest types
@@ -119,8 +120,10 @@ impl From<LegacyManifest> for Manifest {
             types: m.types,
             catalogs,
             addon_catalogs: vec![],
-            background: m.background,
-            logo: m.logo,
+            background: m
+                .background
+                .and_then(|background| Url::parse(&background).ok()),
+            logo: m.logo.and_then(|logo| Url::parse(&logo).ok()),
             id_prefixes,
             description: m.description,
             contact_email: m.contact_email,

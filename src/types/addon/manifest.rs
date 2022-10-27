@@ -6,8 +6,9 @@ use derive_more::Deref;
 use either::Either;
 use semver::Version;
 use serde::{Deserialize, Deserializer, Serialize};
-use serde_with::{serde_as, DefaultOnNull, DeserializeAs};
+use serde_with::{serde_as, DefaultOnError, DefaultOnNull, DeserializeAs, NoneAsEmptyString};
 use std::borrow::Cow;
+use url::Url;
 
 #[serde_as]
 #[derive(Clone, PartialEq, Serialize, Deserialize)]
@@ -22,8 +23,12 @@ pub struct Manifest {
     pub name: String,
     pub contact_email: Option<String>,
     pub description: Option<String>,
-    pub logo: Option<String>,
-    pub background: Option<String>,
+    #[serde(default)]
+    #[serde_as(deserialize_as = "DefaultOnError<NoneAsEmptyString>")]
+    pub logo: Option<Url>,
+    #[serde(default)]
+    #[serde_as(deserialize_as = "DefaultOnError<NoneAsEmptyString>")]
+    pub background: Option<Url>,
     pub types: Vec<String>,
     pub resources: Vec<ManifestResource>,
     pub id_prefixes: Option<Vec<String>>,
@@ -77,6 +82,7 @@ impl Manifest {
     }
 }
 
+#[serde_as]
 #[derive(Clone, PartialEq, Serialize, Deserialize)]
 #[cfg_attr(debug_assertions, derive(Debug))]
 #[cfg_attr(test, derive(Derivative))]
@@ -88,8 +94,12 @@ pub struct ManifestPreview {
     pub version: Version,
     pub name: String,
     pub description: Option<String>,
-    pub logo: Option<String>,
-    pub background: Option<String>,
+    #[serde(default)]
+    #[serde_as(deserialize_as = "DefaultOnError<NoneAsEmptyString>")]
+    pub logo: Option<Url>,
+    #[serde(default)]
+    #[serde_as(deserialize_as = "DefaultOnError<NoneAsEmptyString>")]
+    pub background: Option<Url>,
     pub types: Vec<String>,
 }
 

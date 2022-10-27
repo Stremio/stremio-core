@@ -1,18 +1,19 @@
 use crate::types::addon::ManifestPreview;
 use semver::Version;
-use serde_test::{assert_de_tokens, assert_tokens, Token};
+use serde_test::{assert_de_tokens, assert_ser_tokens, Token};
+use url::Url;
 
 #[test]
 fn manifest_preview() {
-    assert_tokens(
+    assert_ser_tokens(
         &vec![
             ManifestPreview {
                 id: "id".to_owned(),
                 version: Version::new(0, 0, 1),
                 name: "name".to_owned(),
                 description: Some("description".to_owned()),
-                logo: Some("logo".to_owned()),
-                background: Some("background".to_owned()),
+                logo: Some(Url::parse("http://logo/").unwrap()),
+                background: Some(Url::parse("http://background/").unwrap()),
                 types: vec!["type".to_owned()],
             },
             ManifestPreview {
@@ -42,10 +43,10 @@ fn manifest_preview() {
             Token::Str("description"),
             Token::Str("logo"),
             Token::Some,
-            Token::Str("logo"),
+            Token::Str("http://logo/"),
             Token::Str("background"),
             Token::Some,
-            Token::Str("background"),
+            Token::Str("http://background/"),
             Token::Str("types"),
             Token::Seq { len: Some(1) },
             Token::Str("type"),
@@ -75,16 +76,50 @@ fn manifest_preview() {
         ],
     );
     assert_de_tokens(
-        &ManifestPreview {
-            id: "id".to_owned(),
-            version: Version::new(0, 0, 1),
-            name: "name".to_owned(),
-            description: None,
-            logo: None,
-            background: None,
-            types: vec![],
-        },
+        &vec![
+            ManifestPreview {
+                id: "id".to_owned(),
+                version: Version::new(0, 0, 1),
+                name: "name".to_owned(),
+                description: Some("description".to_owned()),
+                logo: Some(Url::parse("http://logo/").unwrap()),
+                background: Some(Url::parse("http://background/").unwrap()),
+                types: vec!["type".to_owned()],
+            },
+            ManifestPreview {
+                id: "id".to_owned(),
+                version: Version::new(0, 0, 1),
+                name: "name".to_owned(),
+                description: None,
+                logo: None,
+                background: None,
+                types: vec![],
+            },
+        ],
         &[
+            Token::Seq { len: Some(2) },
+            Token::Struct {
+                name: "ManifestPreview",
+                len: 4,
+            },
+            Token::Str("id"),
+            Token::Str("id"),
+            Token::Str("version"),
+            Token::Str("0.0.1"),
+            Token::Str("name"),
+            Token::Str("name"),
+            Token::Str("description"),
+            Token::Some,
+            Token::Str("description"),
+            Token::Str("logo"),
+            Token::Str("http://logo/"),
+            Token::Str("background"),
+            Token::Str("http://background/"),
+            Token::Str("types"),
+            Token::Seq { len: Some(1) },
+            Token::Str("type"),
+            Token::SeqEnd,
+            Token::StructEnd,
             Token::Struct {
                 name: "ManifestPreview",
                 len: 4,
@@ -99,6 +134,7 @@ fn manifest_preview() {
             Token::Seq { len: Some(0) },
             Token::SeqEnd,
             Token::StructEnd,
+            Token::SeqEnd,
         ],
     );
 }
