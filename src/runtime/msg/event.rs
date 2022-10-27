@@ -49,6 +49,7 @@ pub enum Event {
         transport_urls: Vec<Url>,
     },
     LibrarySyncWithAPIPlanned {
+        uid: UID,
         plan: (Vec<String>, Vec<String>),
     },
     LibraryItemsPushedToAPI {

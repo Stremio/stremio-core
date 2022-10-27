@@ -82,6 +82,7 @@ pub fn update_library<E: Env + 'static>(
             _ => Effects::msg(Msg::Event(Event::Error {
                 error: CtxError::from(OtherError::UserNotLoggedIn),
                 source: Box::new(Event::LibrarySyncWithAPIPlanned {
+                    uid: profile.uid(),
                     plan: Default::default(),
                 }),
             }))
@@ -154,6 +155,7 @@ pub fn update_library<E: Env + 'static>(
                     .unchanged()
                 };
                 Effects::msg(Msg::Event(Event::LibrarySyncWithAPIPlanned {
+                    uid: profile.uid(),
                     plan: (pull_ids.to_owned(), push_ids.to_owned()),
                 }))
                 .join(push_items_to_api_effects)
@@ -163,6 +165,7 @@ pub fn update_library<E: Env + 'static>(
             Err(error) => Effects::msg(Msg::Event(Event::Error {
                 error: error.to_owned(),
                 source: Box::new(Event::LibrarySyncWithAPIPlanned {
+                    uid: profile.uid(),
                     plan: Default::default(),
                 }),
             }))
