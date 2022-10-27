@@ -59,12 +59,8 @@ impl<E: Env + 'static> Update<E> for Ctx {
                     _ => Effects::none().unchanged(),
                 };
                 let profile_effects = update_profile::<E>(&mut self.profile, &self.status, msg);
-                let library_effects = update_library::<E>(
-                    &mut self.library,
-                    self.profile.auth_key(),
-                    &self.status,
-                    msg,
-                );
+                let library_effects =
+                    update_library::<E>(&mut self.library, &self.profile, &self.status, msg);
                 self.status = CtxStatus::Ready;
                 Effects::msg(Msg::Event(Event::UserLoggedOut { uid }))
                     .unchanged()
@@ -74,12 +70,8 @@ impl<E: Env + 'static> Update<E> for Ctx {
             }
             Msg::Internal(Internal::CtxAuthResult(auth_request, result)) => {
                 let profile_effects = update_profile::<E>(&mut self.profile, &self.status, msg);
-                let library_effects = update_library::<E>(
-                    &mut self.library,
-                    self.profile.auth_key(),
-                    &self.status,
-                    msg,
-                );
+                let library_effects =
+                    update_library::<E>(&mut self.library, &self.profile, &self.status, msg);
                 let ctx_effects = match &self.status {
                     CtxStatus::Loading(loading_auth_request)
                         if loading_auth_request == auth_request =>
@@ -105,12 +97,8 @@ impl<E: Env + 'static> Update<E> for Ctx {
             }
             _ => {
                 let profile_effects = update_profile::<E>(&mut self.profile, &self.status, msg);
-                let library_effects = update_library::<E>(
-                    &mut self.library,
-                    self.profile.auth_key(),
-                    &self.status,
-                    msg,
-                );
+                let library_effects =
+                    update_library::<E>(&mut self.library, &self.profile, &self.status, msg);
                 profile_effects.join(library_effects)
             }
         }

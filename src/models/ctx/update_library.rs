@@ -8,7 +8,7 @@ use crate::types::api::{
     fetch_api, APIResult, DatastoreCommand, DatastoreRequest, LibraryItemModified, SuccessResponse,
 };
 use crate::types::library::{LibraryBucket, LibraryBucketRef, LibraryItem};
-use crate::types::profile::AuthKey;
+use crate::types::profile::{AuthKey, Profile};
 use futures::future::Either;
 use futures::{future, FutureExt, TryFutureExt};
 use std::collections::HashMap;
@@ -16,10 +16,11 @@ use std::marker::PhantomData;
 
 pub fn update_library<E: Env + 'static>(
     library: &mut LibraryBucket,
-    auth_key: Option<&AuthKey>,
+    profile: &Profile,
     status: &CtxStatus,
     msg: &Msg,
 ) -> Effects {
+    let auth_key = profile.auth_key();
     match msg {
         Msg::Action(Action::Ctx(ActionCtx::Logout)) | Msg::Internal(Internal::Logout) => {
             let next_library = LibraryBucket::default();
