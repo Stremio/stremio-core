@@ -20,7 +20,7 @@ mod model {
     pub struct ManifestPreview<'a> {
         pub id: &'a String,
         pub name: &'a String,
-        pub logo: &'a Option<String>,
+        pub logo: &'a Option<Url>,
     }
     #[derive(Serialize)]
     #[serde(rename_all = "camelCase")]

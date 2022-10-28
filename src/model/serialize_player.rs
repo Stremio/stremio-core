@@ -27,8 +27,8 @@ mod model {
         pub name: &'a String,
         pub version: &'a Version,
         pub description: &'a Option<String>,
-        pub logo: &'a Option<String>,
-        pub background: &'a Option<String>,
+        pub logo: &'a Option<Url>,
+        pub background: &'a Option<Url>,
         pub types: &'a Vec<String>,
     }
     #[derive(Serialize)]
