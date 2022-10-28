@@ -1,3 +1,6 @@
+mod community_addons_resp;
+pub use community_addons_resp::*;
+
 mod update_library;
 use update_library::*;
 

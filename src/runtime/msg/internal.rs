@@ -28,6 +28,8 @@ pub enum Internal {
     CtxAuthResult(AuthRequest, Result<AuthResponse, CtxError>),
     // Result for pull addons from API.
     AddonsAPIResult(APIRequest, Result<Vec<Descriptor>, CtxError>),
+    // Result for pull community addons from Cinemeta.
+    AddonsCommunityResult(Result<Vec<Descriptor>, CtxError>),
     // Result for pull user from API.
     UserAPIResult(APIRequest, Result<User, CtxError>),
     // Result for library sync plan with API.

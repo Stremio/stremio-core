@@ -4,6 +4,9 @@ pub mod library;
 pub mod profile;
 pub mod resource;
 
+mod option_inspect_ext;
+pub use option_inspect_ext::*;
+
 mod query_params_encode;
 pub use query_params_encode::*;
 
