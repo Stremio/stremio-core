@@ -1,6 +1,6 @@
 use crate::models::ctx::CtxError;
 use crate::models::link::LinkError;
-use crate::models::streaming_server::{Settings as StreamingServerSettings, CastingDevice};
+use crate::models::streaming_server::{CastingDevice, Settings as StreamingServerSettings};
 use crate::runtime::EnvError;
 use crate::types::addon::{Descriptor, Manifest, ResourceRequest, ResourceResponse};
 use crate::types::api::{

@@ -1,7 +1,9 @@
 use crate::constants::META_RESOURCE_NAME;
 use crate::models::common::{eq_update, Loadable};
 use crate::models::ctx::{Ctx, CtxError};
-use crate::runtime::msg::{Action, ActionStreamingServer, CreateTorrentArgs, PlayOnDeviceArgs, Event, Internal, Msg};
+use crate::runtime::msg::{
+    Action, ActionStreamingServer, CreateTorrentArgs, Event, Internal, Msg, PlayOnDeviceArgs,
+};
 use crate::runtime::{Effect, EffectFuture, Effects, Env, EnvError, EnvFutureExt, UpdateWithCtx};
 use crate::types::addon::ResourcePath;
 use crate::types::api::SuccessResponse;
@@ -167,15 +169,15 @@ impl<E: Env + 'static> UpdateWithCtx<E> for StreamingServer {
                     .join(torrent_effects)
                 }
             },
-            Msg::Action(Action::StreamingServer(ActionStreamingServer::PlayOnDevice(
-                args,
-            ))) => Effects::many(vec![
-                play_on_device::<E>(&self.selected.transport_url, args),
-                Effect::Msg(Box::new(Msg::Event(Event::PlayingOnDevice {
-                    device: args.device.to_owned(),
-                }))),
-            ])
-            .unchanged(),
+            Msg::Action(Action::StreamingServer(ActionStreamingServer::PlayOnDevice(args))) => {
+                Effects::many(vec![
+                    play_on_device::<E>(&self.selected.transport_url, args),
+                    Effect::Msg(Box::new(Msg::Event(Event::PlayingOnDevice {
+                        device: args.device.to_owned(),
+                    }))),
+                ])
+                .unchanged()
+            }
             Msg::Internal(Internal::ProfileChanged)
                 if self.selected.transport_url != ctx.profile.settings.streaming_server_url =>
             {
@@ -239,9 +241,10 @@ impl<E: Env + 'static> UpdateWithCtx<E> for StreamingServer {
                 if self.selected.transport_url == *url && self.casting_devices.is_loading() =>
             {
                 match result {
-                    Ok(casting_devices) => {
-                        eq_update(&mut self.casting_devices, Loadable::Ready(casting_devices.to_owned()))
-                    }
+                    Ok(casting_devices) => eq_update(
+                        &mut self.casting_devices,
+                        Loadable::Ready(casting_devices.to_owned()),
+                    ),
                     Err(error) => {
                         let base_url_effects =
                             eq_update(&mut self.base_url, Loadable::Err(error.to_owned()));
@@ -531,7 +534,7 @@ fn play_on_device<E: Env + 'static>(url: &Url, args: &PlayOnDeviceArgs) -> Effec
         source: args.source.to_owned(),
         time: match args.time {
             Some(time) => time,
-            None => 0
+            None => 0,
         },
     };
     let request = Request::post(endpoint.as_str())

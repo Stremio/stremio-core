@@ -79,7 +79,7 @@ pub enum CreateTorrentArgs {
 pub struct PlayOnDeviceArgs {
     pub device: String,
     pub source: String,
-    pub time: Option<u64>
+    pub time: Option<u64>,
 }
 
 #[derive(Clone, Deserialize)]
