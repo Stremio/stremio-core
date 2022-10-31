@@ -73,6 +73,15 @@ pub enum CreateTorrentArgs {
     Magnet(Url),
 }
 
+#[derive(Clone, PartialEq, Deserialize)]
+#[cfg_attr(debug_assertions, derive(Debug))]
+#[serde(rename_all = "camelCase")]
+pub struct PlayOnDeviceArgs {
+    pub device: String,
+    pub source: String,
+    pub time: Option<u64>
+}
+
 #[derive(Clone, Deserialize)]
 #[cfg_attr(debug_assertions, derive(Debug))]
 #[serde(tag = "action", content = "args")]
@@ -80,6 +89,7 @@ pub enum ActionStreamingServer {
     Reload,
     UpdateSettings(StreamingServerSettings),
     CreateTorrent(CreateTorrentArgs),
+    PlayOnDevice(PlayOnDeviceArgs),
 }
 
 #[derive(Clone, Deserialize)]

@@ -97,6 +97,9 @@ pub enum Event {
     TorrentParsed {
         torrent: Vec<u8>,
     },
+    PlayingOnDevice {
+        device: String,
+    },
     Error {
         error: CtxError,
         source: Box<Event>,
