@@ -532,10 +532,7 @@ fn play_on_device<E: Env + 'static>(url: &Url, args: &PlayOnDeviceArgs) -> Effec
         .expect("url builder failed");
     let body = Body {
         source: args.source.to_owned(),
-        time: match args.time {
-            Some(time) => time,
-            None => 0,
-        },
+        time: args.time.unwrap_or(0),
     };
     let request = Request::post(endpoint.as_str())
         .header(http::header::CONTENT_TYPE, "application/json")
