@@ -67,6 +67,9 @@ pub enum Event {
     SessionDeleted {
         auth_key: AuthKey,
     },
+    TraktAddonInstalled {
+        uid: UID,
+    },
     AddonInstalled {
         transport_url: Url,
         id: String,
