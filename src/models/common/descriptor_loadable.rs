@@ -8,6 +8,7 @@ use serde::Serialize;
 use url::Url;
 
 #[derive(PartialEq, Serialize)]
+#[cfg_attr(debug_assertions, derive(Clone, Debug))]
 pub struct DescriptorLoadable {
     pub transport_url: Url,
     pub content: Loadable<Descriptor, EnvError>,
