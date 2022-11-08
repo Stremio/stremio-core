@@ -95,7 +95,7 @@ impl<E: Env + 'static> Update<E> for Ctx {
                     ),
                     _ => Effects::msg(Msg::Event(Event::Error {
                         error: CtxError::from(OtherError::UserNotLoggedIn),
-                        source: Box::new(Event::TraktAddonInstalled { uid }),
+                        source: Box::new(Event::TraktAddonFetched { uid }),
                     }))
                     .unchanged(),
                 }
@@ -108,30 +108,33 @@ impl<E: Env + 'static> Update<E> for Ctx {
                         result,
                     },
                 );
-                match &self.trakt_addon {
+                let trakt_addon_events_effects = match &self.trakt_addon {
                     Some(DescriptorLoadable {
                         content: Loadable::Ready(addon),
                         ..
-                    }) if trakt_addon_effects.has_changed => {
-                        Effects::msg(Msg::Internal(Internal::InstallAddon(addon.to_owned())))
-                            .unchanged()
-                            .join(trakt_addon_effects)
-                    }
+                    }) if trakt_addon_effects.has_changed => Effects::msgs(vec![
+                        Msg::Event(Event::TraktAddonFetched {
+                            uid: self.profile.uid(),
+                        }),
+                        Msg::Internal(Internal::InstallAddon(addon.to_owned())),
+                    ])
+                    .unchanged(),
                     Some(DescriptorLoadable {
                         content: Loadable::Err(error),
                         ..
                     }) if trakt_addon_effects.has_changed => {
                         Effects::msg(Msg::Event(Event::Error {
                             error: CtxError::Env(error.to_owned()),
-                            source: Box::new(Event::TraktAddonInstalled {
+                            source: Box::new(Event::TraktAddonFetched {
                                 uid: self.profile.uid(),
                             }),
                         }))
                         .unchanged()
-                        .join(trakt_addon_effects)
                     }
-                    _ => trakt_addon_effects,
-                }
+                    _ => Effects::none().unchanged(),
+                };
+                self.trakt_addon = None;
+                trakt_addon_effects.join(trakt_addon_events_effects)
             }
             Msg::Internal(Internal::CtxAuthResult(auth_request, result)) => {
                 let profile_effects = update_profile::<E>(&mut self.profile, &self.status, msg);
