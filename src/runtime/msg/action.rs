@@ -112,6 +112,7 @@ pub enum ActionLoad {
     AddonDetails(AddonDetailsSelected),
     CatalogWithFilters(Option<CatalogWithFiltersSelected>),
     CatalogsWithExtra(CatalogsWithExtraSelected),
+    DataExport,
     InstalledAddonsWithFilters(InstalledAddonsWithFiltersSelected),
     LibraryWithFilters(LibraryWithFiltersSelected),
     LibraryByType(LibraryByTypeSelected),
@@ -121,9 +122,10 @@ pub enum ActionLoad {
     Notifications,
 }
 
-//
-// Those messages are meant to be dispatched only by the users of the stremio-core crate and handled by the stremio-core crate
-//
+/// Action messages
+///
+/// Those messages are meant to be dispatched only by the users of the
+/// `stremio-core` crate and handled by the `stremio-core` crate.
 #[derive(Clone, Deserialize)]
 #[cfg_attr(debug_assertions, derive(Debug))]
 #[serde(tag = "action", content = "args")]

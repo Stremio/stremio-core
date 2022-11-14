@@ -36,6 +36,12 @@ pub struct AuthResponse {
     pub user: User,
 }
 
+#[derive(Deserialize)]
+#[serde(rename = "camelCase")]
+pub struct DataExportResponse {
+    pub export_id: String,
+}
+
 #[derive(PartialEq, Deserialize)]
 #[cfg_attr(debug_assertions, derive(Debug))]
 pub struct LibraryItemModified(
