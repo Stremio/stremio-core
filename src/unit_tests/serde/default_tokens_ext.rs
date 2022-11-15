@@ -375,7 +375,7 @@ impl DefaultTokens for Settings {
             Token::Str("streamingServerUrl"),
             Token::Str("http://127.0.0.1:11470/"),
             Token::Str("playerType"),
-            Token::U8(0),
+            Token::None,
             Token::Str("bingeWatching"),
             Token::Bool(false),
             Token::Str("playInBackground"),
