@@ -20,12 +20,18 @@ use super::{
     ctx::{Ctx, CtxError},
 };
 
-#[derive(Serialize, Default)]
+#[derive(Serialize, Default, Clone)]
 #[cfg_attr(debug_assertions, derive(Debug))]
 #[serde(rename_all = "camelCase")]
 pub struct DataExport {
     /// This is the Loading result of the User data export request.
     pub export_url: Option<(AuthKey, Loadable<Url, CtxError>)>,
+}
+
+impl DataExport {
+    pub fn new() -> Self {
+        Self { export_url: None }
+    }
 }
 
 impl<E: Env + 'static> UpdateWithCtx<E> for DataExport {

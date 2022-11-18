@@ -1,0 +1,134 @@
+use crate::models::common::Loadable;
+use crate::models::ctx::Ctx;
+use crate::models::data_export::DataExport;
+use crate::runtime::msg::{Action, ActionLoad};
+use crate::runtime::{Env, EnvFutureExt, Runtime, RuntimeAction, RuntimeEvent, TryEnvFuture};
+use crate::types::api::{APIResult, DataExportResponse};
+use crate::types::profile::{Auth, AuthKey, GDPRConsent, User};
+use crate::unit_tests::{
+    default_fetch_handler, Request, TestEnv, EVENTS, FETCH_HANDLER, REQUESTS, STATES,
+};
+use assert_matches::assert_matches;
+use enclose::enclose;
+use futures::future;
+use std::any::Any;
+use std::sync::{Arc, RwLock};
+use stremio_derive::Model;
+
+#[derive(Model, Default, Debug, Clone)]
+#[model(TestEnv)]
+struct TestModel {
+    ctx: Ctx,
+    data_export: DataExport,
+}
+
+fn data_export_fetch_handler(request: Request) -> TryEnvFuture<Box<dyn Any + Send>> {
+    match request {
+        Request {
+            url, method, body, ..
+        } if url == "https://api.strem.io/api/dataExport"
+            && method == "POST"
+            && &body == r#"{"type":"DataExport","authKey":"user_key"}"# =>
+        {
+            future::ok(Box::new(APIResult::Ok {
+                result: DataExportResponse {
+                    export_id: "user_export_id".into(),
+                },
+            }) as Box<dyn Any + Send>)
+            .boxed_env()
+        }
+        _ => default_fetch_handler(request),
+    }
+}
+
+#[test]
+fn data_export_with_user() {
+    let _env_mutex = TestEnv::reset();
+    *FETCH_HANDLER.write().unwrap() = Box::new(data_export_fetch_handler);
+    let mut ctx = Ctx::default();
+    ctx.profile.auth = Some(Auth {
+        key: AuthKey("user_key".into()),
+        user: User {
+            id: "user_id".to_owned(),
+            email: "user_email".to_owned(),
+            fb_id: None,
+            avatar: None,
+            last_modified: TestEnv::now(),
+            date_registered: TestEnv::now(),
+            trakt: None,
+            premium_expire: None,
+            gdpr_consent: GDPRConsent {
+                tos: true,
+                privacy: true,
+                marketing: true,
+                from: Some("tests".to_owned()),
+            },
+        },
+    });
+
+    let data_export = DataExport::new();
+    let (runtime, rx) = Runtime::<TestEnv, _>::new(TestModel { ctx, data_export }, vec![], 1000);
+    let runtime = Arc::new(RwLock::new(runtime));
+    TestEnv::run_with_runtime(
+        rx,
+        runtime.clone(),
+        enclose!((runtime) move || {
+            let runtime = runtime.read().unwrap();
+            runtime.dispatch(RuntimeAction {
+                field: None,
+                action: Action::Load(ActionLoad::DataExport),
+            });
+        }),
+    );
+    let events = EVENTS.read().unwrap();
+    assert_eq!(events.len(), 2);
+
+    assert_matches!(
+        events[0]
+            .downcast_ref::<RuntimeEvent<TestEnv, TestModel>>()
+            .unwrap(),
+        RuntimeEvent::NewState(fields) if fields.len() == 1 && *fields.first().unwrap() == TestModelField::DataExport
+    );
+    assert_matches!(
+        events[1]
+            .downcast_ref::<RuntimeEvent<TestEnv, TestModel>>()
+            .unwrap(),
+        RuntimeEvent::NewState(fields) if fields.len() == 1 && *fields.first().unwrap() == TestModelField::DataExport
+    );
+    let states = STATES.read().unwrap();
+    let states = states
+        .iter()
+        .map(|state| state.downcast_ref::<TestModel>().unwrap())
+        .collect::<Vec<_>>();
+    assert_eq!(states.len(), 3);
+    assert!(states[0].data_export.export_url.is_none());
+    assert_eq!(
+        &states[1].data_export.export_url,
+        &Some((AuthKey("user_key".into()), Loadable::Loading))
+    );
+
+    assert_eq!(
+        &states[2].data_export.export_url,
+        &Some((
+            AuthKey("user_key".into()),
+            Loadable::Ready(
+                "https://www.strem.io/data-export/user_export_id/export.json"
+                    .parse()
+                    .unwrap()
+            )
+        ))
+    );
+    let requests = REQUESTS.read().unwrap();
+    assert_eq!(requests.len(), 1);
+    assert_eq!(
+        requests[0],
+        Request {
+            url: "https://api.strem.io/api/dataExport".to_owned(),
+            method: "POST".to_owned(),
+            headers: Default::default(),
+            body: r#"{"type":"DataExport","authKey":"user_key"}"#.to_owned(),
+        }
+    );
+}
+
+// https://www.strem.io/data-export/{}/export.json
