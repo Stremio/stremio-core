@@ -6,7 +6,7 @@ use crate::models::common::{
 use crate::models::ctx::Ctx;
 use crate::runtime::msg::{Action, ActionLoad, ActionPlayer, Event, Internal, Msg};
 use crate::runtime::{Effects, Env, UpdateWithCtx};
-use crate::types::addon::{AggrRequest, ResourcePath, ResourceRequest, ResourceResponse};
+use crate::types::addon::{AggrRequest, ResourcePath, ResourceRequest};
 use crate::types::library::{LibraryBucket, LibraryItem};
 use crate::types::profile::Settings as ProfileSettings;
 use crate::types::resource::{MetaItem, SeriesInfo, Stream, Subtitles, Video};
@@ -515,33 +515,28 @@ where
         Some(stream_request) => stream_request.clone(),
         None => return Effects::none().unchanged(),
     };
+    // use the next video id to update the stream request
+    stream_request.path.id = next_video.id.clone();
 
     if let Some(stream) = next_video.stream() {
-        return resource_update_with_vector_content::<E, _>(
-            next_streams,
-            ResourceAction::ResourceRequestResult {
-                request: &stream_request,
-                result: &Ok(ResourceResponse::Streams {
-                    streams: vec![stream.into_owned()],
-                }),
-            },
-        );
+        *next_streams = ResourceLoadable {
+            request: stream_request,
+            content: Some(Loadable::Ready(vec![stream.into_owned()])),
+        };
+
+        return Effects::none();
     }
 
     if !next_video.streams.is_empty() {
-        return resource_update_with_vector_content::<E, _>(
-            next_streams,
-            ResourceAction::ResourceRequestResult {
-                request: &stream_request,
-                result: &Ok(ResourceResponse::Streams {
-                    streams: next_video.streams.clone(),
-                }),
-            },
-        );
+        *next_streams = ResourceLoadable {
+            request: stream_request,
+            content: Some(Loadable::Ready(next_video.streams.clone())),
+        };
+
+        return Effects::none();
     }
 
-    // use the next video id to request the next streams
-    stream_request.path.id = next_video.id.clone();
+    // otherwise, fetch te next streams using a request
     resource_update_with_vector_content::<E, _>(
         next_streams,
         ResourceAction::ResourceRequested {
@@ -656,7 +651,8 @@ mod test {
 
     use crate::{
         constants::YOUTUBE_ADDON_ID_PREFIX,
-        models::common::ResourceLoadable,
+        models::common::{Loadable, ResourceLoadable},
+        runtime::Effect,
         types::{
             addon::{ResourcePath, ResourceRequest},
             resource::{SeriesInfo, Stream, Video},
@@ -698,7 +694,7 @@ mod test {
         {
             let mut next_streams = next_streams.clone();
             let next_video = Video {
-                id: "id".to_owned(),
+                id: "next_video".to_owned(),
                 title: "title".to_owned(),
                 released: Some(Utc.ymd(2020, 1, 1).and_hms(0, 0, 0)),
                 overview: Some("overview".to_owned()),
@@ -707,16 +703,96 @@ mod test {
                 series_info: Some(SeriesInfo::default()),
                 trailer_streams: vec![],
             };
-            let result = next_streams_update::<TestEnv>(
+            let result_effects = next_streams_update::<TestEnv>(
                 &next_video,
                 &mut next_streams,
                 &Some(selected.clone()),
             );
 
-            assert!(!result.has_changed);
+            assert!(result_effects.has_changed);
+            assert!(result_effects
+                .into_iter()
+                .collect::<Vec<Effect>>()
+                .is_empty());
             assert_eq!(
-                next_streams.request.path.id, next_youtube_1234,
+                next_streams.request.path.id, "next_video",
                 "request should contain the next youtube video"
+            );
+
+            assert_eq!(
+                Loadable::Ready(vec![next_youtube_stream.clone()]),
+                next_streams.content.expect("Should have content")
+            );
+        }
+
+        // Test that it should update next_streams using all streams in Video
+        {
+            let another_youtube_5678 = format!("{}666:5678", YOUTUBE_ADDON_ID_PREFIX);
+            let another_youtube_stream = Stream::youtube(&another_youtube_5678).unwrap();
+            let youtube_streams = vec![next_youtube_stream, another_youtube_stream];
+            let mut next_streams = next_streams.clone();
+            let next_video = Video {
+                id: "next_video_2".to_owned(),
+                title: "title".to_owned(),
+                released: Some(Utc.ymd(2020, 1, 1).and_hms(0, 0, 0)),
+                overview: Some("overview".to_owned()),
+                thumbnail: Some("thumbnail".to_owned()),
+                streams: youtube_streams.clone(),
+                series_info: Some(SeriesInfo::default()),
+                trailer_streams: vec![],
+            };
+            let result_effects = next_streams_update::<TestEnv>(
+                &next_video,
+                &mut next_streams,
+                &Some(selected.clone()),
+            );
+
+            assert!(result_effects.has_changed);
+            assert!(result_effects
+                .into_iter()
+                .collect::<Vec<Effect>>()
+                .is_empty());
+
+            assert_eq!(
+                next_streams.request.path.id, "next_video_2",
+                "request should contain the next youtube video"
+            );
+
+            assert_eq!(
+                Loadable::Ready(youtube_streams),
+                next_streams.content.expect("Should have content")
+            );
+        }
+
+        // Test that it should make a request to get next_streams if no streams are available in Video
+        {
+            let mut next_streams = next_streams.clone();
+            let next_video = Video {
+                id: "next_video_3".to_owned(),
+                title: "title".to_owned(),
+                released: Some(Utc.ymd(2020, 1, 1).and_hms(0, 0, 0)),
+                overview: Some("overview".to_owned()),
+                thumbnail: Some("thumbnail".to_owned()),
+                // empty streams will cause a request to be made
+                streams: vec![],
+                series_info: Some(SeriesInfo::default()),
+                trailer_streams: vec![],
+            };
+            let result_effects = next_streams_update::<TestEnv>(
+                &next_video,
+                &mut next_streams,
+                &Some(selected.clone()),
+            );
+
+            assert!(result_effects.has_changed);
+            assert_eq!(1, result_effects.into_iter().collect::<Vec<Effect>>().len());
+            assert_eq!(
+                next_streams.request.path.id, "next_video_3",
+                "request should contain the next youtube video"
+            );
+            assert_eq!(
+                Loadable::Loading,
+                next_streams.content.expect("Should have content")
             );
         }
     }
