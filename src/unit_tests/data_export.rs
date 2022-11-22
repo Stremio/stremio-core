@@ -1,10 +1,11 @@
 use crate::models::common::Loadable;
 use crate::models::ctx::Ctx;
 use crate::models::data_export::DataExport;
-use crate::runtime::msg::{Action, ActionLoad};
-use crate::runtime::{Env, EnvFutureExt, Runtime, RuntimeAction, RuntimeEvent, TryEnvFuture};
-use crate::types::api::{APIResult, DataExportResponse};
-use crate::types::profile::{Auth, AuthKey, GDPRConsent, User};
+use crate::runtime::msg::{Action, ActionCtx, ActionLoad};
+use crate::runtime::{EnvFutureExt, Runtime, RuntimeAction, RuntimeEvent, TryEnvFuture};
+use crate::types::api::{APIResult, DataExportResponse, SuccessResponse};
+use crate::types::profile::{Auth, AuthKey, User};
+use crate::types::True;
 use crate::unit_tests::{
     default_fetch_handler, Request, TestEnv, EVENTS, FETCH_HANDLER, REQUESTS, STATES,
 };
@@ -48,25 +49,10 @@ fn data_export_with_user() {
     let mut ctx = Ctx::default();
     ctx.profile.auth = Some(Auth {
         key: AuthKey("user_key".into()),
-        user: User {
-            id: "user_id".to_owned(),
-            email: "user_email".to_owned(),
-            fb_id: None,
-            avatar: None,
-            last_modified: TestEnv::now(),
-            date_registered: TestEnv::now(),
-            trakt: None,
-            premium_expire: None,
-            gdpr_consent: GDPRConsent {
-                tos: true,
-                privacy: true,
-                marketing: true,
-                from: Some("tests".to_owned()),
-            },
-        },
+        user: User::default(),
     });
 
-    let data_export = DataExport::new();
+    let data_export = DataExport::default();
     let (runtime, rx) = Runtime::<TestEnv, _>::new(TestModel { ctx, data_export }, vec![], 1000);
     let runtime = Arc::new(RwLock::new(runtime));
     TestEnv::run_with_runtime(
@@ -131,4 +117,43 @@ fn data_export_with_user() {
     );
 }
 
-// https://www.strem.io/data-export/{}/export.json
+#[test]
+fn data_export_without_a_user() {
+    let _env_mutex = TestEnv::reset();
+    *FETCH_HANDLER.write().unwrap() = Box::new(data_export_fetch_handler);
+    let ctx = Ctx::default();
+
+    assert!(
+        ctx.profile.auth.is_none(),
+        "For this test we require no authenticated user!"
+    );
+
+    let data_export = DataExport::default();
+    let (runtime, rx) = Runtime::<TestEnv, _>::new(TestModel { ctx, data_export }, vec![], 1000);
+    let runtime = Arc::new(RwLock::new(runtime));
+    TestEnv::run_with_runtime(
+        rx,
+        runtime.clone(),
+        enclose!((runtime) move || {
+            let runtime = runtime.read().unwrap();
+            runtime.dispatch(RuntimeAction {
+                field: None,
+                action: Action::Load(ActionLoad::DataExport),
+            });
+        }),
+    );
+    let events = EVENTS.read().unwrap();
+    assert!(events.is_empty());
+
+    let states = STATES.read().unwrap();
+    let states = states
+        .iter()
+        .map(|state| state.downcast_ref::<TestModel>().unwrap())
+        .collect::<Vec<_>>();
+
+    assert_eq!(states.len(), 1);
+    assert!(states[0].data_export.export_url.is_none());
+
+    let requests = REQUESTS.read().unwrap();
+    assert!(requests.is_empty());
+}

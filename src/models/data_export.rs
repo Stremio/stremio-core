@@ -28,12 +28,6 @@ pub struct DataExport {
     pub export_url: Option<(AuthKey, Loadable<Url, CtxError>)>,
 }
 
-impl DataExport {
-    pub fn new() -> Self {
-        Self { export_url: None }
-    }
-}
-
 impl<E: Env + 'static> UpdateWithCtx<E> for DataExport {
     fn update(&mut self, msg: &Msg, ctx: &Ctx) -> Effects {
         match msg {
