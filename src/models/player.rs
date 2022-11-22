@@ -138,6 +138,11 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                     &self.meta_item,
                     &ctx.profile.settings,
                 );
+                let next_streams_effects = next_streams_update::<E>(
+                    &mut self.next_streams,
+                    &self.next_video,
+                    &self.selected,
+                );
                 let series_info_effects =
                     series_info_update(&mut self.series_info, &self.selected, &self.meta_item);
                 let library_item_effects = library_item_update::<E>(
@@ -181,6 +186,7 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                     .join(meta_item_effects)
                     .join(subtitles_effects)
                     .join(next_video_effects)
+                    .join(next_streams_effects)
                     .join(series_info_effects)
                     .join(library_item_effects)
                     .join(watched_effects)
@@ -200,6 +206,7 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                 let meta_item_effects = eq_update(&mut self.meta_item, None);
                 let subtitles_effects = eq_update(&mut self.subtitles, vec![]);
                 let next_video_effects = eq_update(&mut self.next_video, None);
+                let next_streams_effects = eq_update(&mut self.next_streams, None);
                 let series_info_effects = eq_update(&mut self.series_info, None);
                 let library_item_effects = eq_update(&mut self.library_item, None);
                 let watched_effects = eq_update(&mut self.watched, None);
@@ -213,6 +220,7 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                     .join(meta_item_effects)
                     .join(subtitles_effects)
                     .join(next_video_effects)
+                    .join(next_streams_effects)
                     .join(series_info_effects)
                     .join(library_item_effects)
                     .join(watched_effects)
@@ -371,6 +379,11 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                     &self.meta_item,
                     &ctx.profile.settings,
                 );
+                let next_streams_effects = next_streams_update::<E>(
+                    &mut self.next_streams,
+                    &self.next_video,
+                    &self.selected,
+                );
                 let series_info_effects =
                     series_info_update(&mut self.series_info, &self.selected, &self.meta_item);
                 let library_item_effects = library_item_update::<E>(
@@ -406,6 +419,7 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                 meta_item_effects
                     .join(subtitles_effects)
                     .join(next_video_effects)
+                    .join(next_streams_effects)
                     .join(series_info_effects)
                     .join(library_item_effects)
                     .join(watched_effects)
@@ -524,21 +538,23 @@ where
     stream_request.path.id = next_video.id.clone();
 
     if let Some(stream) = next_video.stream() {
-        *next_streams = Some(ResourceLoadable {
-            request: stream_request,
-            content: Some(Loadable::Ready(vec![stream.into_owned()])),
-        });
-
-        return Effects::none();
+        return eq_update(
+            next_streams,
+            Some(ResourceLoadable {
+                request: stream_request,
+                content: Some(Loadable::Ready(vec![stream.into_owned()])),
+            }),
+        );
     }
 
     if !next_video.streams.is_empty() {
-        *next_streams = Some(ResourceLoadable {
-            request: stream_request,
-            content: Some(Loadable::Ready(next_video.streams.clone())),
-        });
-
-        return Effects::none();
+        return eq_update(
+            next_streams,
+            Some(ResourceLoadable {
+                request: stream_request,
+                content: Some(Loadable::Ready(next_video.streams.clone())),
+            }),
+        );
     }
 
     // otherwise, fetch te next streams using a request
