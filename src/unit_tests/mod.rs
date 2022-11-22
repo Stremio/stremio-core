@@ -1,5 +1,5 @@
 mod env;
-use env::*;
+pub use env::*;
 
 mod catalog_with_filters;
 mod ctx;

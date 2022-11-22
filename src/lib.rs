@@ -9,4 +9,4 @@ pub mod types;
 pub mod constants;
 
 #[cfg(test)]
-mod unit_tests;
+pub(crate) mod unit_tests;
