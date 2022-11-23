@@ -8,7 +8,7 @@ use futures::StreamExt;
 use futures::{future, Future, TryFutureExt};
 use lazy_static::lazy_static;
 use serde::{Deserialize, Serialize};
-use std::any::Any;
+use std::any::{type_name, Any};
 use std::collections::BTreeMap;
 use std::collections::HashMap;
 use std::ops::Fn;
@@ -115,7 +115,11 @@ impl Env for TestEnv {
         let request = Request::from(request);
         REQUESTS.write().unwrap().push(request.to_owned());
         FETCH_HANDLER.read().unwrap()(request)
-            .map_ok(|resp| *resp.downcast::<OUT>().unwrap())
+            .map_ok(|resp| {
+                *resp
+                    .downcast::<OUT>()
+                    .expect(&format!("Failed to downcast to {}", type_name::<OUT>()))
+            })
             .boxed_env()
     }
     fn get_storage<
