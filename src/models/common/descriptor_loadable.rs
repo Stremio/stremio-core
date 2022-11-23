@@ -7,6 +7,7 @@ use futures::FutureExt;
 use serde::Serialize;
 use url::Url;
 
+/// Fetching addons
 #[derive(PartialEq, Serialize)]
 #[cfg_attr(debug_assertions, derive(Clone, Debug))]
 pub struct DescriptorLoadable {
@@ -15,15 +16,21 @@ pub struct DescriptorLoadable {
 }
 
 pub enum DescriptorAction<'a> {
+    /// Requests the addon [`Descriptor`]
     DescriptorRequested {
+        /// The transport_url is unique for every addon.
         transport_url: &'a Url,
     },
+    /// Loads the manifest for the addon of the [`Descriptor`]
     ManifestRequestResult {
         transport_url: &'a Url,
         result: &'a Result<Manifest, EnvError>,
     },
 }
 
+/// Request or Load Addon [`Descriptor`] on the `descriptor` argument.
+///
+/// see [DescriptorAction]
 pub fn descriptor_update<E: Env + 'static>(
     descriptor: &mut Option<DescriptorLoadable>,
     action: DescriptorAction,
@@ -66,6 +73,7 @@ pub fn descriptor_update<E: Env + 'static>(
                         Ok(manifest) => Loadable::Ready(Descriptor {
                             transport_url: transport_url.to_owned(),
                             manifest: manifest.to_owned(),
+                            // Only official addons have flags!
                             flags: OFFICIAL_ADDONS
                                 .iter()
                                 .find(|descriptor| descriptor.transport_url == *transport_url)
