@@ -386,10 +386,6 @@ fn migrate_storage_schema_to_v6<E: Env>() -> TryEnvFuture<()> {
             {
                 Some(settings) => {
                     settings.insert(
-                        "player_type".to_owned(),
-                        serde_json::Value::Number(serde_json::Number::from(0)),
-                    );
-                    settings.insert(
                         "auto_frame_rate_matching".to_owned(),
                         serde_json::Value::Bool(false),
                     );
