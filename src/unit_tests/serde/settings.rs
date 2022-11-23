@@ -13,7 +13,6 @@ fn settings() {
             player_type: Some("player".to_owned()),
             binge_watching: true,
             play_in_background: true,
-            play_in_external_player: true,
             hardware_decoding: true,
             auto_frame_rate_matching: true,
             next_video_notification_duration: 30,
@@ -35,7 +34,7 @@ fn settings() {
         &[
             Token::Struct {
                 name: "Settings",
-                len: 23,
+                len: 22,
             },
             Token::Str("interfaceLanguage"),
             Token::Str("interface_language"),
@@ -47,8 +46,6 @@ fn settings() {
             Token::Str("bingeWatching"),
             Token::Bool(true),
             Token::Str("playInBackground"),
-            Token::Bool(true),
-            Token::Str("playInExternalPlayer"),
             Token::Bool(true),
             Token::Str("hardwareDecoding"),
             Token::Bool(true),
@@ -99,7 +96,7 @@ fn settings_de() {
         &[
             Token::Struct {
                 name: "Settings",
-                len: 18,
+                len: 17,
             },
             Token::Str("interfaceLanguage"),
             Token::Str("eng"),
@@ -111,8 +108,6 @@ fn settings_de() {
             Token::Bool(false),
             Token::Str("playInBackground"),
             Token::Bool(true),
-            Token::Str("playInExternalPlayer"),
-            Token::Bool(false),
             Token::Str("hardwareDecoding"),
             Token::Bool(true),
             Token::Str("autoFrameRateMatching"),

@@ -383,14 +383,23 @@ fn migrate_storage_schema_to_v6<E: Env>() -> TryEnvFuture<()> {
                 .and_then(|profile| profile.as_object_mut())
                 .and_then(|profile| profile.get_mut("settings"))
                 .and_then(|settings| settings.as_object_mut())
+                .map(|settings| (settings.remove("playInExternalPlayer"), settings))
             {
-                Some(settings) => {
+                Some((Some(play_in_external_player), settings)) => {
                     settings.insert(
-                        "auto_frame_rate_matching".to_owned(),
+                        "playerType".to_owned(),
+                        if play_in_external_player == "true" {
+                            serde_json::Value::String("external".to_owned())
+                        } else {
+                            serde_json::Value::Null
+                        },
+                    );
+                    settings.insert(
+                        "autoFrameRateMatching".to_owned(),
                         serde_json::Value::Bool(false),
                     );
                     settings.insert(
-                        "next_video_notification_duration".to_owned(),
+                        "nextVideoNotificationDuration".to_owned(),
                         serde_json::Value::Number(serde_json::Number::from(0)),
                     );
                     E::set_storage(PROFILE_STORAGE_KEY, Some(&profile))
