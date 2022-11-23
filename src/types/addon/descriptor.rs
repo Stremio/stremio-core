@@ -2,6 +2,7 @@ use crate::types::addon::{Manifest, ManifestPreview};
 use serde::{Deserialize, Serialize};
 use url::Url;
 
+/// Addon descriptor
 #[derive(Clone, PartialEq, Serialize, Deserialize)]
 #[cfg_attr(debug_assertions, derive(Debug))]
 #[serde(rename_all = "camelCase")]
