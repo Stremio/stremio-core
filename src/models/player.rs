@@ -373,17 +373,25 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                     &mut self.subtitles,
                     ResourcesAction::ResourceRequestResult { request, result },
                 );
+                let next_streams_effects = match self.next_streams.as_mut() {
+                    Some(next_streams) => resource_update_with_vector_content::<E, _>(
+                        next_streams,
+                        ResourceAction::ResourceRequestResult { request, result },
+                    ),
+                    None => Effects::none().unchanged(),
+                };
+
                 let next_video_effects = next_video_update(
                     &mut self.next_video,
                     &self.selected,
                     &self.meta_item,
                     &ctx.profile.settings,
                 );
-                let next_streams_effects = next_streams_update::<E>(
+                let next_streams_effects = next_streams_effects.join(next_streams_update::<E>(
                     &mut self.next_streams,
                     &self.next_video,
                     &self.selected,
-                );
+                ));
                 let series_info_effects =
                     series_info_update(&mut self.series_info, &self.selected, &self.meta_item);
                 let library_item_effects = library_item_update::<E>(
