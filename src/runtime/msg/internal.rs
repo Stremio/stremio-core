@@ -37,6 +37,8 @@ pub enum Internal {
     LibraryPullResult(DatastoreRequest, Result<Vec<LibraryItem>, CtxError>),
     /// Dispatched when expired session is detected
     Logout,
+    /// Dispatched when addons needs to be installed.
+    InstallAddon(Descriptor),
     /// Dispatched when library item needs to be updated in the memory, storage and API.
     UpdateLibraryItem(LibraryItem),
     /// Dispatched when some of auth, addons or settings changed.
