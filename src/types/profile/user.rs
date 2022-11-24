@@ -14,6 +14,7 @@ use serde_with::{serde_as, DefaultOnError, DefaultOnNull, DurationSeconds, NoneA
 #[cfg_attr(test, derivative(Default))]
 pub struct TraktInfo {
     #[serde(with = "ts_seconds")]
+    #[cfg_attr(test, derivative(Default(value = "Utc.timestamp(0, 0)")))]
     pub created_at: DateTime<Utc>,
     #[serde_as(as = "DurationSeconds<i64>")]
     #[cfg_attr(test, derivative(Default(value = "Duration::zero()")))]

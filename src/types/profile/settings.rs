@@ -9,10 +9,12 @@ use url::Url;
 pub struct Settings {
     pub interface_language: String,
     pub streaming_server_url: Url,
+    pub player_type: Option<String>,
     pub binge_watching: bool,
     pub play_in_background: bool,
-    pub play_in_external_player: bool,
     pub hardware_decoding: bool,
+    pub auto_frame_rate_matching: bool,
+    pub next_video_notification_duration: u32,
     pub audio_passthrough: bool,
     pub audio_language: String,
     pub secondary_audio_language: Option<String>,
@@ -32,10 +34,12 @@ pub struct Settings {
 impl Default for Settings {
     fn default() -> Self {
         Settings {
+            player_type: None,
             binge_watching: false,
             play_in_background: true,
-            play_in_external_player: false,
             hardware_decoding: true,
+            auto_frame_rate_matching: false,
+            next_video_notification_duration: 0,
             audio_passthrough: false,
             streaming_server_url: STREAMING_SERVER_URL.to_owned(),
             interface_language: "eng".to_owned(),

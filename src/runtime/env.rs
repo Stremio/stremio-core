@@ -203,6 +203,12 @@ pub trait Env {
                         .await?;
                     schema_version = 5;
                 };
+                if schema_version == 5 {
+                    migrate_storage_schema_to_v6::<Self>()
+                        .map_err(|error| EnvError::StorageSchemaVersionUpgrade(Box::new(error)))
+                        .await?;
+                    schema_version = 6;
+                };
                 if schema_version != SCHEMA_VERSION {
                     panic!(
                         "Storage schema version must be upgraded from {} to {}",
@@ -366,5 +372,41 @@ fn migrate_storage_schema_to_v5<E: Env>() -> TryEnvFuture<()> {
             }
         })
         .and_then(|_| E::set_storage(SCHEMA_VERSION_STORAGE_KEY, Some(&5)))
+        .boxed_env()
+}
+
+fn migrate_storage_schema_to_v6<E: Env>() -> TryEnvFuture<()> {
+    E::get_storage::<serde_json::Value>(PROFILE_STORAGE_KEY)
+        .and_then(|mut profile| {
+            match profile
+                .as_mut()
+                .and_then(|profile| profile.as_object_mut())
+                .and_then(|profile| profile.get_mut("settings"))
+                .and_then(|settings| settings.as_object_mut())
+                .map(|settings| (settings.remove("playInExternalPlayer"), settings))
+            {
+                Some((Some(play_in_external_player), settings)) => {
+                    settings.insert(
+                        "playerType".to_owned(),
+                        if play_in_external_player == serde_json::Value::Bool(true) {
+                            serde_json::Value::String("external".to_owned())
+                        } else {
+                            serde_json::Value::Null
+                        },
+                    );
+                    settings.insert(
+                        "autoFrameRateMatching".to_owned(),
+                        serde_json::Value::Bool(false),
+                    );
+                    settings.insert(
+                        "nextVideoNotificationDuration".to_owned(),
+                        serde_json::Value::Number(serde_json::Number::from(0)),
+                    );
+                    E::set_storage(PROFILE_STORAGE_KEY, Some(&profile))
+                }
+                _ => E::set_storage::<()>(PROFILE_STORAGE_KEY, None),
+            }
+        })
+        .and_then(|_| E::set_storage(SCHEMA_VERSION_STORAGE_KEY, Some(&6)))
         .boxed_env()
 }
