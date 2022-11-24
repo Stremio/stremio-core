@@ -17,6 +17,8 @@ use std::cmp;
 use std::marker::PhantomData;
 use stremio_watched_bitfield::WatchedBitField;
 
+use super::common::resource_update_with_vector_content;
+
 #[derive(Clone, Default, PartialEq, Serialize, Deserialize)]
 #[cfg_attr(debug_assertions, derive(Debug))]
 #[serde(rename_all = "camelCase")]
@@ -59,6 +61,7 @@ pub struct Player {
     pub meta_item: Option<ResourceLoadable<MetaItem>>,
     pub subtitles: Vec<ResourceLoadable<Vec<Subtitles>>>,
     pub next_video: Option<Video>,
+    pub next_streams: Option<ResourceLoadable<Vec<Stream>>>,
     pub series_info: Option<SeriesInfo>,
     pub library_item: Option<LibraryItem>,
     #[serde(skip_serializing)]
@@ -135,6 +138,11 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                     &self.meta_item,
                     &ctx.profile.settings,
                 );
+                let next_streams_effects = next_streams_update::<E>(
+                    &mut self.next_streams,
+                    &self.next_video,
+                    &self.selected,
+                );
                 let series_info_effects =
                     series_info_update(&mut self.series_info, &self.selected, &self.meta_item);
                 let library_item_effects = library_item_update::<E>(
@@ -178,6 +186,7 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                     .join(meta_item_effects)
                     .join(subtitles_effects)
                     .join(next_video_effects)
+                    .join(next_streams_effects)
                     .join(series_info_effects)
                     .join(library_item_effects)
                     .join(watched_effects)
@@ -197,6 +206,7 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                 let meta_item_effects = eq_update(&mut self.meta_item, None);
                 let subtitles_effects = eq_update(&mut self.subtitles, vec![]);
                 let next_video_effects = eq_update(&mut self.next_video, None);
+                let next_streams_effects = eq_update(&mut self.next_streams, None);
                 let series_info_effects = eq_update(&mut self.series_info, None);
                 let library_item_effects = eq_update(&mut self.library_item, None);
                 let watched_effects = eq_update(&mut self.watched, None);
@@ -210,6 +220,7 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                     .join(meta_item_effects)
                     .join(subtitles_effects)
                     .join(next_video_effects)
+                    .join(next_streams_effects)
                     .join(series_info_effects)
                     .join(library_item_effects)
                     .join(watched_effects)
@@ -362,12 +373,25 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                     &mut self.subtitles,
                     ResourcesAction::ResourceRequestResult { request, result },
                 );
+                let next_streams_effects = match self.next_streams.as_mut() {
+                    Some(next_streams) => resource_update_with_vector_content::<E, _>(
+                        next_streams,
+                        ResourceAction::ResourceRequestResult { request, result },
+                    ),
+                    None => Effects::none().unchanged(),
+                };
+
                 let next_video_effects = next_video_update(
                     &mut self.next_video,
                     &self.selected,
                     &self.meta_item,
                     &ctx.profile.settings,
                 );
+                let next_streams_effects = next_streams_effects.join(next_streams_update::<E>(
+                    &mut self.next_streams,
+                    &self.next_video,
+                    &self.selected,
+                ));
                 let series_info_effects =
                     series_info_update(&mut self.series_info, &self.selected, &self.meta_item);
                 let library_item_effects = library_item_update::<E>(
@@ -403,6 +427,7 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                 meta_item_effects
                     .join(subtitles_effects)
                     .join(next_video_effects)
+                    .join(next_streams_effects)
                     .join(series_info_effects)
                     .join(library_item_effects)
                     .join(watched_effects)
@@ -495,6 +520,74 @@ fn next_video_update(
         _ => None,
     };
     eq_update(video, next_video)
+}
+
+fn next_streams_update<E>(
+    next_streams: &mut Option<ResourceLoadable<Vec<Stream>>>,
+    next_video: &Option<Video>,
+    selected: &Option<Selected>,
+) -> Effects
+where
+    E: Env + 'static,
+{
+    let next_video = match next_video {
+        Some(next_video) => next_video,
+        None => return Effects::none().unchanged(),
+    };
+
+    let mut stream_request = match selected
+        .as_ref()
+        .and_then(|selected| selected.stream_request.as_ref())
+    {
+        Some(stream_request) => stream_request.clone(),
+        None => return Effects::none().unchanged(),
+    };
+    // use the next video id to update the stream request
+    stream_request.path.id = next_video.id.clone();
+
+    if let Some(stream) = next_video.stream() {
+        return eq_update(
+            next_streams,
+            Some(ResourceLoadable {
+                request: stream_request,
+                content: Some(Loadable::Ready(vec![stream.into_owned()])),
+            }),
+        );
+    }
+
+    if !next_video.streams.is_empty() {
+        return eq_update(
+            next_streams,
+            Some(ResourceLoadable {
+                request: stream_request,
+                content: Some(Loadable::Ready(next_video.streams.clone())),
+            }),
+        );
+    }
+
+    // otherwise, fetch te next streams using a request
+    match next_streams.as_mut() {
+        Some(next_streams) => resource_update_with_vector_content::<E, _>(
+            next_streams,
+            ResourceAction::ResourceRequested {
+                request: &stream_request,
+            },
+        ),
+        None => {
+            let mut new_next_streams = ResourceLoadable {
+                request: stream_request.to_owned(),
+                content: None,
+            };
+            let next_streams_effects = resource_update::<E, _>(
+                &mut new_next_streams,
+                ResourceAction::ResourceRequested {
+                    request: &stream_request,
+                },
+            );
+            *next_streams = Some(new_next_streams);
+            next_streams_effects
+        }
+    }
 }
 
 fn series_info_update(
@@ -595,4 +688,175 @@ fn watched_update<E: Env>(
         })
         .map(|(meta_item, library_item)| library_item.state.watched_bitfield(&meta_item.videos));
     eq_update(watched, next_watched)
+}
+#[cfg(test)]
+mod test {
+    use chrono::{TimeZone, Utc};
+    use url::Url;
+
+    use crate::{
+        constants::YOUTUBE_ADDON_ID_PREFIX,
+        models::common::{Loadable, ResourceLoadable},
+        runtime::Effect,
+        types::{
+            addon::{ResourcePath, ResourceRequest},
+            resource::{SeriesInfo, Stream, Video},
+        },
+        unit_tests::TestEnv,
+    };
+
+    use super::{next_streams_update, Selected};
+
+    #[test]
+    fn next_streams_update_with_a_stream_from_next_video() {
+        let current_youtube_1 = format!("{}666:1", YOUTUBE_ADDON_ID_PREFIX);
+        let current_youtube_stream = Stream::youtube(&current_youtube_1).unwrap();
+        let next_youtube_1234 = format!("{}666:1234", YOUTUBE_ADDON_ID_PREFIX);
+        let next_youtube_stream = Stream::youtube(&next_youtube_1234).unwrap();
+
+        let youtube_base = "https://youtube.com"
+            .parse::<Url>()
+            .expect("Valid youtube url");
+        let next_streams = ResourceLoadable {
+            request: ResourceRequest {
+                base: youtube_base.clone(),
+                path: ResourcePath::without_extra("stream", "movie", &next_youtube_1234),
+            },
+            content: None,
+        };
+
+        let selected = Selected {
+            stream: current_youtube_stream,
+            stream_request: Some(ResourceRequest {
+                base: youtube_base,
+                path: ResourcePath::without_extra("stream", "movie", &current_youtube_1),
+            }),
+            meta_request: None,
+            subtitles_path: None,
+        };
+
+        // Test that it should update the next_streams from the next_video if Video has one stream
+        {
+            let mut next_streams = Some(next_streams.clone());
+            let next_video = Video {
+                id: "next_video".to_owned(),
+                title: "title".to_owned(),
+                released: Some(Utc.ymd(2020, 1, 1).and_hms(0, 0, 0)),
+                overview: Some("overview".to_owned()),
+                thumbnail: Some("thumbnail".to_owned()),
+                streams: vec![next_youtube_stream.clone()],
+                series_info: Some(SeriesInfo::default()),
+                trailer_streams: vec![],
+            };
+            let result_effects = next_streams_update::<TestEnv>(
+                &mut next_streams,
+                &Some(next_video),
+                &Some(selected.clone()),
+            );
+
+            assert!(result_effects.has_changed);
+            assert!(result_effects
+                .into_iter()
+                .collect::<Vec<Effect>>()
+                .is_empty());
+            assert_eq!(
+                next_streams.as_ref().unwrap().request.path.id,
+                "next_video",
+                "request should contain the next youtube video"
+            );
+
+            assert_eq!(
+                &Loadable::Ready(vec![next_youtube_stream.clone()]),
+                next_streams
+                    .as_ref()
+                    .unwrap()
+                    .content
+                    .as_ref()
+                    .expect("Should have content")
+            );
+        }
+
+        // Test that it should update next_streams using all streams in Video
+        {
+            let another_youtube_5678 = format!("{}666:5678", YOUTUBE_ADDON_ID_PREFIX);
+            let another_youtube_stream = Stream::youtube(&another_youtube_5678).unwrap();
+            let youtube_streams = vec![next_youtube_stream, another_youtube_stream];
+            let mut next_streams = Some(next_streams.clone());
+            let next_video = Video {
+                id: "next_video_2".to_owned(),
+                title: "title".to_owned(),
+                released: Some(Utc.ymd(2020, 1, 1).and_hms(0, 0, 0)),
+                overview: Some("overview".to_owned()),
+                thumbnail: Some("thumbnail".to_owned()),
+                streams: youtube_streams.clone(),
+                series_info: Some(SeriesInfo::default()),
+                trailer_streams: vec![],
+            };
+            let result_effects = next_streams_update::<TestEnv>(
+                &mut next_streams,
+                &Some(next_video),
+                &Some(selected.clone()),
+            );
+
+            assert!(result_effects.has_changed);
+            assert!(result_effects
+                .into_iter()
+                .collect::<Vec<Effect>>()
+                .is_empty());
+
+            assert_eq!(
+                next_streams.as_ref().unwrap().request.path.id,
+                "next_video_2",
+                "request should contain the next youtube video"
+            );
+
+            assert_eq!(
+                &Loadable::Ready(youtube_streams),
+                next_streams
+                    .as_ref()
+                    .unwrap()
+                    .content
+                    .as_ref()
+                    .expect("Should have content")
+            );
+        }
+
+        // Test that it should make a request to get next_streams if no streams are available in Video
+        {
+            let mut next_streams = Some(next_streams.clone());
+            let next_video = Video {
+                id: "next_video_3".to_owned(),
+                title: "title".to_owned(),
+                released: Some(Utc.ymd(2020, 1, 1).and_hms(0, 0, 0)),
+                overview: Some("overview".to_owned()),
+                thumbnail: Some("thumbnail".to_owned()),
+                // empty streams will cause a request to be made
+                streams: vec![],
+                series_info: Some(SeriesInfo::default()),
+                trailer_streams: vec![],
+            };
+            let result_effects = next_streams_update::<TestEnv>(
+                &mut next_streams,
+                &Some(next_video),
+                &Some(selected.clone()),
+            );
+
+            assert!(result_effects.has_changed);
+            assert_eq!(1, result_effects.into_iter().collect::<Vec<Effect>>().len());
+            assert_eq!(
+                next_streams.as_ref().unwrap().request.path.id,
+                "next_video_3",
+                "request should contain the next youtube video"
+            );
+            assert_eq!(
+                &Loadable::Loading,
+                next_streams
+                    .as_ref()
+                    .unwrap()
+                    .content
+                    .as_ref()
+                    .expect("Should have content")
+            );
+        }
+    }
 }

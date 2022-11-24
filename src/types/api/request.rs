@@ -46,6 +46,10 @@ pub enum APIRequest {
         user: User,
     },
     #[serde(rename_all = "camelCase")]
+    DataExport {
+        auth_key: AuthKey,
+    },
+    #[serde(rename_all = "camelCase")]
     Events {
         auth_key: AuthKey,
         events: Vec<serde_json::Value>,
@@ -69,6 +73,7 @@ impl FetchRequestParams<APIRequest> for APIRequest {
             APIRequest::AddonCollectionSet { .. } => "addonCollectionSet".to_owned(),
             APIRequest::GetUser { .. } => "getUser".to_owned(),
             APIRequest::SaveUser { .. } => "saveUser".to_owned(),
+            APIRequest::DataExport { .. } => "dataExport".to_owned(),
             APIRequest::Events { .. } => "events".to_owned(),
         }
     }
