@@ -388,7 +388,7 @@ fn migrate_storage_schema_to_v6<E: Env>() -> TryEnvFuture<()> {
                 Some((Some(play_in_external_player), settings)) => {
                     settings.insert(
                         "playerType".to_owned(),
-                        if play_in_external_player == "true" {
+                        if play_in_external_player == serde_json::Value::Bool(true) {
                             serde_json::Value::String("external".to_owned())
                         } else {
                             serde_json::Value::Null
