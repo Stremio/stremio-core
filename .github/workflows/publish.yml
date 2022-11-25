@@ -17,7 +17,7 @@ jobs:
         cache: 'npm'
         registry-url: https://registry.npmjs.org/
     - name: Set default rust toolchain
-      run: rustup default 1.61.0
+      run: rustup default 1.64.0
     - name: Install wasm-pack
       run: cargo install --version 0.10.3 wasm-pack
     - name: Install NPM dependencies
