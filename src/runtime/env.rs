@@ -383,17 +383,15 @@ fn migrate_storage_schema_to_v6<E: Env>() -> TryEnvFuture<()> {
                 .and_then(|profile| profile.as_object_mut())
                 .and_then(|profile| profile.get_mut("settings"))
                 .and_then(|settings| settings.as_object_mut())
-                .map(|settings| (settings.remove("playInExternalPlayer"), settings))
             {
-                Some((Some(play_in_external_player), settings)) => {
-                    settings.insert(
-                        "playerType".to_owned(),
-                        if play_in_external_player == serde_json::Value::Bool(true) {
+                Some(settings) => {
+                    let player_type = match settings.remove("playInExternalPlayer") {
+                        Some(play_in_external_player) if play_in_external_player == true => {
                             serde_json::Value::String("external".to_owned())
-                        } else {
-                            serde_json::Value::Null
-                        },
-                    );
+                        }
+                        _ => serde_json::Value::Null,
+                    };
+                    settings.insert("playerType".to_owned(), player_type);
                     settings.insert(
                         "autoFrameRateMatching".to_owned(),
                         serde_json::Value::Bool(false),
@@ -409,4 +407,161 @@ fn migrate_storage_schema_to_v6<E: Env>() -> TryEnvFuture<()> {
         })
         .and_then(|_| E::set_storage(SCHEMA_VERSION_STORAGE_KEY, Some(&6)))
         .boxed_env()
+}
+
+#[cfg(test)]
+mod test {
+    use serde_json::{json, Value};
+
+    use crate::{
+        constants::{PROFILE_STORAGE_KEY, SCHEMA_VERSION_STORAGE_KEY},
+        runtime::Env,
+        unit_tests::{TestEnv, STORAGE},
+    };
+
+    fn set_profile_and_schema_version(profile: &Value, schema_v: u32) {
+        let mut storage = STORAGE.write().expect("Should lock");
+
+        let no_schema = storage.insert(SCHEMA_VERSION_STORAGE_KEY.into(), schema_v.to_string());
+        assert!(
+            no_schema.is_none(),
+            "Current schema should be empty for this test"
+        );
+
+        let no_profile = storage.insert(PROFILE_STORAGE_KEY.into(), profile.to_string());
+        assert!(
+            no_profile.is_none(),
+            "Current profile should be empty for this test"
+        );
+    }
+
+    #[tokio::test]
+    async fn test_migration_from_5_to_6() {
+        // Profile with external player (true)
+        {
+            let _test_env_guard = TestEnv::reset().expect("Should lock TestEnv");
+            let profile_before = json!({
+                "settings": {
+                    "playInExternalPlayer": true,
+                }
+            });
+
+            let migrated_profile = json!({
+                "settings": {
+                    "playerType": "external",
+                    "autoFrameRateMatching": false,
+                    "nextVideoNotificationDuration": 0_u64
+                }
+            });
+
+            // setup storage for migration
+            set_profile_and_schema_version(&profile_before, 5);
+
+            // migrate storage
+            TestEnv::migrate_storage_schema()
+                .await
+                .expect("Should migrate");
+
+            let storage = STORAGE.read().expect("Should lock");
+
+            assert_eq!(
+                &6.to_string(),
+                storage
+                    .get(SCHEMA_VERSION_STORAGE_KEY)
+                    .expect("Should have the schema set"),
+                "Scheme version should now be updated"
+            );
+            assert_eq!(
+                &migrated_profile.to_string(),
+                storage
+                    .get(PROFILE_STORAGE_KEY)
+                    .expect("Should have the profile set"),
+                "Profile should match"
+            );
+        }
+
+        // Profile without external player (false)
+        {
+            let _test_env_guard = TestEnv::reset().expect("Should lock TestEnv");
+            let profile_before = json!({
+                "settings": {
+                    "playInExternalPlayer": false,
+                }
+            });
+
+            let migrated_profile = json!({
+                "settings": {
+                    "playerType": null,
+                    "autoFrameRateMatching": false,
+                    "nextVideoNotificationDuration": 0_u64
+                }
+            });
+
+            // setup storage for migration
+            set_profile_and_schema_version(&profile_before, 5);
+
+            // migrate storage
+            TestEnv::migrate_storage_schema()
+                .await
+                .expect("Should migrate");
+
+            let storage = STORAGE.read().expect("Should lock");
+
+            assert_eq!(
+                &6.to_string(),
+                storage
+                    .get(SCHEMA_VERSION_STORAGE_KEY)
+                    .expect("Should have the schema set"),
+                "Scheme version should now be updated"
+            );
+            assert_eq!(
+                &migrated_profile.to_string(),
+                storage
+                    .get(PROFILE_STORAGE_KEY)
+                    .expect("Should have the profile set"),
+                "Profile should match"
+            );
+        }
+
+        // Profile with no external player set (null)
+        {
+            let _test_env_guard = TestEnv::reset().expect("Should lock TestEnv");
+            let profile_before = json!({
+                "settings": {}
+            });
+
+            let migrated_profile = json!({
+                "settings": {
+                    "playerType": null,
+                    "autoFrameRateMatching": false,
+                    "nextVideoNotificationDuration": 0_u64
+                }
+            });
+
+            // setup storage for migration
+            set_profile_and_schema_version(&profile_before, 5);
+
+            // migrate storage
+            TestEnv::migrate_storage_schema()
+                .await
+                .expect("Should migrate");
+
+            let storage = STORAGE.read().expect("Should lock");
+
+            assert_eq!(
+                &6.to_string(),
+                storage
+                    .get(SCHEMA_VERSION_STORAGE_KEY)
+                    .expect("Should have the schema set"),
+                "Scheme version should now be updated"
+            );
+            assert_eq!(
+                &migrated_profile.to_string(),
+                storage
+                    .get(PROFILE_STORAGE_KEY)
+                    .expect("Should have the profile set"),
+                "Profile should match"
+            );
+        }
+    }
 }
