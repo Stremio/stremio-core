@@ -72,7 +72,7 @@ pub async fn initialize_runtime(emit_to_ui: js_sys::Function) -> Result<(), JsVa
                                     let model = runtime.model().expect("model read failed");
                                     let path = location_hash.split('#').last().map(|path| path.to_owned()).unwrap_or_default();
                                     WebEnv::emit_to_analytics(
-                                        &WebEvent::CoreEvent(event.to_owned()),
+                                        &WebEvent::CoreEvent(Box::new(event.to_owned())),
                                         &model,
                                         &path
                                     );

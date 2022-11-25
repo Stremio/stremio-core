@@ -133,59 +133,62 @@ impl WebEnv {
                     }
                 }),
             ),
-            WebEvent::CoreEvent(Event::UserAuthenticated { auth_request }) => (
-                "login".to_owned(),
-                json!({
-                    "type": match auth_request {
-                        AuthRequest::Login { facebook, .. } if *facebook => "facebook",
-                        AuthRequest::Login { .. } => "login",
-                        AuthRequest::LoginWithToken { .. } => "loginWithToken",
-                        AuthRequest::Register { .. } => "register",
-                    },
-                }),
-            ),
-            WebEvent::CoreEvent(Event::AddonInstalled { transport_url, id }) => (
-                "installAddon".to_owned(),
-                json!({
-                    "addonTransportUrl": transport_url,
-                    "addonID": id
-                }),
-            ),
-            WebEvent::CoreEvent(Event::AddonUninstalled { transport_url, id }) => (
-                "removeAddon".to_owned(),
-                json!({
-                    "addonTransportUrl": transport_url,
-                    "addonID": id
-                }),
-            ),
-            WebEvent::CoreEvent(Event::PlayerPlaying { load_time, context }) => (
-                "playerPlaying".to_owned(),
-                json!({
-                    "loadTime": load_time,
-                    "player": context
-                }),
-            ),
-            WebEvent::CoreEvent(Event::PlayerStopped { context }) => {
-                ("playerStopped".to_owned(), json!({ "player": context }))
-            }
-            WebEvent::CoreEvent(Event::PlayerEnded {
-                context,
-                is_binge_enabled,
-                is_playing_next_video,
-            }) => (
-                "playerEnded".to_owned(),
-                json!({
-                   "player": context,
-                   "isBingeEnabled": is_binge_enabled,
-                   "isPlayingNextVideo": is_playing_next_video
-                }),
-            ),
-            WebEvent::CoreEvent(Event::TraktPlaying { context }) => {
-                ("traktPlaying".to_owned(), json!({ "player": context }))
-            }
-            WebEvent::CoreEvent(Event::TraktPaused { context }) => {
-                ("traktPaused".to_owned(), json!({ "player": context }))
-            }
+            WebEvent::CoreEvent(core_event) => match core_event.as_ref() {
+                Event::UserAuthenticated { auth_request } => (
+                    "login".to_owned(),
+                    json!({
+                        "type": match auth_request {
+                            AuthRequest::Login { facebook, .. } if *facebook => "facebook",
+                            AuthRequest::Login { .. } => "login",
+                            AuthRequest::LoginWithToken { .. } => "loginWithToken",
+                            AuthRequest::Register { .. } => "register",
+                        },
+                    }),
+                ),
+                Event::AddonInstalled { transport_url, id } => (
+                    "installAddon".to_owned(),
+                    json!({
+                        "addonTransportUrl": transport_url,
+                        "addonID": id
+                    }),
+                ),
+                Event::AddonUninstalled { transport_url, id } => (
+                    "removeAddon".to_owned(),
+                    json!({
+                        "addonTransportUrl": transport_url,
+                        "addonID": id
+                    }),
+                ),
+                Event::PlayerPlaying { load_time, context } => (
+                    "playerPlaying".to_owned(),
+                    json!({
+                        "loadTime": load_time,
+                        "player": context
+                    }),
+                ),
+                Event::PlayerStopped { context } => {
+                    ("playerStopped".to_owned(), json!({ "player": context }))
+                }
+                Event::PlayerEnded {
+                    context,
+                    is_binge_enabled,
+                    is_playing_next_video,
+                } => (
+                    "playerEnded".to_owned(),
+                    json!({
+                       "player": context,
+                       "isBingeEnabled": is_binge_enabled,
+                       "isPlayingNextVideo": is_playing_next_video
+                    }),
+                ),
+                Event::TraktPlaying { context } => {
+                    ("traktPlaying".to_owned(), json!({ "player": context }))
+                }
+                Event::TraktPaused { context } => {
+                    ("traktPaused".to_owned(), json!({ "player": context }))
+                }
+                _ => return,
+            },
             WebEvent::CoreAction(core_action) => match core_action.as_ref() {
                 Action::Ctx(ActionCtx::AddToLibrary(meta_preview)) => {
                     let library_item = model.ctx.library.items.get(&meta_preview.id);
@@ -216,7 +219,6 @@ impl WebEnv {
                 Action::Ctx(ActionCtx::Logout) => ("logout".to_owned(), serde_json::Value::Null),
                 _ => return,
             },
-            _ => return,
         };
         ANALYTICS.emit(name, data, &model.ctx, &model.streaming_server, path);
     }
