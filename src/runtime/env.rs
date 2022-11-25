@@ -383,17 +383,15 @@ fn migrate_storage_schema_to_v6<E: Env>() -> TryEnvFuture<()> {
                 .and_then(|profile| profile.as_object_mut())
                 .and_then(|profile| profile.get_mut("settings"))
                 .and_then(|settings| settings.as_object_mut())
-                .map(|settings| (settings.remove("playInExternalPlayer"), settings))
             {
-                Some((Some(play_in_external_player), settings)) => {
-                    settings.insert(
-                        "playerType".to_owned(),
-                        if play_in_external_player == true {
+                Some(settings) => {
+                    let player_type = match settings.remove("playInExternalPlayer") {
+                        Some(play_in_external_player) if play_in_external_player == true => {
                             serde_json::Value::String("external".to_owned())
-                        } else {
-                            serde_json::Value::Null
-                        },
-                    );
+                        }
+                        _ => serde_json::Value::Null,
+                    };
+                    settings.insert("playerType".to_owned(), player_type);
                     settings.insert(
                         "autoFrameRateMatching".to_owned(),
                         serde_json::Value::Bool(false),
@@ -532,6 +530,14 @@ mod test {
                 "settings": {}
             });
 
+            let migrated_profile = json!({
+                "settings": {
+                    "playerType": null,
+                    "autoFrameRateMatching": false,
+                    "nextVideoNotificationDuration": 0_u64
+                }
+            });
+
             // setup storage for migration
             set_profile_and_schema_version(&profile_before, 5);
 
@@ -549,9 +555,12 @@ mod test {
                     .expect("Should have the schema set"),
                 "Scheme version should now be updated"
             );
-            assert!(
-                storage.get(PROFILE_STORAGE_KEY).is_none(),
-                "Profile should be set to None"
+            assert_eq!(
+                &migrated_profile.to_string(),
+                storage
+                    .get(PROFILE_STORAGE_KEY)
+                    .expect("Should have the profile set"),
+                "Profile should match"
             );
         }
     }
