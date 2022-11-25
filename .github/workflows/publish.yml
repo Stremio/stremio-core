@@ -19,7 +19,7 @@ jobs:
     - name: Set default rust toolchain
       run: rustup default 1.61.0
     - name: Install wasm-pack
-      run: cargo install --version 0.10.2 wasm-pack
+      run: cargo install --version 0.10.3 wasm-pack
     - name: Install NPM dependencies
       run: npm ci
     - name: Build
