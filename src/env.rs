@@ -400,6 +400,7 @@ impl Env for WebEnv {
         let msecs = js_sys::Date::now() as i64;
         let (secs, nsecs) = (msecs / 1000, msecs % 1000 * 1_000_000);
         Utc.timestamp_opt(secs, nsecs as u32)
+            .single()
             .expect("Invalid timestamp")
     }
     fn flush_analytics() -> EnvFuture<()> {
