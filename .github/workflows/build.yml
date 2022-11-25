@@ -20,3 +20,6 @@ jobs:
       run: cargo clippy --all -- -D warnings
     - name: Test
       run: cargo test
+    # This makes sure that core will be correctly build in release
+    - name: Build in --release
+      run: cargo build --release
