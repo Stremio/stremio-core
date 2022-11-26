@@ -1,5 +1,5 @@
 use crate::constants::{OFFICIAL_ADDONS, PROFILE_STORAGE_KEY};
-use crate::models::ctx::Ctx;
+use crate::models::ctx::{CommunityAddonsResp, Ctx};
 use crate::runtime::msg::{Action, ActionCtx};
 use crate::runtime::{Env, EnvFutureExt, Runtime, RuntimeAction, TryEnvFuture};
 use crate::types::addon::{Descriptor, Manifest};
@@ -22,19 +22,64 @@ fn actionctx_pulladdonsfromapi() {
         ctx: Ctx,
     }
     let official_addon = OFFICIAL_ADDONS.first().unwrap();
+    let community_addon = Descriptor {
+        manifest: Manifest {
+            id: "com.community.addon.new".to_owned(),
+            version: Version::new(0, 0, 2),
+            ..Default::default()
+        },
+        transport_url: Url::parse("https://transport_url2").unwrap(),
+        flags: Default::default(),
+    };
+    fn fetch_handler(request: Request) -> TryEnvFuture<Box<dyn Any + Send>> {
+        match request {
+            Request {
+                url, method, body, ..
+            } if url == "https://v3-cinemeta.strem.io/addon%5Fcatalog/all/community.json"
+                && method == "GET"
+                && body == "null" =>
+            {
+                future::ok(Box::new(CommunityAddonsResp {
+                    addons: vec![Descriptor {
+                        manifest: Manifest {
+                            id: "com.community.addon.new".to_owned(),
+                            version: Version::new(0, 0, 2),
+                            ..Default::default()
+                        },
+                        transport_url: Url::parse("https://transport_url2").unwrap(),
+                        flags: Default::default(),
+                    }],
+                }) as Box<dyn Any + Send>)
+                .boxed_env()
+            }
+            _ => default_fetch_handler(request),
+        }
+    }
     let _env_mutex = TestEnv::reset();
+    *FETCH_HANDLER.write().unwrap() = Box::new(fetch_handler);
     let (runtime, _rx) = Runtime::<TestEnv, _>::new(
         TestModel {
             ctx: Ctx {
                 profile: Profile {
-                    addons: vec![Descriptor {
-                        manifest: Manifest {
-                            version: Version::new(0, 0, 1),
-                            ..official_addon.manifest.to_owned()
+                    addons: vec![
+                        Descriptor {
+                            manifest: Manifest {
+                                version: Version::new(0, 0, 1),
+                                ..official_addon.manifest.to_owned()
+                            },
+                            transport_url: Url::parse("https://transport_url").unwrap(),
+                            flags: official_addon.flags.to_owned(),
                         },
-                        transport_url: Url::parse("https://transport_url").unwrap(),
-                        flags: official_addon.flags.to_owned(),
-                    }],
+                        Descriptor {
+                            manifest: Manifest {
+                                id: "com.community.addon.old".to_owned(),
+                                version: Version::new(0, 0, 1),
+                                ..community_addon.manifest.to_owned()
+                            },
+                            transport_url: community_addon.transport_url.to_owned(),
+                            flags: community_addon.flags.to_owned(),
+                        },
+                    ],
                     ..Default::default()
                 },
                 ..Default::default()
@@ -51,7 +96,7 @@ fn actionctx_pulladdonsfromapi() {
     });
     assert_eq!(
         runtime.model().unwrap().ctx.profile.addons,
-        vec![official_addon.to_owned()],
+        vec![official_addon.to_owned(), community_addon.to_owned()],
         "addons updated successfully in memory"
     );
     assert!(
@@ -61,13 +106,24 @@ fn actionctx_pulladdonsfromapi() {
             .get(PROFILE_STORAGE_KEY)
             .map_or(false, |data| {
                 serde_json::from_str::<Profile>(&data).unwrap().addons
-                    == vec![official_addon.to_owned()]
+                    == vec![official_addon.to_owned(), community_addon.to_owned()]
             }),
         "addons updated successfully in storage"
     );
-    assert!(
-        REQUESTS.read().unwrap().is_empty(),
-        "No requests have been sent"
+    assert_eq!(
+        REQUESTS.read().unwrap().len(),
+        1,
+        "One request has been sent"
+    );
+    assert_eq!(
+        REQUESTS.read().unwrap().get(0).unwrap().to_owned(),
+        Request {
+            url: "https://v3-cinemeta.strem.io/addon%5Fcatalog/all/community.json".to_owned(),
+            method: "GET".to_owned(),
+            body: "null".to_owned(),
+            ..Default::default()
+        },
+        "community addons request has been sent"
     );
 }
 

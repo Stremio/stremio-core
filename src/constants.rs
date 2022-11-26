@@ -41,6 +41,9 @@ pub const URI_COMPONENT_ENCODE_SET: &AsciiSet = &NON_ALPHANUMERIC
 lazy_static! {
     pub static ref CINEMETA_URL: Url = Url::parse("https://v3-cinemeta.strem.io/manifest.json")
         .expect("CINEMETA_URL parse failed");
+    pub static ref CINEMETA_COMMUNITY_ADDONS_URL: Url =
+        Url::parse("https://v3-cinemeta.strem.io/addon%5Fcatalog/all/community.json")
+            .expect("CINEMETA_COMMUNITY_ADDONS_URL parse failed");
     pub static ref API_URL: Url = Url::parse("https://api.strem.io").expect("API_URL parse failed");
     pub static ref LINK_API_URL: Url =
         Url::parse("https://link.stremio.com").expect("LINK_API_URL parse failed");

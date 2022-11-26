@@ -1,5 +1,5 @@
-use crate::constants::{OFFICIAL_ADDONS, PROFILE_STORAGE_KEY};
-use crate::models::ctx::{CtxError, CtxStatus, OtherError};
+use crate::constants::{CINEMETA_COMMUNITY_ADDONS_URL, OFFICIAL_ADDONS, PROFILE_STORAGE_KEY};
+use crate::models::ctx::{CommunityAddonsResp, CtxError, CtxStatus, OtherError};
 use crate::runtime::msg::{Action, ActionCtx, Event, Internal, Msg};
 use crate::runtime::{Effect, EffectFuture, Effects, Env, EnvFutureExt};
 use crate::types::addon::Descriptor;
@@ -7,8 +7,10 @@ use crate::types::api::{
     fetch_api, APIError, APIRequest, APIResult, CollectionResponse, SuccessResponse,
 };
 use crate::types::profile::{Auth, AuthKey, Profile, Settings, User};
+use crate::types::OptionInspectExt;
 use enclose::enclose;
 use futures::{future, FutureExt, TryFutureExt};
+use http::request::Request;
 
 pub fn update_profile<E: Env + 'static>(
     profile: &mut Profile,
@@ -63,39 +65,7 @@ pub fn update_profile<E: Env + 'static>(
         },
         Msg::Action(Action::Ctx(ActionCtx::PullAddonsFromAPI)) => match profile.auth_key() {
             Some(auth_key) => Effects::one(pull_addons_from_api::<E>(auth_key)).unchanged(),
-            _ => {
-                let next_addons = profile
-                    .addons
-                    .iter()
-                    .map(|profile_addon| {
-                        OFFICIAL_ADDONS
-                            .iter()
-                            .find(|Descriptor { manifest, .. }| {
-                                manifest.id == profile_addon.manifest.id
-                                    && manifest.version > profile_addon.manifest.version
-                            })
-                            .map(|official_addon| Descriptor {
-                                transport_url: official_addon.transport_url.to_owned(),
-                                manifest: official_addon.manifest.to_owned(),
-                                flags: profile_addon.flags.to_owned(),
-                            })
-                            .unwrap_or_else(|| profile_addon.to_owned())
-                    })
-                    .collect::<Vec<_>>();
-                let transport_urls = next_addons
-                    .iter()
-                    .map(|addon| &addon.transport_url)
-                    .cloned()
-                    .collect();
-                if profile.addons != next_addons {
-                    profile.addons = next_addons;
-                    Effects::msg(Msg::Event(Event::AddonsPulledFromAPI { transport_urls }))
-                        .join(Effects::msg(Msg::Internal(Internal::ProfileChanged)))
-                } else {
-                    Effects::msg(Msg::Event(Event::AddonsPulledFromAPI { transport_urls }))
-                        .unchanged()
-                }
-            }
+            _ => Effects::one(pull_community_addons::<E>()).unchanged(),
         },
         Msg::Action(Action::Ctx(ActionCtx::InstallAddon(addon))) => {
             Effects::msg(Msg::Internal(Internal::InstallAddon(addon.to_owned()))).unchanged()
@@ -277,6 +247,61 @@ pub fn update_profile<E: Env + 'static>(
             }
             _ => Effects::none().unchanged(),
         },
+        Msg::Internal(Internal::AddonsCommunityResult(result)) => {
+            let mut transport_urls = vec![];
+            let next_addons = match result {
+                Ok(community_addons) => profile
+                    .addons
+                    .iter()
+                    .map(|profile_addon| {
+                        community_addons
+                            .iter()
+                            .find(|community_addon| {
+                                community_addon.transport_url == profile_addon.transport_url
+                                    && community_addon.manifest.version
+                                        > profile_addon.manifest.version
+                            })
+                            .inspect_some(|community_addon| {
+                                transport_urls.push(community_addon.transport_url.to_owned())
+                            })
+                            .map(|community_addon| Descriptor {
+                                transport_url: community_addon.transport_url.to_owned(),
+                                manifest: community_addon.manifest.to_owned(),
+                                flags: profile_addon.flags.to_owned(),
+                            })
+                            .unwrap_or_else(|| profile_addon.to_owned())
+                    })
+                    .collect::<Vec<_>>(),
+                _ => profile.addons.to_owned(),
+            };
+            let next_addons = next_addons
+                .iter()
+                .map(|profile_addon| {
+                    OFFICIAL_ADDONS
+                        .iter()
+                        .find(|official_addon| {
+                            official_addon.manifest.id == profile_addon.manifest.id
+                                && official_addon.manifest.version > profile_addon.manifest.version
+                        })
+                        .inspect_some(|official_addon| {
+                            transport_urls.push(official_addon.transport_url.to_owned())
+                        })
+                        .map(|official_addon| Descriptor {
+                            transport_url: official_addon.transport_url.to_owned(),
+                            manifest: official_addon.manifest.to_owned(),
+                            flags: profile_addon.flags.to_owned(),
+                        })
+                        .unwrap_or_else(|| profile_addon.to_owned())
+                })
+                .collect::<Vec<_>>();
+            if profile.addons != next_addons {
+                profile.addons = next_addons;
+                Effects::msg(Msg::Event(Event::AddonsPulledFromAPI { transport_urls }))
+                    .join(Effects::msg(Msg::Internal(Internal::ProfileChanged)))
+            } else {
+                Effects::msg(Msg::Event(Event::AddonsPulledFromAPI { transport_urls })).unchanged()
+            }
+        }
         Msg::Internal(Internal::AddonsAPIResult(
             APIRequest::AddonCollectionGet { auth_key, .. },
             result,
@@ -437,6 +462,20 @@ fn push_profile_to_storage<E: Env + 'static>(profile: &Profile) -> Effect {
                     source: Box::new(Event::ProfilePushedToStorage { uid }),
                 })
             }))
+            .boxed_env(),
+    )
+    .into()
+}
+
+fn pull_community_addons<E: Env + 'static>() -> Effect {
+    let request = Request::get(CINEMETA_COMMUNITY_ADDONS_URL.as_str())
+        .body(())
+        .expect("request builder failed");
+    EffectFuture::Concurrent(
+        E::fetch::<_, CommunityAddonsResp>(request)
+            .map_ok(|resp| resp.addons)
+            .map_err(CtxError::from)
+            .map(|result| Msg::Internal(Internal::AddonsCommunityResult(result)))
             .boxed_env(),
     )
     .into()
