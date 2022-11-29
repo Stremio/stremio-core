@@ -16,7 +16,7 @@ use std::borrow::Cow;
 use std::marker::PhantomData;
 use stremio_watched_bitfield::WatchedBitField;
 
-#[derive(Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[cfg_attr(debug_assertions, derive(Debug))]
 #[serde(rename_all = "camelCase")]
 pub struct Selected {

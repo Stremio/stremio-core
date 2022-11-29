@@ -12,7 +12,7 @@ use futures::FutureExt;
 use serde::{Deserialize, Serialize};
 use std::ops::Range;
 
-#[derive(Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[cfg_attr(debug_assertions, derive(Debug))]
 pub struct Selected {
     pub r#type: Option<String>,

@@ -9,26 +9,26 @@ use itertools::Itertools;
 use serde::{Deserialize, Serialize};
 use std::iter;
 
-#[derive(Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[cfg_attr(debug_assertions, derive(Debug))]
 pub struct InstalledAddonsRequest {
     pub r#type: Option<String>,
 }
 
-#[derive(Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[cfg_attr(debug_assertions, derive(Debug))]
 pub struct Selected {
     pub request: InstalledAddonsRequest,
 }
 
-#[derive(PartialEq, Serialize)]
+#[derive(PartialEq, Eq, Serialize)]
 pub struct SelectableType {
     pub r#type: Option<String>,
     pub selected: bool,
     pub request: InstalledAddonsRequest,
 }
 
-#[derive(Default, PartialEq, Serialize)]
+#[derive(Default, PartialEq, Eq, Serialize)]
 pub struct Selectable {
     pub types: Vec<SelectableType>,
 }

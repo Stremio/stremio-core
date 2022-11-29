@@ -6,7 +6,7 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Clone, TryInto, Serialize)]
 #[cfg_attr(debug_assertions, derive(Debug))]
-#[cfg_attr(test, derive(PartialEq))]
+#[cfg_attr(test, derive(PartialEq, Eq))]
 #[serde(untagged)]
 pub enum ResourceResponse {
     Metas {

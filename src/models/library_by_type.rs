@@ -12,21 +12,21 @@ use std::collections::HashMap;
 use std::marker::PhantomData;
 use strum::IntoEnumIterator;
 
-#[derive(Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[cfg_attr(debug_assertions, derive(Debug))]
 pub struct Selected {
     #[serde(default)]
     pub sort: Sort,
 }
 
-#[derive(PartialEq, Serialize)]
+#[derive(PartialEq, Eq, Serialize)]
 #[cfg_attr(debug_assertions, derive(Debug))]
 pub struct SelectableSort {
     pub sort: Sort,
     pub selected: bool,
 }
 
-#[derive(Default, PartialEq, Serialize)]
+#[derive(Default, PartialEq, Eq, Serialize)]
 #[cfg_attr(debug_assertions, derive(Debug))]
 pub struct Selectable {
     pub sorts: Vec<SelectableSort>,

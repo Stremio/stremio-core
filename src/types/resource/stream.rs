@@ -14,7 +14,7 @@ use std::io::Write;
 use stremio_serde_hex::{SerHex, Strict};
 use url::Url;
 
-#[derive(Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[cfg_attr(debug_assertions, derive(Debug))]
 #[serde(rename_all = "camelCase")]
 pub struct Stream {
@@ -96,7 +96,7 @@ impl Stream {
 }
 
 #[serde_as]
-#[derive(Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[cfg_attr(debug_assertions, derive(Debug))]
 #[cfg_attr(test, derive(Derivative))]
 #[cfg_attr(test, derivative(Default))]
@@ -171,7 +171,7 @@ where
     ))
 }
 
-#[derive(Default, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Default, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[cfg_attr(debug_assertions, derive(Debug))]
 #[serde(rename_all = "camelCase")]
 pub struct StreamProxyHeaders {
@@ -181,7 +181,7 @@ pub struct StreamProxyHeaders {
     pub response: HashMap<String, String>,
 }
 
-#[derive(Default, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Default, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[cfg_attr(debug_assertions, derive(Debug))]
 #[serde(rename_all = "camelCase")]
 pub struct StreamBehaviorHints {

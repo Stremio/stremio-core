@@ -14,7 +14,7 @@ pub enum APIResult<T> {
     Ok { result: T },
 }
 
-#[derive(Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[cfg_attr(debug_assertions, derive(Debug))]
 #[cfg_attr(test, derive(Default))]
 pub struct APIError {
@@ -42,7 +42,7 @@ pub struct DataExportResponse {
     pub export_id: String,
 }
 
-#[derive(PartialEq, Deserialize)]
+#[derive(PartialEq, Eq, Deserialize)]
 #[cfg_attr(debug_assertions, derive(Debug))]
 pub struct LibraryItemModified(
     pub String,
@@ -54,7 +54,7 @@ pub struct SuccessResponse {
     pub success: True,
 }
 
-#[derive(Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[cfg_attr(debug_assertions, derive(Debug))]
 pub struct LinkCodeResponse {
     pub code: String,
@@ -62,7 +62,7 @@ pub struct LinkCodeResponse {
     pub qrcode: String,
 }
 
-#[derive(Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[cfg_attr(debug_assertions, derive(Debug))]
 #[serde(rename_all = "camelCase")]
 pub struct LinkAuthKey {
@@ -71,7 +71,7 @@ pub struct LinkAuthKey {
 
 #[derive(Clone, TryInto, Serialize, Deserialize)]
 #[cfg_attr(debug_assertions, derive(Debug))]
-#[cfg_attr(test, derive(PartialEq))]
+#[cfg_attr(test, derive(PartialEq, Eq))]
 #[serde(untagged)]
 pub enum LinkDataResponse {
     AuthKey(LinkAuthKey),

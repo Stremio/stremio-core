@@ -19,7 +19,7 @@ use serde::{Deserialize, Serialize};
 use std::convert::TryFrom;
 use std::ops::Add;
 
-#[derive(PartialEq)]
+#[derive(PartialEq, Eq)]
 pub enum SelectablePriority {
     Type,
     Catalog,
@@ -55,13 +55,13 @@ impl CatalogResourceAdapter for DescriptorPreview {
     }
 }
 
-#[derive(Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[cfg_attr(debug_assertions, derive(Debug))]
 pub struct Selected {
     pub request: ResourceRequest,
 }
 
-#[derive(PartialEq, Serialize)]
+#[derive(PartialEq, Eq, Serialize)]
 #[cfg_attr(debug_assertions, derive(Clone, Debug))]
 #[serde(rename_all = "camelCase")]
 pub struct SelectableCatalog {
@@ -70,7 +70,7 @@ pub struct SelectableCatalog {
     pub request: ResourceRequest,
 }
 
-#[derive(PartialEq, Serialize)]
+#[derive(PartialEq, Eq, Serialize)]
 #[cfg_attr(debug_assertions, derive(Clone, Debug))]
 pub struct SelectableType {
     pub r#type: String,
@@ -78,7 +78,7 @@ pub struct SelectableType {
     pub request: ResourceRequest,
 }
 
-#[derive(PartialEq, Serialize)]
+#[derive(PartialEq, Eq, Serialize)]
 #[cfg_attr(debug_assertions, derive(Clone, Debug))]
 pub struct SelectableExtraOption {
     pub value: Option<String>,
@@ -86,7 +86,7 @@ pub struct SelectableExtraOption {
     pub request: ResourceRequest,
 }
 
-#[derive(PartialEq, Serialize)]
+#[derive(PartialEq, Eq, Serialize)]
 #[cfg_attr(debug_assertions, derive(Clone, Debug))]
 #[serde(rename_all = "camelCase")]
 pub struct SelectableExtra {
@@ -95,13 +95,13 @@ pub struct SelectableExtra {
     pub options: Vec<SelectableExtraOption>,
 }
 
-#[derive(PartialEq, Serialize)]
+#[derive(PartialEq, Eq, Serialize)]
 #[cfg_attr(debug_assertions, derive(Clone, Debug))]
 pub struct SelectablePage {
     pub request: ResourceRequest,
 }
 
-#[derive(Default, PartialEq, Serialize)]
+#[derive(Default, PartialEq, Eq, Serialize)]
 #[cfg_attr(debug_assertions, derive(Clone, Debug))]
 #[serde(rename_all = "camelCase")]
 pub struct Selectable {

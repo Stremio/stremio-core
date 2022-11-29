@@ -37,7 +37,7 @@ impl LibraryFilter for NotRemovedFilter {
     }
 }
 
-#[derive(Derivative, Clone, PartialEq, EnumIter, Serialize, Deserialize)]
+#[derive(Derivative, Clone, PartialEq, Eq, EnumIter, Serialize, Deserialize)]
 #[cfg_attr(debug_assertions, derive(Debug))]
 #[derivative(Default)]
 #[serde(rename_all = "lowercase")]
@@ -48,7 +48,7 @@ pub enum Sort {
     TimesWatched,
 }
 
-#[derive(Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[cfg_attr(debug_assertions, derive(Debug))]
 pub struct LibraryRequest {
     pub r#type: Option<String>,
@@ -58,7 +58,7 @@ pub struct LibraryRequest {
     pub page: LibraryRequestPage,
 }
 
-#[derive(Clone, Deref, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Deref, PartialEq, Eq, Serialize, Deserialize)]
 #[cfg_attr(debug_assertions, derive(Debug))]
 pub struct LibraryRequestPage(pub NonZeroUsize);
 
@@ -68,13 +68,13 @@ impl Default for LibraryRequestPage {
     }
 }
 
-#[derive(Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[cfg_attr(debug_assertions, derive(Debug))]
 pub struct Selected {
     pub request: LibraryRequest,
 }
 
-#[derive(PartialEq, Serialize)]
+#[derive(PartialEq, Eq, Serialize)]
 #[cfg_attr(debug_assertions, derive(Debug))]
 pub struct SelectableType {
     pub r#type: Option<String>,
@@ -82,7 +82,7 @@ pub struct SelectableType {
     pub request: LibraryRequest,
 }
 
-#[derive(PartialEq, Serialize)]
+#[derive(PartialEq, Eq, Serialize)]
 #[cfg_attr(debug_assertions, derive(Debug))]
 pub struct SelectableSort {
     pub sort: Sort,
@@ -90,13 +90,13 @@ pub struct SelectableSort {
     pub request: LibraryRequest,
 }
 
-#[derive(PartialEq, Serialize)]
+#[derive(PartialEq, Eq, Serialize)]
 #[cfg_attr(debug_assertions, derive(Debug))]
 pub struct SelectablePage {
     pub request: LibraryRequest,
 }
 
-#[derive(Default, PartialEq, Serialize)]
+#[derive(Default, PartialEq, Eq, Serialize)]
 #[cfg_attr(debug_assertions, derive(Debug))]
 pub struct Selectable {
     pub types: Vec<SelectableType>,

@@ -19,7 +19,7 @@ use stremio_watched_bitfield::WatchedBitField;
 
 use super::common::resource_update_with_vector_content;
 
-#[derive(Clone, Default, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
 #[cfg_attr(debug_assertions, derive(Debug))]
 #[serde(rename_all = "camelCase")]
 pub struct AnalyticsContext {
@@ -43,7 +43,7 @@ pub struct AnalyticsContext {
     pub has_trakt: bool,
 }
 
-#[derive(Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[cfg_attr(debug_assertions, derive(Debug))]
 #[serde(rename_all = "camelCase")]
 pub struct Selected {
@@ -697,7 +697,6 @@ mod test {
     use crate::{
         constants::YOUTUBE_ADDON_ID_PREFIX,
         models::common::{Loadable, ResourceLoadable},
-        runtime::Effect,
         types::{
             addon::{ResourcePath, ResourceRequest},
             resource::{SeriesInfo, Stream, Video},
@@ -755,10 +754,7 @@ mod test {
             );
 
             assert!(result_effects.has_changed);
-            assert!(result_effects
-                .into_iter()
-                .collect::<Vec<Effect>>()
-                .is_empty());
+            assert!(result_effects.into_iter().next().is_none());
             assert_eq!(
                 next_streams.as_ref().unwrap().request.path.id,
                 "next_video",
@@ -799,10 +795,7 @@ mod test {
             );
 
             assert!(result_effects.has_changed);
-            assert!(result_effects
-                .into_iter()
-                .collect::<Vec<Effect>>()
-                .is_empty());
+            assert!(result_effects.into_iter().next().is_none());
 
             assert_eq!(
                 next_streams.as_ref().unwrap().request.path.id,
@@ -823,7 +816,7 @@ mod test {
 
         // Test that it should make a request to get next_streams if no streams are available in Video
         {
-            let mut next_streams = Some(next_streams.clone());
+            let mut next_streams = Some(next_streams);
             let next_video = Video {
                 id: "next_video_3".to_owned(),
                 title: "title".to_owned(),
@@ -838,11 +831,11 @@ mod test {
             let result_effects = next_streams_update::<TestEnv>(
                 &mut next_streams,
                 &Some(next_video),
-                &Some(selected.clone()),
+                &Some(selected),
             );
 
             assert!(result_effects.has_changed);
-            assert_eq!(1, result_effects.into_iter().collect::<Vec<Effect>>().len());
+            assert_eq!(1, result_effects.into_iter().count());
             assert_eq!(
                 next_streams.as_ref().unwrap().request.path.id,
                 "next_video_3",

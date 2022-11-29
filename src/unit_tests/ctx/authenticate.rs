@@ -124,7 +124,7 @@ fn actionctx_authenticate_login() {
         "library updated successfully in memory"
     );
     assert_eq!(
-        serde_json::from_str::<Profile>(&STORAGE.read().unwrap().get(PROFILE_STORAGE_KEY).unwrap())
+        serde_json::from_str::<Profile>(STORAGE.read().unwrap().get(PROFILE_STORAGE_KEY).unwrap())
             .unwrap(),
         Profile {
             auth: Some(Auth {
@@ -153,7 +153,7 @@ fn actionctx_authenticate_login() {
     );
     assert_eq!(
         serde_json::from_str::<LibraryBucket>(
-            &STORAGE
+            STORAGE
                 .read()
                 .unwrap()
                 .get(LIBRARY_RECENT_STORAGE_KEY)
@@ -165,7 +165,7 @@ fn actionctx_authenticate_login() {
     );
     assert_eq!(
         serde_json::from_str::<LibraryBucket>(
-            &STORAGE.read().unwrap().get(LIBRARY_STORAGE_KEY).unwrap()
+            STORAGE.read().unwrap().get(LIBRARY_STORAGE_KEY).unwrap()
         )
         .unwrap(),
         LibraryBucket::new(Some("user_id".to_owned()), vec![]),
@@ -321,7 +321,7 @@ fn actionctx_authenticate_login_with_token() {
         "library updated successfully in memory"
     );
     assert_eq!(
-        serde_json::from_str::<Profile>(&STORAGE.read().unwrap().get(PROFILE_STORAGE_KEY).unwrap())
+        serde_json::from_str::<Profile>(STORAGE.read().unwrap().get(PROFILE_STORAGE_KEY).unwrap())
             .unwrap(),
         Profile {
             auth: Some(Auth {
@@ -350,7 +350,7 @@ fn actionctx_authenticate_login_with_token() {
     );
     assert_eq!(
         serde_json::from_str::<LibraryBucket>(
-            &STORAGE
+            STORAGE
                 .read()
                 .unwrap()
                 .get(LIBRARY_RECENT_STORAGE_KEY)
@@ -362,7 +362,7 @@ fn actionctx_authenticate_login_with_token() {
     );
     assert_eq!(
         serde_json::from_str::<LibraryBucket>(
-            &STORAGE.read().unwrap().get(LIBRARY_STORAGE_KEY).unwrap()
+            STORAGE.read().unwrap().get(LIBRARY_STORAGE_KEY).unwrap()
         )
         .unwrap(),
         LibraryBucket::new(Some("user_id".to_owned()), vec![]),
@@ -526,7 +526,7 @@ fn actionctx_authenticate_register() {
         "library updated successfully in memory"
     );
     assert_eq!(
-        serde_json::from_str::<Profile>(&STORAGE.read().unwrap().get(PROFILE_STORAGE_KEY).unwrap())
+        serde_json::from_str::<Profile>(STORAGE.read().unwrap().get(PROFILE_STORAGE_KEY).unwrap())
             .unwrap(),
         Profile {
             auth: Some(Auth {
@@ -555,7 +555,7 @@ fn actionctx_authenticate_register() {
     );
     assert_eq!(
         serde_json::from_str::<LibraryBucket>(
-            &STORAGE
+            STORAGE
                 .read()
                 .unwrap()
                 .get(LIBRARY_RECENT_STORAGE_KEY)
@@ -567,7 +567,7 @@ fn actionctx_authenticate_register() {
     );
     assert_eq!(
         serde_json::from_str::<LibraryBucket>(
-            &STORAGE.read().unwrap().get(LIBRARY_STORAGE_KEY).unwrap()
+            STORAGE.read().unwrap().get(LIBRARY_STORAGE_KEY).unwrap()
         )
         .unwrap(),
         LibraryBucket::new(Some("user_id".to_owned()), vec![]),

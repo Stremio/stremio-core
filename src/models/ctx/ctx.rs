@@ -18,7 +18,7 @@ use percent_encoding::utf8_percent_encode;
 use serde::Serialize;
 use url::Url;
 
-#[derive(PartialEq, Serialize)]
+#[derive(PartialEq, Eq, Serialize)]
 #[cfg_attr(debug_assertions, derive(Clone, Debug))]
 pub enum CtxStatus {
     Loading(AuthRequest),
