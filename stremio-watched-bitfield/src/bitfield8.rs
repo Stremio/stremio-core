@@ -6,7 +6,7 @@ use flate2::Compression;
 use std::convert::TryFrom;
 use std::io::{Read, Write};
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct BitField8 {
     pub length: usize,
     values: Vec<u8>,
@@ -49,12 +49,9 @@ impl BitField8 {
     }
 
     pub fn last_index_of(&self, val: bool) -> Option<usize> {
-        for i in (0..self.length.saturating_sub(1)).rev() {
-            if self.get(i) == val {
-                return Some(i);
-            }
-        }
-        None
+        (0..self.length.saturating_sub(1))
+            .rev()
+            .find(|&i| self.get(i) == val)
     }
 }
 
