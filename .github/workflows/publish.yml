@@ -3,27 +3,39 @@ name: Publish
 on:
   release:
     types: [published]
-    
+
+env:
+  # For publishing we always use stable
+  RUST_VERSION: stable
+  NODE_VERSION: 12
+  WASM_PACK_VERSION: 0.10.3
+
 jobs:
   publish:
     runs-on: ubuntu-latest
     steps:
     - name: Checkout
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
+    
     - name: Setup NodeJS
       uses: actions/setup-node@v3
       with:
-        node-version: 12
+        node-version: ${{ env.NODE_VERSION }}
         cache: 'npm'
         registry-url: https://registry.npmjs.org/
-    - name: Set default rust toolchain
-      run: rustup default 1.64.0
+
+    - name: Set default Rust version - ${{ env.RUST_VERSION }}
+      run: rustup default ${{ env.RUST_VERSION }}
+
     - name: Install wasm-pack
-      run: cargo install --version 0.10.3 wasm-pack
+      run: cargo install --version ${{ env.WASM_PACK_VERSION }} wasm-pack
+
     - name: Install NPM dependencies
       run: npm ci
+
     - name: Build
       run: npm run build
+
     - name: Publish to NPM
       run: npm publish --access public
       env:
