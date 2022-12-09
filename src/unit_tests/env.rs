@@ -28,7 +28,7 @@ lazy_static! {
 pub type FetchHandler =
     Box<dyn Fn(Request) -> TryEnvFuture<Box<dyn Any + Send>> + Send + Sync + 'static>;
 
-#[derive(Default, Debug, Clone, PartialEq)]
+#[derive(Default, Debug, Clone, PartialEq, Eq)]
 pub struct Request {
     pub url: String,
     pub method: String,
@@ -118,7 +118,7 @@ impl Env for TestEnv {
             .map_ok(|resp| {
                 *resp
                     .downcast::<OUT>()
-                    .expect(&format!("Failed to downcast to {}", type_name::<OUT>()))
+                    .unwrap_or_else(|_| panic!("Failed to downcast to {}", type_name::<OUT>()))
             })
             .boxed_env()
     }
@@ -133,7 +133,7 @@ impl Env for TestEnv {
                 .read()
                 .unwrap()
                 .get(key)
-                .map(|data| serde_json::from_str(&data).unwrap()),
+                .map(|data| serde_json::from_str(data).unwrap()),
         )
         .boxed_env()
     }
@@ -175,7 +175,7 @@ impl Env for TestEnv {
         serde_json::Value::Null
     }
     fn log(message: String) {
-        println!("{}", message)
+        println!("{message}")
     }
 }
 

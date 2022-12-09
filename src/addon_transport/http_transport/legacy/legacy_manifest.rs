@@ -95,7 +95,7 @@ impl From<LegacyManifest> for Manifest {
                 .map(|p| match p as &str {
                     "imdb_id" => "tt".to_owned(),
                     "yt_id" => "UC".to_owned(),
-                    id => format!("{}:", id),
+                    id => format!("{id}:"),
                 })
                 .collect()
         });

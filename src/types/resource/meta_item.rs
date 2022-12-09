@@ -91,7 +91,7 @@ struct MetaItemPreviewLegacy {
     behavior_hints: MetaItemBehaviorHints,
 }
 
-#[derive(Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[cfg_attr(debug_assertions, derive(Debug))]
 #[cfg_attr(test, derive(Default))]
 #[serde(rename_all = "camelCase", try_from = "MetaItemPreviewLegacy")]
@@ -123,7 +123,7 @@ impl From<MetaItemPreviewLegacy> for MetaItemPreview {
                     name: imdb_rating,
                     category: IMDB_LINK_CATEGORY.to_owned(),
                     url: IMDB_URL
-                        .join(&format!("{}/", IMDB_TITLE_PATH))
+                        .join(&format!("{IMDB_TITLE_PATH}/"))
                         .expect("IMDB url build failed")
                         .join(&utf8_percent_encode(&id, URI_COMPONENT_ENCODE_SET).to_string())
                         .expect("IMDB url build failed"),
@@ -188,7 +188,7 @@ impl From<MetaItemPreviewLegacy> for MetaItemPreview {
 }
 
 #[serde_as]
-#[derive(Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[cfg_attr(debug_assertions, derive(Debug))]
 #[cfg_attr(test, derive(Default))]
 #[serde(rename_all = "camelCase")]
@@ -202,7 +202,7 @@ pub struct MetaItem {
     pub videos: Vec<Video>,
 }
 
-#[derive(Derivative, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Derivative, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[cfg_attr(debug_assertions, derive(Debug))]
 #[derivative(Default)]
 #[serde(rename_all = "camelCase")]
@@ -214,7 +214,7 @@ pub enum PosterShape {
     Poster,
 }
 
-#[derive(Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[cfg_attr(debug_assertions, derive(Debug))]
 #[cfg_attr(test, derive(Default))]
 pub struct SeriesInfo {
@@ -223,7 +223,7 @@ pub struct SeriesInfo {
 }
 
 #[serde_as]
-#[derive(Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[cfg_attr(debug_assertions, derive(Debug))]
 #[serde(rename_all = "camelCase")]
 pub struct Video {
@@ -304,7 +304,7 @@ impl SortedVecAdapter for VideoSortedVecAdapter {
     }
 }
 
-#[derive(Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[cfg_attr(debug_assertions, derive(Debug))]
 pub struct Link {
     pub name: String,
@@ -312,7 +312,7 @@ pub struct Link {
     pub url: Url,
 }
 
-#[derive(Default, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Default, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[cfg_attr(debug_assertions, derive(Debug))]
 #[serde(rename_all = "camelCase")]
 pub struct MetaItemBehaviorHints {

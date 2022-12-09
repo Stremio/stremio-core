@@ -132,7 +132,7 @@ fn actionctx_rewindlibraryitem() {
             .unwrap()
             .get(LIBRARY_RECENT_STORAGE_KEY)
             .map_or(false, |data| {
-                serde_json::from_str::<LibraryBucket>(&data).unwrap()
+                serde_json::from_str::<LibraryBucket>(data).unwrap()
                     == LibraryBucket::new(Some("id".to_owned()), vec![library_item_rewinded])
             }),
         "Library recent slot updated successfully in storage"
@@ -219,7 +219,7 @@ fn actionctx_rewindlibraryitem_not_added() {
             .unwrap()
             .get(LIBRARY_RECENT_STORAGE_KEY)
             .map_or(false, |data| {
-                serde_json::from_str::<LibraryBucket>(&data).unwrap()
+                serde_json::from_str::<LibraryBucket>(data).unwrap()
                     == LibraryBucket::new(None, vec![library_item])
             }),
         "Library recent slot not updated in storage"

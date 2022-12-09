@@ -31,7 +31,7 @@ impl From<OtherError> for CtxError {
     }
 }
 
-#[derive(Clone, PartialEq)]
+#[derive(Clone, PartialEq, Eq)]
 #[cfg_attr(debug_assertions, derive(Debug))]
 pub enum OtherError {
     UserNotLoggedIn,

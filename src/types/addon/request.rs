@@ -3,7 +3,7 @@ use derive_more::{From, Into};
 use serde::{Deserialize, Serialize};
 use url::Url;
 
-#[derive(Clone, From, Into, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, From, Into, PartialEq, Eq, Serialize, Deserialize)]
 #[cfg_attr(debug_assertions, derive(Debug))]
 #[serde(from = "(String, String)", into = "(String, String)")]
 pub struct ExtraValue {
@@ -51,7 +51,7 @@ impl ExtraExt for Vec<ExtraValue> {
     }
 }
 
-#[derive(Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[cfg_attr(debug_assertions, derive(Debug))]
 #[cfg_attr(test, derive(Default))]
 pub struct ResourcePath {
@@ -93,7 +93,7 @@ impl ResourcePath {
     }
 }
 
-#[derive(Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[cfg_attr(debug_assertions, derive(Debug))]
 pub struct ResourceRequest {
     pub base: Url,

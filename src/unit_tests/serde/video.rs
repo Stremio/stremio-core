@@ -256,7 +256,6 @@ fn videos_minimal() {
                     trailer_streams: vec![],
                 },
             ],
-            ..Default::default()
         },
         &[
             Token::Struct {
@@ -330,7 +329,6 @@ fn videos_released_equal() {
                     trailer_streams: vec![],
                 },
             ],
-            ..Default::default()
         },
         &[
             Token::Struct {
@@ -434,7 +432,6 @@ fn videos_released_sequal() {
                     trailer_streams: vec![],
                 },
             ],
-            ..Default::default()
         },
         &[
             Token::Struct {
@@ -602,7 +599,6 @@ fn various_videos_deserialization() {
                     trailer_streams: vec![],
                 },
             ],
-            ..Default::default()
         },
         &[
             Token::Struct {

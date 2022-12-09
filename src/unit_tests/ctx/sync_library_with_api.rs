@@ -174,7 +174,7 @@ fn actionctx_synclibrarywithapi_with_user() {
                     collection: String,
                     changes: Vec<LibraryItem>,
                 }
-                match serde_json::from_str::<Body>(&body) {
+                match serde_json::from_str::<Body>(body) {
                     Result::Ok(body)
                         if body.auth_key == AuthKey("auth_key".to_owned())
                             && body.collection == "libraryItem"
@@ -202,11 +202,11 @@ fn actionctx_synclibrarywithapi_with_user() {
                     all: bool,
                     ids: Vec<String>,
                 }
-                match serde_json::from_str::<Body>(&body) {
+                match serde_json::from_str::<Body>(body) {
                     Result::Ok(body)
                         if body.auth_key == AuthKey("auth_key".to_owned())
                             && body.collection == "libraryItem"
-                            && body.all == false
+                            && !body.all
                             && body.ids.len() == 2
                             && body.ids.contains(&REMOTE_ONLY_ITEM.id)
                             && body.ids.contains(&REMOTE_NEWER_ITEM.id) =>
@@ -324,7 +324,7 @@ fn actionctx_synclibrarywithapi_with_user() {
             .read()
             .unwrap()
             .get(LIBRARY_RECENT_STORAGE_KEY)
-            .map(|data| serde_json::from_str::<LibraryBucket>(&data).unwrap()),
+            .map(|data| serde_json::from_str::<LibraryBucket>(data).unwrap()),
         Some(LibraryBucket::new(
             Some("user_id".to_owned()),
             vec![

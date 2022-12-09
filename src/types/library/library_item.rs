@@ -9,7 +9,7 @@ use stremio_watched_bitfield::WatchedBitField;
 use url::Url;
 
 #[serde_as]
-#[derive(Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 #[cfg_attr(debug_assertions, derive(Debug))]
 pub struct LibraryItem {
@@ -87,7 +87,7 @@ impl From<(&MetaItemPreview, &LibraryItem)> for LibraryItem {
 }
 
 #[serde_as]
-#[derive(Default, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Default, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 #[cfg_attr(debug_assertions, derive(Debug))]
 pub struct LibraryItemState {

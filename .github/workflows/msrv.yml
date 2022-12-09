@@ -1,6 +1,10 @@
-name: Build
+name: MSRV 1.60 build
 
-on: [push]
+on:
+  # will checkout the default branch `development`
+  schedule:
+    # run every Friday at 17:00
+    - cron: '00 17 * * 5'
 
 # Stops the running workflow of previous pushes
 concurrency:
@@ -8,30 +12,24 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  RUST_VERSION: stable
+  RUST_MSRV_VERSION: '1.60'
 
 jobs:
   build:
-    name: Lint, test and check --release
+    name: Test and build --release
     runs-on: ubuntu-latest
 
     steps:
-    - name: Set default Rust version - ${{ env.RUST_VERSION }}
-      run: rustup default ${{ env.RUST_VERSION }}
+    - name: Set default Rust version - ${{ env.RUST_MSRV_VERSION }}
+      run: rustup default ${{ env.RUST_MSRV_VERSION }}
 
     - name: Checkout
       uses: actions/checkout@v3
-
-    - name: Lint - rustfmt
-      run: cargo fmt --all -- --check
-
-    - name: Lint - clippy
-      run: cargo clippy --all --no-deps -- -D warnings
 
     - name: Test
       run: cargo test
 
     # This makes sure that core will be correctly build in release
     # This will prevent issues caused by `debug_assertions` cfg. attributes
-    - name: Check in --release
-      run: cargo check --release
+    - name: Build in --release
+      run: cargo build --release

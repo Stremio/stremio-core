@@ -27,7 +27,7 @@ impl fmt::Display for LinkError {
         match &self {
             LinkError::API(error) => write!(f, "API: {}", error.message),
             LinkError::Env(error) => write!(f, "Env: {}", error.message()),
-            LinkError::UnexpectedResponse(message) => write!(f, "UnexpectedResponse: {}", message),
+            LinkError::UnexpectedResponse(message) => write!(f, "UnexpectedResponse: {message}"),
         }
     }
 }

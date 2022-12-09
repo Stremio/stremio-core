@@ -22,7 +22,7 @@ impl fmt::Display for ResourceError {
         match &self {
             ResourceError::EmptyContent => write!(f, "EmptyContent"),
             ResourceError::UnexpectedResponse(message) => {
-                write!(f, "UnexpectedResponse: {}", message)
+                write!(f, "UnexpectedResponse: {message}")
             }
             ResourceError::Env(error) => write!(f, "Env: {}", error.message()),
         }

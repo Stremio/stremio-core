@@ -10,7 +10,7 @@ use url::Url;
 pub type UID = Option<String>;
 
 #[serde_as]
-#[derive(Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[cfg_attr(debug_assertions, derive(Debug))]
 pub struct Profile {
     pub auth: Option<Auth>,
