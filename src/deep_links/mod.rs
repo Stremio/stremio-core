@@ -31,7 +31,7 @@ impl From<&Stream> for ExternalPlayerLink {
             StreamSource::Url { url } => ExternalPlayerLink {
                 href: Some(format!(
                     "data:application/octet-stream;charset=utf-8;base64,{}",
-                    base64::encode(format!("#EXTM3U\n#EXTINF:0\n{}", url))
+                    base64::encode(format!("#EXTM3U\n#EXTINF:0\n{url}"))
                 )),
                 download: Some("playlist.m3u".to_owned()),
                 ..Default::default()
@@ -351,7 +351,7 @@ pub struct LibraryDeepLinks {
 impl From<&String> for LibraryDeepLinks {
     fn from(root: &String) -> Self {
         LibraryDeepLinks {
-            library: format!("stremio:///{}", root),
+            library: format!("stremio:///{root}"),
         }
     }
 }

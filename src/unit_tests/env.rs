@@ -175,7 +175,7 @@ impl Env for TestEnv {
         serde_json::Value::Null
     }
     fn log(message: String) {
-        println!("{}", message)
+        println!("{message}")
     }
 }
 

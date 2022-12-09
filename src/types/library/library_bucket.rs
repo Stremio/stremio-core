@@ -25,7 +25,7 @@ impl LibraryBucket {
     }
     pub fn merge_bucket(&mut self, bucket: LibraryBucket) {
         if self.uid == bucket.uid {
-            self.merge_items(bucket.items.into_iter().map(|(_, item)| item).collect());
+            self.merge_items(bucket.items.into_values().collect());
         };
     }
     pub fn merge_items(&mut self, items: Vec<LibraryItem>) {

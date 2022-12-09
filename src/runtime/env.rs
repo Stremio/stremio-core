@@ -30,21 +30,20 @@ pub enum EnvError {
 impl EnvError {
     pub fn message(&self) -> String {
         match &self {
-            EnvError::Fetch(message) => format!("Failed to fetch: {}", message),
-            EnvError::AddonTransport(message) => format!("Addon protocol violation: {}", message),
-            EnvError::Serde(message) => format!("Serialization error: {}", message),
+            EnvError::Fetch(message) => format!("Failed to fetch: {message}"),
+            EnvError::AddonTransport(message) => format!("Addon protocol violation: {message}"),
+            EnvError::Serde(message) => format!("Serialization error: {message}"),
             EnvError::StorageUnavailable => "Storage is not available".to_owned(),
-            EnvError::StorageSchemaVersionDowngrade(from, to) => format!(
-                "Downgrade storage schema version from {} to {} is not allowed",
-                from, to
-            ),
+            EnvError::StorageSchemaVersionDowngrade(from, to) => {
+                format!("Downgrade storage schema version from {from} to {to} is not allowed",)
+            }
             EnvError::StorageSchemaVersionUpgrade(source) => format!(
                 "Upgrade storage schema version failed caused by: {}",
                 source.message()
             ),
-            EnvError::StorageReadError(message) => format!("Storage read error: {}", message),
-            EnvError::StorageWriteError(message) => format!("Storage write error: {}", message),
-            EnvError::Other(message) => format!("Other error: {}", message),
+            EnvError::StorageReadError(message) => format!("Storage read error: {message}"),
+            EnvError::StorageWriteError(message) => format!("Storage write error: {message}"),
+            EnvError::Other(message) => format!("Other error: {message}"),
         }
     }
     pub fn code(&self) -> u32 {

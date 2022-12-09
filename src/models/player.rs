@@ -708,9 +708,9 @@ mod test {
 
     #[test]
     fn next_streams_update_with_a_stream_from_next_video() {
-        let current_youtube_1 = format!("{}666:1", YOUTUBE_ADDON_ID_PREFIX);
+        let current_youtube_1 = format!("{YOUTUBE_ADDON_ID_PREFIX}666:1");
         let current_youtube_stream = Stream::youtube(&current_youtube_1).unwrap();
-        let next_youtube_1234 = format!("{}666:1234", YOUTUBE_ADDON_ID_PREFIX);
+        let next_youtube_1234 = format!("{YOUTUBE_ADDON_ID_PREFIX}666:1234");
         let next_youtube_stream = Stream::youtube(&next_youtube_1234).unwrap();
 
         let youtube_base = "https://youtube.com"
@@ -774,7 +774,7 @@ mod test {
 
         // Test that it should update next_streams using all streams in Video
         {
-            let another_youtube_5678 = format!("{}666:5678", YOUTUBE_ADDON_ID_PREFIX);
+            let another_youtube_5678 = format!("{YOUTUBE_ADDON_ID_PREFIX}666:5678");
             let another_youtube_stream = Stream::youtube(&another_youtube_5678).unwrap();
             let youtube_streams = vec![next_youtube_stream, another_youtube_stream];
             let mut next_streams = Some(next_streams.clone());

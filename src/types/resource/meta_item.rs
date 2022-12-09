@@ -123,7 +123,7 @@ impl From<MetaItemPreviewLegacy> for MetaItemPreview {
                     name: imdb_rating,
                     category: IMDB_LINK_CATEGORY.to_owned(),
                     url: IMDB_URL
-                        .join(&format!("{}/", IMDB_TITLE_PATH))
+                        .join(&format!("{IMDB_TITLE_PATH}/"))
                         .expect("IMDB url build failed")
                         .join(&utf8_percent_encode(&id, URI_COMPONENT_ENCODE_SET).to_string())
                         .expect("IMDB url build failed"),
