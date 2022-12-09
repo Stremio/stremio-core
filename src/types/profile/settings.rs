@@ -35,11 +35,11 @@ impl Default for Settings {
     fn default() -> Self {
         Settings {
             player_type: None,
-            binge_watching: false,
+            binge_watching: true,
             play_in_background: true,
             hardware_decoding: true,
             auto_frame_rate_matching: false,
-            next_video_notification_duration: 0,
+            next_video_notification_duration: 35000,
             audio_passthrough: false,
             streaming_server_url: STREAMING_SERVER_URL.to_owned(),
             interface_language: "eng".to_owned(),
@@ -53,8 +53,8 @@ impl Default for Settings {
             subtitles_offset: 5,
             subtitles_text_color: "#FFFFFFFF".to_owned(),
             subtitles_background_color: "#00000000".to_owned(),
-            subtitles_outline_color: "#00000000".to_owned(),
-            seek_time_duration: 20000,
+            subtitles_outline_color: "#000000".to_owned(),
+            seek_time_duration: 10000,
             streaming_server_warning_dismissed: None,
         }
     }

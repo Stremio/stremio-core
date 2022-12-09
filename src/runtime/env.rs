@@ -397,7 +397,7 @@ fn migrate_storage_schema_to_v6<E: Env>() -> TryEnvFuture<()> {
                     );
                     settings.insert(
                         "nextVideoNotificationDuration".to_owned(),
-                        serde_json::Value::Number(serde_json::Number::from(0)),
+                        serde_json::Value::Number(serde_json::Number::from(35000)),
                     );
                     E::set_storage(PROFILE_STORAGE_KEY, Some(&profile))
                 }
@@ -449,7 +449,7 @@ mod test {
                 "settings": {
                     "playerType": "external",
                     "autoFrameRateMatching": false,
-                    "nextVideoNotificationDuration": 0_u64
+                    "nextVideoNotificationDuration": 35000_u64
                 }
             });
 
@@ -492,7 +492,7 @@ mod test {
                 "settings": {
                     "playerType": null,
                     "autoFrameRateMatching": false,
-                    "nextVideoNotificationDuration": 0_u64
+                    "nextVideoNotificationDuration": 35000_u64
                 }
             });
 
@@ -533,7 +533,7 @@ mod test {
                 "settings": {
                     "playerType": null,
                     "autoFrameRateMatching": false,
-                    "nextVideoNotificationDuration": 0_u64
+                    "nextVideoNotificationDuration": 35000_u64
                 }
             });
 
