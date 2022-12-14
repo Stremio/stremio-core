@@ -13,8 +13,7 @@ use serde::{Deserialize, Serialize, Serializer};
 use std::fmt;
 use url::Url;
 
-#[derive(Clone, PartialEq)]
-#[cfg_attr(debug_assertions, derive(Debug))]
+#[derive(Clone, PartialEq, Debug)]
 pub enum EnvError {
     Fetch(String),
     AddonTransport(String),

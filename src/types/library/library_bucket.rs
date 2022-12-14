@@ -6,8 +6,8 @@ use serde::{Deserialize, Serialize};
 use std::cmp;
 use std::collections::{HashMap, HashSet};
 
-#[derive(Default, Clone, PartialEq, Eq, Serialize, Deserialize)]
-#[cfg_attr(debug_assertions, derive(Debug))]
+#[derive(Default, Clone, PartialEq, Eq, Serialize, Deserialize, Debug)]
+
 pub struct LibraryBucket {
     pub uid: UID,
     pub items: HashMap<String, LibraryItem>,

@@ -16,8 +16,8 @@ use stremio_core::types::profile::AuthKey;
 #[cfg(debug_assertions)]
 use stremio_core::types::True;
 
-#[derive(Clone, PartialEq, Serialize)]
-#[cfg_attr(debug_assertions, derive(Debug))]
+#[derive(Clone, PartialEq, Serialize, Debug)]
+
 struct Event {
     #[serde(flatten)]
     data: serde_json::Value,
@@ -31,8 +31,8 @@ struct Event {
     context: serde_json::Value,
 }
 
-#[derive(Clone, PartialEq)]
-#[cfg_attr(debug_assertions, derive(Debug))]
+#[derive(Clone, PartialEq, Debug)]
+
 struct EventsBatch {
     auth_key: AuthKey,
     events: Vec<Event>,

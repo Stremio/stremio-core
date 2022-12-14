@@ -1,6 +1,7 @@
 use crate::types::query_params_encode;
 
-#[cfg_attr(debug_assertions, derive(Debug, PartialEq, Eq))]
+#[derive(Debug)]
+#[cfg_attr(debug_assertions, derive(PartialEq, Eq))]
 pub struct ErrorLink(String);
 
 impl From<anyhow::Error> for ErrorLink {

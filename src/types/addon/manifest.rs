@@ -11,8 +11,7 @@ use std::borrow::Cow;
 use url::Url;
 
 #[serde_as]
-#[derive(Clone, PartialEq, Eq, Serialize, Deserialize)]
-#[cfg_attr(debug_assertions, derive(Debug))]
+#[derive(Clone, PartialEq, Eq, Serialize, Deserialize, Debug)]
 #[cfg_attr(test, derive(Derivative))]
 #[cfg_attr(test, derivative(Default))]
 #[serde(rename_all = "camelCase")]
@@ -83,8 +82,7 @@ impl Manifest {
 }
 
 #[serde_as]
-#[derive(Clone, PartialEq, Eq, Serialize, Deserialize)]
-#[cfg_attr(debug_assertions, derive(Debug))]
+#[derive(Clone, PartialEq, Eq, Serialize, Deserialize, Debug)]
 #[cfg_attr(test, derive(Derivative))]
 #[cfg_attr(test, derivative(Default))]
 #[serde(rename_all = "camelCase")]
@@ -103,8 +101,7 @@ pub struct ManifestPreview {
     pub types: Vec<String>,
 }
 
-#[derive(Clone, PartialEq, Eq, Serialize, Deserialize)]
-#[cfg_attr(debug_assertions, derive(Debug))]
+#[derive(Clone, PartialEq, Eq, Serialize, Deserialize, Debug)]
 #[serde(untagged)]
 pub enum ManifestResource {
     Short(String),
@@ -126,8 +123,7 @@ impl ManifestResource {
     }
 }
 
-#[derive(Clone, PartialEq, Eq, Serialize, Deserialize)]
-#[cfg_attr(debug_assertions, derive(Debug))]
+#[derive(Clone, PartialEq, Eq, Serialize, Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct ManifestCatalog {
     pub id: String,
@@ -182,7 +178,7 @@ impl UniqueVecAdapter for ManifestCatalogUniqueVecAdapter {
 #[serde_as]
 #[derive(Derivative, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[derivative(Default)]
-#[cfg_attr(debug_assertions, derive(Debug))]
+#[derive(Debug)]
 #[serde(untagged)]
 pub enum ManifestExtra {
     #[derivative(Default)]
@@ -223,8 +219,7 @@ impl ManifestExtra {
 }
 
 #[serde_as]
-#[derive(Clone, PartialEq, Eq, Serialize, Deserialize)]
-#[cfg_attr(debug_assertions, derive(Debug))]
+#[derive(Clone, PartialEq, Eq, Serialize, Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct ExtraProp {
     pub name: String,
@@ -271,8 +266,8 @@ impl<'de> DeserializeAs<'de, ExtraProp> for ExtraPropValid {
     }
 }
 
-#[derive(Clone, Deref, PartialEq, Eq, Serialize, Deserialize)]
-#[cfg_attr(debug_assertions, derive(Debug))]
+#[derive(Clone, Deref, PartialEq, Eq, Serialize, Deserialize, Debug)]
+
 pub struct OptionsLimit(pub usize);
 
 impl Default for OptionsLimit {
@@ -281,8 +276,7 @@ impl Default for OptionsLimit {
     }
 }
 
-#[derive(Default, Clone, PartialEq, Eq, Serialize, Deserialize)]
-#[cfg_attr(debug_assertions, derive(Debug))]
+#[derive(Default, Clone, PartialEq, Eq, Serialize, Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct ManifestBehaviorHints {
     #[serde(default)]

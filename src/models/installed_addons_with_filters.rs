@@ -9,14 +9,14 @@ use itertools::Itertools;
 use serde::{Deserialize, Serialize};
 use std::iter;
 
-#[derive(Clone, PartialEq, Eq, Serialize, Deserialize)]
-#[cfg_attr(debug_assertions, derive(Debug))]
+#[derive(Clone, PartialEq, Eq, Serialize, Deserialize, Debug)]
+
 pub struct InstalledAddonsRequest {
     pub r#type: Option<String>,
 }
 
-#[derive(Clone, PartialEq, Eq, Serialize, Deserialize)]
-#[cfg_attr(debug_assertions, derive(Debug))]
+#[derive(Clone, PartialEq, Eq, Serialize, Deserialize, Debug)]
+
 pub struct Selected {
     pub request: InstalledAddonsRequest,
 }

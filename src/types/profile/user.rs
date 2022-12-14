@@ -8,8 +8,7 @@ use serde::{Deserialize, Serialize};
 use serde_with::{serde_as, DefaultOnError, DefaultOnNull, DurationSeconds, NoneAsEmptyString};
 
 #[serde_as]
-#[derive(Clone, PartialEq, Eq, Serialize, Deserialize)]
-#[cfg_attr(debug_assertions, derive(Debug))]
+#[derive(Clone, PartialEq, Eq, Serialize, Deserialize, Debug)]
 #[cfg_attr(test, derive(Derivative))]
 #[cfg_attr(test, derivative(Default))]
 pub struct TraktInfo {
@@ -23,8 +22,7 @@ pub struct TraktInfo {
     pub access_token: String,
 }
 
-#[derive(Clone, PartialEq, Eq, Serialize, Deserialize)]
-#[cfg_attr(debug_assertions, derive(Debug))]
+#[derive(Clone, PartialEq, Eq, Serialize, Deserialize, Debug)]
 #[cfg_attr(test, derive(Default))]
 pub struct GDPRConsent {
     pub tos: bool,
@@ -36,7 +34,7 @@ pub struct GDPRConsent {
 #[serde_as]
 #[derive(Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
-#[cfg_attr(debug_assertions, derive(Debug))]
+#[derive(Debug)]
 #[cfg_attr(test, derive(Derivative))]
 #[cfg_attr(test, derivative(Default))]
 pub struct User {

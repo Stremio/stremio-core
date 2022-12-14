@@ -8,8 +8,7 @@ use serde::Serialize;
 use std::convert::TryFrom;
 use std::fmt;
 
-#[derive(Clone, PartialEq, Serialize)]
-#[cfg_attr(debug_assertions, derive(Debug))]
+#[derive(Clone, PartialEq, Serialize, Debug)]
 #[serde(tag = "type", content = "content")]
 pub enum ResourceError {
     EmptyContent,
@@ -30,8 +29,8 @@ impl fmt::Display for ResourceError {
 }
 
 /// When we want to fetch meta items, streams and catalogues
-#[derive(Clone, PartialEq, Serialize)]
-#[cfg_attr(debug_assertions, derive(Debug))]
+#[derive(Clone, PartialEq, Serialize, Debug)]
+
 pub struct ResourceLoadable<T> {
     pub request: ResourceRequest,
     pub content: Option<Loadable<T, ResourceError>>,

@@ -16,8 +16,7 @@ pub trait FetchRequestParams<T> {
     fn body(self) -> T;
 }
 
-#[derive(Clone, PartialEq, Eq, Serialize)]
-#[cfg_attr(debug_assertions, derive(Debug))]
+#[derive(Clone, PartialEq, Eq, Serialize, Debug)]
 #[serde(tag = "type")]
 pub enum APIRequest {
     Auth(AuthRequest),
@@ -85,8 +84,7 @@ impl FetchRequestParams<APIRequest> for APIRequest {
     }
 }
 
-#[derive(Clone, PartialEq, Eq, Serialize, Deserialize)]
-#[cfg_attr(debug_assertions, derive(Debug))]
+#[derive(Clone, PartialEq, Eq, Serialize, Deserialize, Debug)]
 #[cfg_attr(test, derive(Derivative))]
 #[cfg_attr(test, derivative(Default))]
 #[serde(tag = "type")]
@@ -108,8 +106,7 @@ pub enum AuthRequest {
     },
 }
 
-#[derive(Clone, PartialEq, Eq, Serialize, Deserialize)]
-#[cfg_attr(debug_assertions, derive(Debug))]
+#[derive(Clone, PartialEq, Eq, Serialize, Deserialize, Debug)]
 #[cfg_attr(test, derive(Derivative))]
 #[cfg_attr(test, derivative(Default))]
 #[serde(tag = "type")]
@@ -140,8 +137,7 @@ impl FetchRequestParams<()> for LinkRequest {
     fn body(self) {}
 }
 
-#[derive(Clone, PartialEq, Eq, Serialize)]
-#[cfg_attr(debug_assertions, derive(Debug))]
+#[derive(Clone, PartialEq, Eq, Serialize, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct DatastoreRequest {
     pub auth_key: AuthKey,
@@ -172,8 +168,7 @@ impl FetchRequestParams<DatastoreRequest> for DatastoreRequest {
     }
 }
 
-#[derive(Clone, PartialEq, Eq, Serialize)]
-#[cfg_attr(debug_assertions, derive(Debug))]
+#[derive(Clone, PartialEq, Eq, Serialize, Debug)]
 #[cfg_attr(test, derive(Derivative))]
 #[cfg_attr(test, derivative(Default))]
 #[serde(untagged)]
