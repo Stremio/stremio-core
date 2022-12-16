@@ -19,8 +19,7 @@ use stremio_watched_bitfield::WatchedBitField;
 
 use super::common::resource_update_with_vector_content;
 
-#[derive(Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
-#[cfg_attr(debug_assertions, derive(Debug))]
+#[derive(Clone, Default, PartialEq, Eq, Serialize, Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct AnalyticsContext {
     #[serde(rename = "libItemID")]
@@ -43,8 +42,7 @@ pub struct AnalyticsContext {
     pub has_trakt: bool,
 }
 
-#[derive(Clone, PartialEq, Eq, Serialize, Deserialize)]
-#[cfg_attr(debug_assertions, derive(Debug))]
+#[derive(Clone, PartialEq, Eq, Serialize, Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct Selected {
     pub stream: Stream,
@@ -53,8 +51,7 @@ pub struct Selected {
     pub subtitles_path: Option<ResourcePath>,
 }
 
-#[derive(Default, Serialize)]
-#[cfg_attr(debug_assertions, derive(Debug))]
+#[derive(Default, Serialize, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct Player {
     pub selected: Option<Selected>,

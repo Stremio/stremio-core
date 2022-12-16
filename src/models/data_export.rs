@@ -20,8 +20,7 @@ use super::{
     ctx::{Ctx, CtxError},
 };
 
-#[derive(Serialize, Default, Clone)]
-#[cfg_attr(debug_assertions, derive(Debug))]
+#[derive(Serialize, Default, Clone, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct DataExport {
     /// This is the Loading result of the User data export request.

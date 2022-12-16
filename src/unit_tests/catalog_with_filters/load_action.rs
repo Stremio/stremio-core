@@ -18,7 +18,7 @@ use url::Url;
 
 #[test]
 fn default_catalog() {
-    #[derive(Model, Default, Debug, Clone)]
+    #[derive(Model, Default, Clone, Debug)]
     #[model(TestEnv)]
     struct TestModel {
         ctx: Ctx,
@@ -111,7 +111,7 @@ fn default_catalog() {
 
 #[test]
 fn search_catalog() {
-    #[derive(Model, Default, Debug, Clone)]
+    #[derive(Model, Default, Clone, Debug)]
     #[model(TestEnv)]
     struct TestModel {
         ctx: Ctx,

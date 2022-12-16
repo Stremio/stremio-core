@@ -18,15 +18,13 @@ use percent_encoding::utf8_percent_encode;
 use serde::Serialize;
 use url::Url;
 
-#[derive(PartialEq, Eq, Serialize)]
-#[cfg_attr(debug_assertions, derive(Clone, Debug))]
+#[derive(PartialEq, Eq, Serialize, Clone, Debug)]
 pub enum CtxStatus {
     Loading(AuthRequest),
     Ready,
 }
 
-#[derive(Derivative, Serialize)]
-#[cfg_attr(debug_assertions, derive(Clone, Debug))]
+#[derive(Derivative, Serialize, Clone, Debug)]
 #[derivative(Default)]
 pub struct Ctx {
     pub profile: Profile,

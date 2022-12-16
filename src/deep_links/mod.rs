@@ -11,8 +11,7 @@ use crate::types::resource::{MetaItem, MetaItemPreview, Stream, StreamSource, Vi
 use percent_encoding::utf8_percent_encode;
 use serde::Serialize;
 
-#[derive(Default, Serialize)]
-#[cfg_attr(debug_assertions, derive(Debug, PartialEq, Eq))]
+#[derive(Default, Serialize, Debug, PartialEq, Eq)]
 pub struct ExternalPlayerLink {
     pub href: Option<String>,
     pub android_tv: Option<String>,
@@ -114,8 +113,7 @@ impl From<&LibraryItem> for LibraryItemDeepLinks {
     }
 }
 
-#[derive(Serialize)]
-#[cfg_attr(debug_assertions, derive(Debug, PartialEq, Eq))]
+#[derive(Serialize, Debug, PartialEq, Eq)]
 #[serde(rename_all = "camelCase")]
 pub struct MetaItemDeepLinks {
     pub meta_details_videos: Option<String>,

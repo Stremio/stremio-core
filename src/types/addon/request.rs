@@ -3,8 +3,7 @@ use derive_more::{From, Into};
 use serde::{Deserialize, Serialize};
 use url::Url;
 
-#[derive(Clone, From, Into, PartialEq, Eq, Serialize, Deserialize)]
-#[cfg_attr(debug_assertions, derive(Debug))]
+#[derive(Clone, From, Into, PartialEq, Eq, Serialize, Deserialize, Debug)]
 #[serde(from = "(String, String)", into = "(String, String)")]
 pub struct ExtraValue {
     pub name: String,
@@ -51,8 +50,7 @@ impl ExtraExt for Vec<ExtraValue> {
     }
 }
 
-#[derive(Clone, PartialEq, Eq, Serialize, Deserialize)]
-#[cfg_attr(debug_assertions, derive(Debug))]
+#[derive(Clone, PartialEq, Eq, Serialize, Deserialize, Debug)]
 #[cfg_attr(test, derive(Default))]
 pub struct ResourcePath {
     pub resource: String,
@@ -93,8 +91,7 @@ impl ResourcePath {
     }
 }
 
-#[derive(Clone, PartialEq, Eq, Serialize, Deserialize)]
-#[cfg_attr(debug_assertions, derive(Debug))]
+#[derive(Clone, PartialEq, Eq, Serialize, Deserialize, Debug)]
 pub struct ResourceRequest {
     pub base: Url,
     pub path: ResourcePath,
@@ -110,8 +107,7 @@ impl ResourceRequest {
     }
 }
 
-#[derive(Clone)]
-#[cfg_attr(debug_assertions, derive(Debug))]
+#[derive(Clone, Debug)]
 pub enum AggrRequest<'a> {
     AllCatalogs {
         extra: &'a Vec<ExtraValue>,

@@ -6,16 +6,14 @@ use chrono::{DateTime, Utc};
 use derive_more::TryInto;
 use serde::{Deserialize, Serialize};
 
-#[derive(Serialize, Deserialize)]
-#[cfg_attr(debug_assertions, derive(Debug))]
+#[derive(Serialize, Deserialize, Debug)]
 #[serde(untagged)]
 pub enum APIResult<T> {
     Err { error: APIError },
     Ok { result: T },
 }
 
-#[derive(Clone, PartialEq, Eq, Serialize, Deserialize)]
-#[cfg_attr(debug_assertions, derive(Debug))]
+#[derive(Clone, PartialEq, Eq, Serialize, Deserialize, Debug)]
 #[cfg_attr(test, derive(Default))]
 pub struct APIError {
     pub message: String,
@@ -42,8 +40,7 @@ pub struct DataExportResponse {
     pub export_id: String,
 }
 
-#[derive(PartialEq, Eq, Deserialize)]
-#[cfg_attr(debug_assertions, derive(Debug))]
+#[derive(PartialEq, Eq, Deserialize, Debug)]
 pub struct LibraryItemModified(
     pub String,
     #[serde(with = "ts_milliseconds")] pub DateTime<Utc>,
@@ -54,23 +51,20 @@ pub struct SuccessResponse {
     pub success: True,
 }
 
-#[derive(Clone, PartialEq, Eq, Serialize, Deserialize)]
-#[cfg_attr(debug_assertions, derive(Debug))]
+#[derive(Clone, PartialEq, Eq, Serialize, Deserialize, Debug)]
 pub struct LinkCodeResponse {
     pub code: String,
     pub link: String,
     pub qrcode: String,
 }
 
-#[derive(Clone, PartialEq, Eq, Serialize, Deserialize)]
-#[cfg_attr(debug_assertions, derive(Debug))]
+#[derive(Clone, PartialEq, Eq, Serialize, Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct LinkAuthKey {
     pub auth_key: String,
 }
 
-#[derive(Clone, TryInto, Serialize, Deserialize)]
-#[cfg_attr(debug_assertions, derive(Debug))]
+#[derive(Clone, TryInto, Serialize, Deserialize, Debug)]
 #[cfg_attr(test, derive(PartialEq, Eq))]
 #[serde(untagged)]
 pub enum LinkDataResponse {

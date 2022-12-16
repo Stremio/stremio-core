@@ -14,8 +14,7 @@ use std::io::Write;
 use stremio_serde_hex::{SerHex, Strict};
 use url::Url;
 
-#[derive(Clone, PartialEq, Eq, Serialize, Deserialize)]
-#[cfg_attr(debug_assertions, derive(Debug))]
+#[derive(Clone, PartialEq, Eq, Serialize, Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct Stream {
     #[serde(flatten)]
@@ -96,8 +95,7 @@ impl Stream {
 }
 
 #[serde_as]
-#[derive(Clone, PartialEq, Eq, Serialize, Deserialize)]
-#[cfg_attr(debug_assertions, derive(Debug))]
+#[derive(Clone, PartialEq, Eq, Serialize, Deserialize, Debug)]
 #[cfg_attr(test, derive(Derivative))]
 #[cfg_attr(test, derivative(Default))]
 #[serde(untagged)]
@@ -171,8 +169,7 @@ where
     ))
 }
 
-#[derive(Default, Clone, PartialEq, Eq, Serialize, Deserialize)]
-#[cfg_attr(debug_assertions, derive(Debug))]
+#[derive(Default, Clone, PartialEq, Eq, Serialize, Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct StreamProxyHeaders {
     #[serde(default, skip_serializing_if = "HashMap::is_empty")]
@@ -181,8 +178,7 @@ pub struct StreamProxyHeaders {
     pub response: HashMap<String, String>,
 }
 
-#[derive(Default, Clone, PartialEq, Eq, Serialize, Deserialize)]
-#[cfg_attr(debug_assertions, derive(Debug))]
+#[derive(Default, Clone, PartialEq, Eq, Serialize, Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct StreamBehaviorHints {
     #[serde(default, skip_serializing_if = "is_default_value")]
