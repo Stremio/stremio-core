@@ -20,7 +20,6 @@ pub trait LibraryFilter {
 }
 
 #[derive(Debug)]
-
 pub enum ContinueWatchingFilter {}
 
 impl LibraryFilter for ContinueWatchingFilter {
@@ -30,7 +29,6 @@ impl LibraryFilter for ContinueWatchingFilter {
 }
 
 #[derive(Debug)]
-
 pub enum NotRemovedFilter {}
 
 impl LibraryFilter for NotRemovedFilter {
@@ -50,7 +48,6 @@ pub enum Sort {
 }
 
 #[derive(Clone, PartialEq, Eq, Serialize, Deserialize, Debug)]
-
 pub struct LibraryRequest {
     pub r#type: Option<String>,
     #[serde(default)]
@@ -60,7 +57,6 @@ pub struct LibraryRequest {
 }
 
 #[derive(Clone, Deref, PartialEq, Eq, Serialize, Deserialize, Debug)]
-
 pub struct LibraryRequestPage(pub NonZeroUsize);
 
 impl Default for LibraryRequestPage {
@@ -70,13 +66,11 @@ impl Default for LibraryRequestPage {
 }
 
 #[derive(Clone, PartialEq, Eq, Serialize, Deserialize, Debug)]
-
 pub struct Selected {
     pub request: LibraryRequest,
 }
 
 #[derive(PartialEq, Eq, Serialize, Debug)]
-
 pub struct SelectableType {
     pub r#type: Option<String>,
     pub selected: bool,
@@ -84,7 +78,6 @@ pub struct SelectableType {
 }
 
 #[derive(PartialEq, Eq, Serialize, Debug)]
-
 pub struct SelectableSort {
     pub sort: Sort,
     pub selected: bool,
@@ -92,13 +85,11 @@ pub struct SelectableSort {
 }
 
 #[derive(PartialEq, Eq, Serialize, Debug)]
-
 pub struct SelectablePage {
     pub request: LibraryRequest,
 }
 
 #[derive(Default, PartialEq, Eq, Serialize, Debug)]
-
 pub struct Selectable {
     pub types: Vec<SelectableType>,
     pub sorts: Vec<SelectableSort>,

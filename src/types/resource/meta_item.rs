@@ -298,7 +298,6 @@ impl SortedVecAdapter for VideoSortedVecAdapter {
 }
 
 #[derive(Clone, PartialEq, Eq, Serialize, Deserialize, Debug)]
-
 pub struct Link {
     pub name: String,
     pub category: String,

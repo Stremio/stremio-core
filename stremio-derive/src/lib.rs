@@ -111,28 +111,26 @@ pub fn model_derive(input: TokenStream) -> TokenStream {
                 }))
                 .collect::<Vec<_>>();
             TokenStream::from(quote! {
-                            #[derive(serde::Serialize, serde::Deserialize)]
-                            #[derive(Debug)]
-            #[cfg_attr(debug_assertions, derive(PartialEq, Eq))]
-                            #[serde(rename_all = "snake_case")]
-                            pub enum #field_enum_ident {
-                                #(#field_enum_variant_idents),*
-                            }
+                #[derive(serde::Serialize, serde::Deserialize, Debug, PartialEq, Eq)]
+                #[serde(rename_all = "snake_case")]
+                pub enum #field_enum_ident {
+                    #(#field_enum_variant_idents),*
+                }
 
-                            impl #core_ident::runtime::Model<#env_ident> for #struct_ident {
-                                type Field = #field_enum_ident;
+                impl #core_ident::runtime::Model<#env_ident> for #struct_ident {
+                    type Field = #field_enum_ident;
 
-                                fn update(&mut self, msg: &#core_ident::runtime::msg::Msg) -> (Vec<#core_ident::runtime::Effect>, Vec<Self::Field>) {
-                                    #(#field_updates_chain)*
-                                }
+                    fn update(&mut self, msg: &#core_ident::runtime::msg::Msg) -> (Vec<#core_ident::runtime::Effect>, Vec<Self::Field>) {
+                        #(#field_updates_chain)*
+                    }
 
-                                fn update_field(&mut self, msg: &#core_ident::runtime::msg::Msg, field: &Self::Field) -> (Vec<#core_ident::runtime::Effect>, Vec<Self::Field>) {
-                                    match field {
-                                        #(#field_update_match_arms),*
-                                    }
-                                }
-                            }
-                        })
+                    fn update_field(&mut self, msg: &#core_ident::runtime::msg::Msg, field: &Self::Field) -> (Vec<#core_ident::runtime::Effect>, Vec<Self::Field>) {
+                        match field {
+                            #(#field_update_match_arms),*
+                        }
+                    }
+                }
+            })
         }
         _ => panic!("#[derive(Model)] is only defined for structs with named fields"),
     }

@@ -9,8 +9,7 @@ use url::Url;
 /// Those messages are meant to be dispatched by the `stremio-core` crate and
 /// handled by the users of the `stremio-core` crate and by the `stremio-core`
 /// crate itself.
-#[derive(Clone, Serialize, Debug)]
-#[cfg_attr(debug_assertions, derive(PartialEq))]
+#[derive(Clone, Serialize, Debug, PartialEq)]
 #[serde(tag = "event", content = "args")]
 pub enum Event {
     PlayerPlaying {

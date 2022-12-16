@@ -108,7 +108,6 @@ impl ResourceRequest {
 }
 
 #[derive(Clone, Debug)]
-
 pub enum AggrRequest<'a> {
     AllCatalogs {
         extra: &'a Vec<ExtraValue>,

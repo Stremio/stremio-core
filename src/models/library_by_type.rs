@@ -13,21 +13,18 @@ use std::marker::PhantomData;
 use strum::IntoEnumIterator;
 
 #[derive(Clone, PartialEq, Eq, Serialize, Deserialize, Debug)]
-
 pub struct Selected {
     #[serde(default)]
     pub sort: Sort,
 }
 
 #[derive(PartialEq, Eq, Serialize, Debug)]
-
 pub struct SelectableSort {
     pub sort: Sort,
     pub selected: bool,
 }
 
 #[derive(Default, PartialEq, Eq, Serialize, Debug)]
-
 pub struct Selectable {
     pub sorts: Vec<SelectableSort>,
 }

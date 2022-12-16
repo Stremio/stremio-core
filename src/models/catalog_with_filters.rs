@@ -56,13 +56,11 @@ impl CatalogResourceAdapter for DescriptorPreview {
 }
 
 #[derive(Clone, PartialEq, Eq, Serialize, Deserialize, Debug)]
-
 pub struct Selected {
     pub request: ResourceRequest,
 }
 
 #[derive(PartialEq, Eq, Serialize, Clone, Debug)]
-// #[cfg_attr(debug_assertions, derive(Clone, Debug))]
 #[serde(rename_all = "camelCase")]
 pub struct SelectableCatalog {
     pub catalog: String,
@@ -71,7 +69,6 @@ pub struct SelectableCatalog {
 }
 
 #[derive(PartialEq, Eq, Serialize, Clone, Debug)]
-// #[cfg_attr(debug_assertions, derive(Clone, Debug))]
 pub struct SelectableType {
     pub r#type: String,
     pub selected: bool,
@@ -79,7 +76,6 @@ pub struct SelectableType {
 }
 
 #[derive(PartialEq, Eq, Serialize, Clone, Debug)]
-// #[cfg_attr(debug_assertions, derive(Clone, Debug))]
 pub struct SelectableExtraOption {
     pub value: Option<String>,
     pub selected: bool,
@@ -87,7 +83,6 @@ pub struct SelectableExtraOption {
 }
 
 #[derive(PartialEq, Eq, Serialize, Clone, Debug)]
-// #[cfg_attr(debug_assertions, derive(Clone, Debug))]
 #[serde(rename_all = "camelCase")]
 pub struct SelectableExtra {
     pub name: String,
@@ -96,13 +91,11 @@ pub struct SelectableExtra {
 }
 
 #[derive(PartialEq, Eq, Serialize, Clone, Debug)]
-// #[cfg_attr(debug_assertions, derive(Clone, Debug))]
 pub struct SelectablePage {
     pub request: ResourceRequest,
 }
 
 #[derive(Default, PartialEq, Eq, Serialize, Clone, Debug)]
-// #[cfg_attr(debug_assertions, derive(Clone, Debug))]
 #[serde(rename_all = "camelCase")]
 pub struct Selectable {
     pub types: Vec<SelectableType>,
@@ -121,7 +114,6 @@ pub type CatalogPage<T> = ResourceLoadable<Vec<T>>;
 pub type Catalog<T> = Vec<CatalogPage<T>>;
 
 #[derive(Derivative, Serialize, Clone, Debug)]
-// #[cfg_attr(debug_assertions, derive(Clone, Debug))]
 #[derivative(Default(bound = ""))]
 pub struct CatalogWithFilters<T> {
     pub selected: Option<Selected>,

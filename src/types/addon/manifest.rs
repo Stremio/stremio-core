@@ -176,9 +176,8 @@ impl UniqueVecAdapter for ManifestCatalogUniqueVecAdapter {
 }
 
 #[serde_as]
-#[derive(Derivative, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Derivative, Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 #[derivative(Default)]
-#[derive(Debug)]
 #[serde(untagged)]
 pub enum ManifestExtra {
     #[derivative(Default)]
@@ -267,7 +266,6 @@ impl<'de> DeserializeAs<'de, ExtraProp> for ExtraPropValid {
 }
 
 #[derive(Clone, Deref, PartialEq, Eq, Serialize, Deserialize, Debug)]
-
 pub struct OptionsLimit(pub usize);
 
 impl Default for OptionsLimit {

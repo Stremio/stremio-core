@@ -31,7 +31,6 @@ impl From<OtherError> for CtxError {
 }
 
 #[derive(Clone, PartialEq, Eq, Debug)]
-
 pub enum OtherError {
     UserNotLoggedIn,
     LibraryItemNotFound,

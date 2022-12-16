@@ -15,7 +15,7 @@ use std::any::Any;
 use std::sync::{Arc, RwLock};
 use stremio_derive::Model;
 
-#[derive(Model, Default, Debug, Clone)]
+#[derive(Model, Default, Clone, Debug)]
 #[model(TestEnv)]
 struct TestModel {
     ctx: Ctx,

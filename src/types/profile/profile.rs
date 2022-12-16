@@ -11,7 +11,6 @@ pub type UID = Option<String>;
 
 #[serde_as]
 #[derive(Clone, PartialEq, Eq, Serialize, Deserialize, Debug)]
-
 pub struct Profile {
     pub auth: Option<Auth>,
     #[serde_as(deserialize_as = "UniqueVec<Vec<_>, DescriptorUniqueVecAdapter>")]

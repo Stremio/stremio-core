@@ -17,7 +17,6 @@ use stremio_core::types::profile::AuthKey;
 use stremio_core::types::True;
 
 #[derive(Clone, PartialEq, Serialize, Debug)]
-
 struct Event {
     #[serde(flatten)]
     data: serde_json::Value,
@@ -32,7 +31,6 @@ struct Event {
 }
 
 #[derive(Clone, PartialEq, Debug)]
-
 struct EventsBatch {
     auth_key: AuthKey,
     events: Vec<Event>,
@@ -156,6 +154,7 @@ fn send_events_batch_to_api<E: Env>(
         })
         .boxed_env();
     };
+
     fetch_api::<E, _, _, _>(&APIRequest::Events {
         auth_key: batch.auth_key.to_owned(),
         events: batch

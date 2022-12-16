@@ -3,7 +3,7 @@ use crate::error::Error;
 use std::convert::TryFrom;
 use std::fmt;
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct WatchedBitField {
     bitfield: BitField8,
     video_ids: Vec<String>,

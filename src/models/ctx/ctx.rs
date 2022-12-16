@@ -19,14 +19,12 @@ use serde::Serialize;
 use url::Url;
 
 #[derive(PartialEq, Eq, Serialize, Clone, Debug)]
-// #[cfg_attr(debug_assertions, derive(Clone, Debug))]
 pub enum CtxStatus {
     Loading(AuthRequest),
     Ready,
 }
 
 #[derive(Derivative, Serialize, Clone, Debug)]
-// #[cfg_attr(debug_assertions, derive(Clone, Debug))]
 #[derivative(Default)]
 pub struct Ctx {
     pub profile: Profile,

@@ -41,7 +41,6 @@ pub struct DataExportResponse {
 }
 
 #[derive(PartialEq, Eq, Deserialize, Debug)]
-
 pub struct LibraryItemModified(
     pub String,
     #[serde(with = "ts_milliseconds")] pub DateTime<Utc>,
@@ -53,7 +52,6 @@ pub struct SuccessResponse {
 }
 
 #[derive(Clone, PartialEq, Eq, Serialize, Deserialize, Debug)]
-
 pub struct LinkCodeResponse {
     pub code: String,
     pub link: String,

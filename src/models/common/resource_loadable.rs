@@ -30,7 +30,6 @@ impl fmt::Display for ResourceError {
 
 /// When we want to fetch meta items, streams and catalogues
 #[derive(Clone, PartialEq, Serialize, Debug)]
-
 pub struct ResourceLoadable<T> {
     pub request: ResourceRequest,
     pub content: Option<Loadable<T, ResourceError>>,

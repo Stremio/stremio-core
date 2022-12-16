@@ -9,7 +9,6 @@ use url::Url;
 
 /// Fetching addons
 #[derive(PartialEq, Serialize, Clone, Debug)]
-// #[cfg_attr(debug_assertions, derive(Clone, Debug))]
 pub struct DescriptorLoadable {
     pub transport_url: Url,
     pub content: Loadable<Descriptor, EnvError>,

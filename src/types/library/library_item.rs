@@ -9,10 +9,8 @@ use stremio_watched_bitfield::WatchedBitField;
 use url::Url;
 
 #[serde_as]
-#[derive(Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
-#[derive(Debug)]
-
 pub struct LibraryItem {
     #[serde(rename = "_id")]
     pub id: String,
@@ -90,10 +88,8 @@ impl From<(&MetaItemPreview, &LibraryItem)> for LibraryItem {
 }
 
 #[serde_as]
-#[derive(Default, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Default, Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
-#[derive(Debug)]
-
 pub struct LibraryItemState {
     #[serde(default)]
     #[serde_as(deserialize_as = "DefaultOnNull<NoneAsEmptyString>")]
@@ -122,10 +118,11 @@ pub struct LibraryItemState {
     #[serde(default)]
     #[serde_as(deserialize_as = "DefaultOnNull<NoneAsEmptyString>")]
     pub watched: Option<String>,
-    // release date of last observed video
+    /// Release date of last observed video
     #[serde(default)]
     #[serde_as(deserialize_as = "DefaultOnNull<NoneAsEmptyString>")]
     pub last_vid_released: Option<DateTime<Utc>>,
+    /// Weather or not to receive notification for the given [`LibraryItem`].
     pub no_notif: bool,
 }
 
