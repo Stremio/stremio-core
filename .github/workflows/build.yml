@@ -12,7 +12,7 @@ env:
 
 jobs:
   build:
-    name: Lint, test and check --release
+    name: Lint, test and build
     runs-on: ubuntu-latest
 
     steps:
@@ -31,7 +31,5 @@ jobs:
     - name: Test
       run: cargo test
 
-    # This makes sure that core will be correctly build in release
-    # This will prevent issues caused by `debug_assertions` cfg. attributes
-    - name: Check in --release
-      run: cargo check --release
+    - name: Build
+      run: cargo build
