@@ -7,7 +7,6 @@ use derive_more::TryInto;
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize, Debug)]
-#[serde(untagged)]
 pub enum APIResult<T> {
     Err { error: APIError },
     Ok { result: T },

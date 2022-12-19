@@ -17,7 +17,8 @@ pub struct ExternalPlayerLink {
     pub android_tv: Option<String>,
     pub tizen: Option<String>,
     pub webos: Option<String>,
-    pub download: Option<String>,
+    #[serde(rename = "camelCase")]
+    pub file_name: Option<String>,
 }
 
 impl From<&Stream> for ExternalPlayerLink {
@@ -32,7 +33,7 @@ impl From<&Stream> for ExternalPlayerLink {
                     "data:application/octet-stream;charset=utf-8;base64,{}",
                     base64::encode(format!("#EXTM3U\n#EXTINF:0\n{url}"))
                 )),
-                download: Some("playlist.m3u".to_owned()),
+                file_name: Some("playlist.m3u".to_owned()),
                 ..Default::default()
             },
             StreamSource::Torrent { .. } => ExternalPlayerLink {
