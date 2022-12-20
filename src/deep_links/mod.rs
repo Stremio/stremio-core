@@ -18,7 +18,7 @@ pub struct ExternalPlayerLink {
     pub android_tv: Option<String>,
     pub tizen: Option<String>,
     pub webos: Option<String>,
-    #[serde(rename = "camelCase")]
+    #[serde(rename = "fileName")]
     pub file_name: Option<String>,
 }
 
