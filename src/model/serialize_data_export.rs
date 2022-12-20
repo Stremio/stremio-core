@@ -1,4 +1,5 @@
 use serde::Serialize;
+use url::Url;
 use stremio_core::models::common::Loadable;
 use stremio_core::models::ctx::CtxError;
 use stremio_core::models::data_export::DataExport;
@@ -9,7 +10,7 @@ mod model {
     #[derive(Serialize)]
     #[serde(rename_all = "camelCase")]
     pub struct DataExport<'a> {
-        pub export_url: Option<Loadable<String, &'a CtxError>>,
+        pub export_url: Option<&'a Loadable<Url, CtxError>>,
     }
 }
 
@@ -19,13 +20,6 @@ pub fn serialize_data_export(data_export: &DataExport) -> JsValue {
             .export_url
             .as_ref()
             .map(|(_auth_key, loadable)| {
-                let loadable = match loadable {
-                    Loadable::Ready(url) => Loadable::Ready(
-                        url.as_str().to_string()
-                    ),
-                    Loadable::Loading => Loadable::Loading,
-                    Loadable::Err(error) => Loadable::Err(error),
-                };
                 loadable
             }),
     })
