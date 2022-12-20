@@ -35,7 +35,7 @@ pub struct AuthResponse {
 }
 
 #[derive(Deserialize)]
-#[serde(rename = "camelCase")]
+#[serde(rename_all = "camelCase")]
 pub struct DataExportResponse {
     pub export_id: String,
 }
