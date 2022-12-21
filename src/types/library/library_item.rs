@@ -5,7 +5,7 @@ use itertools::Itertools;
 use serde::{Deserialize, Serialize};
 use serde_with::{serde_as, DefaultOnError, DefaultOnNull, NoneAsEmptyString};
 use std::marker::PhantomData;
-use stremio_watched_bitfield::WatchedBitField;
+use stremio_watched_bitfield::{WatchedBitField, WatchedField};
 use url::Url;
 
 #[serde_as]
@@ -114,10 +114,9 @@ pub struct LibraryItemState {
     pub video_id: Option<String>,
     /// Field tracking watched videos.
     /// For [`LibraryItem`]s without videos, this field should [`None`].
-    // @TODO bitfield, special type
     #[serde(default)]
     #[serde_as(deserialize_as = "DefaultOnNull<NoneAsEmptyString>")]
-    pub watched: Option<String>,
+    pub watched: Option<WatchedField>,
     /// Release date of last observed video
     #[serde(default)]
     #[serde_as(deserialize_as = "DefaultOnNull<NoneAsEmptyString>")]
@@ -170,8 +169,9 @@ impl LibraryItemState {
             .cloned()
             .collect::<Vec<_>>();
         match &self.watched {
-            Some(watched) => {
-                match WatchedBitField::construct_and_resize(watched, video_ids.to_owned()) {
+            Some(watched_field) => {
+                // TODO: Construct WatchedBitField from `BitField8`
+                match WatchedBitField::construct_with_videos(watched_field.to_owned(), video_ids.to_owned()) {
                     Ok(watched) => watched,
                     Err(_) => WatchedBitField::construct_from_array(vec![], video_ids),
                 }

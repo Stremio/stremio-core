@@ -268,10 +268,10 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                         library_item.state.flagged_watched = 1;
                         library_item.state.times_watched =
                             library_item.state.times_watched.saturating_add(1);
-                        if let Some(watched) = &self.watched {
-                            let mut watched = watched.to_owned();
-                            watched.set_video(video_id, true);
-                            library_item.state.watched = Some(watched.to_string());
+                        if let Some(watched_bit_field) = &self.watched {
+                            let mut watched_bit_field = watched_bit_field.to_owned();
+                            watched_bit_field.set_video(video_id, true);
+                            library_item.state.watched = Some(watched_bit_field.into());
                         }
                     };
                     if library_item.temp && library_item.state.times_watched == 0 {

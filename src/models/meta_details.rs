@@ -102,7 +102,7 @@ impl<E: Env + 'static> UpdateWithCtx<E> for MetaDetails {
                     let mut watched = watched.to_owned();
                     watched.set_video(video_id, *is_watched);
                     let mut library_item = library_item.to_owned();
-                    library_item.state.watched = Some(watched.to_string());
+                    library_item.state.watched = Some(watched.into());
                     Effects::msg(Msg::Internal(Internal::UpdateLibraryItem(library_item)))
                         .unchanged()
                 }
