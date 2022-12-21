@@ -1,4 +1,5 @@
 mod bitfield8;
+pub use bitfield8::BitField8;
 
 mod error;
 pub use error::*;
