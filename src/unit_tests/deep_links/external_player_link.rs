@@ -21,7 +21,7 @@ fn external_player_link_magnet() {
     };
     let epl = ExternalPlayerLink::try_from(&stream).unwrap();
     assert_eq!(epl.href, Some(MAGNET_STR_URL.to_owned()));
-    assert_eq!(epl.download, None);
+    assert_eq!(epl.file_name, None);
 }
 
 #[test]
@@ -38,7 +38,7 @@ fn external_player_link_http() {
     };
     let epl = ExternalPlayerLink::try_from(&stream).unwrap();
     assert_eq!(epl.href, Some(BASE64_HTTP_URL.to_owned()));
-    assert_eq!(epl.download, Some("playlist.m3u".to_string()));
+    assert_eq!(epl.file_name, Some("playlist.m3u".to_string()));
 }
 
 #[test]
@@ -60,7 +60,7 @@ fn external_player_link_torrent() {
     };
     let epl = ExternalPlayerLink::try_from(&stream).unwrap();
     assert_eq!(epl.href, Some(MAGNET_STR_URL.to_owned()));
-    assert_eq!(epl.download, None);
+    assert_eq!(epl.file_name, None);
 }
 
 #[test]
@@ -80,7 +80,7 @@ fn external_player_link_external() {
     };
     let epl = ExternalPlayerLink::try_from(&stream).unwrap();
     assert_eq!(epl.href, Some(HTTP_STR_URL.to_owned()));
-    assert_eq!(epl.download, None);
+    assert_eq!(epl.file_name, None);
 }
 
 #[test]
@@ -100,7 +100,7 @@ fn external_player_link_youtube() {
         epl.href,
         Some("https://www.youtube.com/watch?v=aqz-KE-bpKQ".to_string())
     );
-    assert_eq!(epl.download, None);
+    assert_eq!(epl.file_name, None);
 }
 
 #[test]
@@ -117,5 +117,5 @@ fn external_player_link_player_frame() {
     };
     let epl = ExternalPlayerLink::try_from(&stream).unwrap();
     assert_eq!(epl.href, Some(HTTP_STR_URL.to_owned()));
-    assert_eq!(epl.download, None);
+    assert_eq!(epl.file_name, None);
 }
