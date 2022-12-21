@@ -12,13 +12,13 @@ use percent_encoding::utf8_percent_encode;
 use serde::Serialize;
 
 #[derive(Default, Serialize, Debug, PartialEq, Eq)]
+#[serde(rename_all = "camelCase")]
 pub struct ExternalPlayerLink {
     pub href: Option<String>,
     pub download: Option<String>,
     pub android_tv: Option<String>,
     pub tizen: Option<String>,
     pub webos: Option<String>,
-    #[serde(rename = "fileName")]
     pub file_name: Option<String>,
 }
 
