@@ -2,7 +2,7 @@ use crate::env::WebEnv;
 use crate::model::{
     serialize_catalogs_with_extra, serialize_continue_watching_preview, serialize_discover,
     serialize_installed_addons, serialize_library, serialize_meta_details, serialize_player,
-    serialize_remote_addons, serialize_streaming_server,
+    serialize_remote_addons, serialize_streaming_server, serialize_data_export
 };
 #[cfg(debug_assertions)]
 use serde::Serialize;
@@ -11,6 +11,7 @@ use stremio_core::models::catalog_with_filters::CatalogWithFilters;
 use stremio_core::models::catalogs_with_extra::CatalogsWithExtra;
 use stremio_core::models::continue_watching_preview::ContinueWatchingPreview;
 use stremio_core::models::ctx::Ctx;
+use stremio_core::models::data_export::DataExport;
 use stremio_core::models::installed_addons_with_filters::InstalledAddonsWithFilters;
 use stremio_core::models::library_with_filters::{
     ContinueWatchingFilter, LibraryWithFilters, NotRemovedFilter,
@@ -34,6 +35,7 @@ use wasm_bindgen::JsValue;
 pub struct WebModel {
     pub ctx: Ctx,
     pub auth_link: Link<LinkAuthKey>,
+    pub data_export: DataExport,
     pub continue_watching_preview: ContinueWatchingPreview,
     pub board: CatalogsWithExtra,
     pub discover: CatalogWithFilters<MetaItemPreview>,
@@ -64,6 +66,7 @@ impl WebModel {
         let model = WebModel {
             ctx: Ctx::new(profile, library),
             auth_link: Default::default(),
+            data_export: Default::default(),
             continue_watching_preview,
             board: Default::default(),
             discover,
@@ -92,6 +95,7 @@ impl WebModel {
         match field {
             WebModelField::Ctx => JsValue::from_serde(&self.ctx).unwrap(),
             WebModelField::AuthLink => JsValue::from_serde(&self.auth_link).unwrap(),
+            WebModelField::DataExport => serialize_data_export(&self.data_export),
             WebModelField::ContinueWatchingPreview => {
                 serialize_continue_watching_preview(&self.continue_watching_preview)
             }
