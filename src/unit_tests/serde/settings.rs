@@ -1,6 +1,5 @@
 use crate::types::profile::Settings;
-use chrono::prelude::TimeZone;
-use chrono::Utc;
+use chrono::{TimeZone, Utc};
 use serde_test::{assert_de_tokens, assert_tokens, Token};
 use url::Url;
 
@@ -29,7 +28,9 @@ fn settings() {
             subtitles_background_color: "subtitles_background_color".to_owned(),
             subtitles_outline_color: "subtitles_outline_color".to_owned(),
             seek_time_duration: 1,
-            streaming_server_warning_dismissed: Some(Utc.ymd(2021, 1, 1).and_hms_milli(0, 0, 0, 0)),
+            streaming_server_warning_dismissed: Some(
+                Utc.with_ymd_and_hms(2021, 1, 1, 0, 0, 0).unwrap(),
+            ),
         },
         &[
             Token::Struct {
