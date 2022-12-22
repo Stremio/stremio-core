@@ -97,7 +97,7 @@ fn data_export_with_user() {
         &Some((
             AuthKey("user_key".into()),
             Loadable::Ready(
-                "https://www.strem.io/data-export/user_export_id/export.json"
+                "https://api.strem.io/data-export/user_export_id/export.json"
                     .parse()
                     .unwrap()
             )
