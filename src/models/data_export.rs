@@ -55,7 +55,7 @@ impl<E: Env + 'static> UpdateWithCtx<E> for DataExport {
                     match result {
                         Ok(result) => {
                             let loaded_export_url = format!(
-                                "https://www.strem.io/data-export/{}/export.json",
+                                "https://api.strem.io/data-export/{}/export.json",
                                 utf8_percent_encode(&result.export_id, URI_COMPONENT_ENCODE_SET)
                             )
                             .parse()
