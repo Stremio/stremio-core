@@ -68,8 +68,7 @@ pub enum CreateTorrentArgs {
     Magnet(Url),
 }
 
-#[derive(Clone, PartialEq, Deserialize)]
-#[cfg_attr(debug_assertions, derive(Debug))]
+#[derive(Clone, PartialEq, Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct PlayOnDeviceArgs {
     pub device: String,
