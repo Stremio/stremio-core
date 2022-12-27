@@ -8,7 +8,7 @@ use futures::StreamExt;
 use futures::{future, Future, TryFutureExt};
 use lazy_static::lazy_static;
 use serde::{Deserialize, Serialize};
-use std::any::Any;
+use std::any::{type_name, Any};
 use std::collections::BTreeMap;
 use std::collections::HashMap;
 use std::ops::Fn;
@@ -28,7 +28,7 @@ lazy_static! {
 pub type FetchHandler =
     Box<dyn Fn(Request) -> TryEnvFuture<Box<dyn Any + Send>> + Send + Sync + 'static>;
 
-#[derive(Default, Debug, Clone, PartialEq)]
+#[derive(Default, Clone, Debug, PartialEq, Eq)]
 pub struct Request {
     pub url: String,
     pub method: String,
@@ -115,7 +115,11 @@ impl Env for TestEnv {
         let request = Request::from(request);
         REQUESTS.write().unwrap().push(request.to_owned());
         FETCH_HANDLER.read().unwrap()(request)
-            .map_ok(|resp| *resp.downcast::<OUT>().unwrap())
+            .map_ok(|resp| {
+                *resp
+                    .downcast::<OUT>()
+                    .unwrap_or_else(|_| panic!("Failed to downcast to {}", type_name::<OUT>()))
+            })
             .boxed_env()
     }
     fn get_storage<
@@ -129,7 +133,7 @@ impl Env for TestEnv {
                 .read()
                 .unwrap()
                 .get(key)
-                .map(|data| serde_json::from_str(&data).unwrap()),
+                .map(|data| serde_json::from_str(data).unwrap()),
         )
         .boxed_env()
     }
@@ -171,7 +175,7 @@ impl Env for TestEnv {
         serde_json::Value::Null
     }
     fn log(message: String) {
-        println!("{}", message)
+        println!("{message}")
     }
 }
 

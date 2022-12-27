@@ -31,8 +31,7 @@ impl<E: Env> AddonTransport for AddonHTTPTransport<E> {
         }
         if !self.transport_url.path().ends_with(ADDON_MANIFEST_PATH) {
             return future::err(EnvError::AddonTransport(format!(
-                "addon http transport url must ends with {}",
-                ADDON_MANIFEST_PATH
+                "addon http transport url must ends with {ADDON_MANIFEST_PATH}"
             )))
             .boxed_env();
         }

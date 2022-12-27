@@ -4,6 +4,8 @@ version = "0.1.0"
 authors = ["Smart Code OOD"]
 edition = "2018"
 
+rust-version = "1.60"
+
 [workspace]
 members = [
     "stremio-derive",
@@ -51,7 +53,7 @@ hex = "0.4.*"
 anyhow = "1.0.*"
 
 [dev-dependencies]
-tokio = { version = "1.12.*", features = ["rt"] }
+tokio = { version = "1.12.*", features = ["rt", "macros"] }
 tokio-current-thread = "=0.2.0-alpha.1"
 serde_test = "1.0.*"
 assert_matches = "1.5.*"

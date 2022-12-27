@@ -19,7 +19,7 @@ use serde::{Deserialize, Serialize};
 use std::convert::TryFrom;
 use std::ops::Add;
 
-#[derive(PartialEq)]
+#[derive(PartialEq, Eq)]
 pub enum SelectablePriority {
     Type,
     Catalog,
@@ -55,14 +55,12 @@ impl CatalogResourceAdapter for DescriptorPreview {
     }
 }
 
-#[derive(Clone, PartialEq, Serialize, Deserialize)]
-#[cfg_attr(debug_assertions, derive(Debug))]
+#[derive(Clone, PartialEq, Eq, Serialize, Deserialize, Debug)]
 pub struct Selected {
     pub request: ResourceRequest,
 }
 
-#[derive(PartialEq, Serialize)]
-#[cfg_attr(debug_assertions, derive(Clone, Debug))]
+#[derive(PartialEq, Eq, Serialize, Clone, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct SelectableCatalog {
     pub catalog: String,
@@ -70,24 +68,21 @@ pub struct SelectableCatalog {
     pub request: ResourceRequest,
 }
 
-#[derive(PartialEq, Serialize)]
-#[cfg_attr(debug_assertions, derive(Clone, Debug))]
+#[derive(PartialEq, Eq, Serialize, Clone, Debug)]
 pub struct SelectableType {
     pub r#type: String,
     pub selected: bool,
     pub request: ResourceRequest,
 }
 
-#[derive(PartialEq, Serialize)]
-#[cfg_attr(debug_assertions, derive(Clone, Debug))]
+#[derive(PartialEq, Eq, Serialize, Clone, Debug)]
 pub struct SelectableExtraOption {
     pub value: Option<String>,
     pub selected: bool,
     pub request: ResourceRequest,
 }
 
-#[derive(PartialEq, Serialize)]
-#[cfg_attr(debug_assertions, derive(Clone, Debug))]
+#[derive(PartialEq, Eq, Serialize, Clone, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct SelectableExtra {
     pub name: String,
@@ -95,14 +90,12 @@ pub struct SelectableExtra {
     pub options: Vec<SelectableExtraOption>,
 }
 
-#[derive(PartialEq, Serialize)]
-#[cfg_attr(debug_assertions, derive(Clone, Debug))]
+#[derive(PartialEq, Eq, Serialize, Clone, Debug)]
 pub struct SelectablePage {
     pub request: ResourceRequest,
 }
 
-#[derive(Default, PartialEq, Serialize)]
-#[cfg_attr(debug_assertions, derive(Clone, Debug))]
+#[derive(Default, PartialEq, Eq, Serialize, Clone, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct Selectable {
     pub types: Vec<SelectableType>,
@@ -120,8 +113,7 @@ pub type CatalogPage<T> = ResourceLoadable<Vec<T>>;
 
 pub type Catalog<T> = Vec<CatalogPage<T>>;
 
-#[derive(Derivative, Serialize)]
-#[cfg_attr(debug_assertions, derive(Clone, Debug))]
+#[derive(Derivative, Serialize, Clone, Debug)]
 #[derivative(Default(bound = ""))]
 pub struct CatalogWithFilters<T> {
     pub selected: Option<Selected>,

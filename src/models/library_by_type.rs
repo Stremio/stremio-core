@@ -12,22 +12,19 @@ use std::collections::HashMap;
 use std::marker::PhantomData;
 use strum::IntoEnumIterator;
 
-#[derive(Clone, PartialEq, Serialize, Deserialize)]
-#[cfg_attr(debug_assertions, derive(Debug))]
+#[derive(Clone, PartialEq, Eq, Serialize, Deserialize, Debug)]
 pub struct Selected {
     #[serde(default)]
     pub sort: Sort,
 }
 
-#[derive(PartialEq, Serialize)]
-#[cfg_attr(debug_assertions, derive(Debug))]
+#[derive(PartialEq, Eq, Serialize, Debug)]
 pub struct SelectableSort {
     pub sort: Sort,
     pub selected: bool,
 }
 
-#[derive(Default, PartialEq, Serialize)]
-#[cfg_attr(debug_assertions, derive(Debug))]
+#[derive(Default, PartialEq, Eq, Serialize, Debug)]
 pub struct Selectable {
     pub sorts: Vec<SelectableSort>,
 }
@@ -36,8 +33,7 @@ pub type CatalogPage = Vec<LibraryItem>;
 
 pub type Catalog = Vec<CatalogPage>;
 
-#[derive(Derivative, Serialize)]
-#[cfg_attr(debug_assertions, derive(Debug))]
+#[derive(Derivative, Serialize, Debug)]
 #[derivative(Default(bound = ""))]
 pub struct LibraryByType<F> {
     pub selected: Option<Selected>,

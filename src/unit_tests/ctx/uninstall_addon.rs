@@ -76,7 +76,7 @@ fn actionctx_uninstalladdon() {
             .unwrap()
             .get(PROFILE_STORAGE_KEY)
             .map_or(false, |data| {
-                serde_json::from_str::<Profile>(&data)
+                serde_json::from_str::<Profile>(data)
                     .unwrap()
                     .addons
                     .is_empty()
@@ -185,7 +185,7 @@ fn actionctx_uninstalladdon_with_user() {
             .unwrap()
             .get(PROFILE_STORAGE_KEY)
             .map_or(false, |data| {
-                serde_json::from_str::<Profile>(&data)
+                serde_json::from_str::<Profile>(data)
                     .unwrap()
                     .addons
                     .is_empty()
@@ -275,7 +275,7 @@ fn actionctx_uninstalladdon_protected() {
             .unwrap()
             .get(PROFILE_STORAGE_KEY)
             .map_or(false, |data| {
-                serde_json::from_str::<Profile>(&data).unwrap().addons == vec![addon.to_owned()]
+                serde_json::from_str::<Profile>(data).unwrap().addons == vec![addon.to_owned()]
             }),
         "protected addon is in storage"
     );
@@ -350,7 +350,7 @@ fn actionctx_uninstalladdon_not_installed() {
             .unwrap()
             .get(PROFILE_STORAGE_KEY)
             .map_or(false, |data| {
-                serde_json::from_str::<Profile>(&data).unwrap().addons == vec![addon.to_owned()]
+                serde_json::from_str::<Profile>(data).unwrap().addons == vec![addon.to_owned()]
             }),
         "addons in storage not updated"
     );

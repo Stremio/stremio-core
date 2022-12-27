@@ -111,8 +111,7 @@ pub fn model_derive(input: TokenStream) -> TokenStream {
                 }))
                 .collect::<Vec<_>>();
             TokenStream::from(quote! {
-                #[derive(serde::Serialize, serde::Deserialize)]
-                #[cfg_attr(debug_assertions, derive(Debug, PartialEq))]
+                #[derive(serde::Serialize, serde::Deserialize, Debug, PartialEq, Eq)]
                 #[serde(rename_all = "snake_case")]
                 pub enum #field_enum_ident {
                     #(#field_enum_variant_idents),*

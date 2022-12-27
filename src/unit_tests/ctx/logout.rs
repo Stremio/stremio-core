@@ -109,7 +109,7 @@ fn actionctx_logout() {
             .unwrap()
             .get(PROFILE_STORAGE_KEY)
             .map_or(false, |data| {
-                serde_json::from_str::<Profile>(&data).unwrap() == Default::default()
+                serde_json::from_str::<Profile>(data).unwrap() == Default::default()
             }),
         "profile updated successfully in storage"
     );
@@ -119,7 +119,7 @@ fn actionctx_logout() {
             .unwrap()
             .get(LIBRARY_RECENT_STORAGE_KEY)
             .map_or(false, |data| {
-                serde_json::from_str::<LibraryBucket>(&data).unwrap() == Default::default()
+                serde_json::from_str::<LibraryBucket>(data).unwrap() == Default::default()
             }),
         "recent library updated successfully in storage"
     );
@@ -129,7 +129,7 @@ fn actionctx_logout() {
             .unwrap()
             .get(LIBRARY_STORAGE_KEY)
             .map_or(false, |data| {
-                serde_json::from_str::<LibraryBucket>(&data).unwrap() == Default::default()
+                serde_json::from_str::<LibraryBucket>(data).unwrap() == Default::default()
             }),
         "library updated successfully in storage"
     );

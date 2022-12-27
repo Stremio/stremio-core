@@ -29,13 +29,13 @@ mod tests {
         )
         .unwrap();
 
-        assert_eq!(wb.get_video("tt2934286:1:5"), true);
-        assert_eq!(wb.get_video("tt2934286:1:6"), false);
+        assert!(wb.get_video("tt2934286:1:5"));
+        assert!(!wb.get_video("tt2934286:1:6"));
 
         assert_eq!(watched, wb.to_string());
 
         wb.set_video("tt2934286:1:6", true);
-        assert_eq!(wb.get_video("tt2934286:1:6"), true);
+        assert!(wb.get_video("tt2934286:1:6"));
     }
     #[test]
     fn construct_from_array() {
@@ -48,8 +48,8 @@ mod tests {
 
         // All should be false
         for (i, val) in video_ids.iter().enumerate() {
-            assert_eq!(wb.get(i), false);
-            assert_eq!(wb.get_video(val), false);
+            assert!(!wb.get(i));
+            assert!(!wb.get_video(val));
         }
 
         // Set half to true

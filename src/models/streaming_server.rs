@@ -17,8 +17,7 @@ use sha1::{Digest, Sha1};
 use std::iter;
 use url::Url;
 
-#[derive(Clone, PartialEq, Serialize, Deserialize)]
-#[cfg_attr(debug_assertions, derive(Debug))]
+#[derive(Clone, PartialEq, Serialize, Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct Settings {
     pub app_path: String,
@@ -42,15 +41,13 @@ pub struct CastingDevice {
     pub r#type: String,
 }
 
-#[derive(Serialize)]
-#[cfg_attr(debug_assertions, derive(Debug))]
+#[derive(Serialize, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct Selected {
     pub transport_url: Url,
 }
 
-#[derive(Serialize)]
-#[cfg_attr(debug_assertions, derive(Debug))]
+#[derive(Serialize, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct StreamingServer {
     pub selected: Selected,
@@ -158,8 +155,7 @@ impl<E: Env + 'static> UpdateWithCtx<E> for StreamingServer {
                     let torrent_effects = eq_update(&mut self.torrent, None);
                     Effects::msg(Msg::Event(Event::Error {
                         error: CtxError::Env(EnvError::Other(format!(
-                            "Failed to parse torrent file: {}",
-                            error
+                            "Failed to parse torrent file: {error}"
                         ))),
                         source: Box::new(Event::TorrentParsed {
                             torrent: torrent.to_owned(),
@@ -288,7 +284,7 @@ impl<E: Env + 'static> UpdateWithCtx<E> for StreamingServer {
                         Ok(_) => Loadable::Ready(ResourcePath {
                             resource: META_RESOURCE_NAME.to_owned(),
                             r#type: "other".to_owned(),
-                            id: format!("bt:{}", info_hash),
+                            id: format!("bt:{info_hash}"),
                             extra: vec![],
                         }),
                         Err(error) => Loadable::Err(error.to_owned()),
@@ -421,7 +417,7 @@ fn create_magnet<E: Env + 'static>(url: &Url, info_hash: &str, announce: &[Strin
     }
     let info_hash = info_hash.to_owned();
     let endpoint = url
-        .join(&format!("{}/", info_hash))
+        .join(&format!("{info_hash}/"))
         .expect("url builder failed")
         .join("create")
         .expect("url builder failed");
@@ -431,7 +427,7 @@ fn create_magnet<E: Env + 'static>(url: &Url, info_hash: &str, announce: &[Strin
         },
         peer_search: if !announce.is_empty() {
             Some(PeerSearch {
-                sources: iter::once(&format!("dht:{}", info_hash))
+                sources: iter::once(&format!("dht:{info_hash}"))
                     .chain(announce.iter())
                     .cloned()
                     .collect(),

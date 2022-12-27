@@ -1,0 +1,33 @@
+name: MSRV 1.60 build
+
+on:
+  # will checkout the default branch `development`
+  schedule:
+    # run every Friday at 17:00
+    - cron: '00 17 * * 5'
+
+# Stops the running workflow of previous pushes
+concurrency:
+  group: ${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  RUST_MSRV_VERSION: '1.60'
+
+jobs:
+  build:
+    name: Test and build --release
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Set default Rust version - ${{ env.RUST_MSRV_VERSION }}
+      run: rustup default ${{ env.RUST_MSRV_VERSION }}
+
+    - name: Checkout
+      uses: actions/checkout@v3
+
+    - name: Test
+      run: cargo test
+
+    - name: Build
+      run: cargo build

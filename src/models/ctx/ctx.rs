@@ -1,5 +1,8 @@
-use crate::constants::LIBRARY_COLLECTION_NAME;
-use crate::models::ctx::{update_library, update_profile, CtxError};
+use crate::constants::{LIBRARY_COLLECTION_NAME, URI_COMPONENT_ENCODE_SET};
+use crate::models::common::{
+    descriptor_update, eq_update, DescriptorAction, DescriptorLoadable, Loadable,
+};
+use crate::models::ctx::{update_library, update_profile, CtxError, OtherError};
 use crate::runtime::msg::{Action, ActionCtx, Event, Internal, Msg};
 use crate::runtime::{Effect, EffectFuture, Effects, Env, EnvFutureExt, Update};
 use crate::types::api::{
@@ -11,17 +14,17 @@ use crate::types::profile::{Auth, AuthKey, Profile};
 use derivative::Derivative;
 use enclose::enclose;
 use futures::{future, FutureExt, TryFutureExt};
+use percent_encoding::utf8_percent_encode;
 use serde::Serialize;
+use url::Url;
 
-#[derive(PartialEq, Serialize)]
-#[cfg_attr(debug_assertions, derive(Clone, Debug))]
+#[derive(PartialEq, Eq, Serialize, Clone, Debug)]
 pub enum CtxStatus {
     Loading(AuthRequest),
     Ready,
 }
 
-#[derive(Derivative, Serialize)]
-#[cfg_attr(debug_assertions, derive(Clone, Debug))]
+#[derive(Derivative, Serialize, Clone, Debug)]
 #[derivative(Default)]
 pub struct Ctx {
     pub profile: Profile,
@@ -33,6 +36,8 @@ pub struct Ctx {
     #[serde(skip)]
     #[derivative(Default(value = "CtxStatus::Ready"))]
     pub status: CtxStatus,
+    #[serde(skip)]
+    pub trakt_addon: Option<DescriptorLoadable>,
 }
 
 impl Ctx {
@@ -50,7 +55,10 @@ impl<E: Env + 'static> Update<E> for Ctx {
         match msg {
             Msg::Action(Action::Ctx(ActionCtx::Authenticate(auth_request))) => {
                 self.status = CtxStatus::Loading(auth_request.to_owned());
-                Effects::one(authenticate::<E>(auth_request)).unchanged()
+                let trakt_addon_effects = eq_update(&mut self.trakt_addon, None);
+                Effects::one(authenticate::<E>(auth_request))
+                    .unchanged()
+                    .join(trakt_addon_effects)
             }
             Msg::Action(Action::Ctx(ActionCtx::Logout)) | Msg::Internal(Internal::Logout) => {
                 let uid = self.profile.uid();
@@ -61,12 +69,70 @@ impl<E: Env + 'static> Update<E> for Ctx {
                 let profile_effects = update_profile::<E>(&mut self.profile, &self.status, msg);
                 let library_effects =
                     update_library::<E>(&mut self.library, &self.profile, &self.status, msg);
+                let trakt_addon_effects = eq_update(&mut self.trakt_addon, None);
                 self.status = CtxStatus::Ready;
                 Effects::msg(Msg::Event(Event::UserLoggedOut { uid }))
                     .unchanged()
                     .join(session_effects)
                     .join(profile_effects)
                     .join(library_effects)
+                    .join(trakt_addon_effects)
+            }
+            Msg::Action(Action::Ctx(ActionCtx::InstallTraktAddon)) => {
+                let uid = self.profile.uid();
+                match uid {
+                    Some(uid) => descriptor_update::<E>(
+                        &mut self.trakt_addon,
+                        DescriptorAction::DescriptorRequested {
+                            transport_url: &Url::parse(&format!(
+                                "https://www.strem.io/trakt/addon/{}/manifest.json",
+                                utf8_percent_encode(&uid, URI_COMPONENT_ENCODE_SET)
+                            ))
+                            .expect("Failed to parse trakt addon transport url"),
+                        },
+                    ),
+                    _ => Effects::msg(Msg::Event(Event::Error {
+                        error: CtxError::from(OtherError::UserNotLoggedIn),
+                        source: Box::new(Event::TraktAddonFetched { uid }),
+                    }))
+                    .unchanged(),
+                }
+            }
+            Msg::Internal(Internal::ManifestRequestResult(transport_url, result)) => {
+                let trakt_addon_effects = descriptor_update::<E>(
+                    &mut self.trakt_addon,
+                    DescriptorAction::ManifestRequestResult {
+                        transport_url,
+                        result,
+                    },
+                );
+                let trakt_addon_events_effects = match &self.trakt_addon {
+                    Some(DescriptorLoadable {
+                        content: Loadable::Ready(addon),
+                        ..
+                    }) if trakt_addon_effects.has_changed => Effects::msgs(vec![
+                        Msg::Event(Event::TraktAddonFetched {
+                            uid: self.profile.uid(),
+                        }),
+                        Msg::Internal(Internal::InstallAddon(addon.to_owned())),
+                    ])
+                    .unchanged(),
+                    Some(DescriptorLoadable {
+                        content: Loadable::Err(error),
+                        ..
+                    }) if trakt_addon_effects.has_changed => {
+                        Effects::msg(Msg::Event(Event::Error {
+                            error: CtxError::Env(error.to_owned()),
+                            source: Box::new(Event::TraktAddonFetched {
+                                uid: self.profile.uid(),
+                            }),
+                        }))
+                        .unchanged()
+                    }
+                    _ => Effects::none().unchanged(),
+                };
+                self.trakt_addon = None;
+                trakt_addon_effects.join(trakt_addon_events_effects)
             }
             Msg::Internal(Internal::CtxAuthResult(auth_request, result)) => {
                 let profile_effects = update_profile::<E>(&mut self.profile, &self.status, msg);

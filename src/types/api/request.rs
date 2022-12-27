@@ -16,8 +16,7 @@ pub trait FetchRequestParams<T> {
     fn body(self) -> T;
 }
 
-#[derive(Clone, PartialEq, Serialize)]
-#[cfg_attr(debug_assertions, derive(Debug))]
+#[derive(Clone, PartialEq, Eq, Serialize, Debug)]
 #[serde(tag = "type")]
 pub enum APIRequest {
     Auth(AuthRequest),
@@ -46,6 +45,10 @@ pub enum APIRequest {
         user: User,
     },
     #[serde(rename_all = "camelCase")]
+    DataExport {
+        auth_key: AuthKey,
+    },
+    #[serde(rename_all = "camelCase")]
     Events {
         auth_key: AuthKey,
         events: Vec<serde_json::Value>,
@@ -69,6 +72,7 @@ impl FetchRequestParams<APIRequest> for APIRequest {
             APIRequest::AddonCollectionSet { .. } => "addonCollectionSet".to_owned(),
             APIRequest::GetUser { .. } => "getUser".to_owned(),
             APIRequest::SaveUser { .. } => "saveUser".to_owned(),
+            APIRequest::DataExport { .. } => "dataExport".to_owned(),
             APIRequest::Events { .. } => "events".to_owned(),
         }
     }
@@ -80,8 +84,7 @@ impl FetchRequestParams<APIRequest> for APIRequest {
     }
 }
 
-#[derive(Clone, PartialEq, Serialize, Deserialize)]
-#[cfg_attr(debug_assertions, derive(Debug))]
+#[derive(Clone, PartialEq, Eq, Serialize, Deserialize, Debug)]
 #[cfg_attr(test, derive(Derivative))]
 #[cfg_attr(test, derivative(Default))]
 #[serde(tag = "type")]
@@ -103,8 +106,7 @@ pub enum AuthRequest {
     },
 }
 
-#[derive(Clone, PartialEq, Serialize, Deserialize)]
-#[cfg_attr(debug_assertions, derive(Debug))]
+#[derive(Clone, PartialEq, Eq, Serialize, Deserialize, Debug)]
 #[cfg_attr(test, derive(Derivative))]
 #[cfg_attr(test, derivative(Default))]
 #[serde(tag = "type")]
@@ -135,8 +137,7 @@ impl FetchRequestParams<()> for LinkRequest {
     fn body(self) {}
 }
 
-#[derive(Clone, PartialEq, Serialize)]
-#[cfg_attr(debug_assertions, derive(Debug))]
+#[derive(Clone, PartialEq, Eq, Serialize, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct DatastoreRequest {
     pub auth_key: AuthKey,
@@ -167,8 +168,7 @@ impl FetchRequestParams<DatastoreRequest> for DatastoreRequest {
     }
 }
 
-#[derive(Clone, PartialEq, Serialize)]
-#[cfg_attr(debug_assertions, derive(Debug))]
+#[derive(Clone, PartialEq, Eq, Serialize, Debug)]
 #[cfg_attr(test, derive(Derivative))]
 #[cfg_attr(test, derivative(Default))]
 #[serde(untagged)]

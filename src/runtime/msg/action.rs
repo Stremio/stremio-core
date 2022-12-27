@@ -15,13 +15,13 @@ use serde::Deserialize;
 use std::ops::Range;
 use url::Url;
 
-#[derive(Clone, Deserialize)]
-#[cfg_attr(debug_assertions, derive(Debug))]
+#[derive(Clone, Deserialize, Debug)]
 #[serde(tag = "action", content = "args")]
 pub enum ActionCtx {
     Authenticate(AuthRequest),
     Logout,
     InstallAddon(Descriptor),
+    InstallTraktAddon,
     UpgradeAddon(Descriptor),
     UninstallAddon(Descriptor),
     UpdateSettings(ProfileSettings),
@@ -35,38 +35,33 @@ pub enum ActionCtx {
     SyncLibraryWithAPI,
 }
 
-#[derive(Clone, Deserialize)]
-#[cfg_attr(debug_assertions, derive(Debug))]
+#[derive(Clone, Deserialize, Debug)]
 #[serde(tag = "action", content = "args")]
 pub enum ActionCatalogWithFilters {
     LoadNextPage,
 }
 
-#[derive(Clone, Deserialize)]
-#[cfg_attr(debug_assertions, derive(Debug))]
+#[derive(Clone, Deserialize, Debug)]
 #[serde(tag = "action", content = "args")]
 pub enum ActionCatalogsWithExtra {
     LoadRange(Range<usize>),
     LoadNextPage(usize),
 }
 
-#[derive(Clone, Deserialize)]
-#[cfg_attr(debug_assertions, derive(Debug))]
+#[derive(Clone, Deserialize, Debug)]
 #[serde(tag = "action", content = "args")]
 pub enum ActionLibraryByType {
     LoadNextPage(usize),
 }
 
-#[derive(Clone, Deserialize)]
-#[cfg_attr(debug_assertions, derive(Debug))]
+#[derive(Clone, Deserialize, Debug)]
 #[serde(tag = "action", content = "args")]
 pub enum ActionMetaDetails {
     MarkAsWatched(bool),
     MarkVideoAsWatched(String, bool),
 }
 
-#[derive(Clone, Deserialize)]
-#[cfg_attr(debug_assertions, derive(Debug))]
+#[derive(Clone, Deserialize, Debug)]
 #[serde(untagged)]
 pub enum CreateTorrentArgs {
     File(Vec<u8>),
@@ -82,8 +77,7 @@ pub struct PlayOnDeviceArgs {
     pub time: Option<u64>,
 }
 
-#[derive(Clone, Deserialize)]
-#[cfg_attr(debug_assertions, derive(Debug))]
+#[derive(Clone, Deserialize, Debug)]
 #[serde(tag = "action", content = "args")]
 pub enum ActionStreamingServer {
     Reload,
@@ -92,15 +86,13 @@ pub enum ActionStreamingServer {
     PlayOnDevice(PlayOnDeviceArgs),
 }
 
-#[derive(Clone, Deserialize)]
-#[cfg_attr(debug_assertions, derive(Debug))]
+#[derive(Clone, Deserialize, Debug)]
 #[serde(tag = "action", content = "args")]
 pub enum ActionLink {
     ReadData,
 }
 
-#[derive(Clone, Deserialize)]
-#[cfg_attr(debug_assertions, derive(Debug))]
+#[derive(Clone, Deserialize, Debug)]
 #[serde(tag = "action", content = "args")]
 pub enum ActionPlayer {
     TimeChanged {
@@ -115,13 +107,13 @@ pub enum ActionPlayer {
     PushToLibrary,
 }
 
-#[derive(Clone, Deserialize)]
-#[cfg_attr(debug_assertions, derive(Debug))]
+#[derive(Clone, Deserialize, Debug)]
 #[serde(tag = "model", content = "args")]
 pub enum ActionLoad {
     AddonDetails(AddonDetailsSelected),
     CatalogWithFilters(Option<CatalogWithFiltersSelected>),
     CatalogsWithExtra(CatalogsWithExtraSelected),
+    DataExport,
     InstalledAddonsWithFilters(InstalledAddonsWithFiltersSelected),
     LibraryWithFilters(LibraryWithFiltersSelected),
     LibraryByType(LibraryByTypeSelected),
@@ -131,11 +123,11 @@ pub enum ActionLoad {
     Notifications,
 }
 
-//
-// Those messages are meant to be dispatched only by the users of the stremio-core crate and handled by the stremio-core crate
-//
-#[derive(Clone, Deserialize)]
-#[cfg_attr(debug_assertions, derive(Debug))]
+/// Action messages
+///
+/// Those messages are meant to be dispatched only by the users of the
+/// `stremio-core` crate and handled by the `stremio-core` crate.
+#[derive(Clone, Deserialize, Debug)]
 #[serde(tag = "action", content = "args")]
 pub enum Action {
     Ctx(ActionCtx),

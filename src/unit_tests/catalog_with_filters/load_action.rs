@@ -18,7 +18,7 @@ use url::Url;
 
 #[test]
 fn default_catalog() {
-    #[derive(Model, Default, Debug, Clone)]
+    #[derive(Model, Default, Clone, Debug)]
     #[model(TestEnv)]
     struct TestModel {
         ctx: Ctx,
@@ -111,7 +111,7 @@ fn default_catalog() {
 
 #[test]
 fn search_catalog() {
-    #[derive(Model, Default, Debug, Clone)]
+    #[derive(Model, Default, Clone, Debug)]
     #[model(TestEnv)]
     struct TestModel {
         ctx: Ctx,
@@ -159,7 +159,7 @@ fn search_catalog() {
     TestEnv::run_with_runtime(
         rx,
         runtime.clone(),
-        enclose!((runtime, selected.to_owned() => selected) move || {
+        enclose!((runtime, selected => selected) move || {
             let runtime = runtime.read().unwrap();
             runtime.dispatch(RuntimeAction {
                 field: None,

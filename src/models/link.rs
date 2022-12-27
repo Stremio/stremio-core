@@ -13,8 +13,7 @@ use serde::Serialize;
 use std::convert::TryFrom;
 use std::fmt;
 
-#[derive(Clone, PartialEq, From, Serialize)]
-#[cfg_attr(debug_assertions, derive(Debug))]
+#[derive(Clone, PartialEq, From, Serialize, Debug)]
 #[serde(tag = "type", content = "content")]
 pub enum LinkError {
     API(APIError),
@@ -27,13 +26,12 @@ impl fmt::Display for LinkError {
         match &self {
             LinkError::API(error) => write!(f, "API: {}", error.message),
             LinkError::Env(error) => write!(f, "Env: {}", error.message()),
-            LinkError::UnexpectedResponse(message) => write!(f, "UnexpectedResponse: {}", message),
+            LinkError::UnexpectedResponse(message) => write!(f, "UnexpectedResponse: {message}"),
         }
     }
 }
 
-#[derive(Derivative, Serialize)]
-#[cfg_attr(debug_assertions, derive(Debug))]
+#[derive(Derivative, Serialize, Debug)]
 #[derivative(Default(bound = ""))]
 #[serde(rename_all = "camelCase")]
 pub struct Link<T> {

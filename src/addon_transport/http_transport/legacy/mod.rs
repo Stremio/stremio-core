@@ -22,7 +22,7 @@ const MANIFEST_REQUEST_PARAM: &str =
 //
 // Errors
 //
-#[cfg_attr(debug_assertions, derive(Debug))]
+#[derive(Debug)]
 pub enum LegacyErr {
     JsonRPC(JsonRPCErr),
     UnsupportedResource,
@@ -42,8 +42,7 @@ impl From<LegacyErr> for EnvError {
 //
 // JSON RPC types
 //
-#[derive(Deserialize)]
-#[cfg_attr(debug_assertions, derive(Debug))]
+#[derive(Deserialize, Debug)]
 pub struct JsonRPCErr {
     message: String,
     #[serde(default)]
@@ -214,9 +213,9 @@ fn build_legacy_req(transport_url: &Url, path: &ResourcePath) -> Result<Request<
     // so we're technically replicating a legacy bug on purpose
     // https://github.com/Stremio/stremio-addons/blob/v2.8.14/rpc.js#L53
     let param_str = base64::encode(
-        &serde_json::to_string(&q_json).map_err(|error| EnvError::Serde(error.to_string()))?,
+        serde_json::to_string(&q_json).map_err(|error| EnvError::Serde(error.to_string()))?,
     );
-    let url = format!("{}/q.json?b={}", transport_url, param_str);
+    let url = format!("{transport_url}/q.json?b={param_str}");
     Ok(Request::get(&url).body(()).expect("request builder failed"))
 }
 

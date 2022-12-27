@@ -13,8 +13,7 @@ use serde::{Deserialize, Serialize, Serializer};
 use std::fmt;
 use url::Url;
 
-#[derive(Clone, PartialEq)]
-#[cfg_attr(debug_assertions, derive(Debug))]
+#[derive(Clone, PartialEq, Debug)]
 pub enum EnvError {
     Fetch(String),
     AddonTransport(String),
@@ -30,21 +29,20 @@ pub enum EnvError {
 impl EnvError {
     pub fn message(&self) -> String {
         match &self {
-            EnvError::Fetch(message) => format!("Failed to fetch: {}", message),
-            EnvError::AddonTransport(message) => format!("Addon protocol violation: {}", message),
-            EnvError::Serde(message) => format!("Serialization error: {}", message),
+            EnvError::Fetch(message) => format!("Failed to fetch: {message}"),
+            EnvError::AddonTransport(message) => format!("Addon protocol violation: {message}"),
+            EnvError::Serde(message) => format!("Serialization error: {message}"),
             EnvError::StorageUnavailable => "Storage is not available".to_owned(),
-            EnvError::StorageSchemaVersionDowngrade(from, to) => format!(
-                "Downgrade storage schema version from {} to {} is not allowed",
-                from, to
-            ),
+            EnvError::StorageSchemaVersionDowngrade(from, to) => {
+                format!("Downgrade storage schema version from {from} to {to} is not allowed",)
+            }
             EnvError::StorageSchemaVersionUpgrade(source) => format!(
                 "Upgrade storage schema version failed caused by: {}",
                 source.message()
             ),
-            EnvError::StorageReadError(message) => format!("Storage read error: {}", message),
-            EnvError::StorageWriteError(message) => format!("Storage write error: {}", message),
-            EnvError::Other(message) => format!("Other error: {}", message),
+            EnvError::StorageReadError(message) => format!("Storage read error: {message}"),
+            EnvError::StorageWriteError(message) => format!("Storage write error: {message}"),
+            EnvError::Other(message) => format!("Other error: {message}"),
         }
     }
     pub fn code(&self) -> u32 {
@@ -202,6 +200,12 @@ pub trait Env {
                         .map_err(|error| EnvError::StorageSchemaVersionUpgrade(Box::new(error)))
                         .await?;
                     schema_version = 5;
+                };
+                if schema_version == 5 {
+                    migrate_storage_schema_to_v6::<Self>()
+                        .map_err(|error| EnvError::StorageSchemaVersionUpgrade(Box::new(error)))
+                        .await?;
+                    schema_version = 6;
                 };
                 if schema_version != SCHEMA_VERSION {
                     panic!(
@@ -367,4 +371,195 @@ fn migrate_storage_schema_to_v5<E: Env>() -> TryEnvFuture<()> {
         })
         .and_then(|_| E::set_storage(SCHEMA_VERSION_STORAGE_KEY, Some(&5)))
         .boxed_env()
+}
+
+fn migrate_storage_schema_to_v6<E: Env>() -> TryEnvFuture<()> {
+    E::get_storage::<serde_json::Value>(PROFILE_STORAGE_KEY)
+        .and_then(|mut profile| {
+            match profile
+                .as_mut()
+                .and_then(|profile| profile.as_object_mut())
+                .and_then(|profile| profile.get_mut("settings"))
+                .and_then(|settings| settings.as_object_mut())
+            {
+                Some(settings) => {
+                    let player_type = match settings.remove("playInExternalPlayer") {
+                        Some(play_in_external_player) if play_in_external_player == true => {
+                            serde_json::Value::String("external".to_owned())
+                        }
+                        _ => serde_json::Value::Null,
+                    };
+                    settings.insert("playerType".to_owned(), player_type);
+                    settings.insert(
+                        "autoFrameRateMatching".to_owned(),
+                        serde_json::Value::Bool(false),
+                    );
+                    settings.insert(
+                        "nextVideoNotificationDuration".to_owned(),
+                        serde_json::Value::Number(serde_json::Number::from(35000)),
+                    );
+                    E::set_storage(PROFILE_STORAGE_KEY, Some(&profile))
+                }
+                _ => E::set_storage::<()>(PROFILE_STORAGE_KEY, None),
+            }
+        })
+        .and_then(|_| E::set_storage(SCHEMA_VERSION_STORAGE_KEY, Some(&6)))
+        .boxed_env()
+}
+
+#[cfg(test)]
+mod test {
+    use serde_json::{json, Value};
+
+    use crate::{
+        constants::{PROFILE_STORAGE_KEY, SCHEMA_VERSION_STORAGE_KEY},
+        runtime::Env,
+        unit_tests::{TestEnv, STORAGE},
+    };
+
+    fn set_profile_and_schema_version(profile: &Value, schema_v: u32) {
+        let mut storage = STORAGE.write().expect("Should lock");
+
+        let no_schema = storage.insert(SCHEMA_VERSION_STORAGE_KEY.into(), schema_v.to_string());
+        assert!(
+            no_schema.is_none(),
+            "Current schema should be empty for this test"
+        );
+
+        let no_profile = storage.insert(PROFILE_STORAGE_KEY.into(), profile.to_string());
+        assert!(
+            no_profile.is_none(),
+            "Current profile should be empty for this test"
+        );
+    }
+
+    #[tokio::test]
+    async fn test_migration_from_5_to_6() {
+        // Profile with external player (true)
+        {
+            let _test_env_guard = TestEnv::reset().expect("Should lock TestEnv");
+            let profile_before = json!({
+                "settings": {
+                    "playInExternalPlayer": true,
+                }
+            });
+
+            let migrated_profile = json!({
+                "settings": {
+                    "playerType": "external",
+                    "autoFrameRateMatching": false,
+                    "nextVideoNotificationDuration": 35000_u64
+                }
+            });
+
+            // setup storage for migration
+            set_profile_and_schema_version(&profile_before, 5);
+
+            // migrate storage
+            TestEnv::migrate_storage_schema()
+                .await
+                .expect("Should migrate");
+
+            let storage = STORAGE.read().expect("Should lock");
+
+            assert_eq!(
+                &6.to_string(),
+                storage
+                    .get(SCHEMA_VERSION_STORAGE_KEY)
+                    .expect("Should have the schema set"),
+                "Scheme version should now be updated"
+            );
+            assert_eq!(
+                &migrated_profile.to_string(),
+                storage
+                    .get(PROFILE_STORAGE_KEY)
+                    .expect("Should have the profile set"),
+                "Profile should match"
+            );
+        }
+
+        // Profile without external player (false)
+        {
+            let _test_env_guard = TestEnv::reset().expect("Should lock TestEnv");
+            let profile_before = json!({
+                "settings": {
+                    "playInExternalPlayer": false,
+                }
+            });
+
+            let migrated_profile = json!({
+                "settings": {
+                    "playerType": null,
+                    "autoFrameRateMatching": false,
+                    "nextVideoNotificationDuration": 35000_u64
+                }
+            });
+
+            // setup storage for migration
+            set_profile_and_schema_version(&profile_before, 5);
+
+            // migrate storage
+            TestEnv::migrate_storage_schema()
+                .await
+                .expect("Should migrate");
+
+            let storage = STORAGE.read().expect("Should lock");
+
+            assert_eq!(
+                &6.to_string(),
+                storage
+                    .get(SCHEMA_VERSION_STORAGE_KEY)
+                    .expect("Should have the schema set"),
+                "Scheme version should now be updated"
+            );
+            assert_eq!(
+                &migrated_profile.to_string(),
+                storage
+                    .get(PROFILE_STORAGE_KEY)
+                    .expect("Should have the profile set"),
+                "Profile should match"
+            );
+        }
+
+        // Profile with no external player set (null)
+        {
+            let _test_env_guard = TestEnv::reset().expect("Should lock TestEnv");
+            let profile_before = json!({
+                "settings": {}
+            });
+
+            let migrated_profile = json!({
+                "settings": {
+                    "playerType": null,
+                    "autoFrameRateMatching": false,
+                    "nextVideoNotificationDuration": 35000_u64
+                }
+            });
+
+            // setup storage for migration
+            set_profile_and_schema_version(&profile_before, 5);
+
+            // migrate storage
+            TestEnv::migrate_storage_schema()
+                .await
+                .expect("Should migrate");
+
+            let storage = STORAGE.read().expect("Should lock");
+
+            assert_eq!(
+                &6.to_string(),
+                storage
+                    .get(SCHEMA_VERSION_STORAGE_KEY)
+                    .expect("Should have the schema set"),
+                "Scheme version should now be updated"
+            );
+            assert_eq!(
+                &migrated_profile.to_string(),
+                storage
+                    .get(PROFILE_STORAGE_KEY)
+                    .expect("Should have the profile set"),
+                "Profile should match"
+            );
+        }
+    }
 }

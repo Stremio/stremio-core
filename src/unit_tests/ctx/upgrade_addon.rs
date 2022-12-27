@@ -59,7 +59,7 @@ fn actionctx_installaddon_upgrade() {
         TestModel {
             ctx: Ctx {
                 profile: Profile {
-                    addons: vec![addon1.to_owned()],
+                    addons: vec![addon1],
                     ..Default::default()
                 },
                 ..Default::default()
@@ -86,7 +86,7 @@ fn actionctx_installaddon_upgrade() {
             .unwrap()
             .get(PROFILE_STORAGE_KEY)
             .map_or(false, |data| {
-                serde_json::from_str::<Profile>(&data).unwrap().addons == vec![addon2.to_owned()]
+                serde_json::from_str::<Profile>(data).unwrap().addons == vec![addon2.to_owned()]
             }),
         "addon upgrade successfully in storage"
     );

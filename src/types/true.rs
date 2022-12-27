@@ -1,8 +1,7 @@
 use serde::de::Unexpected;
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
 
-#[derive(Clone, Copy, PartialEq)]
-#[cfg_attr(debug_assertions, derive(Debug))]
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
 #[cfg_attr(test, derive(Default))]
 pub struct True;
 
