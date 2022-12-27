@@ -32,7 +32,7 @@ pub struct Settings {
     pub bt_min_peers_for_stable: u64,
 }
 
-#[derive(Clone, PartialEq, Serialize, Deserialize, Debug)]
+#[derive(Clone, PartialEq, Eq, Serialize, Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct CastingDevice {
     pub id: String,
