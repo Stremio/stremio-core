@@ -70,6 +70,9 @@ pub enum Event {
     TraktAddonFetched {
         uid: UID,
     },
+    TraktLoggedOut {
+        uid: UID,
+    },
     AddonInstalled {
         transport_url: Url,
         id: String,
