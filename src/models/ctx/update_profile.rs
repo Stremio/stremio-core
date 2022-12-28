@@ -196,7 +196,7 @@ pub fn update_profile<E: Env + 'static>(
         }
         Msg::Action(Action::Ctx(ActionCtx::LogoutTrakt)) => match &mut profile.auth {
             Some(Auth { user, key }) => {
-                if user.trakt != None {
+                if user.trakt.is_some() {
                     user.trakt = None;
                     let push_to_api_effects =
                         Effects::one(push_user_to_api::<E>(user.to_owned(), key));
