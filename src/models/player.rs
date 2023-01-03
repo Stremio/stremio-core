@@ -1,4 +1,6 @@
-use crate::constants::{CREDITS_THRESHOLD_COEF, WATCHED_THRESHOLD_COEF};
+use crate::constants::{
+    CREDITS_THRESHOLD_COEF, VIDEO_HASH_EXTRA_PROP, VIDEO_SIZE_EXTRA_PROP, WATCHED_THRESHOLD_COEF,
+};
 use crate::models::common::{
     eq_update, resource_update, resources_update_with_vector_content, Loadable, ResourceAction,
     ResourceLoadable, ResourcesAction,
@@ -6,15 +8,15 @@ use crate::models::common::{
 use crate::models::ctx::Ctx;
 use crate::runtime::msg::{Action, ActionLoad, ActionPlayer, Event, Internal, Msg};
 use crate::runtime::{Effects, Env, UpdateWithCtx};
-use crate::types::addon::{AggrRequest, ResourcePath, ResourceRequest};
+use crate::types::addon::{AggrRequest, ExtraExt, ResourcePath, ResourceRequest};
 use crate::types::library::{LibraryBucket, LibraryItem};
 use crate::types::profile::Settings as ProfileSettings;
 use crate::types::resource::{MetaItem, SeriesInfo, Stream, Subtitles, Video};
 use chrono::{DateTime, Utc};
 use itertools::Itertools;
 use serde::{Deserialize, Serialize};
-use std::cmp;
 use std::marker::PhantomData;
+use std::{cmp, str};
 use stremio_watched_bitfield::WatchedBitField;
 
 use super::common::resource_update_with_vector_content;
@@ -44,11 +46,19 @@ pub struct AnalyticsContext {
 
 #[derive(Clone, PartialEq, Eq, Serialize, Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
+pub struct VideoParams {
+    pub hash: Option<String>,
+    pub size: Option<u32>,
+}
+
+#[derive(Clone, PartialEq, Eq, Serialize, Deserialize, Debug)]
+#[serde(rename_all = "camelCase")]
 pub struct Selected {
     pub stream: Stream,
     pub stream_request: Option<ResourceRequest>,
     pub meta_request: Option<ResourceRequest>,
     pub subtitles_path: Option<ResourcePath>,
+    pub video_params: Option<VideoParams>,
 }
 
 #[derive(Default, Serialize, Debug)]
@@ -119,14 +129,29 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                     },
                     _ => eq_update(&mut self.meta_item, None),
                 };
-                let subtitles_effects = match &selected.subtitles_path {
-                    Some(subtitles_path) => resources_update_with_vector_content::<E, _>(
-                        &mut self.subtitles,
-                        ResourcesAction::ResourcesRequested {
-                            request: &AggrRequest::AllOfResource(subtitles_path.to_owned()),
-                            addons: &ctx.profile.addons,
-                        },
-                    ),
+                let subtitles_effects = match (&selected.subtitles_path, &selected.video_params) {
+                    (Some(subtitles_path), Some(video_params)) => {
+                        resources_update_with_vector_content::<E, _>(
+                            &mut self.subtitles,
+                            ResourcesAction::ResourcesRequested {
+                                request: &AggrRequest::AllOfResource(ResourcePath {
+                                    extra: subtitles_path
+                                        .extra
+                                        .to_owned()
+                                        .extend_one(
+                                            &VIDEO_HASH_EXTRA_PROP,
+                                            video_params.hash.to_owned(),
+                                        )
+                                        .extend_one(
+                                            &VIDEO_SIZE_EXTRA_PROP,
+                                            video_params.size.as_ref().map(|size| size.to_string()),
+                                        ),
+                                    ..subtitles_path.to_owned()
+                                }),
+                                addons: &ctx.profile.addons,
+                            },
+                        )
+                    }
                     _ => eq_update(&mut self.subtitles, vec![]),
                 };
                 let next_video_effects = next_video_update(
@@ -729,6 +754,7 @@ mod test {
             }),
             meta_request: None,
             subtitles_path: None,
+            video_params: None,
         };
 
         // Test that it should update the next_streams from the next_video if Video has one stream
