@@ -1,15 +1,16 @@
-use crate::runtime::{Env, TryEnvFuture};
-use crate::types::api::{APIResult, FetchRequestParams};
+use crate::{
+    runtime::{ConditionalSend, Env, TryEnvFuture},
+    types::api::{APIResult, FetchRequestParams},
+};
+
 use http::Request;
 use serde::{Deserialize, Serialize};
 
 pub fn fetch_api<
     E: Env,
-    #[cfg(not(feature = "env-future-send"))] BODY: Serialize + 'static,
-    #[cfg(feature = "env-future-send")] BODY: Serialize + Send + 'static,
+    BODY: Serialize + ConditionalSend + 'static,
     REQ: FetchRequestParams<BODY> + Clone + Serialize,
-    #[cfg(not(feature = "env-future-send"))] RESP: for<'de> Deserialize<'de> + 'static,
-    #[cfg(feature = "env-future-send")] RESP: for<'de> Deserialize<'de> + Send + 'static,
+    RESP: for<'de> Deserialize<'de> + ConditionalSend + 'static,
 >(
     api_request: &REQ,
 ) -> TryEnvFuture<APIResult<RESP>> {

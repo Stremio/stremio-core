@@ -6,12 +6,14 @@ use crate::constants::{
 use crate::models::ctx::Ctx;
 use crate::models::streaming_server::StreamingServer;
 use chrono::{DateTime, Utc};
-use futures::{future, Future, FutureExt, TryFutureExt};
+use futures::{future, Future, TryFutureExt};
 use http::Request;
 use serde::ser::SerializeStruct;
 use serde::{Deserialize, Serialize, Serializer};
 use std::fmt;
 use url::Url;
+
+pub use conditional_types::{ConditionalSend, EnvFuture, EnvFutureExt};
 
 #[derive(Clone, PartialEq, Debug)]
 pub enum EnvError {
@@ -84,64 +86,68 @@ impl From<serde_json::Error> for EnvError {
     }
 }
 
-#[cfg(not(feature = "env-future-send"))]
-pub type EnvFuture<T> = futures::future::LocalBoxFuture<'static, T>;
+#[cfg(any(not(feature = "env-future-send"), target_family = "wasm"))]
+/// Only for wasm or when `env-future-send` is not enabled
+mod conditional_types {
+    use futures::{future::LocalBoxFuture, Future, FutureExt};
 
-#[cfg(feature = "env-future-send")]
-pub type EnvFuture<T> = future::BoxFuture<'static, T>;
+    pub type EnvFuture<'a, T> = LocalBoxFuture<'a, T>;
 
-impl<T: ?Sized> EnvFutureExt for T where T: Future {}
+    pub trait ConditionalSend {}
 
-pub trait EnvFutureExt: Future {
-    #[cfg(not(feature = "env-future-send"))]
-    fn boxed_env<'a>(self) -> futures::future::LocalBoxFuture<'a, Self::Output>
-    where
-        Self: Sized + 'a,
-    {
-        self.boxed_local()
-    }
+    impl<T> ConditionalSend for T {}
 
-    #[cfg(feature = "env-future-send")]
-    fn boxed_env<'a>(self) -> future::BoxFuture<'a, Self::Output>
-    where
-        Self: Sized + Send + 'a,
-    {
-        self.boxed()
+    pub trait EnvFutureExt: Future {
+        fn boxed_env<'a>(self) -> EnvFuture<'a, Self::Output>
+        where
+            Self: Sized + 'a,
+        {
+            self.boxed_local()
+        }
     }
 }
 
-pub type TryEnvFuture<T> = EnvFuture<Result<T, EnvError>>;
+#[cfg(all(feature = "env-future-send", not(target_family = "wasm")))]
+/// Enabled with the feature `env-future-send` but it requires a non-wasm target!
+mod conditional_types {
+    use futures::{future::BoxFuture, Future, FutureExt};
+
+    pub type EnvFuture<'a, T> = BoxFuture<'a, T>;
+
+    pub trait ConditionalSend: Send {}
+
+    impl<T> ConditionalSend for T where T: Send {}
+
+    pub trait EnvFutureExt: Future {
+        fn boxed_env<'a>(self) -> EnvFuture<'a, Self::Output>
+        where
+            Self: Sized + Send + 'a,
+        {
+            self.boxed()
+        }
+    }
+}
+
+impl<T: ?Sized> EnvFutureExt for T where T: Future {}
+
+pub type TryEnvFuture<T> = EnvFuture<'static, Result<T, EnvError>>;
 
 pub trait Env {
     fn fetch<
-        #[cfg(not(feature = "env-future-send"))] IN: Serialize + 'static,
-        #[cfg(feature = "env-future-send")] IN: Serialize + Send + 'static,
-        #[cfg(not(feature = "env-future-send"))] OUT: for<'de> Deserialize<'de> + 'static,
-        #[cfg(feature = "env-future-send")] OUT: for<'de> Deserialize<'de> + Send + 'static,
+        IN: Serialize + ConditionalSend + 'static,
+        OUT: for<'de> Deserialize<'de> + ConditionalSend + 'static,
     >(
         request: Request<IN>,
     ) -> TryEnvFuture<OUT>;
-    fn get_storage<
-        #[cfg(not(feature = "env-future-send"))] T: for<'de> Deserialize<'de> + 'static,
-        #[cfg(feature = "env-future-send")] T: for<'de> Deserialize<'de> + Send + 'static,
-    >(
+
+    fn get_storage<T: for<'de> Deserialize<'de> + ConditionalSend + 'static>(
         key: &str,
     ) -> TryEnvFuture<Option<T>>;
     fn set_storage<T: Serialize>(key: &str, value: Option<&T>) -> TryEnvFuture<()>;
-    fn exec_concurrent<
-        #[cfg(not(feature = "env-future-send"))] F: Future<Output = ()> + 'static,
-        #[cfg(feature = "env-future-send")] F: Future<Output = ()> + Send + 'static,
-    >(
-        future: F,
-    );
-    fn exec_sequential<
-        #[cfg(not(feature = "env-future-send"))] F: Future<Output = ()> + 'static,
-        #[cfg(feature = "env-future-send")] F: Future<Output = ()> + Send + 'static,
-    >(
-        future: F,
-    );
+    fn exec_concurrent<F: Future<Output = ()> + ConditionalSend + 'static>(future: F);
+    fn exec_sequential<F: Future<Output = ()> + ConditionalSend + 'static>(future: F);
     fn now() -> DateTime<Utc>;
-    fn flush_analytics() -> EnvFuture<()>;
+    fn flush_analytics() -> EnvFuture<'static, ()>;
     fn analytics_context(
         ctx: &Ctx,
         streaming_server: &StreamingServer,

@@ -1,11 +1,9 @@
 use crate::runtime::msg::Msg;
 use derive_more::{From, IntoIterator};
 
-#[cfg(not(feature = "env-future-send"))]
-type Future = futures::future::LocalBoxFuture<'static, Msg>;
+use super::EnvFuture;
 
-#[cfg(feature = "env-future-send")]
-type Future = futures::future::BoxFuture<'static, Msg>;
+type Future = EnvFuture<'static, Msg>;
 
 pub enum EffectFuture {
     Concurrent(Future),
