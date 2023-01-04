@@ -2,7 +2,9 @@ use crate::constants::{LIBRARY_RECENT_STORAGE_KEY, LIBRARY_STORAGE_KEY, PROFILE_
 use crate::models::ctx::Ctx;
 use crate::runtime::msg::{Action, ActionCtx};
 use crate::runtime::{Env, EnvFutureExt, Runtime, RuntimeAction, TryEnvFuture};
-use crate::types::api::{APIResult, AuthRequest, AuthResponse, CollectionResponse};
+use crate::types::api::{
+    APIResult, AuthRequest, AuthResponse, CollectionResponse, LibraryItemsResponse,
+};
 use crate::types::library::{LibraryBucket, LibraryItem};
 use crate::types::profile::{Auth, AuthKey, GDPRConsent, Profile, User};
 use crate::unit_tests::{
@@ -69,7 +71,7 @@ fn actionctx_authenticate_login() {
                 && body == "{\"authKey\":\"auth_key\",\"collection\":\"libraryItem\",\"ids\":[],\"all\":true}" =>
             {
                 future::ok(Box::new(APIResult::Ok {
-                    result: Vec::<LibraryItem>::new(),
+                    result: LibraryItemsResponse::new(),
                 }) as Box<dyn Any + Send>).boxed_env()
             }
             _ => default_fetch_handler(request),
@@ -268,7 +270,7 @@ fn actionctx_authenticate_login_with_token() {
                 && body == "{\"authKey\":\"auth_key\",\"collection\":\"libraryItem\",\"ids\":[],\"all\":true}" =>
             {
                 future::ok(Box::new(APIResult::Ok {
-                    result: Vec::<LibraryItem>::new(),
+                    result: LibraryItemsResponse::new(),
                 }) as Box<dyn Any + Send>).boxed_env()
             }
             _ => default_fetch_handler(request),
@@ -466,7 +468,7 @@ fn actionctx_authenticate_register() {
                 && body == "{\"authKey\":\"auth_key\",\"collection\":\"libraryItem\",\"ids\":[],\"all\":true}" =>
             {
                 future::ok(Box::new(APIResult::Ok {
-                    result: Vec::<LibraryItem>::new(),
+                    result: LibraryItemsResponse::new(),
                 }) as Box<dyn Any + Send>).boxed_env()
             }
             _ => default_fetch_handler(request),

@@ -7,7 +7,7 @@ use crate::runtime::msg::{Action, ActionCtx, Event, Internal, Msg};
 use crate::runtime::{Effect, EffectFuture, Effects, Env, EnvFutureExt, Update};
 use crate::types::api::{
     fetch_api, APIRequest, APIResult, AuthRequest, AuthResponse, CollectionResponse,
-    DatastoreCommand, DatastoreRequest, SuccessResponse,
+    DatastoreCommand, DatastoreRequest, LibraryItemsResponse, SuccessResponse,
 };
 use crate::types::library::LibraryBucket;
 use crate::types::profile::{Auth, AuthKey, Profile};
@@ -195,7 +195,7 @@ fn authenticate<E: Env + 'static>(auth_request: &AuthRequest) -> Effect {
                         APIResult::Err { error } => future::err(CtxError::from(error)),
                     })
                     .map_ok(|CollectionResponse { addons, .. }| addons),
-                    fetch_api::<E, _, _, _>(&DatastoreRequest {
+                    fetch_api::<E, _, _, LibraryItemsResponse>(&DatastoreRequest {
                         auth_key: auth.key.to_owned(),
                         collection: LIBRARY_COLLECTION_NAME.to_owned(),
                         command: DatastoreCommand::Get {
@@ -205,7 +205,7 @@ fn authenticate<E: Env + 'static>(auth_request: &AuthRequest) -> Effect {
                     })
                     .map_err(CtxError::from)
                     .and_then(|result| match result {
-                        APIResult::Ok { result } => future::ok(result),
+                        APIResult::Ok { result } => future::ok(result.0),
                         APIResult::Err { error } => future::err(CtxError::from(error)),
                     }),
                 )
