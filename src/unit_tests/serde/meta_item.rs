@@ -1,7 +1,6 @@
 use crate::types::resource::{MetaItem, MetaItemBehaviorHints, MetaItemPreview, PosterShape};
 use crate::unit_tests::serde::default_tokens_ext::DefaultTokens;
-use chrono::prelude::TimeZone;
-use chrono::Utc;
+use chrono::{TimeZone, Utc};
 use serde_test::{assert_de_tokens, assert_tokens, Token};
 use url::Url;
 
@@ -20,7 +19,7 @@ fn meta_item() {
                     description: Some("description".to_owned()),
                     release_info: Some("release_info".to_owned()),
                     runtime: Some("runtime".to_owned()),
-                    released: Some(Utc.ymd(2020, 1, 1).and_hms_milli(0, 0, 0, 0)),
+                    released: Some(Utc.with_ymd_and_hms(2020, 1, 1, 0, 0, 0).unwrap()),
                     poster_shape: PosterShape::default(),
                     links: vec![],
                     trailer_streams: vec![],
@@ -156,7 +155,7 @@ fn meta_item() {
                     description: None,
                     release_info: None,
                     runtime: None,
-                    released: Some(Utc.ymd(1970, 1, 1).and_hms_milli(0, 0, 0, 10)),
+                    released: Some(Utc.with_ymd_and_hms(1970, 1, 1, 0, 0, 10).unwrap()),
                     poster_shape: PosterShape::default(),
                     links: vec![],
                     trailer_streams: vec![],
@@ -196,7 +195,7 @@ fn meta_item() {
             Token::Str("type"),
             Token::Str("released"),
             Token::Some,
-            Token::I64(10),
+            Token::I64(10_000),
             Token::StructEnd,
             Token::Struct {
                 name: "MetaItem",

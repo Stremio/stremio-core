@@ -1,8 +1,7 @@
 use crate::types::library::{LibraryItem, LibraryItemState};
 use crate::types::resource::{MetaItemBehaviorHints, PosterShape};
 use crate::unit_tests::serde::default_tokens_ext::DefaultTokens;
-use chrono::prelude::TimeZone;
-use chrono::Utc;
+use chrono::{TimeZone, Utc};
 use serde_test::{assert_de_tokens, assert_ser_tokens, Token};
 use url::Url;
 
@@ -18,8 +17,8 @@ fn library_item() {
                 poster_shape: PosterShape::default(),
                 removed: true,
                 temp: true,
-                ctime: Some(Utc.ymd(2020, 1, 1).and_hms_milli(0, 0, 0, 0)),
-                mtime: Utc.ymd(2020, 1, 1).and_hms_milli(0, 0, 0, 0),
+                ctime: Some(Utc.with_ymd_and_hms(2020, 1, 1, 0, 0, 0).unwrap()),
+                mtime: Utc.with_ymd_and_hms(2020, 1, 1, 0, 0, 0).unwrap(),
                 state: LibraryItemState::default(),
                 behavior_hints: MetaItemBehaviorHints::default(),
             },
@@ -32,7 +31,7 @@ fn library_item() {
                 removed: false,
                 temp: false,
                 ctime: None,
-                mtime: Utc.ymd(2020, 1, 1).and_hms_milli(0, 0, 0, 0),
+                mtime: Utc.with_ymd_and_hms(2020, 1, 1, 0, 0, 0).unwrap(),
                 state: LibraryItemState::default(),
                 behavior_hints: MetaItemBehaviorHints::default(),
             },
@@ -117,7 +116,7 @@ fn library_item() {
                 removed: false,
                 temp: false,
                 ctime: None,
-                mtime: Utc.ymd(2020, 1, 1).and_hms_milli(0, 0, 0, 0),
+                mtime: Utc.with_ymd_and_hms(2020, 1, 1, 0, 0, 0).unwrap(),
                 state: LibraryItemState::default(),
                 behavior_hints: MetaItemBehaviorHints::default(),
             },
@@ -130,7 +129,7 @@ fn library_item() {
                 removed: false,
                 temp: false,
                 ctime: None,
-                mtime: Utc.ymd(2020, 1, 1).and_hms_milli(0, 0, 0, 0),
+                mtime: Utc.with_ymd_and_hms(2020, 1, 1, 0, 0, 0).unwrap(),
                 state: LibraryItemState::default(),
                 behavior_hints: MetaItemBehaviorHints::default(),
             },
@@ -143,7 +142,7 @@ fn library_item() {
                 removed: false,
                 temp: false,
                 ctime: None,
-                mtime: Utc.ymd(2020, 1, 1).and_hms_milli(0, 0, 0, 0),
+                mtime: Utc.with_ymd_and_hms(2020, 1, 1, 0, 0, 0).unwrap(),
                 state: LibraryItemState::default(),
                 behavior_hints: MetaItemBehaviorHints::default(),
             },
@@ -156,7 +155,7 @@ fn library_item() {
                 removed: false,
                 temp: false,
                 ctime: None,
-                mtime: Utc.ymd(2020, 1, 1).and_hms_milli(0, 0, 0, 0),
+                mtime: Utc.with_ymd_and_hms(2020, 1, 1, 0, 0, 0).unwrap(),
                 state: LibraryItemState::default(),
                 behavior_hints: MetaItemBehaviorHints::default(),
             },
@@ -169,7 +168,7 @@ fn library_item() {
                 removed: false,
                 temp: false,
                 ctime: None,
-                mtime: Utc.ymd(2020, 1, 1).and_hms_milli(0, 0, 0, 0),
+                mtime: Utc.with_ymd_and_hms(2020, 1, 1, 0, 0, 0).unwrap(),
                 state: LibraryItemState::default(),
                 behavior_hints: MetaItemBehaviorHints::default(),
             },

@@ -1,12 +1,14 @@
 use crate::types::api::LibraryItemModified;
-use chrono::prelude::TimeZone;
-use chrono::Utc;
+use chrono::{TimeZone, Utc};
 use serde_test::{assert_de_tokens, Token};
 
 #[test]
 fn library_item_modified() {
     assert_de_tokens(
-        &LibraryItemModified("".to_owned(), Utc.ymd(2020, 1, 1).and_hms_milli(0, 0, 0, 0)),
+        &LibraryItemModified(
+            "".to_owned(),
+            Utc.with_ymd_and_hms(2020, 1, 1, 0, 0, 0).unwrap(),
+        ),
         &[
             Token::Tuple { len: 2 },
             Token::Str(""),

@@ -10,8 +10,7 @@ use crate::types::True;
 use crate::unit_tests::{
     default_fetch_handler, Request, TestEnv, FETCH_HANDLER, NOW, REQUESTS, STORAGE,
 };
-use chrono::prelude::TimeZone;
-use chrono::Utc;
+use chrono::{TimeZone, Utc};
 use futures::future;
 use std::any::Any;
 use stremio_derive::Model;
@@ -59,10 +58,10 @@ fn actionctx_addtolibrary() {
         id: "id".to_owned(),
         removed: false,
         temp: false,
-        ctime: Some(Utc.ymd(2020, 1, 1).and_hms_milli(0, 0, 0, 0)),
-        mtime: Utc.ymd(2020, 1, 1).and_hms_milli(0, 0, 0, 0),
+        ctime: Some(Utc.with_ymd_and_hms(2020, 1, 1, 0, 0, 0).unwrap()),
+        mtime: Utc.with_ymd_and_hms(2020, 1, 1, 0, 0, 0).unwrap(),
         state: LibraryItemState {
-            last_watched: Some(Utc.ymd(2020, 1, 1).and_hms_milli(0, 0, 0, 0)),
+            last_watched: Some(Utc.with_ymd_and_hms(2020, 1, 1, 0, 0, 0).unwrap()),
             ..Default::default()
         },
         name: "name".to_owned(),
@@ -73,7 +72,7 @@ fn actionctx_addtolibrary() {
     };
     let _env_mutex = TestEnv::reset();
     *FETCH_HANDLER.write().unwrap() = Box::new(fetch_handler);
-    *NOW.write().unwrap() = Utc.ymd(2020, 1, 1).and_hms_milli(0, 0, 0, 0);
+    *NOW.write().unwrap() = Utc.with_ymd_and_hms(2020, 1, 1, 0, 0, 0).unwrap();
     let (runtime, _rx) = Runtime::<TestEnv, _>::new(
         TestModel {
             ctx: Ctx {
@@ -194,8 +193,8 @@ fn actionctx_addtolibrary_already_added() {
         poster_shape: PosterShape::Square,
         removed: false,
         temp: false,
-        ctime: Some(Utc.ymd(2020, 1, 1).and_hms_milli(0, 0, 0, 0)),
-        mtime: Utc.ymd(2020, 1, 2).and_hms_milli(0, 0, 0, 0),
+        ctime: Some(Utc.with_ymd_and_hms(2020, 1, 1, 0, 0, 0).unwrap()),
+        mtime: Utc.with_ymd_and_hms(2020, 1, 2, 0, 0, 0).unwrap(),
         state: LibraryItemState {
             video_id: Some("video_id".to_owned()),
             ..LibraryItemState::default()
@@ -208,7 +207,7 @@ fn actionctx_addtolibrary_already_added() {
         },
     };
     let _env_mutex = TestEnv::reset();
-    *NOW.write().unwrap() = Utc.ymd(2020, 1, 2).and_hms_milli(0, 0, 0, 0);
+    *NOW.write().unwrap() = Utc.with_ymd_and_hms(2020, 1, 2, 0, 0, 0).unwrap();
     let (runtime, _rx) = Runtime::<TestEnv, _>::new(
         TestModel {
             ctx: Ctx {
@@ -224,8 +223,8 @@ fn actionctx_addtolibrary_already_added() {
                             poster_shape: PosterShape::Poster,
                             removed: true,
                             temp: true,
-                            ctime: Some(Utc.ymd(2020, 1, 1).and_hms_milli(0, 0, 0, 0)),
-                            mtime: Utc.ymd(2020, 1, 1).and_hms_milli(0, 0, 0, 0),
+                            ctime: Some(Utc.with_ymd_and_hms(2020, 1, 1, 0, 0, 0).unwrap()),
+                            mtime: Utc.with_ymd_and_hms(2020, 1, 1, 0, 0, 0).unwrap(),
                             state: LibraryItemState {
                                 video_id: Some("video_id".to_owned()),
                                 ..LibraryItemState::default()

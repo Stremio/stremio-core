@@ -1,7 +1,6 @@
 use crate::types::profile::{GDPRConsent, User};
 use crate::unit_tests::serde::default_tokens_ext::DefaultTokens;
-use chrono::prelude::TimeZone;
-use chrono::Utc;
+use chrono::{TimeZone, Utc};
 use serde_test::{assert_de_tokens, assert_tokens, Token};
 
 #[test]
@@ -13,8 +12,8 @@ fn user() {
                 email: "email".to_owned(),
                 fb_id: Some("fb_id".to_owned()),
                 avatar: Some("avatar".to_owned()),
-                last_modified: Utc.ymd(2020, 1, 1).and_hms_milli(0, 0, 0, 0),
-                date_registered: Utc.ymd(2020, 1, 1).and_hms_milli(0, 0, 0, 0),
+                last_modified: Utc.with_ymd_and_hms(2020, 1, 1, 0, 0, 0).unwrap(),
+                date_registered: Utc.with_ymd_and_hms(2020, 1, 1, 0, 0, 0).unwrap(),
                 trakt: None,
                 premium_expire: None,
                 gdpr_consent: GDPRConsent::default(),
@@ -24,8 +23,8 @@ fn user() {
                 email: "email".to_owned(),
                 fb_id: None,
                 avatar: None,
-                last_modified: Utc.ymd(2020, 1, 1).and_hms_milli(0, 0, 0, 0),
-                date_registered: Utc.ymd(2020, 1, 1).and_hms_milli(0, 0, 0, 0),
+                last_modified: Utc.with_ymd_and_hms(2020, 1, 1, 0, 0, 0).unwrap(),
+                date_registered: Utc.with_ymd_and_hms(2020, 1, 1, 0, 0, 0).unwrap(),
                 trakt: None,
                 premium_expire: None,
                 gdpr_consent: GDPRConsent::default(),
@@ -94,8 +93,8 @@ fn user() {
             email: "email".to_owned(),
             fb_id: None,
             avatar: None,
-            last_modified: Utc.ymd(2020, 1, 1).and_hms_milli(0, 0, 0, 0),
-            date_registered: Utc.ymd(2020, 1, 1).and_hms_milli(0, 0, 0, 0),
+            last_modified: Utc.with_ymd_and_hms(2020, 1, 1, 0, 0, 0).unwrap(),
+            date_registered: Utc.with_ymd_and_hms(2020, 1, 1, 0, 0, 0).unwrap(),
             trakt: None,
             premium_expire: None,
             gdpr_consent: GDPRConsent::default(),

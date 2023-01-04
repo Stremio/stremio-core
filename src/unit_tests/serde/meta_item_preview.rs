@@ -3,8 +3,7 @@ use crate::types::resource::{
     StreamSource,
 };
 use crate::unit_tests::serde::default_tokens_ext::DefaultTokens;
-use chrono::prelude::TimeZone;
-use chrono::Utc;
+use chrono::{TimeZone, Utc};
 use serde_test::{assert_de_tokens, assert_ser_tokens, Token};
 use url::Url;
 
@@ -22,7 +21,7 @@ fn meta_item_preview_serizlize() {
                 description: Some("description".to_owned()),
                 release_info: Some("release_info".to_owned()),
                 runtime: Some("runtime".to_owned()),
-                released: Some(Utc.ymd(2020, 1, 1).and_hms_milli(0, 0, 0, 0)),
+                released: Some(Utc.with_ymd_and_hms(2020, 1, 1, 0, 0, 0).unwrap()),
                 poster_shape: PosterShape::default(),
                 links: vec![],
                 trailer_streams: vec![],
@@ -151,7 +150,7 @@ fn meta_item_preview_de() {
                 description: Some("description".to_owned()),
                 release_info: Some("release_info".to_owned()),
                 runtime: Some("runtime".to_owned()),
-                released: Some(Utc.ymd(2020, 1, 1).and_hms_milli(0, 0, 0, 0)),
+                released: Some(Utc.with_ymd_and_hms(2020, 1, 1, 0, 0, 0).unwrap()),
                 poster_shape: PosterShape::default(),
                 links: vec![],
                 trailer_streams: vec![],
