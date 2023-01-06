@@ -5,7 +5,8 @@ use crate::models::ctx::{CtxError, CtxStatus, OtherError};
 use crate::runtime::msg::{Action, ActionCtx, Event, Internal, Msg};
 use crate::runtime::{Effect, EffectFuture, Effects, Env, EnvFutureExt};
 use crate::types::api::{
-    fetch_api, APIResult, DatastoreCommand, DatastoreRequest, LibraryItemModified, SuccessResponse,
+    fetch_api, APIResult, DatastoreCommand, DatastoreRequest, LibraryItemModified,
+    LibraryItemsResponse, SuccessResponse,
 };
 use crate::types::library::{LibraryBucket, LibraryBucketRef, LibraryItem};
 use crate::types::profile::{AuthKey, Profile};
@@ -313,10 +314,10 @@ fn pull_items_from_api<E: Env + 'static>(ids: Vec<String>, auth_key: &AuthKey) -
         command: DatastoreCommand::Get { ids, all: false },
     };
     EffectFuture::Concurrent(
-        fetch_api::<E, _, _, _>(&request)
+        fetch_api::<E, _, _, LibraryItemsResponse>(&request)
             .map_err(CtxError::from)
             .and_then(|result| match result {
-                APIResult::Ok { result } => future::ok(result),
+                APIResult::Ok { result } => future::ok(result.0),
                 APIResult::Err { error } => future::err(CtxError::from(error)),
             })
             .map(move |result| Msg::Internal(Internal::LibraryPullResult(request, result)))
