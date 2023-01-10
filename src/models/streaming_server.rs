@@ -165,13 +165,7 @@ impl<E: Env + 'static> UpdateWithCtx<E> for StreamingServer {
                 }
             },
             Msg::Action(Action::StreamingServer(ActionStreamingServer::PlayOnDevice(args))) => {
-                Effects::many(vec![
-                    play_on_device::<E>(&self.selected.transport_url, args),
-                    Effect::Msg(Box::new(Msg::Event(Event::PlayingOnDevice {
-                        device: args.device.to_owned(),
-                    }))),
-                ])
-                .unchanged()
+                Effects::one(play_on_device::<E>(&self.selected.transport_url, args)).unchanged()
             }
             Msg::Internal(Internal::ProfileChanged)
                 if self.selected.transport_url != ctx.profile.settings.streaming_server_url =>
@@ -270,6 +264,17 @@ impl<E: Env + 'static> UpdateWithCtx<E> for StreamingServer {
                             .join(settings_effects)
                             .join(torrent_effects)
                     }
+                }
+            }
+            Msg::Internal(Internal::StreamingServerPlayOnDeviceResult(device, result)) => {
+                match result {
+                    Ok(_) => {
+                        Effects::one(Effect::Msg(Box::new(Msg::Event(Event::PlayingOnDevice {
+                            device: device.to_owned(),
+                        }))))
+                        .unchanged()
+                    }
+                    Err(_) => Effects::none().unchanged(),
                 }
             }
             Msg::Internal(Internal::StreamingServerCreateTorrentResult(
@@ -522,8 +527,9 @@ fn play_on_device<E: Env + 'static>(url: &Url, args: &PlayOnDeviceArgs) -> Effec
         source: String,
         time: u64,
     }
+    let device = args.device.clone();
     let endpoint = url
-        .join(&format!("casting/{}/player", args.device))
+        .join(&format!("casting/{}/player", device))
         .expect("url builder failed");
     let body = Body {
         source: args.source.to_owned(),
@@ -537,7 +543,7 @@ fn play_on_device<E: Env + 'static>(url: &Url, args: &PlayOnDeviceArgs) -> Effec
         E::fetch::<_, serde_json::Value>(request)
             .map_ok(|_| ())
             .map(enclose!(() move |result|
-                Msg::Internal(Internal::StreamingServerPlayOnDeviceResult(result))
+                Msg::Internal(Internal::StreamingServerPlayOnDeviceResult(device, result))
             ))
             .boxed_env(),
     )

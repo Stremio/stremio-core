@@ -60,7 +60,7 @@ pub enum Internal {
     /// Result for creating a torrent.
     StreamingServerCreateTorrentResult(String, Result<(), EnvError>),
     // Result for playing on device.
-    StreamingServerPlayOnDeviceResult(Result<(), EnvError>),
+    StreamingServerPlayOnDeviceResult(String, Result<(), EnvError>),
     /// Result for fetching resource from addons.
     ResourceRequestResult(ResourceRequest, Box<Result<ResourceResponse, EnvError>>),
     /// Result for fetching manifest from addon.
