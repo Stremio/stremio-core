@@ -165,7 +165,25 @@ impl<E: Env + 'static> UpdateWithCtx<E> for StreamingServer {
                 }
             },
             Msg::Action(Action::StreamingServer(ActionStreamingServer::PlayOnDevice(args))) => {
-                Effects::one(play_on_device::<E>(&self.selected.transport_url, args)).unchanged()
+                match Url::parse(&args.source).is_ok() {
+                    true => match &mut self.casting_devices {
+                        Loadable::Ready(casting_devices) => {
+                            let device_exists = casting_devices
+                                .iter()
+                                .any(|device| device.id == args.device);
+                            match device_exists {
+                                true => Effects::one(play_on_device::<E>(
+                                    &self.selected.transport_url,
+                                    args,
+                                ))
+                                .unchanged(),
+                                _ => Effects::none().unchanged(),
+                            }
+                        }
+                        _ => Effects::none().unchanged(),
+                    },
+                    _ => Effects::none().unchanged(),
+                }
             }
             Msg::Internal(Internal::ProfileChanged)
                 if self.selected.transport_url != ctx.profile.settings.streaming_server_url =>
