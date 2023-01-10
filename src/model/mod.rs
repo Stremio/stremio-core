@@ -27,5 +27,8 @@ use serialize_remote_addons::*;
 mod serialize_streaming_server;
 use serialize_streaming_server::*;
 
+mod serialize_data_export;
+use serialize_data_export::*;
+
 mod model;
 pub use model::*;
