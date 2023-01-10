@@ -1,6 +1,6 @@
 use crate::models::ctx::CtxError;
 use crate::models::link::LinkError;
-use crate::models::streaming_server::Settings as StreamingServerSettings;
+use crate::models::streaming_server::{CastingDevice, Settings as StreamingServerSettings};
 use crate::runtime::EnvError;
 use crate::types::addon::{Descriptor, Manifest, ResourceRequest, ResourceResponse};
 use crate::types::api::{
@@ -53,10 +53,14 @@ pub enum Internal {
     StreamingServerSettingsResult(Url, Result<StreamingServerSettings, EnvError>),
     /// Result for loading streaming server base url.
     StreamingServerBaseURLResult(Url, Result<Url, EnvError>),
+    // Result for loading streaming server casting devices.
+    StreamingServerCastingDevicesResult(Url, Result<Vec<CastingDevice>, EnvError>),
     /// Result for updating streaming server settings.
     StreamingServerUpdateSettingsResult(Url, Result<(), EnvError>),
     /// Result for creating a torrent.
     StreamingServerCreateTorrentResult(String, Result<(), EnvError>),
+    // Result for playing on device.
+    StreamingServerPlayOnDeviceResult(String, Result<(), EnvError>),
     /// Result for fetching resource from addons.
     ResourceRequestResult(ResourceRequest, Box<Result<ResourceResponse, EnvError>>),
     /// Result for fetching manifest from addon.
