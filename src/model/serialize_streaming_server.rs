@@ -2,7 +2,7 @@ use crate::model::deep_links_ext::DeepLinksExt;
 use serde::Serialize;
 use stremio_core::deep_links::MetaItemDeepLinks;
 use stremio_core::models::common::Loadable;
-use stremio_core::models::streaming_server::{Selected, Settings, StreamingServer, CastingDevice};
+use stremio_core::models::streaming_server::{Selected, Settings, StreamingServer, PlaybackDevice};
 use stremio_core::runtime::EnvError;
 use stremio_core::types::addon::ResourcePath;
 use url::Url;
@@ -17,7 +17,7 @@ mod model {
         pub selected: &'a Selected,
         pub settings: &'a Loadable<Settings, EnvError>,
         pub base_url: &'a Loadable<Url, EnvError>,
-        pub casting_devices: &'a Loadable<Vec<CastingDevice>, EnvError>,
+        pub playback_devices: &'a Loadable<Vec<PlaybackDevice>, EnvError>,
         pub torrent: Option<(&'a String, TorrentLoadable<'a>)>,
     }
 }
@@ -27,7 +27,7 @@ pub fn serialize_streaming_server(streaming_server: &StreamingServer) -> JsValue
         selected: &streaming_server.selected,
         settings: &streaming_server.settings,
         base_url: &streaming_server.base_url,
-        casting_devices: &streaming_server.casting_devices,
+        playback_devices: &streaming_server.playback_devices,
         torrent: streaming_server
             .torrent
             .as_ref()
