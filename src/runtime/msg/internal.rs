@@ -1,6 +1,6 @@
 use crate::models::ctx::CtxError;
 use crate::models::link::LinkError;
-use crate::models::streaming_server::{CastingDevice, Settings as StreamingServerSettings};
+use crate::models::streaming_server::{PlaybackDevice, Settings as StreamingServerSettings};
 use crate::runtime::EnvError;
 use crate::types::addon::{Descriptor, Manifest, ResourceRequest, ResourceResponse};
 use crate::types::api::{
@@ -53,8 +53,8 @@ pub enum Internal {
     StreamingServerSettingsResult(Url, Result<StreamingServerSettings, EnvError>),
     /// Result for loading streaming server base url.
     StreamingServerBaseURLResult(Url, Result<Url, EnvError>),
-    // Result for loading streaming server casting devices.
-    StreamingServerCastingDevicesResult(Url, Result<Vec<CastingDevice>, EnvError>),
+    // Result for loading streaming server playback devices.
+    StreamingServerPlaybackDevicesResult(Url, Result<Vec<PlaybackDevice>, EnvError>),
     /// Result for updating streaming server settings.
     StreamingServerUpdateSettingsResult(Url, Result<(), EnvError>),
     /// Result for creating a torrent.
