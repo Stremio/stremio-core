@@ -10,6 +10,7 @@ use crate::types::query_params_encode;
 use crate::types::resource::{MetaItem, MetaItemPreview, Stream, StreamSource, Video};
 use percent_encoding::utf8_percent_encode;
 use serde::Serialize;
+use url::Url;
 
 #[derive(Default, Serialize, Debug, PartialEq, Eq)]
 #[serde(rename_all = "camelCase")]
@@ -22,8 +23,8 @@ pub struct ExternalPlayerLink {
     pub file_name: Option<String>,
 }
 
-impl From<&Stream> for ExternalPlayerLink {
-    fn from(stream: &Stream) -> Self {
+impl From<(&Stream, &Url)> for ExternalPlayerLink {
+    fn from((stream, streaming_server_url): (&Stream, &Url)) -> Self {
         match &stream.source {
             StreamSource::Url { url } if url.scheme() == "magnet" => ExternalPlayerLink {
                 href: Some(url.as_str().to_owned()),
@@ -39,19 +40,28 @@ impl From<&Stream> for ExternalPlayerLink {
                 file_name: Some("playlist.m3u".to_owned()),
                 ..Default::default()
             },
-            StreamSource::Torrent { .. } => ExternalPlayerLink {
+            StreamSource::Torrent {
+                info_hash,
+                file_idx,
+                ..
+            } => ExternalPlayerLink {
                 href: Some(
                     stream
                         .magnet_url()
                         .map(|magnet_url| magnet_url.to_string())
                         .expect("Failed to build magnet url for torrent"),
                 ),
-                download: Some(
-                    stream
-                        .magnet_url()
-                        .map(|magnet_url| magnet_url.to_string())
-                        .expect("Failed to build magnet url for torrent"),
-                ),
+                download: streaming_server_url
+                    .join(&format!("{}/", hex::encode(info_hash)))
+                    .map(|url| match file_idx {
+                        Some(idx) => url.join(&idx.to_string()),
+                        None => Ok(url),
+                    })
+                    .map(|url| match url {
+                        Ok(url) => Some(url.to_string()),
+                        Err(_) => None,
+                    })
+                    .expect("Failed to build streaming server url for torrent"),
                 ..Default::default()
             },
             StreamSource::External {
@@ -214,8 +224,8 @@ pub struct VideoDeepLinks {
     pub external_player: Option<ExternalPlayerLink>,
 }
 
-impl From<(&Video, &ResourceRequest)> for VideoDeepLinks {
-    fn from((video, request): (&Video, &ResourceRequest)) -> Self {
+impl From<(&Video, &ResourceRequest, &Url)> for VideoDeepLinks {
+    fn from((video, request, streaming_server_url): (&Video, &ResourceRequest, &Url)) -> Self {
         let stream = video.stream();
         VideoDeepLinks {
             meta_details_streams: format!(
@@ -241,7 +251,7 @@ impl From<(&Video, &ResourceRequest)> for VideoDeepLinks {
                 .unwrap_or_else(|error| Some(ErrorLink::from(error).into())),
             external_player: stream
                 .as_ref()
-                .map(|stream| ExternalPlayerLink::from(stream.as_ref())),
+                .map(|stream| ExternalPlayerLink::from((stream.as_ref(), streaming_server_url))),
         }
     }
 }
@@ -253,8 +263,8 @@ pub struct StreamDeepLinks {
     pub external_player: ExternalPlayerLink,
 }
 
-impl From<&Stream> for StreamDeepLinks {
-    fn from(stream: &Stream) -> Self {
+impl From<(&Stream, &Url)> for StreamDeepLinks {
+    fn from((stream, streaming_server_url): (&Stream, &Url)) -> Self {
         StreamDeepLinks {
             player: stream
                 .encode()
@@ -265,14 +275,19 @@ impl From<&Stream> for StreamDeepLinks {
                     )
                 })
                 .unwrap_or_else(|error| ErrorLink::from(error).into()),
-            external_player: ExternalPlayerLink::from(stream),
+            external_player: ExternalPlayerLink::from((stream, streaming_server_url)),
         }
     }
 }
 
-impl From<(&Stream, &ResourceRequest, &ResourceRequest)> for StreamDeepLinks {
+impl From<(&Stream, &ResourceRequest, &ResourceRequest, &Url)> for StreamDeepLinks {
     fn from(
-        (stream, stream_request, meta_request): (&Stream, &ResourceRequest, &ResourceRequest),
+        (stream, stream_request, meta_request, streaming_server_url): (
+            &Stream,
+            &ResourceRequest,
+            &ResourceRequest,
+            &Url,
+        ),
     ) -> Self {
         StreamDeepLinks {
             player: stream
@@ -289,7 +304,7 @@ impl From<(&Stream, &ResourceRequest, &ResourceRequest)> for StreamDeepLinks {
                     )
                 })
                 .unwrap_or_else(|error| ErrorLink::from(error).into()),
-            external_player: ExternalPlayerLink::from(stream),
+            external_player: ExternalPlayerLink::from((stream, streaming_server_url)),
         }
     }
 }

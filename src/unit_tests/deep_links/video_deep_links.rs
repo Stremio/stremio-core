@@ -5,6 +5,8 @@ use std::convert::TryFrom;
 use std::str::FromStr;
 use url::Url;
 
+const STREAMING_SERVER_URL: &str = "http://127.0.0.1:11471";
+
 #[test]
 fn video_deep_links() {
     let video = Video {
@@ -21,7 +23,8 @@ fn video_deep_links() {
         base: Url::from_str("http://domain.root").unwrap(),
         path: ResourcePath::without_extra("meta", "movie", "yt_id:aqz-KE-bpKQ"),
     };
-    let vdl = VideoDeepLinks::try_from((&video, &request)).unwrap();
+    let streaming_server_url = Url::parse(STREAMING_SERVER_URL).unwrap();
+    let vdl = VideoDeepLinks::try_from((&video, &request, &streaming_server_url)).unwrap();
     assert_eq!(vdl.meta_details_streams, "stremio:///detail/movie/yt_id%3Aaqz-KE-bpKQ/yt_id%3AUCSMOQeBJ2RAnuFungnQOxLg%3Aaqz-KE-bpKQ".to_string());
     assert_eq!(vdl.player, Some("stremio:///player/eAEBFgDp%2F3sieXRJZCI6ImFxei1LRS1icEtRIn1RRQb5/http%3A%2F%2Fdomain.root%2F/http%3A%2F%2Fdomain.root%2F/movie/yt_id%3Aaqz-KE-bpKQ/yt_id%3AUCSMOQeBJ2RAnuFungnQOxLg%3Aaqz-KE-bpKQ".to_string()));
     assert_eq!(
