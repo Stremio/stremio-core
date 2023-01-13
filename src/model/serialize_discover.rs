@@ -170,7 +170,7 @@ pub fn serialize_discover(discover: &CatalogWithFilters<MetaItemPreview>, ctx: &
                                         .take(1)
                                         .map(|stream| model::Stream {
                                             stream,
-                                            deep_links: StreamDeepLinks::from(stream)
+                                            deep_links: StreamDeepLinks::from((stream, &ctx.profile.settings.streaming_server_url))
                                                 .into_web_deep_links(),
                                         })
                                         .collect::<Vec<_>>(),

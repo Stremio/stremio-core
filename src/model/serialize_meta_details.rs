@@ -140,7 +140,7 @@ pub fn serialize_meta_details(meta_details: &MetaDetails, ctx: &Ctx) -> JsValue 
                                     .unwrap_or_default(),
                                 progress: None, // TODO use library,
                                 scheduled: meta_item.preview.behavior_hints.has_scheduled_videos,
-                                deep_links: VideoDeepLinks::from((video, request))
+                                deep_links: VideoDeepLinks::from((video, request, &ctx.profile.settings.streaming_server_url))
                                     .into_web_deep_links(),
                             })
                             .collect::<Vec<_>>(),
@@ -150,7 +150,7 @@ pub fn serialize_meta_details(meta_details: &MetaDetails, ctx: &Ctx) -> JsValue 
                             .iter()
                             .map(|stream| model::Stream {
                                 stream,
-                                deep_links: StreamDeepLinks::from(stream).into_web_deep_links(),
+                                deep_links: StreamDeepLinks::from((stream, &ctx.profile.settings.streaming_server_url)).into_web_deep_links(),
                             })
                             .collect::<Vec<_>>(),
                         in_library: ctx
@@ -207,12 +207,13 @@ pub fn serialize_meta_details(meta_details: &MetaDetails, ctx: &Ctx) -> JsValue 
                                 stream,
                                 deep_links: meta_item
                                     .map_or_else(
-                                        || StreamDeepLinks::from(stream),
+                                        || StreamDeepLinks::from((stream, &ctx.profile.settings.streaming_server_url)),
                                         |meta_item| {
                                             StreamDeepLinks::from((
                                                 stream,
                                                 request,
                                                 &meta_item.request,
+                                                &ctx.profile.settings.streaming_server_url
                                             ))
                                         },
                                     )
