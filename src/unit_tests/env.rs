@@ -1,8 +1,6 @@
 use crate::models::ctx::Ctx;
 use crate::models::streaming_server::StreamingServer;
-use crate::runtime::{
-    ConditionalSend, Env, EnvFuture, EnvFutureExt, Model, Runtime, RuntimeEvent, TryEnvFuture,
-};
+use crate::runtime::{Env, EnvFuture, EnvFutureExt, Model, Runtime, RuntimeEvent, TryEnvFuture};
 use chrono::{DateTime, Utc};
 use enclose::enclose;
 use futures::channel::mpsc::Receiver;
@@ -106,10 +104,7 @@ impl TestEnv {
 }
 
 impl Env for TestEnv {
-    fn fetch<
-        IN: Serialize + ConditionalSend + 'static,
-        OUT: for<'de> Deserialize<'de> + ConditionalSend + 'static,
-    >(
+    fn fetch<IN: Serialize + 'static, OUT: for<'de> Deserialize<'de> + 'static>(
         request: http::Request<IN>,
     ) -> TryEnvFuture<OUT> {
         let request = Request::from(request);
@@ -122,9 +117,7 @@ impl Env for TestEnv {
             })
             .boxed_env()
     }
-    fn get_storage<T: for<'de> Deserialize<'de> + ConditionalSend + 'static>(
-        key: &str,
-    ) -> TryEnvFuture<Option<T>> {
+    fn get_storage<T: for<'de> Deserialize<'de> + 'static>(key: &str) -> TryEnvFuture<Option<T>> {
         future::ok(
             STORAGE
                 .read()
@@ -142,10 +135,10 @@ impl Env for TestEnv {
         };
         future::ok(()).boxed_env()
     }
-    fn exec_concurrent<F: Future<Output = ()> + ConditionalSend + 'static>(future: F) {
+    fn exec_concurrent<F: Future<Output = ()> + 'static>(future: F) {
         tokio_current_thread::spawn(future);
     }
-    fn exec_sequential<F: Future<Output = ()> + ConditionalSend + 'static>(future: F) {
+    fn exec_sequential<F: Future<Output = ()> + 'static>(future: F) {
         tokio_current_thread::spawn(future);
     }
     fn now() -> DateTime<Utc> {
