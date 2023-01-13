@@ -52,11 +52,12 @@ fn external_player_link_torrent() {
         0x62, 0xdb, 0x1f, 0x6d, 0x1c,
     ];
     let file_idx = 0;
+    let announce = vec!["http://bt1.archive.org:6969/announce".to_string()];
     let stream = Stream {
         source: StreamSource::Torrent {
             info_hash,
             file_idx: Some(file_idx),
-            announce: vec![],
+            announce,
         },
         name: None,
         description: None,
@@ -68,15 +69,16 @@ fn external_player_link_torrent() {
     let epl = ExternalPlayerLink::try_from((&stream, &streaming_server_url)).unwrap();
     assert_eq!(epl.href, Some(MAGNET_STR_URL.to_owned()));
     assert_eq!(
-        epl.download,
+        epl.streaming_server,
         Some(format!(
-            "{}/{}/{}",
+            "{}/{}/{}/{}",
             STREAMING_SERVER_URL,
             hex::encode(info_hash),
-            file_idx
+            file_idx,
+            "?tr=http://bt1.archive.org:6969/announce",
         ))
     );
-    assert_eq!(epl.file_name, None);
+    assert_eq!(epl.file_name, Some("torrent".to_string()));
 }
 
 #[test]
@@ -102,9 +104,10 @@ fn external_player_link_external() {
 
 #[test]
 fn external_player_link_youtube() {
+    let yt_id = "aqz-KE-bpKQ";
     let stream = Stream {
         source: StreamSource::YouTube {
-            yt_id: "aqz-KE-bpKQ".to_string(),
+            yt_id: yt_id.to_string(),
         },
         name: None,
         description: None,
@@ -116,7 +119,13 @@ fn external_player_link_youtube() {
     let epl = ExternalPlayerLink::try_from((&stream, &streaming_server_url)).unwrap();
     assert_eq!(
         epl.href,
-        Some("https://www.youtube.com/watch?v=aqz-KE-bpKQ".to_string())
+        Some(format!(
+            "data:application/octet-stream;charset=utf-8;base64,{}",
+            base64::encode(format!(
+                "#EXTM3U\n#EXTINF:0\n{}/yt/{}",
+                STREAMING_SERVER_URL, yt_id
+            ))
+        ))
     );
     assert_eq!(epl.file_name, None);
 }

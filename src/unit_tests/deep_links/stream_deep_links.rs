@@ -8,7 +8,8 @@ use url::Url;
 const MAGNET_STR_URL: &str = "magnet:?xt=urn:btih:dd8255ecdc7ca55fb0bbf81323d87062db1f6d1c";
 const HTTP_STR_URL: &str = "http://domain.root/path";
 const BASE64_HTTP_URL: &str = "data:application/octet-stream;charset=utf-8;base64,I0VYVE0zVQojRVhUSU5GOjAKaHR0cDovL2RvbWFpbi5yb290L3BhdGg=";
-const STREAMING_SERVER_URL: &str = "http://127.0.0.1:11471";
+const STREAMING_SERVER_URL: &str = "http://127.0.0.1:11471/";
+const YT_ID: &str = "aqz-KE-bpKQ";
 
 #[test]
 fn stream_deep_links_magnet() {
@@ -76,7 +77,7 @@ fn stream_deep_links_torrent() {
     let sdl = StreamDeepLinks::try_from((&stream, &streaming_server_url)).unwrap();
     assert_eq!(sdl.player, "stremio:///player/eAEBVACr%2F3siaW5mb0hhc2giOiJkZDgyNTVlY2RjN2NhNTVmYjBiYmY4MTMyM2Q4NzA2MmRiMWY2ZDFjIiwiZmlsZUlkeCI6bnVsbCwiYW5ub3VuY2UiOltdfVAyGnc%3D".to_string());
     assert_eq!(sdl.external_player.href, Some(MAGNET_STR_URL.to_owned()));
-    assert_eq!(sdl.external_player.file_name, None);
+    assert_eq!(sdl.external_player.file_name, Some("torrent".to_string()));
 }
 
 #[test]
@@ -105,7 +106,7 @@ fn stream_deep_links_external() {
 fn stream_deep_links_youtube() {
     let stream = Stream {
         source: StreamSource::YouTube {
-            yt_id: "aqz-KE-bpKQ".to_string(),
+            yt_id: YT_ID.to_string(),
         },
         name: None,
         description: None,
@@ -121,7 +122,13 @@ fn stream_deep_links_youtube() {
     );
     assert_eq!(
         sdl.external_player.href,
-        Some("https://www.youtube.com/watch?v=aqz-KE-bpKQ".to_string())
+        Some(format!(
+            "data:application/octet-stream;charset=utf-8;base64,{}",
+            base64::encode(format!(
+                "#EXTM3U\n#EXTINF:0\n{}yt/{}",
+                STREAMING_SERVER_URL, YT_ID
+            ))
+        ))
     );
     assert_eq!(sdl.external_player.file_name, None);
 }
@@ -149,7 +156,7 @@ fn stream_deep_links_player_frame() {
 fn stream_deep_links_requests() {
     let stream = Stream {
         source: StreamSource::YouTube {
-            yt_id: "aqz-KE-bpKQ".to_string(),
+            yt_id: YT_ID.to_string(),
         },
         name: None,
         description: None,
@@ -159,11 +166,11 @@ fn stream_deep_links_requests() {
     };
     let stream_request = ResourceRequest {
         base: Url::from_str("http://domain.root").unwrap(),
-        path: ResourcePath::without_extra("stream", "movie", "yt_id:aqz-KE-bpKQ"),
+        path: ResourcePath::without_extra("stream", "movie", format!("yt_id:{YT_ID}").as_str()),
     };
     let meta_request = ResourceRequest {
         base: Url::from_str("http://domain.root").unwrap(),
-        path: ResourcePath::without_extra("meta", "movie", "yt_id:aqz-KE-bpKQ"),
+        path: ResourcePath::without_extra("meta", "movie", format!("yt_id:{YT_ID}").as_str()),
     };
 
     let streaming_server_url = Url::parse(STREAMING_SERVER_URL).unwrap();
@@ -174,10 +181,19 @@ fn stream_deep_links_requests() {
         &streaming_server_url,
     ))
     .unwrap();
-    assert_eq!(sdl.player, "stremio:///player/eAEBFgDp%2F3sieXRJZCI6ImFxei1LRS1icEtRIn1RRQb5/http%3A%2F%2Fdomain.root%2F/http%3A%2F%2Fdomain.root%2F/movie/yt_id%3Aaqz-KE-bpKQ/yt_id%3Aaqz-KE-bpKQ".to_string());
+    assert_eq!(sdl.player, format!(
+        "stremio:///player/eAEBFgDp%2F3sieXRJZCI6ImFxei1LRS1icEtRIn1RRQb5/http%3A%2F%2Fdomain.root%2F/http%3A%2F%2Fdomain.root%2F/movie/yt_id%3A{}/yt_id%3A{}",
+        YT_ID, YT_ID
+    ));
     assert_eq!(
         sdl.external_player.href,
-        Some("https://www.youtube.com/watch?v=aqz-KE-bpKQ".to_string())
+        Some(format!(
+            "data:application/octet-stream;charset=utf-8;base64,{}",
+            base64::encode(format!(
+                "#EXTM3U\n#EXTINF:0\n{}yt/{}",
+                STREAMING_SERVER_URL, YT_ID
+            ))
+        ))
     );
     assert_eq!(sdl.external_player.file_name, None);
 }

@@ -17,6 +17,7 @@ use url::Url;
 pub struct ExternalPlayerLink {
     pub href: Option<String>,
     pub download: Option<String>,
+    pub streaming_server: Option<String>,
     pub android_tv: Option<String>,
     pub tizen: Option<String>,
     pub webos: Option<String>,
@@ -43,7 +44,7 @@ impl From<(&Stream, &Url)> for ExternalPlayerLink {
             StreamSource::Torrent {
                 info_hash,
                 file_idx,
-                ..
+                announce,
             } => ExternalPlayerLink {
                 href: Some(
                     stream
@@ -51,17 +52,28 @@ impl From<(&Stream, &Url)> for ExternalPlayerLink {
                         .map(|magnet_url| magnet_url.to_string())
                         .expect("Failed to build magnet url for torrent"),
                 ),
-                download: streaming_server_url
+                download: Some(
+                    stream
+                        .magnet_url()
+                        .map(|magnet_url| magnet_url.to_string())
+                        .expect("Failed to build magnet url for torrent"),
+                ),
+                streaming_server: streaming_server_url
                     .join(&format!("{}/", hex::encode(info_hash)))
                     .map(|url| match file_idx {
-                        Some(idx) => url.join(&idx.to_string()),
+                        Some(idx) => url.join(&format!("{}/", idx)),
                         None => Ok(url),
                     })
                     .map(|url| match url {
+                        Ok(url) => url.join(&format!("?tr={}", announce.join("&tr="))),
+                        _ => url,
+                    })
+                    .map(|url| match url {
                         Ok(url) => Some(url.to_string()),
-                        Err(_) => None,
+                        _ => None,
                     })
                     .expect("Failed to build streaming server url for torrent"),
+                file_name: Some("torrent".to_string()),
                 ..Default::default()
             },
             StreamSource::External {
@@ -79,13 +91,17 @@ impl From<(&Stream, &Url)> for ExternalPlayerLink {
             },
             StreamSource::YouTube { yt_id } => ExternalPlayerLink {
                 href: Some(format!(
-                    "https://www.youtube.com/watch?v={}",
-                    utf8_percent_encode(yt_id, URI_COMPONENT_ENCODE_SET)
+                    "data:application/octet-stream;charset=utf-8;base64,{}",
+                    base64::encode(format!(
+                        "#EXTM3U\n#EXTINF:0\n{}yt/{}",
+                        streaming_server_url, yt_id
+                    ))
                 )),
                 download: Some(format!(
                     "https://www.youtube.com/watch?v={}",
                     utf8_percent_encode(yt_id, URI_COMPONENT_ENCODE_SET)
                 )),
+                streaming_server: Some(format!("{}yt/{}", streaming_server_url, yt_id)),
                 ..Default::default()
             },
             StreamSource::PlayerFrame { player_frame_url } => ExternalPlayerLink {
