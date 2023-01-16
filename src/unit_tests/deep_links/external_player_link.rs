@@ -67,23 +67,23 @@ fn external_player_link_torrent() {
     };
     let streaming_server_url = Some(Url::parse(STREAMING_SERVER_URL).unwrap());
     let epl = ExternalPlayerLink::try_from((&stream, &streaming_server_url)).unwrap();
-    assert_eq!(epl.href, Some(format!(
-        "data:application/octet-stream;charset=utf-8;base64,{}",
-        base64::encode(format!(
-            "#EXTM3U\n#EXTINF:0\n{}",
-            format!(
-                "{}/{}/{}/{}",
-                STREAMING_SERVER_URL,
-                hex::encode(info_hash),
-                file_idx,
-                "?tr=http://bt1.archive.org:6969/announce",
-            )
-        ))
-    )));
     assert_eq!(
-        epl.download,
-        Some(MAGNET_STR_URL.to_owned())
+        epl.href,
+        Some(format!(
+            "data:application/octet-stream;charset=utf-8;base64,{}",
+            base64::encode(format!(
+                "#EXTM3U\n#EXTINF:0\n{}",
+                format!(
+                    "{}/{}/{}/{}",
+                    STREAMING_SERVER_URL,
+                    hex::encode(info_hash),
+                    file_idx,
+                    "?tr=http://bt1.archive.org:6969/announce",
+                )
+            ))
+        ))
     );
+    assert_eq!(epl.download, Some(MAGNET_STR_URL.to_owned()));
     assert_eq!(epl.file_name, Some("playlist.m3u".to_string()));
 }
 

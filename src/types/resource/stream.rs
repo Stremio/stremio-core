@@ -106,21 +106,23 @@ impl Stream {
                 announce,
                 ..
             } => streaming_server_url
-                    .join(&format!("{}/", hex::encode(info_hash)))
-                    .map(|url| match file_idx {
-                        Some(idx) => url.join(&format!("{}/", idx)),
-                        None => Ok(url),
-                    })
-                    .map(|url| match url {
-                        Ok(url) => url.join(&format!("?tr={}", announce.join("&tr="))),
-                        _ => url,
-                    })
-                    .map(|url| match url {
-                        Ok(url) => Some(url.to_string()),
-                        _ => None,
-                    })
-                    .expect("Failed to build streaming url for torrent"),
-            StreamSource::YouTube { yt_id } => Some(format!("{}yt/{}", streaming_server_url, yt_id)),
+                .join(&format!("{}/", hex::encode(info_hash)))
+                .map(|url| match file_idx {
+                    Some(idx) => url.join(&format!("{}/", idx)),
+                    None => Ok(url),
+                })
+                .map(|url| match url {
+                    Ok(url) => url.join(&format!("?tr={}", announce.join("&tr="))),
+                    _ => url,
+                })
+                .map(|url| match url {
+                    Ok(url) => Some(url.to_string()),
+                    _ => None,
+                })
+                .expect("Failed to build streaming url for torrent"),
+            StreamSource::YouTube { yt_id } => {
+                Some(format!("{}yt/{}", streaming_server_url, yt_id))
+            }
             _ => None,
         }
     }

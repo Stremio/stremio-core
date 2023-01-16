@@ -79,20 +79,26 @@ fn stream_deep_links_torrent() {
     let streaming_server_url = Some(Url::parse(STREAMING_SERVER_URL).unwrap());
     let sdl = StreamDeepLinks::try_from((&stream, &streaming_server_url)).unwrap();
     assert_eq!(sdl.player, "stremio:///player/eAEBdwCI%2F3siaW5mb0hhc2giOiJkZDgyNTVlY2RjN2NhNTVmYjBiYmY4MTMyM2Q4NzA2MmRiMWY2ZDFjIiwiZmlsZUlkeCI6MCwiYW5ub3VuY2UiOlsiaHR0cDovL2J0MS5hcmNoaXZlLm9yZzo2OTY5L2Fubm91bmNlIl19ndAlsw%3D%3D".to_string());
-    assert_eq!(sdl.external_player.href, Some(format!(
-        "data:application/octet-stream;charset=utf-8;base64,{}",
-        base64::encode(format!(
-            "#EXTM3U\n#EXTINF:0\n{}",
-            format!(
-                "{}{}/{}/{}",
-                STREAMING_SERVER_URL,
-                hex::encode(info_hash),
-                file_idx,
-                "?tr=http://bt1.archive.org:6969/announce",
-            )
+    assert_eq!(
+        sdl.external_player.href,
+        Some(format!(
+            "data:application/octet-stream;charset=utf-8;base64,{}",
+            base64::encode(format!(
+                "#EXTM3U\n#EXTINF:0\n{}",
+                format!(
+                    "{}{}/{}/{}",
+                    STREAMING_SERVER_URL,
+                    hex::encode(info_hash),
+                    file_idx,
+                    "?tr=http://bt1.archive.org:6969/announce",
+                )
+            ))
         ))
-    )));
-    assert_eq!(sdl.external_player.file_name, Some("playlist.m3u".to_string()));
+    );
+    assert_eq!(
+        sdl.external_player.file_name,
+        Some("playlist.m3u".to_string())
+    );
 }
 
 #[test]
