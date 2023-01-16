@@ -7,6 +7,7 @@ use stremio_core::models::catalog_with_filters::{
 };
 use stremio_core::models::common::Loadable;
 use stremio_core::models::ctx::Ctx;
+use stremio_core::models::streaming_server::StreamingServer;
 use stremio_core::types::resource::MetaItemPreview;
 use wasm_bindgen::JsValue;
 
@@ -91,7 +92,11 @@ mod model {
     }
 }
 
-pub fn serialize_discover(discover: &CatalogWithFilters<MetaItemPreview>, ctx: &Ctx) -> JsValue {
+pub fn serialize_discover(discover: &CatalogWithFilters<MetaItemPreview>, ctx: &Ctx, streaming_server: &StreamingServer) -> JsValue {
+    let streaming_server_url = match streaming_server.base_url.clone() {
+        Loadable::Ready(url) => Some(url),
+        _ => None,
+    };
     JsValue::from_serde(&model::CatalogWithFilters {
         selected: &discover.selected,
         selectable: model::Selectable {
@@ -170,7 +175,7 @@ pub fn serialize_discover(discover: &CatalogWithFilters<MetaItemPreview>, ctx: &
                                         .take(1)
                                         .map(|stream| model::Stream {
                                             stream,
-                                            deep_links: StreamDeepLinks::from((stream, &ctx.profile.settings.streaming_server_url))
+                                            deep_links: StreamDeepLinks::from((stream, &streaming_server_url))
                                                 .into_web_deep_links(),
                                         })
                                         .collect::<Vec<_>>(),
