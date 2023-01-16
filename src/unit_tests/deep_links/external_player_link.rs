@@ -21,7 +21,7 @@ fn external_player_link_magnet() {
         subtitles: vec![],
         behavior_hints: Default::default(),
     };
-    let streaming_server_url = Url::parse(STREAMING_SERVER_URL).unwrap();
+    let streaming_server_url = Some(Url::parse(STREAMING_SERVER_URL).unwrap());
     let epl = ExternalPlayerLink::try_from((&stream, &streaming_server_url)).unwrap();
     assert_eq!(epl.href, Some(MAGNET_STR_URL.to_owned()));
     assert_eq!(epl.file_name, None);
@@ -39,7 +39,7 @@ fn external_player_link_http() {
         subtitles: vec![],
         behavior_hints: Default::default(),
     };
-    let streaming_server_url = Url::parse(STREAMING_SERVER_URL).unwrap();
+    let streaming_server_url = Some(Url::parse(STREAMING_SERVER_URL).unwrap());
     let epl = ExternalPlayerLink::try_from((&stream, &streaming_server_url)).unwrap();
     assert_eq!(epl.href, Some(BASE64_HTTP_URL.to_owned()));
     assert_eq!(epl.file_name, Some("playlist.m3u".to_string()));
@@ -65,20 +65,26 @@ fn external_player_link_torrent() {
         subtitles: vec![],
         behavior_hints: Default::default(),
     };
-    let streaming_server_url = Url::parse(STREAMING_SERVER_URL).unwrap();
+    let streaming_server_url = Some(Url::parse(STREAMING_SERVER_URL).unwrap());
     let epl = ExternalPlayerLink::try_from((&stream, &streaming_server_url)).unwrap();
-    assert_eq!(epl.href, Some(MAGNET_STR_URL.to_owned()));
-    assert_eq!(
-        epl.streaming_server,
-        Some(format!(
-            "{}/{}/{}/{}",
-            STREAMING_SERVER_URL,
-            hex::encode(info_hash),
-            file_idx,
-            "?tr=http://bt1.archive.org:6969/announce",
+    assert_eq!(epl.href, Some(format!(
+        "data:application/octet-stream;charset=utf-8;base64,{}",
+        base64::encode(format!(
+            "#EXTM3U\n#EXTINF:0\n{}",
+            format!(
+                "{}/{}/{}/{}",
+                STREAMING_SERVER_URL,
+                hex::encode(info_hash),
+                file_idx,
+                "?tr=http://bt1.archive.org:6969/announce",
+            )
         ))
+    )));
+    assert_eq!(
+        epl.download,
+        Some(MAGNET_STR_URL.to_owned())
     );
-    assert_eq!(epl.file_name, Some("torrent".to_string()));
+    assert_eq!(epl.file_name, Some("playlist.m3u".to_string()));
 }
 
 #[test]
@@ -96,7 +102,7 @@ fn external_player_link_external() {
         subtitles: vec![],
         behavior_hints: Default::default(),
     };
-    let streaming_server_url = Url::parse(STREAMING_SERVER_URL).unwrap();
+    let streaming_server_url = Some(Url::parse(STREAMING_SERVER_URL).unwrap());
     let epl = ExternalPlayerLink::try_from((&stream, &streaming_server_url)).unwrap();
     assert_eq!(epl.href, Some(HTTP_STR_URL.to_owned()));
     assert_eq!(epl.file_name, None);
@@ -115,7 +121,7 @@ fn external_player_link_youtube() {
         subtitles: vec![],
         behavior_hints: Default::default(),
     };
-    let streaming_server_url = Url::parse(STREAMING_SERVER_URL).unwrap();
+    let streaming_server_url = Some(Url::parse(STREAMING_SERVER_URL).unwrap());
     let epl = ExternalPlayerLink::try_from((&stream, &streaming_server_url)).unwrap();
     assert_eq!(
         epl.href,
@@ -142,7 +148,7 @@ fn external_player_link_player_frame() {
         subtitles: vec![],
         behavior_hints: Default::default(),
     };
-    let streaming_server_url = Url::parse(STREAMING_SERVER_URL).unwrap();
+    let streaming_server_url = Some(Url::parse(STREAMING_SERVER_URL).unwrap());
     let epl = ExternalPlayerLink::try_from((&stream, &streaming_server_url)).unwrap();
     assert_eq!(epl.href, Some(HTTP_STR_URL.to_owned()));
     assert_eq!(epl.file_name, None);

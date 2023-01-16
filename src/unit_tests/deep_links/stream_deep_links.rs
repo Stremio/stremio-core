@@ -23,7 +23,7 @@ fn stream_deep_links_magnet() {
         subtitles: vec![],
         behavior_hints: Default::default(),
     };
-    let streaming_server_url = Url::parse(STREAMING_SERVER_URL).unwrap();
+    let streaming_server_url = Some(Url::parse(STREAMING_SERVER_URL).unwrap());
     let sdl = StreamDeepLinks::try_from((&stream, &streaming_server_url)).unwrap();
     assert_eq!(sdl.player, "stremio:///player/eAEBRgC5%2F3sidXJsIjoibWFnbmV0Oj94dD11cm46YnRpaDpkZDgyNTVlY2RjN2NhNTVmYjBiYmY4MTMyM2Q4NzA2MmRiMWY2ZDFjIn0%2BMhZF".to_string());
     assert_eq!(sdl.external_player.href, Some(MAGNET_STR_URL.to_owned()));
@@ -42,7 +42,7 @@ fn stream_deep_links_http() {
         subtitles: vec![],
         behavior_hints: Default::default(),
     };
-    let streaming_server_url = Url::parse(STREAMING_SERVER_URL).unwrap();
+    let streaming_server_url = Some(Url::parse(STREAMING_SERVER_URL).unwrap());
     let sdl = StreamDeepLinks::try_from((&stream, &streaming_server_url)).unwrap();
     assert_eq!(
         sdl.player,
@@ -58,14 +58,17 @@ fn stream_deep_links_http() {
 
 #[test]
 fn stream_deep_links_torrent() {
+    let info_hash = [
+        0xdd, 0x82, 0x55, 0xec, 0xdc, 0x7c, 0xa5, 0x5f, 0xb0, 0xbb, 0xf8, 0x13, 0x23, 0xd8, 0x70,
+        0x62, 0xdb, 0x1f, 0x6d, 0x1c,
+    ];
+    let file_idx = 0;
+    let announce = vec!["http://bt1.archive.org:6969/announce".to_string()];
     let stream = Stream {
         source: StreamSource::Torrent {
-            info_hash: [
-                0xdd, 0x82, 0x55, 0xec, 0xdc, 0x7c, 0xa5, 0x5f, 0xb0, 0xbb, 0xf8, 0x13, 0x23, 0xd8,
-                0x70, 0x62, 0xdb, 0x1f, 0x6d, 0x1c,
-            ],
-            file_idx: None,
-            announce: vec![],
+            info_hash,
+            file_idx: Some(file_idx),
+            announce,
         },
         name: None,
         description: None,
@@ -73,11 +76,23 @@ fn stream_deep_links_torrent() {
         subtitles: vec![],
         behavior_hints: Default::default(),
     };
-    let streaming_server_url = Url::parse(STREAMING_SERVER_URL).unwrap();
+    let streaming_server_url = Some(Url::parse(STREAMING_SERVER_URL).unwrap());
     let sdl = StreamDeepLinks::try_from((&stream, &streaming_server_url)).unwrap();
-    assert_eq!(sdl.player, "stremio:///player/eAEBVACr%2F3siaW5mb0hhc2giOiJkZDgyNTVlY2RjN2NhNTVmYjBiYmY4MTMyM2Q4NzA2MmRiMWY2ZDFjIiwiZmlsZUlkeCI6bnVsbCwiYW5ub3VuY2UiOltdfVAyGnc%3D".to_string());
-    assert_eq!(sdl.external_player.href, Some(MAGNET_STR_URL.to_owned()));
-    assert_eq!(sdl.external_player.file_name, Some("torrent".to_string()));
+    assert_eq!(sdl.player, "stremio:///player/eAEBdwCI%2F3siaW5mb0hhc2giOiJkZDgyNTVlY2RjN2NhNTVmYjBiYmY4MTMyM2Q4NzA2MmRiMWY2ZDFjIiwiZmlsZUlkeCI6MCwiYW5ub3VuY2UiOlsiaHR0cDovL2J0MS5hcmNoaXZlLm9yZzo2OTY5L2Fubm91bmNlIl19ndAlsw%3D%3D".to_string());
+    assert_eq!(sdl.external_player.href, Some(format!(
+        "data:application/octet-stream;charset=utf-8;base64,{}",
+        base64::encode(format!(
+            "#EXTM3U\n#EXTINF:0\n{}",
+            format!(
+                "{}{}/{}/{}",
+                STREAMING_SERVER_URL,
+                hex::encode(info_hash),
+                file_idx,
+                "?tr=http://bt1.archive.org:6969/announce",
+            )
+        ))
+    )));
+    assert_eq!(sdl.external_player.file_name, Some("playlist.m3u".to_string()));
 }
 
 #[test]
@@ -95,7 +110,7 @@ fn stream_deep_links_external() {
         subtitles: vec![],
         behavior_hints: Default::default(),
     };
-    let streaming_server_url = Url::parse(STREAMING_SERVER_URL).unwrap();
+    let streaming_server_url = Some(Url::parse(STREAMING_SERVER_URL).unwrap());
     let sdl = StreamDeepLinks::try_from((&stream, &streaming_server_url)).unwrap();
     assert_eq!(sdl.player, "stremio:///player/eAEBKQDW%2F3siZXh0ZXJuYWxVcmwiOiJodHRwOi8vZG9tYWluLnJvb3QvcGF0aCJ9OoEO7w%3D%3D".to_string());
     assert_eq!(sdl.external_player.href, Some(HTTP_STR_URL.to_owned()));
@@ -114,7 +129,7 @@ fn stream_deep_links_youtube() {
         subtitles: vec![],
         behavior_hints: Default::default(),
     };
-    let streaming_server_url = Url::parse(STREAMING_SERVER_URL).unwrap();
+    let streaming_server_url = Some(Url::parse(STREAMING_SERVER_URL).unwrap());
     let sdl = StreamDeepLinks::try_from((&stream, &streaming_server_url)).unwrap();
     assert_eq!(
         sdl.player,
@@ -145,7 +160,7 @@ fn stream_deep_links_player_frame() {
         subtitles: vec![],
         behavior_hints: Default::default(),
     };
-    let streaming_server_url = Url::parse(STREAMING_SERVER_URL).unwrap();
+    let streaming_server_url = Some(Url::parse(STREAMING_SERVER_URL).unwrap());
     let sdl = StreamDeepLinks::try_from((&stream, &streaming_server_url)).unwrap();
     assert_eq!(sdl.player, "stremio:///player/eAEBLADT%2F3sicGxheWVyRnJhbWVVcmwiOiJodHRwOi8vZG9tYWluLnJvb3QvcGF0aCJ9abUQBA%3D%3D".to_string());
     assert_eq!(sdl.external_player.href, Some(HTTP_STR_URL.to_owned()));
@@ -173,7 +188,7 @@ fn stream_deep_links_requests() {
         path: ResourcePath::without_extra("meta", "movie", format!("yt_id:{YT_ID}").as_str()),
     };
 
-    let streaming_server_url = Url::parse(STREAMING_SERVER_URL).unwrap();
+    let streaming_server_url = Some(Url::parse(STREAMING_SERVER_URL).unwrap());
     let sdl = StreamDeepLinks::try_from((
         &stream,
         &stream_request,

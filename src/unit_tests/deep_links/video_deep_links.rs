@@ -24,7 +24,7 @@ fn video_deep_links() {
         base: Url::from_str("http://domain.root").unwrap(),
         path: ResourcePath::without_extra("meta", "movie", format!("yt_id:{YT_ID}").as_str()),
     };
-    let streaming_server_url = Url::parse(STREAMING_SERVER_URL).unwrap();
+    let streaming_server_url = Some(Url::parse(STREAMING_SERVER_URL).unwrap());
     let vdl = VideoDeepLinks::try_from((&video, &request, &streaming_server_url)).unwrap();
     assert_eq!(
         vdl.meta_details_streams,
@@ -47,8 +47,8 @@ fn video_deep_links() {
                     STREAMING_SERVER_URL, YT_ID
                 ))
             )),
-            download: Some(format!("https://www.youtube.com/watch?v={YT_ID}")),
-            streaming_server: Some(format!("{}yt/{}", STREAMING_SERVER_URL, YT_ID)),
+            download: Some(format!("https://youtube.com/{}", YT_ID)),
+            streaming: Some(format!("{}yt/{}", STREAMING_SERVER_URL, YT_ID)),
             ..Default::default()
         })
     );
