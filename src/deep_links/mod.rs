@@ -71,7 +71,7 @@ impl From<(&Stream, &Option<Url>)> for ExternalPlayerLink {
                     webos: webos_url.to_owned(),
                     ..Default::default()
                 },
-                StreamSource::YouTube { yt_id } => ExternalPlayerLink {
+                StreamSource::YouTube { .. } => ExternalPlayerLink {
                     href: Some(
                         stream.m3u_data_uri(
                             stream
@@ -79,7 +79,7 @@ impl From<(&Stream, &Option<Url>)> for ExternalPlayerLink {
                                 .expect("Failed to build streaming url for youtube"),
                         ),
                     ),
-                    download: Some(format!("https://youtube.com/{}", yt_id)),
+                    download: stream.to_youtube_url(),
                     streaming: stream.to_streaming_url(streaming_server_url),
                     ..Default::default()
                 },
@@ -130,9 +130,9 @@ impl From<(&Stream, &Option<Url>)> for ExternalPlayerLink {
                     webos: webos_url.to_owned(),
                     ..Default::default()
                 },
-                StreamSource::YouTube { yt_id } => ExternalPlayerLink {
-                    href: Some(format!("https://youtube.com/{}", yt_id)),
-                    download: Some(format!("https://youtube.com/{}", yt_id)),
+                StreamSource::YouTube { .. } => ExternalPlayerLink {
+                    href: stream.to_youtube_url(),
+                    download: stream.to_youtube_url(),
                     ..Default::default()
                 },
                 StreamSource::PlayerFrame { player_frame_url } => ExternalPlayerLink {
