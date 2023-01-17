@@ -34,6 +34,7 @@ pub struct Stream {
 impl Stream {
     pub fn magnet_url(&self) -> Option<Magnet> {
         match &self.source {
+            StreamSource::Url { url } if url.scheme() == "magnet" => Magnet::new(url.as_str()).ok(),
             StreamSource::Torrent {
                 info_hash,
                 announce,
