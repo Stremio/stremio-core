@@ -123,9 +123,7 @@ impl Stream {
     }
     pub fn to_youtube_url(&self) -> Option<String> {
         match &self.source {
-            StreamSource::YouTube { yt_id } => {
-                Some(format!("https://youtube.com/{}", yt_id))
-            }
+            StreamSource::YouTube { yt_id } => Some(format!("https://youtube.com/{}", yt_id)),
             _ => None,
         }
     }
