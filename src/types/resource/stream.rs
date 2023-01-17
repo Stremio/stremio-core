@@ -111,7 +111,10 @@ impl Stream {
                         Some(idx) => url.join(&format!("{}/", idx)),
                         None => Ok(url),
                     })
-                    .and_then(|url| url.join(&format!("?tr={}", announce.join("&tr="))))
+                    .and_then(|url| match !announce.is_empty() {
+                        true => url.join(&format!("?tr={}", announce.join("&tr="))),
+                        false => Ok(url),
+                    })
                     .map(|url| url.to_string())
                     .expect("Failed to build streaming url for torrent"),
             ),
