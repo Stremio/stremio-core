@@ -47,8 +47,9 @@ fn video_deep_links() {
                     STREAMING_SERVER_URL, YT_ID
                 ))
             )),
-            download: Some(format!("https://youtube.com/{}", YT_ID)),
+            download: Some(format!("https://youtube.com/watch?v={}", YT_ID)),
             streaming: Some(format!("{}yt/{}", STREAMING_SERVER_URL, YT_ID)),
+            file_name: Some("playlist.m3u".to_string()),
             ..Default::default()
         })
     );

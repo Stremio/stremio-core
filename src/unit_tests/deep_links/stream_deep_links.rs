@@ -1,6 +1,8 @@
+use crate::constants::URI_COMPONENT_ENCODE_SET;
 use crate::deep_links::StreamDeepLinks;
 use crate::types::addon::{ResourcePath, ResourceRequest};
 use crate::types::resource::{Stream, StreamSource};
+use percent_encoding::utf8_percent_encode;
 use std::convert::TryFrom;
 use std::str::FromStr;
 use url::Url;
@@ -8,7 +10,7 @@ use url::Url;
 const MAGNET_STR_URL: &str = "magnet:?xt=urn:btih:dd8255ecdc7ca55fb0bbf81323d87062db1f6d1c";
 const HTTP_STR_URL: &str = "http://domain.root/path";
 const BASE64_HTTP_URL: &str = "data:application/octet-stream;charset=utf-8;base64,I0VYVE0zVQojRVhUSU5GOjAKaHR0cDovL2RvbWFpbi5yb290L3BhdGg=";
-const STREAMING_SERVER_URL: &str = "http://127.0.0.1:11471/";
+const STREAMING_SERVER_URL: &str = "http://127.0.0.1:11471";
 const YT_ID: &str = "aqz-KE-bpKQ";
 
 #[test]
@@ -86,11 +88,17 @@ fn stream_deep_links_torrent() {
             base64::encode(format!(
                 "#EXTM3U\n#EXTINF:0\n{}",
                 format!(
-                    "{}{}/{}/{}",
+                    "{}/{}/{}{}",
                     STREAMING_SERVER_URL,
                     hex::encode(info_hash),
                     file_idx,
-                    "?tr=http://bt1.archive.org:6969/announce",
+                    format!(
+                        "?tr={}",
+                        utf8_percent_encode(
+                            "http://bt1.archive.org:6969/announce",
+                            URI_COMPONENT_ENCODE_SET
+                        )
+                    ),
                 )
             ))
         ))
@@ -146,12 +154,15 @@ fn stream_deep_links_youtube() {
         Some(format!(
             "data:application/octet-stream;charset=utf-8;base64,{}",
             base64::encode(format!(
-                "#EXTM3U\n#EXTINF:0\n{}yt/{}",
+                "#EXTM3U\n#EXTINF:0\n{}/yt/{}",
                 STREAMING_SERVER_URL, YT_ID
             ))
         ))
     );
-    assert_eq!(sdl.external_player.file_name, None);
+    assert_eq!(
+        sdl.external_player.file_name,
+        Some("playlist.m3u".to_string())
+    );
 }
 
 #[test]
@@ -211,10 +222,13 @@ fn stream_deep_links_requests() {
         Some(format!(
             "data:application/octet-stream;charset=utf-8;base64,{}",
             base64::encode(format!(
-                "#EXTM3U\n#EXTINF:0\n{}yt/{}",
+                "#EXTM3U\n#EXTINF:0\n{}/yt/{}",
                 STREAMING_SERVER_URL, YT_ID
             ))
         ))
     );
-    assert_eq!(sdl.external_player.file_name, None);
+    assert_eq!(
+        sdl.external_player.file_name,
+        Some("playlist.m3u".to_string())
+    );
 }

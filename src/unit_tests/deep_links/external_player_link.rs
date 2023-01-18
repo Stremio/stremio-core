@@ -1,5 +1,7 @@
+use crate::constants::URI_COMPONENT_ENCODE_SET;
 use crate::deep_links::ExternalPlayerLink;
 use crate::types::resource::{Stream, StreamSource};
+use percent_encoding::utf8_percent_encode;
 use std::convert::TryFrom;
 use std::str::FromStr;
 use url::Url;
@@ -74,11 +76,17 @@ fn external_player_link_torrent() {
             base64::encode(format!(
                 "#EXTM3U\n#EXTINF:0\n{}",
                 format!(
-                    "{}/{}/{}/{}",
+                    "{}/{}/{}{}",
                     STREAMING_SERVER_URL,
                     hex::encode(info_hash),
                     file_idx,
-                    "?tr=http://bt1.archive.org:6969/announce",
+                    format!(
+                        "?tr={}",
+                        utf8_percent_encode(
+                            "http://bt1.archive.org:6969/announce",
+                            URI_COMPONENT_ENCODE_SET
+                        )
+                    ),
                 )
             ))
         ))
@@ -133,7 +141,7 @@ fn external_player_link_youtube() {
             ))
         ))
     );
-    assert_eq!(epl.file_name, None);
+    assert_eq!(epl.file_name, Some("playlist.m3u".to_string()));
 }
 
 #[test]

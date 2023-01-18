@@ -26,120 +26,32 @@ pub struct ExternalPlayerLink {
 
 impl From<(&Stream, &Option<Url>)> for ExternalPlayerLink {
     fn from((stream, streaming_server_url): (&Stream, &Option<Url>)) -> Self {
-        match streaming_server_url {
-            Some(streaming_server_url) => match &stream.source {
-                StreamSource::Url { url } if url.scheme() == "magnet" => ExternalPlayerLink {
-                    href: Some(url.as_str().to_owned()),
-                    download: Some(url.as_str().to_owned()),
-                    ..Default::default()
-                },
-                StreamSource::Url { url } => ExternalPlayerLink {
-                    href: Some(stream.m3u_data_uri(url.to_string())),
-                    download: Some(url.as_str().to_owned()),
-                    streaming: Some(url.as_str().to_owned()),
-                    file_name: Some("playlist.m3u".to_owned()),
-                    ..Default::default()
-                },
-                StreamSource::Torrent { .. } => ExternalPlayerLink {
-                    href: Some(
-                        stream.m3u_data_uri(
-                            stream
-                                .to_streaming_url(streaming_server_url)
-                                .expect("Failed to build streaming url for torrent"),
-                        ),
-                    ),
-                    download: Some(
-                        stream
-                            .magnet_url()
-                            .map(|magnet_url| magnet_url.to_string())
-                            .expect("Failed to build magnet url for torrent"),
-                    ),
-                    streaming: stream.to_streaming_url(streaming_server_url),
-                    file_name: Some("playlist.m3u".to_owned()),
-                    ..Default::default()
-                },
-                StreamSource::External {
-                    external_url,
-                    android_tv_url,
-                    tizen_url,
-                    webos_url,
-                } => ExternalPlayerLink {
-                    href: external_url.as_ref().map(|url| url.as_str().to_owned()),
-                    download: external_url.as_ref().map(|url| url.as_str().to_owned()),
-                    android_tv: android_tv_url.as_ref().map(|url| url.as_str().to_owned()),
-                    tizen: tizen_url.to_owned(),
-                    webos: webos_url.to_owned(),
-                    ..Default::default()
-                },
-                StreamSource::YouTube { .. } => ExternalPlayerLink {
-                    href: Some(
-                        stream.m3u_data_uri(
-                            stream
-                                .to_streaming_url(streaming_server_url)
-                                .expect("Failed to build streaming url for youtube"),
-                        ),
-                    ),
-                    download: stream.to_youtube_url(),
-                    streaming: stream.to_streaming_url(streaming_server_url),
-                    ..Default::default()
-                },
-                StreamSource::PlayerFrame { player_frame_url } => ExternalPlayerLink {
-                    href: Some(player_frame_url.as_str().to_owned()),
-                    download: Some(player_frame_url.as_str().to_owned()),
-                    ..Default::default()
-                },
-            },
-            None => match &stream.source {
-                StreamSource::Url { url } if url.scheme() == "magnet" => ExternalPlayerLink {
-                    href: Some(url.as_str().to_owned()),
-                    download: Some(url.as_str().to_owned()),
-                    ..Default::default()
-                },
-                StreamSource::Url { url } => ExternalPlayerLink {
-                    href: Some(url.as_str().to_owned()),
-                    download: Some(url.as_str().to_owned()),
-                    streaming: Some(url.as_str().to_owned()),
-                    file_name: Some("playlist.m3u".to_owned()),
-                    ..Default::default()
-                },
-                StreamSource::Torrent { .. } => ExternalPlayerLink {
-                    href: Some(
-                        stream
-                            .magnet_url()
-                            .map(|magnet_url| magnet_url.to_string())
-                            .expect("Failed to build magnet url for torrent"),
-                    ),
-                    download: Some(
-                        stream
-                            .magnet_url()
-                            .map(|magnet_url| magnet_url.to_string())
-                            .expect("Failed to build magnet url for torrent"),
-                    ),
-                    ..Default::default()
-                },
-                StreamSource::External {
-                    external_url,
-                    android_tv_url,
-                    tizen_url,
-                    webos_url,
-                } => ExternalPlayerLink {
-                    href: external_url.as_ref().map(|url| url.as_str().to_owned()),
-                    download: external_url.as_ref().map(|url| url.as_str().to_owned()),
-                    android_tv: android_tv_url.as_ref().map(|url| url.as_str().to_owned()),
-                    tizen: tizen_url.to_owned(),
-                    webos: webos_url.to_owned(),
-                    ..Default::default()
-                },
-                StreamSource::YouTube { .. } => ExternalPlayerLink {
-                    href: stream.to_youtube_url(),
-                    download: stream.to_youtube_url(),
-                    ..Default::default()
-                },
-                StreamSource::PlayerFrame { player_frame_url } => ExternalPlayerLink {
-                    download: Some(player_frame_url.as_str().to_owned()),
-                    ..Default::default()
-                },
-            },
+        let download = stream.download_url();
+        let streaming = stream.streaming_url(streaming_server_url.as_ref());
+        let m3u_uri = stream.m3u_data_uri(streaming_server_url.as_ref());
+        let file_name = m3u_uri.as_ref().map(|_| "playlist.m3u".to_owned());
+        let href = m3u_uri.or_else(|| download.to_owned());
+        let (android_tv, tizen, webos) = match &stream.source {
+            StreamSource::External {
+                android_tv_url,
+                tizen_url,
+                webos_url,
+                ..
+            } => (
+                android_tv_url.as_ref().map(|url| url.to_string()),
+                tizen_url.to_owned(),
+                webos_url.to_owned(),
+            ),
+            _ => (None, None, None),
+        };
+        ExternalPlayerLink {
+            href,
+            download,
+            streaming,
+            android_tv,
+            tizen,
+            webos,
+            file_name,
         }
     }
 }
