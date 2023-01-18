@@ -86,7 +86,7 @@ impl From<serde_json::Error> for EnvError {
     }
 }
 
-#[cfg(any(not(feature = "env-future-send"), target_family = "wasm"))]
+#[cfg(not(feature = "env-future-send"))]
 /// Only for wasm or when `env-future-send` is not enabled
 mod conditional_types {
     use futures::{future::LocalBoxFuture, Future, FutureExt};
@@ -107,8 +107,9 @@ mod conditional_types {
     }
 }
 
-#[cfg(all(feature = "env-future-send", not(target_family = "wasm")))]
+#[cfg(feature = "env-future-send")]
 /// Enabled with the feature `env-future-send` but it requires a non-wasm target!
+/// It will cause a compile-time error!
 mod conditional_types {
     use futures::{future::BoxFuture, Future, FutureExt};
 

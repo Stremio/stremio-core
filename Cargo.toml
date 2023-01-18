@@ -23,7 +23,7 @@ doctest = false
 
 # Adds `Send` marker trait to the `Env` trait methods and `EnvFuture`.
 # It's required for environments that do not support `Send`.
-# If enabled for `wasm` it will do nothing since `wasm` does not support Send!
+# If enabled for `wasm` it will cause a compile error!
 # see https://github.com/rustwasm/wasm-bindgen/issues/2833
 env-future-send = []
 
