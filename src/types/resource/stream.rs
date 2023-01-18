@@ -99,7 +99,7 @@ impl Stream {
             StreamSource::Torrent { .. } => {
                 self.magnet_url().map(|magnet_url| magnet_url.to_string())
             }
-            StreamSource::YouTube { .. } => self.to_youtube_url(),
+            StreamSource::YouTube { .. } => self.youtube_url(),
             StreamSource::External { external_url, .. } => {
                 external_url.as_ref().map(|url| url.to_string())
             }
@@ -155,7 +155,7 @@ impl Stream {
             _ => None,
         }
     }
-    pub fn to_youtube_url(&self) -> Option<String> {
+    pub fn youtube_url(&self) -> Option<String> {
         match &self.source {
             StreamSource::YouTube { yt_id } => {
                 Some(format!("https://youtube.com/watch?v={}", yt_id))
