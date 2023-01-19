@@ -1,8 +1,5 @@
 # keep the workflow only for manual deployment because of Github monthly CI quota
 on:
-  push:
-    branches:
-      - docs-ci-workflow
   workflow_dispatch:
 
 name: Deploy docs
