@@ -22,6 +22,7 @@ pub enum ActionCtx {
     Logout,
     InstallAddon(Descriptor),
     InstallTraktAddon,
+    LogoutTrakt,
     UpgradeAddon(Descriptor),
     UninstallAddon(Descriptor),
     UpdateSettings(ProfileSettings),
@@ -69,11 +70,20 @@ pub enum CreateTorrentArgs {
 }
 
 #[derive(Clone, Deserialize, Debug)]
+#[serde(rename_all = "camelCase")]
+pub struct PlayOnDeviceArgs {
+    pub device: String,
+    pub source: String,
+    pub time: Option<u64>,
+}
+
+#[derive(Clone, Deserialize, Debug)]
 #[serde(tag = "action", content = "args")]
 pub enum ActionStreamingServer {
     Reload,
     UpdateSettings(StreamingServerSettings),
     CreateTorrent(CreateTorrentArgs),
+    PlayOnDevice(PlayOnDeviceArgs),
 }
 
 #[derive(Clone, Deserialize, Debug)]

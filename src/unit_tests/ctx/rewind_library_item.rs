@@ -9,8 +9,7 @@ use crate::types::True;
 use crate::unit_tests::{
     default_fetch_handler, Request, TestEnv, FETCH_HANDLER, NOW, REQUESTS, STORAGE,
 };
-use chrono::prelude::TimeZone;
-use chrono::Utc;
+use chrono::{TimeZone, Utc};
 use futures::future;
 use std::any::Any;
 use stremio_derive::Model;
@@ -41,8 +40,8 @@ fn actionctx_rewindlibraryitem() {
         id: "id".to_owned(),
         removed: false,
         temp: false,
-        ctime: Some(Utc.ymd(2020, 1, 1).and_hms_milli(0, 0, 0, 0)),
-        mtime: Utc.ymd(2020, 1, 1).and_hms_milli(0, 0, 0, 0),
+        ctime: Some(Utc.with_ymd_and_hms(2020, 1, 1, 0, 0, 0).unwrap()),
+        mtime: Utc.with_ymd_and_hms(2020, 1, 1, 0, 0, 0).unwrap(),
         state: LibraryItemState {
             time_offset: 10,
             ..LibraryItemState::default()
@@ -54,7 +53,7 @@ fn actionctx_rewindlibraryitem() {
         behavior_hints: Default::default(),
     };
     let library_item_rewinded = LibraryItem {
-        mtime: Utc.ymd(2020, 1, 2).and_hms_milli(0, 0, 0, 0),
+        mtime: Utc.with_ymd_and_hms(2020, 1, 2, 0, 0, 0).unwrap(),
         state: LibraryItemState {
             time_offset: 0,
             ..LibraryItemState::default()
@@ -63,7 +62,7 @@ fn actionctx_rewindlibraryitem() {
     };
     let _env_mutex = TestEnv::reset();
     *FETCH_HANDLER.write().unwrap() = Box::new(fetch_handler);
-    *NOW.write().unwrap() = Utc.ymd(2020, 1, 2).and_hms_milli(0, 0, 0, 0);
+    *NOW.write().unwrap() = Utc.with_ymd_and_hms(2020, 1, 2, 0, 0, 0).unwrap();
     STORAGE.write().unwrap().insert(
         LIBRARY_RECENT_STORAGE_KEY.to_owned(),
         serde_json::to_string(&LibraryBucket::new(
@@ -164,8 +163,8 @@ fn actionctx_rewindlibraryitem_not_added() {
         id: "id".to_owned(),
         removed: false,
         temp: false,
-        ctime: Some(Utc.ymd(2020, 1, 1).and_hms_milli(0, 0, 0, 0)),
-        mtime: Utc.ymd(2020, 1, 1).and_hms_milli(0, 0, 0, 0),
+        ctime: Some(Utc.with_ymd_and_hms(2020, 1, 1, 0, 0, 0).unwrap()),
+        mtime: Utc.with_ymd_and_hms(2020, 1, 1, 0, 0, 0).unwrap(),
         state: LibraryItemState {
             time_offset: 10,
             ..LibraryItemState::default()

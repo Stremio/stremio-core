@@ -1,10 +1,13 @@
-use crate::types::addon::Descriptor;
-use crate::types::profile::{AuthKey, User};
-use crate::types::True;
-use chrono::serde::ts_milliseconds;
-use chrono::{DateTime, Utc};
+use crate::types::{
+    addon::Descriptor,
+    library::LibraryItem,
+    profile::{AuthKey, User},
+    True,
+};
+use chrono::{serde::ts_milliseconds, DateTime, Utc};
 use derive_more::TryInto;
 use serde::{Deserialize, Serialize};
+use serde_with::serde_as;
 
 #[derive(Serialize, Deserialize, Debug)]
 #[serde(untagged)]
@@ -35,7 +38,7 @@ pub struct AuthResponse {
 }
 
 #[derive(Deserialize)]
-#[serde(rename = "camelCase")]
+#[serde(rename_all = "camelCase")]
 pub struct DataExportResponse {
     pub export_id: String,
 }
@@ -69,4 +72,17 @@ pub struct LinkAuthKey {
 #[serde(untagged)]
 pub enum LinkDataResponse {
     AuthKey(LinkAuthKey),
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, Default, PartialEq, Eq)]
+#[serde_as]
+#[serde(transparent)]
+/// API response for the [`LibraryItem`]s which skips invalid items
+/// when deserializing.
+pub struct LibraryItemsResponse(#[serde_as(as = "VecSkipError<_>")] pub Vec<LibraryItem>);
+
+impl LibraryItemsResponse {
+    pub fn new() -> Self {
+        Self(Vec::new())
+    }
 }

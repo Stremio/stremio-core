@@ -737,7 +737,7 @@ mod test {
             let next_video = Video {
                 id: "next_video".to_owned(),
                 title: "title".to_owned(),
-                released: Some(Utc.ymd(2020, 1, 1).and_hms(0, 0, 0)),
+                released: Some(Utc.with_ymd_and_hms(2020, 1, 1, 0, 0, 0).unwrap()),
                 overview: Some("overview".to_owned()),
                 thumbnail: Some("thumbnail".to_owned()),
                 streams: vec![next_youtube_stream.clone()],
@@ -778,7 +778,7 @@ mod test {
             let next_video = Video {
                 id: "next_video_2".to_owned(),
                 title: "title".to_owned(),
-                released: Some(Utc.ymd(2020, 1, 1).and_hms(0, 0, 0)),
+                released: Some(Utc.with_ymd_and_hms(2020, 1, 1, 0, 0, 0).unwrap()),
                 overview: Some("overview".to_owned()),
                 thumbnail: Some("thumbnail".to_owned()),
                 streams: youtube_streams.clone(),
@@ -817,7 +817,7 @@ mod test {
             let next_video = Video {
                 id: "next_video_3".to_owned(),
                 title: "title".to_owned(),
-                released: Some(Utc.ymd(2020, 1, 1).and_hms(0, 0, 0)),
+                released: Some(Utc.with_ymd_and_hms(2020, 1, 1, 0, 0, 0).unwrap()),
                 overview: Some("overview".to_owned()),
                 thumbnail: Some("thumbnail".to_owned()),
                 // empty streams will cause a request to be made

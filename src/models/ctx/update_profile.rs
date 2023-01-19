@@ -194,6 +194,26 @@ pub fn update_profile<E: Env + 'static>(
                 .unchanged()
             }
         }
+        Msg::Action(Action::Ctx(ActionCtx::LogoutTrakt)) => match &mut profile.auth {
+            Some(Auth { user, key }) => {
+                if user.trakt.is_some() {
+                    user.trakt = None;
+                    let push_to_api_effects =
+                        Effects::one(push_user_to_api::<E>(user.to_owned(), key));
+                    Effects::msg(Msg::Event(Event::TraktLoggedOut { uid: profile.uid() }))
+                        .join(push_to_api_effects)
+                        .join(Effects::msg(Msg::Internal(Internal::ProfileChanged)))
+                } else {
+                    Effects::msg(Msg::Event(Event::TraktLoggedOut { uid: profile.uid() }))
+                        .unchanged()
+                }
+            }
+            _ => Effects::msg(Msg::Event(Event::Error {
+                error: CtxError::from(OtherError::UserNotLoggedIn),
+                source: Box::new(Event::TraktLoggedOut { uid: profile.uid() }),
+            }))
+            .unchanged(),
+        },
         Msg::Action(Action::Ctx(ActionCtx::UpdateSettings(settings))) => {
             if profile.settings != *settings {
                 profile.settings = settings.to_owned();

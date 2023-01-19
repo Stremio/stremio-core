@@ -1,5 +1,5 @@
 use crate::addon_transport::AddonTransport;
-use crate::runtime::{Env, EnvError, EnvFutureExt, TryEnvFuture};
+use crate::runtime::{ConditionalSend, Env, EnvError, EnvFutureExt, TryEnvFuture};
 use crate::types::addon::{Manifest, ResourcePath, ResourceResponse};
 use crate::types::resource::{MetaItem, MetaItemPreview, Stream, Subtitles};
 use futures::{future, TryFutureExt};
@@ -85,12 +85,7 @@ impl From<SubtitlesResult> for ResourceResponse {
     }
 }
 
-fn map_response<
-    #[cfg(not(feature = "env-future-send"))] T: Sized + 'static,
-    #[cfg(feature = "env-future-send")] T: Sized + Send + 'static,
->(
-    resp: JsonRPCResp<T>,
-) -> TryEnvFuture<T> {
+fn map_response<T: Sized + ConditionalSend + 'static>(resp: JsonRPCResp<T>) -> TryEnvFuture<T> {
     match resp {
         JsonRPCResp::Result { result } => future::ok(result).boxed_env(),
         JsonRPCResp::Error { error } => future::err(LegacyErr::JsonRPC(error).into()).boxed_env(),

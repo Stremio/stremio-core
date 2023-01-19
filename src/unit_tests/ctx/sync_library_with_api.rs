@@ -2,7 +2,7 @@ use crate::constants::LIBRARY_RECENT_STORAGE_KEY;
 use crate::models::ctx::Ctx;
 use crate::runtime::msg::{Action, ActionCtx};
 use crate::runtime::{Env, EnvFutureExt, Runtime, RuntimeAction, TryEnvFuture};
-use crate::types::api::{APIResult, LibraryItemModified, SuccessResponse};
+use crate::types::api::{APIResult, LibraryItemModified, LibraryItemsResponse, SuccessResponse};
 use crate::types::library::{LibraryBucket, LibraryItem};
 use crate::types::profile::{Auth, AuthKey, GDPRConsent, Profile, User};
 use crate::types::True;
@@ -54,8 +54,8 @@ fn actionctx_synclibrarywithapi_with_user() {
             poster_shape: Default::default(),
             removed: false,
             temp: false,
-            ctime: Some(Utc.ymd(2020, 1, 1).and_hms_milli(0, 0, 0, 0)),
-            mtime: Utc.ymd(2020, 1, 1).and_hms_milli(0, 0, 0, 0),
+            ctime: Some(Utc.with_ymd_and_hms(2020, 1, 1, 0, 0, 0).unwrap()),
+            mtime: Utc.with_ymd_and_hms(2020, 1, 1, 0, 0, 0).unwrap(),
             state: Default::default(),
             behavior_hints: Default::default(),
         };
@@ -67,8 +67,8 @@ fn actionctx_synclibrarywithapi_with_user() {
             poster_shape: Default::default(),
             removed: false,
             temp: false,
-            ctime: Some(Utc.ymd(2020, 1, 1).and_hms_milli(0, 0, 0, 0)),
-            mtime: Utc.ymd(2020, 1, 1).and_hms_milli(0, 0, 0, 0),
+            ctime: Some(Utc.with_ymd_and_hms(2020, 1, 1, 0, 0, 0).unwrap()),
+            mtime: Utc.with_ymd_and_hms(2020, 1, 1, 0, 0, 0).unwrap(),
             state: Default::default(),
             behavior_hints: Default::default(),
         };
@@ -80,8 +80,8 @@ fn actionctx_synclibrarywithapi_with_user() {
             poster_shape: Default::default(),
             removed: false,
             temp: false,
-            ctime: Some(Utc.ymd(2020, 1, 1).and_hms_milli(0, 0, 0, 0)),
-            mtime: Utc.ymd(2020, 1, 1).and_hms_milli(0, 0, 0, 0),
+            ctime: Some(Utc.with_ymd_and_hms(2020, 1, 1, 0, 0, 0).unwrap()),
+            mtime: Utc.with_ymd_and_hms(2020, 1, 1, 0, 0, 0).unwrap(),
             state: Default::default(),
             behavior_hints: Default::default(),
         };
@@ -93,8 +93,8 @@ fn actionctx_synclibrarywithapi_with_user() {
             poster_shape: Default::default(),
             removed: false,
             temp: false,
-            ctime: Some(Utc.ymd(2020, 1, 1).and_hms_milli(0, 0, 0, 0)),
-            mtime: Utc.ymd(2020, 1, 1).and_hms_milli(0, 0, 0, 0),
+            ctime: Some(Utc.with_ymd_and_hms(2020, 1, 1, 0, 0, 0).unwrap()),
+            mtime: Utc.with_ymd_and_hms(2020, 1, 1, 0, 0, 0).unwrap(),
             state: Default::default(),
             behavior_hints: Default::default(),
         };
@@ -106,7 +106,7 @@ fn actionctx_synclibrarywithapi_with_user() {
             poster_shape: Default::default(),
             removed: true,
             temp: false,
-            ctime: Some(Utc.ymd(2020, 1, 1).and_hms_milli(0, 0, 0, 0)),
+            ctime: Some(Utc.with_ymd_and_hms(2020, 1, 1, 0, 0, 0).unwrap()),
             mtime: Utc::now() - Duration::days(367),
             state: Default::default(),
             behavior_hints: Default::default(),
@@ -119,7 +119,7 @@ fn actionctx_synclibrarywithapi_with_user() {
             poster_shape: Default::default(),
             removed: true,
             temp: false,
-            ctime: Some(Utc.ymd(2020, 1, 1).and_hms_milli(0, 0, 0, 0)),
+            ctime: Some(Utc.with_ymd_and_hms(2020, 1, 1, 0, 0, 0).unwrap()),
             mtime: Utc::now() - Duration::days(3),
             state: Default::default(),
             behavior_hints: Default::default(),
@@ -132,7 +132,7 @@ fn actionctx_synclibrarywithapi_with_user() {
             poster_shape: Default::default(),
             removed: false,
             temp: false,
-            ctime: Some(Utc.ymd(2020, 1, 1).and_hms_milli(0, 0, 0, 0)),
+            ctime: Some(Utc.with_ymd_and_hms(2020, 1, 1, 0, 0, 0).unwrap()),
             mtime: Utc::now(),
             state: Default::default(),
             behavior_hints: Default::default(),
@@ -212,7 +212,10 @@ fn actionctx_synclibrarywithapi_with_user() {
                             && body.ids.contains(&REMOTE_NEWER_ITEM.id) =>
                     {
                         future::ok(Box::new(APIResult::Ok {
-                            result: vec![REMOTE_ONLY_ITEM.to_owned(), REMOTE_NEWER_ITEM.to_owned()],
+                            result: LibraryItemsResponse(vec![
+                                REMOTE_ONLY_ITEM.to_owned(),
+                                REMOTE_NEWER_ITEM.to_owned(),
+                            ]),
                         }) as Box<dyn Any + Send>)
                         .boxed_env()
                     }

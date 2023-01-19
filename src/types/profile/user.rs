@@ -13,7 +13,7 @@ use serde_with::{serde_as, DefaultOnError, DefaultOnNull, DurationSeconds, NoneA
 #[cfg_attr(test, derivative(Default))]
 pub struct TraktInfo {
     #[serde(with = "ts_seconds")]
-    #[cfg_attr(test, derivative(Default(value = "Utc.timestamp(0, 0)")))]
+    #[cfg_attr(test, derivative(Default(value = "Utc.timestamp_opt(0, 0).unwrap()")))]
     pub created_at: DateTime<Utc>,
     #[serde_as(as = "DurationSeconds<i64>")]
     #[cfg_attr(test, derivative(Default(value = "Duration::zero()")))]
@@ -46,9 +46,9 @@ pub struct User {
     #[serde(default)]
     #[serde_as(deserialize_as = "DefaultOnNull<NoneAsEmptyString>")]
     pub avatar: Option<String>,
-    #[cfg_attr(test, derivative(Default(value = "Utc.timestamp(0, 0)")))]
+    #[cfg_attr(test, derivative(Default(value = "Utc.timestamp_opt(0, 0).unwrap()")))]
     pub last_modified: DateTime<Utc>,
-    #[cfg_attr(test, derivative(Default(value = "Utc.timestamp(0, 0)")))]
+    #[cfg_attr(test, derivative(Default(value = "Utc.timestamp_opt(0, 0).unwrap()")))]
     pub date_registered: DateTime<Utc>,
     #[serde(default)]
     #[serde_as(deserialize_as = "DefaultOnError")]

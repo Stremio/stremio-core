@@ -1,6 +1,5 @@
 use crate::types::library::LibraryItemState;
-use chrono::prelude::TimeZone;
-use chrono::Utc;
+use chrono::{TimeZone, Utc};
 use serde_test::{assert_de_tokens, assert_tokens, Token};
 
 #[test]
@@ -8,7 +7,7 @@ fn library_item_state() {
     assert_tokens(
         &vec![
             LibraryItemState {
-                last_watched: Some(Utc.ymd(2020, 1, 1).and_hms_milli(0, 0, 0, 0)),
+                last_watched: Some(Utc.with_ymd_and_hms(2020, 1, 1, 0, 0, 0).unwrap()),
                 time_watched: 1,
                 time_offset: 1,
                 overall_time_watched: 1,
