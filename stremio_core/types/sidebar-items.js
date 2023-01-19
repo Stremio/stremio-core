@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"fn":[["query_params_encode",""]],"mod":[["addon",""],["api",""],["library",""],["profile",""],["resource",""]],"struct":[["NumberAsString",""],["SortedVec",""],["True",""],["UniqueVec",""]],"trait":[["SortedVecAdapter",""],["UniqueVecAdapter",""]]};
