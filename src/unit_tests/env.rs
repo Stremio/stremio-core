@@ -104,12 +104,7 @@ impl TestEnv {
 }
 
 impl Env for TestEnv {
-    fn fetch<
-        #[cfg(not(feature = "env-future-send"))] IN: Serialize + 'static,
-        #[cfg(feature = "env-future-send")] IN: Serialize + Send + 'static,
-        #[cfg(not(feature = "env-future-send"))] OUT: for<'de> Deserialize<'de> + 'static,
-        #[cfg(feature = "env-future-send")] OUT: for<'de> Deserialize<'de> + Send + 'static,
-    >(
+    fn fetch<IN: Serialize + 'static, OUT: for<'de> Deserialize<'de> + 'static>(
         request: http::Request<IN>,
     ) -> TryEnvFuture<OUT> {
         let request = Request::from(request);
@@ -122,12 +117,7 @@ impl Env for TestEnv {
             })
             .boxed_env()
     }
-    fn get_storage<
-        #[cfg(not(feature = "env-future-send"))] T: for<'de> Deserialize<'de> + 'static,
-        #[cfg(feature = "env-future-send")] T: for<'de> Deserialize<'de> + Send + 'static,
-    >(
-        key: &str,
-    ) -> TryEnvFuture<Option<T>> {
+    fn get_storage<T: for<'de> Deserialize<'de> + 'static>(key: &str) -> TryEnvFuture<Option<T>> {
         future::ok(
             STORAGE
                 .read()
@@ -145,26 +135,16 @@ impl Env for TestEnv {
         };
         future::ok(()).boxed_env()
     }
-    fn exec_concurrent<
-        #[cfg(not(feature = "env-future-send"))] F: Future<Output = ()> + 'static,
-        #[cfg(feature = "env-future-send")] F: Future<Output = ()> + Send + 'static,
-    >(
-        future: F,
-    ) {
+    fn exec_concurrent<F: Future<Output = ()> + 'static>(future: F) {
         tokio_current_thread::spawn(future);
     }
-    fn exec_sequential<
-        #[cfg(not(feature = "env-future-send"))] F: Future<Output = ()> + 'static,
-        #[cfg(feature = "env-future-send")] F: Future<Output = ()> + Send + 'static,
-    >(
-        future: F,
-    ) {
+    fn exec_sequential<F: Future<Output = ()> + 'static>(future: F) {
         tokio_current_thread::spawn(future);
     }
     fn now() -> DateTime<Utc> {
         *NOW.read().unwrap()
     }
-    fn flush_analytics() -> EnvFuture<()> {
+    fn flush_analytics() -> EnvFuture<'static, ()> {
         future::ready(()).boxed_env()
     }
     fn analytics_context(

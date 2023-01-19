@@ -1,5 +1,5 @@
 use crate::addon_transport::AddonTransport;
-use crate::runtime::{EnvError, EnvFutureExt, TryEnvFuture};
+use crate::runtime::{ConditionalSend, EnvError, EnvFutureExt, TryEnvFuture};
 use crate::types::addon::{Manifest, ResourcePath, ResourceResponse};
 use futures::future;
 use url::Url;
@@ -12,12 +12,7 @@ impl UnsupportedTransport {
     pub fn new(transport_url: Url) -> Self {
         UnsupportedTransport { transport_url }
     }
-    fn result<
-        #[cfg(not(feature = "env-future-send"))] T: Sized + 'static,
-        #[cfg(feature = "env-future-send")] T: Sized + Send + 'static,
-    >(
-        &self,
-    ) -> TryEnvFuture<T> {
+    fn result<T: Sized + ConditionalSend + 'static>(&self) -> TryEnvFuture<T> {
         future::err(EnvError::AddonTransport(format!(
             "Unsupported addon transport: {}",
             self.transport_url.scheme()
