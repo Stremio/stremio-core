@@ -1,4 +1,4 @@
-use crate::constants::YOUTUBE_ADDON_ID_PREFIX;
+use crate::constants::{URI_COMPONENT_ENCODE_SET, YOUTUBE_ADDON_ID_PREFIX};
 use crate::types::resource::Subtitles;
 use boolinator::Boolinator;
 #[cfg(test)]
@@ -6,6 +6,7 @@ use derivative::Derivative;
 use flate2::write::{ZlibDecoder, ZlibEncoder};
 use flate2::Compression;
 use magnet_url::Magnet;
+use percent_encoding::utf8_percent_encode;
 use serde::de::Error;
 use serde::{Deserialize, Deserializer, Serialize};
 use serde_with::{serde_as, DefaultOnNull};
@@ -146,7 +147,9 @@ impl Stream {
                 match url.path_segments_mut() {
                     Ok(mut path) => {
                         path.push("yt");
-                        path.push(yt_id);
+                        path.push(
+                            &utf8_percent_encode(yt_id, URI_COMPONENT_ENCODE_SET).to_string(),
+                        );
                     }
                     _ => return None,
                 };
@@ -157,9 +160,10 @@ impl Stream {
     }
     pub fn youtube_url(&self) -> Option<String> {
         match &self.source {
-            StreamSource::YouTube { yt_id } => {
-                Some(format!("https://youtube.com/watch?v={}", yt_id))
-            }
+            StreamSource::YouTube { yt_id } => Some(format!(
+                "https://youtube.com/watch?v={}",
+                utf8_percent_encode(yt_id, URI_COMPONENT_ENCODE_SET)
+            )),
             _ => None,
         }
     }
