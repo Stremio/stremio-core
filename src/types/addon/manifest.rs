@@ -285,4 +285,8 @@ pub struct ManifestBehaviorHints {
     pub configurable: bool,
     #[serde(default)]
     pub configuration_required: bool,
+    /// Whether or not the add-on supports notifications for new episodes.
+    // TODO: Define the new catalog for Add-ons
+    #[serde(default)]
+    pub new_episodes_notifications: bool,
 }
