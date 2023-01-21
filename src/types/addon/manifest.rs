@@ -274,6 +274,33 @@ impl Default for OptionsLimit {
     }
 }
 
+///
+/// # Examples
+///
+/// ```
+/// use stremio_core::types::addon::ManifestBehaviorHints;
+///
+/// use serde_json::{from_value, json};
+///
+/// let json = json!({
+///     "adult": true,
+///     "p2p": true,
+///     "configurable": true,
+///     "configuration_required": true,
+///     "new_episode_notifications": true,
+///     "unknown_property": "unknown property data",
+/// });
+///
+/// let actual = from_value::<ManifestBehaviorHints>(json).expect("Should deserialize");
+///
+/// let expected = ManifestBehaviorHints {
+///     adult: true,
+///     p2p: true,
+///     configurable: true,
+///     configuration_required: true,
+///     new_episode_notifications: true,
+/// };
+/// ```
 #[derive(Default, Clone, PartialEq, Eq, Serialize, Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct ManifestBehaviorHints {
@@ -288,5 +315,5 @@ pub struct ManifestBehaviorHints {
     /// Whether or not the add-on supports notifications for new episodes.
     // TODO: Define the new catalog for Add-ons
     #[serde(default)]
-    pub new_episodes_notifications: bool,
+    pub new_episode_notifications: bool,
 }
