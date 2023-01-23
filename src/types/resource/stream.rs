@@ -47,8 +47,10 @@ impl Stream {
                 xl: None,
                 tr: announce
                     .iter()
-                    .filter(|source| source.starts_with("tracker:"))
                     .map(|tracker| tracker.replace("tracker:", ""))
+                    .map(|tracker| {
+                        utf8_percent_encode(&tracker, URI_COMPONENT_ENCODE_SET).to_string()
+                    })
                     .collect::<Vec<String>>(),
                 kt: None,
                 ws: None,
@@ -96,6 +98,9 @@ impl Stream {
     }
     pub fn download_url(&self) -> Option<String> {
         match &self.source {
+            StreamSource::Url { url } if url.scheme() == "magnet" => {
+                self.magnet_url().map(|magnet_url| magnet_url.to_string())
+            }
             StreamSource::Url { url } => Some(url.to_string()),
             StreamSource::Torrent { .. } => {
                 self.magnet_url().map(|magnet_url| magnet_url.to_string())
