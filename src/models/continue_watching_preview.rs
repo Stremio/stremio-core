@@ -9,6 +9,7 @@ use serde::Serialize;
 
 #[derive(Default, Serialize, Debug)]
 #[serde(rename_all = "camelCase")]
+/// The continue watching section in the app
 pub struct ContinueWatchingPreview {
     pub library_items: Vec<LibraryItem>,
 }

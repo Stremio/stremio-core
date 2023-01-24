@@ -28,7 +28,7 @@ impl fmt::Display for ResourceError {
     }
 }
 
-/// When we want to fetch meta items, streams and catalogues
+/// When we want to fetch meta items, streams and catalogs
 #[derive(Clone, PartialEq, Serialize, Debug)]
 pub struct ResourceLoadable<T> {
     pub request: ResourceRequest,
