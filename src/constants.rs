@@ -29,7 +29,6 @@ pub const GENRES_LINK_CATEGORY: &str = "Genres";
 pub const CINEMETA_TOP_CATALOG_ID: &str = "top";
 pub const IMDB_TITLE_PATH: &str = "title";
 pub const YOUTUBE_ADDON_ID_PREFIX: &str = "yt_id:";
-pub const INTRO_FEED_ID: &str = "feed-intro";
 pub const URI_COMPONENT_ENCODE_SET: &AsciiSet = &NON_ALPHANUMERIC
     .remove(b'-')
     .remove(b'_')
@@ -51,7 +50,6 @@ lazy_static! {
         Url::parse("http://127.0.0.1:11470").expect("STREAMING_SERVER_URL parse failed");
     pub static ref IMDB_URL: Url = Url::parse("https://imdb.com").expect("IMDB_URL parse failed");
     /// Meta hub url used to show background images for Notifications.
-    pub static ref METAHUB_URL: Url = Url::parse("https://images.metahub.space").expect("METAHUB_URL parse failed");
     pub static ref OFFICIAL_ADDONS: Vec<Descriptor> =
         serde_json::from_slice(stremio_official_addons::ADDONS)
             .expect("OFFICIAL_ADDONS parse failed");
