@@ -51,9 +51,14 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Notifications {
                     .profile
                     .addons
                     .iter()
+                    .filter(|addon| {
+                        // skip the addon if it does not support `new_episode_notifications`
+                        addon.manifest.behavior_hints.new_episode_notifications
+                    })
                     .flat_map(|addon| {
                         // The catalogs that support the `lastVideosIds` property
                         let viable_catalogs = addon.manifest.catalogs.iter().filter(|cat| {
+                            
                             cat.extra.iter().any(|e| e.name == EXTRA_LAST_VIDEOS_IDS)
                         });
 
@@ -66,7 +71,7 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Notifications {
                                 .filter(|item| {
                                     !item.state.no_notif
                                         && !item.removed
-                                        && cat.r#type == item.r#type // should be `series`
+                                        && cat.r#type == item.r#type // for example `series`
                                         && addon.manifest.is_resource_supported(
                                             &ResourcePath::without_extra(
                                                 CATALOG_RESOURCE_NAME,
@@ -88,6 +93,7 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Notifications {
                                             .iter()
                                             .map(|x| x.id.as_str())
                                             .collect::<Vec<_>>();
+                                            // sort the ids alphabetically
                                         ids.sort_unstable();
                                         ids
                                     };
