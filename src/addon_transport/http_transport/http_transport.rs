@@ -27,8 +27,8 @@ impl<E: Env> AddonHTTPTransport<E> {
 impl<E: Env> AddonTransport for AddonHTTPTransport<E> {
     /// Request a resource from the addon.
     ///
-    /// This will encode all components with [`utf8_percent_encode(.., URI_COMPONENT_ENCODE_SET)`]
-    /// and the [`ResourcePath.extra`](ResourcePath.extra) properties if they are not empty
+    /// This will encode all components with [`utf8_percent_encode(.., URI_COMPONENT_ENCODE_SET)`](utf8_percent_encode)
+    /// and the [`ResourcePath.extra`](ResourcePath::extra) properties if they are not empty
     /// with [`query_params_encode`].
     fn resource(&self, path: &ResourcePath) -> TryEnvFuture<ResourceResponse> {
         if self.transport_url.path().ends_with(ADDON_LEGACY_PATH) {
