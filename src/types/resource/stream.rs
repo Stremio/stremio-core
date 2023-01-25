@@ -1,4 +1,4 @@
-use crate::constants::YOUTUBE_ADDON_ID_PREFIX;
+use crate::constants::{URI_COMPONENT_ENCODE_SET, YOUTUBE_ADDON_ID_PREFIX};
 use crate::types::resource::Subtitles;
 use boolinator::Boolinator;
 #[cfg(test)]
@@ -6,6 +6,7 @@ use derivative::Derivative;
 use flate2::write::{ZlibDecoder, ZlibEncoder};
 use flate2::Compression;
 use magnet_url::Magnet;
+use percent_encoding::utf8_percent_encode;
 use serde::de::Error;
 use serde::{Deserialize, Deserializer, Serialize};
 use serde_with::{serde_as, DefaultOnNull};
@@ -34,6 +35,7 @@ pub struct Stream {
 impl Stream {
     pub fn magnet_url(&self) -> Option<Magnet> {
         match &self.source {
+            StreamSource::Url { url } if url.scheme() == "magnet" => Magnet::new(url.as_str()).ok(),
             StreamSource::Torrent {
                 info_hash,
                 announce,
@@ -45,8 +47,10 @@ impl Stream {
                 xl: None,
                 tr: announce
                     .iter()
-                    .filter(|source| source.starts_with("tracker:"))
                     .map(|tracker| tracker.replace("tracker:", ""))
+                    .map(|tracker| {
+                        utf8_percent_encode(&tracker, URI_COMPONENT_ENCODE_SET).to_string()
+                    })
                     .collect::<Vec<String>>(),
                 kt: None,
                 ws: None,
@@ -91,6 +95,82 @@ impl Stream {
                 subtitles: vec![],
                 behavior_hints: Default::default(),
             })
+    }
+    pub fn download_url(&self) -> Option<String> {
+        match &self.source {
+            StreamSource::Url { url } if url.scheme() == "magnet" => {
+                self.magnet_url().map(|magnet_url| magnet_url.to_string())
+            }
+            StreamSource::Url { url } => Some(url.to_string()),
+            StreamSource::Torrent { .. } => {
+                self.magnet_url().map(|magnet_url| magnet_url.to_string())
+            }
+            StreamSource::YouTube { .. } => self.youtube_url(),
+            StreamSource::External { external_url, .. } => {
+                external_url.as_ref().map(|url| url.to_string())
+            }
+            StreamSource::PlayerFrame { player_frame_url } => Some(player_frame_url.to_string()),
+        }
+    }
+    pub fn m3u_data_uri(&self, streaming_server_url: Option<&Url>) -> Option<String> {
+        self.streaming_url(streaming_server_url).map(|url| {
+            format!(
+                "data:application/octet-stream;charset=utf-8;base64,{}",
+                base64::encode(format!("#EXTM3U\n#EXTINF:0\n{}", url))
+            )
+        })
+    }
+    pub fn streaming_url(&self, streaming_server_url: Option<&Url>) -> Option<String> {
+        match (&self.source, streaming_server_url) {
+            (StreamSource::Url { url }, _) if url.scheme() != "magnet" => Some(url.to_string()),
+            (
+                StreamSource::Torrent {
+                    info_hash,
+                    file_idx,
+                    announce,
+                },
+                Some(streaming_server_url),
+            ) => {
+                let mut url = streaming_server_url.to_owned();
+                match url.path_segments_mut() {
+                    Ok(mut path) => {
+                        path.push(&hex::encode(info_hash));
+                        if let Some(file_idx) = file_idx {
+                            path.push(&file_idx.to_string());
+                        }
+                    }
+                    _ => return None,
+                };
+                if !announce.is_empty() {
+                    let mut query = url.query_pairs_mut();
+                    query.extend_pairs(announce.iter().map(|tracker| ("tr", tracker)));
+                };
+                Some(url.to_string())
+            }
+            (StreamSource::YouTube { yt_id }, Some(streaming_server_url)) => {
+                let mut url = streaming_server_url.to_owned();
+                match url.path_segments_mut() {
+                    Ok(mut path) => {
+                        path.push("yt");
+                        path.push(
+                            &utf8_percent_encode(yt_id, URI_COMPONENT_ENCODE_SET).to_string(),
+                        );
+                    }
+                    _ => return None,
+                };
+                Some(url.to_string())
+            }
+            _ => None,
+        }
+    }
+    pub fn youtube_url(&self) -> Option<String> {
+        match &self.source {
+            StreamSource::YouTube { yt_id } => Some(format!(
+                "https://youtube.com/watch?v={}",
+                utf8_percent_encode(yt_id, URI_COMPONENT_ENCODE_SET)
+            )),
+            _ => None,
+        }
     }
 }
 
