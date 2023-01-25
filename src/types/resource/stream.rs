@@ -47,7 +47,20 @@ impl Stream {
                 xl: None,
                 tr: announce
                     .iter()
-                    .map(|tracker| tracker.replace("tracker:", ""))
+                    .map(|tracker| {
+                        if tracker.starts_with("tracker:") {
+                            tracker.replacen("tracker:", "", 1)
+                        } else {
+                            tracker.to_owned()
+                        }
+                    })
+                    .map(|tracker| {
+                        if tracker.starts_with("dht:") {
+                            tracker.replacen("dht:", "", 1)
+                        } else {
+                            tracker
+                        }
+                    })
                     .map(|tracker| {
                         utf8_percent_encode(&tracker, URI_COMPONENT_ENCODE_SET).to_string()
                     })
