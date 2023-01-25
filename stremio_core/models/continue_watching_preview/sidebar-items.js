@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"struct":[["ContinueWatchingPreview",""]]};
+window.SIDEBAR_ITEMS = {"struct":[["ContinueWatchingPreview","The continue watching section in the app"]]};
