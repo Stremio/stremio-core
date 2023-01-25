@@ -8,7 +8,9 @@ use std::collections::{HashMap, HashSet};
 
 #[derive(Default, Clone, PartialEq, Eq, Serialize, Deserialize, Debug)]
 pub struct LibraryBucket {
+    /// User ID
     pub uid: UID,
+    /// [`HashMap`] Key is the [`LibraryItem`]`.id`.
     pub items: HashMap<String, LibraryItem>,
 }
 
