@@ -108,7 +108,7 @@ pub struct LibraryItemState {
     /// The last video watched.
     ///
     /// - For meta's without videos it's either `behavior_hints.default_video_id` (if present) or the `meta.id`
-    /// - For meta's with video - the played video.
+    /// - For meta's with videos - the played video.
     #[serde(default, rename = "video_id")]
     #[serde_as(deserialize_as = "DefaultOnNull<NoneAsEmptyString>")]
     pub video_id: Option<String>,

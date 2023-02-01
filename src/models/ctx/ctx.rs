@@ -1,15 +1,18 @@
 use crate::constants::{LIBRARY_COLLECTION_NAME, URI_COMPONENT_ENCODE_SET};
 use crate::models::common::{
-    descriptor_update, eq_update, DescriptorAction, DescriptorLoadable, Loadable,
+    descriptor_update, eq_update, resources_update, DescriptorAction, DescriptorLoadable, Loadable,
+    ResourcesAction, resources_update_with_vector_content,
 };
 use crate::models::ctx::{update_library, update_profile, CtxError, OtherError};
-use crate::runtime::msg::{Action, ActionCtx, Event, Internal, Msg};
+use crate::runtime::msg::{Action, ActionCtx, Event, Internal, Msg, ActionLoad};
 use crate::runtime::{Effect, EffectFuture, Effects, Env, EnvFutureExt, Update};
+use crate::types::addon::AggrRequest;
 use crate::types::api::{
     fetch_api, APIRequest, APIResult, AuthRequest, AuthResponse, CollectionResponse,
     DatastoreCommand, DatastoreRequest, LibraryItemsResponse, SuccessResponse,
 };
 use crate::types::library::LibraryBucket;
+use crate::types::notifications::NotificationsBucket;
 use crate::types::profile::{Auth, AuthKey, Profile};
 use derivative::Derivative;
 use enclose::enclose;
@@ -31,8 +34,12 @@ pub struct Ctx {
     // TODO StreamsBucket
     // TODO SubtitlesBucket
     // TODO SearchesBucket
+    /// The User's library
     #[serde(skip)]
     pub library: LibraryBucket,
+    /// Notifications for new episodes
+    #[serde(skip)]
+    pub notifications: NotificationsBucket,
     #[serde(skip)]
     #[derivative(Default(value = "CtxStatus::Ready"))]
     pub status: CtxStatus,
@@ -98,6 +105,7 @@ impl<E: Env + 'static> Update<E> for Ctx {
                     .unchanged(),
                 }
             }
+            Msg::Action(Action::Load(ActionLoad::Notifications)) => { todo!() }
             Msg::Internal(Internal::ManifestRequestResult(transport_url, result)) => {
                 let trakt_addon_effects = descriptor_update::<E>(
                     &mut self.trakt_addon,
@@ -240,4 +248,71 @@ fn delete_session<E: Env + 'static>(auth_key: &AuthKey) -> Effect {
             .boxed_env(),
     )
     .into()
+}
+
+
+
+pub fn update_notifications<E: Env + 'static>(
+    notifications: &mut NotificationsBucket,
+    profile: &Profile,
+    library: &LibraryBucket,
+    msg: &Msg,
+) -> Effects {
+    match msg {
+        Msg::Action(Action::Load(ActionLoad::Notifications)) => {
+
+            
+        }
+        Msg::Internal(Internal::NotificationsUpdate(uid, resource_path)) if uid == &profile.uid() => {
+
+
+            
+        },
+        Msg::Internal(Internal::ResourceRequestResult(request, result)) => { 
+            // request.path.extra
+            todo!()
+        }
+        _ => Effects::none().unchanged()
+    }
+
+    // match msg {
+    //     Msg::Internal(Internal::ResourceRequestResult(request, result)) => {
+    //         if let Some(idx) = notifications
+    //             .groups
+    //             .iter()
+    //             .position(|g| g.request == *request)
+    //         {
+    //             resources_update::<E, _>(
+    //                 &mut notifications.groups,
+    //                 ResourcesAction::ResourceRequestResult { request, result },
+    //             );
+    //             // Modify all the items so that only the new videos are left
+    //             if let Some(Loadable::Ready(ref mut meta_items)) = notifications.groups[idx].content
+    //             {
+    //                 for item in meta_items {
+    //                     if let Some(library_item) = library.items.get(&item.preview.id) {
+    //                         item.videos
+    //                             // It's not gonna be a notification if we don't have the
+    //                             // released date of the last watched video
+    //                             // NOTE: if we want to show the recent videos in the default
+    //                             // case, we should unwrap_or(now - THRESHOLD)
+    //                             // we have to get `now` somehow (environment or through a msg)
+    //                             // Alternatively, just set that when we add library items
+    //                             .retain(|v| {
+    //                                 library_item.state.last_vid_released.map_or(false, |lvr| {
+    //                                     v.released.map_or(false, |vr| vr > lvr)
+    //                                 })
+    //                             });
+    //                     } else {
+    //                         item.videos = vec![];
+    //                     }
+    //                 }
+    //             }
+    //             Effects::none()
+    //         } else {
+    //             Effects::none().unchanged()
+    //         }
+    //     }
+    //     _ => Effects::none().unchanged(),
+    // }
 }

@@ -107,12 +107,14 @@ impl ResourceRequest {
     }
 }
 
+/// Aggregation request to all user's addons.
 #[derive(Clone, Debug)]
 pub enum AggrRequest<'a> {
     AllCatalogs {
         extra: &'a Vec<ExtraValue>,
         r#type: &'a Option<String>,
     },
+    /// Fetch specific resource from all addons.
     AllOfResource(ResourcePath),
 }
 

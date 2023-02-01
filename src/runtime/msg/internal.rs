@@ -2,13 +2,13 @@ use crate::models::ctx::CtxError;
 use crate::models::link::LinkError;
 use crate::models::streaming_server::{PlaybackDevice, Settings as StreamingServerSettings};
 use crate::runtime::EnvError;
-use crate::types::addon::{Descriptor, Manifest, ResourceRequest, ResourceResponse};
+use crate::types::addon::{Descriptor, Manifest, ResourceRequest, ResourceResponse, ResourcePath};
 use crate::types::api::{
     APIRequest, AuthRequest, DataExportResponse, DatastoreRequest, LinkCodeResponse,
     LinkDataResponse,
 };
 use crate::types::library::{LibraryBucket, LibraryItem};
-use crate::types::profile::{Auth, AuthKey, Profile, User};
+use crate::types::profile::{Auth, AuthKey, Profile, User, UID};
 use url::Url;
 
 pub type CtxStorageResponse = (
@@ -67,4 +67,8 @@ pub enum Internal {
     ManifestRequestResult(Url, Result<Manifest, EnvError>),
     /// Result for requesting a `dataExport` of user data.
     DataExportResult(AuthKey, Result<DataExportResponse, CtxError>),
+    /// Notification bucket has been updated with new Notifications.
+    NotificationsUpdate(UID, ResourcePath),
+    NotificationsUpdated(UID),
+
 }

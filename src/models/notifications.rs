@@ -19,6 +19,8 @@ use lazysort::SortedBy;
 use percent_encoding::utf8_percent_encode;
 use serde::Serialize;
 
+use super::common::eq_update;
+
 /// Cinemeta/Channels are currently limited to that many
 /// but in general, it's healthy to have some sort of a limit
 const MAX_PER_REQUEST: usize = 50;
@@ -38,9 +40,15 @@ const LIST_VIDEOS_CATALOG_ID: &str = "last-videos";
 #[derive(Default, Serialize)]
 pub struct Notifications {
     /// each addon has it's own group
+    /// These groups are ordered based on the addon indices which
+    /// always ordered by installation order.
+    ///
+    /// `Cinemeta` is installed by default so it's always the first index in the user's addon list.
     pub groups: Vec<ResourceLoadable<Vec<MetaItem>>>,
 }
 
+// const itemTime = item.last_watched_time || newest_episode.released
+// sort by itemTime
 impl<E: Env + 'static> UpdateWithCtx<E> for Notifications {
     fn update(&mut self, msg: &Msg, ctx: &Ctx) -> Effects {
         match msg {
@@ -139,8 +147,16 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Notifications {
                     })
                     .unzip();
 
-                self.groups = groups;
-                Effects::many(effects)
+
+                resources_update_with_vector_content::<E, _>(
+                    &mut notifications.groups,
+                    ResourcesAction::ResourcesRequested {
+                        request: &AggrRequest::AllOfResource(resource_path.to_owned()),
+                        addons: &profile.addons,
+                    },
+                );
+
+                eq_update(&mut notifications.groups, groups)
             }
             Msg::Internal(Internal::ResourceRequestResult(req, result)) => {
                 if let Some(idx) = self.groups.iter().position(|g| g.request == *req) {

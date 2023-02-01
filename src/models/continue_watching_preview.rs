@@ -24,6 +24,23 @@ impl ContinueWatchingPreview {
 impl<E: Env + 'static> UpdateWithCtx<E> for ContinueWatchingPreview {
     fn update(&mut self, msg: &Msg, ctx: &Ctx) -> Effects {
         match msg {
+            // based on the addons grouping of notifications
+            // order the library items in continue watching
+            // this needs to happen on every `NotificationsUpdated`
+            Msg::Internal(Internal::NotificationsUpdated(uid)) if uid == &ctx.profile.uid() => {
+                // ctx.notifications.groups.iter().map(|notifs| {
+                    
+                // })
+                // self.library_items.iter().map(|library_item| {
+                //     ctx.notifications.iter().find_map(|notif_group| )
+                // });
+                
+                // library_item.video_id
+                // library_item.last_vid_released
+
+                todo!("Handle event for notifications")
+            }
+            
             Msg::Internal(Internal::LibraryChanged(_)) => {
                 library_items_update(&mut self.library_items, &ctx.library)
             }
