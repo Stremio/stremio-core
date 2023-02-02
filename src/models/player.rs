@@ -16,7 +16,6 @@ use chrono::{DateTime, Utc};
 use itertools::Itertools;
 use serde::{Deserialize, Serialize};
 use std::marker::PhantomData;
-use std::{cmp, str};
 use stremio_watched_bitfield::WatchedBitField;
 
 use super::common::resource_update_with_vector_content;
@@ -276,7 +275,7 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                         library_item.state.flagged_watched = 0;
                     } else {
                         let time_watched =
-                            cmp::min(1000, time.saturating_sub(library_item.state.time_offset));
+                            1000.min(time.saturating_sub(library_item.state.time_offset));
                         library_item.state.time_watched =
                             library_item.state.time_watched.saturating_add(time_watched);
                         library_item.state.overall_time_watched = library_item
