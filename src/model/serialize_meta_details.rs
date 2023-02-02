@@ -3,6 +3,7 @@ use crate::model::deep_links_ext::DeepLinksExt;
 use either::Either;
 use itertools::Itertools;
 use serde::Serialize;
+use stremio_core::models::streaming_server::StreamingServer;
 use std::iter;
 use stremio_core::constants::META_RESOURCE_NAME;
 use stremio_core::deep_links::{MetaItemDeepLinks, StreamDeepLinks, VideoDeepLinks};
@@ -81,7 +82,7 @@ mod model {
     }
 }
 
-pub fn serialize_meta_details(meta_details: &MetaDetails, ctx: &Ctx) -> JsValue {
+pub fn serialize_meta_details(meta_details: &MetaDetails, ctx: &Ctx, streaming_server: &StreamingServer) -> JsValue {
     let meta_item = meta_details
         .meta_items
         .iter()
@@ -104,6 +105,10 @@ pub fn serialize_meta_details(meta_details: &MetaDetails, ctx: &Ctx) -> JsValue 
         meta_details.streams.iter()
     } else {
         meta_details.meta_streams.iter()
+    };
+    let streaming_server_url = match streaming_server.base_url.clone() {
+        Loadable::Ready(url) => Some(url),
+        _ => None,
     };
     JsValue::from_serde(&model::MetaDetails {
         selected: &meta_details.selected,
@@ -140,7 +145,7 @@ pub fn serialize_meta_details(meta_details: &MetaDetails, ctx: &Ctx) -> JsValue 
                                     .unwrap_or_default(),
                                 progress: None, // TODO use library,
                                 scheduled: meta_item.preview.behavior_hints.has_scheduled_videos,
-                                deep_links: VideoDeepLinks::from((video, request))
+                                deep_links: VideoDeepLinks::from((video, request, &streaming_server_url))
                                     .into_web_deep_links(),
                             })
                             .collect::<Vec<_>>(),
@@ -150,7 +155,7 @@ pub fn serialize_meta_details(meta_details: &MetaDetails, ctx: &Ctx) -> JsValue 
                             .iter()
                             .map(|stream| model::Stream {
                                 stream,
-                                deep_links: StreamDeepLinks::from(stream).into_web_deep_links(),
+                                deep_links: StreamDeepLinks::from((stream, &streaming_server_url)).into_web_deep_links(),
                             })
                             .collect::<Vec<_>>(),
                         in_library: ctx
@@ -207,12 +212,13 @@ pub fn serialize_meta_details(meta_details: &MetaDetails, ctx: &Ctx) -> JsValue 
                                 stream,
                                 deep_links: meta_item
                                     .map_or_else(
-                                        || StreamDeepLinks::from(stream),
+                                        || StreamDeepLinks::from((stream, &streaming_server_url)),
                                         |meta_item| {
                                             StreamDeepLinks::from((
                                                 stream,
                                                 request,
                                                 &meta_item.request,
+                                                &streaming_server_url
                                             ))
                                         },
                                     )
