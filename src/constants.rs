@@ -56,6 +56,18 @@ lazy_static! {
         options: vec![],
         options_limit: OptionsLimit::default(),
     };
+    pub static ref VIDEO_HASH_EXTRA_PROP: ExtraProp = ExtraProp {
+        name: "videoHash".to_owned(),
+        is_required: false,
+        options: vec![],
+        options_limit: OptionsLimit::default(),
+    };
+    pub static ref VIDEO_SIZE_EXTRA_PROP: ExtraProp = ExtraProp {
+        name: "videoSize".to_owned(),
+        is_required: false,
+        options: vec![],
+        options_limit: OptionsLimit::default(),
+    };
     pub static ref TYPE_PRIORITIES: HashMap<&'static str, i32> = vec![
         ("movie", 4),
         ("series", 3),
