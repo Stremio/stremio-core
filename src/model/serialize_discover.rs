@@ -92,7 +92,11 @@ mod model {
     }
 }
 
-pub fn serialize_discover(discover: &CatalogWithFilters<MetaItemPreview>, ctx: &Ctx, streaming_server: &StreamingServer) -> JsValue {
+pub fn serialize_discover(
+    discover: &CatalogWithFilters<MetaItemPreview>,
+    ctx: &Ctx,
+    streaming_server: &StreamingServer,
+) -> JsValue {
     let streaming_server_url = match streaming_server.base_url.clone() {
         Loadable::Ready(url) => Some(url),
         _ => None,
@@ -175,8 +179,11 @@ pub fn serialize_discover(discover: &CatalogWithFilters<MetaItemPreview>, ctx: &
                                         .take(1)
                                         .map(|stream| model::Stream {
                                             stream,
-                                            deep_links: StreamDeepLinks::from((stream, &streaming_server_url))
-                                                .into_web_deep_links(),
+                                            deep_links: StreamDeepLinks::from((
+                                                stream,
+                                                &streaming_server_url,
+                                            ))
+                                            .into_web_deep_links(),
                                         })
                                         .collect::<Vec<_>>(),
                                     in_library: ctx

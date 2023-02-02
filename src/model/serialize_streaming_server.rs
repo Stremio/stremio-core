@@ -2,7 +2,7 @@ use crate::model::deep_links_ext::DeepLinksExt;
 use serde::Serialize;
 use stremio_core::deep_links::MetaItemDeepLinks;
 use stremio_core::models::common::Loadable;
-use stremio_core::models::streaming_server::{Selected, Settings, StreamingServer, PlaybackDevice};
+use stremio_core::models::streaming_server::{PlaybackDevice, Selected, Settings, StreamingServer};
 use stremio_core::runtime::EnvError;
 use stremio_core::types::addon::ResourcePath;
 use url::Url;
