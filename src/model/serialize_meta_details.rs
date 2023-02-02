@@ -82,7 +82,12 @@ mod model {
     }
 }
 
-pub fn serialize_meta_details(meta_details: &MetaDetails, ctx: &Ctx, streaming_server: &StreamingServer) -> JsValue {
+/// For MetaDetails:
+///
+/// 1. If at least 1 item is ready we show the first ready item's data
+/// 2. If all loaded resources have returned an error we show the first item's error
+/// 3. We show a loading state
+pub fn serialize_meta_details(meta_details: &MetaDetails, ctx: &Ctx) -> JsValue {
     let meta_item = meta_details
         .meta_items
         .iter()
@@ -101,6 +106,7 @@ pub fn serialize_meta_details(meta_details: &MetaDetails, ctx: &Ctx, streaming_s
                     .find(|meta_item| matches!(&meta_item.content, Some(Loadable::Loading)))
             }
         });
+
     let streams = if meta_details.meta_streams.is_empty() {
         meta_details.streams.iter()
     } else {
