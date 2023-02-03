@@ -9,7 +9,7 @@ use crate::{
         Effect, EffectFuture, Effects, Env, UpdateWithCtx, EnvFutureExt,
     },
     types::{
-        addon::{ExtraValue, ResourcePath, ResourceRequest},
+        addon::{ExtraValue, ResourcePath, ResourceRequest, AggrRequest},
         resource::MetaItem,
     },
 };
@@ -19,7 +19,7 @@ use lazysort::SortedBy;
 use percent_encoding::utf8_percent_encode;
 use serde::Serialize;
 
-use super::common::eq_update;
+use super::common::{eq_update, resources_update_with_vector_content};
 
 /// Cinemeta/Channels are currently limited to that many
 /// but in general, it's healthy to have some sort of a limit
@@ -148,15 +148,17 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Notifications {
                     .unzip();
 
 
+                // eq_update(&mut self.groups, groups)
+                // TODO: How to chunk each addon that supports specific resources and batch meta items together
+                let resource_path = todo!("should batch catalog meta items with addons");
                 resources_update_with_vector_content::<E, _>(
-                    &mut notifications.groups,
+                    &mut self.groups,
                     ResourcesAction::ResourcesRequested {
                         request: &AggrRequest::AllOfResource(resource_path.to_owned()),
-                        addons: &profile.addons,
+                        addons: &ctx.profile.addons,
                     },
-                );
+                )
 
-                eq_update(&mut notifications.groups, groups)
             }
             Msg::Internal(Internal::ResourceRequestResult(req, result)) => {
                 if let Some(idx) = self.groups.iter().position(|g| g.request == *req) {
