@@ -174,6 +174,13 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                 );
                 let watched_effects =
                     watched_update::<E>(&mut self.watched, &self.meta_item, &self.library_item);
+                let notification_effects = match &selected.meta_request {
+                    Some(meta_request) => Effects::msg(Msg::Internal(
+                        Internal::DismissNotificationItem(meta_request.path.id.to_owned()),
+                    ))
+                    .unchanged(),
+                    _ => Effects::none().unchanged(),
+                };
                 let (id, r#type, name, video_id, time, duration) = self
                     .library_item
                     .as_ref()
@@ -211,6 +218,7 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                     .join(series_info_effects)
                     .join(library_item_effects)
                     .join(watched_effects)
+                    .join(notification_effects)
             }
             Msg::Action(Action::Unload) => {
                 let ended_effects = if !self.ended && self.selected.is_some() {
@@ -663,7 +671,7 @@ fn library_item_update<E: Env + 'static>(
                 } => Some(meta_item),
                 _ => None,
             });
-            match (library_item, meta_item) {
+            let library_item = match (library_item, meta_item) {
                 (Some(library_item), Some(meta_item)) => {
                     Some(LibraryItem::from((&meta_item.preview, library_item)))
                 }
@@ -672,7 +680,31 @@ fn library_item_update<E: Env + 'static>(
                 }
                 (Some(library_item), None) => Some(library_item.to_owned()),
                 _ => None,
-            }
+            };
+            library_item.map(|mut library_item| {
+                if let Some(meta_item) = meta_item {
+                    let is_series = meta_item
+                        .videos
+                        .iter()
+                        .any(|video| video.series_info.is_some());
+                    let last_video = if is_series {
+                        meta_item
+                            .videos
+                            .iter()
+                            .rev()
+                            .find(|video| match &video.series_info {
+                                Some(series_info) => series_info.season != 0,
+                                _ => false,
+                            })
+                    } else {
+                        meta_item.videos.first()
+                    };
+                    library_item.state.last_video_released = last_video
+                        .and_then(|last_video| last_video.released.as_ref())
+                        .cloned();
+                };
+                library_item
+            })
         }
         _ => None,
     };

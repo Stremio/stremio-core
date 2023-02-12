@@ -45,6 +45,10 @@ pub enum Internal {
     ProfileChanged,
     /// Dispatched when library changes with a flag if its already persisted.
     LibraryChanged(bool),
+    /// TODO: write some obvious comment about what it is
+    NotificationsChanged,
+    /// TODO: write some obvious comment about what it is
+    DismissNotificationItem(String),
     /// Result for loading link code.
     LinkCodeResult(Result<LinkCodeResponse, LinkError>),
     /// Result for loading link data.
@@ -65,6 +69,8 @@ pub enum Internal {
     ResourceRequestResult(ResourceRequest, Box<Result<ResourceResponse, EnvError>>),
     /// Result for fetching manifest from addon.
     ManifestRequestResult(Url, Result<Manifest, EnvError>),
+    /// TODO: write some obvious comment about what it is
+    NotificationsRequestResult(ResourceRequest, Box<Result<ResourceResponse, EnvError>>),
     /// Result for requesting a `dataExport` of user data.
     DataExportResult(AuthKey, Result<DataExportResponse, CtxError>),
 }

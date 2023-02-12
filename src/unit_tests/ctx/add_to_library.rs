@@ -4,6 +4,7 @@ use crate::runtime::msg::{Action, ActionCtx};
 use crate::runtime::{Env, EnvFutureExt, Runtime, RuntimeAction, TryEnvFuture};
 use crate::types::api::{APIResult, SuccessResponse};
 use crate::types::library::{LibraryBucket, LibraryItem, LibraryItemState};
+use crate::types::notifications::NotificationsBucket;
 use crate::types::profile::{Auth, AuthKey, GDPRConsent, Profile, User};
 use crate::types::resource::{MetaItemBehaviorHints, MetaItemPreview, PosterShape};
 use crate::types::True;
@@ -18,7 +19,7 @@ use url::Url;
 
 #[test]
 fn actionctx_addtolibrary() {
-    #[derive(Model, Default)]
+    #[derive(Model)]
     #[model(TestEnv)]
     struct TestModel {
         ctx: Ctx,
@@ -29,7 +30,7 @@ fn actionctx_addtolibrary() {
                 url, method, body, ..
             } if url == "https://api.strem.io/api/datastorePut"
                 && method == "POST"
-                && body == "{\"authKey\":\"auth_key\",\"collection\":\"libraryItem\",\"changes\":[{\"_id\":\"id\",\"name\":\"name\",\"type\":\"type\",\"poster\":null,\"posterShape\":\"poster\",\"removed\":false,\"temp\":false,\"_ctime\":\"2020-01-01T00:00:00Z\",\"_mtime\":\"2020-01-01T00:00:00Z\",\"state\":{\"lastWatched\":\"2020-01-01T00:00:00Z\",\"timeWatched\":0,\"timeOffset\":0,\"overallTimeWatched\":0,\"timesWatched\":0,\"flaggedWatched\":0,\"duration\":0,\"video_id\":null,\"watched\":null,\"lastVidReleased\":null,\"noNotif\":false},\"behaviorHints\":{\"defaultVideoId\":null,\"featuredVideoId\":null,\"hasScheduledVideos\":false}}]}" =>
+                && body == "{\"authKey\":\"auth_key\",\"collection\":\"libraryItem\",\"changes\":[{\"_id\":\"id\",\"name\":\"name\",\"type\":\"type\",\"poster\":null,\"posterShape\":\"poster\",\"removed\":false,\"temp\":false,\"_ctime\":\"2020-01-01T00:00:00Z\",\"_mtime\":\"2020-01-01T00:00:00Z\",\"state\":{\"lastWatched\":\"2020-01-01T00:00:00Z\",\"timeWatched\":0,\"timeOffset\":0,\"overallTimeWatched\":0,\"timesWatched\":0,\"flaggedWatched\":0,\"duration\":0,\"video_id\":null,\"watched\":null,\"lastVideoReleased\":null,\"notificationsDisabled\":false},\"behaviorHints\":{\"defaultVideoId\":null,\"featuredVideoId\":null,\"hasScheduledVideos\":false}}]}" =>
             {
                 future::ok(Box::new(APIResult::Ok {
                     result: SuccessResponse { success: True {} },
@@ -75,8 +76,8 @@ fn actionctx_addtolibrary() {
     *NOW.write().unwrap() = Utc.with_ymd_and_hms(2020, 1, 1, 0, 0, 0).unwrap();
     let (runtime, _rx) = Runtime::<TestEnv, _>::new(
         TestModel {
-            ctx: Ctx {
-                profile: Profile {
+            ctx: Ctx::new(
+                Profile {
                     auth: Some(Auth {
                         key: AuthKey("auth_key".to_owned()),
                         user: User {
@@ -98,12 +99,12 @@ fn actionctx_addtolibrary() {
                     }),
                     ..Default::default()
                 },
-                library: LibraryBucket {
+                LibraryBucket {
                     uid: Some("id".to_owned()),
                     ..Default::default()
                 },
-                ..Default::default()
-            },
+                NotificationsBucket::new::<TestEnv>(None, vec![]),
+            ),
         },
         vec![],
         1000,
@@ -159,7 +160,7 @@ fn actionctx_addtolibrary() {
 
 #[test]
 fn actionctx_addtolibrary_already_added() {
-    #[derive(Model, Default)]
+    #[derive(Model)]
     #[model(TestEnv)]
     struct TestModel {
         ctx: Ctx,
@@ -210,8 +211,9 @@ fn actionctx_addtolibrary_already_added() {
     *NOW.write().unwrap() = Utc.with_ymd_and_hms(2020, 1, 2, 0, 0, 0).unwrap();
     let (runtime, _rx) = Runtime::<TestEnv, _>::new(
         TestModel {
-            ctx: Ctx {
-                library: LibraryBucket {
+            ctx: Ctx::new(
+                Profile::default(),
+                LibraryBucket {
                     uid: None,
                     items: vec![(
                         "id".to_owned(),
@@ -235,8 +237,8 @@ fn actionctx_addtolibrary_already_added() {
                     .into_iter()
                     .collect(),
                 },
-                ..Default::default()
-            },
+                NotificationsBucket::new::<TestEnv>(None, vec![]),
+            ),
         },
         vec![],
         1000,

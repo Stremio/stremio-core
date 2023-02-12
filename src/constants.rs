@@ -8,6 +8,7 @@ pub const SCHEMA_VERSION_STORAGE_KEY: &str = "schema_version";
 pub const PROFILE_STORAGE_KEY: &str = "profile";
 pub const LIBRARY_STORAGE_KEY: &str = "library";
 pub const LIBRARY_RECENT_STORAGE_KEY: &str = "library_recent";
+pub const NOTIFICATIONS_STORAGE_KEY: &str = "notifications";
 pub const LIBRARY_COLLECTION_NAME: &str = "libraryItem";
 pub const SEARCH_EXTRA_NAME: &str = "search";
 pub const META_RESOURCE_NAME: &str = "meta";
@@ -67,6 +68,12 @@ lazy_static! {
         is_required: false,
         options: vec![],
         options_limit: OptionsLimit::default(),
+    };
+    pub static ref LAST_VIDEOS_IDS_EXTRA_PROP: ExtraProp = ExtraProp {
+        name: "lastVideosIds".to_owned(),
+        is_required: false,
+        options: vec![],
+        options_limit: OptionsLimit(100),
     };
     pub static ref TYPE_PRIORITIES: HashMap<&'static str, i32> = vec![
         ("movie", 4),

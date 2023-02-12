@@ -1,3 +1,4 @@
+use crate::types::notifications::NotificationsBucket;
 use crate::{
     constants::{LIBRARY_RECENT_STORAGE_KEY, LIBRARY_STORAGE_KEY, PROFILE_STORAGE_KEY},
     models::ctx::Ctx,
@@ -19,7 +20,7 @@ use stremio_derive::Model;
 
 #[test]
 fn actionctx_authenticate_login() {
-    #[derive(Model, Default)]
+    #[derive(Model)]
     #[model(TestEnv)]
     struct TestModel {
         ctx: Ctx,
@@ -82,7 +83,12 @@ fn actionctx_authenticate_login() {
     }
     let _env_mutex = TestEnv::reset();
     *FETCH_HANDLER.write().unwrap() = Box::new(fetch_handler);
-    let (runtime, _rx) = Runtime::<TestEnv, _>::new(TestModel::default(), vec![], 1000);
+    let ctx = Ctx::new(
+        Profile::default(),
+        LibraryBucket::default(),
+        NotificationsBucket::new::<TestEnv>(None, vec![]),
+    );
+    let (runtime, _rx) = Runtime::<TestEnv, _>::new(TestModel { ctx }, vec![], 1000);
     TestEnv::run(|| {
         runtime.dispatch(RuntimeAction {
             field: None,
@@ -218,7 +224,7 @@ fn actionctx_authenticate_login() {
 
 #[test]
 fn actionctx_authenticate_login_with_token() {
-    #[derive(Model, Default)]
+    #[derive(Model)]
     #[model(TestEnv)]
     struct TestModel {
         ctx: Ctx,
@@ -281,7 +287,12 @@ fn actionctx_authenticate_login_with_token() {
     }
     let _env_mutex = TestEnv::reset();
     *FETCH_HANDLER.write().unwrap() = Box::new(fetch_handler);
-    let (runtime, _rx) = Runtime::<TestEnv, _>::new(TestModel::default(), vec![], 1000);
+    let ctx = Ctx::new(
+        Profile::default(),
+        LibraryBucket::default(),
+        NotificationsBucket::new::<TestEnv>(None, vec![]),
+    );
+    let (runtime, _rx) = Runtime::<TestEnv, _>::new(TestModel { ctx }, vec![], 1000);
     TestEnv::run(|| {
         runtime.dispatch(RuntimeAction {
             field: None,
@@ -416,7 +427,7 @@ fn actionctx_authenticate_login_with_token() {
 
 #[test]
 fn actionctx_authenticate_register() {
-    #[derive(Model, Default)]
+    #[derive(Model)]
     #[model(TestEnv)]
     struct TestModel {
         ctx: Ctx,
@@ -479,7 +490,12 @@ fn actionctx_authenticate_register() {
     }
     let _env_mutex = TestEnv::reset();
     *FETCH_HANDLER.write().unwrap() = Box::new(fetch_handler);
-    let (runtime, _rx) = Runtime::<TestEnv, _>::new(TestModel::default(), vec![], 1000);
+    let ctx = Ctx::new(
+        Profile::default(),
+        LibraryBucket::default(),
+        NotificationsBucket::new::<TestEnv>(None, vec![]),
+    );
+    let (runtime, _rx) = Runtime::<TestEnv, _>::new(TestModel { ctx }, vec![], 1000);
     TestEnv::run(|| {
         runtime.dispatch(RuntimeAction {
             field: None,
