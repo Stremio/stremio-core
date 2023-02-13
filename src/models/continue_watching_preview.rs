@@ -4,6 +4,7 @@ use crate::models::ctx::Ctx;
 use crate::runtime::msg::{Internal, Msg};
 use crate::runtime::{Effects, Env, UpdateWithCtx};
 use crate::types::library::{LibraryBucket, LibraryItem};
+use crate::types::notifications::NotificationsBucket;
 use lazysort::SortedBy;
 use serde::Serialize;
 
@@ -15,9 +16,9 @@ pub struct ContinueWatchingPreview {
 }
 
 impl ContinueWatchingPreview {
-    pub fn new(library: &LibraryBucket) -> (Self, Effects) {
+    pub fn new(library: &LibraryBucket, notifications: &NotificationsBucket) -> (Self, Effects) {
         let mut library_items = vec![];
-        let effects = library_items_update(&mut library_items, library);
+        let effects = library_items_update(&mut library_items, library, notifications);
         (Self { library_items }, effects.unchanged())
     }
 }
@@ -26,14 +27,21 @@ impl<E: Env + 'static> UpdateWithCtx<E> for ContinueWatchingPreview {
     fn update(&mut self, msg: &Msg, ctx: &Ctx) -> Effects {
         match msg {
             Msg::Internal(Internal::LibraryChanged(_)) => {
-                library_items_update(&mut self.library_items, &ctx.library)
+                library_items_update(&mut self.library_items, &ctx.library, &ctx.notifications)
+            }
+            Msg::Internal(Internal::NotificationsChanged) => {
+                library_items_update(&mut self.library_items, &ctx.library, &ctx.notifications)
             }
             _ => Effects::none().unchanged(),
         }
     }
 }
 
-fn library_items_update(library_items: &mut Vec<LibraryItem>, library: &LibraryBucket) -> Effects {
+fn library_items_update(
+    library_items: &mut Vec<LibraryItem>,
+    library: &LibraryBucket,
+    _notifications: &NotificationsBucket,
+) -> Effects {
     let next_library_items = library
         .items
         .values()
