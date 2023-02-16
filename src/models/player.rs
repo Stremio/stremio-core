@@ -339,9 +339,10 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                     } else {
                         Effects::none()
                     };
-                    let push_to_api_effect = if self.api_push_time.is_none()
-                        || E::now() - self.api_push_time.unwrap() >= Duration::seconds(30)
+                    let push_to_api_effect = if E::now() - self.api_push_time.unwrap_or_default()
+                        >= Duration::seconds(30)
                     {
+                        self.api_push_time = Some(E::now());
                         Effects::msg(Msg::Internal(Internal::UpdateLibraryItem(
                             library_item.to_owned(),
                         )))
