@@ -225,6 +225,7 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                 };
                 let switch_to_next_video_effects =
                     switch_to_next_video(&mut self.library_item, &self.next_video);
+                let push_to_api_effect = push_to_api(&self.library_item);
                 let selected_effects = eq_update(&mut self.selected, None);
                 let meta_item_effects = eq_update(&mut self.meta_item, None);
                 let subtitles_effects = eq_update(&mut self.subtitles, vec![]);
@@ -233,13 +234,13 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                 let series_info_effects = eq_update(&mut self.series_info, None);
                 let library_item_effects = eq_update(&mut self.library_item, None);
                 let watched_effects = eq_update(&mut self.watched, None);
-                let push_to_api_effect = push_to_api(&self.library_item);
                 self.analytics_context = None;
                 self.load_time = None;
                 self.loaded = false;
                 self.ended = false;
                 self.paused = None;
                 switch_to_next_video_effects
+                    .join(push_to_api_effect)
                     .join(selected_effects)
                     .join(meta_item_effects)
                     .join(subtitles_effects)
@@ -249,7 +250,6 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                     .join(library_item_effects)
                     .join(watched_effects)
                     .join(ended_effects)
-                    .join(push_to_api_effect)
             }
             Msg::Action(Action::Player(ActionPlayer::TimeChanged {
                 time,
