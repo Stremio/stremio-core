@@ -116,7 +116,7 @@ impl Stream {
         self.streaming_url(streaming_server_url).map(|url| {
             format!(
                 "data:application/octet-stream;charset=utf-8;base64,{}",
-                base64::encode(format!("#EXTM3U\n#EXTINF:0\n{}", url))
+                base64::encode(format!("#EXTM3U\n#EXTINF:0\n{url}"))
             )
         })
     }

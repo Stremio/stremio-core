@@ -547,7 +547,7 @@ fn play_on_device<E: Env + 'static>(url: &Url, args: &PlayOnDeviceArgs) -> Effec
     }
     let device = args.device.clone();
     let endpoint = url
-        .join(&format!("casting/{}/player", device))
+        .join(&format!("casting/{device}/player"))
         .expect("url builder failed");
     let body = Body {
         source: args.source.to_owned(),
