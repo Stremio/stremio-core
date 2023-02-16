@@ -77,7 +77,7 @@ pub struct Player {
     #[serde(skip_serializing)]
     pub load_time: Option<DateTime<Utc>>,
     #[serde(skip_serializing)]
-    pub api_push_time: Option<DateTime<Utc>>,
+    pub api_push_time: DateTime<Utc>,
     #[serde(skip_serializing)]
     pub loaded: bool,
     #[serde(skip_serializing)]
@@ -339,17 +339,16 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                     } else {
                         Effects::none()
                     };
-                    let push_to_api_effect = if E::now() - self.api_push_time.unwrap_or_default()
-                        >= Duration::seconds(30)
-                    {
-                        self.api_push_time = Some(E::now());
-                        Effects::msg(Msg::Internal(Internal::UpdateLibraryItem(
-                            library_item.to_owned(),
-                        )))
-                        .unchanged()
-                    } else {
-                        Effects::none().unchanged()
-                    };
+                    let push_to_api_effect =
+                        if E::now() - self.api_push_time >= Duration::seconds(30) {
+                            self.api_push_time = E::now();
+                            Effects::msg(Msg::Internal(Internal::UpdateLibraryItem(
+                                library_item.to_owned(),
+                            )))
+                            .unchanged()
+                        } else {
+                            Effects::none().unchanged()
+                        };
                     trakt_event_effect.join(push_to_api_effect)
                 }
                 _ => Effects::none().unchanged(),
