@@ -77,7 +77,7 @@ pub struct Player {
     #[serde(skip_serializing)]
     pub load_time: Option<DateTime<Utc>>,
     #[serde(skip_serializing)]
-    pub api_push_time: DateTime<Utc>,
+    pub push_library_item_time: DateTime<Utc>,
     #[serde(skip_serializing)]
     pub loaded: bool,
     #[serde(skip_serializing)]
@@ -225,7 +225,7 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                 };
                 let switch_to_next_video_effects =
                     switch_to_next_video(&mut self.library_item, &self.next_video);
-                let push_to_api_effect = push_to_api(&self.library_item);
+                let push_to_library_effects = push_to_library(&self.library_item);
                 let selected_effects = eq_update(&mut self.selected, None);
                 let meta_item_effects = eq_update(&mut self.meta_item, None);
                 let subtitles_effects = eq_update(&mut self.subtitles, vec![]);
@@ -240,7 +240,7 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                 self.ended = false;
                 self.paused = None;
                 switch_to_next_video_effects
-                    .join(push_to_api_effect)
+                    .join(push_to_library_effects)
                     .join(selected_effects)
                     .join(meta_item_effects)
                     .join(subtitles_effects)
@@ -316,7 +316,7 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                         analytics_context.device_name = Some(device.to_owned());
                         analytics_context.player_duration = Some(duration.to_owned());
                     };
-                    let trakt_event_effect = if seeking && self.loaded && self.paused.is_some() {
+                    let trakt_event_effects = if seeking && self.loaded && self.paused.is_some() {
                         if self.paused.expect("paused is None") {
                             Effects::msg(Msg::Event(Event::TraktPaused {
                                 context: self
@@ -339,9 +339,9 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                     } else {
                         Effects::none()
                     };
-                    let push_to_api_effect =
-                        if E::now() - self.api_push_time >= Duration::seconds(30) {
-                            self.api_push_time = E::now();
+                    let push_to_library_effects =
+                        if E::now() - self.push_library_item_time >= Duration::seconds(30) {
+                            self.push_library_item_time = E::now();
                             Effects::msg(Msg::Internal(Internal::UpdateLibraryItem(
                                 library_item.to_owned(),
                             )))
@@ -349,7 +349,7 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                         } else {
                             Effects::none().unchanged()
                         };
-                    trakt_event_effect.join(push_to_api_effect)
+                    trakt_event_effects.join(push_to_library_effects)
                 }
                 _ => Effects::none().unchanged(),
             },
@@ -357,7 +357,7 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                 if self.selected.is_some() =>
             {
                 self.paused = Some(*paused);
-                let trakt_event_effect = if !self.loaded {
+                let trakt_event_effects = if !self.loaded {
                     self.loaded = true;
                     Effects::msg(Msg::Event(Event::PlayerPlaying {
                         load_time: self
@@ -380,8 +380,8 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                     }))
                     .unchanged()
                 };
-                let push_to_api_effect = push_to_api(&self.library_item);
-                trakt_event_effect.join(push_to_api_effect)
+                let push_to_library_effects = push_to_library(&self.library_item);
+                trakt_event_effects.join(push_to_library_effects)
             }
             Msg::Action(Action::Player(ActionPlayer::Ended)) if self.selected.is_some() => {
                 self.ended = true;
@@ -474,7 +474,7 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
     }
 }
 
-fn push_to_api(library_item: &Option<LibraryItem>) -> Effects {
+fn push_to_library(library_item: &Option<LibraryItem>) -> Effects {
     match library_item {
         Some(library_item) => Effects::msg(Msg::Internal(Internal::UpdateLibraryItem(
             library_item.to_owned(),
