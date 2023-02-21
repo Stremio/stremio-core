@@ -31,12 +31,15 @@ env-future-send = []
 stremio-derive = { path = "stremio-derive" }
 stremio-watched-bitfield = { path = "stremio-watched-bitfield" }
 stremio-official-addons = "=2.0.10"
+
+# (De)Serialization
 serde = "1.0.*"
 serde_json = "1.0.*"
 serde_url_params = "0.2.*"
 serde_bencode = "0.2.*"
 stremio-serde-hex = "0.1.*" # keep track of https://github.com/fspmarshall/serde-hex/pull/8
 serde_with = { version = "1.14.*", features = ["macros", "chrono"] }
+
 flate2 = "1.0.*"
 futures = "0.3.*"
 http = "0.2.*"
@@ -53,12 +56,18 @@ derive_more = "0.99.*"
 boolinator = "2.4.*"
 strum = "0.22.*"
 strum_macros = "0.22.*"
+
 lazysort = "0.2.*"
 lazy_static = "1.4.*"
 itertools = "0.10.*"
+
 magnet-url = "2.0.*"
 hex = "0.4.*"
+
+# error handling
 anyhow = "1.0.*"
+
+localsearch = { git = "https://github.com/Stremio/local-search" }
 
 [dev-dependencies]
 tokio = { version = "1.12.*", features = ["rt", "macros"] }
