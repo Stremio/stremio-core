@@ -73,7 +73,7 @@ lazy_static! {
         name: "lastVideosIds".to_owned(),
         is_required: false,
         options: vec![],
-        options_limit: OptionsLimit(100),
+        options_limit: OptionsLimit(1),
     };
     pub static ref TYPE_PRIORITIES: HashMap<&'static str, i32> = vec![
         ("movie", 4),
