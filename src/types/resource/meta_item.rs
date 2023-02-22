@@ -1,6 +1,6 @@
 use crate::constants::{
     CATALOG_RESOURCE_NAME, CINEMETA_TOP_CATALOG_ID, CINEMETA_URL, GENRES_LINK_CATEGORY,
-    IMDB_LINK_CATEGORY, IMDB_TITLE_PATH, IMDB_URL, URI_COMPONENT_ENCODE_SET,
+    IMDB_LINK_CATEGORY, IMDB_TITLE_PATH, IMDB_URL, TYPE_PRIORITIES, URI_COMPONENT_ENCODE_SET,
 };
 use crate::deep_links::DiscoverDeepLinks;
 use crate::types::addon::{ExtraValue, ResourcePath, ResourceRequest};
@@ -17,7 +17,7 @@ use serde_with::{
     serde_as, DefaultOnNull, DeserializeAs, NoneAsEmptyString, OneOrMany, PickFirst,
     TimestampMilliSeconds,
 };
-use std::borrow::Cow;
+use std::borrow::{Borrow, Cow};
 use std::collections::HashMap;
 use url::Url;
 
@@ -315,4 +315,138 @@ pub struct MetaItemBehaviorHints {
     pub has_scheduled_videos: bool,
     #[serde(flatten)]
     pub other: HashMap<String, serde_json::Value>,
+}
+
+/// The types of media we can have for a [`MetaItem`]s and [`LibraryItem`]s.
+///
+/// If adding new types, don't forget to update the tests!
+///
+/// [`LibraryItem`]: crate::types::library::LibraryItem
+#[derive(Debug, Clone, Copy, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub enum MetaType {
+    Movie,
+    Series,
+    Channel,
+    Tv,
+    // TODO: do we need "other" option here when deserializing?
+    // #[serde(other)]
+    Other,
+}
+
+impl MetaType {
+    pub fn as_str(&self) -> &str {
+        match self {
+            MetaType::Movie => "movie",
+            MetaType::Series => "series",
+            MetaType::Channel => "channel",
+            MetaType::Tv => "tv",
+            MetaType::Other => "other",
+        }
+    }
+
+    pub fn get_priority(&self) -> i32 {
+        // TODO: remove TYPE_PRIORITIES and use this method instead.
+        *TYPE_PRIORITIES
+            .get(self.as_str())
+            .expect("All types should be present!")
+    }
+}
+
+impl Borrow<str> for MetaType {
+    fn borrow(&self) -> &str {
+        self.as_str()
+    }
+}
+
+impl PartialEq<&str> for MetaType {
+    fn eq(&self, other: &&str) -> bool {
+        self.as_str() == *other
+    }
+}
+
+impl PartialEq<MetaType> for &str {
+    fn eq(&self, other: &MetaType) -> bool {
+        *self == other.as_str()
+    }
+}
+
+impl PartialEq<String> for MetaType {
+    fn eq(&self, other: &String) -> bool {
+        self.as_str() == other.as_str()
+    }
+}
+
+impl PartialEq<MetaType> for String {
+    fn eq(&self, other: &MetaType) -> bool {
+        self.as_str() == other.as_str()
+    }
+}
+
+impl AsRef<str> for MetaType {
+    fn as_ref(&self) -> &str {
+        self.as_str()
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use std::borrow::Borrow;
+
+    use serde_json::Value;
+
+    use super::MetaType;
+
+    pub const ALL_META_TYPES: [MetaType; 5] = [
+        MetaType::Movie,
+        MetaType::Series,
+        MetaType::Channel,
+        MetaType::Tv,
+        MetaType::Other,
+    ];
+
+    #[test]
+    fn test_meta_type_as_str() {
+        let movie = MetaType::Movie;
+        let movie_str = "movie";
+        let movie_string = "movie".to_string();
+        let tv_str = "tv";
+        let tv = MetaType::Tv;
+
+        // check both impls of PartialEq for str
+        assert!(movie == movie_str);
+        assert!(movie_str == movie);
+        assert!(movie_str != tv);
+
+        // check both impls of PartialEq for String
+        assert!(movie == movie_string);
+        assert!(movie_string == movie);
+        assert!(movie_string != tv);
+
+        // check both impls of PartialEq with Borrow
+        let borrowed: &str = movie.borrow();
+        assert!(borrowed == movie_str);
+        assert!(borrowed != tv_str);
+        assert!(tv_str != borrowed);
+    }
+
+    #[test]
+    fn test_serialization() {
+        let serialization_results = ALL_META_TYPES
+            .iter()
+            .map(|meta_type| serde_json::to_value(meta_type).map_err(|err| (meta_type, err)))
+            .collect::<Vec<Result<Value, _>>>();
+
+        let errors = serialization_results
+            .into_iter()
+            .filter_map(|result| match result {
+                Ok(_) => None,
+                Err(error_result) => Some(error_result),
+            })
+            .collect::<Vec<_>>();
+
+        if errors.len() > 0 {
+            panic!("MetaTypes serialization failed: {:#?}", errors);
+        }
+    }
 }
