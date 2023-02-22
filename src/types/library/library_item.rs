@@ -1,5 +1,8 @@
-use crate::runtime::Env;
-use crate::types::resource::{MetaItemBehaviorHints, MetaItemPreview, PosterShape, Video};
+use crate::{
+    runtime::Env,
+    types::resource::{MetaItemBehaviorHints, MetaItemPreview, MetaType, PosterShape, Video},
+};
+
 use chrono::{DateTime, Duration, Utc};
 use itertools::Itertools;
 use serde::{Deserialize, Serialize};
@@ -40,17 +43,17 @@ impl LibraryItem {
     pub fn should_sync<E: Env + 'static>(&self) -> bool {
         let year_ago = E::now() - Duration::days(365);
         let recently_removed = self.removed && self.mtime > year_ago;
-        self.r#type != "other" && (!self.removed || recently_removed)
+        self.r#type != MetaType::Other && (!self.removed || recently_removed)
     }
     #[inline]
     pub fn is_in_continue_watching(&self) -> bool {
-        self.r#type != "other" && (!self.removed || self.temp) && self.state.time_offset > 0
+        self.r#type != MetaType::Other && (!self.removed || self.temp) && self.state.time_offset > 0
     }
     pub fn should_pull_notifications(&self) -> bool {
         // TODO move those to constants.rs
         !self.state.notifications_disabled
-            && self.r#type != "other"
-            && self.r#type != "movie"
+            && self.r#type != MetaType::Other
+            && self.r#type != MetaType::Movie
             && self.behavior_hints.default_video_id.is_none()
             && (!self.removed || self.temp)
             && (self.state.time_offset == 0
@@ -107,6 +110,7 @@ pub struct LibraryItemState {
     pub last_watched: Option<DateTime<Utc>>,
     pub time_watched: u64,
     pub time_offset: u64,
+    /// In milliseconds
     pub overall_time_watched: u64,
     /// Shows how many times this item has been watched.
     ///
