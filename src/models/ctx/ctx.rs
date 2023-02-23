@@ -90,7 +90,8 @@ impl<E: Env + 'static> Update<E> for Ctx {
                     &self.library,
                     &self.status,
                     msg,
-                );
+                )
+                .unchanged();
                 self.status = CtxStatus::Ready;
                 Effects::msg(Msg::Event(Event::UserLoggedOut { uid }))
                     .unchanged()
@@ -117,7 +118,8 @@ impl<E: Env + 'static> Update<E> for Ctx {
                     &self.library,
                     &self.status,
                     msg,
-                );
+                )
+                .unchanged();
                 let ctx_effects = match &self.status {
                     CtxStatus::Loading(loading_auth_request)
                         if loading_auth_request == auth_request =>
@@ -162,7 +164,8 @@ impl<E: Env + 'static> Update<E> for Ctx {
                     &self.library,
                     &self.status,
                     msg,
-                );
+                )
+                .unchanged();
                 profile_effects
                     .join(library_effects)
                     .join(trakt_addon_effects)
