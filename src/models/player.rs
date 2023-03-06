@@ -683,18 +683,26 @@ fn library_item_update<E: Env + 'static>(
             };
             library_item.map(|mut library_item| {
                 if let Some(meta_item) = meta_item {
-                    let is_series = meta_item
-                        .videos
-                        .iter()
-                        .any(|video| video.series_info.is_some());
-                    let last_video = if is_series {
+                    let last_video = if meta_item.is_series() {
                         meta_item
                             .videos
                             .iter()
                             .rev()
-                            .find(|video| match &video.series_info {
-                                Some(series_info) => series_info.season != 0,
-                                _ => false,
+                            // find the latest video which is not in the future
+                            // based on it's `released` DateTime
+                            .find(|video| {
+                                // take into account only if `released` is not in the future.
+                                let released_before_now =
+                                    video.released.filter(|released| released <= &E::now());
+
+                                let regular_season = video
+                                    .series_info
+                                    .as_ref()
+                                    .map(|series_info| series_info.season != 0)
+                                    .unwrap_or_default();
+
+                                // only if it's released and is a regular season
+                                released_before_now.is_some() && regular_season
                             })
                     } else {
                         meta_item.videos.first()
