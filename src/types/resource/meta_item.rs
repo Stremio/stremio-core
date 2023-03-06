@@ -198,6 +198,16 @@ pub struct MetaItem {
     pub videos: Vec<Video>,
 }
 
+impl MetaItem {
+    /// Whether or not the [`MetaItem`] is a movie series.
+    ///
+    ///
+    /// Returns `true` if any of the [`MetaItem`].videos has [`SeriesInfo`].
+    pub fn is_series(&self) -> bool {
+        self.videos.iter().any(|video| video.series_info.is_some())
+    }
+}
+
 #[derive(Derivative, Clone, PartialEq, Eq, Serialize, Deserialize, Debug)]
 #[derivative(Default)]
 #[serde(rename_all = "camelCase")]
