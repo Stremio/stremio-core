@@ -34,7 +34,7 @@ pub enum ActionCtx {
     PushAddonsToAPI,
     PullAddonsFromAPI,
     SyncLibraryWithAPI,
-    PullNotificatons,
+    PullNotifications,
     DismissNotificationItem(String),
 }
 

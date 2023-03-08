@@ -1,17 +1,27 @@
 use std::collections::HashMap;
 
-use crate::constants::{LAST_VIDEOS_IDS_EXTRA_PROP, NOTIFICATIONS_STORAGE_KEY};
-use crate::models::common::{
-    eq_update, resources_update_with_vector_content, Loadable, ResourceLoadable, ResourcesAction,
+use crate::{
+    constants::{LAST_VIDEOS_IDS_EXTRA_PROP, NOTIFICATIONS_STORAGE_KEY},
+    models::{
+        common::{
+            eq_update, resources_update_with_vector_content, Loadable, ResourceLoadable,
+            ResourcesAction,
+        },
+        ctx::{CtxError, CtxStatus},
+    },
+    runtime::{
+        msg::{Action, ActionCtx, Event, Internal, Msg},
+        Effect, EffectFuture, Effects, Env, EnvFutureExt,
+    },
+    types::{
+        addon::{AggrRequest, ExtraValue},
+        library::LibraryBucket,
+        notifications::{NotificationItem, NotificationsBucket},
+        profile::Profile,
+        resource::MetaItem,
+    },
 };
-use crate::models::ctx::{CtxError, CtxStatus};
-use crate::runtime::msg::{Action, ActionCtx, Event, Internal, Msg};
-use crate::runtime::{Effect, EffectFuture, Effects, Env, EnvFutureExt};
-use crate::types::addon::{AggrRequest, ExtraValue};
-use crate::types::library::LibraryBucket;
-use crate::types::notifications::{NotificationItem, NotificationsBucket};
-use crate::types::profile::Profile;
-use crate::types::resource::MetaItem;
+
 use either::Either;
 use enclose::enclose;
 use futures::FutureExt;
@@ -26,13 +36,14 @@ pub fn update_notifications<E: Env + 'static>(
     msg: &Msg,
 ) -> Effects {
     match msg {
-        Msg::Action(Action::Ctx(ActionCtx::PullNotificatons)) => {
+        Msg::Action(Action::Ctx(ActionCtx::PullNotifications)) => {
             let notification_item_ids = library
                 .items
                 .values()
                 .filter(|library_item| library_item.should_pull_notifications())
                 .sorted_by(|a, b| b.mtime.cmp(&a.mtime))
-                .take(*LAST_VIDEOS_IDS_EXTRA_PROP.options_limit)
+                // Why would we take only X amount based on Options limit and do nothing with the rest?!
+                // .take(*LAST_VIDEOS_IDS_EXTRA_PROP.options_limit)
                 .map(|library_item| &library_item.id)
                 .cloned()
                 .collect::<Vec<_>>();
@@ -59,7 +70,7 @@ pub fn update_notifications<E: Env + 'static>(
                 .filter_map(|id| notifications.items.get_key_value(id))
                 .map(|(id, notification_item)| (id.to_owned(), notification_item.to_owned()))
                 .collect();
-            let notification_items_effects = update_notification_items(
+            let notification_items_effects = update_notification_items::<E>(
                 &mut notifications.items,
                 &last_videos_catalogs,
                 &library,
@@ -105,7 +116,7 @@ pub fn update_notifications<E: Env + 'static>(
                 last_videos_catalogs,
                 ResourcesAction::ResourceRequestResult { request, result },
             );
-            let notification_items_effects = update_notification_items(
+            let notification_items_effects = update_notification_items::<E>(
                 &mut notifications.items,
                 &last_videos_catalogs,
                 &library,
@@ -126,7 +137,7 @@ pub fn update_notifications<E: Env + 'static>(
     }
 }
 
-fn update_notification_items(
+fn update_notification_items<E: Env + 'static>(
     notification_items: &mut HashMap<String, NotificationItem>,
     last_videos_catalogs: &Vec<ResourceLoadable<Vec<MetaItem>>>,
     library: &LibraryBucket,
@@ -138,12 +149,16 @@ fn update_notification_items(
             _ => false,
         })
         .collect::<Vec<_>>();
+
     let next_notification_items = last_videos_catalogs
+        // get first addon results - Cinemeta
         .first()
+        // get resources where the extra is for Last videos ids
         .map(|resource| &resource.request.path.extra)
         .map(|extra| Either::Left(extra.iter()))
         .unwrap_or_else(|| Either::Right(std::iter::empty()))
         .filter(|extra_value| extra_value.name == LAST_VIDEOS_IDS_EXTRA_PROP.name)
+        // extra value is the MetaItem id
         .map(|extra_value| &extra_value.value)
         .filter_map(|id| {
             if let Some(notification_item) = notification_items.get(id) {
@@ -151,6 +166,7 @@ fn update_notification_items(
             };
 
             let library_item = library.items.get(id);
+            // find the MetaItem in the loaded catalogs
             let meta_item = selected_catalogs.iter().find_map(|catalog| {
                 catalog
                     .content
@@ -162,24 +178,28 @@ fn update_notification_items(
             });
             match (library_item, meta_item) {
                 (Some(library_item), Some(meta_item)) if !meta_item.videos.is_empty() => {
-                    let is_series = meta_item
-                        .videos
-                        .iter()
-                        .any(|video| video.series_info.is_some());
-                    let last_video_released = library_item.state.last_video_released.as_ref();
-                    let mut videos = if is_series {
+                    let mut videos = if meta_item.is_series() {
                         Either::Left(meta_item.videos.iter())
                     } else {
                         Either::Right(meta_item.videos.iter().rev())
+                    }
+                    .into_iter();
+
+                    let video = match library_item.state.last_video_released.as_ref() {
+                        Some(last_video_released) => videos.find(|video| {
+                            video
+                                .released
+                                .as_ref()
+                                // find videos that are already released and newer than last_video_released of the LibraryItem
+                                .map(|released| {
+                                    released > last_video_released && released <= &E::now()
+                                })
+                                .unwrap_or_default()
+                        }),
+                        // or just return the first video from the iterator
+                        None => videos.next(),
                     };
-                    let video = videos.find(|video| match last_video_released {
-                        Some(last_video_released) => video
-                            .released
-                            .as_ref()
-                            .map(|released| released > last_video_released)
-                            .unwrap_or_default(),
-                        _ => true,
-                    });
+
                     video.map(|video| NotificationItem {
                         id: id.to_owned(),
                         video: video.to_owned(),
