@@ -85,9 +85,7 @@ fn library_items_update(
                     .flatten()
                     .unwrap_or(library_item_b.mtime);
 
-                let cmp = datetime_b.cmp(&datetime_a);
-                dbg!(library_item_a, library_item_b, cmp, datetime_a, datetime_b);
-                cmp
+                datetime_b.cmp(&datetime_a)
             },
         )
         .take(limit.into().unwrap_or(CATALOG_PREVIEW_SIZE))
