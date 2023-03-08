@@ -37,6 +37,9 @@ pub struct Ctx {
     pub status: CtxStatus,
     #[serde(skip)]
     pub trakt_addon: Option<DescriptorLoadable>,
+    /// Last videos catalog of all MetaItems that are marked for receiving notifications for new episodes.
+    ///
+    /// Loaded from all the user's addons.
     #[serde(skip)]
     pub last_videos_catalogs: Vec<ResourceLoadable<Vec<MetaItem>>>,
 }

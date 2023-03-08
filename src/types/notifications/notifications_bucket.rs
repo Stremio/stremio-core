@@ -8,6 +8,12 @@ use std::collections::HashMap;
 #[derive(Clone, PartialEq, Eq, Serialize, Deserialize, Debug)]
 pub struct NotificationsBucket {
     pub uid: UID,
+    /// Notifications videos
+    ///
+    /// The list key is the `MetaItem.preview.id`.
+    ///
+    /// Videos in this list are already released (released < Now)
+    /// and newer than `LibraryItem.state.last_video_released`.
     pub items: HashMap<String, NotificationItem>,
     pub created: DateTime<Utc>,
 }

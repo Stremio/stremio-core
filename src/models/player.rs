@@ -293,6 +293,9 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                     };
                     library_item.state.time_offset = time.to_owned();
                     library_item.state.duration = duration.to_owned();
+
+                    // LibraryItem is flagged as watched and the times_watched is incremented
+                    // once we have passed a given threshold `time_watched > duration * WATCHED_THRESHOLD_COEF`
                     if library_item.state.flagged_watched == 0
                         && library_item.state.time_watched as f64
                             > library_item.state.duration as f64 * WATCHED_THRESHOLD_COEF

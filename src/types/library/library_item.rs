@@ -27,6 +27,9 @@ pub struct LibraryItem {
     pub removed: bool,
     pub temp: bool,
     /// Creation time
+    ///
+    /// The time when the given MetaItem was added to the Library of the user
+    /// and became a `LibraryItem`
     #[serde(default, rename = "_ctime")]
     #[serde_as(deserialize_as = "DefaultOnNull<NoneAsEmptyString>")]
     pub ctime: Option<DateTime<Utc>>,
@@ -108,7 +111,9 @@ pub struct LibraryItemState {
     #[serde(default)]
     #[serde_as(deserialize_as = "DefaultOnNull<NoneAsEmptyString>")]
     pub last_watched: Option<DateTime<Utc>>,
+    /// In milliseconds
     pub time_watched: u64,
+    /// In milliseconds
     pub time_offset: u64,
     /// In milliseconds
     pub overall_time_watched: u64,
@@ -119,6 +124,7 @@ pub struct LibraryItemState {
     pub times_watched: u32,
     // @TODO: consider bool that can be deserialized from an integer
     pub flagged_watched: u32,
+    /// In milliseconds
     pub duration: u64,
     /// The last video watched.
     ///
