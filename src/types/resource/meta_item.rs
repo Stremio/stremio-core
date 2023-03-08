@@ -1,3 +1,10 @@
+use core::cmp::Ordering;
+use std::{
+    borrow::{Borrow, Cow},
+    collections::HashMap,
+    fmt,
+};
+
 use crate::constants::{
     CATALOG_RESOURCE_NAME, CINEMETA_TOP_CATALOG_ID, CINEMETA_URL, GENRES_LINK_CATEGORY,
     IMDB_LINK_CATEGORY, IMDB_TITLE_PATH, IMDB_URL, TYPE_PRIORITIES, URI_COMPONENT_ENCODE_SET,
@@ -6,8 +13,8 @@ use crate::deep_links::DiscoverDeepLinks;
 use crate::types::addon::{ExtraValue, ResourcePath, ResourceRequest};
 use crate::types::resource::{Stream, StreamSource};
 use crate::types::{NumberAsString, SortedVec, SortedVecAdapter, UniqueVec, UniqueVecAdapter};
+
 use chrono::{DateTime, Utc};
-use core::cmp::Ordering;
 use derivative::Derivative;
 use itertools::Itertools;
 use percent_encoding::utf8_percent_encode;
@@ -17,8 +24,7 @@ use serde_with::{
     serde_as, DefaultOnNull, DeserializeAs, NoneAsEmptyString, OneOrMany, PickFirst,
     TimestampMilliSeconds,
 };
-use std::borrow::{Borrow, Cow};
-use std::collections::HashMap;
+
 use url::Url;
 
 #[derive(Clone, PartialEq, Deserialize, Debug)]
@@ -360,6 +366,12 @@ impl MetaType {
         *TYPE_PRIORITIES
             .get(self.as_str())
             .expect("All types should be present!")
+    }
+}
+
+impl fmt::Display for MetaType {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.write_str(self.as_str())
     }
 }
 
