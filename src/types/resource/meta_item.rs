@@ -334,20 +334,34 @@ pub struct MetaItemBehaviorHints {
 }
 
 /// The types of media we can have for a [`MetaItem`]s and [`LibraryItem`]s.
+/// We specify only the **known** to core types,
+/// for any unknown type we use `MetaType::Unknown`.
 ///
-/// If adding new types, don't forget to update the tests!
+/// If adding new known types, don't forget to update the tests!
 ///
 /// [`LibraryItem`]: crate::types::library::LibraryItem
-#[derive(Debug, Clone, Copy, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(untagged, rename_all = "camelCase", from = "String")]
 pub enum MetaType {
     Movie,
     Series,
     Channel,
     Tv,
-    // TODO: do we need "other" option here when deserializing?
-    // #[serde(other)]
     Other,
+    Unknown(String),
+}
+
+impl From<String> for MetaType {
+    fn from(value: String) -> MetaType {
+        match value.as_str() {
+            "movie" => MetaType::Movie,
+            "series" => MetaType::Series,
+            "channel" => MetaType::Channel,
+            "tv" => MetaType::Tv,
+            "other" => MetaType::Other,
+            _unknown => MetaType::Unknown(value),
+        }
+    }
 }
 
 impl MetaType {
@@ -358,14 +372,15 @@ impl MetaType {
             MetaType::Channel => "channel",
             MetaType::Tv => "tv",
             MetaType::Other => "other",
+            MetaType::Unknown(unknown) => unknown.as_str(),
         }
     }
 
-    pub fn get_priority(&self) -> i32 {
+    /// For know types it returns the priorities,
+    /// for unknown it returns `None`
+    pub fn get_priority(&self) -> Option<i32> {
         // TODO: remove TYPE_PRIORITIES and use this method instead.
-        *TYPE_PRIORITIES
-            .get(self.as_str())
-            .expect("All types should be present!")
+        TYPE_PRIORITIES.get(self.as_str()).copied()
     }
 }
 
@@ -419,6 +434,7 @@ mod test {
 
     use super::MetaType;
 
+    /// All types known to `core`!
     pub const ALL_META_TYPES: [MetaType; 5] = [
         MetaType::Movie,
         MetaType::Series,
@@ -434,6 +450,11 @@ mod test {
         let movie_string = "movie".to_string();
         let tv_str = "tv";
         let tv = MetaType::Tv;
+        let other = MetaType::Other;
+
+        assert_ne!(other, tv);
+        assert_ne!(other, movie);
+        assert_ne!(tv, movie);
 
         // check both impls of PartialEq for str
         assert!(movie == movie_str);
@@ -454,21 +475,36 @@ mod test {
 
     #[test]
     fn test_serialization() {
-        let serialization_results = ALL_META_TYPES
-            .iter()
-            .map(|meta_type| serde_json::to_value(meta_type).map_err(|err| (meta_type, err)))
-            .collect::<Vec<Result<Value, _>>>();
+        // all known MetaTypes
+        {
+            let serialization_results = ALL_META_TYPES
+                .iter()
+                .map(|meta_type| serde_json::to_value(meta_type).map_err(|err| (meta_type, err)))
+                .collect::<Vec<Result<Value, _>>>();
 
-        let errors = serialization_results
-            .into_iter()
-            .filter_map(|result| match result {
-                Ok(_) => None,
-                Err(error_result) => Some(error_result),
-            })
-            .collect::<Vec<_>>();
+            let errors = serialization_results
+                .into_iter()
+                .filter_map(|result| match result {
+                    Ok(_) => None,
+                    Err(error_result) => Some(error_result),
+                })
+                .collect::<Vec<_>>();
 
-        if errors.len() > 0 {
-            panic!("MetaTypes serialization failed: {:#?}", errors);
+            if errors.len() > 0 {
+                panic!("MetaTypes serialization failed: {:#?}", errors);
+            }
+        }
+
+        // Unknown MetaType
+        {
+            let unknown_radio = MetaType::Unknown("radio".into());
+
+            let serialized = serde_json::to_value(unknown_radio.clone()).expect("Should serialize");
+            assert_eq!(Value::String("radio".into()), serialized);
+
+            let deserialized =
+                serde_json::from_value::<MetaType>(serialized).expect("should deserialize");
+            assert_eq!(unknown_radio, deserialized);
         }
     }
 }
