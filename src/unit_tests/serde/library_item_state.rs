@@ -16,7 +16,7 @@ fn library_item_state() {
                 duration: 1,
                 video_id: Some("tt2934286:1:5".to_owned()),
                 watched: Some("tt2934286:1:5:5:eJyTZwAAAEAAIA==".parse().unwrap()),
-                last_video_released: Some(Utc.ymd(2020, 1, 1).and_hms_milli(0, 0, 0, 0)),
+                last_video_released: Some(Utc.with_ymd_and_hms(2020, 1, 1, 0, 0, 0).unwrap()),
                 notifications_disabled: true,
             },
             LibraryItemState {
