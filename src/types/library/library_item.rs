@@ -46,6 +46,17 @@ impl LibraryItem {
     pub fn is_in_continue_watching(&self) -> bool {
         self.r#type != "other" && (!self.removed || self.temp) && self.state.time_offset > 0
     }
+    pub fn should_pull_notifications(&self) -> bool {
+        !self.state.notifications_disabled
+            && self.r#type != "other"
+            && self.r#type != "movie"
+            && self.behavior_hints.default_video_id.is_none()
+            && (!self.removed || self.temp)
+            && (self.state.time_offset == 0
+                || self.state.time_offset as f64 > self.state.duration as f64 * 0.8)
+            && self.state.last_video_released.is_some()
+            && self.state.overall_time_watched > 15 * 60 * 1000
+    }
 }
 
 impl<E: Env + 'static> From<(&MetaItemPreview, PhantomData<E>)> for LibraryItem {
@@ -120,9 +131,9 @@ pub struct LibraryItemState {
     /// Release date of last observed video
     #[serde(default)]
     #[serde_as(deserialize_as = "DefaultOnNull<NoneAsEmptyString>")]
-    pub last_vid_released: Option<DateTime<Utc>>,
+    pub last_video_released: Option<DateTime<Utc>>,
     /// Weather or not to receive notification for the given [`LibraryItem`].
-    pub no_notif: bool,
+    pub notifications_disabled: bool,
 }
 
 impl LibraryItemState {

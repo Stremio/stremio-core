@@ -8,6 +8,7 @@ pub const SCHEMA_VERSION_STORAGE_KEY: &str = "schema_version";
 pub const PROFILE_STORAGE_KEY: &str = "profile";
 pub const LIBRARY_STORAGE_KEY: &str = "library";
 pub const LIBRARY_RECENT_STORAGE_KEY: &str = "library_recent";
+pub const NOTIFICATIONS_STORAGE_KEY: &str = "notifications";
 pub const LIBRARY_COLLECTION_NAME: &str = "libraryItem";
 pub const SEARCH_EXTRA_NAME: &str = "search";
 pub const META_RESOURCE_NAME: &str = "meta";
@@ -19,6 +20,7 @@ pub const ADDON_LEGACY_PATH: &str = "/stremio/v1";
 pub const CATALOG_PAGE_SIZE: usize = 100;
 pub const CATALOG_PREVIEW_SIZE: usize = 10;
 pub const LIBRARY_RECENT_COUNT: usize = 200;
+pub const NOTIFICATION_ITEMS_COUNT: usize = 100;
 pub const WATCHED_THRESHOLD_COEF: f64 = 0.7;
 pub const CREDITS_THRESHOLD_COEF: f64 = 0.9;
 pub const SCHEMA_VERSION: u32 = 6;
@@ -67,6 +69,12 @@ lazy_static! {
         is_required: false,
         options: vec![],
         options_limit: OptionsLimit::default(),
+    };
+    pub static ref LAST_VIDEOS_IDS_EXTRA_PROP: ExtraProp = ExtraProp {
+        name: "lastVideosIds".to_owned(),
+        is_required: false,
+        options: vec![],
+        options_limit: OptionsLimit(1),
     };
     pub static ref TYPE_PRIORITIES: HashMap<&'static str, i32> = vec![
         ("movie", 4),

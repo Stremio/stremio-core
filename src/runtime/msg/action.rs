@@ -29,11 +29,14 @@ pub enum ActionCtx {
     AddToLibrary(MetaItemPreview),
     RemoveFromLibrary(String),
     RewindLibraryItem(String),
+    DisableLibraryItemNotifications(String),
+    DismissNotificationItem(String),
     PushUserToAPI,
     PullUserFromAPI,
     PushAddonsToAPI,
     PullAddonsFromAPI,
     SyncLibraryWithAPI,
+    PullNotificatons,
 }
 
 #[derive(Clone, Deserialize, Debug)]

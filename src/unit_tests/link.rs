@@ -4,6 +4,9 @@ use crate::models::link::Link;
 use crate::runtime::msg::{Action, ActionLink, ActionLoad};
 use crate::runtime::{EnvFutureExt, Runtime, RuntimeAction, TryEnvFuture};
 use crate::types::api::{APIResult, LinkAuthKey, LinkCodeResponse, LinkDataResponse};
+use crate::types::library::LibraryBucket;
+use crate::types::notifications::NotificationsBucket;
+use crate::types::profile::Profile;
 use crate::unit_tests::{default_fetch_handler, Request, TestEnv, FETCH_HANDLER, REQUESTS};
 use futures::future;
 use std::any::Any;
@@ -11,7 +14,7 @@ use stremio_derive::Model;
 
 #[test]
 fn create_link_code() {
-    #[derive(Model, Default)]
+    #[derive(Model)]
     #[model(TestEnv)]
     struct TestModel {
         ctx: Ctx,
@@ -52,7 +55,15 @@ fn create_link_code() {
     }
     let _env_mutex = TestEnv::reset();
     *FETCH_HANDLER.write().unwrap() = Box::new(fetch_handler);
-    let (runtime, _rx) = Runtime::<TestEnv, _>::new(TestModel::default(), vec![], 1000);
+    let model = TestModel {
+        ctx: Ctx::new(
+            Profile::default(),
+            LibraryBucket::default(),
+            NotificationsBucket::new::<TestEnv>(None, vec![]),
+        ),
+        link: Link::default(),
+    };
+    let (runtime, _rx) = Runtime::<TestEnv, _>::new(model, vec![], 1000);
     TestEnv::run(|| {
         runtime.dispatch(RuntimeAction {
             field: None,

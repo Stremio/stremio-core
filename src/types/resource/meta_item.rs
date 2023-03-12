@@ -9,6 +9,7 @@ use crate::types::{NumberAsString, SortedVec, SortedVecAdapter, UniqueVec, Uniqu
 use chrono::{DateTime, Utc};
 use core::cmp::Ordering;
 use derivative::Derivative;
+use either::Either;
 use itertools::Itertools;
 use percent_encoding::utf8_percent_encode;
 use serde::{Deserialize, Serialize};
@@ -196,6 +197,20 @@ pub struct MetaItem {
         deserialize_as = "SortedVec<UniqueVec<Vec<_>, VideoUniqueVecAdapter>, VideoSortedVecAdapter>"
     )]
     pub videos: Vec<Video>,
+}
+
+impl MetaItem {
+    /// Returns an iterator over references to Video, skipping special episodes, sorted by released and series_info, oldest first
+    pub fn videos_iter(&self) -> impl Iterator<Item = &Video> {
+        if self.preview.r#type == "series" {
+            Either::Left(self.videos.iter().filter(|video| match video.series_info {
+                Some(SeriesInfo { season, .. }) => season != 0,
+                _ => true,
+            }))
+        } else {
+            Either::Right(self.videos.iter().rev())
+        }
+    }
 }
 
 #[derive(Derivative, Clone, PartialEq, Eq, Serialize, Deserialize, Debug)]

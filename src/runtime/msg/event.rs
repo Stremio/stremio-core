@@ -36,6 +36,9 @@ pub enum Event {
     LibraryItemsPushedToStorage {
         ids: Vec<String>,
     },
+    NotificationsPushedToStorage {
+        ids: Vec<String>,
+    },
     UserPulledFromAPI {
         uid: UID,
     },
