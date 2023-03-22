@@ -201,11 +201,11 @@ pub struct MetaItem {
 
 impl MetaItem {
     /// Returns an iterator over references to Video, skipping special episodes, sorted by released and series_info, oldest first
-    pub fn videos_iter(&self) -> impl Iterator<Item = &Video> {
+    pub fn videos_iter(&self) -> impl Iterator<Item = &Video> + DoubleEndedIterator {
         if self.preview.r#type == "series" {
             Either::Left(self.videos.iter().filter(|video| match video.series_info {
                 Some(SeriesInfo { season, .. }) => season != 0,
-                _ => true,
+                _ => false,
             }))
         } else {
             Either::Right(self.videos.iter().rev())
