@@ -684,23 +684,32 @@ fn library_item_update<E: Env + 'static>(
             if let (Some(library_item), Some(meta_item)) = (&mut library_item, meta_item) {
                 library_item.state.last_video_released = meta_item
                     .videos_iter()
-                    .last()
-                    .and_then(|last_video| last_video.released.to_owned());
+                    .rev()
+                    .find_map(|last_video| last_video.released.to_owned());
             };
             library_item
         }
         _ => None,
     };
     if *library_item != next_library_item {
-        let update_library_item_effects = match library_item {
+        let update_library_item_effects = match &library_item {
             Some(library_item) => Effects::msg(Msg::Internal(Internal::UpdateLibraryItem(
                 library_item.to_owned(),
             )))
             .unchanged(),
             _ => Effects::none().unchanged(),
         };
+        let update_next_library_item_effects = match &next_library_item {
+            Some(next_library_item) => Effects::msg(Msg::Internal(Internal::UpdateLibraryItem(
+                next_library_item.to_owned(),
+            )))
+            .unchanged(),
+            _ => Effects::none().unchanged(),
+        };
         *library_item = next_library_item;
-        Effects::none().join(update_library_item_effects)
+        Effects::none()
+            .join(update_library_item_effects)
+            .join(update_next_library_item_effects)
     } else {
         Effects::none().unchanged()
     }
