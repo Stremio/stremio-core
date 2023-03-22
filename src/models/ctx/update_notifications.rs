@@ -49,61 +49,7 @@ pub fn update_notifications<E: Env + 'static>(
                     addons: &profile.addons,
                 },
             );
-            let mut next_notification_items = library_item_ids
-                .iter()
-                .filter_map(|id| notifications.items.get_key_value(id))
-                .map(|(id, notification_item)| (id.to_owned(), notification_item.to_owned()))
-                .collect();
-            let notification_items_effects = update_notification_items(
-                &mut next_notification_items,
-                &notification_catalogs,
-                &library,
-            );
-            let notifications_effects = if notification_items_effects.has_changed {
-                *notifications = NotificationsBucket::new::<E>(
-                    profile.uid(),
-                    next_notification_items.into_values().collect(),
-                );
-                Effects::msg(Msg::Internal(Internal::NotificationsChanged))
-            } else {
-                Effects::none().unchanged()
-            };
-            notification_catalogs_effects
-                .join(notification_items_effects)
-                .join(notifications_effects)
-        }
-        Msg::Action(Action::Ctx(ActionCtx::Logout)) | Msg::Internal(Internal::Logout) => {
-            let notification_catalogs_effects = eq_update(notification_catalogs, vec![]);
-            let next_notifications = NotificationsBucket::new::<E>(profile.uid(), vec![]);
-            let notifications_effects = if *notifications != next_notifications {
-                *notifications = next_notifications;
-                Effects::msg(Msg::Internal(Internal::NotificationsChanged))
-            } else {
-                Effects::none().unchanged()
-            };
-            notification_catalogs_effects.join(notifications_effects)
-        }
-        Msg::Internal(Internal::CtxAuthResult(auth_request, result)) => match (status, result) {
-            (CtxStatus::Loading(loading_auth_request), Ok(_))
-                if loading_auth_request == auth_request =>
-            {
-                let notification_catalogs_effects = eq_update(notification_catalogs, vec![]);
-                let next_notifications = NotificationsBucket::new::<E>(profile.uid(), vec![]);
-                let notifications_effects = if *notifications != next_notifications {
-                    *notifications = next_notifications;
-                    Effects::msg(Msg::Internal(Internal::NotificationsChanged))
-                } else {
-                    Effects::none().unchanged()
-                };
-                notification_catalogs_effects.join(notifications_effects)
-            }
-            _ => Effects::none().unchanged(),
-        },
-        Msg::Internal(Internal::ResourceRequestResult(request, result)) => {
-            let notification_catalogs_effects = resources_update_with_vector_content::<E, _>(
-                notification_catalogs,
-                ResourcesAction::ResourceRequestResult { request, result },
-            );
+            notifications.created = E::now();
             let notification_items_effects = update_notification_items(
                 &mut notifications.items,
                 &notification_catalogs,
@@ -117,26 +63,66 @@ pub fn update_notifications<E: Env + 'static>(
             notification_catalogs_effects
                 .join(notification_items_effects)
                 .join(notifications_effects)
+                .unchanged()
+        }
+        Msg::Action(Action::Ctx(ActionCtx::Logout)) | Msg::Internal(Internal::Logout) => {
+            let notification_catalogs_effects = eq_update(notification_catalogs, vec![]);
+            let next_notifications = NotificationsBucket::new::<E>(profile.uid(), vec![]);
+            let notifications_effects = if *notifications != next_notifications {
+                *notifications = next_notifications;
+                Effects::msg(Msg::Internal(Internal::NotificationsChanged))
+            } else {
+                Effects::none().unchanged()
+            };
+            notification_catalogs_effects
+                .join(notifications_effects)
+                .unchanged()
+        }
+        Msg::Internal(Internal::CtxAuthResult(auth_request, result)) => match (status, result) {
+            (CtxStatus::Loading(loading_auth_request), Ok(_))
+                if loading_auth_request == auth_request =>
+            {
+                let notification_catalogs_effects = eq_update(notification_catalogs, vec![]);
+                let next_notifications = NotificationsBucket::new::<E>(profile.uid(), vec![]);
+                let notifications_effects = if *notifications != next_notifications {
+                    *notifications = next_notifications;
+                    Effects::msg(Msg::Internal(Internal::NotificationsChanged))
+                } else {
+                    Effects::none().unchanged()
+                };
+                notification_catalogs_effects
+                    .join(notifications_effects)
+                    .unchanged()
+            }
+            _ => Effects::none().unchanged(),
+        },
+        Msg::Internal(Internal::ResourceRequestResult(request, result)) => {
+            let notification_catalogs_effects = resources_update_with_vector_content::<E, _>(
+                notification_catalogs,
+                ResourcesAction::ResourceRequestResult { request, result },
+            );
+            let notification_items_effects = if notification_catalogs_effects.has_changed {
+                update_notification_items(
+                    &mut notifications.items,
+                    &notification_catalogs,
+                    &library,
+                )
+            } else {
+                Effects::none().unchanged()
+            };
+            let notifications_effects = if notification_items_effects.has_changed {
+                Effects::msg(Msg::Internal(Internal::NotificationsChanged))
+            } else {
+                Effects::none().unchanged()
+            };
+            notification_catalogs_effects
+                .join(notification_items_effects)
+                .join(notifications_effects)
+                .unchanged()
         }
         Msg::Internal(Internal::DismissNotificationItem(id)) => {
             match notifications.items.remove(id) {
-                Some(notification_item) => {
-                    let library_effects = match library.items.get(id) {
-                        Some(library_item) => {
-                            let mut library_item = library_item.to_owned();
-                            library_item.state.last_video_released =
-                                notification_item.video.released.to_owned();
-                            Effects::msg(Msg::Internal(Internal::UpdateLibraryItem({
-                                library_item
-                            })))
-                            .unchanged()
-                        }
-                        _ => Effects::none().unchanged(),
-                    };
-                    Effects::msg(Msg::Internal(Internal::NotificationsChanged))
-                        .unchanged()
-                        .join(library_effects)
-                }
+                Some(_) => Effects::msg(Msg::Internal(Internal::NotificationsChanged)).unchanged(),
                 _ => Effects::none().unchanged(),
             }
         }
@@ -159,14 +145,15 @@ fn update_notification_items(
             _ => false,
         })
         .collect::<Vec<_>>();
-    let next_notification_items = notification_catalogs
+    let next_notification_ids = notification_catalogs
         .first()
         .map(|resource| &resource.request.path.extra)
         .map(|extra| Either::Left(extra.iter()))
         .unwrap_or_else(|| Either::Right(std::iter::empty()))
         .find(|extra_value| extra_value.name == LAST_VIDEOS_IDS_EXTRA_PROP.name)
         .map(|extra_value| Either::Left(extra_value.value.split(",")))
-        .unwrap_or_else(|| Either::Right(std::iter::empty()))
+        .unwrap_or_else(|| Either::Right(std::iter::empty()));
+    let next_notification_items = next_notification_ids
         .filter_map(|id| {
             if let Some(notification_item) = notification_items.get(id) {
                 return Some(notification_item.to_owned());
