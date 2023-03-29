@@ -237,7 +237,13 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                 };
                 let switch_to_next_video_effects =
                     switch_to_next_video(&mut self.library_item, &self.next_video);
-                let push_to_library_effects = update_library_item(&self.library_item);
+                let push_to_library_effects = match &self.library_item {
+                    Some(library_item) => Effects::msg(Msg::Internal(Internal::UpdateLibraryItem(
+                        library_item.to_owned(),
+                    )))
+                    .unchanged(),
+                    _ => Effects::none().unchanged(),
+                };
                 let selected_effects = eq_update(&mut self.selected, None);
                 let meta_item_effects = eq_update(&mut self.meta_item, None);
                 let subtitles_effects = eq_update(&mut self.subtitles, vec![]);
@@ -395,7 +401,13 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                     }))
                     .unchanged()
                 };
-                let update_library_item_effects = update_library_item(&self.library_item);
+                let update_library_item_effects = match &self.library_item {
+                    Some(library_item) => Effects::msg(Msg::Internal(Internal::UpdateLibraryItem(
+                        library_item.to_owned(),
+                    )))
+                    .unchanged(),
+                    _ => Effects::none().unchanged(),
+                };
                 trakt_event_effects.join(update_library_item_effects)
             }
             Msg::Action(Action::Player(ActionPlayer::Ended)) if self.selected.is_some() => {
@@ -486,17 +498,6 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
             }
             _ => Effects::none().unchanged(),
         }
-    }
-}
-
-/// Will add an [`Internal::UpdateLibraryItem`] message effect if `Some` is passed.
-fn update_library_item(library_item: &Option<LibraryItem>) -> Effects {
-    match library_item {
-        Some(library_item) => Effects::msg(Msg::Internal(Internal::UpdateLibraryItem(
-            library_item.to_owned(),
-        )))
-        .unchanged(),
-        _ => Effects::none().unchanged(),
     }
 }
 
@@ -710,7 +711,13 @@ fn library_item_update<E: Env + 'static>(
         _ => None,
     };
     if *library_item != next_library_item {
-        let update_library_item_effects = update_library_item(library_item);
+        let update_library_item_effects = match library_item {
+            Some(library_item) => Effects::msg(Msg::Internal(Internal::UpdateLibraryItem(
+                library_item.to_owned(),
+            )))
+            .unchanged(),
+            _ => Effects::none().unchanged(),
+        };
         *library_item = next_library_item;
         Effects::none().join(update_library_item_effects)
     } else {
