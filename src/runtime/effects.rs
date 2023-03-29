@@ -16,10 +16,25 @@ pub enum Effect {
     Future(EffectFuture),
 }
 
+/// # Examples
+///
+/// ```
+/// use stremio_core::runtime::Effects;
+///
+/// let none_unchanged = Effects::none().unchanged();
+/// let default = Effects::default();
+///
+/// assert_eq!(default.has_changed, false);
+/// assert!(none_unchanged.is_empty());
+/// assert!(default.is_empty());
+/// assert_eq!(none_unchanged.has_changed, default.has_changed);
+/// ```
 #[derive(IntoIterator)]
 pub struct Effects {
     #[into_iterator(owned)]
+    /// The effects to be applied
     effects: Vec<Effect>,
+    /// whether or not the effects are changing something
     pub has_changed: bool,
 }
 
@@ -62,5 +77,37 @@ impl Effects {
         self.has_changed = self.has_changed || effects.has_changed;
         self.effects.append(&mut effects.effects);
         self
+    }
+
+    /// Returns the amount of effects
+    pub fn len(&self) -> usize {
+        self.effects.len()
+    }
+
+    /// Returns whether there are any effects
+    pub fn is_empty(&self) -> bool {
+        self.effects.is_empty()
+    }
+}
+
+impl Default for Effects {
+    fn default() -> Self {
+        Self::none().unchanged()
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    #[test]
+    fn test_effects_defaults() {
+        let none_unchanged = Effects::none().unchanged();
+        let default = Effects::default();
+
+        assert_eq!(default.has_changed, false);
+        assert!(none_unchanged.is_empty());
+        assert!(default.is_empty());
+        assert_eq!(none_unchanged.has_changed, default.has_changed);
     }
 }

@@ -104,7 +104,6 @@ pub enum ActionPlayer {
         paused: bool,
     },
     Ended,
-    PushToLibrary,
 }
 
 #[derive(Clone, Deserialize, Debug)]
