@@ -1,14 +1,18 @@
 use derivative::Derivative;
 use serde::Serialize;
 
-#[derive(Derivative, Clone, PartialEq, Eq, Serialize, Debug)]
-#[derivative(Default)]
+#[derive(Clone, PartialEq, Eq, Serialize, Debug)]
 #[serde(tag = "type", content = "content")]
 pub enum Loadable<R, E> {
-    #[derivative(Default)]
     Loading,
     Ready(R),
     Err(E),
+}
+
+impl<R, E> Default for Loadable<R, E> {
+    fn default() -> Self {
+        Self::Loading
+    }
 }
 
 impl<R, E> Loadable<R, E> {

@@ -117,10 +117,18 @@ pub enum ActionLoad {
     InstalledAddonsWithFilters(InstalledAddonsWithFiltersSelected),
     LibraryWithFilters(LibraryWithFiltersSelected),
     LibraryByType(LibraryByTypeSelected),
+    /// Loads the data required for Local search
+    LocalSearch,
     MetaDetails(MetaDetailsSelected),
     Player(Box<PlayerSelected>),
     Link,
     Notifications,
+}
+
+#[derive(Clone, Deserialize, Debug)]
+pub enum ActionSearch {
+    /// autocomplete request for Search queries
+    Autocomplete(String),
 }
 
 /// Action messages
@@ -139,5 +147,6 @@ pub enum Action {
     StreamingServer(ActionStreamingServer),
     Player(ActionPlayer),
     Load(ActionLoad),
+    Search(ActionSearch),
     Unload,
 }
