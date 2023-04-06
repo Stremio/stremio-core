@@ -66,8 +66,12 @@ hex = "0.4.*"
 
 # error handling
 anyhow = "1.0.*"
+thiserror = "1"
 
 localsearch = { git = "https://github.com/Stremio/local-search" }
+
+# Number operations
+num = { version = "0.4.0", default-features = false }
 
 [dev-dependencies]
 tokio = { version = "1.12.*", features = ["rt", "macros"] }
