@@ -47,19 +47,19 @@ impl Stream {
                 xl: None,
                 tr: announce
                     .iter()
+                    // `tracker` and `dht` prefixes are used internally by the server.js
+                    // we need to remove those prefixes when generating the magnet URL
                     .map(|tracker| {
-                        if tracker.starts_with("tracker:") {
-                            tracker.replacen("tracker:", "", 1)
-                        } else {
-                            tracker.to_owned()
-                        }
+                        tracker
+                            .strip_prefix("tracker:")
+                            .map(ToString::to_string)
+                            .unwrap_or_else(|| tracker.to_owned())
                     })
                     .map(|tracker| {
-                        if tracker.starts_with("dht:") {
-                            tracker.replacen("dht:", "", 1)
-                        } else {
-                            tracker
-                        }
+                        tracker
+                            .strip_prefix("dht:")
+                            .map(ToString::to_string)
+                            .unwrap_or_else(|| tracker.to_owned())
                     })
                     .map(|tracker| {
                         utf8_percent_encode(&tracker, URI_COMPONENT_ENCODE_SET).to_string()
