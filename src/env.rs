@@ -95,7 +95,7 @@ impl WebEnv {
             })
             .boxed_local()
     }
-    pub fn get_location_hash() -> EnvFuture<String> {
+    pub fn get_location_hash() -> EnvFuture<'static, String> {
         get_location_hash()
             .map(|location_hash| {
                 location_hash
@@ -403,7 +403,7 @@ impl Env for WebEnv {
             .single()
             .expect("Invalid timestamp")
     }
-    fn flush_analytics() -> EnvFuture<()> {
+    fn flush_analytics() -> EnvFuture<'static, ()> {
         ANALYTICS.flush().boxed_local()
     }
     fn analytics_context(

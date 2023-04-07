@@ -1,8 +1,8 @@
 use serde::Serialize;
-use url::Url;
 use stremio_core::models::common::Loadable;
 use stremio_core::models::ctx::CtxError;
 use stremio_core::models::data_export::DataExport;
+use url::Url;
 use wasm_bindgen::JsValue;
 
 mod model {
@@ -19,9 +19,7 @@ pub fn serialize_data_export(data_export: &DataExport) -> JsValue {
         export_url: data_export
             .export_url
             .as_ref()
-            .map(|(_auth_key, loadable)| {
-                loadable
-            }),
+            .map(|(_auth_key, loadable)| loadable),
     })
     .unwrap()
 }

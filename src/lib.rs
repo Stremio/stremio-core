@@ -1,7 +1,6 @@
-#![allow(clippy::module_inception)]
+#[allow(clippy::module_inception)]
+pub mod model;
 
-mod model;
-
-mod env;
-mod event;
-mod stremio_core_web;
+pub mod env;
+pub mod event;
+pub mod stremio_core_web;
