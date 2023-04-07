@@ -3,6 +3,7 @@
 /target
 /wasm_build
 .babelrc
-build.sh
+scripts/build.sh
+.cargo
 Cargo.lock
 Cargo.toml
