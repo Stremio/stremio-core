@@ -9,7 +9,7 @@ use serde::{Deserialize, Serialize};
 use serde_with::{serde_as, DefaultOnError, NoneAsEmptyString};
 use url::Url;
 
-use localsearch::{self, LocalSearch as Searcher, Score, DEFAULT_SCORE_THRESHOLD};
+use localsearch::{self, LocalSearch as Searcher, DEFAULT_SCORE_THRESHOLD};
 
 use crate::{
     constants::{CINEMETA_FEED_CATALOG_ID, CINEMETA_URL},
@@ -21,10 +21,14 @@ use crate::{
         msg::{Action, ActionSearch, Internal, Msg},
         Effect, EffectFuture, Effects, Env, EnvError, EnvFutureExt, UpdateWithCtx,
     },
-    types::NumberAsString,
 };
 
 pub use imdb_rating::*;
+
+const INDEX_OPTIONS: IndexOptions = IndexOptions {
+    imdb_rating_weight: 0.5,
+    popularity_weight: 0.5,
+};
 
 /// The response returned when fetching the searchable items list.
 ///
@@ -55,13 +59,16 @@ pub struct Searchable {
     pub release_info: Option<String>,
 }
 
-#[derive(Default, Clone, Serialize, Debug)]
+#[derive(Default, Serialize, Debug)]
 // #[derivative(Default)]
 #[serde(rename_all = "camelCase")]
 pub struct LocalSearch {
     /// The Searchable items that will be used for the local search.
     ///
     pub current_records: Vec<Searchable>,
+    /// The results of the search autocompletion
+    pub search_results: Vec<Searchable>,
+    #[serde(skip)]
     pub searcher: Option<Searcher<Searchable>>,
     /// A loadable resource in order to be able to search for items while
     /// a new set of items is being loaded (i.e. refreshed)
@@ -75,6 +82,7 @@ impl LocalSearch {
         (
             Self {
                 current_records: vec![],
+                search_results: vec![],
                 searcher: None,
                 latest_records: Loadable::Loading,
             },
@@ -109,7 +117,7 @@ impl LocalSearch {
         let max_imdb_rating = self
             .current_records
             .iter()
-            // it's ok to set rating to 0 for the max if non is present
+            // it's ok to set rating to 0 for the max if no items are present
             .map(|searchable| searchable.imdb_rating.unwrap_or_default())
             .max_by(|rating_a, rating_b| rating_a.partial_cmp(rating_b).unwrap())
             .unwrap_or_default();
@@ -118,7 +126,7 @@ impl LocalSearch {
             .current_records
             .iter()
             .map(|searchable| searchable.popularity.unwrap_or_default())
-            // it's ok to set popularity to 0 for the max if non is present
+            // it's ok to set popularity to 0 for the max if no items are present
             .max_by(|popularity_a, popularity_b| popularity_a.partial_cmp(&popularity_b).unwrap())
             .unwrap_or_default();
 
@@ -139,7 +147,7 @@ impl LocalSearch {
                     let popularity_percent =
                         Ratio::new(popularity, max_popularity.max(1)).to_f64()?;
 
-                    Some((popularity_percent * index_options.imdb_rating_weight).exp())
+                    Some((popularity_percent * index_options.popularity_weight).exp())
                 })
                 .unwrap_or(1.0);
 
@@ -154,19 +162,29 @@ impl LocalSearch {
 }
 
 impl<E: Env + 'static> UpdateWithCtx<E> for LocalSearch {
-    fn update(&mut self, msg: &Msg, ctx: &Ctx) -> Effects {
-        let cinemeta_addon = ctx.profile.addons.first().unwrap();
+    fn update(&mut self, msg: &Msg, _ctx: &Ctx) -> Effects {
 
         match msg {
-            Msg::Action(Action::Search(ActionSearch::Autocomplete(search_text))) => {
-                match self.searcher {
+            Msg::Action(Action::Search(ActionSearch::Search {
+                search_query,
+                max_results,
+            })) => {
+                match &self.searcher {
                     // local search can be performed
-                    Some(searcher) => {}
+                    Some(searcher) => {
+                        let new_search_results = searcher
+                            .search(search_query, *max_results)
+                            .into_iter()
+                            .map(|(searchable, _score)| searchable.to_owned())
+                            .collect();
+
+                        eq_update(&mut self.search_results, new_search_results)
+                    }
                     // we first need to load the Searchable records from Cinemeta
-                    None => return Effects::none().unchanged(),
+                    None => Effects::none().unchanged(),
                 }
             }
-            Msg::Internal(Internal::LoadLocalSearchResult(url, result)) => {
+            Msg::Internal(Internal::LoadLocalSearchResult(_url, result)) => {
                 match result {
                     Ok(searchable) => {
                         // update the latest records, used for refreshing the list
@@ -179,13 +197,16 @@ impl<E: Env + 'static> UpdateWithCtx<E> for LocalSearch {
                         let current_records_effects =
                             eq_update(&mut self.current_records, searchable.to_owned());
 
-                        const INDEX_OPTIONS: IndexOptions = IndexOptions {
-                            imdb_rating_weight: 0.5,
-                            popularity_weight: 0.5,
-                        };
-                        let searcher = self.index(INDEX_OPTIONS, DEFAULT_SCORE_THRESHOLD);
+                        // Due to LocalSearch not implementing PartialEq, we handle the effects
+                        // based on the current records effects.
+                        let searcher_effects = if current_records_effects.has_changed {
+                            let searcher = self.index(INDEX_OPTIONS, DEFAULT_SCORE_THRESHOLD);
 
-                        let searcher_effects = eq_update(&mut self.searcher, Some(searcher));
+                            self.searcher = Some(searcher);
+                            Effects::none()
+                        } else {
+                            Effects::none().unchanged()
+                        };
 
                         last_records_effects
                             .join(current_records_effects)
@@ -204,14 +225,9 @@ impl<E: Env + 'static> UpdateWithCtx<E> for LocalSearch {
 }
 
 mod imdb_rating {
-    use std::{
-        convert::{TryFrom, TryInto},
-        fmt,
-        num::{ParseFloatError, ParseIntError},
-        str::FromStr,
-    };
+    use std::{convert::TryFrom, num::ParseFloatError, str::FromStr};
 
-    use serde::{de::DeserializeOwned, Deserialize, Serialize};
+    use serde::{Deserialize, Serialize};
     use thiserror::Error;
 
     /// With a scale between 0 and 10 in either a floating or whole numbers

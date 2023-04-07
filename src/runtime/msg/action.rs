@@ -127,8 +127,11 @@ pub enum ActionLoad {
 
 #[derive(Clone, Deserialize, Debug)]
 pub enum ActionSearch {
-    /// autocomplete request for Search queries
-    Autocomplete(String),
+    /// Request for Search queries
+    Search {
+        search_query: String,
+        max_results: usize,
+    }
 }
 
 /// Action messages
