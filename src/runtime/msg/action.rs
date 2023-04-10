@@ -131,7 +131,7 @@ pub enum ActionSearch {
     Search {
         search_query: String,
         max_results: usize,
-    }
+    },
 }
 
 /// Action messages

@@ -69,7 +69,7 @@ anyhow = "1.0.*"
 thiserror = "1"
 
 # local search and autocomplete functionallity
-localsearch = { version = "0.1.0", git = "https://github.com/Stremio/local-search" }
+localsearch = { version = "0.1.0", git = "https://github.com/Stremio/local-search", branch = "tokenizer-trait" }
 
 # Number operations
 num = { version = "0.4.0", default-features = false }

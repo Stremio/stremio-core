@@ -1,16 +1,21 @@
 use crate::constants::{LIBRARY_COLLECTION_NAME, URI_COMPONENT_ENCODE_SET};
-use crate::models::common::{
-    descriptor_update, eq_update, DescriptorAction, DescriptorLoadable, Loadable,
+use crate::models::{
+    common::{descriptor_update, eq_update, DescriptorAction, DescriptorLoadable, Loadable},
+    ctx::{update_library, update_profile, CtxError, OtherError},
+    local_search::LocalSearch,
 };
-use crate::models::ctx::{update_library, update_profile, CtxError, OtherError};
-use crate::runtime::msg::{Action, ActionCtx, Event, Internal, Msg};
-use crate::runtime::{Effect, EffectFuture, Effects, Env, EnvFutureExt, Update};
-use crate::types::api::{
-    fetch_api, APIRequest, APIResult, AuthRequest, AuthResponse, CollectionResponse,
-    DatastoreCommand, DatastoreRequest, LibraryItemsResponse, SuccessResponse,
+use crate::runtime::{
+    msg::{Action, ActionCtx, Event, Internal, Msg},
+    Effect, EffectFuture, Effects, Env, EnvFutureExt, Update,
 };
-use crate::types::library::LibraryBucket;
-use crate::types::profile::{Auth, AuthKey, Profile};
+use crate::types::{
+    api::{
+        fetch_api, APIRequest, APIResult, AuthRequest, AuthResponse, CollectionResponse,
+        DatastoreCommand, DatastoreRequest, LibraryItemsResponse, SuccessResponse,
+    },
+    library::LibraryBucket,
+    profile::{Auth, AuthKey, Profile},
+};
 use derivative::Derivative;
 use enclose::enclose;
 use futures::{future, FutureExt, TryFutureExt};
@@ -31,6 +36,8 @@ pub struct Ctx {
     // TODO StreamsBucket
     // TODO SubtitlesBucket
     // TODO SearchesBucket
+    #[serde(skip)]
+    pub local_search: LocalSearch,
     #[serde(skip)]
     pub library: LibraryBucket,
     #[serde(skip)]

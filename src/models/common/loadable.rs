@@ -1,4 +1,3 @@
-use derivative::Derivative;
 use serde::Serialize;
 
 #[derive(Clone, PartialEq, Eq, Serialize, Debug)]

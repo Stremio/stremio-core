@@ -59,8 +59,8 @@ pub struct Searchable {
     pub release_info: Option<String>,
 }
 
-#[derive(Default, Serialize, Debug)]
-// #[derivative(Default)]
+/// Local search functionality for the search engine's suggestions when typing
+#[derive(Default, Serialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct LocalSearch {
     /// The Searchable items that will be used for the local search.
@@ -163,7 +163,6 @@ impl LocalSearch {
 
 impl<E: Env + 'static> UpdateWithCtx<E> for LocalSearch {
     fn update(&mut self, msg: &Msg, _ctx: &Ctx) -> Effects {
-
         match msg {
             Msg::Action(Action::Search(ActionSearch::Search {
                 search_query,
