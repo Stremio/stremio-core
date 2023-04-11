@@ -40,28 +40,28 @@ serde_with = { version = "1.14.*", features = ["macros", "chrono"] }
 flate2 = "1.0.*"
 futures = "0.3.*"
 http = "0.2.*"
-url = { version = "2.2.*", features = ["serde"] }
-percent-encoding = "2.1.*"
-chrono = { version = "0.4.*", features = ["serde"] }
-semver = { version = "0.11.*", features = ["serde"] }
-base64 = "0.13.*"
-sha1 = "0.10.*"
-either = "1.6.*"
-enclose = "1.1.*"
-derivative = "2.2.*"
-derive_more = "0.99.*"
+url = { version = "2.2", features = ["serde"] }
+percent-encoding = "2.1"
+chrono = { version = "0.4", features = ["serde"] }
+semver = { version = "1", features = ["serde"] }
+base64 = "0.13"
+base64_21 = { version = "0.21", package = "base64"}
+sha1 = "0.10"
+either = "1.6"
+enclose = "1.1"
+derivative = "2.2"
+derive_more = "0.99"
 boolinator = "2.4.*"
-strum = "0.22.*"
-strum_macros = "0.22.*"
-lazysort = "0.2.*"
-lazy_static = "1.4.*"
-itertools = "0.10.*"
-magnet-url = "2.0.*"
-hex = "0.4.*"
-anyhow = "1.0.*"
+strum = { version = "0.24", features = ["derive"] }
+lazysort = "0.2"
+lazy_static = "1.4"
+itertools = "0.10"
+magnet-url = "2.0"
+hex = "0.4"
+anyhow = "1.0"
 
 [dev-dependencies]
-tokio = { version = "1.12.*", features = ["rt", "macros"] }
+tokio = { version = "1.12", features = ["rt", "macros"] }
 tokio-current-thread = "=0.2.0-alpha.1"
-serde_test = "1.0.*"
-assert_matches = "1.5.*"
+serde_test = "1.0"
+assert_matches = "1.5"

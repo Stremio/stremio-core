@@ -1,7 +1,9 @@
 use crate::addon_transport::AddonTransport;
+use crate::constants::BASE64;
 use crate::runtime::{ConditionalSend, Env, EnvError, EnvFutureExt, TryEnvFuture};
 use crate::types::addon::{Manifest, ResourcePath, ResourceResponse};
 use crate::types::resource::{MetaItem, MetaItemPreview, Stream, Subtitles};
+use base64_21::Engine;
 use futures::{future, TryFutureExt};
 use http::Request;
 use serde::Deserialize;
@@ -207,7 +209,7 @@ fn build_legacy_req(transport_url: &Url, path: &ResourcePath) -> Result<Request<
     // not safe; however, the original implementation of stremio-addons work the same way,
     // so we're technically replicating a legacy bug on purpose
     // https://github.com/Stremio/stremio-addons/blob/v2.8.14/rpc.js#L53
-    let param_str = base64::encode(
+    let param_str = BASE64.encode(
         serde_json::to_string(&q_json).map_err(|error| EnvError::Serde(error.to_string()))?,
     );
     let url = format!("{transport_url}/q.json?b={param_str}");

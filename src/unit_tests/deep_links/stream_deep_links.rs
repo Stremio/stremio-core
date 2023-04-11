@@ -1,7 +1,8 @@
-use crate::constants::URI_COMPONENT_ENCODE_SET;
+use crate::constants::{BASE64, URI_COMPONENT_ENCODE_SET};
 use crate::deep_links::StreamDeepLinks;
 use crate::types::addon::{ResourcePath, ResourceRequest};
 use crate::types::resource::{Stream, StreamSource};
+use base64_21::Engine;
 use percent_encoding::utf8_percent_encode;
 use std::convert::TryFrom;
 use std::str::FromStr;
@@ -85,7 +86,7 @@ fn stream_deep_links_torrent() {
         sdl.external_player.href,
         Some(format!(
             "data:application/octet-stream;charset=utf-8;base64,{}",
-            base64::encode(format!(
+            BASE64.encode(format!(
                 "#EXTM3U\n#EXTINF:0\n{}",
                 format_args!(
                     "{}/{}/{}?tr={}",
@@ -150,7 +151,7 @@ fn stream_deep_links_youtube() {
         sdl.external_player.href,
         Some(format!(
             "data:application/octet-stream;charset=utf-8;base64,{}",
-            base64::encode(format!(
+            BASE64.encode(format!(
                 "#EXTM3U\n#EXTINF:0\n{}/yt/{}",
                 STREAMING_SERVER_URL, YT_ID
             ))
@@ -218,7 +219,7 @@ fn stream_deep_links_requests() {
         sdl.external_player.href,
         Some(format!(
             "data:application/octet-stream;charset=utf-8;base64,{}",
-            base64::encode(format!(
+            BASE64.encode(format!(
                 "#EXTM3U\n#EXTINF:0\n{}/yt/{}",
                 STREAMING_SERVER_URL, YT_ID
             ))
