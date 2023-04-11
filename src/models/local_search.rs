@@ -12,13 +12,13 @@ use url::Url;
 use localsearch::{self, LocalSearch as Searcher, DEFAULT_SCORE_THRESHOLD};
 
 use crate::{
-    constants::{CINEMETA_FEED_CATALOG_ID, CINEMETA_CATALOGS_URL},
+    constants::{CINEMETA_CATALOGS_URL, CINEMETA_FEED_CATALOG_ID},
     models::{
         common::{eq_update, Loadable},
         ctx::Ctx,
     },
     runtime::{
-        msg::{Action, ActionSearch, Internal, Msg, ActionLoad},
+        msg::{Action, ActionLoad, ActionSearch, Internal, Msg},
         Effect, EffectFuture, Effects, Env, EnvError, EnvFutureExt, UpdateWithCtx,
     },
 };
@@ -49,11 +49,17 @@ pub struct IndexOptions {
 #[serde(rename_all = "camelCase")]
 pub struct Searchable {
     pub id: String,
+    /// Some deleted or duplicated ids might not have the name
+    /// this is why we default it to empty string and will later
+    /// filter out any items with empty `name` before indexing.
+    #[serde(default)]
     pub name: String,
     pub r#type: String,
     #[serde(default)]
     #[serde_as(deserialize_as = "DefaultOnError<NoneAsEmptyString>")]
     pub poster: Option<Url>,
+    #[serde(default)]
+    #[serde_as(deserialize_as = "DefaultOnError<NoneAsEmptyString>")]
     pub imdb_rating: Option<ImdbRating>,
     pub popularity: Option<u64>,
     pub release_info: Option<String>,
@@ -73,7 +79,6 @@ pub struct LocalSearch {
     pub searcher: Option<Searcher<Searchable>>,
     /// A loadable resource in order to be able to search for items while
     /// a new set of items is being loaded (i.e. refreshed)
-    // #[serde(skip)]
     pub latest_records: Loadable<Vec<Searchable>, EnvError>,
 }
 
@@ -92,6 +97,7 @@ impl LocalSearch {
         )
     }
 
+    /// fetches the `/feed.js` using the given [`Url`]
     fn get_searchable_items<E: Env + 'static>(url: &Url) -> Effect {
         let endpoint = url
             .join(CINEMETA_FEED_CATALOG_ID)
@@ -169,13 +175,12 @@ impl<E: Env + 'static> UpdateWithCtx<E> for LocalSearch {
             Msg::Action(Action::Load(ActionLoad::LocalSearch)) => {
                 let load_feed_effect = Self::get_searchable_items::<E>(&*CINEMETA_CATALOGS_URL);
 
-                let last_records_effects = eq_update(
-                    &mut self.latest_records,
-                    Loadable::Loading,
-                );
+                let last_records_effects = eq_update(&mut self.latest_records, Loadable::Loading);
 
-                Effects::one(load_feed_effect).unchanged().join(last_records_effects)
-            },
+                Effects::one(load_feed_effect)
+                    .unchanged()
+                    .join(last_records_effects)
+            }
             Msg::Action(Action::Search(ActionSearch::Search {
                 search_query,
                 max_results,
@@ -198,6 +203,18 @@ impl<E: Env + 'static> UpdateWithCtx<E> for LocalSearch {
             Msg::Internal(Internal::LoadLocalSearchResult(_url, result)) => {
                 match result {
                     Ok(searchable) => {
+                        // filters out any `Searchable` items without a `name`
+                        let searchable = searchable
+                            .iter()
+                            .filter_map(|searchable| {
+                                if !searchable.name.is_empty() {
+                                    Some(searchable.to_owned())
+                                } else {
+                                    None
+                                }
+                            })
+                            .collect::<Vec<_>>();
+
                         // update the latest records, used for refreshing the list
                         let last_records_effects = eq_update(
                             &mut self.latest_records,
@@ -325,8 +342,6 @@ mod imdb_rating {
 mod test {
     use std::convert::TryFrom;
 
-    use serde_json::Value;
-
     use super::*;
 
     #[test]
@@ -367,5 +382,23 @@ mod test {
             assert!(matches!(bad_results[1], Err(ParseError::OutOfRange)));
             assert!(matches!(bad_results[2], Err(ParseError::Parsing(_))));
         }
+    }
+
+    #[test]
+    fn test_deserialization_of_searchable() {
+        // json with the same movie series in IMDB but one of the ids is only a redirect to the other
+        let json = serde_json::json! {
+            [{"id":"tt22054878","type":"series","popularity":6880},
+            {"id":"tt15264452","name":"The Lørenskog Disappearance","releaseInfo":"2022","type":"series","poster":"https://images.metahub.space/poster/small/tt15264452/img","imdbRating":"6.0","popularity":6879}]
+        };
+
+        let searchable_results = serde_json::from_value::<Vec<Searchable>>(json).expect("Should deserialize json value");
+
+        assert_eq!(2, searchable_results.len());
+        
+        let redirected_id = searchable_results.get(0).unwrap();
+
+        assert!(redirected_id.name.is_empty());
+        assert!(redirected_id.poster.is_none());
     }
 }
