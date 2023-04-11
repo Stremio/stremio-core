@@ -135,7 +135,7 @@ impl LocalSearch {
             .iter()
             .map(|searchable| searchable.popularity.unwrap_or_default())
             // it's ok to set popularity to 0 for the max if no items are present
-            .max_by(|popularity_a, popularity_b| popularity_a.partial_cmp(&popularity_b).unwrap())
+            .max_by(|popularity_a, popularity_b| popularity_a.partial_cmp(popularity_b).unwrap())
             .unwrap_or_default();
 
         let score_computer = move |searchable: &Searchable| {
@@ -173,7 +173,7 @@ impl<E: Env + 'static> UpdateWithCtx<E> for LocalSearch {
     fn update(&mut self, msg: &Msg, _ctx: &Ctx) -> Effects {
         match msg {
             Msg::Action(Action::Load(ActionLoad::LocalSearch)) => {
-                let load_feed_effect = Self::get_searchable_items::<E>(&*CINEMETA_CATALOGS_URL);
+                let load_feed_effect = Self::get_searchable_items::<E>(&CINEMETA_CATALOGS_URL);
 
                 let last_records_effects = eq_update(&mut self.latest_records, Loadable::Loading);
 
@@ -223,7 +223,7 @@ impl<E: Env + 'static> UpdateWithCtx<E> for LocalSearch {
 
                         // and the current, used for the search itself
                         let current_records_effects =
-                            eq_update(&mut self.current_records, searchable.to_owned());
+                            eq_update(&mut self.current_records, searchable);
 
                         // Due to LocalSearch not implementing PartialEq, we handle the effects
                         // based on the current records effects.
@@ -316,7 +316,7 @@ mod imdb_rating {
         type Error = ParseError;
 
         fn try_from(value: f64) -> Result<Self, Self::Error> {
-            if value >= 0.0 && value <= 10.0 {
+            if (0.0..=10.0).contains(&value) {
                 Ok(Self(value))
             } else {
                 Err(ParseError::OutOfRange)
@@ -330,8 +330,8 @@ mod imdb_rating {
         fn from_str(value: &str) -> Result<Self, Self::Err> {
             let rating = value
                 .parse::<f64>()
-                .map_err(|err| ParseError::Parsing(err))
-                .and_then(|parsed_value| Self::try_from(parsed_value))?;
+                .map_err(ParseError::Parsing)
+                .and_then(Self::try_from)?;
 
             Ok(rating)
         }
@@ -392,10 +392,11 @@ mod test {
             {"id":"tt15264452","name":"The Lørenskog Disappearance","releaseInfo":"2022","type":"series","poster":"https://images.metahub.space/poster/small/tt15264452/img","imdbRating":"6.0","popularity":6879}]
         };
 
-        let searchable_results = serde_json::from_value::<Vec<Searchable>>(json).expect("Should deserialize json value");
+        let searchable_results =
+            serde_json::from_value::<Vec<Searchable>>(json).expect("Should deserialize json value");
 
         assert_eq!(2, searchable_results.len());
-        
+
         let redirected_id = searchable_results.get(0).unwrap();
 
         assert!(redirected_id.name.is_empty());
