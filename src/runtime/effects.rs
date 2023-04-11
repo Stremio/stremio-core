@@ -105,7 +105,7 @@ mod test {
         let none_unchanged = Effects::none().unchanged();
         let default = Effects::default();
 
-        assert_eq!(default.has_changed, false);
+        assert!(!default.has_changed);
         assert!(none_unchanged.is_empty());
         assert!(default.is_empty());
         assert_eq!(none_unchanged.has_changed, default.has_changed);
