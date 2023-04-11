@@ -87,17 +87,14 @@ fn stream_deep_links_torrent() {
             "data:application/octet-stream;charset=utf-8;base64,{}",
             base64::encode(format!(
                 "#EXTM3U\n#EXTINF:0\n{}",
-                format!(
-                    "{}/{}/{}{}",
+                format_args!(
+                    "{}/{}/{}?tr={}",
                     STREAMING_SERVER_URL,
                     hex::encode(info_hash),
                     file_idx,
-                    format!(
-                        "?tr={}",
-                        utf8_percent_encode(
-                            "http://bt1.archive.org:6969/announce",
-                            URI_COMPONENT_ENCODE_SET
-                        )
+                    utf8_percent_encode(
+                        "http://bt1.archive.org:6969/announce",
+                        URI_COMPONENT_ENCODE_SET
                     ),
                 )
             ))
