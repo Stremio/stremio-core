@@ -3,7 +3,7 @@ use crate::constants::BASE64;
 use crate::runtime::{ConditionalSend, Env, EnvError, EnvFutureExt, TryEnvFuture};
 use crate::types::addon::{Manifest, ResourcePath, ResourceResponse};
 use crate::types::resource::{MetaItem, MetaItemPreview, Stream, Subtitles};
-use base64_21::Engine;
+use base64::Engine;
 use futures::{future, TryFutureExt};
 use http::Request;
 use serde::Deserialize;

@@ -1,6 +1,6 @@
 use crate::constants::{BASE64, URI_COMPONENT_ENCODE_SET, YOUTUBE_ADDON_ID_PREFIX};
 use crate::types::resource::Subtitles;
-use base64_21::Engine;
+use base64::Engine;
 use boolinator::Boolinator;
 #[cfg(test)]
 use derivative::Derivative;

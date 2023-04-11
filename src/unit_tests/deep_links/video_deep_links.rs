@@ -2,7 +2,7 @@ use crate::constants::BASE64;
 use crate::deep_links::{ExternalPlayerLink, VideoDeepLinks};
 use crate::types::addon::{ResourcePath, ResourceRequest};
 use crate::types::resource::Video;
-use base64_21::Engine;
+use base64::Engine;
 use std::convert::TryFrom;
 use std::str::FromStr;
 use url::Url;

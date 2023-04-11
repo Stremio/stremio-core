@@ -44,8 +44,7 @@ url = { version = "2.2", features = ["serde"] }
 percent-encoding = "2.1"
 chrono = { version = "0.4", features = ["serde"] }
 semver = { version = "1", features = ["serde"] }
-base64 = "0.13"
-base64_21 = { version = "0.21", package = "base64"}
+base64 = { version = "0.21"}
 sha1 = "0.10"
 either = "1.6"
 enclose = "1.1"

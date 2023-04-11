@@ -1,7 +1,7 @@
 use crate::constants::{BASE64, URI_COMPONENT_ENCODE_SET};
 use crate::deep_links::ExternalPlayerLink;
 use crate::types::resource::{Stream, StreamSource};
-use base64_21::Engine;
+use base64::Engine;
 use percent_encoding::utf8_percent_encode;
 use std::convert::TryFrom;
 use std::str::FromStr;
