@@ -12,13 +12,13 @@ use url::Url;
 use localsearch::{self, LocalSearch as Searcher, DEFAULT_SCORE_THRESHOLD};
 
 use crate::{
-    constants::{CINEMETA_FEED_CATALOG_ID, CINEMETA_URL},
+    constants::{CINEMETA_FEED_CATALOG_ID, CINEMETA_CATALOGS_URL},
     models::{
         common::{eq_update, Loadable},
         ctx::Ctx,
     },
     runtime::{
-        msg::{Action, ActionSearch, Internal, Msg},
+        msg::{Action, ActionSearch, Internal, Msg, ActionLoad},
         Effect, EffectFuture, Effects, Env, EnvError, EnvFutureExt, UpdateWithCtx,
     },
 };
@@ -65,6 +65,7 @@ pub struct Searchable {
 pub struct LocalSearch {
     /// The Searchable items that will be used for the local search.
     ///
+    // #[serde(skip)]
     pub current_records: Vec<Searchable>,
     /// The results of the search autocompletion
     pub search_results: Vec<Searchable>,
@@ -72,12 +73,13 @@ pub struct LocalSearch {
     pub searcher: Option<Searcher<Searchable>>,
     /// A loadable resource in order to be able to search for items while
     /// a new set of items is being loaded (i.e. refreshed)
+    // #[serde(skip)]
     pub latest_records: Loadable<Vec<Searchable>, EnvError>,
 }
 
 impl LocalSearch {
     pub fn init<E: Env + 'static>() -> (Self, Effects) {
-        let effects = Effects::one(Self::get_searchable_items::<E>(&CINEMETA_URL));
+        let effects = Effects::one(Self::get_searchable_items::<E>(&CINEMETA_CATALOGS_URL));
 
         (
             Self {
@@ -164,6 +166,16 @@ impl LocalSearch {
 impl<E: Env + 'static> UpdateWithCtx<E> for LocalSearch {
     fn update(&mut self, msg: &Msg, _ctx: &Ctx) -> Effects {
         match msg {
+            Msg::Action(Action::Load(ActionLoad::LocalSearch)) => {
+                let load_feed_effect = Self::get_searchable_items::<E>(&*CINEMETA_CATALOGS_URL);
+
+                let last_records_effects = eq_update(
+                    &mut self.latest_records,
+                    Loadable::Loading,
+                );
+
+                Effects::one(load_feed_effect).unchanged().join(last_records_effects)
+            },
             Msg::Action(Action::Search(ActionSearch::Search {
                 search_query,
                 max_results,

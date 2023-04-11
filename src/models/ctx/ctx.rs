@@ -2,7 +2,6 @@ use crate::constants::{LIBRARY_COLLECTION_NAME, URI_COMPONENT_ENCODE_SET};
 use crate::models::{
     common::{descriptor_update, eq_update, DescriptorAction, DescriptorLoadable, Loadable},
     ctx::{update_library, update_profile, CtxError, OtherError},
-    local_search::LocalSearch,
 };
 use crate::runtime::{
     msg::{Action, ActionCtx, Event, Internal, Msg},
@@ -36,8 +35,6 @@ pub struct Ctx {
     // TODO StreamsBucket
     // TODO SubtitlesBucket
     // TODO SearchesBucket
-    #[serde(skip)]
-    pub local_search: LocalSearch,
     #[serde(skip)]
     pub library: LibraryBucket,
     #[serde(skip)]
