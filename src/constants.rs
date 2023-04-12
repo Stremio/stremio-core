@@ -38,6 +38,9 @@ pub const URI_COMPONENT_ENCODE_SET: &AsciiSet = &NON_ALPHANUMERIC
     .remove(b'(')
     .remove(b')');
 
+pub static BASE64: base64::engine::general_purpose::GeneralPurpose =
+    base64::engine::general_purpose::STANDARD;
+
 lazy_static! {
     pub static ref CINEMETA_URL: Url = Url::parse("https://v3-cinemeta.strem.io/manifest.json")
         .expect("CINEMETA_URL parse failed");
