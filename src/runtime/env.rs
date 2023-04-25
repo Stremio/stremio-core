@@ -214,6 +214,12 @@ pub trait Env {
                         .await?;
                     schema_version = 6;
                 };
+                if schema_version == 6 {
+                    migrate_storage_schema_to_v7::<Self>()
+                        .map_err(|error| EnvError::StorageSchemaVersionUpgrade(Box::new(error)))
+                        .await?;
+                    schema_version = 7;
+                };
                 if schema_version != SCHEMA_VERSION {
                     panic!(
                         "Storage schema version must be upgraded from {} to {}",
@@ -414,10 +420,36 @@ fn migrate_storage_schema_to_v6<E: Env>() -> TryEnvFuture<()> {
         .boxed_env()
 }
 
+fn migrate_storage_schema_to_v7<E: Env>() -> TryEnvFuture<()> {
+    E::get_storage::<serde_json::Value>(PROFILE_STORAGE_KEY)
+        .and_then(|mut profile| {
+            match profile
+                .as_mut()
+                .and_then(|profile| profile.as_object_mut())
+                .and_then(|profile| profile.get_mut("settings"))
+                .and_then(|settings| settings.as_object_mut())
+            {
+                Some(settings) => {
+                    settings.remove("autoFrameRateMatching");
+                    settings.insert(
+                        "frameRateMatchingStrategy".to_owned(),
+                        serde_json::Value::String("FrameRateAndResolution".to_owned()),
+                    );
+                    E::set_storage(PROFILE_STORAGE_KEY, Some(&profile))
+                }
+                _ => E::set_storage::<()>(PROFILE_STORAGE_KEY, None),
+            }
+        })
+        .and_then(|_| E::set_storage(SCHEMA_VERSION_STORAGE_KEY, Some(&7)))
+        .boxed_env()
+}
+
 #[cfg(test)]
 mod test {
     use serde_json::{json, Value};
 
+    use crate::constants::SCHEMA_VERSION;
+    use crate::runtime::env::{migrate_storage_schema_to_v6, migrate_storage_schema_to_v7};
     use crate::{
         constants::{PROFILE_STORAGE_KEY, SCHEMA_VERSION_STORAGE_KEY},
         runtime::Env,
@@ -438,6 +470,34 @@ mod test {
             no_profile.is_none(),
             "Current profile should be empty for this test"
         );
+    }
+
+    #[tokio::test]
+    async fn test_migration_to_latest_version() {
+        {
+            let _test_env_guard = TestEnv::reset().expect("Should lock TestEnv");
+            let profile_before = json!({
+                "settings": {}
+            });
+
+            // setup storage for migration
+            set_profile_and_schema_version(&profile_before, 1);
+
+            // migrate storage
+            TestEnv::migrate_storage_schema()
+                .await
+                .expect("Should migrate");
+
+            let storage = STORAGE.read().expect("Should lock");
+
+            assert_eq!(
+                &SCHEMA_VERSION.to_string(),
+                storage
+                    .get(SCHEMA_VERSION_STORAGE_KEY)
+                    .expect("Should have the schema set"),
+                "Scheme version should now be updated"
+            );
+        }
     }
 
     #[tokio::test]
@@ -463,7 +523,7 @@ mod test {
             set_profile_and_schema_version(&profile_before, 5);
 
             // migrate storage
-            TestEnv::migrate_storage_schema()
+            migrate_storage_schema_to_v6::<TestEnv>()
                 .await
                 .expect("Should migrate");
 
@@ -506,7 +566,7 @@ mod test {
             set_profile_and_schema_version(&profile_before, 5);
 
             // migrate storage
-            TestEnv::migrate_storage_schema()
+            migrate_storage_schema_to_v6::<TestEnv>()
                 .await
                 .expect("Should migrate");
 
@@ -547,7 +607,7 @@ mod test {
             set_profile_and_schema_version(&profile_before, 5);
 
             // migrate storage
-            TestEnv::migrate_storage_schema()
+            migrate_storage_schema_to_v6::<TestEnv>()
                 .await
                 .expect("Should migrate");
 
@@ -555,6 +615,88 @@ mod test {
 
             assert_eq!(
                 &6.to_string(),
+                storage
+                    .get(SCHEMA_VERSION_STORAGE_KEY)
+                    .expect("Should have the schema set"),
+                "Scheme version should now be updated"
+            );
+            assert_eq!(
+                &migrated_profile.to_string(),
+                storage
+                    .get(PROFILE_STORAGE_KEY)
+                    .expect("Should have the profile set"),
+                "Profile should match"
+            );
+        }
+    }
+
+    #[tokio::test]
+    async fn test_migration_from_6_to_7() {
+        {
+            let _test_env_guard = TestEnv::reset().expect("Should lock TestEnv");
+            let profile_before = json!({
+                "settings": {
+                    "autoFrameRateMatching": false,
+                }
+            });
+
+            let migrated_profile = json!({
+                "settings": {
+                    "frameRateMatchingStrategy": "FrameRateAndResolution"
+                }
+            });
+
+            // setup storage for migration
+            set_profile_and_schema_version(&profile_before, 6);
+
+            // migrate storage
+            migrate_storage_schema_to_v7::<TestEnv>()
+                .await
+                .expect("Should migrate");
+
+            let storage = STORAGE.read().expect("Should lock");
+
+            assert_eq!(
+                &7.to_string(),
+                storage
+                    .get(SCHEMA_VERSION_STORAGE_KEY)
+                    .expect("Should have the schema set"),
+                "Scheme version should now be updated"
+            );
+            assert_eq!(
+                &migrated_profile.to_string(),
+                storage
+                    .get(PROFILE_STORAGE_KEY)
+                    .expect("Should have the profile set"),
+                "Profile should match"
+            );
+        }
+
+        // Profile without autoFrameRateMatching
+        {
+            let _test_env_guard = TestEnv::reset().expect("Should lock TestEnv");
+            let profile_before = json!({
+                "settings": {}
+            });
+
+            let migrated_profile = json!({
+                "settings": {
+                     "frameRateMatchingStrategy": "FrameRateAndResolution"
+                }
+            });
+
+            // setup storage for migration
+            set_profile_and_schema_version(&profile_before, 6);
+
+            // migrate storage
+            migrate_storage_schema_to_v7::<TestEnv>()
+                .await
+                .expect("Should migrate");
+
+            let storage = STORAGE.read().expect("Should lock");
+
+            assert_eq!(
+                &7.to_string(),
                 storage
                     .get(SCHEMA_VERSION_STORAGE_KEY)
                     .expect("Should have the schema set"),

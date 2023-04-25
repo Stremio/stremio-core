@@ -12,7 +12,7 @@ pub struct Settings {
     pub binge_watching: bool,
     pub play_in_background: bool,
     pub hardware_decoding: bool,
-    pub auto_frame_rate_matching: bool,
+    pub frame_rate_matching_strategy: FrameRateMatchingStrategy,
     pub next_video_notification_duration: u32,
     pub audio_passthrough: bool,
     pub audio_language: String,
@@ -30,6 +30,13 @@ pub struct Settings {
     pub streaming_server_warning_dismissed: Option<DateTime<Utc>>,
 }
 
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+pub enum FrameRateMatchingStrategy {
+    Disabled,
+    FrameRateOnly,
+    FrameRateAndResolution,
+}
+
 impl Default for Settings {
     fn default() -> Self {
         Settings {
@@ -37,7 +44,7 @@ impl Default for Settings {
             binge_watching: true,
             play_in_background: true,
             hardware_decoding: true,
-            auto_frame_rate_matching: false,
+            frame_rate_matching_strategy: FrameRateMatchingStrategy::FrameRateAndResolution,
             next_video_notification_duration: 35000,
             audio_passthrough: false,
             streaming_server_url: STREAMING_SERVER_URL.to_owned(),
