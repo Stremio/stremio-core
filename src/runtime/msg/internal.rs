@@ -9,6 +9,7 @@ use crate::types::api::{
 };
 use crate::types::library::{LibraryBucket, LibraryItem};
 use crate::types::profile::{Auth, AuthKey, Profile, User};
+use crate::types::streaming_server::Statistics;
 use url::Url;
 
 pub type CtxStorageResponse = (
@@ -61,6 +62,8 @@ pub enum Internal {
     StreamingServerCreateTorrentResult(String, Result<(), EnvError>),
     // Result for playing on device.
     StreamingServerPlayOnDeviceResult(String, Result<(), EnvError>),
+    // Result for streaming server statistics.
+    StreamingServerStatisticsResult(Url, Result<Statistics, EnvError>),
     /// Result for fetching resource from addons.
     ResourceRequestResult(ResourceRequest, Box<Result<ResourceResponse, EnvError>>),
     /// Result for fetching manifest from addon.

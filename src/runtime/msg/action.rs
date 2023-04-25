@@ -71,6 +71,13 @@ pub enum CreateTorrentArgs {
 
 #[derive(Clone, Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
+pub struct GetStatisticsArgs {
+    pub info_hash: String,
+    pub file_idx: u16,
+}
+
+#[derive(Clone, Deserialize, Debug)]
+#[serde(rename_all = "camelCase")]
 pub struct PlayOnDeviceArgs {
     pub device: String,
     pub source: String,
@@ -83,6 +90,7 @@ pub enum ActionStreamingServer {
     Reload,
     UpdateSettings(StreamingServerSettings),
     CreateTorrent(CreateTorrentArgs),
+    GetStatistics(GetStatisticsArgs),
     PlayOnDevice(PlayOnDeviceArgs),
 }
 
