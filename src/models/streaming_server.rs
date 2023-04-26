@@ -312,13 +312,7 @@ impl<E: Env + 'static> UpdateWithCtx<E> for StreamingServer {
             }
             Msg::Internal(Internal::StreamingServerStatisticsResult((url, request), result))
                 if self.selected.transport_url == *url
-                    && match &self.selected.statistics {
-                        Some(StatisticsRequest {
-                            info_hash,
-                            file_idx,
-                        }) => info_hash == &request.info_hash && file_idx == &request.file_idx,
-                        None => false,
-                    } =>
+                    && self.selected.statistics.as_ref() == Some(request) =>
             {
                 let loadable = match result {
                     Ok(statistics) => Loadable::Ready(statistics.to_owned()),
