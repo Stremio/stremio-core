@@ -99,6 +99,8 @@ pub struct ManifestPreview {
     #[serde_as(deserialize_as = "DefaultOnError<NoneAsEmptyString>")]
     pub background: Option<Url>,
     pub types: Vec<String>,
+    #[serde(default)]
+    pub behavior_hints: ManifestBehaviorHints,
 }
 
 #[derive(Clone, PartialEq, Eq, Serialize, Deserialize, Debug)]
