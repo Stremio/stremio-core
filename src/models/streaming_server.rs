@@ -46,7 +46,6 @@ pub struct PlaybackDevice {
 #[serde(rename_all = "camelCase")]
 pub struct Selected {
     pub transport_url: Url,
-    pub statistics: Option<Loadable<Statistics, EnvError>>,
 }
 
 #[derive(Serialize, Debug)]
@@ -57,6 +56,7 @@ pub struct StreamingServer {
     pub base_url: Loadable<Url, EnvError>,
     pub playback_devices: Loadable<Vec<PlaybackDevice>, EnvError>,
     pub torrent: Option<(String, Loadable<ResourcePath, EnvError>)>,
+    pub statistics: Option<Loadable<Statistics, EnvError>>,
 }
 
 impl StreamingServer {
@@ -70,12 +70,12 @@ impl StreamingServer {
             Self {
                 selected: Selected {
                     transport_url: profile.settings.streaming_server_url.to_owned(),
-                    statistics: None,
                 },
                 settings: Loadable::Loading,
                 base_url: Loadable::Loading,
                 playback_devices: Loadable::Loading,
                 torrent: None,
+                statistics: None,
             },
             effects.unchanged(),
         )
@@ -170,7 +170,7 @@ impl<E: Env + 'static> UpdateWithCtx<E> for StreamingServer {
             },
             Msg::Action(Action::StreamingServer(ActionStreamingServer::GetStatistics(args))) => {
                 let statistics_effects =
-                    eq_update(&mut self.selected.statistics, Some(Loadable::Loading));
+                    eq_update(&mut self.statistics, Some(Loadable::Loading));
                 Effects::one(get_torrent_statistics::<E>(
                     &self.selected.transport_url,
                     args,
@@ -204,11 +204,11 @@ impl<E: Env + 'static> UpdateWithCtx<E> for StreamingServer {
             {
                 self.selected = Selected {
                     transport_url: ctx.profile.settings.streaming_server_url.to_owned(),
-                    statistics: None,
                 };
                 self.settings = Loadable::Loading;
                 self.base_url = Loadable::Loading;
                 self.torrent = None;
+                self.statistics = None;
                 Effects::many(vec![
                     get_settings::<E>(&self.selected.transport_url),
                     get_base_url::<E>(&self.selected.transport_url),
@@ -306,7 +306,7 @@ impl<E: Env + 'static> UpdateWithCtx<E> for StreamingServer {
                     Ok(statistics) => Loadable::Ready(statistics.to_owned()),
                     Err(error) => Loadable::Err(error.to_owned()),
                 };
-                eq_update(&mut self.selected.statistics, Some(loadable))
+                eq_update(&mut self.statistics, Some(loadable))
             }
             Msg::Internal(Internal::StreamingServerPlayOnDeviceResult(device, result)) => {
                 match result {
