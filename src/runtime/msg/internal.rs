@@ -63,7 +63,7 @@ pub enum Internal {
     // Result for playing on device.
     StreamingServerPlayOnDeviceResult(String, Result<(), EnvError>),
     // Result for streaming server statistics.
-    StreamingServerStatisticsResult(Url, Result<Statistics, EnvError>),
+    StreamingServerStatisticsResult(Url, String, u16, Result<Statistics, EnvError>),
     /// Result for fetching resource from addons.
     ResourceRequestResult(ResourceRequest, Box<Result<ResourceResponse, EnvError>>),
     /// Result for fetching manifest from addon.

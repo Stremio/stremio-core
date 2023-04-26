@@ -6,7 +6,9 @@ use crate::models::library_by_type::Selected as LibraryByTypeSelected;
 use crate::models::library_with_filters::Selected as LibraryWithFiltersSelected;
 use crate::models::meta_details::Selected as MetaDetailsSelected;
 use crate::models::player::Selected as PlayerSelected;
-use crate::models::streaming_server::Settings as StreamingServerSettings;
+use crate::models::streaming_server::{
+    Settings as StreamingServerSettings, StatisticsRequest as StreamingServerStatisticsRequest,
+};
 use crate::types::addon::Descriptor;
 use crate::types::api::AuthRequest;
 use crate::types::profile::Settings as ProfileSettings;
@@ -71,13 +73,6 @@ pub enum CreateTorrentArgs {
 
 #[derive(Clone, Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
-pub struct GetStatisticsArgs {
-    pub info_hash: String,
-    pub file_idx: u16,
-}
-
-#[derive(Clone, Deserialize, Debug)]
-#[serde(rename_all = "camelCase")]
 pub struct PlayOnDeviceArgs {
     pub device: String,
     pub source: String,
@@ -90,7 +85,7 @@ pub enum ActionStreamingServer {
     Reload,
     UpdateSettings(StreamingServerSettings),
     CreateTorrent(CreateTorrentArgs),
-    GetStatistics(GetStatisticsArgs),
+    GetStatistics(StreamingServerStatisticsRequest),
     PlayOnDevice(PlayOnDeviceArgs),
 }
 
