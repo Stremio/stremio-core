@@ -1,6 +1,8 @@
 use crate::models::ctx::CtxError;
 use crate::models::link::LinkError;
-use crate::models::streaming_server::{PlaybackDevice, Settings as StreamingServerSettings};
+use crate::models::streaming_server::{
+    PlaybackDevice, Settings as StreamingServerSettings, StatisticsRequest,
+};
 use crate::runtime::EnvError;
 use crate::types::addon::{Descriptor, Manifest, ResourceRequest, ResourceResponse};
 use crate::types::api::{
@@ -63,7 +65,7 @@ pub enum Internal {
     // Result for playing on device.
     StreamingServerPlayOnDeviceResult(String, Result<(), EnvError>),
     // Result for streaming server statistics.
-    StreamingServerStatisticsResult(Url, String, u16, Result<Statistics, EnvError>),
+    StreamingServerStatisticsResult((Url, StatisticsRequest), Result<Statistics, EnvError>),
     /// Result for fetching resource from addons.
     ResourceRequestResult(ResourceRequest, Box<Result<ResourceResponse, EnvError>>),
     /// Result for fetching manifest from addon.

@@ -310,18 +310,15 @@ impl<E: Env + 'static> UpdateWithCtx<E> for StreamingServer {
                     }
                 }
             }
-            Msg::Internal(Internal::StreamingServerStatisticsResult(
-                url,
-                info_hash,
-                file_idx,
-                result,
-            )) if self.selected.transport_url == *url
-                && match &self.selected.statistics {
-                    Some(selected) => {
-                        selected.info_hash == *info_hash && selected.file_idx == *file_idx
-                    }
-                    None => false,
-                } =>
+            Msg::Internal(Internal::StreamingServerStatisticsResult((url, request), result))
+                if self.selected.transport_url == *url
+                    && match &self.selected.statistics {
+                        Some(StatisticsRequest {
+                            info_hash,
+                            file_idx,
+                        }) => info_hash == &request.info_hash && file_idx == &request.file_idx,
+                        None => false,
+                    } =>
             {
                 let loadable = match result {
                     Ok(statistics) => Loadable::Ready(statistics.to_owned()),
@@ -584,9 +581,13 @@ fn parse_torrent(torrent: &[u8]) -> Result<(String, Vec<String>), serde_bencode:
 }
 
 fn get_torrent_statistics<E: Env + 'static>(url: &Url, request: &StatisticsRequest) -> Effect {
-    let (info_hash, file_idx) = (request.info_hash.clone(), request.file_idx);
+    let statistics_request = request.clone();
     let endpoint = url
-        .join(&format!("/{}/{}/stats.json", info_hash, file_idx))
+        .join(&format!(
+            "/{}/{}/stats.json",
+            statistics_request.info_hash.clone(),
+            statistics_request.file_idx
+        ))
         .expect("url builder failed");
     let request = Request::get(endpoint.as_str())
         .header(http::header::CONTENT_TYPE, "application/json")
@@ -595,7 +596,7 @@ fn get_torrent_statistics<E: Env + 'static>(url: &Url, request: &StatisticsReque
     EffectFuture::Concurrent(
         E::fetch::<_, Statistics>(request)
             .map(enclose!((url) move |result|
-                Msg::Internal(Internal::StreamingServerStatisticsResult(url, info_hash, file_idx, result))
+                Msg::Internal(Internal::StreamingServerStatisticsResult((url, statistics_request), result))
             ))
             .boxed_env(),
     )
