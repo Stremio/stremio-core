@@ -72,6 +72,7 @@ lazy_static! {
         options_limit: OptionsLimit::default(),
     };
     pub static ref TYPE_PRIORITIES: HashMap<&'static str, i32> = vec![
+        ("all", 5),
         ("movie", 4),
         ("series", 3),
         ("channel", 2),
