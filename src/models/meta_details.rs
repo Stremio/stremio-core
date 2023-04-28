@@ -42,11 +42,8 @@ impl<E: Env + 'static> UpdateWithCtx<E> for MetaDetails {
                 let selected_effects = eq_update(&mut self.selected, Some(selected.to_owned()));
                 let meta_items_effects =
                     meta_items_update::<E>(&mut self.meta_items, &self.selected, &ctx.profile);
-                let meta_streams_effects = meta_streams_update::<E>(
-                    &mut self.meta_streams,
-                    &self.selected,
-                    &self.meta_items,
-                );
+                let meta_streams_effects =
+                    meta_streams_update(&mut self.meta_streams, &self.selected, &self.meta_items);
                 let streams_effects =
                     streams_update::<E>(&mut self.streams, &self.selected, &ctx.profile);
                 let library_item_effects = library_item_update::<E>(
@@ -115,11 +112,8 @@ impl<E: Env + 'static> UpdateWithCtx<E> for MetaDetails {
                     &mut self.meta_items,
                     ResourcesAction::ResourceRequestResult { request, result },
                 );
-                let meta_streams_effects = meta_streams_update::<E>(
-                    &mut self.meta_streams,
-                    &self.selected,
-                    &self.meta_items,
-                );
+                let meta_streams_effects =
+                    meta_streams_update(&mut self.meta_streams, &self.selected, &self.meta_items);
                 let library_item_effects = library_item_update::<E>(
                     &mut self.library_item,
                     &self.selected,
@@ -155,11 +149,8 @@ impl<E: Env + 'static> UpdateWithCtx<E> for MetaDetails {
             Msg::Internal(Internal::ProfileChanged) => {
                 let meta_items_effects =
                     meta_items_update::<E>(&mut self.meta_items, &self.selected, &ctx.profile);
-                let meta_streams_effects = meta_streams_update::<E>(
-                    &mut self.meta_streams,
-                    &self.selected,
-                    &self.meta_items,
-                );
+                let meta_streams_effects =
+                    meta_streams_update(&mut self.meta_streams, &self.selected, &self.meta_items);
                 let streams_effects =
                     streams_update::<E>(&mut self.streams, &self.selected, &ctx.profile);
                 let library_item_effects = library_item_update::<E>(
@@ -215,7 +206,7 @@ fn meta_items_update<E: Env + 'static>(
     }
 }
 
-fn meta_streams_update<E: Env + 'static>(
+fn meta_streams_update(
     meta_streams: &mut Vec<ResourceLoadable<Vec<Stream>>>,
     selected: &Option<Selected>,
     meta_items: &[ResourceLoadable<MetaItem>],
