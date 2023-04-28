@@ -56,7 +56,7 @@ impl<E: Env + 'static> UpdateWithCtx<E> for MetaDetails {
                     &ctx.library,
                 );
                 let watched_effects =
-                    watched_update::<E>(&mut self.watched, &self.meta_items, &self.library_item);
+                    watched_update(&mut self.watched, &self.meta_items, &self.library_item);
                 let libraty_item_sync_effects = library_item_sync(&self.library_item, &ctx.profile);
                 libraty_item_sync_effects
                     .join(selected_effects)
@@ -127,7 +127,7 @@ impl<E: Env + 'static> UpdateWithCtx<E> for MetaDetails {
                     &ctx.library,
                 );
                 let watched_effects =
-                    watched_update::<E>(&mut self.watched, &self.meta_items, &self.library_item);
+                    watched_update(&mut self.watched, &self.meta_items, &self.library_item);
                 meta_items_effects
                     .join(meta_streams_effects)
                     .join(library_item_effects)
@@ -149,7 +149,7 @@ impl<E: Env + 'static> UpdateWithCtx<E> for MetaDetails {
                     &ctx.library,
                 );
                 let watched_effects =
-                    watched_update::<E>(&mut self.watched, &self.meta_items, &self.library_item);
+                    watched_update(&mut self.watched, &self.meta_items, &self.library_item);
                 library_item_effects.join(watched_effects)
             }
             Msg::Internal(Internal::ProfileChanged) => {
@@ -169,7 +169,7 @@ impl<E: Env + 'static> UpdateWithCtx<E> for MetaDetails {
                     &ctx.library,
                 );
                 let watched_effects =
-                    watched_update::<E>(&mut self.watched, &self.meta_items, &self.library_item);
+                    watched_update(&mut self.watched, &self.meta_items, &self.library_item);
                 meta_items_effects
                     .join(meta_streams_effects)
                     .join(streams_effects)
@@ -320,7 +320,7 @@ fn library_item_update<E: Env + 'static>(
     eq_update(library_item, next_library_item)
 }
 
-fn watched_update<E: Env>(
+fn watched_update(
     watched: &mut Option<WatchedBitField>,
     meta_items: &[ResourceLoadable<MetaItem>],
     library_item: &Option<LibraryItem>,
