@@ -14,10 +14,18 @@ use url::Url;
 
 #[derive(Default, Serialize, Debug, PartialEq, Eq)]
 #[serde(rename_all = "camelCase")]
+pub struct VlcLink {
+    pub ios: String,
+    pub android: String,
+}
+
+#[derive(Default, Serialize, Debug, PartialEq, Eq)]
+#[serde(rename_all = "camelCase")]
 pub struct ExternalPlayerLink {
     pub href: Option<String>,
     pub download: Option<String>,
     pub streaming: Option<String>,
+    pub vlc: Option<VlcLink>,
     pub android_tv: Option<String>,
     pub tizen: Option<String>,
     pub webos: Option<String>,
@@ -31,6 +39,12 @@ impl From<(&Stream, &Option<Url>)> for ExternalPlayerLink {
         let m3u_uri = stream.m3u_data_uri(streaming_server_url.as_ref());
         let file_name = m3u_uri.as_ref().map(|_| "playlist.m3u".to_owned());
         let href = m3u_uri.or_else(|| download.to_owned());
+        let vlc = streaming.as_ref().map(|url| VlcLink {
+            ios: format!("vlc-x-callback://x-callback-url/stream?url={url}"),
+            android: format!(
+                "intent://{url}#Intent;package=org.videolan.vlc;type=video;scheme=https;end",
+            ),
+        });
         let (android_tv, tizen, webos) = match &stream.source {
             StreamSource::External {
                 android_tv_url,
@@ -48,6 +62,7 @@ impl From<(&Stream, &Option<Url>)> for ExternalPlayerLink {
             href,
             download,
             streaming,
+            vlc,
             android_tv,
             tizen,
             webos,
