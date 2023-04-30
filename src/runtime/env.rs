@@ -433,7 +433,7 @@ fn migrate_storage_schema_to_v7<E: Env>() -> TryEnvFuture<()> {
                     settings.remove("autoFrameRateMatching");
                     settings.insert(
                         "frameRateMatchingStrategy".to_owned(),
-                        serde_json::Value::String("FrameRateAndResolution".to_owned()),
+                        serde_json::Value::String("FrameRateOnly".to_owned()),
                     );
                     E::set_storage(PROFILE_STORAGE_KEY, Some(&profile))
                 }
@@ -642,7 +642,7 @@ mod test {
 
             let migrated_profile = json!({
                 "settings": {
-                    "frameRateMatchingStrategy": "FrameRateAndResolution"
+                    "frameRateMatchingStrategy": "FrameRateOnly"
                 }
             });
 
@@ -681,7 +681,7 @@ mod test {
 
             let migrated_profile = json!({
                 "settings": {
-                     "frameRateMatchingStrategy": "FrameRateAndResolution"
+                     "frameRateMatchingStrategy": "FrameRateOnly"
                 }
             });
 

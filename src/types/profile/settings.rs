@@ -44,7 +44,7 @@ impl Default for Settings {
             binge_watching: true,
             play_in_background: true,
             hardware_decoding: true,
-            frame_rate_matching_strategy: FrameRateMatchingStrategy::FrameRateAndResolution,
+            frame_rate_matching_strategy: FrameRateMatchingStrategy::FrameRateOnly,
             next_video_notification_duration: 35000,
             audio_passthrough: false,
             streaming_server_url: STREAMING_SERVER_URL.to_owned(),

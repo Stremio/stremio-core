@@ -385,7 +385,7 @@ impl DefaultTokens for Settings {
             Token::Str("frameRateMatchingStrategy"),
             Token::UnitVariant {
                 name: "FrameRateMatchingStrategy",
-                variant: "FrameRateAndResolution",
+                variant: "FrameRateOnly",
             },
             Token::Str("nextVideoNotificationDuration"),
             Token::U32(35000),
