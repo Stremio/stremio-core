@@ -104,28 +104,33 @@ impl DefaultTokens for PosterShape {
 
 impl DefaultTokens for ManifestPreview {
     fn default_tokens() -> Vec<Token> {
-        vec![
-            Token::Struct {
-                name: "ManifestPreview",
-                len: 7,
-            },
-            Token::Str("id"),
-            Token::Str(""),
-            Token::Str("version"),
-            Token::Str("0.0.1"),
-            Token::Str("name"),
-            Token::Str(""),
-            Token::Str("description"),
-            Token::None,
-            Token::Str("logo"),
-            Token::None,
-            Token::Str("background"),
-            Token::None,
-            Token::Str("types"),
-            Token::Seq { len: Some(0) },
-            Token::SeqEnd,
-            Token::StructEnd,
+        [
+            vec![
+                Token::Struct {
+                    name: "ManifestPreview",
+                    len: 8,
+                },
+                Token::Str("id"),
+                Token::Str(""),
+                Token::Str("version"),
+                Token::Str("0.0.1"),
+                Token::Str("name"),
+                Token::Str(""),
+                Token::Str("description"),
+                Token::None,
+                Token::Str("logo"),
+                Token::None,
+                Token::Str("background"),
+                Token::None,
+                Token::Str("types"),
+                Token::Seq { len: Some(0) },
+                Token::SeqEnd,
+                Token::Str("behaviorHints"),
+            ],
+            ManifestBehaviorHints::default_tokens(),
+            vec![Token::StructEnd],
         ]
+        .concat()
     }
 }
 

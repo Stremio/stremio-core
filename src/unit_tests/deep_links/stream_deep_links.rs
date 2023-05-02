@@ -1,7 +1,8 @@
-use crate::constants::URI_COMPONENT_ENCODE_SET;
+use crate::constants::{BASE64, URI_COMPONENT_ENCODE_SET};
 use crate::deep_links::StreamDeepLinks;
 use crate::types::addon::{ResourcePath, ResourceRequest};
 use crate::types::resource::{Stream, StreamSource};
+use base64::Engine;
 use percent_encoding::utf8_percent_encode;
 use std::convert::TryFrom;
 use std::str::FromStr;
@@ -85,19 +86,16 @@ fn stream_deep_links_torrent() {
         sdl.external_player.href,
         Some(format!(
             "data:application/octet-stream;charset=utf-8;base64,{}",
-            base64::encode(format!(
+            BASE64.encode(format!(
                 "#EXTM3U\n#EXTINF:0\n{}",
-                format!(
-                    "{}/{}/{}{}",
+                format_args!(
+                    "{}/{}/{}?tr={}",
                     STREAMING_SERVER_URL,
                     hex::encode(info_hash),
                     file_idx,
-                    format!(
-                        "?tr={}",
-                        utf8_percent_encode(
-                            "http://bt1.archive.org:6969/announce",
-                            URI_COMPONENT_ENCODE_SET
-                        )
+                    utf8_percent_encode(
+                        "http://bt1.archive.org:6969/announce",
+                        URI_COMPONENT_ENCODE_SET
                     ),
                 )
             ))
@@ -153,7 +151,7 @@ fn stream_deep_links_youtube() {
         sdl.external_player.href,
         Some(format!(
             "data:application/octet-stream;charset=utf-8;base64,{}",
-            base64::encode(format!(
+            BASE64.encode(format!(
                 "#EXTM3U\n#EXTINF:0\n{}/yt/{}",
                 STREAMING_SERVER_URL, YT_ID
             ))
@@ -221,7 +219,7 @@ fn stream_deep_links_requests() {
         sdl.external_player.href,
         Some(format!(
             "data:application/octet-stream;charset=utf-8;base64,{}",
-            base64::encode(format!(
+            BASE64.encode(format!(
                 "#EXTM3U\n#EXTINF:0\n{}/yt/{}",
                 STREAMING_SERVER_URL, YT_ID
             ))
