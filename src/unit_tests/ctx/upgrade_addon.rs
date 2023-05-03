@@ -35,7 +35,7 @@ fn actionctx_addon_upgrade() {
         transport_url: Url::parse("https://transport_url").unwrap(),
         flags: Default::default(),
     };
-    let addon2 = Descriptor {
+    let addon1_update = Descriptor {
         manifest: Manifest {
             id: "id1".to_owned(),
             version: Version::new(0, 0, 2),
@@ -54,7 +54,7 @@ fn actionctx_addon_upgrade() {
         transport_url: Url::parse("https://transport_url").unwrap(),
         flags: Default::default(),
     };
-    let addon3 = Descriptor {
+    let addon2 = Descriptor {
         manifest: Manifest {
             id: "id2".to_owned(),
             version: Version::new(0, 0, 1),
@@ -78,7 +78,7 @@ fn actionctx_addon_upgrade() {
         TestModel {
             ctx: Ctx {
                 profile: Profile {
-                    addons: vec![addon1.to_owned(), addon3.to_owned()],
+                    addons: vec![addon1.to_owned(), addon2.to_owned()],
                     ..Default::default()
                 },
                 ..Default::default()
@@ -90,10 +90,10 @@ fn actionctx_addon_upgrade() {
     TestEnv::run(|| {
         runtime.dispatch(RuntimeAction {
             field: None,
-            action: Action::Ctx(ActionCtx::UpgradeAddon(addon2.to_owned())),
+            action: Action::Ctx(ActionCtx::UpgradeAddon(addon1_update.to_owned())),
         })
     });
-    let expected = vec![addon2.to_owned(), addon3.to_owned()];
+    let expected = vec![addon1_update.to_owned(), addon2.to_owned()];
 
     assert_eq!(
         runtime.model().unwrap().ctx.profile.addons,
