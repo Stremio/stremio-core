@@ -3,7 +3,7 @@ use serde::{Deserialize, Serialize};
 use url::Url;
 
 /// Addon descriptor
-#[derive(Clone, PartialEq, Eq, Serialize, Deserialize, Debug)]
+#[derive(Clone, PartialEq, Eq, Hash, Serialize, Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct Descriptor {
     pub manifest: Manifest,
@@ -19,7 +19,7 @@ pub struct DescriptorPreview {
     pub transport_url: Url,
 }
 
-#[derive(Default, Clone, PartialEq, Eq, Serialize, Deserialize, Debug)]
+#[derive(Default, Clone, PartialEq, Eq, Hash, Serialize, Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct DescriptorFlags {
     #[serde(default)]
