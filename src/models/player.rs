@@ -1,3 +1,5 @@
+use std::marker::PhantomData;
+
 use crate::constants::{
     CREDITS_THRESHOLD_COEF, VIDEO_HASH_EXTRA_PROP, VIDEO_SIZE_EXTRA_PROP, WATCHED_THRESHOLD_COEF,
 };
@@ -12,13 +14,22 @@ use crate::types::addon::{AggrRequest, ExtraExt, ResourcePath, ResourceRequest};
 use crate::types::library::{LibraryBucket, LibraryItem};
 use crate::types::profile::Settings as ProfileSettings;
 use crate::types::resource::{MetaItem, SeriesInfo, Stream, Subtitles, Video};
-use chrono::{DateTime, Utc};
-use itertools::Itertools;
-use serde::{Deserialize, Serialize};
-use std::marker::PhantomData;
+
 use stremio_watched_bitfield::WatchedBitField;
 
+use chrono::{DateTime, Duration, Utc};
+use derivative::Derivative;
+use itertools::Itertools;
+use serde::{Deserialize, Serialize};
+
+use lazy_static::lazy_static;
+
 use super::common::resource_update_with_vector_content;
+
+lazy_static! {
+    /// The duration that must have passed in order for a library item to be updated.
+    pub static ref PUSH_TO_LIBRARY_EVERY: Duration = Duration::seconds(30);
+}
 
 #[derive(Clone, Default, PartialEq, Eq, Serialize, Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
@@ -60,7 +71,7 @@ pub struct Selected {
     pub video_params: Option<VideoParams>,
 }
 
-#[derive(Default, Serialize, Debug)]
+#[derive(Default, Derivative, Serialize, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct Player {
     pub selected: Option<Selected>,
@@ -76,6 +87,9 @@ pub struct Player {
     pub analytics_context: Option<AnalyticsContext>,
     #[serde(skip_serializing)]
     pub load_time: Option<DateTime<Utc>>,
+    #[serde(skip_serializing)]
+    #[derivative(Default(value = "Utc.timestamp_opt(0, 0).unwrap()"))]
+    pub push_library_item_time: DateTime<Utc>,
     #[serde(skip_serializing)]
     pub loaded: bool,
     #[serde(skip_serializing)]
@@ -173,7 +187,7 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                     &ctx.library,
                 );
                 let watched_effects =
-                    watched_update::<E>(&mut self.watched, &self.meta_item, &self.library_item);
+                    watched_update(&mut self.watched, &self.meta_item, &self.library_item);
                 let (id, r#type, name, video_id, time, duration) = self
                     .library_item
                     .as_ref()
@@ -223,6 +237,13 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                 };
                 let switch_to_next_video_effects =
                     switch_to_next_video(&mut self.library_item, &self.next_video);
+                let push_to_library_effects = match &self.library_item {
+                    Some(library_item) => Effects::msg(Msg::Internal(Internal::UpdateLibraryItem(
+                        library_item.to_owned(),
+                    )))
+                    .unchanged(),
+                    _ => Effects::none().unchanged(),
+                };
                 let selected_effects = eq_update(&mut self.selected, None);
                 let meta_item_effects = eq_update(&mut self.meta_item, None);
                 let subtitles_effects = eq_update(&mut self.subtitles, vec![]);
@@ -237,6 +258,7 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                 self.ended = false;
                 self.paused = None;
                 switch_to_next_video_effects
+                    .join(push_to_library_effects)
                     .join(selected_effects)
                     .join(meta_item_effects)
                     .join(subtitles_effects)
@@ -312,7 +334,7 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                         analytics_context.device_name = Some(device.to_owned());
                         analytics_context.player_duration = Some(duration.to_owned());
                     };
-                    if seeking && self.loaded && self.paused.is_some() {
+                    let trakt_event_effects = if seeking && self.loaded && self.paused.is_some() {
                         if self.paused.expect("paused is None") {
                             Effects::msg(Msg::Event(Event::TraktPaused {
                                 context: self
@@ -334,7 +356,21 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                         }
                     } else {
                         Effects::none()
-                    }
+                    };
+
+                    let push_to_library_effects =
+                        if E::now() - self.push_library_item_time >= *PUSH_TO_LIBRARY_EVERY {
+                            self.push_library_item_time = E::now();
+
+                            Effects::msg(Msg::Internal(Internal::UpdateLibraryItem(
+                                library_item.to_owned(),
+                            )))
+                            .unchanged()
+                        } else {
+                            Effects::none().unchanged()
+                        };
+
+                    trakt_event_effects.join(push_to_library_effects)
                 }
                 _ => Effects::none().unchanged(),
             },
@@ -342,7 +378,7 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                 if self.selected.is_some() =>
             {
                 self.paused = Some(*paused);
-                if !self.loaded {
+                let trakt_event_effects = if !self.loaded {
                     self.loaded = true;
                     Effects::msg(Msg::Event(Event::PlayerPlaying {
                         load_time: self
@@ -364,7 +400,15 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                         context: self.analytics_context.as_ref().cloned().unwrap_or_default(),
                     }))
                     .unchanged()
-                }
+                };
+                let update_library_item_effects = match &self.library_item {
+                    Some(library_item) => Effects::msg(Msg::Internal(Internal::UpdateLibraryItem(
+                        library_item.to_owned(),
+                    )))
+                    .unchanged(),
+                    _ => Effects::none().unchanged(),
+                };
+                trakt_event_effects.join(update_library_item_effects)
             }
             Msg::Action(Action::Player(ActionPlayer::Ended)) if self.selected.is_some() => {
                 self.ended = true;
@@ -375,13 +419,6 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                 }))
                 .unchanged()
             }
-            Msg::Action(Action::Player(ActionPlayer::PushToLibrary)) => match &self.library_item {
-                Some(library_item) => Effects::msg(Msg::Internal(Internal::UpdateLibraryItem(
-                    library_item.to_owned(),
-                )))
-                .unchanged(),
-                _ => Effects::none().unchanged(),
-            },
             Msg::Internal(Internal::ResourceRequestResult(request, result)) => {
                 let meta_item_effects = match &mut self.meta_item {
                     Some(meta_item) => resource_update::<E, _>(
@@ -422,7 +459,7 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                     &ctx.library,
                 );
                 let watched_effects =
-                    watched_update::<E>(&mut self.watched, &self.meta_item, &self.library_item);
+                    watched_update(&mut self.watched, &self.meta_item, &self.library_item);
                 let (id, r#type, name, video_id, time, duration) = self
                     .library_item
                     .as_ref()
@@ -484,13 +521,10 @@ fn switch_to_next_video(
                 library_item.state.flagged_watched = 0;
                 library_item.state.time_offset = 1;
             };
-            Effects::msg(Msg::Internal(Internal::UpdateLibraryItem(
-                library_item.to_owned(),
-            )))
-            .unchanged()
         }
-        _ => Effects::none().unchanged(),
-    }
+        _ => {}
+    };
+    Effects::none().unchanged()
 }
 
 fn next_video_update(
@@ -691,7 +725,7 @@ fn library_item_update<E: Env + 'static>(
     }
 }
 
-fn watched_update<E: Env>(
+fn watched_update(
     watched: &mut Option<WatchedBitField>,
     meta_item: &Option<ResourceLoadable<MetaItem>>,
     library_item: &Option<LibraryItem>,

@@ -1,4 +1,4 @@
-use crate::types::profile::Settings;
+use crate::types::profile::{FrameRateMatchingStrategy, Settings};
 use chrono::{TimeZone, Utc};
 use serde_test::{assert_de_tokens, assert_tokens, Token};
 use url::Url;
@@ -13,7 +13,7 @@ fn settings() {
             binge_watching: true,
             play_in_background: true,
             hardware_decoding: true,
-            auto_frame_rate_matching: true,
+            frame_rate_matching_strategy: FrameRateMatchingStrategy::FrameRateAndResolution,
             next_video_notification_duration: 30,
             audio_passthrough: true,
             audio_language: "audio_language".to_owned(),
@@ -50,8 +50,11 @@ fn settings() {
             Token::Bool(true),
             Token::Str("hardwareDecoding"),
             Token::Bool(true),
-            Token::Str("autoFrameRateMatching"),
-            Token::Bool(true),
+            Token::Str("frameRateMatchingStrategy"),
+            Token::UnitVariant {
+                name: "FrameRateMatchingStrategy",
+                variant: "FrameRateAndResolution",
+            },
             Token::Str("nextVideoNotificationDuration"),
             Token::U32(30),
             Token::Str("audioPassthrough"),
@@ -111,8 +114,11 @@ fn settings_de() {
             Token::Bool(true),
             Token::Str("hardwareDecoding"),
             Token::Bool(true),
-            Token::Str("autoFrameRateMatching"),
-            Token::Bool(false),
+            Token::Str("frameRateMatchingStrategy"),
+            Token::UnitVariant {
+                name: "FrameRateMatchingStrategy",
+                variant: "FrameRateOnly",
+            },
             Token::Str("nextVideoNotificationDuration"),
             Token::U32(35000),
             Token::Str("audioPassthrough"),
