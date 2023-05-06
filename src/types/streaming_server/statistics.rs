@@ -4,81 +4,81 @@ use url::Url;
 #[derive(Clone, PartialEq, Serialize, Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct File {
-    name: String,
-    path: String,
-    length: u64,
-    offset: u64,
+    pub name: String,
+    pub path: String,
+    pub length: u64,
+    pub offset: u64,
 }
 
 #[derive(Clone, PartialEq, Serialize, Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct Growler {
-    flood: u64,
-    pulse: u64,
+    pub flood: u64,
+    pub pulse: u64,
 }
 
 #[derive(Clone, PartialEq, Serialize, Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct PeerSearch {
-    max: u64,
-    min: u64,
-    sources: Vec<String>,
+    pub max: u64,
+    pub min: u64,
+    pub sources: Vec<String>,
 }
 
 #[derive(Clone, PartialEq, Serialize, Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct SwarmCap {
-    max_speed: u64,
-    min_peers: u64,
+    pub max_speed: u64,
+    pub min_peers: u64,
 }
 
 #[derive(Clone, PartialEq, Serialize, Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct Options {
-    connections: u64,
-    dht: bool,
-    growler: Growler,
-    handshake_timeout: u64,
-    path: String,
-    peer_search: PeerSearch,
-    swarm_cap: SwarmCap,
-    timeout: u64,
-    tracker: bool,
-    r#virtual: bool,
+    pub connections: u64,
+    pub dht: bool,
+    pub growler: Growler,
+    pub handshake_timeout: u64,
+    pub path: String,
+    pub peer_search: PeerSearch,
+    pub swarm_cap: SwarmCap,
+    pub timeout: u64,
+    pub tracker: bool,
+    pub r#virtual: bool,
 }
 
 #[derive(Clone, PartialEq, Serialize, Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct Source {
-    last_started: String,
-    num_found: u64,
-    num_found_uniq: u64,
-    num_requests: u64,
-    url: Url,
+    pub last_started: String,
+    pub num_found: u64,
+    pub num_found_uniq: u64,
+    pub num_requests: u64,
+    pub url: Url,
 }
 
 #[derive(Clone, PartialEq, Serialize, Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct Statistics {
-    name: String,
-    info_hash: String,
-    files: Vec<File>,
-    sources: Vec<Source>,
-    opts: Options,
-    download_speed: f64,
-    upload_speed: f64,
-    downloaded: u64,
-    uploaded: u64,
-    unchoked: u64,
-    peers: u64,
-    queued: u64,
-    unique: u64,
-    connection_tries: u64,
-    peer_search_running: bool,
-    stream_len: u64,
-    stream_name: String,
-    stream_progress: f64,
-    swarm_connections: u64,
-    swarm_paused: bool,
-    swarm_size: u64,
+    pub name: String,
+    pub info_hash: String,
+    pub files: Vec<File>,
+    pub sources: Vec<Source>,
+    pub opts: Options,
+    pub download_speed: f64,
+    pub upload_speed: f64,
+    pub downloaded: u64,
+    pub uploaded: u64,
+    pub unchoked: u64,
+    pub peers: u64,
+    pub queued: u64,
+    pub unique: u64,
+    pub connection_tries: u64,
+    pub peer_search_running: bool,
+    pub stream_len: u64,
+    pub stream_name: String,
+    pub stream_progress: f64,
+    pub swarm_connections: u64,
+    pub swarm_paused: bool,
+    pub swarm_size: u64,
 }
