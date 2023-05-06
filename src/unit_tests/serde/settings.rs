@@ -12,6 +12,7 @@ fn settings() {
             player_type: Some("player".to_owned()),
             binge_watching: true,
             play_in_background: true,
+            play_in_vlc: false,
             hardware_decoding: true,
             frame_rate_matching_strategy: FrameRateMatchingStrategy::FrameRateAndResolution,
             next_video_notification_duration: 30,
@@ -35,7 +36,7 @@ fn settings() {
         &[
             Token::Struct {
                 name: "Settings",
-                len: 22,
+                len: 23,
             },
             Token::Str("interfaceLanguage"),
             Token::Str("interface_language"),
@@ -48,6 +49,8 @@ fn settings() {
             Token::Bool(true),
             Token::Str("playInBackground"),
             Token::Bool(true),
+            Token::Str("playInVlc"),
+            Token::Bool(false),
             Token::Str("hardwareDecoding"),
             Token::Bool(true),
             Token::Str("frameRateMatchingStrategy"),
@@ -100,7 +103,7 @@ fn settings_de() {
         &[
             Token::Struct {
                 name: "Settings",
-                len: 17,
+                len: 18,
             },
             Token::Str("interfaceLanguage"),
             Token::Str("eng"),
@@ -112,6 +115,8 @@ fn settings_de() {
             Token::Bool(true),
             Token::Str("playInBackground"),
             Token::Bool(true),
+            Token::Str("playInVlc"),
+            Token::Bool(false),
             Token::Str("hardwareDecoding"),
             Token::Bool(true),
             Token::Str("frameRateMatchingStrategy"),
