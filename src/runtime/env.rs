@@ -460,10 +460,7 @@ fn migrate_storage_schema_to_v8<E: Env>() -> TryEnvFuture<()> {
                 .and_then(|settings| settings.as_object_mut())
             {
                 Some(settings) => {
-                    settings.insert(
-                        "playInVlc".to_owned(),
-                        serde_json::Value::Bool(false),
-                    );
+                    settings.insert("playInVlc".to_owned(), serde_json::Value::Bool(false));
                     E::set_storage(PROFILE_STORAGE_KEY, Some(&profile))
                 }
                 _ => E::set_storage::<()>(PROFILE_STORAGE_KEY, None),
@@ -478,7 +475,9 @@ mod test {
     use serde_json::{json, Value};
 
     use crate::constants::SCHEMA_VERSION;
-    use crate::runtime::env::{migrate_storage_schema_to_v6, migrate_storage_schema_to_v7, migrate_storage_schema_to_v8};
+    use crate::runtime::env::{
+        migrate_storage_schema_to_v6, migrate_storage_schema_to_v7, migrate_storage_schema_to_v8,
+    };
     use crate::{
         constants::{PROFILE_STORAGE_KEY, SCHEMA_VERSION_STORAGE_KEY},
         runtime::Env,
