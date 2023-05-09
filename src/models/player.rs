@@ -187,7 +187,7 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                     &ctx.library,
                 );
                 let watched_effects =
-                    watched_update::<E>(&mut self.watched, &self.meta_item, &self.library_item);
+                    watched_update(&mut self.watched, &self.meta_item, &self.library_item);
                 let (id, r#type, name, video_id, time, duration) = self
                     .library_item
                     .as_ref()
@@ -459,7 +459,7 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                     &ctx.library,
                 );
                 let watched_effects =
-                    watched_update::<E>(&mut self.watched, &self.meta_item, &self.library_item);
+                    watched_update(&mut self.watched, &self.meta_item, &self.library_item);
                 let (id, r#type, name, video_id, time, duration) = self
                     .library_item
                     .as_ref()
@@ -725,7 +725,7 @@ fn library_item_update<E: Env + 'static>(
     }
 }
 
-fn watched_update<E: Env>(
+fn watched_update(
     watched: &mut Option<WatchedBitField>,
     meta_item: &Option<ResourceLoadable<MetaItem>>,
     library_item: &Option<LibraryItem>,

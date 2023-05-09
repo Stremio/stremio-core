@@ -152,6 +152,7 @@ fn catalog_update(
                     logo: addon.manifest.logo.to_owned(),
                     background: addon.manifest.background.to_owned(),
                     types: addon.manifest.types.to_owned(),
+                    behavior_hints: addon.manifest.behavior_hints.to_owned(),
                 },
             })
             .collect::<Vec<_>>(),

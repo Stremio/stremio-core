@@ -3,6 +3,7 @@ pub mod api;
 pub mod library;
 pub mod profile;
 pub mod resource;
+pub mod streaming_server;
 
 mod query_params_encode;
 pub use query_params_encode::*;

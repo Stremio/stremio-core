@@ -56,6 +56,26 @@ pub enum ResourcesAction<'a> {
     },
 }
 
+impl<T> ResourceLoadable<T> {
+    pub fn update<E>(&mut self, action: ResourceAction) -> Effects
+    where
+        E: Env + 'static,
+        T: TryFrom<ResourceResponse, Error = &'static str>,
+    {
+        resource_update::<E, T>(self, action)
+    }
+}
+
+impl<T> ResourceLoadable<Vec<T>> {
+    pub fn update_with_vector_content<E>(&mut self, action: ResourceAction) -> Effects
+    where
+        E: Env + 'static,
+        Vec<T>: TryFrom<ResourceResponse, Error = &'static str>,
+    {
+        resource_update_with_vector_content::<E, T>(self, action)
+    }
+}
+
 pub fn resource_update<E, T>(resource: &mut ResourceLoadable<T>, action: ResourceAction) -> Effects
 where
     E: Env + 'static,

@@ -8,6 +8,7 @@ use crate::runtime::{Effect, EffectFuture, Effects, Env, EnvError, EnvFutureExt,
 use crate::types::addon::ResourcePath;
 use crate::types::api::SuccessResponse;
 use crate::types::profile::Profile;
+use crate::types::streaming_server::Statistics;
 use enclose::enclose;
 use futures::{FutureExt, TryFutureExt};
 use http::request::Request;
@@ -40,10 +41,18 @@ pub struct PlaybackDevice {
     pub r#type: String,
 }
 
+#[derive(Clone, PartialEq, Serialize, Deserialize, Debug)]
+#[serde(rename_all = "camelCase")]
+pub struct StatisticsRequest {
+    pub info_hash: String,
+    pub file_idx: u16,
+}
+
 #[derive(Serialize, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct Selected {
     pub transport_url: Url,
+    pub statistics: Option<StatisticsRequest>,
 }
 
 #[derive(Serialize, Debug)]
@@ -54,6 +63,7 @@ pub struct StreamingServer {
     pub base_url: Loadable<Url, EnvError>,
     pub playback_devices: Loadable<Vec<PlaybackDevice>, EnvError>,
     pub torrent: Option<(String, Loadable<ResourcePath, EnvError>)>,
+    pub statistics: Option<Loadable<Statistics, EnvError>>,
 }
 
 impl StreamingServer {
@@ -67,11 +77,13 @@ impl StreamingServer {
             Self {
                 selected: Selected {
                     transport_url: profile.settings.streaming_server_url.to_owned(),
+                    statistics: None,
                 },
                 settings: Loadable::Loading,
                 base_url: Loadable::Loading,
                 playback_devices: Loadable::Loading,
                 torrent: None,
+                statistics: None,
             },
             effects.unchanged(),
         )
@@ -164,6 +176,18 @@ impl<E: Env + 'static> UpdateWithCtx<E> for StreamingServer {
                     .join(torrent_effects)
                 }
             },
+            Msg::Action(Action::StreamingServer(ActionStreamingServer::GetStatistics(request))) => {
+                let selected_effects =
+                    eq_update(&mut self.selected.statistics, Some(request.to_owned()));
+                let statistics_effects = eq_update(&mut self.statistics, Some(Loadable::Loading));
+                Effects::one(get_torrent_statistics::<E>(
+                    &self.selected.transport_url,
+                    request,
+                ))
+                .unchanged()
+                .join(selected_effects)
+                .join(statistics_effects)
+            }
             Msg::Action(Action::StreamingServer(ActionStreamingServer::PlayOnDevice(args))) => {
                 match Url::parse(&args.source).is_ok() {
                     true => match &mut self.playback_devices {
@@ -190,10 +214,12 @@ impl<E: Env + 'static> UpdateWithCtx<E> for StreamingServer {
             {
                 self.selected = Selected {
                     transport_url: ctx.profile.settings.streaming_server_url.to_owned(),
+                    statistics: None,
                 };
                 self.settings = Loadable::Loading;
                 self.base_url = Loadable::Loading;
                 self.torrent = None;
+                self.statistics = None;
                 Effects::many(vec![
                     get_settings::<E>(&self.selected.transport_url),
                     get_base_url::<E>(&self.selected.transport_url),
@@ -283,6 +309,16 @@ impl<E: Env + 'static> UpdateWithCtx<E> for StreamingServer {
                             .join(torrent_effects)
                     }
                 }
+            }
+            Msg::Internal(Internal::StreamingServerStatisticsResult((url, request), result))
+                if self.selected.transport_url == *url
+                    && self.selected.statistics.as_ref() == Some(request) =>
+            {
+                let loadable = match result {
+                    Ok(statistics) => Loadable::Ready(statistics.to_owned()),
+                    Err(error) => Loadable::Err(error.to_owned()),
+                };
+                eq_update(&mut self.statistics, Some(loadable))
             }
             Msg::Internal(Internal::StreamingServerPlayOnDeviceResult(device, result)) => {
                 match result {
@@ -536,6 +572,29 @@ fn parse_torrent(torrent: &[u8]) -> Result<(String, Vec<String>), serde_bencode:
     };
     announce.dedup();
     Ok((info_hash, announce))
+}
+
+fn get_torrent_statistics<E: Env + 'static>(url: &Url, request: &StatisticsRequest) -> Effect {
+    let statistics_request = request.clone();
+    let endpoint = url
+        .join(&format!(
+            "/{}/{}/stats.json",
+            statistics_request.info_hash.clone(),
+            statistics_request.file_idx
+        ))
+        .expect("url builder failed");
+    let request = Request::get(endpoint.as_str())
+        .header(http::header::CONTENT_TYPE, "application/json")
+        .body(())
+        .expect("request builder failed");
+    EffectFuture::Concurrent(
+        E::fetch::<_, Statistics>(request)
+            .map(enclose!((url) move |result|
+                Msg::Internal(Internal::StreamingServerStatisticsResult((url, statistics_request), result))
+            ))
+            .boxed_env(),
+    )
+    .into()
 }
 
 fn play_on_device<E: Env + 'static>(url: &Url, args: &PlayOnDeviceArgs) -> Effect {
