@@ -21,6 +21,10 @@ pub const CATALOG_PAGE_SIZE: usize = 100;
 pub const CATALOG_PREVIEW_SIZE: usize = 10;
 pub const LIBRARY_RECENT_COUNT: usize = 200;
 pub const NOTIFICATION_ITEMS_COUNT: usize = 100;
+
+/// A `LibraryItem` is considered watched once we've watched more than the `duration * threshold`:
+///
+/// `LibraryItem.state.time_watched` > `LibraryItem.state.duration` * [`WATCHED_THRESHOLD_COEF`]
 pub const WATCHED_THRESHOLD_COEF: f64 = 0.7;
 pub const CREDITS_THRESHOLD_COEF: f64 = 0.9;
 pub const SCHEMA_VERSION: u32 = 6;
