@@ -39,27 +39,35 @@
         },
         "addons": [
             {
-                "id": "id",
-                "version": "0.0.1",
-                "name": "name",
-                "idPrefixes": [
-                    "tt"
-                ],
-                "catalogs": [
-                    {
-                        "id": "lastVideosIds",
-                        "type": "series",
-                        "extra": [
-                            {
-                                "name": "lastVideosIds"
-                            }
-                        ]
-                    }
-                ],
+                "manifest": {
+                    "id": "id",
+                    "version": "0.0.1",
+                    "name": "name",
+                    "types": [
+                        "series"
+                    ],
+                    "resources": [
+                        "catalogs"
+                    ],
+                    "idPrefixes": [
+                        "tt"
+                    ],
+                    "catalogs": [
+                        {
+                            "id": "lastVideosIds",
+                            "type": "series",
+                            "extra": [
+                                {
+                                    "name": "lastVideosIds"
+                                }
+                            ]
+                        }
+                    ]
+                },
                 "transportUrl": "https://example.com/manifest.json"
             }
         ],
-        "library": [
+        "library_items": [
             {
                 "_id": "tt1",
                 "name": "name",
@@ -82,6 +90,17 @@
                 }
             }
         ],
-        "notifications": []
+        "notification_items": [],
+        "result": [
+            {
+                "id": "tt1",
+                "video": {
+                    "id": "tt1:1:6",
+                    "season": 1,
+                    "episode": 6,
+                    "released": "2020-01-05T00:00:00.000Z"
+                }
+            }
+        ]
     }
 ]
