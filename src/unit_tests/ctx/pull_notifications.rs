@@ -207,7 +207,7 @@ fn pull_notifications() {
     TestEnv::run(|| {
         runtime.dispatch(RuntimeAction {
             field: None,
-            action: Action::Ctx(ActionCtx::PullNotificatons),
+            action: Action::Ctx(ActionCtx::PullNotifications),
         })
     });
     assert_eq!(
@@ -291,7 +291,7 @@ fn pull_notifications() {
     TestEnv::run(|| {
         runtime.dispatch(RuntimeAction {
             field: None,
-            action: Action::Ctx(ActionCtx::PullNotificatons),
+            action: Action::Ctx(ActionCtx::PullNotifications),
         })
     });
     assert_eq!(

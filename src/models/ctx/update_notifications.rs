@@ -26,7 +26,7 @@ pub fn update_notifications<E: Env + 'static>(
     msg: &Msg,
 ) -> Effects {
     match msg {
-        Msg::Action(Action::Ctx(ActionCtx::PullNotificatons)) => {
+        Msg::Action(Action::Ctx(ActionCtx::PullNotifications)) => {
             let library_item_ids = library
                 .items
                 .values()
