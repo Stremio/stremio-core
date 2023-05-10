@@ -1,3 +1,4 @@
+mod notifications;
 mod add_to_library;
 mod authenticate;
 mod install_addon;
