@@ -1,5 +1,6 @@
-use crate::constants::{URI_COMPONENT_ENCODE_SET, YOUTUBE_ADDON_ID_PREFIX};
+use crate::constants::{BASE64, URI_COMPONENT_ENCODE_SET, YOUTUBE_ADDON_ID_PREFIX};
 use crate::types::resource::Subtitles;
+use base64::Engine;
 use boolinator::Boolinator;
 #[cfg(test)]
 use derivative::Derivative;
@@ -47,7 +48,20 @@ impl Stream {
                 xl: None,
                 tr: announce
                     .iter()
-                    .map(|tracker| tracker.replace("tracker:", ""))
+                    // `tracker` and `dht` prefixes are used internally by the server.js
+                    // we need to remove those prefixes when generating the magnet URL
+                    .map(|tracker| {
+                        tracker
+                            .strip_prefix("tracker:")
+                            .map(ToString::to_string)
+                            .unwrap_or_else(|| tracker.to_owned())
+                    })
+                    .map(|tracker| {
+                        tracker
+                            .strip_prefix("dht:")
+                            .map(ToString::to_string)
+                            .unwrap_or_else(|| tracker.to_owned())
+                    })
                     .map(|tracker| {
                         utf8_percent_encode(&tracker, URI_COMPONENT_ENCODE_SET).to_string()
                     })
@@ -66,11 +80,11 @@ impl Stream {
         let stream = serde_json::to_string(&self)?;
         encoder.write_all(stream.as_bytes())?;
         let stream = encoder.finish()?;
-        let stream = base64::encode(stream);
+        let stream = BASE64.encode(stream);
         Ok(stream)
     }
     pub fn decode(stream: String) -> Result<Self, anyhow::Error> {
-        let stream = base64::decode(stream)?;
+        let stream = BASE64.decode(stream)?;
         let mut writer = Vec::new();
         let mut decoder = ZlibDecoder::new(writer);
         decoder.write_all(&stream)?;
@@ -116,7 +130,7 @@ impl Stream {
         self.streaming_url(streaming_server_url).map(|url| {
             format!(
                 "data:application/octet-stream;charset=utf-8;base64,{}",
-                base64::encode(format!("#EXTM3U\n#EXTINF:0\n{url}"))
+                BASE64.encode(format!("#EXTM3U\n#EXTINF:0\n{url}"))
             )
         })
     }

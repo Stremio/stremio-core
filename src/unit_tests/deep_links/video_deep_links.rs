@@ -1,6 +1,8 @@
+use crate::constants::BASE64;
 use crate::deep_links::{ExternalPlayerLink, VideoDeepLinks};
 use crate::types::addon::{ResourcePath, ResourceRequest};
 use crate::types::resource::Video;
+use base64::Engine;
 use std::convert::TryFrom;
 use std::str::FromStr;
 use url::Url;
@@ -42,7 +44,7 @@ fn video_deep_links() {
         Some(ExternalPlayerLink {
             href: Some(format!(
                 "data:application/octet-stream;charset=utf-8;base64,{}",
-                base64::encode(format!(
+                BASE64.encode(format!(
                     "#EXTM3U\n#EXTINF:0\n{}yt/{}",
                     STREAMING_SERVER_URL, YT_ID
                 ))

@@ -278,10 +278,6 @@ fn pull_notifications() {
                 device: "chromecast".to_owned(),
             }),
         });
-        runtime.dispatch(RuntimeAction {
-            field: None,
-            action: Action::Player(ActionPlayer::PushToLibrary),
-        });
     });
     assert_eq!(
         runtime.model().unwrap().ctx.notifications.items.len(),

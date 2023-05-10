@@ -1,19 +1,18 @@
+use std::{iter, marker::PhantomData, num::NonZeroUsize};
+
 use crate::constants::{CATALOG_PAGE_SIZE, TYPE_PRIORITIES};
 use crate::models::common::{compare_with_priorities, eq_update};
 use crate::models::ctx::Ctx;
 use crate::runtime::msg::{Action, ActionLoad, Internal, Msg};
 use crate::runtime::{Effects, Env, UpdateWithCtx};
 use crate::types::library::{LibraryBucket, LibraryItem};
+
 use boolinator::Boolinator;
 use derivative::Derivative;
 use derive_more::Deref;
 use itertools::Itertools;
 use serde::{Deserialize, Serialize};
-use std::iter;
-use std::marker::PhantomData;
-use std::num::NonZeroUsize;
-use strum::IntoEnumIterator;
-use strum_macros::EnumIter;
+use strum::{EnumIter, IntoEnumIterator};
 
 pub trait LibraryFilter {
     fn predicate(library_item: &LibraryItem) -> bool;
