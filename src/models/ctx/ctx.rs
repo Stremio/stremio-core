@@ -15,15 +15,16 @@ use crate::types::profile::{Auth, AuthKey, Profile};
 use crate::types::resource::MetaItem;
 use enclose::enclose;
 use futures::{future, FutureExt, TryFutureExt};
-use serde::Serialize;
+use serde::{Serialize, Deserialize};
 
-#[derive(PartialEq, Eq, Serialize, Clone, Debug)]
+#[derive(Default, PartialEq, Eq, Serialize, Clone, Debug)]
 pub enum CtxStatus {
     Loading(AuthRequest),
+    #[default]
     Ready,
 }
 
-#[derive(Serialize, Clone, Debug)]
+#[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct Ctx {
     pub profile: Profile,
     // TODO StreamsBucket
@@ -31,7 +32,6 @@ pub struct Ctx {
     // TODO SearchesBucket
     #[serde(skip)]
     pub library: LibraryBucket,
-    #[serde(skip)]
     pub notifications: NotificationsBucket,
     #[serde(skip)]
     pub status: CtxStatus,
