@@ -5,6 +5,8 @@ use enclose::enclose;
 use futures::{future, FutureExt, StreamExt};
 use lazy_static::lazy_static;
 use std::sync::RwLock;
+use tracing::debug;
+
 use stremio_core::constants::{
     LIBRARY_RECENT_STORAGE_KEY, LIBRARY_STORAGE_KEY, PROFILE_STORAGE_KEY,
 };
@@ -14,6 +16,7 @@ use stremio_core::runtime::{Env, EnvError, Runtime, RuntimeAction, RuntimeEvent}
 use stremio_core::types::library::LibraryBucket;
 use stremio_core::types::profile::Profile;
 use stremio_core::types::resource::Stream;
+
 use wasm_bindgen::prelude::wasm_bindgen;
 use wasm_bindgen::JsValue;
 
@@ -24,7 +27,14 @@ lazy_static! {
 
 #[wasm_bindgen(start)]
 pub fn start() {
-    std::panic::set_hook(Box::new(console_error_panic_hook::hook));
+    // print pretty errors in wasm https://github.com/rustwasm/console_error_panic_hook
+    // This is not needed for tracing_wasm to work, but it is a common tool for getting proper error line numbers for panics.
+    console_error_panic_hook::set_once();
+
+    // setup wasm tracing Subscriber on web console
+    tracing_wasm::set_as_global_default();
+
+    debug!("Tracing subscriber is set!");
 }
 
 #[wasm_bindgen]
