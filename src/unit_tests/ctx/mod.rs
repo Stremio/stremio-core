@@ -2,6 +2,7 @@ mod add_to_library;
 mod authenticate;
 mod install_addon;
 mod logout;
+mod notifications;
 mod pull_addons_from_api;
 mod pull_notifications;
 mod push_addons_to_api;

@@ -387,8 +387,11 @@ impl DefaultTokens for Settings {
             Token::Bool(true),
             Token::Str("hardwareDecoding"),
             Token::Bool(true),
-            Token::Str("autoFrameRateMatching"),
-            Token::Bool(false),
+            Token::Str("frameRateMatchingStrategy"),
+            Token::UnitVariant {
+                name: "FrameRateMatchingStrategy",
+                variant: "FrameRateOnly",
+            },
             Token::Str("nextVideoNotificationDuration"),
             Token::U32(35000),
             Token::Str("audioPassthrough"),

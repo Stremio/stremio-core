@@ -18,7 +18,7 @@ pub const SUBTITLES_RESOURCE_NAME: &str = "subtitles";
 pub const ADDON_MANIFEST_PATH: &str = "/manifest.json";
 pub const ADDON_LEGACY_PATH: &str = "/stremio/v1";
 pub const CATALOG_PAGE_SIZE: usize = 100;
-pub const CATALOG_PREVIEW_SIZE: usize = 10;
+pub const CATALOG_PREVIEW_SIZE: usize = 100;
 pub const LIBRARY_RECENT_COUNT: usize = 200;
 pub const NOTIFICATION_ITEMS_COUNT: usize = 100;
 
@@ -27,7 +27,7 @@ pub const NOTIFICATION_ITEMS_COUNT: usize = 100;
 /// `LibraryItem.state.time_watched` > `LibraryItem.state.duration` * [`WATCHED_THRESHOLD_COEF`]
 pub const WATCHED_THRESHOLD_COEF: f64 = 0.7;
 pub const CREDITS_THRESHOLD_COEF: f64 = 0.9;
-pub const SCHEMA_VERSION: u32 = 6;
+pub const SCHEMA_VERSION: u32 = 7;
 pub const IMDB_LINK_CATEGORY: &str = "imdb";
 pub const GENRES_LINK_CATEGORY: &str = "Genres";
 pub const CINEMETA_TOP_CATALOG_ID: &str = "top";
@@ -84,6 +84,7 @@ lazy_static! {
         options_limit: OptionsLimit(1),
     };
     pub static ref TYPE_PRIORITIES: HashMap<&'static str, i32> = vec![
+        ("all", 5),
         ("movie", 4),
         ("series", 3),
         ("channel", 2),
