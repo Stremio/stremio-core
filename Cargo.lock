@@ -927,7 +927,7 @@ checksum = "a507befe795404456341dfab10cef66ead4c041f62b8b11bbb92bffe5d0953e0"
 [[package]]
 name = "stremio-analytics"
 version = "0.1.0"
-source = "git+https://github.com/Stremio/stremio-core?branch=development#98747d1fbb847fdb111ac55b2dd14f766ea44404"
+source = "git+https://github.com/Stremio/stremio-core?branch=notifications-bucket-part-2#54a12b956eec757f5c618c5287bb01509f7fbe22"
 dependencies = [
  "derivative",
  "enclose",
@@ -940,7 +940,7 @@ dependencies = [
 [[package]]
 name = "stremio-core"
 version = "0.1.0"
-source = "git+https://github.com/Stremio/stremio-core?branch=development#98747d1fbb847fdb111ac55b2dd14f766ea44404"
+source = "git+https://github.com/Stremio/stremio-core?branch=notifications-bucket-part-2#54a12b956eec757f5c618c5287bb01509f7fbe22"
 dependencies = [
  "anyhow",
  "base64 0.21.0",
@@ -958,6 +958,7 @@ dependencies = [
  "lazy_static",
  "lazysort",
  "magnet-url",
+ "once_cell",
  "percent-encoding",
  "semver",
  "serde",
@@ -1012,7 +1013,7 @@ dependencies = [
 [[package]]
 name = "stremio-derive"
 version = "0.1.0"
-source = "git+https://github.com/Stremio/stremio-core?branch=development#98747d1fbb847fdb111ac55b2dd14f766ea44404"
+source = "git+https://github.com/Stremio/stremio-core?branch=notifications-bucket-part-2#54a12b956eec757f5c618c5287bb01509f7fbe22"
 dependencies = [
  "case",
  "proc-macro-crate",
@@ -1042,7 +1043,7 @@ dependencies = [
 [[package]]
 name = "stremio-watched-bitfield"
 version = "0.1.0"
-source = "git+https://github.com/Stremio/stremio-core?branch=development#98747d1fbb847fdb111ac55b2dd14f766ea44404"
+source = "git+https://github.com/Stremio/stremio-core?branch=notifications-bucket-part-2#54a12b956eec757f5c618c5287bb01509f7fbe22"
 dependencies = [
  "base64 0.13.1",
  "flate2",
