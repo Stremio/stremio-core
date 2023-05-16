@@ -210,13 +210,13 @@ fn build_legacy_req(transport_url: &Url, path: &ResourcePath) -> Result<Request<
                     serde_json::Value::String(video_hash.to_owned()),
                 );
             }
-            let video_size = path.get_extra_first_value(VIDEO_SIZE_EXTRA_PROP.name.as_str());
+            let video_size = path
+                .get_extra_first_value(VIDEO_SIZE_EXTRA_PROP.name.as_str())
+                .and_then(|video_size| video_size.parse().ok());
             if let Some(video_size) = video_size {
                 query.insert(
                     VIDEO_SIZE_EXTRA_PROP.name.as_str(),
-                    serde_json::Value::Number(
-                        video_size.parse().expect("Failed to parse videoSize"),
-                    ),
+                    serde_json::Value::Number(video_size),
                 );
             }
             build_jsonrpc("subtitles.find", json!({ "query": query }))
