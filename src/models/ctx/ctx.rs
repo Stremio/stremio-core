@@ -21,7 +21,6 @@ use url::Url;
 
 use tracing::{debug, event, Level};
 
-
 #[derive(PartialEq, Eq, Serialize, Clone, Debug)]
 pub enum CtxStatus {
     Loading(AuthRequest),
@@ -182,7 +181,7 @@ fn authenticate<E: Env + 'static>(auth_request: &AuthRequest) -> Effect {
         E::flush_analytics()
             .then(move |_| {
                 fetch_api::<E, _, _, _>(&auth_api)
-                .inspect(move |result| debug!(?result, ?auth_api, "Auth request"))
+                    .inspect(move |result| debug!(?result, ?auth_api, "Auth request"))
             })
             .map_err(CtxError::from)
             .and_then(|result| match result {
