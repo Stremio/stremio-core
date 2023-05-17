@@ -1,14 +1,18 @@
+use std::collections::HashMap;
+
 use crate::runtime::Env;
 use crate::types::notifications::NotificationItem;
 use crate::types::profile::UID;
-use chrono::{DateTime, Utc};
-use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
 
-#[derive(Clone, PartialEq, Eq, Serialize, Deserialize, Debug)]
+use chrono::{DateTime, Utc};
+use derivative::Derivative;
+use serde::{Deserialize, Serialize};
+
+#[derive(Default, Derivative, Clone, PartialEq, Eq, Serialize, Deserialize, Debug)]
 pub struct NotificationsBucket {
     pub uid: UID,
     pub items: HashMap<String, NotificationItem>,
+    #[derivative(Default(value = "Utc.timestamp_opt(0, 0).unwrap()"))]
     pub created: DateTime<Utc>,
 }
 

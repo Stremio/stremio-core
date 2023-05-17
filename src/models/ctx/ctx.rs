@@ -13,9 +13,13 @@ use crate::types::library::LibraryBucket;
 use crate::types::notifications::NotificationsBucket;
 use crate::types::profile::{Auth, AuthKey, Profile};
 use crate::types::resource::MetaItem;
+
+use derivative::Derivative;
 use enclose::enclose;
 use futures::{future, FutureExt, TryFutureExt};
 use serde::{Serialize, Deserialize};
+
+use tracing::{debug, event, Level};
 
 #[derive(Default, PartialEq, Eq, Serialize, Clone, Debug)]
 pub enum CtxStatus {
@@ -24,7 +28,8 @@ pub enum CtxStatus {
     Ready,
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug)]
+#[derive(Derivative, Serialize, Deserialize, Clone, Debug)]
+#[derivative(Default)]
 pub struct Ctx {
     pub profile: Profile,
     // TODO StreamsBucket
@@ -34,6 +39,7 @@ pub struct Ctx {
     pub library: LibraryBucket,
     pub notifications: NotificationsBucket,
     #[serde(skip)]
+    #[derivative(Default(value = "CtxStatus::Ready"))]
     pub status: CtxStatus,
     #[serde(skip)]
     pub trakt_addon: Option<DescriptorLoadable>,
@@ -51,9 +57,7 @@ impl Ctx {
             profile,
             library,
             notifications,
-            status: CtxStatus::Ready,
-            trakt_addon: None,
-            notification_catalogs: vec![],
+            ..Self::default()
         }
     }
 }
@@ -170,11 +174,14 @@ impl<E: Env + 'static> Update<E> for Ctx {
 }
 
 fn authenticate<E: Env + 'static>(auth_request: &AuthRequest) -> Effect {
+    let auth_api = APIRequest::Auth(auth_request.clone());
+
     EffectFuture::Concurrent(
         E::flush_analytics()
-            .then(enclose!((auth_request) move |_| {
-                fetch_api::<E, _, _, _>(&APIRequest::Auth(auth_request))
-            }))
+            .then(move |_| {
+                fetch_api::<E, _, _, _>(&auth_api)
+                    .inspect(move |result| debug!(?result, ?auth_api, "Auth request"))
+            })
             .map_err(CtxError::from)
             .and_then(|result| match result {
                 APIResult::Ok { result } => future::ok(result),
@@ -182,35 +189,52 @@ fn authenticate<E: Env + 'static>(auth_request: &AuthRequest) -> Effect {
             })
             .map_ok(|AuthResponse { key, user }| Auth { key, user })
             .and_then(|auth| {
-                future::try_join(
-                    fetch_api::<E, _, _, _>(&APIRequest::AddonCollectionGet {
+                let addon_collection_fut = {
+                    let request = APIRequest::AddonCollectionGet {
                         auth_key: auth.key.to_owned(),
                         update: true,
-                    })
-                    .map_err(CtxError::from)
-                    .and_then(|result| match result {
-                        APIResult::Ok { result } => future::ok(result),
-                        APIResult::Err { error } => future::err(CtxError::from(error)),
-                    })
-                    .map_ok(|CollectionResponse { addons, .. }| addons),
-                    fetch_api::<E, _, _, LibraryItemsResponse>(&DatastoreRequest {
+                    };
+                    fetch_api::<E, _, _, _>(&request)
+                        .inspect(move |result| {
+                            debug!(?result, ?request, "Get user's Addon Collection request")
+                        })
+                        .map_err(CtxError::from)
+                        .and_then(|result| match result {
+                            APIResult::Ok { result } => future::ok(result),
+                            APIResult::Err { error } => future::err(CtxError::from(error)),
+                        })
+                        .map_ok(|CollectionResponse { addons, .. }| addons)
+                };
+
+                let datastore_library_fut = {
+                    let request = DatastoreRequest {
                         auth_key: auth.key.to_owned(),
                         collection: LIBRARY_COLLECTION_NAME.to_owned(),
                         command: DatastoreCommand::Get {
                             ids: vec![],
                             all: true,
                         },
-                    })
-                    .map_err(CtxError::from)
-                    .and_then(|result| match result {
-                        APIResult::Ok { result } => future::ok(result.0),
-                        APIResult::Err { error } => future::err(CtxError::from(error)),
-                    }),
-                )
-                .map_ok(move |(addons, library_items)| (auth, addons, library_items))
+                    };
+
+                    fetch_api::<E, _, _, LibraryItemsResponse>(&request)
+                        .inspect(move |result| {
+                            debug!(?result, ?request, "Get user's Addon Collection request")
+                        })
+                        .map_err(CtxError::from)
+                        .and_then(|result| match result {
+                            APIResult::Ok { result } => future::ok(result.0),
+                            APIResult::Err { error } => future::err(CtxError::from(error)),
+                        })
+                };
+
+                future::try_join(addon_collection_fut, datastore_library_fut)
+                    .map_ok(move |(addons, library_items)| (auth, addons, library_items))
             })
             .map(enclose!((auth_request) move |result| {
-                Msg::Internal(Internal::CtxAuthResult(auth_request, result))
+                let internal_msg = Msg::Internal(Internal::CtxAuthResult(auth_request, result));
+
+                event!(Level::INFO, internal_message = ?internal_msg);
+                internal_msg
             }))
             .boxed_env(),
     )
@@ -218,11 +242,16 @@ fn authenticate<E: Env + 'static>(auth_request: &AuthRequest) -> Effect {
 }
 
 fn delete_session<E: Env + 'static>(auth_key: &AuthKey) -> Effect {
+    let request = APIRequest::Logout {
+        auth_key: auth_key.clone(),
+    };
+
     EffectFuture::Concurrent(
         E::flush_analytics()
-            .then(enclose!((auth_key) move |_| {
-                fetch_api::<E, _, _, SuccessResponse>(&APIRequest::Logout { auth_key })
-            }))
+            .then(|_| {
+                fetch_api::<E, _, _, SuccessResponse>(&request)
+                    .inspect(move |result| debug!(?result, ?request, "Logout request"))
+            })
             .map_err(CtxError::from)
             .and_then(|result| match result {
                 APIResult::Ok { result } => future::ok(result),
