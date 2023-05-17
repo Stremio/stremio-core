@@ -133,6 +133,9 @@ pub struct LibraryItemState {
     #[serde_as(deserialize_as = "DefaultOnNull<NoneAsEmptyString>")]
     pub last_video_released: Option<DateTime<Utc>>,
     /// Weather or not to receive notification for the given [`LibraryItem`].
+    ///
+    /// Default: receive notifications
+    #[serde(default)]
     pub notifications_disabled: bool,
 }
 
