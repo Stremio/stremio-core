@@ -12,7 +12,7 @@ use serde::{Deserialize, Serialize};
 pub struct NotificationsBucket {
     pub uid: UID,
     pub items: HashMap<String, NotificationItem>,
-    #[derivative(Default(value = "Utc.timestamp_opt(0, 0).unwrap()"))]
+    #[derivative(Default(value = "Utc::now()"))]
     pub created: DateTime<Utc>,
 }
 
