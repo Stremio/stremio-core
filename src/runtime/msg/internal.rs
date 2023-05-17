@@ -28,6 +28,7 @@ pub type LibraryPlanResponse = (Vec<String>, Vec<String>);
 //
 // Those messages are meant to be dispatched and handled only inside stremio-core crate
 //
+#[derive(Debug)]
 pub enum Internal {
     /// Result for authenticate to API.
     CtxAuthResult(AuthRequest, Result<AuthResponse, CtxError>),

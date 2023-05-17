@@ -42,10 +42,14 @@ serde_with = { version = "1.14.*", features = ["macros", "chrono"] }
 
 flate2 = "1.0.*"
 futures = "0.3.*"
+
 http = "0.2.*"
 url = { version = "2.2", features = ["serde"] }
 percent-encoding = "2.1"
+
+# Time
 chrono = { version = "0.4", features = ["serde"] }
+
 semver = { version = "1", features = ["serde"] }
 base64 = { version = "0.21"}
 sha1 = "0.10"
@@ -72,6 +76,9 @@ localsearch = { version = "0.1.0", git = "https://github.com/Stremio/local-searc
 
 # Number operations
 num = { version = "0.4.0", default-features = false }
+
+# Tracing
+tracing = "0.1"
 
 [dev-dependencies]
 tokio = { version = "1.12", features = ["rt", "macros"] }
