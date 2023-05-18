@@ -52,7 +52,6 @@ serde_path_to_error = "0.1.*"
 # Tracing
 tracing = "0.1"
 tracing-wasm = "0.2"
-tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 
 # A way to quickly test with local version of `core` crates
 # [patch.'https://github.com/Stremio/stremio-core']
