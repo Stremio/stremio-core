@@ -5,8 +5,7 @@ use std::sync::RwLock;
 use enclose::enclose;
 use futures::{future, FutureExt, StreamExt};
 use lazy_static::lazy_static;
-use tracing::{debug, info, Level};
-use tracing_subscriber::EnvFilter;
+use tracing::{info, Level};
 
 use stremio_core::constants::{
     LIBRARY_RECENT_STORAGE_KEY, LIBRARY_STORAGE_KEY, PROFILE_STORAGE_KEY,
@@ -37,7 +36,7 @@ pub fn start() {
     let max_level = Level::TRACE;
     #[cfg(not(debug_assertions))]
     let max_level = Level::INFO;
-    
+
     let config = WASMLayerConfigBuilder::default()
         .set_max_level(max_level)
         .build();
