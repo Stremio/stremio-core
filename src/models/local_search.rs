@@ -71,7 +71,7 @@ pub struct Searchable {
 pub struct LocalSearch {
     /// The Searchable items that will be used for the local search.
     ///
-    // #[serde(skip)]
+    #[serde(skip)]
     pub current_records: Vec<Searchable>,
     /// The results of the search autocompletion
     pub search_results: Vec<Searchable>,
