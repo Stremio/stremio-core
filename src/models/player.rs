@@ -58,7 +58,7 @@ pub struct AnalyticsContext {
 #[serde(rename_all = "camelCase")]
 pub struct VideoParams {
     pub hash: Option<String>,
-    pub size: Option<u32>,
+    pub size: Option<u64>,
 }
 
 #[derive(Clone, PartialEq, Eq, Serialize, Deserialize, Debug)]
