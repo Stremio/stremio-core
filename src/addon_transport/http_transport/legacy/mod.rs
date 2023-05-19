@@ -1,5 +1,5 @@
 use crate::addon_transport::AddonTransport;
-use crate::constants::BASE64;
+use crate::constants::{BASE64, VIDEO_HASH_EXTRA_PROP, VIDEO_SIZE_EXTRA_PROP};
 use crate::runtime::{ConditionalSend, Env, EnvError, EnvFutureExt, TryEnvFuture};
 use crate::types::addon::{Manifest, ResourcePath, ResourceResponse};
 use crate::types::resource::{MetaItem, MetaItemPreview, Stream, Subtitles};
@@ -8,6 +8,7 @@ use futures::{future, TryFutureExt};
 use http::Request;
 use serde::Deserialize;
 use serde_json::json;
+use std::collections::HashMap;
 use std::marker::PhantomData;
 use url::Url;
 
@@ -199,10 +200,27 @@ fn build_legacy_req(transport_url: &Url, path: &ResourcePath) -> Result<Request<
             query.insert("type".into(), serde_json::Value::String(r#type.to_owned()));
             build_jsonrpc("stream.find", json!({ "query": query }))
         }
-        "subtitles" => build_jsonrpc(
-            "subtitles.find",
-            json!({ "query": json!({ "itemHash": id.replace(':', " ") }) }),
-        ),
+        "subtitles" => {
+            let mut query = HashMap::new();
+            query.insert("itemHash", serde_json::Value::String(id.replace(':', " ")));
+            let video_hash = path.get_extra_first_value(VIDEO_HASH_EXTRA_PROP.name.as_str());
+            if let Some(video_hash) = video_hash {
+                query.insert(
+                    VIDEO_HASH_EXTRA_PROP.name.as_str(),
+                    serde_json::Value::String(video_hash.to_owned()),
+                );
+            }
+            let video_size = path
+                .get_extra_first_value(VIDEO_SIZE_EXTRA_PROP.name.as_str())
+                .and_then(|video_size| video_size.parse().ok());
+            if let Some(video_size) = video_size {
+                query.insert(
+                    VIDEO_SIZE_EXTRA_PROP.name.as_str(),
+                    serde_json::Value::Number(video_size),
+                );
+            }
+            build_jsonrpc("subtitles.find", json!({ "query": query }))
+        }
         _ => return Err(LegacyErr::UnsupportedRequest.into()),
     };
     // NOTE: this is not using a URL safe base64 standard, which means that technically this is
@@ -263,7 +281,7 @@ fn query_from_id(id: &str) -> serde_json::Value {
 #[cfg(test)]
 mod test {
     use super::*;
-    use crate::types::addon::ResourcePath;
+    use crate::types::addon::{ExtraExt, ResourcePath};
 
     // Those are a bit sensitive for now, but that's a good thing, since it will force us
     // to pay attention to minor details that might matter with the legacy system
@@ -287,6 +305,31 @@ mod test {
         assert_eq!(
             &build_legacy_req(&transport_url, &path).unwrap().uri().to_string(),
             "https://legacywatchhub.strem.io/stremio/v1/q.json?b=eyJpZCI6MSwianNvbnJwYyI6IjIuMCIsIm1ldGhvZCI6InN0cmVhbS5maW5kIiwicGFyYW1zIjpbbnVsbCx7InF1ZXJ5Ijp7ImVwaXNvZGUiOjEsImltZGJfaWQiOiJ0dDAzODY2NzYiLCJzZWFzb24iOjUsInR5cGUiOiJzZXJpZXMifX1dfQ=="
+        );
+    }
+
+    #[test]
+    fn subtitles_only_id() {
+        let transport_url =
+            Url::parse("https://legacywatchhub.strem.io/stremio/v1").expect("url parse failed");
+        let path = ResourcePath::without_extra("subtitles", "series", "tt0386676:5:1");
+        assert_eq!(
+            &build_legacy_req(&transport_url, &path).unwrap().uri().to_string(),
+            "https://legacywatchhub.strem.io/stremio/v1/q.json?b=eyJpZCI6MSwianNvbnJwYyI6IjIuMCIsIm1ldGhvZCI6InN1YnRpdGxlcy5maW5kIiwicGFyYW1zIjpbbnVsbCx7InF1ZXJ5Ijp7Iml0ZW1IYXNoIjoidHQwMzg2Njc2IDUgMSJ9fV19"
+        );
+    }
+
+    #[test]
+    fn subtitles_with_hash() {
+        let transport_url =
+            Url::parse("https://legacywatchhub.strem.io/stremio/v1").expect("url parse failed");
+        let extra = &vec![]
+            .extend_one(&VIDEO_HASH_EXTRA_PROP, Some("ffffffffff".to_string()))
+            .extend_one(&VIDEO_SIZE_EXTRA_PROP, Some("1000000000".to_string()));
+        let path = ResourcePath::with_extra("subtitles", "series", "tt0386676:5:1", extra);
+        assert_eq!(
+            &build_legacy_req(&transport_url, &path).unwrap().uri().to_string(),
+            "https://legacywatchhub.strem.io/stremio/v1/q.json?b=eyJpZCI6MSwianNvbnJwYyI6IjIuMCIsIm1ldGhvZCI6InN1YnRpdGxlcy5maW5kIiwicGFyYW1zIjpbbnVsbCx7InF1ZXJ5Ijp7Iml0ZW1IYXNoIjoidHQwMzg2Njc2IDUgMSIsInZpZGVvSGFzaCI6ImZmZmZmZmZmZmYiLCJ2aWRlb1NpemUiOjEwMDAwMDAwMDB9fV19"
         );
     }
 
