@@ -1,5 +1,5 @@
 use crate::constants::BASE64;
-use crate::deep_links::{ExternalPlayerLink, VideoDeepLinks, OpenPlayerLink};
+use crate::deep_links::{ExternalPlayerLink, OpenPlayerLink, VideoDeepLinks};
 use crate::types::addon::{ResourcePath, ResourceRequest};
 use crate::types::resource::Video;
 use base64::Engine;
