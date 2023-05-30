@@ -53,14 +53,21 @@ fn video_deep_links() {
             streaming: Some(format!("{}yt/{}", STREAMING_SERVER_URL, YT_ID)),
             file_name: Some("playlist.m3u".to_string()),
             vlc: Some(OpenPlayerLink {
-                ios: format!(
+                ios: Some(format!(
                     "vlc-x-callback://x-callback-url/stream?url={}yt/{}",
                     STREAMING_SERVER_URL, YT_ID,
-                ),
-                android: format!(
+                )),
+                android: Some(format!(
                     "intent://{}yt/{}#Intent;package=org.videolan.vlc;type=video;scheme=https;end",
                     STREAMING_SERVER_URL, YT_ID,
-                ),
+                )),
+                windows: None,
+                macos: None,
+                linux: None,
+                tizen: None,
+                webos: None,
+                chromeos: None,
+                roku: None,
             }),
             ..Default::default()
         })
