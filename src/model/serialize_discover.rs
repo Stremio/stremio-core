@@ -182,6 +182,7 @@ pub fn serialize_discover(
                                             deep_links: StreamDeepLinks::from((
                                                 stream,
                                                 &streaming_server_url,
+                                                &ctx.profile.settings,
                                             ))
                                             .into_web_deep_links(),
                                         })

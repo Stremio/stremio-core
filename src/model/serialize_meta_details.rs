@@ -164,6 +164,7 @@ pub fn serialize_meta_details(
                                     video,
                                     request,
                                     &streaming_server_url,
+                                    &ctx.profile.settings,
                                 ))
                                 .into_web_deep_links(),
                             })
@@ -174,8 +175,12 @@ pub fn serialize_meta_details(
                             .iter()
                             .map(|stream| model::Stream {
                                 stream,
-                                deep_links: StreamDeepLinks::from((stream, &streaming_server_url))
-                                    .into_web_deep_links(),
+                                deep_links: StreamDeepLinks::from((
+                                    stream,
+                                    &streaming_server_url,
+                                    &ctx.profile.settings,
+                                ))
+                                .into_web_deep_links(),
                             })
                             .collect::<Vec<_>>(),
                         in_library: ctx
@@ -232,13 +237,20 @@ pub fn serialize_meta_details(
                                 stream,
                                 deep_links: meta_item
                                     .map_or_else(
-                                        || StreamDeepLinks::from((stream, &streaming_server_url)),
+                                        || {
+                                            StreamDeepLinks::from((
+                                                stream,
+                                                &streaming_server_url,
+                                                &ctx.profile.settings,
+                                            ))
+                                        },
                                         |meta_item| {
                                             StreamDeepLinks::from((
                                                 stream,
                                                 request,
                                                 &meta_item.request,
                                                 &streaming_server_url,
+                                                &ctx.profile.settings,
                                             ))
                                         },
                                     )
