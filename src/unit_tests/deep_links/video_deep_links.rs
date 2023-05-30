@@ -127,8 +127,8 @@ fn video_deep_links() {
             }),
             infuse: Some(OpenPlayerLink {
                 ios: Some(format!(
-                    "{}",
-                    http_regex.replace(&streaming_server_yt, "infuse://")
+                    "infuse://x-callback-url/play?url={}",
+                    streaming_server_yt,
                 )),
                 android: None,
                 windows: None,
