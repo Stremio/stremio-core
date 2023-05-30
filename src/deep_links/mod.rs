@@ -52,26 +52,65 @@ impl From<(&Stream, &Option<Url>)> for ExternalPlayerLink {
             android: format!("intent:{url}#Intent;type=video/any;scheme=https;end",),
         });
         let vlc = streaming.as_ref().map(|url| OpenPlayerLink {
-            ios: format!("vlc-x-callback://x-callback-url/stream?url={url}"),
-            android: format!(
+            ios: Some(format!("vlc-x-callback://x-callback-url/stream?url={url}")),
+            android: Some(format!(
                 "intent:{url}#Intent;package=org.videolan.vlc;type=video;scheme=https;end",
-            ),
+            )),
+            windows: None,
+            macos: None,
+            linux: None,
+            tizen: None,
+            webos: None,
+            chromeos: None,
+            roku: None,
         });
         let mxplayer = streaming.as_ref().map(|url| OpenPlayerLink {
-            android: format!(
+            android: Some(format!(
                 "intent:{url}#Intent;package=com.mxtech.videoplayer.ad;type=video;scheme=https;end",
-            ),
+            )),
+            ios: None,
+            windows: None,
+            macos: None,
+            linux: None,
+            tizen: None,
+            webos: None,
+            chromeos: None,
+            roku: None,
         });
         let justplayer = streaming.as_ref().map(|url| OpenPlayerLink {
-            android: format!(
+            android: Some(format!(
                 "intent:{url}#Intent;package=com.brouken.player;type=video;scheme=https;end",
-            ),
+            )),
+            ios: None,
+            windows: None,
+            macos: None,
+            linux: None,
+            tizen: None,
+            webos: None,
+            chromeos: None,
+            roku: None,
         });
         let outplayer = streaming.as_ref().map(|url| OpenPlayerLink {
-            ios: format!("{}", http_regex.replace(url, "outplayer://")),
+            ios: Some(format!("{}", http_regex.replace(url, "outplayer://"))),
+            android: None,
+            windows: None,
+            macos: None,
+            linux: None,
+            tizen: None,
+            webos: None,
+            chromeos: None,
+            roku: None,
         });
         let infuse = streaming.as_ref().map(|url| OpenPlayerLink {
-            ios: format!("{}", http_regex.replace(url, "infuse://")),
+            ios: Some(format!("{}", http_regex.replace(url, "infuse://"))),
+            android: None,
+            windows: None,
+            macos: None,
+            linux: None,
+            tizen: None,
+            webos: None,
+            chromeos: None,
+            roku: None,
         });
         let (android_tv, tizen, webos) = match &stream.source {
             StreamSource::External {
