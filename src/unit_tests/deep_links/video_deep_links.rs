@@ -1,6 +1,7 @@
 use crate::constants::BASE64;
-use crate::deep_links::{ExternalPlayerLink, OpenPlayerLink, VideoDeepLinks};
+use crate::deep_links::{ExternalPlayerLink, VideoDeepLinks};
 use crate::types::addon::{ResourcePath, ResourceRequest};
+use crate::types::profile::Settings;
 use crate::types::resource::Video;
 use base64::Engine;
 use std::convert::TryFrom;
@@ -27,7 +28,9 @@ fn video_deep_links() {
         path: ResourcePath::without_extra("meta", "movie", format!("yt_id:{YT_ID}").as_str()),
     };
     let streaming_server_url = Some(Url::parse(STREAMING_SERVER_URL).unwrap());
-    let vdl = VideoDeepLinks::try_from((&video, &request, &streaming_server_url)).unwrap();
+    let settings = Settings::default();
+    let vdl =
+        VideoDeepLinks::try_from((&video, &request, &streaming_server_url, &settings)).unwrap();
     assert_eq!(
         vdl.meta_details_streams,
         format!(
@@ -52,16 +55,6 @@ fn video_deep_links() {
             download: Some(format!("https://youtube.com/watch?v={}", YT_ID)),
             streaming: Some(format!("{}yt/{}", STREAMING_SERVER_URL, YT_ID)),
             file_name: Some("playlist.m3u".to_string()),
-            vlc: Some(OpenPlayerLink {
-                ios: format!(
-                    "vlc-x-callback://x-callback-url/stream?url={}yt/{}",
-                    STREAMING_SERVER_URL, YT_ID,
-                ),
-                android: format!(
-                    "intent://{}yt/{}#Intent;package=org.videolan.vlc;type=video;scheme=https;end",
-                    STREAMING_SERVER_URL, YT_ID,
-                ),
-            }),
             ..Default::default()
         })
     );
