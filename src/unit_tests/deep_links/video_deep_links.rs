@@ -57,8 +57,8 @@ fn video_deep_links() {
             file_name: Some("playlist.m3u".to_string()),
             choose: Some(OpenPlayerLink {
                 android: Some(format!(
-                    "intent:{}#Intent;type=video/any;scheme=https;end",
-                    streaming_server_yt,
+                    "{}#Intent;type=video/any;scheme=https;end",
+                    http_regex.replace(&streaming_server_yt, "intent://"),
                 )),
                 ios: None,
                 windows: None,
@@ -75,8 +75,8 @@ fn video_deep_links() {
                     streaming_server_yt,
                 )),
                 android: Some(format!(
-                    "intent:{}#Intent;package=org.videolan.vlc;type=video;scheme=https;end",
-                    streaming_server_yt,
+                    "{}#Intent;package=org.videolan.vlc;type=video;scheme=https;end",
+                    http_regex.replace(&streaming_server_yt, "intent://"),
                 )),
                 windows: None,
                 macos: None,
@@ -88,8 +88,8 @@ fn video_deep_links() {
             }),
             mxplayer: Some(OpenPlayerLink {
                 android: Some(format!(
-                    "intent:{}#Intent;package=com.mxtech.videoplayer.ad;type=video;scheme=https;end",
-                    streaming_server_yt,
+                    "{}#Intent;package=com.mxtech.videoplayer.ad;type=video;scheme=https;end",
+                    http_regex.replace(&streaming_server_yt, "intent://"),
                 )),
                 ios: None,
                 windows: None,
@@ -102,8 +102,8 @@ fn video_deep_links() {
             }),
             justplayer: Some(OpenPlayerLink {
                 android: Some(format!(
-                    "intent:{}#Intent;package=com.brouken.player;type=video;scheme=https;end",
-                    streaming_server_yt,
+                    "{}#Intent;package=com.brouken.player;type=video;scheme=https;end",
+                    http_regex.replace(&streaming_server_yt, "intent://"),
                 )),
                 ios: None,
                 windows: None,

@@ -55,7 +55,8 @@ impl From<(&Stream, &Option<Url>)> for ExternalPlayerLink {
         let href = m3u_uri.or_else(|| download.to_owned());
         let choose = streaming.as_ref().map(|url| OpenPlayerLink {
             android: Some(format!(
-                "intent:{url}#Intent;type=video/any;scheme=https;end",
+                "{}#Intent;type=video/any;scheme=https;end",
+                http_regex.replace(url, "intent://"),
             )),
             ios: None,
             windows: None,
@@ -69,7 +70,8 @@ impl From<(&Stream, &Option<Url>)> for ExternalPlayerLink {
         let vlc = streaming.as_ref().map(|url| OpenPlayerLink {
             ios: Some(format!("vlc-x-callback://x-callback-url/stream?url={url}")),
             android: Some(format!(
-                "intent:{url}#Intent;package=org.videolan.vlc;type=video;scheme=https;end",
+                "{}#Intent;package=org.videolan.vlc;type=video;scheme=https;end",
+                http_regex.replace(url, "intent://"),
             )),
             windows: None,
             macos: None,
@@ -81,7 +83,8 @@ impl From<(&Stream, &Option<Url>)> for ExternalPlayerLink {
         });
         let mxplayer = streaming.as_ref().map(|url| OpenPlayerLink {
             android: Some(format!(
-                "intent:{url}#Intent;package=com.mxtech.videoplayer.ad;type=video;scheme=https;end",
+                "{}#Intent;package=com.mxtech.videoplayer.ad;type=video;scheme=https;end",
+                http_regex.replace(url, "intent://"),
             )),
             ios: None,
             windows: None,
@@ -94,7 +97,8 @@ impl From<(&Stream, &Option<Url>)> for ExternalPlayerLink {
         });
         let justplayer = streaming.as_ref().map(|url| OpenPlayerLink {
             android: Some(format!(
-                "intent:{url}#Intent;package=com.brouken.player;type=video;scheme=https;end",
+                "{}#Intent;package=com.brouken.player;type=video;scheme=https;end",
+                http_regex.replace(url, "intent://"),
             )),
             ios: None,
             windows: None,
