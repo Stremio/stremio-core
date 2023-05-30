@@ -115,7 +115,7 @@ fn video_deep_links() {
                 roku: None,
             }),
             outplayer: Some(OpenPlayerLink {
-                ios: Some(format!("{}", http_regex.replace(streaming_server_yt, "outplayer://"))),
+                ios: Some(format!("{}", http_regex.replace(&streaming_server_yt, "outplayer://"))),
                 android: None,
                 windows: None,
                 macos: None,
@@ -125,8 +125,8 @@ fn video_deep_links() {
                 chromeos: None,
                 roku: None,
             }),
-            infuse = Some(OpenPlayerLink {
-                ios: Some(format!("{}", http_regex.replace(streaming_server_yt, "infuse://"))),
+            infuse: Some(OpenPlayerLink {
+                ios: Some(format!("{}", http_regex.replace(&streaming_server_yt, "infuse://"))),
                 android: None,
                 windows: None,
                 macos: None,
