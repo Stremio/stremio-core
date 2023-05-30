@@ -121,7 +121,7 @@ impl From<(&Stream, &Option<Url>)> for ExternalPlayerLink {
             roku: None,
         });
         let infuse = streaming.as_ref().map(|url| OpenPlayerLink {
-            ios: Some(format!("{}", http_regex.replace(url, "infuse://"))),
+            ios: Some(format!("infuse://x-callback-url/play?url={url}")),
             android: None,
             windows: None,
             macos: None,
