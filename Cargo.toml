@@ -12,9 +12,9 @@ lto = true
 opt-level = 's'
 
 [dependencies]
-stremio-core = { git = "https://github.com/Stremio/stremio-core", branch = "development" }
-stremio-derive = { git = "https://github.com/Stremio/stremio-core", branch = "development" }
-stremio-analytics = { git = "https://github.com/Stremio/stremio-core", branch = "development" }
+stremio-core = { git = "https://github.com/Stremio/stremio-core", branch = "more-ext-players" }
+stremio-derive = { git = "https://github.com/Stremio/stremio-core", branch = "more-ext-players" }
+stremio-analytics = { git = "https://github.com/Stremio/stremio-core", branch = "more-ext-players" }
 serde = { version = "1.0.*", features = ["derive"] }
 serde_json = "1.0.*"
 futures = "0.3.*"
@@ -22,7 +22,7 @@ http = "0.2.*"
 url = { version = "2.2.*", features = ["serde"] }
 chrono = "0.4.*"
 semver = { version = "1", features = ["serde"] }
-regex = "1.6.*"
+regex = "1.8"
 hex = "0.4.*"
 either = "1.6.*"
 lazy_static = "1.4.*"
