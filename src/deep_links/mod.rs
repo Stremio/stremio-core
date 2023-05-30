@@ -11,6 +11,7 @@ use crate::types::resource::{MetaItem, MetaItemPreview, Stream, StreamSource, Vi
 use percent_encoding::utf8_percent_encode;
 use serde::Serialize;
 use url::Url;
+use regex::Regex;
 
 #[derive(Default, Serialize, Debug, PartialEq, Eq)]
 #[serde(rename_all = "camelCase")]
@@ -23,7 +24,6 @@ pub struct OpenPlayerLink {
     pub tizen: Option<String>,
     pub webos: Option<String>,
     pub chromeos: Option<String>,
-    pub webos: Option<String>,
     pub roku: Option<String>,
 }
 
@@ -42,7 +42,6 @@ pub struct ExternalPlayerLink {
 
 impl From<(&Stream, &Option<Url>)> for ExternalPlayerLink {
     fn from((stream, streaming_server_url): (&Stream, &Option<Url>)) -> Self {
-        use regex::Regex;
         let http_regex = Regex::new(r"https?://").unwrap();
         let download = stream.download_url();
         let streaming = stream.streaming_url(streaming_server_url.as_ref());
