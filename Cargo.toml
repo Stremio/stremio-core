@@ -63,7 +63,7 @@ itertools = "0.10"
 magnet-url = "2.0"
 hex = "0.4"
 anyhow = "1.0"
-regex = "1.6.*"
+regex = "1.8"
 
 # Tracing
 tracing = "0.1"
