@@ -58,7 +58,7 @@ fn video_deep_links() {
                     STREAMING_SERVER_URL, YT_ID,
                 )),
                 android: Some(format!(
-                    "intent://{}yt/{}#Intent;package=org.videolan.vlc;type=video;scheme=https;end",
+                    "intent:{}yt/{}#Intent;package=org.videolan.vlc;type=video;scheme=https;end",
                     STREAMING_SERVER_URL, YT_ID,
                 )),
                 windows: None,
