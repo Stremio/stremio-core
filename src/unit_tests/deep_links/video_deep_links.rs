@@ -29,7 +29,7 @@ fn video_deep_links() {
         path: ResourcePath::without_extra("meta", "movie", format!("yt_id:{YT_ID}").as_str()),
     };
     let streaming_server_url = Some(Url::parse(STREAMING_SERVER_URL).unwrap());
-    let streaming_server_yt = format!("{}yt/{}", STREAMING_SERVER_URL, YT_ID,)
+    let streaming_server_yt = format!("{}yt/{}", STREAMING_SERVER_URL, YT_ID,);
     let vdl = VideoDeepLinks::try_from((&video, &request, &streaming_server_url)).unwrap();
     assert_eq!(
         vdl.meta_details_streams,
