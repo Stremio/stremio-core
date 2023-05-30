@@ -47,10 +47,7 @@ fn video_deep_links() {
         Some(ExternalPlayerLink {
             href: Some(format!(
                 "data:application/octet-stream;charset=utf-8;base64,{}",
-                BASE64.encode(format!(
-                    "#EXTM3U\n#EXTINF:0\n{}",
-                    streaming_server_yt
-                ))
+                BASE64.encode(format!("#EXTM3U\n#EXTINF:0\n{}", streaming_server_yt))
             )),
             download: Some(format!("https://youtube.com/watch?v={}", YT_ID)),
             streaming: Some(format!("{}yt/{}", STREAMING_SERVER_URL, YT_ID)),
@@ -115,7 +112,10 @@ fn video_deep_links() {
                 roku: None,
             }),
             outplayer: Some(OpenPlayerLink {
-                ios: Some(format!("{}", http_regex.replace(&streaming_server_yt, "outplayer://"))),
+                ios: Some(format!(
+                    "{}",
+                    http_regex.replace(&streaming_server_yt, "outplayer://")
+                )),
                 android: None,
                 windows: None,
                 macos: None,
@@ -126,7 +126,10 @@ fn video_deep_links() {
                 roku: None,
             }),
             infuse: Some(OpenPlayerLink {
-                ios: Some(format!("{}", http_regex.replace(&streaming_server_yt, "infuse://"))),
+                ios: Some(format!(
+                    "{}",
+                    http_regex.replace(&streaming_server_yt, "infuse://")
+                )),
                 android: None,
                 windows: None,
                 macos: None,
