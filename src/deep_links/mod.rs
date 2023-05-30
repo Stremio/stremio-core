@@ -9,9 +9,9 @@ use crate::types::library::LibraryItem;
 use crate::types::query_params_encode;
 use crate::types::resource::{MetaItem, MetaItemPreview, Stream, StreamSource, Video};
 use percent_encoding::utf8_percent_encode;
+use regex::Regex;
 use serde::Serialize;
 use url::Url;
-use regex::Regex;
 
 #[derive(Default, Serialize, Debug, PartialEq, Eq)]
 #[serde(rename_all = "camelCase")]
