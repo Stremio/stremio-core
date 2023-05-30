@@ -1,5 +1,5 @@
 use crate::constants::BASE64;
-use crate::deep_links::{ExternalPlayerLink, VideoDeepLinks, VlcLink};
+use crate::deep_links::{ExternalPlayerLink, VideoDeepLinks, OpenPlayerLink};
 use crate::types::addon::{ResourcePath, ResourceRequest};
 use crate::types::resource::Video;
 use base64::Engine;
@@ -52,7 +52,7 @@ fn video_deep_links() {
             download: Some(format!("https://youtube.com/watch?v={}", YT_ID)),
             streaming: Some(format!("{}yt/{}", STREAMING_SERVER_URL, YT_ID)),
             file_name: Some("playlist.m3u".to_string()),
-            vlc: Some(VlcLink {
+            vlc: Some(OpenPlayerLink {
                 ios: format!(
                     "vlc-x-callback://x-callback-url/stream?url={}yt/{}",
                     STREAMING_SERVER_URL, YT_ID,
