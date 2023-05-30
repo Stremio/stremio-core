@@ -58,7 +58,7 @@ pub struct AnalyticsContext {
 #[serde(rename_all = "camelCase")]
 pub struct VideoParams {
     pub hash: Option<String>,
-    pub size: Option<u32>,
+    pub size: Option<u64>,
 }
 
 #[derive(Clone, PartialEq, Eq, Serialize, Deserialize, Debug)]
@@ -142,29 +142,34 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                     },
                     _ => eq_update(&mut self.meta_item, None),
                 };
-                let subtitles_effects = match (&selected.subtitles_path, &selected.video_params) {
-                    (Some(subtitles_path), Some(video_params)) => {
-                        resources_update_with_vector_content::<E, _>(
-                            &mut self.subtitles,
-                            ResourcesAction::ResourcesRequested {
-                                request: &AggrRequest::AllOfResource(ResourcePath {
-                                    extra: subtitles_path
-                                        .extra
-                                        .to_owned()
-                                        .extend_one(
-                                            &VIDEO_HASH_EXTRA_PROP,
-                                            video_params.hash.to_owned(),
-                                        )
-                                        .extend_one(
-                                            &VIDEO_SIZE_EXTRA_PROP,
-                                            video_params.size.as_ref().map(|size| size.to_string()),
-                                        ),
-                                    ..subtitles_path.to_owned()
-                                }),
-                                addons: &ctx.profile.addons,
-                            },
-                        )
-                    }
+                let subtitles_effects = match &selected.subtitles_path {
+                    Some(subtitles_path) => resources_update_with_vector_content::<E, _>(
+                        &mut self.subtitles,
+                        ResourcesAction::ResourcesRequested {
+                            request: &AggrRequest::AllOfResource(ResourcePath {
+                                extra: subtitles_path
+                                    .extra
+                                    .to_owned()
+                                    .extend_one(
+                                        &VIDEO_HASH_EXTRA_PROP,
+                                        selected
+                                            .video_params
+                                            .as_ref()
+                                            .and_then(|params| params.hash.to_owned()),
+                                    )
+                                    .extend_one(
+                                        &VIDEO_SIZE_EXTRA_PROP,
+                                        selected
+                                            .video_params
+                                            .as_ref()
+                                            .and_then(|params| params.size)
+                                            .map(|size| size.to_string()),
+                                    ),
+                                ..subtitles_path.to_owned()
+                            }),
+                            addons: &ctx.profile.addons,
+                        },
+                    ),
                     _ => eq_update(&mut self.subtitles, vec![]),
                 };
                 let next_video_effects = next_video_update(
