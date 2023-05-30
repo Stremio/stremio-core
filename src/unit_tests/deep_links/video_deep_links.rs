@@ -14,7 +14,6 @@ const YT_ID: &str = "aqz-KE-bpKQ";
 
 #[test]
 fn video_deep_links() {
-    let http_regex = Regex::new(r"https?://").unwrap();
     let video = Video {
         id: format!("yt_id:UCSMOQeBJ2RAnuFungnQOxLg:{YT_ID}"),
         title: "Big Buck Bunny".to_string(),
