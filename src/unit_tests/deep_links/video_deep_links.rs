@@ -3,6 +3,7 @@ use crate::deep_links::{ExternalPlayerLink, OpenPlayerLink, VideoDeepLinks};
 use crate::types::addon::{ResourcePath, ResourceRequest};
 use crate::types::resource::Video;
 use base64::Engine;
+use regex::Regex;
 use std::convert::TryFrom;
 use std::str::FromStr;
 use url::Url;
@@ -12,6 +13,7 @@ const YT_ID: &str = "aqz-KE-bpKQ";
 
 #[test]
 fn video_deep_links() {
+    let http_regex = Regex::new(r"https?://").unwrap();
     let video = Video {
         id: format!("yt_id:UCSMOQeBJ2RAnuFungnQOxLg:{YT_ID}"),
         title: "Big Buck Bunny".to_string(),
@@ -27,6 +29,7 @@ fn video_deep_links() {
         path: ResourcePath::without_extra("meta", "movie", format!("yt_id:{YT_ID}").as_str()),
     };
     let streaming_server_url = Some(Url::parse(STREAMING_SERVER_URL).unwrap());
+    let streaming_server_yt = format!("{}yt/{}", STREAMING_SERVER_URL, YT_ID,)
     let vdl = VideoDeepLinks::try_from((&video, &request, &streaming_server_url)).unwrap();
     assert_eq!(
         vdl.meta_details_streams,
@@ -45,22 +48,86 @@ fn video_deep_links() {
             href: Some(format!(
                 "data:application/octet-stream;charset=utf-8;base64,{}",
                 BASE64.encode(format!(
-                    "#EXTM3U\n#EXTINF:0\n{}yt/{}",
-                    STREAMING_SERVER_URL, YT_ID
+                    "#EXTM3U\n#EXTINF:0\n{}",
+                    streaming_server_yt
                 ))
             )),
             download: Some(format!("https://youtube.com/watch?v={}", YT_ID)),
             streaming: Some(format!("{}yt/{}", STREAMING_SERVER_URL, YT_ID)),
             file_name: Some("playlist.m3u".to_string()),
+            choose: Some(OpenPlayerLink {
+                android: Some(format!(
+                    "intent:{}#Intent;type=video/any;scheme=https;end",
+                    streaming_server_yt,
+                )),
+                ios: None,
+                windows: None,
+                macos: None,
+                linux: None,
+                tizen: None,
+                webos: None,
+                chromeos: None,
+                roku: None,
+            }),
             vlc: Some(OpenPlayerLink {
                 ios: Some(format!(
-                    "vlc-x-callback://x-callback-url/stream?url={}yt/{}",
-                    STREAMING_SERVER_URL, YT_ID,
+                    "vlc-x-callback://x-callback-url/stream?url={}",
+                    streaming_server_yt,
                 )),
                 android: Some(format!(
-                    "intent:{}yt/{}#Intent;package=org.videolan.vlc;type=video;scheme=https;end",
-                    STREAMING_SERVER_URL, YT_ID,
+                    "intent:{}#Intent;package=org.videolan.vlc;type=video;scheme=https;end",
+                    streaming_server_yt,
                 )),
+                windows: None,
+                macos: None,
+                linux: None,
+                tizen: None,
+                webos: None,
+                chromeos: None,
+                roku: None,
+            }),
+            mxplayer: Some(OpenPlayerLink {
+                android: Some(format!(
+                    "intent:{}#Intent;package=com.mxtech.videoplayer.ad;type=video;scheme=https;end",
+                    streaming_server_yt,
+                )),
+                ios: None,
+                windows: None,
+                macos: None,
+                linux: None,
+                tizen: None,
+                webos: None,
+                chromeos: None,
+                roku: None,
+            }),
+            justplayer: Some(OpenPlayerLink {
+                android: Some(format!(
+                    "intent:{}#Intent;package=com.brouken.player;type=video;scheme=https;end",
+                    streaming_server_yt,
+                )),
+                ios: None,
+                windows: None,
+                macos: None,
+                linux: None,
+                tizen: None,
+                webos: None,
+                chromeos: None,
+                roku: None,
+            }),
+            outplayer: Some(OpenPlayerLink {
+                ios: Some(format!("{}", http_regex.replace(streaming_server_yt, "outplayer://"))),
+                android: None,
+                windows: None,
+                macos: None,
+                linux: None,
+                tizen: None,
+                webos: None,
+                chromeos: None,
+                roku: None,
+            }),
+            infuse = Some(OpenPlayerLink {
+                ios: Some(format!("{}", http_regex.replace(streaming_server_yt, "infuse://"))),
+                android: None,
                 windows: None,
                 macos: None,
                 linux: None,
