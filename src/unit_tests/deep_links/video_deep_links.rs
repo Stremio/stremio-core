@@ -4,6 +4,7 @@ use crate::types::addon::{ResourcePath, ResourceRequest};
 use crate::types::profile::Settings;
 use crate::types::resource::Video;
 use base64::Engine;
+use regex::Regex;
 use std::convert::TryFrom;
 use std::str::FromStr;
 use url::Url;
@@ -13,6 +14,7 @@ const YT_ID: &str = "aqz-KE-bpKQ";
 
 #[test]
 fn video_deep_links() {
+    let http_regex = Regex::new(r"https?://").unwrap();
     let video = Video {
         id: format!("yt_id:UCSMOQeBJ2RAnuFungnQOxLg:{YT_ID}"),
         title: "Big Buck Bunny".to_string(),
