@@ -4,7 +4,6 @@ use crate::types::addon::{ResourcePath, ResourceRequest};
 use crate::types::profile::Settings;
 use crate::types::resource::Video;
 use base64::Engine;
-use regex::Regex;
 use std::convert::TryFrom;
 use std::str::FromStr;
 use url::Url;

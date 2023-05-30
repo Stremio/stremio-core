@@ -54,26 +54,30 @@ impl From<(&Stream, &Option<Url>, &Settings)> for ExternalPlayerLink {
                 Some(player_type) => match player_type.as_str() {
                     "choose" => Some(OpenPlayerLink {
                         android: Some(format!(
-                            "intent:{url}#Intent;type=video/any;scheme=https;end",
+                            "{}#Intent;type=video/any;scheme=https;end",
+                            http_regex.replace(url, "intent://"),
                         )),
                         ..Default::default()
                     }),
                     "vlc" => Some(OpenPlayerLink {
                         ios: Some(format!("vlc-x-callback://x-callback-url/stream?url={url}")),
                         android: Some(format!(
-                            "intent:{url}#Intent;package=org.videolan.vlc;type=video;scheme=https;end",
+                            "{}#Intent;package=org.videolan.vlc;type=video;scheme=https;end",
+                            http_regex.replace(url, "intent://"),
                         )),
                         ..Default::default()
                     }),
                     "mxplayer" => Some(OpenPlayerLink {
                         android: Some(format!(
-                            "intent:{url}#Intent;package=com.mxtech.videoplayer.ad;type=video;scheme=https;end",
+                            "{}#Intent;package=com.mxtech.videoplayer.ad;type=video;scheme=https;end",
+                            http_regex.replace(url, "intent://"),
                         )),
                         ..Default::default()
                     }),
                     "justplayer" => Some(OpenPlayerLink {
                         android: Some(format!(
-                            "intent:{url}#Intent;package=com.brouken.player;type=video;scheme=https;end",
+                            "{}#Intent;package=com.brouken.player;type=video;scheme=https;end",
+                            http_regex.replace(url, "intent://"),
                         )),
                         ..Default::default()
                     }),
