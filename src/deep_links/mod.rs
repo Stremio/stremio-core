@@ -50,9 +50,7 @@ impl From<(&Stream, &Option<Url>)> for ExternalPlayerLink {
         let file_name = m3u_uri.as_ref().map(|_| "playlist.m3u".to_owned());
         let href = m3u_uri.or_else(|| download.to_owned());
         let choose = streaming.as_ref().map(|url| OpenPlayerLink {
-            android: format!(
-                "intent:{url}#Intent;type=video/any;scheme=https;end",
-            ),
+            android: format!("intent:{url}#Intent;type=video/any;scheme=https;end",),
         });
         let vlc = streaming.as_ref().map(|url| OpenPlayerLink {
             ios: format!("vlc-x-callback://x-callback-url/stream?url={url}"),
