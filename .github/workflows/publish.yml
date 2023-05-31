@@ -9,17 +9,21 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - name: Checkout
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
     - name: Setup NodeJS
       uses: actions/setup-node@v3
       with:
         node-version: 12
         cache: 'npm'
         registry-url: https://registry.npmjs.org/
-    - name: Set default rust toolchain
-      run: rustup default 1.64.0
-    - name: Install wasm-pack
-      run: cargo install --version 0.10.3 wasm-pack
+
+    - name: Rust setup
+      uses: dtolnay/rust-toolchain@1.64.0
+      with:
+        targets: wasm32-unknown-unknown
+    - uses: taiki-e/install-action@v2
+      with:
+        tool: wasm-pack@0.10.3
     - name: Install NPM dependencies
       run: npm ci
     - name: Build
