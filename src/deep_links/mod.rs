@@ -86,7 +86,7 @@ impl From<(&Stream, &Option<Url>, &Settings)> for ExternalPlayerLink {
                         ..Default::default()
                     }),
                     "infuse" => Some(OpenPlayerLink {
-                        ios: Some(format!("{}", http_regex.replace(url, "infuse://"))),
+                        ios: Some(format!("infuse://x-callback-url/play?url={url}")),
                        ..Default::default()
                     }),
                     _ => None,
