@@ -122,9 +122,9 @@ checksum = "baf1de4339761588bc0619e3cbc0120ee582ebb74b53b4efbf79117bd2da40fd"
 
 [[package]]
 name = "chrono"
-version = "0.4.25"
+version = "0.4.26"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "fdbc37d37da9e5bce8173f3a41b71d9bf3c674deebbaceacd0ebdabde76efb03"
+checksum = "ec837a71355b28f6556dbd569b37b3f363091c0bd4b2e735674521b4c5fd9bc5"
 dependencies = [
  "android-tzdata",
  "iana-time-zone",
@@ -809,7 +809,7 @@ dependencies = [
 [[package]]
 name = "stremio-analytics"
 version = "0.1.0"
-source = "git+https://github.com/Stremio/stremio-core?branch=development#adc48f4b3bf392d78b70f8cd9f4ee9b209c6dd5f"
+source = "git+https://github.com/Stremio/stremio-core?branch=development#08e668ce7456166912b2caffeb7082fcbb0f238e"
 dependencies = [
  "derivative",
  "enclose",
@@ -822,7 +822,7 @@ dependencies = [
 [[package]]
 name = "stremio-core"
 version = "0.1.0"
-source = "git+https://github.com/Stremio/stremio-core?branch=development#adc48f4b3bf392d78b70f8cd9f4ee9b209c6dd5f"
+source = "git+https://github.com/Stremio/stremio-core?branch=development#08e668ce7456166912b2caffeb7082fcbb0f238e"
 dependencies = [
  "anyhow",
  "base64 0.21.2",
@@ -895,7 +895,7 @@ dependencies = [
 [[package]]
 name = "stremio-derive"
 version = "0.1.0"
-source = "git+https://github.com/Stremio/stremio-core?branch=development#adc48f4b3bf392d78b70f8cd9f4ee9b209c6dd5f"
+source = "git+https://github.com/Stremio/stremio-core?branch=development#08e668ce7456166912b2caffeb7082fcbb0f238e"
 dependencies = [
  "case",
  "proc-macro-crate",
@@ -925,7 +925,7 @@ dependencies = [
 [[package]]
 name = "stremio-watched-bitfield"
 version = "0.1.0"
-source = "git+https://github.com/Stremio/stremio-core?branch=development#adc48f4b3bf392d78b70f8cd9f4ee9b209c6dd5f"
+source = "git+https://github.com/Stremio/stremio-core?branch=development#08e668ce7456166912b2caffeb7082fcbb0f238e"
 dependencies = [
  "base64 0.13.1",
  "flate2",
