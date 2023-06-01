@@ -9,6 +9,7 @@ fn manifest_behavior_hints() {
             p2p: true,
             configurable: true,
             configuration_required: true,
+            new_episode_notifications: true,
         },
         &[
             Token::Struct {
@@ -23,6 +24,8 @@ fn manifest_behavior_hints() {
             Token::Bool(true),
             Token::Str("configurationRequired"),
             Token::Bool(true),
+            Token::Str("newEpisodeNotifications"),
+            Token::Bool(true),
             Token::StructEnd,
         ],
     );
@@ -32,6 +35,7 @@ fn manifest_behavior_hints() {
             p2p: false,
             configurable: false,
             configuration_required: false,
+            new_episode_notifications: false,
         },
         &[
             Token::Struct {

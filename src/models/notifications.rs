@@ -1,24 +1,46 @@
-use crate::models::common::{resources_update, Loadable, ResourceLoadable, ResourcesAction};
-use crate::models::ctx::Ctx;
-use crate::runtime::msg::Internal::*;
-use crate::runtime::msg::*;
-use crate::runtime::*;
-use crate::types::addon::{ExtraValue, ResourcePath, ResourceRequest};
-use crate::types::resource::MetaItem;
+use crate::{
+    constants::{CATALOG_RESOURCE_NAME, URI_COMPONENT_ENCODE_SET},
+    models::{
+        common::{resources_update, Loadable, ResourceLoadable, ResourcesAction},
+        ctx::Ctx,
+    },
+    runtime::{
+        msg::{Action, ActionLoad, Internal, Msg},
+        Effect, EffectFuture, Effects, Env, UpdateWithCtx, EnvFutureExt,
+    },
+    types::{
+        addon::{ExtraValue, ResourcePath, ResourceRequest},
+        resource::MetaItem,
+    },
+};
+
 use futures::FutureExt;
 use lazysort::SortedBy;
-use serde::*;
+use percent_encoding::utf8_percent_encode;
+use serde::Serialize;
 
-// Cinemeta/Channels are curently limited to that many
-// but in general, it's healthy to have some sort of a limit
+/// Cinemeta/Channels are currently limited to that many
+/// but in general, it's healthy to have some sort of a limit
 const MAX_PER_REQUEST: usize = 50;
-// The name of the extra property
-const LAST_VID_IDS: &str = "lastVideosIds";
 
+// The name of the extra property
+const EXTRA_LAST_VIDEOS_IDS: &str = "lastVideosIds";
+
+/// The last videos catalog id should be `last-videos`
+///
+/// See [ManifestCatalog.id](crate::types::addon::ManifestCatalog.id)
+const LIST_VIDEOS_CATALOG_ID: &str = "last-videos";
+
+/// Notifications for new video for [`LibraryItem`]s with videos
+/// (i.e. movie series with new episodes).
+///
+/// [`LibraryItem`]: crate::types::library::LibraryItem
 #[derive(Default, Serialize)]
 pub struct Notifications {
+    /// each addon has it's own group
     pub groups: Vec<ResourceLoadable<Vec<MetaItem>>>,
 }
+
 impl<E: Env + 'static> UpdateWithCtx<E> for Notifications {
     fn update(&mut self, msg: &Msg, ctx: &Ctx) -> Effects {
         match msg {
@@ -29,13 +51,16 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Notifications {
                     .profile
                     .addons
                     .iter()
+                    .filter(|addon| {
+                        // skip the addon if it does not support `new_episode_notifications`
+                        addon.manifest.behavior_hints.new_episode_notifications
+                    })
                     .flat_map(|addon| {
-                        // The catalog supports this property
-                        let viable_catalogs = addon
-                            .manifest
-                            .catalogs
-                            .iter()
-                            .filter(|cat| cat.extra.iter().any(|e| e.name == LAST_VID_IDS));
+                        // The catalogs that support the `lastVideosIds` property
+                        let viable_catalogs = addon.manifest.catalogs.iter().filter(|cat| {
+                            
+                            cat.extra.iter().any(|e| e.name == EXTRA_LAST_VIDEOS_IDS)
+                        });
 
                         viable_catalogs.flat_map(move |cat| {
                             let relevant_items = library
@@ -46,12 +71,12 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Notifications {
                                 .filter(|item| {
                                     !item.state.no_notif
                                         && !item.removed
-                                        && cat.r#type == item.r#type
+                                        && cat.r#type == item.r#type // for example `series`
                                         && addon.manifest.is_resource_supported(
                                             &ResourcePath::without_extra(
-                                                "meta",
+                                                CATALOG_RESOURCE_NAME,
                                                 &item.r#type,
-                                                &item.id,
+                                                &LIST_VIDEOS_CATALOG_ID,
                                             ),
                                         )
                                 })
@@ -63,14 +88,26 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Notifications {
                             relevant_items
                                 .chunks(MAX_PER_REQUEST)
                                 .map(|items_page| -> (_, Effect) {
-                                    let ids =
-                                        items_page.iter().map(|x| x.id.clone()).collect::<Vec<_>>();
+                                    let ordered_ids = {
+                                        let mut ids = items_page
+                                            .iter()
+                                            .map(|x| x.id.as_str())
+                                            .collect::<Vec<_>>();
+                                            // sort the ids alphabetically
+                                        ids.sort_unstable();
+                                        ids
+                                    };
                                     let extra_props = [ExtraValue {
-                                        name: LAST_VID_IDS.into(),
-                                        value: ids.join(","),
+                                        name: EXTRA_LAST_VIDEOS_IDS.into(),
+                                        value: utf8_percent_encode(
+                                            &ordered_ids.join(","),
+                                            URI_COMPONENT_ENCODE_SET,
+                                        )
+                                        .to_string(),
                                     }];
+
                                     let path = ResourcePath::with_extra(
-                                        "catalog",
+                                        CATALOG_RESOURCE_NAME,
                                         &cat.r#type,
                                         &cat.id,
                                         &extra_props,
@@ -105,7 +142,7 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Notifications {
                 self.groups = groups;
                 Effects::many(effects)
             }
-            Msg::Internal(ResourceRequestResult(req, result)) => {
+            Msg::Internal(Internal::ResourceRequestResult(req, result)) => {
                 if let Some(idx) = self.groups.iter().position(|g| g.request == *req) {
                     resources_update::<E, _>(
                         &mut self.groups,

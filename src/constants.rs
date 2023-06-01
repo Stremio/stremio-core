@@ -10,8 +10,10 @@ pub const LIBRARY_STORAGE_KEY: &str = "library";
 pub const LIBRARY_RECENT_STORAGE_KEY: &str = "library_recent";
 pub const LIBRARY_COLLECTION_NAME: &str = "libraryItem";
 pub const SEARCH_EXTRA_NAME: &str = "search";
+/// `https://{ADDON_UR}/meta/...` resource
 pub const META_RESOURCE_NAME: &str = "meta";
 pub const STREAM_RESOURCE_NAME: &str = "stream";
+/// `https://{ADDON_URL}/catalog/...` resource
 pub const CATALOG_RESOURCE_NAME: &str = "catalog";
 pub const SUBTITLES_RESOURCE_NAME: &str = "subtitles";
 pub const ADDON_MANIFEST_PATH: &str = "/manifest.json";
@@ -50,6 +52,7 @@ lazy_static! {
     pub static ref STREAMING_SERVER_URL: Url =
         Url::parse("http://127.0.0.1:11470").expect("STREAMING_SERVER_URL parse failed");
     pub static ref IMDB_URL: Url = Url::parse("https://imdb.com").expect("IMDB_URL parse failed");
+    /// Meta hub url used to show background images for Notifications.
     pub static ref OFFICIAL_ADDONS: Vec<Descriptor> =
         serde_json::from_slice(stremio_official_addons::ADDONS)
             .expect("OFFICIAL_ADDONS parse failed");
