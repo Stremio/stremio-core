@@ -35,7 +35,7 @@ pub fn start() {
     #[cfg(debug_assertions)]
     let max_level = Level::TRACE;
     #[cfg(not(debug_assertions))]
-    let max_level = Level::INFO;
+    let max_level = Level::ERROR;
 
     let config = WASMLayerConfigBuilder::default()
         .set_max_level(max_level)
