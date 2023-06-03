@@ -281,6 +281,7 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
             })) => match (&self.selected, &mut self.library_item) {
                 (
                     Some(Selected {
+                        stream,
                         stream_request:
                             Some(ResourceRequest {
                                 path: ResourcePath { id: video_id, .. },
@@ -310,6 +311,11 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                             .overall_time_watched
                             .saturating_add(time_watched);
                     };
+                    if let Ok(encoded_stream) = stream.encode() {
+                        if library_item.state.stream_id != Some(encoded_stream.clone()) {
+                            library_item.state.stream_id = Some(encoded_stream);
+                        }
+                    }
                     library_item.state.time_offset = time.to_owned();
                     library_item.state.duration = duration.to_owned();
                     if library_item.state.flagged_watched == 0
