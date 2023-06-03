@@ -39,6 +39,7 @@ mod model {
     pub struct Stream<'a> {
         #[serde(flatten)]
         pub stream: &'a stremio_core::types::resource::Stream,
+        pub progress: Option<f64>,
         pub deep_links: StreamDeepLinks,
     }
     #[derive(Serialize)]
@@ -48,7 +49,7 @@ mod model {
         pub video: &'a stremio_core::types::resource::Video,
         pub upcomming: bool,
         pub watched: bool,
-        pub progress: Option<u32>,
+        pub progress: Option<f64>,
         pub scheduled: bool,
         pub deep_links: VideoDeepLinks,
     }
@@ -158,7 +159,14 @@ pub fn serialize_meta_details(
                                     .as_ref()
                                     .map(|watched| watched.get_video(&video.id))
                                     .unwrap_or_default(),
-                                progress: None, // TODO use library,
+                                progress: ctx
+                                    .library
+                                    .items
+                                    .get(&meta_item.preview.id)
+                                    .filter(|library_item| {
+                                        Some(video.id.to_owned()) == library_item.state.video_id
+                                    })
+                                    .map(|library_item| library_item.progress()),
                                 scheduled: meta_item.preview.behavior_hints.has_scheduled_videos,
                                 deep_links: VideoDeepLinks::from((
                                     video,
@@ -175,6 +183,7 @@ pub fn serialize_meta_details(
                             .iter()
                             .map(|stream| model::Stream {
                                 stream,
+                                progress: None,
                                 deep_links: StreamDeepLinks::from((
                                     stream,
                                     &streaming_server_url,
@@ -235,6 +244,22 @@ pub fn serialize_meta_details(
                             .iter()
                             .map(|stream| model::Stream {
                                 stream,
+                                progress: meta_item
+                                    .and_then(|meta_item| meta_item.content.as_ref())
+                                    .and_then(|loadable| loadable.ready())
+                                    .and_then(|meta_item| {
+                                        ctx.library.items.get(&meta_item.preview.id)
+                                    })
+                                    .and_then(|library_item| {
+                                        stream
+                                            .encode()
+                                            .ok()
+                                            .filter(|encoded_stream| {
+                                                Some(encoded_stream.to_owned())
+                                                    == library_item.state.stream_id
+                                            })
+                                            .map(|_| library_item.progress())
+                                    }),
                                 deep_links: meta_item
                                     .map_or_else(
                                         || {
