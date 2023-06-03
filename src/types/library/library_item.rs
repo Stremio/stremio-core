@@ -46,6 +46,14 @@ impl LibraryItem {
     pub fn is_in_continue_watching(&self) -> bool {
         self.r#type != "other" && (!self.removed || self.temp) && self.state.time_offset > 0
     }
+    #[inline]
+    pub fn progress(&self) -> f64 {
+        if self.state.time_offset > 0 && self.state.duration > 0 {
+            self.state.time_offset as f64 / self.state.duration as f64
+        } else {
+            0.0
+        }
+    }
 }
 
 impl<E: Env + 'static> From<(&MetaItemPreview, PhantomData<E>)> for LibraryItem {
