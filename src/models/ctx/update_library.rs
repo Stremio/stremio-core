@@ -288,7 +288,16 @@ fn push_items_to_api<E: Env + 'static>(items: Vec<LibraryItem>, auth_key: &AuthK
         fetch_api::<E, _, _, SuccessResponse>(&DatastoreRequest {
             auth_key: auth_key.to_owned(),
             collection: LIBRARY_COLLECTION_NAME.to_owned(),
-            command: DatastoreCommand::Put { changes: items },
+            command: DatastoreCommand::Put {
+                changes: items
+                    .iter()
+                    .map(|item| {
+                        let mut item_without_stream = item.clone();
+                        item_without_stream.state.stream_id = None;
+                        item_without_stream
+                    })
+                    .collect(),
+            },
         })
         .map_err(CtxError::from)
         .and_then(|result| match result {
