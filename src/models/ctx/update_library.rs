@@ -293,7 +293,7 @@ fn push_items_to_api<E: Env + 'static>(items: Vec<LibraryItem>, auth_key: &AuthK
                     .iter()
                     .map(|item| {
                         let mut item_without_stream = item.clone();
-                        item_without_stream.state.stream_id = None;
+                        item_without_stream.state.stream = None;
                         item_without_stream
                     })
                     .collect(),

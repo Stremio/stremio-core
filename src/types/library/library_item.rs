@@ -121,9 +121,9 @@ pub struct LibraryItemState {
     #[serde_as(deserialize_as = "DefaultOnNull<NoneAsEmptyString>")]
     pub video_id: Option<String>,
     /// The last stream watched.
-    #[serde(default, rename = "stream_id")]
+    #[serde(default)]
     #[serde_as(deserialize_as = "DefaultOnNull<NoneAsEmptyString>")]
-    pub stream_id: Option<String>,
+    pub stream: Option<String>,
     /// Field tracking watched videos.
     /// For [`LibraryItem`]s without videos, this field should [`None`].
     #[serde(default)]

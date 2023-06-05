@@ -312,8 +312,8 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                             .saturating_add(time_watched);
                     };
                     if let Ok(encoded_stream) = stream.encode() {
-                        if library_item.state.stream_id != Some(encoded_stream.clone()) {
-                            library_item.state.stream_id = Some(encoded_stream);
+                        if library_item.state.stream != Some(encoded_stream.clone()) {
+                            library_item.state.stream = Some(encoded_stream);
                         }
                     }
                     library_item.state.time_offset = time.to_owned();
