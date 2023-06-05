@@ -19,7 +19,7 @@ use percent_encoding::utf8_percent_encode;
 use serde::Serialize;
 use url::Url;
 
-use tracing::{debug, event, Level};
+use tracing::{event, trace, Level};
 
 #[derive(PartialEq, Eq, Serialize, Clone, Debug)]
 pub enum CtxStatus {
@@ -181,7 +181,7 @@ fn authenticate<E: Env + 'static>(auth_request: &AuthRequest) -> Effect {
         E::flush_analytics()
             .then(move |_| {
                 fetch_api::<E, _, _, _>(&auth_api)
-                    .inspect(move |result| debug!(?result, ?auth_api, "Auth request"))
+                    .inspect(move |result| trace!(?result, ?auth_api, "Auth request"))
             })
             .map_err(CtxError::from)
             .and_then(|result| match result {
@@ -197,7 +197,7 @@ fn authenticate<E: Env + 'static>(auth_request: &AuthRequest) -> Effect {
                     };
                     fetch_api::<E, _, _, _>(&request)
                         .inspect(move |result| {
-                            debug!(?result, ?request, "Get user's Addon Collection request")
+                            trace!(?result, ?request, "Get user's Addon Collection request")
                         })
                         .map_err(CtxError::from)
                         .and_then(|result| match result {
@@ -219,7 +219,7 @@ fn authenticate<E: Env + 'static>(auth_request: &AuthRequest) -> Effect {
 
                     fetch_api::<E, _, _, LibraryItemsResponse>(&request)
                         .inspect(move |result| {
-                            debug!(?result, ?request, "Get user's Addon Collection request")
+                            trace!(?result, ?request, "Get user's Addon Collection request")
                         })
                         .map_err(CtxError::from)
                         .and_then(|result| match result {
@@ -251,7 +251,7 @@ fn delete_session<E: Env + 'static>(auth_key: &AuthKey) -> Effect {
         E::flush_analytics()
             .then(|_| {
                 fetch_api::<E, _, _, SuccessResponse>(&request)
-                    .inspect(move |result| debug!(?result, ?request, "Logout request"))
+                    .inspect(move |result| trace!(?result, ?request, "Logout request"))
             })
             .map_err(CtxError::from)
             .and_then(|result| match result {
