@@ -42,7 +42,7 @@ impl DefaultTokens for LibraryItemState {
             Token::U64(0),
             Token::Str("video_id"),
             Token::None,
-            Token::Str("stream_id"),
+            Token::Str("stream"),
             Token::None,
             Token::Str("watched"),
             Token::None,
