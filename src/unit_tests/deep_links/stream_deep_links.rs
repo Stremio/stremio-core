@@ -1,6 +1,7 @@
 use crate::constants::{BASE64, URI_COMPONENT_ENCODE_SET};
 use crate::deep_links::StreamDeepLinks;
 use crate::types::addon::{ResourcePath, ResourceRequest};
+use crate::types::profile::Settings;
 use crate::types::resource::{Stream, StreamSource};
 use base64::Engine;
 use percent_encoding::utf8_percent_encode;
@@ -27,7 +28,8 @@ fn stream_deep_links_magnet() {
         behavior_hints: Default::default(),
     };
     let streaming_server_url = Some(Url::parse(STREAMING_SERVER_URL).unwrap());
-    let sdl = StreamDeepLinks::try_from((&stream, &streaming_server_url)).unwrap();
+    let settings = Settings::default();
+    let sdl = StreamDeepLinks::try_from((&stream, &streaming_server_url, &settings)).unwrap();
     assert_eq!(sdl.player, "stremio:///player/eAEBRgC5%2F3sidXJsIjoibWFnbmV0Oj94dD11cm46YnRpaDpkZDgyNTVlY2RjN2NhNTVmYjBiYmY4MTMyM2Q4NzA2MmRiMWY2ZDFjIn0%2BMhZF".to_string());
     assert_eq!(sdl.external_player.href, Some(MAGNET_STR_URL.to_owned()));
     assert_eq!(sdl.external_player.file_name, None);
@@ -46,7 +48,8 @@ fn stream_deep_links_http() {
         behavior_hints: Default::default(),
     };
     let streaming_server_url = Some(Url::parse(STREAMING_SERVER_URL).unwrap());
-    let sdl = StreamDeepLinks::try_from((&stream, &streaming_server_url)).unwrap();
+    let settings = Settings::default();
+    let sdl = StreamDeepLinks::try_from((&stream, &streaming_server_url, &settings)).unwrap();
     assert_eq!(
         sdl.player,
         "stremio:///player/eAEBIQDe%2F3sidXJsIjoiaHR0cDovL2RvbWFpbi5yb290L3BhdGgifcEEC6w%3D"
@@ -80,7 +83,8 @@ fn stream_deep_links_torrent() {
         behavior_hints: Default::default(),
     };
     let streaming_server_url = Some(Url::parse(STREAMING_SERVER_URL).unwrap());
-    let sdl = StreamDeepLinks::try_from((&stream, &streaming_server_url)).unwrap();
+    let settings = Settings::default();
+    let sdl = StreamDeepLinks::try_from((&stream, &streaming_server_url, &settings)).unwrap();
     assert_eq!(sdl.player, "stremio:///player/eAEBdwCI%2F3siaW5mb0hhc2giOiJkZDgyNTVlY2RjN2NhNTVmYjBiYmY4MTMyM2Q4NzA2MmRiMWY2ZDFjIiwiZmlsZUlkeCI6MCwiYW5ub3VuY2UiOlsiaHR0cDovL2J0MS5hcmNoaXZlLm9yZzo2OTY5L2Fubm91bmNlIl19ndAlsw%3D%3D".to_string());
     assert_eq!(
         sdl.external_player.href,
@@ -123,7 +127,8 @@ fn stream_deep_links_external() {
         behavior_hints: Default::default(),
     };
     let streaming_server_url = Some(Url::parse(STREAMING_SERVER_URL).unwrap());
-    let sdl = StreamDeepLinks::try_from((&stream, &streaming_server_url)).unwrap();
+    let settings = Settings::default();
+    let sdl = StreamDeepLinks::try_from((&stream, &streaming_server_url, &settings)).unwrap();
     assert_eq!(sdl.player, "stremio:///player/eAEBKQDW%2F3siZXh0ZXJuYWxVcmwiOiJodHRwOi8vZG9tYWluLnJvb3QvcGF0aCJ9OoEO7w%3D%3D".to_string());
     assert_eq!(sdl.external_player.href, Some(HTTP_STR_URL.to_owned()));
     assert_eq!(sdl.external_player.file_name, None);
@@ -142,7 +147,8 @@ fn stream_deep_links_youtube() {
         behavior_hints: Default::default(),
     };
     let streaming_server_url = Some(Url::parse(STREAMING_SERVER_URL).unwrap());
-    let sdl = StreamDeepLinks::try_from((&stream, &streaming_server_url)).unwrap();
+    let settings = Settings::default();
+    let sdl = StreamDeepLinks::try_from((&stream, &streaming_server_url, &settings)).unwrap();
     assert_eq!(
         sdl.player,
         "stremio:///player/eAEBFgDp%2F3sieXRJZCI6ImFxei1LRS1icEtRIn1RRQb5".to_string()
@@ -176,7 +182,8 @@ fn stream_deep_links_player_frame() {
         behavior_hints: Default::default(),
     };
     let streaming_server_url = Some(Url::parse(STREAMING_SERVER_URL).unwrap());
-    let sdl = StreamDeepLinks::try_from((&stream, &streaming_server_url)).unwrap();
+    let settings = Settings::default();
+    let sdl = StreamDeepLinks::try_from((&stream, &streaming_server_url, &settings)).unwrap();
     assert_eq!(sdl.player, "stremio:///player/eAEBLADT%2F3sicGxheWVyRnJhbWVVcmwiOiJodHRwOi8vZG9tYWluLnJvb3QvcGF0aCJ9abUQBA%3D%3D".to_string());
     assert_eq!(sdl.external_player.href, Some(HTTP_STR_URL.to_owned()));
     assert_eq!(sdl.external_player.file_name, None);
@@ -204,11 +211,13 @@ fn stream_deep_links_requests() {
     };
 
     let streaming_server_url = Some(Url::parse(STREAMING_SERVER_URL).unwrap());
+    let settings = Settings::default();
     let sdl = StreamDeepLinks::try_from((
         &stream,
         &stream_request,
         &meta_request,
         &streaming_server_url,
+        &settings,
     ))
     .unwrap();
     assert_eq!(sdl.player, format!(

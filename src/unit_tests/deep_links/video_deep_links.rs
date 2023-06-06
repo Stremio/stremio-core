@@ -1,6 +1,7 @@
 use crate::constants::BASE64;
 use crate::deep_links::{ExternalPlayerLink, VideoDeepLinks};
 use crate::types::addon::{ResourcePath, ResourceRequest};
+use crate::types::profile::Settings;
 use crate::types::resource::Video;
 use base64::Engine;
 use std::convert::TryFrom;
@@ -27,7 +28,9 @@ fn video_deep_links() {
         path: ResourcePath::without_extra("meta", "movie", format!("yt_id:{YT_ID}").as_str()),
     };
     let streaming_server_url = Some(Url::parse(STREAMING_SERVER_URL).unwrap());
-    let vdl = VideoDeepLinks::try_from((&video, &request, &streaming_server_url)).unwrap();
+    let settings = Settings::default();
+    let vdl =
+        VideoDeepLinks::try_from((&video, &request, &streaming_server_url, &settings)).unwrap();
     assert_eq!(
         vdl.meta_details_streams,
         format!(

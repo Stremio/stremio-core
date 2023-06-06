@@ -23,21 +23,21 @@ pub struct APIError {
     pub code: u64,
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct CollectionResponse {
     pub addons: Vec<Descriptor>,
     pub last_modified: DateTime<Utc>,
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct AuthResponse {
     #[serde(rename = "authKey")]
     pub key: AuthKey,
     pub user: User,
 }
 
-#[derive(Deserialize)]
+#[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct DataExportResponse {
     pub export_id: String,
@@ -49,7 +49,7 @@ pub struct LibraryItemModified(
     #[serde(with = "ts_milliseconds")] pub DateTime<Utc>,
 );
 
-#[derive(Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct SuccessResponse {
     pub success: True,
 }
@@ -74,11 +74,11 @@ pub enum LinkDataResponse {
     AuthKey(LinkAuthKey),
 }
 
+/// API response for the [`LibraryItem`]s which skips invalid items
+/// when deserializing.
 #[derive(Debug, Clone, Serialize, Deserialize, Default, PartialEq, Eq)]
 #[serde_as]
 #[serde(transparent)]
-/// API response for the [`LibraryItem`]s which skips invalid items
-/// when deserializing.
 pub struct LibraryItemsResponse(#[serde_as(as = "VecSkipError<_>")] pub Vec<LibraryItem>);
 
 impl LibraryItemsResponse {
