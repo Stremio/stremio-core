@@ -116,6 +116,36 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                 } else {
                     Effects::none().unchanged()
                 };
+                let update_streams_effects = if self.selected.as_ref().map(|selected| {
+                    (
+                        &selected.stream,
+                        &selected.stream_request,
+                        &selected.meta_request,
+                    )
+                }) != Some((
+                    &selected.stream,
+                    &selected.stream_request,
+                    &selected.meta_request,
+                )) {
+                    Effects::msg(Msg::Internal(Internal::StreamLoaded(
+                        selected
+                            .meta_request
+                            .as_ref()
+                            .map(|meta_request| meta_request.path.id.to_owned()),
+                        selected
+                            .stream_request
+                            .as_ref()
+                            .map(|stream_request| stream_request.path.id.to_owned()),
+                        selected
+                            .stream_request
+                            .as_ref()
+                            .map(|stream_request| stream_request.base.to_owned()),
+                        selected.stream.to_owned(),
+                    )))
+                    .unchanged()
+                } else {
+                    Effects::none().unchanged()
+                };
                 let selected_effects = eq_update(&mut self.selected, Some(*selected.to_owned()));
                 let meta_item_effects = match &selected.meta_request {
                     Some(meta_request) => match &mut self.meta_item {
@@ -222,6 +252,7 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                 self.ended = false;
                 self.paused = None;
                 switch_to_next_video_effects
+                    .join(update_streams_effects)
                     .join(selected_effects)
                     .join(meta_item_effects)
                     .join(subtitles_effects)
