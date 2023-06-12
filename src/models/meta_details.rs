@@ -112,6 +112,13 @@ impl<E: Env + 'static> UpdateWithCtx<E> for MetaDetails {
                     &mut self.meta_items,
                     ResourcesAction::ResourceRequestResult { request, result },
                 );
+                let selected_effects: Effects =
+                    selected_override_update(&mut self.selected, &self.meta_items);
+                let streams_effects = if selected_effects.has_changed {
+                    streams_update::<E>(&mut self.streams, &self.selected, &ctx.profile)
+                } else {
+                    Effects::default()
+                };
                 let meta_streams_effects =
                     meta_streams_update(&mut self.meta_streams, &self.selected, &self.meta_items);
                 let library_item_effects = library_item_update::<E>(
@@ -122,8 +129,10 @@ impl<E: Env + 'static> UpdateWithCtx<E> for MetaDetails {
                 );
                 let watched_effects =
                     watched_update(&mut self.watched, &self.meta_items, &self.library_item);
-                meta_items_effects
+                selected_effects
+                    .join(meta_items_effects)
                     .join(meta_streams_effects)
+                    .join(streams_effects)
                     .join(library_item_effects)
                     .join(watched_effects)
             }
@@ -187,6 +196,56 @@ fn library_item_sync(library_item: &Option<LibraryItem>, profile: &Profile) -> E
         }
         _ => Effects::none().unchanged(),
     }
+}
+
+fn selected_override_update(
+    selected: &mut Option<Selected>,
+    meta_items: &Vec<ResourceLoadable<MetaItem>>,
+) -> Effects {
+    let meta_path = if let Some(Selected {
+        meta_path,
+        stream_path: None,
+    }) = &selected
+    {
+        meta_path
+    } else {
+        return Effects::default();
+    };
+    let viable_meta_item = if let Some(viable_meta_item) = meta_items
+        .iter()
+        .find_map(|meta_item| match &meta_item.content {
+            Some(Loadable::Ready(meta_item)) => Some(Some(meta_item)),
+            Some(Loadable::Loading) => Some(None),
+            _ => None,
+        })
+        .flatten()
+    {
+        viable_meta_item
+    } else {
+        return Effects::default();
+    };
+    let video_id = match (
+        viable_meta_item.videos.len(),
+        viable_meta_item.preview.r#type.as_str(),
+        &viable_meta_item.preview.behavior_hints.default_video_id,
+    ) {
+        (1, _, _) => viable_meta_item.videos.first().unwrap().id.to_owned(),
+        (0, _, Some(default_video_id)) => default_video_id.to_owned(),
+        (0, "movie", _) => viable_meta_item.preview.id.to_owned(),
+        _ => return Effects::default(),
+    };
+    eq_update(
+        selected,
+        Some(Selected {
+            meta_path: meta_path.to_owned(),
+            stream_path: Some(ResourcePath {
+                resource: STREAM_RESOURCE_NAME.to_owned(),
+                r#type: meta_path.r#type.to_owned(),
+                id: video_id,
+                extra: vec![],
+            }),
+        }),
+    )
 }
 
 fn meta_items_update<E: Env + 'static>(
