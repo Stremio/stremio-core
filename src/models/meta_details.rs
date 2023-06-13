@@ -112,7 +112,7 @@ impl<E: Env + 'static> UpdateWithCtx<E> for MetaDetails {
                     &mut self.meta_items,
                     ResourcesAction::ResourceRequestResult { request, result },
                 );
-                let selected_effects: Effects =
+                let selected_effects =
                     selected_override_update(&mut self.selected, &self.meta_items);
                 let streams_effects = if selected_effects.has_changed {
                     streams_update::<E>(&mut self.streams, &self.selected, &ctx.profile)
