@@ -23,7 +23,7 @@ pub struct Selected {
     pub stream_path: Option<ResourcePath>,
 }
 
-#[derive(Default, Serialize, Debug)]
+#[derive(Default, Serialize, Clone, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct MetaDetails {
     pub selected: Option<Selected>,
@@ -42,6 +42,8 @@ impl<E: Env + 'static> UpdateWithCtx<E> for MetaDetails {
                 let selected_effects = eq_update(&mut self.selected, Some(selected.to_owned()));
                 let meta_items_effects =
                     meta_items_update::<E>(&mut self.meta_items, &self.selected, &ctx.profile);
+                let selected_override_effects =
+                    selected_override_update(&mut self.selected, &self.meta_items);
                 let meta_streams_effects =
                     meta_streams_update(&mut self.meta_streams, &self.selected, &self.meta_items);
                 let streams_effects =
@@ -57,6 +59,7 @@ impl<E: Env + 'static> UpdateWithCtx<E> for MetaDetails {
                 let libraty_item_sync_effects = library_item_sync(&self.library_item, &ctx.profile);
                 libraty_item_sync_effects
                     .join(selected_effects)
+                    .join(selected_override_effects)
                     .join(meta_items_effects)
                     .join(meta_streams_effects)
                     .join(streams_effects)
@@ -112,9 +115,9 @@ impl<E: Env + 'static> UpdateWithCtx<E> for MetaDetails {
                     &mut self.meta_items,
                     ResourcesAction::ResourceRequestResult { request, result },
                 );
-                let selected_effects =
+                let selected_override_effects =
                     selected_override_update(&mut self.selected, &self.meta_items);
-                let streams_effects = if selected_effects.has_changed {
+                let streams_effects = if selected_override_effects.has_changed {
                     streams_update::<E>(&mut self.streams, &self.selected, &ctx.profile)
                 } else {
                     Effects::default()
@@ -129,7 +132,7 @@ impl<E: Env + 'static> UpdateWithCtx<E> for MetaDetails {
                 );
                 let watched_effects =
                     watched_update(&mut self.watched, &self.meta_items, &self.library_item);
-                selected_effects
+                selected_override_effects
                     .join(meta_items_effects)
                     .join(meta_streams_effects)
                     .join(streams_effects)
@@ -226,12 +229,11 @@ fn selected_override_update(
     };
     let video_id = match (
         viable_meta_item.videos.len(),
-        viable_meta_item.preview.r#type.as_str(),
         &viable_meta_item.preview.behavior_hints.default_video_id,
     ) {
-        (1, _, _) => viable_meta_item.videos.first().unwrap().id.to_owned(),
-        (0, _, Some(default_video_id)) => default_video_id.to_owned(),
-        (0, "movie", _) => viable_meta_item.preview.id.to_owned(),
+        (_, Some(default_video_id)) => default_video_id.to_owned(),
+        (1, _) => viable_meta_item.videos.first().unwrap().id.to_owned(),
+        (0, None) => viable_meta_item.preview.id.to_owned(),
         _ => return Effects::default(),
     };
     eq_update(
