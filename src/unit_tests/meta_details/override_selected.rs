@@ -41,14 +41,6 @@ fn override_selected_default_video_id() {
                 }) as Box<dyn Any + Send>)
                 .boxed_env()
             }
-            Request { url, .. }
-                if url == "https://v3-cinemeta.strem.io//stream/movie/_tt1.json" =>
-            {
-                future::ok(
-                    Box::new(ResourceResponse::Streams { streams: vec![] }) as Box<dyn Any + Send>
-                )
-                .boxed_env()
-            }
             _ => default_fetch_handler(request),
         }
     }
@@ -146,14 +138,6 @@ fn override_selected_only_video_id() {
                 }) as Box<dyn Any + Send>)
                 .boxed_env()
             }
-            Request { url, .. }
-                if url == "https://v3-cinemeta.strem.io//stream/movie/_tt1.json" =>
-            {
-                future::ok(
-                    Box::new(ResourceResponse::Streams { streams: vec![] }) as Box<dyn Any + Send>
-                )
-                .boxed_env()
-            }
             _ => default_fetch_handler(request),
         }
     }
@@ -246,14 +230,6 @@ fn override_selected_meta_id() {
                         videos: vec![],
                     },
                 }) as Box<dyn Any + Send>)
-                .boxed_env()
-            }
-            Request { url, .. }
-                if url == "https://v3-cinemeta.strem.io//stream/movie/_tt1.json" =>
-            {
-                future::ok(
-                    Box::new(ResourceResponse::Streams { streams: vec![] }) as Box<dyn Any + Send>
-                )
                 .boxed_env()
             }
             _ => default_fetch_handler(request),
