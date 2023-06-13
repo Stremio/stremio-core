@@ -218,6 +218,7 @@ pub struct SeriesInfo {
 
 #[serde_as]
 #[derive(Clone, PartialEq, Eq, Serialize, Deserialize, Debug)]
+#[cfg_attr(test, derive(Default))]
 #[serde(rename_all = "camelCase")]
 pub struct Video {
     pub id: String,

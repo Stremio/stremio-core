@@ -13,7 +13,7 @@ use std::sync::{Arc, LockResult, RwLock, RwLockReadGuard};
 #[derive(Serialize, Debug, PartialEq)]
 #[serde(tag = "name", content = "args")]
 pub enum RuntimeEvent<E: Env, M: Model<E>> {
-    NewState(Vec<M::Field>),
+    NewState(Vec<M::Field>, M),
     CoreEvent(Event),
 }
 
@@ -78,7 +78,8 @@ where
     }
     fn handle_effects(&self, effects: Vec<Effect>, fields: Vec<M::Field>) {
         if !fields.is_empty() {
-            self.emit(RuntimeEvent::<E, M>::NewState(fields));
+            let model = self.model.read().expect("model read failed");
+            self.emit(RuntimeEvent::<E, M>::NewState(fields, model.to_owned()));
         };
         effects
             .into_iter()
