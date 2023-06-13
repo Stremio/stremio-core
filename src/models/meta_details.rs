@@ -214,7 +214,7 @@ fn selected_override_update(
     } else {
         return Effects::default();
     };
-    let viable_meta_item = if let Some(viable_meta_item) = meta_items
+    let meta_item = if let Some(meta_item) = meta_items
         .iter()
         .find_map(|meta_item| match &meta_item.content {
             Some(Loadable::Ready(meta_item)) => Some(Some(meta_item)),
@@ -223,17 +223,17 @@ fn selected_override_update(
         })
         .flatten()
     {
-        viable_meta_item
+        meta_item
     } else {
         return Effects::default();
     };
     let video_id = match (
-        viable_meta_item.videos.len(),
-        &viable_meta_item.preview.behavior_hints.default_video_id,
+        meta_item.videos.len(),
+        &meta_item.preview.behavior_hints.default_video_id,
     ) {
         (_, Some(default_video_id)) => default_video_id.to_owned(),
-        (1, _) => viable_meta_item.videos.first().unwrap().id.to_owned(),
-        (0, None) => viable_meta_item.preview.id.to_owned(),
+        (1, _) => meta_item.videos.first().unwrap().id.to_owned(),
+        (0, None) => meta_item.preview.id.to_owned(),
         _ => return Effects::default(),
     };
     eq_update(
