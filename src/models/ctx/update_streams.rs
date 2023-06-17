@@ -2,7 +2,7 @@ use crate::constants::STREAMS_STORAGE_KEY;
 use crate::models::ctx::{CtxError, CtxStatus};
 use crate::runtime::msg::{Action, ActionCtx, Event, Internal, Msg};
 use crate::runtime::{Effect, EffectFuture, Effects, Env, EnvFutureExt};
-use crate::types::streams::{StreamsBucket, StreamsItem};
+use crate::types::streams::{StreamsBucket, StreamsItem, StreamsItemKey};
 use enclose::enclose;
 use futures::FutureExt;
 
@@ -27,14 +27,16 @@ pub fn update_streams<E: Env + 'static>(
             video_id: Some(video_id),
             transport_url: Some(transport_url),
         }) => {
+            let key = StreamsItemKey {
+                meta_id: meta_id.to_owned(),
+                video_id: video_id.to_owned(),
+            };
             let streams_item = StreamsItem {
                 stream: stream.to_owned(),
                 transport_url: transport_url.to_owned(),
                 mtime: E::now(),
             };
-            streams
-                .items
-                .insert((meta_id.to_owned(), video_id.to_owned()), streams_item);
+            streams.items.insert(key, streams_item);
             Effects::msg(Msg::Internal(Internal::StreamsChanged(false)))
         }
         Msg::Internal(Internal::StreamsChanged(persisted)) if !persisted => {
