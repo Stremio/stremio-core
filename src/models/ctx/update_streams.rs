@@ -1,11 +1,10 @@
-use enclose::enclose;
-use futures::FutureExt;
-
 use crate::constants::STREAMS_STORAGE_KEY;
 use crate::models::ctx::{CtxError, CtxStatus};
 use crate::runtime::msg::{Action, ActionCtx, Event, Internal, Msg};
 use crate::runtime::{Effect, EffectFuture, Effects, Env, EnvFutureExt};
 use crate::types::streams::{StreamsBucket, StreamsItem};
+use enclose::enclose;
+use futures::FutureExt;
 
 pub fn update_streams<E: Env + 'static>(
     streams: &mut StreamsBucket,

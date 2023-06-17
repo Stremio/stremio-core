@@ -1,14 +1,11 @@
-use std::collections::HashMap;
-
-use serde::{Deserialize, Serialize};
-use serde_with::serde_as;
-
 use crate::types::profile::UID;
 use crate::types::streams::StreamsItem;
+use serde::{Deserialize, Serialize};
+use serde_with::serde_as;
+use std::collections::HashMap;
 
 #[serde_as]
-#[derive(Default, Clone, PartialEq, Serialize, Deserialize)]
-#[cfg_attr(debug_assertions, derive(Debug))]
+#[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct StreamsBucket {
     pub uid: UID,
     #[serde_as(as = "Vec<(_, _)>")]
