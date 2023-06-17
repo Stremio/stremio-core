@@ -45,7 +45,12 @@ pub enum Internal {
     /// Dispatched when addons needs to be installed.
     InstallAddon(Descriptor),
     /// Dispatched when a new stream is loaded into the Player.
-    StreamLoaded(Option<String>, Option<String>, Option<Url>, Stream),
+    StreamLoaded {
+        stream: Stream,
+        meta_id: Option<String>,
+        video_id: Option<String>,
+        transport_url: Option<Url>,
+    },
     /// Dispatched when library item needs to be updated in the memory, storage and API.
     UpdateLibraryItem(LibraryItem),
     /// Dispatched when some of auth, addons or settings changed.

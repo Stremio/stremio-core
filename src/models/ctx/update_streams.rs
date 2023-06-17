@@ -21,12 +21,12 @@ pub fn update_streams<E: Env + 'static>(
                 Effects::none().unchanged()
             }
         }
-        Msg::Internal(Internal::StreamLoaded(
-            Some(meta_item_id),
-            Some(video_id),
-            Some(transport_url),
+        Msg::Internal(Internal::StreamLoaded {
             stream,
-        )) => {
+            meta_id: Some(meta_id),
+            video_id: Some(video_id),
+            transport_url: Some(transport_url),
+        }) => {
             let streams_item = StreamsItem {
                 stream: stream.to_owned(),
                 transport_url: transport_url.to_owned(),
@@ -34,7 +34,7 @@ pub fn update_streams<E: Env + 'static>(
             };
             streams
                 .items
-                .insert((meta_item_id.to_owned(), video_id.to_owned()), streams_item);
+                .insert((meta_id.to_owned(), video_id.to_owned()), streams_item);
             Effects::msg(Msg::Internal(Internal::StreamsChanged(false)))
         }
         Msg::Internal(Internal::StreamsChanged(persisted)) if !persisted => {
