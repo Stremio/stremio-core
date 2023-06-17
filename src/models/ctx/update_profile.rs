@@ -83,14 +83,22 @@ pub fn update_profile<E: Env + 'static>(
                             .unwrap_or_else(|| profile_addon.to_owned())
                     })
                     .collect::<Vec<_>>();
-                let local_addons = profile.addons.iter().cloned().collect::<HashSet<_>>();
-                let remote_addons = next_addons.iter().cloned().collect::<HashSet<_>>();
-                let added_addons = &remote_addons - &local_addons;
-                let removed_addon = &local_addons - &remote_addons;
-                let transport_urls = added_addons
+                let prev_transport_urls = profile
+                    .addons
+                    .iter()
+                    .map(|addon| &addon.transport_url)
+                    .cloned()
+                    .collect::<HashSet<_>>();
+                let next_transport_urls = next_addons
+                    .iter()
+                    .map(|addon| &addon.transport_url)
+                    .cloned()
+                    .collect::<HashSet<_>>();
+                let added_transport_urls = &next_transport_urls - &prev_transport_urls;
+                let removed_transport_urls = &prev_transport_urls - &next_transport_urls;
+                let transport_urls = added_transport_urls
                     .into_iter()
-                    .chain(removed_addon.into_iter())
-                    .map(|addon| addon.transport_url)
+                    .chain(removed_transport_urls.into_iter())
                     .collect();
                 if profile.addons != next_addons {
                     profile.addons = next_addons;
@@ -263,14 +271,22 @@ pub fn update_profile<E: Env + 'static>(
             result,
         )) if profile.auth_key() == Some(auth_key) => match result {
             Ok(addons) => {
-                let local_addons = profile.addons.iter().cloned().collect::<HashSet<_>>();
-                let remote_addons = addons.iter().cloned().collect::<HashSet<_>>();
-                let added_addons = &remote_addons - &local_addons;
-                let removed_addon = &local_addons - &remote_addons;
-                let transport_urls = added_addons
+                let prev_transport_urls = profile
+                    .addons
+                    .iter()
+                    .map(|addon| &addon.transport_url)
+                    .cloned()
+                    .collect::<HashSet<_>>();
+                let next_transport_urls = addons
+                    .iter()
+                    .map(|addon| &addon.transport_url)
+                    .cloned()
+                    .collect::<HashSet<_>>();
+                let added_transport_urls = &next_transport_urls - &prev_transport_urls;
+                let removed_transport_urls = &prev_transport_urls - &next_transport_urls;
+                let transport_urls = added_transport_urls
                     .into_iter()
-                    .chain(removed_addon.into_iter())
-                    .map(|addon| addon.transport_url)
+                    .chain(removed_transport_urls.into_iter())
                     .collect();
                 if profile.addons != *addons {
                     profile.addons = addons.to_owned();
