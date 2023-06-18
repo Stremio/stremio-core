@@ -1,11 +1,11 @@
-name: Publish
+name: Release
 
 on:
   release:
-    types: [published]
+    types: [released]
     
 jobs:
-  publish:
+  release:
     runs-on: ubuntu-latest
     steps:
     - name: Checkout
