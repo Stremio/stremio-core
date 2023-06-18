@@ -8,6 +8,8 @@ use url::Url;
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct StreamsItem {
     pub stream: Stream,
+    pub meta_id: String,
+    pub video_id: String,
     pub transport_url: Url,
     pub mtime: DateTime<Utc>,
 }

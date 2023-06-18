@@ -33,6 +33,8 @@ pub fn update_streams<E: Env + 'static>(
             };
             let streams_item = StreamsItem {
                 stream: stream.to_owned(),
+                meta_id: meta_id.to_owned(),
+                video_id: video_id.to_owned(),
                 transport_url: transport_url.to_owned(),
                 mtime: E::now(),
             };
