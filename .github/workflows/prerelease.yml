@@ -31,10 +31,10 @@ jobs:
     - name: Package
       run: npm pack
     - name: Upload build artifact to GitHub release assets
-      uses: svenstaro/upload-release-action@v1-release
+      uses: svenstaro/upload-release-action@v2s
       with:
         repo_token: ${{ secrets.GITHUB_TOKEN }}
-        file: *.tgz
+        file: ./*.tgz
         tag: ${{ github.ref }}
         overwrite: true
         file_glob: true
