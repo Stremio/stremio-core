@@ -5,6 +5,7 @@ use serde_with::serde_as;
 use std::collections::HashMap;
 
 #[derive(Default, Debug, Clone, Eq, PartialEq, Hash, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct StreamsItemKey {
     pub meta_id: String,
     pub video_id: String,
