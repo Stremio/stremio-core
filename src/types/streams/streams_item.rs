@@ -12,5 +12,7 @@ pub struct StreamsItem {
     pub meta_id: String,
     pub video_id: String,
     pub transport_url: Url,
+    /// Modification time
+    #[serde(rename = "_mtime")]
     pub mtime: DateTime<Utc>,
 }
