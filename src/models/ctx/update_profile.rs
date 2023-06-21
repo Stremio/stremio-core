@@ -9,6 +9,7 @@ use crate::types::api::{
 use crate::types::profile::{Auth, AuthKey, Profile, Settings, User};
 use enclose::enclose;
 use futures::{future, FutureExt, TryFutureExt};
+use std::collections::HashSet;
 
 pub fn update_profile<E: Env + 'static>(
     profile: &mut Profile,
@@ -82,10 +83,22 @@ pub fn update_profile<E: Env + 'static>(
                             .unwrap_or_else(|| profile_addon.to_owned())
                     })
                     .collect::<Vec<_>>();
-                let transport_urls = next_addons
+                let prev_transport_urls = profile
+                    .addons
                     .iter()
                     .map(|addon| &addon.transport_url)
                     .cloned()
+                    .collect::<HashSet<_>>();
+                let next_transport_urls = next_addons
+                    .iter()
+                    .map(|addon| &addon.transport_url)
+                    .cloned()
+                    .collect::<HashSet<_>>();
+                let added_transport_urls = &next_transport_urls - &prev_transport_urls;
+                let removed_transport_urls = &prev_transport_urls - &next_transport_urls;
+                let transport_urls = added_transport_urls
+                    .into_iter()
+                    .chain(removed_transport_urls.into_iter())
                     .collect();
                 if profile.addons != next_addons {
                     profile.addons = next_addons;
@@ -258,10 +271,22 @@ pub fn update_profile<E: Env + 'static>(
             result,
         )) if profile.auth_key() == Some(auth_key) => match result {
             Ok(addons) => {
-                let transport_urls = addons
+                let prev_transport_urls = profile
+                    .addons
                     .iter()
                     .map(|addon| &addon.transport_url)
                     .cloned()
+                    .collect::<HashSet<_>>();
+                let next_transport_urls = addons
+                    .iter()
+                    .map(|addon| &addon.transport_url)
+                    .cloned()
+                    .collect::<HashSet<_>>();
+                let added_transport_urls = &next_transport_urls - &prev_transport_urls;
+                let removed_transport_urls = &prev_transport_urls - &next_transport_urls;
+                let transport_urls = added_transport_urls
+                    .into_iter()
+                    .chain(removed_transport_urls.into_iter())
                     .collect();
                 if profile.addons != *addons {
                     profile.addons = addons.to_owned();
