@@ -77,6 +77,17 @@ impl TestEnv {
         runnable: F,
     ) {
         tokio_current_thread::block_on_all(future::lazy(|_| {
+            TestEnv::exec_concurrent(rx.for_each(enclose!((runtime) move |event| {
+                if let RuntimeEvent::NewState(_) = event {
+                    let runtime = runtime.read().expect("runtime read failed");
+                    let state = runtime.model().expect("model read failed");
+                    let mut states = STATES.write().expect("states write failed");
+                    states.push(Box::new(state.to_owned()) as Box<dyn Any + Send + Sync>);
+                };
+                let mut events = EVENTS.write().expect("events write failed");
+                events.push(Box::new(event) as Box<dyn Any + Send + Sync>);
+                future::ready(())
+            })));
             {
                 let runtime = runtime.read().expect("runtime read failed");
                 let state = runtime.model().expect("model read failed");
@@ -84,22 +95,11 @@ impl TestEnv {
                 states.push(Box::new(state.to_owned()) as Box<dyn Any + Send + Sync>);
             }
             runnable();
-        }));
-        tokio_current_thread::block_on_all(future::lazy(|_| {
-            TestEnv::exec_concurrent(rx.for_each(move |event| {
-                if let RuntimeEvent::NewState(_, state) = &event {
-                    let mut states = STATES.write().expect("states write failed");
-                    states.push(Box::new(state.to_owned()) as Box<dyn Any + Send + Sync>);
-                };
-                let mut events = EVENTS.write().expect("events write failed");
-                events.push(Box::new(event) as Box<dyn Any + Send + Sync>);
-                future::ready(())
-            }));
             TestEnv::exec_concurrent(enclose!((runtime) async move {
                 let mut runtime = runtime.write().expect("runtime read failed");
                 runtime.close().await.unwrap();
             }));
-        }));
+        }))
     }
 }
 

@@ -31,7 +31,7 @@ impl fmt::Display for LinkError {
     }
 }
 
-#[derive(Derivative, Serialize, Clone, Debug)]
+#[derive(Derivative, Serialize, Debug)]
 #[derivative(Default(bound = ""))]
 #[serde(rename_all = "camelCase")]
 pub struct Link<T> {

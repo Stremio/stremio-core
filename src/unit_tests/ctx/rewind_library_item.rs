@@ -16,7 +16,7 @@ use stremio_derive::Model;
 
 #[test]
 fn actionctx_rewindlibraryitem() {
-    #[derive(Model, Clone, Default)]
+    #[derive(Model, Default)]
     #[model(TestEnv)]
     struct TestModel {
         ctx: Ctx,
@@ -154,7 +154,7 @@ fn actionctx_rewindlibraryitem() {
 
 #[test]
 fn actionctx_rewindlibraryitem_not_added() {
-    #[derive(Model, Clone, Default)]
+    #[derive(Model, Default)]
     #[model(TestEnv)]
     struct TestModel {
         ctx: Ctx,

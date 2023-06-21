@@ -72,13 +72,13 @@ fn data_export_with_user() {
         events[0]
             .downcast_ref::<RuntimeEvent<TestEnv, TestModel>>()
             .unwrap(),
-        RuntimeEvent::NewState(fields, _) if fields.len() == 1 && *fields.first().unwrap() == TestModelField::DataExport
+        RuntimeEvent::NewState(fields) if fields.len() == 1 && *fields.first().unwrap() == TestModelField::DataExport
     );
     assert_matches!(
         events[1]
             .downcast_ref::<RuntimeEvent<TestEnv, TestModel>>()
             .unwrap(),
-        RuntimeEvent::NewState(fields, _) if fields.len() == 1 && *fields.first().unwrap() == TestModelField::DataExport
+        RuntimeEvent::NewState(fields) if fields.len() == 1 && *fields.first().unwrap() == TestModelField::DataExport
     );
     let states = STATES.read().unwrap();
     let states = states

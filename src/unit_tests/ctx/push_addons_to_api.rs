@@ -14,7 +14,7 @@ use url::Url;
 
 #[test]
 fn actionctx_pushaddonstoapi() {
-    #[derive(Model, Clone, Default)]
+    #[derive(Model, Default)]
     #[model(TestEnv)]
     struct TestModel {
         ctx: Ctx,
@@ -65,7 +65,7 @@ fn actionctx_pushaddonstoapi() {
 
 #[test]
 fn actionctx_pushaddonstoapi_with_user() {
-    #[derive(Model, Clone, Default)]
+    #[derive(Model, Default)]
     #[model(TestEnv)]
     struct TestModel {
         ctx: Ctx,
