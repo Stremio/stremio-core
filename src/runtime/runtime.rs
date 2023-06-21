@@ -74,6 +74,7 @@ where
         Ok(())
     }
     fn emit(&self, event: RuntimeEvent<E, M>) {
+        println!("emit NewState");
         self.tx.clone().try_send(event).expect("emit event failed");
     }
     fn handle_effects(&self, effects: Vec<Effect>, fields: Vec<M::Field>) {
@@ -101,6 +102,7 @@ where
             }));
     }
     fn handle_effect_output(&self, msg: Msg) {
+        println!("handle_effect_output {:#?}", msg);
         match msg {
             Msg::Event(event) => {
                 self.emit(RuntimeEvent::CoreEvent(event));

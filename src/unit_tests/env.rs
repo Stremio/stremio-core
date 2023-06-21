@@ -78,6 +78,7 @@ impl TestEnv {
     ) {
         tokio_current_thread::block_on_all(future::lazy(|_| {
             TestEnv::exec_concurrent(rx.for_each(enclose!((runtime) move |event| {
+                println!("run_with_runtime: event");
                 if let RuntimeEvent::NewState(_) = event {
                     let runtime = runtime.read().expect("runtime read failed");
                     let state = runtime.model().expect("model read failed");
@@ -94,9 +95,12 @@ impl TestEnv {
                 let mut states = STATES.write().expect("states write failed");
                 states.push(Box::new(state.to_owned()) as Box<dyn Any + Send + Sync>);
             }
+            println!("run_with_runtime: before runnable");
             runnable();
+            println!("run_with_runtime: after runnable");
             TestEnv::exec_concurrent(enclose!((runtime) async move {
                 let mut runtime = runtime.write().expect("runtime read failed");
+                println!("run_with_runtime: runtime.close()");
                 runtime.close().await.unwrap();
             }));
         }))

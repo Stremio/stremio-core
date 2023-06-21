@@ -3,7 +3,7 @@ use crate::models::ctx::Ctx;
 use crate::models::meta_details::{MetaDetails, Selected};
 use crate::runtime::msg::{Action, ActionLoad};
 use crate::runtime::{EnvFutureExt, Runtime, RuntimeAction, TryEnvFuture};
-use crate::types::addon::{ResourcePath, ResourceResponse};
+use crate::types::addon::{Descriptor, Manifest, ManifestResource, ResourcePath, ResourceResponse};
 use crate::types::profile::Profile;
 use crate::types::resource::{MetaItem, MetaItemBehaviorHints, MetaItemPreview, Video};
 use crate::unit_tests::{default_fetch_handler, Request, TestEnv, FETCH_HANDLER, STATES};
@@ -13,6 +13,7 @@ use futures::future;
 use std::any::Any;
 use std::sync::{Arc, RwLock};
 use stremio_derive::Model;
+use url::Url;
 
 #[test]
 fn override_selected_default_video_id() {
@@ -24,7 +25,7 @@ fn override_selected_default_video_id() {
     }
     fn fetch_handler(request: Request) -> TryEnvFuture<Box<dyn Any + Send>> {
         match request {
-            Request { url, .. } if url == "https://v3-cinemeta.strem.io/meta/movie/tt1.json" => {
+            Request { url, .. } if url == "https://transport_url/meta/movie/tt1.json" => {
                 future::ok(Box::new(ResourceResponse::Meta {
                     meta: MetaItem {
                         preview: MetaItemPreview {
@@ -41,6 +42,12 @@ fn override_selected_default_video_id() {
                 }) as Box<dyn Any + Send>)
                 .boxed_env()
             }
+            Request { url, .. } if url == "https://transport_url/stream/movie/_tt1.json" => {
+                future::ok(
+                    Box::new(ResourceResponse::Streams { streams: vec![] }) as Box<dyn Any + Send>
+                )
+                .boxed_env()
+            }
             _ => default_fetch_handler(request),
         }
     }
@@ -50,11 +57,18 @@ fn override_selected_default_video_id() {
         TestModel {
             ctx: Ctx {
                 profile: Profile {
-                    addons: OFFICIAL_ADDONS
-                        .iter()
-                        .filter(|addon| addon.transport_url == *CINEMETA_URL)
-                        .cloned()
-                        .collect(),
+                    addons: vec![Descriptor {
+                        manifest: Manifest {
+                            types: vec!["movie".to_owned()],
+                            resources: vec![
+                                ManifestResource::Short(META_RESOURCE_NAME.to_owned()),
+                                ManifestResource::Short(STREAM_RESOURCE_NAME.to_owned()),
+                            ],
+                            ..Default::default()
+                        },
+                        transport_url: Url::parse("https://transport_url/manifest.json").unwrap(),
+                        flags: Default::default(),
+                    }],
                     ..Default::default()
                 },
                 ..Default::default()
