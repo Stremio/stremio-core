@@ -6,6 +6,7 @@ use url::Url;
 
 #[serde_as]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct StreamsItem {
     pub stream: Stream,
     pub meta_id: String,
