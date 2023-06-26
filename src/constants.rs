@@ -8,6 +8,7 @@ pub const SCHEMA_VERSION_STORAGE_KEY: &str = "schema_version";
 pub const PROFILE_STORAGE_KEY: &str = "profile";
 pub const LIBRARY_STORAGE_KEY: &str = "library";
 pub const LIBRARY_RECENT_STORAGE_KEY: &str = "library_recent";
+pub const STREAMS_STORAGE_KEY: &str = "streams";
 pub const LIBRARY_COLLECTION_NAME: &str = "libraryItem";
 pub const SEARCH_EXTRA_NAME: &str = "search";
 pub const META_RESOURCE_NAME: &str = "meta";

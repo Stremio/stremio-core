@@ -2,7 +2,7 @@ use crate::constants::{LIBRARY_COLLECTION_NAME, URI_COMPONENT_ENCODE_SET};
 use crate::models::common::{
     descriptor_update, eq_update, DescriptorAction, DescriptorLoadable, Loadable,
 };
-use crate::models::ctx::{update_library, update_profile, CtxError, OtherError};
+use crate::models::ctx::{update_library, update_profile, update_streams, CtxError, OtherError};
 use crate::runtime::msg::{Action, ActionCtx, Event, Internal, Msg};
 use crate::runtime::{Effect, EffectFuture, Effects, Env, EnvFutureExt, Update};
 use crate::types::api::{
@@ -11,6 +11,7 @@ use crate::types::api::{
 };
 use crate::types::library::LibraryBucket;
 use crate::types::profile::{Auth, AuthKey, Profile};
+use crate::types::streams::StreamsBucket;
 
 use derivative::Derivative;
 use enclose::enclose;
@@ -31,11 +32,12 @@ pub enum CtxStatus {
 #[derivative(Default)]
 pub struct Ctx {
     pub profile: Profile,
-    // TODO StreamsBucket
     // TODO SubtitlesBucket
     // TODO SearchesBucket
     #[serde(skip)]
     pub library: LibraryBucket,
+    #[serde(skip)]
+    pub streams: StreamsBucket,
     #[serde(skip)]
     #[derivative(Default(value = "CtxStatus::Ready"))]
     pub status: CtxStatus,
@@ -44,10 +46,11 @@ pub struct Ctx {
 }
 
 impl Ctx {
-    pub fn new(profile: Profile, library: LibraryBucket) -> Self {
+    pub fn new(profile: Profile, library: LibraryBucket, streams: StreamsBucket) -> Self {
         Self {
             profile,
             library,
+            streams,
             ..Self::default()
         }
     }
@@ -72,6 +75,7 @@ impl<E: Env + 'static> Update<E> for Ctx {
                 let profile_effects = update_profile::<E>(&mut self.profile, &self.status, msg);
                 let library_effects =
                     update_library::<E>(&mut self.library, &self.profile, &self.status, msg);
+                let streams_effects = update_streams::<E>(&mut self.streams, &self.status, msg);
                 let trakt_addon_effects = eq_update(&mut self.trakt_addon, None);
                 self.status = CtxStatus::Ready;
                 Effects::msg(Msg::Event(Event::UserLoggedOut { uid }))
@@ -79,6 +83,7 @@ impl<E: Env + 'static> Update<E> for Ctx {
                     .join(session_effects)
                     .join(profile_effects)
                     .join(library_effects)
+                    .join(streams_effects)
                     .join(trakt_addon_effects)
             }
             Msg::Action(Action::Ctx(ActionCtx::InstallTraktAddon)) => {
@@ -141,6 +146,7 @@ impl<E: Env + 'static> Update<E> for Ctx {
                 let profile_effects = update_profile::<E>(&mut self.profile, &self.status, msg);
                 let library_effects =
                     update_library::<E>(&mut self.library, &self.profile, &self.status, msg);
+                let streams_effects = update_streams::<E>(&mut self.streams, &self.status, msg);
                 let ctx_effects = match &self.status {
                     CtxStatus::Loading(loading_auth_request)
                         if loading_auth_request == auth_request =>
@@ -162,13 +168,17 @@ impl<E: Env + 'static> Update<E> for Ctx {
                     }
                     _ => Effects::none().unchanged(),
                 };
-                profile_effects.join(library_effects).join(ctx_effects)
+                profile_effects
+                    .join(library_effects)
+                    .join(streams_effects)
+                    .join(ctx_effects)
             }
             _ => {
                 let profile_effects = update_profile::<E>(&mut self.profile, &self.status, msg);
                 let library_effects =
                     update_library::<E>(&mut self.library, &self.profile, &self.status, msg);
-                profile_effects.join(library_effects)
+                let streams_effects = update_streams::<E>(&mut self.streams, &self.status, msg);
+                profile_effects.join(library_effects).join(streams_effects)
             }
         }
     }
