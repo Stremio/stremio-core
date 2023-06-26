@@ -11,6 +11,7 @@ use crate::types::api::{
 };
 use crate::types::library::{LibraryBucket, LibraryItem};
 use crate::types::profile::{Auth, AuthKey, Profile, User};
+use crate::types::resource::Stream;
 use crate::types::streaming_server::Statistics;
 use url::Url;
 
@@ -43,12 +44,21 @@ pub enum Internal {
     Logout,
     /// Dispatched when addons needs to be installed.
     InstallAddon(Descriptor),
+    /// Dispatched when a new stream is loaded into the Player.
+    StreamLoaded {
+        stream: Stream,
+        meta_id: Option<String>,
+        video_id: Option<String>,
+        transport_url: Option<Url>,
+    },
     /// Dispatched when library item needs to be updated in the memory, storage and API.
     UpdateLibraryItem(LibraryItem),
     /// Dispatched when some of auth, addons or settings changed.
     ProfileChanged,
     /// Dispatched when library changes with a flag if its already persisted.
     LibraryChanged(bool),
+    /// Dispatched when streams bucket changes with a flag if its already persisted.
+    StreamsChanged(bool),
     /// Result for loading link code.
     LinkCodeResult(Result<LinkCodeResponse, LinkError>),
     /// Result for loading link data.
