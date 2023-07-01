@@ -205,16 +205,14 @@ fn selected_override_update(
     selected: &mut Option<Selected>,
     meta_items: &Vec<ResourceLoadable<MetaItem>>,
 ) -> Effects {
-    let meta_path = if let Some(Selected {
-        meta_path,
-        stream_path: None,
-    }) = &selected
-    {
-        meta_path
-    } else {
-        return Effects::default();
+    let meta_path = match &selected {
+        Some(Selected {
+            meta_path,
+            stream_path: None,
+        }) => meta_path,
+        None => return Effects::default(),
     };
-    let meta_item = if let Some(meta_item) = meta_items
+    let meta_item = match meta_items
         .iter()
         .find_map(|meta_item| match &meta_item.content {
             Some(Loadable::Ready(meta_item)) => Some(Some(meta_item)),
@@ -223,9 +221,8 @@ fn selected_override_update(
         })
         .flatten()
     {
-        meta_item
-    } else {
-        return Effects::default();
+        Some(meta_item) => meta_item,
+        _ => return Effects::default(),
     };
     let video_id = match (
         meta_item.videos.len(),
