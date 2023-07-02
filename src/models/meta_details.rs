@@ -229,7 +229,6 @@ fn selected_override_update(
         &meta_item.preview.behavior_hints.default_video_id,
     ) {
         (_, Some(default_video_id)) => default_video_id.to_owned(),
-        (1, _) => meta_item.videos.first().unwrap().id.to_owned(),
         (0, None) => meta_item.preview.id.to_owned(),
         _ => return Effects::default(),
     };
