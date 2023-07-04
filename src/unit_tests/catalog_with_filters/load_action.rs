@@ -65,13 +65,13 @@ fn default_catalog() {
         events[0]
             .downcast_ref::<RuntimeEvent<TestEnv, TestModel>>()
             .unwrap(),
-        RuntimeEvent::NewState(fields) if fields.len() == 1 && *fields.first().unwrap() == TestModelField::Discover
+        RuntimeEvent::NewState(fields, _) if fields.len() == 1 && *fields.first().unwrap() == TestModelField::Discover
     );
     assert_matches!(
         events[1]
             .downcast_ref::<RuntimeEvent<TestEnv, TestModel>>()
             .unwrap(),
-        RuntimeEvent::NewState(fields) if fields.len() == 1 && *fields.first().unwrap() == TestModelField::Discover
+        RuntimeEvent::NewState(fields, _) if fields.len() == 1 && *fields.first().unwrap() == TestModelField::Discover
     );
     let states = STATES.read().unwrap();
     let states = states
@@ -173,13 +173,13 @@ fn search_catalog() {
         events[0]
             .downcast_ref::<RuntimeEvent<TestEnv, TestModel>>()
             .unwrap(),
-        RuntimeEvent::NewState(fields) if fields.len() == 1 && *fields.first().unwrap() == TestModelField::Discover
+        RuntimeEvent::NewState(fields, _) if fields.len() == 1 && *fields.first().unwrap() == TestModelField::Discover
     );
     assert_matches!(
         events[1]
             .downcast_ref::<RuntimeEvent<TestEnv, TestModel>>()
             .unwrap(),
-        RuntimeEvent::NewState(fields) if fields.len() == 1 && *fields.first().unwrap() == TestModelField::Discover
+        RuntimeEvent::NewState(fields, _) if fields.len() == 1 && *fields.first().unwrap() == TestModelField::Discover
     );
     let states = STATES.read().unwrap();
     let states = states

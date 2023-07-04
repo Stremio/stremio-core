@@ -23,7 +23,7 @@ pub struct Selected {
     pub stream_path: Option<ResourcePath>,
 }
 
-#[derive(Default, Serialize, Debug)]
+#[derive(Default, Serialize, Clone, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct MetaDetails {
     pub selected: Option<Selected>,
@@ -42,6 +42,8 @@ impl<E: Env + 'static> UpdateWithCtx<E> for MetaDetails {
                 let selected_effects = eq_update(&mut self.selected, Some(selected.to_owned()));
                 let meta_items_effects =
                     meta_items_update::<E>(&mut self.meta_items, &self.selected, &ctx.profile);
+                let selected_override_effects =
+                    selected_override_update(&mut self.selected, &self.meta_items);
                 let meta_streams_effects =
                     meta_streams_update(&mut self.meta_streams, &self.selected, &self.meta_items);
                 let streams_effects =
@@ -57,6 +59,7 @@ impl<E: Env + 'static> UpdateWithCtx<E> for MetaDetails {
                 let libraty_item_sync_effects = library_item_sync(&self.library_item, &ctx.profile);
                 libraty_item_sync_effects
                     .join(selected_effects)
+                    .join(selected_override_effects)
                     .join(meta_items_effects)
                     .join(meta_streams_effects)
                     .join(streams_effects)
@@ -112,6 +115,13 @@ impl<E: Env + 'static> UpdateWithCtx<E> for MetaDetails {
                     &mut self.meta_items,
                     ResourcesAction::ResourceRequestResult { request, result },
                 );
+                let selected_override_effects =
+                    selected_override_update(&mut self.selected, &self.meta_items);
+                let streams_effects = if selected_override_effects.has_changed {
+                    streams_update::<E>(&mut self.streams, &self.selected, &ctx.profile)
+                } else {
+                    Effects::default()
+                };
                 let meta_streams_effects =
                     meta_streams_update(&mut self.meta_streams, &self.selected, &self.meta_items);
                 let library_item_effects = library_item_update::<E>(
@@ -122,8 +132,10 @@ impl<E: Env + 'static> UpdateWithCtx<E> for MetaDetails {
                 );
                 let watched_effects =
                     watched_update(&mut self.watched, &self.meta_items, &self.library_item);
-                meta_items_effects
+                selected_override_effects
+                    .join(meta_items_effects)
                     .join(meta_streams_effects)
+                    .join(streams_effects)
                     .join(library_item_effects)
                     .join(watched_effects)
             }
@@ -187,6 +199,52 @@ fn library_item_sync(library_item: &Option<LibraryItem>, profile: &Profile) -> E
         }
         _ => Effects::none().unchanged(),
     }
+}
+
+fn selected_override_update(
+    selected: &mut Option<Selected>,
+    meta_items: &Vec<ResourceLoadable<MetaItem>>,
+) -> Effects {
+    let meta_path = match &selected {
+        Some(Selected {
+            meta_path,
+            stream_path: None,
+        }) => meta_path,
+        None => return Effects::default(),
+    };
+    let meta_item = match meta_items
+        .iter()
+        .find_map(|meta_item| match &meta_item.content {
+            Some(Loadable::Ready(meta_item)) => Some(Some(meta_item)),
+            Some(Loadable::Loading) => Some(None),
+            _ => None,
+        })
+        .flatten()
+    {
+        Some(meta_item) => meta_item,
+        _ => return Effects::default(),
+    };
+    let video_id = match (
+        meta_item.videos.len(),
+        &meta_item.preview.behavior_hints.default_video_id,
+    ) {
+        (_, Some(default_video_id)) => default_video_id.to_owned(),
+        (1, _) => meta_item.videos.first().unwrap().id.to_owned(),
+        (0, None) => meta_item.preview.id.to_owned(),
+        _ => return Effects::default(),
+    };
+    eq_update(
+        selected,
+        Some(Selected {
+            meta_path: meta_path.to_owned(),
+            stream_path: Some(ResourcePath {
+                resource: STREAM_RESOURCE_NAME.to_owned(),
+                r#type: meta_path.r#type.to_owned(),
+                id: video_id,
+                extra: vec![],
+            }),
+        }),
+    )
 }
 
 fn meta_items_update<E: Env + 'static>(

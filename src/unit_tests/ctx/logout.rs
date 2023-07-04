@@ -15,7 +15,7 @@ use stremio_derive::Model;
 
 #[test]
 fn actionctx_logout() {
-    #[derive(Model, Default)]
+    #[derive(Model, Clone, Default)]
     #[model(TestEnv)]
     struct TestModel {
         ctx: Ctx,

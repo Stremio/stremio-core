@@ -16,7 +16,7 @@ use stremio_derive::Model;
 
 #[test]
 fn actionctx_removefromlibrary() {
-    #[derive(Model, Default)]
+    #[derive(Model, Clone, Default)]
     #[model(TestEnv)]
     struct TestModel {
         ctx: Ctx,
@@ -148,7 +148,7 @@ fn actionctx_removefromlibrary() {
 
 #[test]
 fn actionctx_removefromlibrary_not_added() {
-    #[derive(Model, Default)]
+    #[derive(Model, Clone, Default)]
     #[model(TestEnv)]
     struct TestModel {
         ctx: Ctx,
