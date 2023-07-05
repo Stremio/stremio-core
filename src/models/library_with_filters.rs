@@ -27,7 +27,7 @@ impl LibraryFilter for ContinueWatchingFilter {
     }
 }
 
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub enum NotRemovedFilter {}
 
 impl LibraryFilter for NotRemovedFilter {
