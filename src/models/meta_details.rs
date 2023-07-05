@@ -210,7 +210,7 @@ fn selected_override_update(
             meta_path,
             stream_path: None,
         }) => meta_path,
-        None => return Effects::default(),
+        _ => return Effects::default(),
     };
     let meta_item = match meta_items
         .iter()
