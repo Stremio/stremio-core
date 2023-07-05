@@ -203,7 +203,7 @@ fn library_item_sync(library_item: &Option<LibraryItem>, profile: &Profile) -> E
 
 fn selected_override_update(
     selected: &mut Option<Selected>,
-    meta_items: &Vec<ResourceLoadable<MetaItem>>,
+    meta_items: &[ResourceLoadable<MetaItem>],
 ) -> Effects {
     let meta_path = match &selected {
         Some(Selected {
