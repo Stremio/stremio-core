@@ -69,26 +69,26 @@ pub struct Selected {
     pub request: LibraryRequest,
 }
 
-#[derive(PartialEq, Eq, Serialize, Debug)]
+#[derive(Clone, PartialEq, Eq, Serialize, Debug)]
 pub struct SelectableType {
     pub r#type: Option<String>,
     pub selected: bool,
     pub request: LibraryRequest,
 }
 
-#[derive(PartialEq, Eq, Serialize, Debug)]
+#[derive(Clone, PartialEq, Eq, Serialize, Debug)]
 pub struct SelectableSort {
     pub sort: Sort,
     pub selected: bool,
     pub request: LibraryRequest,
 }
 
-#[derive(PartialEq, Eq, Serialize, Debug)]
+#[derive(Clone, PartialEq, Eq, Serialize, Debug)]
 pub struct SelectablePage {
     pub request: LibraryRequest,
 }
 
-#[derive(Default, PartialEq, Eq, Serialize, Debug)]
+#[derive(Default, Clone, PartialEq, Eq, Serialize, Debug)]
 pub struct Selectable {
     pub types: Vec<SelectableType>,
     pub sorts: Vec<SelectableSort>,
@@ -96,7 +96,7 @@ pub struct Selectable {
     pub next_page: Option<SelectablePage>,
 }
 
-#[derive(Derivative, Serialize, Debug)]
+#[derive(Derivative, Clone, Serialize, Debug)]
 #[derivative(Default(bound = ""))]
 pub struct LibraryWithFilters<F> {
     pub selected: Option<Selected>,
