@@ -18,7 +18,7 @@ pub trait LibraryFilter {
     fn predicate(library_item: &LibraryItem) -> bool;
 }
 
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub enum ContinueWatchingFilter {}
 
 impl LibraryFilter for ContinueWatchingFilter {
