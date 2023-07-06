@@ -48,14 +48,14 @@ pub struct StatisticsRequest {
     pub file_idx: u16,
 }
 
-#[derive(Serialize, Debug)]
+#[derive(Clone, Serialize, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct Selected {
     pub transport_url: Url,
     pub statistics: Option<StatisticsRequest>,
 }
 
-#[derive(Serialize, Debug)]
+#[derive(Clone, Serialize, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct StreamingServer {
     pub selected: Selected,

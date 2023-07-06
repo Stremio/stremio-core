@@ -203,14 +203,14 @@ fn library_item_sync(library_item: &Option<LibraryItem>, profile: &Profile) -> E
 
 fn selected_override_update(
     selected: &mut Option<Selected>,
-    meta_items: &Vec<ResourceLoadable<MetaItem>>,
+    meta_items: &[ResourceLoadable<MetaItem>],
 ) -> Effects {
     let meta_path = match &selected {
         Some(Selected {
             meta_path,
             stream_path: None,
         }) => meta_path,
-        None => return Effects::default(),
+        _ => return Effects::default(),
     };
     let meta_item = match meta_items
         .iter()
@@ -229,7 +229,6 @@ fn selected_override_update(
         &meta_item.preview.behavior_hints.default_video_id,
     ) {
         (_, Some(default_video_id)) => default_video_id.to_owned(),
-        (1, _) => meta_item.videos.first().unwrap().id.to_owned(),
         (0, None) => meta_item.preview.id.to_owned(),
         _ => return Effects::default(),
     };
