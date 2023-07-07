@@ -80,7 +80,7 @@ pub fn serialize_catalogs_with_extra(
                             Some(Loadable::Ready(
                                 meta_items
                                     .iter()
-                                    .unique_by(|meta_item| meta_item.id.clone())
+                                    .unique_by(|meta_item| &meta_item.id)
                                     .take(10)
                                     .map(|meta_item| model::MetaItemPreview {
                                         meta_item,

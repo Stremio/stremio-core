@@ -206,7 +206,7 @@ pub fn serialize_discover(
                             })
                             // it is possible that they are duplicates returned in 2 different pages
                             // so we deduplicate all the results at once
-                            .unique_by(|meta| meta.meta_item.id.clone())
+                            .unique_by(|meta| &meta.meta_item.id)
                             .collect::<Vec<_>>(),
                     ),
                     Some(Loadable::Loading) | None => Loadable::Loading,
