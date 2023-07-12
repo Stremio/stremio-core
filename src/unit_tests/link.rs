@@ -11,7 +11,7 @@ use stremio_derive::Model;
 
 #[test]
 fn create_link_code() {
-    #[derive(Model, Default)]
+    #[derive(Model, Debug, Default)]
     #[model(TestEnv)]
     struct TestModel {
         ctx: Ctx,

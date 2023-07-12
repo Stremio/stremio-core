@@ -17,7 +17,7 @@ use url::Url;
 
 #[test]
 fn actionctx_installaddon_install() {
-    #[derive(Model, Default)]
+    #[derive(Model, Debug, Default)]
     #[model(TestEnv)]
     struct TestModel {
         ctx: Ctx,
@@ -84,7 +84,7 @@ fn actionctx_installaddon_install() {
 
 #[test]
 fn actionctx_installaddon_install_with_user() {
-    #[derive(Model, Default)]
+    #[derive(Model, Debug, Default)]
     #[model(TestEnv)]
     struct TestModel {
         ctx: Ctx,
@@ -198,7 +198,7 @@ fn actionctx_installaddon_install_with_user() {
 
 #[test]
 fn actionctx_installaddon_update() {
-    #[derive(Model, Default)]
+    #[derive(Model, Debug, Default)]
     #[model(TestEnv)]
     struct TestModel {
         ctx: Ctx,
@@ -306,7 +306,7 @@ fn actionctx_installaddon_update() {
 
 #[test]
 fn actionctx_installaddon_already_installed() {
-    #[derive(Model, Default)]
+    #[derive(Model, Debug, Default)]
     #[model(TestEnv)]
     struct TestModel {
         ctx: Ctx,
