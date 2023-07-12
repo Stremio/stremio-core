@@ -58,7 +58,7 @@ pub struct AnalyticsContext {
 #[serde(rename_all = "camelCase")]
 pub struct VideoParams {
     pub hash: Option<String>,
-    pub size: Option<u32>,
+    pub size: Option<u64>,
 }
 
 #[derive(Clone, PartialEq, Eq, Serialize, Deserialize, Debug)]
@@ -71,7 +71,7 @@ pub struct Selected {
     pub video_params: Option<VideoParams>,
 }
 
-#[derive(Default, Derivative, Serialize, Debug)]
+#[derive(Default, Clone, Derivative, Serialize, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct Player {
     pub selected: Option<Selected>,
@@ -116,6 +116,36 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                 } else {
                     Effects::none().unchanged()
                 };
+                let update_streams_effects = if self.selected.as_ref().map(|selected| {
+                    (
+                        &selected.stream,
+                        &selected.stream_request,
+                        &selected.meta_request,
+                    )
+                }) != Some((
+                    &selected.stream,
+                    &selected.stream_request,
+                    &selected.meta_request,
+                )) {
+                    Effects::msg(Msg::Internal(Internal::StreamLoaded {
+                        stream: selected.stream.to_owned(),
+                        meta_id: selected
+                            .meta_request
+                            .as_ref()
+                            .map(|meta_request| meta_request.path.id.to_owned()),
+                        video_id: selected
+                            .stream_request
+                            .as_ref()
+                            .map(|stream_request| stream_request.path.id.to_owned()),
+                        transport_url: selected
+                            .stream_request
+                            .as_ref()
+                            .map(|stream_request| stream_request.base.to_owned()),
+                    }))
+                    .unchanged()
+                } else {
+                    Effects::none().unchanged()
+                };
                 let selected_effects = eq_update(&mut self.selected, Some(*selected.to_owned()));
                 let meta_item_effects = match &selected.meta_request {
                     Some(meta_request) => match &mut self.meta_item {
@@ -142,29 +172,34 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                     },
                     _ => eq_update(&mut self.meta_item, None),
                 };
-                let subtitles_effects = match (&selected.subtitles_path, &selected.video_params) {
-                    (Some(subtitles_path), Some(video_params)) => {
-                        resources_update_with_vector_content::<E, _>(
-                            &mut self.subtitles,
-                            ResourcesAction::ResourcesRequested {
-                                request: &AggrRequest::AllOfResource(ResourcePath {
-                                    extra: subtitles_path
-                                        .extra
-                                        .to_owned()
-                                        .extend_one(
-                                            &VIDEO_HASH_EXTRA_PROP,
-                                            video_params.hash.to_owned(),
-                                        )
-                                        .extend_one(
-                                            &VIDEO_SIZE_EXTRA_PROP,
-                                            video_params.size.as_ref().map(|size| size.to_string()),
-                                        ),
-                                    ..subtitles_path.to_owned()
-                                }),
-                                addons: &ctx.profile.addons,
-                            },
-                        )
-                    }
+                let subtitles_effects = match &selected.subtitles_path {
+                    Some(subtitles_path) => resources_update_with_vector_content::<E, _>(
+                        &mut self.subtitles,
+                        ResourcesAction::ResourcesRequested {
+                            request: &AggrRequest::AllOfResource(ResourcePath {
+                                extra: subtitles_path
+                                    .extra
+                                    .to_owned()
+                                    .extend_one(
+                                        &VIDEO_HASH_EXTRA_PROP,
+                                        selected
+                                            .video_params
+                                            .as_ref()
+                                            .and_then(|params| params.hash.to_owned()),
+                                    )
+                                    .extend_one(
+                                        &VIDEO_SIZE_EXTRA_PROP,
+                                        selected
+                                            .video_params
+                                            .as_ref()
+                                            .and_then(|params| params.size)
+                                            .map(|size| size.to_string()),
+                                    ),
+                                ..subtitles_path.to_owned()
+                            }),
+                            addons: &ctx.profile.addons,
+                        },
+                    ),
                     _ => eq_update(&mut self.subtitles, vec![]),
                 };
                 let next_video_effects = next_video_update(
@@ -217,6 +252,7 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                 self.ended = false;
                 self.paused = None;
                 switch_to_next_video_effects
+                    .join(update_streams_effects)
                     .join(selected_effects)
                     .join(meta_item_effects)
                     .join(subtitles_effects)

@@ -11,7 +11,7 @@ use url::Url;
 
 #[test]
 fn actionctx_addon_upgrade() {
-    #[derive(Model, Default)]
+    #[derive(Model, Clone, Default)]
     #[model(TestEnv)]
     struct TestModel {
         ctx: Ctx,
@@ -118,7 +118,7 @@ fn actionctx_addon_upgrade() {
 
 #[test]
 fn actionctx_addon_upgrade_fail_due_to_different_url() {
-    #[derive(Model, Default)]
+    #[derive(Model, Clone, Default)]
     #[model(TestEnv)]
     struct TestModel {
         ctx: Ctx,
