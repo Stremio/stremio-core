@@ -33,8 +33,8 @@ pub struct Runtime<E: Env, M: Model<E>> {
 
 impl<E, M> Runtime<E, M>
 where
-    E: Env + Send + 'static,
-    M: Model<E> + Send + Sync + 'static,
+    E: Env + core::fmt::Debug + Send + 'static,
+    M: Model<E> + core::fmt::Debug + Send + Sync + 'static,
 {
     pub fn new(
         model: M,
@@ -67,15 +67,25 @@ where
         };
         self.handle_effects(effects, fields);
     }
+
     #[cfg(test)]
     pub async fn close(&mut self) -> Result<(), anyhow::Error> {
         self.tx.flush().await?;
         self.tx.close_channel();
         Ok(())
     }
+
+    #[cfg(test)]
+    pub async fn flush(&mut self) -> Result<(), anyhow::Error> {
+        self.tx.flush().await?;
+        Ok(())
+    }
     fn emit(&self, event: RuntimeEvent<E, M>) {
-        println!("emit NewState");
-        self.tx.clone().try_send(event).expect("emit event failed");
+        println!("emit event: {event:#?}");
+
+        let result = self.tx.clone().try_send(event);
+        println!("Result is ok? {}", result.is_ok());
+        result.expect("emit event failed")
     }
     fn handle_effects(&self, effects: Vec<Effect>, fields: Vec<M::Field>) {
         if !fields.is_empty() {
@@ -102,7 +112,6 @@ where
             }));
     }
     fn handle_effect_output(&self, msg: Msg) {
-        println!("handle_effect_output {:#?}", msg);
         match msg {
             Msg::Event(event) => {
                 self.emit(RuntimeEvent::CoreEvent(event));
