@@ -1,6 +1,6 @@
 use crate::models::ctx::Ctx;
 use crate::models::streaming_server::StreamingServer;
-use crate::runtime::{Env, EnvFuture, EnvFutureExt, Model, Runtime, RuntimeEvent, TryEnvFuture};
+use crate::runtime::{Env, EnvFuture, EnvFutureExt, Model, Runtime, RuntimeEvent, TryEnvFuture, ConditionalSend};
 use chrono::{DateTime, Utc};
 use enclose::enclose;
 use futures::channel::mpsc::Receiver;
@@ -24,6 +24,10 @@ lazy_static! {
     pub static ref NOW: RwLock<DateTime<Utc>> = RwLock::new(Utc::now());
     pub static ref ENV_MUTEX: Mutex<()> = Default::default();
 }
+
+// pub trait FetchHandlerT {
+//     fn request(handler: Request) -> TryEnvFuture<Box<dyn Any + Send>> + Send + Sync + 'static;
+// }
 
 pub type FetchHandler =
     Box<dyn Fn(Request) -> TryEnvFuture<Box<dyn Any + Send>> + Send + Sync + 'static>;
@@ -71,7 +75,7 @@ impl TestEnv {
             runnable();
         }))
     }
-    pub fn run_with_runtime<M: Model<TestEnv> + Clone + Send + Sync + 'static, F: FnOnce()>(
+    pub fn run_with_runtime<M: Model<TestEnv> + core::fmt::Debug + Clone + Send + Sync + 'static, F: FnOnce()>(
         rx: Receiver<RuntimeEvent<TestEnv, M>>,
         runtime: Arc<RwLock<Runtime<TestEnv, M>>>,
         runnable: F,
@@ -98,11 +102,11 @@ impl TestEnv {
             println!("run_with_runtime: before runnable");
             runnable();
             println!("run_with_runtime: after runnable");
-            TestEnv::exec_concurrent(enclose!((runtime) async move {
-                let mut runtime = runtime.write().expect("runtime read failed");
-                println!("run_with_runtime: runtime.close()");
-                runtime.close().await.unwrap();
-            }));
+            // TestEnv::exec_concurrent(enclose!((runtime) async move {
+            //     let mut runtime = runtime.write().expect("runtime read failed");
+            //     println!("run_with_runtime: runtime.close()");
+            //     runtime.close().await.unwrap();
+            // }));
         }))
     }
 }
@@ -121,7 +125,7 @@ impl Env for TestEnv {
             })
             .boxed_env()
     }
-    fn get_storage<T: for<'de> Deserialize<'de> + 'static>(key: &str) -> TryEnvFuture<Option<T>> {
+    fn get_storage<T: for<'de> Deserialize<'de> + ConditionalSend + 'static>(key: &str) -> TryEnvFuture<Option<T>> {
         future::ok(
             STORAGE
                 .read()
