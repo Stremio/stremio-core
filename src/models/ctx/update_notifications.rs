@@ -50,11 +50,8 @@ pub fn update_notifications<E: Env + 'static>(
                 },
             );
             notifications.created = E::now();
-            let notification_items_effects = update_notification_items(
-                &mut notifications.items,
-                &notification_catalogs,
-                &library,
-            );
+            let notification_items_effects =
+                update_notification_items(&mut notifications.items, notification_catalogs, library);
             let notifications_effects = if notification_items_effects.has_changed {
                 Effects::msg(Msg::Internal(Internal::NotificationsChanged))
             } else {
@@ -102,11 +99,7 @@ pub fn update_notifications<E: Env + 'static>(
                 ResourcesAction::ResourceRequestResult { request, result },
             );
             let notification_items_effects = if notification_catalogs_effects.has_changed {
-                update_notification_items(
-                    &mut notifications.items,
-                    &notification_catalogs,
-                    &library,
-                )
+                update_notification_items(&mut notifications.items, notification_catalogs, library)
             } else {
                 Effects::none().unchanged()
             };
@@ -135,14 +128,16 @@ pub fn update_notifications<E: Env + 'static>(
 
 fn update_notification_items(
     notification_items: &mut HashMap<String, NotificationItem>,
-    notification_catalogs: &Vec<ResourceLoadable<Vec<MetaItem>>>,
+    notification_catalogs: &[ResourceLoadable<Vec<MetaItem>>],
     library: &LibraryBucket,
 ) -> Effects {
     let selected_catalogs = notification_catalogs
         .iter()
-        .take_while(|catalog| match &catalog.content {
-            Some(Loadable::Ready(_)) | Some(Loadable::Err(_)) => true,
-            _ => false,
+        .take_while(|catalog| {
+            matches!(
+                &catalog.content,
+                Some(Loadable::Ready(_)) | Some(Loadable::Err(_))
+            )
         })
         .collect::<Vec<_>>();
     let next_notification_ids = notification_catalogs
@@ -151,7 +146,7 @@ fn update_notification_items(
         .map(|extra| Either::Left(extra.iter()))
         .unwrap_or_else(|| Either::Right(std::iter::empty()))
         .find(|extra_value| extra_value.name == LAST_VIDEOS_IDS_EXTRA_PROP.name)
-        .map(|extra_value| Either::Left(extra_value.value.split(",")))
+        .map(|extra_value| Either::Left(extra_value.value.split(',')))
         .unwrap_or_else(|| Either::Right(std::iter::empty()));
     let next_notification_items = next_notification_ids
         .filter_map(|id| {
