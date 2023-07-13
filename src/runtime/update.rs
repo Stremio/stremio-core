@@ -5,7 +5,7 @@ use crate::runtime::{Effect, Effects, Env};
 use core::fmt::Debug;
 use serde::{Deserialize, Serialize};
 
-pub trait Model<E: Env> {
+pub trait Model<E: Env>: Clone {
     #[cfg(not(debug_assertions))]
     type Field: Send + Sync + Serialize + for<'de> Deserialize<'de>;
     #[cfg(debug_assertions)]

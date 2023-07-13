@@ -20,7 +20,7 @@ use stremio_derive::Model;
 
 #[test]
 fn actionctx_synclibrarywithapi() {
-    #[derive(Model)]
+    #[derive(Model, Clone, Default)]
     #[model(TestEnv)]
     struct TestModel {
         ctx: Ctx,
@@ -46,7 +46,7 @@ fn actionctx_synclibrarywithapi() {
 
 #[test]
 fn actionctx_synclibrarywithapi_with_user() {
-    #[derive(Model)]
+    #[derive(Model, Clone, Default)]
     #[model(TestEnv)]
     struct TestModel {
         ctx: Ctx,
@@ -372,7 +372,7 @@ fn actionctx_synclibrarywithapi_with_user() {
 
 #[test]
 fn actionctx_synclibrarywithapi_with_user_empty_library() {
-    #[derive(Model)]
+    #[derive(Model, Clone, Default)]
     #[model(TestEnv)]
     struct TestModel {
         ctx: Ctx,

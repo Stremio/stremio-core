@@ -20,7 +20,7 @@ use stremio_derive::Model;
 
 #[test]
 fn actionctx_authenticate_login() {
-    #[derive(Model)]
+    #[derive(Model, Clone, Default)]
     #[model(TestEnv)]
     struct TestModel {
         ctx: Ctx,
@@ -224,7 +224,7 @@ fn actionctx_authenticate_login() {
 
 #[test]
 fn actionctx_authenticate_login_with_token() {
-    #[derive(Model)]
+    #[derive(Model, Clone, Default)]
     #[model(TestEnv)]
     struct TestModel {
         ctx: Ctx,
@@ -427,7 +427,7 @@ fn actionctx_authenticate_login_with_token() {
 
 #[test]
 fn actionctx_authenticate_register() {
-    #[derive(Model)]
+    #[derive(Model, Clone, Default)]
     #[model(TestEnv)]
     struct TestModel {
         ctx: Ctx,

@@ -7,6 +7,9 @@ use update_notifications::*;
 mod update_profile;
 use update_profile::*;
 
+mod update_streams;
+use update_streams::*;
+
 mod update_trakt_addon;
 use update_trakt_addon::*;
 

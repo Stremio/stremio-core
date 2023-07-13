@@ -12,8 +12,8 @@ use stremio_derive::Model;
 use url::Url;
 
 #[test]
-fn actionctx_installaddon_upgrade() {
-    #[derive(Model)]
+fn actionctx_addon_upgrade() {
+    #[derive(Model, Clone, Default)]
     #[model(TestEnv)]
     struct TestModel {
         ctx: Ctx,
@@ -121,7 +121,7 @@ fn actionctx_installaddon_upgrade() {
 
 #[test]
 fn actionctx_addon_upgrade_fail_due_to_different_url() {
-    #[derive(Model)]
+    #[derive(Model, Clone, Default)]
     #[model(TestEnv)]
     struct TestModel {
         ctx: Ctx,

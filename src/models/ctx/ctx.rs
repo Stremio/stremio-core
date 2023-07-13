@@ -3,6 +3,7 @@ use crate::models::common::{DescriptorLoadable, ResourceLoadable};
 use crate::models::ctx::{
     update_library, update_notifications, update_profile, update_trakt_addon, CtxError,
 };
+use crate::models::ctx::{update_library, update_profile, update_streams, CtxError, OtherError};
 use crate::runtime::msg::{Action, ActionCtx, Event, Internal, Msg};
 use crate::runtime::{Effect, EffectFuture, Effects, Env, EnvFutureExt, Update};
 use crate::types::api::{
@@ -12,6 +13,7 @@ use crate::types::api::{
 use crate::types::library::LibraryBucket;
 use crate::types::notifications::NotificationsBucket;
 use crate::types::profile::{Auth, AuthKey, Profile};
+use crate::types::streams::StreamsBucket;
 use crate::types::resource::MetaItem;
 
 use derivative::Derivative;
@@ -19,7 +21,7 @@ use enclose::enclose;
 use futures::{future, FutureExt, TryFutureExt};
 use serde::{Serialize, Deserialize};
 
-use tracing::{debug, event, Level};
+use tracing::{event, trace, Level};
 
 #[derive(Default, PartialEq, Eq, Serialize, Clone, Debug)]
 pub enum CtxStatus {
@@ -32,12 +34,13 @@ pub enum CtxStatus {
 #[derivative(Default)]
 pub struct Ctx {
     pub profile: Profile,
-    // TODO StreamsBucket
     // TODO SubtitlesBucket
     // TODO SearchesBucket
     #[serde(skip)]
     pub library: LibraryBucket,
     pub notifications: NotificationsBucket,
+    #[serde(skip)]
+    pub streams: StreamsBucket,
     #[serde(skip)]
     #[derivative(Default(value = "CtxStatus::Ready"))]
     pub status: CtxStatus,
@@ -48,14 +51,11 @@ pub struct Ctx {
 }
 
 impl Ctx {
-    pub fn new(
-        profile: Profile,
-        library: LibraryBucket,
-        notifications: NotificationsBucket,
-    ) -> Self {
+    pub fn new(profile: Profile, library: LibraryBucket, streams: StreamsBucket, notifications: NotificationsBucket) -> Self {
         Self {
             profile,
             library,
+            streams,
             notifications,
             ..Self::default()
         }
@@ -78,6 +78,7 @@ impl<E: Env + 'static> Update<E> for Ctx {
                 let profile_effects = update_profile::<E>(&mut self.profile, &self.status, msg);
                 let library_effects =
                     update_library::<E>(&mut self.library, &self.profile, &self.status, msg);
+                let streams_effects = update_streams::<E>(&mut self.streams, &self.status, msg);
                 let trakt_addon_effects = update_trakt_addon::<E>(
                     &mut self.trakt_addon,
                     &self.profile,
@@ -98,6 +99,7 @@ impl<E: Env + 'static> Update<E> for Ctx {
                     .join(session_effects)
                     .join(profile_effects)
                     .join(library_effects)
+                    .join(streams_effects)
                     .join(trakt_addon_effects)
                     .join(notifications_effects)
             }
@@ -119,6 +121,7 @@ impl<E: Env + 'static> Update<E> for Ctx {
                     &self.status,
                     msg,
                 );
+                let streams_effects = update_streams::<E>(&mut self.streams, &self.status, msg);
                 let ctx_effects = match &self.status {
                     CtxStatus::Loading(loading_auth_request)
                         if loading_auth_request == auth_request =>
@@ -142,6 +145,7 @@ impl<E: Env + 'static> Update<E> for Ctx {
                 };
                 profile_effects
                     .join(library_effects)
+                    .join(streams_effects)
                     .join(trakt_addon_effects)
                     .join(notifications_effects)
                     .join(ctx_effects)
@@ -150,6 +154,7 @@ impl<E: Env + 'static> Update<E> for Ctx {
                 let profile_effects = update_profile::<E>(&mut self.profile, &self.status, msg);
                 let library_effects =
                     update_library::<E>(&mut self.library, &self.profile, &self.status, msg);
+                let streams_effects = update_streams::<E>(&mut self.streams, &self.status, msg);
                 let trakt_addon_effects = update_trakt_addon::<E>(
                     &mut self.trakt_addon,
                     &self.profile,
@@ -166,6 +171,7 @@ impl<E: Env + 'static> Update<E> for Ctx {
                 );
                 profile_effects
                     .join(library_effects)
+                    .join(streams_effects)
                     .join(trakt_addon_effects)
                     .join(notifications_effects)
             }
@@ -180,7 +186,7 @@ fn authenticate<E: Env + 'static>(auth_request: &AuthRequest) -> Effect {
         E::flush_analytics()
             .then(move |_| {
                 fetch_api::<E, _, _, _>(&auth_api)
-                    .inspect(move |result| debug!(?result, ?auth_api, "Auth request"))
+                    .inspect(move |result| trace!(?result, ?auth_api, "Auth request"))
             })
             .map_err(CtxError::from)
             .and_then(|result| match result {
@@ -196,7 +202,7 @@ fn authenticate<E: Env + 'static>(auth_request: &AuthRequest) -> Effect {
                     };
                     fetch_api::<E, _, _, _>(&request)
                         .inspect(move |result| {
-                            debug!(?result, ?request, "Get user's Addon Collection request")
+                            trace!(?result, ?request, "Get user's Addon Collection request")
                         })
                         .map_err(CtxError::from)
                         .and_then(|result| match result {
@@ -218,7 +224,7 @@ fn authenticate<E: Env + 'static>(auth_request: &AuthRequest) -> Effect {
 
                     fetch_api::<E, _, _, LibraryItemsResponse>(&request)
                         .inspect(move |result| {
-                            debug!(?result, ?request, "Get user's Addon Collection request")
+                            trace!(?result, ?request, "Get user's Addon Collection request")
                         })
                         .map_err(CtxError::from)
                         .and_then(|result| match result {
@@ -250,7 +256,7 @@ fn delete_session<E: Env + 'static>(auth_key: &AuthKey) -> Effect {
         E::flush_analytics()
             .then(|_| {
                 fetch_api::<E, _, _, SuccessResponse>(&request)
-                    .inspect(move |result| debug!(?result, ?request, "Logout request"))
+                    .inspect(move |result| trace!(?result, ?request, "Logout request"))
             })
             .map_err(CtxError::from)
             .and_then(|result| match result {
