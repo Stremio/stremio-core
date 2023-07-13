@@ -31,7 +31,7 @@ pub enum ActionCtx {
     AddToLibrary(MetaItemPreview),
     RemoveFromLibrary(String),
     RewindLibraryItem(String),
-    DisableLibraryItemNotifications(String),
+    /// Dismiss a notification by id
     DismissNotificationItem(String),
     PushUserToAPI,
     PullUserFromAPI,
