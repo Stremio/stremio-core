@@ -7,8 +7,8 @@ use crate::types::library::{LibraryBucket, LibraryItem, LibraryItemState};
 use crate::types::notifications::NotificationsBucket;
 use crate::types::profile::{Auth, AuthKey, GDPRConsent, Profile, User};
 use crate::types::resource::{MetaItemBehaviorHints, MetaItemPreview, PosterShape};
-use crate::types::True;
 use crate::types::streams::StreamsBucket;
+use crate::types::True;
 use crate::unit_tests::{
     default_fetch_handler, Request, TestEnv, FETCH_HANDLER, NOW, REQUESTS, STORAGE,
 };

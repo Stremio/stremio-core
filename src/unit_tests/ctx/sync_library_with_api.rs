@@ -6,8 +6,8 @@ use crate::types::api::{APIResult, LibraryItemModified, LibraryItemsResponse, Su
 use crate::types::library::{LibraryBucket, LibraryItem};
 use crate::types::notifications::NotificationsBucket;
 use crate::types::profile::{Auth, AuthKey, GDPRConsent, Profile, User};
-use crate::types::True;
 use crate::types::streams::StreamsBucket;
+use crate::types::True;
 use crate::unit_tests::{
     default_fetch_handler, Request, TestEnv, FETCH_HANDLER, REQUESTS, STORAGE,
 };

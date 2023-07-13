@@ -1,6 +1,9 @@
 use crate::constants::LIBRARY_COLLECTION_NAME;
 use crate::models::common::{DescriptorLoadable, ResourceLoadable};
-use crate::models::ctx::{update_library, update_profile, update_trakt_addon,update_notifications, update_streams, CtxError};
+use crate::models::ctx::{
+    update_library, update_notifications, update_profile, update_streams, update_trakt_addon,
+    CtxError,
+};
 use crate::runtime::msg::{Action, ActionCtx, Event, Internal, Msg};
 use crate::runtime::{Effect, EffectFuture, Effects, Env, EnvFutureExt, Update};
 use crate::types::api::{
@@ -10,13 +13,13 @@ use crate::types::api::{
 use crate::types::library::LibraryBucket;
 use crate::types::notifications::NotificationsBucket;
 use crate::types::profile::{Auth, AuthKey, Profile};
-use crate::types::streams::StreamsBucket;
 use crate::types::resource::MetaItem;
+use crate::types::streams::StreamsBucket;
 
 use derivative::Derivative;
 use enclose::enclose;
 use futures::{future, FutureExt, TryFutureExt};
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 
 use tracing::{event, trace, Level};
 
@@ -48,7 +51,12 @@ pub struct Ctx {
 }
 
 impl Ctx {
-    pub fn new(profile: Profile, library: LibraryBucket, streams: StreamsBucket, notifications: NotificationsBucket) -> Self {
+    pub fn new(
+        profile: Profile,
+        library: LibraryBucket,
+        streams: StreamsBucket,
+        notifications: NotificationsBucket,
+    ) -> Self {
         Self {
             profile,
             library,

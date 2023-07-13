@@ -7,8 +7,8 @@ use crate::types::api::{APIResult, SuccessResponse};
 use crate::types::library::LibraryBucket;
 use crate::types::notifications::NotificationsBucket;
 use crate::types::profile::{Auth, AuthKey, GDPRConsent, Profile, User};
-use crate::types::True;
 use crate::types::streams::StreamsBucket;
+use crate::types::True;
 use crate::unit_tests::{
     default_fetch_handler, Request, TestEnv, FETCH_HANDLER, REQUESTS, STORAGE,
 };
@@ -168,7 +168,8 @@ fn actionctx_uninstalladdon_with_user() {
         TestModel {
             ctx: Ctx::new(
                 profile,
-                LibraryBucket::default(),StreamsBucket::default(),
+                LibraryBucket::default(),
+                StreamsBucket::default(),
                 NotificationsBucket::new::<TestEnv>(None, vec![]),
             ),
         },
@@ -258,7 +259,8 @@ fn actionctx_uninstalladdon_protected() {
         TestModel {
             ctx: Ctx::new(
                 profile,
-                LibraryBucket::default(),StreamsBucket::default(),
+                LibraryBucket::default(),
+                StreamsBucket::default(),
                 NotificationsBucket::new::<TestEnv>(None, vec![]),
             ),
         },
@@ -331,7 +333,8 @@ fn actionctx_uninstalladdon_not_installed() {
         TestModel {
             ctx: Ctx::new(
                 profile,
-                LibraryBucket::default(),StreamsBucket::default(),
+                LibraryBucket::default(),
+                StreamsBucket::default(),
                 NotificationsBucket::new::<TestEnv>(None, vec![]),
             ),
         },
