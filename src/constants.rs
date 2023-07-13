@@ -11,8 +11,10 @@ pub const LIBRARY_RECENT_STORAGE_KEY: &str = "library_recent";
 pub const STREAMS_STORAGE_KEY: &str = "streams";
 pub const LIBRARY_COLLECTION_NAME: &str = "libraryItem";
 pub const SEARCH_EXTRA_NAME: &str = "search";
+/// `https://{ADDON_UR}/meta/...` resource
 pub const META_RESOURCE_NAME: &str = "meta";
 pub const STREAM_RESOURCE_NAME: &str = "stream";
+/// `https://{ADDON_URL}/catalog/...` resource
 pub const CATALOG_RESOURCE_NAME: &str = "catalog";
 pub const SUBTITLES_RESOURCE_NAME: &str = "subtitles";
 pub const ADDON_MANIFEST_PATH: &str = "/manifest.json";
