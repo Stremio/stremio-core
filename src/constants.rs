@@ -32,6 +32,8 @@ pub const SCHEMA_VERSION: u32 = 7;
 pub const IMDB_LINK_CATEGORY: &str = "imdb";
 pub const GENRES_LINK_CATEGORY: &str = "Genres";
 pub const CINEMETA_TOP_CATALOG_ID: &str = "top";
+/// Only found in Cinemeta catalogs, i.e. [`CINEMETA_CATALOGS_URL`]
+pub const CINEMETA_FEED_CATALOG_ID: &str = "feed.json";
 pub const IMDB_TITLE_PATH: &str = "title";
 pub const YOUTUBE_ADDON_ID_PREFIX: &str = "yt_id:";
 pub const URI_COMPONENT_ENCODE_SET: &AsciiSet = &NON_ALPHANUMERIC
@@ -49,6 +51,10 @@ pub static BASE64: base64::engine::general_purpose::GeneralPurpose =
     base64::engine::general_purpose::STANDARD;
 
 lazy_static! {
+    pub static ref CINEMETA_CATALOGS_URL: Url = Url::parse("https://cinemeta-catalogs.strem.io")
+        .expect("CINEMETA_URL parse failed");
+
+    /// Manifest URL for Cinemeta V3
     pub static ref CINEMETA_URL: Url = Url::parse("https://v3-cinemeta.strem.io/manifest.json")
         .expect("CINEMETA_URL parse failed");
     pub static ref API_URL: Url = Url::parse("https://api.strem.io").expect("API_URL parse failed");
