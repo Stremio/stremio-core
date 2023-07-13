@@ -59,9 +59,9 @@ pub enum Internal {
     LibraryChanged(bool),
     /// Dispatched when streams bucket changes with a flag if its already persisted.
     StreamsChanged(bool),
-    /// TODO: write some obvious comment about what it is
+    /// User notifications have changed
     NotificationsChanged,
-    /// TODO: write some obvious comment about what it is
+    /// Dismiss a Notification for a given Notification Id
     DismissNotificationItem(String),
     /// Result for loading link code.
     LinkCodeResult(Result<LinkCodeResponse, LinkError>),
