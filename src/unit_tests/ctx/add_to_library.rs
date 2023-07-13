@@ -8,6 +8,7 @@ use crate::types::notifications::NotificationsBucket;
 use crate::types::profile::{Auth, AuthKey, GDPRConsent, Profile, User};
 use crate::types::resource::{MetaItemBehaviorHints, MetaItemPreview, PosterShape};
 use crate::types::True;
+use crate::types::streams::StreamsBucket;
 use crate::unit_tests::{
     default_fetch_handler, Request, TestEnv, FETCH_HANDLER, NOW, REQUESTS, STORAGE,
 };
@@ -103,6 +104,7 @@ fn actionctx_addtolibrary() {
                     uid: Some("id".to_owned()),
                     ..Default::default()
                 },
+                StreamsBucket::default(),
                 NotificationsBucket::new::<TestEnv>(None, vec![]),
             ),
         },
@@ -237,6 +239,7 @@ fn actionctx_addtolibrary_already_added() {
                     .into_iter()
                     .collect(),
                 },
+                StreamsBucket::default(),
                 NotificationsBucket::new::<TestEnv>(None, vec![]),
             ),
         },

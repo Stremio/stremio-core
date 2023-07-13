@@ -7,6 +7,7 @@ use crate::types::library::{LibraryBucket, LibraryItem, LibraryItemState};
 use crate::types::notifications::NotificationsBucket;
 use crate::types::profile::{Auth, AuthKey, GDPRConsent, Profile, User};
 use crate::types::True;
+use crate::types::streams::StreamsBucket;
 use crate::unit_tests::{
     default_fetch_handler, Request, TestEnv, FETCH_HANDLER, NOW, REQUESTS, STORAGE,
 };
@@ -103,6 +104,7 @@ fn actionctx_rewindlibraryitem() {
                         .into_iter()
                         .collect(),
                 },
+                StreamsBucket::default(),
                 NotificationsBucket::new::<TestEnv>(None, vec![]),
             ),
         },
@@ -191,6 +193,7 @@ fn actionctx_rewindlibraryitem_not_added() {
                         .into_iter()
                         .collect(),
                 },
+                StreamsBucket::default(),
                 NotificationsBucket::new::<TestEnv>(None, vec![]),
             ),
         },

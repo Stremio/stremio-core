@@ -8,6 +8,7 @@ use crate::types::library::LibraryBucket;
 use crate::types::notifications::NotificationsBucket;
 use crate::types::profile::{Auth, AuthKey, GDPRConsent, Profile, User};
 use crate::types::True;
+use crate::types::streams::StreamsBucket;
 use crate::unit_tests::{
     default_fetch_handler, Request, TestEnv, FETCH_HANDLER, REQUESTS, STORAGE,
 };
@@ -52,6 +53,7 @@ fn actionctx_installaddon_install() {
                     ..Default::default()
                 },
                 LibraryBucket::default(),
+                StreamsBucket::default(),
                 NotificationsBucket::new::<TestEnv>(None, vec![]),
             ),
         },
@@ -155,6 +157,7 @@ fn actionctx_installaddon_install_with_user() {
                     ..Default::default()
                 },
                 LibraryBucket::default(),
+                StreamsBucket::default(),
                 NotificationsBucket::new::<TestEnv>(None, vec![]),
             ),
         },
@@ -275,6 +278,7 @@ fn actionctx_installaddon_update() {
                     ..Default::default()
                 },
                 LibraryBucket::default(),
+                StreamsBucket::default(),
                 NotificationsBucket::new::<TestEnv>(None, vec![]),
             ),
         },
@@ -349,6 +353,7 @@ fn actionctx_installaddon_already_installed() {
             ctx: Ctx::new(
                 profile,
                 LibraryBucket::default(),
+                StreamsBucket::default(),
                 NotificationsBucket::new::<TestEnv>(None, vec![]),
             ),
         },

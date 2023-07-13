@@ -7,6 +7,7 @@ use crate::types::library::{LibraryBucket, LibraryItem};
 use crate::types::notifications::NotificationsBucket;
 use crate::types::profile::{Auth, AuthKey, GDPRConsent, Profile, User};
 use crate::types::True;
+use crate::types::streams::StreamsBucket;
 use crate::unit_tests::{
     default_fetch_handler, Request, TestEnv, FETCH_HANDLER, REQUESTS, STORAGE,
 };
@@ -29,6 +30,7 @@ fn actionctx_synclibrarywithapi() {
     let ctx = Ctx::new(
         Profile::default(),
         LibraryBucket::default(),
+        StreamsBucket::default(),
         NotificationsBucket::new::<TestEnv>(None, vec![]),
     );
     let (runtime, _rx) = Runtime::<TestEnv, _>::new(TestModel { ctx }, vec![], 1000);
@@ -286,6 +288,7 @@ fn actionctx_synclibrarywithapi_with_user() {
                     .into_iter()
                     .collect(),
                 },
+                StreamsBucket::default(),
                 NotificationsBucket::new::<TestEnv>(None, vec![]),
             ),
         },
@@ -421,6 +424,7 @@ fn actionctx_synclibrarywithapi_with_user_empty_library() {
                     ..Default::default()
                 },
                 LibraryBucket::default(),
+                StreamsBucket::default(),
                 NotificationsBucket::new::<TestEnv>(None, vec![]),
             ),
         },

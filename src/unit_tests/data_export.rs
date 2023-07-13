@@ -8,6 +8,7 @@ use crate::types::library::LibraryBucket;
 use crate::types::notifications::NotificationsBucket;
 use crate::types::profile::Profile;
 use crate::types::profile::{Auth, AuthKey, User};
+use crate::types::streams::StreamsBucket;
 use crate::unit_tests::{
     default_fetch_handler, Request, TestEnv, EVENTS, FETCH_HANDLER, REQUESTS, STATES,
 };
@@ -51,6 +52,7 @@ fn data_export_with_user() {
     let mut ctx = Ctx::new(
         Profile::default(),
         LibraryBucket::default(),
+        StreamsBucket::default(),
         NotificationsBucket::new::<TestEnv>(None, vec![]),
     );
     ctx.profile.auth = Some(Auth {
@@ -130,6 +132,7 @@ fn data_export_without_a_user() {
     let ctx = Ctx::new(
         Profile::default(),
         LibraryBucket::default(),
+        StreamsBucket::default(),
         NotificationsBucket::new::<TestEnv>(None, vec![]),
     );
 

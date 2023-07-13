@@ -7,6 +7,7 @@ use crate::types::library::LibraryBucket;
 use crate::types::notifications::NotificationsBucket;
 use crate::types::profile::{Auth, AuthKey, GDPRConsent, Profile, User};
 use crate::types::True;
+use crate::types::streams::StreamsBucket;
 use crate::unit_tests::{default_fetch_handler, Request, TestEnv, FETCH_HANDLER, REQUESTS};
 use futures::future;
 use semver::Version;
@@ -48,6 +49,7 @@ fn actionctx_pushaddonstoapi() {
                     ..Default::default()
                 },
                 LibraryBucket::default(),
+                StreamsBucket::default(),
                 NotificationsBucket::new::<TestEnv>(None, vec![]),
             ),
         },
@@ -135,6 +137,7 @@ fn actionctx_pushaddonstoapi_with_user() {
                     ..Default::default()
                 },
                 LibraryBucket::default(),
+                StreamsBucket::default(),
                 NotificationsBucket::new::<TestEnv>(None, vec![]),
             ),
         },

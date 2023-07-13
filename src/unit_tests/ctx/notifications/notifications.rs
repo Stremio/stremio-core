@@ -5,6 +5,7 @@ use crate::types::addon::{Descriptor, ResourceResponse};
 use crate::types::library::{LibraryBucket, LibraryItem};
 use crate::types::notifications::{NotificationItem, NotificationsBucket};
 use crate::types::profile::Profile;
+use crate::types::streams::StreamsBucket;
 use crate::unit_tests::{default_fetch_handler, Request, TestEnv, FETCH_HANDLER};
 use enclose::enclose;
 use futures::future;
@@ -28,7 +29,7 @@ struct TestData {
 fn notifications() {
     let tests = serde_json::from_slice::<Vec<TestData>>(DATA).unwrap();
     for test in tests {
-        #[derive(Model)]
+        #[derive(Model, Clone, Debug)]
         #[model(TestEnv)]
         struct TestModel {
             ctx: Ctx,
@@ -50,6 +51,7 @@ fn notifications() {
                         ..Default::default()
                     },
                     LibraryBucket::new(None, test.library_items),
+                    StreamsBucket::default(),
                     NotificationsBucket::new::<TestEnv>(None, test.notification_items),
                 ),
             },

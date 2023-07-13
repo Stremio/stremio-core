@@ -7,6 +7,7 @@ use crate::types::api::{APIResult, LinkAuthKey, LinkCodeResponse, LinkDataRespon
 use crate::types::library::LibraryBucket;
 use crate::types::notifications::NotificationsBucket;
 use crate::types::profile::Profile;
+use crate::types::streams::StreamsBucket;
 use crate::unit_tests::{default_fetch_handler, Request, TestEnv, FETCH_HANDLER, REQUESTS};
 use futures::future;
 use std::any::Any;
@@ -59,6 +60,7 @@ fn create_link_code() {
         ctx: Ctx::new(
             Profile::default(),
             LibraryBucket::default(),
+            StreamsBucket::default(),
             NotificationsBucket::new::<TestEnv>(None, vec![]),
         ),
         link: Link::default(),

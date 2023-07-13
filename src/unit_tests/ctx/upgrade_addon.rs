@@ -6,6 +6,7 @@ use crate::types::addon::{Descriptor, Manifest};
 use crate::types::library::LibraryBucket;
 use crate::types::notifications::NotificationsBucket;
 use crate::types::profile::Profile;
+use crate::types::streams::StreamsBucket;
 use crate::unit_tests::{TestEnv, REQUESTS, STORAGE};
 use semver::Version;
 use stremio_derive::Model;
@@ -84,6 +85,7 @@ fn actionctx_addon_upgrade() {
                     ..Default::default()
                 },
                 LibraryBucket::default(),
+                StreamsBucket::default(),
                 NotificationsBucket::new::<TestEnv>(None, vec![]),
             ),
         },
@@ -173,6 +175,7 @@ fn actionctx_addon_upgrade_fail_due_to_different_url() {
                     ..Default::default()
                 },
                 LibraryBucket::default(),
+                StreamsBucket::default(),
                 NotificationsBucket::new::<TestEnv>(None, vec![]),
             ),
         },

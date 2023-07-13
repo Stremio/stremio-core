@@ -1,9 +1,6 @@
 use crate::constants::LIBRARY_COLLECTION_NAME;
 use crate::models::common::{DescriptorLoadable, ResourceLoadable};
-use crate::models::ctx::{
-    update_library, update_notifications, update_profile, update_trakt_addon, CtxError,
-};
-use crate::models::ctx::{update_library, update_profile, update_streams, CtxError, OtherError};
+use crate::models::ctx::{update_library, update_profile, update_trakt_addon,update_notifications, update_streams, CtxError};
 use crate::runtime::msg::{Action, ActionCtx, Event, Internal, Msg};
 use crate::runtime::{Effect, EffectFuture, Effects, Env, EnvFutureExt, Update};
 use crate::types::api::{

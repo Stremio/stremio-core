@@ -13,6 +13,7 @@ use crate::types::profile::Profile;
 use crate::types::resource::{
     MetaItem, MetaItemPreview, PosterShape, SeriesInfo, Stream, StreamSource, Video,
 };
+use crate::types::streams::StreamsBucket;
 use crate::unit_tests::{default_fetch_handler, Request, TestEnv, FETCH_HANDLER, REQUESTS};
 use chrono::TimeZone;
 use chrono::Utc;
@@ -24,7 +25,7 @@ use url::Url;
 
 #[test]
 fn pull_notifications() {
-    #[derive(Model)]
+    #[derive(Model, Clone, Debug)]
     #[model(TestEnv)]
     struct TestModel {
         ctx: Ctx,
@@ -197,6 +198,7 @@ fn pull_notifications() {
                         behavior_hints: Default::default(),
                     }],
                 ),
+                StreamsBucket::default(),
                 NotificationsBucket::new::<TestEnv>(None, vec![]),
             ),
             player: Default::default(),
