@@ -122,10 +122,22 @@ pub enum ActionLoad {
     InstalledAddonsWithFilters(InstalledAddonsWithFiltersSelected),
     LibraryWithFilters(LibraryWithFiltersSelected),
     LibraryByType(LibraryByTypeSelected),
+    /// Loads the data required for Local search
+    LocalSearch,
     MetaDetails(MetaDetailsSelected),
     Player(Box<PlayerSelected>),
     Link,
     Notifications,
+}
+
+#[derive(Clone, Deserialize, Debug)]
+#[serde(tag = "action", content = "args", rename_all = "camelCase")]
+pub enum ActionSearch {
+    /// Request for Search queries
+    Search {
+        search_query: String,
+        max_results: usize,
+    },
 }
 
 /// Action messages
@@ -144,5 +156,6 @@ pub enum Action {
     StreamingServer(ActionStreamingServer),
     Player(ActionPlayer),
     Load(ActionLoad),
+    Search(ActionSearch),
     Unload,
 }

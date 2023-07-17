@@ -1,5 +1,6 @@
 use crate::models::ctx::CtxError;
 use crate::models::link::LinkError;
+use crate::models::local_search::Searchable;
 use crate::models::streaming_server::{
     PlaybackDevice, Settings as StreamingServerSettings, StatisticsRequest,
 };
@@ -89,4 +90,6 @@ pub enum Internal {
     NotificationsRequestResult(ResourceRequest, Box<Result<ResourceResponse, EnvError>>),
     /// Result for requesting a `dataExport` of user data.
     DataExportResult(AuthKey, Result<DataExportResponse, CtxError>),
+    /// The result of querying the data for LocalSearch
+    LoadLocalSearchResult(Url, Result<Vec<Searchable>, EnvError>),
 }
