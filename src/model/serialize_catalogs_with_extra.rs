@@ -1,5 +1,6 @@
 use crate::model::deep_links_ext::DeepLinksExt;
 use inflector::Inflector;
+use itertools::Itertools;
 use serde::Serialize;
 use stremio_core::deep_links::{DiscoverDeepLinks, MetaItemDeepLinks};
 use stremio_core::models::catalogs_with_extra::{CatalogsWithExtra, Selected};
@@ -9,6 +10,7 @@ use stremio_core::types::resource::PosterShape;
 use wasm_bindgen::JsValue;
 
 mod model {
+
     use super::*;
     #[derive(Serialize)]
     #[serde(rename_all = "camelCase")]
@@ -78,6 +80,7 @@ pub fn serialize_catalogs_with_extra(
                             Some(Loadable::Ready(
                                 meta_items
                                     .iter()
+                                    .unique_by(|meta_item| &meta_item.id)
                                     .take(10)
                                     .map(|meta_item| model::MetaItemPreview {
                                         meta_item,

@@ -1,6 +1,9 @@
-use crate::model::deep_links_ext::DeepLinksExt;
 use boolinator::Boolinator;
+use itertools::Itertools;
+
 use serde::Serialize;
+use wasm_bindgen::JsValue;
+
 use stremio_core::deep_links::{DiscoverDeepLinks, MetaItemDeepLinks, StreamDeepLinks};
 use stremio_core::models::catalog_with_filters::{
     CatalogWithFilters, Selected as CatalogWithFiltersSelected,
@@ -9,7 +12,8 @@ use stremio_core::models::common::Loadable;
 use stremio_core::models::ctx::Ctx;
 use stremio_core::models::streaming_server::StreamingServer;
 use stremio_core::types::resource::MetaItemPreview;
-use wasm_bindgen::JsValue;
+
+use crate::model::deep_links_ext::DeepLinksExt;
 
 mod model {
     use super::*;
@@ -200,6 +204,9 @@ pub fn serialize_discover(
                                     .into_web_deep_links(),
                                 })
                             })
+                            // it is possible that they are duplicates returned in 2 different pages
+                            // so we deduplicate all the results at once
+                            .unique_by(|meta| &meta.meta_item.id)
                             .collect::<Vec<_>>(),
                     ),
                     Some(Loadable::Loading) | None => Loadable::Loading,
