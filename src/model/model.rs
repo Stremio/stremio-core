@@ -19,6 +19,7 @@ use stremio_core::runtime::Effects;
 use stremio_core::types::addon::DescriptorPreview;
 use stremio_core::types::api::LinkAuthKey;
 use stremio_core::types::library::LibraryBucket;
+use stremio_core::types::notifications::NotificationsBucket;
 use stremio_core::types::profile::Profile;
 use stremio_core::types::resource::MetaItemPreview;
 use stremio_core::types::streams::StreamsBucket;
@@ -71,6 +72,7 @@ impl WebModel {
         let (installed_addons, installed_addons_effects) =
             InstalledAddonsWithFilters::new(&profile);
         let (streaming_server, streaming_server_effects) = StreamingServer::new::<WebEnv>(&profile);
+        let uid = profile.uid();
         let model = WebModel {
             ctx: Ctx::new(
                 profile,
