@@ -64,7 +64,7 @@ fn notifications() {
                 action: Action::Ctx(ActionCtx::PullNotifications),
             })
         });
-        
+
         pretty_assertions::assert_eq!(
             runtime.model().unwrap().ctx.notifications.items,
             test.result,
