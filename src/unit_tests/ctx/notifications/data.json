@@ -1,7 +1,7 @@
 [
     {
         "network_requests": {
-            "https://example.com/catalog/series/lastVideosIds/lastVideosIds=tt1.json": {
+            "https://addon_1.com/catalog/series/lastVideosIds/lastVideosIds=tt1.json": {
                 "metasDetailed": [
                     {
                         "id": "tt1",
@@ -64,7 +64,7 @@
                         }
                     ]
                 },
-                "transportUrl": "https://example.com/manifest.json"
+                "transportUrl": "https://addon_1.com/manifest.json"
             }
         ],
         "library_items": [
@@ -79,7 +79,7 @@
                 "state": {
                     "timeWatched": 1000,
                     "overallTimeWatched": 900001,
-                    "lastWatched": "2020-01-01T00:00:00.000Z",
+                    "lastWatched": "2020-01-01T10:00:00.000Z",
                     "timesWatched": 5,
                     "flaggedWatched": 1,
                     "timeOffset": 100,
@@ -91,16 +91,29 @@
             }
         ],
         "notification_items": [],
-        "result": [
-            {
-                "id": "tt1",
-                "video": {
-                    "id": "tt1:1:6",
-                    "season": 1,
-                    "episode": 6,
-                    "released": "2020-01-05T00:00:00.000Z"
+        "result": {
+            "tt1": {
+                "tt1:1:6": {
+                    "meta_id": "tt1",
+                    "video_id": "tt1:1:6",
+                    "video": {
+                        "id": "tt1:1:6",
+                        "season": 1,
+                        "episode": 6,
+                        "released": "2020-01-05T00:00:00.000Z"
+                    }
+                },
+                "tt1:1:7": {
+                    "meta_id": "tt1",
+                    "video_id": "tt1:1:7",
+                    "video": {
+                        "id": "tt1:1:7",
+                        "season": 1,
+                        "episode": 7,
+                        "released": "2020-01-15T00:00:00.000Z"
+                    }
                 }
             }
-        ]
+        }
     }
 ]

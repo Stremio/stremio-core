@@ -3,7 +3,7 @@ use crate::runtime::msg::{Action, ActionCtx};
 use crate::runtime::{EnvFutureExt, Runtime, RuntimeAction, TryEnvFuture};
 use crate::types::addon::{Descriptor, ResourceResponse};
 use crate::types::library::{LibraryBucket, LibraryItem};
-use crate::types::notifications::{NotificationItem, NotificationsBucket};
+use crate::types::notifications::{MetaItemId, NotificationItem, NotificationsBucket, VideoId};
 use crate::types::profile::Profile;
 use crate::types::streams::StreamsBucket;
 use crate::unit_tests::{default_fetch_handler, Request, TestEnv, FETCH_HANDLER};
@@ -22,7 +22,7 @@ struct TestData {
     addons: Vec<Descriptor>,
     library_items: Vec<LibraryItem>,
     notification_items: Vec<NotificationItem>,
-    result: Vec<NotificationItem>,
+    result: HashMap<MetaItemId, HashMap<VideoId, NotificationItem>>,
 }
 
 #[test]
@@ -64,16 +64,10 @@ fn notifications() {
                 action: Action::Ctx(ActionCtx::PullNotifications),
             })
         });
-        assert_eq!(
-            runtime
-                .model()
-                .unwrap()
-                .ctx
-                .notifications
-                .items
-                .values()
-                .collect::<Vec<_>>(),
-            test.result.iter().collect::<Vec<_>>(),
+        
+        pretty_assertions::assert_eq!(
+            runtime.model().unwrap().ctx.notifications.items,
+            test.result,
             "Notifications items match"
         );
     }

@@ -76,3 +76,4 @@ tokio = { version = "1.12", features = ["rt", "macros"] }
 tokio-current-thread = "=0.2.0-alpha.1"
 serde_test = "1.0"
 assert_matches = "1.5"
+pretty_assertions = "1"

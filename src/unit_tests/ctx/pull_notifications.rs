@@ -18,6 +18,7 @@ use crate::unit_tests::{default_fetch_handler, Request, TestEnv, FETCH_HANDLER, 
 use chrono::TimeZone;
 use chrono::Utc;
 use futures::future;
+use once_cell::sync::Lazy;
 use semver::Version;
 use std::any::Any;
 use stremio_derive::Model;
@@ -31,82 +32,114 @@ fn pull_notifications() {
         ctx: Ctx,
         player: Player,
     }
-    fn fetch_handler(request: Request) -> TryEnvFuture<Box<dyn Any + Send>> {
-        let meta_item = MetaItem {
-            preview: MetaItemPreview {
-                id: "tt1".to_string(),
-                name: "name".to_string(),
-                r#type: "series".to_string(),
-                poster: None,
-                background: None,
-                logo: None,
-                description: None,
-                release_info: None,
-                runtime: None,
-                released: None,
-                poster_shape: PosterShape::default(),
-                links: vec![],
+
+    /// Addon 1 with lastVideosIds catalog
+    pub static ADDON_1: Lazy<Descriptor> = Lazy::new(|| Descriptor {
+        manifest: Manifest {
+            id: "addon_1".to_owned(),
+            version: Version::new(0, 0, 1),
+            name: "Addon 1".to_owned(),
+            contact_email: None,
+            description: None,
+            logo: None,
+            background: None,
+            types: vec![],
+            resources: vec![],
+            id_prefixes: Some(vec!["tt".to_owned()]),
+            catalogs: vec![ManifestCatalog {
+                id: "lastVideosIds".to_owned(),
+                r#type: "series".to_owned(),
+                name: None,
+                extra: ManifestExtra::Full {
+                    props: vec![LAST_VIDEOS_IDS_EXTRA_PROP.to_owned()],
+                },
+            }],
+            addon_catalogs: vec![],
+            behavior_hints: Default::default(),
+        },
+        transport_url: Url::parse("https://addon_1.com/manifest.json").unwrap(),
+        flags: Default::default(),
+    });
+
+    /// Meta item 1 with id `tt1` and 7 episodes from season 1
+    pub static META_ITEM_1: Lazy<MetaItem> = Lazy::new(|| MetaItem {
+        preview: MetaItemPreview {
+            id: "tt1".to_string(),
+            name: "name".to_string(),
+            r#type: "series".to_string(),
+            poster: None,
+            background: None,
+            logo: None,
+            description: None,
+            release_info: None,
+            runtime: None,
+            released: None,
+            poster_shape: PosterShape::default(),
+            links: vec![],
+            trailer_streams: vec![],
+            behavior_hints: Default::default(),
+        },
+        videos: vec![
+            Video {
+                id: "tt1:1:4".to_owned(),
+                title: "ep4".to_owned(),
+                released: Some(Utc.with_ymd_and_hms(2019, 12, 20, 0, 0, 0).unwrap()),
+                overview: None,
+                thumbnail: None,
+                streams: vec![],
+                series_info: Some(SeriesInfo {
+                    season: 1,
+                    episode: 4,
+                }),
                 trailer_streams: vec![],
-                behavior_hints: Default::default(),
             },
-            videos: vec![
-                Video {
-                    id: "tt1:1:4".to_owned(),
-                    title: "ep4".to_owned(),
-                    released: Some(Utc.with_ymd_and_hms(2019, 12, 20, 0, 0, 0).unwrap()),
-                    overview: None,
-                    thumbnail: None,
-                    streams: vec![],
-                    series_info: Some(SeriesInfo {
-                        season: 1,
-                        episode: 4,
-                    }),
-                    trailer_streams: vec![],
-                },
-                Video {
-                    id: "tt1:1:5".to_owned(),
-                    title: "ep5".to_owned(),
-                    released: Some(Utc.with_ymd_and_hms(2020, 1, 1, 0, 0, 0).unwrap()),
-                    overview: None,
-                    thumbnail: None,
-                    streams: vec![],
-                    series_info: Some(SeriesInfo {
-                        season: 1,
-                        episode: 5,
-                    }),
-                    trailer_streams: vec![],
-                },
-                Video {
-                    id: "tt1:1:6".to_owned(),
-                    title: "ep6".to_owned(),
-                    released: Some(Utc.with_ymd_and_hms(2020, 1, 5, 0, 0, 0).unwrap()),
-                    overview: None,
-                    thumbnail: None,
-                    streams: vec![],
-                    series_info: Some(SeriesInfo {
-                        season: 1,
-                        episode: 6,
-                    }),
-                    trailer_streams: vec![],
-                },
-                Video {
-                    id: "tt1:1:7".to_owned(),
-                    title: "ep7".to_owned(),
-                    released: Some(Utc.with_ymd_and_hms(2020, 1, 15, 0, 0, 0).unwrap()),
-                    overview: None,
-                    thumbnail: None,
-                    streams: vec![],
-                    series_info: Some(SeriesInfo {
-                        season: 1,
-                        episode: 7,
-                    }),
-                    trailer_streams: vec![],
-                },
-            ],
-        };
+            Video {
+                id: "tt1:1:5".to_owned(),
+                title: "ep5".to_owned(),
+                released: Some(Utc.with_ymd_and_hms(2020, 1, 1, 0, 0, 0).unwrap()),
+                overview: None,
+                thumbnail: None,
+                streams: vec![],
+                series_info: Some(SeriesInfo {
+                    season: 1,
+                    episode: 5,
+                }),
+                trailer_streams: vec![],
+            },
+            Video {
+                id: "tt1:1:6".to_owned(),
+                title: "ep6".to_owned(),
+                released: Some(Utc.with_ymd_and_hms(2020, 1, 5, 0, 0, 0).unwrap()),
+                overview: None,
+                thumbnail: None,
+                streams: vec![],
+                series_info: Some(SeriesInfo {
+                    season: 1,
+                    episode: 6,
+                }),
+                trailer_streams: vec![],
+            },
+            Video {
+                id: "tt1:1:7".to_owned(),
+                title: "ep7".to_owned(),
+                released: Some(Utc.with_ymd_and_hms(2020, 1, 15, 0, 0, 0).unwrap()),
+                overview: None,
+                thumbnail: None,
+                streams: vec![],
+                series_info: Some(SeriesInfo {
+                    season: 1,
+                    episode: 7,
+                }),
+                trailer_streams: vec![],
+            },
+        ],
+    });
+
+    fn fetch_handler(request: Request) -> TryEnvFuture<Box<dyn Any + Send>> {
+        let meta_item = META_ITEM_1.clone();
         match request {
             Request { url, method, .. }
-                if url == "https://example.com/catalog/series/lastVideosIds/lastVideosIds=tt1.json"
+                if url == "https://addon_1.com/catalog/series/lastVideosIds/lastVideosIds=tt1.json"
                     && method == "GET" =>
             {
                 future::ok(Box::new(ResourceResponse::MetasDetailed {
@@ -115,7 +148,7 @@ fn pull_notifications() {
                 .boxed_env()
             }
             Request { url, method, .. }
-                if url == "https://example.com/meta/series/tt1.json" && method == "GET" =>
+                if url == "https://addon_1.com/meta/series/tt1.json" && method == "GET" =>
             {
                 future::ok(
                     Box::new(ResourceResponse::Meta { meta: meta_item }) as Box<dyn Any + Send>
@@ -123,7 +156,7 @@ fn pull_notifications() {
                 .boxed_env()
             }
             Request { url, method, .. }
-                if url == "https://example.com/stream/series/tt1%3A1%3A7.json"
+                if url == "https://addon_1.com/stream/series/tt1%3A1%3A7.json"
                     && method == "GET" =>
             {
                 future::ok(
@@ -140,32 +173,7 @@ fn pull_notifications() {
         TestModel {
             ctx: Ctx::new(
                 Profile {
-                    addons: vec![Descriptor {
-                        manifest: Manifest {
-                            id: "id".to_owned(),
-                            version: Version::new(0, 0, 1),
-                            name: "name".to_owned(),
-                            contact_email: None,
-                            description: None,
-                            logo: None,
-                            background: None,
-                            types: vec![],
-                            resources: vec![],
-                            id_prefixes: Some(vec!["tt".to_owned()]),
-                            catalogs: vec![ManifestCatalog {
-                                id: "lastVideosIds".to_owned(),
-                                r#type: "series".to_owned(),
-                                name: None,
-                                extra: ManifestExtra::Full {
-                                    props: vec![LAST_VIDEOS_IDS_EXTRA_PROP.to_owned()],
-                                },
-                            }],
-                            addon_catalogs: vec![],
-                            behavior_hints: Default::default(),
-                        },
-                        transport_url: Url::parse("https://example.com/manifest.json").unwrap(),
-                        flags: Default::default(),
-                    }],
+                    addons: vec![ADDON_1.clone()],
                     ..Default::default()
                 },
                 LibraryBucket::new(
@@ -184,7 +192,8 @@ fn pull_notifications() {
                             watched: None,
                             time_watched: 1000,
                             overall_time_watched: 15 * 60 * 1000 + 1,
-                            last_watched: Some(TestEnv::now()),
+                            // Episode 5 is released on this date and we've watched it the later that day
+                            last_watched: Some(Utc.with_ymd_and_hms(2020, 1, 1, 20, 0, 0).unwrap()),
                             times_watched: 5,
                             flagged_watched: 1,
                             time_offset: 100,
@@ -217,25 +226,35 @@ fn pull_notifications() {
         1,
         "One request has been sent"
     );
+
     assert_eq!(
         runtime.model().unwrap().ctx.notifications.items.len(),
         1,
-        "There is one notification item in memory"
+        "1 MetaItem should be in the notifications bucket"
     );
-    assert_eq!(
-        runtime
-            .model()
-            .unwrap()
-            .ctx
-            .notifications
-            .items
-            .get("tt1")
-            .unwrap()
-            .video
-            .id,
-        "tt1:1:6",
-        "There is one notification item in memory"
+
+    let meta_notifs = runtime
+        .model()
+        .unwrap()
+        .ctx
+        .notifications
+        .items
+        .get("tt1")
+        .expect("Should have new notifications for this MetaItem")
+        .clone();
+
+    assert_eq!(2, meta_notifs.len(), "Should have 2 video notifications");
+    assert!(
+        meta_notifs.get("tt1:1:6").is_some(),
+        "Should have notification for tt1:1:6"
     );
+    assert!(
+        meta_notifs.get("tt1:1:7").is_some(),
+        "Should have notification for tt1:1:7"
+    );
+    // Start watching episode 6
+    // This should dismiss all notifications for this MetaItem Id.
+    // libraryItem.state.lastWatched dismisses any unwatched episode notifications
     TestEnv::run(|| {
         runtime.dispatch(RuntimeAction {
             field: None,
@@ -251,7 +270,7 @@ fn pull_notifications() {
                     behavior_hints: Default::default(),
                 },
                 meta_request: Some(ResourceRequest {
-                    base: Url::parse("https://example.com/manifest.json").unwrap(),
+                    base: Url::parse("https://addon_1.com/manifest.json").unwrap(),
                     path: ResourcePath {
                         id: "tt1".to_owned(),
                         resource: "meta".to_owned(),
@@ -260,7 +279,7 @@ fn pull_notifications() {
                     },
                 }),
                 stream_request: Some(ResourceRequest {
-                    base: Url::parse("https://example.com/manifest.json").unwrap(),
+                    base: Url::parse("https://addon_1.com/manifest.json").unwrap(),
                     path: ResourcePath {
                         resource: "stream".to_owned(),
                         r#type: "series".to_owned(),
@@ -281,10 +300,17 @@ fn pull_notifications() {
             }),
         });
     });
-    assert_eq!(
-        runtime.model().unwrap().ctx.notifications.items.len(),
-        0,
-        "There are no notification items in memory"
+
+    assert!(
+        runtime
+            .model()
+            .unwrap()
+            .ctx
+            .notifications
+            .items
+            .get("tt1")
+            .is_none(),
+        "All notifications for this MetaItem should be now dismissed"
     );
     TestEnv::run(|| {
         runtime.dispatch(RuntimeAction {
@@ -292,9 +318,10 @@ fn pull_notifications() {
             action: Action::Ctx(ActionCtx::PullNotifications),
         })
     });
+
     assert_eq!(
         runtime.model().unwrap().ctx.notifications.items.len(),
         0,
-        "There is one notification item in memory"
+        "MetaItem Id should be removed because it doesn't have any notifications anymore"
     );
 }
