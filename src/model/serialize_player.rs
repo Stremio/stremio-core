@@ -109,8 +109,12 @@ pub fn serialize_player(player: &Player, ctx: &Ctx, streaming_server: &Streaming
         selected: player.selected.as_ref().map(|selected| model::Selected {
             stream: model::Stream {
                 stream: &selected.stream,
-                deep_links: StreamDeepLinks::from((&selected.stream, &streaming_server_url))
-                    .into_web_deep_links(),
+                deep_links: StreamDeepLinks::from((
+                    &selected.stream,
+                    &streaming_server_url,
+                    &ctx.profile.settings,
+                ))
+                .into_web_deep_links(),
             },
             stream_request: &selected.stream_request,
             meta_request: &selected.meta_request,
@@ -143,6 +147,7 @@ pub fn serialize_player(player: &Player, ctx: &Ctx, streaming_server: &Streaming
                                     video,
                                     request,
                                     &streaming_server_url,
+                                    &ctx.profile.settings,
                                 ))
                                 .into_web_deep_links(),
                             })
@@ -217,8 +222,13 @@ pub fn serialize_player(player: &Player, ctx: &Ctx, streaming_server: &Streaming
                         _ => None,
                     })
                     .unwrap_or_default(),
-                deep_links: VideoDeepLinks::from((video, request, &streaming_server_url))
-                    .into_web_deep_links(),
+                deep_links: VideoDeepLinks::from((
+                    video,
+                    request,
+                    &streaming_server_url,
+                    &ctx.profile.settings,
+                ))
+                .into_web_deep_links(),
             }),
         series_info: player.series_info.as_ref(),
         library_item: player

@@ -1,6 +1,6 @@
 [package]
 name = "stremio-core-web"
-version = "0.44.14"
+version = "0.44.18"
 authors = ["Smart Code OOD"]
 edition = "2021"
 
@@ -25,7 +25,7 @@ http = "0.2.*"
 url = { version = "2.2.*", features = ["serde"] }
 chrono = "0.4.*"
 semver = { version = "1", features = ["serde"] }
-regex = "1.6.*"
+regex = "1.8"
 hex = "0.4.*"
 either = "1.6.*"
 lazy_static = "1.4.*"
@@ -55,7 +55,6 @@ serde_path_to_error = "0.1.*"
 # Tracing
 tracing = "0.1"
 tracing-wasm = "0.2"
-tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 
 # A way to quickly test with local version of `core` crates
 # [patch.'https://github.com/Stremio/stremio-core']
