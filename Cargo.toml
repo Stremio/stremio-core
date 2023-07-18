@@ -15,9 +15,9 @@ opt-level = 's'
 # stremio-core = { git = "https://github.com/Stremio/stremio-core", branch = "development" }
 # stremio-derive = { git = "https://github.com/Stremio/stremio-core", branch = "development" }
 # stremio-analytics = { git = "https://github.com/Stremio/stremio-core", branch = "development" }
-stremio-core = { git = "https://github.com/Stremio/stremio-core", branch = "notifications-bucket-part-2" }
-stremio-derive = { git = "https://github.com/Stremio/stremio-core", branch = "notifications-bucket-part-2" }
-stremio-analytics = { git = "https://github.com/Stremio/stremio-core", branch = "notifications-bucket-part-2" }
+stremio-core = { git = "https://github.com/Stremio/stremio-core", branch = "continue-watching-part-2" }
+stremio-derive = { git = "https://github.com/Stremio/stremio-core", branch = "continue-watching-part-2" }
+stremio-analytics = { git = "https://github.com/Stremio/stremio-core", branch = "continue-watching-part-2" }
 serde = { version = "1.0.*", features = ["derive"] }
 serde_json = "1.0.*"
 futures = "0.3.*"
