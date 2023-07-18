@@ -61,8 +61,11 @@ impl WebModel {
         library: LibraryBucket,
         streams: StreamsBucket,
     ) -> (WebModel, Effects) {
+        let uid = profile.uid();
+
+        let notifications = NotificationsBucket::new::<WebEnv>(uid, vec![]);
         let (continue_watching_preview, continue_watching_preview_effects) =
-            ContinueWatchingPreview::new(&library);
+            ContinueWatchingPreview::new(&library, &notifications);
         let (discover, discover_effects) = CatalogWithFilters::<MetaItemPreview>::new(&profile);
         let (library_, library_effects) = LibraryWithFilters::<NotRemovedFilter>::new(&library);
         let (continue_watching, continue_watching_effects) =
@@ -72,14 +75,8 @@ impl WebModel {
         let (installed_addons, installed_addons_effects) =
             InstalledAddonsWithFilters::new(&profile);
         let (streaming_server, streaming_server_effects) = StreamingServer::new::<WebEnv>(&profile);
-        let uid = profile.uid();
         let model = WebModel {
-            ctx: Ctx::new(
-                profile,
-                library,
-                streams,
-                NotificationsBucket::new::<WebEnv>(uid, vec![]),
-            ),
+            ctx: Ctx::new(profile, library, streams, notifications),
             auth_link: Default::default(),
             data_export: Default::default(),
             continue_watching_preview,
