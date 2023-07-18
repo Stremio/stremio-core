@@ -64,7 +64,7 @@ fn library_items_update(
                         .filter_map(|notification| notification.video.released)
                         .sorted_by(|a_released, b_released| {
                             // order by the oldest video released!
-                            b_released.cmp(&a_released).reverse()
+                            b_released.cmp(a_released).reverse()
                         })
                         .next()
                 })
@@ -80,7 +80,7 @@ fn library_items_update(
                         .filter_map(|notification| notification.video.released)
                         .sorted_by(|a_released, b_released| {
                             // order by the oldest video released!
-                            b_released.cmp(&a_released).reverse()
+                            b_released.cmp(a_released).reverse()
                         })
                         .next()
                 })

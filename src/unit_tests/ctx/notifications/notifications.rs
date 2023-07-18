@@ -14,7 +14,7 @@ use std::any::Any;
 use std::collections::HashMap;
 use stremio_derive::Model;
 
-pub const DATA: &'static [u8] = include_bytes!("./data.json");
+pub const DATA: &[u8] = include_bytes!("./data.json");
 
 #[derive(Deserialize)]
 struct TestData {
