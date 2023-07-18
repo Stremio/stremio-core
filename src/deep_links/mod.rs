@@ -185,6 +185,12 @@ impl From<&ResourcePath> for MetaItemDeepLinks {
     }
 }
 
+impl From<(MetaItemPreview, &ResourceRequest)> for MetaItemDeepLinks {
+    fn from((item, request): (MetaItemPreview, &ResourceRequest)) -> Self {
+        Self::from((&item, request))
+    }
+}
+
 impl From<(&MetaItemPreview, &ResourceRequest)> for MetaItemDeepLinks {
     fn from((item, request): (&MetaItemPreview, &ResourceRequest)) -> Self {
         MetaItemDeepLinks {

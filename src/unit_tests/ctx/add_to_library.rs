@@ -18,7 +18,7 @@ use url::Url;
 
 #[test]
 fn actionctx_addtolibrary() {
-    #[derive(Model, Default)]
+    #[derive(Model, Clone, Default)]
     #[model(TestEnv)]
     struct TestModel {
         ctx: Ctx,
@@ -159,7 +159,7 @@ fn actionctx_addtolibrary() {
 
 #[test]
 fn actionctx_addtolibrary_already_added() {
-    #[derive(Model, Default)]
+    #[derive(Model, Clone, Default)]
     #[model(TestEnv)]
     struct TestModel {
         ctx: Ctx,

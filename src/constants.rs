@@ -11,8 +11,10 @@ pub const LIBRARY_RECENT_STORAGE_KEY: &str = "library_recent";
 pub const STREAMS_STORAGE_KEY: &str = "streams";
 pub const LIBRARY_COLLECTION_NAME: &str = "libraryItem";
 pub const SEARCH_EXTRA_NAME: &str = "search";
+/// `https://{ADDON_UR}/meta/...` resource
 pub const META_RESOURCE_NAME: &str = "meta";
 pub const STREAM_RESOURCE_NAME: &str = "stream";
+/// `https://{ADDON_URL}/catalog/...` resource
 pub const CATALOG_RESOURCE_NAME: &str = "catalog";
 pub const SUBTITLES_RESOURCE_NAME: &str = "subtitles";
 pub const ADDON_MANIFEST_PATH: &str = "/manifest.json";
@@ -20,12 +22,18 @@ pub const ADDON_LEGACY_PATH: &str = "/stremio/v1";
 pub const CATALOG_PAGE_SIZE: usize = 100;
 pub const CATALOG_PREVIEW_SIZE: usize = 100;
 pub const LIBRARY_RECENT_COUNT: usize = 200;
+
+/// A `LibraryItem` is considered watched once we've watched more than the `duration * threshold`:
+///
+/// `LibraryItem.state.time_watched` > `LibraryItem.state.duration` * [`WATCHED_THRESHOLD_COEF`]
 pub const WATCHED_THRESHOLD_COEF: f64 = 0.7;
 pub const CREDITS_THRESHOLD_COEF: f64 = 0.9;
 pub const SCHEMA_VERSION: u32 = 7;
 pub const IMDB_LINK_CATEGORY: &str = "imdb";
 pub const GENRES_LINK_CATEGORY: &str = "Genres";
 pub const CINEMETA_TOP_CATALOG_ID: &str = "top";
+/// Only found in Cinemeta catalogs, i.e. [`CINEMETA_CATALOGS_URL`]
+pub const CINEMETA_FEED_CATALOG_ID: &str = "feed.json";
 pub const IMDB_TITLE_PATH: &str = "title";
 pub const YOUTUBE_ADDON_ID_PREFIX: &str = "yt_id:";
 pub const URI_COMPONENT_ENCODE_SET: &AsciiSet = &NON_ALPHANUMERIC
@@ -43,6 +51,10 @@ pub static BASE64: base64::engine::general_purpose::GeneralPurpose =
     base64::engine::general_purpose::STANDARD;
 
 lazy_static! {
+    pub static ref CINEMETA_CATALOGS_URL: Url = Url::parse("https://cinemeta-catalogs.strem.io")
+        .expect("CINEMETA_URL parse failed");
+
+    /// Manifest URL for Cinemeta V3
     pub static ref CINEMETA_URL: Url = Url::parse("https://v3-cinemeta.strem.io/manifest.json")
         .expect("CINEMETA_URL parse failed");
     pub static ref API_URL: Url = Url::parse("https://api.strem.io").expect("API_URL parse failed");

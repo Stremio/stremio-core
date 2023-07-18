@@ -23,7 +23,7 @@ pub type CatalogPage<T> = ResourceLoadable<Vec<T>>;
 
 pub type Catalog<T> = Vec<CatalogPage<T>>;
 
-#[derive(Default, Serialize, Debug)]
+#[derive(Default, Clone, Serialize, Debug)]
 pub struct CatalogsWithExtra {
     pub selected: Option<Selected>,
     pub catalogs: Vec<Catalog<MetaItemPreview>>,

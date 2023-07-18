@@ -71,7 +71,7 @@ pub struct Selected {
     pub video_params: Option<VideoParams>,
 }
 
-#[derive(Default, Derivative, Serialize, Debug)]
+#[derive(Default, Clone, Derivative, Serialize, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct Player {
     pub selected: Option<Selected>,

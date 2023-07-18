@@ -13,7 +13,7 @@ pub struct Selected {
     pub transport_url: Url,
 }
 
-#[derive(Default, Serialize)]
+#[derive(Default, Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct AddonDetails {
     pub selected: Option<Selected>,
