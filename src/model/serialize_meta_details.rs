@@ -256,7 +256,7 @@ pub fn serialize_meta_details(
                                             .ok()
                                             .filter(|encoded_stream| {
                                                 Some(encoded_stream.to_owned())
-                                                    == library_item.state.stream_id
+                                                    == library_item.state.stream
                                             })
                                             .map(|_| library_item.progress())
                                     }),
