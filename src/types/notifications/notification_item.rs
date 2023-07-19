@@ -1,8 +1,9 @@
-use crate::types::resource::Video;
 use serde::{Deserialize, Serialize};
 
-pub type MetaItemId = String;
-pub type VideoId = String;
+use crate::types::{
+    resource::MetaItemId,
+    resource::{Video, VideoId},
+};
 
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct NotificationItem {
