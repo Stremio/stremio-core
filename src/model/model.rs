@@ -27,11 +27,14 @@ use stremio_derive::Model;
 
 use wasm_bindgen::JsValue;
 
-use crate::env::WebEnv;
-use crate::model::{
-    serialize_catalogs_with_extra, serialize_continue_watching_preview, serialize_data_export,
-    serialize_discover, serialize_installed_addons, serialize_library, serialize_local_search,
-    serialize_meta_details, serialize_player, serialize_remote_addons, serialize_streaming_server,
+use crate::{
+    env::WebEnv,
+    model::{
+        serialize_catalogs_with_extra, serialize_continue_watching_preview, serialize_data_export,
+        serialize_discover, serialize_installed_addons, serialize_library, serialize_local_search,
+        serialize_meta_details, serialize_player, serialize_remote_addons,
+        serialize_streaming_server,
+    },
 };
 
 #[derive(Model, Clone)]
@@ -136,4 +139,3 @@ impl WebModel {
         }
     }
 }
-

@@ -3,7 +3,10 @@ use stremio_core::models::local_search::LocalSearch;
 use wasm_bindgen::JsValue;
 
 mod model {
-    use stremio_core::{models::{local_search::Searchable, common::Loadable}, runtime::EnvError};
+    use stremio_core::{
+        models::{common::Loadable, local_search::Searchable},
+        runtime::EnvError,
+    };
 
     use super::*;
     #[derive(Serialize)]
@@ -20,7 +23,7 @@ pub fn serialize_local_search(local_search: &LocalSearch) -> JsValue {
     JsValue::from_serde(&model::LocalSearch {
         current_records: local_search.current_records.to_owned(),
         search_results: local_search.search_results.to_owned(),
-        latest_records: local_search.latest_records.to_owned()
+        latest_records: local_search.latest_records.to_owned(),
     })
     .unwrap()
 }
