@@ -66,6 +66,7 @@ pub struct VideoParams {
 pub struct Selected {
     pub stream: Stream,
     pub stream_request: Option<ResourceRequest>,
+    /// A request to fetch the selected [`MetaItem`].
     pub meta_request: Option<ResourceRequest>,
     pub subtitles_path: Option<ResourcePath>,
     pub video_params: Option<VideoParams>,

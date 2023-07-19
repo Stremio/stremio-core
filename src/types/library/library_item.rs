@@ -1,12 +1,16 @@
-use crate::runtime::Env;
-use crate::types::resource::{MetaItemBehaviorHints, MetaItemPreview, PosterShape, Video};
+use std::marker::PhantomData;
+
 use chrono::{DateTime, Duration, Utc};
 use itertools::Itertools;
 use serde::{Deserialize, Serialize};
 use serde_with::{serde_as, DefaultOnError, DefaultOnNull, NoneAsEmptyString};
-use std::marker::PhantomData;
 use stremio_watched_bitfield::{WatchedBitField, WatchedField};
 use url::Url;
+
+use crate::{
+    runtime::Env,
+    types::resource::{MetaItemBehaviorHints, MetaItemPreview, PosterShape, Video},
+};
 
 #[serde_as]
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
