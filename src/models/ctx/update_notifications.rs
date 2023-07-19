@@ -29,6 +29,9 @@ pub fn update_notifications<E: Env + 'static>(
 ) -> Effects {
     match msg {
         Msg::Action(Action::Ctx(ActionCtx::PullNotifications)) => {
+            // Clear the notification catalogs in order to trigger a new request
+            *notification_catalogs = vec![];
+
             let library_item_ids = library
                 .items
                 .values()
@@ -38,6 +41,7 @@ pub fn update_notifications<E: Env + 'static>(
                 .map(|library_item| &library_item.id)
                 .cloned()
                 .collect::<Vec<_>>();
+
             let notification_catalogs_effects = resources_update_with_vector_content::<E, _>(
                 notification_catalogs,
                 ResourcesAction::ResourcesRequested {
@@ -51,6 +55,7 @@ pub fn update_notifications<E: Env + 'static>(
                     addons: &profile.addons,
                 },
             );
+
             notifications.created = E::now();
             let notification_items_effects = update_notification_items::<E>(
                 &mut notifications.items,
