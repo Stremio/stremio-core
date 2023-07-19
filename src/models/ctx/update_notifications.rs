@@ -4,20 +4,27 @@ use either::Either;
 use futures::FutureExt;
 use lazysort::SortedBy;
 
-use crate::constants::{
-    LAST_VIDEOS_IDS_EXTRA_PROP, NOTIFICATIONS_STORAGE_KEY, NOTIFICATION_ITEMS_COUNT,
+use crate::{
+    constants::{LAST_VIDEOS_IDS_EXTRA_PROP, NOTIFICATIONS_STORAGE_KEY, NOTIFICATION_ITEMS_COUNT},
+    models::{
+        common::{
+            eq_update, resources_update_with_vector_content, Loadable, ResourceLoadable,
+            ResourcesAction,
+        },
+        ctx::{CtxError, CtxStatus},
+    },
+    runtime::{
+        msg::{Action, ActionCtx, Event, Internal, Msg},
+        Effect, EffectFuture, Effects, Env, EnvFutureExt,
+    },
+    types::{
+        addon::{AggrRequest, ExtraValue},
+        library::LibraryBucket,
+        notifications::{NotificationItem, NotificationsBucket},
+        profile::Profile,
+        resource::{MetaItem, MetaItemId, VideoId},
+    },
 };
-use crate::models::common::{
-    eq_update, resources_update_with_vector_content, Loadable, ResourceLoadable, ResourcesAction,
-};
-use crate::models::ctx::{CtxError, CtxStatus};
-use crate::runtime::msg::{Action, ActionCtx, Event, Internal, Msg};
-use crate::runtime::{Effect, EffectFuture, Effects, Env, EnvFutureExt};
-use crate::types::addon::{AggrRequest, ExtraValue};
-use crate::types::library::LibraryBucket;
-use crate::types::notifications::{MetaItemId, NotificationItem, NotificationsBucket, VideoId};
-use crate::types::profile::Profile;
-use crate::types::resource::MetaItem;
 
 pub fn update_notifications<E: Env + 'static>(
     notifications: &mut NotificationsBucket,

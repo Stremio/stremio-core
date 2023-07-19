@@ -1,13 +1,17 @@
-use std::collections::hash_map::Entry;
-use std::collections::HashMap;
-
-use crate::runtime::Env;
-use crate::types::notifications::{MetaItemId, NotificationItem, VideoId};
-use crate::types::profile::UID;
+use std::collections::{hash_map::Entry, HashMap};
 
 use chrono::{DateTime, Utc};
 use derivative::Derivative;
 use serde::{Deserialize, Serialize};
+
+use crate::{
+    runtime::Env,
+    types::{
+        notifications::NotificationItem,
+        profile::UID,
+        resource::{MetaItemId, VideoId},
+    },
+};
 
 #[derive(Default, Derivative, Clone, PartialEq, Eq, Serialize, Deserialize, Debug)]
 pub struct NotificationsBucket {
