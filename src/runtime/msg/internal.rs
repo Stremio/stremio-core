@@ -10,10 +10,13 @@ use crate::types::api::{
     APIRequest, AuthRequest, DataExportResponse, DatastoreRequest, LinkCodeResponse,
     LinkDataResponse,
 };
-use crate::types::library::{LibraryBucket, LibraryItem};
 use crate::types::profile::{Auth, AuthKey, Profile, User};
 use crate::types::resource::Stream;
 use crate::types::streaming_server::Statistics;
+use crate::types::{
+    library::{LibraryBucket, LibraryItem},
+    resource::MetaItemId,
+};
 use url::Url;
 
 pub type CtxStorageResponse = (
@@ -62,8 +65,8 @@ pub enum Internal {
     StreamsChanged(bool),
     /// User notifications have changed
     NotificationsChanged,
-    /// Dismiss a Notification for a given MetaItem Id
-    DismissNotificationItem(String),
+    /// Dismiss all Notifications for a given [`MetaItemId`].
+    DismissNotificationItem(MetaItemId),
     /// Result for loading link code.
     LinkCodeResult(Result<LinkCodeResponse, LinkError>),
     /// Result for loading link data.
