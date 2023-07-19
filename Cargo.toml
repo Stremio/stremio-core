@@ -1,6 +1,6 @@
 [package]
 name = "stremio-core-web"
-version = "0.44.13"
+version = "0.44.19"
 authors = ["Smart Code OOD"]
 edition = "2021"
 
@@ -21,8 +21,8 @@ futures = "0.3.*"
 http = "0.2.*"
 url = { version = "2.2.*", features = ["serde"] }
 chrono = "0.4.*"
-semver = { version = "0.11.*", features = ["serde"] }
-regex = "1.6.*"
+semver = { version = "1", features = ["serde"] }
+regex = "1.8"
 hex = "0.4.*"
 either = "1.6.*"
 lazy_static = "1.4.*"
@@ -32,7 +32,10 @@ boolinator = "2.4.*"
 Inflector = "0.11.*"
 wasm-bindgen = { version = "=0.2.78", features = ["serde-serialize"] }
 wasm-bindgen-futures = "0.4.*"
+
+# panic hook for wasm
 console_error_panic_hook = "0.1.*"
+
 js-sys = "0.3.*"
 web-sys = { version = "0.3.*", features = [
     "WorkerGlobalScope",
@@ -45,6 +48,10 @@ web-sys = { version = "0.3.*", features = [
 getrandom = { version = "0.2.*", features = ["js"] }
 cfg-if = "1.0"
 serde_path_to_error = "0.1.*"
+
+# Tracing
+tracing = "0.1"
+tracing-wasm = "0.2"
 
 # A way to quickly test with local version of `core` crates
 # [patch.'https://github.com/Stremio/stremio-core']

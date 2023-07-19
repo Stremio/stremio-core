@@ -16,7 +16,7 @@ npm run build
 
 ## Publishing
 
-1. Update version to the next minor/major/patch version in `Cargo.toml` and `package.json`, e.g. from `0.44.13` to `0.44.14`.
+1. Update version to the next minor/major/patch version in Cargo (`Cargo.toml` and `Cargo.lock`) and npm (`package.json` and `package-lock.json`), e.g. from `0.44.13` to `0.44.14`.
 2. Commit the change with the new version as a message, e.g. `0.44.14`
 3. Wait for CI to build successfully
 4. Push a new tag starting with `v`, e.g. `git tag v0.44.14` `git push origin v0.44.14`
