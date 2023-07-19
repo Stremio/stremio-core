@@ -22,6 +22,11 @@ use std::borrow::Cow;
 use std::collections::HashMap;
 use url::Url;
 
+/// The [`MetaItem`] Id type to improve the readability of the code.
+///
+/// For example when using the id as key in a [`HashMap`].
+pub type MetaItemId = String;
+
 #[derive(Clone, PartialEq, Deserialize, Debug)]
 #[cfg_attr(test, derive(Default))]
 struct Trailer {
@@ -50,7 +55,7 @@ impl<'de> DeserializeAs<'de, Trailer> for Stream {
 #[cfg_attr(test, derive(Default))]
 #[serde(rename_all = "camelCase")]
 struct MetaItemPreviewLegacy {
-    id: String,
+    id: MetaItemId,
     r#type: String,
     #[serde(default)]
     name: String,
@@ -230,6 +235,11 @@ pub struct SeriesInfo {
     pub season: u32,
     pub episode: u32,
 }
+
+/// The [`Video`] Id type to improve the readability of the code.
+///
+/// For example when using the id as key in a [`HashMap`].
+pub type VideoId = String;
 
 #[serde_as]
 #[derive(Clone, PartialEq, Eq, Serialize, Deserialize, Debug)]
