@@ -1,14 +1,19 @@
-use crate::model::deep_links_ext::DeepLinksExt;
 use boolinator::Boolinator;
+use itertools::Itertools;
+
 use serde::Serialize;
+use wasm_bindgen::JsValue;
+
 use stremio_core::deep_links::{DiscoverDeepLinks, MetaItemDeepLinks, StreamDeepLinks};
 use stremio_core::models::catalog_with_filters::{
     CatalogWithFilters, Selected as CatalogWithFiltersSelected,
 };
 use stremio_core::models::common::Loadable;
 use stremio_core::models::ctx::Ctx;
+use stremio_core::models::streaming_server::StreamingServer;
 use stremio_core::types::resource::MetaItemPreview;
-use wasm_bindgen::JsValue;
+
+use crate::model::deep_links_ext::DeepLinksExt;
 
 mod model {
     use super::*;
@@ -91,7 +96,15 @@ mod model {
     }
 }
 
-pub fn serialize_discover(discover: &CatalogWithFilters<MetaItemPreview>, ctx: &Ctx) -> JsValue {
+pub fn serialize_discover(
+    discover: &CatalogWithFilters<MetaItemPreview>,
+    ctx: &Ctx,
+    streaming_server: &StreamingServer,
+) -> JsValue {
+    let streaming_server_url = match streaming_server.base_url.clone() {
+        Loadable::Ready(url) => Some(url),
+        _ => None,
+    };
     JsValue::from_serde(&model::CatalogWithFilters {
         selected: &discover.selected,
         selectable: model::Selectable {
@@ -170,8 +183,12 @@ pub fn serialize_discover(discover: &CatalogWithFilters<MetaItemPreview>, ctx: &
                                         .take(1)
                                         .map(|stream| model::Stream {
                                             stream,
-                                            deep_links: StreamDeepLinks::from(stream)
-                                                .into_web_deep_links(),
+                                            deep_links: StreamDeepLinks::from((
+                                                stream,
+                                                &streaming_server_url,
+                                                &ctx.profile.settings,
+                                            ))
+                                            .into_web_deep_links(),
                                         })
                                         .collect::<Vec<_>>(),
                                     in_library: ctx
@@ -187,6 +204,9 @@ pub fn serialize_discover(discover: &CatalogWithFilters<MetaItemPreview>, ctx: &
                                     .into_web_deep_links(),
                                 })
                             })
+                            // it is possible that they are duplicates returned in 2 different pages
+                            // so we deduplicate all the results at once
+                            .unique_by(|meta| &meta.meta_item.id)
                             .collect::<Vec<_>>(),
                     ),
                     Some(Loadable::Loading) | None => Loadable::Loading,

@@ -1,44 +1,40 @@
-name: Publish
+name: Prerelease
 
 on:
   release:
-    types: [released]
-
-env:
-  # For releasing we always use stable
-  RUST_VERSION: stable
-  NODE_VERSION: 12
-  WASM_PACK_VERSION: 0.10.3
-
+    types: [prereleased]
+    
 jobs:
-  publish:
+  prerelease:
     runs-on: ubuntu-latest
     steps:
     - name: Checkout
       uses: actions/checkout@v3
-    
     - name: Setup NodeJS
       uses: actions/setup-node@v3
       with:
-        node-version: ${{ env.NODE_VERSION }}
+        node-version: 12
         cache: 'npm'
         registry-url: https://registry.npmjs.org/
 
     - name: Rust setup
-      uses: dtolnay/rust-toolchain@${{ env.RUST_VERSION }}
+      uses: dtolnay/rust-toolchain@1.64.0
       with:
         targets: wasm32-unknown-unknown
     - uses: taiki-e/install-action@v2
       with:
-        tool: wasm-pack@${{ env.WASM_PACK_VERSION }}
-
+        tool: wasm-pack@0.10.3
     - name: Install NPM dependencies
       run: npm ci
-
     - name: Build
       run: npm run build
-
-    - name: Publish to NPM
-      run: npm publish --access public
-      env:
-        NODE_AUTH_TOKEN: ${{ secrets.NPM_PUBLISH_TOKEN }}
+    - name: Package
+      run: npm pack
+    - name: Upload build artifact to GitHub release assets
+      uses: svenstaro/upload-release-action@v2
+      with:
+        repo_token: ${{ secrets.GITHUB_TOKEN }}
+        file: ./*.tgz
+        tag: ${{ github.ref }}
+        overwrite: true
+        file_glob: true

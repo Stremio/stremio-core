@@ -9,8 +9,10 @@ use lazy_static::lazy_static;
 use regex::Regex;
 use serde::{Deserialize, Serialize};
 use serde_json::json;
+
 use std::collections::HashMap;
 use std::sync::RwLock;
+
 use stremio_analytics::Analytics;
 use stremio_core::models::ctx::Ctx;
 use stremio_core::models::streaming_server::StreamingServer;
@@ -18,7 +20,10 @@ use stremio_core::runtime::msg::{Action, ActionCtx, Event};
 use stremio_core::runtime::{Env, EnvError, EnvFuture, EnvFutureExt, TryEnvFuture};
 use stremio_core::types::api::AuthRequest;
 use stremio_core::types::resource::StreamSource;
+
+use tracing::trace;
 use url::Url;
+
 use wasm_bindgen::closure::Closure;
 use wasm_bindgen::prelude::wasm_bindgen;
 use wasm_bindgen::{JsCast, JsValue};
@@ -72,9 +77,12 @@ struct AnalyticsContext {
 pub enum WebEnv {}
 
 impl WebEnv {
+    /// Sets panic hook, enables logging
     pub fn init() -> TryEnvFuture<()> {
         WebEnv::migrate_storage_schema()
+            .inspect(|migration_result| trace!("Migration result: {migration_result:?}",))
             .and_then(|_| WebEnv::get_storage::<String>(INSTALLATION_ID_STORAGE_KEY))
+            .inspect(|installation_id_result| trace!("Migration: {installation_id_result:?}"))
             .map_ok(|installation_id| {
                 installation_id.or_else(|| Some(hex::encode(WebEnv::random_buffer(10))))
             })
@@ -95,7 +103,7 @@ impl WebEnv {
             })
             .boxed_local()
     }
-    pub fn get_location_hash() -> EnvFuture<String> {
+    pub fn get_location_hash() -> EnvFuture<'static, String> {
         get_location_hash()
             .map(|location_hash| {
                 location_hash
@@ -403,7 +411,7 @@ impl Env for WebEnv {
             .single()
             .expect("Invalid timestamp")
     }
-    fn flush_analytics() -> EnvFuture<()> {
+    fn flush_analytics() -> EnvFuture<'static, ()> {
         ANALYTICS.flush().boxed_local()
     }
     fn analytics_context(
