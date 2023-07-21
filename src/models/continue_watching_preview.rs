@@ -1,16 +1,22 @@
-use crate::constants::CATALOG_PREVIEW_SIZE;
-use crate::models::common::eq_update;
-use crate::models::ctx::Ctx;
-use crate::runtime::msg::{Internal, Msg};
-use crate::runtime::{Effects, Env, UpdateWithCtx};
-use crate::types::library::{LibraryBucket, LibraryItem};
-use crate::types::notifications::NotificationsBucket;
 use lazysort::SortedBy;
 use serde::Serialize;
 
+use crate::{
+    constants::CATALOG_PREVIEW_SIZE,
+    models::{common::eq_update, ctx::Ctx},
+    runtime::{
+        msg::{Internal, Msg},
+        Effects, Env, UpdateWithCtx,
+    },
+    types::{
+        library::{LibraryBucket, LibraryItem},
+        notifications::NotificationsBucket,
+    },
+};
+
+/// The continue watching section in the app
 #[derive(Default, Clone, Serialize, Debug)]
 #[serde(rename_all = "camelCase")]
-/// The continue watching section in the app
 pub struct ContinueWatchingPreview {
     pub library_items: Vec<LibraryItem>,
 }
@@ -25,8 +31,16 @@ impl ContinueWatchingPreview {
 
 impl<E: Env + 'static> UpdateWithCtx<E> for ContinueWatchingPreview {
     fn update(&mut self, msg: &Msg, ctx: &Ctx) -> Effects {
+        // update the CW list if
         match msg {
-            Msg::Internal(Internal::LibraryChanged(_)) => {
+            // library has changed
+            Msg::Internal(Internal::LibraryChanged(_))
+            // LibraryItem has been updated (this message alters the `mtime` and will re-order the CW list)
+            | Msg::Internal(Internal::UpdateLibraryItem(_))
+            // notifications have been updated
+            | Msg::Internal(Internal::NotificationsChanged)
+            // or a notification has been dismissed (this will re-order the given LibraryItem based on mtime)
+            | Msg::Internal(Internal::DismissNotificationItem(_)) => {
                 library_items_update(&mut self.library_items, &ctx.library, &ctx.notifications)
             }
             _ => Effects::none().unchanged(),
