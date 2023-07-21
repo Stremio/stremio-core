@@ -1,18 +1,26 @@
-use crate::models::ctx::Ctx;
-use crate::runtime::msg::{Action, ActionCtx};
-use crate::runtime::{EnvFutureExt, Runtime, RuntimeAction, TryEnvFuture};
-use crate::types::addon::{Descriptor, ResourceResponse};
-use crate::types::library::{LibraryBucket, LibraryItem};
-use crate::types::notifications::{MetaItemId, NotificationItem, NotificationsBucket, VideoId};
-use crate::types::profile::Profile;
-use crate::types::streams::StreamsBucket;
-use crate::unit_tests::{default_fetch_handler, Request, TestEnv, FETCH_HANDLER};
+use std::{any::Any, collections::HashMap};
+
 use enclose::enclose;
 use futures::future;
 use serde::Deserialize;
-use std::any::Any;
-use std::collections::HashMap;
 use stremio_derive::Model;
+
+use crate::{
+    models::ctx::Ctx,
+    runtime::{
+        msg::{Action, ActionCtx},
+        EnvFutureExt, Runtime, RuntimeAction, TryEnvFuture,
+    },
+    types::{
+        addon::{Descriptor, ResourceResponse},
+        library::{LibraryBucket, LibraryItem},
+        notifications::{NotificationItem, NotificationsBucket},
+        profile::Profile,
+        resource::{MetaItemId, VideoId},
+        streams::StreamsBucket,
+    },
+    unit_tests::{default_fetch_handler, Request, TestEnv, FETCH_HANDLER},
+};
 
 pub const DATA: &'static [u8] = include_bytes!("./data.json");
 
