@@ -128,7 +128,7 @@ pub enum ActionLoad {
 }
 
 #[derive(Clone, Deserialize, Debug)]
-#[serde(tag = "action", content = "args", rename_all = "camelCase")]
+#[serde(tag = "action", content = "args")]
 pub enum ActionSearch {
     /// Request for Search queries
     Search {
