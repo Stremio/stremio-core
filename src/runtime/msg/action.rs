@@ -131,6 +131,7 @@ pub enum ActionLoad {
 #[serde(tag = "action", content = "args")]
 pub enum ActionSearch {
     /// Request for Search queries
+    #[serde(rename_all = "camelCase")]
     Search {
         search_query: String,
         max_results: usize,
