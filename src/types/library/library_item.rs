@@ -52,11 +52,6 @@ impl LibraryItem {
             && self.r#type != "movie"
             && self.behavior_hints.default_video_id.is_none()
             && (!self.removed || self.temp)
-            && (self.state.time_offset == 0
-                || self.state.time_offset as f64 > self.state.duration as f64 * 0.8)
-            // TODO: Enable if we need to keep the last video in the LibraryItem itself
-            // This field should be updated when we pull notifications!
-            // && self.state.last_video_released.is_some()
             && self.state.overall_time_watched > 15 * 60 * 1000
     }
 }
