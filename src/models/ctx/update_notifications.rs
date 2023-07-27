@@ -63,7 +63,7 @@ pub fn update_notifications<E: Env + 'static>(
                 },
             );
 
-            notifications.created = E::now();
+            notifications.last_updated = Some(E::now());
             let notification_items_effects = update_notification_items::<E>(
                 &mut notifications.items,
                 notification_catalogs,

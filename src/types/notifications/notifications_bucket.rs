@@ -15,9 +15,15 @@ use crate::{
 
 #[derive(Default, Derivative, Clone, PartialEq, Eq, Serialize, Deserialize, Debug)]
 pub struct NotificationsBucket {
+    #[serde(default)]
     pub uid: UID,
-    /// Notifications
+    /// Notifications per meta item and video id
+    #[serde(default)]
     pub items: HashMap<MetaItemId, HashMap<VideoId, NotificationItem>>,
+    /// The last time notifications were pulled.
+    #[serde(default)]
+    pub last_updated: Option<DateTime<Utc>>,
+    /// The moment that the notification bucket was initialized.
     #[derivative(Default(value = "Utc::now()"))]
     pub created: DateTime<Utc>,
 }
@@ -39,6 +45,7 @@ impl NotificationsBucket {
 
                 acc
             }),
+            last_updated: None,
             created: E::now(),
         }
     }
