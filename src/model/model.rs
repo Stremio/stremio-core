@@ -1,37 +1,40 @@
 #[cfg(debug_assertions)]
 use serde::Serialize;
 
-use stremio_core::models::addon_details::AddonDetails;
-use stremio_core::models::catalog_with_filters::CatalogWithFilters;
-use stremio_core::models::catalogs_with_extra::CatalogsWithExtra;
-use stremio_core::models::continue_watching_preview::ContinueWatchingPreview;
-use stremio_core::models::ctx::Ctx;
-use stremio_core::models::data_export::DataExport;
-use stremio_core::models::installed_addons_with_filters::InstalledAddonsWithFilters;
-use stremio_core::models::library_with_filters::{
-    ContinueWatchingFilter, LibraryWithFilters, NotRemovedFilter,
-};
-use stremio_core::models::link::Link;
-use stremio_core::models::meta_details::MetaDetails;
-use stremio_core::models::player::Player;
-use stremio_core::models::streaming_server::StreamingServer;
-use stremio_core::runtime::Effects;
-use stremio_core::types::addon::DescriptorPreview;
-use stremio_core::types::api::LinkAuthKey;
-use stremio_core::types::library::LibraryBucket;
-use stremio_core::types::notifications::NotificationsBucket;
-use stremio_core::types::profile::Profile;
-use stremio_core::types::resource::MetaItemPreview;
-use stremio_core::types::streams::StreamsBucket;
-use stremio_derive::Model;
-
 use wasm_bindgen::JsValue;
 
-use crate::env::WebEnv;
-use crate::model::{
-    serialize_catalogs_with_extra, serialize_continue_watching_preview, serialize_data_export,
-    serialize_discover, serialize_installed_addons, serialize_library, serialize_meta_details,
-    serialize_player, serialize_remote_addons, serialize_streaming_server,
+use stremio_core::{
+    models::{
+        addon_details::AddonDetails,
+        catalog_with_filters::CatalogWithFilters,
+        catalogs_with_extra::CatalogsWithExtra,
+        continue_watching_preview::ContinueWatchingPreview,
+        ctx::Ctx,
+        data_export::DataExport,
+        installed_addons_with_filters::InstalledAddonsWithFilters,
+        library_with_filters::{ContinueWatchingFilter, LibraryWithFilters, NotRemovedFilter},
+        link::Link,
+        meta_details::MetaDetails,
+        player::Player,
+        streaming_server::StreamingServer,
+    },
+    runtime::Effects,
+    types::{
+        addon::DescriptorPreview, api::LinkAuthKey, library::LibraryBucket,
+        notifications::NotificationsBucket, profile::Profile, resource::MetaItemPreview,
+        streams::StreamsBucket,
+    },
+};
+use stremio_derive::Model;
+
+use crate::{
+    env::WebEnv,
+    model::{
+        serialize_catalogs_with_extra, serialize_continue_watching_preview, serialize_ctx,
+        serialize_data_export, serialize_discover, serialize_installed_addons, serialize_library,
+        serialize_meta_details, serialize_player, serialize_remote_addons,
+        serialize_streaming_server,
+    },
 };
 
 #[derive(Model, Clone)]
@@ -108,7 +111,7 @@ impl WebModel {
     }
     pub fn get_state(&self, field: &WebModelField) -> JsValue {
         match field {
-            WebModelField::Ctx => JsValue::from_serde(&self.ctx).unwrap(),
+            WebModelField::Ctx => serialize_ctx(&self.ctx),
             WebModelField::AuthLink => JsValue::from_serde(&self.auth_link).unwrap(),
             WebModelField::DataExport => serialize_data_export(&self.data_export),
             WebModelField::ContinueWatchingPreview => {
