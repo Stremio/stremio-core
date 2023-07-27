@@ -7,7 +7,6 @@ use crate::types::{
     resource::{MetaItem, MetaItemPreview, Stream, Subtitles},
 };
 
-
 /// Resource Response from an addon.
 ///
 /// Deserializing the struct from json will skip any invalid Vec items
