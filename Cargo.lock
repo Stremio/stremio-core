@@ -895,7 +895,7 @@ dependencies = [
 [[package]]
 name = "stremio-analytics"
 version = "0.1.0"
-source = "git+https://github.com/Stremio/stremio-core?branch=continue-watching-part-2#a951b580a0f06eba214fbbc102ca7174d1731ce0"
+source = "git+https://github.com/Stremio/stremio-core?branch=continue-watching-part-2#426b861686cf6e7e153ef8781df8d2c68846954b"
 dependencies = [
  "derivative",
  "enclose",
@@ -908,7 +908,7 @@ dependencies = [
 [[package]]
 name = "stremio-core"
 version = "0.1.0"
-source = "git+https://github.com/Stremio/stremio-core?branch=continue-watching-part-2#a951b580a0f06eba214fbbc102ca7174d1731ce0"
+source = "git+https://github.com/Stremio/stremio-core?branch=continue-watching-part-2#426b861686cf6e7e153ef8781df8d2c68846954b"
 dependencies = [
  "anyhow",
  "base64 0.21.2",
@@ -985,7 +985,7 @@ dependencies = [
 [[package]]
 name = "stremio-derive"
 version = "0.1.0"
-source = "git+https://github.com/Stremio/stremio-core?branch=continue-watching-part-2#a951b580a0f06eba214fbbc102ca7174d1731ce0"
+source = "git+https://github.com/Stremio/stremio-core?branch=continue-watching-part-2#426b861686cf6e7e153ef8781df8d2c68846954b"
 dependencies = [
  "case",
  "proc-macro-crate",
@@ -1015,7 +1015,7 @@ dependencies = [
 [[package]]
 name = "stremio-watched-bitfield"
 version = "0.1.0"
-source = "git+https://github.com/Stremio/stremio-core?branch=continue-watching-part-2#a951b580a0f06eba214fbbc102ca7174d1731ce0"
+source = "git+https://github.com/Stremio/stremio-core?branch=continue-watching-part-2#426b861686cf6e7e153ef8781df8d2c68846954b"
 dependencies = [
  "base64 0.13.1",
  "flate2",
