@@ -22,7 +22,7 @@ use crate::{
     unit_tests::{default_fetch_handler, Request, TestEnv, FETCH_HANDLER},
 };
 
-pub const DATA: &'static [u8] = include_bytes!("./data.json");
+pub const DATA: &[u8] = include_bytes!("./data.json");
 
 #[derive(Deserialize)]
 struct TestData {

@@ -36,9 +36,6 @@ pub fn update_notifications<E: Env + 'static>(
 ) -> Effects {
     match msg {
         Msg::Action(Action::Ctx(ActionCtx::PullNotifications)) => {
-            // Clear the notification catalogs in order to trigger a new request
-            *notification_catalogs = vec![];
-
             let library_item_ids = library
                 .items
                 .values()
@@ -49,34 +46,34 @@ pub fn update_notifications<E: Env + 'static>(
                 .cloned()
                 .collect::<Vec<_>>();
 
-            let notification_catalogs_effects = resources_update_with_vector_content::<E, _>(
+            let notifications_catalog_resource_effects = resources_update_with_vector_content::<E, _>(
                 notification_catalogs,
-                ResourcesAction::ResourcesRequested {
-                    request: &AggrRequest::AllCatalogs {
+                // force the making of a requests every time PullNotifications is called.
+                ResourcesAction::force_request(
+                    &AggrRequest::AllCatalogs {
                         extra: &vec![ExtraValue {
                             name: LAST_VIDEOS_IDS_EXTRA_PROP.name.to_owned(),
                             value: library_item_ids.join(","),
                         }],
                         r#type: &None,
                     },
-                    addons: &profile.addons,
-                },
+                    &profile.addons,
+                ),
             );
 
             notifications.last_updated = Some(E::now());
+
+            // first update the notification items
             let notification_items_effects = update_notification_items::<E>(
                 &mut notifications.items,
                 notification_catalogs,
                 library,
             );
-            let notifications_effects = if notification_items_effects.has_changed {
-                Effects::msg(Msg::Internal(Internal::NotificationsChanged))
-            } else {
-                Effects::none().unchanged()
-            };
-            notification_catalogs_effects
+
+            // because notifications are getting loaded by forcing new requests
+            // we do not trigger a `NotificationsChanged` as the addons should return results first.
+            notifications_catalog_resource_effects
                 .join(notification_items_effects)
-                .join(notifications_effects)
                 .unchanged()
         }
         Msg::Action(Action::Ctx(ActionCtx::Logout)) | Msg::Internal(Internal::Logout) => {
@@ -124,6 +121,7 @@ pub fn update_notifications<E: Env + 'static>(
             } else {
                 Effects::none().unchanged()
             };
+
             let notifications_effects = if notification_items_effects.has_changed {
                 Effects::msg(Msg::Internal(Internal::NotificationsChanged))
             } else {

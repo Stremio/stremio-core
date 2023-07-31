@@ -257,6 +257,8 @@ fn meta_items_update<E: Env + 'static>(
             ResourcesAction::ResourcesRequested {
                 request: &AggrRequest::AllOfResource(meta_path.to_owned()),
                 addons: &profile.addons,
+                // use existing loaded MetaItems instead of making a request every time.
+                force: false,
             },
         ),
         _ => eq_update(meta_items, vec![]),
@@ -332,6 +334,8 @@ fn streams_update<E: Env + 'static>(
             ResourcesAction::ResourcesRequested {
                 request: &AggrRequest::AllOfResource(stream_path.to_owned()),
                 addons: &profile.addons,
+                // use existing loaded MetaItems instead of making a request every time.
+                force: false,
             },
         ),
         _ => eq_update(streams, vec![]),
