@@ -130,7 +130,6 @@ pub fn update_notifications<E: Env + 'static>(
             notification_catalogs_effects
                 .join(notification_items_effects)
                 .join(notifications_effects)
-                .unchanged()
         }
         Msg::Internal(Internal::DismissNotificationItem(id)) => {
             match notifications.items.remove(id) {
