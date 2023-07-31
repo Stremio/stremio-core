@@ -98,7 +98,7 @@ fn actionctx_addon_upgrade() {
             action: Action::Ctx(ActionCtx::UpgradeAddon(addon1_update.to_owned())),
         })
     });
-    let expected = vec![addon1_update.to_owned(), addon2.to_owned()];
+    let expected = vec![addon1_update, addon2];
 
     assert_eq!(
         runtime.model().unwrap().ctx.profile.addons,
@@ -191,7 +191,7 @@ fn actionctx_addon_upgrade_fail_due_to_different_url() {
 
     assert_eq!(
         runtime.model().unwrap().ctx.profile.addons,
-        vec![addon1.to_owned()],
+        vec![addon1],
         "addon was not updated"
     );
     assert!(

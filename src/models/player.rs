@@ -175,8 +175,8 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                 let subtitles_effects = match &selected.subtitles_path {
                     Some(subtitles_path) => resources_update_with_vector_content::<E, _>(
                         &mut self.subtitles,
-                        ResourcesAction::ResourcesRequested {
-                            request: &AggrRequest::AllOfResource(ResourcePath {
+                        ResourcesAction::force_request(
+                            &AggrRequest::AllOfResource(ResourcePath {
                                 extra: subtitles_path
                                     .extra
                                     .to_owned()
@@ -197,8 +197,8 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                                     ),
                                 ..subtitles_path.to_owned()
                             }),
-                            addons: &ctx.profile.addons,
-                        },
+                            &ctx.profile.addons,
+                        ),
                     ),
                     _ => eq_update(&mut self.subtitles, vec![]),
                 };
@@ -330,6 +330,7 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                     Some(library_item),
                 ) => {
                     let seeking = library_item.state.time_offset.abs_diff(*time) > 1000;
+                    // library_item.state.last_watched = Some(E::now() - chrono::Duration::days(1));
                     library_item.state.last_watched = Some(E::now());
                     if library_item.state.video_id != Some(video_id.to_owned()) {
                         library_item.state.video_id = Some(video_id.to_owned());
