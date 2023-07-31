@@ -34,7 +34,7 @@ impl<E: Env + 'static> UpdateWithCtx<E> for ContinueWatchingPreview {
         // update the CW list if
         match msg {
             // library has changed
-            Msg::Internal(Internal::LibraryChanged(_))
+            Msg::Internal(Internal::LibraryChanged(true))
             // LibraryItem has been updated (this message alters the `mtime` and will re-order the CW list)
             | Msg::Internal(Internal::UpdateLibraryItem(_))
             // notifications have been updated
@@ -105,5 +105,6 @@ fn library_items_update(
         .take(CATALOG_PREVIEW_SIZE)
         .cloned()
         .collect::<Vec<_>>();
+
     eq_update(library_items, next_library_items)
 }
