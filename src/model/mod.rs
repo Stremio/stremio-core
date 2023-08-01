@@ -6,6 +6,9 @@ use serialize_catalogs_with_extra::*;
 mod serialize_continue_watching_preview;
 use serialize_continue_watching_preview::*;
 
+mod serialize_ctx;
+use serialize_ctx::*;
+
 mod serialize_discover;
 use serialize_discover::*;
 
