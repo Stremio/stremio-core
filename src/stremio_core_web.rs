@@ -83,7 +83,8 @@ pub async fn initialize_runtime(emit_to_ui: js_sys::Function) -> Result<(), JsVa
                         library.merge_bucket(other_bucket);
                     };
                     let streams_bucket = streams_bucket.unwrap_or_default();
-                    let notifications_bucket = notifications_bucket.unwrap_or_default();
+                    let notifications_bucket = notifications_bucket
+                        .unwrap_or(NotificationsBucket::new::<WebEnv>(profile.uid(), vec![]));
                     let (model, effects) =
                         WebModel::new(profile, library, streams_bucket, notifications_bucket);
                     let (runtime, rx) = Runtime::<WebEnv, _>::new(
