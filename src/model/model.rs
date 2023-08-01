@@ -63,10 +63,8 @@ impl WebModel {
         profile: Profile,
         library: LibraryBucket,
         streams: StreamsBucket,
+        notifications: NotificationsBucket,
     ) -> (WebModel, Effects) {
-        let uid = profile.uid();
-
-        let notifications = NotificationsBucket::new::<WebEnv>(uid, vec![]);
         let (continue_watching_preview, continue_watching_preview_effects) =
             ContinueWatchingPreview::new(&library, &notifications);
         let (discover, discover_effects) = CatalogWithFilters::<MetaItemPreview>::new(&profile);
