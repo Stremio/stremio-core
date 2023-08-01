@@ -33,7 +33,7 @@ use crate::{
     model::{
         serialize_catalogs_with_extra, serialize_continue_watching_preview, serialize_ctx,
         serialize_data_export, serialize_discover, serialize_installed_addons, serialize_library,
-        serialize_meta_details, serialize_player, serialize_remote_addons,
+        serialize_local_search, serialize_meta_details, serialize_player, serialize_remote_addons,
         serialize_streaming_server,
     },
 };
