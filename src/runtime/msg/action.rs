@@ -31,6 +31,7 @@ pub enum ActionCtx {
     AddToLibrary(MetaItemPreview),
     RemoveFromLibrary(String),
     RewindLibraryItem(String),
+    ToggleLibraryItemNotifications(MetaItemId),
     /// Dismiss all Notification for a given [`MetaItemId`].
     DismissNotificationItem(MetaItemId),
     PushUserToAPI,

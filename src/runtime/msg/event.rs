@@ -103,6 +103,9 @@ pub enum Event {
     LibraryItemRewinded {
         id: String,
     },
+    LibraryItemNotificationsToggled {
+        id: String,
+    },
     MagnetParsed {
         magnet: Url,
     },
