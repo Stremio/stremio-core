@@ -18,6 +18,9 @@ use serialize_installed_addons::*;
 mod serialize_library;
 use serialize_library::*;
 
+mod serialize_local_search;
+use serialize_local_search::*;
+
 mod serialize_meta_details;
 use serialize_meta_details::*;
 
