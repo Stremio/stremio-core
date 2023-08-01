@@ -3,7 +3,10 @@ use crate::models::ctx::Ctx;
 use crate::runtime::msg::{Action, ActionCtx};
 use crate::runtime::{Runtime, RuntimeAction};
 use crate::types::addon::{Descriptor, Manifest};
+use crate::types::library::LibraryBucket;
+use crate::types::notifications::NotificationsBucket;
 use crate::types::profile::Profile;
+use crate::types::streams::StreamsBucket;
 use crate::unit_tests::{TestEnv, REQUESTS, STORAGE};
 use semver::Version;
 use stremio_derive::Model;
@@ -76,13 +79,15 @@ fn actionctx_addon_upgrade() {
     let _env_mutex = TestEnv::reset();
     let (runtime, _rx) = Runtime::<TestEnv, _>::new(
         TestModel {
-            ctx: Ctx {
-                profile: Profile {
-                    addons: vec![addon1.to_owned(), addon2.to_owned()],
+            ctx: Ctx::new(
+                Profile {
+                    addons: vec![addon1, addon2.to_owned()],
                     ..Default::default()
                 },
-                ..Default::default()
-            },
+                LibraryBucket::default(),
+                StreamsBucket::default(),
+                NotificationsBucket::new::<TestEnv>(None, vec![]),
+            ),
         },
         vec![],
         1000,
@@ -93,7 +98,7 @@ fn actionctx_addon_upgrade() {
             action: Action::Ctx(ActionCtx::UpgradeAddon(addon1_update.to_owned())),
         })
     });
-    let expected = vec![addon1_update.to_owned(), addon2.to_owned()];
+    let expected = vec![addon1_update, addon2];
 
     assert_eq!(
         runtime.model().unwrap().ctx.profile.addons,
@@ -164,13 +169,15 @@ fn actionctx_addon_upgrade_fail_due_to_different_url() {
     let _env_mutex = TestEnv::reset();
     let (runtime, _rx) = Runtime::<TestEnv, _>::new(
         TestModel {
-            ctx: Ctx {
-                profile: Profile {
+            ctx: Ctx::new(
+                Profile {
                     addons: vec![addon1.to_owned()],
                     ..Default::default()
                 },
-                ..Default::default()
-            },
+                LibraryBucket::default(),
+                StreamsBucket::default(),
+                NotificationsBucket::new::<TestEnv>(None, vec![]),
+            ),
         },
         vec![],
         1000,
@@ -184,7 +191,7 @@ fn actionctx_addon_upgrade_fail_due_to_different_url() {
 
     assert_eq!(
         runtime.model().unwrap().ctx.profile.addons,
-        vec![addon1.to_owned()],
+        vec![addon1],
         "addon was not updated"
     );
     assert!(

@@ -12,7 +12,7 @@ use crate::models::streaming_server::{
 use crate::types::addon::Descriptor;
 use crate::types::api::AuthRequest;
 use crate::types::profile::Settings as ProfileSettings;
-use crate::types::resource::MetaItemPreview;
+use crate::types::resource::{MetaItemId, MetaItemPreview};
 use serde::Deserialize;
 use std::ops::Range;
 use url::Url;
@@ -31,11 +31,21 @@ pub enum ActionCtx {
     AddToLibrary(MetaItemPreview),
     RemoveFromLibrary(String),
     RewindLibraryItem(String),
+    /// Dismiss all Notification for a given [`MetaItemId`].
+    DismissNotificationItem(MetaItemId),
     PushUserToAPI,
     PullUserFromAPI,
     PushAddonsToAPI,
     PullAddonsFromAPI,
     SyncLibraryWithAPI,
+    /// Pull notifications for all [`LibraryItem`]s that we should pull notifications for.
+    ///
+    /// **Warning:** The action will **always** trigger requests to the addons.
+    ///
+    /// See `LibraryItem::should_pull_notifications()`
+    ///
+    /// [`LibraryItem`]: crate::types::library::LibraryItem
+    PullNotifications,
 }
 
 #[derive(Clone, Deserialize, Debug)]
@@ -128,7 +138,7 @@ pub enum ActionLoad {
 }
 
 #[derive(Clone, Deserialize, Debug)]
-#[serde(tag = "action", content = "args", rename_all = "camelCase")]
+#[serde(tag = "action", content = "args")]
 pub enum ActionSearch {
     /// Request for Search queries
     Search {

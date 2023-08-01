@@ -1,12 +1,13 @@
+use std::{convert::TryFrom, fmt, fmt::Debug};
+
 use crate::models::common::{eq_update, Loadable};
 use crate::runtime::msg::{Internal, Msg};
 use crate::runtime::{EffectFuture, Effects, Env, EnvError, EnvFutureExt};
 use crate::types::addon::{AggrRequest, Descriptor, ResourceRequest, ResourceResponse};
+
 use enclose::enclose;
 use futures::FutureExt;
 use serde::Serialize;
-use std::convert::TryFrom;
-use std::fmt;
 
 #[derive(Clone, PartialEq, Serialize, Debug)]
 #[serde(tag = "type", content = "content")]
@@ -49,11 +50,31 @@ pub enum ResourcesAction<'a> {
     ResourcesRequested {
         request: &'a AggrRequest<'a>,
         addons: &'a [Descriptor],
+        // whether to force a new request instead of returning an existing response.
+        force: bool,
     },
     ResourceRequestResult {
         request: &'a ResourceRequest,
         result: &'a Result<ResourceResponse, EnvError>,
     },
+}
+
+impl<'a> ResourcesAction<'a> {
+    pub fn request(aggr_request: &'a AggrRequest<'a>, addons: &'a [Descriptor]) -> Self {
+        Self::ResourcesRequested {
+            request: aggr_request,
+            addons,
+            force: false,
+        }
+    }
+
+    pub fn force_request(aggr_request: &'a AggrRequest<'a>, addons: &'a [Descriptor]) -> Self {
+        Self::ResourcesRequested {
+            request: aggr_request,
+            addons,
+            force: true,
+        }
+    }
 }
 
 impl<T> ResourceLoadable<T> {
@@ -137,14 +158,22 @@ where
     T: TryFrom<ResourceResponse, Error = &'static str> + Clone + PartialEq,
 {
     match action {
-        ResourcesAction::ResourcesRequested { request, addons } => {
+        ResourcesAction::ResourcesRequested {
+            request,
+            addons,
+            force,
+        } => {
             let (next_resources, effects) = request
                 .plan(addons)
                 .into_iter()
                 .map(|(_, request)| {
                     resources
                         .iter()
-                        .find(|resource| resource.request == request && resource.content.is_some())
+                        // Check if we've seen this request before and return it (caching) requests which are the same
+                        // We can also pass `force = true` to always trigger a new request.
+                        .find(|resource| {
+                            resource.request == request && resource.content.is_some() && !force
+                        })
                         .map(|resource| (resource.to_owned(), None))
                         .unwrap_or_else(|| {
                             (

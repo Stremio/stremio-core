@@ -4,7 +4,10 @@ use crate::runtime::msg::{Action, ActionCtx};
 use crate::runtime::{Env, EnvFutureExt, Runtime, RuntimeAction, TryEnvFuture};
 use crate::types::addon::{Descriptor, Manifest};
 use crate::types::api::{APIResult, SuccessResponse};
+use crate::types::library::LibraryBucket;
+use crate::types::notifications::NotificationsBucket;
 use crate::types::profile::{Auth, AuthKey, GDPRConsent, Profile, User};
+use crate::types::streams::StreamsBucket;
 use crate::types::True;
 use crate::unit_tests::{
     default_fetch_handler, Request, TestEnv, FETCH_HANDLER, REQUESTS, STORAGE,
@@ -44,13 +47,15 @@ fn actionctx_installaddon_install() {
     let _env_mutex = TestEnv::reset();
     let (runtime, _rx) = Runtime::<TestEnv, _>::new(
         TestModel {
-            ctx: Ctx {
-                profile: Profile {
+            ctx: Ctx::new(
+                Profile {
                     addons: vec![],
                     ..Default::default()
                 },
-                ..Default::default()
-            },
+                LibraryBucket::default(),
+                StreamsBucket::default(),
+                NotificationsBucket::new::<TestEnv>(None, vec![]),
+            ),
         },
         vec![],
         1000,
@@ -127,8 +132,8 @@ fn actionctx_installaddon_install_with_user() {
     *FETCH_HANDLER.write().unwrap() = Box::new(fetch_handler);
     let (runtime, _rx) = Runtime::<TestEnv, _>::new(
         TestModel {
-            ctx: Ctx {
-                profile: Profile {
+            ctx: Ctx::new(
+                Profile {
                     auth: Some(Auth {
                         key: AuthKey("auth_key".to_owned()),
                         user: User {
@@ -151,8 +156,10 @@ fn actionctx_installaddon_install_with_user() {
                     addons: vec![],
                     ..Default::default()
                 },
-                ..Default::default()
-            },
+                LibraryBucket::default(),
+                StreamsBucket::default(),
+                NotificationsBucket::new::<TestEnv>(None, vec![]),
+            ),
         },
         vec![],
         1000,
@@ -244,8 +251,8 @@ fn actionctx_installaddon_update() {
     let _env_mutex = TestEnv::reset();
     let (runtime, _rx) = Runtime::<TestEnv, _>::new(
         TestModel {
-            ctx: Ctx {
-                profile: Profile {
+            ctx: Ctx::new(
+                Profile {
                     addons: vec![
                         Descriptor {
                             manifest: Manifest {
@@ -270,8 +277,10 @@ fn actionctx_installaddon_update() {
                     ],
                     ..Default::default()
                 },
-                ..Default::default()
-            },
+                LibraryBucket::default(),
+                StreamsBucket::default(),
+                NotificationsBucket::new::<TestEnv>(None, vec![]),
+            ),
         },
         vec![],
         1000,
@@ -341,10 +350,12 @@ fn actionctx_installaddon_already_installed() {
     );
     let (runtime, _rx) = Runtime::<TestEnv, _>::new(
         TestModel {
-            ctx: Ctx {
+            ctx: Ctx::new(
                 profile,
-                ..Default::default()
-            },
+                LibraryBucket::default(),
+                StreamsBucket::default(),
+                NotificationsBucket::new::<TestEnv>(None, vec![]),
+            ),
         },
         vec![],
         1000,

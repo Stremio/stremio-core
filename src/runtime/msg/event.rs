@@ -39,6 +39,9 @@ pub enum Event {
     StreamsPushedToStorage {
         uid: UID,
     },
+    NotificationsPushedToStorage {
+        ids: Vec<String>,
+    },
     UserPulledFromAPI {
         uid: UID,
     },

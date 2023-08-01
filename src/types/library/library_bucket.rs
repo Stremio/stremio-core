@@ -33,7 +33,7 @@ impl LibraryBucket {
         for new_item in items.into_iter() {
             match self.items.get_mut(&new_item.id) {
                 Some(item) => {
-                    if new_item.mtime > item.mtime {
+                    if new_item.mtime >= item.mtime {
                         *item = new_item;
                     }
                 }

@@ -1,6 +1,7 @@
 pub mod addon;
 pub mod api;
 pub mod library;
+pub mod notifications;
 pub mod profile;
 pub mod resource;
 pub mod streaming_server;

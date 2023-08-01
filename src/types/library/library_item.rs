@@ -1,12 +1,16 @@
-use crate::runtime::Env;
-use crate::types::resource::{MetaItemBehaviorHints, MetaItemPreview, PosterShape, Video};
+use std::marker::PhantomData;
+
 use chrono::{DateTime, Duration, Utc};
 use itertools::Itertools;
 use serde::{Deserialize, Serialize};
 use serde_with::{serde_as, DefaultOnError, DefaultOnNull, NoneAsEmptyString};
-use std::marker::PhantomData;
 use stremio_watched_bitfield::{WatchedBitField, WatchedField};
 use url::Url;
+
+use crate::{
+    runtime::Env,
+    types::resource::{MetaItemBehaviorHints, MetaItemPreview, PosterShape, Video},
+};
 
 #[serde_as]
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
@@ -53,6 +57,14 @@ impl LibraryItem {
         } else {
             0.0
         }
+    }
+    pub fn should_pull_notifications(&self) -> bool {
+        !self.state.notifications_disabled
+            && self.r#type != "other"
+            && self.r#type != "movie"
+            && self.behavior_hints.default_video_id.is_none()
+            && (!self.removed || self.temp)
+            && self.state.overall_time_watched > 15 * 60 * 1000
     }
 }
 
@@ -136,9 +148,12 @@ pub struct LibraryItemState {
     /// Release date of last observed video
     #[serde(default)]
     #[serde_as(deserialize_as = "DefaultOnNull<NoneAsEmptyString>")]
-    pub last_vid_released: Option<DateTime<Utc>>,
+    pub last_video_released: Option<DateTime<Utc>>,
     /// Weather or not to receive notification for the given [`LibraryItem`].
-    pub no_notif: bool,
+    ///
+    /// Default: receive notifications
+    #[serde(default)]
+    pub notifications_disabled: bool,
 }
 
 impl LibraryItemState {
