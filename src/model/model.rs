@@ -1,36 +1,41 @@
 #[cfg(debug_assertions)]
 use serde::Serialize;
 
-use stremio_core::models::addon_details::AddonDetails;
-use stremio_core::models::catalog_with_filters::CatalogWithFilters;
-use stremio_core::models::catalogs_with_extra::CatalogsWithExtra;
-use stremio_core::models::continue_watching_preview::ContinueWatchingPreview;
-use stremio_core::models::ctx::Ctx;
-use stremio_core::models::data_export::DataExport;
-use stremio_core::models::installed_addons_with_filters::InstalledAddonsWithFilters;
-use stremio_core::models::library_with_filters::{
-    ContinueWatchingFilter, LibraryWithFilters, NotRemovedFilter,
-};
-use stremio_core::models::link::Link;
-use stremio_core::models::meta_details::MetaDetails;
-use stremio_core::models::player::Player;
-use stremio_core::models::streaming_server::StreamingServer;
-use stremio_core::runtime::Effects;
-use stremio_core::types::addon::DescriptorPreview;
-use stremio_core::types::api::LinkAuthKey;
-use stremio_core::types::library::LibraryBucket;
-use stremio_core::types::profile::Profile;
-use stremio_core::types::resource::MetaItemPreview;
-use stremio_core::types::streams::StreamsBucket;
-use stremio_derive::Model;
-
 use wasm_bindgen::JsValue;
 
-use crate::env::WebEnv;
-use crate::model::{
-    serialize_catalogs_with_extra, serialize_continue_watching_preview, serialize_data_export,
-    serialize_discover, serialize_installed_addons, serialize_library, serialize_meta_details,
-    serialize_player, serialize_remote_addons, serialize_streaming_server,
+use stremio_core::{
+    models::{
+        addon_details::AddonDetails,
+        catalog_with_filters::CatalogWithFilters,
+        catalogs_with_extra::CatalogsWithExtra,
+        continue_watching_preview::ContinueWatchingPreview,
+        ctx::Ctx,
+        data_export::DataExport,
+        installed_addons_with_filters::InstalledAddonsWithFilters,
+        library_with_filters::{ContinueWatchingFilter, LibraryWithFilters, NotRemovedFilter},
+        link::Link,
+        local_search::LocalSearch,
+        meta_details::MetaDetails,
+        player::Player,
+        streaming_server::StreamingServer,
+    },
+    runtime::Effects,
+    types::{
+        addon::DescriptorPreview, api::LinkAuthKey, library::LibraryBucket,
+        notifications::NotificationsBucket, profile::Profile, resource::MetaItemPreview,
+        streams::StreamsBucket,
+    },
+};
+use stremio_derive::Model;
+
+use crate::{
+    env::WebEnv,
+    model::{
+        serialize_catalogs_with_extra, serialize_continue_watching_preview, serialize_ctx,
+        serialize_data_export, serialize_discover, serialize_installed_addons, serialize_library,
+        serialize_local_search, serialize_meta_details, serialize_player, serialize_remote_addons,
+        serialize_streaming_server,
+    },
 };
 
 #[derive(Model, Clone)]
@@ -46,6 +51,8 @@ pub struct WebModel {
     pub library: LibraryWithFilters<NotRemovedFilter>,
     pub continue_watching: LibraryWithFilters<ContinueWatchingFilter>,
     pub search: CatalogsWithExtra,
+    /// Pre-loaded results for local search
+    pub local_search: LocalSearch,
     pub meta_details: MetaDetails,
     pub remote_addons: CatalogWithFilters<DescriptorPreview>,
     pub installed_addons: InstalledAddonsWithFilters,
@@ -59,9 +66,10 @@ impl WebModel {
         profile: Profile,
         library: LibraryBucket,
         streams: StreamsBucket,
+        notifications: NotificationsBucket,
     ) -> (WebModel, Effects) {
         let (continue_watching_preview, continue_watching_preview_effects) =
-            ContinueWatchingPreview::new(&library);
+            ContinueWatchingPreview::new(&library, &notifications);
         let (discover, discover_effects) = CatalogWithFilters::<MetaItemPreview>::new(&profile);
         let (library_, library_effects) = LibraryWithFilters::<NotRemovedFilter>::new(&library);
         let (continue_watching, continue_watching_effects) =
@@ -71,10 +79,12 @@ impl WebModel {
         let (installed_addons, installed_addons_effects) =
             InstalledAddonsWithFilters::new(&profile);
         let (streaming_server, streaming_server_effects) = StreamingServer::new::<WebEnv>(&profile);
+        let (local_search, local_search_effects) = LocalSearch::init::<WebEnv>();
         let model = WebModel {
-            ctx: Ctx::new(profile, library, streams),
+            ctx: Ctx::new(profile, library, streams, notifications),
             auth_link: Default::default(),
             data_export: Default::default(),
+            local_search,
             continue_watching_preview,
             board: Default::default(),
             discover,
@@ -96,12 +106,13 @@ impl WebModel {
                 .join(continue_watching_effects)
                 .join(remote_addons_effects)
                 .join(installed_addons_effects)
-                .join(streaming_server_effects),
+                .join(streaming_server_effects)
+                .join(local_search_effects),
         )
     }
     pub fn get_state(&self, field: &WebModelField) -> JsValue {
         match field {
-            WebModelField::Ctx => JsValue::from_serde(&self.ctx).unwrap(),
+            WebModelField::Ctx => serialize_ctx(&self.ctx),
             WebModelField::AuthLink => JsValue::from_serde(&self.auth_link).unwrap(),
             WebModelField::DataExport => serialize_data_export(&self.data_export),
             WebModelField::ContinueWatchingPreview => {
@@ -116,6 +127,7 @@ impl WebModel {
                 serialize_library(&self.continue_watching, "continuewatching".to_owned())
             }
             WebModelField::Search => serialize_catalogs_with_extra(&self.search, &self.ctx),
+            WebModelField::LocalSearch => serialize_local_search(&self.local_search),
             WebModelField::MetaDetails => {
                 serialize_meta_details(&self.meta_details, &self.ctx, &self.streaming_server)
             }
