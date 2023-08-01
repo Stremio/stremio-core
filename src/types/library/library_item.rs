@@ -51,7 +51,7 @@ impl LibraryItem {
         self.r#type != "other" && (!self.removed || self.temp) && self.state.time_offset > 0
     }
     pub fn should_pull_notifications(&self) -> bool {
-        !self.state.notifications_disabled
+        !self.state.no_notif
             && self.r#type != "other"
             && self.r#type != "movie"
             && self.behavior_hints.default_video_id.is_none()
@@ -141,7 +141,7 @@ pub struct LibraryItemState {
     ///
     /// Default: receive notifications
     #[serde(default)]
-    pub notifications_disabled: bool,
+    pub no_notif: bool,
 }
 
 impl LibraryItemState {
