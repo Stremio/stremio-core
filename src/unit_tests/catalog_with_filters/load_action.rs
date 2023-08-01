@@ -4,7 +4,11 @@ use crate::models::ctx::Ctx;
 use crate::runtime::msg::{Action, ActionLoad};
 use crate::runtime::{EnvFutureExt, Runtime, RuntimeAction, RuntimeEvent, TryEnvFuture};
 use crate::types::addon::{ExtraValue, ResourcePath, ResourceRequest, ResourceResponse};
+use crate::types::library::LibraryBucket;
+use crate::types::notifications::NotificationsBucket;
+use crate::types::profile::Profile;
 use crate::types::resource::MetaItemPreview;
+use crate::types::streams::StreamsBucket;
 use crate::unit_tests::{
     default_fetch_handler, Request, TestEnv, EVENTS, FETCH_HANDLER, REQUESTS, STATES,
 };
@@ -18,7 +22,7 @@ use url::Url;
 
 #[test]
 fn default_catalog() {
-    #[derive(Model, Default, Clone, Debug)]
+    #[derive(Model, Clone, Debug)]
     #[model(TestEnv)]
     struct TestModel {
         ctx: Ctx,
@@ -40,7 +44,12 @@ fn default_catalog() {
     }
     let _env_mutex = TestEnv::reset();
     *FETCH_HANDLER.write().unwrap() = Box::new(fetch_handler);
-    let ctx = Ctx::default();
+    let ctx = Ctx::new(
+        Profile::default(),
+        LibraryBucket::default(),
+        StreamsBucket::default(),
+        NotificationsBucket::new::<TestEnv>(None, vec![]),
+    );
     let (discover, effects) = CatalogWithFilters::<MetaItemPreview>::new(&ctx.profile);
     let (runtime, rx) = Runtime::<TestEnv, _>::new(
         TestModel { ctx, discover },
@@ -111,7 +120,7 @@ fn default_catalog() {
 
 #[test]
 fn search_catalog() {
-    #[derive(Model, Default, Clone, Debug)]
+    #[derive(Model, Clone, Debug)]
     #[model(TestEnv)]
     struct TestModel {
         ctx: Ctx,
@@ -134,7 +143,12 @@ fn search_catalog() {
     }
     let _env_mutex = TestEnv::reset();
     *FETCH_HANDLER.write().unwrap() = Box::new(fetch_handler);
-    let ctx = Ctx::default();
+    let ctx = Ctx::new(
+        Profile::default(),
+        LibraryBucket::default(),
+        StreamsBucket::default(),
+        NotificationsBucket::new::<TestEnv>(None, vec![]),
+    );
     let (discover, effects) = CatalogWithFilters::<MetaItemPreview>::new(&ctx.profile);
     let (runtime, rx) = Runtime::<TestEnv, _>::new(
         TestModel { ctx, discover },

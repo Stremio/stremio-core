@@ -4,7 +4,9 @@ use crate::runtime::msg::{Action, ActionCtx};
 use crate::runtime::{Env, EnvFutureExt, Runtime, RuntimeAction, TryEnvFuture};
 use crate::types::api::{APIResult, SuccessResponse};
 use crate::types::library::{LibraryBucket, LibraryItem};
+use crate::types::notifications::NotificationsBucket;
 use crate::types::profile::{Auth, AuthKey, GDPRConsent, Profile, User};
+use crate::types::streams::StreamsBucket;
 use crate::types::True;
 use crate::unit_tests::{
     default_fetch_handler, Request, TestEnv, FETCH_HANDLER, NOW, REQUESTS, STORAGE,
@@ -27,7 +29,7 @@ fn actionctx_removefromlibrary() {
                 url, method, body, ..
             } if url == "https://api.strem.io/api/datastorePut"
                 && method == "POST"
-                && body == "{\"authKey\":\"auth_key\",\"collection\":\"libraryItem\",\"changes\":[{\"_id\":\"id\",\"name\":\"name\",\"type\":\"type\",\"poster\":null,\"posterShape\":\"poster\",\"removed\":true,\"temp\":false,\"_ctime\":\"2020-01-01T00:00:00Z\",\"_mtime\":\"2020-01-02T00:00:00Z\",\"state\":{\"lastWatched\":null,\"timeWatched\":0,\"timeOffset\":0,\"overallTimeWatched\":0,\"timesWatched\":0,\"flaggedWatched\":0,\"duration\":0,\"video_id\":null,\"watched\":null,\"lastVidReleased\":null,\"noNotif\":false},\"behaviorHints\":{\"defaultVideoId\":null,\"featuredVideoId\":null,\"hasScheduledVideos\":false}}]}" =>
+                && body == "{\"authKey\":\"auth_key\",\"collection\":\"libraryItem\",\"changes\":[{\"_id\":\"id\",\"name\":\"name\",\"type\":\"type\",\"poster\":null,\"posterShape\":\"poster\",\"removed\":true,\"temp\":false,\"_ctime\":\"2020-01-01T00:00:00Z\",\"_mtime\":\"2020-01-02T00:00:00Z\",\"state\":{\"lastWatched\":null,\"timeWatched\":0,\"timeOffset\":0,\"overallTimeWatched\":0,\"timesWatched\":0,\"flaggedWatched\":0,\"duration\":0,\"video_id\":null,\"watched\":null,\"lastVideoReleased\":null,\"notificationsDisabled\":false},\"behaviorHints\":{\"defaultVideoId\":null,\"featuredVideoId\":null,\"hasScheduledVideos\":false}}]}" =>
             {
                 future::ok(Box::new(APIResult::Ok {
                     result: SuccessResponse { success: True {} },
@@ -67,8 +69,8 @@ fn actionctx_removefromlibrary() {
     );
     let (runtime, _rx) = Runtime::<TestEnv, _>::new(
         TestModel {
-            ctx: Ctx {
-                profile: Profile {
+            ctx: Ctx::new(
+                Profile {
                     auth: Some(Auth {
                         key: AuthKey("auth_key".to_owned()),
                         user: User {
@@ -90,14 +92,15 @@ fn actionctx_removefromlibrary() {
                     }),
                     ..Default::default()
                 },
-                library: LibraryBucket {
+                LibraryBucket {
                     uid: Some("id".to_owned()),
                     items: vec![("id".to_owned(), library_item.to_owned())]
                         .into_iter()
                         .collect(),
                 },
-                ..Default::default()
-            },
+                StreamsBucket::default(),
+                NotificationsBucket::new::<TestEnv>(None, vec![]),
+            ),
         },
         vec![],
         1000,
@@ -173,15 +176,17 @@ fn actionctx_removefromlibrary_not_added() {
     );
     let (runtime, _rx) = Runtime::<TestEnv, _>::new(
         TestModel {
-            ctx: Ctx {
-                library: LibraryBucket {
+            ctx: Ctx::new(
+                Profile::default(),
+                LibraryBucket {
                     uid: None,
                     items: vec![("id".to_owned(), library_item.to_owned())]
                         .into_iter()
                         .collect(),
                 },
-                ..Default::default()
-            },
+                StreamsBucket::default(),
+                NotificationsBucket::new::<TestEnv>(None, vec![]),
+            ),
         },
         vec![],
         1000,

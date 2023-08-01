@@ -4,7 +4,11 @@ use crate::models::data_export::DataExport;
 use crate::runtime::msg::{Action, ActionLoad};
 use crate::runtime::{EnvFutureExt, Runtime, RuntimeAction, RuntimeEvent, TryEnvFuture};
 use crate::types::api::{APIResult, DataExportResponse};
+use crate::types::library::LibraryBucket;
+use crate::types::notifications::NotificationsBucket;
+use crate::types::profile::Profile;
 use crate::types::profile::{Auth, AuthKey, User};
+use crate::types::streams::StreamsBucket;
 use crate::unit_tests::{
     default_fetch_handler, Request, TestEnv, EVENTS, FETCH_HANDLER, REQUESTS, STATES,
 };
@@ -15,7 +19,7 @@ use std::any::Any;
 use std::sync::{Arc, RwLock};
 use stremio_derive::Model;
 
-#[derive(Model, Default, Clone, Debug)]
+#[derive(Model, Clone, Debug)]
 #[model(TestEnv)]
 struct TestModel {
     ctx: Ctx,
@@ -45,7 +49,12 @@ fn data_export_fetch_handler(request: Request) -> TryEnvFuture<Box<dyn Any + Sen
 fn data_export_with_user() {
     let _env_mutex = TestEnv::reset();
     *FETCH_HANDLER.write().unwrap() = Box::new(data_export_fetch_handler);
-    let mut ctx = Ctx::default();
+    let mut ctx = Ctx::new(
+        Profile::default(),
+        LibraryBucket::default(),
+        StreamsBucket::default(),
+        NotificationsBucket::new::<TestEnv>(None, vec![]),
+    );
     ctx.profile.auth = Some(Auth {
         key: AuthKey("user_key".into()),
         user: User::default(),
@@ -120,7 +129,12 @@ fn data_export_with_user() {
 fn data_export_without_a_user() {
     let _env_mutex = TestEnv::reset();
     *FETCH_HANDLER.write().unwrap() = Box::new(data_export_fetch_handler);
-    let ctx = Ctx::default();
+    let ctx = Ctx::new(
+        Profile::default(),
+        LibraryBucket::default(),
+        StreamsBucket::default(),
+        NotificationsBucket::new::<TestEnv>(None, vec![]),
+    );
 
     assert!(
         ctx.profile.auth.is_none(),

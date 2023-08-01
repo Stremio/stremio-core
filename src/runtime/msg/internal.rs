@@ -10,10 +10,13 @@ use crate::types::api::{
     APIRequest, AuthRequest, DataExportResponse, DatastoreRequest, LinkCodeResponse,
     LinkDataResponse,
 };
-use crate::types::library::{LibraryBucket, LibraryItem};
 use crate::types::profile::{Auth, AuthKey, Profile, User};
 use crate::types::resource::Stream;
 use crate::types::streaming_server::Statistics;
+use crate::types::{
+    library::{LibraryBucket, LibraryItem},
+    resource::MetaItemId,
+};
 use url::Url;
 
 pub type CtxStorageResponse = (
@@ -60,6 +63,10 @@ pub enum Internal {
     LibraryChanged(bool),
     /// Dispatched when streams bucket changes with a flag if its already persisted.
     StreamsChanged(bool),
+    /// User notifications have changed
+    NotificationsChanged,
+    /// Dismiss all Notifications for a given [`MetaItemId`].
+    DismissNotificationItem(MetaItemId),
     /// Result for loading link code.
     LinkCodeResult(Result<LinkCodeResponse, LinkError>),
     /// Result for loading link data.
@@ -82,6 +89,8 @@ pub enum Internal {
     ResourceRequestResult(ResourceRequest, Box<Result<ResourceResponse, EnvError>>),
     /// Result for fetching manifest from addon.
     ManifestRequestResult(Url, Result<Manifest, EnvError>),
+    /// TODO: write some obvious comment about what it is
+    NotificationsRequestResult(ResourceRequest, Box<Result<ResourceResponse, EnvError>>),
     /// Result for requesting a `dataExport` of user data.
     DataExportResult(AuthKey, Result<DataExportResponse, CtxError>),
     /// The result of querying the data for LocalSearch

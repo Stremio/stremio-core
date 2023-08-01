@@ -12,6 +12,5 @@ pub mod library_with_filters;
 pub mod link;
 pub mod local_search;
 pub mod meta_details;
-pub mod notifications;
 pub mod player;
 pub mod streaming_server;

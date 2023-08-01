@@ -9,6 +9,7 @@ use crate::types::{NumberAsString, SortedVec, SortedVecAdapter, UniqueVec, Uniqu
 use chrono::{DateTime, Utc};
 use core::cmp::Ordering;
 use derivative::Derivative;
+use either::Either;
 use itertools::Itertools;
 use percent_encoding::utf8_percent_encode;
 use serde::{Deserialize, Serialize};
@@ -20,6 +21,11 @@ use serde_with::{
 use std::borrow::Cow;
 use std::collections::HashMap;
 use url::Url;
+
+/// The [`MetaItem`] Id type to improve the readability of the code.
+///
+/// For example when using the id as key in a [`HashMap`].
+pub type MetaItemId = String;
 
 #[derive(Clone, PartialEq, Deserialize, Debug)]
 #[cfg_attr(test, derive(Default))]
@@ -49,7 +55,7 @@ impl<'de> DeserializeAs<'de, Trailer> for Stream {
 #[cfg_attr(test, derive(Default))]
 #[serde(rename_all = "camelCase")]
 struct MetaItemPreviewLegacy {
-    id: String,
+    id: MetaItemId,
     r#type: String,
     #[serde(default)]
     name: String,
@@ -198,6 +204,20 @@ pub struct MetaItem {
     pub videos: Vec<Video>,
 }
 
+impl MetaItem {
+    /// Returns an iterator over references to Video, skipping special episodes, sorted by released and series_info, oldest first
+    pub fn videos_iter(&self) -> impl Iterator<Item = &Video> + DoubleEndedIterator {
+        if self.preview.r#type == "series" {
+            Either::Left(self.videos.iter().filter(|video| match video.series_info {
+                Some(SeriesInfo { season, .. }) => season != 0,
+                _ => false,
+            }))
+        } else {
+            Either::Right(self.videos.iter().rev())
+        }
+    }
+}
+
 #[derive(Derivative, Clone, PartialEq, Eq, Serialize, Deserialize, Debug)]
 #[derivative(Default)]
 #[serde(rename_all = "camelCase")]
@@ -215,6 +235,11 @@ pub struct SeriesInfo {
     pub season: u32,
     pub episode: u32,
 }
+
+/// The [`Video`] Id type to improve the readability of the code.
+///
+/// For example when using the id as key in a [`HashMap`].
+pub type VideoId = String;
 
 #[serde_as]
 #[derive(Clone, PartialEq, Eq, Serialize, Deserialize, Debug)]

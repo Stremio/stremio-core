@@ -4,7 +4,9 @@ use crate::runtime::msg::{Action, ActionCtx};
 use crate::runtime::{Env, EnvFutureExt, Runtime, RuntimeAction, TryEnvFuture};
 use crate::types::api::{APIResult, LibraryItemModified, LibraryItemsResponse, SuccessResponse};
 use crate::types::library::{LibraryBucket, LibraryItem};
+use crate::types::notifications::NotificationsBucket;
 use crate::types::profile::{Auth, AuthKey, GDPRConsent, Profile, User};
+use crate::types::streams::StreamsBucket;
 use crate::types::True;
 use crate::unit_tests::{
     default_fetch_handler, Request, TestEnv, FETCH_HANDLER, REQUESTS, STORAGE,
@@ -25,7 +27,13 @@ fn actionctx_synclibrarywithapi() {
         ctx: Ctx,
     }
     let _env_mutex = TestEnv::reset();
-    let (runtime, _rx) = Runtime::<TestEnv, _>::new(TestModel::default(), vec![], 1000);
+    let ctx = Ctx::new(
+        Profile::default(),
+        LibraryBucket::default(),
+        StreamsBucket::default(),
+        NotificationsBucket::new::<TestEnv>(None, vec![]),
+    );
+    let (runtime, _rx) = Runtime::<TestEnv, _>::new(TestModel { ctx }, vec![], 1000);
     TestEnv::run(|| {
         runtime.dispatch(RuntimeAction {
             field: None,
@@ -229,8 +237,8 @@ fn actionctx_synclibrarywithapi_with_user() {
     *FETCH_HANDLER.write().unwrap() = Box::new(fetch_handler);
     let (runtime, _rx) = Runtime::<TestEnv, _>::new(
         TestModel {
-            ctx: Ctx {
-                profile: Profile {
+            ctx: Ctx::new(
+                Profile {
                     auth: Some(Auth {
                         key: AuthKey("auth_key".to_owned()),
                         user: User {
@@ -252,7 +260,7 @@ fn actionctx_synclibrarywithapi_with_user() {
                     }),
                     ..Default::default()
                 },
-                library: LibraryBucket {
+                LibraryBucket {
                     uid: Some("user_id".to_owned()),
                     items: vec![
                         (LOCAL_ONLY_ITEM.id.to_owned(), LOCAL_ONLY_ITEM.to_owned()),
@@ -280,8 +288,9 @@ fn actionctx_synclibrarywithapi_with_user() {
                     .into_iter()
                     .collect(),
                 },
-                ..Default::default()
-            },
+                StreamsBucket::default(),
+                NotificationsBucket::new::<TestEnv>(None, vec![]),
+            ),
         },
         vec![],
         1000,
@@ -391,8 +400,8 @@ fn actionctx_synclibrarywithapi_with_user_empty_library() {
     *FETCH_HANDLER.write().unwrap() = Box::new(fetch_handler);
     let (runtime, _rx) = Runtime::<TestEnv, _>::new(
         TestModel {
-            ctx: Ctx {
-                profile: Profile {
+            ctx: Ctx::new(
+                Profile {
                     auth: Some(Auth {
                         key: AuthKey("auth_key".to_owned()),
                         user: User {
@@ -414,8 +423,10 @@ fn actionctx_synclibrarywithapi_with_user_empty_library() {
                     }),
                     ..Default::default()
                 },
-                ..Default::default()
-            },
+                LibraryBucket::default(),
+                StreamsBucket::default(),
+                NotificationsBucket::new::<TestEnv>(None, vec![]),
+            ),
         },
         vec![],
         1000,

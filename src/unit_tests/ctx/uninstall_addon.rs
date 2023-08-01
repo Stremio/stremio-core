@@ -4,7 +4,10 @@ use crate::runtime::msg::{Action, ActionCtx};
 use crate::runtime::{Env, EnvFutureExt, Runtime, RuntimeAction, TryEnvFuture};
 use crate::types::addon::{Descriptor, DescriptorFlags, Manifest};
 use crate::types::api::{APIResult, SuccessResponse};
+use crate::types::library::LibraryBucket;
+use crate::types::notifications::NotificationsBucket;
 use crate::types::profile::{Auth, AuthKey, GDPRConsent, Profile, User};
+use crate::types::streams::StreamsBucket;
 use crate::types::True;
 use crate::unit_tests::{
     default_fetch_handler, Request, TestEnv, FETCH_HANDLER, REQUESTS, STORAGE,
@@ -52,10 +55,12 @@ fn actionctx_uninstalladdon() {
     );
     let (runtime, _rx) = Runtime::<TestEnv, _>::new(
         TestModel {
-            ctx: Ctx {
+            ctx: Ctx::new(
                 profile,
-                ..Default::default()
-            },
+                LibraryBucket::default(),
+                StreamsBucket::default(),
+                NotificationsBucket::new::<TestEnv>(None, vec![]),
+            ),
         },
         vec![],
         1000,
@@ -161,10 +166,12 @@ fn actionctx_uninstalladdon_with_user() {
     );
     let (runtime, _rx) = Runtime::<TestEnv, _>::new(
         TestModel {
-            ctx: Ctx {
+            ctx: Ctx::new(
                 profile,
-                ..Default::default()
-            },
+                LibraryBucket::default(),
+                StreamsBucket::default(),
+                NotificationsBucket::new::<TestEnv>(None, vec![]),
+            ),
         },
         vec![],
         1000,
@@ -250,10 +257,12 @@ fn actionctx_uninstalladdon_protected() {
     );
     let (runtime, _rx) = Runtime::<TestEnv, _>::new(
         TestModel {
-            ctx: Ctx {
+            ctx: Ctx::new(
                 profile,
-                ..Default::default()
-            },
+                LibraryBucket::default(),
+                StreamsBucket::default(),
+                NotificationsBucket::new::<TestEnv>(None, vec![]),
+            ),
         },
         vec![],
         1000,
@@ -322,10 +331,12 @@ fn actionctx_uninstalladdon_not_installed() {
     );
     let (runtime, _rx) = Runtime::<TestEnv, _>::new(
         TestModel {
-            ctx: Ctx {
+            ctx: Ctx::new(
                 profile,
-                ..Default::default()
-            },
+                LibraryBucket::default(),
+                StreamsBucket::default(),
+                NotificationsBucket::new::<TestEnv>(None, vec![]),
+            ),
         },
         vec![],
         1000,

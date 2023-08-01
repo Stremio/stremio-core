@@ -176,8 +176,8 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                 let subtitles_effects = match &selected.subtitles_path {
                     Some(subtitles_path) => resources_update_with_vector_content::<E, _>(
                         &mut self.subtitles,
-                        ResourcesAction::ResourcesRequested {
-                            request: &AggrRequest::AllOfResource(ResourcePath {
+                        ResourcesAction::force_request(
+                            &AggrRequest::AllOfResource(ResourcePath {
                                 extra: subtitles_path
                                     .extra
                                     .to_owned()
@@ -198,8 +198,8 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                                     ),
                                 ..subtitles_path.to_owned()
                             }),
-                            addons: &ctx.profile.addons,
-                        },
+                            &ctx.profile.addons,
+                        ),
                     ),
                     _ => eq_update(&mut self.subtitles, vec![]),
                 };
@@ -224,6 +224,13 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                 );
                 let watched_effects =
                     watched_update(&mut self.watched, &self.meta_item, &self.library_item);
+                let notification_effects = match &selected.meta_request {
+                    Some(meta_request) => Effects::msg(Msg::Internal(
+                        Internal::DismissNotificationItem(meta_request.path.id.to_owned()),
+                    ))
+                    .unchanged(),
+                    _ => Effects::none().unchanged(),
+                };
                 let (id, r#type, name, video_id, time, duration) = self
                     .library_item
                     .as_ref()
@@ -262,6 +269,7 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                     .join(series_info_effects)
                     .join(library_item_effects)
                     .join(watched_effects)
+                    .join(notification_effects)
             }
             Msg::Action(Action::Unload) => {
                 let ended_effects = if !self.ended && self.selected.is_some() {
@@ -323,6 +331,7 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                     Some(library_item),
                 ) => {
                     let seeking = library_item.state.time_offset.abs_diff(*time) > 1000;
+                    // library_item.state.last_watched = Some(E::now() - chrono::Duration::days(1));
                     library_item.state.last_watched = Some(E::now());
                     if library_item.state.video_id != Some(video_id.to_owned()) {
                         library_item.state.video_id = Some(video_id.to_owned());
@@ -734,7 +743,7 @@ fn library_item_update<E: Env + 'static>(
                 } => Some(meta_item),
                 _ => None,
             });
-            match (library_item, meta_item) {
+            let mut library_item = match (library_item, meta_item) {
                 (Some(library_item), Some(meta_item)) => {
                     Some(LibraryItem::from((&meta_item.preview, library_item)))
                 }
@@ -743,20 +752,36 @@ fn library_item_update<E: Env + 'static>(
                 }
                 (Some(library_item), None) => Some(library_item.to_owned()),
                 _ => None,
-            }
+            };
+            if let (Some(library_item), Some(meta_item)) = (&mut library_item, meta_item) {
+                library_item.state.last_video_released = meta_item
+                    .videos_iter()
+                    .rev()
+                    .find_map(|last_video| last_video.released.to_owned());
+            };
+            library_item
         }
         _ => None,
     };
     if *library_item != next_library_item {
-        let update_library_item_effects = match library_item {
+        let update_library_item_effects = match &library_item {
             Some(library_item) => Effects::msg(Msg::Internal(Internal::UpdateLibraryItem(
                 library_item.to_owned(),
             )))
             .unchanged(),
             _ => Effects::none().unchanged(),
         };
+        let update_next_library_item_effects = match &next_library_item {
+            Some(next_library_item) => Effects::msg(Msg::Internal(Internal::UpdateLibraryItem(
+                next_library_item.to_owned(),
+            )))
+            .unchanged(),
+            _ => Effects::none().unchanged(),
+        };
         *library_item = next_library_item;
-        Effects::none().join(update_library_item_effects)
+        Effects::none()
+            .join(update_library_item_effects)
+            .join(update_next_library_item_effects)
     } else {
         Effects::none().unchanged()
     }
