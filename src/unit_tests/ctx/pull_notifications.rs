@@ -199,6 +199,7 @@ fn pull_notifications() {
                             time_offset: 100,
                             duration: 101,
                             video_id: Some("tt1:1:5".to_string()),
+                            stream: None,
                             last_video_released: Some(
                                 Utc.with_ymd_and_hms(2020, 1, 1, 0, 0, 0).unwrap(),
                             ),
