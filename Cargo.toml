@@ -20,12 +20,16 @@ doctest = false
 # TODO: env-future-send should be enabled by default
 # but our `TestEnv` for `unit_tests` uses a MutexGuard which is not Send.
 # default = ["env-future-send"]
+default = []
 
 # Adds `Send` marker trait to the `Env` trait methods and `EnvFuture`.
 # It's required for environments that do not support `Send`.
 # If enabled for `wasm` it will cause a compile error!
 # see https://github.com/rustwasm/wasm-bindgen/issues/2833
 env-future-send = []
+
+# Exports the Model derive macro from `stremio-derive`
+derive = []
 
 [dependencies]
 stremio-derive = { path = "stremio-derive" }
