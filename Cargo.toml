@@ -2,7 +2,7 @@
 name = "stremio-core"
 version = "0.1.0"
 authors = ["Smart Code OOD"]
-edition = "2018"
+edition = "2021"
 
 rust-version = "1.60"
 
