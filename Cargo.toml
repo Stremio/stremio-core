@@ -9,7 +9,6 @@ rust-version = "1.60"
 [workspace]
 members = [
     "stremio-derive",
-    "stremio-analytics",
     "stremio-watched-bitfield",
 ]
 
