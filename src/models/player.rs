@@ -226,7 +226,7 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                     watched_update(&mut self.watched, &self.meta_item, &self.library_item);
                 let notification_effects = match &selected.meta_request {
                     Some(meta_request) => Effects::msg(Msg::Internal(
-                        Internal::DismissNotificationItem(meta_request.path.id.to_owned()),
+                        Internal::NotificationItemDismissed(meta_request.path.id.to_owned()),
                     ))
                     .unchanged(),
                     _ => Effects::none().unchanged(),

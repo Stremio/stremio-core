@@ -134,7 +134,7 @@ pub fn update_notifications<E: Env + 'static>(
                 .join(notification_items_effects)
                 .join(notifications_effects)
         }
-        Msg::Internal(Internal::DismissNotificationItem(id)) => {
+        Msg::Internal(Internal::NotificationItemDismissed(id)) => {
             remove_notification_item(notifications, id)
         }
         Msg::Internal(Internal::NotificationsChanged) => {
