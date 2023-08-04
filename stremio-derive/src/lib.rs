@@ -1,7 +1,7 @@
 use case::CaseExt;
 use proc_macro::TokenStream;
 use proc_macro2::Span;
-use proc_macro_crate::crate_name;
+use proc_macro_crate::{crate_name, FoundCrate};
 use proc_macro_roids::IdentExt;
 use quote::quote;
 use std::borrow::Cow;
@@ -30,7 +30,7 @@ pub fn model_derive(input: TokenStream) -> TokenStream {
             let env_ident = input
                 .attrs
                 .iter()
-                .find(|attr| attr.path.is_ident("model"))
+                .find(|attr| attr.path().is_ident("model"))
                 .expect("model attribute required")
                 .parse_args::<Ident>()
                 .expect("model attribute parse failed");
@@ -136,10 +136,13 @@ pub fn model_derive(input: TokenStream) -> TokenStream {
     }
 }
 
-fn get_core_ident() -> Result<Ident, String> {
+fn get_core_ident() -> Result<Ident, proc_macro_crate::Error> {
     let core_crate_name = match env::var("CARGO_PKG_NAME") {
         Ok(cargo_pkg_name) if cargo_pkg_name == CORE_CRATE_ORIGINAL_NAME => Cow::Borrowed("crate"),
-        _ => Cow::Owned(crate_name(CORE_CRATE_ORIGINAL_NAME)?),
+        _ => match crate_name(CORE_CRATE_ORIGINAL_NAME)? {
+            FoundCrate::Itself => Cow::Borrowed("crate"),
+            FoundCrate::Name(name) => Cow::Owned(name),
+        },
     };
     Ok(Ident::new(&core_crate_name, Span::call_site()))
 }
