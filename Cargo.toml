@@ -31,6 +31,9 @@ env-future-send = []
 # Exports the Model derive macro from `stremio-derive`
 derive = []
 
+# Enable core analytics
+analytics = []
+
 [dependencies]
 stremio-derive = { path = "stremio-derive" }
 stremio-watched-bitfield = { path = "stremio-watched-bitfield" }
