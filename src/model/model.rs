@@ -25,8 +25,8 @@ use stremio_core::{
         notifications::NotificationsBucket, profile::Profile, resource::MetaItemPreview,
         streams::StreamsBucket,
     },
+    Model,
 };
-use stremio_derive::Model;
 
 use crate::{
     env::WebEnv,
