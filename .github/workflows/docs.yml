@@ -12,20 +12,24 @@ jobs:
       - uses: actions/checkout@v3
         with:
           submodules: true
-      - uses: actions-rs/toolchain@v1
+
+      - name: Rust setup
+        uses: dtolnay/rust-toolchain@master
         with:
           # Use nightly to build the docs with `--cfg docsrs`
           toolchain: nightly
-          profile: minimal
           components: rust-docs
+
       - name: Build docs
         # Building locally:
         # for `--enable-index-page` it is required to pass `-Z unstable-options` to rustdocs
         run: RUSTDOCFLAGS="--cfg docsrs -Z unstable-options --enable-index-page" cargo +nightly doc --all-features --no-deps --workspace
+
       - name: Prepare /docs
         run: |
           rm -rf ./docs
           mv target/doc ./docs
+
       - name: Deploy gh-pages
         uses: peaceiris/actions-gh-pages@v3
         with:
