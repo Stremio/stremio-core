@@ -25,7 +25,7 @@ jobs:
     - name: Rust setup (MSRV)
       uses: dtolnay/rust-toolchain@master
       with:
-        toolchain: ${{ RUST_MSRV_VERSION }}
+        toolchain: ${{ env.RUST_MSRV_VERSION }}
 
     - name: Checkout
       uses: actions/checkout@v3
