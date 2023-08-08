@@ -78,24 +78,25 @@ pub fn update_library<E: Env + 'static>(
             }))
             .unchanged(),
         },
-        Msg::Action(Action::Ctx(ActionCtx::ToggleLibraryItemNotifications(id, state))) => {
-            match library.items.get(id) {
-                Some(library_item) => {
-                    let mut library_item = library_item.to_owned();
-                    library_item.state.no_notif = *state;
-                    Effects::msg(Msg::Internal(Internal::UpdateLibraryItem(library_item)))
-                        .join(Effects::msg(Msg::Event(
-                            Event::LibraryItemNotificationsToggled { id: id.to_owned() },
-                        )))
-                        .unchanged()
-                }
-                _ => Effects::msg(Msg::Event(Event::Error {
-                    error: CtxError::from(OtherError::LibraryItemNotFound),
-                    source: Box::new(Event::LibraryItemNotificationsToggled { id: id.to_owned() }),
-                }))
-                .unchanged(),
+        Msg::Action(Action::Ctx(ActionCtx::ToggleLibraryItemNotifications {
+            id,
+            no_notifications,
+        })) => match library.items.get(id) {
+            Some(library_item) => {
+                let mut library_item = library_item.to_owned();
+                library_item.state.no_notif = *no_notifications;
+                Effects::msg(Msg::Internal(Internal::UpdateLibraryItem(library_item)))
+                    .join(Effects::msg(Msg::Event(
+                        Event::LibraryItemNotificationsToggled { id: id.to_owned() },
+                    )))
+                    .unchanged()
             }
-        }
+            _ => Effects::msg(Msg::Event(Event::Error {
+                error: CtxError::from(OtherError::LibraryItemNotFound),
+                source: Box::new(Event::LibraryItemNotificationsToggled { id: id.to_owned() }),
+            }))
+            .unchanged(),
+        },
         Msg::Action(Action::Ctx(ActionCtx::SyncLibraryWithAPI)) => match auth_key {
             Some(auth_key) => Effects::one(plan_sync_with_api::<E>(library, auth_key)).unchanged(),
             _ => Effects::msg(Msg::Event(Event::Error {

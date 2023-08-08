@@ -1,21 +1,31 @@
-use crate::models::addon_details::Selected as AddonDetailsSelected;
-use crate::models::catalog_with_filters::Selected as CatalogWithFiltersSelected;
-use crate::models::catalogs_with_extra::Selected as CatalogsWithExtraSelected;
-use crate::models::installed_addons_with_filters::Selected as InstalledAddonsWithFiltersSelected;
-use crate::models::library_by_type::Selected as LibraryByTypeSelected;
-use crate::models::library_with_filters::Selected as LibraryWithFiltersSelected;
-use crate::models::meta_details::Selected as MetaDetailsSelected;
-use crate::models::player::Selected as PlayerSelected;
-use crate::models::streaming_server::{
-    Settings as StreamingServerSettings, StatisticsRequest as StreamingServerStatisticsRequest,
-};
-use crate::types::addon::Descriptor;
-use crate::types::api::AuthRequest;
-use crate::types::profile::Settings as ProfileSettings;
-use crate::types::resource::{MetaItemId, MetaItemPreview};
-use serde::Deserialize;
 use std::ops::Range;
+
+use serde::Deserialize;
 use url::Url;
+
+use crate::{
+    models::{
+        addon_details::Selected as AddonDetailsSelected,
+        catalog_with_filters::Selected as CatalogWithFiltersSelected,
+        catalogs_with_extra::Selected as CatalogsWithExtraSelected,
+        installed_addons_with_filters::Selected as InstalledAddonsWithFiltersSelected,
+        library_by_type::Selected as LibraryByTypeSelected,
+        library_with_filters::Selected as LibraryWithFiltersSelected,
+        meta_details::Selected as MetaDetailsSelected,
+        player::Selected as PlayerSelected,
+        streaming_server::{
+            Settings as StreamingServerSettings,
+            StatisticsRequest as StreamingServerStatisticsRequest,
+        },
+    },
+    types::{
+        addon::Descriptor,
+        api::AuthRequest,
+        library::LibraryItemId,
+        profile::Settings as ProfileSettings,
+        resource::{MetaItemId, MetaItemPreview},
+    },
+};
 
 #[derive(Clone, Deserialize, Debug)]
 #[serde(tag = "action", content = "args")]
@@ -31,7 +41,12 @@ pub enum ActionCtx {
     AddToLibrary(MetaItemPreview),
     RemoveFromLibrary(String),
     RewindLibraryItem(String),
-    ToggleLibraryItemNotifications(MetaItemId, bool),
+    #[serde(rename_all = "camelCase")]
+    ToggleLibraryItemNotifications {
+        id: LibraryItemId,
+        /// If set to `true` it will disable notifications for the LibraryItem.
+        no_notifications: bool,
+    },
     /// Dismiss all Notification for a given [`MetaItemId`].
     DismissNotificationItem(MetaItemId),
     PushUserToAPI,
