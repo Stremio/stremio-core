@@ -12,12 +12,14 @@ use crate::{
     types::resource::{MetaItemBehaviorHints, MetaItemPreview, PosterShape, Video},
 };
 
+pub type LibraryItemId = String;
+
 #[serde_as]
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct LibraryItem {
     #[serde(rename = "_id")]
-    pub id: String,
+    pub id: LibraryItemId,
     pub name: String,
     pub r#type: String,
     #[serde(default)]
