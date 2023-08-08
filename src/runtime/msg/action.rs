@@ -41,12 +41,8 @@ pub enum ActionCtx {
     AddToLibrary(MetaItemPreview),
     RemoveFromLibrary(String),
     RewindLibraryItem(String),
-    #[serde(rename_all = "camelCase")]
-    ToggleLibraryItemNotifications {
-        id: LibraryItemId,
-        /// If set to `true` it will disable notifications for the LibraryItem.
-        no_notifications: bool,
-    },
+    /// If boolean is set to `true` it will disable notifications for the LibraryItem.
+    ToggleLibraryItemNotifications(LibraryItemId, bool),
     /// Dismiss all Notification for a given [`MetaItemId`].
     DismissNotificationItem(MetaItemId),
     PushUserToAPI,
