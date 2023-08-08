@@ -4,7 +4,8 @@ on: [push]
 
 # Stops the running workflow of previous pushes
 concurrency:
-  group: ${{ github.ref }}
+  # cancel per workflow
+  group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:

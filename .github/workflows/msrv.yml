@@ -10,11 +10,12 @@ on:
 
 # Stops the running workflow of previous pushes
 concurrency:
-  group: ${{ github.ref }}
+  # cancel per workflow
+  group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
 env:
-  RUST_MSRV_VERSION: '1.61'
+  RUST_MSRV_VERSION: '1.67.1'
 
 jobs:
   build:
