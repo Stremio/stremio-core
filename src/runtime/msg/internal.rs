@@ -65,8 +65,8 @@ pub enum Internal {
     StreamsChanged(bool),
     /// User notifications have changed
     NotificationsChanged,
-    /// All Notifications for a given [`MetaItemId`] were dismissed.
-    NotificationItemDismissed(MetaItemId),
+    /// Dismiss all Notifications for a given [`MetaItemId`].
+    DismissNotificationItem(MetaItemId),
     /// Result for loading link code.
     LinkCodeResult(Result<LinkCodeResponse, LinkError>),
     /// Result for loading link data.

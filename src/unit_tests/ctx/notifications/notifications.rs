@@ -1,5 +1,6 @@
 use std::{any::Any, collections::HashMap};
 
+use chrono::{TimeZone, Utc};
 use enclose::enclose;
 use futures::future;
 use serde::Deserialize;
@@ -13,10 +14,10 @@ use crate::{
     },
     types::{
         addon::{Descriptor, ResourceResponse},
-        library::{LibraryBucket, LibraryItem},
+        library::{LibraryBucket, LibraryItem, LibraryItemState},
         notifications::{NotificationItem, NotificationsBucket},
         profile::Profile,
-        resource::{MetaItemId, VideoId},
+        resource::{MetaItemId, PosterShape, VideoId},
         streams::StreamsBucket,
     },
     unit_tests::{default_fetch_handler, Request, TestEnv, FETCH_HANDLER},
@@ -34,7 +35,7 @@ struct TestData {
 }
 
 #[test]
-fn notifications() {
+fn test_pull_notifications() {
     let tests = serde_json::from_slice::<Vec<TestData>>(DATA).unwrap();
     for test in tests {
         #[derive(Model, Clone, Debug)]
@@ -79,4 +80,108 @@ fn notifications() {
             "Notifications items match"
         );
     }
+}
+
+#[test]
+fn test_dismiss_notification() {
+    #[derive(Model, Clone, Debug)]
+    #[model(TestEnv)]
+    struct TestModel {
+        ctx: Ctx,
+    }
+
+    let (runtime, _rx) = Runtime::<TestEnv, _>::new(
+        TestModel {
+            ctx: Ctx::new(
+                Profile {
+                    ..Default::default()
+                },
+                LibraryBucket::new(
+                    None,
+                    vec![
+                        LibraryItem {
+                            id: "tt1".to_string(),
+                            name: "Item 1".to_string(),
+                            r#type: "series".to_string(),
+                            poster: None,
+                            poster_shape: crate::types::resource::PosterShape::Poster,
+                            removed: false,
+                            temp: false,
+                            ctime: Some(Utc::now()),
+                            mtime: Utc::now(),
+                            state: LibraryItemState {
+                                last_watched: Some(
+                                    Utc.with_ymd_and_hms(2022, 6, 20, 0, 0, 0).unwrap(),
+                                ),
+                                time_watched: 40 * 60 * 60 * 1000,
+                                time_offset: 15,
+                                overall_time_watched: 140 * 60 * 60 * 1000,
+                                times_watched: 2,
+                                flagged_watched: 1,
+                                duration: 55 * 60 * 60 * 1000,
+                                video_id: Some("tt1:1".into()),
+                                watched: None,
+                                last_video_released: Some(Utc::now()),
+                                notifications_disabled: false,
+                            },
+                            behavior_hints: Default::default(),
+                        },
+                        LibraryItem {
+                            id: "tt2".to_string(),
+                            name: "Item 2".to_string(),
+                            r#type: "series".to_string(),
+                            poster: None,
+                            poster_shape: PosterShape::Poster,
+                            removed: false,
+                            temp: false,
+                            ctime: Some(Utc::now()),
+                            mtime: Utc::now(),
+                            state: LibraryItemState {
+                                last_watched: Some(
+                                    Utc.with_ymd_and_hms(2022, 6, 20, 0, 0, 0).unwrap(),
+                                ),
+                                time_watched: 40 * 60 * 60 * 1000,
+                                time_offset: 15,
+                                overall_time_watched: 140 * 60 * 60 * 1000,
+                                times_watched: 2,
+                                flagged_watched: 1,
+                                duration: 55 * 60 * 60 * 1000,
+                                video_id: Some("tt1:1".into()),
+                                watched: None,
+                                last_video_released: Some(Utc::now()),
+                                notifications_disabled: false,
+                            },
+                            behavior_hints: Default::default(),
+                        },
+                    ],
+                ),
+                StreamsBucket::default(),
+                NotificationsBucket::new::<TestEnv>(
+                    None,
+                    vec![
+                        NotificationItem {
+                            meta_id: "tt1".to_string(),
+                            video_id: "tt1:2".to_string(),
+                            video_released: Utc::now(),
+                        },
+                        NotificationItem {
+                            meta_id: "tt2".to_string(),
+                            video_id: "tt2:10".to_string(),
+                            video_released: Utc::now(),
+                        },
+                    ],
+                ),
+            ),
+        },
+        vec![],
+        1000,
+    );
+    TestEnv::run(|| {
+        runtime.dispatch(RuntimeAction {
+            field: None,
+            action: Action::Ctx(ActionCtx::DismissNotificationItem("tt1".into())),
+        })
+    });
+
+    
 }
