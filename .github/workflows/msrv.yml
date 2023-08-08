@@ -1,4 +1,4 @@
-name: MSRV 1.60 build
+name: MSRV build
 
 on:
   # will checkout the default branch `development`
@@ -12,16 +12,18 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  RUST_MSRV_VERSION: '1.60'
+  RUST_MSRV_VERSION: '1.61'
 
 jobs:
   build:
-    name: Test and build --release
+    name: Test and build
     runs-on: ubuntu-latest
 
     steps:
-    - name: Set default Rust version - ${{ env.RUST_MSRV_VERSION }}
-      run: rustup default ${{ env.RUST_MSRV_VERSION }}
+    - name: Rust setup
+      uses: dtolnay/rust-toolchain@master
+      with:
+        toolchain: ${{ RUST_MSRV_VERSION }}
 
     - name: Checkout
       uses: actions/checkout@v3
