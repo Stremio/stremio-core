@@ -76,7 +76,7 @@ pub struct ResourcePath {
     /// Extra query parameters to be passed to the endpoint
     ///
     /// When calling the endpoint using the [`AddonHTTPTransport`](crate::addon_transport::AddonHTTPTransport),
-    /// they will be encoded using [`query_params_encode`](crate::types::query_params_encode).
+    /// they will be encoded using [`query_params_encode()`](crate::types::query_params_encode()).
     pub extra: Vec<ExtraValue>,
 }
 
