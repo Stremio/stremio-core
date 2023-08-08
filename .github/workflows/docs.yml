@@ -13,7 +13,7 @@ jobs:
         with:
           submodules: true
 
-      - name: Rust setup
+      - name: Rust setup (nightly)
         uses: dtolnay/rust-toolchain@master
         with:
           # Use nightly to build the docs with `--cfg docsrs`
