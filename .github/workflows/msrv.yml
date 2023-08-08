@@ -5,6 +5,8 @@ on:
   schedule:
     # run every Friday at 17:00
     - cron: '00 17 * * 5'
+  # Or ran manually
+  workflow_dispatch:
 
 # Stops the running workflow of previous pushes
 concurrency:
