@@ -1,4 +1,4 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `src/deep_links/mod.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>mod.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceSerif4-Regular-1f7d512b176f0f72.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceSerif4-Bold-124a1ca42af929b6.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../../static.files/rustdoc-6d262342be62306e.css" id="mainThemeStyle"><link rel="stylesheet" id="themeStyle" href="../../../static.files/light-5f7299aa2b503fb1.css"><link rel="stylesheet" disabled href="../../../static.files/dark-dfb18ef8114bb428.css"><link rel="stylesheet" disabled href="../../../static.files/ayu-4047a6aaddd3789d.css"><script id="default-settings" ></script><script src="../../../static.files/storage-d43fa987303ecbbb.js"></script><script defer src="../../../static.files/source-script-ea63cb6500f71309.js"></script><script defer src="../../../source-files.js"></script><script defer src="../../../static.files/main-3367e395607fafc1.js"></script><noscript><link rel="stylesheet" href="../../../static.files/noscript-13285aec31fa243e.css"></noscript><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc source"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"></nav><main><nav class="sub"><a class="sub-logo-container" href="../../../stremio_core/index.html"><img class="rust-logo" src="../../../static.files/rust-logo-151179464ae7ed46.svg" alt="logo"></a><form class="search-form"><span></span><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><a href="../../../help.html">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../../static.files/wheel-5ec35bf9ca753509.svg"></a></div></form></nav><section id="main-content" class="content"><div class="example-wrap"><pre class="src-line-numbers"><a href="#1" id="1">1</a>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `src/deep_links/mod.rs`."><title>mod.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceSerif4-Regular-46f98efaafac5295.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceSerif4-Bold-a2c9cd1067f8b328.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../../static.files/rustdoc-cb6f1f67f1bcd037.css" id="mainThemeStyle"><meta name="rustdoc-vars" data-root-path="../../../" data-static-root-path="../../../static.files/" data-current-crate="stremio_core" data-themes="" data-resource-suffix="" data-rustdoc-version="1.73.0-nightly (03a119b0b 2023-08-07)" data-channel="nightly" data-search-js="search-6dfdfced5eff6596.js" data-settings-js="settings-de11bff964e9d4e5.js" data-settings-css="settings-8c76f75bfb6bd192.css" data-theme-light-css="light-1596385f77d47ef2.css" data-theme-dark-css="dark-0a43001d3fc2282c.css" data-theme-ayu-css="ayu-fd19013d6ce078bf.css" ><script src="../../../static.files/storage-db41da1a38ea3cb8.js"></script><script defer src="../../../static.files/src-script-3280b574d94e47b4.js"></script><script defer src="../../../src-files.js"></script><script defer src="../../../static.files/main-0795b7d26be81095.js"></script><noscript><link rel="stylesheet" media="(prefers-color-scheme:light)" href="../../../static.files/light-1596385f77d47ef2.css"><link rel="stylesheet" media="(prefers-color-scheme:dark)" href="../../../static.files/dark-0a43001d3fc2282c.css"><link rel="stylesheet" href="../../../static.files/noscript-cffde32267a19fd6.css"></noscript><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"></nav><main><nav class="sub"><a class="sub-logo-container" href="../../../stremio_core/index.html"><img class="rust-logo" src="../../../static.files/rust-logo-151179464ae7ed46.svg" alt="logo"></a><form class="search-form"><span></span><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><a href="../../../help.html">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../../static.files/wheel-7b819b6101059cd0.svg"></a></div></form></nav><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
 <a href="#2" id="2">2</a>
 <a href="#3" id="3">3</a>
 <a href="#4" id="4">4</a>
@@ -383,19 +383,152 @@
 <a href="#383" id="383">383</a>
 <a href="#384" id="384">384</a>
 <a href="#385" id="385">385</a>
-</pre><pre class="rust"><code><span class="kw">mod </span>error_link;
-
-<span class="kw">use </span><span class="kw">crate</span>::constants::URI_COMPONENT_ENCODE_SET;
-<span class="kw">use </span><span class="kw">crate</span>::deep_links::error_link::ErrorLink;
-<span class="kw">use </span><span class="kw">crate</span>::models::installed_addons_with_filters::InstalledAddonsRequest;
-<span class="kw">use </span><span class="kw">crate</span>::models::library_with_filters::LibraryRequest;
-<span class="kw">use </span><span class="kw">crate</span>::types::addon::{ExtraValue, ResourcePath, ResourceRequest};
-<span class="kw">use </span><span class="kw">crate</span>::types::library::LibraryItem;
-<span class="kw">use </span><span class="kw">crate</span>::types::query_params_encode;
-<span class="kw">use </span><span class="kw">crate</span>::types::resource::{MetaItem, MetaItemPreview, Stream, StreamSource, Video};
-<span class="kw">use </span>percent_encoding::utf8_percent_encode;
+<a href="#386" id="386">386</a>
+<a href="#387" id="387">387</a>
+<a href="#388" id="388">388</a>
+<a href="#389" id="389">389</a>
+<a href="#390" id="390">390</a>
+<a href="#391" id="391">391</a>
+<a href="#392" id="392">392</a>
+<a href="#393" id="393">393</a>
+<a href="#394" id="394">394</a>
+<a href="#395" id="395">395</a>
+<a href="#396" id="396">396</a>
+<a href="#397" id="397">397</a>
+<a href="#398" id="398">398</a>
+<a href="#399" id="399">399</a>
+<a href="#400" id="400">400</a>
+<a href="#401" id="401">401</a>
+<a href="#402" id="402">402</a>
+<a href="#403" id="403">403</a>
+<a href="#404" id="404">404</a>
+<a href="#405" id="405">405</a>
+<a href="#406" id="406">406</a>
+<a href="#407" id="407">407</a>
+<a href="#408" id="408">408</a>
+<a href="#409" id="409">409</a>
+<a href="#410" id="410">410</a>
+<a href="#411" id="411">411</a>
+<a href="#412" id="412">412</a>
+<a href="#413" id="413">413</a>
+<a href="#414" id="414">414</a>
+<a href="#415" id="415">415</a>
+<a href="#416" id="416">416</a>
+<a href="#417" id="417">417</a>
+<a href="#418" id="418">418</a>
+<a href="#419" id="419">419</a>
+<a href="#420" id="420">420</a>
+<a href="#421" id="421">421</a>
+<a href="#422" id="422">422</a>
+<a href="#423" id="423">423</a>
+<a href="#424" id="424">424</a>
+<a href="#425" id="425">425</a>
+<a href="#426" id="426">426</a>
+<a href="#427" id="427">427</a>
+<a href="#428" id="428">428</a>
+<a href="#429" id="429">429</a>
+<a href="#430" id="430">430</a>
+<a href="#431" id="431">431</a>
+<a href="#432" id="432">432</a>
+<a href="#433" id="433">433</a>
+<a href="#434" id="434">434</a>
+<a href="#435" id="435">435</a>
+<a href="#436" id="436">436</a>
+<a href="#437" id="437">437</a>
+<a href="#438" id="438">438</a>
+<a href="#439" id="439">439</a>
+<a href="#440" id="440">440</a>
+<a href="#441" id="441">441</a>
+<a href="#442" id="442">442</a>
+<a href="#443" id="443">443</a>
+<a href="#444" id="444">444</a>
+<a href="#445" id="445">445</a>
+<a href="#446" id="446">446</a>
+<a href="#447" id="447">447</a>
+<a href="#448" id="448">448</a>
+<a href="#449" id="449">449</a>
+<a href="#450" id="450">450</a>
+<a href="#451" id="451">451</a>
+<a href="#452" id="452">452</a>
+<a href="#453" id="453">453</a>
+<a href="#454" id="454">454</a>
+<a href="#455" id="455">455</a>
+<a href="#456" id="456">456</a>
+<a href="#457" id="457">457</a>
+<a href="#458" id="458">458</a>
+<a href="#459" id="459">459</a>
+<a href="#460" id="460">460</a>
+<a href="#461" id="461">461</a>
+<a href="#462" id="462">462</a>
+<a href="#463" id="463">463</a>
+<a href="#464" id="464">464</a>
+<a href="#465" id="465">465</a>
+<a href="#466" id="466">466</a>
+<a href="#467" id="467">467</a>
+<a href="#468" id="468">468</a>
+<a href="#469" id="469">469</a>
+<a href="#470" id="470">470</a>
+<a href="#471" id="471">471</a>
+<a href="#472" id="472">472</a>
+<a href="#473" id="473">473</a>
+<a href="#474" id="474">474</a>
+<a href="#475" id="475">475</a>
+<a href="#476" id="476">476</a>
+<a href="#477" id="477">477</a>
+<a href="#478" id="478">478</a>
+<a href="#479" id="479">479</a>
+<a href="#480" id="480">480</a>
+<a href="#481" id="481">481</a>
+<a href="#482" id="482">482</a>
+<a href="#483" id="483">483</a>
+<a href="#484" id="484">484</a>
+<a href="#485" id="485">485</a>
+<a href="#486" id="486">486</a>
+<a href="#487" id="487">487</a>
+<a href="#488" id="488">488</a>
+<a href="#489" id="489">489</a>
+<a href="#490" id="490">490</a>
+<a href="#491" id="491">491</a>
+<a href="#492" id="492">492</a>
+<a href="#493" id="493">493</a>
+<a href="#494" id="494">494</a>
+<a href="#495" id="495">495</a>
+</pre></div><pre class="rust"><code><span class="kw">use </span>percent_encoding::utf8_percent_encode;
+<span class="kw">use </span>regex::Regex;
 <span class="kw">use </span>serde::Serialize;
 <span class="kw">use </span>url::Url;
+
+<span class="kw">use crate</span>::{
+    constants::URI_COMPONENT_ENCODE_SET,
+    models::{
+        installed_addons_with_filters::InstalledAddonsRequest, library_with_filters::LibraryRequest,
+    },
+    types::{
+        addon::{ExtraValue, ResourcePath, ResourceRequest},
+        library::LibraryItem,
+        profile::Settings,
+        query_params_encode,
+        resource::{MetaItem, MetaItemPreview, Stream, StreamSource, Video},
+    },
+};
+
+<span class="kw">pub use </span>error_link::ErrorLink;
+
+<span class="kw">mod </span>error_link;
+
+<span class="attr">#[derive(Default, Serialize, Debug, PartialEq, Eq)]
+#[serde(rename_all = <span class="string">&quot;camelCase&quot;</span>)]
+</span><span class="kw">pub struct </span>OpenPlayerLink {
+    <span class="kw">pub </span>ios: <span class="prelude-ty">Option</span>&lt;String&gt;,
+    <span class="kw">pub </span>android: <span class="prelude-ty">Option</span>&lt;String&gt;,
+    <span class="kw">pub </span>windows: <span class="prelude-ty">Option</span>&lt;String&gt;,
+    <span class="kw">pub </span>macos: <span class="prelude-ty">Option</span>&lt;String&gt;,
+    <span class="kw">pub </span>linux: <span class="prelude-ty">Option</span>&lt;String&gt;,
+    <span class="kw">pub </span>tizen: <span class="prelude-ty">Option</span>&lt;String&gt;,
+    <span class="kw">pub </span>webos: <span class="prelude-ty">Option</span>&lt;String&gt;,
+    <span class="kw">pub </span>chromeos: <span class="prelude-ty">Option</span>&lt;String&gt;,
+    <span class="kw">pub </span>roku: <span class="prelude-ty">Option</span>&lt;String&gt;,
+}
 
 <span class="attr">#[derive(Default, Serialize, Debug, PartialEq, Eq)]
 #[serde(rename_all = <span class="string">&quot;camelCase&quot;</span>)]
@@ -403,19 +536,73 @@
     <span class="kw">pub </span>href: <span class="prelude-ty">Option</span>&lt;String&gt;,
     <span class="kw">pub </span>download: <span class="prelude-ty">Option</span>&lt;String&gt;,
     <span class="kw">pub </span>streaming: <span class="prelude-ty">Option</span>&lt;String&gt;,
+    <span class="kw">pub </span>open_player: <span class="prelude-ty">Option</span>&lt;OpenPlayerLink&gt;,
     <span class="kw">pub </span>android_tv: <span class="prelude-ty">Option</span>&lt;String&gt;,
     <span class="kw">pub </span>tizen: <span class="prelude-ty">Option</span>&lt;String&gt;,
     <span class="kw">pub </span>webos: <span class="prelude-ty">Option</span>&lt;String&gt;,
     <span class="kw">pub </span>file_name: <span class="prelude-ty">Option</span>&lt;String&gt;,
 }
 
-<span class="kw">impl </span>From&lt;(<span class="kw-2">&amp;</span>Stream, <span class="kw-2">&amp;</span><span class="prelude-ty">Option</span>&lt;Url&gt;)&gt; <span class="kw">for </span>ExternalPlayerLink {
-    <span class="kw">fn </span>from((stream, streaming_server_url): (<span class="kw-2">&amp;</span>Stream, <span class="kw-2">&amp;</span><span class="prelude-ty">Option</span>&lt;Url&gt;)) -&gt; <span class="self">Self </span>{
+<span class="kw">impl </span>From&lt;(<span class="kw-2">&amp;</span>Stream, <span class="kw-2">&amp;</span><span class="prelude-ty">Option</span>&lt;Url&gt;, <span class="kw-2">&amp;</span>Settings)&gt; <span class="kw">for </span>ExternalPlayerLink {
+    <span class="doccomment">/// Create an [`ExternalPlayerLink`] using the [`Stream`],
+    /// the server url (from [`StreamingServer::base_url`] which indicates a running or not server)
+    /// and the user&#39;s [`Settings`] in order to use the [`Settings::player_type`] for generating a
+    /// player-specific url.
+    ///
+    /// [`StreamingServer::base_url`]: crate::models::streaming_server::StreamingServer::base_url
+    </span><span class="kw">fn </span>from((stream, streaming_server_url, settings): (<span class="kw-2">&amp;</span>Stream, <span class="kw-2">&amp;</span><span class="prelude-ty">Option</span>&lt;Url&gt;, <span class="kw-2">&amp;</span>Settings)) -&gt; <span class="self">Self </span>{
+        <span class="kw">let </span>http_regex = Regex::new(<span class="string">r&quot;https?://&quot;</span>).unwrap();
         <span class="kw">let </span>download = stream.download_url();
         <span class="kw">let </span>streaming = stream.streaming_url(streaming_server_url.as_ref());
         <span class="kw">let </span>m3u_uri = stream.m3u_data_uri(streaming_server_url.as_ref());
         <span class="kw">let </span>file_name = m3u_uri.as_ref().map(|<span class="kw">_</span>| <span class="string">&quot;playlist.m3u&quot;</span>.to_owned());
         <span class="kw">let </span>href = m3u_uri.or_else(|| download.to_owned());
+        <span class="kw">let </span>open_player = <span class="kw">match </span><span class="kw-2">&amp;</span>streaming {
+            <span class="prelude-val">Some</span>(url) =&gt; <span class="kw">match </span>settings.player_type.as_ref() {
+                <span class="prelude-val">Some</span>(player_type) =&gt; <span class="kw">match </span>player_type.as_str() {
+                    <span class="string">&quot;choose&quot; </span>=&gt; <span class="prelude-val">Some</span>(OpenPlayerLink {
+                        android: <span class="prelude-val">Some</span>(<span class="macro">format!</span>(
+                            <span class="string">&quot;{}#Intent;type=video/any;scheme=https;end&quot;</span>,
+                            http_regex.replace(url, <span class="string">&quot;intent://&quot;</span>),
+                        )),
+                        ..Default::default()
+                    }),
+                    <span class="string">&quot;vlc&quot; </span>=&gt; <span class="prelude-val">Some</span>(OpenPlayerLink {
+                        ios: <span class="prelude-val">Some</span>(<span class="macro">format!</span>(<span class="string">&quot;vlc-x-callback://x-callback-url/stream?url={url}&quot;</span>)),
+                        android: <span class="prelude-val">Some</span>(<span class="macro">format!</span>(
+                            <span class="string">&quot;{}#Intent;package=org.videolan.vlc;type=video;scheme=https;end&quot;</span>,
+                            http_regex.replace(url, <span class="string">&quot;intent://&quot;</span>),
+                        )),
+                        ..Default::default()
+                    }),
+                    <span class="string">&quot;mxplayer&quot; </span>=&gt; <span class="prelude-val">Some</span>(OpenPlayerLink {
+                        android: <span class="prelude-val">Some</span>(<span class="macro">format!</span>(
+                            <span class="string">&quot;{}#Intent;package=com.mxtech.videoplayer.ad;type=video;scheme=https;end&quot;</span>,
+                            http_regex.replace(url, <span class="string">&quot;intent://&quot;</span>),
+                        )),
+                        ..Default::default()
+                    }),
+                    <span class="string">&quot;justplayer&quot; </span>=&gt; <span class="prelude-val">Some</span>(OpenPlayerLink {
+                        android: <span class="prelude-val">Some</span>(<span class="macro">format!</span>(
+                            <span class="string">&quot;{}#Intent;package=com.brouken.player;type=video;scheme=https;end&quot;</span>,
+                            http_regex.replace(url, <span class="string">&quot;intent://&quot;</span>),
+                        )),
+                        ..Default::default()
+                    }),
+                    <span class="string">&quot;outplayer&quot; </span>=&gt; <span class="prelude-val">Some</span>(OpenPlayerLink {
+                        ios: <span class="prelude-val">Some</span>(<span class="macro">format!</span>(<span class="string">&quot;{}&quot;</span>, http_regex.replace(url, <span class="string">&quot;outplayer://&quot;</span>))),
+                        ..Default::default()
+                    }),
+                    <span class="string">&quot;infuse&quot; </span>=&gt; <span class="prelude-val">Some</span>(OpenPlayerLink {
+                        ios: <span class="prelude-val">Some</span>(<span class="macro">format!</span>(<span class="string">&quot;infuse://x-callback-url/play?url={url}&quot;</span>)),
+                       ..Default::default()
+                    }),
+                    <span class="kw">_ </span>=&gt; <span class="prelude-val">None</span>,
+                },
+                <span class="prelude-val">None </span>=&gt; <span class="prelude-val">None</span>,
+            },
+            <span class="prelude-val">None </span>=&gt; <span class="prelude-val">None</span>,
+        };
         <span class="kw">let </span>(android_tv, tizen, webos) = <span class="kw">match </span><span class="kw-2">&amp;</span>stream.source {
             StreamSource::External {
                 android_tv_url,
@@ -433,6 +620,7 @@
             href,
             download,
             streaming,
+            open_player,
             android_tv,
             tizen,
             webos,
@@ -505,6 +693,12 @@
     }
 }
 
+<span class="kw">impl </span>From&lt;(MetaItemPreview, <span class="kw-2">&amp;</span>ResourceRequest)&gt; <span class="kw">for </span>MetaItemDeepLinks {
+    <span class="kw">fn </span>from((item, request): (MetaItemPreview, <span class="kw-2">&amp;</span>ResourceRequest)) -&gt; <span class="self">Self </span>{
+        <span class="self">Self</span>::from((<span class="kw-2">&amp;</span>item, request))
+    }
+}
+
 <span class="kw">impl </span>From&lt;(<span class="kw-2">&amp;</span>MetaItemPreview, <span class="kw-2">&amp;</span>ResourceRequest)&gt; <span class="kw">for </span>MetaItemDeepLinks {
     <span class="kw">fn </span>from((item, request): (<span class="kw-2">&amp;</span>MetaItemPreview, <span class="kw-2">&amp;</span>ResourceRequest)) -&gt; <span class="self">Self </span>{
         MetaItemDeepLinks {
@@ -568,9 +762,14 @@
     <span class="kw">pub </span>external_player: <span class="prelude-ty">Option</span>&lt;ExternalPlayerLink&gt;,
 }
 
-<span class="kw">impl </span>From&lt;(<span class="kw-2">&amp;</span>Video, <span class="kw-2">&amp;</span>ResourceRequest, <span class="kw-2">&amp;</span><span class="prelude-ty">Option</span>&lt;Url&gt;)&gt; <span class="kw">for </span>VideoDeepLinks {
+<span class="kw">impl </span>From&lt;(<span class="kw-2">&amp;</span>Video, <span class="kw-2">&amp;</span>ResourceRequest, <span class="kw-2">&amp;</span><span class="prelude-ty">Option</span>&lt;Url&gt;, <span class="kw-2">&amp;</span>Settings)&gt; <span class="kw">for </span>VideoDeepLinks {
     <span class="kw">fn </span>from(
-        (video, request, streaming_server_url): (<span class="kw-2">&amp;</span>Video, <span class="kw-2">&amp;</span>ResourceRequest, <span class="kw-2">&amp;</span><span class="prelude-ty">Option</span>&lt;Url&gt;),
+        (video, request, streaming_server_url, settings): (
+            <span class="kw-2">&amp;</span>Video,
+            <span class="kw-2">&amp;</span>ResourceRequest,
+            <span class="kw-2">&amp;</span><span class="prelude-ty">Option</span>&lt;Url&gt;,
+            <span class="kw-2">&amp;</span>Settings,
+        ),
     ) -&gt; <span class="self">Self </span>{
         <span class="kw">let </span>stream = video.stream();
         VideoDeepLinks {
@@ -595,9 +794,9 @@
                 })
                 .transpose()
                 .unwrap_or_else(|error| <span class="prelude-val">Some</span>(ErrorLink::from(error).into())),
-            external_player: stream
-                .as_ref()
-                .map(|stream| ExternalPlayerLink::from((stream.as_ref(), streaming_server_url))),
+            external_player: stream.as_ref().map(|stream| {
+                ExternalPlayerLink::from((stream.as_ref(), streaming_server_url, settings))
+            }),
         }
     }
 }
@@ -609,8 +808,14 @@
     <span class="kw">pub </span>external_player: ExternalPlayerLink,
 }
 
-<span class="kw">impl </span>From&lt;(<span class="kw-2">&amp;</span>Stream, <span class="kw-2">&amp;</span><span class="prelude-ty">Option</span>&lt;Url&gt;)&gt; <span class="kw">for </span>StreamDeepLinks {
-    <span class="kw">fn </span>from((stream, streaming_server_url): (<span class="kw-2">&amp;</span>Stream, <span class="kw-2">&amp;</span><span class="prelude-ty">Option</span>&lt;Url&gt;)) -&gt; <span class="self">Self </span>{
+<span class="kw">impl </span>From&lt;(<span class="kw-2">&amp;</span>Stream, <span class="kw-2">&amp;</span><span class="prelude-ty">Option</span>&lt;Url&gt;, <span class="kw-2">&amp;</span>Settings)&gt; <span class="kw">for </span>StreamDeepLinks {
+    <span class="doccomment">/// Create a [`StreamDeepLinks`] using the [`Stream`],
+    /// the server url (from [`StreamingServer::base_url`] which indicates a running or not server)
+    /// and the user&#39;s [`Settings`] in order to use the [`Settings::player_type`] for generating a
+    /// player-specific url.
+    ///
+    /// [`StreamingServer::base_url`]: crate::models::streaming_server::StreamingServer::base_url
+    </span><span class="kw">fn </span>from((stream, streaming_server_url, settings): (<span class="kw-2">&amp;</span>Stream, <span class="kw-2">&amp;</span><span class="prelude-ty">Option</span>&lt;Url&gt;, <span class="kw-2">&amp;</span>Settings)) -&gt; <span class="self">Self </span>{
         StreamDeepLinks {
             player: stream
                 .encode()
@@ -621,18 +826,33 @@
                     )
                 })
                 .unwrap_or_else(|error| ErrorLink::from(error).into()),
-            external_player: ExternalPlayerLink::from((stream, streaming_server_url)),
+            external_player: ExternalPlayerLink::from((stream, streaming_server_url, settings)),
         }
     }
 }
 
-<span class="kw">impl </span>From&lt;(<span class="kw-2">&amp;</span>Stream, <span class="kw-2">&amp;</span>ResourceRequest, <span class="kw-2">&amp;</span>ResourceRequest, <span class="kw-2">&amp;</span><span class="prelude-ty">Option</span>&lt;Url&gt;)&gt; <span class="kw">for </span>StreamDeepLinks {
-    <span class="kw">fn </span>from(
-        (stream, stream_request, meta_request, streaming_server_url): (
+<span class="kw">impl
+    </span>From&lt;(
+        <span class="kw-2">&amp;</span>Stream,
+        <span class="kw-2">&amp;</span>ResourceRequest,
+        <span class="kw-2">&amp;</span>ResourceRequest,
+        <span class="kw-2">&amp;</span><span class="prelude-ty">Option</span>&lt;Url&gt;,
+        <span class="kw-2">&amp;</span>Settings,
+    )&gt; <span class="kw">for </span>StreamDeepLinks
+{
+    <span class="doccomment">/// Create a [`StreamDeepLinks`] using the [`Stream`], stream request, meta request,
+    /// the server url (from [`StreamingServer::base_url`] which indicates a running or not server)
+    /// and the user&#39;s [`Settings`] in order to use the [`Settings::player_type`] for generating a
+    /// player-specific url.
+    ///
+    /// [`StreamingServer::base_url`]: crate::models::streaming_server::StreamingServer::base_url
+    </span><span class="kw">fn </span>from(
+        (stream, stream_request, meta_request, streaming_server_url, settings): (
             <span class="kw-2">&amp;</span>Stream,
             <span class="kw-2">&amp;</span>ResourceRequest,
             <span class="kw-2">&amp;</span>ResourceRequest,
             <span class="kw-2">&amp;</span><span class="prelude-ty">Option</span>&lt;Url&gt;,
+            <span class="kw-2">&amp;</span>Settings,
         ),
     ) -&gt; <span class="self">Self </span>{
         StreamDeepLinks {
@@ -650,7 +870,7 @@
                     )
                 })
                 .unwrap_or_else(|error| ErrorLink::from(error).into()),
-            external_player: ExternalPlayerLink::from((stream, streaming_server_url)),
+            external_player: ExternalPlayerLink::from((stream, streaming_server_url, settings)),
         }
     }
 }
@@ -768,5 +988,4 @@
         }
     }
 }
-</code></pre></div>
-</section></main><div id="rustdoc-vars" data-root-path="../../../" data-static-root-path="../../../static.files/" data-current-crate="stremio_core" data-themes="" data-resource-suffix="" data-rustdoc-version="1.69.0-nightly (c8e6a9e8b 2023-01-23)" data-search-js="search-98d53477a794af0b.js" data-settings-js="settings-c3c521c753752a1a.js" data-settings-css="settings-08ddfdda51b8ee2e.css" ></div></body></html>
+</code></pre></div></section></main></body></html>

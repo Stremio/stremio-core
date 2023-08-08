@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"struct":[["BitField8",""],["Error",""],["WatchedBitField","Tracks which videos have been watched."],["WatchedField","(De)Serializable field that tracks which videos have been watched and the latest one watched."]]};
+window.SIDEBAR_ITEMS = {"struct":["BitField8","Error","WatchedBitField","WatchedField"]};

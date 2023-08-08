@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"enum":[["CtxError",""],["CtxStatus",""],["OtherError",""]],"struct":[["Ctx",""]]};
+window.SIDEBAR_ITEMS = {"enum":["CtxError","CtxStatus","OtherError"],"struct":["Ctx"]};

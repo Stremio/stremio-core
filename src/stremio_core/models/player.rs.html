@@ -1,4 +1,4 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `src/models/player.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>player.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceSerif4-Regular-1f7d512b176f0f72.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceSerif4-Bold-124a1ca42af929b6.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../../static.files/rustdoc-6d262342be62306e.css" id="mainThemeStyle"><link rel="stylesheet" id="themeStyle" href="../../../static.files/light-5f7299aa2b503fb1.css"><link rel="stylesheet" disabled href="../../../static.files/dark-dfb18ef8114bb428.css"><link rel="stylesheet" disabled href="../../../static.files/ayu-4047a6aaddd3789d.css"><script id="default-settings" ></script><script src="../../../static.files/storage-d43fa987303ecbbb.js"></script><script defer src="../../../static.files/source-script-ea63cb6500f71309.js"></script><script defer src="../../../source-files.js"></script><script defer src="../../../static.files/main-3367e395607fafc1.js"></script><noscript><link rel="stylesheet" href="../../../static.files/noscript-13285aec31fa243e.css"></noscript><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc source"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"></nav><main><nav class="sub"><a class="sub-logo-container" href="../../../stremio_core/index.html"><img class="rust-logo" src="../../../static.files/rust-logo-151179464ae7ed46.svg" alt="logo"></a><form class="search-form"><span></span><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><a href="../../../help.html">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../../static.files/wheel-5ec35bf9ca753509.svg"></a></div></form></nav><section id="main-content" class="content"><div class="example-wrap"><pre class="src-line-numbers"><a href="#1" id="1">1</a>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `src/models/player.rs`."><title>player.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceSerif4-Regular-46f98efaafac5295.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceSerif4-Bold-a2c9cd1067f8b328.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../../static.files/rustdoc-cb6f1f67f1bcd037.css" id="mainThemeStyle"><meta name="rustdoc-vars" data-root-path="../../../" data-static-root-path="../../../static.files/" data-current-crate="stremio_core" data-themes="" data-resource-suffix="" data-rustdoc-version="1.73.0-nightly (03a119b0b 2023-08-07)" data-channel="nightly" data-search-js="search-6dfdfced5eff6596.js" data-settings-js="settings-de11bff964e9d4e5.js" data-settings-css="settings-8c76f75bfb6bd192.css" data-theme-light-css="light-1596385f77d47ef2.css" data-theme-dark-css="dark-0a43001d3fc2282c.css" data-theme-ayu-css="ayu-fd19013d6ce078bf.css" ><script src="../../../static.files/storage-db41da1a38ea3cb8.js"></script><script defer src="../../../static.files/src-script-3280b574d94e47b4.js"></script><script defer src="../../../src-files.js"></script><script defer src="../../../static.files/main-0795b7d26be81095.js"></script><noscript><link rel="stylesheet" media="(prefers-color-scheme:light)" href="../../../static.files/light-1596385f77d47ef2.css"><link rel="stylesheet" media="(prefers-color-scheme:dark)" href="../../../static.files/dark-0a43001d3fc2282c.css"><link rel="stylesheet" href="../../../static.files/noscript-cffde32267a19fd6.css"></noscript><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"></nav><main><nav class="sub"><a class="sub-logo-container" href="../../../stremio_core/index.html"><img class="rust-logo" src="../../../static.files/rust-logo-151179464ae7ed46.svg" alt="logo"></a><form class="search-form"><span></span><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><a href="../../../help.html">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../../static.files/wheel-7b819b6101059cd0.svg"></a></div></form></nav><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
 <a href="#2" id="2">2</a>
 <a href="#3" id="3">3</a>
 <a href="#4" id="4">4</a>
@@ -850,7 +850,132 @@
 <a href="#850" id="850">850</a>
 <a href="#851" id="851">851</a>
 <a href="#852" id="852">852</a>
-</pre><pre class="rust"><code><span class="kw">use </span><span class="kw">crate</span>::constants::{CREDITS_THRESHOLD_COEF, WATCHED_THRESHOLD_COEF};
+<a href="#853" id="853">853</a>
+<a href="#854" id="854">854</a>
+<a href="#855" id="855">855</a>
+<a href="#856" id="856">856</a>
+<a href="#857" id="857">857</a>
+<a href="#858" id="858">858</a>
+<a href="#859" id="859">859</a>
+<a href="#860" id="860">860</a>
+<a href="#861" id="861">861</a>
+<a href="#862" id="862">862</a>
+<a href="#863" id="863">863</a>
+<a href="#864" id="864">864</a>
+<a href="#865" id="865">865</a>
+<a href="#866" id="866">866</a>
+<a href="#867" id="867">867</a>
+<a href="#868" id="868">868</a>
+<a href="#869" id="869">869</a>
+<a href="#870" id="870">870</a>
+<a href="#871" id="871">871</a>
+<a href="#872" id="872">872</a>
+<a href="#873" id="873">873</a>
+<a href="#874" id="874">874</a>
+<a href="#875" id="875">875</a>
+<a href="#876" id="876">876</a>
+<a href="#877" id="877">877</a>
+<a href="#878" id="878">878</a>
+<a href="#879" id="879">879</a>
+<a href="#880" id="880">880</a>
+<a href="#881" id="881">881</a>
+<a href="#882" id="882">882</a>
+<a href="#883" id="883">883</a>
+<a href="#884" id="884">884</a>
+<a href="#885" id="885">885</a>
+<a href="#886" id="886">886</a>
+<a href="#887" id="887">887</a>
+<a href="#888" id="888">888</a>
+<a href="#889" id="889">889</a>
+<a href="#890" id="890">890</a>
+<a href="#891" id="891">891</a>
+<a href="#892" id="892">892</a>
+<a href="#893" id="893">893</a>
+<a href="#894" id="894">894</a>
+<a href="#895" id="895">895</a>
+<a href="#896" id="896">896</a>
+<a href="#897" id="897">897</a>
+<a href="#898" id="898">898</a>
+<a href="#899" id="899">899</a>
+<a href="#900" id="900">900</a>
+<a href="#901" id="901">901</a>
+<a href="#902" id="902">902</a>
+<a href="#903" id="903">903</a>
+<a href="#904" id="904">904</a>
+<a href="#905" id="905">905</a>
+<a href="#906" id="906">906</a>
+<a href="#907" id="907">907</a>
+<a href="#908" id="908">908</a>
+<a href="#909" id="909">909</a>
+<a href="#910" id="910">910</a>
+<a href="#911" id="911">911</a>
+<a href="#912" id="912">912</a>
+<a href="#913" id="913">913</a>
+<a href="#914" id="914">914</a>
+<a href="#915" id="915">915</a>
+<a href="#916" id="916">916</a>
+<a href="#917" id="917">917</a>
+<a href="#918" id="918">918</a>
+<a href="#919" id="919">919</a>
+<a href="#920" id="920">920</a>
+<a href="#921" id="921">921</a>
+<a href="#922" id="922">922</a>
+<a href="#923" id="923">923</a>
+<a href="#924" id="924">924</a>
+<a href="#925" id="925">925</a>
+<a href="#926" id="926">926</a>
+<a href="#927" id="927">927</a>
+<a href="#928" id="928">928</a>
+<a href="#929" id="929">929</a>
+<a href="#930" id="930">930</a>
+<a href="#931" id="931">931</a>
+<a href="#932" id="932">932</a>
+<a href="#933" id="933">933</a>
+<a href="#934" id="934">934</a>
+<a href="#935" id="935">935</a>
+<a href="#936" id="936">936</a>
+<a href="#937" id="937">937</a>
+<a href="#938" id="938">938</a>
+<a href="#939" id="939">939</a>
+<a href="#940" id="940">940</a>
+<a href="#941" id="941">941</a>
+<a href="#942" id="942">942</a>
+<a href="#943" id="943">943</a>
+<a href="#944" id="944">944</a>
+<a href="#945" id="945">945</a>
+<a href="#946" id="946">946</a>
+<a href="#947" id="947">947</a>
+<a href="#948" id="948">948</a>
+<a href="#949" id="949">949</a>
+<a href="#950" id="950">950</a>
+<a href="#951" id="951">951</a>
+<a href="#952" id="952">952</a>
+<a href="#953" id="953">953</a>
+<a href="#954" id="954">954</a>
+<a href="#955" id="955">955</a>
+<a href="#956" id="956">956</a>
+<a href="#957" id="957">957</a>
+<a href="#958" id="958">958</a>
+<a href="#959" id="959">959</a>
+<a href="#960" id="960">960</a>
+<a href="#961" id="961">961</a>
+<a href="#962" id="962">962</a>
+<a href="#963" id="963">963</a>
+<a href="#964" id="964">964</a>
+<a href="#965" id="965">965</a>
+<a href="#966" id="966">966</a>
+<a href="#967" id="967">967</a>
+<a href="#968" id="968">968</a>
+<a href="#969" id="969">969</a>
+<a href="#970" id="970">970</a>
+<a href="#971" id="971">971</a>
+<a href="#972" id="972">972</a>
+<a href="#973" id="973">973</a>
+</pre></div><pre class="rust"><code><span class="kw">use </span>std::marker::PhantomData;
+
+<span class="kw">use </span><span class="kw">crate</span>::constants::{
+    CREDITS_THRESHOLD_COEF, VIDEO_HASH_EXTRA_PROP, VIDEO_SIZE_EXTRA_PROP, WATCHED_THRESHOLD_COEF,
+};
 <span class="kw">use </span><span class="kw">crate</span>::models::common::{
     eq_update, resource_update, resources_update_with_vector_content, Loadable, ResourceAction,
     ResourceLoadable, ResourcesAction,
@@ -858,18 +983,26 @@
 <span class="kw">use </span><span class="kw">crate</span>::models::ctx::Ctx;
 <span class="kw">use </span><span class="kw">crate</span>::runtime::msg::{Action, ActionLoad, ActionPlayer, Event, Internal, Msg};
 <span class="kw">use </span><span class="kw">crate</span>::runtime::{Effects, Env, UpdateWithCtx};
-<span class="kw">use </span><span class="kw">crate</span>::types::addon::{AggrRequest, ResourcePath, ResourceRequest};
+<span class="kw">use </span><span class="kw">crate</span>::types::addon::{AggrRequest, ExtraExt, ResourcePath, ResourceRequest};
 <span class="kw">use </span><span class="kw">crate</span>::types::library::{LibraryBucket, LibraryItem};
 <span class="kw">use </span><span class="kw">crate</span>::types::profile::Settings <span class="kw">as </span>ProfileSettings;
 <span class="kw">use </span><span class="kw">crate</span>::types::resource::{MetaItem, SeriesInfo, Stream, Subtitles, Video};
-<span class="kw">use </span>chrono::{DateTime, Utc};
-<span class="kw">use </span>itertools::Itertools;
-<span class="kw">use </span>serde::{Deserialize, Serialize};
-<span class="kw">use </span>std::cmp;
-<span class="kw">use </span>std::marker::PhantomData;
+
 <span class="kw">use </span>stremio_watched_bitfield::WatchedBitField;
 
+<span class="kw">use </span>chrono::{DateTime, Duration, Utc};
+<span class="kw">use </span>derivative::Derivative;
+<span class="kw">use </span>itertools::Itertools;
+<span class="kw">use </span>serde::{Deserialize, Serialize};
+
+<span class="kw">use </span>lazy_static::lazy_static;
+
 <span class="kw">use </span><span class="kw">super</span>::common::resource_update_with_vector_content;
+
+<span class="macro">lazy_static! </span>{
+    <span class="doccomment">/// The duration that must have passed in order for a library item to be updated.
+    </span><span class="kw">pub static </span><span class="kw-2">ref </span>PUSH_TO_LIBRARY_EVERY: Duration = Duration::seconds(<span class="number">30</span>);
+}
 
 <span class="attr">#[derive(Clone, Default, PartialEq, Eq, Serialize, Deserialize, Debug)]
 #[serde(rename_all = <span class="string">&quot;camelCase&quot;</span>)]
@@ -896,14 +1029,23 @@
 
 <span class="attr">#[derive(Clone, PartialEq, Eq, Serialize, Deserialize, Debug)]
 #[serde(rename_all = <span class="string">&quot;camelCase&quot;</span>)]
+</span><span class="kw">pub struct </span>VideoParams {
+    <span class="kw">pub </span>hash: <span class="prelude-ty">Option</span>&lt;String&gt;,
+    <span class="kw">pub </span>size: <span class="prelude-ty">Option</span>&lt;u64&gt;,
+}
+
+<span class="attr">#[derive(Clone, PartialEq, Eq, Serialize, Deserialize, Debug)]
+#[serde(rename_all = <span class="string">&quot;camelCase&quot;</span>)]
 </span><span class="kw">pub struct </span>Selected {
     <span class="kw">pub </span>stream: Stream,
     <span class="kw">pub </span>stream_request: <span class="prelude-ty">Option</span>&lt;ResourceRequest&gt;,
-    <span class="kw">pub </span>meta_request: <span class="prelude-ty">Option</span>&lt;ResourceRequest&gt;,
+    <span class="doccomment">/// A request to fetch the selected [`MetaItem`].
+    </span><span class="kw">pub </span>meta_request: <span class="prelude-ty">Option</span>&lt;ResourceRequest&gt;,
     <span class="kw">pub </span>subtitles_path: <span class="prelude-ty">Option</span>&lt;ResourcePath&gt;,
+    <span class="kw">pub </span>video_params: <span class="prelude-ty">Option</span>&lt;VideoParams&gt;,
 }
 
-<span class="attr">#[derive(Default, Serialize, Debug)]
+<span class="attr">#[derive(Default, Clone, Derivative, Serialize, Debug)]
 #[serde(rename_all = <span class="string">&quot;camelCase&quot;</span>)]
 </span><span class="kw">pub struct </span>Player {
     <span class="kw">pub </span>selected: <span class="prelude-ty">Option</span>&lt;Selected&gt;,
@@ -919,6 +1061,9 @@
     </span><span class="kw">pub </span>analytics_context: <span class="prelude-ty">Option</span>&lt;AnalyticsContext&gt;,
     <span class="attr">#[serde(skip_serializing)]
     </span><span class="kw">pub </span>load_time: <span class="prelude-ty">Option</span>&lt;DateTime&lt;Utc&gt;&gt;,
+    <span class="attr">#[serde(skip_serializing)]
+    #[derivative(Default(value = <span class="string">&quot;Utc.timestamp_opt(0, 0).unwrap()&quot;</span>))]
+    </span><span class="kw">pub </span>push_library_item_time: DateTime&lt;Utc&gt;,
     <span class="attr">#[serde(skip_serializing)]
     </span><span class="kw">pub </span>loaded: bool,
     <span class="attr">#[serde(skip_serializing)]
@@ -942,6 +1087,36 @@
                         .map(|meta_request| <span class="kw-2">&amp;</span>meta_request.path.id)
                 {
                     switch_to_next_video(<span class="kw-2">&amp;mut </span><span class="self">self</span>.library_item, <span class="kw-2">&amp;</span><span class="self">self</span>.next_video)
+                } <span class="kw">else </span>{
+                    Effects::none().unchanged()
+                };
+                <span class="kw">let </span>update_streams_effects = <span class="kw">if </span><span class="self">self</span>.selected.as_ref().map(|selected| {
+                    (
+                        <span class="kw-2">&amp;</span>selected.stream,
+                        <span class="kw-2">&amp;</span>selected.stream_request,
+                        <span class="kw-2">&amp;</span>selected.meta_request,
+                    )
+                }) != <span class="prelude-val">Some</span>((
+                    <span class="kw-2">&amp;</span>selected.stream,
+                    <span class="kw-2">&amp;</span>selected.stream_request,
+                    <span class="kw-2">&amp;</span>selected.meta_request,
+                )) {
+                    Effects::msg(Msg::Internal(Internal::StreamLoaded {
+                        stream: selected.stream.to_owned(),
+                        meta_id: selected
+                            .meta_request
+                            .as_ref()
+                            .map(|meta_request| meta_request.path.id.to_owned()),
+                        video_id: selected
+                            .stream_request
+                            .as_ref()
+                            .map(|stream_request| stream_request.path.id.to_owned()),
+                        transport_url: selected
+                            .stream_request
+                            .as_ref()
+                            .map(|stream_request| stream_request.base.to_owned()),
+                    }))
+                    .unchanged()
                 } <span class="kw">else </span>{
                     Effects::none().unchanged()
                 };
@@ -974,10 +1149,30 @@
                 <span class="kw">let </span>subtitles_effects = <span class="kw">match </span><span class="kw-2">&amp;</span>selected.subtitles_path {
                     <span class="prelude-val">Some</span>(subtitles_path) =&gt; resources_update_with_vector_content::&lt;E, <span class="kw">_</span>&gt;(
                         <span class="kw-2">&amp;mut </span><span class="self">self</span>.subtitles,
-                        ResourcesAction::ResourcesRequested {
-                            request: <span class="kw-2">&amp;</span>AggrRequest::AllOfResource(subtitles_path.to_owned()),
-                            addons: <span class="kw-2">&amp;</span>ctx.profile.addons,
-                        },
+                        ResourcesAction::force_request(
+                            <span class="kw-2">&amp;</span>AggrRequest::AllOfResource(ResourcePath {
+                                extra: subtitles_path
+                                    .extra
+                                    .to_owned()
+                                    .extend_one(
+                                        <span class="kw-2">&amp;</span>VIDEO_HASH_EXTRA_PROP,
+                                        selected
+                                            .video_params
+                                            .as_ref()
+                                            .and_then(|params| params.hash.to_owned()),
+                                    )
+                                    .extend_one(
+                                        <span class="kw-2">&amp;</span>VIDEO_SIZE_EXTRA_PROP,
+                                        selected
+                                            .video_params
+                                            .as_ref()
+                                            .and_then(|params| params.size)
+                                            .map(|size| size.to_string()),
+                                    ),
+                                ..subtitles_path.to_owned()
+                            }),
+                            <span class="kw-2">&amp;</span>ctx.profile.addons,
+                        ),
                     ),
                     <span class="kw">_ </span>=&gt; eq_update(<span class="kw-2">&amp;mut </span><span class="self">self</span>.subtitles, <span class="macro">vec!</span>[]),
                 };
@@ -1001,7 +1196,14 @@
                     <span class="kw-2">&amp;</span>ctx.library,
                 );
                 <span class="kw">let </span>watched_effects =
-                    watched_update::&lt;E&gt;(<span class="kw-2">&amp;mut </span><span class="self">self</span>.watched, <span class="kw-2">&amp;</span><span class="self">self</span>.meta_item, <span class="kw-2">&amp;</span><span class="self">self</span>.library_item);
+                    watched_update(<span class="kw-2">&amp;mut </span><span class="self">self</span>.watched, <span class="kw-2">&amp;</span><span class="self">self</span>.meta_item, <span class="kw-2">&amp;</span><span class="self">self</span>.library_item);
+                <span class="kw">let </span>notification_effects = <span class="kw">match </span><span class="kw-2">&amp;</span>selected.meta_request {
+                    <span class="prelude-val">Some</span>(meta_request) =&gt; Effects::msg(Msg::Internal(
+                        Internal::DismissNotificationItem(meta_request.path.id.to_owned()),
+                    ))
+                    .unchanged(),
+                    <span class="kw">_ </span>=&gt; Effects::none().unchanged(),
+                };
                 <span class="kw">let </span>(id, r#type, name, video_id, time, duration) = <span class="self">self
                     </span>.library_item
                     .as_ref()
@@ -1031,6 +1233,7 @@
                 <span class="self">self</span>.ended = <span class="bool-val">false</span>;
                 <span class="self">self</span>.paused = <span class="prelude-val">None</span>;
                 switch_to_next_video_effects
+                    .join(update_streams_effects)
                     .join(selected_effects)
                     .join(meta_item_effects)
                     .join(subtitles_effects)
@@ -1039,6 +1242,7 @@
                     .join(series_info_effects)
                     .join(library_item_effects)
                     .join(watched_effects)
+                    .join(notification_effects)
             }
             Msg::Action(Action::Unload) =&gt; {
                 <span class="kw">let </span>ended_effects = <span class="kw">if </span>!<span class="self">self</span>.ended &amp;&amp; <span class="self">self</span>.selected.is_some() {
@@ -1051,6 +1255,13 @@
                 };
                 <span class="kw">let </span>switch_to_next_video_effects =
                     switch_to_next_video(<span class="kw-2">&amp;mut </span><span class="self">self</span>.library_item, <span class="kw-2">&amp;</span><span class="self">self</span>.next_video);
+                <span class="kw">let </span>push_to_library_effects = <span class="kw">match </span><span class="kw-2">&amp;</span><span class="self">self</span>.library_item {
+                    <span class="prelude-val">Some</span>(library_item) =&gt; Effects::msg(Msg::Internal(Internal::UpdateLibraryItem(
+                        library_item.to_owned(),
+                    )))
+                    .unchanged(),
+                    <span class="kw">_ </span>=&gt; Effects::none().unchanged(),
+                };
                 <span class="kw">let </span>selected_effects = eq_update(<span class="kw-2">&amp;mut </span><span class="self">self</span>.selected, <span class="prelude-val">None</span>);
                 <span class="kw">let </span>meta_item_effects = eq_update(<span class="kw-2">&amp;mut </span><span class="self">self</span>.meta_item, <span class="prelude-val">None</span>);
                 <span class="kw">let </span>subtitles_effects = eq_update(<span class="kw-2">&amp;mut </span><span class="self">self</span>.subtitles, <span class="macro">vec!</span>[]);
@@ -1065,6 +1276,7 @@
                 <span class="self">self</span>.ended = <span class="bool-val">false</span>;
                 <span class="self">self</span>.paused = <span class="prelude-val">None</span>;
                 switch_to_next_video_effects
+                    .join(push_to_library_effects)
                     .join(selected_effects)
                     .join(meta_item_effects)
                     .join(subtitles_effects)
@@ -1092,7 +1304,8 @@
                     <span class="prelude-val">Some</span>(library_item),
                 ) =&gt; {
                     <span class="kw">let </span>seeking = library_item.state.time_offset.abs_diff(<span class="kw-2">*</span>time) &gt; <span class="number">1000</span>;
-                    library_item.state.last_watched = <span class="prelude-val">Some</span>(E::now());
+                    <span class="comment">// library_item.state.last_watched = Some(E::now() - chrono::Duration::days(1));
+                    </span>library_item.state.last_watched = <span class="prelude-val">Some</span>(E::now());
                     <span class="kw">if </span>library_item.state.video_id != <span class="prelude-val">Some</span>(video_id.to_owned()) {
                         library_item.state.video_id = <span class="prelude-val">Some</span>(video_id.to_owned());
                         library_item.state.overall_time_watched = library_item
@@ -1103,7 +1316,7 @@
                         library_item.state.flagged_watched = <span class="number">0</span>;
                     } <span class="kw">else </span>{
                         <span class="kw">let </span>time_watched =
-                            cmp::min(<span class="number">1000</span>, time.saturating_sub(library_item.state.time_offset));
+                            <span class="number">1000</span>.min(time.saturating_sub(library_item.state.time_offset));
                         library_item.state.time_watched =
                             library_item.state.time_watched.saturating_add(time_watched);
                         library_item.state.overall_time_watched = library_item
@@ -1140,7 +1353,7 @@
                         analytics_context.device_name = <span class="prelude-val">Some</span>(device.to_owned());
                         analytics_context.player_duration = <span class="prelude-val">Some</span>(duration.to_owned());
                     };
-                    <span class="kw">if </span>seeking &amp;&amp; <span class="self">self</span>.loaded &amp;&amp; <span class="self">self</span>.paused.is_some() {
+                    <span class="kw">let </span>trakt_event_effects = <span class="kw">if </span>seeking &amp;&amp; <span class="self">self</span>.loaded &amp;&amp; <span class="self">self</span>.paused.is_some() {
                         <span class="kw">if </span><span class="self">self</span>.paused.expect(<span class="string">&quot;paused is None&quot;</span>) {
                             Effects::msg(Msg::Event(Event::TraktPaused {
                                 context: <span class="self">self
@@ -1162,7 +1375,21 @@
                         }
                     } <span class="kw">else </span>{
                         Effects::none()
-                    }
+                    };
+
+                    <span class="kw">let </span>push_to_library_effects =
+                        <span class="kw">if </span>E::now() - <span class="self">self</span>.push_library_item_time &gt;= <span class="kw-2">*</span>PUSH_TO_LIBRARY_EVERY {
+                            <span class="self">self</span>.push_library_item_time = E::now();
+
+                            Effects::msg(Msg::Internal(Internal::UpdateLibraryItem(
+                                library_item.to_owned(),
+                            )))
+                            .unchanged()
+                        } <span class="kw">else </span>{
+                            Effects::none().unchanged()
+                        };
+
+                    trakt_event_effects.join(push_to_library_effects)
                 }
                 <span class="kw">_ </span>=&gt; Effects::none().unchanged(),
             },
@@ -1170,7 +1397,7 @@
                 <span class="kw">if </span><span class="self">self</span>.selected.is_some() =&gt;
             {
                 <span class="self">self</span>.paused = <span class="prelude-val">Some</span>(<span class="kw-2">*</span>paused);
-                <span class="kw">if </span>!<span class="self">self</span>.loaded {
+                <span class="kw">let </span>trakt_event_effects = <span class="kw">if </span>!<span class="self">self</span>.loaded {
                     <span class="self">self</span>.loaded = <span class="bool-val">true</span>;
                     Effects::msg(Msg::Event(Event::PlayerPlaying {
                         load_time: <span class="self">self
@@ -1192,7 +1419,15 @@
                         context: <span class="self">self</span>.analytics_context.as_ref().cloned().unwrap_or_default(),
                     }))
                     .unchanged()
-                }
+                };
+                <span class="kw">let </span>update_library_item_effects = <span class="kw">match </span><span class="kw-2">&amp;</span><span class="self">self</span>.library_item {
+                    <span class="prelude-val">Some</span>(library_item) =&gt; Effects::msg(Msg::Internal(Internal::UpdateLibraryItem(
+                        library_item.to_owned(),
+                    )))
+                    .unchanged(),
+                    <span class="kw">_ </span>=&gt; Effects::none().unchanged(),
+                };
+                trakt_event_effects.join(update_library_item_effects)
             }
             Msg::Action(Action::Player(ActionPlayer::Ended)) <span class="kw">if </span><span class="self">self</span>.selected.is_some() =&gt; {
                 <span class="self">self</span>.ended = <span class="bool-val">true</span>;
@@ -1203,13 +1438,6 @@
                 }))
                 .unchanged()
             }
-            Msg::Action(Action::Player(ActionPlayer::PushToLibrary)) =&gt; <span class="kw">match </span><span class="kw-2">&amp;</span><span class="self">self</span>.library_item {
-                <span class="prelude-val">Some</span>(library_item) =&gt; Effects::msg(Msg::Internal(Internal::UpdateLibraryItem(
-                    library_item.to_owned(),
-                )))
-                .unchanged(),
-                <span class="kw">_ </span>=&gt; Effects::none().unchanged(),
-            },
             Msg::Internal(Internal::ResourceRequestResult(request, result)) =&gt; {
                 <span class="kw">let </span>meta_item_effects = <span class="kw">match </span><span class="kw-2">&amp;mut </span><span class="self">self</span>.meta_item {
                     <span class="prelude-val">Some</span>(meta_item) =&gt; resource_update::&lt;E, <span class="kw">_</span>&gt;(
@@ -1250,7 +1478,7 @@
                     <span class="kw-2">&amp;</span>ctx.library,
                 );
                 <span class="kw">let </span>watched_effects =
-                    watched_update::&lt;E&gt;(<span class="kw-2">&amp;mut </span><span class="self">self</span>.watched, <span class="kw-2">&amp;</span><span class="self">self</span>.meta_item, <span class="kw-2">&amp;</span><span class="self">self</span>.library_item);
+                    watched_update(<span class="kw-2">&amp;mut </span><span class="self">self</span>.watched, <span class="kw-2">&amp;</span><span class="self">self</span>.meta_item, <span class="kw-2">&amp;</span><span class="self">self</span>.library_item);
                 <span class="kw">let </span>(id, r#type, name, video_id, time, duration) = <span class="self">self
                     </span>.library_item
                     .as_ref()
@@ -1312,13 +1540,10 @@
                 library_item.state.flagged_watched = <span class="number">0</span>;
                 library_item.state.time_offset = <span class="number">1</span>;
             };
-            Effects::msg(Msg::Internal(Internal::UpdateLibraryItem(
-                library_item.to_owned(),
-            )))
-            .unchanged()
         }
-        <span class="kw">_ </span>=&gt; Effects::none().unchanged(),
-    }
+        <span class="kw">_ </span>=&gt; {}
+    };
+    Effects::none().unchanged()
 }
 
 <span class="kw">fn </span>next_video_update(
@@ -1491,7 +1716,7 @@
                 } =&gt; <span class="prelude-val">Some</span>(meta_item),
                 <span class="kw">_ </span>=&gt; <span class="prelude-val">None</span>,
             });
-            <span class="kw">match </span>(library_item, meta_item) {
+            <span class="kw">let </span><span class="kw-2">mut </span>library_item = <span class="kw">match </span>(library_item, meta_item) {
                 (<span class="prelude-val">Some</span>(library_item), <span class="prelude-val">Some</span>(meta_item)) =&gt; {
                     <span class="prelude-val">Some</span>(LibraryItem::from((<span class="kw-2">&amp;</span>meta_item.preview, library_item)))
                 }
@@ -1500,26 +1725,42 @@
                 }
                 (<span class="prelude-val">Some</span>(library_item), <span class="prelude-val">None</span>) =&gt; <span class="prelude-val">Some</span>(library_item.to_owned()),
                 <span class="kw">_ </span>=&gt; <span class="prelude-val">None</span>,
-            }
+            };
+            <span class="kw">if let </span>(<span class="prelude-val">Some</span>(library_item), <span class="prelude-val">Some</span>(meta_item)) = (<span class="kw-2">&amp;mut </span>library_item, meta_item) {
+                library_item.state.last_video_released = meta_item
+                    .videos_iter()
+                    .rev()
+                    .find_map(|last_video| last_video.released.to_owned());
+            };
+            library_item
         }
         <span class="kw">_ </span>=&gt; <span class="prelude-val">None</span>,
     };
     <span class="kw">if </span><span class="kw-2">*</span>library_item != next_library_item {
-        <span class="kw">let </span>update_library_item_effects = <span class="kw">match </span>library_item {
+        <span class="kw">let </span>update_library_item_effects = <span class="kw">match </span><span class="kw-2">&amp;</span>library_item {
             <span class="prelude-val">Some</span>(library_item) =&gt; Effects::msg(Msg::Internal(Internal::UpdateLibraryItem(
                 library_item.to_owned(),
             )))
             .unchanged(),
             <span class="kw">_ </span>=&gt; Effects::none().unchanged(),
         };
+        <span class="kw">let </span>update_next_library_item_effects = <span class="kw">match </span><span class="kw-2">&amp;</span>next_library_item {
+            <span class="prelude-val">Some</span>(next_library_item) =&gt; Effects::msg(Msg::Internal(Internal::UpdateLibraryItem(
+                next_library_item.to_owned(),
+            )))
+            .unchanged(),
+            <span class="kw">_ </span>=&gt; Effects::none().unchanged(),
+        };
         <span class="kw-2">*</span>library_item = next_library_item;
-        Effects::none().join(update_library_item_effects)
+        Effects::none()
+            .join(update_library_item_effects)
+            .join(update_next_library_item_effects)
     } <span class="kw">else </span>{
         Effects::none().unchanged()
     }
 }
 
-<span class="kw">fn </span>watched_update&lt;E: Env&gt;(
+<span class="kw">fn </span>watched_update(
     watched: <span class="kw-2">&amp;mut </span><span class="prelude-ty">Option</span>&lt;WatchedBitField&gt;,
     meta_item: <span class="kw-2">&amp;</span><span class="prelude-ty">Option</span>&lt;ResourceLoadable&lt;MetaItem&gt;&gt;,
     library_item: <span class="kw-2">&amp;</span><span class="prelude-ty">Option</span>&lt;LibraryItem&gt;,
@@ -1581,6 +1822,7 @@
             }),
             meta_request: <span class="prelude-val">None</span>,
             subtitles_path: <span class="prelude-val">None</span>,
+            video_params: <span class="prelude-val">None</span>,
         };
 
         <span class="comment">// Test that it should update the next_streams from the next_video if Video has one stream
@@ -1702,5 +1944,4 @@
         }
     }
 }
-</code></pre></div>
-</section></main><div id="rustdoc-vars" data-root-path="../../../" data-static-root-path="../../../static.files/" data-current-crate="stremio_core" data-themes="" data-resource-suffix="" data-rustdoc-version="1.69.0-nightly (c8e6a9e8b 2023-01-23)" data-search-js="search-98d53477a794af0b.js" data-settings-js="settings-c3c521c753752a1a.js" data-settings-css="settings-08ddfdda51b8ee2e.css" ></div></body></html>
+</code></pre></div></section></main></body></html>

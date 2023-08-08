@@ -1,4 +1,4 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `src/addon_transport/http_transport/legacy/mod.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>mod.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../../static.files/SourceSerif4-Regular-1f7d512b176f0f72.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../../static.files/SourceSerif4-Bold-124a1ca42af929b6.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../../../../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../../../../static.files/rustdoc-6d262342be62306e.css" id="mainThemeStyle"><link rel="stylesheet" id="themeStyle" href="../../../../../static.files/light-5f7299aa2b503fb1.css"><link rel="stylesheet" disabled href="../../../../../static.files/dark-dfb18ef8114bb428.css"><link rel="stylesheet" disabled href="../../../../../static.files/ayu-4047a6aaddd3789d.css"><script id="default-settings" ></script><script src="../../../../../static.files/storage-d43fa987303ecbbb.js"></script><script defer src="../../../../../static.files/source-script-ea63cb6500f71309.js"></script><script defer src="../../../../../source-files.js"></script><script defer src="../../../../../static.files/main-3367e395607fafc1.js"></script><noscript><link rel="stylesheet" href="../../../../../static.files/noscript-13285aec31fa243e.css"></noscript><link rel="alternate icon" type="image/png" href="../../../../../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../../../../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../../../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc source"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"></nav><main><nav class="sub"><a class="sub-logo-container" href="../../../../../stremio_core/index.html"><img class="rust-logo" src="../../../../../static.files/rust-logo-151179464ae7ed46.svg" alt="logo"></a><form class="search-form"><span></span><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><a href="../../../../../help.html">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../../../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../../../../static.files/wheel-5ec35bf9ca753509.svg"></a></div></form></nav><section id="main-content" class="content"><div class="example-wrap"><pre class="src-line-numbers"><a href="#1" id="1">1</a>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `src/addon_transport/http_transport/legacy/mod.rs`."><title>mod.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../../static.files/SourceSerif4-Regular-46f98efaafac5295.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../../static.files/SourceSerif4-Bold-a2c9cd1067f8b328.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../../../../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../../../../static.files/rustdoc-cb6f1f67f1bcd037.css" id="mainThemeStyle"><meta name="rustdoc-vars" data-root-path="../../../../../" data-static-root-path="../../../../../static.files/" data-current-crate="stremio_core" data-themes="" data-resource-suffix="" data-rustdoc-version="1.73.0-nightly (03a119b0b 2023-08-07)" data-channel="nightly" data-search-js="search-6dfdfced5eff6596.js" data-settings-js="settings-de11bff964e9d4e5.js" data-settings-css="settings-8c76f75bfb6bd192.css" data-theme-light-css="light-1596385f77d47ef2.css" data-theme-dark-css="dark-0a43001d3fc2282c.css" data-theme-ayu-css="ayu-fd19013d6ce078bf.css" ><script src="../../../../../static.files/storage-db41da1a38ea3cb8.js"></script><script defer src="../../../../../static.files/src-script-3280b574d94e47b4.js"></script><script defer src="../../../../../src-files.js"></script><script defer src="../../../../../static.files/main-0795b7d26be81095.js"></script><noscript><link rel="stylesheet" media="(prefers-color-scheme:light)" href="../../../../../static.files/light-1596385f77d47ef2.css"><link rel="stylesheet" media="(prefers-color-scheme:dark)" href="../../../../../static.files/dark-0a43001d3fc2282c.css"><link rel="stylesheet" href="../../../../../static.files/noscript-cffde32267a19fd6.css"></noscript><link rel="alternate icon" type="image/png" href="../../../../../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../../../../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../../../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"></nav><main><nav class="sub"><a class="sub-logo-container" href="../../../../../stremio_core/index.html"><img class="rust-logo" src="../../../../../static.files/rust-logo-151179464ae7ed46.svg" alt="logo"></a><form class="search-form"><span></span><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><a href="../../../../../help.html">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../../../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../../../../static.files/wheel-7b819b6101059cd0.svg"></a></div></form></nav><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
 <a href="#2" id="2">2</a>
 <a href="#3" id="3">3</a>
 <a href="#4" id="4">4</a>
@@ -311,14 +311,62 @@
 <a href="#311" id="311">311</a>
 <a href="#312" id="312">312</a>
 <a href="#313" id="313">313</a>
-</pre><pre class="rust"><code><span class="kw">use </span><span class="kw">crate</span>::addon_transport::AddonTransport;
+<a href="#314" id="314">314</a>
+<a href="#315" id="315">315</a>
+<a href="#316" id="316">316</a>
+<a href="#317" id="317">317</a>
+<a href="#318" id="318">318</a>
+<a href="#319" id="319">319</a>
+<a href="#320" id="320">320</a>
+<a href="#321" id="321">321</a>
+<a href="#322" id="322">322</a>
+<a href="#323" id="323">323</a>
+<a href="#324" id="324">324</a>
+<a href="#325" id="325">325</a>
+<a href="#326" id="326">326</a>
+<a href="#327" id="327">327</a>
+<a href="#328" id="328">328</a>
+<a href="#329" id="329">329</a>
+<a href="#330" id="330">330</a>
+<a href="#331" id="331">331</a>
+<a href="#332" id="332">332</a>
+<a href="#333" id="333">333</a>
+<a href="#334" id="334">334</a>
+<a href="#335" id="335">335</a>
+<a href="#336" id="336">336</a>
+<a href="#337" id="337">337</a>
+<a href="#338" id="338">338</a>
+<a href="#339" id="339">339</a>
+<a href="#340" id="340">340</a>
+<a href="#341" id="341">341</a>
+<a href="#342" id="342">342</a>
+<a href="#343" id="343">343</a>
+<a href="#344" id="344">344</a>
+<a href="#345" id="345">345</a>
+<a href="#346" id="346">346</a>
+<a href="#347" id="347">347</a>
+<a href="#348" id="348">348</a>
+<a href="#349" id="349">349</a>
+<a href="#350" id="350">350</a>
+<a href="#351" id="351">351</a>
+<a href="#352" id="352">352</a>
+<a href="#353" id="353">353</a>
+<a href="#354" id="354">354</a>
+<a href="#355" id="355">355</a>
+<a href="#356" id="356">356</a>
+<a href="#357" id="357">357</a>
+<a href="#358" id="358">358</a>
+</pre></div><pre class="rust"><code><span class="kw">use </span><span class="kw">crate</span>::addon_transport::AddonTransport;
+<span class="kw">use </span><span class="kw">crate</span>::constants::{BASE64, VIDEO_HASH_EXTRA_PROP, VIDEO_SIZE_EXTRA_PROP};
 <span class="kw">use </span><span class="kw">crate</span>::runtime::{ConditionalSend, Env, EnvError, EnvFutureExt, TryEnvFuture};
 <span class="kw">use </span><span class="kw">crate</span>::types::addon::{Manifest, ResourcePath, ResourceResponse};
 <span class="kw">use </span><span class="kw">crate</span>::types::resource::{MetaItem, MetaItemPreview, Stream, Subtitles};
+<span class="kw">use </span>base64::Engine;
 <span class="kw">use </span>futures::{future, TryFutureExt};
 <span class="kw">use </span>http::Request;
 <span class="kw">use </span>serde::Deserialize;
 <span class="kw">use </span>serde_json::json;
+<span class="kw">use </span>std::collections::HashMap;
 <span class="kw">use </span>std::marker::PhantomData;
 <span class="kw">use </span>url::Url;
 
@@ -510,17 +558,34 @@
             query.insert(<span class="string">&quot;type&quot;</span>.into(), serde_json::Value::String(r#type.to_owned()));
             build_jsonrpc(<span class="string">&quot;stream.find&quot;</span>, <span class="macro">json!</span>({ <span class="string">&quot;query&quot;</span>: query }))
         }
-        <span class="string">&quot;subtitles&quot; </span>=&gt; build_jsonrpc(
-            <span class="string">&quot;subtitles.find&quot;</span>,
-            <span class="macro">json!</span>({ <span class="string">&quot;query&quot;</span>: <span class="macro">json!</span>({ <span class="string">&quot;itemHash&quot;</span>: id.replace(<span class="string">&#39;:&#39;</span>, <span class="string">&quot; &quot;</span>) }) }),
-        ),
+        <span class="string">&quot;subtitles&quot; </span>=&gt; {
+            <span class="kw">let </span><span class="kw-2">mut </span>query = HashMap::new();
+            query.insert(<span class="string">&quot;itemHash&quot;</span>, serde_json::Value::String(id.replace(<span class="string">&#39;:&#39;</span>, <span class="string">&quot; &quot;</span>)));
+            <span class="kw">let </span>video_hash = path.get_extra_first_value(VIDEO_HASH_EXTRA_PROP.name.as_str());
+            <span class="kw">if let </span><span class="prelude-val">Some</span>(video_hash) = video_hash {
+                query.insert(
+                    VIDEO_HASH_EXTRA_PROP.name.as_str(),
+                    serde_json::Value::String(video_hash.to_owned()),
+                );
+            }
+            <span class="kw">let </span>video_size = path
+                .get_extra_first_value(VIDEO_SIZE_EXTRA_PROP.name.as_str())
+                .and_then(|video_size| video_size.parse().ok());
+            <span class="kw">if let </span><span class="prelude-val">Some</span>(video_size) = video_size {
+                query.insert(
+                    VIDEO_SIZE_EXTRA_PROP.name.as_str(),
+                    serde_json::Value::Number(video_size),
+                );
+            }
+            build_jsonrpc(<span class="string">&quot;subtitles.find&quot;</span>, <span class="macro">json!</span>({ <span class="string">&quot;query&quot;</span>: query }))
+        }
         <span class="kw">_ </span>=&gt; <span class="kw">return </span><span class="prelude-val">Err</span>(LegacyErr::UnsupportedRequest.into()),
     };
     <span class="comment">// NOTE: this is not using a URL safe base64 standard, which means that technically this is
     // not safe; however, the original implementation of stremio-addons work the same way,
     // so we&#39;re technically replicating a legacy bug on purpose
     // https://github.com/Stremio/stremio-addons/blob/v2.8.14/rpc.js#L53
-    </span><span class="kw">let </span>param_str = base64::encode(
+    </span><span class="kw">let </span>param_str = BASE64.encode(
         serde_json::to_string(<span class="kw-2">&amp;</span>q_json).map_err(|error| EnvError::Serde(error.to_string()))<span class="question-mark">?</span>,
     );
     <span class="kw">let </span>url = <span class="macro">format!</span>(<span class="string">&quot;{transport_url}/q.json?b={param_str}&quot;</span>);
@@ -574,7 +639,7 @@
 <span class="attr">#[cfg(test)]
 </span><span class="kw">mod </span>test {
     <span class="kw">use super</span>::<span class="kw-2">*</span>;
-    <span class="kw">use </span><span class="kw">crate</span>::types::addon::ResourcePath;
+    <span class="kw">use </span><span class="kw">crate</span>::types::addon::{ExtraExt, ResourcePath};
 
     <span class="comment">// Those are a bit sensitive for now, but that&#39;s a good thing, since it will force us
     // to pay attention to minor details that might matter with the legacy system
@@ -602,6 +667,31 @@
     }
 
     <span class="attr">#[test]
+    </span><span class="kw">fn </span>subtitles_only_id() {
+        <span class="kw">let </span>transport_url =
+            Url::parse(<span class="string">&quot;https://legacywatchhub.strem.io/stremio/v1&quot;</span>).expect(<span class="string">&quot;url parse failed&quot;</span>);
+        <span class="kw">let </span>path = ResourcePath::without_extra(<span class="string">&quot;subtitles&quot;</span>, <span class="string">&quot;series&quot;</span>, <span class="string">&quot;tt0386676:5:1&quot;</span>);
+        <span class="macro">assert_eq!</span>(
+            <span class="kw-2">&amp;</span>build_legacy_req(<span class="kw-2">&amp;</span>transport_url, <span class="kw-2">&amp;</span>path).unwrap().uri().to_string(),
+            <span class="string">&quot;https://legacywatchhub.strem.io/stremio/v1/q.json?b=eyJpZCI6MSwianNvbnJwYyI6IjIuMCIsIm1ldGhvZCI6InN1YnRpdGxlcy5maW5kIiwicGFyYW1zIjpbbnVsbCx7InF1ZXJ5Ijp7Iml0ZW1IYXNoIjoidHQwMzg2Njc2IDUgMSJ9fV19&quot;
+        </span>);
+    }
+
+    <span class="attr">#[test]
+    </span><span class="kw">fn </span>subtitles_with_hash() {
+        <span class="kw">let </span>transport_url =
+            Url::parse(<span class="string">&quot;https://legacywatchhub.strem.io/stremio/v1&quot;</span>).expect(<span class="string">&quot;url parse failed&quot;</span>);
+        <span class="kw">let </span>extra = <span class="kw-2">&amp;</span><span class="macro">vec!</span>[]
+            .extend_one(<span class="kw-2">&amp;</span>VIDEO_HASH_EXTRA_PROP, <span class="prelude-val">Some</span>(<span class="string">&quot;ffffffffff&quot;</span>.to_string()))
+            .extend_one(<span class="kw-2">&amp;</span>VIDEO_SIZE_EXTRA_PROP, <span class="prelude-val">Some</span>(<span class="string">&quot;1000000000&quot;</span>.to_string()));
+        <span class="kw">let </span>path = ResourcePath::with_extra(<span class="string">&quot;subtitles&quot;</span>, <span class="string">&quot;series&quot;</span>, <span class="string">&quot;tt0386676:5:1&quot;</span>, extra);
+        <span class="macro">assert_eq!</span>(
+            <span class="kw-2">&amp;</span>build_legacy_req(<span class="kw-2">&amp;</span>transport_url, <span class="kw-2">&amp;</span>path).unwrap().uri().to_string(),
+            <span class="string">&quot;https://legacywatchhub.strem.io/stremio/v1/q.json?b=eyJpZCI6MSwianNvbnJwYyI6IjIuMCIsIm1ldGhvZCI6InN1YnRpdGxlcy5maW5kIiwicGFyYW1zIjpbbnVsbCx7InF1ZXJ5Ijp7Iml0ZW1IYXNoIjoidHQwMzg2Njc2IDUgMSIsInZpZGVvSGFzaCI6ImZmZmZmZmZmZmYiLCJ2aWRlb1NpemUiOjEwMDAwMDAwMDB9fV19&quot;
+        </span>);
+    }
+
+    <span class="attr">#[test]
     </span><span class="kw">fn </span>query_meta() {
         <span class="macro">assert_eq!</span>(
             query_from_id(<span class="string">&quot;tt0386676&quot;</span>),
@@ -624,5 +714,4 @@
         );
     }
 }
-</code></pre></div>
-</section></main><div id="rustdoc-vars" data-root-path="../../../../../" data-static-root-path="../../../../../static.files/" data-current-crate="stremio_core" data-themes="" data-resource-suffix="" data-rustdoc-version="1.69.0-nightly (c8e6a9e8b 2023-01-23)" data-search-js="search-98d53477a794af0b.js" data-settings-js="settings-c3c521c753752a1a.js" data-settings-css="settings-08ddfdda51b8ee2e.css" ></div></body></html>
+</code></pre></div></section></main></body></html>

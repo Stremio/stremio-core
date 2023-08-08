@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"struct":[["MetaDetails",""],["Selected",""]]};
+window.SIDEBAR_ITEMS = {"struct":["MetaDetails","Selected"]};

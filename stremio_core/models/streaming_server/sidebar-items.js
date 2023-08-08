@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"struct":[["PlaybackDevice",""],["Selected",""],["Settings",""],["StreamingServer",""]]};
+window.SIDEBAR_ITEMS = {"struct":["PlaybackDevice","Selected","Settings","StatisticsRequest","StreamingServer"]};

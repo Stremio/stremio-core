@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"struct":[["AddonDetails",""],["Selected",""]]};
+window.SIDEBAR_ITEMS = {"struct":["AddonDetails","Selected"]};

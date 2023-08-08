@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"mod":[["addon_transport",""],["constants",""],["deep_links",""],["models",""],["runtime",""],["types",""]]};
+window.SIDEBAR_ITEMS = {"derive":["Model"],"mod":["addon_transport","analytics","constants","deep_links","models","runtime","types"]};

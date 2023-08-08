@@ -1,4 +1,4 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `src/models/ctx/update_profile.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>update_profile.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/SourceSerif4-Regular-1f7d512b176f0f72.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/SourceSerif4-Bold-124a1ca42af929b6.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../../../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../../../static.files/rustdoc-6d262342be62306e.css" id="mainThemeStyle"><link rel="stylesheet" id="themeStyle" href="../../../../static.files/light-5f7299aa2b503fb1.css"><link rel="stylesheet" disabled href="../../../../static.files/dark-dfb18ef8114bb428.css"><link rel="stylesheet" disabled href="../../../../static.files/ayu-4047a6aaddd3789d.css"><script id="default-settings" ></script><script src="../../../../static.files/storage-d43fa987303ecbbb.js"></script><script defer src="../../../../static.files/source-script-ea63cb6500f71309.js"></script><script defer src="../../../../source-files.js"></script><script defer src="../../../../static.files/main-3367e395607fafc1.js"></script><noscript><link rel="stylesheet" href="../../../../static.files/noscript-13285aec31fa243e.css"></noscript><link rel="alternate icon" type="image/png" href="../../../../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../../../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc source"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"></nav><main><nav class="sub"><a class="sub-logo-container" href="../../../../stremio_core/index.html"><img class="rust-logo" src="../../../../static.files/rust-logo-151179464ae7ed46.svg" alt="logo"></a><form class="search-form"><span></span><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><a href="../../../../help.html">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../../../static.files/wheel-5ec35bf9ca753509.svg"></a></div></form></nav><section id="main-content" class="content"><div class="example-wrap"><pre class="src-line-numbers"><a href="#1" id="1">1</a>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `src/models/ctx/update_profile.rs`."><title>update_profile.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/SourceSerif4-Regular-46f98efaafac5295.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/SourceSerif4-Bold-a2c9cd1067f8b328.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../../../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../../../static.files/rustdoc-cb6f1f67f1bcd037.css" id="mainThemeStyle"><meta name="rustdoc-vars" data-root-path="../../../../" data-static-root-path="../../../../static.files/" data-current-crate="stremio_core" data-themes="" data-resource-suffix="" data-rustdoc-version="1.73.0-nightly (03a119b0b 2023-08-07)" data-channel="nightly" data-search-js="search-6dfdfced5eff6596.js" data-settings-js="settings-de11bff964e9d4e5.js" data-settings-css="settings-8c76f75bfb6bd192.css" data-theme-light-css="light-1596385f77d47ef2.css" data-theme-dark-css="dark-0a43001d3fc2282c.css" data-theme-ayu-css="ayu-fd19013d6ce078bf.css" ><script src="../../../../static.files/storage-db41da1a38ea3cb8.js"></script><script defer src="../../../../static.files/src-script-3280b574d94e47b4.js"></script><script defer src="../../../../src-files.js"></script><script defer src="../../../../static.files/main-0795b7d26be81095.js"></script><noscript><link rel="stylesheet" media="(prefers-color-scheme:light)" href="../../../../static.files/light-1596385f77d47ef2.css"><link rel="stylesheet" media="(prefers-color-scheme:dark)" href="../../../../static.files/dark-0a43001d3fc2282c.css"><link rel="stylesheet" href="../../../../static.files/noscript-cffde32267a19fd6.css"></noscript><link rel="alternate icon" type="image/png" href="../../../../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../../../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"></nav><main><nav class="sub"><a class="sub-logo-container" href="../../../../stremio_core/index.html"><img class="rust-logo" src="../../../../static.files/rust-logo-151179464ae7ed46.svg" alt="logo"></a><form class="search-form"><span></span><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><a href="../../../../help.html">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../../../static.files/wheel-7b819b6101059cd0.svg"></a></div></form></nav><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
 <a href="#2" id="2">2</a>
 <a href="#3" id="3">3</a>
 <a href="#4" id="4">4</a>
@@ -461,7 +461,26 @@
 <a href="#461" id="461">461</a>
 <a href="#462" id="462">462</a>
 <a href="#463" id="463">463</a>
-</pre><pre class="rust"><code><span class="kw">use </span><span class="kw">crate</span>::constants::{OFFICIAL_ADDONS, PROFILE_STORAGE_KEY};
+<a href="#464" id="464">464</a>
+<a href="#465" id="465">465</a>
+<a href="#466" id="466">466</a>
+<a href="#467" id="467">467</a>
+<a href="#468" id="468">468</a>
+<a href="#469" id="469">469</a>
+<a href="#470" id="470">470</a>
+<a href="#471" id="471">471</a>
+<a href="#472" id="472">472</a>
+<a href="#473" id="473">473</a>
+<a href="#474" id="474">474</a>
+<a href="#475" id="475">475</a>
+<a href="#476" id="476">476</a>
+<a href="#477" id="477">477</a>
+<a href="#478" id="478">478</a>
+<a href="#479" id="479">479</a>
+<a href="#480" id="480">480</a>
+<a href="#481" id="481">481</a>
+<a href="#482" id="482">482</a>
+</pre></div><pre class="rust"><code><span class="kw">use </span><span class="kw">crate</span>::constants::{OFFICIAL_ADDONS, PROFILE_STORAGE_KEY};
 <span class="kw">use </span><span class="kw">crate</span>::models::ctx::{CtxError, CtxStatus, OtherError};
 <span class="kw">use </span><span class="kw">crate</span>::runtime::msg::{Action, ActionCtx, Event, Internal, Msg};
 <span class="kw">use </span><span class="kw">crate</span>::runtime::{Effect, EffectFuture, Effects, Env, EnvFutureExt};
@@ -472,6 +491,7 @@
 <span class="kw">use </span><span class="kw">crate</span>::types::profile::{Auth, AuthKey, Profile, Settings, User};
 <span class="kw">use </span>enclose::enclose;
 <span class="kw">use </span>futures::{future, FutureExt, TryFutureExt};
+<span class="kw">use </span>std::collections::HashSet;
 
 <span class="kw">pub fn </span>update_profile&lt;E: Env + <span class="lifetime">&#39;static</span>&gt;(
     profile: <span class="kw-2">&amp;mut </span>Profile,
@@ -545,10 +565,22 @@
                             .unwrap_or_else(|| profile_addon.to_owned())
                     })
                     .collect::&lt;Vec&lt;<span class="kw">_</span>&gt;&gt;();
-                <span class="kw">let </span>transport_urls = next_addons
+                <span class="kw">let </span>prev_transport_urls = profile
+                    .addons
                     .iter()
                     .map(|addon| <span class="kw-2">&amp;</span>addon.transport_url)
                     .cloned()
+                    .collect::&lt;HashSet&lt;<span class="kw">_</span>&gt;&gt;();
+                <span class="kw">let </span>next_transport_urls = next_addons
+                    .iter()
+                    .map(|addon| <span class="kw-2">&amp;</span>addon.transport_url)
+                    .cloned()
+                    .collect::&lt;HashSet&lt;<span class="kw">_</span>&gt;&gt;();
+                <span class="kw">let </span>added_transport_urls = <span class="kw-2">&amp;</span>next_transport_urls - <span class="kw-2">&amp;</span>prev_transport_urls;
+                <span class="kw">let </span>removed_transport_urls = <span class="kw-2">&amp;</span>prev_transport_urls - <span class="kw-2">&amp;</span>next_transport_urls;
+                <span class="kw">let </span>transport_urls = added_transport_urls
+                    .into_iter()
+                    .chain(removed_transport_urls.into_iter())
                     .collect();
                 <span class="kw">if </span>profile.addons != next_addons {
                     profile.addons = next_addons;
@@ -564,54 +596,38 @@
             Effects::msg(Msg::Internal(Internal::InstallAddon(addon.to_owned()))).unchanged()
         }
         Msg::Action(Action::Ctx(ActionCtx::UpgradeAddon(addon))) =&gt; {
-            <span class="kw">if </span>!profile.addons.contains(addon) {
-                <span class="kw">if </span>!addon.manifest.behavior_hints.configuration_required {
-                    <span class="kw">let </span>addon_positions = profile
-                        .addons
-                        .iter()
-                        .map(|addon| <span class="kw-2">&amp;</span>addon.manifest.id)
-                        .enumerate()
-                        .filter(|(<span class="kw">_</span>, id)| <span class="kw-2">**</span>id == addon.manifest.id &amp;&amp; !addon.flags.protected)
-                        .map(|(position, <span class="kw">_</span>)| position)
-                        .collect::&lt;Vec&lt;<span class="kw">_</span>&gt;&gt;();
-                    <span class="kw">for </span>position <span class="kw">in </span>addon_positions {
-                        profile.addons.remove(position);
-                    }
-                    profile.addons.push(addon.to_owned());
-                    <span class="kw">let </span>push_to_api_effects = <span class="kw">match </span>profile.auth_key() {
-                        <span class="prelude-val">Some</span>(auth_key) =&gt; Effects::one(push_addons_to_api::&lt;E&gt;(
-                            profile.addons.to_owned(),
-                            auth_key,
-                        ))
-                        .unchanged(),
-                        <span class="kw">_ </span>=&gt; Effects::none().unchanged(),
-                    };
-                    Effects::msg(Msg::Event(Event::AddonUpgraded {
-                        transport_url: addon.transport_url.to_owned(),
-                        id: addon.manifest.id.to_owned(),
-                    }))
-                    .join(push_to_api_effects)
-                    .join(Effects::msg(Msg::Internal(Internal::ProfileChanged)))
-                } <span class="kw">else </span>{
-                    Effects::msg(Msg::Event(Event::Error {
-                        error: CtxError::from(OtherError::AddonConfigurationRequired),
-                        source: Box::new(Event::AddonUpgraded {
-                            transport_url: addon.transport_url.to_owned(),
-                            id: addon.manifest.id.to_owned(),
-                        }),
-                    }))
-                    .unchanged()
-                }
-            } <span class="kw">else </span>{
-                Effects::msg(Msg::Event(Event::Error {
-                    error: CtxError::from(OtherError::AddonAlreadyInstalled),
-                    source: Box::new(Event::AddonUpgraded {
-                        transport_url: addon.transport_url.to_owned(),
-                        id: addon.manifest.id.to_owned(),
-                    }),
-                }))
-                .unchanged()
+            <span class="kw">if </span>profile.addons.contains(addon) {
+                <span class="kw">return </span>addon_upgrade_error_effects(addon, OtherError::AddonAlreadyInstalled);
             }
+            <span class="kw">if </span>addon.manifest.behavior_hints.configuration_required {
+                <span class="kw">return </span>addon_upgrade_error_effects(addon, OtherError::AddonConfigurationRequired);
+            }
+            <span class="kw">let </span>addon_position = <span class="kw">match </span>profile
+                .addons
+                .iter()
+                .map(|addon| <span class="kw-2">&amp;</span>addon.transport_url)
+                .position(|transport_url| <span class="kw-2">*</span>transport_url == addon.transport_url)
+            {
+                <span class="prelude-val">Some</span>(addon_position) =&gt; addon_position,
+                <span class="prelude-val">None </span>=&gt; <span class="kw">return </span>addon_upgrade_error_effects(addon, OtherError::AddonNotInstalled),
+            };
+            <span class="kw">if </span>addon.flags.protected || profile.addons[addon_position].flags.protected {
+                <span class="kw">return </span>addon_upgrade_error_effects(addon, OtherError::AddonIsProtected);
+            }
+            profile.addons[addon_position] = addon.to_owned();
+            <span class="kw">let </span>push_to_api_effects = <span class="kw">match </span>profile.auth_key() {
+                <span class="prelude-val">Some</span>(auth_key) =&gt; {
+                    Effects::one(push_addons_to_api::&lt;E&gt;(profile.addons.to_owned(), auth_key))
+                        .unchanged()
+                }
+                <span class="kw">_ </span>=&gt; Effects::none().unchanged(),
+            };
+            Effects::msg(Msg::Event(Event::AddonUpgraded {
+                transport_url: addon.transport_url.to_owned(),
+                id: addon.manifest.id.to_owned(),
+            }))
+            .join(push_to_api_effects)
+            .join(Effects::msg(Msg::Internal(Internal::ProfileChanged)))
         }
         Msg::Action(Action::Ctx(ActionCtx::UninstallAddon(addon))) =&gt; {
             <span class="kw">let </span>addon_position = profile
@@ -620,7 +636,7 @@
                 .map(|addon| <span class="kw-2">&amp;</span>addon.transport_url)
                 .position(|transport_url| <span class="kw-2">*</span>transport_url == addon.transport_url);
             <span class="kw">if let </span><span class="prelude-val">Some</span>(addon_position) = addon_position {
-                <span class="kw">if </span>!profile.addons[addon_position].flags.protected {
+                <span class="kw">if </span>!profile.addons[addon_position].flags.protected &amp;&amp; !addon.flags.protected {
                     profile.addons.remove(addon_position);
                     <span class="kw">let </span>push_to_api_effects = <span class="kw">match </span>profile.auth_key() {
                         <span class="prelude-val">Some</span>(auth_key) =&gt; Effects::one(push_addons_to_api::&lt;E&gt;(
@@ -637,24 +653,10 @@
                     .join(push_to_api_effects)
                     .join(Effects::msg(Msg::Internal(Internal::ProfileChanged)))
                 } <span class="kw">else </span>{
-                    Effects::msg(Msg::Event(Event::Error {
-                        error: CtxError::from(OtherError::AddonIsProtected),
-                        source: Box::new(Event::AddonUninstalled {
-                            transport_url: addon.transport_url.to_owned(),
-                            id: addon.manifest.id.to_owned(),
-                        }),
-                    }))
-                    .unchanged()
+                    addon_uninstall_error_effects(addon, OtherError::AddonIsProtected)
                 }
             } <span class="kw">else </span>{
-                Effects::msg(Msg::Event(Event::Error {
-                    error: CtxError::from(OtherError::AddonNotInstalled),
-                    source: Box::new(Event::AddonUninstalled {
-                        transport_url: addon.transport_url.to_owned(),
-                        id: addon.manifest.id.to_owned(),
-                    }),
-                }))
-                .unchanged()
+                addon_uninstall_error_effects(addon, OtherError::AddonNotInstalled)
             }
         }
         Msg::Action(Action::Ctx(ActionCtx::LogoutTrakt)) =&gt; <span class="kw">match </span><span class="kw-2">&amp;mut </span>profile.auth {
@@ -722,37 +724,23 @@
                     .join(push_to_api_effects)
                     .join(Effects::msg(Msg::Internal(Internal::ProfileChanged)))
                 } <span class="kw">else </span>{
-                    Effects::msg(Msg::Event(Event::Error {
-                        error: CtxError::from(OtherError::AddonConfigurationRequired),
-                        source: Box::new(Event::AddonInstalled {
-                            transport_url: addon.transport_url.to_owned(),
-                            id: addon.manifest.id.to_owned(),
-                        }),
-                    }))
-                    .unchanged()
+                    addon_install_error_effects(addon, OtherError::AddonConfigurationRequired)
                 }
             } <span class="kw">else </span>{
-                Effects::msg(Msg::Event(Event::Error {
-                    error: CtxError::from(OtherError::AddonAlreadyInstalled),
-                    source: Box::new(Event::AddonInstalled {
-                        transport_url: addon.transport_url.to_owned(),
-                        id: addon.manifest.id.to_owned(),
-                    }),
-                }))
-                .unchanged()
+                addon_install_error_effects(addon, OtherError::AddonAlreadyInstalled)
             }
         }
         Msg::Internal(Internal::CtxAuthResult(auth_request, result)) =&gt; <span class="kw">match </span>(status, result) {
             (CtxStatus::Loading(loading_auth_request), <span class="prelude-val">Ok</span>((auth, addons, <span class="kw">_</span>)))
                 <span class="kw">if </span>loading_auth_request == auth_request =&gt;
             {
-                <span class="kw">let </span>next_proifle = Profile {
+                <span class="kw">let </span>next_profile = Profile {
                     auth: <span class="prelude-val">Some</span>(auth.to_owned()),
                     addons: addons.to_owned(),
                     settings: Settings::default(),
                 };
-                <span class="kw">if </span><span class="kw-2">*</span>profile != next_proifle {
-                    <span class="kw-2">*</span>profile = next_proifle;
+                <span class="kw">if </span><span class="kw-2">*</span>profile != next_profile {
+                    <span class="kw-2">*</span>profile = next_profile;
                     Effects::msg(Msg::Internal(Internal::ProfileChanged))
                 } <span class="kw">else </span>{
                     Effects::none().unchanged()
@@ -765,10 +753,22 @@
             result,
         )) <span class="kw">if </span>profile.auth_key() == <span class="prelude-val">Some</span>(auth_key) =&gt; <span class="kw">match </span>result {
             <span class="prelude-val">Ok</span>(addons) =&gt; {
-                <span class="kw">let </span>transport_urls = addons
+                <span class="kw">let </span>prev_transport_urls = profile
+                    .addons
                     .iter()
                     .map(|addon| <span class="kw-2">&amp;</span>addon.transport_url)
                     .cloned()
+                    .collect::&lt;HashSet&lt;<span class="kw">_</span>&gt;&gt;();
+                <span class="kw">let </span>next_transport_urls = addons
+                    .iter()
+                    .map(|addon| <span class="kw-2">&amp;</span>addon.transport_url)
+                    .cloned()
+                    .collect::&lt;HashSet&lt;<span class="kw">_</span>&gt;&gt;();
+                <span class="kw">let </span>added_transport_urls = <span class="kw-2">&amp;</span>next_transport_urls - <span class="kw-2">&amp;</span>prev_transport_urls;
+                <span class="kw">let </span>removed_transport_urls = <span class="kw-2">&amp;</span>prev_transport_urls - <span class="kw-2">&amp;</span>next_transport_urls;
+                <span class="kw">let </span>transport_urls = added_transport_urls
+                    .into_iter()
+                    .chain(removed_transport_urls.into_iter())
                     .collect();
                 <span class="kw">if </span>profile.addons != <span class="kw-2">*</span>addons {
                     profile.addons = addons.to_owned();
@@ -924,5 +924,42 @@
     )
     .into()
 }
-</code></pre></div>
-</section></main><div id="rustdoc-vars" data-root-path="../../../../" data-static-root-path="../../../../static.files/" data-current-crate="stremio_core" data-themes="" data-resource-suffix="" data-rustdoc-version="1.69.0-nightly (c8e6a9e8b 2023-01-23)" data-search-js="search-98d53477a794af0b.js" data-settings-js="settings-c3c521c753752a1a.js" data-settings-css="settings-08ddfdda51b8ee2e.css" ></div></body></html>
+
+<span class="kw">fn </span>addon_upgrade_error_effects(addon: <span class="kw-2">&amp;</span>Descriptor, error: OtherError) -&gt; Effects {
+    addon_action_error_effects(
+        error,
+        Event::AddonUpgraded {
+            transport_url: addon.transport_url.to_owned(),
+            id: addon.manifest.id.to_owned(),
+        },
+    )
+}
+
+<span class="kw">fn </span>addon_uninstall_error_effects(addon: <span class="kw-2">&amp;</span>Descriptor, error: OtherError) -&gt; Effects {
+    addon_action_error_effects(
+        error,
+        Event::AddonUninstalled {
+            transport_url: addon.transport_url.to_owned(),
+            id: addon.manifest.id.to_owned(),
+        },
+    )
+}
+
+<span class="kw">fn </span>addon_install_error_effects(addon: <span class="kw-2">&amp;</span>Descriptor, error: OtherError) -&gt; Effects {
+    addon_action_error_effects(
+        error,
+        Event::AddonInstalled {
+            transport_url: addon.transport_url.to_owned(),
+            id: addon.manifest.id.to_owned(),
+        },
+    )
+}
+
+<span class="kw">fn </span>addon_action_error_effects(error: OtherError, source: Event) -&gt; Effects {
+    Effects::msg(Msg::Event(Event::Error {
+        error: CtxError::from(error),
+        source: Box::new(source),
+    }))
+    .unchanged()
+}
+</code></pre></div></section></main></body></html>

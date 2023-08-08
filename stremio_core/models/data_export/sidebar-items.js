@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"struct":[["DataExport",""]]};
+window.SIDEBAR_ITEMS = {"struct":["DataExport"]};

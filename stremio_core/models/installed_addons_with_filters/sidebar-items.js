@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"struct":[["InstalledAddonsRequest",""],["InstalledAddonsWithFilters",""],["Selectable",""],["SelectableType",""],["Selected",""]]};
+window.SIDEBAR_ITEMS = {"struct":["InstalledAddonsRequest","InstalledAddonsWithFilters","Selectable","SelectableType","Selected"]};

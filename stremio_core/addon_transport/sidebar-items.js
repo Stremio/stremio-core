@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"struct":[["AddonHTTPTransport",""],["UnsupportedTransport",""]],"trait":[["AddonTransport",""]]};
+window.SIDEBAR_ITEMS = {"struct":["AddonHTTPTransport","UnsupportedTransport"],"trait":["AddonTransport"]};

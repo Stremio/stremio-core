@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"struct":[["Auth",""],["AuthKey",""],["GDPRConsent",""],["Profile",""],["Settings",""],["TraktInfo",""],["User",""]],"type":[["UID","User ID"]]};
+window.SIDEBAR_ITEMS = {"enum":["FrameRateMatchingStrategy"],"struct":["Auth","AuthKey","GDPRConsent","Profile","Settings","TraktInfo","User"],"type":["UID"]};

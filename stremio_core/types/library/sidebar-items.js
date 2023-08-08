@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"struct":[["LibraryBucket",""],["LibraryBucketRef",""],["LibraryItem",""],["LibraryItemState",""]]};
+window.SIDEBAR_ITEMS = {"struct":["LibraryBucket","LibraryBucketRef","LibraryItem","LibraryItemState"],"type":["LibraryItemId"]};

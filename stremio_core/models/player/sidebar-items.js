@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"struct":[["AnalyticsContext",""],["Player",""],["Selected",""]]};
+window.SIDEBAR_ITEMS = {"struct":["AnalyticsContext","PUSH_TO_LIBRARY_EVERY","Player","Selected","VideoParams"]};
