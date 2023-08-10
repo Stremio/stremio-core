@@ -71,7 +71,8 @@ impl WebModel {
         let (continue_watching_preview, continue_watching_preview_effects) =
             ContinueWatchingPreview::new(&library, &notifications);
         let (discover, discover_effects) = CatalogWithFilters::<MetaItemPreview>::new(&profile);
-        let (library_, library_effects) = LibraryWithFilters::<NotRemovedFilter>::new(&library, &notifications);
+        let (library_, library_effects) =
+            LibraryWithFilters::<NotRemovedFilter>::new(&library, &notifications);
         let (continue_watching, continue_watching_effects) =
             LibraryWithFilters::<ContinueWatchingFilter>::new(&library, &notifications);
         let (remote_addons, remote_addons_effects) =

@@ -39,7 +39,7 @@ mod model {
                 items: continue_watching_preview
                     .items
                     .iter()
-                    .map(|item| Item::from(item))
+                    .map(Item::from)
                     .collect::<Vec<_>>(),
                 deep_links: LibraryDeepLinks::from(&"continuewatching".to_owned())
                     .into_web_deep_links(),
