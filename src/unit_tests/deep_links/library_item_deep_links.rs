@@ -31,7 +31,7 @@ fn library_item_deep_links() {
             stream: None,
             watched: None,
             last_video_released: None,
-            notifications_disabled: true,
+            no_notif: true,
         },
         behavior_hints: Default::default(),
     };
@@ -70,7 +70,7 @@ fn library_item_deep_links_state_video_id_no_time_offset() {
             stream: None,
             watched: None,
             last_video_released: None,
-            notifications_disabled: true,
+            no_notif: true,
         },
         behavior_hints: Default::default(),
     };
@@ -109,7 +109,7 @@ fn library_item_deep_links_state_video_id() {
             stream: None,
             watched: None,
             last_video_released: None,
-            notifications_disabled: true,
+            no_notif: true,
         },
         behavior_hints: Default::default(),
     };
@@ -150,7 +150,7 @@ fn library_item_deep_links_behavior_hints_default_video_id() {
             stream: None,
             watched: None,
             last_video_released: None,
-            notifications_disabled: true,
+            no_notif: true,
         },
         behavior_hints: MetaItemBehaviorHints {
             default_video_id: Some("bh_video_id".to_string()),
@@ -193,7 +193,7 @@ fn library_item_deep_links_state_and_behavior_hints_default_video_id() {
             stream: None,
             watched: None,
             last_video_released: None,
-            notifications_disabled: true,
+            no_notif: true,
         },
         behavior_hints: MetaItemBehaviorHints {
             default_video_id: Some("bh_video_id".to_string()),
@@ -236,7 +236,7 @@ fn library_item_deep_links_state_no_time_offset_and_behavior_hints_default_video
             stream: None,
             watched: None,
             last_video_released: None,
-            notifications_disabled: true,
+            no_notif: true,
         },
         behavior_hints: MetaItemBehaviorHints {
             default_video_id: Some("bh_video_id".to_string()),

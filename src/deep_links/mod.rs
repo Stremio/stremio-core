@@ -1,18 +1,25 @@
-mod error_link;
-
-use crate::constants::URI_COMPONENT_ENCODE_SET;
-use crate::deep_links::error_link::ErrorLink;
-use crate::models::installed_addons_with_filters::InstalledAddonsRequest;
-use crate::models::library_with_filters::LibraryRequest;
-use crate::types::addon::{ExtraValue, ResourcePath, ResourceRequest};
-use crate::types::library::LibraryItem;
-use crate::types::profile::Settings;
-use crate::types::query_params_encode;
-use crate::types::resource::{MetaItem, MetaItemPreview, Stream, StreamSource, Video};
 use percent_encoding::utf8_percent_encode;
 use regex::Regex;
 use serde::Serialize;
 use url::Url;
+
+use crate::{
+    constants::URI_COMPONENT_ENCODE_SET,
+    models::{
+        installed_addons_with_filters::InstalledAddonsRequest, library_with_filters::LibraryRequest,
+    },
+    types::{
+        addon::{ExtraValue, ResourcePath, ResourceRequest},
+        library::LibraryItem,
+        profile::Settings,
+        query_params_encode,
+        resource::{MetaItem, MetaItemPreview, Stream, StreamSource, Video},
+    },
+};
+
+pub use error_link::ErrorLink;
+
+mod error_link;
 
 #[derive(Default, Serialize, Debug, PartialEq, Eq)]
 #[serde(rename_all = "camelCase")]
@@ -42,6 +49,12 @@ pub struct ExternalPlayerLink {
 }
 
 impl From<(&Stream, &Option<Url>, &Settings)> for ExternalPlayerLink {
+    /// Create an [`ExternalPlayerLink`] using the [`Stream`],
+    /// the server url (from [`StreamingServer::base_url`] which indicates a running or not server)
+    /// and the user's [`Settings`] in order to use the [`Settings::player_type`] for generating a
+    /// player-specific url.
+    ///
+    /// [`StreamingServer::base_url`]: crate::models::streaming_server::StreamingServer::base_url
     fn from((stream, streaming_server_url, settings): (&Stream, &Option<Url>, &Settings)) -> Self {
         let http_regex = Regex::new(r"https?://").unwrap();
         let download = stream.download_url();
@@ -301,6 +314,12 @@ pub struct StreamDeepLinks {
 }
 
 impl From<(&Stream, &Option<Url>, &Settings)> for StreamDeepLinks {
+    /// Create a [`StreamDeepLinks`] using the [`Stream`],
+    /// the server url (from [`StreamingServer::base_url`] which indicates a running or not server)
+    /// and the user's [`Settings`] in order to use the [`Settings::player_type`] for generating a
+    /// player-specific url.
+    ///
+    /// [`StreamingServer::base_url`]: crate::models::streaming_server::StreamingServer::base_url
     fn from((stream, streaming_server_url, settings): (&Stream, &Option<Url>, &Settings)) -> Self {
         StreamDeepLinks {
             player: stream
@@ -326,6 +345,12 @@ impl
         &Settings,
     )> for StreamDeepLinks
 {
+    /// Create a [`StreamDeepLinks`] using the [`Stream`], stream request, meta request,
+    /// the server url (from [`StreamingServer::base_url`] which indicates a running or not server)
+    /// and the user's [`Settings`] in order to use the [`Settings::player_type`] for generating a
+    /// player-specific url.
+    ///
+    /// [`StreamingServer::base_url`]: crate::models::streaming_server::StreamingServer::base_url
     fn from(
         (stream, stream_request, meta_request, streaming_server_url, settings): (
             &Stream,

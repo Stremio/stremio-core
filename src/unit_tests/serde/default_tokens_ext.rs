@@ -48,7 +48,7 @@ impl DefaultTokens for LibraryItemState {
             Token::None,
             Token::Str("lastVideoReleased"),
             Token::None,
-            Token::Str("notificationsDisabled"),
+            Token::Str("noNotif"),
             Token::Bool(false),
             Token::StructEnd,
         ]

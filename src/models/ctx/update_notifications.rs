@@ -76,6 +76,9 @@ pub fn update_notifications<E: Env + 'static>(
                 .join(notification_items_effects)
                 .unchanged()
         }
+        Msg::Action(Action::Ctx(ActionCtx::DismissNotificationItem(id))) => {
+            remove_notification_item(notifications, id)
+        }
         Msg::Action(Action::Ctx(ActionCtx::Logout)) | Msg::Internal(Internal::Logout) => {
             let notification_catalogs_effects = eq_update(notification_catalogs, vec![]);
             let next_notifications = NotificationsBucket::new::<E>(profile.uid(), vec![]);
@@ -132,10 +135,7 @@ pub fn update_notifications<E: Env + 'static>(
                 .join(notifications_effects)
         }
         Msg::Internal(Internal::DismissNotificationItem(id)) => {
-            match notifications.items.remove(id) {
-                Some(_) => Effects::msg(Msg::Internal(Internal::NotificationsChanged)).unchanged(),
-                _ => Effects::none().unchanged(),
-            }
+            remove_notification_item(notifications, id)
         }
         Msg::Internal(Internal::NotificationsChanged) => {
             Effects::one(push_notifications_to_storage::<E>(notifications)).unchanged()
@@ -255,4 +255,11 @@ fn push_notifications_to_storage<E: Env + 'static>(notifications: &Notifications
             .boxed_env(),
     )
     .into()
+}
+
+fn remove_notification_item(notifications: &mut NotificationsBucket, id: &String) -> Effects {
+    match notifications.items.remove(id) {
+        Some(_) => Effects::msg(Msg::Internal(Internal::NotificationsChanged)).unchanged(),
+        _ => Effects::none().unchanged(),
+    }
 }

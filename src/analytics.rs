@@ -1,20 +1,28 @@
+use std::{
+    collections::VecDeque,
+    marker::PhantomData,
+    sync::{Arc, Mutex},
+};
+
 use derivative::Derivative;
 use enclose::enclose;
-use futures::future::Either;
-use futures::{future, Future, FutureExt};
+use futures::{
+    future::{self, Either},
+    Future, FutureExt,
+};
 use serde::Serialize;
-use std::collections::VecDeque;
-use std::marker::PhantomData;
-use std::sync::{Arc, Mutex};
-use stremio_core::models::ctx::Ctx;
-use stremio_core::models::streaming_server::StreamingServer;
+
+use crate::{
+    models::{ctx::Ctx, streaming_server::StreamingServer},
+    runtime::{Env, EnvError, TryEnvFuture},
+    types::{
+        api::{fetch_api, APIRequest, APIResult, SuccessResponse},
+        profile::AuthKey,
+    },
+};
+
 #[cfg(debug_assertions)]
-use stremio_core::runtime::EnvFutureExt;
-use stremio_core::runtime::{Env, EnvError, TryEnvFuture};
-use stremio_core::types::api::{fetch_api, APIRequest, APIResult, SuccessResponse};
-use stremio_core::types::profile::AuthKey;
-#[cfg(debug_assertions)]
-use stremio_core::types::True;
+use crate::{runtime::EnvFutureExt, types::True};
 
 #[derive(Clone, PartialEq, Serialize, Debug)]
 struct Event {
