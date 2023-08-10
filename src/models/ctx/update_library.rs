@@ -10,7 +10,6 @@ use crate::types::api::{
 };
 use crate::types::library::{LibraryBucket, LibraryBucketRef, LibraryItem};
 use crate::types::profile::{AuthKey, Profile};
-use chrono::Utc;
 use futures::future::Either;
 use futures::{future, FutureExt, TryFutureExt};
 use std::collections::HashMap;
@@ -67,7 +66,7 @@ pub fn update_library<E: Env + 'static>(
             Some(library_item) => {
                 let mut library_item = library_item.to_owned();
                 library_item.state.time_offset = 0;
-                library_item.state.last_watched = Some(Utc::now());
+                library_item.state.last_watched = Some(E::now());
                 Effects::msg(Msg::Internal(Internal::UpdateLibraryItem(library_item)))
                     .join(Effects::msg(Msg::Event(Event::LibraryItemRewinded {
                         id: id.to_owned(),
