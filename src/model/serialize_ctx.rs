@@ -7,8 +7,9 @@ pub fn serialize_ctx(ctx: &Ctx) -> JsValue {
 }
 
 mod model {
-    use serde::Serialize;
     use std::collections::HashMap;
+
+    use serde::Serialize;
 
     use chrono::{DateTime, Utc};
 
@@ -26,9 +27,10 @@ mod model {
     }
 
     #[derive(Serialize)]
+    #[serde(rename_all = "camelCase")]
     pub struct Notifications<'a> {
         /// Override the notifications to simplify the mapping
-        pub items: HashMap<MetaItemId, Vec<&'a Video>>,
+        pub items: HashMap<MetaItemId, Vec<&'a NotificationItem>>,
         pub last_updated: Option<DateTime<Utc>>,
         pub created: DateTime<Utc>,
     }
@@ -43,12 +45,7 @@ mod model {
                         .items
                         .iter()
                         .map(|(meta_id, notifications)| {
-                            let notif_videos = notifications
-                                .iter()
-                                .map(|(_video_id, notification_item)| &notification_item.video)
-                                .collect();
-
-                            (meta_id.to_owned(), notif_videos)
+                            (meta_id.to_owned(), notifications.values().collect())
                         })
                         .collect(),
                     last_updated: ctx.notifications.last_updated,
