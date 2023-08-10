@@ -1,3 +1,7 @@
+use std::{collections::HashMap, marker::PhantomData};
+
+use futures::{future::{Either, self}, FutureExt, TryFutureExt};
+
 use crate::constants::{
     LIBRARY_COLLECTION_NAME, LIBRARY_RECENT_COUNT, LIBRARY_RECENT_STORAGE_KEY, LIBRARY_STORAGE_KEY,
 };
@@ -10,10 +14,6 @@ use crate::types::api::{
 };
 use crate::types::library::{LibraryBucket, LibraryBucketRef, LibraryItem};
 use crate::types::profile::{AuthKey, Profile};
-use futures::future::Either;
-use futures::{future, FutureExt, TryFutureExt};
-use std::collections::HashMap;
-use std::marker::PhantomData;
 
 pub fn update_library<E: Env + 'static>(
     library: &mut LibraryBucket,

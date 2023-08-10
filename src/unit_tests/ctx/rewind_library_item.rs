@@ -23,6 +23,10 @@ fn actionctx_rewindlibraryitem() {
     struct TestModel {
         ctx: Ctx,
     }
+    let _env_mutex = TestEnv::reset();
+    *FETCH_HANDLER.write().unwrap() = Box::new(fetch_handler);
+    *NOW.write().unwrap() = Utc.with_ymd_and_hms(2020, 1, 2, 0, 0, 0).unwrap();
+
     fn fetch_handler(request: Request) -> TryEnvFuture<Box<dyn Any + Send>> {
         match request {
             Request {
@@ -35,6 +39,7 @@ fn actionctx_rewindlibraryitem() {
                     result: SuccessResponse { success: True {} },
                 }) as Box<dyn Any + Send>).boxed_env()
             }
+            
             _ => default_fetch_handler(request),
         }
     }
@@ -63,9 +68,7 @@ fn actionctx_rewindlibraryitem() {
         },
         ..library_item.to_owned()
     };
-    let _env_mutex = TestEnv::reset();
-    *FETCH_HANDLER.write().unwrap() = Box::new(fetch_handler);
-    *NOW.write().unwrap() = Utc.with_ymd_and_hms(2020, 1, 2, 0, 0, 0).unwrap();
+
     STORAGE.write().unwrap().insert(
         LIBRARY_RECENT_STORAGE_KEY.to_owned(),
         serde_json::to_string(&LibraryBucket::new(

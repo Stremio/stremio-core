@@ -208,7 +208,7 @@ fn update_notification_items<E: Env + 'static>(
                                     // exclude future videos (i.e. that will air in the future)
                                     video_released <= E::now()
                         {
-                            Some((library_item.id, video.id, video_released))
+                            Some((&library_item.id, &video.id, video_released))
                         } else {
                             None
                         }
@@ -227,8 +227,8 @@ fn update_notification_items<E: Env + 'static>(
                     // leave the first one found in the Vec.
                     if let Entry::Vacant(new) = notif_entry {
                         let notification = NotificationItem {
-                            meta_id,
-                            video_id,
+                            meta_id: meta_id.to_owned(),
+                            video_id: video_id.to_owned(),
                             video_released,
                         };
 
