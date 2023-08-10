@@ -94,24 +94,14 @@
         "result": {
             "tt1": {
                 "tt1:1:6": {
-                    "meta_id": "tt1",
-                    "video_id": "tt1:1:6",
-                    "video": {
-                        "id": "tt1:1:6",
-                        "season": 1,
-                        "episode": 6,
-                        "released": "2020-01-05T00:00:00.000Z"
-                    }
+                    "metaId": "tt1",
+                    "videoId": "tt1:1:6",
+                    "videoReleased": "2020-01-05T00:00:00.000Z"
                 },
                 "tt1:1:7": {
-                    "meta_id": "tt1",
-                    "video_id": "tt1:1:7",
-                    "video": {
-                        "id": "tt1:1:7",
-                        "season": 1,
-                        "episode": 7,
-                        "released": "2020-01-15T00:00:00.000Z"
-                    }
+                    "metaId": "tt1",
+                    "videoId": "tt1:1:7",
+                    "videoReleased": "2020-01-15T00:00:00.000Z"
                 }
             }
         }
