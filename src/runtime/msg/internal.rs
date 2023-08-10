@@ -1,3 +1,5 @@
+use url::Url;
+
 use crate::models::ctx::CtxError;
 use crate::models::link::LinkError;
 use crate::models::local_search::Searchable;
@@ -10,14 +12,10 @@ use crate::types::api::{
     APIRequest, AuthRequest, DataExportResponse, DatastoreRequest, LinkCodeResponse,
     LinkDataResponse,
 };
+use crate::types::library::{LibraryBucket, LibraryItem, LibraryItemId};
 use crate::types::profile::{Auth, AuthKey, Profile, User};
 use crate::types::resource::Stream;
 use crate::types::streaming_server::Statistics;
-use crate::types::{
-    library::{LibraryBucket, LibraryItem},
-    resource::MetaItemId,
-};
-use url::Url;
 
 pub type CtxStorageResponse = (
     Option<Profile>,
@@ -66,7 +64,7 @@ pub enum Internal {
     /// User notifications have changed
     NotificationsChanged,
     /// Dismiss all Notifications for a given [`MetaItemId`].
-    DismissNotificationItem(MetaItemId),
+    DismissNotificationItem(LibraryItemId),
     /// Result for loading link code.
     LinkCodeResult(Result<LinkCodeResponse, LinkError>),
     /// Result for loading link data.

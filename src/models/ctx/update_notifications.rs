@@ -136,7 +136,7 @@ pub fn update_notifications<E: Env + 'static>(
                 .join(notifications_effects)
         }
         Msg::Internal(Internal::DismissNotificationItem(id)) => {
-            dismiss_notification_item(notifications, id)
+            dismiss_notification_item::<E>(library, notifications, id)
         }
         Msg::Internal(Internal::NotificationsChanged) => {
             Effects::one(push_notifications_to_storage::<E>(notifications)).unchanged()
@@ -266,11 +266,33 @@ fn push_notifications_to_storage<E: Env + 'static>(notifications: &Notifications
     .into()
 }
 
-fn dismiss_notification_item(notifications: &mut NotificationsBucket, id: &str) -> Effects {
+fn dismiss_notification_item<E: Env + 'static>(
+    library: &LibraryBucket,
+    notifications: &mut NotificationsBucket,
+    id: &str,
+) -> Effects {
     match notifications.items.remove(id) {
-        Some(_) => Effects::msg(Msg::Internal(Internal::NotificationsChanged)).join(Effects::msg(
-            Msg::Event(Event::NotificationsDismissed { id: id.to_owned() }),
-        )),
+        Some(_) => {
+            // when dismissing notifications, make sure we update the `last_watched`
+            // of the LibraryItem this way if we've only `DismissedNotificationItem`
+            // the next time we `PullNotifications` we won't see the same notifications.
+            let library_item_effects = match library.items.get(id) {
+                Some(library_item) => {
+                    let mut library_item = library_item.to_owned();
+                    library_item.state.last_watched = Some(E::now());
+
+                    Effects::msg(Msg::Internal(Internal::UpdateLibraryItem(library_item)))
+                        .unchanged()
+                }
+                _ => Effects::none().unchanged(),
+            };
+
+            Effects::msg(Msg::Internal(Internal::NotificationsChanged))
+                .join(library_item_effects)
+                .join(Effects::msg(Msg::Event(Event::NotificationsDismissed {
+                    id: id.to_owned(),
+                })))
+        }
         _ => Effects::none().unchanged(),
     }
 }
