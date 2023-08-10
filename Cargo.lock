@@ -940,7 +940,7 @@ dependencies = [
 [[package]]
 name = "stremio-core"
 version = "0.1.0"
-source = "git+https://github.com/Stremio/stremio-core?branch=fix/notifications-and-cw#2d2376f7c7ff84dc667e4a6e8931cf8f38424c57"
+source = "git+https://github.com/Stremio/stremio-core?branch=fix/notifications-and-cw#96d2653169d36149a16dd28599e3dcb5181bb8b3"
 dependencies = [
  "anyhow",
  "base64 0.21.2",
@@ -1015,7 +1015,7 @@ dependencies = [
 [[package]]
 name = "stremio-derive"
 version = "0.1.0"
-source = "git+https://github.com/Stremio/stremio-core?branch=fix/notifications-and-cw#2d2376f7c7ff84dc667e4a6e8931cf8f38424c57"
+source = "git+https://github.com/Stremio/stremio-core?branch=fix/notifications-and-cw#96d2653169d36149a16dd28599e3dcb5181bb8b3"
 dependencies = [
  "case",
  "proc-macro-crate",
@@ -1045,7 +1045,7 @@ dependencies = [
 [[package]]
 name = "stremio-watched-bitfield"
 version = "0.1.0"
-source = "git+https://github.com/Stremio/stremio-core?branch=fix/notifications-and-cw#2d2376f7c7ff84dc667e4a6e8931cf8f38424c57"
+source = "git+https://github.com/Stremio/stremio-core?branch=fix/notifications-and-cw#96d2653169d36149a16dd28599e3dcb5181bb8b3"
 dependencies = [
  "base64 0.13.1",
  "flate2",
