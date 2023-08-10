@@ -57,6 +57,7 @@ fn test_pull_notifications() {
 
             return default_fetch_handler(request);
         });
+        let _env_lock = TestEnv::reset().expect("Should have exclusive lock to TestEnv");
         *FETCH_HANDLER.write().unwrap() = Box::new(fetch_handler);
         let (runtime, _rx) = Runtime::<TestEnv, _>::new(
             TestModel {
@@ -184,7 +185,7 @@ fn test_dismiss_notification() {
     );
     let runtime = Arc::new(RwLock::new(runtime));
 
-    let _env_mutex = TestEnv::reset().unwrap();
+    let _env_lock = TestEnv::reset().unwrap();
 
     TestEnv::run_with_runtime(
         rx,
