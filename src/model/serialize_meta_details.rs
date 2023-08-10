@@ -17,6 +17,7 @@ use stremio_core::{
         streaming_server::StreamingServer,
     },
     runtime::Env,
+    types::library::LibraryItem,
 };
 
 mod model {
@@ -81,6 +82,7 @@ mod model {
     pub struct MetaDetails<'a> {
         pub selected: &'a Option<MetaDetailsSelected>,
         pub meta_item: Option<ResourceLoadable<'a, MetaItem<'a>>>,
+        pub library_item: &'a Option<LibraryItem>,
         pub streams: Vec<ResourceLoadable<'a, Vec<Stream<'a>>>>,
         pub meta_extensions: Vec<MetaExtension<'a>>,
         pub title: Option<String>,
@@ -217,6 +219,7 @@ pub fn serialize_meta_details(
                     },
                 },
             }),
+        library_item: &meta_details.library_item,
         streams: streams
             .filter_map(|streams| {
                 ctx.profile
