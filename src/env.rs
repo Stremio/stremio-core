@@ -1,25 +1,25 @@
-use crate::event::{UIEvent, WebEvent};
-use crate::model::WebModel;
-use chrono::offset::TimeZone;
-use chrono::{DateTime, Utc};
-use futures::future::Either;
-use futures::{future, Future, FutureExt, TryFutureExt};
+use std::{collections::HashMap, sync::RwLock};
+
+use chrono::{offset::TimeZone, DateTime, Utc};
+use futures::{
+    future::{self, Either},
+    Future, FutureExt, TryFutureExt,
+};
 use http::{Method, Request};
 use lazy_static::lazy_static;
 use regex::Regex;
 use serde::{Deserialize, Serialize};
 use serde_json::json;
 
-use std::collections::HashMap;
-use std::sync::RwLock;
-
-use stremio_analytics::Analytics;
-use stremio_core::models::ctx::Ctx;
-use stremio_core::models::streaming_server::StreamingServer;
-use stremio_core::runtime::msg::{Action, ActionCtx, Event};
-use stremio_core::runtime::{Env, EnvError, EnvFuture, EnvFutureExt, TryEnvFuture};
-use stremio_core::types::api::AuthRequest;
-use stremio_core::types::resource::StreamSource;
+use stremio_core::{
+    analytics::Analytics,
+    models::{ctx::Ctx, streaming_server::StreamingServer},
+    runtime::{
+        msg::{Action, ActionCtx, Event},
+        Env, EnvError, EnvFuture, EnvFutureExt, TryEnvFuture,
+    },
+    types::{api::AuthRequest, resource::StreamSource},
+};
 
 use tracing::trace;
 use url::Url;
@@ -29,6 +29,11 @@ use wasm_bindgen::prelude::wasm_bindgen;
 use wasm_bindgen::{JsCast, JsValue};
 use wasm_bindgen_futures::{spawn_local, JsFuture};
 use web_sys::WorkerGlobalScope;
+
+use crate::{
+    event::{UIEvent, WebEvent},
+    model::WebModel,
+};
 
 const UNKNOWN_ERROR: &str = "Unknown Error";
 const INSTALLATION_ID_STORAGE_KEY: &str = "installation_id";
