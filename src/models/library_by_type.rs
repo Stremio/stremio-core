@@ -66,8 +66,12 @@ impl<E: Env + 'static, F: LibraryFilter> UpdateWithCtx<E> for LibraryByType<F> {
             Msg::Action(Action::Load(ActionLoad::LibraryByType(selected))) => {
                 let selected_effects = eq_update(&mut self.selected, Some(selected.to_owned()));
                 let selectable_effects = selectable_update(&mut self.selectable, &self.selected);
-                let catalogs_effects =
-                    catalogs_update::<F>(&mut self.catalogs, &self.selected, &ctx.library, &ctx.notifications);
+                let catalogs_effects = catalogs_update::<F>(
+                    &mut self.catalogs,
+                    &self.selected,
+                    &ctx.library,
+                    &ctx.notifications,
+                );
                 selected_effects
                     .join(selectable_effects)
                     .join(catalogs_effects)
@@ -91,7 +95,13 @@ impl<E: Env + 'static, F: LibraryFilter> UpdateWithCtx<E> for LibraryByType<F> {
                                 .map(|library_item| &library_item.r#type)
                                 .expect("first page of library catalog is empty");
                             let skip = catalog.iter().fold(0, |result, page| result + page.len());
-                            let page = next_page::<F>(r#type, skip, &self.selected, &ctx.library, &ctx.notifications);
+                            let page = next_page::<F>(
+                                r#type,
+                                skip,
+                                &self.selected,
+                                &ctx.library,
+                                &ctx.notifications,
+                            );
                             catalog.push(page);
                             Effects::none()
                         }
@@ -100,9 +110,12 @@ impl<E: Env + 'static, F: LibraryFilter> UpdateWithCtx<E> for LibraryByType<F> {
                     _ => Effects::none().unchanged(),
                 }
             }
-            Msg::Internal(Internal::LibraryChanged(_)) => {
-                catalogs_update::<F>(&mut self.catalogs, &self.selected, &ctx.library, &ctx.notifications)
-            }
+            Msg::Internal(Internal::LibraryChanged(_)) => catalogs_update::<F>(
+                &mut self.catalogs,
+                &self.selected,
+                &ctx.library,
+                &ctx.notifications,
+            ),
             _ => Effects::none().unchanged(),
         }
     }

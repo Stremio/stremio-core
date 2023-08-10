@@ -39,7 +39,7 @@ fn actionctx_rewindlibraryitem() {
                     result: SuccessResponse { success: True {} },
                 }) as Box<dyn Any + Send>).boxed_env()
             }
-            
+
             _ => default_fetch_handler(request),
         }
     }

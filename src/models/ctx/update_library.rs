@@ -1,6 +1,9 @@
 use std::{collections::HashMap, marker::PhantomData};
 
-use futures::{future::{Either, self}, FutureExt, TryFutureExt};
+use futures::{
+    future::{self, Either},
+    FutureExt, TryFutureExt,
+};
 
 use crate::constants::{
     LIBRARY_COLLECTION_NAME, LIBRARY_RECENT_COUNT, LIBRARY_RECENT_STORAGE_KEY, LIBRARY_STORAGE_KEY,
