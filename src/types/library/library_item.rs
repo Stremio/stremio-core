@@ -58,7 +58,6 @@ impl LibraryItem {
             && self.r#type != "movie"
             && self.behavior_hints.default_video_id.is_none()
             && (!self.removed || self.temp)
-            && self.state.overall_time_watched > 15 * 60 * 1000
     }
 }
 
