@@ -44,7 +44,7 @@ fn override_selected_default_video_id() {
             _ => default_fetch_handler(request),
         }
     }
-    let _env_mutex = TestEnv::reset();
+    let _env_mutex = TestEnv::reset().expect("Should have exclusive lock to TestEnv");
     *FETCH_HANDLER.write().unwrap() = Box::new(fetch_handler);
     let (runtime, rx) = Runtime::<TestEnv, _>::new(
         TestModel {
@@ -138,7 +138,7 @@ fn override_selected_meta_id() {
             _ => default_fetch_handler(request),
         }
     }
-    let _env_mutex = TestEnv::reset();
+    let _env_mutex = TestEnv::reset().expect("Should have exclusive lock to TestEnv");
     *FETCH_HANDLER.write().unwrap() = Box::new(fetch_handler);
     let (runtime, rx) = Runtime::<TestEnv, _>::new(
         TestModel {

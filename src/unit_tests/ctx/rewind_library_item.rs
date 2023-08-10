@@ -63,7 +63,7 @@ fn actionctx_rewindlibraryitem() {
         },
         ..library_item.to_owned()
     };
-    let _env_mutex = TestEnv::reset();
+    let _env_mutex = TestEnv::reset().expect("Should have exclusive lock to TestEnv");
     *FETCH_HANDLER.write().unwrap() = Box::new(fetch_handler);
     *NOW.write().unwrap() = Utc.with_ymd_and_hms(2020, 1, 2, 0, 0, 0).unwrap();
     STORAGE.write().unwrap().insert(
@@ -179,7 +179,7 @@ fn actionctx_rewindlibraryitem_not_added() {
         poster_shape: Default::default(),
         behavior_hints: Default::default(),
     };
-    let _env_mutex = TestEnv::reset();
+    let _env_mutex = TestEnv::reset().expect("Should have exclusive lock to TestEnv");
     STORAGE.write().unwrap().insert(
         LIBRARY_RECENT_STORAGE_KEY.to_owned(),
         serde_json::to_string(&LibraryBucket::new(None, vec![library_item.to_owned()])).unwrap(),

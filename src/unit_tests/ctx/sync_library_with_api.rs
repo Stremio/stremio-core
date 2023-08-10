@@ -26,7 +26,7 @@ fn actionctx_synclibrarywithapi() {
     struct TestModel {
         ctx: Ctx,
     }
-    let _env_mutex = TestEnv::reset();
+    let _env_mutex = TestEnv::reset().expect("Should have exclusive lock to TestEnv");
     let ctx = Ctx::new(
         Profile::default(),
         LibraryBucket::default(),
@@ -233,7 +233,7 @@ fn actionctx_synclibrarywithapi_with_user() {
             _ => default_fetch_handler(request),
         }
     }
-    let _env_mutex = TestEnv::reset();
+    let _env_mutex = TestEnv::reset().expect("Should have exclusive lock to TestEnv");
     *FETCH_HANDLER.write().unwrap() = Box::new(fetch_handler);
     let (runtime, _rx) = Runtime::<TestEnv, _>::new(
         TestModel {
@@ -396,7 +396,7 @@ fn actionctx_synclibrarywithapi_with_user_empty_library() {
             _ => default_fetch_handler(request),
         }
     }
-    let _env_mutex = TestEnv::reset();
+    let _env_mutex = TestEnv::reset().expect("Should have exclusive lock to TestEnv");
     *FETCH_HANDLER.write().unwrap() = Box::new(fetch_handler);
     let (runtime, _rx) = Runtime::<TestEnv, _>::new(
         TestModel {
