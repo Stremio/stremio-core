@@ -107,6 +107,10 @@ pub enum Event {
     LibraryItemNotificationsToggled {
         id: LibraryItemId,
     },
+    /// The notifications for the given LibraryItemId have been dismissed
+    NotificationsDismissed {
+        id: LibraryItemId,
+    },
     MagnetParsed {
         magnet: Url,
     },

@@ -268,7 +268,9 @@ fn push_notifications_to_storage<E: Env + 'static>(notifications: &Notifications
 
 fn dismiss_notification_item(notifications: &mut NotificationsBucket, id: &str) -> Effects {
     match notifications.items.remove(id) {
-        Some(_) => Effects::msg(Msg::Internal(Internal::NotificationsChanged)),
+        Some(_) => Effects::msg(Msg::Internal(Internal::NotificationsChanged)).join(Effects::msg(
+            Msg::Event(Event::NotificationsDismissed { id: id.to_owned() }),
+        )),
         _ => Effects::none().unchanged(),
     }
 }
