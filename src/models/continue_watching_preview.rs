@@ -35,8 +35,6 @@ impl<E: Env + 'static> UpdateWithCtx<E> for ContinueWatchingPreview {
         match msg {
             // library has changed
             Msg::Internal(Internal::LibraryChanged(true))
-            // LibraryItem has been updated (this message alters the `mtime` and will re-order the CW list)
-            | Msg::Internal(Internal::UpdateLibraryItem(_))
             // notifications have been updated
             | Msg::Internal(Internal::NotificationsChanged) => {
                 library_items_update(&mut self.library_items, &ctx.library, &ctx.notifications)

@@ -202,7 +202,7 @@ fn pull_notifications() {
                             last_video_released: Some(
                                 Utc.with_ymd_and_hms(2020, 1, 1, 0, 0, 0).unwrap(),
                             ),
-                            notifications_disabled: false,
+                            no_notif: false,
                         },
                         behavior_hints: Default::default(),
                     }],

@@ -34,7 +34,7 @@ pub const SCHEMA_VERSION: u32 = 7;
 pub const IMDB_LINK_CATEGORY: &str = "imdb";
 pub const GENRES_LINK_CATEGORY: &str = "Genres";
 pub const CINEMETA_TOP_CATALOG_ID: &str = "top";
-/// Only found in Cinemeta catalogs, i.e. [`CINEMETA_CATALOGS_URL`]
+/// Only found in Cinemeta catalogs, i.e. [`CINEMETA_CATALOGS_URL`](struct@CINEMETA_CATALOGS_URL)
 pub const CINEMETA_FEED_CATALOG_ID: &str = "feed.json";
 pub const IMDB_TITLE_PATH: &str = "title";
 pub const YOUTUBE_ADDON_ID_PREFIX: &str = "yt_id:";

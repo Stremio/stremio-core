@@ -12,12 +12,14 @@ use crate::{
     types::resource::{MetaItemBehaviorHints, MetaItemPreview, PosterShape, Video},
 };
 
+pub type LibraryItemId = String;
+
 #[serde_as]
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct LibraryItem {
     #[serde(rename = "_id")]
-    pub id: String,
+    pub id: LibraryItemId,
     pub name: String,
     pub r#type: String,
     #[serde(default)]
@@ -51,7 +53,7 @@ impl LibraryItem {
         self.r#type != "other" && (!self.removed || self.temp) && self.state.time_offset > 0
     }
     pub fn should_pull_notifications(&self) -> bool {
-        !self.state.notifications_disabled
+        !self.state.no_notif
             && self.r#type != "other"
             && self.r#type != "movie"
             && self.behavior_hints.default_video_id.is_none()
@@ -141,7 +143,7 @@ pub struct LibraryItemState {
     ///
     /// Default: receive notifications
     #[serde(default)]
-    pub notifications_disabled: bool,
+    pub no_notif: bool,
 }
 
 impl LibraryItemState {

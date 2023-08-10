@@ -1,6 +1,7 @@
 use crate::models::ctx::CtxError;
 use crate::models::player::AnalyticsContext as PlayerAnalyticsContext;
 use crate::types::api::AuthRequest;
+use crate::types::library::LibraryItemId;
 use crate::types::profile::{AuthKey, Settings, UID};
 use serde::Serialize;
 use url::Url;
@@ -95,13 +96,16 @@ pub enum Event {
         settings: Settings,
     },
     LibraryItemAdded {
-        id: String,
+        id: LibraryItemId,
     },
     LibraryItemRemoved {
-        id: String,
+        id: LibraryItemId,
     },
     LibraryItemRewinded {
-        id: String,
+        id: LibraryItemId,
+    },
+    LibraryItemNotificationsToggled {
+        id: LibraryItemId,
     },
     MagnetParsed {
         magnet: Url,
