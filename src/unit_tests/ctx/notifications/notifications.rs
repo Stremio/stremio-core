@@ -1,16 +1,22 @@
-use std::{any::Any, collections::HashMap};
+use std::{
+    any::Any,
+    collections::HashMap,
+    sync::{Arc, RwLock},
+};
 
+use assert_matches::assert_matches;
 use chrono::{TimeZone, Utc};
 use enclose::enclose;
 use futures::future;
 use serde::Deserialize;
+
 use stremio_derive::Model;
 
 use crate::{
     models::ctx::Ctx,
     runtime::{
         msg::{Action, ActionCtx},
-        EnvFutureExt, Runtime, RuntimeAction, TryEnvFuture,
+        EnvFutureExt, Runtime, RuntimeAction, RuntimeEvent, TryEnvFuture,
     },
     types::{
         addon::{Descriptor, ResourceResponse},
@@ -20,7 +26,7 @@ use crate::{
         resource::{MetaItemId, PosterShape, VideoId},
         streams::StreamsBucket,
     },
-    unit_tests::{default_fetch_handler, Request, TestEnv, FETCH_HANDLER},
+    unit_tests::{default_fetch_handler, Request, TestEnv, EVENTS, FETCH_HANDLER, STATES},
 };
 
 pub const DATA: &[u8] = include_bytes!("./data.json");
@@ -37,6 +43,7 @@ struct TestData {
 #[test]
 fn test_pull_notifications() {
     let tests = serde_json::from_slice::<Vec<TestData>>(DATA).unwrap();
+
     for test in tests {
         #[derive(Model, Clone, Debug)]
         #[model(TestEnv)]
@@ -50,7 +57,6 @@ fn test_pull_notifications() {
 
             return default_fetch_handler(request);
         });
-        let _env_mutex = TestEnv::reset();
         *FETCH_HANDLER.write().unwrap() = Box::new(fetch_handler);
         let (runtime, _rx) = Runtime::<TestEnv, _>::new(
             TestModel {
@@ -90,7 +96,7 @@ fn test_dismiss_notification() {
         ctx: Ctx,
     }
 
-    let (runtime, _rx) = Runtime::<TestEnv, _>::new(
+    let (runtime, rx) = Runtime::<TestEnv, _>::new(
         TestModel {
             ctx: Ctx::new(
                 Profile {
@@ -104,7 +110,7 @@ fn test_dismiss_notification() {
                             name: "Item 1".to_string(),
                             r#type: "series".to_string(),
                             poster: None,
-                            poster_shape: crate::types::resource::PosterShape::Poster,
+                            poster_shape: PosterShape::Poster,
                             removed: false,
                             temp: false,
                             ctime: Some(Utc::now()),
@@ -122,7 +128,7 @@ fn test_dismiss_notification() {
                                 video_id: Some("tt1:1".into()),
                                 watched: None,
                                 last_video_released: Some(Utc::now()),
-                                notifications_disabled: false,
+                                no_notif: false,
                             },
                             behavior_hints: Default::default(),
                         },
@@ -149,7 +155,7 @@ fn test_dismiss_notification() {
                                 video_id: Some("tt1:1".into()),
                                 watched: None,
                                 last_video_released: Some(Utc::now()),
-                                notifications_disabled: false,
+                                no_notif: false,
                             },
                             behavior_hints: Default::default(),
                         },
@@ -176,12 +182,75 @@ fn test_dismiss_notification() {
         vec![],
         1000,
     );
-    TestEnv::run(|| {
-        runtime.dispatch(RuntimeAction {
-            field: None,
-            action: Action::Ctx(ActionCtx::DismissNotificationItem("tt1".into())),
-        })
-    });
+    let runtime = Arc::new(RwLock::new(runtime));
 
-    
+    let _env_mutex = TestEnv::reset().unwrap();
+
+    TestEnv::run_with_runtime(
+        rx,
+        runtime.clone(),
+        enclose!((runtime) move || {
+            let runtime = runtime.read().unwrap();
+            runtime.dispatch(RuntimeAction {
+                field: None,
+                action: Action::Ctx(ActionCtx::DismissNotificationItem("tt1".into())),
+            })
+        }),
+    );
+    let events = EVENTS.read().unwrap();
+    assert_eq!(events.len(), 2);
+
+    let event_1 = events[0]
+        .downcast_ref::<RuntimeEvent<TestEnv, TestModel>>()
+        .unwrap();
+
+    let event_2 = events[1]
+        .downcast_ref::<RuntimeEvent<TestEnv, TestModel>>()
+        .unwrap();
+
+    assert_matches!(
+        event_1,
+        RuntimeEvent::NewState(fields, _) if fields.len() == 1 && *fields.first().unwrap() == TestModelField::Ctx
+    );
+    assert_matches!(
+        event_2,
+        RuntimeEvent::CoreEvent(crate::runtime::msg::Event::NotificationsPushedToStorage {
+            ids
+        }) if ids == &vec!["tt2".to_string()]
+    );
+
+    let states = STATES.read().unwrap();
+    let states = states
+        .iter()
+        .map(|state| state.downcast_ref::<TestModel>().unwrap())
+        .collect::<Vec<_>>();
+    assert_eq!(2, states.len());
+
+    // state 0 - we have both notifs.
+    {
+        let notification_items = &states[0].ctx.notifications.items;
+        assert_eq!(
+            2,
+            notification_items.len(),
+            "Should have both notifications"
+        );
+    }
+
+    // state 1 - we have only the remaining notification after we've dismissed the other
+    {
+        let notification_items = &states[1].ctx.notifications.items;
+        assert_eq!(
+            1,
+            notification_items.len(),
+            "Should have single notification"
+        );
+
+        let notification_library_item = notification_items
+            .get("tt2")
+            .expect("Should have notification");
+        assert!(
+            notification_library_item.get("tt2:10").is_some(),
+            "Should have notification"
+        );
+    }
 }
