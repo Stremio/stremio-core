@@ -17,7 +17,7 @@ fn library_item_state() {
                 video_id: Some("tt2934286:1:5".to_owned()),
                 watched: Some("tt2934286:1:5:5:eJyTZwAAAEAAIA==".parse().unwrap()),
                 last_video_released: Some(Utc.with_ymd_and_hms(2020, 1, 1, 0, 0, 0).unwrap()),
-                notifications_disabled: true,
+                no_notif: true,
             },
             LibraryItemState {
                 last_watched: None,
@@ -30,7 +30,7 @@ fn library_item_state() {
                 video_id: None,
                 watched: None,
                 last_video_released: None,
-                notifications_disabled: false,
+                no_notif: false,
             },
         ],
         &[
@@ -63,7 +63,7 @@ fn library_item_state() {
             Token::Str("lastVideoReleased"),
             Token::Some,
             Token::Str("2020-01-01T00:00:00Z"),
-            Token::Str("notificationsDisabled"),
+            Token::Str("noNotif"),
             Token::Bool(true),
             Token::StructEnd,
             Token::Struct {
@@ -90,7 +90,7 @@ fn library_item_state() {
             Token::None,
             Token::Str("lastVideoReleased"),
             Token::None,
-            Token::Str("notificationsDisabled"),
+            Token::Str("noNotif"),
             Token::Bool(false),
             Token::StructEnd,
             Token::SeqEnd,
@@ -109,7 +109,7 @@ fn library_item_state() {
                 video_id: None,
                 watched: None,
                 last_video_released: None,
-                notifications_disabled: false,
+                no_notif: false,
             },
             LibraryItemState {
                 last_watched: None,
@@ -122,7 +122,7 @@ fn library_item_state() {
                 video_id: None,
                 watched: None,
                 last_video_released: None,
-                notifications_disabled: false,
+                no_notif: false,
             },
         ],
         &[
@@ -143,7 +143,7 @@ fn library_item_state() {
             Token::U32(0),
             Token::Str("duration"),
             Token::U64(0),
-            Token::Str("notificationsDisabled"),
+            Token::Str("noNotif"),
             Token::Bool(false),
             Token::StructEnd,
             Token::Struct {
@@ -174,7 +174,7 @@ fn library_item_state() {
             Token::Str("lastVideoReleased"),
             Token::Some,
             Token::Str(""),
-            Token::Str("notificationsDisabled"),
+            Token::Str("noNotif"),
             Token::Bool(false),
             Token::StructEnd,
             Token::SeqEnd,

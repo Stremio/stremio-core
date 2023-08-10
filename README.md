@@ -1,4 +1,7 @@
 ## Stremio - the next generation media center
+[![Build Workflow Status](https://img.shields.io/github/actions/workflow/status/Stremio/stremio-core/build.yml?label=Build)](https://github.com/Stremio/stremio-core/actions/workflows/build.yml)
+[![Latest MSRV workflow Status](https://img.shields.io/github/actions/workflow/status/Stremio/stremio-core/msrv.yml?label=MSRV)](https://github.com/Stremio/stremio-core/actions/workflows/msrv.yml)
+[![Latest deployed docs on GH pages](https://img.shields.io/github/actions/workflow/status/Stremio/stremio-core/docs.yml?event=workflow_dispatch&label=Latest%20deployed%20Docs)](https://stremio.github.io/stremio-core)
 
 Stremio is a full-featured media center designed to help you organize and stream your favorite videos, movies and TV series. It will notify you for new episodes / movies, and allow you to find new content through Discover.
 
