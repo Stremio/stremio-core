@@ -45,7 +45,7 @@ impl LibraryFilter for ContinueWatchingFilter {
 pub enum NotRemovedFilter {}
 
 impl LibraryFilter for NotRemovedFilter {
-    fn predicate(library_item: &LibraryItem, notifications: &NotificationsBucket) -> bool {
+    fn predicate(library_item: &LibraryItem, _notifications: &NotificationsBucket) -> bool {
         !library_item.removed
     }
 }
