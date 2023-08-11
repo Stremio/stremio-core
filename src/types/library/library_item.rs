@@ -52,12 +52,20 @@ impl LibraryItem {
     pub fn is_in_continue_watching(&self) -> bool {
         self.r#type != "other" && (!self.removed || self.temp) && self.state.time_offset > 0
     }
+
+    /// Pulling notifications relies on a few key things:
+    ///
+    /// - LibraryItem should not be "other" or "movie", i.e. if you have "series" it will pull notifications
+    /// - `LibraryItem.behavior_hints.default_video_id` should be `None`
+    /// - The LibraryItem should not have been removed from the Library
+    /// - The LibraryItem should not be temporary but in your LibraryItem
     pub fn should_pull_notifications(&self) -> bool {
         !self.state.no_notif
             && self.r#type != "other"
             && self.r#type != "movie"
             && self.behavior_hints.default_video_id.is_none()
-            && (!self.removed || self.temp)
+            && !self.removed
+            && !self.temp
     }
 }
 
