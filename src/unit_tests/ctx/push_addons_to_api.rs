@@ -22,7 +22,7 @@ fn actionctx_pushaddonstoapi() {
     struct TestModel {
         ctx: Ctx,
     }
-    let _env_mutex = TestEnv::reset();
+    let _env_mutex = TestEnv::reset().expect("Should have exclusive lock to TestEnv");
     let (runtime, _rx) = Runtime::<TestEnv, _>::new(
         TestModel {
             ctx: Ctx::new(
@@ -90,7 +90,7 @@ fn actionctx_pushaddonstoapi_with_user() {
             _ => default_fetch_handler(request),
         }
     }
-    let _env_mutex = TestEnv::reset();
+    let _env_mutex = TestEnv::reset().expect("Should have exclusive lock to TestEnv");
     *FETCH_HANDLER.write().unwrap() = Box::new(fetch_handler);
     let (runtime, _rx) = Runtime::<TestEnv, _>::new(
         TestModel {

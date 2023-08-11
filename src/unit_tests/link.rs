@@ -54,7 +54,7 @@ fn create_link_code() {
             _ => default_fetch_handler(request),
         }
     }
-    let _env_mutex = TestEnv::reset();
+    let _env_mutex = TestEnv::reset().expect("Should have exclusive lock to TestEnv");
     *FETCH_HANDLER.write().unwrap() = Box::new(fetch_handler);
     let model = TestModel {
         ctx: Ctx::new(

@@ -182,7 +182,7 @@ fn actionctx_rewindlibraryitem_not_added() {
         poster_shape: Default::default(),
         behavior_hints: Default::default(),
     };
-    let _env_mutex = TestEnv::reset();
+    let _env_mutex = TestEnv::reset().expect("Should have exclusive lock to TestEnv");
     STORAGE.write().unwrap().insert(
         LIBRARY_RECENT_STORAGE_KEY.to_owned(),
         serde_json::to_string(&LibraryBucket::new(None, vec![library_item.to_owned()])).unwrap(),
