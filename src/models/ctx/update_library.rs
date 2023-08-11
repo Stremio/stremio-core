@@ -60,7 +60,19 @@ pub fn update_library<E: Env + 'static>(
                 let mut library_item = library_item.to_owned();
                 library_item.removed = true;
                 library_item.temp = false;
+
+                // Dismiss any notification for the LibraryItem
+                let notifications_effects = if library_item.state.no_notif {
+                    Effects::msg(Msg::Internal(Internal::DismissNotificationItem(
+                        id.to_owned(),
+                    )))
+                    .unchanged()
+                } else {
+                    Effects::none().unchanged()
+                };
+
                 Effects::msg(Msg::Internal(Internal::UpdateLibraryItem(library_item)))
+                    .join(notifications_effects)
                     .join(Effects::msg(Msg::Event(Event::LibraryItemRemoved {
                         id: id.to_owned(),
                     })))
