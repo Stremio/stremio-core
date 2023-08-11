@@ -82,7 +82,7 @@ fn actionctx_authenticate_login() {
             _ => default_fetch_handler(request),
         }
     }
-    let _env_mutex = TestEnv::reset();
+    let _env_mutex = TestEnv::reset().expect("Should have exclusive lock to TestEnv");
     *FETCH_HANDLER.write().unwrap() = Box::new(fetch_handler);
     let ctx = Ctx::new(
         Profile::default(),
@@ -287,7 +287,7 @@ fn actionctx_authenticate_login_with_token() {
             _ => default_fetch_handler(request),
         }
     }
-    let _env_mutex = TestEnv::reset();
+    let _env_mutex = TestEnv::reset().expect("Should have exclusive lock to TestEnv");
     *FETCH_HANDLER.write().unwrap() = Box::new(fetch_handler);
     let ctx = Ctx::new(
         Profile::default(),
@@ -491,7 +491,7 @@ fn actionctx_authenticate_register() {
             _ => default_fetch_handler(request),
         }
     }
-    let _env_mutex = TestEnv::reset();
+    let _env_mutex = TestEnv::reset().expect("Should have exclusive lock to TestEnv");
     *FETCH_HANDLER.write().unwrap() = Box::new(fetch_handler);
     let ctx = Ctx::new(
         Profile::default(),
