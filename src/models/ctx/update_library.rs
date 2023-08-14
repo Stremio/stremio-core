@@ -1,19 +1,29 @@
-use crate::constants::{
-    LIBRARY_COLLECTION_NAME, LIBRARY_RECENT_COUNT, LIBRARY_RECENT_STORAGE_KEY, LIBRARY_STORAGE_KEY,
+use std::{collections::HashMap, marker::PhantomData};
+
+use futures::{
+    future::{self, Either},
+    FutureExt, TryFutureExt,
 };
-use crate::models::ctx::{CtxError, CtxStatus, OtherError};
-use crate::runtime::msg::{Action, ActionCtx, Event, Internal, Msg};
-use crate::runtime::{Effect, EffectFuture, Effects, Env, EnvFutureExt};
-use crate::types::api::{
-    fetch_api, APIResult, DatastoreCommand, DatastoreRequest, LibraryItemModified,
-    LibraryItemsResponse, SuccessResponse,
+
+use crate::{
+    constants::{
+        LIBRARY_COLLECTION_NAME, LIBRARY_RECENT_COUNT, LIBRARY_RECENT_STORAGE_KEY,
+        LIBRARY_STORAGE_KEY,
+    },
+    models::ctx::{CtxError, CtxStatus, OtherError},
+    runtime::{
+        msg::{Action, ActionCtx, Event, Internal, Msg},
+        Effect, EffectFuture, Effects, Env, EnvFutureExt,
+    },
+    types::{
+        api::{
+            fetch_api, APIResult, DatastoreCommand, DatastoreRequest, LibraryItemModified,
+            LibraryItemsResponse, SuccessResponse,
+        },
+        library::{LibraryBucket, LibraryBucketRef, LibraryItem},
+        profile::{AuthKey, Profile},
+    },
 };
-use crate::types::library::{LibraryBucket, LibraryBucketRef, LibraryItem};
-use crate::types::profile::{AuthKey, Profile};
-use futures::future::Either;
-use futures::{future, FutureExt, TryFutureExt};
-use std::collections::HashMap;
-use std::marker::PhantomData;
 
 pub fn update_library<E: Env + 'static>(
     library: &mut LibraryBucket,
@@ -50,7 +60,19 @@ pub fn update_library<E: Env + 'static>(
                 let mut library_item = library_item.to_owned();
                 library_item.removed = true;
                 library_item.temp = false;
+
+                // Dismiss any notification for the LibraryItem
+                let notifications_effects = if library_item.state.no_notif {
+                    Effects::msg(Msg::Internal(Internal::DismissNotificationItem(
+                        id.to_owned(),
+                    )))
+                    .unchanged()
+                } else {
+                    Effects::none().unchanged()
+                };
+
                 Effects::msg(Msg::Internal(Internal::UpdateLibraryItem(library_item)))
+                    .join(notifications_effects)
                     .join(Effects::msg(Msg::Event(Event::LibraryItemRemoved {
                         id: id.to_owned(),
                     })))
@@ -66,7 +88,7 @@ pub fn update_library<E: Env + 'static>(
             Some(library_item) => {
                 let mut library_item = library_item.to_owned();
                 library_item.state.time_offset = 0;
-                library_item.state.last_watched = Some(E::now());
+
                 Effects::msg(Msg::Internal(Internal::UpdateLibraryItem(library_item)))
                     .join(Effects::msg(Msg::Event(Event::LibraryItemRewinded {
                         id: id.to_owned(),
@@ -84,10 +106,23 @@ pub fn update_library<E: Env + 'static>(
                 Some(library_item) => {
                     let mut library_item = library_item.to_owned();
                     library_item.state.no_notif = *state;
+
+                    // if we have `no_notif` set to `true` (we don't want notifications for the LibraryItem)
+                    // we want to dismiss any notifications for the LibraryItem that exist
+                    let notifications_effects = if library_item.state.no_notif {
+                        Effects::msg(Msg::Internal(Internal::DismissNotificationItem(
+                            id.to_owned(),
+                        )))
+                        .unchanged()
+                    } else {
+                        Effects::none().unchanged()
+                    };
+
                     Effects::msg(Msg::Internal(Internal::UpdateLibraryItem(library_item)))
                         .join(Effects::msg(Msg::Event(
                             Event::LibraryItemNotificationsToggled { id: id.to_owned() },
                         )))
+                        .join(notifications_effects)
                         .unchanged()
                 }
                 _ => Effects::msg(Msg::Event(Event::Error {
@@ -111,6 +146,7 @@ pub fn update_library<E: Env + 'static>(
         Msg::Internal(Internal::UpdateLibraryItem(library_item)) => {
             let mut library_item = library_item.to_owned();
             library_item.mtime = E::now();
+
             let push_to_api_effects = match auth_key {
                 Some(auth_key) => Effects::one(push_items_to_api::<E>(
                     vec![library_item.to_owned()],
@@ -119,10 +155,12 @@ pub fn update_library<E: Env + 'static>(
                 .unchanged(),
                 _ => Effects::none().unchanged(),
             };
+
             let push_to_storage_effects = Effects::one(update_and_push_items_to_storage::<E>(
                 library,
                 vec![library_item],
             ));
+
             push_to_api_effects
                 .join(push_to_storage_effects)
                 .join(Effects::msg(Msg::Internal(Internal::LibraryChanged(true))))

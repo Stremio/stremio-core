@@ -5,6 +5,7 @@ use crate::models::library_with_filters::{LibraryFilter, Sort};
 use crate::runtime::msg::{Action, ActionLibraryByType, ActionLoad, Internal, Msg};
 use crate::runtime::{Effects, Env, UpdateWithCtx};
 use crate::types::library::{LibraryBucket, LibraryItem};
+use crate::types::notifications::NotificationsBucket;
 use derivative::Derivative;
 use itertools::Itertools;
 use serde::{Deserialize, Serialize};
@@ -65,8 +66,12 @@ impl<E: Env + 'static, F: LibraryFilter> UpdateWithCtx<E> for LibraryByType<F> {
             Msg::Action(Action::Load(ActionLoad::LibraryByType(selected))) => {
                 let selected_effects = eq_update(&mut self.selected, Some(selected.to_owned()));
                 let selectable_effects = selectable_update(&mut self.selectable, &self.selected);
-                let catalogs_effects =
-                    catalogs_update::<F>(&mut self.catalogs, &self.selected, &ctx.library);
+                let catalogs_effects = catalogs_update::<F>(
+                    &mut self.catalogs,
+                    &self.selected,
+                    &ctx.library,
+                    &ctx.notifications,
+                );
                 selected_effects
                     .join(selectable_effects)
                     .join(catalogs_effects)
@@ -90,7 +95,13 @@ impl<E: Env + 'static, F: LibraryFilter> UpdateWithCtx<E> for LibraryByType<F> {
                                 .map(|library_item| &library_item.r#type)
                                 .expect("first page of library catalog is empty");
                             let skip = catalog.iter().fold(0, |result, page| result + page.len());
-                            let page = next_page::<F>(r#type, skip, &self.selected, &ctx.library);
+                            let page = next_page::<F>(
+                                r#type,
+                                skip,
+                                &self.selected,
+                                &ctx.library,
+                                &ctx.notifications,
+                            );
                             catalog.push(page);
                             Effects::none()
                         }
@@ -99,9 +110,12 @@ impl<E: Env + 'static, F: LibraryFilter> UpdateWithCtx<E> for LibraryByType<F> {
                     _ => Effects::none().unchanged(),
                 }
             }
-            Msg::Internal(Internal::LibraryChanged(_)) => {
-                catalogs_update::<F>(&mut self.catalogs, &self.selected, &ctx.library)
-            }
+            Msg::Internal(Internal::LibraryChanged(_)) => catalogs_update::<F>(
+                &mut self.catalogs,
+                &self.selected,
+                &ctx.library,
+                &ctx.notifications,
+            ),
             _ => Effects::none().unchanged(),
         }
     }
@@ -127,6 +141,7 @@ fn catalogs_update<F: LibraryFilter>(
     catalogs: &mut Vec<Catalog>,
     selected: &Option<Selected>,
     library: &LibraryBucket,
+    notifications: &NotificationsBucket,
 ) -> Effects {
     let catalogs_size = catalogs.iter().fold(HashMap::new(), |mut result, catalog| {
         let r#type = catalog
@@ -142,7 +157,7 @@ fn catalogs_update<F: LibraryFilter>(
         Some(selected) => library
             .items
             .values()
-            .filter(|library_item| F::predicate(library_item))
+            .filter(|library_item| F::predicate(library_item, notifications))
             .fold(HashMap::new(), |mut result, library_item| {
                 result
                     .entry(&library_item.r#type)
@@ -187,12 +202,13 @@ fn next_page<F: LibraryFilter>(
     skip: usize,
     selected: &Option<Selected>,
     library: &LibraryBucket,
+    notifications: &NotificationsBucket,
 ) -> CatalogPage {
     match selected {
         Some(selected) => library
             .items
             .values()
-            .filter(|library_item| F::predicate(library_item))
+            .filter(|library_item| F::predicate(library_item, notifications))
             .filter(|library_item| library_item.r#type == *r#type)
             .sorted_by(|a, b| match &selected.sort {
                 Sort::LastWatched => b.state.last_watched.cmp(&a.state.last_watched),

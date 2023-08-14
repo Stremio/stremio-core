@@ -14,6 +14,7 @@ use crate::{
 };
 
 #[derive(Default, Derivative, Clone, PartialEq, Eq, Serialize, Deserialize, Debug)]
+#[serde(rename_all = "camelCase")]
 pub struct NotificationsBucket {
     #[serde(default)]
     pub uid: UID,
