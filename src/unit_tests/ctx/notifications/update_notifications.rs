@@ -40,7 +40,7 @@ use crate::{
         streams::StreamsBucket,
     },
     unit_tests::{
-        default_fetch_handler, Request, TestEnv, EVENTS, FETCH_HANDLER, NOW, REQUESTS, STATES,
+        default_fetch_handler, Request, TestEnv, EVENTS, FETCH_HANDLER, REQUESTS, STATES,
     },
 };
 
@@ -283,6 +283,23 @@ fn test_pull_notifications_and_play_in_player() {
         meta_notifs.get("tt1:1:7").is_some(),
         "Should have notification for tt1:1:7"
     );
+
+    // last_video-released should be updated
+    assert_eq!(
+        Some(Utc.with_ymd_and_hms(2020, 1, 15, 0, 0, 0).unwrap()),
+        runtime
+            .model()
+            .unwrap()
+            .ctx
+            .library
+            .items
+            .get("tt1")
+            .unwrap()
+            .state
+            .last_video_released,
+        "Last video released should be updated with the latest episode release date"
+    );
+
     // Start watching episode 6
     // This should dismiss all notifications for this MetaItem Id.
     // libraryItem.state.lastWatched dismisses any unwatched episode notifications
@@ -449,7 +466,7 @@ fn test_dismiss_notification() {
                                 video_id: Some("tt1:1".into()),
                                 watched: None,
                                 last_video_released: Some(
-                                    Utc.with_ymd_and_hms(2023, 7, 10, 0, 0, 0).unwrap(),
+                                    Utc.with_ymd_and_hms(2023, 6, 20, 0, 0, 0).unwrap(),
                                 ),
                                 no_notif: false,
                             },
@@ -478,7 +495,7 @@ fn test_dismiss_notification() {
                                 video_id: Some("tt1:1".into()),
                                 watched: None,
                                 last_video_released: Some(
-                                    Utc.with_ymd_and_hms(2023, 8, 14, 0, 0, 0).unwrap(),
+                                    Utc.with_ymd_and_hms(2023, 6, 20, 0, 0, 0).unwrap(),
                                 ),
                                 no_notif: false,
                             },
@@ -508,9 +525,6 @@ fn test_dismiss_notification() {
         1000,
     );
     let runtime = Arc::new(RwLock::new(runtime));
-    // update now to later date than both last_watched
-    let expected_last_watched = Utc.with_ymd_and_hms(2023, 8, 14, 0, 0, 0).unwrap();
-    *NOW.write().unwrap() = expected_last_watched.clone();
 
     TestEnv::run_with_runtime(
         rx,
@@ -540,28 +554,23 @@ fn test_dismiss_notification() {
         RuntimeEvent::NewState(fields, model) if fields.len() == 1 && *fields.first().unwrap() == TestModelField::Ctx && model.ctx.notifications.items.len() == 1,
         "We should have notifications for 1 LibraryItem ids"
     );
+
     assert_matches!(
         events[1],
         RuntimeEvent::NewState(fields, model) if fields.len() == 1 && *fields.first().unwrap() == TestModelField::Ctx && model.ctx.notifications.items.len() == 1,
         "We should have notifications for 1 LibraryItem ids"
     );
-
     assert_matches!(
         events[2],
-        RuntimeEvent::CoreEvent(crate::runtime::msg::Event::NotificationsDismissed {
+        RuntimeEvent::CoreEvent(Event::NotificationsDismissed {
             id
         }) if id == "tt1"
     );
     assert_matches!(
         events[3],
-        RuntimeEvent::CoreEvent(crate::runtime::msg::Event::NotificationsPushedToStorage {
+        RuntimeEvent::CoreEvent(Event::NotificationsPushedToStorage {
             ids
         }) if ids == &vec!["tt2".to_string()]
-    );
-    assert_matches!(
-        events[4],
-        RuntimeEvent::CoreEvent(Event::LibraryItemsPushedToStorage { ids }) if ids == &["tt1".to_string()],
-        "LibraryItem should be pushed to storage"
     );
 
     let states = STATES.read().unwrap();
@@ -599,11 +608,11 @@ fn test_dismiss_notification() {
         );
     }
 
-    // state 2 - `LibraryItem.state.last_watched` of the dismissed item's notifications should be updated too
+    // state 2 - `LibraryItem.state.last_video_released` of the dismissed item's notifications should be updated too
     // by the `UpdateLibraryItem`
     {
         assert_eq!(
-            Some(expected_last_watched),
+            Some(Utc.with_ymd_and_hms(2023, 7, 10, 0, 0, 0).unwrap()),
             states[2]
                 .ctx
                 .library
@@ -611,7 +620,8 @@ fn test_dismiss_notification() {
                 .get("tt1")
                 .unwrap()
                 .state
-                .last_watched
+                .last_video_released,
+            "Last video released should be updated with the latest episode release date"
         );
     }
 }

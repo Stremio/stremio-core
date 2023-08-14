@@ -333,7 +333,6 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                     Some(library_item),
                 ) => {
                     let seeking = library_item.state.time_offset.abs_diff(*time) > 1000;
-                    // library_item.state.last_watched = Some(E::now() - chrono::Duration::days(1));
                     library_item.state.last_watched = Some(E::now());
                     if library_item.state.video_id != Some(video_id.to_owned()) {
                         library_item.state.video_id = Some(video_id.to_owned());
@@ -568,6 +567,24 @@ fn switch_to_next_video(
                 library_item.state.time_watched = 0;
                 library_item.state.flagged_watched = 0;
                 library_item.state.time_offset = 1;
+
+                match (
+                    &next_video.released,
+                    &library_item.state.last_video_released,
+                ) {
+                    // if video's released date is larger than the last_video_released (observed)
+                    // update that too
+                    (Some(released), Some(last_video_released))
+                        if released > last_video_released =>
+                    {
+                        library_item.state.last_video_released = Some(*released)
+                    }
+                    // or if we haven't had a last_video_released up until now.
+                    (Some(released), None) => {
+                        library_item.state.last_video_released = Some(*released)
+                    }
+                    _ => {}
+                };
             };
         }
         _ => {}

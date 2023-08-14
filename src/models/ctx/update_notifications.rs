@@ -19,7 +19,7 @@ use crate::{
     },
     types::{
         addon::{AggrRequest, ExtraValue},
-        library::LibraryBucket,
+        library::{LibraryBucket, LibraryItem},
         notifications::{NotificationItem, NotificationsBucket},
         profile::Profile,
         resource::{MetaItem, MetaItemId, VideoId},
@@ -136,7 +136,7 @@ pub fn update_notifications<E: Env + 'static>(
                 .join(notifications_effects)
         }
         Msg::Internal(Internal::DismissNotificationItem(id)) => {
-            dismiss_notification_item::<E>(library, notifications, id)
+            dismiss_notification_item(library, notifications, id)
         }
         Msg::Internal(Internal::NotificationsChanged) => {
             Effects::one(push_notifications_to_storage::<E>(notifications)).unchanged()
@@ -171,6 +171,7 @@ fn update_notification_items<E: Env + 'static>(
         .map(|extra_value| Either::Left(extra_value.value.split(',')))
         .unwrap_or_else(|| Either::Right(std::iter::empty()));
 
+    let mut library_items_effects = vec![];
     let next_notification_items = next_notification_ids.fold(HashMap::new(), |mut map, meta_id| {
         // Get the LibraryItem from user's library
         // Exit early if library item does not exist in the Library
@@ -202,9 +203,9 @@ fn update_notification_items<E: Env + 'static>(
         meta_item
             .videos_iter()
             .filter_map(|video| {
-                match (&library_item.state.last_watched, video.released) {
-                    (Some(last_watched), Some(video_released)) => {
-                        if last_watched < &video_released &&
+                match (&library_item.state.last_video_released, video.released) {
+                    (Some(last_video_released), Some(video_released)) => {
+                        if last_video_released < &video_released &&
                                     // exclude future videos (i.e. that will air in the future)
                                     video_released <= E::now()
                         {
@@ -240,14 +241,28 @@ fn update_notification_items<E: Env + 'static>(
             );
 
         // if not videos were added and the hashmap is empty, just remove the MetaItem record all together
+        // otherwise try to update the last_video_released on the LibraryItem
         if meta_notifs.is_empty() {
             map.remove(meta_id);
+        } else {
+            // when dismissing notifications, make sure we update the `last_video_released`
+            // of the LibraryItem this way if we've only `DismissedNotificationItem`
+            // the next time we `PullNotifications` we won't see the same notifications.
+            library_items_effects.push(update_library_item(library_item, meta_notifs));
         }
 
         map
     });
 
-    eq_update(notification_items, next_notification_items)
+    // if we have at least 1 LibraryItem effect in the vector
+    let library_items_effects = library_items_effects.into_iter().fold(
+        Effects::none().unchanged(),
+        |effects, library_item_effects| effects.join(library_item_effects),
+    );
+
+    let notifications_effects = eq_update(notification_items, next_notification_items);
+
+    library_items_effects.join(notifications_effects)
 }
 
 fn push_notifications_to_storage<E: Env + 'static>(notifications: &NotificationsBucket) -> Effect {
@@ -266,23 +281,19 @@ fn push_notifications_to_storage<E: Env + 'static>(notifications: &Notifications
     .into()
 }
 
-fn dismiss_notification_item<E: Env + 'static>(
+fn dismiss_notification_item(
     library: &LibraryBucket,
     notifications: &mut NotificationsBucket,
     id: &str,
 ) -> Effects {
     match notifications.items.remove(id) {
-        Some(_) => {
-            // when dismissing notifications, make sure we update the `last_watched`
-            // of the LibraryItem this way if we've only `DismissedNotificationItem`
+        Some(library_item_notifications) => {
+            // when dismissing notifications, make sure we update the `last_video_released`
+            // of the LibraryItem this way if we've `DismissedNotificationItem`
             // the next time we `PullNotifications` we won't see the same notifications.
             let library_item_effects = match library.items.get(id) {
                 Some(library_item) => {
-                    let mut library_item = library_item.to_owned();
-                    library_item.state.last_watched = Some(E::now());
-
-                    Effects::msg(Msg::Internal(Internal::UpdateLibraryItem(library_item)))
-                        .unchanged()
+                    update_library_item(library_item, &library_item_notifications)
                 }
                 _ => Effects::none().unchanged(),
             };
@@ -294,5 +305,66 @@ fn dismiss_notification_item<E: Env + 'static>(
                 })))
         }
         _ => Effects::none().unchanged(),
+    }
+}
+
+/// Updates the [`LibraryItem.state.last_video_released`] by triggering an [`Internal::UpdateLibraryItem`].
+///
+/// There should be at least 1 [`NotificationItem.video_released`] > [`LibraryItem.state.last_video_released`]
+/// in order for this to happen.
+fn update_library_item(
+    library_item: &LibraryItem,
+    library_item_notifications: &HashMap<VideoId, NotificationItem>,
+) -> Effects {
+    let last_video_released = library_item_notifications
+        .iter()
+        .sorted_by(|(_id_a, item_a), (_id_b, item_b)| {
+            item_b.video_released.cmp(&item_a.video_released)
+        })
+        .map(|(_id, item)| item.video_released)
+        .next();
+
+    match last_video_released {
+        Some(last_video_released) => {
+            // This should always be the case but to be safe
+            // we check if the library item's last_video_released is really
+            // smaller than the notif. video_released before updating the
+            // LibraryItem
+            let should_update_library_item = library_item
+                .state
+                .last_video_released
+                .filter(|lib_item| lib_item < &last_video_released)
+                .is_some();
+
+            if should_update_library_item {
+                let mut library_item = library_item.to_owned();
+
+                library_item.state.last_video_released = Some(last_video_released);
+
+                Effects::msg(Msg::Internal(Internal::UpdateLibraryItem(library_item))).unchanged()
+            } else {
+                Effects::none().unchanged()
+            }
+        }
+        _ => Effects::none().unchanged(),
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use chrono::{TimeZone, Utc};
+    use lazysort::SortedBy;
+
+    #[test]
+    fn test_sort_by_with_datetimes() {
+        let datetimes = &[
+            Utc.with_ymd_and_hms(2022, 6, 10, 10, 0, 0).unwrap(),
+            Utc.with_ymd_and_hms(2022, 7, 20, 20, 0, 0).unwrap(),
+        ];
+
+        // let latest_ab = datetimes.iter().sorted_by(|a, b| a.cmp(b)).next();
+        let latest_ba = datetimes.iter().sorted_by(|a, b| b.cmp(a)).next();
+        // assert_eq!(latest_ab, Some(&datetimes[1]));
+        assert_eq!(latest_ba, Some(&datetimes[1]));
     }
 }
