@@ -4,7 +4,7 @@ use serde::ser::{SerializeStruct, Serializer};
 use serde::Serialize;
 
 // TODO move this to runtime::msg::Error and rename it
-#[derive(Clone, PartialEq, Serialize, Debug)]
+#[derive(Clone, PartialEq, Eq, Serialize, Debug)]
 #[serde(tag = "type")]
 pub enum CtxError {
     API(APIError),
