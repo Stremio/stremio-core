@@ -53,5 +53,5 @@ tracing-wasm = "0.2"
 
 # A way to quickly test with local version of `core` crates
 # [patch.'https://github.com/Stremio/stremio-core']
-
 # stremio-core = { path = "../core" }
+
