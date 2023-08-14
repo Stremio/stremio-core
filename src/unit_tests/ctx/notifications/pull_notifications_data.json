@@ -73,7 +73,7 @@
                 "name": "name",
                 "type": "series",
                 "removed": false,
-                "temp": true,
+                "temp": false,
                 "_ctime": "2019-12-10T00:00:00.000Z",
                 "_mtime": "2020-01-01T00:00:00.000Z",
                 "state": {
