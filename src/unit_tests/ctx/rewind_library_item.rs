@@ -23,7 +23,7 @@ fn actionctx_rewindlibraryitem() {
     struct TestModel {
         ctx: Ctx,
     }
-    let _env_mutex = TestEnv::reset();
+    let _env_mutex = TestEnv::reset().expect("Should get exclusive lock to TestEnv");
     *FETCH_HANDLER.write().unwrap() = Box::new(fetch_handler);
     *NOW.write().unwrap() = Utc.with_ymd_and_hms(2020, 1, 2, 0, 0, 0).unwrap();
 
@@ -32,14 +32,13 @@ fn actionctx_rewindlibraryitem() {
             Request {
                 url, method, body, ..
             } if url == "https://api.strem.io/api/datastorePut"
-                && method == "POST"
-                && body == "{\"authKey\":\"auth_key\",\"collection\":\"libraryItem\",\"changes\":[{\"_id\":\"id\",\"name\":\"name\",\"type\":\"type\",\"poster\":null,\"posterShape\":\"poster\",\"removed\":false,\"temp\":false,\"_ctime\":\"2020-01-01T00:00:00Z\",\"_mtime\":\"2020-01-02T00:00:00Z\",\"state\":{\"lastWatched\":\"2020-01-02T00:00:00Z\",\"timeWatched\":0,\"timeOffset\":0,\"overallTimeWatched\":0,\"timesWatched\":0,\"flaggedWatched\":0,\"duration\":0,\"video_id\":null,\"watched\":null,\"lastVideoReleased\":null,\"noNotif\":false},\"behaviorHints\":{\"defaultVideoId\":null,\"featuredVideoId\":null,\"hasScheduledVideos\":false}}]}" =>
+            && method == "POST"
+            && body == "{\"authKey\":\"auth_key\",\"collection\":\"libraryItem\",\"changes\":[{\"_id\":\"id\",\"name\":\"name\",\"type\":\"type\",\"poster\":null,\"posterShape\":\"poster\",\"removed\":false,\"temp\":false,\"_ctime\":\"2020-01-01T00:00:00Z\",\"_mtime\":\"2020-01-02T00:00:00Z\",\"state\":{\"lastWatched\":null,\"timeWatched\":0,\"timeOffset\":0,\"overallTimeWatched\":0,\"timesWatched\":0,\"flaggedWatched\":0,\"duration\":0,\"video_id\":null,\"watched\":null,\"lastVideoReleased\":null,\"noNotif\":false},\"behaviorHints\":{\"defaultVideoId\":null,\"featuredVideoId\":null,\"hasScheduledVideos\":false}}]}" =>
             {
                 future::ok(Box::new(APIResult::Ok {
                     result: SuccessResponse { success: True {} },
                 }) as Box<dyn Any + Send>).boxed_env()
-            }
-
+            },
             _ => default_fetch_handler(request),
         }
     }
@@ -63,7 +62,6 @@ fn actionctx_rewindlibraryitem() {
         mtime: Utc.with_ymd_and_hms(2020, 1, 2, 0, 0, 0).unwrap(),
         state: LibraryItemState {
             time_offset: 0,
-            last_watched: Some(Utc.with_ymd_and_hms(2020, 1, 2, 0, 0, 0).unwrap()),
             ..LibraryItemState::default()
         },
         ..library_item.to_owned()
