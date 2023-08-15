@@ -8,7 +8,7 @@ use url::Url;
 pub struct Settings {
     pub interface_language: String,
     pub streaming_server_url: Url,
-    pub player_type: Option<String>,
+    pub player_type: String,
     pub binge_watching: bool,
     pub play_in_background: bool,
     pub hardware_decoding: bool,
