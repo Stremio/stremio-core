@@ -8,7 +8,7 @@ use url::Url;
 pub struct Settings {
     pub interface_language: String,
     pub streaming_server_url: Url,
-    pub player_type: String,
+    pub player_type: Option<String>,
     pub binge_watching: bool,
     pub play_in_background: bool,
     pub hardware_decoding: bool,
@@ -40,7 +40,7 @@ pub enum FrameRateMatchingStrategy {
 impl Default for Settings {
     fn default() -> Self {
         Settings {
-            player_type: "internal".to_owned(),
+            player_type: Some("internal".to_owned()),
             binge_watching: true,
             play_in_background: true,
             hardware_decoding: true,
