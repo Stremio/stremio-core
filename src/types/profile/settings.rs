@@ -40,7 +40,7 @@ pub enum FrameRateMatchingStrategy {
 impl Default for Settings {
     fn default() -> Self {
         Settings {
-            player_type: None,
+            player_type: "internal".to_owned(),
             binge_watching: true,
             play_in_background: true,
             hardware_decoding: true,
