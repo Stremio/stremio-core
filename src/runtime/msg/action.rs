@@ -23,7 +23,7 @@ use crate::{
         api::AuthRequest,
         library::LibraryItemId,
         profile::Settings as ProfileSettings,
-        resource::{MetaItemId, MetaItemPreview},
+        resource::{MetaItemId, MetaItemPreview, Video},
     },
 };
 
@@ -83,7 +83,7 @@ pub enum ActionLibraryByType {
 #[serde(tag = "action", content = "args")]
 pub enum ActionMetaDetails {
     MarkAsWatched(bool),
-    MarkVideoAsWatched(String, bool),
+    MarkVideoAsWatched(Video, bool),
 }
 
 #[derive(Clone, Deserialize, Debug)]
