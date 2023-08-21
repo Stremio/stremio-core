@@ -745,7 +745,8 @@ fn library_item_update<E: Env + 'static>(
                 } => Some(meta_item),
                 _ => None,
             });
-            let mut library_item = match (library_item, meta_item) {
+
+            match (library_item, meta_item) {
                 (Some(library_item), Some(meta_item)) => {
                     Some(LibraryItem::from((&meta_item.preview, library_item)))
                 }
@@ -754,14 +755,7 @@ fn library_item_update<E: Env + 'static>(
                 }
                 (Some(library_item), None) => Some(library_item.to_owned()),
                 _ => None,
-            };
-            if let (Some(library_item), Some(meta_item)) = (&mut library_item, meta_item) {
-                library_item.state.last_video_released = meta_item
-                    .videos_iter()
-                    .rev()
-                    .find_map(|last_video| last_video.released.to_owned());
-            };
-            library_item
+            }
         }
         _ => None,
     };
