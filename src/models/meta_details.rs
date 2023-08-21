@@ -88,6 +88,9 @@ impl<E: Env + 'static> UpdateWithCtx<E> for MetaDetails {
                             true => library_item.state.times_watched + 1,
                             false => 0,
                         };
+                        // update the last_watched for the LibraryItem
+                        library_item.state.last_watched = Some(E::now());
+
                         Effects::msg(Msg::Internal(Internal::UpdateLibraryItem(library_item)))
                             .unchanged()
                     }
@@ -112,7 +115,7 @@ impl<E: Env + 'static> UpdateWithCtx<E> for MetaDetails {
                                 (None, released) => released.to_owned(),
                                 (last_watched, _) => last_watched.to_owned(),
                             };
-                    };
+                    }
                     Effects::msg(Msg::Internal(Internal::UpdateLibraryItem(library_item)))
                         .unchanged()
                 }
