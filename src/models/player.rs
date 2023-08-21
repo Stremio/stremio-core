@@ -817,7 +817,7 @@ mod test {
         constants::YOUTUBE_ADDON_ID_PREFIX,
         models::common::{Loadable, ResourceLoadable},
         types::{
-            addon::{ResourcePath, ResourceRequest},
+            addon::{ResourcePath, ResourceRequest, TransportUrl},
             resource::{SeriesInfo, Stream, Video},
         },
         unit_tests::TestEnv,
@@ -833,7 +833,7 @@ mod test {
         let next_youtube_stream = Stream::youtube(&next_youtube_1234).unwrap();
 
         let youtube_base = "https://youtube.com"
-            .parse::<Url>()
+            .parse::<TransportUrl>()
             .expect("Valid youtube url");
         let next_streams = ResourceLoadable {
             request: ResourceRequest {

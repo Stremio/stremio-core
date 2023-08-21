@@ -1,6 +1,6 @@
 use crate::deep_links::AddonsDeepLinks;
 use crate::models::installed_addons_with_filters::InstalledAddonsRequest;
-use crate::types::addon::{ResourcePath, ResourceRequest};
+use crate::types::addon::{ResourcePath, ResourceRequest, TransportUrl};
 use std::convert::TryFrom;
 use std::str::FromStr;
 use url::Url;
@@ -23,10 +23,10 @@ fn addons_deep_links_installed_addons_request_type() {
 
 #[test]
 fn addons_deep_links_request() {
-    let request = ResourceRequest {
-        base: Url::from_str("http://v3-cinemeta.strem.io").unwrap(),
-        path: ResourcePath::without_extra("addons", "movie", "com.linvo.cinemeta"),
-    };
+    let request = ResourceRequest::new(
+        TransportUrl::parse("http://v3-cinemeta.strem.io").unwrap(),
+        ResourcePath::without_extra("addons", "movie", "com.linvo.cinemeta"),
+    );
     let adl = AddonsDeepLinks::try_from(&request).unwrap();
     assert_eq!(
         adl.addons,

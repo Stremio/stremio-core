@@ -1,16 +1,24 @@
-use crate::models::common::{descriptor_update, eq_update, DescriptorAction, DescriptorLoadable};
-use crate::models::ctx::Ctx;
-use crate::runtime::msg::{Action, ActionLoad, Internal, Msg};
-use crate::runtime::{Effects, Env, UpdateWithCtx};
-use crate::types::addon::Descriptor;
-use crate::types::profile::Profile;
 use serde::{Deserialize, Serialize};
-use url::Url;
+
+use crate::{
+    models::{
+        common::{descriptor_update, eq_update, DescriptorAction, DescriptorLoadable},
+        ctx::Ctx,
+    },
+    runtime::{
+        msg::{Action, ActionLoad, Internal, Msg},
+        Effects, Env, UpdateWithCtx,
+    },
+    types::{
+        addon::{Descriptor, TransportUrl},
+        profile::Profile,
+    },
+};
 
 #[derive(Clone, PartialEq, Eq, Serialize, Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct Selected {
-    pub transport_url: Url,
+    pub transport_url: TransportUrl,
 }
 
 #[derive(Default, Clone, Serialize)]

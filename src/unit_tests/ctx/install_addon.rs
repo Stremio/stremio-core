@@ -1,8 +1,14 @@
+use std::any::Any;
+
+use futures::future;
+use semver::Version;
+use stremio_derive::Model;
+
 use crate::constants::PROFILE_STORAGE_KEY;
 use crate::models::ctx::Ctx;
 use crate::runtime::msg::{Action, ActionCtx};
 use crate::runtime::{Env, EnvFutureExt, Runtime, RuntimeAction, TryEnvFuture};
-use crate::types::addon::{Descriptor, Manifest};
+use crate::types::addon::{Descriptor, Manifest, TransportUrl};
 use crate::types::api::{APIResult, SuccessResponse};
 use crate::types::library::LibraryBucket;
 use crate::types::notifications::NotificationsBucket;
@@ -12,11 +18,6 @@ use crate::types::True;
 use crate::unit_tests::{
     default_fetch_handler, Request, TestEnv, FETCH_HANDLER, REQUESTS, STORAGE,
 };
-use futures::future;
-use semver::Version;
-use std::any::Any;
-use stremio_derive::Model;
-use url::Url;
 
 #[test]
 fn actionctx_installaddon_install() {
@@ -41,7 +42,7 @@ fn actionctx_installaddon_install() {
             addon_catalogs: vec![],
             behavior_hints: Default::default(),
         },
-        transport_url: Url::parse("https://transport_url").unwrap(),
+        transport_url: TransportUrl::parse("https://transport_url.com/manifest.json").unwrap(),
         flags: Default::default(),
     };
     let _env_mutex = TestEnv::reset().expect("Should have exclusive lock to TestEnv");
@@ -125,7 +126,7 @@ fn actionctx_installaddon_install_with_user() {
             addon_catalogs: vec![],
             behavior_hints: Default::default(),
         },
-        transport_url: Url::parse("https://transport_url").unwrap(),
+        transport_url: TransportUrl::parse("https://transport_url.com/manifest.json").unwrap(),
         flags: Default::default(),
     };
     let _env_mutex = TestEnv::reset().expect("Should have exclusive lock to TestEnv");
@@ -226,7 +227,7 @@ fn actionctx_installaddon_update() {
             addon_catalogs: vec![],
             behavior_hints: Default::default(),
         },
-        transport_url: Url::parse("https://transport_url1").unwrap(),
+        transport_url: TransportUrl::parse("https://transport_url1.com/manifest.json").unwrap(),
         flags: Default::default(),
     };
     let addon2 = Descriptor {
@@ -245,7 +246,7 @@ fn actionctx_installaddon_update() {
             addon_catalogs: vec![],
             behavior_hints: Default::default(),
         },
-        transport_url: Url::parse("https://transport_url2").unwrap(),
+        transport_url: TransportUrl::parse("https://transport_url2.com/manifest.json").unwrap(),
         flags: Default::default(),
     };
     let _env_mutex = TestEnv::reset().expect("Should have exclusive lock to TestEnv");
@@ -270,7 +271,10 @@ fn actionctx_installaddon_update() {
                                 addon_catalogs: vec![],
                                 behavior_hints: Default::default(),
                             },
-                            transport_url: Url::parse("https://transport_url1").unwrap(),
+                            transport_url: TransportUrl::parse(
+                                "https://transport_url1.com/manifest.json",
+                            )
+                            .unwrap(),
                             flags: Default::default(),
                         },
                         addon2.to_owned(),
@@ -336,7 +340,7 @@ fn actionctx_installaddon_already_installed() {
             addon_catalogs: vec![],
             behavior_hints: Default::default(),
         },
-        transport_url: Url::parse("https://transport_url").unwrap(),
+        transport_url: TransportUrl::parse("https://transport_url.com/manifest.json").unwrap(),
         flags: Default::default(),
     };
     let profile = Profile {

@@ -2,21 +2,20 @@ use crate::addon_transport::http_transport::legacy::AddonLegacyTransport;
 use crate::addon_transport::AddonTransport;
 use crate::constants::{ADDON_LEGACY_PATH, ADDON_MANIFEST_PATH, URI_COMPONENT_ENCODE_SET};
 use crate::runtime::{Env, EnvError, EnvFutureExt, TryEnvFuture};
-use crate::types::addon::{Manifest, ResourcePath, ResourceResponse};
+use crate::types::addon::{Manifest, ResourcePath, ResourceResponse, TransportUrl};
 use crate::types::query_params_encode;
 use futures::future;
 use http::Request;
 use percent_encoding::utf8_percent_encode;
 use std::marker::PhantomData;
-use url::Url;
 
 pub struct AddonHTTPTransport<E: Env> {
-    transport_url: Url,
+    transport_url: TransportUrl,
     env: PhantomData<E>,
 }
 
 impl<E: Env> AddonHTTPTransport<E> {
-    pub fn new(transport_url: Url) -> Self {
+    pub fn new(transport_url: TransportUrl) -> Self {
         AddonHTTPTransport {
             transport_url,
             env: PhantomData,

@@ -2,15 +2,15 @@ use crate::constants::OFFICIAL_ADDONS;
 use crate::models::common::Loadable;
 use crate::runtime::msg::{Internal, Msg};
 use crate::runtime::{EffectFuture, Effects, Env, EnvError, EnvFutureExt};
-use crate::types::addon::{Descriptor, Manifest};
+use crate::types::addon::{Descriptor, Manifest, TransportUrl};
+
 use futures::FutureExt;
 use serde::Serialize;
-use url::Url;
 
 /// Fetching addons
 #[derive(PartialEq, Serialize, Clone, Debug)]
 pub struct DescriptorLoadable {
-    pub transport_url: Url,
+    pub transport_url: TransportUrl,
     pub content: Loadable<Descriptor, EnvError>,
 }
 
@@ -18,11 +18,11 @@ pub enum DescriptorAction<'a> {
     /// Requests the addon [`Descriptor`]
     DescriptorRequested {
         /// The transport_url is unique for every addon.
-        transport_url: &'a Url,
+        transport_url: &'a TransportUrl,
     },
     /// Loads the manifest for the addon of the [`Descriptor`]
     ManifestRequestResult {
-        transport_url: &'a Url,
+        transport_url: &'a TransportUrl,
         result: &'a Result<Manifest, EnvError>,
     },
 }

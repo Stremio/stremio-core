@@ -1,7 +1,13 @@
+use std::any::Any;
+
+use futures::future;
+use semver::Version;
+use stremio_derive::Model;
+
 use crate::models::ctx::Ctx;
 use crate::runtime::msg::{Action, ActionCtx};
 use crate::runtime::{Env, EnvFutureExt, Runtime, RuntimeAction, TryEnvFuture};
-use crate::types::addon::{Descriptor, Manifest};
+use crate::types::addon::{Descriptor, Manifest, TransportUrl};
 use crate::types::api::{APIResult, SuccessResponse};
 use crate::types::library::LibraryBucket;
 use crate::types::notifications::NotificationsBucket;
@@ -9,11 +15,6 @@ use crate::types::profile::{Auth, AuthKey, GDPRConsent, Profile, User};
 use crate::types::streams::StreamsBucket;
 use crate::types::True;
 use crate::unit_tests::{default_fetch_handler, Request, TestEnv, FETCH_HANDLER, REQUESTS};
-use futures::future;
-use semver::Version;
-use std::any::Any;
-use stremio_derive::Model;
-use url::Url;
 
 #[test]
 fn actionctx_pushaddonstoapi() {
@@ -43,7 +44,10 @@ fn actionctx_pushaddonstoapi() {
                             addon_catalogs: vec![],
                             behavior_hints: Default::default(),
                         },
-                        transport_url: Url::parse("https://transport_url").unwrap(),
+                        transport_url: TransportUrl::parse(
+                            "https://transport_url.com/manifest.json",
+                        )
+                        .unwrap(),
                         flags: Default::default(),
                     }],
                     ..Default::default()
@@ -131,7 +135,10 @@ fn actionctx_pushaddonstoapi_with_user() {
                             addon_catalogs: vec![],
                             behavior_hints: Default::default(),
                         },
-                        transport_url: Url::parse("https://transport_url").unwrap(),
+                        transport_url: TransportUrl::parse(
+                            "https://transport_url.com/manifest.json",
+                        )
+                        .unwrap(),
                         flags: Default::default(),
                     }],
                     ..Default::default()

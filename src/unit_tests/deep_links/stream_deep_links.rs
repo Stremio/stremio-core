@@ -1,13 +1,12 @@
-use crate::constants::{BASE64, URI_COMPONENT_ENCODE_SET};
-use crate::deep_links::StreamDeepLinks;
-use crate::types::addon::{ResourcePath, ResourceRequest};
-use crate::types::profile::Settings;
-use crate::types::resource::{Stream, StreamSource};
 use base64::Engine;
 use percent_encoding::utf8_percent_encode;
-use std::convert::TryFrom;
-use std::str::FromStr;
 use url::Url;
+
+use crate::constants::{BASE64, URI_COMPONENT_ENCODE_SET};
+use crate::deep_links::StreamDeepLinks;
+use crate::types::addon::{ResourcePath, ResourceRequest, TransportUrl};
+use crate::types::profile::Settings;
+use crate::types::resource::{Stream, StreamSource};
 
 const MAGNET_STR_URL: &str = "magnet:?xt=urn:btih:dd8255ecdc7ca55fb0bbf81323d87062db1f6d1c";
 const HTTP_STR_URL: &str = "http://domain.root/path";
@@ -19,7 +18,7 @@ const YT_ID: &str = "aqz-KE-bpKQ";
 fn stream_deep_links_magnet() {
     let stream = Stream {
         source: StreamSource::Url {
-            url: Url::from_str(MAGNET_STR_URL).unwrap(),
+            url: Url::parse(MAGNET_STR_URL).unwrap(),
         },
         name: None,
         description: None,
@@ -39,7 +38,7 @@ fn stream_deep_links_magnet() {
 fn stream_deep_links_http() {
     let stream = Stream {
         source: StreamSource::Url {
-            url: Url::from_str(HTTP_STR_URL).unwrap(),
+            url: Url::parse(HTTP_STR_URL).unwrap(),
         },
         name: None,
         description: None,
@@ -115,7 +114,7 @@ fn stream_deep_links_torrent() {
 fn stream_deep_links_external() {
     let stream = Stream {
         source: StreamSource::External {
-            external_url: Some(Url::from_str(HTTP_STR_URL).unwrap()),
+            external_url: Some(Url::parse(HTTP_STR_URL).unwrap()),
             android_tv_url: None,
             tizen_url: None,
             webos_url: None,
@@ -173,7 +172,7 @@ fn stream_deep_links_youtube() {
 fn stream_deep_links_player_frame() {
     let stream = Stream {
         source: StreamSource::PlayerFrame {
-            player_frame_url: Url::from_str(HTTP_STR_URL).unwrap(),
+            player_frame_url: Url::parse(HTTP_STR_URL).unwrap(),
         },
         name: None,
         description: None,
@@ -201,14 +200,14 @@ fn stream_deep_links_requests() {
         subtitles: vec![],
         behavior_hints: Default::default(),
     };
-    let stream_request = ResourceRequest {
-        base: Url::from_str("http://domain.root").unwrap(),
-        path: ResourcePath::without_extra("stream", "movie", format!("yt_id:{YT_ID}").as_str()),
-    };
-    let meta_request = ResourceRequest {
-        base: Url::from_str("http://domain.root").unwrap(),
-        path: ResourcePath::without_extra("meta", "movie", format!("yt_id:{YT_ID}").as_str()),
-    };
+    let stream_request = ResourceRequest::new(
+        TransportUrl::parse("http://domain.root/manifest.json").unwrap(),
+        ResourcePath::without_extra("stream", "movie", format!("yt_id:{YT_ID}").as_str()),
+    );
+    let meta_request = ResourceRequest::new(
+        TransportUrl::parse("http://domain.root/manifest.json").unwrap(),
+        ResourcePath::without_extra("meta", "movie", format!("yt_id:{YT_ID}").as_str()),
+    );
 
     let streaming_server_url = Some(Url::parse(STREAMING_SERVER_URL).unwrap());
     let settings = Settings::default();

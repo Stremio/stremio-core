@@ -1,3 +1,5 @@
+use percent_encoding::utf8_percent_encode;
+
 use crate::constants::URI_COMPONENT_ENCODE_SET;
 use crate::models::common::{
     descriptor_update, eq_update, DescriptorAction, DescriptorLoadable, Loadable,
@@ -5,9 +7,8 @@ use crate::models::common::{
 use crate::models::ctx::{CtxError, CtxStatus, OtherError};
 use crate::runtime::msg::{Action, ActionCtx, Event, Internal, Msg};
 use crate::runtime::{Effects, Env};
+use crate::types::addon::TransportUrl;
 use crate::types::profile::Profile;
-use percent_encoding::utf8_percent_encode;
-use url::Url;
 
 pub fn update_trakt_addon<E: Env + 'static>(
     trakt_addon: &mut Option<DescriptorLoadable>,
@@ -25,7 +26,7 @@ pub fn update_trakt_addon<E: Env + 'static>(
                 Some(uid) => descriptor_update::<E>(
                     trakt_addon,
                     DescriptorAction::DescriptorRequested {
-                        transport_url: &Url::parse(&format!(
+                        transport_url: &TransportUrl::parse(&format!(
                             "https://www.strem.io/trakt/addon/{}/manifest.json",
                             utf8_percent_encode(&uid, URI_COMPONENT_ENCODE_SET)
                         ))

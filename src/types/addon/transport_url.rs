@@ -1,28 +1,72 @@
-use std::str::FromStr;
+use std::{ops, str::FromStr};
 
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
 use url::Url;
-
-/// An Addon transport Url `stremio://.../manifest.json` or `https://.../manifest.json`
-///
-/// When deserializing the url:
-/// - Should start with either `stremio://` or `https://`
-/// - Should end with `manifest.json`
-///
-#[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize)]
-#[serde(try_from = "Url", into = "Url")]
-pub struct TransportUrl(Url);
 
 #[derive(Debug, Error, PartialEq, Eq)]
 pub enum Error {
     /// Only stremio:// and https:// are allowed
     #[error("Url scheme is not supported, only stremio:// and https:// are allowed.")]
     UnsupportedScheme,
-    #[error("Manifest.json path is missing from the Url")]
-    MissingManifest,
     #[error("Invalid Url")]
     ParsingUrl(#[from] url::ParseError),
+}
+
+/// An Addon transport Url `stremio://example_addon.com` or `https://example_addon.com`
+///
+/// When deserializing the url:
+/// - Should start with either `stremio://` or `https://`
+///
+/// Optionally it can end with `manifest.json` for SDK Addons.
+///
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Deserialize, Serialize)]
+#[serde(try_from = "Url", into = "Url")]
+pub struct TransportUrl {
+    url: Url,
+    pub has_manifest: bool,
+}
+
+/// The manifest.json filename that we define the TransportUrl with.
+const MANIFEST: &str = "manifest.json";
+
+impl TransportUrl {
+    ///
+    /// # Examples
+    ///
+    /// ## Parsing
+    ///
+    /// ```
+    /// let with_manifest = TransportUrl::parse("https://v3-cinemeta.strem.io/manifest.json").expect("Cinemeta url parse failed");
+    /// assert!(with_manifest.has_manifest);
+    ///
+    /// let no_manifest = TransportUrl::parse("https://v3-cinemeta.strem.io").expect("Cinemeta url parse failed");
+    /// assert!(!no_manifest.has_manifest);
+    ///
+    ///```
+    ///
+    pub fn new(addon_url: Url) -> Self {
+        Self {
+            has_manifest: has_manifest(&addon_url),
+            url: addon_url,
+        }
+    }
+
+    pub fn parse(input: &str) -> Result<Self, Error> {
+        input.parse()
+    }
+}
+
+impl From<TransportUrl> for Url {
+    fn from(transport_url: TransportUrl) -> Url {
+        transport_url.url
+    }
+}
+
+impl From<&TransportUrl> for Url {
+    fn from(transport_url: &TransportUrl) -> Url {
+        transport_url.url.to_owned()
+    }
 }
 
 impl TryFrom<Url> for TransportUrl {
@@ -40,11 +84,20 @@ impl TryFrom<Url> for TransportUrl {
             _ => return Err(Error::UnsupportedScheme),
         };
 
-        if !sanitized_url.path().ends_with("manifest.json") {
-            return Err(Error::MissingManifest);
-        }
+        let with_manifest = sanitized_url.path().ends_with("manifest.json");
 
-        Ok(Self(sanitized_url))
+        Ok(Self {
+            url: sanitized_url,
+            has_manifest: with_manifest,
+        })
+    }
+}
+
+impl ops::Deref for TransportUrl {
+    type Target = Url;
+
+    fn deref(&self) -> &Self::Target {
+        &self.url
     }
 }
 
@@ -57,11 +110,8 @@ impl FromStr for TransportUrl {
         Self::try_from(url)
     }
 }
-
-impl From<TransportUrl> for Url {
-    fn from(transport_url: TransportUrl) -> Self {
-        transport_url.0
-    }
+fn has_manifest(url: &Url) -> bool {
+    url.path().ends_with(MANIFEST)
 }
 
 #[cfg(test)]
@@ -82,7 +132,8 @@ mod test {
                 .expect("Should parse");
 
             let transport_url = TransportUrl::try_from(url).expect("Should convert");
-            assert_eq!(expected_url, transport_url.0)
+            assert_eq!(expected_url, transport_url.url);
+            assert!(transport_url.has_manifest);
         }
 
         // stremio:// protocol w/out manifest.json
@@ -91,8 +142,8 @@ mod test {
                 .parse::<Url>()
                 .expect("Should parse");
 
-            let result = TransportUrl::try_from(url);
-            assert_eq!(Err(Error::MissingManifest), result)
+            let transport_url = TransportUrl::try_from(url).expect("Should parse");
+            assert!(!transport_url.has_manifest);
         }
 
         // https:// protocol w/ manifest.json
@@ -102,7 +153,8 @@ mod test {
                 .expect("Should parse");
 
             let transport_url = TransportUrl::try_from(url.clone()).expect("Should convert");
-            assert_eq!(url, transport_url.0)
+            assert_eq!(url, transport_url.url);
+            assert!(transport_url.has_manifest);
         }
 
         // https:// protocol w/out manifest.json
@@ -111,8 +163,9 @@ mod test {
                 .parse::<Url>()
                 .expect("Should parse");
 
-            let result = TransportUrl::try_from(url);
-            assert_eq!(Err(Error::MissingManifest), result)
+            let transport_url = TransportUrl::try_from(url).expect("Should parse");
+            assert!(!transport_url.has_manifest);
+            assert!(transport_url.has_manifest);
         }
 
         // http:// protocol w/ manifest.json
@@ -122,15 +175,16 @@ mod test {
                 .expect("Should parse");
 
             let transport_url = TransportUrl::try_from(url.clone()).expect("Should convert");
-            assert_eq!(url, transport_url.0)
+            assert_eq!(url, transport_url.url);
+            assert!(transport_url.has_manifest);
         }
 
         // https:// protocol w/out manifest.json
         {
             let url = "http://addon_url.com".parse::<Url>().expect("Should parse");
 
-            let result = TransportUrl::try_from(url);
-            assert_eq!(Err(Error::MissingManifest), result)
+            let transport_url = TransportUrl::try_from(url).expect("Should parse");
+            assert!(!transport_url.has_manifest)
         }
     }
 }

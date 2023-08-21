@@ -1,10 +1,15 @@
-use crate::models::ctx::CtxError;
-use crate::models::player::AnalyticsContext as PlayerAnalyticsContext;
-use crate::types::api::AuthRequest;
-use crate::types::library::LibraryItemId;
-use crate::types::profile::{AuthKey, Settings, UID};
 use serde::Serialize;
 use url::Url;
+
+use crate::{
+    models::{ctx::CtxError, player::AnalyticsContext as PlayerAnalyticsContext},
+    types::{
+        addon::TransportUrl,
+        api::AuthRequest,
+        library::LibraryItemId,
+        profile::{AuthKey, Settings, UID},
+    },
+};
 
 ///
 /// Those messages are meant to be dispatched by the `stremio-core` crate and
@@ -50,10 +55,10 @@ pub enum Event {
         uid: UID,
     },
     AddonsPulledFromAPI {
-        transport_urls: Vec<Url>,
+        transport_urls: Vec<TransportUrl>,
     },
     AddonsPushedToAPI {
-        transport_urls: Vec<Url>,
+        transport_urls: Vec<TransportUrl>,
     },
     LibrarySyncWithAPIPlanned {
         uid: UID,
@@ -81,15 +86,15 @@ pub enum Event {
         uid: UID,
     },
     AddonInstalled {
-        transport_url: Url,
+        transport_url: TransportUrl,
         id: String,
     },
     AddonUpgraded {
-        transport_url: Url,
+        transport_url: TransportUrl,
         id: String,
     },
     AddonUninstalled {
-        transport_url: Url,
+        transport_url: TransportUrl,
         id: String,
     },
     SettingsUpdated {

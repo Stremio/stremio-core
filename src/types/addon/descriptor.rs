@@ -1,13 +1,12 @@
-use crate::types::addon::{Manifest, ManifestPreview};
+use crate::types::addon::{Manifest, ManifestPreview, TransportUrl};
 use serde::{Deserialize, Serialize};
-use url::Url;
 
 /// Addon descriptor
 #[derive(Clone, PartialEq, Eq, Serialize, Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct Descriptor {
     pub manifest: Manifest,
-    pub transport_url: Url,
+    pub transport_url: TransportUrl,
     #[serde(default)]
     pub flags: DescriptorFlags,
 }
@@ -16,7 +15,7 @@ pub struct Descriptor {
 #[serde(rename_all = "camelCase")]
 pub struct DescriptorPreview {
     pub manifest: ManifestPreview,
-    pub transport_url: Url,
+    pub transport_url: TransportUrl,
 }
 
 #[derive(Default, Clone, PartialEq, Eq, Serialize, Deserialize, Debug)]

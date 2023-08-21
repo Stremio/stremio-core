@@ -1,13 +1,12 @@
-use crate::types::addon::{ResourcePath, ResourceRequest};
+use crate::types::addon::{ResourcePath, ResourceRequest, TransportUrl};
 use crate::unit_tests::serde::default_tokens_ext::DefaultTokens;
 use serde_test::{assert_tokens, Token};
-use url::Url;
 
 #[test]
 fn resource_request() {
     assert_tokens(
         &ResourceRequest {
-            base: Url::parse("https://base").unwrap(),
+            base: TransportUrl::parse("https://transport_url.com/manifest.json").unwrap(),
             path: ResourcePath::default(),
         },
         &[

@@ -2,7 +2,7 @@ use crate::constants::PROFILE_STORAGE_KEY;
 use crate::models::ctx::Ctx;
 use crate::runtime::msg::{Action, ActionCtx};
 use crate::runtime::{Runtime, RuntimeAction};
-use crate::types::addon::{Descriptor, Manifest};
+use crate::types::addon::{Descriptor, Manifest, TransportUrl};
 use crate::types::library::LibraryBucket;
 use crate::types::notifications::NotificationsBucket;
 use crate::types::profile::Profile;
@@ -35,7 +35,7 @@ fn actionctx_addon_upgrade() {
             addon_catalogs: vec![],
             behavior_hints: Default::default(),
         },
-        transport_url: Url::parse("https://transport_url").unwrap(),
+        transport_url: TransportUrl::parse("https://transport_url.com/manifest.json").unwrap(),
         flags: Default::default(),
     };
     let addon1_update = Descriptor {
@@ -54,7 +54,7 @@ fn actionctx_addon_upgrade() {
             addon_catalogs: vec![],
             behavior_hints: Default::default(),
         },
-        transport_url: Url::parse("https://transport_url").unwrap(),
+        transport_url: TransportUrl::parse("https://transport_url.com/manifest.json").unwrap(),
         flags: Default::default(),
     };
     let addon2 = Descriptor {
@@ -73,7 +73,7 @@ fn actionctx_addon_upgrade() {
             addon_catalogs: vec![],
             behavior_hints: Default::default(),
         },
-        transport_url: Url::parse("https://transport_url_other").unwrap(),
+        transport_url: TransportUrl::parse("https://transport_url_other").unwrap(),
         flags: Default::default(),
     };
     let _env_mutex = TestEnv::reset().expect("Should have exclusive lock to TestEnv");
@@ -144,7 +144,7 @@ fn actionctx_addon_upgrade_fail_due_to_different_url() {
             addon_catalogs: vec![],
             behavior_hints: Default::default(),
         },
-        transport_url: Url::parse("https://transport_url1").unwrap(),
+        transport_url: TransportUrl::parse("https://transport_url1.com/manifest.json").unwrap(),
         flags: Default::default(),
     };
     let addon2 = Descriptor {
@@ -163,7 +163,7 @@ fn actionctx_addon_upgrade_fail_due_to_different_url() {
             addon_catalogs: vec![],
             behavior_hints: Default::default(),
         },
-        transport_url: Url::parse("https://transport_url2").unwrap(),
+        transport_url: TransportUrl::parse("https://transport_url2.com/manifest.json").unwrap(),
         flags: Default::default(),
     };
     let _env_mutex = TestEnv::reset().expect("Should have exclusive lock to TestEnv");

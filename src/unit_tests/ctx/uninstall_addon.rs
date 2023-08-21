@@ -2,7 +2,7 @@ use crate::constants::PROFILE_STORAGE_KEY;
 use crate::models::ctx::Ctx;
 use crate::runtime::msg::{Action, ActionCtx};
 use crate::runtime::{Env, EnvFutureExt, Runtime, RuntimeAction, TryEnvFuture};
-use crate::types::addon::{Descriptor, DescriptorFlags, Manifest};
+use crate::types::addon::{Descriptor, DescriptorFlags, Manifest, TransportUrl};
 use crate::types::api::{APIResult, SuccessResponse};
 use crate::types::library::LibraryBucket;
 use crate::types::notifications::NotificationsBucket;
@@ -41,7 +41,7 @@ fn actionctx_uninstalladdon() {
             addon_catalogs: vec![],
             behavior_hints: Default::default(),
         },
-        transport_url: Url::parse("https://transport_url").unwrap(),
+        transport_url: TransportUrl::parse("https://transport_url.com/manifest.json").unwrap(),
         flags: Default::default(),
     };
     let profile = Profile {
@@ -132,7 +132,7 @@ fn actionctx_uninstalladdon_with_user() {
             addon_catalogs: vec![],
             behavior_hints: Default::default(),
         },
-        transport_url: Url::parse("https://transport_url").unwrap(),
+        transport_url: TransportUrl::parse("https://transport_url.com/manifest.json").unwrap(),
         flags: Default::default(),
     };
     let profile = Profile {
@@ -240,7 +240,7 @@ fn actionctx_uninstalladdon_protected() {
             addon_catalogs: vec![],
             behavior_hints: Default::default(),
         },
-        transport_url: Url::parse("https://transport_url").unwrap(),
+        transport_url: TransportUrl::parse("https://transport_url.com/manifest.json").unwrap(),
         flags: DescriptorFlags {
             official: false,
             protected: true,
@@ -317,7 +317,7 @@ fn actionctx_uninstalladdon_not_installed() {
             addon_catalogs: vec![],
             behavior_hints: Default::default(),
         },
-        transport_url: Url::parse("https://transport_url").unwrap(),
+        transport_url: TransportUrl::parse("https://transport_url.com/manifest.json").unwrap(),
         flags: Default::default(),
     };
     let profile = Profile {
@@ -345,7 +345,8 @@ fn actionctx_uninstalladdon_not_installed() {
         runtime.dispatch(RuntimeAction {
             field: None,
             action: Action::Ctx(ActionCtx::UninstallAddon(Descriptor {
-                transport_url: Url::parse("https://transport_url2").unwrap(),
+                transport_url: TransportUrl::parse("https://transport_url2.com/manifest.json")
+                    .unwrap(),
                 ..addon.to_owned()
             })),
         })

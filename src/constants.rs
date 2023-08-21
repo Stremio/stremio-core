@@ -1,4 +1,4 @@
-use crate::types::addon::{Descriptor, ExtraProp, OptionsLimit};
+use crate::types::addon::{Descriptor, ExtraProp, OptionsLimit, TransportUrl};
 use lazy_static::lazy_static;
 use percent_encoding::{AsciiSet, NON_ALPHANUMERIC};
 use std::collections::HashMap;
@@ -57,7 +57,7 @@ lazy_static! {
         .expect("CINEMETA_URL parse failed");
 
     /// Manifest URL for Cinemeta V3
-    pub static ref CINEMETA_URL: Url = Url::parse("https://v3-cinemeta.strem.io/manifest.json")
+    pub static ref CINEMETA_URL: TransportUrl = TransportUrl::parse("https://v3-cinemeta.strem.io/manifest.json")
         .expect("CINEMETA_URL parse failed");
     pub static ref API_URL: Url = Url::parse("https://api.strem.io").expect("API_URL parse failed");
     pub static ref LINK_API_URL: Url =

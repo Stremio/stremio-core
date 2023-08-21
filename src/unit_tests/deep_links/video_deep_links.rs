@@ -1,11 +1,9 @@
 use crate::constants::BASE64;
 use crate::deep_links::{ExternalPlayerLink, VideoDeepLinks};
-use crate::types::addon::{ResourcePath, ResourceRequest};
+use crate::types::addon::{ResourcePath, ResourceRequest, TransportUrl};
 use crate::types::profile::Settings;
 use crate::types::resource::Video;
 use base64::Engine;
-use std::convert::TryFrom;
-use std::str::FromStr;
 use url::Url;
 
 const STREAMING_SERVER_URL: &str = "http://127.0.0.1:11471/";
@@ -23,10 +21,10 @@ fn video_deep_links() {
         series_info: None,
         trailer_streams: vec![],
     };
-    let request = ResourceRequest {
-        base: Url::from_str("http://domain.root").unwrap(),
-        path: ResourcePath::without_extra("meta", "movie", format!("yt_id:{YT_ID}").as_str()),
-    };
+    let request = ResourceRequest::new(
+        TransportUrl::parse("http://domain.root/manifest.json").unwrap(),
+        ResourcePath::without_extra("meta", "movie", format!("yt_id:{YT_ID}").as_str()),
+    );
     let streaming_server_url = Some(Url::parse(STREAMING_SERVER_URL).unwrap());
     let settings = Settings::default();
     let vdl =

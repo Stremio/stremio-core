@@ -1,9 +1,17 @@
+use std::any::Any;
+use std::sync::{Arc, RwLock};
+
+use assert_matches::assert_matches;
+use enclose::enclose;
+use futures::future;
+use stremio_derive::Model;
+
 use crate::models::catalog_with_filters::{CatalogWithFilters, Selected};
 use crate::models::common::{Loadable, ResourceLoadable};
 use crate::models::ctx::Ctx;
 use crate::runtime::msg::{Action, ActionLoad};
 use crate::runtime::{EnvFutureExt, Runtime, RuntimeAction, RuntimeEvent, TryEnvFuture};
-use crate::types::addon::{ExtraValue, ResourcePath, ResourceRequest, ResourceResponse};
+use crate::types::addon::{ExtraValue, ResourcePath, ResourceRequest, ResourceResponse, TransportUrl};
 use crate::types::library::LibraryBucket;
 use crate::types::notifications::NotificationsBucket;
 use crate::types::profile::Profile;
@@ -12,13 +20,6 @@ use crate::types::streams::StreamsBucket;
 use crate::unit_tests::{
     default_fetch_handler, Request, TestEnv, EVENTS, FETCH_HANDLER, REQUESTS, STATES,
 };
-use assert_matches::assert_matches;
-use enclose::enclose;
-use futures::future;
-use std::any::Any;
-use std::sync::{Arc, RwLock};
-use stremio_derive::Model;
-use url::Url;
 
 #[test]
 fn default_catalog() {
@@ -158,7 +159,7 @@ fn search_catalog() {
     let runtime = Arc::new(RwLock::new(runtime));
     let selected = Selected {
         request: ResourceRequest {
-            base: Url::parse("https://v3-cinemeta.strem.io/manifest.json").unwrap(),
+            base: TransportUrl::parse("https://v3-cinemeta.strem.io/manifest.json").unwrap(),
             path: ResourcePath {
                 resource: "catalog".to_owned(),
                 id: "top".to_owned(),

@@ -28,7 +28,7 @@ use crate::{
     types::{
         addon::{
             Descriptor, Manifest, ManifestCatalog, ManifestExtra, ResourcePath, ResourceRequest,
-            ResourceResponse,
+            ResourceResponse, TransportUrl,
         },
         library::{LibraryBucket, LibraryItem, LibraryItemState},
         notifications::{NotificationItem, NotificationsBucket},
@@ -88,7 +88,7 @@ fn test_pull_notifications_and_play_in_player() {
             addon_catalogs: vec![],
             behavior_hints: Default::default(),
         },
-        transport_url: Url::parse("https://addon_1.com/manifest.json").unwrap(),
+        transport_url: TransportUrl::parse("https://addon_1.com/manifest.json").unwrap(),
         flags: Default::default(),
     });
 
@@ -301,7 +301,7 @@ fn test_pull_notifications_and_play_in_player() {
                     behavior_hints: Default::default(),
                 },
                 meta_request: Some(ResourceRequest {
-                    base: Url::parse("https://addon_1.com/manifest.json").unwrap(),
+                    base: TransportUrl::parse("https://addon_1.com/manifest.json").unwrap(),
                     path: ResourcePath {
                         id: "tt1".to_owned(),
                         resource: "meta".to_owned(),
@@ -310,7 +310,7 @@ fn test_pull_notifications_and_play_in_player() {
                     },
                 }),
                 stream_request: Some(ResourceRequest {
-                    base: Url::parse("https://addon_1.com/manifest.json").unwrap(),
+                    base: TransportUrl::parse("https://addon_1.com/manifest.json").unwrap(),
                     path: ResourcePath {
                         resource: "stream".to_owned(),
                         r#type: "series".to_owned(),

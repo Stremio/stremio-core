@@ -71,7 +71,57 @@ impl TestEnv {
             runnable();
         }))
     }
-    pub fn run_with_runtime<M: Model<TestEnv> + Clone + Send + Sync + 'static, F: FnOnce()>(
+
+    // pub async fn handle_event<M>(event: RuntimeEvent<Self, M>)
+    // where
+    //     M: Model<TestEnv> + Clone + Send + Sync + 'static,
+    // {
+    //     if let RuntimeEvent::NewState(_, state) = &event {
+    //         let mut states = STATES.write().expect("states write failed");
+    //         states.push(Box::new(state.to_owned()) as Box<dyn Any + Send + Sync>);
+    //     };
+    //     let mut events = EVENTS.write().expect("events write failed");
+    //     events.push(Box::new(event) as Box<dyn Any + Send + Sync>);
+    // }
+
+    // pub fn with_runtime<M, F>(
+    //     rx: Receiver<RuntimeEvent<TestEnv, M>>,
+    //     runtime: &Runtime<TestEnv, M>,
+    //     runnable: F,
+    // ) -> JoinHandle<T::Output>
+    // where
+    //     M: Model<TestEnv> + Clone + Send + Sync + 'static,
+    //     F: FnOnce(&Runtime<TestEnv, M>),
+    // {
+    //     tokio_current_thread::block_on_all(future::lazy(|_| {
+    //         {
+    //             let state = runtime.model().expect("model read failed");
+    //             let mut states = STATES.write().expect("states write failed");
+    //             states.push(Box::new(state.to_owned()) as Box<dyn Any + Send + Sync>);
+    //         }
+    //         runnable(runtime);
+    //     }));
+    //     tokio_current_thread::block_on_all(future::lazy(|_| {
+    //         TestEnv::exec_concurrent(rx.for_each(move |event| {
+    //             if let RuntimeEvent::NewState(_, state) = &event {
+    //                 let mut states = STATES.write().expect("states write failed");
+    //                 states.push(Box::new(state.to_owned()) as Box<dyn Any + Send + Sync>);
+    //             };
+    //             let mut events = EVENTS.write().expect("events write failed");
+    //             events.push(Box::new(event) as Box<dyn Any + Send + Sync>);
+    //             future::ready(())
+    //         }));
+    //         TestEnv::exec_concurrent(enclose!((runtime) async move {
+    //             let mut runtime = runtime.write().expect("runtime read failed");
+    //             runtime.close().await.unwrap();
+    //         }));
+    //     }));
+    // }
+
+    pub fn run_with_runtime<
+        M: Model<TestEnv> + core::fmt::Debug + Clone + Send + Sync + 'static,
+        F: FnOnce(),
+    >(
         rx: Receiver<RuntimeEvent<TestEnv, M>>,
         runtime: Arc<RwLock<Runtime<TestEnv, M>>>,
         runnable: F,
@@ -89,6 +139,7 @@ impl TestEnv {
             TestEnv::exec_concurrent(rx.for_each(move |event| {
                 if let RuntimeEvent::NewState(_, state) = &event {
                     let mut states = STATES.write().expect("states write failed");
+
                     states.push(Box::new(state.to_owned()) as Box<dyn Any + Send + Sync>);
                 };
                 let mut events = EVENTS.write().expect("events write failed");

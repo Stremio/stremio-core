@@ -1,3 +1,11 @@
+use std::fmt;
+
+use chrono::{DateTime, Utc};
+use futures::{future, Future, TryFutureExt};
+use http::Request;
+use serde::ser::SerializeStruct;
+use serde::{Deserialize, Serialize, Serializer};
+
 use crate::addon_transport::{AddonHTTPTransport, AddonTransport, UnsupportedTransport};
 use crate::constants::{
     LIBRARY_RECENT_STORAGE_KEY, LIBRARY_STORAGE_KEY, PROFILE_STORAGE_KEY, SCHEMA_VERSION,
@@ -5,13 +13,7 @@ use crate::constants::{
 };
 use crate::models::ctx::Ctx;
 use crate::models::streaming_server::StreamingServer;
-use chrono::{DateTime, Utc};
-use futures::{future, Future, TryFutureExt};
-use http::Request;
-use serde::ser::SerializeStruct;
-use serde::{Deserialize, Serialize, Serializer};
-use std::fmt;
-use url::Url;
+use crate::types::addon::TransportUrl;
 
 pub use conditional_types::{ConditionalSend, EnvFuture, EnvFutureExt};
 
@@ -156,13 +158,13 @@ pub trait Env {
     ) -> serde_json::Value;
     #[cfg(debug_assertions)]
     fn log(message: String);
-    fn addon_transport(transport_url: &Url) -> Box<dyn AddonTransport>
+    fn addon_transport(transport_url: &TransportUrl) -> Box<dyn AddonTransport>
     where
         Self: Sized + 'static,
     {
         match transport_url.scheme() {
             "http" | "https" => Box::new(AddonHTTPTransport::<Self>::new(transport_url.to_owned())),
-            _ => Box::new(UnsupportedTransport::new(transport_url.to_owned())),
+            _ => Box::new(UnsupportedTransport::new(transport_url.into())),
         }
     }
     fn migrate_storage_schema() -> TryEnvFuture<()>

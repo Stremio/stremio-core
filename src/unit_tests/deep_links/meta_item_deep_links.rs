@@ -1,9 +1,6 @@
 use crate::deep_links::MetaItemDeepLinks;
-use crate::types::addon::{ResourcePath, ResourceRequest};
+use crate::types::addon::{ResourcePath, ResourceRequest, TransportUrl};
 use crate::types::resource::{MetaItem, MetaItemBehaviorHints, MetaItemPreview, PosterShape};
-use std::convert::TryFrom;
-use std::str::FromStr;
-use url::Url;
 
 #[test]
 fn meta_item_deep_links() {
@@ -27,10 +24,10 @@ fn meta_item_deep_links() {
         preview: preview.clone(),
         videos: vec![],
     };
-    let request = ResourceRequest {
-        base: Url::from_str("http://domain.root").unwrap(),
-        path: ResourcePath::without_extra("meta", preview.r#type.as_ref(), preview.id.as_ref()),
-    };
+    let request = ResourceRequest::new(
+        TransportUrl::parse("http://domain.root/manifest.json").unwrap(),
+        ResourcePath::without_extra("meta", preview.r#type.as_ref(), preview.id.as_ref()),
+    );
 
     let preview_midl = MetaItemDeepLinks::try_from((&preview, &request)).unwrap();
     let midl = MetaItemDeepLinks::try_from((&item, &request)).unwrap();
@@ -70,10 +67,10 @@ fn meta_item_deep_links_behavior_hints() {
         preview: preview.clone(),
         videos: vec![],
     };
-    let request = ResourceRequest {
-        base: Url::from_str("http://domain.root").unwrap(),
-        path: ResourcePath::without_extra("meta", preview.r#type.as_ref(), preview.id.as_ref()),
-    };
+    let request = ResourceRequest::new(
+        TransportUrl::parse("http://domain.root/manifest.json").unwrap(),
+        ResourcePath::without_extra("meta", preview.r#type.as_ref(), preview.id.as_ref()),
+    );
 
     let preview_midl = MetaItemDeepLinks::try_from((&preview, &request)).unwrap();
     let midl = MetaItemDeepLinks::try_from((&item, &request)).unwrap();
@@ -113,10 +110,10 @@ fn meta_item_deep_links_behavior_hints_yt_id() {
         preview: preview.clone(),
         videos: vec![],
     };
-    let request = ResourceRequest {
-        base: Url::from_str("http://domain.root").unwrap(),
-        path: ResourcePath::without_extra("meta", preview.r#type.as_ref(), preview.id.as_ref()),
-    };
+    let request = ResourceRequest::new(
+        TransportUrl::parse("http://domain.root/manifest.json").unwrap(),
+        ResourcePath::without_extra("meta", preview.r#type.as_ref(), preview.id.as_ref()),
+    );
 
     let preview_midl = MetaItemDeepLinks::try_from((&preview, &request)).unwrap();
     let midl = MetaItemDeepLinks::try_from((&item, &request)).unwrap();

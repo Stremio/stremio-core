@@ -54,6 +54,6 @@ impl UniqueVecAdapter for DescriptorUniqueVecAdapter {
     type Input = Descriptor;
     type Output = Url;
     fn hash(descriptor: &Descriptor) -> Url {
-        descriptor.transport_url.to_owned()
+        descriptor.transport_url.to_owned().into()
     }
 }

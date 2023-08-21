@@ -7,7 +7,7 @@ use crate::models::streaming_server::{
     PlaybackDevice, Settings as StreamingServerSettings, StatisticsRequest,
 };
 use crate::runtime::EnvError;
-use crate::types::addon::{Descriptor, Manifest, ResourceRequest, ResourceResponse};
+use crate::types::addon::{Descriptor, Manifest, ResourceRequest, ResourceResponse, TransportUrl};
 use crate::types::api::{
     APIRequest, AuthRequest, DataExportResponse, DatastoreRequest, LinkCodeResponse,
     LinkDataResponse,
@@ -51,7 +51,7 @@ pub enum Internal {
         stream: Stream,
         meta_id: Option<String>,
         video_id: Option<String>,
-        transport_url: Option<Url>,
+        transport_url: Option<TransportUrl>,
     },
     /// Dispatched when library item needs to be updated in the memory, storage and API.
     UpdateLibraryItem(LibraryItem),
@@ -86,7 +86,7 @@ pub enum Internal {
     /// Result for fetching resource from addons.
     ResourceRequestResult(ResourceRequest, Box<Result<ResourceResponse, EnvError>>),
     /// Result for fetching manifest from addon.
-    ManifestRequestResult(Url, Result<Manifest, EnvError>),
+    ManifestRequestResult(TransportUrl, Result<Manifest, EnvError>),
     /// TODO: write some obvious comment about what it is
     NotificationsRequestResult(ResourceRequest, Box<Result<ResourceResponse, EnvError>>),
     /// Result for requesting a `dataExport` of user data.

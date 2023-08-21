@@ -1,4 +1,4 @@
-use crate::types::resource::Stream;
+use crate::types::{resource::Stream, addon::TransportUrl};
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use serde_with::serde_as;
@@ -11,7 +11,7 @@ pub struct StreamsItem {
     pub stream: Stream,
     pub meta_id: String,
     pub video_id: String,
-    pub transport_url: Url,
+    pub transport_url: TransportUrl,
     /// Modification time
     #[serde(rename = "_mtime")]
     pub mtime: DateTime<Utc>,
