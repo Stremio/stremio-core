@@ -1,4 +1,4 @@
-use crate::types::{resource::Stream, addon::TransportUrl};
+use crate::types::{addon::TransportUrl, resource::Stream};
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use serde_with::serde_as;

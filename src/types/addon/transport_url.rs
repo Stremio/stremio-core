@@ -165,7 +165,6 @@ mod test {
 
             let transport_url = TransportUrl::try_from(url).expect("Should parse");
             assert!(!transport_url.has_manifest);
-            assert!(transport_url.has_manifest);
         }
 
         // http:// protocol w/ manifest.json

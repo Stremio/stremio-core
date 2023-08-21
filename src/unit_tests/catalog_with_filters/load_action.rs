@@ -11,7 +11,9 @@ use crate::models::common::{Loadable, ResourceLoadable};
 use crate::models::ctx::Ctx;
 use crate::runtime::msg::{Action, ActionLoad};
 use crate::runtime::{EnvFutureExt, Runtime, RuntimeAction, RuntimeEvent, TryEnvFuture};
-use crate::types::addon::{ExtraValue, ResourcePath, ResourceRequest, ResourceResponse, TransportUrl};
+use crate::types::addon::{
+    ExtraValue, ResourcePath, ResourceRequest, ResourceResponse, TransportUrl,
+};
 use crate::types::library::LibraryBucket;
 use crate::types::notifications::NotificationsBucket;
 use crate::types::profile::Profile;
