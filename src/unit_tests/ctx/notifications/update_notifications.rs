@@ -501,7 +501,7 @@ fn test_dismiss_notification() {
     let runtime = Arc::new(RwLock::new(runtime));
     // update now to later date than both last_watched
     let expected_last_watched = Utc.with_ymd_and_hms(2023, 8, 14, 0, 0, 0).unwrap();
-    *NOW.write().unwrap() = expected_last_watched.clone();
+    *NOW.write().unwrap() = expected_last_watched;
 
     TestEnv::run_with_runtime(
         rx,

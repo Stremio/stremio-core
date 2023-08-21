@@ -82,7 +82,13 @@ pub enum ActionLibraryByType {
 #[derive(Clone, Deserialize, Debug)]
 #[serde(tag = "action", content = "args")]
 pub enum ActionMetaDetails {
+    /// Marks the [`LibraryItem`] as watched.
+    ///
+    /// Applicable when you have single-video (e.g. a movie) and multi-video (e.g. a movie series) item.
     MarkAsWatched(bool),
+    /// Marks the given [`Video`] of the [`LibraryItem`] as watched.
+    ///
+    /// Applicable only when you have a multi-video (e.g. movie series) item.
     MarkVideoAsWatched(Video, bool),
 }
 

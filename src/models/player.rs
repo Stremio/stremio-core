@@ -745,7 +745,8 @@ fn library_item_update<E: Env + 'static>(
                 } => Some(meta_item),
                 _ => None,
             });
-            let library_item = match (library_item, meta_item) {
+
+            match (library_item, meta_item) {
                 (Some(library_item), Some(meta_item)) => {
                     Some(LibraryItem::from((&meta_item.preview, library_item)))
                 }
@@ -754,8 +755,7 @@ fn library_item_update<E: Env + 'static>(
                 }
                 (Some(library_item), None) => Some(library_item.to_owned()),
                 _ => None,
-            };
-            library_item
+            }
         }
         _ => None,
     };
