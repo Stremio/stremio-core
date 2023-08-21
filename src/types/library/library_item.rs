@@ -112,6 +112,12 @@ impl From<(&MetaItemPreview, &LibraryItem)> for LibraryItem {
 #[derive(Default, Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct LibraryItemState {
+    /// Indicates the last time this [`LibraryItem`] was watched and:
+    /// - When we're playing the LibraryItem we're constantly updating the field
+    /// - Marking the whole [`LibraryItem`] as watched will update the field
+    /// to the latest released video if `last_watched < released date`.
+    /// - Marking a video from the [`LibraryItem`] will update the field
+    /// to the video released date if `last_watched < released date`.
     #[serde(default)]
     #[serde_as(deserialize_as = "DefaultOnNull<NoneAsEmptyString>")]
     pub last_watched: Option<DateTime<Utc>>,
@@ -142,10 +148,6 @@ pub struct LibraryItemState {
     #[serde(default)]
     #[serde_as(deserialize_as = "DefaultOnNull<NoneAsEmptyString>")]
     pub watched: Option<WatchedField>,
-    /// Release date of last observed video
-    #[serde(default)]
-    #[serde_as(deserialize_as = "DefaultOnNull<NoneAsEmptyString>")]
-    pub last_video_released: Option<DateTime<Utc>>,
     /// Weather or not to receive notification for the given [`LibraryItem`].
     ///
     /// Default: receive notifications

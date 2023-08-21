@@ -230,9 +230,6 @@ fn test_pull_notifications_and_play_in_player() {
                             time_offset: 100,
                             duration: 101,
                             video_id: Some("tt1:1:5".to_string()),
-                            last_video_released: Some(
-                                Utc.with_ymd_and_hms(2020, 1, 1, 0, 0, 0).unwrap(),
-                            ),
                             no_notif: false,
                         },
                         behavior_hints: Default::default(),
@@ -448,9 +445,6 @@ fn test_dismiss_notification() {
                                 duration: 55 * 60 * 60 * 1000,
                                 video_id: Some("tt1:1".into()),
                                 watched: None,
-                                last_video_released: Some(
-                                    Utc.with_ymd_and_hms(2023, 7, 10, 0, 0, 0).unwrap(),
-                                ),
                                 no_notif: false,
                             },
                             behavior_hints: Default::default(),
@@ -477,9 +471,6 @@ fn test_dismiss_notification() {
                                 duration: 55 * 60 * 60 * 1000,
                                 video_id: Some("tt1:1".into()),
                                 watched: None,
-                                last_video_released: Some(
-                                    Utc.with_ymd_and_hms(2023, 8, 14, 0, 0, 0).unwrap(),
-                                ),
                                 no_notif: false,
                             },
                             behavior_hints: Default::default(),
