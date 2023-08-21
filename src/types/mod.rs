@@ -1,4 +1,19 @@
-pub mod addon;
+pub mod addon {
+    mod descriptor;
+    pub use descriptor::*;
+
+    mod manifest;
+    pub use manifest::*;
+
+    mod request;
+    pub use request::*;
+
+    mod response;
+    pub use response::*;
+
+    mod transport_url;
+    pub use transport_url::*;
+}
 pub mod api;
 pub mod library;
 pub mod notifications;
