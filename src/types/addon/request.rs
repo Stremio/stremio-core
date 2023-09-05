@@ -1,5 +1,12 @@
-use crate::types::addon::{Descriptor, ExtraProp};
+use crate::{
+    constants::URI_COMPONENT_ENCODE_SET,
+    types::{
+        addon::{Descriptor, ExtraProp},
+        query_params_encode,
+    },
+};
 use derive_more::{From, Into};
+use percent_encoding::utf8_percent_encode;
 use serde::{Deserialize, Serialize};
 use url::Url;
 
@@ -109,6 +116,28 @@ impl ResourcePath {
     #[inline]
     pub fn eq_no_extra(&self, other: &ResourcePath) -> bool {
         self.resource == other.resource && self.r#type == other.r#type && self.id == other.id
+    }
+
+    /// returns a `/` prefixed path to the resource
+    /// with all the resource components and extras (if present)
+    /// and ends the path with `.json`
+    pub fn to_url_path(&self) -> String {
+        if self.extra.is_empty() {
+            format!(
+                "/{}/{}/{}.json",
+                utf8_percent_encode(&self.resource, URI_COMPONENT_ENCODE_SET),
+                utf8_percent_encode(&self.r#type, URI_COMPONENT_ENCODE_SET),
+                utf8_percent_encode(&self.id, URI_COMPONENT_ENCODE_SET),
+            )
+        } else {
+            format!(
+                "/{}/{}/{}/{}.json",
+                utf8_percent_encode(&self.resource, URI_COMPONENT_ENCODE_SET),
+                utf8_percent_encode(&self.r#type, URI_COMPONENT_ENCODE_SET),
+                utf8_percent_encode(&self.id, URI_COMPONENT_ENCODE_SET),
+                query_params_encode(self.extra.iter().map(|ev| (&ev.name, &ev.value)))
+            )
+        }
     }
 }
 

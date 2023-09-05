@@ -1,12 +1,10 @@
 use crate::addon_transport::http_transport::legacy::AddonLegacyTransport;
 use crate::addon_transport::AddonTransport;
-use crate::constants::{ADDON_LEGACY_PATH, ADDON_MANIFEST_PATH, URI_COMPONENT_ENCODE_SET};
+use crate::constants::{ADDON_LEGACY_PATH, ADDON_MANIFEST_PATH};
 use crate::runtime::{Env, EnvError, EnvFutureExt, TryEnvFuture};
 use crate::types::addon::{Manifest, ResourcePath, ResourceResponse};
-use crate::types::query_params_encode;
 use futures::future;
 use http::Request;
-use percent_encoding::utf8_percent_encode;
 use std::marker::PhantomData;
 use url::Url;
 
@@ -40,27 +38,13 @@ impl<E: Env> AddonTransport for AddonHTTPTransport<E> {
             )))
             .boxed_env();
         }
-        let path = if path.extra.is_empty() {
-            format!(
-                "/{}/{}/{}.json",
-                utf8_percent_encode(&path.resource, URI_COMPONENT_ENCODE_SET),
-                utf8_percent_encode(&path.r#type, URI_COMPONENT_ENCODE_SET),
-                utf8_percent_encode(&path.id, URI_COMPONENT_ENCODE_SET),
-            )
-        } else {
-            format!(
-                "/{}/{}/{}/{}.json",
-                utf8_percent_encode(&path.resource, URI_COMPONENT_ENCODE_SET),
-                utf8_percent_encode(&path.r#type, URI_COMPONENT_ENCODE_SET),
-                utf8_percent_encode(&path.id, URI_COMPONENT_ENCODE_SET),
-                query_params_encode(path.extra.iter().map(|ev| (&ev.name, &ev.value)))
-            )
-        };
+        let path = path.to_url_path();
         let url = self
             .transport_url
             .as_str()
             .replace(ADDON_MANIFEST_PATH, &path);
         let request = Request::get(&url).body(()).expect("request builder failed");
+
         E::fetch(request)
     }
     fn manifest(&self) -> TryEnvFuture<Manifest> {
