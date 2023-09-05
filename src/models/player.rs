@@ -854,7 +854,7 @@ fn watch_status_update<E: Env + 'static>(
         Some(library_item) => {
             let extra_values = match msg {
                 Msg::Action(Action::Load(ActionLoad::Player(_selected))) => {
-                    let action = "play";
+                    let action = "start";
 
                     // TODO: Double check if this is current time!
                     let current_time = library_item.state.time_offset;
@@ -868,24 +868,6 @@ fn watch_status_update<E: Env + 'static>(
                         ExtraValue {
                             name: "currentTime".to_owned(),
                             value: current_time.to_string(),
-                        },
-                        ExtraValue {
-                            name: "duration".to_owned(),
-                            value: duration.to_string(),
-                        },
-                    ]
-                }
-                Msg::Action(Action::Player(ActionPlayer::TimeChanged {
-                    time, duration, ..
-                })) => {
-                    vec![
-                        ExtraValue {
-                            name: "action".to_owned(),
-                            value: "action".to_owned(),
-                        },
-                        ExtraValue {
-                            name: "currentTime".to_owned(),
-                            value: time.to_string(),
                         },
                         ExtraValue {
                             name: "duration".to_owned(),
@@ -923,7 +905,7 @@ fn watch_status_update<E: Env + 'static>(
                     vec![
                         ExtraValue {
                             name: "action".to_owned(),
-                            value: "ended".to_owned(),
+                            value: "end".to_owned(),
                         },
                         ExtraValue {
                             name: "currentTime".to_owned(),
@@ -944,10 +926,10 @@ fn watch_status_update<E: Env + 'static>(
                 // force the making of a requests every time we have WatchStatus changes
                 ResourcesAction::force_request(
                     &AggrRequest::AllOfResource(ResourcePath {
-                        id: "".into(),
+                        id: library_item.id.to_owned(),
                         resource: WATCH_STATUS_RESOURCE_NAME.to_string(),
                         extra: extra_values,
-                        r#type: library_item.r#type.clone(),
+                        r#type: library_item.r#type.to_owned(),
                     }),
                     addons,
                 ),
