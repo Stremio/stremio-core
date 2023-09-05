@@ -121,7 +121,7 @@ fn selectable_update(
             .map(|selected| selected.request.r#type.is_none())
             .unwrap_or_default(),
     })
-    .chain(selectable_types.into_iter())
+    .chain(selectable_types)
     .collect::<Vec<_>>();
     let next_selectable = Selectable {
         types: selectable_types,
