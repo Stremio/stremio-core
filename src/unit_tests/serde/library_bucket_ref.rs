@@ -6,7 +6,7 @@ fn library_bucket_ref() {
     assert_ser_tokens(
         &LibraryBucketRef {
             uid: &Some("uid".to_owned()),
-            items: vec![].iter().cloned().collect(),
+            items: [].iter().cloned().collect(),
         },
         &[
             Token::Struct {

@@ -241,7 +241,7 @@ fn selectable_update<F: LibraryFilter>(
             .map(|selected| selected.request.r#type.is_none())
             .unwrap_or_default(),
     })
-    .chain(selectable_types.into_iter())
+    .chain(selectable_types)
     .collect::<Vec<_>>();
     let selectable_sorts = Sort::iter()
         .map(|sort| SelectableSort {
