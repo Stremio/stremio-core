@@ -854,8 +854,6 @@ fn watch_status_update<E: Env + 'static>(
         Some(library_item) => {
             let extra_values = match msg {
                 Msg::Action(Action::Load(ActionLoad::Player(_selected))) => {
-                    let action = "start";
-
                     // TODO: Double check if this is current time!
                     let current_time = library_item.state.time_offset;
                     // TODO: Double check if this is duration!
@@ -863,7 +861,7 @@ fn watch_status_update<E: Env + 'static>(
                     vec![
                         ExtraValue {
                             name: "action".to_owned(),
-                            value: action.to_owned(),
+                            value: "start".to_owned(),
                         },
                         ExtraValue {
                             name: "currentTime".to_owned(),
@@ -884,7 +882,7 @@ fn watch_status_update<E: Env + 'static>(
                     vec![
                         ExtraValue {
                             name: "action".to_owned(),
-                            value: if *paused { "paused" } else { "play" }.to_owned(),
+                            value: if *paused { "paused" } else { "resume" }.to_owned(),
                         },
                         ExtraValue {
                             name: "currentTime".to_owned(),
@@ -905,6 +903,28 @@ fn watch_status_update<E: Env + 'static>(
                     vec![
                         ExtraValue {
                             name: "action".to_owned(),
+                            value: "end".to_owned(),
+                        },
+                        ExtraValue {
+                            name: "currentTime".to_owned(),
+                            value: current_time.to_string(),
+                        },
+                        ExtraValue {
+                            name: "duration".to_owned(),
+                            value: duration.to_string(),
+                        },
+                    ]
+                }
+                Msg::Action(Action::Unload) => {
+                    // TODO: Double check if this is current time!
+                    let current_time = library_item.state.time_offset;
+                    // TODO: Double check if this is duration!
+                    let duration = library_item.state.duration;
+
+                    vec![
+                        ExtraValue {
+                            name: "action".to_owned(),
+                            // TODO: discuss whether we need to keep this "end" or use another action like "stop"
                             value: "end".to_owned(),
                         },
                         ExtraValue {
