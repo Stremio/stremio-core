@@ -17,6 +17,9 @@ pub const META_RESOURCE_NAME: &str = "meta";
 pub const STREAM_RESOURCE_NAME: &str = "stream";
 /// `https://{ADDON_URL}/catalog/...` resource
 pub const CATALOG_RESOURCE_NAME: &str = "catalog";
+/// `https://{ADDON_URL}/watchStatus/...` resource
+pub const WATCH_STATUS_RESOURCE_NAME: &str = "watchStatus";
+/// `https://{ADDON_URL}/subtitles/...` resource
 pub const SUBTITLES_RESOURCE_NAME: &str = "subtitles";
 pub const ADDON_MANIFEST_PATH: &str = "/manifest.json";
 pub const ADDON_LEGACY_PATH: &str = "/stremio/v1";

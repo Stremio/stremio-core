@@ -2,6 +2,7 @@ use std::marker::PhantomData;
 
 use crate::constants::{
     CREDITS_THRESHOLD_COEF, VIDEO_HASH_EXTRA_PROP, VIDEO_SIZE_EXTRA_PROP, WATCHED_THRESHOLD_COEF,
+    WATCH_STATUS_RESOURCE_NAME,
 };
 use crate::models::common::{
     eq_update, resource_update, resources_update_with_vector_content, Loadable, ResourceAction,
@@ -10,7 +11,9 @@ use crate::models::common::{
 use crate::models::ctx::Ctx;
 use crate::runtime::msg::{Action, ActionLoad, ActionPlayer, Event, Internal, Msg};
 use crate::runtime::{Effects, Env, UpdateWithCtx};
-use crate::types::addon::{AggrRequest, ExtraExt, ResourcePath, ResourceRequest};
+use crate::types::addon::{
+    AggrRequest, Descriptor, ExtraExt, ExtraValue, ResourcePath, ResourceRequest,
+};
 use crate::types::library::{LibraryBucket, LibraryItem};
 use crate::types::profile::Settings as ProfileSettings;
 use crate::types::resource::{MetaItem, SeriesInfo, Stream, Subtitles, Video};
@@ -24,7 +27,7 @@ use serde::{Deserialize, Serialize};
 
 use lazy_static::lazy_static;
 
-use super::common::resource_update_with_vector_content;
+use super::common::{resource_update_with_vector_content, resources_update};
 
 lazy_static! {
     /// The duration that must have passed in order for a library item to be updated.
@@ -97,6 +100,8 @@ pub struct Player {
     pub ended: bool,
     #[serde(skip_serializing)]
     pub paused: Option<bool>,
+    #[serde(skip)]
+    pub watch_status: Vec<ResourceLoadable<()>>,
 }
 
 impl<E: Env + 'static> UpdateWithCtx<E> for Player {
@@ -225,6 +230,13 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                 let watched_effects =
                     watched_update(&mut self.watched, &self.meta_item, &self.library_item);
 
+                let watched_status_effects = watch_status_update::<E>(
+                    msg,
+                    &ctx.profile.addons,
+                    self.library_item.as_ref(),
+                    &mut self.watch_status,
+                );
+
                 // dismiss LibraryItem notification if we have a LibraryItem to begin with
                 let notification_effects = match &self.library_item {
                     Some(library_item) => Effects::msg(Msg::Internal(
@@ -271,6 +283,8 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                     .join(series_info_effects)
                     .join(library_item_effects)
                     .join(watched_effects)
+                    // after LibraryItem in order to have the LibraryItem updated and `Some`
+                    .join(watched_status_effects)
                     .join(notification_effects)
             }
             Msg::Action(Action::Unload) => {
@@ -299,6 +313,14 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                 let series_info_effects = eq_update(&mut self.series_info, None);
                 let library_item_effects = eq_update(&mut self.library_item, None);
                 let watched_effects = eq_update(&mut self.watched, None);
+                // todo: is this the best place to update watch status?
+                let watched_status_effects = watch_status_update::<E>(
+                    msg,
+                    &ctx.profile.addons,
+                    self.library_item.as_ref(),
+                    &mut self.watch_status,
+                );
+
                 self.analytics_context = None;
                 self.load_time = None;
                 self.loaded = false;
@@ -456,16 +478,35 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                     .unchanged(),
                     _ => Effects::none().unchanged(),
                 };
-                trakt_event_effects.join(update_library_item_effects)
+
+                let watched_status_effects = watch_status_update::<E>(
+                    msg,
+                    &ctx.profile.addons,
+                    self.library_item.as_ref(),
+                    &mut self.watch_status,
+                );
+                trakt_event_effects
+                    .join(update_library_item_effects)
+                    .join(watched_status_effects)
             }
             Msg::Action(Action::Player(ActionPlayer::Ended)) if self.selected.is_some() => {
                 self.ended = true;
-                Effects::msg(Msg::Event(Event::PlayerEnded {
+
+                let ended_effects = Effects::msg(Msg::Event(Event::PlayerEnded {
                     context: self.analytics_context.as_ref().cloned().unwrap_or_default(),
                     is_binge_enabled: ctx.profile.settings.binge_watching,
                     is_playing_next_video: self.next_video.is_some(),
                 }))
-                .unchanged()
+                .unchanged();
+
+                let watched_status_effects = watch_status_update::<E>(
+                    msg,
+                    &ctx.profile.addons,
+                    self.library_item.as_ref(),
+                    &mut self.watch_status,
+                );
+
+                ended_effects.join(watched_status_effects)
             }
             Msg::Internal(Internal::ResourceRequestResult(request, result)) => {
                 let meta_item_effects = match &mut self.meta_item {
@@ -801,6 +842,149 @@ fn watched_update(
         })
         .map(|(meta_item, library_item)| library_item.state.watched_bitfield(&meta_item.videos));
     eq_update(watched, next_watched)
+}
+
+fn watch_status_update<E: Env + 'static>(
+    msg: &Msg,
+    addons: &[Descriptor],
+    library_item: Option<&LibraryItem>,
+    watch_status: &mut Vec<ResourceLoadable<()>>,
+) -> Effects {
+    match library_item {
+        Some(library_item) => {
+            let extra_values = match msg {
+                Msg::Action(Action::Load(ActionLoad::Player(_selected))) => {
+                    let action = "play";
+
+                    // TODO: Double check if this is current time!
+                    let current_time = library_item.state.time_offset;
+                    // TODO: Double check if this is duration!
+                    let duration = library_item.state.duration;
+                    vec![
+                        ExtraValue {
+                            name: "action".to_owned(),
+                            value: action.to_owned(),
+                        },
+                        ExtraValue {
+                            name: "currentTime".to_owned(),
+                            value: current_time.to_string(),
+                        },
+                        ExtraValue {
+                            name: "duration".to_owned(),
+                            value: duration.to_string(),
+                        },
+                    ]
+                }
+                Msg::Action(Action::Player(ActionPlayer::TimeChanged {
+                    time, duration, ..
+                })) => {
+                    vec![
+                        ExtraValue {
+                            name: "action".to_owned(),
+                            value: "action".to_owned(),
+                        },
+                        ExtraValue {
+                            name: "currentTime".to_owned(),
+                            value: time.to_string(),
+                        },
+                        ExtraValue {
+                            name: "duration".to_owned(),
+                            value: duration.to_string(),
+                        },
+                    ]
+                }
+                Msg::Action(Action::Player(ActionPlayer::PausedChanged { paused })) => {
+                    // TODO: Double check if this is current time!
+                    let current_time = library_item.state.time_offset;
+                    // TODO: Double check if this is duration!
+                    let duration = library_item.state.duration;
+
+                    vec![
+                        ExtraValue {
+                            name: "action".to_owned(),
+                            value: if *paused { "paused" } else { "play" }.to_owned(),
+                        },
+                        ExtraValue {
+                            name: "currentTime".to_owned(),
+                            value: current_time.to_string(),
+                        },
+                        ExtraValue {
+                            name: "duration".to_owned(),
+                            value: duration.to_string(),
+                        },
+                    ]
+                }
+                Msg::Action(Action::Player(ActionPlayer::Ended)) => {
+                    // TODO: Double check if this is current time!
+                    let current_time = library_item.state.time_offset;
+                    // TODO: Double check if this is duration!
+                    let duration = library_item.state.duration;
+
+                    vec![
+                        ExtraValue {
+                            name: "action".to_owned(),
+                            value: "ended".to_owned(),
+                        },
+                        ExtraValue {
+                            name: "currentTime".to_owned(),
+                            value: current_time.to_string(),
+                        },
+                        ExtraValue {
+                            name: "duration".to_owned(),
+                            value: duration.to_string(),
+                        },
+                    ]
+                }
+                // TODO: Handle unload?
+                _ => return Effects::none().unchanged(),
+            };
+
+            let watch_status_resource_effects = resources_update::<E, _>(
+                watch_status,
+                // force the making of a requests every time we have WatchStatus changes
+                ResourcesAction::force_request(
+                    &AggrRequest::AllOfResource(ResourcePath {
+                        id: "".into(),
+                        resource: WATCH_STATUS_RESOURCE_NAME.to_string(),
+                        extra: extra_values,
+                        r#type: library_item.r#type.clone(),
+                    }),
+                    addons,
+                ),
+            );
+
+            Effects::none()
+                .unchanged()
+                .join(watch_status_resource_effects)
+        }
+
+        None => Effects::none().unchanged(),
+    }
+
+    // ResourceRequest {
+    //     base: CINEMETA_URL.to_owned(),
+    //     path: ResourcePath {
+    //         id: "tt0944947".to_owned(),
+    //         resource: WATCH_STATUS_RESOURCE_NAME.to_owned(),
+    //         r#type: "series".to_owned(),
+    //         extra: vec![
+    //             ExtraValue {
+    //                 name: "action".to_owned(),
+    //                 value: "play".to_owned(),
+    //             },
+    //             ExtraValue {
+    //                 name: "currentTime".to_owned(),
+    //                 // 1 hour mark in milliseconds
+    //                 value: (60_u64 * 60 * 1000).to_string(),
+    //             },
+    //             ExtraValue {
+    //                 name: "duration".to_owned(),
+    //                 // 1.5 hours in milliseconds
+    //                 value: (90_u64 * 60 * 1000).to_string(),
+    //             },
+    //         ],
+    //     },
+    // };
 }
 #[cfg(test)]
 mod test {
