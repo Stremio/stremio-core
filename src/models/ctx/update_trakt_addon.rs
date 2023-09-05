@@ -9,6 +9,13 @@ use crate::types::profile::Profile;
 use percent_encoding::utf8_percent_encode;
 use url::Url;
 
+pub fn build_track_addon_url(uid: &str) -> Result<Url, url::ParseError> {
+    Url::parse(&format!(
+        "https://www.strem.io/trakt/addon/{}/manifest.json",
+        utf8_percent_encode(uid, URI_COMPONENT_ENCODE_SET)
+    ))
+}
+
 pub fn update_trakt_addon<E: Env + 'static>(
     trakt_addon: &mut Option<DescriptorLoadable>,
     profile: &Profile,
@@ -20,16 +27,16 @@ pub fn update_trakt_addon<E: Env + 'static>(
             eq_update(trakt_addon, None)
         }
         Msg::Action(Action::Ctx(ActionCtx::InstallTraktAddon)) => {
+            Effects::msg(Msg::Internal(Internal::InstallTraktAddon))
+        }
+        Msg::Internal(Internal::InstallTraktAddon) => {
             let uid = profile.uid();
             match uid {
                 Some(uid) => descriptor_update::<E>(
                     trakt_addon,
                     DescriptorAction::DescriptorRequested {
-                        transport_url: &Url::parse(&format!(
-                            "https://www.strem.io/trakt/addon/{}/manifest.json",
-                            utf8_percent_encode(&uid, URI_COMPONENT_ENCODE_SET)
-                        ))
-                        .expect("Failed to parse trakt addon transport url"),
+                        transport_url: &build_track_addon_url(&uid)
+                            .expect("Failed to parse trakt addon transport url"),
                     },
                 ),
                 _ => Effects::msg(Msg::Event(Event::Error {
@@ -39,6 +46,25 @@ pub fn update_trakt_addon<E: Env + 'static>(
                 .unchanged(),
             }
         }
+        Msg::Internal(Internal::UninstallTraktAddon) => {
+            // make sure we uninstall the addon from the user profile too!
+            let trakt_uninstall_effects = match profile.uid() {
+                Some(uid) => {
+                    match profile.addons.iter().find(|addon| {
+                        addon.transport_url
+                            == build_track_addon_url(&uid).expect("Should be valid url")
+                    }) {
+                        Some(trakt_addon) => Effects::msg(Msg::Internal(Internal::UninstallAddon(
+                            trakt_addon.clone(),
+                        ))),
+                        None => Effects::none().unchanged(),
+                    }
+                }
+                None => Effects::none().unchanged(),
+            };
+
+            trakt_uninstall_effects.join(eq_update(trakt_addon, None))
+        }
         Msg::Internal(Internal::ManifestRequestResult(transport_url, result)) => {
             let trakt_addon_effects = descriptor_update::<E>(
                 trakt_addon,
@@ -47,6 +73,7 @@ pub fn update_trakt_addon<E: Env + 'static>(
                     result,
                 },
             );
+
             let trakt_addon_events_effects = match trakt_addon {
                 Some(DescriptorLoadable {
                     content: Loadable::Ready(addon),
@@ -73,7 +100,10 @@ pub fn update_trakt_addon<E: Env + 'static>(
             (CtxStatus::Loading(loading_auth_request), Ok(_))
                 if loading_auth_request == auth_request =>
             {
-                eq_update(trakt_addon, None)
+                // clear the trakt_addon from Ctx when a new Auth request has been initialised
+                *trakt_addon = None;
+
+                Effects::none().unchanged()
             }
             _ => Effects::none().unchanged(),
         },

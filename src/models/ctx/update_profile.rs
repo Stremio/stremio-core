@@ -113,6 +113,9 @@ pub fn update_profile<E: Env + 'static>(
         Msg::Action(Action::Ctx(ActionCtx::InstallAddon(addon))) => {
             Effects::msg(Msg::Internal(Internal::InstallAddon(addon.to_owned()))).unchanged()
         }
+        Msg::Action(Action::Ctx(ActionCtx::UninstallAddon(addon))) => {
+            Effects::msg(Msg::Internal(Internal::UninstallAddon(addon.to_owned()))).unchanged()
+        }
         Msg::Action(Action::Ctx(ActionCtx::UpgradeAddon(addon))) => {
             if profile.addons.contains(addon) {
                 return addon_upgrade_error_effects(addon, OtherError::AddonAlreadyInstalled);
@@ -147,7 +150,7 @@ pub fn update_profile<E: Env + 'static>(
             .join(push_to_api_effects)
             .join(Effects::msg(Msg::Internal(Internal::ProfileChanged)))
         }
-        Msg::Action(Action::Ctx(ActionCtx::UninstallAddon(addon))) => {
+        Msg::Internal(Internal::UninstallAddon(addon)) => {
             let addon_position = profile
                 .addons
                 .iter()
@@ -183,8 +186,11 @@ pub fn update_profile<E: Env + 'static>(
                     user.trakt = None;
                     let push_to_api_effects =
                         Effects::one(push_user_to_api::<E>(user.to_owned(), key));
+
                     Effects::msg(Msg::Event(Event::TraktLoggedOut { uid: profile.uid() }))
                         .join(push_to_api_effects)
+                        // first uninstall the trakt addon
+                        .join(Effects::msg(Msg::Internal(Internal::UninstallTraktAddon)))
                         .join(Effects::msg(Msg::Internal(Internal::ProfileChanged)))
                 } else {
                     Effects::msg(Msg::Event(Event::TraktLoggedOut { uid: profile.uid() }))
