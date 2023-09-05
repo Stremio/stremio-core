@@ -34,6 +34,7 @@ pub enum ResourceResponse {
     Addons {
         addons: Vec<DescriptorPreview>,
     },
+    WatchStatus
 }
 
 #[serde_as]
@@ -86,9 +87,11 @@ impl<'de> Deserialize<'de> for ResourceResponse {
             Ok(ResourceResponse::Subtitles { subtitles: skip.0 })
         } else if let Some(value) = value.get_mut("addons") {
             let skip = serde_json::from_value::<SkipError<_>>(value.take())
-                .map_err(serde::de::Error::custom)?;
-
-            Ok(ResourceResponse::Addons { addons: skip.0 })
+            .map_err(serde::de::Error::custom)?;
+        
+        Ok(ResourceResponse::Addons { addons: skip.0 })
+        } else if let Some(_value) = value.get_mut("watchStatus") {
+            Ok(ResourceResponse::WatchStatus)
         } else {
             Err(serde::de::Error::custom(
                 "Cannot deserialize as ResourceResponse",
