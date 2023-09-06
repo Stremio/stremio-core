@@ -60,13 +60,20 @@ impl LibraryItem {
             0.0
         }
     }
+
+    /// Pulling notifications relies on a few key things:
+    ///
+    /// - LibraryItem should not be "other" or "movie", i.e. if you have "series" it will pull notifications
+    /// - `LibraryItem.behavior_hints.default_video_id` should be `None`
+    /// - The LibraryItem should not have been removed from the Library
+    /// - The LibraryItem should not be temporary but in your LibraryItem
     pub fn should_pull_notifications(&self) -> bool {
         !self.state.no_notif
             && self.r#type != "other"
             && self.r#type != "movie"
             && self.behavior_hints.default_video_id.is_none()
-            && (!self.removed || self.temp)
-            && self.state.overall_time_watched > 15 * 60 * 1000
+            && !self.removed
+            && !self.temp
     }
 }
 
@@ -113,6 +120,12 @@ impl From<(&MetaItemPreview, &LibraryItem)> for LibraryItem {
 #[derive(Default, Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct LibraryItemState {
+    /// Indicates the last time this [`LibraryItem`] was watched and:
+    /// - When we're playing the LibraryItem we're constantly updating the field
+    /// - Marking the whole [`LibraryItem`] as watched will update the field
+    /// to the latest released video if `last_watched < released date`.
+    /// - Marking a video from the [`LibraryItem`] will update the field
+    /// to the video released date if `last_watched < released date`.
     #[serde(default)]
     #[serde_as(deserialize_as = "DefaultOnNull<NoneAsEmptyString>")]
     pub last_watched: Option<DateTime<Utc>>,
@@ -147,10 +160,6 @@ pub struct LibraryItemState {
     #[serde(default)]
     #[serde_as(deserialize_as = "DefaultOnNull<NoneAsEmptyString>")]
     pub watched: Option<WatchedField>,
-    /// Release date of last observed video
-    #[serde(default)]
-    #[serde_as(deserialize_as = "DefaultOnNull<NoneAsEmptyString>")]
-    pub last_video_released: Option<DateTime<Utc>>,
     /// Weather or not to receive notification for the given [`LibraryItem`].
     ///
     /// Default: receive notifications

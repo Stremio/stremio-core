@@ -4,13 +4,29 @@ use crate::runtime::msg::{Action, ActionLoad, Internal, Msg};
 use crate::runtime::{Effects, Env, UpdateWithCtx};
 use crate::types::addon::Descriptor;
 use crate::types::profile::Profile;
-use serde::{Deserialize, Serialize};
+use serde::{Deserialize, Deserializer, Serialize};
 use url::Url;
 
 #[derive(Clone, PartialEq, Eq, Serialize, Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct Selected {
+    #[serde(deserialize_with = "deserialize_transport_url")]
     pub transport_url: Url,
+}
+
+fn deserialize_transport_url<'de, D>(de: D) -> Result<Url, D::Error>
+where
+    D: Deserializer<'de>,
+{
+    let url = Url::deserialize(de)?;
+
+    if url.scheme() == "stremio" {
+        let replaced_url = url.as_str().replacen("stremio://", "https://", 1);
+
+        Ok(replaced_url.parse().expect("Should be able to parse URL"))
+    } else {
+        Ok(url)
+    }
 }
 
 #[derive(Default, Clone, Serialize)]
@@ -76,4 +92,28 @@ fn local_addon_update(
             .cloned()
     });
     eq_update(local_addon, next_local_addon)
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    use serde_json::{from_value, json};
+
+    #[test]
+    fn test_deserialization_of_select() {
+        let cases = [
+            ("stremio://transport_url.com", "https://transport_url.com/"),
+            ("http://transport_url.com", "http://transport_url.com/"),
+            ("https://transport_url.com", "https://transport_url.com/"),
+        ];
+
+        for (transport_url, expected) in cases {
+            let selected_json = json!({ "transportUrl": transport_url });
+
+            let selected = from_value::<Selected>(selected_json).expect("Should deserialize");
+
+            assert_eq!(expected, selected.transport_url.as_str());
+        }
+    }
 }

@@ -34,7 +34,15 @@ pub struct Effects {
     #[into_iterator(owned)]
     /// The effects to be applied
     effects: Vec<Effect>,
-    /// whether or not the effects are changing something
+    /// Whether or not the effects are changing something in the [`Model`].
+    ///
+    /// When `has_changed == true` it will mark the given model field
+    /// as changed and add effect for it.
+    /// This will trigger a [`RuntimeEvent::NewState`] for the [`Model`]
+    /// with all it's changed fields.
+    ///
+    /// [`Model`]: crate::runtime::Model
+    /// [`RuntimeEvent::NewState`]: crate::runtime::RuntimeEvent::NewState
     pub has_changed: bool,
 }
 
@@ -69,6 +77,8 @@ impl Effects {
     pub fn futures(futures: Vec<EffectFuture>) -> Self {
         Effects::many(futures.into_iter().map(Effect::from).collect())
     }
+
+    /// mark model as not changed
     pub fn unchanged(mut self) -> Self {
         self.has_changed = false;
         self

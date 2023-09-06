@@ -76,9 +76,10 @@ pub fn update_notifications<E: Env + 'static>(
                 .join(notification_items_effects)
                 .unchanged()
         }
-        Msg::Action(Action::Ctx(ActionCtx::DismissNotificationItem(id))) => {
-            remove_notification_item(notifications, id)
-        }
+        Msg::Action(Action::Ctx(ActionCtx::DismissNotificationItem(id))) => Effects::msg(
+            Msg::Internal(Internal::DismissNotificationItem(id.to_owned())),
+        )
+        .unchanged(),
         Msg::Action(Action::Ctx(ActionCtx::Logout)) | Msg::Internal(Internal::Logout) => {
             let notification_catalogs_effects = eq_update(notification_catalogs, vec![]);
             let next_notifications = NotificationsBucket::new::<E>(profile.uid(), vec![]);
@@ -135,7 +136,7 @@ pub fn update_notifications<E: Env + 'static>(
                 .join(notifications_effects)
         }
         Msg::Internal(Internal::DismissNotificationItem(id)) => {
-            remove_notification_item(notifications, id)
+            dismiss_notification_item::<E>(library, notifications, id)
         }
         Msg::Internal(Internal::NotificationsChanged) => {
             Effects::one(push_notifications_to_storage::<E>(notifications)).unchanged()
@@ -200,35 +201,43 @@ fn update_notification_items<E: Env + 'static>(
         // meta items videos
         meta_item
             .videos_iter()
-            .filter(|video| {
-                match (&library_item.state.last_watched, &video.released) {
+            .filter_map(|video| {
+                match (&library_item.state.last_watched, video.released) {
                     (Some(last_watched), Some(video_released)) => {
-                        last_watched < video_released &&
+                        if last_watched < &video_released &&
                                     // exclude future videos (i.e. that will air in the future)
-                                    video_released <= &E::now()
+                                    video_released <= E::now()
+                        {
+                            Some((&library_item.id, &video.id, video_released))
+                        } else {
+                            None
+                        }
                     }
-                    _ => false,
+                    _ => None,
                 }
             })
             // We need to manually fold, otherwise the last seen element with a given key
             // will be present in the final HashMap instead of the first occurrence.
-            .fold(&mut meta_notifs, |meta_notifs, video| {
-                let notif_entry = meta_notifs.entry(video.id.clone());
+            .fold(
+                &mut meta_notifs,
+                |meta_notifs, (meta_id, video_id, video_released)| {
+                    let notif_entry = meta_notifs.entry(video_id.to_owned());
 
-                // for now just skip same videos that already exist
-                // leave the first one found in the Vec.
-                if let Entry::Vacant(new) = notif_entry {
-                    let notification = NotificationItem {
-                        meta_id: meta_id.to_owned(),
-                        video_id: video.id.to_owned(),
-                        video: video.to_owned(),
-                    };
+                    // for now just skip same videos that already exist
+                    // leave the first one found in the Vec.
+                    if let Entry::Vacant(new) = notif_entry {
+                        let notification = NotificationItem {
+                            meta_id: meta_id.to_owned(),
+                            video_id: video_id.to_owned(),
+                            video_released,
+                        };
 
-                    new.insert(notification);
-                }
+                        new.insert(notification);
+                    }
 
-                meta_notifs
-            });
+                    meta_notifs
+                },
+            );
 
         // if not videos were added and the hashmap is empty, just remove the MetaItem record all together
         if meta_notifs.is_empty() {
@@ -257,9 +266,33 @@ fn push_notifications_to_storage<E: Env + 'static>(notifications: &Notifications
     .into()
 }
 
-fn remove_notification_item(notifications: &mut NotificationsBucket, id: &String) -> Effects {
+fn dismiss_notification_item<E: Env + 'static>(
+    library: &LibraryBucket,
+    notifications: &mut NotificationsBucket,
+    id: &str,
+) -> Effects {
     match notifications.items.remove(id) {
-        Some(_) => Effects::msg(Msg::Internal(Internal::NotificationsChanged)).unchanged(),
+        Some(_) => {
+            // when dismissing notifications, make sure we update the `last_watched`
+            // of the LibraryItem this way if we've only `DismissedNotificationItem`
+            // the next time we `PullNotifications` we won't see the same notifications.
+            let library_item_effects = match library.items.get(id) {
+                Some(library_item) => {
+                    let mut library_item = library_item.to_owned();
+                    library_item.state.last_watched = Some(E::now());
+
+                    Effects::msg(Msg::Internal(Internal::UpdateLibraryItem(library_item)))
+                        .unchanged()
+                }
+                _ => Effects::none().unchanged(),
+            };
+
+            Effects::msg(Msg::Internal(Internal::NotificationsChanged))
+                .join(library_item_effects)
+                .join(Effects::msg(Msg::Event(Event::NotificationsDismissed {
+                    id: id.to_owned(),
+                })))
+        }
         _ => Effects::none().unchanged(),
     }
 }

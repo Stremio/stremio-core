@@ -30,7 +30,6 @@ fn library_item_deep_links() {
             video_id: None,
             stream: None,
             watched: None,
-            last_video_released: None,
             no_notif: true,
         },
         behavior_hints: Default::default(),
@@ -69,7 +68,6 @@ fn library_item_deep_links_state_video_id_no_time_offset() {
             video_id: Some("video_id".to_string()),
             stream: None,
             watched: None,
-            last_video_released: None,
             no_notif: true,
         },
         behavior_hints: Default::default(),
@@ -108,7 +106,6 @@ fn library_item_deep_links_state_video_id() {
             video_id: Some("video_id".to_string()),
             stream: None,
             watched: None,
-            last_video_released: None,
             no_notif: true,
         },
         behavior_hints: Default::default(),
@@ -149,7 +146,6 @@ fn library_item_deep_links_behavior_hints_default_video_id() {
             video_id: None,
             stream: None,
             watched: None,
-            last_video_released: None,
             no_notif: true,
         },
         behavior_hints: MetaItemBehaviorHints {
@@ -192,7 +188,6 @@ fn library_item_deep_links_state_and_behavior_hints_default_video_id() {
             video_id: Some("video_id".to_string()),
             stream: None,
             watched: None,
-            last_video_released: None,
             no_notif: true,
         },
         behavior_hints: MetaItemBehaviorHints {
@@ -235,7 +230,6 @@ fn library_item_deep_links_state_no_time_offset_and_behavior_hints_default_video
             video_id: Some("video_id".to_string()),
             stream: None,
             watched: None,
-            last_video_released: None,
             no_notif: true,
         },
         behavior_hints: MetaItemBehaviorHints {

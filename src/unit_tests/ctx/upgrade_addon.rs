@@ -76,7 +76,7 @@ fn actionctx_addon_upgrade() {
         transport_url: Url::parse("https://transport_url_other").unwrap(),
         flags: Default::default(),
     };
-    let _env_mutex = TestEnv::reset();
+    let _env_mutex = TestEnv::reset().expect("Should have exclusive lock to TestEnv");
     let (runtime, _rx) = Runtime::<TestEnv, _>::new(
         TestModel {
             ctx: Ctx::new(
@@ -166,7 +166,7 @@ fn actionctx_addon_upgrade_fail_due_to_different_url() {
         transport_url: Url::parse("https://transport_url2").unwrap(),
         flags: Default::default(),
     };
-    let _env_mutex = TestEnv::reset();
+    let _env_mutex = TestEnv::reset().expect("Should have exclusive lock to TestEnv");
     let (runtime, _rx) = Runtime::<TestEnv, _>::new(
         TestModel {
             ctx: Ctx::new(

@@ -224,9 +224,11 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                 );
                 let watched_effects =
                     watched_update(&mut self.watched, &self.meta_item, &self.library_item);
-                let notification_effects = match &selected.meta_request {
-                    Some(meta_request) => Effects::msg(Msg::Internal(
-                        Internal::DismissNotificationItem(meta_request.path.id.to_owned()),
+
+                // dismiss LibraryItem notification if we have a LibraryItem to begin with
+                let notification_effects = match &self.library_item {
+                    Some(library_item) => Effects::msg(Msg::Internal(
+                        Internal::DismissNotificationItem(library_item.id.to_owned()),
                     ))
                     .unchanged(),
                     _ => Effects::none().unchanged(),
@@ -749,7 +751,8 @@ fn library_item_update<E: Env + 'static>(
                 } => Some(meta_item),
                 _ => None,
             });
-            let mut library_item = match (library_item, meta_item) {
+
+            match (library_item, meta_item) {
                 (Some(library_item), Some(meta_item)) => {
                     Some(LibraryItem::from((&meta_item.preview, library_item)))
                 }
@@ -758,14 +761,7 @@ fn library_item_update<E: Env + 'static>(
                 }
                 (Some(library_item), None) => Some(library_item.to_owned()),
                 _ => None,
-            };
-            if let (Some(library_item), Some(meta_item)) = (&mut library_item, meta_item) {
-                library_item.state.last_video_released = meta_item
-                    .videos_iter()
-                    .rev()
-                    .find_map(|last_video| last_video.released.to_owned());
-            };
-            library_item
+            }
         }
         _ => None,
     };

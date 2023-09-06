@@ -47,7 +47,7 @@ fn data_export_fetch_handler(request: Request) -> TryEnvFuture<Box<dyn Any + Sen
 
 #[test]
 fn data_export_with_user() {
-    let _env_mutex = TestEnv::reset();
+    let _env_mutex = TestEnv::reset().expect("Should have exclusive lock to TestEnv");
     *FETCH_HANDLER.write().unwrap() = Box::new(data_export_fetch_handler);
     let mut ctx = Ctx::new(
         Profile::default(),
@@ -127,7 +127,7 @@ fn data_export_with_user() {
 
 #[test]
 fn data_export_without_a_user() {
-    let _env_mutex = TestEnv::reset();
+    let _env_mutex = TestEnv::reset().expect("Should have exclusive lock to TestEnv");
     *FETCH_HANDLER.write().unwrap() = Box::new(data_export_fetch_handler);
     let ctx = Ctx::new(
         Profile::default(),

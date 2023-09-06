@@ -24,7 +24,7 @@ impl DefaultTokens for LibraryItemState {
         vec![
             Token::Struct {
                 name: "LibraryItemState",
-                len: 12,
+                len: 11,
             },
             Token::Str("lastWatched"),
             Token::None,
@@ -45,8 +45,6 @@ impl DefaultTokens for LibraryItemState {
             Token::Str("stream"),
             Token::None,
             Token::Str("watched"),
-            Token::None,
-            Token::Str("lastVideoReleased"),
             Token::None,
             Token::Str("noNotif"),
             Token::Bool(false),

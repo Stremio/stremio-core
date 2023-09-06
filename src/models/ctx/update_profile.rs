@@ -98,7 +98,7 @@ pub fn update_profile<E: Env + 'static>(
                 let removed_transport_urls = &prev_transport_urls - &next_transport_urls;
                 let transport_urls = added_transport_urls
                     .into_iter()
-                    .chain(removed_transport_urls.into_iter())
+                    .chain(removed_transport_urls)
                     .collect();
                 if profile.addons != next_addons {
                     profile.addons = next_addons;
@@ -286,7 +286,7 @@ pub fn update_profile<E: Env + 'static>(
                 let removed_transport_urls = &prev_transport_urls - &next_transport_urls;
                 let transport_urls = added_transport_urls
                     .into_iter()
-                    .chain(removed_transport_urls.into_iter())
+                    .chain(removed_transport_urls)
                     .collect();
                 if profile.addons != *addons {
                     profile.addons = addons.to_owned();

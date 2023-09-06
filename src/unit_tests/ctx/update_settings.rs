@@ -21,7 +21,7 @@ fn actionctx_updatesettings() {
         subtitles_size: 150,
         ..Settings::default()
     };
-    let _env_mutex = TestEnv::reset();
+    let _env_mutex = TestEnv::reset().expect("Should have exclusive lock to TestEnv");
     let ctx = Ctx::new(
         Profile::default(),
         LibraryBucket::default(),
@@ -72,7 +72,7 @@ fn actionctx_updatesettings_not_changed() {
         settings: settings.to_owned(),
         ..Default::default()
     };
-    let _env_mutex = TestEnv::reset();
+    let _env_mutex = TestEnv::reset().expect("Should have exclusive lock to TestEnv");
     STORAGE.write().unwrap().insert(
         PROFILE_STORAGE_KEY.to_owned(),
         serde_json::to_string(&profile).unwrap(),
