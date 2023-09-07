@@ -11,16 +11,15 @@ use crate::models::common::{
 use crate::models::ctx::Ctx;
 use crate::runtime::msg::{Action, ActionLoad, ActionPlayer, Event, Internal, Msg};
 use crate::runtime::{Effects, Env, UpdateWithCtx};
-use crate::types::addon::{
-    AggrRequest, Descriptor, ExtraExt, ExtraValue, ResourcePath, ResourceRequest,
-};
+use crate::types::addon::{AggrRequest, Descriptor, ExtraExt, ResourcePath, ResourceRequest};
 use crate::types::library::{LibraryBucket, LibraryItem};
 use crate::types::profile::Settings as ProfileSettings;
 use crate::types::resource::{MetaItem, SeriesInfo, Stream, Subtitles, Video};
+use crate::types::watch_status;
 
 use stremio_watched_bitfield::WatchedBitField;
 
-use chrono::{DateTime, Duration, Utc};
+use chrono::{DateTime, Duration, TimeZone, Utc};
 use derivative::Derivative;
 use itertools::Itertools;
 use serde::{Deserialize, Serialize};
@@ -75,7 +74,8 @@ pub struct Selected {
     pub video_params: Option<VideoParams>,
 }
 
-#[derive(Default, Clone, Derivative, Serialize, Debug)]
+#[derive(Clone, Derivative, Serialize, Debug)]
+#[derivative(Default)]
 #[serde(rename_all = "camelCase")]
 pub struct Player {
     pub selected: Option<Selected>,
@@ -101,7 +101,7 @@ pub struct Player {
     #[serde(skip_serializing)]
     pub paused: Option<bool>,
     #[serde(skip)]
-    pub watch_status: Vec<ResourceLoadable<()>>,
+    pub watch_status: Vec<ResourceLoadable<watch_status::Response>>,
 }
 
 impl<E: Env + 'static> UpdateWithCtx<E> for Player {
@@ -337,6 +337,7 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                     .join(library_item_effects)
                     .join(watched_effects)
                     .join(ended_effects)
+                    .join(watched_status_effects)
             }
             Msg::Action(Action::Player(ActionPlayer::TimeChanged {
                 time,
@@ -848,30 +849,20 @@ fn watch_status_update<E: Env + 'static>(
     msg: &Msg,
     addons: &[Descriptor],
     library_item: Option<&LibraryItem>,
-    watch_status: &mut Vec<ResourceLoadable<()>>,
+    watch_status: &mut Vec<ResourceLoadable<watch_status::Response>>,
 ) -> Effects {
     match library_item {
         Some(library_item) => {
-            let extra_values = match msg {
+            let watch_status_request = match msg {
                 Msg::Action(Action::Load(ActionLoad::Player(_selected))) => {
                     // TODO: Double check if this is current time!
                     let current_time = library_item.state.time_offset;
                     // TODO: Double check if this is duration!
                     let duration = library_item.state.duration;
-                    vec![
-                        ExtraValue {
-                            name: "action".to_owned(),
-                            value: "start".to_owned(),
-                        },
-                        ExtraValue {
-                            name: "currentTime".to_owned(),
-                            value: current_time.to_string(),
-                        },
-                        ExtraValue {
-                            name: "duration".to_owned(),
-                            value: duration.to_string(),
-                        },
-                    ]
+                    watch_status::Request::Start {
+                        current_time,
+                        duration,
+                    }
                 }
                 Msg::Action(Action::Player(ActionPlayer::PausedChanged { paused })) => {
                     // TODO: Double check if this is current time!
@@ -879,20 +870,17 @@ fn watch_status_update<E: Env + 'static>(
                     // TODO: Double check if this is duration!
                     let duration = library_item.state.duration;
 
-                    vec![
-                        ExtraValue {
-                            name: "action".to_owned(),
-                            value: if *paused { "paused" } else { "resume" }.to_owned(),
-                        },
-                        ExtraValue {
-                            name: "currentTime".to_owned(),
-                            value: current_time.to_string(),
-                        },
-                        ExtraValue {
-                            name: "duration".to_owned(),
-                            value: duration.to_string(),
-                        },
-                    ]
+                    if *paused {
+                        watch_status::Request::Pause {
+                            current_time,
+                            duration,
+                        }
+                    } else {
+                        watch_status::Request::Resume {
+                            current_time,
+                            duration,
+                        }
+                    }
                 }
                 Msg::Action(Action::Player(ActionPlayer::Ended)) => {
                     // TODO: Double check if this is current time!
@@ -900,20 +888,10 @@ fn watch_status_update<E: Env + 'static>(
                     // TODO: Double check if this is duration!
                     let duration = library_item.state.duration;
 
-                    vec![
-                        ExtraValue {
-                            name: "action".to_owned(),
-                            value: "end".to_owned(),
-                        },
-                        ExtraValue {
-                            name: "currentTime".to_owned(),
-                            value: current_time.to_string(),
-                        },
-                        ExtraValue {
-                            name: "duration".to_owned(),
-                            value: duration.to_string(),
-                        },
-                    ]
+                    watch_status::Request::End {
+                        current_time,
+                        duration,
+                    }
                 }
                 Msg::Action(Action::Unload) => {
                     // TODO: Double check if this is current time!
@@ -921,23 +899,11 @@ fn watch_status_update<E: Env + 'static>(
                     // TODO: Double check if this is duration!
                     let duration = library_item.state.duration;
 
-                    vec![
-                        ExtraValue {
-                            name: "action".to_owned(),
-                            // TODO: discuss whether we need to keep this "end" or use another action like "stop"
-                            value: "end".to_owned(),
-                        },
-                        ExtraValue {
-                            name: "currentTime".to_owned(),
-                            value: current_time.to_string(),
-                        },
-                        ExtraValue {
-                            name: "duration".to_owned(),
-                            value: duration.to_string(),
-                        },
-                    ]
+                    watch_status::Request::End {
+                        current_time,
+                        duration,
+                    }
                 }
-                // TODO: Handle unload?
                 _ => return Effects::none().unchanged(),
             };
 
@@ -948,7 +914,7 @@ fn watch_status_update<E: Env + 'static>(
                     &AggrRequest::AllOfResource(ResourcePath {
                         id: library_item.id.to_owned(),
                         resource: WATCH_STATUS_RESOURCE_NAME.to_string(),
-                        extra: extra_values,
+                        extra: watch_status_request.into(),
                         r#type: library_item.r#type.to_owned(),
                     }),
                     addons,
@@ -962,32 +928,8 @@ fn watch_status_update<E: Env + 'static>(
 
         None => Effects::none().unchanged(),
     }
-
-    // ResourceRequest {
-    //     base: CINEMETA_URL.to_owned(),
-    //     path: ResourcePath {
-    //         id: "tt0944947".to_owned(),
-    //         resource: WATCH_STATUS_RESOURCE_NAME.to_owned(),
-    //         r#type: "series".to_owned(),
-    //         extra: vec![
-    //             ExtraValue {
-    //                 name: "action".to_owned(),
-    //                 value: "play".to_owned(),
-    //             },
-    //             ExtraValue {
-    //                 name: "currentTime".to_owned(),
-    //                 // 1 hour mark in milliseconds
-    //                 value: (60_u64 * 60 * 1000).to_string(),
-    //             },
-    //             ExtraValue {
-    //                 name: "duration".to_owned(),
-    //                 // 1.5 hours in milliseconds
-    //                 value: (90_u64 * 60 * 1000).to_string(),
-    //             },
-    //         ],
-    //     },
-    // };
 }
+
 #[cfg(test)]
 mod test {
     use chrono::{TimeZone, Utc};

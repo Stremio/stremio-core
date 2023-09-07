@@ -1,5 +1,3 @@
-mod resource_request;
-
 use stremio_core::types::addon::ResourceResponse;
 
 fn main() {

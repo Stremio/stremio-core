@@ -12,8 +12,8 @@ members = [
     "stremio-watched-bitfield",
 ]
 
-[lib]
-doctest = false
+# [lib]
+# doctest = false
 
 [features]
 # TODO: env-future-send should be enabled by default
