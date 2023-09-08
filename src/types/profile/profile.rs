@@ -39,6 +39,9 @@ impl Profile {
     pub fn auth_key(&self) -> Option<&AuthKey> {
         self.auth.as_ref().map(|auth| &auth.key)
     }
+
+    /// check whether the user has Trakt authentication token
+    /// will return `false` if the token has expired
     pub fn has_trakt<E: Env>(&self) -> bool {
         self.auth
             .as_ref()
