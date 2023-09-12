@@ -17,7 +17,7 @@ use stremio_core::{
         streaming_server::StreamingServer,
     },
     runtime::Env,
-    types::library::LibraryItem,
+    types::{library::LibraryItem, streams::StreamsItemKey},
 };
 
 mod model {
@@ -247,22 +247,29 @@ pub fn serialize_meta_details(
                             .iter()
                             .map(|stream| model::Stream {
                                 stream,
-                                progress: meta_item
-                                    .and_then(|meta_item| meta_item.content.as_ref())
-                                    .and_then(|loadable| loadable.ready())
-                                    .and_then(|meta_item| {
-                                        ctx.library.items.get(&meta_item.preview.id)
+                                progress: meta_details.selected.as_ref().and_then(|selected| {
+                                    let streams_item_key = StreamsItemKey {
+                                        meta_id: selected.meta_path.id.to_owned(),
+                                        video_id: selected
+                                            .stream_path
+                                            .as_ref()
+                                            .map_or(selected.meta_path.id.to_owned(), |path| {
+                                                path.id.to_owned()
+                                            }),
+                                    };
+
+                                    meta_details.library_item.as_ref().and_then(|library_item| {
+                                        ctx.streams.items.get(&streams_item_key).and_then(
+                                            |streams_item| {
+                                                if streams_item.stream == *stream {
+                                                    Some(library_item.progress())
+                                                } else {
+                                                    None
+                                                }
+                                            },
+                                        )
                                     })
-                                    .and_then(|library_item| {
-                                        stream
-                                            .encode()
-                                            .ok()
-                                            .filter(|encoded_stream| {
-                                                Some(encoded_stream.to_owned())
-                                                    == library_item.state.stream
-                                            })
-                                            .map(|_| library_item.progress())
-                                    }),
+                                }),
                                 deep_links: meta_item
                                     .map_or_else(
                                         || {
