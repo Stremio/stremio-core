@@ -130,7 +130,7 @@ fn library_items_update(
                 .clone()
                 .map(|video_id| StreamsItemKey {
                     meta_id: library_item.id.clone(),
-                    video_id: video_id,
+                    video_id,
                 });
             let stream = stream_key.and_then(|key| {
                 streams
