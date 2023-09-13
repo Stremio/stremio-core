@@ -52,6 +52,8 @@ impl LibraryItem {
     pub fn is_in_continue_watching(&self) -> bool {
         self.r#type != "other" && (!self.removed || self.temp) && self.state.time_offset > 0
     }
+
+    /// Returns watch progress in percentage
     #[inline]
     pub fn progress(&self) -> f64 {
         if self.state.time_offset > 0 && self.state.duration > 0 {
