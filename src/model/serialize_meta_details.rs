@@ -40,6 +40,7 @@ mod model {
     pub struct Stream<'a> {
         #[serde(flatten)]
         pub stream: &'a stremio_core::types::resource::Stream,
+        // Watch progress percentage
         pub progress: Option<f64>,
         pub deep_links: StreamDeepLinks,
     }
@@ -50,6 +51,7 @@ mod model {
         pub video: &'a stremio_core::types::resource::Video,
         pub upcomming: bool,
         pub watched: bool,
+        // Watch progress percentage
         pub progress: Option<f64>,
         pub scheduled: bool,
         pub deep_links: VideoDeepLinks,
