@@ -143,8 +143,8 @@ pub struct LibraryItemDeepLinks {
     pub external_player: Option<ExternalPlayerLink>,
 }
 
-impl From<&LibraryItem> for LibraryItemDeepLinks {
-    fn from(item: &LibraryItem) -> Self {
+impl From<(&LibraryItem, Option<&Stream>)> for LibraryItemDeepLinks {
+    fn from((item, stream): (&LibraryItem, Option<&Stream>)) -> Self {
         LibraryItemDeepLinks {
             meta_details_videos: item
                 .behavior_hints
@@ -170,6 +170,25 @@ impl From<&LibraryItem> for LibraryItemDeepLinks {
                         utf8_percent_encode(video_id, URI_COMPONENT_ENCODE_SET)
                     )
                 }),
+                // How to build these links using the SteamsBucket?!
+            // player: stream
+            //     .as_ref()
+            //     .map(|stream| {
+            //         Ok::<_, anyhow::Error>(format!(
+            //             "stremio:///player/{}/{}/{}/{}/{}/{}",
+            //             utf8_percent_encode(&stream.encode()?, URI_COMPONENT_ENCODE_SET),
+            //             utf8_percent_encode(request.base.as_str(), URI_COMPONENT_ENCODE_SET),
+            //             utf8_percent_encode(request.base.as_str(), URI_COMPONENT_ENCODE_SET),
+            //             utf8_percent_encode(&request.path.r#type, URI_COMPONENT_ENCODE_SET),
+            //             utf8_percent_encode(&request.path.id, URI_COMPONENT_ENCODE_SET),
+            //             utf8_percent_encode(&video.id, URI_COMPONENT_ENCODE_SET)
+            //         ))
+            //     })
+            //     .transpose()
+            //     .unwrap_or_else(|error| Some(ErrorLink::from(error).into())),
+            // external_player: stream
+            //     .as_ref()
+            //     .map(|stream| ExternalPlayerLink::from((stream, streaming_server_url, settings))),
             player: None,          // TODO use StreamsBucket
             external_player: None, // TODO use StreamsBucket
         }
