@@ -1,13 +1,20 @@
+use url::Url;
 use wasm_bindgen::JsValue;
 
-use stremio_core::models::continue_watching_preview::ContinueWatchingPreview;
+use stremio_core::{
+    models::continue_watching_preview::ContinueWatchingPreview, types::profile::Settings,
+};
 
 pub fn serialize_continue_watching_preview(
     continue_watching_preview: &ContinueWatchingPreview,
+    streaming_server_url: Option<&Url>,
+    settings: &Settings,
 ) -> JsValue {
-    JsValue::from_serde(&model::ContinueWatchingPreview::from(
+    JsValue::from_serde(&model::ContinueWatchingPreview::from((
         continue_watching_preview,
-    ))
+        streaming_server_url,
+        settings,
+    )))
     .unwrap()
 }
 
@@ -17,7 +24,10 @@ mod model {
 
     use stremio_core::{
         deep_links::{LibraryDeepLinks, LibraryItemDeepLinks},
-        types::resource::PosterShape,
+        types::{
+            profile::Settings,
+            resource::{PosterShape, Stream},
+        },
     };
 
     use crate::model::deep_links_ext::DeepLinksExt;
@@ -29,17 +39,25 @@ mod model {
         pub deep_links: LibraryDeepLinks,
     }
 
-    impl<'a> From<&'a stremio_core::models::continue_watching_preview::ContinueWatchingPreview>
-        for ContinueWatchingPreview<'a>
+    impl<'a>
+        From<(
+            &'a stremio_core::models::continue_watching_preview::ContinueWatchingPreview,
+            Option<&Url>,
+            &Settings,
+        )> for ContinueWatchingPreview<'a>
     {
         fn from(
-            continue_watching_preview: &'a stremio_core::models::continue_watching_preview::ContinueWatchingPreview,
+            (continue_watching_preview, streaming_server_url, settings): (
+                &'a stremio_core::models::continue_watching_preview::ContinueWatchingPreview,
+                Option<&Url>,
+                &Settings,
+            ),
         ) -> Self {
             Self {
                 items: continue_watching_preview
                     .items
                     .iter()
-                    .map(Item::from)
+                    .map(|core_cw_item| Item::from((core_cw_item, streaming_server_url, settings)))
                     .collect::<Vec<_>>(),
                 deep_links: LibraryDeepLinks::from(&"continuewatching".to_owned())
                     .into_web_deep_links(),
@@ -52,14 +70,35 @@ mod model {
     pub struct Item<'a> {
         #[serde(flatten)]
         library_item: LibraryItem<'a>,
+        /// The loaded stream for the LibraryItem
+        /// TODO: Do we need the stream serialized here? We only use it to build the LibraryItem deeplinks
+        stream: Option<Stream>,
         /// a count of the total notifications we have for this item
         notifications: usize,
     }
 
-    impl<'a> From<&'a stremio_core::models::continue_watching_preview::Item> for Item<'a> {
-        fn from(item: &'a stremio_core::models::continue_watching_preview::Item) -> Self {
+    impl<'a>
+        From<(
+            &'a stremio_core::models::continue_watching_preview::Item,
+            Option<&Url>,
+            &Settings,
+        )> for Item<'a>
+    {
+        fn from(
+            (item, streaming_server_url, settings): (
+                &'a stremio_core::models::continue_watching_preview::Item,
+                Option<&Url>,
+                &Settings,
+            ),
+        ) -> Self {
             Self {
-                library_item: LibraryItem::from(&item.library_item),
+                library_item: LibraryItem::from((
+                    &item.library_item,
+                    item.stream.as_ref(),
+                    streaming_server_url,
+                    settings,
+                )),
+                stream: item.stream.clone(),
                 notifications: item.notifications,
             }
         }
@@ -79,8 +118,22 @@ mod model {
         pub state: LibraryItemState<'a>,
     }
 
-    impl<'a> From<&'a stremio_core::types::library::LibraryItem> for LibraryItem<'a> {
-        fn from(library_item: &'a stremio_core::types::library::LibraryItem) -> Self {
+    impl<'a>
+        From<(
+            &'a stremio_core::types::library::LibraryItem,
+            Option<&Stream>,
+            Option<&Url>,
+            &Settings,
+        )> for LibraryItem<'a>
+    {
+        fn from(
+            (library_item, stream, streaming_server_url, settings): (
+                &'a stremio_core::types::library::LibraryItem,
+                Option<&Stream>,
+                Option<&Url>,
+                &Settings,
+            ),
+        ) -> Self {
             LibraryItem {
                 id: &library_item.id,
                 name: &library_item.name,
@@ -97,7 +150,13 @@ mod model {
                 } else {
                     0.0
                 },
-                deep_links: LibraryItemDeepLinks::from(library_item).into_web_deep_links(),
+                deep_links: LibraryItemDeepLinks::from((
+                    library_item,
+                    stream,
+                    streaming_server_url,
+                    settings,
+                ))
+                .into_web_deep_links(),
                 state: LibraryItemState::from(&library_item.state),
             }
         }

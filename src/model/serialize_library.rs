@@ -2,7 +2,9 @@ use crate::model::deep_links_ext::DeepLinksExt;
 use serde::Serialize;
 use stremio_core::deep_links::{LibraryDeepLinks, LibraryItemDeepLinks};
 use stremio_core::models::library_with_filters::{LibraryWithFilters, Selected, Sort};
+use stremio_core::types::profile::Settings;
 use stremio_core::types::resource::PosterShape;
+use stremio_core::types::streams::{StreamsBucket, StreamsItemKey};
 use url::Url;
 use wasm_bindgen::JsValue;
 
@@ -55,7 +57,13 @@ mod model {
     }
 }
 
-pub fn serialize_library<F>(library: &LibraryWithFilters<F>, root: String) -> JsValue {
+pub fn serialize_library<F>(
+    library: &LibraryWithFilters<F>,
+    streams_bucket: &StreamsBucket,
+    streaming_server_url: Option<&Url>,
+    settings: &Settings,
+    root: String,
+) -> JsValue {
     JsValue::from_serde(&model::LibraryWithFilters {
         selected: &library.selected,
         selectable: model::Selectable {
@@ -97,22 +105,46 @@ pub fn serialize_library<F>(library: &LibraryWithFilters<F>, root: String) -> Js
         catalog: library
             .catalog
             .iter()
-            .map(|library_item| model::LibraryItem {
-                id: &library_item.id,
-                name: &library_item.name,
-                r#type: &library_item.r#type,
-                poster: &library_item.poster,
-                poster_shape: if library_item.poster_shape == PosterShape::Landscape {
-                    &PosterShape::Square
-                } else {
-                    &library_item.poster_shape
-                },
-                progress: if library_item.state.time_offset > 0 && library_item.state.duration > 0 {
-                    library_item.state.time_offset as f64 / library_item.state.duration as f64
-                } else {
-                    0.0
-                },
-                deep_links: LibraryItemDeepLinks::from(library_item).into_web_deep_links(),
+            .map(|library_item| {
+                // Try to get the stream from the StreamBucket
+                // given that we have a video_id in the LibraryItemState!
+                let stream = library_item
+                    .state
+                    .video_id
+                    .as_ref()
+                    .and_then(|video_id| {
+                        streams_bucket.items.get(&StreamsItemKey {
+                            meta_id: library_item.id.to_owned(),
+                            video_id: video_id.to_owned(),
+                        })
+                    })
+                    .map(|item| &item.stream);
+
+                model::LibraryItem {
+                    id: &library_item.id,
+                    name: &library_item.name,
+                    r#type: &library_item.r#type,
+                    poster: &library_item.poster,
+                    poster_shape: if library_item.poster_shape == PosterShape::Landscape {
+                        &PosterShape::Square
+                    } else {
+                        &library_item.poster_shape
+                    },
+                    progress: if library_item.state.time_offset > 0
+                        && library_item.state.duration > 0
+                    {
+                        library_item.state.time_offset as f64 / library_item.state.duration as f64
+                    } else {
+                        0.0
+                    },
+                    deep_links: LibraryItemDeepLinks::from((
+                        library_item,
+                        stream,
+                        streaming_server_url,
+                        settings,
+                    ))
+                    .into_web_deep_links(),
+                }
             })
             .collect(),
     })
