@@ -191,25 +191,16 @@ impl From<(&LibraryItem, Option<&StreamsItem>, Option<&Url>, &Settings)> for Lib
                     "stremio:///player/{}/{}/{}/{}/{}/{}",
                     utf8_percent_encode(&encoded_stream, URI_COMPONENT_ENCODE_SET),
                     utf8_percent_encode(
-                        streams_item.stream_request.base.as_str(),
+                        streams_item.stream_transport_url.as_str(),
                         URI_COMPONENT_ENCODE_SET
                     ),
                     utf8_percent_encode(
-                        streams_item.meta_request.base.as_str(),
+                        streams_item.meta_transport_url.as_str(),
                         URI_COMPONENT_ENCODE_SET
                     ),
-                    utf8_percent_encode(
-                        &streams_item.meta_request.path.r#type,
-                        URI_COMPONENT_ENCODE_SET
-                    ),
-                    utf8_percent_encode(
-                        &streams_item.meta_request.path.id,
-                        URI_COMPONENT_ENCODE_SET
-                    ),
-                    utf8_percent_encode(
-                        &streams_item.stream_request.path.id,
-                        URI_COMPONENT_ENCODE_SET
-                    )
+                    utf8_percent_encode(&streams_item.r#type, URI_COMPONENT_ENCODE_SET),
+                    utf8_percent_encode(&streams_item.meta_id, URI_COMPONENT_ENCODE_SET),
+                    utf8_percent_encode(&streams_item.video_id, URI_COMPONENT_ENCODE_SET)
                 ),
                 Err(error) => ErrorLink::from(error).into(),
             }),

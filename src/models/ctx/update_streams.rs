@@ -27,14 +27,21 @@ pub fn update_streams<E: Env + 'static>(
             stream_request: Some(stream_request),
             meta_request: Some(meta_request),
         }) => {
+            let meta_id = &meta_request.path.id;
+            let video_id = &stream_request.path.id;
+
             let key = StreamsItemKey {
-                meta_id: meta_request.path.id.to_owned(),
-                video_id: stream_request.path.id.to_owned(),
+                meta_id: meta_id.to_owned(),
+                video_id: video_id.to_owned(),
             };
+
             let streams_item = StreamsItem {
                 stream: stream.to_owned(),
-                meta_request: meta_request.to_owned(),
-                stream_request: stream_request.to_owned(),
+                r#type: meta_request.path.r#type.to_owned(),
+                meta_id: meta_id.to_owned(),
+                video_id: video_id.to_owned(),
+                meta_transport_url: meta_request.base.to_owned(),
+                stream_transport_url: stream_request.base.to_owned(),
                 mtime: E::now(),
             };
 
