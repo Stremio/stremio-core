@@ -1,18 +1,47 @@
+use crate::constants::STREAMING_SERVER_URL;
 use crate::deep_links::LibraryItemDeepLinks;
+use crate::deep_links::OpenPlayerLink;
 use crate::types::library::LibraryItem;
 use crate::types::library::LibraryItemState;
+use crate::types::profile::Settings;
+use crate::types::resource::Stream;
+use crate::types::resource::StreamBehaviorHints;
+use crate::types::resource::StreamSource;
 use crate::types::resource::{MetaItemBehaviorHints, PosterShape};
 use chrono::Utc;
+use once_cell::sync::Lazy;
 use std::convert::TryFrom;
+use stremio_serde_hex::SerHex;
+use stremio_serde_hex::Strict;
 
-const META_DETAILS_VIDEOS: &str = "stremio:///detail/movie/tt1254207";
+const META_DETAILS_VIDEOS: &str = "stremio:///detail/series/tt13622776";
+
+const INFUSE_PLAYER_SETTINGS: Lazy<Settings> = Lazy::new(|| {
+    let mut settings = Settings::default();
+    settings.player_type = Some("infuse".to_owned());
+
+    settings
+});
+
+const TORRENT_STREAM: Lazy<Stream> = Lazy::new(|| Stream {
+    source: StreamSource::Torrent {
+        info_hash: SerHex::<Strict>::from_hex("df2c94aec35f97943c4e432f25081b590cd35326").unwrap(),
+        file_idx: Some(0),
+        announce: vec![],
+    },
+    name: Some("PaidTV".to_owned()),
+    description: Some("Ahsoka S01E05 Part Five 1080p".to_owned()),
+    thumbnail: None,
+    subtitles: vec![],
+    behavior_hints: StreamBehaviorHints::default(),
+});
 
 #[test]
-fn library_item_deep_links() {
+fn library_item_deep_links_no_video() {
     let lib_item = LibraryItem {
-        id: "tt1254207".to_string(),
-        name: "movie".to_string(),
-        r#type: "movie".to_string(),
+        id: "tt13622776".to_string(),
+        name: "Ahsoka".to_string(),
+        r#type: "series".to_string(),
         poster: None,
         poster_shape: PosterShape::Poster,
         removed: false,
@@ -33,23 +62,35 @@ fn library_item_deep_links() {
         },
         behavior_hints: Default::default(),
     };
-    let lidl = LibraryItemDeepLinks::try_from(&lib_item).unwrap();
+    let lidl = LibraryItemDeepLinks::try_from((
+        &lib_item,
+        None,
+        Some(&*STREAMING_SERVER_URL),
+        &*INFUSE_PLAYER_SETTINGS,
+    ))
+    .unwrap();
     assert_eq!(
         lidl.meta_details_videos,
         Some(META_DETAILS_VIDEOS.to_string())
     );
     assert_eq!(lidl.meta_details_streams, None);
-    assert_eq!(lidl.player, None);
-    assert_eq!(lidl.external_player, None);
+    assert_eq!(
+        lidl.player, None,
+        "We do not have a video so we cannot have a Stream pulled from the StreamBucket"
+    );
+    assert_eq!(
+        lidl.external_player, None,
+        "We do not have a video so we cannot have a Stream pulled from the StreamBucket"
+    );
 }
 
 #[test]
-fn library_item_deep_links_state_video_id_no_time_offset() {
+fn library_item_deep_links_state_video_id_no_time_offset_infuse_player() {
     // With state.video_id
     let lib_item = LibraryItem {
-        id: "tt1254207".to_string(),
-        name: "movie".to_string(),
-        r#type: "movie".to_string(),
+        id: "tt13622776".to_string(),
+        name: "Ahsoka".to_string(),
+        r#type: "series".to_string(),
         poster: None,
         poster_shape: PosterShape::Poster,
         removed: false,
@@ -64,29 +105,46 @@ fn library_item_deep_links_state_video_id_no_time_offset() {
             times_watched: 999,
             flagged_watched: 1,
             duration: 0,
-            video_id: Some("video_id".to_string()),
+            video_id: Some("tt13622776:1:5".to_string()),
             watched: None,
             no_notif: true,
         },
         behavior_hints: Default::default(),
     };
-    let lidl = LibraryItemDeepLinks::try_from(&lib_item).unwrap();
+    let lidl = LibraryItemDeepLinks::try_from((
+        &lib_item,
+        // We have a video so we can have a Stream pulled from the StreamBucket!
+        Some(&*TORRENT_STREAM),
+        Some(&*STREAMING_SERVER_URL),
+        &*INFUSE_PLAYER_SETTINGS,
+    ))
+    .unwrap();
     assert_eq!(
         lidl.meta_details_videos,
         Some(META_DETAILS_VIDEOS.to_string())
     );
     assert_eq!(lidl.meta_details_streams, None);
-    assert_eq!(lidl.player, None);
-    assert_eq!(lidl.external_player, None);
+    // with a stream and StreamSource::Torrent we should get an external_player link
+    assert!(matches!(
+        lidl.external_player
+            .expect("Should have external player")
+            .open_player,
+            Some(OpenPlayerLink {
+                ios: Some(ios),
+                ..
+            }) if ios.starts_with("infuse://")
+    ));
+    // with a Stream we should get a player link
+    assert!(matches!(lidl.player, Some(player) if player.starts_with("stremio:///player")));
 }
 
 #[test]
 fn library_item_deep_links_state_video_id() {
     // With state.video_id
     let lib_item = LibraryItem {
-        id: "tt1254207".to_string(),
-        name: "movie".to_string(),
-        r#type: "movie".to_string(),
+        id: "tt13622776".to_string(),
+        name: "Ahsoka".to_string(),
+        r#type: "series".to_string(),
         poster: None,
         poster_shape: PosterShape::Poster,
         removed: false,
@@ -101,23 +159,36 @@ fn library_item_deep_links_state_video_id() {
             times_watched: 999,
             flagged_watched: 1,
             duration: 0,
-            video_id: Some("video_id".to_string()),
+            video_id: Some("tt13622776:1:5".to_string()),
             watched: None,
             no_notif: true,
         },
         behavior_hints: Default::default(),
     };
-    let lidl = LibraryItemDeepLinks::try_from(&lib_item).unwrap();
+    let lidl = LibraryItemDeepLinks::try_from((
+        &lib_item,
+        // We have a video so we can have a Stream pulled from the StreamBucket!
+        Some(&*TORRENT_STREAM),
+        Some(&*STREAMING_SERVER_URL),
+        &*INFUSE_PLAYER_SETTINGS,
+    ))
+    .unwrap();
     assert_eq!(
         lidl.meta_details_videos,
         Some(META_DETAILS_VIDEOS.to_string())
     );
-    assert_eq!(
-        lidl.meta_details_streams,
-        Some("stremio:///detail/movie/tt1254207/video_id".to_string())
-    );
-    assert_eq!(lidl.player, None);
-    assert_eq!(lidl.external_player, None);
+
+    assert!(matches!(lidl.player, Some(player) if player.starts_with("stremio:///player")));
+    // with a stream and StreamSource::Torrent we should get an external_player link
+    assert!(matches!(
+        lidl.external_player
+            .expect("Should have external player")
+            .open_player,
+            Some(OpenPlayerLink {
+                ios: Some(ios),
+                ..
+            }) if ios.starts_with("infuse://")
+    ));
 }
 
 #[test]
@@ -145,20 +216,36 @@ fn library_item_deep_links_behavior_hints_default_video_id() {
             no_notif: true,
         },
         behavior_hints: MetaItemBehaviorHints {
-            default_video_id: Some("bh_video_id".to_string()),
+            default_video_id: Some("tt13622776:1:5".to_string()),
             featured_video_id: None,
             has_scheduled_videos: false,
             other: Default::default(),
         },
     };
-    let lidl = LibraryItemDeepLinks::try_from(&lib_item).unwrap();
+    let lidl = LibraryItemDeepLinks::try_from((
+        &lib_item,
+        // We have a video so we can have a Stream pulled from the StreamBucket!
+        Some(&*TORRENT_STREAM),
+        Some(&*STREAMING_SERVER_URL),
+        &*INFUSE_PLAYER_SETTINGS,
+    ))
+    .unwrap();
     assert_eq!(lidl.meta_details_videos, None);
     assert_eq!(
         lidl.meta_details_streams,
-        Some("stremio:///detail/movie/tt1254207/bh_video_id".to_string())
+        Some("stremio:///detail/movie/tt1254207/tt13622776%3A1%3A5".to_string())
     );
-    assert_eq!(lidl.player, None);
-    assert_eq!(lidl.external_player, None);
+    assert!(matches!(lidl.player, Some(player) if player.starts_with("stremio:///player")));
+    // with a stream and StreamSource::Torrent we should get an external_player link
+    assert!(matches!(
+        lidl.external_player
+            .expect("Should have external player")
+            .open_player,
+            Some(OpenPlayerLink {
+                ios: Some(ios),
+                ..
+            }) if ios.starts_with("infuse://")
+    ));
 }
 
 #[test]
@@ -192,14 +279,30 @@ fn library_item_deep_links_state_and_behavior_hints_default_video_id() {
             other: Default::default(),
         },
     };
-    let lidl = LibraryItemDeepLinks::try_from(&lib_item).unwrap();
+    let lidl = LibraryItemDeepLinks::try_from((
+        &lib_item,
+        // We have a video so we can have a Stream pulled from the StreamBucket!
+        Some(&*TORRENT_STREAM),
+        Some(&*STREAMING_SERVER_URL),
+        &*INFUSE_PLAYER_SETTINGS,
+    ))
+    .unwrap();
     assert_eq!(lidl.meta_details_videos, None);
     assert_eq!(
         lidl.meta_details_streams,
         Some("stremio:///detail/movie/tt1254207/video_id".to_string())
     );
-    assert_eq!(lidl.player, None);
-    assert_eq!(lidl.external_player, None);
+    assert!(matches!(lidl.player, Some(player) if player.starts_with("stremio:///player")));
+    // with a stream and StreamSource::Torrent we should get an external_player link
+    assert!(matches!(
+        lidl.external_player
+            .expect("Should have external player")
+            .open_player,
+            Some(OpenPlayerLink {
+                ios: Some(ios),
+                ..
+            }) if ios.starts_with("infuse://")
+    ));
 }
 
 #[test]
@@ -233,12 +336,28 @@ fn library_item_deep_links_state_no_time_offset_and_behavior_hints_default_video
             other: Default::default(),
         },
     };
-    let lidl = LibraryItemDeepLinks::try_from(&lib_item).unwrap();
+    let lidl = LibraryItemDeepLinks::try_from((
+        &lib_item,
+        // We have a video so we can have a Stream pulled from the StreamBucket!
+        Some(&*TORRENT_STREAM),
+        Some(&*STREAMING_SERVER_URL),
+        &*INFUSE_PLAYER_SETTINGS,
+    ))
+    .unwrap();
     assert_eq!(lidl.meta_details_videos, None);
     assert_eq!(
         lidl.meta_details_streams,
         Some("stremio:///detail/movie/tt1254207/bh_video_id".to_string())
     );
-    assert_eq!(lidl.player, None);
-    assert_eq!(lidl.external_player, None);
+    assert!(matches!(lidl.player, Some(player) if player.starts_with("stremio:///player")));
+    // with a stream and StreamSource::Torrent we should get an external_player link
+    assert!(matches!(
+        lidl.external_player
+            .expect("Should have external player")
+            .open_player,
+            Some(OpenPlayerLink {
+                ios: Some(ios),
+                ..
+            }) if ios.starts_with("infuse://")
+    ));
 }
