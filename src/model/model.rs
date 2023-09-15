@@ -69,7 +69,7 @@ impl WebModel {
         notifications: NotificationsBucket,
     ) -> (WebModel, Effects) {
         let (continue_watching_preview, continue_watching_preview_effects) =
-            ContinueWatchingPreview::new(&library, &streams, &notifications);
+            ContinueWatchingPreview::new(&library, &notifications);
         let (discover, discover_effects) = CatalogWithFilters::<MetaItemPreview>::new(&profile);
         let (library_, library_effects) =
             LibraryWithFilters::<NotRemovedFilter>::new(&library, &notifications);
@@ -118,6 +118,7 @@ impl WebModel {
             WebModelField::DataExport => serialize_data_export(&self.data_export),
             WebModelField::ContinueWatchingPreview => serialize_continue_watching_preview(
                 &self.continue_watching_preview,
+                &self.ctx.streams,
                 self.streaming_server.base_url.ready(),
                 &self.ctx.profile.settings,
             ),

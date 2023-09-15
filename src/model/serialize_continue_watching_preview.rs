@@ -2,16 +2,19 @@ use url::Url;
 use wasm_bindgen::JsValue;
 
 use stremio_core::{
-    models::continue_watching_preview::ContinueWatchingPreview, types::profile::Settings,
+    models::continue_watching_preview::ContinueWatchingPreview,
+    types::{profile::Settings, streams::StreamsBucket},
 };
 
 pub fn serialize_continue_watching_preview(
     continue_watching_preview: &ContinueWatchingPreview,
+    streams_bucket: &StreamsBucket,
     streaming_server_url: Option<&Url>,
     settings: &Settings,
 ) -> JsValue {
     JsValue::from_serde(&model::ContinueWatchingPreview::from((
         continue_watching_preview,
+        streams_bucket,
         streaming_server_url,
         settings,
     )))
@@ -27,6 +30,7 @@ mod model {
         types::{
             profile::Settings,
             resource::{PosterShape, Stream},
+            streams::{StreamsBucket, StreamsItemKey},
         },
     };
 
@@ -42,13 +46,15 @@ mod model {
     impl<'a>
         From<(
             &'a stremio_core::models::continue_watching_preview::ContinueWatchingPreview,
+            &StreamsBucket,
             Option<&Url>,
             &Settings,
         )> for ContinueWatchingPreview<'a>
     {
         fn from(
-            (continue_watching_preview, streaming_server_url, settings): (
+            (continue_watching_preview, streams_bucket, streaming_server_url, settings): (
                 &'a stremio_core::models::continue_watching_preview::ContinueWatchingPreview,
+                &StreamsBucket,
                 Option<&Url>,
                 &Settings,
             ),
@@ -57,7 +63,29 @@ mod model {
                 items: continue_watching_preview
                     .items
                     .iter()
-                    .map(|core_cw_item| Item::from((core_cw_item, streaming_server_url, settings)))
+                    .map(|core_cw_item| {
+                        let library_item_stream = core_cw_item
+                            .library_item
+                            .state
+                            .video_id
+                            .clone()
+                            .and_then(|video_id| {
+                                streams_bucket
+                                    .items
+                                    .get(&StreamsItemKey {
+                                        meta_id: core_cw_item.library_item.id.clone(),
+                                        video_id,
+                                    })
+                                    .map(|stream_item| &stream_item.stream)
+                            });
+
+                        Item::from((
+                            core_cw_item,
+                            library_item_stream,
+                            streaming_server_url,
+                            settings,
+                        ))
+                    })
                     .collect::<Vec<_>>(),
                 deep_links: LibraryDeepLinks::from(&"continuewatching".to_owned())
                     .into_web_deep_links(),
@@ -70,9 +98,6 @@ mod model {
     pub struct Item<'a> {
         #[serde(flatten)]
         library_item: LibraryItem<'a>,
-        /// The loaded stream for the LibraryItem
-        /// TODO: Do we need the stream serialized here? We only use it to build the LibraryItem deeplinks
-        stream: Option<Stream>,
         /// a count of the total notifications we have for this item
         notifications: usize,
     }
@@ -80,13 +105,15 @@ mod model {
     impl<'a>
         From<(
             &'a stremio_core::models::continue_watching_preview::Item,
+            Option<&Stream>,
             Option<&Url>,
             &Settings,
         )> for Item<'a>
     {
         fn from(
-            (item, streaming_server_url, settings): (
+            (item, stream, streaming_server_url, settings): (
                 &'a stremio_core::models::continue_watching_preview::Item,
+                Option<&Stream>,
                 Option<&Url>,
                 &Settings,
             ),
@@ -94,11 +121,10 @@ mod model {
             Self {
                 library_item: LibraryItem::from((
                     &item.library_item,
-                    item.stream.as_ref(),
+                    stream,
                     streaming_server_url,
                     settings,
                 )),
-                stream: item.stream.clone(),
                 notifications: item.notifications,
             }
         }
