@@ -1,6 +1,12 @@
+use chrono::Utc;
+use once_cell::sync::Lazy;
+use stremio_serde_hex::{SerHex, Strict};
+
 use crate::constants::STREAMING_SERVER_URL;
 use crate::deep_links::LibraryItemDeepLinks;
 use crate::deep_links::OpenPlayerLink;
+use crate::types::addon::ResourcePath;
+use crate::types::addon::ResourceRequest;
 use crate::types::library::LibraryItem;
 use crate::types::library::LibraryItemState;
 use crate::types::profile::Settings;
@@ -8,11 +14,7 @@ use crate::types::resource::Stream;
 use crate::types::resource::StreamBehaviorHints;
 use crate::types::resource::StreamSource;
 use crate::types::resource::{MetaItemBehaviorHints, PosterShape};
-use chrono::Utc;
-use once_cell::sync::Lazy;
-use std::convert::TryFrom;
-use stremio_serde_hex::SerHex;
-use stremio_serde_hex::Strict;
+use crate::types::streams::StreamsItem;
 
 const META_DETAILS_VIDEOS: &str = "stremio:///detail/series/tt13622776";
 
@@ -23,17 +25,47 @@ const INFUSE_PLAYER_SETTINGS: Lazy<Settings> = Lazy::new(|| {
     settings
 });
 
-const TORRENT_STREAM: Lazy<Stream> = Lazy::new(|| Stream {
-    source: StreamSource::Torrent {
-        info_hash: SerHex::<Strict>::from_hex("df2c94aec35f97943c4e432f25081b590cd35326").unwrap(),
-        file_idx: Some(0),
-        announce: vec![],
-    },
-    name: Some("PaidTV".to_owned()),
-    description: Some("Ahsoka S01E05 Part Five 1080p".to_owned()),
-    thumbnail: None,
-    subtitles: vec![],
-    behavior_hints: StreamBehaviorHints::default(),
+const TORRENT_STREAMS_ITEM: Lazy<StreamsItem> = Lazy::new(|| {
+    let stream = Stream {
+        source: StreamSource::Torrent {
+            info_hash: SerHex::<Strict>::from_hex("df2c94aec35f97943c4e432f25081b590cd35326")
+                .unwrap(),
+            file_idx: Some(0),
+            announce: vec![],
+        },
+        name: Some("PaidTV".to_owned()),
+        description: Some("Ahsoka S01E05 Part Five 1080p".to_owned()),
+        thumbnail: None,
+        subtitles: vec![],
+        behavior_hints: StreamBehaviorHints::default(),
+    };
+
+    StreamsItem {
+        stream,
+        stream_request: ResourceRequest {
+            base: "https://torrentio.strem.fun/qualityfilter=1080p,720p/manifest.json"
+                .parse()
+                .unwrap(),
+            path: ResourcePath {
+                resource: "stream".to_owned(),
+                r#type: "series".to_owned(),
+                id: "tt13622776:1:5".to_owned(),
+                extra: vec![],
+            },
+        },
+        meta_request: ResourceRequest {
+            base: "https://v3-cinemeta.strem.io/manifest.json"
+                .parse()
+                .unwrap(),
+            path: ResourcePath {
+                resource: "meta".to_owned(),
+                r#type: "series".to_owned(),
+                id: "tt13622776".to_owned(),
+                extra: vec![],
+            },
+        },
+        mtime: Utc::now(),
+    }
 });
 
 #[test]
@@ -114,7 +146,7 @@ fn library_item_deep_links_state_video_id_no_time_offset_infuse_player() {
     let lidl = LibraryItemDeepLinks::try_from((
         &lib_item,
         // We have a video so we can have a Stream pulled from the StreamBucket!
-        Some(&*TORRENT_STREAM),
+        Some(&*TORRENT_STREAMS_ITEM),
         Some(&*STREAMING_SERVER_URL),
         &*INFUSE_PLAYER_SETTINGS,
     ))
@@ -168,7 +200,7 @@ fn library_item_deep_links_state_video_id() {
     let lidl = LibraryItemDeepLinks::try_from((
         &lib_item,
         // We have a video so we can have a Stream pulled from the StreamBucket!
-        Some(&*TORRENT_STREAM),
+        Some(&*TORRENT_STREAMS_ITEM),
         Some(&*STREAMING_SERVER_URL),
         &*INFUSE_PLAYER_SETTINGS,
     ))
@@ -225,7 +257,7 @@ fn library_item_deep_links_behavior_hints_default_video_id() {
     let lidl = LibraryItemDeepLinks::try_from((
         &lib_item,
         // We have a video so we can have a Stream pulled from the StreamBucket!
-        Some(&*TORRENT_STREAM),
+        Some(&*TORRENT_STREAMS_ITEM),
         Some(&*STREAMING_SERVER_URL),
         &*INFUSE_PLAYER_SETTINGS,
     ))
@@ -282,7 +314,7 @@ fn library_item_deep_links_state_and_behavior_hints_default_video_id() {
     let lidl = LibraryItemDeepLinks::try_from((
         &lib_item,
         // We have a video so we can have a Stream pulled from the StreamBucket!
-        Some(&*TORRENT_STREAM),
+        Some(&*TORRENT_STREAMS_ITEM),
         Some(&*STREAMING_SERVER_URL),
         &*INFUSE_PLAYER_SETTINGS,
     ))
@@ -339,7 +371,7 @@ fn library_item_deep_links_state_no_time_offset_and_behavior_hints_default_video
     let lidl = LibraryItemDeepLinks::try_from((
         &lib_item,
         // We have a video so we can have a Stream pulled from the StreamBucket!
-        Some(&*TORRENT_STREAM),
+        Some(&*TORRENT_STREAMS_ITEM),
         Some(&*STREAMING_SERVER_URL),
         &*INFUSE_PLAYER_SETTINGS,
     ))
