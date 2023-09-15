@@ -14,6 +14,7 @@ use crate::{
         profile::Settings,
         query_params_encode,
         resource::{MetaItem, MetaItemPreview, Stream, StreamSource, Video},
+        streams::StreamsItem,
     },
 };
 
@@ -150,11 +151,11 @@ pub struct LibraryItemDeepLinks {
     pub external_player: Option<ExternalPlayerLink>,
 }
 
-impl From<(&LibraryItem, Option<&Stream>, Option<&Url>, &Settings)> for LibraryItemDeepLinks {
+impl From<(&LibraryItem, Option<&StreamsItem>, Option<&Url>, &Settings)> for LibraryItemDeepLinks {
     fn from(
-        (item, stream, streaming_server_url, settings): (
+        (item, streams_item, streaming_server_url, settings): (
             &LibraryItem,
-            Option<&Stream>,
+            Option<&StreamsItem>,
             Option<&Url>,
             &Settings,
         ),
@@ -185,20 +186,37 @@ impl From<(&LibraryItem, Option<&Stream>, Option<&Url>, &Settings)> for LibraryI
                     )
                 }),
             // We have the steam so use the same logic as in StreamDeepLinks
-            player: stream.map(|stream| {
-                stream
-                    .encode()
-                    .map(|stream| {
-                        format!(
-                            "stremio:///player/{}",
-                            utf8_percent_encode(&stream, URI_COMPONENT_ENCODE_SET),
-                        )
-                    })
-                    .unwrap_or_else(|error| ErrorLink::from(error).into())
+            player: streams_item.map(|streams_item| match streams_item.stream.encode() {
+                Ok(encoded_stream) => format!(
+                    "stremio:///player/{}/{}/{}/{}/{}/{}",
+                    utf8_percent_encode(&encoded_stream, URI_COMPONENT_ENCODE_SET),
+                    utf8_percent_encode(
+                        streams_item.stream_request.base.as_str(),
+                        URI_COMPONENT_ENCODE_SET
+                    ),
+                    utf8_percent_encode(
+                        streams_item.meta_request.base.as_str(),
+                        URI_COMPONENT_ENCODE_SET
+                    ),
+                    utf8_percent_encode(
+                        &streams_item.meta_request.path.r#type,
+                        URI_COMPONENT_ENCODE_SET
+                    ),
+                    utf8_percent_encode(
+                        &streams_item.meta_request.path.id,
+                        URI_COMPONENT_ENCODE_SET
+                    ),
+                    utf8_percent_encode(
+                        &streams_item.stream_request.path.id,
+                        URI_COMPONENT_ENCODE_SET
+                    )
+                ),
+                Err(error) => ErrorLink::from(error).into(),
             }),
-            // We have the steam so use the same logic as in VideoDeepLinks
-            external_player: stream
-                .map(|stream| ExternalPlayerLink::from((stream, streaming_server_url, settings))),
+            // We have the steams bucket item so use the same logic as in StreamDeepLinks
+            external_player: streams_item.map(|item| {
+                ExternalPlayerLink::from((&item.stream, streaming_server_url, settings))
+            }),
         }
     }
 }

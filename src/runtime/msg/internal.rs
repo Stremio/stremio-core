@@ -55,9 +55,8 @@ pub enum Internal {
     /// Dispatched when a new stream is loaded into the Player.
     StreamLoaded {
         stream: Stream,
-        meta_id: Option<String>,
-        video_id: Option<String>,
-        transport_url: Option<Url>,
+        stream_request: Option<ResourceRequest>,
+        meta_request: Option<ResourceRequest>,
     },
     /// Dispatched when library item needs to be updated in the memory, storage and API.
     UpdateLibraryItem(LibraryItem),

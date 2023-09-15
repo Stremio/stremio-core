@@ -1,10 +1,11 @@
+use enclose::enclose;
+use futures::FutureExt;
+
 use crate::constants::STREAMS_STORAGE_KEY;
 use crate::models::ctx::{CtxError, CtxStatus};
 use crate::runtime::msg::{Action, ActionCtx, Event, Internal, Msg};
 use crate::runtime::{Effect, EffectFuture, Effects, Env, EnvFutureExt};
 use crate::types::streams::{StreamsBucket, StreamsItem, StreamsItemKey};
-use enclose::enclose;
-use futures::FutureExt;
 
 pub fn update_streams<E: Env + 'static>(
     streams: &mut StreamsBucket,
@@ -23,21 +24,20 @@ pub fn update_streams<E: Env + 'static>(
         }
         Msg::Internal(Internal::StreamLoaded {
             stream,
-            meta_id: Some(meta_id),
-            video_id: Some(video_id),
-            transport_url: Some(transport_url),
+            stream_request: Some(stream_request),
+            meta_request: Some(meta_request),
         }) => {
             let key = StreamsItemKey {
-                meta_id: meta_id.to_owned(),
-                video_id: video_id.to_owned(),
+                meta_id: meta_request.path.id.to_owned(),
+                video_id: stream_request.path.id.to_owned(),
             };
             let streams_item = StreamsItem {
                 stream: stream.to_owned(),
-                meta_id: meta_id.to_owned(),
-                video_id: video_id.to_owned(),
-                transport_url: transport_url.to_owned(),
+                meta_request: meta_request.to_owned(),
+                stream_request: stream_request.to_owned(),
                 mtime: E::now(),
             };
+
             streams.items.insert(key, streams_item);
             Effects::msg(Msg::Internal(Internal::StreamsChanged(false)))
         }

@@ -11,8 +11,6 @@ use crate::{
     types::{
         library::{LibraryBucket, LibraryItem},
         notifications::NotificationsBucket,
-        resource::Stream,
-        streams::{StreamsBucket, StreamsItemKey},
     },
 };
 
@@ -21,7 +19,6 @@ use crate::{
 pub struct Item {
     #[serde(flatten)]
     pub library_item: LibraryItem,
-    pub stream: Option<Stream>,
     /// a count of the total notifications we have for this item
     pub notifications: usize,
 }
@@ -34,13 +31,9 @@ pub struct ContinueWatchingPreview {
 }
 
 impl ContinueWatchingPreview {
-    pub fn new(
-        library: &LibraryBucket,
-        streams: &StreamsBucket,
-        notifications: &NotificationsBucket,
-    ) -> (Self, Effects) {
+    pub fn new(library: &LibraryBucket, notifications: &NotificationsBucket) -> (Self, Effects) {
         let mut items = vec![];
-        let effects = library_items_update(&mut items, library, streams, notifications);
+        let effects = library_items_update(&mut items, library, notifications);
         (Self { items }, effects.unchanged())
     }
 }
@@ -53,7 +46,7 @@ impl<E: Env + 'static> UpdateWithCtx<E> for ContinueWatchingPreview {
             Msg::Internal(Internal::LibraryChanged(true))
             // notifications have been updated
             | Msg::Internal(Internal::NotificationsChanged) => {
-                library_items_update(&mut self.items, &ctx.library, &ctx.streams, &ctx.notifications)
+                library_items_update(&mut self.items, &ctx.library, &ctx.notifications)
             }
             _ => Effects::none().unchanged(),
         }
@@ -63,7 +56,6 @@ impl<E: Env + 'static> UpdateWithCtx<E> for ContinueWatchingPreview {
 fn library_items_update(
     cw_items: &mut Vec<Item>,
     library: &LibraryBucket,
-    streams: &StreamsBucket,
     notifications: &NotificationsBucket,
 ) -> Effects {
     let next_cw_items = library
@@ -123,26 +115,9 @@ fn library_items_update(
             b_time.cmp(&a_time)
         })
         .take(CATALOG_PREVIEW_SIZE)
-        .map(|(library_item, notifications)| {
-            let stream_key = library_item
-                .state
-                .video_id
-                .clone()
-                .map(|video_id| StreamsItemKey {
-                    meta_id: library_item.id.clone(),
-                    video_id,
-                });
-            let stream = stream_key.and_then(|key| {
-                streams
-                    .items
-                    .get(&key)
-                    .map(|stream_item| stream_item.stream.to_owned())
-            });
-            Item {
-                library_item: library_item.clone(),
-                stream,
-                notifications,
-            }
+        .map(|(library_item, notifications)| Item {
+            library_item: library_item.clone(),
+            notifications,
         })
         .collect::<Vec<_>>();
 

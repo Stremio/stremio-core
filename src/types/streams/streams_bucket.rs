@@ -1,8 +1,10 @@
-use crate::types::profile::UID;
-use crate::types::streams::StreamsItem;
+use std::collections::HashMap;
+
 use serde::{Deserialize, Serialize};
 use serde_with::serde_as;
-use std::collections::HashMap;
+
+use crate::types::profile::UID;
+use crate::types::streams::StreamsItem;
 
 #[derive(Default, Debug, Clone, Eq, PartialEq, Hash, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]

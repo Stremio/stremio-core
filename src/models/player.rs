@@ -130,18 +130,8 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                 )) {
                     Effects::msg(Msg::Internal(Internal::StreamLoaded {
                         stream: selected.stream.to_owned(),
-                        meta_id: selected
-                            .meta_request
-                            .as_ref()
-                            .map(|meta_request| meta_request.path.id.to_owned()),
-                        video_id: selected
-                            .stream_request
-                            .as_ref()
-                            .map(|stream_request| stream_request.path.id.to_owned()),
-                        transport_url: selected
-                            .stream_request
-                            .as_ref()
-                            .map(|stream_request| stream_request.base.to_owned()),
+                        stream_request: selected.stream_request.to_owned(),
+                        meta_request: selected.meta_request.to_owned(),
                     }))
                     .unchanged()
                 } else {
