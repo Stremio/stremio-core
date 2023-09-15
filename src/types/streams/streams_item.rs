@@ -1,9 +1,8 @@
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use serde_with::serde_as;
-use url::Url;
 
-use crate::types::{resource::Stream, addon::ResourceRequest};
+use crate::types::{addon::ResourceRequest, resource::Stream};
 
 #[serde_as]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
