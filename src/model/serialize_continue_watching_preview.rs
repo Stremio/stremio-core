@@ -29,8 +29,8 @@ mod model {
         deep_links::{LibraryDeepLinks, LibraryItemDeepLinks},
         types::{
             profile::Settings,
-            resource::{PosterShape, Stream},
-            streams::{StreamsBucket, StreamsItemKey},
+            resource::PosterShape,
+            streams::{StreamsBucket, StreamsItem, StreamsItemKey},
         },
     };
 
@@ -70,13 +70,10 @@ mod model {
                             .video_id
                             .clone()
                             .and_then(|video_id| {
-                                streams_bucket
-                                    .items
-                                    .get(&StreamsItemKey {
-                                        meta_id: core_cw_item.library_item.id.clone(),
-                                        video_id,
-                                    })
-                                    .map(|stream_item| &stream_item.stream)
+                                streams_bucket.items.get(&StreamsItemKey {
+                                    meta_id: core_cw_item.library_item.id.clone(),
+                                    video_id,
+                                })
                             });
 
                         Item::from((
@@ -105,15 +102,15 @@ mod model {
     impl<'a>
         From<(
             &'a stremio_core::models::continue_watching_preview::Item,
-            Option<&Stream>,
+            Option<&StreamsItem>,
             Option<&Url>,
             &Settings,
         )> for Item<'a>
     {
         fn from(
-            (item, stream, streaming_server_url, settings): (
+            (item, stream_item, streaming_server_url, settings): (
                 &'a stremio_core::models::continue_watching_preview::Item,
-                Option<&Stream>,
+                Option<&StreamsItem>,
                 Option<&Url>,
                 &Settings,
             ),
@@ -121,7 +118,7 @@ mod model {
             Self {
                 library_item: LibraryItem::from((
                     &item.library_item,
-                    stream,
+                    stream_item,
                     streaming_server_url,
                     settings,
                 )),
@@ -147,15 +144,15 @@ mod model {
     impl<'a>
         From<(
             &'a stremio_core::types::library::LibraryItem,
-            Option<&Stream>,
+            Option<&StreamsItem>,
             Option<&Url>,
             &Settings,
         )> for LibraryItem<'a>
     {
         fn from(
-            (library_item, stream, streaming_server_url, settings): (
+            (library_item, streams_item, streaming_server_url, settings): (
                 &'a stremio_core::types::library::LibraryItem,
-                Option<&Stream>,
+                Option<&StreamsItem>,
                 Option<&Url>,
                 &Settings,
             ),
@@ -178,7 +175,7 @@ mod model {
                 },
                 deep_links: LibraryItemDeepLinks::from((
                     library_item,
-                    stream,
+                    streams_item,
                     streaming_server_url,
                     settings,
                 ))

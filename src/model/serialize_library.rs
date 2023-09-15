@@ -108,17 +108,12 @@ pub fn serialize_library<F>(
             .map(|library_item| {
                 // Try to get the stream from the StreamBucket
                 // given that we have a video_id in the LibraryItemState!
-                let stream = library_item
-                    .state
-                    .video_id
-                    .as_ref()
-                    .and_then(|video_id| {
-                        streams_bucket.items.get(&StreamsItemKey {
-                            meta_id: library_item.id.to_owned(),
-                            video_id: video_id.to_owned(),
-                        })
+                let streams_item = library_item.state.video_id.as_ref().and_then(|video_id| {
+                    streams_bucket.items.get(&StreamsItemKey {
+                        meta_id: library_item.id.to_owned(),
+                        video_id: video_id.to_owned(),
                     })
-                    .map(|item| &item.stream);
+                });
 
                 model::LibraryItem {
                     id: &library_item.id,
@@ -139,7 +134,7 @@ pub fn serialize_library<F>(
                     },
                     deep_links: LibraryItemDeepLinks::from((
                         library_item,
-                        stream,
+                        streams_item,
                         streaming_server_url,
                         settings,
                     ))
