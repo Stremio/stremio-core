@@ -53,6 +53,16 @@ impl LibraryItem {
         self.r#type != "other" && (!self.removed || self.temp) && self.state.time_offset > 0
     }
 
+    /// Returns watch progress percentage
+    #[inline]
+    pub fn progress(&self) -> f64 {
+        if self.state.time_offset > 0 && self.state.duration > 0 {
+            (self.state.time_offset as f64 / self.state.duration as f64) * 100.0
+        } else {
+            0.0
+        }
+    }
+
     /// Pulling notifications relies on a few key things:
     ///
     /// - LibraryItem should not be "other" or "movie", i.e. if you have "series" it will pull notifications

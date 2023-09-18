@@ -15,7 +15,7 @@ use url::Url;
 
 pub use conditional_types::{ConditionalSend, EnvFuture, EnvFutureExt};
 
-#[derive(Clone, PartialEq, Debug)]
+#[derive(Clone, PartialEq, Eq, Debug)]
 pub enum EnvError {
     Fetch(String),
     AddonTransport(String),

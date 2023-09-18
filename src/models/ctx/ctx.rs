@@ -45,6 +45,7 @@ pub struct Ctx {
     #[derivative(Default(value = "CtxStatus::Ready"))]
     pub status: CtxStatus,
     #[serde(skip)]
+    /// Used only for loading the Descriptor and then the descriptor will be discarded
     pub trakt_addon: Option<DescriptorLoadable>,
     #[serde(skip)]
     pub notification_catalogs: Vec<ResourceLoadable<Vec<MetaItem>>>,

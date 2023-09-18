@@ -44,8 +44,14 @@ pub enum Internal {
     LibraryPullResult(DatastoreRequest, Result<Vec<LibraryItem>, CtxError>),
     /// Dispatched when expired session is detected
     Logout,
+    /// Internal event dispatched on user action or login
+    /// to install the addon if it's not present
+    InstallTraktAddon,
     /// Dispatched when addons needs to be installed.
     InstallAddon(Descriptor),
+    /// Dispatched when addons needs to be uninstalled.
+    UninstallAddon(Descriptor),
+    UninstallTraktAddon,
     /// Dispatched when a new stream is loaded into the Player.
     StreamLoaded {
         stream: Stream,

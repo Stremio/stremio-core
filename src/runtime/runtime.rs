@@ -10,7 +10,7 @@ use serde::Serialize;
 use std::marker::PhantomData;
 use std::sync::{Arc, LockResult, RwLock, RwLockReadGuard};
 
-#[derive(Serialize, Debug, PartialEq)]
+#[derive(Serialize, Debug, PartialEq, Eq)]
 #[serde(tag = "name", content = "args")]
 pub enum RuntimeEvent<E: Env, M: Model<E>> {
     NewState(Vec<M::Field>, #[cfg(test)] M),
