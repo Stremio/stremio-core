@@ -17,7 +17,7 @@ use crate::types::resource::{MetaItem, SeriesInfo, Stream, Subtitles, Video};
 
 use stremio_watched_bitfield::WatchedBitField;
 
-use chrono::{DateTime, Duration, Utc};
+use chrono::{DateTime, Duration, TimeZone, Utc};
 use derivative::Derivative;
 use itertools::Itertools;
 use serde::{Deserialize, Serialize};
@@ -72,7 +72,8 @@ pub struct Selected {
     pub video_params: Option<VideoParams>,
 }
 
-#[derive(Default, Clone, Derivative, Serialize, Debug)]
+#[derive(Clone, Derivative, Serialize, Debug)]
+#[derivative(Default)]
 #[serde(rename_all = "camelCase")]
 pub struct Player {
     pub selected: Option<Selected>,
