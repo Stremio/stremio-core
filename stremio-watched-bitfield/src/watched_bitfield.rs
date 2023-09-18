@@ -21,7 +21,9 @@ use std::{
 /// // `5` - anchor video length
 /// // `eJyTZwAAAEAAIA==` - BitField8
 ///
-/// let watched = "tt2934286:1:5:5:eJyTZwAAAEAAIA==".parse::<WatchedField>().expect("Should parse");
+/// let watched = "tt2934286:1:5:5:eJyTZwAAAEAAIA=="
+///     .parse::<WatchedField>()
+///     .expect("Should parse");
 /// ```
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct WatchedField {

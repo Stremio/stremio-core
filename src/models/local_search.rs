@@ -1,5 +1,4 @@
 //! Local autocompletion search
-//!
 
 use enclose::enclose;
 use futures::FutureExt;
@@ -70,7 +69,6 @@ pub struct Searchable {
 #[serde(rename_all = "camelCase")]
 pub struct LocalSearch {
     /// The Searchable items that will be used for the local search.
-    ///
     #[serde(skip)]
     pub current_records: Vec<Searchable>,
     /// The results of the search autocompletion
