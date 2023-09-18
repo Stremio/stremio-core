@@ -14,6 +14,7 @@ use crate::{
         profile::Settings,
         query_params_encode,
         resource::{MetaItem, MetaItemPreview, Stream, StreamSource, Video},
+        streams::StreamsItem,
     },
 };
 
@@ -48,18 +49,25 @@ pub struct ExternalPlayerLink {
     pub file_name: Option<String>,
 }
 
+/// Using &Option<Url> is not encouraged, use `.as_ref()` to get an `Option<&Url>` instead!
 impl From<(&Stream, &Option<Url>, &Settings)> for ExternalPlayerLink {
+    fn from((stream, streaming_server_url, settings): (&Stream, &Option<Url>, &Settings)) -> Self {
+        Self::from((stream, streaming_server_url.as_ref(), settings))
+    }
+}
+
+impl From<(&Stream, Option<&Url>, &Settings)> for ExternalPlayerLink {
     /// Create an [`ExternalPlayerLink`] using the [`Stream`],
     /// the server url (from [`StreamingServer::base_url`] which indicates a running or not server)
     /// and the user's [`Settings`] in order to use the [`Settings::player_type`] for generating a
     /// player-specific url.
     ///
     /// [`StreamingServer::base_url`]: crate::models::streaming_server::StreamingServer::base_url
-    fn from((stream, streaming_server_url, settings): (&Stream, &Option<Url>, &Settings)) -> Self {
+    fn from((stream, streaming_server_url, settings): (&Stream, Option<&Url>, &Settings)) -> Self {
         let http_regex = Regex::new(r"https?://").unwrap();
         let download = stream.download_url();
-        let streaming = stream.streaming_url(streaming_server_url.as_ref());
-        let m3u_uri = stream.m3u_data_uri(streaming_server_url.as_ref());
+        let streaming = stream.streaming_url(streaming_server_url);
+        let m3u_uri = stream.m3u_data_uri(streaming_server_url);
         let file_name = m3u_uri.as_ref().map(|_| "playlist.m3u".to_owned());
         let href = m3u_uri.or_else(|| download.to_owned());
         let open_player = match &streaming {
@@ -143,8 +151,15 @@ pub struct LibraryItemDeepLinks {
     pub external_player: Option<ExternalPlayerLink>,
 }
 
-impl From<&LibraryItem> for LibraryItemDeepLinks {
-    fn from(item: &LibraryItem) -> Self {
+impl From<(&LibraryItem, Option<&StreamsItem>, Option<&Url>, &Settings)> for LibraryItemDeepLinks {
+    fn from(
+        (item, streams_item, streaming_server_url, settings): (
+            &LibraryItem,
+            Option<&StreamsItem>,
+            Option<&Url>,
+            &Settings,
+        ),
+    ) -> Self {
         LibraryItemDeepLinks {
             meta_details_videos: item
                 .behavior_hints
@@ -170,8 +185,29 @@ impl From<&LibraryItem> for LibraryItemDeepLinks {
                         utf8_percent_encode(video_id, URI_COMPONENT_ENCODE_SET)
                     )
                 }),
-            player: None,          // TODO use StreamsBucket
-            external_player: None, // TODO use StreamsBucket
+            // We have the steam so use the same logic as in StreamDeepLinks
+            player: streams_item.map(|streams_item| match streams_item.stream.encode() {
+                Ok(encoded_stream) => format!(
+                    "stremio:///player/{}/{}/{}/{}/{}/{}",
+                    utf8_percent_encode(&encoded_stream, URI_COMPONENT_ENCODE_SET),
+                    utf8_percent_encode(
+                        streams_item.stream_transport_url.as_str(),
+                        URI_COMPONENT_ENCODE_SET
+                    ),
+                    utf8_percent_encode(
+                        streams_item.meta_transport_url.as_str(),
+                        URI_COMPONENT_ENCODE_SET
+                    ),
+                    utf8_percent_encode(&streams_item.r#type, URI_COMPONENT_ENCODE_SET),
+                    utf8_percent_encode(&streams_item.meta_id, URI_COMPONENT_ENCODE_SET),
+                    utf8_percent_encode(&streams_item.video_id, URI_COMPONENT_ENCODE_SET)
+                ),
+                Err(error) => ErrorLink::from(error).into(),
+            }),
+            // We have the steams bucket item so use the same logic as in StreamDeepLinks
+            external_player: streams_item.map(|item| {
+                ExternalPlayerLink::from((&item.stream, streaming_server_url, settings))
+            }),
         }
     }
 }
