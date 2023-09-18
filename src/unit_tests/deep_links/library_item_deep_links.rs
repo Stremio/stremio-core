@@ -5,8 +5,6 @@ use stremio_serde_hex::{SerHex, Strict};
 use crate::constants::STREAMING_SERVER_URL;
 use crate::deep_links::LibraryItemDeepLinks;
 use crate::deep_links::OpenPlayerLink;
-use crate::types::addon::ResourcePath;
-use crate::types::addon::ResourceRequest;
 use crate::types::library::LibraryItem;
 use crate::types::library::LibraryItemState;
 use crate::types::profile::Settings;
@@ -42,28 +40,15 @@ const TORRENT_STREAMS_ITEM: Lazy<StreamsItem> = Lazy::new(|| {
 
     StreamsItem {
         stream,
-        stream_request: ResourceRequest {
-            base: "https://torrentio.strem.fun/qualityfilter=1080p,720p/manifest.json"
-                .parse()
-                .unwrap(),
-            path: ResourcePath {
-                resource: "stream".to_owned(),
-                r#type: "series".to_owned(),
-                id: "tt13622776:1:5".to_owned(),
-                extra: vec![],
-            },
-        },
-        meta_request: ResourceRequest {
-            base: "https://v3-cinemeta.strem.io/manifest.json"
-                .parse()
-                .unwrap(),
-            path: ResourcePath {
-                resource: "meta".to_owned(),
-                r#type: "series".to_owned(),
-                id: "tt13622776".to_owned(),
-                extra: vec![],
-            },
-        },
+        r#type: "series".to_owned(),
+        meta_id: "tt13622776".to_owned(),
+        video_id: "tt13622776:1:5".to_owned(),
+        meta_transport_url: "https://v3-cinemeta.strem.io/manifest.json"
+            .parse()
+            .unwrap(),
+        stream_transport_url: "https://torrentio.strem.fun/qualityfilter=1080p,720p/manifest.json"
+            .parse()
+            .unwrap(),
         mtime: Utc::now(),
     }
 });
