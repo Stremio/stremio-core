@@ -91,8 +91,9 @@ num = { version = "0.4.0", default-features = false }
 tracing = "0.1"
 
 [dev-dependencies]
-tokio = { version = "1.12", features = ["rt", "macros"] }
+tokio = { version = "1.12", features = ["rt", "macros", "rt-multi-thread"] }
 tokio-current-thread = "=0.2.0-alpha.1"
 serde_test = "1.0"
 assert_matches = "1.5"
 pretty_assertions = "1"
+dashmap = "5.5.1"

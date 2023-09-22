@@ -57,14 +57,16 @@ pub enum TestEnv {}
 
 impl TestEnv {
     pub fn reset() -> LockResult<MutexGuard<'static, ()>> {
-        let env_mutex = ENV_MUTEX.lock();
+        // fail early if the mutex fails to lock
+        let env_mutex = ENV_MUTEX.lock()?;
+
         *FETCH_HANDLER.write().unwrap() = Box::new(default_fetch_handler);
         *REQUESTS.write().unwrap() = vec![];
         *STORAGE.write().unwrap() = BTreeMap::new();
         *EVENTS.write().unwrap() = vec![];
         *STATES.write().unwrap() = vec![];
         *NOW.write().unwrap() = Utc::now();
-        env_mutex
+        Ok(env_mutex)
     }
     pub fn run<F: FnOnce()>(runnable: F) {
         tokio_current_thread::block_on_all(future::lazy(|_| {
