@@ -180,6 +180,8 @@ impl Stream {
                 match url.path_segments_mut() {
                     Ok(mut path) => {
                         path.push(&hex::encode(info_hash));
+                        // When fileIndex is not provided use -1, which will tell the
+                        // streaming server to choose the file with the largest size from the torrent
                         path.push(
                             &file_idx.map_or_else(|| "-1".to_string(), |idx| idx.to_string()),
                         );
