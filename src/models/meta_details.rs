@@ -382,7 +382,14 @@ fn streams_update<E: Env + 'static>(
         _ => eq_update(streams, vec![]),
     }
 }
-
+// Find a stream from addon responses, which should be played if binge watching or continuing to watch.
+// First find the latest StreamItem stored based on last 30 videos from current video
+// (ie. we're in E4, so we're going to check E4, E3, E2, E1 in this order until we hit a stored StreamItem).
+// Then with the stream item we try to find a stream from addon responses (including the streams inside the meta itself meta_streams) -
+// we find the responses from the addon based on StreamItem.stream_transport_url, then first we try to find the stream based on equality (as otherwise stored stream might be expired/no longer valid), if not found we try to find a stream based on it's bingeGroup.
+// One note, why we cannot return StreamItem.stream directly if it's for the same episode,
+// is that user might have played a stream from an addon which he no longer has due to some constrains (ie p2p addon),
+// that's why we have to try to find it first and verify that's it's still available.
 fn suggested_stream_update(
     suggested_stream: &mut Option<Stream>,
     selected: &Option<Selected>,
