@@ -158,13 +158,16 @@ fn catalogs_update<F: LibraryFilter>(
             .items
             .values()
             .filter(|library_item| F::predicate(library_item, notifications))
-            .fold(HashMap::<&str, Vec<LibraryItem>>::new(), |mut result, library_item| {
-                result
-                    .entry(&library_item.r#type)
-                    .or_default()
-                    .push(library_item.to_owned());
-                result
-            })
+            .fold(
+                HashMap::<&str, Vec<LibraryItem>>::new(),
+                |mut result, library_item| {
+                    result
+                        .entry(&library_item.r#type)
+                        .or_default()
+                        .push(library_item.to_owned());
+                    result
+                },
+            )
             .into_iter()
             .sorted_by(|(a_type, _), (b_type, _)| {
                 compare_with_priorities(*a_type, *b_type, &*TYPE_PRIORITIES)
