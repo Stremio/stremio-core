@@ -147,7 +147,7 @@ fn catalogs_update<F: LibraryFilter>(
         let r#type = catalog
             .first()
             .and_then(|first_page| first_page.first())
-            .map(|library_item| &library_item.r#type)
+            .map(|library_item| library_item.r#type.as_str())
             .expect("first page of library catalog is empty");
         let size = catalog.iter().fold(0, |result, page| result + page.len());
         result.insert(r#type, size);
@@ -158,16 +158,16 @@ fn catalogs_update<F: LibraryFilter>(
             .items
             .values()
             .filter(|library_item| F::predicate(library_item, notifications))
-            .fold(HashMap::new(), |mut result, library_item| {
+            .fold(HashMap::<&str, Vec<LibraryItem>>::new(), |mut result, library_item| {
                 result
                     .entry(&library_item.r#type)
-                    .or_insert_with(Vec::new)
+                    .or_default()
                     .push(library_item.to_owned());
                 result
             })
             .into_iter()
             .sorted_by(|(a_type, _), (b_type, _)| {
-                compare_with_priorities(a_type.as_str(), b_type.as_str(), &*TYPE_PRIORITIES)
+                compare_with_priorities(*a_type, *b_type, &*TYPE_PRIORITIES)
             })
             .rev()
             .map(|(r#type, library_items)| {
