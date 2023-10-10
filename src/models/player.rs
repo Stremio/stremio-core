@@ -810,7 +810,7 @@ fn subtitles_update<E: Env + 'static>(
                         ),
                     ..subtitles_path.to_owned()
                 }),
-                &addons,
+                addons,
             ),
         ),
         _ => eq_update(subtitles, vec![]),
