@@ -164,6 +164,7 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                     },
                     _ => eq_update(&mut self.meta_item, None),
                 };
+                let video_params_effects = eq_update(&mut self.video_params, None);
                 let subtitles_effects = subtitles_update::<E>(
                     &mut self.subtitles,
                     &self.selected,
@@ -232,6 +233,7 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                     .join(update_streams_effects)
                     .join(selected_effects)
                     .join(meta_item_effects)
+                    .join(video_params_effects)
                     .join(subtitles_effects)
                     .join(next_video_effects)
                     .join(next_streams_effects)
