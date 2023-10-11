@@ -116,17 +116,30 @@ impl WebModel {
             WebModelField::Ctx => serialize_ctx(&self.ctx),
             WebModelField::AuthLink => JsValue::from_serde(&self.auth_link).unwrap(),
             WebModelField::DataExport => serialize_data_export(&self.data_export),
-            WebModelField::ContinueWatchingPreview => {
-                serialize_continue_watching_preview(&self.continue_watching_preview)
-            }
+            WebModelField::ContinueWatchingPreview => serialize_continue_watching_preview(
+                &self.continue_watching_preview,
+                &self.ctx.streams,
+                self.streaming_server.base_url.ready(),
+                &self.ctx.profile.settings,
+            ),
             WebModelField::Board => serialize_catalogs_with_extra(&self.board, &self.ctx),
             WebModelField::Discover => {
                 serialize_discover(&self.discover, &self.ctx, &self.streaming_server)
             }
-            WebModelField::Library => serialize_library(&self.library, "library".to_owned()),
-            WebModelField::ContinueWatching => {
-                serialize_library(&self.continue_watching, "continuewatching".to_owned())
-            }
+            WebModelField::Library => serialize_library(
+                &self.library,
+                &self.ctx.streams,
+                self.streaming_server.base_url.ready(),
+                &self.ctx.profile.settings,
+                "library".to_owned(),
+            ),
+            WebModelField::ContinueWatching => serialize_library(
+                &self.continue_watching,
+                &self.ctx.streams,
+                self.streaming_server.base_url.ready(),
+                &self.ctx.profile.settings,
+                "continuewatching".to_owned(),
+            ),
             WebModelField::Search => serialize_catalogs_with_extra(&self.search, &self.ctx),
             WebModelField::LocalSearch => serialize_local_search(&self.local_search),
             WebModelField::MetaDetails => {
