@@ -245,7 +245,7 @@ fn authenticate<E: Env + 'static>(auth_request: &AuthRequest) -> Effect {
             .map(enclose!((auth_request) move |result| {
                 let internal_msg = Msg::Internal(Internal::CtxAuthResult(auth_request, result));
 
-                event!(Level::INFO, internal_message = ?internal_msg);
+                event!(Level::TRACE, internal_message = ?internal_msg);
                 internal_msg
             }))
             .boxed_env(),

@@ -4,11 +4,13 @@ use crate::types::{UniqueVec, UniqueVecAdapter};
 use derivative::Derivative;
 use derive_more::Deref;
 use either::Either;
-use semver::Version;
 use serde::{Deserialize, Deserializer, Serialize};
 use serde_with::{serde_as, DefaultOnError, DefaultOnNull, DeserializeAs, NoneAsEmptyString};
 use std::borrow::Cow;
 use url::Url;
+
+/// Re-export the semver::Version
+pub use semver::Version;
 
 #[serde_as]
 #[derive(Clone, PartialEq, Eq, Serialize, Deserialize, Debug)]
