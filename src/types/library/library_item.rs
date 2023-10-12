@@ -133,6 +133,10 @@ pub struct LibraryItemState {
     pub last_watched: Option<DateTime<Utc>>,
     /// In milliseconds
     pub time_watched: u64,
+    /// Current time offset for the LibraryItem status.
+    ///
+    /// How far are you at in playing the given LibraryItem.
+    ///
     /// In milliseconds
     pub time_offset: u64,
     /// In milliseconds

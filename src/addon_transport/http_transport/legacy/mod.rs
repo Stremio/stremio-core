@@ -65,29 +65,6 @@ pub struct SubtitlesResult {
     pub all: Vec<Subtitles>,
 }
 
-impl From<Vec<MetaItemPreview>> for ResourceResponse {
-    fn from(metas: Vec<MetaItemPreview>) -> Self {
-        ResourceResponse::Metas { metas }
-    }
-}
-impl From<MetaItem> for ResourceResponse {
-    fn from(meta: MetaItem) -> Self {
-        ResourceResponse::Meta { meta }
-    }
-}
-impl From<Vec<Stream>> for ResourceResponse {
-    fn from(streams: Vec<Stream>) -> Self {
-        ResourceResponse::Streams { streams }
-    }
-}
-impl From<SubtitlesResult> for ResourceResponse {
-    fn from(subtitles_result: SubtitlesResult) -> Self {
-        ResourceResponse::Subtitles {
-            subtitles: subtitles_result.all,
-        }
-    }
-}
-
 fn map_response<T: Sized + ConditionalSend + 'static>(resp: JsonRPCResp<T>) -> TryEnvFuture<T> {
     match resp {
         JsonRPCResp::Result { result } => future::ok(result).boxed_env(),
