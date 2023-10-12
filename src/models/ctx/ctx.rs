@@ -81,7 +81,8 @@ impl<E: Env + 'static> Update<E> for Ctx {
                     Some(auth_key) => Effects::one(delete_session::<E>(auth_key)).unchanged(),
                     _ => Effects::none().unchanged(),
                 };
-                let profile_effects = update_profile::<E>(&mut self.profile, &self.status, msg);
+                let profile_effects =
+                    update_profile::<E>(&mut self.profile, &mut self.streams, &self.status, msg);
                 let library_effects =
                     update_library::<E>(&mut self.library, &self.profile, &self.status, msg);
                 let streams_effects = update_streams::<E>(&mut self.streams, &self.status, msg);
@@ -110,7 +111,8 @@ impl<E: Env + 'static> Update<E> for Ctx {
                     .join(notifications_effects)
             }
             Msg::Internal(Internal::CtxAuthResult(auth_request, result)) => {
-                let profile_effects = update_profile::<E>(&mut self.profile, &self.status, msg);
+                let profile_effects =
+                    update_profile::<E>(&mut self.profile, &mut self.streams, &self.status, msg);
                 let library_effects =
                     update_library::<E>(&mut self.library, &self.profile, &self.status, msg);
                 let trakt_addon_effects = update_trakt_addon::<E>(
@@ -157,7 +159,8 @@ impl<E: Env + 'static> Update<E> for Ctx {
                     .join(ctx_effects)
             }
             _ => {
-                let profile_effects = update_profile::<E>(&mut self.profile, &self.status, msg);
+                let profile_effects =
+                    update_profile::<E>(&mut self.profile, &mut self.streams, &self.status, msg);
                 let library_effects =
                     update_library::<E>(&mut self.library, &self.profile, &self.status, msg);
                 let streams_effects = update_streams::<E>(&mut self.streams, &self.status, msg);
