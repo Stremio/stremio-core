@@ -19,6 +19,59 @@ use std::any::Any;
 use stremio_derive::Model;
 use url::Url;
 
+type Addon = Descriptor;
+
+impl Addon {
+    fn new(transport_url: &str) -> Self {
+        Self {
+            manifest: Manifest {
+                id: "id".to_owned(),
+                version: Version::new(0, 0, 1),
+                name: "name".to_owned(),
+                contact_email: None,
+                description: None,
+                logo: None,
+                background: None,
+                types: vec![],
+                resources: vec![],
+                id_prefixes: None,
+                catalogs: vec![],
+                addon_catalogs: vec![],
+                behavior_hints: Default::default(),
+            },
+            transport_url: Url::parse(transport_url).unwrap(),
+            flags: Default::default(),
+        }
+    }
+}
+
+type AddonStreamsItem = StreamsItem;
+
+impl AddonStreamsItem {
+    fn new(addon: &Addon) -> Self {
+        let stream = Stream {
+            source: StreamSource::Url {
+                url: "https://source_url".parse().unwrap(),
+            },
+            name: None,
+            description: None,
+            thumbnail: None,
+            subtitles: vec![],
+            behavior_hints: StreamBehaviorHints::default(),
+        };
+
+        Self {
+            stream,
+            r#type: "movie".to_owned(),
+            meta_id: "tt123456".to_owned(),
+            video_id: "tt123456:1:0".to_owned(),
+            meta_transport_url: addon.transport_url.clone(),
+            stream_transport_url: addon.transport_url.clone(),
+            mtime: TestEnv::now(),
+        }
+    }
+}
+
 #[test]
 fn actionctx_uninstalladdon() {
     #[derive(Model, Clone, Default)]
@@ -379,25 +432,10 @@ fn actionctx_uninstalladdon_streams_bucket() {
     struct TestModel {
         ctx: Ctx,
     }
-    let addon = Descriptor {
-        manifest: Manifest {
-            id: "id".to_owned(),
-            version: Version::new(0, 0, 1),
-            name: "name".to_owned(),
-            contact_email: None,
-            description: None,
-            logo: None,
-            background: None,
-            types: vec![],
-            resources: vec![],
-            id_prefixes: None,
-            catalogs: vec![],
-            addon_catalogs: vec![],
-            behavior_hints: Default::default(),
-        },
-        transport_url: Url::parse("https://transport_url").unwrap(),
-        flags: Default::default(),
-    };
+
+    let addon = Addon::new("https://transport_url");
+    let addon_2 = Addon::new("https://transport_url_2");
+
     let profile = Profile {
         addons: vec![addon.to_owned()],
         ..Default::default()
@@ -408,34 +446,24 @@ fn actionctx_uninstalladdon_streams_bucket() {
         serde_json::to_string(&profile).unwrap(),
     );
 
-    let stream = Stream {
-        source: StreamSource::Url {
-            url: "https://source_url".parse().unwrap(),
-        },
-        name: None,
-        description: None,
-        thumbnail: None,
-        subtitles: vec![],
-        behavior_hints: StreamBehaviorHints::default(),
-    };
-
     let streams_item_key = StreamsItemKey {
         meta_id: "tt123456".to_owned(),
         video_id: "tt123456:1:0".to_owned(),
     };
 
-    let streams_item = StreamsItem {
-        stream,
-        r#type: "movie".to_owned(),
+    let streams_item_key_2 = StreamsItemKey {
         meta_id: "tt123456".to_owned(),
-        video_id: "tt123456:1:0".to_owned(),
-        meta_transport_url: "https://transport_url".parse().unwrap(),
-        stream_transport_url: "https://transport_url".parse().unwrap(),
-        mtime: TestEnv::now(),
+        video_id: "tt123456:1:1".to_owned(),
     };
 
+    let stream_item = AddonStreamsItem::new(&addon);
+    let stream_item_2 = AddonStreamsItem::new(&addon_2);
+
     let mut streams = StreamsBucket::default();
-    streams.items.insert(streams_item_key.clone(), streams_item);
+    streams.items.insert(streams_item_key.clone(), stream_item);
+    streams
+        .items
+        .insert(streams_item_key_2.clone(), stream_item_2);
 
     let (runtime, _rx) = Runtime::<TestEnv, _>::new(
         TestModel {
@@ -484,6 +512,16 @@ fn actionctx_uninstalladdon_streams_bucket() {
             .streams
             .items
             .contains_key(&streams_item_key),
-        "streams have been removed from bucket"
+        "stream item was removed from the bucket"
+    );
+    assert!(
+        runtime
+            .model()
+            .unwrap()
+            .ctx
+            .streams
+            .items
+            .contains_key(&streams_item_key_2),
+        "stream item still is in the bucket"
     );
 }
