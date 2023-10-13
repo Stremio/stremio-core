@@ -491,11 +491,10 @@ checksum = "b9e0384b61958566e926dc50660321d12159025e767c18e043daf26b70104c39"
 
 [[package]]
 name = "idna"
-version = "0.2.3"
+version = "0.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "418a0a6fab821475f634efe3ccc45c013f742efe03d853e8d3355d5cb850ecf8"
+checksum = "7d20d6b07bfbc108882d88ed8e37d39636dcc260e15e30c45e6ba089610b917c"
 dependencies = [
- "matches",
  "unicode-bidi",
  "unicode-normalization",
 ]
@@ -587,12 +586,6 @@ dependencies = [
  "lazy_static",
  "regex",
 ]
-
-[[package]]
-name = "matches"
-version = "0.1.10"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2532096657941c2fea9c289d370a250971c689d4f143798ff67113ec042024a5"
 
 [[package]]
 name = "maybe-uninit"
@@ -940,7 +933,7 @@ dependencies = [
 [[package]]
 name = "stremio-core"
 version = "0.1.0"
-source = "git+https://github.com/Stremio/stremio-core?branch=development#d12b6892a3a664eebb7ba92521f90a1256feae4d"
+source = "git+https://github.com/Stremio/stremio-core?branch=development#b6cc8c84fa01bf4626457742ce3c91d6717d06f5"
 dependencies = [
  "anyhow",
  "base64 0.21.2",
@@ -1015,7 +1008,7 @@ dependencies = [
 [[package]]
 name = "stremio-derive"
 version = "0.1.0"
-source = "git+https://github.com/Stremio/stremio-core?branch=development#d12b6892a3a664eebb7ba92521f90a1256feae4d"
+source = "git+https://github.com/Stremio/stremio-core?branch=development#b6cc8c84fa01bf4626457742ce3c91d6717d06f5"
 dependencies = [
  "case",
  "proc-macro-crate",
@@ -1045,7 +1038,7 @@ dependencies = [
 [[package]]
 name = "stremio-watched-bitfield"
 version = "0.1.0"
-source = "git+https://github.com/Stremio/stremio-core?branch=development#d12b6892a3a664eebb7ba92521f90a1256feae4d"
+source = "git+https://github.com/Stremio/stremio-core?branch=development#b6cc8c84fa01bf4626457742ce3c91d6717d06f5"
 dependencies = [
  "base64 0.13.1",
  "flate2",
@@ -1258,13 +1251,12 @@ dependencies = [
 
 [[package]]
 name = "url"
-version = "2.2.2"
+version = "2.4.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a507c383b2d33b5fc35d1861e77e6b383d158b2da5e14fe51b83dfedf6fd578c"
+checksum = "143b538f18257fac9cad154828a57c6bf5157e1aa604d4816b5995bf6de87ae5"
 dependencies = [
  "form_urlencoded",
  "idna",
- "matches",
  "percent-encoding",
  "serde",
 ]
