@@ -197,6 +197,7 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                 };
                 let next_video_effects = next_video_update(
                     &mut self.next_video,
+                    &self.next_stream,
                     &self.selected,
                     &self.meta_item,
                     &ctx.profile.settings,
@@ -490,6 +491,7 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
 
                 let next_video_effects = next_video_update(
                     &mut self.next_video,
+                    &self.next_stream,
                     &self.selected,
                     &self.meta_item,
                     &ctx.profile.settings,
@@ -586,6 +588,7 @@ fn switch_to_next_video(
 
 fn next_video_update(
     video: &mut Option<Video>,
+    stream: &Option<Stream>,
     selected: &Option<Selected>,
     meta_item: &Option<ResourceLoadable<MetaItem>>,
     settings: &ProfileSettings,
@@ -627,8 +630,13 @@ fn next_video_update(
                     .unwrap_or_default();
                 next_season != 0 || current_season == next_season
             })
-            .map(|(_, next_video)| next_video)
-            .cloned(),
+            .map(|(_, next_video)| {
+                let mut next_video = next_video.clone();
+                if let Some(stream) = stream {
+                    next_video.streams = vec![stream.clone()];
+                }
+                next_video
+            }),
         _ => None,
     };
     eq_update(video, next_video)
