@@ -60,7 +60,6 @@ fn next_stream() {
     }
 
     fn fetch_handler(request: Request) -> TryEnvFuture<Box<dyn Any + Send>> {
-        println!("{:?}", request.url);
         match request {
             Request { url, .. } if url == "https://transport_url/meta/series/tt123456.json" => {
                 future::ok(Box::new(ResourceResponse::Meta {
