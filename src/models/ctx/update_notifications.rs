@@ -46,20 +46,24 @@ pub fn update_notifications<E: Env + 'static>(
                 .cloned()
                 .collect::<Vec<_>>();
 
-            let notifications_catalog_resource_effects = resources_update_with_vector_content::<E, _>(
-                notification_catalogs,
-                // force the making of a requests every time PullNotifications is called.
-                ResourcesAction::force_request(
-                    &AggrRequest::AllCatalogs {
-                        extra: &vec![ExtraValue {
-                            name: LAST_VIDEOS_IDS_EXTRA_PROP.name.to_owned(),
-                            value: library_item_ids.join(","),
-                        }],
-                        r#type: &None,
-                    },
-                    &profile.addons,
-                ),
-            );
+            let notifications_catalog_resource_effects = if !library_item_ids.is_empty() {
+                resources_update_with_vector_content::<E, _>(
+                    notification_catalogs,
+                    // force the making of a requests every time PullNotifications is called.
+                    ResourcesAction::force_request(
+                        &AggrRequest::AllCatalogs {
+                            extra: &vec![ExtraValue {
+                                name: LAST_VIDEOS_IDS_EXTRA_PROP.name.to_owned(),
+                                value: library_item_ids.join(","),
+                            }],
+                            r#type: &None,
+                        },
+                        &profile.addons,
+                    ),
+                )
+            } else {
+                Effects::none().unchanged()
+            };
 
             notifications.last_updated = Some(E::now());
 
