@@ -25,9 +25,9 @@ fn external_player_link_magnet() {
         subtitles: vec![],
         behavior_hints: Default::default(),
     };
-    let streaming_server_url = Some(Url::parse(STREAMING_SERVER_URL).unwrap());
-    let settings = Settings::default();
-    let epl = ExternalPlayerLink::try_from((&stream, &streaming_server_url, &settings)).unwrap();
+    let mut settings = Settings::default();
+    settings.streaming_server_url = Url::parse(STREAMING_SERVER_URL).unwrap();
+    let epl = ExternalPlayerLink::try_from((&stream, &settings)).unwrap();
     assert_eq!(epl.href, Some(MAGNET_STR_URL.to_owned()));
     assert_eq!(epl.file_name, None);
 }
@@ -44,9 +44,9 @@ fn external_player_link_http() {
         subtitles: vec![],
         behavior_hints: Default::default(),
     };
-    let streaming_server_url = Some(Url::parse(STREAMING_SERVER_URL).unwrap());
-    let settings = Settings::default();
-    let epl = ExternalPlayerLink::try_from((&stream, &streaming_server_url, &settings)).unwrap();
+    let mut settings = Settings::default();
+    settings.streaming_server_url = Url::parse(STREAMING_SERVER_URL).unwrap();
+    let epl = ExternalPlayerLink::try_from((&stream, &settings)).unwrap();
     assert_eq!(epl.href, Some(BASE64_HTTP_URL.to_owned()));
     assert_eq!(epl.file_name, Some("playlist.m3u".to_string()));
 }
@@ -71,9 +71,9 @@ fn external_player_link_torrent() {
         subtitles: vec![],
         behavior_hints: Default::default(),
     };
-    let streaming_server_url = Some(Url::parse(STREAMING_SERVER_URL).unwrap());
-    let settings = Settings::default();
-    let epl = ExternalPlayerLink::try_from((&stream, &streaming_server_url, &settings)).unwrap();
+    let mut settings = Settings::default();
+    settings.streaming_server_url = Url::parse(STREAMING_SERVER_URL).unwrap();
+    let epl = ExternalPlayerLink::try_from((&stream, &settings)).unwrap();
     assert_eq!(
         epl.href,
         Some(format!(
@@ -112,9 +112,9 @@ fn external_player_link_external() {
         subtitles: vec![],
         behavior_hints: Default::default(),
     };
-    let streaming_server_url = Some(Url::parse(STREAMING_SERVER_URL).unwrap());
-    let settings = Settings::default();
-    let epl = ExternalPlayerLink::try_from((&stream, &streaming_server_url, &settings)).unwrap();
+    let mut settings = Settings::default();
+    settings.streaming_server_url = Url::parse(STREAMING_SERVER_URL).unwrap();
+    let epl = ExternalPlayerLink::try_from((&stream, &settings)).unwrap();
     assert_eq!(epl.href, Some(HTTP_STR_URL.to_owned()));
     assert_eq!(epl.file_name, None);
 }
@@ -132,9 +132,9 @@ fn external_player_link_youtube() {
         subtitles: vec![],
         behavior_hints: Default::default(),
     };
-    let streaming_server_url = Some(Url::parse(STREAMING_SERVER_URL).unwrap());
-    let settings = Settings::default();
-    let epl = ExternalPlayerLink::try_from((&stream, &streaming_server_url, &settings)).unwrap();
+    let mut settings = Settings::default();
+    settings.streaming_server_url = Url::parse(STREAMING_SERVER_URL).unwrap();
+    let epl = ExternalPlayerLink::try_from((&stream, &settings)).unwrap();
     assert_eq!(
         epl.href,
         Some(format!(
@@ -160,9 +160,9 @@ fn external_player_link_player_frame() {
         subtitles: vec![],
         behavior_hints: Default::default(),
     };
-    let streaming_server_url = Some(Url::parse(STREAMING_SERVER_URL).unwrap());
-    let settings = Settings::default();
-    let epl = ExternalPlayerLink::try_from((&stream, &streaming_server_url, &settings)).unwrap();
+    let mut settings = Settings::default();
+    settings.streaming_server_url = Url::parse(STREAMING_SERVER_URL).unwrap();
+    let epl = ExternalPlayerLink::try_from((&stream, &settings)).unwrap();
     assert_eq!(epl.href, Some(HTTP_STR_URL.to_owned()));
     assert_eq!(epl.file_name, None);
 }

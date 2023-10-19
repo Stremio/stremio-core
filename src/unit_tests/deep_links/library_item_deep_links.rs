@@ -2,7 +2,6 @@ use chrono::Utc;
 use once_cell::sync::Lazy;
 use stremio_serde_hex::{SerHex, Strict};
 
-use crate::constants::STREAMING_SERVER_URL;
 use crate::deep_links::LibraryItemDeepLinks;
 use crate::deep_links::OpenPlayerLink;
 use crate::types::library::LibraryItem;
@@ -82,7 +81,6 @@ fn library_item_deep_links_no_video() {
     let lidl = LibraryItemDeepLinks::try_from((
         &lib_item,
         None,
-        Some(&*STREAMING_SERVER_URL),
         &*INFUSE_PLAYER_SETTINGS,
     ))
     .unwrap();
@@ -132,7 +130,6 @@ fn library_item_deep_links_state_video_id_no_time_offset_infuse_player() {
         &lib_item,
         // We have a video so we can have a Stream pulled from the StreamBucket!
         Some(&*TORRENT_STREAMS_ITEM),
-        Some(&*STREAMING_SERVER_URL),
         &*INFUSE_PLAYER_SETTINGS,
     ))
     .unwrap();
@@ -186,7 +183,6 @@ fn library_item_deep_links_state_video_id() {
         &lib_item,
         // We have a video so we can have a Stream pulled from the StreamBucket!
         Some(&*TORRENT_STREAMS_ITEM),
-        Some(&*STREAMING_SERVER_URL),
         &*INFUSE_PLAYER_SETTINGS,
     ))
     .unwrap();
@@ -243,7 +239,6 @@ fn library_item_deep_links_behavior_hints_default_video_id() {
         &lib_item,
         // We have a video so we can have a Stream pulled from the StreamBucket!
         Some(&*TORRENT_STREAMS_ITEM),
-        Some(&*STREAMING_SERVER_URL),
         &*INFUSE_PLAYER_SETTINGS,
     ))
     .unwrap();
@@ -300,7 +295,6 @@ fn library_item_deep_links_state_and_behavior_hints_default_video_id() {
         &lib_item,
         // We have a video so we can have a Stream pulled from the StreamBucket!
         Some(&*TORRENT_STREAMS_ITEM),
-        Some(&*STREAMING_SERVER_URL),
         &*INFUSE_PLAYER_SETTINGS,
     ))
     .unwrap();
@@ -357,7 +351,6 @@ fn library_item_deep_links_state_no_time_offset_and_behavior_hints_default_video
         &lib_item,
         // We have a video so we can have a Stream pulled from the StreamBucket!
         Some(&*TORRENT_STREAMS_ITEM),
-        Some(&*STREAMING_SERVER_URL),
         &*INFUSE_PLAYER_SETTINGS,
     ))
     .unwrap();
