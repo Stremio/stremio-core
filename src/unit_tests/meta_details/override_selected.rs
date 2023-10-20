@@ -80,7 +80,7 @@ fn override_selected_default_video_id() {
                         extra: vec![]
                     },
                     stream_path: None,
-                    stream_override: true,
+                    guess_stream: true,
                 })),
             });
         }),
@@ -175,7 +175,7 @@ fn override_selected_meta_id() {
                         extra: vec![]
                     },
                     stream_path: None,
-                    stream_override: true,
+                    guess_stream: true,
                 })),
             });
         }),

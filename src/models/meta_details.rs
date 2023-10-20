@@ -32,7 +32,9 @@ pub struct Selected {
     pub meta_path: ResourcePath,
     pub stream_path: Option<ResourcePath>,
     #[serde(default)]
-    pub stream_override: bool,
+    /// if `stream_path` is `None` then we try to guess the video and make a request
+    /// to the addons to load the streams for that video id
+    pub guess_stream: bool,
 }
 
 #[derive(Default, Serialize, Clone, Debug)]
@@ -55,7 +57,7 @@ impl<E: Env + 'static> UpdateWithCtx<E> for MetaDetails {
                 let meta_items_effects =
                     meta_items_update::<E>(&mut self.meta_items, &self.selected, &ctx.profile);
                 let selected_override_effects =
-                    selected_override_update(&mut self.selected, &self.meta_items);
+                    selected_guess_stream_update(&mut self.selected, &self.meta_items);
                 let meta_streams_effects =
                     meta_streams_update(&mut self.meta_streams, &self.selected, &self.meta_items);
                 let streams_effects =
@@ -141,7 +143,7 @@ impl<E: Env + 'static> UpdateWithCtx<E> for MetaDetails {
                     ResourcesAction::ResourceRequestResult { request, result },
                 );
                 let selected_override_effects =
-                    selected_override_update(&mut self.selected, &self.meta_items);
+                    selected_guess_stream_update(&mut self.selected, &self.meta_items);
                 let streams_effects = if selected_override_effects.has_changed {
                     streams_update::<E>(&mut self.streams, &self.selected, &ctx.profile)
                 } else {
@@ -239,17 +241,16 @@ fn library_item_sync(library_item: &Option<LibraryItem>, profile: &Profile) -> E
 /// we use the `MetaItem.preview.id`
 ///
 /// If we haven't found a suitable `video_id`, then we do not override the `Selected::stream_path`.
-fn selected_override_update(
+fn selected_guess_stream_update(
     selected: &mut Option<Selected>,
     meta_items: &[ResourceLoadable<MetaItem>],
 ) -> Effects {
     let meta_path = match &selected {
         Some(Selected {
             meta_path,
-            stream_override: true,
-            // we do not check the stream_path because we are forcefully overriding it
-            // and it's value is not taken into account
-            ..
+            // guess the stream only if `stream_path` is `None`!
+            stream_path: None,
+            guess_stream: true,
         }) => meta_path,
         _ => return Effects::default(),
     };
@@ -283,7 +284,7 @@ fn selected_override_update(
             }),
             // we must set the stream_override to false after we've overridden it
             // to make it consistent
-            stream_override: false,
+            guess_stream: false,
         }),
     )
 }
