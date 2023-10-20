@@ -79,7 +79,8 @@ fn override_selected_default_video_id() {
                         id: "tt1".to_owned(),
                         extra: vec![]
                     },
-                    stream_path: None
+                    stream_path: None,
+                    stream_override: true,
                 })),
             });
         }),
@@ -173,7 +174,8 @@ fn override_selected_meta_id() {
                         id: "tt1".to_owned(),
                         extra: vec![]
                     },
-                    stream_path: None
+                    stream_path: None,
+                    stream_override: true,
                 })),
             });
         }),
