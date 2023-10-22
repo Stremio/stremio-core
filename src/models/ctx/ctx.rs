@@ -16,6 +16,7 @@ use crate::types::profile::{Auth, AuthKey, Profile};
 use crate::types::resource::MetaItem;
 use crate::types::streams::StreamsBucket;
 
+#[cfg(test)]
 use derivative::Derivative;
 use enclose::enclose;
 use futures::{future, FutureExt, TryFutureExt};
@@ -30,8 +31,9 @@ pub enum CtxStatus {
     Ready,
 }
 
-#[derive(Derivative, Serialize, Deserialize, Clone, Debug)]
-#[derivative(Default)]
+#[derive(Serialize, Deserialize, Clone, Debug)]
+#[cfg_attr(test, derive(Derivative))]
+#[cfg_attr(test, derivative(Default))]
 pub struct Ctx {
     pub profile: Profile,
     // TODO SubtitlesBucket
@@ -42,7 +44,7 @@ pub struct Ctx {
     #[serde(skip)]
     pub streams: StreamsBucket,
     #[serde(skip)]
-    #[derivative(Default(value = "CtxStatus::Ready"))]
+    #[cfg_attr(test, derivative(Default(value = "CtxStatus::Ready")))]
     pub status: CtxStatus,
     #[serde(skip)]
     /// Used only for loading the Descriptor and then the descriptor will be discarded
@@ -63,7 +65,9 @@ impl Ctx {
             library,
             streams,
             notifications,
-            ..Self::default()
+            trakt_addon: None,
+            notification_catalogs: vec![],
+            status: CtxStatus::Ready,
         }
     }
 }
