@@ -25,7 +25,7 @@ pub struct NotificationsBucket {
     #[serde(default)]
     pub last_updated: Option<DateTime<Utc>>,
     /// The moment that the notification bucket was initialized.
-    #[derivative(Default(value = "Utc::now()"))]
+    #[derivative(Default(value = "Utc.timestamp_opt(0, 0).unwrap()"))]
     pub created: DateTime<Utc>,
 }
 
