@@ -1,7 +1,7 @@
 use crate::addon_transport::{AddonHTTPTransport, AddonTransport, UnsupportedTransport};
 use crate::constants::{
     LIBRARY_RECENT_STORAGE_KEY, LIBRARY_STORAGE_KEY, PROFILE_STORAGE_KEY, SCHEMA_VERSION,
-    SCHEMA_VERSION_STORAGE_KEY,
+    SCHEMA_VERSION_STORAGE_KEY, STREAMS_STORAGE_KEY,
 };
 use crate::models::ctx::Ctx;
 use crate::models::streaming_server::StreamingServer;
@@ -220,6 +220,12 @@ pub trait Env {
                         .await?;
                     schema_version = 7;
                 };
+                if schema_version == 7 {
+                    migrate_storage_schema_to_v8::<Self>()
+                        .map_err(|error| EnvError::StorageSchemaVersionUpgrade(Box::new(error)))
+                        .await?;
+                    schema_version = 8;
+                }
                 if schema_version != SCHEMA_VERSION {
                     panic!(
                         "Storage schema version must be upgraded from {} to {}",
@@ -441,6 +447,12 @@ fn migrate_storage_schema_to_v7<E: Env>() -> TryEnvFuture<()> {
             }
         })
         .and_then(|_| E::set_storage(SCHEMA_VERSION_STORAGE_KEY, Some(&7)))
+        .boxed_env()
+}
+
+fn migrate_storage_schema_to_v8<E: Env>() -> TryEnvFuture<()> {
+    E::set_storage::<()>(STREAMS_STORAGE_KEY, None)
+        .and_then(|_| E::set_storage(SCHEMA_VERSION_STORAGE_KEY, Some(&8)))
         .boxed_env()
 }
 

@@ -1,6 +1,9 @@
 use std::collections::{hash_map::Entry, HashMap};
 
+#[cfg(test)]
+use chrono::offset::TimeZone;
 use chrono::{DateTime, Utc};
+#[cfg(test)]
 use derivative::Derivative;
 use serde::{Deserialize, Serialize};
 
@@ -13,7 +16,9 @@ use crate::{
     },
 };
 
-#[derive(Default, Derivative, Clone, PartialEq, Eq, Serialize, Deserialize, Debug)]
+#[derive(Clone, PartialEq, Eq, Serialize, Deserialize, Debug)]
+#[cfg_attr(test, derive(Derivative))]
+#[cfg_attr(test, derivative(Default))]
 #[serde(rename_all = "camelCase")]
 pub struct NotificationsBucket {
     #[serde(default)]
@@ -25,7 +30,7 @@ pub struct NotificationsBucket {
     #[serde(default)]
     pub last_updated: Option<DateTime<Utc>>,
     /// The moment that the notification bucket was initialized.
-    #[derivative(Default(value = "Utc::now()"))]
+    #[cfg_attr(test, derivative(Default(value = "Utc.timestamp_opt(0, 0).unwrap()")))]
     pub created: DateTime<Utc>,
 }
 

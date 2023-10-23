@@ -316,7 +316,6 @@ fn test_pull_notifications_and_play_in_player() {
                     },
                 }),
                 subtitles_path: None,
-                video_params: None,
             }))),
         });
         runtime.dispatch(RuntimeAction {
