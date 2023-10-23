@@ -136,7 +136,6 @@ fn next_stream() {
                 stream_request: Some(stream_request),
                 meta_request: Some(meta_request),
                 subtitles_path: None,
-                video_params: None,
             }))),
         });
     });
