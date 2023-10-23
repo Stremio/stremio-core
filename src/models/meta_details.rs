@@ -228,7 +228,7 @@ fn library_item_sync(library_item: &Option<LibraryItem>, profile: &Profile) -> E
     }
 }
 
-/// If `Selected::stream_override` is `true` then we will override the selected stream
+/// If `Selected::guess_stream` is `true` then we will override the selected stream
 /// no matter if it's set (`Some`) or not (`None`).
 ///
 /// How we override the stream:
@@ -282,7 +282,7 @@ fn selected_guess_stream_update(
                 id: video_id,
                 extra: vec![],
             }),
-            // we must set the stream_override to false after we've overridden it
+            // we must set the `guess_stream` to `false` after we've overridden it
             // to make it consistent
             guess_stream: false,
         }),
