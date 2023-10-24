@@ -460,13 +460,36 @@ fn migrate_storage_schema_to_v8<E: Env>() -> TryEnvFuture<()> {
 mod test {
     use serde_json::{json, Value};
 
-    use crate::constants::SCHEMA_VERSION;
-    use crate::runtime::env::{migrate_storage_schema_to_v6, migrate_storage_schema_to_v7};
     use crate::{
-        constants::{PROFILE_STORAGE_KEY, SCHEMA_VERSION_STORAGE_KEY},
-        runtime::Env,
+        constants::{
+            PROFILE_STORAGE_KEY, SCHEMA_VERSION, SCHEMA_VERSION_STORAGE_KEY, STREAMS_STORAGE_KEY,
+        },
+        runtime::{
+            env::{
+                migrate_storage_schema_to_v6, migrate_storage_schema_to_v7,
+                migrate_storage_schema_to_v8,
+            },
+            Env,
+        },
+        types::streams::StreamsBucket,
         unit_tests::{TestEnv, STORAGE},
     };
+
+    fn set_streams_and_schema_version(streams: &Value, schema_v: u32) {
+        let mut storage = STORAGE.write().expect("Should lock");
+
+        let no_schema = storage.insert(SCHEMA_VERSION_STORAGE_KEY.into(), schema_v.to_string());
+        assert!(
+            no_schema.is_none(),
+            "Current schema should be empty for this test"
+        );
+
+        let no_streams = storage.insert(STREAMS_STORAGE_KEY.into(), streams.to_string());
+        assert!(
+            no_streams.is_none(),
+            "Current profile should be empty for this test"
+        );
+    }
 
     fn set_profile_and_schema_version(profile: &Value, schema_v: u32) {
         let mut storage = STORAGE.write().expect("Should lock");
@@ -720,6 +743,46 @@ mod test {
                     .get(PROFILE_STORAGE_KEY)
                     .expect("Should have the profile set"),
                 "Profile should match"
+            );
+        }
+    }
+
+    #[tokio::test]
+    async fn test_migration_from_7_to_8() {
+        let _test_env_guard = TestEnv::reset().expect("Should lock TestEnv");
+        let streams_before = serde_json::to_value(StreamsBucket {
+            uid: Some("test".into()),
+            items: Default::default(),
+        })
+        .unwrap();
+
+        // setup storage for migration
+        set_streams_and_schema_version(&streams_before, 7);
+
+        {
+            let storage = STORAGE.read().expect("Should lock");
+
+            assert!(storage.get(STREAMS_STORAGE_KEY).is_some());
+        }
+
+        // migrate storage
+        migrate_storage_schema_to_v8::<TestEnv>()
+            .await
+            .expect("Should migrate");
+
+        {
+            let storage = STORAGE.read().expect("Should lock");
+
+            assert_eq!(
+                &8.to_string(),
+                storage
+                    .get(SCHEMA_VERSION_STORAGE_KEY)
+                    .expect("Should have the schema set"),
+                "Scheme version should now be updated"
+            );
+            assert!(
+                storage.get(STREAMS_STORAGE_KEY).is_none(),
+                "Stream storage key should be removed"
             );
         }
     }
