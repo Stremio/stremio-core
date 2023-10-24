@@ -416,7 +416,7 @@ impl DefaultTokens for Settings {
             Token::Str("#00000000"),
             Token::Str("subtitlesOutlineColor"),
             Token::Str("#000000"),
-            Token::Str("escExistFullscreen"),
+            Token::Str("escExitFullscreen"),
             Token::Bool(true),
             Token::Str("seekTimeDuration"),
             Token::U32(10000),
