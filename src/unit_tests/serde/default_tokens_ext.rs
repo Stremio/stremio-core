@@ -371,7 +371,7 @@ impl DefaultTokens for Settings {
         vec![
             Token::Struct {
                 name: "Settings",
-                len: 23,
+                len: 24,
             },
             Token::Str("interfaceLanguage"),
             Token::Str("eng"),
@@ -416,6 +416,8 @@ impl DefaultTokens for Settings {
             Token::Str("#00000000"),
             Token::Str("subtitlesOutlineColor"),
             Token::Str("#000000"),
+            Token::Str("escExistsFullscreen"),
+            Token::Bool(true),
             Token::Str("seekTimeDuration"),
             Token::U32(20000),
             Token::Str("seekShiftTimeDuration"),

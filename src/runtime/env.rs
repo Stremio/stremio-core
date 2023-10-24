@@ -487,6 +487,9 @@ fn migrate_storage_schema_to_v9<E: Env>() -> TryEnvFuture<()> {
                         old_seek_time_duration
                             .unwrap_or(serde_json::Value::Number(10_000_u32.into())),
                     );
+
+                    // add the new setting for Escape key exiting full screen
+                    settings.insert("escExistsFullscreen".to_owned(), true.into());
                     E::set_storage(PROFILE_STORAGE_KEY, Some(&profile))
                 }
                 _ => E::set_storage::<()>(PROFILE_STORAGE_KEY, None),
@@ -839,6 +842,7 @@ mod test {
 
             let migrated_profile = json!({
                 "settings": {
+                    "escExistsFullscreen": true,
                     "seekTimeDuration": 20000,
                     "seekShiftTimeDuration": 10000,
                 }

@@ -27,6 +27,7 @@ fn settings() {
             subtitles_text_color: "subtitles_text_color".to_owned(),
             subtitles_background_color: "subtitles_background_color".to_owned(),
             subtitles_outline_color: "subtitles_outline_color".to_owned(),
+            esc_exists_fullscreen: true,
             seek_time_duration: 1,
             seek_shift_time_duration: 2,
             streaming_server_warning_dismissed: Some(
@@ -36,7 +37,7 @@ fn settings() {
         &[
             Token::Struct {
                 name: "Settings",
-                len: 23,
+                len: 24,
             },
             Token::Str("interfaceLanguage"),
             Token::Str("interface_language"),
@@ -84,6 +85,8 @@ fn settings() {
             Token::Str("subtitles_background_color"),
             Token::Str("subtitlesOutlineColor"),
             Token::Str("subtitles_outline_color"),
+            Token::Str("escExistsFullscreen"),
+            Token::Bool(true),
             Token::Str("seekTimeDuration"),
             Token::U32(1),
             Token::Str("seekShiftTimeDuration"),
@@ -103,7 +106,7 @@ fn settings_de() {
         &[
             Token::Struct {
                 name: "Settings",
-                len: 18,
+                len: 19,
             },
             Token::Str("interfaceLanguage"),
             Token::Str("eng"),
@@ -144,6 +147,8 @@ fn settings_de() {
             Token::Str("#00000000"),
             Token::Str("subtitlesOutlineColor"),
             Token::Str("#000000"),
+            Token::Str("escExistsFullscreen"),
+            Token::Bool(true),
             Token::Str("seekTimeDuration"),
             Token::U32(20000),
             Token::Str("seekShiftTimeDuration"),
