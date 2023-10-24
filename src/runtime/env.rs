@@ -472,24 +472,14 @@ fn migrate_storage_schema_to_v9<E: Env>() -> TryEnvFuture<()> {
                 .and_then(|settings| settings.as_object_mut())
             {
                 Some(settings) => {
-                    // override the seekTimeDuration with the new value
-                    // and take the old value to put in the seekShiftTimeDuration
-                    let old_seek_time_duration = settings
-                        // new default is 20 seconds
-                        .insert(
-                            "seekTimeDuration".into(),
-                            serde_json::Value::Number(20_000_u32.into()),
-                        );
-
-                    // move the old value to the new seek shift time
+                    // short (i.e. finer) seeking time is 3 seconds
                     settings.insert(
-                        "seekShiftTimeDuration".to_owned(),
-                        old_seek_time_duration
-                            .unwrap_or(serde_json::Value::Number(10_000_u32.into())),
+                        "seekShortTimeDuration".to_owned(),
+                        serde_json::Value::Number(3_000_u32.into()),
                     );
 
                     // add the new setting for Escape key exiting full screen
-                    settings.insert("escExistsFullscreen".to_owned(), true.into());
+                    settings.insert("escExistFullscreen".to_owned(), true.into());
                     // add the new setting for pause on minimize, which is disabled by default
                     settings.insert("pauseOnMinimize".to_owned(), false.into());
                     E::set_storage(PROFILE_STORAGE_KEY, Some(&profile))
@@ -838,15 +828,13 @@ mod test {
             let _test_env_guard = TestEnv::reset().expect("Should lock TestEnv");
             let profile_before = json!({
                 "settings": {
-                    "seekTimeDuration": 10000,
                 }
             });
 
             let migrated_profile = json!({
                 "settings": {
-                    "escExistsFullscreen": true,
-                    "seekTimeDuration": 20000,
-                    "seekShiftTimeDuration": 10000,
+                    "escExistFullscreen": true,
+                    "seekShortTimeDuration": 3000,
                     "pauseOnMinimize": false,
                 }
             });

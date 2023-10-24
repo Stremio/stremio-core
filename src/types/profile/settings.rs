@@ -27,11 +27,12 @@ pub struct Settings {
     pub subtitles_background_color: String,
     pub subtitles_outline_color: String,
     /// Whether or not the Escape key should exists from the app when in Full screen.
-    pub esc_exists_fullscreen: bool,
+    pub esc_exist_fullscreen: bool,
     /// The Seek time duration (in milliseconds) is when using the Arrow keys
     pub seek_time_duration: u32,
-    /// The Seek shift time duration (in milliseconds) is when using the Arrow keys + Shift
-    pub seek_shift_time_duration: u32,
+    /// The Seek short time duration (in milliseconds) is when we are finer seeking,
+    /// e.g. using the Arrow keys + Shift
+    pub seek_short_time_duration: u32,
     /// Whether we should pause the playback when the application get's minimized
     pub pause_on_minimize: bool,
     pub streaming_server_warning_dismissed: Option<DateTime<Utc>>,
@@ -67,9 +68,9 @@ impl Default for Settings {
             subtitles_text_color: "#FFFFFFFF".to_owned(),
             subtitles_background_color: "#00000000".to_owned(),
             subtitles_outline_color: "#000000".to_owned(),
-            esc_exists_fullscreen: true,
-            seek_time_duration: 20000,
-            seek_shift_time_duration: 10000,
+            esc_exist_fullscreen: true,
+            seek_time_duration: 10000,
+            seek_short_time_duration: 3000,
             pause_on_minimize: false,
             streaming_server_warning_dismissed: None,
         }
