@@ -177,61 +177,67 @@ pub trait Env {
                         schema_version,
                         SCHEMA_VERSION,
                     ));
-                };
+                }
                 if schema_version == 0 {
                     migrate_storage_schema_to_v1::<Self>()
                         .map_err(|error| EnvError::StorageSchemaVersionUpgrade(Box::new(error)))
                         .await?;
                     schema_version = 1;
-                };
+                }
                 if schema_version == 1 {
                     migrate_storage_schema_to_v2::<Self>()
                         .map_err(|error| EnvError::StorageSchemaVersionUpgrade(Box::new(error)))
                         .await?;
                     schema_version = 2;
-                };
+                }
                 if schema_version == 2 {
                     migrate_storage_schema_to_v3::<Self>()
                         .map_err(|error| EnvError::StorageSchemaVersionUpgrade(Box::new(error)))
                         .await?;
                     schema_version = 3;
-                };
+                }
                 if schema_version == 3 {
                     migrate_storage_schema_to_v4::<Self>()
                         .map_err(|error| EnvError::StorageSchemaVersionUpgrade(Box::new(error)))
                         .await?;
                     schema_version = 4;
-                };
+                }
                 if schema_version == 4 {
                     migrate_storage_schema_to_v5::<Self>()
                         .map_err(|error| EnvError::StorageSchemaVersionUpgrade(Box::new(error)))
                         .await?;
                     schema_version = 5;
-                };
+                }
                 if schema_version == 5 {
                     migrate_storage_schema_to_v6::<Self>()
                         .map_err(|error| EnvError::StorageSchemaVersionUpgrade(Box::new(error)))
                         .await?;
                     schema_version = 6;
-                };
+                }
                 if schema_version == 6 {
                     migrate_storage_schema_to_v7::<Self>()
                         .map_err(|error| EnvError::StorageSchemaVersionUpgrade(Box::new(error)))
                         .await?;
                     schema_version = 7;
-                };
+                }
                 if schema_version == 7 {
                     migrate_storage_schema_to_v8::<Self>()
                         .map_err(|error| EnvError::StorageSchemaVersionUpgrade(Box::new(error)))
                         .await?;
                     schema_version = 8;
                 }
+                if schema_version == 8 {
+                    migrate_storage_schema_to_v9::<Self>()
+                        .map_err(|error| EnvError::StorageSchemaVersionUpgrade(Box::new(error)))
+                        .await?;
+                    schema_version = 9;
+                }
                 if schema_version != SCHEMA_VERSION {
                     panic!(
                         "Storage schema version must be upgraded from {} to {}",
                         schema_version, SCHEMA_VERSION
                     );
-                };
+                }
                 Ok(())
             })
             .boxed_env()
@@ -456,6 +462,40 @@ fn migrate_storage_schema_to_v8<E: Env>() -> TryEnvFuture<()> {
         .boxed_env()
 }
 
+fn migrate_storage_schema_to_v9<E: Env>() -> TryEnvFuture<()> {
+    E::get_storage::<serde_json::Value>(PROFILE_STORAGE_KEY)
+        .and_then(|mut profile| {
+            match profile
+                .as_mut()
+                .and_then(|profile| profile.as_object_mut())
+                .and_then(|profile| profile.get_mut("settings"))
+                .and_then(|settings| settings.as_object_mut())
+            {
+                Some(settings) => {
+                    // override the seekTimeDuration with the new value
+                    // and take the old value to put in the seekShiftTimeDuration
+                    let old_seek_time_duration = settings
+                        // new default is 20 seconds
+                        .insert(
+                            "seekTimeDuration".into(),
+                            serde_json::Value::Number(20_000_u32.into()),
+                        );
+
+                    // move the old value to the new seek shift time
+                    settings.insert(
+                        "seekShiftTimeDuration".to_owned(),
+                        old_seek_time_duration
+                            .unwrap_or(serde_json::Value::Number(10_000_u32.into())),
+                    );
+                    E::set_storage(PROFILE_STORAGE_KEY, Some(&profile))
+                }
+                _ => E::set_storage::<()>(PROFILE_STORAGE_KEY, None),
+            }
+        })
+        .and_then(|_| E::set_storage(SCHEMA_VERSION_STORAGE_KEY, Some(&9)))
+        .boxed_env()
+}
+
 #[cfg(test)]
 mod test {
     use serde_json::{json, Value};
@@ -467,7 +507,7 @@ mod test {
         runtime::{
             env::{
                 migrate_storage_schema_to_v6, migrate_storage_schema_to_v7,
-                migrate_storage_schema_to_v8,
+                migrate_storage_schema_to_v8, migrate_storage_schema_to_v9,
             },
             Env,
         },
@@ -783,6 +823,50 @@ mod test {
             assert!(
                 storage.get(STREAMS_STORAGE_KEY).is_none(),
                 "Stream storage key should be removed"
+            );
+        }
+    }
+
+    #[tokio::test]
+    async fn test_migration_from_8_to_9() {
+        {
+            let _test_env_guard = TestEnv::reset().expect("Should lock TestEnv");
+            let profile_before = json!({
+                "settings": {
+                    "seekTimeDuration": 10000,
+                }
+            });
+
+            let migrated_profile = json!({
+                "settings": {
+                    "seekTimeDuration": 20000,
+                    "seekShiftTimeDuration": 10000,
+                }
+            });
+
+            // setup storage for migration
+            set_profile_and_schema_version(&profile_before, 8);
+
+            // migrate storage
+            migrate_storage_schema_to_v9::<TestEnv>()
+                .await
+                .expect("Should migrate");
+
+            let storage = STORAGE.read().expect("Should lock");
+
+            assert_eq!(
+                &9.to_string(),
+                storage
+                    .get(SCHEMA_VERSION_STORAGE_KEY)
+                    .expect("Should have the schema set"),
+                "Scheme version should now be updated"
+            );
+            assert_eq!(
+                &migrated_profile.to_string(),
+                storage
+                    .get(PROFILE_STORAGE_KEY)
+                    .expect("Should have the profile set"),
+                "Profile should match"
             );
         }
     }

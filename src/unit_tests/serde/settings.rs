@@ -28,6 +28,7 @@ fn settings() {
             subtitles_background_color: "subtitles_background_color".to_owned(),
             subtitles_outline_color: "subtitles_outline_color".to_owned(),
             seek_time_duration: 1,
+            seek_shift_time_duration: 2,
             streaming_server_warning_dismissed: Some(
                 Utc.with_ymd_and_hms(2021, 1, 1, 0, 0, 0).unwrap(),
             ),
@@ -35,7 +36,7 @@ fn settings() {
         &[
             Token::Struct {
                 name: "Settings",
-                len: 22,
+                len: 23,
             },
             Token::Str("interfaceLanguage"),
             Token::Str("interface_language"),
@@ -85,6 +86,8 @@ fn settings() {
             Token::Str("subtitles_outline_color"),
             Token::Str("seekTimeDuration"),
             Token::U32(1),
+            Token::Str("seekShiftTimeDuration"),
+            Token::U32(2),
             Token::Str("streamingServerWarningDismissed"),
             Token::Some,
             Token::Str("2021-01-01T00:00:00Z"),
@@ -100,7 +103,7 @@ fn settings_de() {
         &[
             Token::Struct {
                 name: "Settings",
-                len: 17,
+                len: 18,
             },
             Token::Str("interfaceLanguage"),
             Token::Str("eng"),
@@ -142,6 +145,8 @@ fn settings_de() {
             Token::Str("subtitlesOutlineColor"),
             Token::Str("#000000"),
             Token::Str("seekTimeDuration"),
+            Token::U32(20000),
+            Token::Str("seekShiftTimeDuration"),
             Token::U32(10000),
             Token::Str("streamingServerWarningDismissed"),
             Token::None,

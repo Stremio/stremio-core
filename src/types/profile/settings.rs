@@ -26,7 +26,10 @@ pub struct Settings {
     pub subtitles_text_color: String,
     pub subtitles_background_color: String,
     pub subtitles_outline_color: String,
+    /// The Seek time duration (in milliseconds) is when using the Arrow keys
     pub seek_time_duration: u32,
+    /// The Seek shift time duration (in milliseconds) is when using the Arrow keys + Shift
+    pub seek_shift_time_duration: u32,
     pub streaming_server_warning_dismissed: Option<DateTime<Utc>>,
 }
 
@@ -60,7 +63,8 @@ impl Default for Settings {
             subtitles_text_color: "#FFFFFFFF".to_owned(),
             subtitles_background_color: "#00000000".to_owned(),
             subtitles_outline_color: "#000000".to_owned(),
-            seek_time_duration: 10000,
+            seek_time_duration: 20000,
+            seek_shift_time_duration: 10000,
             streaming_server_warning_dismissed: None,
         }
     }
