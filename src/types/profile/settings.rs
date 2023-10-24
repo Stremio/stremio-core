@@ -32,6 +32,8 @@ pub struct Settings {
     pub seek_time_duration: u32,
     /// The Seek shift time duration (in milliseconds) is when using the Arrow keys + Shift
     pub seek_shift_time_duration: u32,
+    /// Whether we should pause the playback when the application get's minimized
+    pub pause_on_minimize: bool,
     pub streaming_server_warning_dismissed: Option<DateTime<Utc>>,
 }
 
@@ -68,6 +70,7 @@ impl Default for Settings {
             esc_exists_fullscreen: true,
             seek_time_duration: 20000,
             seek_shift_time_duration: 10000,
+            pause_on_minimize: false,
             streaming_server_warning_dismissed: None,
         }
     }

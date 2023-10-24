@@ -30,6 +30,7 @@ fn settings() {
             esc_exists_fullscreen: true,
             seek_time_duration: 1,
             seek_shift_time_duration: 2,
+            pause_on_minimize: true,
             streaming_server_warning_dismissed: Some(
                 Utc.with_ymd_and_hms(2021, 1, 1, 0, 0, 0).unwrap(),
             ),
@@ -37,7 +38,7 @@ fn settings() {
         &[
             Token::Struct {
                 name: "Settings",
-                len: 24,
+                len: 25,
             },
             Token::Str("interfaceLanguage"),
             Token::Str("interface_language"),
@@ -91,6 +92,8 @@ fn settings() {
             Token::U32(1),
             Token::Str("seekShiftTimeDuration"),
             Token::U32(2),
+            Token::Str("pauseOnMinimize"),
+            Token::Bool(true),
             Token::Str("streamingServerWarningDismissed"),
             Token::Some,
             Token::Str("2021-01-01T00:00:00Z"),
@@ -106,7 +109,7 @@ fn settings_de() {
         &[
             Token::Struct {
                 name: "Settings",
-                len: 19,
+                len: 20,
             },
             Token::Str("interfaceLanguage"),
             Token::Str("eng"),
@@ -153,6 +156,8 @@ fn settings_de() {
             Token::U32(20000),
             Token::Str("seekShiftTimeDuration"),
             Token::U32(10000),
+            Token::Str("pauseOnMinimize"),
+            Token::Bool(false),
             Token::Str("streamingServerWarningDismissed"),
             Token::None,
             Token::StructEnd,

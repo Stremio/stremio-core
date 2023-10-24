@@ -490,6 +490,8 @@ fn migrate_storage_schema_to_v9<E: Env>() -> TryEnvFuture<()> {
 
                     // add the new setting for Escape key exiting full screen
                     settings.insert("escExistsFullscreen".to_owned(), true.into());
+                    // add the new setting for pause on minimize, which is disabled by default
+                    settings.insert("pauseOnMinimize".to_owned(), false.into());
                     E::set_storage(PROFILE_STORAGE_KEY, Some(&profile))
                 }
                 _ => E::set_storage::<()>(PROFILE_STORAGE_KEY, None),
@@ -845,6 +847,7 @@ mod test {
                     "escExistsFullscreen": true,
                     "seekTimeDuration": 20000,
                     "seekShiftTimeDuration": 10000,
+                    "pauseOnMinimize": false,
                 }
             });
 
