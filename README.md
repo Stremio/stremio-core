@@ -7,11 +7,19 @@ Bridge between [stremio-core](https://github.com/stremio/stremio-core) and [stre
 
 ## Build
 
-Builds a wasm package and prepares the rest of the dependencies for the npm package.
+Builds a production wasm package and prepares the rest of the dependencies for the npm package.
 
 ```
 npm install
 npm run build
+```
+
+### Development
+
+Building the package using [`./scripts/build.sh`](./scripts/build.sh) with `--dev` would allow you to see more logging messages being emitted, this is intended **only** for debugging as it will log messages with sensitive information!
+
+```
+./scripts/build.sh --dev
 ```
 
 ## Publishing
