@@ -80,7 +80,7 @@ impl WebModel {
         let (installed_addons, installed_addons_effects) =
             InstalledAddonsWithFilters::new(&profile);
         let (streaming_server, streaming_server_effects) = StreamingServer::new::<WebEnv>(&profile);
-        let (local_search, local_search_effects) = LocalSearch::init::<WebEnv>();
+        let (local_search, local_search_effects) = LocalSearch::new::<WebEnv>();
         let model = WebModel {
             ctx: Ctx::new(profile, library, streams, notifications),
             auth_link: Default::default(),
