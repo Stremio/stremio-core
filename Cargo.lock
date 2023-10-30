@@ -975,7 +975,7 @@ dependencies = [
 
 [[package]]
 name = "stremio-core-web"
-version = "0.44.27"
+version = "0.44.28"
 dependencies = [
  "Inflector",
  "boolinator",
