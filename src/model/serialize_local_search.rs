@@ -15,7 +15,7 @@ mod model {
         pub current_records: Vec<Searchable>,
         /// The results of the search autocompletion
         pub search_results: Vec<Searchable>,
-        pub latest_records: Loadable<Vec<Searchable>, EnvError>,
+        pub latest_records: Option<Loadable<Vec<Searchable>, EnvError>>,
     }
 }
 

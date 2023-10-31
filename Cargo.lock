@@ -933,7 +933,7 @@ dependencies = [
 [[package]]
 name = "stremio-core"
 version = "0.1.0"
-source = "git+https://github.com/Stremio/stremio-core?branch=development#08595747a3b2f8680bb4d7a13f81d30778a3a23c"
+source = "git+https://github.com/Stremio/stremio-core?branch=development#6c50cd82c801543722aaf4907dc79c7d0470f36d"
 dependencies = [
  "anyhow",
  "base64 0.21.2",
@@ -975,7 +975,7 @@ dependencies = [
 
 [[package]]
 name = "stremio-core-web"
-version = "0.44.27"
+version = "0.44.28"
 dependencies = [
  "Inflector",
  "boolinator",
@@ -1008,7 +1008,7 @@ dependencies = [
 [[package]]
 name = "stremio-derive"
 version = "0.1.0"
-source = "git+https://github.com/Stremio/stremio-core?branch=development#08595747a3b2f8680bb4d7a13f81d30778a3a23c"
+source = "git+https://github.com/Stremio/stremio-core?branch=development#6c50cd82c801543722aaf4907dc79c7d0470f36d"
 dependencies = [
  "case",
  "proc-macro-crate",
@@ -1038,7 +1038,7 @@ dependencies = [
 [[package]]
 name = "stremio-watched-bitfield"
 version = "0.1.0"
-source = "git+https://github.com/Stremio/stremio-core?branch=development#08595747a3b2f8680bb4d7a13f81d30778a3a23c"
+source = "git+https://github.com/Stremio/stremio-core?branch=development#6c50cd82c801543722aaf4907dc79c7d0470f36d"
 dependencies = [
  "base64 0.13.1",
  "flate2",
