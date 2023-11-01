@@ -22,7 +22,8 @@ use crate::{
         api::{DatastoreCommand, DatastoreRequest},
         library::{LibraryBucket, LibraryItem},
         profile::Profile,
-        resource::{MetaItem, Stream}, streams::{StreamsBucket, StreamsItemKey},
+        resource::{MetaItem, Stream},
+        streams::{StreamsBucket, StreamsItemKey},
     },
 };
 
