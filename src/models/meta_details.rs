@@ -87,6 +87,7 @@ impl<E: Env + 'static> UpdateWithCtx<E> for MetaDetails {
                     .join(meta_items_effects)
                     .join(meta_streams_effects)
                     .join(streams_effects)
+                    .join(suggested_stream_effects)
                     .join(library_item_effects)
                     .join(watched_effects)
             }
