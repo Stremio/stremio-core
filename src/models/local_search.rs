@@ -77,21 +77,19 @@ pub struct LocalSearch {
     pub searcher: Option<Searcher<Searchable>>,
     /// A loadable resource in order to be able to search for items while
     /// a new set of items is being loaded (i.e. refreshed)
-    pub latest_records: Loadable<Vec<Searchable>, EnvError>,
+    pub latest_records: Option<Loadable<Vec<Searchable>, EnvError>>,
 }
 
 impl LocalSearch {
-    pub fn init<E: Env + 'static>() -> (Self, Effects) {
-        let effects = Effects::one(Self::get_searchable_items::<E>(&CINEMETA_CATALOGS_URL));
-
+    pub fn new<E: Env + 'static>() -> (Self, Effects) {
         (
             Self {
                 current_records: vec![],
                 search_results: vec![],
                 searcher: None,
-                latest_records: Loadable::Loading,
+                latest_records: None,
             },
-            effects.unchanged(),
+            Effects::none().unchanged(),
         )
     }
 
@@ -173,7 +171,8 @@ impl<E: Env + 'static> UpdateWithCtx<E> for LocalSearch {
             Msg::Action(Action::Load(ActionLoad::LocalSearch)) => {
                 let load_feed_effect = Self::get_searchable_items::<E>(&CINEMETA_CATALOGS_URL);
 
-                let last_records_effects = eq_update(&mut self.latest_records, Loadable::Loading);
+                let last_records_effects =
+                    eq_update(&mut self.latest_records, Some(Loadable::Loading));
 
                 Effects::one(load_feed_effect)
                     .unchanged()
@@ -216,7 +215,7 @@ impl<E: Env + 'static> UpdateWithCtx<E> for LocalSearch {
                         // update the latest records, used for refreshing the list
                         let last_records_effects = eq_update(
                             &mut self.latest_records,
-                            Loadable::Ready(searchable.to_owned()),
+                            Some(Loadable::Ready(searchable.to_owned())),
                         );
 
                         // and the current, used for the search itself
@@ -241,7 +240,10 @@ impl<E: Env + 'static> UpdateWithCtx<E> for LocalSearch {
                     Err(error) => {
                         // update the latest records, but leave the current_records
                         // this will ensure that the user can still search locally with autocomplete
-                        eq_update(&mut self.latest_records, Loadable::Err(error.to_owned()))
+                        eq_update(
+                            &mut self.latest_records,
+                            Some(Loadable::Err(error.to_owned())),
+                        )
                     }
                 }
             }

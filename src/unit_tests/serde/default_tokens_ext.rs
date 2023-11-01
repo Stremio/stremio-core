@@ -371,7 +371,7 @@ impl DefaultTokens for Settings {
         vec![
             Token::Struct {
                 name: "Settings",
-                len: 22,
+                len: 25,
             },
             Token::Str("interfaceLanguage"),
             Token::Str("eng"),
@@ -416,8 +416,14 @@ impl DefaultTokens for Settings {
             Token::Str("#00000000"),
             Token::Str("subtitlesOutlineColor"),
             Token::Str("#000000"),
+            Token::Str("escExitFullscreen"),
+            Token::Bool(true),
             Token::Str("seekTimeDuration"),
             Token::U32(10000),
+            Token::Str("seekShortTimeDuration"),
+            Token::U32(3000),
+            Token::Str("pauseOnMinimize"),
+            Token::Bool(false),
             Token::Str("streamingServerWarningDismissed"),
             Token::None,
             Token::StructEnd,

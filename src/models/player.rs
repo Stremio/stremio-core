@@ -10,7 +10,7 @@ use crate::models::common::{
 use crate::models::ctx::Ctx;
 use crate::runtime::msg::{Action, ActionLoad, ActionPlayer, Event, Internal, Msg};
 use crate::runtime::{Effects, Env, UpdateWithCtx};
-use crate::types::addon::{AggrRequest, ExtraExt, ResourcePath, ResourceRequest};
+use crate::types::addon::{AggrRequest, Descriptor, ExtraExt, ResourcePath, ResourceRequest};
 use crate::types::library::{LibraryBucket, LibraryItem};
 use crate::types::profile::Settings as ProfileSettings;
 use crate::types::resource::{MetaItem, SeriesInfo, Stream, Subtitles, Video};
@@ -69,7 +69,6 @@ pub struct Selected {
     /// A request to fetch the selected [`MetaItem`].
     pub meta_request: Option<ResourceRequest>,
     pub subtitles_path: Option<ResourcePath>,
-    pub video_params: Option<VideoParams>,
 }
 
 #[derive(Clone, Derivative, Serialize, Debug)]
@@ -77,10 +76,12 @@ pub struct Selected {
 #[serde(rename_all = "camelCase")]
 pub struct Player {
     pub selected: Option<Selected>,
+    pub video_params: Option<VideoParams>,
     pub meta_item: Option<ResourceLoadable<MetaItem>>,
     pub subtitles: Vec<ResourceLoadable<Vec<Subtitles>>>,
     pub next_video: Option<Video>,
     pub next_streams: Option<ResourceLoadable<Vec<Stream>>>,
+    pub next_stream: Option<Stream>,
     pub series_info: Option<SeriesInfo>,
     pub library_item: Option<LibraryItem>,
     #[serde(skip_serializing)]
@@ -164,38 +165,16 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                     },
                     _ => eq_update(&mut self.meta_item, None),
                 };
-                let subtitles_effects = match &selected.subtitles_path {
-                    Some(subtitles_path) => resources_update_with_vector_content::<E, _>(
-                        &mut self.subtitles,
-                        ResourcesAction::force_request(
-                            &AggrRequest::AllOfResource(ResourcePath {
-                                extra: subtitles_path
-                                    .extra
-                                    .to_owned()
-                                    .extend_one(
-                                        &VIDEO_HASH_EXTRA_PROP,
-                                        selected
-                                            .video_params
-                                            .as_ref()
-                                            .and_then(|params| params.hash.to_owned()),
-                                    )
-                                    .extend_one(
-                                        &VIDEO_SIZE_EXTRA_PROP,
-                                        selected
-                                            .video_params
-                                            .as_ref()
-                                            .and_then(|params| params.size)
-                                            .map(|size| size.to_string()),
-                                    ),
-                                ..subtitles_path.to_owned()
-                            }),
-                            &ctx.profile.addons,
-                        ),
-                    ),
-                    _ => eq_update(&mut self.subtitles, vec![]),
-                };
+                let video_params_effects = eq_update(&mut self.video_params, None);
+                let subtitles_effects = subtitles_update::<E>(
+                    &mut self.subtitles,
+                    &self.selected,
+                    &self.video_params,
+                    &ctx.profile.addons,
+                );
                 let next_video_effects = next_video_update(
                     &mut self.next_video,
+                    &self.next_stream,
                     &self.selected,
                     &self.meta_item,
                     &ctx.profile.settings,
@@ -204,6 +183,12 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                     &mut self.next_streams,
                     &self.next_video,
                     &self.selected,
+                );
+                let next_stream_effects = next_stream_update(
+                    &mut self.next_stream,
+                    &self.next_streams,
+                    &self.selected,
+                    &ctx.profile.settings,
                 );
                 let series_info_effects =
                     series_info_update(&mut self.series_info, &self.selected, &self.meta_item);
@@ -256,9 +241,11 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                     .join(update_streams_effects)
                     .join(selected_effects)
                     .join(meta_item_effects)
+                    .join(video_params_effects)
                     .join(subtitles_effects)
                     .join(next_video_effects)
                     .join(next_streams_effects)
+                    .join(next_stream_effects)
                     .join(series_info_effects)
                     .join(library_item_effects)
                     .join(watched_effects)
@@ -283,10 +270,12 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                     _ => Effects::none().unchanged(),
                 };
                 let selected_effects = eq_update(&mut self.selected, None);
+                let video_params_effects = eq_update(&mut self.video_params, None);
                 let meta_item_effects = eq_update(&mut self.meta_item, None);
                 let subtitles_effects = eq_update(&mut self.subtitles, vec![]);
                 let next_video_effects = eq_update(&mut self.next_video, None);
                 let next_streams_effects = eq_update(&mut self.next_streams, None);
+                let next_stream_effects = eq_update(&mut self.next_stream, None);
                 let series_info_effects = eq_update(&mut self.series_info, None);
                 let library_item_effects = eq_update(&mut self.library_item, None);
                 let watched_effects = eq_update(&mut self.watched, None);
@@ -298,14 +287,27 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                 switch_to_next_video_effects
                     .join(push_to_library_effects)
                     .join(selected_effects)
+                    .join(video_params_effects)
                     .join(meta_item_effects)
                     .join(subtitles_effects)
                     .join(next_video_effects)
                     .join(next_streams_effects)
+                    .join(next_stream_effects)
                     .join(series_info_effects)
                     .join(library_item_effects)
                     .join(watched_effects)
                     .join(ended_effects)
+            }
+            Msg::Action(Action::Player(ActionPlayer::VideoParamsChanged { video_params })) => {
+                let video_params_effects =
+                    eq_update(&mut self.video_params, video_params.to_owned());
+                let subtitles_effects = subtitles_update::<E>(
+                    &mut self.subtitles,
+                    &self.selected,
+                    &self.video_params,
+                    &ctx.profile.addons,
+                );
+                video_params_effects.join(subtitles_effects)
             }
             Msg::Action(Action::Player(ActionPlayer::TimeChanged {
                 time,
@@ -480,6 +482,7 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
 
                 let next_video_effects = next_video_update(
                     &mut self.next_video,
+                    &self.next_stream,
                     &self.selected,
                     &self.meta_item,
                     &ctx.profile.settings,
@@ -489,6 +492,13 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                     &self.next_video,
                     &self.selected,
                 ));
+                let next_stream_effects = next_stream_update(
+                    &mut self.next_stream,
+                    &self.next_streams,
+                    &self.selected,
+                    &ctx.profile.settings,
+                );
+
                 let series_info_effects =
                     series_info_update(&mut self.series_info, &self.selected, &self.meta_item);
                 let library_item_effects = library_item_update::<E>(
@@ -525,6 +535,7 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                     .join(subtitles_effects)
                     .join(next_video_effects)
                     .join(next_streams_effects)
+                    .join(next_stream_effects)
                     .join(series_info_effects)
                     .join(library_item_effects)
                     .join(watched_effects)
@@ -568,6 +579,7 @@ fn switch_to_next_video(
 
 fn next_video_update(
     video: &mut Option<Video>,
+    stream: &Option<Stream>,
     selected: &Option<Selected>,
     meta_item: &Option<ResourceLoadable<MetaItem>>,
     settings: &ProfileSettings,
@@ -609,8 +621,13 @@ fn next_video_update(
                     .unwrap_or_default();
                 next_season != 0 || current_season == next_season
             })
-            .map(|(_, next_video)| next_video)
-            .cloned(),
+            .map(|(_, next_video)| {
+                let mut next_video = next_video.clone();
+                if let Some(stream) = stream {
+                    next_video.streams = vec![stream.clone()];
+                }
+                next_video
+            }),
         _ => None,
     };
     eq_update(video, next_video)
@@ -682,6 +699,31 @@ where
             next_streams_effects
         }
     }
+}
+
+fn next_stream_update(
+    stream: &mut Option<Stream>,
+    next_streams: &Option<ResourceLoadable<Vec<Stream>>>,
+    selected: &Option<Selected>,
+    settings: &ProfileSettings,
+) -> Effects {
+    let next_stream = match (selected, next_streams) {
+        (
+            Some(Selected { stream, .. }),
+            Some(ResourceLoadable {
+                content: Some(Loadable::Ready(streams)),
+                ..
+            }),
+        ) if settings.binge_watching => streams
+            .iter()
+            .find(|Stream { behavior_hints, .. }| {
+                behavior_hints.binge_group == stream.behavior_hints.binge_group
+            })
+            .cloned(),
+        _ => None,
+    };
+
+    eq_update(stream, next_stream)
 }
 
 fn series_info_update(
@@ -793,6 +835,41 @@ fn watched_update(
         .map(|(meta_item, library_item)| library_item.state.watched_bitfield(&meta_item.videos));
     eq_update(watched, next_watched)
 }
+
+fn subtitles_update<E: Env + 'static>(
+    subtitles: &mut Vec<ResourceLoadable<Vec<Subtitles>>>,
+    selected: &Option<Selected>,
+    video_params: &Option<VideoParams>,
+    addons: &[Descriptor],
+) -> Effects {
+    match (selected, video_params) {
+        (
+            Some(Selected {
+                subtitles_path: Some(subtitles_path),
+                ..
+            }),
+            Some(video_params),
+        ) => resources_update_with_vector_content::<E, _>(
+            subtitles,
+            ResourcesAction::force_request(
+                &AggrRequest::AllOfResource(ResourcePath {
+                    extra: subtitles_path
+                        .extra
+                        .to_owned()
+                        .extend_one(&VIDEO_HASH_EXTRA_PROP, video_params.hash.to_owned())
+                        .extend_one(
+                            &VIDEO_SIZE_EXTRA_PROP,
+                            video_params.size.as_ref().map(|size| size.to_string()),
+                        ),
+                    ..subtitles_path.to_owned()
+                }),
+                addons,
+            ),
+        ),
+        _ => eq_update(subtitles, vec![]),
+    }
+}
+
 #[cfg(test)]
 mod test {
     use chrono::{TimeZone, Utc};
@@ -836,7 +913,6 @@ mod test {
             }),
             meta_request: None,
             subtitles_path: None,
-            video_params: None,
         };
 
         // Test that it should update the next_streams from the next_video if Video has one stream
