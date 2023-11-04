@@ -34,6 +34,10 @@ pub fn update_streams<E: Env + 'static>(
                 meta_id: meta_id.to_owned(),
                 video_id: video_id.to_owned(),
             };
+            let last_stream_state = streams
+                .items
+                .get(&key)
+                .and_then(|item| item.adjusted_state(stream));
 
             let streams_item = StreamsItem {
                 stream: stream.to_owned(),
@@ -42,11 +46,37 @@ pub fn update_streams<E: Env + 'static>(
                 video_id: video_id.to_owned(),
                 meta_transport_url: meta_request.base.to_owned(),
                 stream_transport_url: stream_request.base.to_owned(),
+                state: last_stream_state,
                 mtime: E::now(),
             };
 
             streams.items.insert(key, streams_item);
             Effects::msg(Msg::Internal(Internal::StreamsChanged(false)))
+        }
+        Msg::Internal(Internal::StreamStateChanged {
+            state,
+            stream_request: Some(stream_request),
+            meta_request: Some(meta_request),
+        }) => {
+            let meta_id = &meta_request.path.id;
+            let video_id = &stream_request.path.id;
+
+            let key = StreamsItemKey {
+                meta_id: meta_id.to_owned(),
+                video_id: video_id.to_owned(),
+            };
+            let steam_item = streams.items.get(&key).cloned();
+            match steam_item {
+                Some(item) => {
+                    let new_stream_item = StreamsItem {
+                        state: state.clone(),
+                        ..item
+                    };
+                    streams.items.insert(key, new_stream_item);
+                    Effects::msg(Msg::Internal(Internal::StreamsChanged(false)))
+                }
+                None => Effects::none().unchanged(),
+            }
         }
         Msg::Internal(Internal::StreamsChanged(persisted)) if !persisted => {
             Effects::one(push_streams_to_storage::<E>(streams)).unchanged()

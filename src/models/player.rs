@@ -14,6 +14,7 @@ use crate::types::addon::{AggrRequest, Descriptor, ExtraExt, ResourcePath, Resou
 use crate::types::library::{LibraryBucket, LibraryItem};
 use crate::types::profile::Settings as ProfileSettings;
 use crate::types::resource::{MetaItem, SeriesInfo, Stream, Subtitles, Video};
+use crate::types::streams::{StreamItemState, StreamsBucket};
 
 use stremio_watched_bitfield::WatchedBitField;
 
@@ -84,6 +85,7 @@ pub struct Player {
     pub next_stream: Option<Stream>,
     pub series_info: Option<SeriesInfo>,
     pub library_item: Option<LibraryItem>,
+    pub stream_state: Option<StreamItemState>,
     #[serde(skip_serializing)]
     pub watched: Option<WatchedBitField>,
     #[serde(skip_serializing)]
@@ -165,6 +167,7 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                     },
                     _ => eq_update(&mut self.meta_item, None),
                 };
+                let stream_state_effects = eq_update(&mut self.stream_state, None);
                 let video_params_effects = eq_update(&mut self.video_params, None);
                 let subtitles_effects = subtitles_update::<E>(
                     &mut self.subtitles,
@@ -241,6 +244,7 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                     .join(update_streams_effects)
                     .join(selected_effects)
                     .join(meta_item_effects)
+                    .join(stream_state_effects)
                     .join(video_params_effects)
                     .join(subtitles_effects)
                     .join(next_video_effects)
@@ -272,6 +276,7 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                 let selected_effects = eq_update(&mut self.selected, None);
                 let video_params_effects = eq_update(&mut self.video_params, None);
                 let meta_item_effects = eq_update(&mut self.meta_item, None);
+                let stream_state_effects = eq_update(&mut self.stream_state, None);
                 let subtitles_effects = eq_update(&mut self.subtitles, vec![]);
                 let next_video_effects = eq_update(&mut self.next_video, None);
                 let next_streams_effects = eq_update(&mut self.next_streams, None);
@@ -289,6 +294,7 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                     .join(selected_effects)
                     .join(video_params_effects)
                     .join(meta_item_effects)
+                    .join(stream_state_effects)
                     .join(subtitles_effects)
                     .join(next_video_effects)
                     .join(next_streams_effects)
@@ -308,6 +314,23 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                     &ctx.profile.addons,
                 );
                 video_params_effects.join(subtitles_effects)
+            }
+            Msg::Action(Action::Player(ActionPlayer::StreamStateChanged { state })) => {
+                let stream_state_effects = eq_update(&mut self.stream_state, state.to_owned());
+                let state_changed_effects =
+                    Effects::msg(Msg::Internal(Internal::StreamStateChanged {
+                        state: state.to_owned(),
+                        stream_request: self
+                            .selected
+                            .as_ref()
+                            .and_then(|selected| selected.stream_request.to_owned()),
+                        meta_request: self
+                            .selected
+                            .as_ref()
+                            .and_then(|selected| selected.meta_request.to_owned()),
+                    }))
+                    .unchanged();
+                stream_state_effects.join(state_changed_effects)
             }
             Msg::Action(Action::Player(ActionPlayer::TimeChanged {
                 time,
@@ -468,6 +491,12 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                     ),
                     _ => Effects::none().unchanged(),
                 };
+                let stream_state_effects = stream_state_update(
+                    &mut self.stream_state,
+                    &self.selected,
+                    &self.meta_item,
+                    &ctx.streams,
+                );
                 let subtitles_effects = resources_update_with_vector_content::<E, _>(
                     &mut self.subtitles,
                     ResourcesAction::ResourceRequestResult { request, result },
@@ -532,6 +561,7 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                     analytics_context.duration = duration;
                 };
                 meta_item_effects
+                    .join(stream_state_effects)
                     .join(subtitles_effects)
                     .join(next_video_effects)
                     .join(next_streams_effects)
@@ -575,6 +605,42 @@ fn switch_to_next_video(
         _ => {}
     };
     Effects::none().unchanged()
+}
+
+fn stream_state_update(
+    state: &mut Option<StreamItemState>,
+    selected: &Option<Selected>,
+    meta_item: &Option<ResourceLoadable<MetaItem>>,
+    streams: &StreamsBucket,
+) -> Effects {
+    match (&state, selected, meta_item) {
+        (
+            None,
+            Some(Selected {
+                stream,
+                stream_request: Some(stream_request),
+                meta_request: Some(meta_request),
+                ..
+            }),
+            Some(ResourceLoadable {
+                content: Some(Loadable::Ready(meta_item)),
+                ..
+            }),
+        ) => {
+            let video_id = &stream_request.path.id;
+            let next_state = streams
+                .last_stream_item(video_id, meta_item)
+                .and_then(|item| item.adjusted_state(stream));
+            let state_changed_effect = Effects::msg(Msg::Internal(Internal::StreamStateChanged {
+                state: next_state.to_owned(),
+                stream_request: Some(stream_request.to_owned()),
+                meta_request: Some(meta_request.to_owned()),
+            }))
+            .unchanged();
+            eq_update(state, next_state).join(state_changed_effect)
+        }
+        _ => Effects::none().unchanged(),
+    }
 }
 
 fn next_video_update(
@@ -716,9 +782,7 @@ fn next_stream_update(
             }),
         ) if settings.binge_watching => streams
             .iter()
-            .find(|Stream { behavior_hints, .. }| {
-                behavior_hints.binge_group == stream.behavior_hints.binge_group
-            })
+            .find(|next_stream| next_stream.is_binge_match(stream))
             .cloned(),
         _ => None,
     };

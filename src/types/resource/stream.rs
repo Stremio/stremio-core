@@ -219,6 +219,17 @@ impl Stream {
             _ => None,
         }
     }
+
+    #[inline]
+    pub fn is_binge_match(&self, other_stream: &Stream) -> bool {
+        match (
+            &self.behavior_hints.binge_group,
+            &other_stream.behavior_hints.binge_group,
+        ) {
+            (Some(a), Some(b)) => a == b,
+            _ => false,
+        }
+    }
 }
 
 #[serde_as]

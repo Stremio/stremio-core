@@ -49,6 +49,7 @@ const TORRENT_STREAMS_ITEM: Lazy<StreamsItem> = Lazy::new(|| {
         stream_transport_url: "https://torrentio.strem.fun/qualityfilter=1080p,720p/manifest.json"
             .parse()
             .unwrap(),
+        state: None,
         mtime: Utc::now(),
     }
 });
