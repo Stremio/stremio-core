@@ -7,12 +7,14 @@ use crate::types::api::{
     fetch_api, APIError, APIRequest, APIResult, CollectionResponse, SuccessResponse,
 };
 use crate::types::profile::{Auth, AuthKey, Profile, Settings, User};
+use crate::types::streams::StreamsBucket;
 use enclose::enclose;
 use futures::{future, FutureExt, TryFutureExt};
 use std::collections::HashSet;
 
 pub fn update_profile<E: Env + 'static>(
     profile: &mut Profile,
+    streams: &mut StreamsBucket,
     status: &CtxStatus,
     msg: &Msg,
 ) -> Effects {
@@ -159,6 +161,12 @@ pub fn update_profile<E: Env + 'static>(
             if let Some(addon_position) = addon_position {
                 if !profile.addons[addon_position].flags.protected && !addon.flags.protected {
                     profile.addons.remove(addon_position);
+
+                    // Remove stream related to this addon from the streams bucket
+                    streams
+                        .items
+                        .retain(|_key, item| item.stream_transport_url != addon.transport_url);
+
                     let push_to_api_effects = match profile.auth_key() {
                         Some(auth_key) => Effects::one(push_addons_to_api::<E>(
                             profile.addons.to_owned(),

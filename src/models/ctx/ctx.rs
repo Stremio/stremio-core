@@ -16,6 +16,7 @@ use crate::types::profile::{Auth, AuthKey, Profile};
 use crate::types::resource::MetaItem;
 use crate::types::streams::StreamsBucket;
 
+#[cfg(test)]
 use derivative::Derivative;
 use enclose::enclose;
 use futures::{future, FutureExt, TryFutureExt};
@@ -30,8 +31,9 @@ pub enum CtxStatus {
     Ready,
 }
 
-#[derive(Derivative, Serialize, Deserialize, Clone, Debug)]
-#[derivative(Default)]
+#[derive(Serialize, Deserialize, Clone, Debug)]
+#[cfg_attr(test, derive(Derivative))]
+#[cfg_attr(test, derivative(Default))]
 pub struct Ctx {
     pub profile: Profile,
     // TODO SubtitlesBucket
@@ -42,7 +44,7 @@ pub struct Ctx {
     #[serde(skip)]
     pub streams: StreamsBucket,
     #[serde(skip)]
-    #[derivative(Default(value = "CtxStatus::Ready"))]
+    #[cfg_attr(test, derivative(Default(value = "CtxStatus::Ready")))]
     pub status: CtxStatus,
     #[serde(skip)]
     /// Used only for loading the Descriptor and then the descriptor will be discarded
@@ -63,7 +65,9 @@ impl Ctx {
             library,
             streams,
             notifications,
-            ..Self::default()
+            trakt_addon: None,
+            notification_catalogs: vec![],
+            status: CtxStatus::Ready,
         }
     }
 }
@@ -81,7 +85,8 @@ impl<E: Env + 'static> Update<E> for Ctx {
                     Some(auth_key) => Effects::one(delete_session::<E>(auth_key)).unchanged(),
                     _ => Effects::none().unchanged(),
                 };
-                let profile_effects = update_profile::<E>(&mut self.profile, &self.status, msg);
+                let profile_effects =
+                    update_profile::<E>(&mut self.profile, &mut self.streams, &self.status, msg);
                 let library_effects =
                     update_library::<E>(&mut self.library, &self.profile, &self.status, msg);
                 let streams_effects = update_streams::<E>(&mut self.streams, &self.status, msg);
@@ -110,7 +115,8 @@ impl<E: Env + 'static> Update<E> for Ctx {
                     .join(notifications_effects)
             }
             Msg::Internal(Internal::CtxAuthResult(auth_request, result)) => {
-                let profile_effects = update_profile::<E>(&mut self.profile, &self.status, msg);
+                let profile_effects =
+                    update_profile::<E>(&mut self.profile, &mut self.streams, &self.status, msg);
                 let library_effects =
                     update_library::<E>(&mut self.library, &self.profile, &self.status, msg);
                 let trakt_addon_effects = update_trakt_addon::<E>(
@@ -157,7 +163,8 @@ impl<E: Env + 'static> Update<E> for Ctx {
                     .join(ctx_effects)
             }
             _ => {
-                let profile_effects = update_profile::<E>(&mut self.profile, &self.status, msg);
+                let profile_effects =
+                    update_profile::<E>(&mut self.profile, &mut self.streams, &self.status, msg);
                 let library_effects =
                     update_library::<E>(&mut self.library, &self.profile, &self.status, msg);
                 let streams_effects = update_streams::<E>(&mut self.streams, &self.status, msg);
@@ -245,7 +252,7 @@ fn authenticate<E: Env + 'static>(auth_request: &AuthRequest) -> Effect {
             .map(enclose!((auth_request) move |result| {
                 let internal_msg = Msg::Internal(Internal::CtxAuthResult(auth_request, result));
 
-                event!(Level::INFO, internal_message = ?internal_msg);
+                event!(Level::TRACE, internal_message = ?internal_msg);
                 internal_msg
             }))
             .boxed_env(),

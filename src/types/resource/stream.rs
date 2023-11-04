@@ -14,7 +14,7 @@ use serde_with::{serde_as, DefaultOnNull};
 use std::collections::HashMap;
 use std::io::Write;
 use stremio_serde_hex::{SerHex, Strict};
-use url::Url;
+use url::{form_urlencoded, Url};
 
 #[derive(Clone, PartialEq, Eq, Serialize, Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
@@ -136,7 +136,38 @@ impl Stream {
     }
     pub fn streaming_url(&self, streaming_server_url: Option<&Url>) -> Option<String> {
         match (&self.source, streaming_server_url) {
-            (StreamSource::Url { url }, _) if url.scheme() != "magnet" => Some(url.to_string()),
+            (StreamSource::Url { url }, _) if url.scheme() != "magnet" => {
+                match (streaming_server_url, &self.behavior_hints.proxy_headers) {
+                    (
+                        Some(streaming_server_url),
+                        Some(StreamProxyHeaders { request, response }),
+                    ) => {
+                        let mut streaming_url = streaming_server_url.to_owned();
+                        let mut proxy_query = form_urlencoded::Serializer::new(String::new());
+                        let origin = format!("{}://{}", url.scheme(), url.authority());
+                        proxy_query.append_pair("d", origin.as_str());
+                        proxy_query.extend_pairs(
+                            request
+                                .iter()
+                                .map(|header| ("h", format!("{}:{}", header.0, header.1))),
+                        );
+                        proxy_query.extend_pairs(
+                            response
+                                .iter()
+                                .map(|header| ("r", format!("{}:{}", header.0, header.1))),
+                        );
+                        streaming_url
+                            .path_segments_mut()
+                            .ok()?
+                            .push("proxy")
+                            .push(proxy_query.finish().as_str())
+                            .push(&url.path()[1..]);
+                        streaming_url.set_query(url.query());
+                        Some(streaming_url.to_string())
+                    }
+                    _ => Some(url.to_string()),
+                }
+            }
             (
                 StreamSource::Torrent {
                     info_hash,
@@ -149,9 +180,11 @@ impl Stream {
                 match url.path_segments_mut() {
                     Ok(mut path) => {
                         path.push(&hex::encode(info_hash));
-                        if let Some(file_idx) = file_idx {
-                            path.push(&file_idx.to_string());
-                        }
+                        // When fileIndex is not provided use -1, which will tell the
+                        // streaming server to choose the file with the largest size from the torrent
+                        path.push(
+                            &file_idx.map_or_else(|| "-1".to_string(), |idx| idx.to_string()),
+                        );
                     }
                     _ => return None,
                 };

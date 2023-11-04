@@ -185,7 +185,7 @@ impl From<(&LibraryItem, Option<&StreamsItem>, Option<&Url>, &Settings)> for Lib
                         utf8_percent_encode(video_id, URI_COMPONENT_ENCODE_SET)
                     )
                 }),
-            // We have the steam so use the same logic as in StreamDeepLinks
+            // We have the stream so use the same logic as in StreamDeepLinks
             player: streams_item.map(|streams_item| match streams_item.stream.encode() {
                 Ok(encoded_stream) => format!(
                     "stremio:///player/{}/{}/{}/{}/{}/{}",
@@ -204,7 +204,7 @@ impl From<(&LibraryItem, Option<&StreamsItem>, Option<&Url>, &Settings)> for Lib
                 ),
                 Err(error) => ErrorLink::from(error).into(),
             }),
-            // We have the steams bucket item so use the same logic as in StreamDeepLinks
+            // We have the streams bucket item so use the same logic as in StreamDeepLinks
             external_player: streams_item.map(|item| {
                 ExternalPlayerLink::from((&item.stream, streaming_server_url, settings))
             }),

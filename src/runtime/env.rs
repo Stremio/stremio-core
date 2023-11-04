@@ -1,7 +1,7 @@
 use crate::addon_transport::{AddonHTTPTransport, AddonTransport, UnsupportedTransport};
 use crate::constants::{
     LIBRARY_RECENT_STORAGE_KEY, LIBRARY_STORAGE_KEY, PROFILE_STORAGE_KEY, SCHEMA_VERSION,
-    SCHEMA_VERSION_STORAGE_KEY,
+    SCHEMA_VERSION_STORAGE_KEY, STREAMS_STORAGE_KEY,
 };
 use crate::models::ctx::Ctx;
 use crate::models::streaming_server::StreamingServer;
@@ -177,55 +177,67 @@ pub trait Env {
                         schema_version,
                         SCHEMA_VERSION,
                     ));
-                };
+                }
                 if schema_version == 0 {
                     migrate_storage_schema_to_v1::<Self>()
                         .map_err(|error| EnvError::StorageSchemaVersionUpgrade(Box::new(error)))
                         .await?;
                     schema_version = 1;
-                };
+                }
                 if schema_version == 1 {
                     migrate_storage_schema_to_v2::<Self>()
                         .map_err(|error| EnvError::StorageSchemaVersionUpgrade(Box::new(error)))
                         .await?;
                     schema_version = 2;
-                };
+                }
                 if schema_version == 2 {
                     migrate_storage_schema_to_v3::<Self>()
                         .map_err(|error| EnvError::StorageSchemaVersionUpgrade(Box::new(error)))
                         .await?;
                     schema_version = 3;
-                };
+                }
                 if schema_version == 3 {
                     migrate_storage_schema_to_v4::<Self>()
                         .map_err(|error| EnvError::StorageSchemaVersionUpgrade(Box::new(error)))
                         .await?;
                     schema_version = 4;
-                };
+                }
                 if schema_version == 4 {
                     migrate_storage_schema_to_v5::<Self>()
                         .map_err(|error| EnvError::StorageSchemaVersionUpgrade(Box::new(error)))
                         .await?;
                     schema_version = 5;
-                };
+                }
                 if schema_version == 5 {
                     migrate_storage_schema_to_v6::<Self>()
                         .map_err(|error| EnvError::StorageSchemaVersionUpgrade(Box::new(error)))
                         .await?;
                     schema_version = 6;
-                };
+                }
                 if schema_version == 6 {
                     migrate_storage_schema_to_v7::<Self>()
                         .map_err(|error| EnvError::StorageSchemaVersionUpgrade(Box::new(error)))
                         .await?;
                     schema_version = 7;
-                };
+                }
+                if schema_version == 7 {
+                    migrate_storage_schema_to_v8::<Self>()
+                        .map_err(|error| EnvError::StorageSchemaVersionUpgrade(Box::new(error)))
+                        .await?;
+                    schema_version = 8;
+                }
+                if schema_version == 8 {
+                    migrate_storage_schema_to_v9::<Self>()
+                        .map_err(|error| EnvError::StorageSchemaVersionUpgrade(Box::new(error)))
+                        .await?;
+                    schema_version = 9;
+                }
                 if schema_version != SCHEMA_VERSION {
                     panic!(
                         "Storage schema version must be upgraded from {} to {}",
                         schema_version, SCHEMA_VERSION
                     );
-                };
+                }
                 Ok(())
             })
             .boxed_env()
@@ -444,17 +456,75 @@ fn migrate_storage_schema_to_v7<E: Env>() -> TryEnvFuture<()> {
         .boxed_env()
 }
 
+fn migrate_storage_schema_to_v8<E: Env>() -> TryEnvFuture<()> {
+    E::set_storage::<()>(STREAMS_STORAGE_KEY, None)
+        .and_then(|_| E::set_storage(SCHEMA_VERSION_STORAGE_KEY, Some(&8)))
+        .boxed_env()
+}
+
+fn migrate_storage_schema_to_v9<E: Env>() -> TryEnvFuture<()> {
+    E::get_storage::<serde_json::Value>(PROFILE_STORAGE_KEY)
+        .and_then(|mut profile| {
+            match profile
+                .as_mut()
+                .and_then(|profile| profile.as_object_mut())
+                .and_then(|profile| profile.get_mut("settings"))
+                .and_then(|settings| settings.as_object_mut())
+            {
+                Some(settings) => {
+                    // short (i.e. finer) seeking time is 3 seconds
+                    settings.insert(
+                        "seekShortTimeDuration".to_owned(),
+                        serde_json::Value::Number(3_000_u32.into()),
+                    );
+
+                    // add the new setting for Escape key exiting full screen
+                    settings.insert("escExitFullscreen".to_owned(), true.into());
+                    // add the new setting for pause on minimize, which is disabled by default
+                    settings.insert("pauseOnMinimize".to_owned(), false.into());
+                    E::set_storage(PROFILE_STORAGE_KEY, Some(&profile))
+                }
+                _ => E::set_storage::<()>(PROFILE_STORAGE_KEY, None),
+            }
+        })
+        .and_then(|_| E::set_storage(SCHEMA_VERSION_STORAGE_KEY, Some(&9)))
+        .boxed_env()
+}
+
 #[cfg(test)]
 mod test {
     use serde_json::{json, Value};
 
-    use crate::constants::SCHEMA_VERSION;
-    use crate::runtime::env::{migrate_storage_schema_to_v6, migrate_storage_schema_to_v7};
     use crate::{
-        constants::{PROFILE_STORAGE_KEY, SCHEMA_VERSION_STORAGE_KEY},
-        runtime::Env,
+        constants::{
+            PROFILE_STORAGE_KEY, SCHEMA_VERSION, SCHEMA_VERSION_STORAGE_KEY, STREAMS_STORAGE_KEY,
+        },
+        runtime::{
+            env::{
+                migrate_storage_schema_to_v6, migrate_storage_schema_to_v7,
+                migrate_storage_schema_to_v8, migrate_storage_schema_to_v9,
+            },
+            Env,
+        },
+        types::streams::StreamsBucket,
         unit_tests::{TestEnv, STORAGE},
     };
+
+    fn set_streams_and_schema_version(streams: &Value, schema_v: u32) {
+        let mut storage = STORAGE.write().expect("Should lock");
+
+        let no_schema = storage.insert(SCHEMA_VERSION_STORAGE_KEY.into(), schema_v.to_string());
+        assert!(
+            no_schema.is_none(),
+            "Current schema should be empty for this test"
+        );
+
+        let no_streams = storage.insert(STREAMS_STORAGE_KEY.into(), streams.to_string());
+        assert!(
+            no_streams.is_none(),
+            "Current profile should be empty for this test"
+        );
+    }
 
     fn set_profile_and_schema_version(profile: &Value, schema_v: u32) {
         let mut storage = STORAGE.write().expect("Should lock");
@@ -697,6 +767,90 @@ mod test {
 
             assert_eq!(
                 &7.to_string(),
+                storage
+                    .get(SCHEMA_VERSION_STORAGE_KEY)
+                    .expect("Should have the schema set"),
+                "Scheme version should now be updated"
+            );
+            assert_eq!(
+                &migrated_profile.to_string(),
+                storage
+                    .get(PROFILE_STORAGE_KEY)
+                    .expect("Should have the profile set"),
+                "Profile should match"
+            );
+        }
+    }
+
+    #[tokio::test]
+    async fn test_migration_from_7_to_8() {
+        let _test_env_guard = TestEnv::reset().expect("Should lock TestEnv");
+        let streams_before = serde_json::to_value(StreamsBucket {
+            uid: Some("test".into()),
+            items: Default::default(),
+        })
+        .unwrap();
+
+        // setup storage for migration
+        set_streams_and_schema_version(&streams_before, 7);
+
+        {
+            let storage = STORAGE.read().expect("Should lock");
+
+            assert!(storage.get(STREAMS_STORAGE_KEY).is_some());
+        }
+
+        // migrate storage
+        migrate_storage_schema_to_v8::<TestEnv>()
+            .await
+            .expect("Should migrate");
+
+        {
+            let storage = STORAGE.read().expect("Should lock");
+
+            assert_eq!(
+                &8.to_string(),
+                storage
+                    .get(SCHEMA_VERSION_STORAGE_KEY)
+                    .expect("Should have the schema set"),
+                "Scheme version should now be updated"
+            );
+            assert!(
+                storage.get(STREAMS_STORAGE_KEY).is_none(),
+                "Stream storage key should be removed"
+            );
+        }
+    }
+
+    #[tokio::test]
+    async fn test_migration_from_8_to_9() {
+        {
+            let _test_env_guard = TestEnv::reset().expect("Should lock TestEnv");
+            let profile_before = json!({
+                "settings": {
+                }
+            });
+
+            let migrated_profile = json!({
+                "settings": {
+                    "escExitFullscreen": true,
+                    "seekShortTimeDuration": 3000,
+                    "pauseOnMinimize": false,
+                }
+            });
+
+            // setup storage for migration
+            set_profile_and_schema_version(&profile_before, 8);
+
+            // migrate storage
+            migrate_storage_schema_to_v9::<TestEnv>()
+                .await
+                .expect("Should migrate");
+
+            let storage = STORAGE.read().expect("Should lock");
+
+            assert_eq!(
+                &9.to_string(),
                 storage
                     .get(SCHEMA_VERSION_STORAGE_KEY)
                     .expect("Should have the schema set"),

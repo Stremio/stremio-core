@@ -12,7 +12,7 @@ use crate::{
         library_by_type::Selected as LibraryByTypeSelected,
         library_with_filters::Selected as LibraryWithFiltersSelected,
         meta_details::Selected as MetaDetailsSelected,
-        player::Selected as PlayerSelected,
+        player::{Selected as PlayerSelected, VideoParams},
         streaming_server::{
             Settings as StreamingServerSettings,
             StatisticsRequest as StreamingServerStatisticsRequest,
@@ -126,6 +126,10 @@ pub enum ActionLink {
 #[derive(Clone, Deserialize, Debug)]
 #[serde(tag = "action", content = "args")]
 pub enum ActionPlayer {
+    #[serde(rename_all = "camelCase")]
+    VideoParamsChanged {
+        video_params: Option<VideoParams>,
+    },
     TimeChanged {
         time: u64,
         duration: u64,
