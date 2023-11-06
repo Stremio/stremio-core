@@ -191,10 +191,19 @@ impl<E: Env + 'static> UpdateWithCtx<E> for MetaDetails {
             Msg::Internal(Internal::ResourceRequestResult(request, result))
                 if request.path.resource == STREAM_RESOURCE_NAME =>
             {
-                resources_update_with_vector_content::<E, _>(
+                let streams_effects = resources_update_with_vector_content::<E, _>(
                     &mut self.streams,
                     ResourcesAction::ResourceRequestResult { request, result },
-                )
+                );
+                let suggested_stream_effects = suggested_stream_update(
+                    &mut self.suggested_stream,
+                    &self.selected,
+                    &self.meta_items,
+                    &self.meta_streams,
+                    &self.streams,
+                    &ctx.streams,
+                );
+                streams_effects.join(suggested_stream_effects)
             }
             Msg::Internal(Internal::LibraryChanged(_)) => {
                 let library_item_effects = library_item_update::<E>(
