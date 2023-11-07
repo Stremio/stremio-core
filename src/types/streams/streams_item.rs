@@ -21,6 +21,9 @@ pub struct StreamsItem {
     pub mtime: DateTime<Utc>,
 }
 
+/// StreamItemState is to be used when user intentionally changes some values from the defaults,
+/// so that they would be persisted and restored when returning to the same stream,
+/// or some of them reapplied when moving to the next video/stream.
 #[serde_as]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
