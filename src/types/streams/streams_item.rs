@@ -30,9 +30,11 @@ pub struct StreamsItem {
 pub struct StreamItemState {
     pub subtitle_track_id: Option<String>,
     pub subtitle_language: Option<String>,
+    /// In milliseconds
     pub subtitle_delay: Option<i64>,
     pub audio_track_id: Option<String>,
     pub audio_language: Option<String>,
+    /// In milliseconds
     pub audio_delay: Option<i64>,
     pub playback_speed: Option<f32>,
     pub player_type: Option<String>,
