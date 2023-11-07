@@ -132,7 +132,7 @@ pub enum ActionPlayer {
         video_params: Option<VideoParams>,
     },
     StreamStateChanged {
-        state: Option<StreamItemState>,
+        state: StreamItemState,
     },
     TimeChanged {
         time: u64,

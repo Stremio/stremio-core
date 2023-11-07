@@ -69,7 +69,7 @@ pub fn update_streams<E: Env + 'static>(
             match steam_item {
                 Some(item) => {
                     let new_stream_item = StreamsItem {
-                        state: state.clone(),
+                        state: Some(state.to_owned()),
                         ..item
                     };
                     streams.items.insert(key, new_stream_item);

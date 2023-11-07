@@ -316,7 +316,8 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                 video_params_effects.join(subtitles_effects)
             }
             Msg::Action(Action::Player(ActionPlayer::StreamStateChanged { state })) => {
-                let stream_state_effects = eq_update(&mut self.stream_state, state.to_owned());
+                let stream_state_effects =
+                    eq_update(&mut self.stream_state, Some(state.to_owned()));
                 let state_changed_effects =
                     Effects::msg(Msg::Internal(Internal::StreamStateChanged {
                         state: state.to_owned(),
@@ -631,12 +632,15 @@ fn stream_state_update(
             let next_state = streams
                 .last_stream_item(video_id, meta_item)
                 .and_then(|item| item.adjusted_state(stream));
-            let state_changed_effect = Effects::msg(Msg::Internal(Internal::StreamStateChanged {
-                state: next_state.to_owned(),
-                stream_request: Some(stream_request.to_owned()),
-                meta_request: Some(meta_request.to_owned()),
-            }))
-            .unchanged();
+            let state_changed_effect = match &next_state {
+                Some(state) => Effects::msg(Msg::Internal(Internal::StreamStateChanged {
+                    state: state.clone(),
+                    stream_request: Some(stream_request.to_owned()),
+                    meta_request: Some(meta_request.to_owned()),
+                }))
+                .unchanged(),
+                None => Effects::none().unchanged(),
+            };
             eq_update(state, next_state).join(state_changed_effect)
         }
         _ => Effects::none().unchanged(),

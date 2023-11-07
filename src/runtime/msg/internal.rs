@@ -61,7 +61,7 @@ pub enum Internal {
     },
     /// Dispatched when stream item's state has changed
     StreamStateChanged {
-        state: Option<StreamItemState>,
+        state: StreamItemState,
         stream_request: Option<ResourceRequest>,
         meta_request: Option<ResourceRequest>,
     },
