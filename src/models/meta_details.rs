@@ -23,6 +23,7 @@ use crate::{
         library::{LibraryBucket, LibraryItem},
         profile::Profile,
         resource::{MetaItem, Stream},
+        streams::{StreamsBucket, StreamsItemKey},
     },
 };
 
@@ -44,6 +45,7 @@ pub struct MetaDetails {
     pub meta_items: Vec<ResourceLoadable<MetaItem>>,
     pub meta_streams: Vec<ResourceLoadable<Vec<Stream>>>,
     pub streams: Vec<ResourceLoadable<Vec<Stream>>>,
+    pub suggested_stream: Option<Stream>,
     pub library_item: Option<LibraryItem>,
     #[serde(skip_serializing)]
     pub watched: Option<WatchedBitField>,
@@ -62,6 +64,14 @@ impl<E: Env + 'static> UpdateWithCtx<E> for MetaDetails {
                     meta_streams_update(&mut self.meta_streams, &self.selected, &self.meta_items);
                 let streams_effects =
                     streams_update::<E>(&mut self.streams, &self.selected, &ctx.profile);
+                let suggested_stream_effects = suggested_stream_update(
+                    &mut self.suggested_stream,
+                    &self.selected,
+                    &self.meta_items,
+                    &self.meta_streams,
+                    &self.streams,
+                    &ctx.streams,
+                );
                 let library_item_effects = library_item_update::<E>(
                     &mut self.library_item,
                     &self.selected,
@@ -77,6 +87,7 @@ impl<E: Env + 'static> UpdateWithCtx<E> for MetaDetails {
                     .join(meta_items_effects)
                     .join(meta_streams_effects)
                     .join(streams_effects)
+                    .join(suggested_stream_effects)
                     .join(library_item_effects)
                     .join(watched_effects)
             }
@@ -86,11 +97,13 @@ impl<E: Env + 'static> UpdateWithCtx<E> for MetaDetails {
                 let meta_streams_effects = eq_update(&mut self.meta_streams, vec![]);
                 let streams_effects = eq_update(&mut self.streams, vec![]);
                 let library_item_effects = eq_update(&mut self.library_item, None);
+                let suggested_stream_effects = eq_update(&mut self.suggested_stream, None);
                 let watched_effects = eq_update(&mut self.watched, None);
                 selected_effects
                     .join(meta_items_effects)
                     .join(meta_streams_effects)
                     .join(streams_effects)
+                    .join(suggested_stream_effects)
                     .join(library_item_effects)
                     .join(watched_effects)
             }
@@ -151,6 +164,14 @@ impl<E: Env + 'static> UpdateWithCtx<E> for MetaDetails {
                 };
                 let meta_streams_effects =
                     meta_streams_update(&mut self.meta_streams, &self.selected, &self.meta_items);
+                let suggested_stream_effects = suggested_stream_update(
+                    &mut self.suggested_stream,
+                    &self.selected,
+                    &self.meta_items,
+                    &self.meta_streams,
+                    &self.streams,
+                    &ctx.streams,
+                );
                 let library_item_effects = library_item_update::<E>(
                     &mut self.library_item,
                     &self.selected,
@@ -163,16 +184,26 @@ impl<E: Env + 'static> UpdateWithCtx<E> for MetaDetails {
                     .join(meta_items_effects)
                     .join(meta_streams_effects)
                     .join(streams_effects)
+                    .join(suggested_stream_effects)
                     .join(library_item_effects)
                     .join(watched_effects)
             }
             Msg::Internal(Internal::ResourceRequestResult(request, result))
                 if request.path.resource == STREAM_RESOURCE_NAME =>
             {
-                resources_update_with_vector_content::<E, _>(
+                let streams_effects = resources_update_with_vector_content::<E, _>(
                     &mut self.streams,
                     ResourcesAction::ResourceRequestResult { request, result },
-                )
+                );
+                let suggested_stream_effects = suggested_stream_update(
+                    &mut self.suggested_stream,
+                    &self.selected,
+                    &self.meta_items,
+                    &self.meta_streams,
+                    &self.streams,
+                    &ctx.streams,
+                );
+                streams_effects.join(suggested_stream_effects)
             }
             Msg::Internal(Internal::LibraryChanged(_)) => {
                 let library_item_effects = library_item_update::<E>(
@@ -192,6 +223,14 @@ impl<E: Env + 'static> UpdateWithCtx<E> for MetaDetails {
                     meta_streams_update(&mut self.meta_streams, &self.selected, &self.meta_items);
                 let streams_effects =
                     streams_update::<E>(&mut self.streams, &self.selected, &ctx.profile);
+                let suggested_stream_effects = suggested_stream_update(
+                    &mut self.suggested_stream,
+                    &self.selected,
+                    &self.meta_items,
+                    &self.meta_streams,
+                    &self.streams,
+                    &ctx.streams,
+                );
                 let library_item_effects = library_item_update::<E>(
                     &mut self.library_item,
                     &self.selected,
@@ -203,6 +242,7 @@ impl<E: Env + 'static> UpdateWithCtx<E> for MetaDetails {
                 meta_items_effects
                     .join(meta_streams_effects)
                     .join(streams_effects)
+                    .join(suggested_stream_effects)
                     .join(library_item_effects)
                     .join(watched_effects)
             }
@@ -383,6 +423,87 @@ fn streams_update<E: Env + 'static>(
         ),
         _ => eq_update(streams, vec![]),
     }
+}
+
+/// Find a stream from addon responses, which should be played if binge watching or continuing to watch.
+/// We've already loaded the next Video id and we need to find a proper stream for the binge watching.
+///
+/// First find the latest `StreamItem` stored based on last **30** videos from current video
+/// (ie. we're in E4, so we're going to check E4, E3, E2, E1 in this order until we hit a stored `StreamItem`).
+/// Then with the stream item we try to find a stream from addon responses (including the streams inside the meta itself `meta_streams`) -
+/// we find the responses from the addon based on `StreamItem.stream_transport_url`,
+/// then first we try to find the stream based on equality (as otherwise stored stream might be expired/no longer valid),
+/// if not found we try to find a stream based on it's `StreamBehaviorHints.bingeGroup`.
+/// One note, why we cannot return `StreamItem.stream` directly if it's for the same episode,
+/// is that user might have played a stream from an addon which he no longer has due to some constrains (ie p2p addon),
+/// that's why we have to try to find it first and verify that's it's still available.
+fn suggested_stream_update(
+    suggested_stream: &mut Option<Stream>,
+    selected: &Option<Selected>,
+    meta_items: &[ResourceLoadable<MetaItem>],
+    meta_streams: &[ResourceLoadable<Vec<Stream>>],
+    streams: &[ResourceLoadable<Vec<Stream>>],
+    stream_bucket: &StreamsBucket,
+) -> Effects {
+    let next_suggested_stream = match selected {
+        Some(Selected {
+            meta_path,
+            stream_path: Some(stream_path),
+            ..
+        }) => {
+            meta_items
+                .iter()
+                .find_map(|meta_item| match &meta_item.content {
+                    Some(Loadable::Ready(meta_item)) => Some(&meta_item.videos),
+                    _ => None,
+                })
+                .and_then(|videos| {
+                    // Check saved stream only for last 30 videos starting from the current video
+                    videos
+                        .iter()
+                        .position(|video| video.id == stream_path.id)
+                        .and_then(|max_index| {
+                            videos[max_index.saturating_sub(30)..=max_index]
+                                .iter()
+                                .rev()
+                                .find_map(|video| {
+                                    stream_bucket.items.get(&StreamsItemKey {
+                                        meta_id: meta_path.id.to_string(),
+                                        video_id: video.id.to_owned(),
+                                    })
+                                })
+                        })
+                })
+                .and_then(|stream_item| {
+                    [meta_streams, streams]
+                        .concat()
+                        .iter()
+                        .find(|resource| resource.request.base == stream_item.stream_transport_url)
+                        .and_then(|resource| match &resource.content {
+                            Some(Loadable::Ready(streams)) => Some(streams),
+                            _ => None,
+                        })
+                        .and_then(|streams| {
+                            streams
+                                .iter()
+                                .find(|stream| *stream == &stream_item.stream)
+                                .or_else(|| {
+                                    streams.iter().find(|stream| {
+                                        stream.behavior_hints.binge_group.as_deref()
+                                            == stream_item
+                                                .stream
+                                                .behavior_hints
+                                                .binge_group
+                                                .as_deref()
+                                    })
+                                })
+                                .cloned()
+                        })
+                })
+        }
+        _ => None,
+    };
+    eq_update(suggested_stream, next_suggested_stream)
 }
 
 fn library_item_update<E: Env + 'static>(
