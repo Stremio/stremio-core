@@ -30,10 +30,10 @@ pub struct StreamsItem {
 pub struct StreamItemState {
     pub subtitle_track_id: Option<String>,
     pub subtitle_language: Option<String>,
-    pub subtitle_delay_ms: Option<i64>,
+    pub subtitle_delay: Option<i64>,
     pub audio_track_id: Option<String>,
     pub audio_language: Option<String>,
-    pub audio_delay_ms: Option<i64>,
+    pub audio_delay: Option<i64>,
     pub playback_speed: Option<f32>,
     pub player_type: Option<String>,
 }
@@ -58,18 +58,18 @@ impl StreamsItem {
                 return state;
             } else if is_binge_match {
                 return StreamItemState {
-                    subtitle_delay_ms: None,
-                    audio_delay_ms: None,
+                    subtitle_delay: None,
+                    audio_delay: None,
                     ..state
                 };
             }
             StreamItemState {
                 subtitle_track_id: None,
                 subtitle_language: None,
-                subtitle_delay_ms: None,
+                subtitle_delay: None,
                 audio_track_id: None,
                 audio_language: None,
-                audio_delay_ms: None,
+                audio_delay: None,
                 ..state
             }
         })
