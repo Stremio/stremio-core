@@ -45,7 +45,7 @@ pub struct MetaDetails {
     pub meta_items: Vec<ResourceLoadable<MetaItem>>,
     pub meta_streams: Vec<ResourceLoadable<Vec<Stream>>>,
     pub streams: Vec<ResourceLoadable<Vec<Stream>>>,
-    pub suggested_stream: Option<Stream>,
+    pub suggested_stream: Option<ResourceLoadable<Option<Stream>>>,
     pub library_item: Option<LibraryItem>,
     #[serde(skip_serializing)]
     pub watched: Option<WatchedBitField>,
@@ -438,7 +438,7 @@ fn streams_update<E: Env + 'static>(
 /// is that user might have played a stream from an addon which he no longer has due to some constrains (ie p2p addon),
 /// that's why we have to try to find it first and verify that's it's still available.
 fn suggested_stream_update(
-    suggested_stream: &mut Option<Stream>,
+    suggested_stream: &mut Option<ResourceLoadable<Option<Stream>>>,
     selected: &Option<Selected>,
     meta_items: &[ResourceLoadable<MetaItem>],
     meta_streams: &[ResourceLoadable<Vec<Stream>>],
@@ -480,24 +480,34 @@ fn suggested_stream_update(
                         .iter()
                         .find(|resource| resource.request.base == stream_item.stream_transport_url)
                         .and_then(|resource| match &resource.content {
-                            Some(Loadable::Ready(streams)) => Some(streams),
+                            Some(Loadable::Ready(streams)) => Some(ResourceLoadable {
+                                request: resource.request.clone(),
+                                content: Some(Loadable::Ready(
+                                    streams
+                                        .iter()
+                                        .find(|stream| *stream == &stream_item.stream)
+                                        .or_else(|| {
+                                            streams.iter().find(|stream| {
+                                                stream.behavior_hints.binge_group.as_deref()
+                                                    == stream_item
+                                                        .stream
+                                                        .behavior_hints
+                                                        .binge_group
+                                                        .as_deref()
+                                            })
+                                        })
+                                        .cloned(),
+                                )),
+                            }),
+                            Some(Loadable::Loading) => Some(ResourceLoadable {
+                                request: resource.request.clone(),
+                                content: Some(Loadable::Loading),
+                            }),
+                            Some(Loadable::Err(error)) => Some(ResourceLoadable {
+                                request: resource.request.clone(),
+                                content: Some(Loadable::Err(error.clone())),
+                            }),
                             _ => None,
-                        })
-                        .and_then(|streams| {
-                            streams
-                                .iter()
-                                .find(|stream| *stream == &stream_item.stream)
-                                .or_else(|| {
-                                    streams.iter().find(|stream| {
-                                        stream.behavior_hints.binge_group.as_deref()
-                                            == stream_item
-                                                .stream
-                                                .behavior_hints
-                                                .binge_group
-                                                .as_deref()
-                                    })
-                                })
-                                .cloned()
                         })
                 })
         }
