@@ -28,7 +28,7 @@ pub struct PeerSearch {
 #[derive(Clone, PartialEq, Serialize, Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct SwarmCap {
-    pub max_speed: u64,
+    pub max_speed: f64,
     pub min_peers: u64,
 }
 
