@@ -126,88 +126,98 @@ impl Stream {
             StreamSource::PlayerFrame { player_frame_url } => Some(player_frame_url.to_string()),
         }
     }
-    pub fn m3u_data_uri(&self, streaming_server_url: Option<&Url>) -> Option<String> {
-        self.streaming_url(streaming_server_url).map(|url| {
-            format!(
-                "data:application/octet-stream;charset=utf-8;base64,{}",
-                BASE64.encode(format!("#EXTM3U\n#EXTINF:0\n{url}"))
-            )
-        })
+    pub fn m3u_data_uri(
+        &self,
+        streaming_server_available: bool,
+        streaming_server_url: &Url,
+    ) -> Option<String> {
+        self.streaming_url(streaming_server_available, streaming_server_url)
+            .map(|url| {
+                format!(
+                    "data:application/octet-stream;charset=utf-8;base64,{}",
+                    BASE64.encode(format!("#EXTM3U\n#EXTINF:0\n{url}"))
+                )
+            })
     }
-    pub fn streaming_url(&self, streaming_server_url: Option<&Url>) -> Option<String> {
-        match (&self.source, streaming_server_url) {
-            (StreamSource::Url { url }, _) if url.scheme() != "magnet" => {
-                match (streaming_server_url, &self.behavior_hints.proxy_headers) {
-                    (
-                        Some(streaming_server_url),
-                        Some(StreamProxyHeaders { request, response }),
-                    ) => {
-                        let mut streaming_url = streaming_server_url.to_owned();
-                        let mut proxy_query = form_urlencoded::Serializer::new(String::new());
-                        let origin = format!("{}://{}", url.scheme(), url.authority());
-                        proxy_query.append_pair("d", origin.as_str());
-                        proxy_query.extend_pairs(
-                            request
-                                .iter()
-                                .map(|header| ("h", format!("{}:{}", header.0, header.1))),
-                        );
-                        proxy_query.extend_pairs(
-                            response
-                                .iter()
-                                .map(|header| ("r", format!("{}:{}", header.0, header.1))),
-                        );
-                        streaming_url
-                            .path_segments_mut()
-                            .ok()?
-                            .push("proxy")
-                            .push(proxy_query.finish().as_str())
-                            .push(&url.path()[1..]);
-                        streaming_url.set_query(url.query());
-                        Some(streaming_url.to_string())
+    pub fn streaming_url(
+        &self,
+        streaming_server_available: bool,
+        streaming_server_url: &Url,
+    ) -> Option<String> {
+        if streaming_server_available {
+            match (&self.source, streaming_server_url) {
+                (StreamSource::Url { url }, streaming_server_url) if url.scheme() != "magnet" => {
+                    match &self.behavior_hints.proxy_headers {
+                        Some(StreamProxyHeaders { request, response }) => {
+                            let mut streaming_url = streaming_server_url.to_owned();
+                            let mut proxy_query = form_urlencoded::Serializer::new(String::new());
+                            let origin = format!("{}://{}", url.scheme(), url.authority());
+                            proxy_query.append_pair("d", origin.as_str());
+                            proxy_query.extend_pairs(
+                                request
+                                    .iter()
+                                    .map(|header| ("h", format!("{}:{}", header.0, header.1))),
+                            );
+                            proxy_query.extend_pairs(
+                                response
+                                    .iter()
+                                    .map(|header| ("r", format!("{}:{}", header.0, header.1))),
+                            );
+                            streaming_url
+                                .path_segments_mut()
+                                .ok()?
+                                .push("proxy")
+                                .push(proxy_query.finish().as_str())
+                                .push(&url.path()[1..]);
+                            streaming_url.set_query(url.query());
+                            Some(streaming_url.to_string())
+                        }
+                        _ => Some(url.to_string()),
                     }
-                    _ => Some(url.to_string()),
                 }
+                (
+                    StreamSource::Torrent {
+                        info_hash,
+                        file_idx,
+                        announce,
+                    },
+                    streaming_server_url,
+                ) => {
+                    let mut url = streaming_server_url.to_owned();
+                    match url.path_segments_mut() {
+                        Ok(mut path) => {
+                            path.push(&hex::encode(info_hash));
+                            // When fileIndex is not provided use -1, which will tell the
+                            // streaming server to choose the file with the largest size from the torrent
+                            path.push(
+                                &file_idx.map_or_else(|| "-1".to_string(), |idx| idx.to_string()),
+                            );
+                        }
+                        _ => return None,
+                    };
+                    if !announce.is_empty() {
+                        let mut query = url.query_pairs_mut();
+                        query.extend_pairs(announce.iter().map(|tracker| ("tr", tracker)));
+                    };
+                    Some(url.to_string())
+                }
+                (StreamSource::YouTube { yt_id }, streaming_server_url) => {
+                    let mut url = streaming_server_url.to_owned();
+                    match url.path_segments_mut() {
+                        Ok(mut path) => {
+                            path.push("yt");
+                            path.push(
+                                &utf8_percent_encode(yt_id, URI_COMPONENT_ENCODE_SET).to_string(),
+                            );
+                        }
+                        _ => return None,
+                    };
+                    Some(url.to_string())
+                }
+                _ => None,
             }
-            (
-                StreamSource::Torrent {
-                    info_hash,
-                    file_idx,
-                    announce,
-                },
-                Some(streaming_server_url),
-            ) => {
-                let mut url = streaming_server_url.to_owned();
-                match url.path_segments_mut() {
-                    Ok(mut path) => {
-                        path.push(&hex::encode(info_hash));
-                        // When fileIndex is not provided use -1, which will tell the
-                        // streaming server to choose the file with the largest size from the torrent
-                        path.push(
-                            &file_idx.map_or_else(|| "-1".to_string(), |idx| idx.to_string()),
-                        );
-                    }
-                    _ => return None,
-                };
-                if !announce.is_empty() {
-                    let mut query = url.query_pairs_mut();
-                    query.extend_pairs(announce.iter().map(|tracker| ("tr", tracker)));
-                };
-                Some(url.to_string())
-            }
-            (StreamSource::YouTube { yt_id }, Some(streaming_server_url)) => {
-                let mut url = streaming_server_url.to_owned();
-                match url.path_segments_mut() {
-                    Ok(mut path) => {
-                        path.push("yt");
-                        path.push(
-                            &utf8_percent_encode(yt_id, URI_COMPONENT_ENCODE_SET).to_string(),
-                        );
-                    }
-                    _ => return None,
-                };
-                Some(url.to_string())
-            }
-            _ => None,
+        } else {
+            None
         }
     }
     pub fn youtube_url(&self) -> Option<String> {

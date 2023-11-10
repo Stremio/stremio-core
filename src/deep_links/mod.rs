@@ -64,10 +64,13 @@ impl From<(&Stream, Option<&Url>, &Settings)> for ExternalPlayerLink {
     ///
     /// [`StreamingServer::base_url`]: crate::models::streaming_server::StreamingServer::base_url
     fn from((stream, streaming_server_url, settings): (&Stream, Option<&Url>, &Settings)) -> Self {
+        let streaming_server_available = streaming_server_url.map_or(false, |_| true);
         let http_regex = Regex::new(r"https?://").unwrap();
         let download = stream.download_url();
-        let streaming = stream.streaming_url(streaming_server_url);
-        let m3u_uri = stream.m3u_data_uri(streaming_server_url);
+        let streaming =
+            stream.streaming_url(streaming_server_available, &settings.streaming_server_url);
+        let m3u_uri =
+            stream.m3u_data_uri(streaming_server_available, &settings.streaming_server_url);
         let file_name = m3u_uri.as_ref().map(|_| "playlist.m3u".to_owned());
         let href = m3u_uri.or_else(|| download.to_owned());
         let open_player = match &streaming {
