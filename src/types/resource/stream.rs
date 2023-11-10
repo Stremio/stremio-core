@@ -221,6 +221,11 @@ impl Stream {
     }
 
     #[inline]
+    pub fn is_source_match(&self, other_stream: &Stream) -> bool {
+        self.source == other_stream.source
+    }
+
+    #[inline]
     pub fn is_binge_match(&self, other_stream: &Stream) -> bool {
         match (
             &self.behavior_hints.binge_group,

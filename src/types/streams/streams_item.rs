@@ -54,9 +54,9 @@ impl StreamsItem {
     #[inline]
     pub fn adjusted_state(&self, new_stream: &Stream) -> Option<StreamItemState> {
         self.state.clone().map(|state| {
-            let is_exact_match = self.stream.source == new_stream.source;
+            let is_source_match = self.stream.is_source_match(new_stream);
             let is_binge_match = self.stream.is_binge_match(new_stream);
-            if is_exact_match {
+            if is_source_match {
                 return state;
             } else if is_binge_match {
                 return StreamItemState {
