@@ -156,7 +156,6 @@ pub enum ActionLoad {
     MetaDetails(MetaDetailsSelected),
     Player(Box<PlayerSelected>),
     Link,
-    Notifications,
 }
 
 #[derive(Clone, Deserialize, Debug)]
