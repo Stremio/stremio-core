@@ -2,6 +2,7 @@ use enclose::enclose;
 use futures::FutureExt;
 
 use crate::constants::STREAMS_STORAGE_KEY;
+use crate::models::common::{Loadable, ResourceLoadable};
 use crate::models::ctx::{CtxError, CtxStatus};
 use crate::runtime::msg::{Action, ActionCtx, Event, Internal, Msg};
 use crate::runtime::{Effect, EffectFuture, Effects, Env, EnvFutureExt};
@@ -25,8 +26,12 @@ pub fn update_streams<E: Env + 'static>(
         Msg::Internal(Internal::StreamLoaded {
             stream,
             stream_request: Some(stream_request),
-            meta_request: Some(meta_request),
-        }) => {
+            meta_item:
+                ResourceLoadable {
+                    request: meta_request,
+                    content: Some(meta_content),
+                },
+        }) if !meta_content.is_loading() => {
             let meta_id = &meta_request.path.id;
             let video_id = &stream_request.path.id;
 
@@ -34,10 +39,11 @@ pub fn update_streams<E: Env + 'static>(
                 meta_id: meta_id.to_owned(),
                 video_id: video_id.to_owned(),
             };
-            let last_stream_state = streams
-                .items
-                .get(&key)
-                .and_then(|item| item.adjusted_state(stream));
+            let last_stream_item = match meta_content {
+                Loadable::Ready(meta_item) => streams.last_stream_item(video_id, meta_item),
+                _ => streams.items.get(&key),
+            };
+            let last_stream_state = last_stream_item.and_then(|item| item.adjusted_state(stream));
 
             let streams_item = StreamsItem {
                 stream: stream.to_owned(),
