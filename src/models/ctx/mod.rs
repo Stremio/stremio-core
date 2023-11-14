@@ -10,6 +10,9 @@ use update_profile::*;
 mod update_streams;
 use update_streams::*;
 
+mod update_search_history;
+use update_search_history::*;
+
 mod update_trakt_addon;
 use update_trakt_addon::*;
 

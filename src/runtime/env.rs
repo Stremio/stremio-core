@@ -1,10 +1,11 @@
 use crate::addon_transport::{AddonHTTPTransport, AddonTransport, UnsupportedTransport};
 use crate::constants::{
     LIBRARY_RECENT_STORAGE_KEY, LIBRARY_STORAGE_KEY, PROFILE_STORAGE_KEY, SCHEMA_VERSION,
-    SCHEMA_VERSION_STORAGE_KEY, STREAMS_STORAGE_KEY,
+    SCHEMA_VERSION_STORAGE_KEY, SEARCH_HISTORY_STORAGE_KEY, STREAMS_STORAGE_KEY,
 };
 use crate::models::ctx::Ctx;
 use crate::models::streaming_server::StreamingServer;
+use crate::types::search_history::SearchHistoryBucket;
 use chrono::{DateTime, Utc};
 use futures::{future, Future, TryFutureExt};
 use http::Request;
@@ -231,6 +232,12 @@ pub trait Env {
                         .map_err(|error| EnvError::StorageSchemaVersionUpgrade(Box::new(error)))
                         .await?;
                     schema_version = 9;
+                }
+                if schema_version == 9 {
+                    migrate_storage_schema_to_v10::<Self>()
+                        .map_err(|error| EnvError::StorageSchemaVersionUpgrade(Box::new(error)))
+                        .await?;
+                    schema_version = 10;
                 }
                 if schema_version != SCHEMA_VERSION {
                     panic!(
@@ -491,18 +498,27 @@ fn migrate_storage_schema_to_v9<E: Env>() -> TryEnvFuture<()> {
         .boxed_env()
 }
 
+fn migrate_storage_schema_to_v10<E: Env>() -> TryEnvFuture<()> {
+    let search_history_bucket = SearchHistoryBucket::default();
+    E::set_storage(SEARCH_HISTORY_STORAGE_KEY, Some(&search_history_bucket))
+        .and_then(|_| E::set_storage(SCHEMA_VERSION_STORAGE_KEY, Some(&10)))
+        .boxed_env()
+}
+
 #[cfg(test)]
 mod test {
     use serde_json::{json, Value};
 
     use crate::{
         constants::{
-            PROFILE_STORAGE_KEY, SCHEMA_VERSION, SCHEMA_VERSION_STORAGE_KEY, STREAMS_STORAGE_KEY,
+            PROFILE_STORAGE_KEY, SCHEMA_VERSION, SCHEMA_VERSION_STORAGE_KEY,
+            SEARCH_HISTORY_STORAGE_KEY, STREAMS_STORAGE_KEY,
         },
         runtime::{
             env::{
-                migrate_storage_schema_to_v6, migrate_storage_schema_to_v7,
-                migrate_storage_schema_to_v8, migrate_storage_schema_to_v9,
+                migrate_storage_schema_to_v10, migrate_storage_schema_to_v6,
+                migrate_storage_schema_to_v7, migrate_storage_schema_to_v8,
+                migrate_storage_schema_to_v9,
             },
             Env,
         },
@@ -539,6 +555,18 @@ mod test {
         assert!(
             no_profile.is_none(),
             "Current profile should be empty for this test"
+        );
+    }
+
+    fn assert_storage_shema_version(schema_v: u32) {
+        let storage = STORAGE.read().expect("Should lock");
+
+        assert_eq!(
+            &schema_v.to_string(),
+            storage
+                .get(SCHEMA_VERSION_STORAGE_KEY)
+                .expect("Should have the schema set"),
+            "Scheme version should be {schema_v}"
         );
     }
 
@@ -862,6 +890,36 @@ mod test {
                     .get(PROFILE_STORAGE_KEY)
                     .expect("Should have the profile set"),
                 "Profile should match"
+            );
+        }
+    }
+
+    #[tokio::test]
+    async fn test_migration_from_9_to_10() {
+        let _test_env_guard = TestEnv::reset().expect("Should lock TestEnv");
+
+        {
+            let storage = STORAGE.read().expect("Should lock");
+            assert_eq!(
+                storage.get(SEARCH_HISTORY_STORAGE_KEY),
+                None,
+                "Should have no search history key"
+            );
+        }
+
+        migrate_storage_schema_to_v10::<TestEnv>()
+            .await
+            .expect("Should migrate");
+
+        {
+            assert_storage_shema_version(10);
+
+            let storage = STORAGE.read().expect("Should lock");
+
+            assert_eq!(
+                storage.get(SEARCH_HISTORY_STORAGE_KEY).is_some(),
+                true,
+                "Should have set search history key"
             );
         }
     }

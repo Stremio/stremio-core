@@ -8,6 +8,7 @@ use crate::types::library::LibraryBucket;
 use crate::types::notifications::NotificationsBucket;
 use crate::types::profile::Profile;
 use crate::types::resource::MetaItemPreview;
+use crate::types::search_history::SearchHistoryBucket;
 use crate::types::streams::StreamsBucket;
 use crate::unit_tests::{
     default_fetch_handler, Request, TestEnv, EVENTS, FETCH_HANDLER, REQUESTS, STATES,
@@ -49,6 +50,7 @@ fn default_catalog() {
         LibraryBucket::default(),
         StreamsBucket::default(),
         NotificationsBucket::new::<TestEnv>(None, vec![]),
+        SearchHistoryBucket::default(),
     );
     let (discover, effects) = CatalogWithFilters::<MetaItemPreview>::new(&ctx.profile);
     let (runtime, rx) = Runtime::<TestEnv, _>::new(
@@ -148,6 +150,7 @@ fn search_catalog() {
         LibraryBucket::default(),
         StreamsBucket::default(),
         NotificationsBucket::new::<TestEnv>(None, vec![]),
+        SearchHistoryBucket::default(),
     );
     let (discover, effects) = CatalogWithFilters::<MetaItemPreview>::new(&ctx.profile);
     let (runtime, rx) = Runtime::<TestEnv, _>::new(

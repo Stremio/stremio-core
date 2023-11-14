@@ -1,4 +1,5 @@
 use crate::types::notifications::NotificationsBucket;
+use crate::types::search_history::SearchHistoryBucket;
 use crate::types::streams::StreamsBucket;
 use crate::{
     constants::{LIBRARY_RECENT_STORAGE_KEY, LIBRARY_STORAGE_KEY, PROFILE_STORAGE_KEY},
@@ -89,6 +90,7 @@ fn actionctx_authenticate_login() {
         LibraryBucket::default(),
         StreamsBucket::default(),
         NotificationsBucket::new::<TestEnv>(None, vec![]),
+        SearchHistoryBucket::default(),
     );
     let (runtime, _rx) = Runtime::<TestEnv, _>::new(TestModel { ctx }, vec![], 1000);
     TestEnv::run(|| {
@@ -294,6 +296,7 @@ fn actionctx_authenticate_login_with_token() {
         LibraryBucket::default(),
         StreamsBucket::default(),
         NotificationsBucket::new::<TestEnv>(None, vec![]),
+        SearchHistoryBucket::default(),
     );
     let (runtime, _rx) = Runtime::<TestEnv, _>::new(TestModel { ctx }, vec![], 1000);
     TestEnv::run(|| {
@@ -498,6 +501,7 @@ fn actionctx_authenticate_register() {
         LibraryBucket::default(),
         StreamsBucket::default(),
         NotificationsBucket::new::<TestEnv>(None, vec![]),
+        SearchHistoryBucket::default(),
     );
     let (runtime, _rx) = Runtime::<TestEnv, _>::new(TestModel { ctx }, vec![], 1000);
     TestEnv::run(|| {

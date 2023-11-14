@@ -36,7 +36,22 @@ impl<E: Env + 'static> UpdateWithCtx<E> for CatalogsWithExtra {
                 let selected_effects = selected_update(&mut self.selected, selected);
                 let catalogs_effects =
                     catalogs_update::<E>(&mut self.catalogs, &self.selected, None, &ctx.profile);
-                selected_effects.join(catalogs_effects)
+                let search_effects = match &self.selected {
+                    Some(Selected { extra, .. }) => match extra
+                        .iter()
+                        .find(|ExtraValue { name, .. }| name == "search")
+                    {
+                        Some(ExtraValue { value, .. }) => {
+                            Effects::msg(Msg::Internal(Internal::CatalogsWithExtraSearch {
+                                query: value.to_owned(),
+                            }))
+                            .unchanged()
+                        }
+                        None => Effects::none().unchanged(),
+                    },
+                    None => Effects::none().unchanged(),
+                };
+                selected_effects.join(catalogs_effects).join(search_effects)
             }
             Msg::Action(Action::Unload) => {
                 let selected_effects = eq_update(&mut self.selected, None);

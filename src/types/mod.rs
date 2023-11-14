@@ -4,6 +4,7 @@ pub mod library;
 pub mod notifications;
 pub mod profile;
 pub mod resource;
+pub mod search_history;
 pub mod streaming_server;
 pub mod streams;
 
