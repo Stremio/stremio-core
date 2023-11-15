@@ -7,7 +7,7 @@ use crate::{
         ctx::Ctx,
     },
     runtime::{
-        msg::{Action, ActionLoad},
+        msg::{Action, ActionCtx, ActionLoad},
         Env, Runtime, RuntimeAction,
     },
     types::{
@@ -89,5 +89,66 @@ fn test_search_history_update() {
                     .is_some()
             }),
         "Should have stored updated search history"
+    );
+}
+
+#[test]
+fn test_search_history_clear_items() {
+    #[derive(Model, Clone, Debug)]
+    #[model(TestEnv)]
+    struct TestModel {
+        ctx: Ctx,
+        catalogs_with_extra: CatalogsWithExtra,
+    }
+
+    let _env_mutex = TestEnv::reset().expect("Should have exclusive lock to TestEnv");
+
+    let ctx = Ctx::new(
+        Profile::default(),
+        LibraryBucket::default(),
+        StreamsBucket::default(),
+        NotificationsBucket::new::<TestEnv>(None, vec![]),
+        SearchHistoryBucket::default(),
+    );
+
+    let catalogs_with_extra = CatalogsWithExtra::default();
+
+    STORAGE.write().unwrap().insert(
+        SEARCH_HISTORY_STORAGE_KEY.to_owned(),
+        serde_json::to_string(&ctx.search_history).unwrap(),
+    );
+
+    let (runtime, _rx) = Runtime::<TestEnv, _>::new(
+        TestModel {
+            ctx,
+            catalogs_with_extra,
+        },
+        vec![],
+        1000,
+    );
+
+    TestEnv::run(|| {
+        runtime.dispatch(RuntimeAction {
+            field: None,
+            action: Action::Load(ActionLoad::CatalogsWithExtra(Selected {
+                r#type: None,
+                extra: vec![ExtraValue {
+                    name: "search".to_owned(),
+                    value: "superman".to_owned(),
+                }],
+            })),
+        })
+    });
+
+    TestEnv::run(|| {
+        runtime.dispatch(RuntimeAction {
+            field: None,
+            action: Action::Ctx(ActionCtx::ClearSearchHistory),
+        })
+    });
+
+    assert!(
+        runtime.model().unwrap().ctx.search_history.items.is_empty(),
+        "Should have cleared search history"
     );
 }
