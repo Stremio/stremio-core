@@ -28,8 +28,6 @@ fn test_search_history_update() {
 
     let _env_mutex = TestEnv::reset().expect("Should have exclusive lock to TestEnv");
 
-    let search_history = SearchHistoryBucket::default();
-
     let ctx = Ctx::new(
         Profile::default(),
         LibraryBucket::default(),
@@ -42,7 +40,7 @@ fn test_search_history_update() {
 
     STORAGE.write().unwrap().insert(
         SEARCH_HISTORY_STORAGE_KEY.to_owned(),
-        serde_json::to_string(&search_history).unwrap(),
+        serde_json::to_string(&ctx.search_history).unwrap(),
     );
 
     let (runtime, _rx) = Runtime::<TestEnv, _>::new(
@@ -64,7 +62,7 @@ fn test_search_history_update() {
                 r#type: None,
                 extra: vec![ExtraValue {
                     name: "search".to_owned(),
-                    value: "superman".to_owned(),
+                    value: query.to_owned(),
                 }],
             })),
         })
