@@ -232,6 +232,12 @@ pub trait Env {
                         .await?;
                     schema_version = 9;
                 }
+                if schema_version == 9 {
+                    migrate_storage_schema_to_v10::<Self>()
+                        .map_err(|error| EnvError::StorageSchemaVersionUpgrade(Box::new(error)))
+                        .await?;
+                    schema_version = 10;
+                }
                 if schema_version != SCHEMA_VERSION {
                     panic!(
                         "Storage schema version must be upgraded from {} to {}",
@@ -491,6 +497,29 @@ fn migrate_storage_schema_to_v9<E: Env>() -> TryEnvFuture<()> {
         .boxed_env()
 }
 
+fn migrate_storage_schema_to_v10<E: Env>() -> TryEnvFuture<()> {
+    E::get_storage::<serde_json::Value>(PROFILE_STORAGE_KEY)
+        .and_then(|mut profile| {
+            match profile
+                .as_mut()
+                .and_then(|profile| profile.as_object_mut())
+                .and_then(|profile| profile.get_mut("settings"))
+                .and_then(|settings| settings.as_object_mut())
+            {
+                Some(settings) => {
+                    settings.insert(
+                        "surroundSoundEnabled".to_owned(),
+                        serde_json::Value::Bool(false),
+                    );
+                    E::set_storage(PROFILE_STORAGE_KEY, Some(&profile))
+                }
+                _ => E::set_storage::<()>(PROFILE_STORAGE_KEY, None),
+            }
+        })
+        .and_then(|_| E::set_storage(SCHEMA_VERSION_STORAGE_KEY, Some(&10)))
+        .boxed_env()
+}
+
 #[cfg(test)]
 mod test {
     use serde_json::{json, Value};
@@ -501,8 +530,9 @@ mod test {
         },
         runtime::{
             env::{
-                migrate_storage_schema_to_v6, migrate_storage_schema_to_v7,
-                migrate_storage_schema_to_v8, migrate_storage_schema_to_v9,
+                migrate_storage_schema_to_v10, migrate_storage_schema_to_v6,
+                migrate_storage_schema_to_v7, migrate_storage_schema_to_v8,
+                migrate_storage_schema_to_v9,
             },
             Env,
         },
@@ -851,6 +881,47 @@ mod test {
 
             assert_eq!(
                 &9.to_string(),
+                storage
+                    .get(SCHEMA_VERSION_STORAGE_KEY)
+                    .expect("Should have the schema set"),
+                "Scheme version should now be updated"
+            );
+            assert_eq!(
+                &migrated_profile.to_string(),
+                storage
+                    .get(PROFILE_STORAGE_KEY)
+                    .expect("Should have the profile set"),
+                "Profile should match"
+            );
+        }
+    }
+
+    #[tokio::test]
+    async fn test_migration_from_9_to_10() {
+        {
+            let _test_env_guard = TestEnv::reset().expect("Should lock TestEnv");
+            let profile_before = json!({
+                "settings": {}
+            });
+
+            let migrated_profile = json!({
+                "settings": {
+                    "surroundSoundEnabled": false,
+                }
+            });
+
+            // setup storage for migration
+            set_profile_and_schema_version(&profile_before, 9);
+
+            // migrate storage
+            migrate_storage_schema_to_v10::<TestEnv>()
+                .await
+                .expect("Should migrate");
+
+            let storage = STORAGE.read().expect("Should lock");
+
+            assert_eq!(
+                &10.to_string(),
                 storage
                     .get(SCHEMA_VERSION_STORAGE_KEY)
                     .expect("Should have the schema set"),

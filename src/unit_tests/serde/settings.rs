@@ -31,6 +31,7 @@ fn settings() {
             seek_time_duration: 10,
             seek_short_time_duration: 3,
             pause_on_minimize: true,
+            surround_sound_enabled: false,
             streaming_server_warning_dismissed: Some(
                 Utc.with_ymd_and_hms(2021, 1, 1, 0, 0, 0).unwrap(),
             ),
@@ -38,7 +39,7 @@ fn settings() {
         &[
             Token::Struct {
                 name: "Settings",
-                len: 25,
+                len: 26,
             },
             Token::Str("interfaceLanguage"),
             Token::Str("interface_language"),
@@ -94,6 +95,8 @@ fn settings() {
             Token::U32(3),
             Token::Str("pauseOnMinimize"),
             Token::Bool(true),
+            Token::Str("surroundSoundEnabled"),
+            Token::Bool(false),
             Token::Str("streamingServerWarningDismissed"),
             Token::Some,
             Token::Str("2021-01-01T00:00:00Z"),
@@ -109,7 +112,7 @@ fn settings_de() {
         &[
             Token::Struct {
                 name: "Settings",
-                len: 20,
+                len: 21,
             },
             Token::Str("interfaceLanguage"),
             Token::Str("eng"),
@@ -157,6 +160,8 @@ fn settings_de() {
             Token::Str("seekShortTimeDuration"),
             Token::U32(3000),
             Token::Str("pauseOnMinimize"),
+            Token::Bool(false),
+            Token::Str("surroundSoundEnabled"),
             Token::Bool(false),
             Token::Str("streamingServerWarningDismissed"),
             Token::None,
