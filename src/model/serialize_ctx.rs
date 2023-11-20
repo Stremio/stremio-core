@@ -24,7 +24,7 @@ mod model {
         /// keep the original Profile model inside.
         pub profile: &'a Profile,
         pub notifications: Notifications<'a>,
-        pub search_history: Vec<&'a String>,
+        pub search_history: Vec<&'a str>,
     }
 
     #[derive(Serialize)]
@@ -57,7 +57,7 @@ mod model {
                     .items
                     .iter()
                     .sorted_by(|(_, a_date), (_, b_date)| Ord::cmp(b_date, a_date))
-                    .map(|(query, ..)| query)
+                    .map(|(query, ..)| query.as_str())
                     .collect_vec(),
             }
         }
