@@ -138,6 +138,11 @@ fn test_search_history_clear_items() {
         })
     });
 
+    assert!(
+        !runtime.model().unwrap().ctx.search_history.items.is_empty(),
+        "Should have updated search history"
+    );
+
     TestEnv::run(|| {
         runtime.dispatch(RuntimeAction {
             field: None,
