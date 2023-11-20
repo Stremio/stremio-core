@@ -64,6 +64,7 @@ impl From<(&Stream, Option<&Url>, &Settings)> for ExternalPlayerLink {
     ///
     /// [`StreamingServer::base_url`]: crate::models::streaming_server::StreamingServer::base_url
     fn from((stream, streaming_server_url, settings): (&Stream, Option<&Url>, &Settings)) -> Self {
+        // Use streaming_server_url from settings if streaming_server is reachable
         let streaming_server_url = streaming_server_url.map(|_| &settings.streaming_server_url);
         let http_regex = Regex::new(r"https?://").unwrap();
         let download = stream.download_url();
