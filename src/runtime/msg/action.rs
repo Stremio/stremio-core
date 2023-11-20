@@ -45,6 +45,7 @@ pub enum ActionCtx {
     ToggleLibraryItemNotifications(LibraryItemId, bool),
     /// Dismiss all Notification for a given [`MetaItemId`].
     DismissNotificationItem(MetaItemId),
+    ClearSearchHistory,
     PushUserToAPI,
     PullUserFromAPI,
     PushAddonsToAPI,

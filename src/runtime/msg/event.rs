@@ -40,6 +40,9 @@ pub enum Event {
     StreamsPushedToStorage {
         uid: UID,
     },
+    SearchHistoryPushedToStorage {
+        uid: UID,
+    },
     NotificationsPushedToStorage {
         ids: Vec<String>,
     },
