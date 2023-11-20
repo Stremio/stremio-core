@@ -14,7 +14,7 @@ const MAGNET_STR_URL: &str = "magnet:?xt=urn:btih:dd8255ecdc7ca55fb0bbf81323d870
 const HTTP_STR_URL: &str = "http://domain.root/path";
 const HTTP_WITH_QUERY_STR_URL: &str = "http://domain.root/path?param=some&foo=bar";
 const BASE64_HTTP_URL: &str = "data:application/octet-stream;charset=utf-8;base64,I0VYVE0zVQojRVhUSU5GOjAKaHR0cDovL2RvbWFpbi5yb290L3BhdGg=";
-const STREAMING_SERVER_URL: &str = "http://127.0.0.1:11471";
+const STREAMING_SERVER_URL: &str = "http://127.0.0.1:11470";
 const YT_ID: &str = "aqz-KE-bpKQ";
 
 #[test]
