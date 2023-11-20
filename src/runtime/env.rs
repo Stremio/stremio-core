@@ -510,7 +510,7 @@ mod test {
     use crate::{
         constants::{
             PROFILE_STORAGE_KEY, SCHEMA_VERSION, SCHEMA_VERSION_STORAGE_KEY,
-            SEARCH_HISTORY_STORAGE_KEY, STREAMS_STORAGE_KEY,
+            STREAMS_STORAGE_KEY,
         },
         runtime::{
             env::{
