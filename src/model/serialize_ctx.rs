@@ -9,6 +9,7 @@ pub fn serialize_ctx(ctx: &Ctx) -> JsValue {
 mod model {
     use std::collections::HashMap;
 
+    use itertools::Itertools;
     use serde::Serialize;
 
     use chrono::{DateTime, Utc};
@@ -23,6 +24,7 @@ mod model {
         /// keep the original Profile model inside.
         pub profile: &'a Profile,
         pub notifications: Notifications<'a>,
+        pub search_history: Vec<&'a str>,
     }
 
     #[derive(Serialize)]
@@ -50,6 +52,13 @@ mod model {
                     last_updated: ctx.notifications.last_updated,
                     created: ctx.notifications.created,
                 },
+                search_history: ctx
+                    .search_history
+                    .items
+                    .iter()
+                    .sorted_by(|(_, a_date), (_, b_date)| Ord::cmp(b_date, a_date))
+                    .map(|(query, ..)| query.as_str())
+                    .collect_vec(),
             }
         }
     }

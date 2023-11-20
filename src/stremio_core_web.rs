@@ -1,7 +1,7 @@
 use std::sync::RwLock;
 
 use enclose::enclose;
-use futures::{future, FutureExt, StreamExt};
+use futures::{future, try_join, FutureExt, StreamExt};
 use lazy_static::lazy_static;
 use tracing::{info, Level};
 use tracing_wasm::WASMLayerConfigBuilder;
@@ -11,13 +11,13 @@ use wasm_bindgen::JsValue;
 use stremio_core::{
     constants::{
         LIBRARY_RECENT_STORAGE_KEY, LIBRARY_STORAGE_KEY, NOTIFICATIONS_STORAGE_KEY,
-        PROFILE_STORAGE_KEY, STREAMS_STORAGE_KEY,
+        PROFILE_STORAGE_KEY, SEARCH_HISTORY_STORAGE_KEY, STREAMS_STORAGE_KEY,
     },
     models::common::Loadable,
     runtime::{msg::Action, Env, EnvError, Runtime, RuntimeAction, RuntimeEvent},
     types::{
         library::LibraryBucket, notifications::NotificationsBucket, profile::Profile,
-        resource::Stream, streams::StreamsBucket,
+        resource::Stream, search_history::SearchHistoryBucket, streams::StreamsBucket,
     },
 };
 
@@ -58,14 +58,14 @@ pub async fn initialize_runtime(emit_to_ui: js_sys::Function) -> Result<(), JsVa
     let env_init_result = WebEnv::init().await;
     match env_init_result {
         Ok(_) => {
-            let storage_result = future::try_join5(
+            let storage_result = try_join!(
                 WebEnv::get_storage::<Profile>(PROFILE_STORAGE_KEY),
                 WebEnv::get_storage::<LibraryBucket>(LIBRARY_RECENT_STORAGE_KEY),
                 WebEnv::get_storage::<LibraryBucket>(LIBRARY_STORAGE_KEY),
                 WebEnv::get_storage::<StreamsBucket>(STREAMS_STORAGE_KEY),
                 WebEnv::get_storage::<NotificationsBucket>(NOTIFICATIONS_STORAGE_KEY),
-            )
-            .await;
+                WebEnv::get_storage::<SearchHistoryBucket>(SEARCH_HISTORY_STORAGE_KEY),
+            );
             match storage_result {
                 Ok((
                     profile,
@@ -73,6 +73,7 @@ pub async fn initialize_runtime(emit_to_ui: js_sys::Function) -> Result<(), JsVa
                     other_bucket,
                     streams_bucket,
                     notifications_bucket,
+                    search_history_bucket,
                 )) => {
                     let profile = profile.unwrap_or_default();
                     let mut library = LibraryBucket::new(profile.uid(), vec![]);
@@ -86,8 +87,15 @@ pub async fn initialize_runtime(emit_to_ui: js_sys::Function) -> Result<(), JsVa
                         streams_bucket.unwrap_or_else(|| StreamsBucket::new(profile.uid()));
                     let notifications_bucket = notifications_bucket
                         .unwrap_or(NotificationsBucket::new::<WebEnv>(profile.uid(), vec![]));
-                    let (model, effects) =
-                        WebModel::new(profile, library, streams_bucket, notifications_bucket);
+                    let search_history_bucket =
+                        search_history_bucket.unwrap_or(SearchHistoryBucket::new(profile.uid()));
+                    let (model, effects) = WebModel::new(
+                        profile,
+                        library,
+                        streams_bucket,
+                        notifications_bucket,
+                        search_history_bucket,
+                    );
                     let (runtime, rx) = Runtime::<WebEnv, _>::new(
                         model,
                         effects.into_iter().collect::<Vec<_>>(),
