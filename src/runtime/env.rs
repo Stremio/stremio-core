@@ -5,7 +5,6 @@ use crate::constants::{
 };
 use crate::models::ctx::Ctx;
 use crate::models::streaming_server::StreamingServer;
-use crate::types::search_history::SearchHistoryBucket;
 use chrono::{DateTime, Utc};
 use futures::{future, Future, TryFutureExt};
 use http::Request;
@@ -499,8 +498,7 @@ fn migrate_storage_schema_to_v9<E: Env>() -> TryEnvFuture<()> {
 }
 
 fn migrate_storage_schema_to_v10<E: Env>() -> TryEnvFuture<()> {
-    let search_history_bucket = SearchHistoryBucket::default();
-    E::set_storage(SEARCH_HISTORY_STORAGE_KEY, Some(&search_history_bucket))
+    E::set_storage::<()>(SEARCH_HISTORY_STORAGE_KEY, None)
         .and_then(|_| E::set_storage(SCHEMA_VERSION_STORAGE_KEY, Some(&10)))
         .boxed_env()
 }
@@ -898,29 +896,12 @@ mod test {
     async fn test_migration_from_9_to_10() {
         let _test_env_guard = TestEnv::reset().expect("Should lock TestEnv");
 
-        {
-            let storage = STORAGE.read().expect("Should lock");
-            assert_eq!(
-                storage.get(SEARCH_HISTORY_STORAGE_KEY),
-                None,
-                "Should have no search history key"
-            );
-        }
-
         migrate_storage_schema_to_v10::<TestEnv>()
             .await
             .expect("Should migrate");
 
         {
             assert_storage_shema_version(10);
-
-            let storage = STORAGE.read().expect("Should lock");
-
-            assert_eq!(
-                storage.get(SEARCH_HISTORY_STORAGE_KEY).is_some(),
-                true,
-                "Should have set search history key"
-            );
         }
     }
 }
