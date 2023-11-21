@@ -70,11 +70,13 @@ pub enum Internal {
     LibraryChanged(bool),
     /// Dispatched when streams bucket changes with a flag if its already persisted.
     StreamsChanged(bool),
-    /// Search history haschanged.
+    /// Search history has changed.
     SearchHistoryChanged,
     /// User notifications have changed
     NotificationsChanged,
     /// Dismiss all Notifications for a given [`MetaItemId`].
+    ///
+    /// [`MetaItemId`]: crate::types::resource::MetaItemId
     DismissNotificationItem(LibraryItemId),
     /// Result for loading link code.
     LinkCodeResult(Result<LinkCodeResponse, LinkError>),
