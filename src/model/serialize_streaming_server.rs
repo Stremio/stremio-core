@@ -2,10 +2,10 @@ use crate::model::deep_links_ext::DeepLinksExt;
 use serde::Serialize;
 use stremio_core::deep_links::MetaItemDeepLinks;
 use stremio_core::models::common::Loadable;
-use stremio_core::models::streaming_server::{PlaybackDevice, Selected, Settings, StreamingServer};
+use stremio_core::models::streaming_server::{PlaybackDevice, Selected, StreamingServer};
 use stremio_core::runtime::EnvError;
 use stremio_core::types::addon::ResourcePath;
-use stremio_core::types::streaming_server::Statistics;
+use stremio_core::types::streaming_server::{Statistics, Settings};
 use url::Url;
 use wasm_bindgen::JsValue;
 
@@ -17,7 +17,7 @@ mod model {
     pub struct StreamingServer<'a> {
         pub selected: &'a Selected,
         pub settings: &'a Loadable<Settings, EnvError>,
-        pub base_url: &'a Loadable<Url, EnvError>,
+        pub base_url: &'a Option<Url>,
         pub playback_devices: &'a Loadable<Vec<PlaybackDevice>, EnvError>,
         pub torrent: Option<(&'a String, TorrentLoadable<'a>)>,
         pub statistics: Option<&'a Loadable<Statistics, EnvError>>,

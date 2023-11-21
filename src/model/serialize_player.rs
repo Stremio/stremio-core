@@ -101,17 +101,13 @@ mod model {
 }
 
 pub fn serialize_player(player: &Player, ctx: &Ctx, streaming_server: &StreamingServer) -> JsValue {
-    let streaming_server_url = match streaming_server.base_url.clone() {
-        Loadable::Ready(url) => Some(url),
-        _ => None,
-    };
     JsValue::from_serde(&model::Player {
         selected: player.selected.as_ref().map(|selected| model::Selected {
             stream: model::Stream {
                 stream: &selected.stream,
                 deep_links: StreamDeepLinks::from((
                     &selected.stream,
-                    &streaming_server_url,
+                    &streaming_server.base_url,
                     &ctx.profile.settings,
                 ))
                 .into_web_deep_links(),
@@ -146,7 +142,7 @@ pub fn serialize_player(player: &Player, ctx: &Ctx, streaming_server: &Streaming
                                 deep_links: VideoDeepLinks::from((
                                     video,
                                     request,
-                                    &streaming_server_url,
+                                    &streaming_server.base_url,
                                     &ctx.profile.settings,
                                 ))
                                 .into_web_deep_links(),
@@ -225,7 +221,7 @@ pub fn serialize_player(player: &Player, ctx: &Ctx, streaming_server: &Streaming
                 deep_links: VideoDeepLinks::from((
                     video,
                     request,
-                    &streaming_server_url,
+                    &streaming_server.base_url,
                     &ctx.profile.settings,
                 ))
                 .into_web_deep_links(),
