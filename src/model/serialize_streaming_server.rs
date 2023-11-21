@@ -18,6 +18,7 @@ mod model {
         pub selected: &'a Selected,
         pub settings: &'a Loadable<Settings, EnvError>,
         pub base_url: &'a Option<Url>,
+        pub remote_url: &'a Option<Url>,
         pub playback_devices: &'a Loadable<Vec<PlaybackDevice>, EnvError>,
         pub torrent: Option<(&'a String, TorrentLoadable<'a>)>,
         pub statistics: Option<&'a Loadable<Statistics, EnvError>>,
@@ -29,6 +30,7 @@ pub fn serialize_streaming_server(streaming_server: &StreamingServer) -> JsValue
         selected: &streaming_server.selected,
         settings: &streaming_server.settings,
         base_url: &streaming_server.base_url,
+        remote_url: &streaming_server.remote_url,
         playback_devices: &streaming_server.playback_devices,
         torrent: streaming_server
             .torrent
