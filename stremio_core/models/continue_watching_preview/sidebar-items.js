@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"struct":["ContinueWatchingPreview"]};
+window.SIDEBAR_ITEMS = {"struct":["ContinueWatchingPreview","Item"]};

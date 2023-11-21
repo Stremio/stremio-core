@@ -1,4 +1,4 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `src/runtime/msg/action.rs`."><title>action.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/SourceSerif4-Regular-46f98efaafac5295.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/SourceSerif4-Bold-a2c9cd1067f8b328.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../../../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../../../static.files/rustdoc-cb6f1f67f1bcd037.css" id="mainThemeStyle"><meta name="rustdoc-vars" data-root-path="../../../../" data-static-root-path="../../../../static.files/" data-current-crate="stremio_core" data-themes="" data-resource-suffix="" data-rustdoc-version="1.73.0-nightly (03a119b0b 2023-08-07)" data-channel="nightly" data-search-js="search-6dfdfced5eff6596.js" data-settings-js="settings-de11bff964e9d4e5.js" data-settings-css="settings-8c76f75bfb6bd192.css" data-theme-light-css="light-1596385f77d47ef2.css" data-theme-dark-css="dark-0a43001d3fc2282c.css" data-theme-ayu-css="ayu-fd19013d6ce078bf.css" ><script src="../../../../static.files/storage-db41da1a38ea3cb8.js"></script><script defer src="../../../../static.files/src-script-3280b574d94e47b4.js"></script><script defer src="../../../../src-files.js"></script><script defer src="../../../../static.files/main-0795b7d26be81095.js"></script><noscript><link rel="stylesheet" media="(prefers-color-scheme:light)" href="../../../../static.files/light-1596385f77d47ef2.css"><link rel="stylesheet" media="(prefers-color-scheme:dark)" href="../../../../static.files/dark-0a43001d3fc2282c.css"><link rel="stylesheet" href="../../../../static.files/noscript-cffde32267a19fd6.css"></noscript><link rel="alternate icon" type="image/png" href="../../../../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../../../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"></nav><main><nav class="sub"><a class="sub-logo-container" href="../../../../stremio_core/index.html"><img class="rust-logo" src="../../../../static.files/rust-logo-151179464ae7ed46.svg" alt="logo"></a><form class="search-form"><span></span><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><a href="../../../../help.html">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../../../static.files/wheel-7b819b6101059cd0.svg"></a></div></form></nav><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `src/runtime/msg/action.rs`."><title>action.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/SourceSerif4-Regular-46f98efaafac5295.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../../../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../../../static.files/rustdoc-9ee3a5e31a2afa3e.css"><meta name="rustdoc-vars" data-root-path="../../../../" data-static-root-path="../../../../static.files/" data-current-crate="stremio_core" data-themes="" data-resource-suffix="" data-rustdoc-version="1.76.0-nightly (3a85a5cfe 2023-11-20)" data-channel="nightly" data-search-js="search-d23a059ec093b287.js" data-settings-js="settings-74424d7eec62a23e.js" ><script src="../../../../static.files/storage-fec3eaa3851e447d.js"></script><script defer src="../../../../static.files/src-script-3280b574d94e47b4.js"></script><script defer src="../../../../src-files.js"></script><script defer src="../../../../static.files/main-f06f02fd918e3bb3.js"></script><noscript><link rel="stylesheet" href="../../../../static.files/noscript-5d8b3c7633ad77ba.css"></noscript><link rel="alternate icon" type="image/png" href="../../../../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../../../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"></nav><main><nav class="sub"><form class="search-form"><span></span><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><a href="../../../../help.html">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../../../static.files/wheel-7b819b6101059cd0.svg"></a></div></form></nav><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
 <a href="#2" id="2">2</a>
 <a href="#3" id="3">3</a>
 <a href="#4" id="4">4</a>
@@ -179,6 +179,20 @@
 <a href="#179" id="179">179</a>
 <a href="#180" id="180">180</a>
 <a href="#181" id="181">181</a>
+<a href="#182" id="182">182</a>
+<a href="#183" id="183">183</a>
+<a href="#184" id="184">184</a>
+<a href="#185" id="185">185</a>
+<a href="#186" id="186">186</a>
+<a href="#187" id="187">187</a>
+<a href="#188" id="188">188</a>
+<a href="#189" id="189">189</a>
+<a href="#190" id="190">190</a>
+<a href="#191" id="191">191</a>
+<a href="#192" id="192">192</a>
+<a href="#193" id="193">193</a>
+<a href="#194" id="194">194</a>
+<a href="#195" id="195">195</a>
 </pre></div><pre class="rust"><code><span class="kw">use </span>std::ops::Range;
 
 <span class="kw">use </span>serde::Deserialize;
@@ -193,7 +207,7 @@
         library_by_type::Selected <span class="kw">as </span>LibraryByTypeSelected,
         library_with_filters::Selected <span class="kw">as </span>LibraryWithFiltersSelected,
         meta_details::Selected <span class="kw">as </span>MetaDetailsSelected,
-        player::Selected <span class="kw">as </span>PlayerSelected,
+        player::{Selected <span class="kw">as </span>PlayerSelected, VideoParams},
         streaming_server::{
             Settings <span class="kw">as </span>StreamingServerSettings,
             StatisticsRequest <span class="kw">as </span>StreamingServerStatisticsRequest,
@@ -202,9 +216,9 @@
     types::{
         addon::Descriptor,
         api::AuthRequest,
-        library::LibraryItemId,
+        library::{LibraryItemId, LibraryItem},
         profile::Settings <span class="kw">as </span>ProfileSettings,
-        resource::{MetaItemId, MetaItemPreview},
+        resource::{MetaItemId, MetaItemPreview, Video},
     },
 };
 
@@ -226,6 +240,7 @@
     </span>ToggleLibraryItemNotifications(LibraryItemId, bool),
     <span class="doccomment">/// Dismiss all Notification for a given [`MetaItemId`].
     </span>DismissNotificationItem(MetaItemId),
+    ClearSearchHistory,
     PushUserToAPI,
     PullUserFromAPI,
     PushAddonsToAPI,
@@ -263,8 +278,18 @@
 <span class="attr">#[derive(Clone, Deserialize, Debug)]
 #[serde(tag = <span class="string">&quot;action&quot;</span>, content = <span class="string">&quot;args&quot;</span>)]
 </span><span class="kw">pub enum </span>ActionMetaDetails {
-    MarkAsWatched(bool),
-    MarkVideoAsWatched(String, bool),
+    <span class="doccomment">/// Marks the [`LibraryItem`] as watched.
+    ///
+    /// Applicable when you have single-video (e.g. a movie) and multi-video (e.g. a movie series) item.
+    ///
+    /// [`LibraryItem`]: crate::types::library::LibraryItem
+    </span>MarkAsWatched(bool),
+    <span class="doccomment">/// Marks the given [`Video`] of the [`LibraryItem`] as watched.
+    ///
+    /// Applicable only when you have a multi-video (e.g. movie series) item.
+    ///
+    /// [`LibraryItem`]: crate::types::library::LibraryItem
+    </span>MarkVideoAsWatched(Video, bool),
 }
 
 <span class="attr">#[derive(Clone, Deserialize, Debug)]
@@ -301,6 +326,10 @@
 <span class="attr">#[derive(Clone, Deserialize, Debug)]
 #[serde(tag = <span class="string">&quot;action&quot;</span>, content = <span class="string">&quot;args&quot;</span>)]
 </span><span class="kw">pub enum </span>ActionPlayer {
+    <span class="attr">#[serde(rename_all = <span class="string">&quot;camelCase&quot;</span>)]
+    </span>VideoParamsChanged {
+        video_params: <span class="prelude-ty">Option</span>&lt;VideoParams&gt;,
+    },
     TimeChanged {
         time: u64,
         duration: u64,
@@ -327,7 +356,6 @@
     MetaDetails(MetaDetailsSelected),
     Player(Box&lt;PlayerSelected&gt;),
     Link,
-    Notifications,
 }
 
 <span class="attr">#[derive(Clone, Deserialize, Debug)]

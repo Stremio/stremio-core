@@ -1,4 +1,4 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `src/runtime/msg/internal.rs`."><title>internal.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/SourceSerif4-Regular-46f98efaafac5295.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/SourceSerif4-Bold-a2c9cd1067f8b328.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../../../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../../../static.files/rustdoc-cb6f1f67f1bcd037.css" id="mainThemeStyle"><meta name="rustdoc-vars" data-root-path="../../../../" data-static-root-path="../../../../static.files/" data-current-crate="stremio_core" data-themes="" data-resource-suffix="" data-rustdoc-version="1.73.0-nightly (03a119b0b 2023-08-07)" data-channel="nightly" data-search-js="search-6dfdfced5eff6596.js" data-settings-js="settings-de11bff964e9d4e5.js" data-settings-css="settings-8c76f75bfb6bd192.css" data-theme-light-css="light-1596385f77d47ef2.css" data-theme-dark-css="dark-0a43001d3fc2282c.css" data-theme-ayu-css="ayu-fd19013d6ce078bf.css" ><script src="../../../../static.files/storage-db41da1a38ea3cb8.js"></script><script defer src="../../../../static.files/src-script-3280b574d94e47b4.js"></script><script defer src="../../../../src-files.js"></script><script defer src="../../../../static.files/main-0795b7d26be81095.js"></script><noscript><link rel="stylesheet" media="(prefers-color-scheme:light)" href="../../../../static.files/light-1596385f77d47ef2.css"><link rel="stylesheet" media="(prefers-color-scheme:dark)" href="../../../../static.files/dark-0a43001d3fc2282c.css"><link rel="stylesheet" href="../../../../static.files/noscript-cffde32267a19fd6.css"></noscript><link rel="alternate icon" type="image/png" href="../../../../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../../../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"></nav><main><nav class="sub"><a class="sub-logo-container" href="../../../../stremio_core/index.html"><img class="rust-logo" src="../../../../static.files/rust-logo-151179464ae7ed46.svg" alt="logo"></a><form class="search-form"><span></span><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><a href="../../../../help.html">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../../../static.files/wheel-7b819b6101059cd0.svg"></a></div></form></nav><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `src/runtime/msg/internal.rs`."><title>internal.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/SourceSerif4-Regular-46f98efaafac5295.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../../../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../../../static.files/rustdoc-9ee3a5e31a2afa3e.css"><meta name="rustdoc-vars" data-root-path="../../../../" data-static-root-path="../../../../static.files/" data-current-crate="stremio_core" data-themes="" data-resource-suffix="" data-rustdoc-version="1.76.0-nightly (3a85a5cfe 2023-11-20)" data-channel="nightly" data-search-js="search-d23a059ec093b287.js" data-settings-js="settings-74424d7eec62a23e.js" ><script src="../../../../static.files/storage-fec3eaa3851e447d.js"></script><script defer src="../../../../static.files/src-script-3280b574d94e47b4.js"></script><script defer src="../../../../src-files.js"></script><script defer src="../../../../static.files/main-f06f02fd918e3bb3.js"></script><noscript><link rel="stylesheet" href="../../../../static.files/noscript-5d8b3c7633ad77ba.css"></noscript><link rel="alternate icon" type="image/png" href="../../../../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../../../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"></nav><main><nav class="sub"><form class="search-form"><span></span><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><a href="../../../../help.html">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../../../static.files/wheel-7b819b6101059cd0.svg"></a></div></form></nav><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
 <a href="#2" id="2">2</a>
 <a href="#3" id="3">3</a>
 <a href="#4" id="4">4</a>
@@ -96,7 +96,20 @@
 <a href="#96" id="96">96</a>
 <a href="#97" id="97">97</a>
 <a href="#98" id="98">98</a>
-</pre></div><pre class="rust"><code><span class="kw">use </span><span class="kw">crate</span>::models::ctx::CtxError;
+<a href="#99" id="99">99</a>
+<a href="#100" id="100">100</a>
+<a href="#101" id="101">101</a>
+<a href="#102" id="102">102</a>
+<a href="#103" id="103">103</a>
+<a href="#104" id="104">104</a>
+<a href="#105" id="105">105</a>
+<a href="#106" id="106">106</a>
+<a href="#107" id="107">107</a>
+<a href="#108" id="108">108</a>
+<a href="#109" id="109">109</a>
+</pre></div><pre class="rust"><code><span class="kw">use </span>url::Url;
+
+<span class="kw">use </span><span class="kw">crate</span>::models::ctx::CtxError;
 <span class="kw">use </span><span class="kw">crate</span>::models::link::LinkError;
 <span class="kw">use </span><span class="kw">crate</span>::models::local_search::Searchable;
 <span class="kw">use </span><span class="kw">crate</span>::models::streaming_server::{
@@ -108,14 +121,10 @@
     APIRequest, AuthRequest, DataExportResponse, DatastoreRequest, LinkCodeResponse,
     LinkDataResponse,
 };
+<span class="kw">use </span><span class="kw">crate</span>::types::library::{LibraryBucket, LibraryItem, LibraryItemId};
 <span class="kw">use </span><span class="kw">crate</span>::types::profile::{Auth, AuthKey, Profile, User};
 <span class="kw">use </span><span class="kw">crate</span>::types::resource::Stream;
 <span class="kw">use </span><span class="kw">crate</span>::types::streaming_server::Statistics;
-<span class="kw">use </span><span class="kw">crate</span>::types::{
-    library::{LibraryBucket, LibraryItem},
-    resource::MetaItemId,
-};
-<span class="kw">use </span>url::Url;
 
 <span class="kw">pub type </span>CtxStorageResponse = (
     <span class="prelude-ty">Option</span>&lt;Profile&gt;,
@@ -144,14 +153,23 @@
     </span>LibraryPullResult(DatastoreRequest, <span class="prelude-ty">Result</span>&lt;Vec&lt;LibraryItem&gt;, CtxError&gt;),
     <span class="doccomment">/// Dispatched when expired session is detected
     </span>Logout,
+    <span class="doccomment">/// Internal event dispatched on user action or login
+    /// to install the addon if it&#39;s not present
+    </span>InstallTraktAddon,
     <span class="doccomment">/// Dispatched when addons needs to be installed.
     </span>InstallAddon(Descriptor),
+    <span class="doccomment">/// Dispatched when addons needs to be uninstalled.
+    </span>UninstallAddon(Descriptor),
+    UninstallTraktAddon,
     <span class="doccomment">/// Dispatched when a new stream is loaded into the Player.
     </span>StreamLoaded {
         stream: Stream,
-        meta_id: <span class="prelude-ty">Option</span>&lt;String&gt;,
-        video_id: <span class="prelude-ty">Option</span>&lt;String&gt;,
-        transport_url: <span class="prelude-ty">Option</span>&lt;Url&gt;,
+        stream_request: <span class="prelude-ty">Option</span>&lt;ResourceRequest&gt;,
+        meta_request: <span class="prelude-ty">Option</span>&lt;ResourceRequest&gt;,
+    },
+    <span class="doccomment">/// Dispatched when requesting search on catalogs.
+    </span>CatalogsWithExtraSearch {
+        query: String,
     },
     <span class="doccomment">/// Dispatched when library item needs to be updated in the memory, storage and API.
     </span>UpdateLibraryItem(LibraryItem),
@@ -161,10 +179,14 @@
     </span>LibraryChanged(bool),
     <span class="doccomment">/// Dispatched when streams bucket changes with a flag if its already persisted.
     </span>StreamsChanged(bool),
+    <span class="doccomment">/// Search history has changed.
+    </span>SearchHistoryChanged,
     <span class="doccomment">/// User notifications have changed
     </span>NotificationsChanged,
     <span class="doccomment">/// Dismiss all Notifications for a given [`MetaItemId`].
-    </span>DismissNotificationItem(MetaItemId),
+    ///
+    /// [`MetaItemId`]: crate::types::resource::MetaItemId
+    </span>DismissNotificationItem(LibraryItemId),
     <span class="doccomment">/// Result for loading link code.
     </span>LinkCodeResult(<span class="prelude-ty">Result</span>&lt;LinkCodeResponse, LinkError&gt;),
     <span class="doccomment">/// Result for loading link data.
