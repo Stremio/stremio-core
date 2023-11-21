@@ -3,9 +3,7 @@ use url::Url;
 use crate::models::ctx::CtxError;
 use crate::models::link::LinkError;
 use crate::models::local_search::Searchable;
-use crate::models::streaming_server::{
-    PlaybackDevice, Settings as StreamingServerSettings, StatisticsRequest,
-};
+use crate::models::streaming_server::{GetHTTPSResponse, PlaybackDevice, StatisticsRequest};
 use crate::runtime::EnvError;
 use crate::types::addon::{Descriptor, Manifest, ResourceRequest, ResourceResponse};
 use crate::types::api::{
@@ -15,7 +13,7 @@ use crate::types::api::{
 use crate::types::library::{LibraryBucket, LibraryItem, LibraryItemId};
 use crate::types::profile::{Auth, AuthKey, Profile, User};
 use crate::types::resource::Stream;
-use crate::types::streaming_server::Statistics;
+use crate::types::streaming_server::{Settings as StreamingServerSettings, Statistics};
 
 pub type CtxStorageResponse = (
     Option<Profile>,
@@ -94,6 +92,8 @@ pub enum Internal {
     StreamingServerPlayOnDeviceResult(String, Result<(), EnvError>),
     // Result for streaming server statistics.
     StreamingServerStatisticsResult((Url, StatisticsRequest), Result<Statistics, EnvError>),
+    // Result for get https endpoint request
+    StreamingServerGetHTTPSResult(Url, Result<GetHTTPSResponse, EnvError>),
     /// Result for fetching resource from addons.
     ResourceRequestResult(ResourceRequest, Box<Result<ResourceResponse, EnvError>>),
     /// Result for fetching manifest from addon.
