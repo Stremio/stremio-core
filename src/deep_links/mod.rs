@@ -49,7 +49,7 @@ pub struct ExternalPlayerLink {
     pub file_name: Option<String>,
 }
 
-/// Using `&Option<Url>`` is not encouraged, use `.as_ref()` to get an `Option<&Url>` instead!
+/// Using `&Option<Url>` is not encouraged, use `.as_ref()` to get an `Option<&Url>` instead!
 impl From<(&Stream, &Option<Url>, &Settings)> for ExternalPlayerLink {
     fn from((stream, streaming_server_url, settings): (&Stream, &Option<Url>, &Settings)) -> Self {
         Self::from((stream, streaming_server_url.as_ref(), settings))
