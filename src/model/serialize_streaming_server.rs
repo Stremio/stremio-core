@@ -5,7 +5,7 @@ use stremio_core::models::common::Loadable;
 use stremio_core::models::streaming_server::{PlaybackDevice, Selected, StreamingServer};
 use stremio_core::runtime::EnvError;
 use stremio_core::types::addon::ResourcePath;
-use stremio_core::types::streaming_server::{NetworkInfo, Statistics, Settings};
+use stremio_core::types::streaming_server::{NetworkInfo, Settings, Statistics};
 use url::Url;
 use wasm_bindgen::JsValue;
 
