@@ -5,7 +5,7 @@ use stremio_core::models::common::Loadable;
 use stremio_core::models::streaming_server::{PlaybackDevice, Selected, StreamingServer};
 use stremio_core::runtime::EnvError;
 use stremio_core::types::addon::ResourcePath;
-use stremio_core::types::streaming_server::{Statistics, Settings};
+use stremio_core::types::streaming_server::{NetworkInfo, Statistics, Settings};
 use url::Url;
 use wasm_bindgen::JsValue;
 
@@ -20,6 +20,7 @@ mod model {
         pub base_url: &'a Option<Url>,
         pub remote_url: &'a Option<Url>,
         pub playback_devices: &'a Loadable<Vec<PlaybackDevice>, EnvError>,
+        pub network_info: &'a Loadable<NetworkInfo, EnvError>,
         pub torrent: Option<(&'a String, TorrentLoadable<'a>)>,
         pub statistics: Option<&'a Loadable<Statistics, EnvError>>,
     }
@@ -32,6 +33,7 @@ pub fn serialize_streaming_server(streaming_server: &StreamingServer) -> JsValue
         base_url: &streaming_server.base_url,
         remote_url: &streaming_server.remote_url,
         playback_devices: &streaming_server.playback_devices,
+        network_info: &streaming_server.network_info,
         torrent: streaming_server
             .torrent
             .as_ref()

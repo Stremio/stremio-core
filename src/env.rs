@@ -431,7 +431,7 @@ impl Env for WebEnv {
                 .settings
                 .as_ref()
                 .ready()
-                .map(|settings| settings.values.server_version.to_owned()),
+                .map(|settings| settings.server_version.to_owned()),
             shell_version: shell_version.to_owned(),
             system_language: global()
                 .navigator()
