@@ -112,6 +112,14 @@ impl From<(&Stream, Option<&Url>, &Settings)> for ExternalPlayerLink {
                         ios: Some(format!("infuse://x-callback-url/play?url={url}")),
                        ..Default::default()
                     }),
+                    "iina" => Some(OpenPlayerLink {
+                        macos: Some(format!("iina://weblink?url={url}")),
+                       ..Default::default()
+                    }),
+                    "mpv" => Some(OpenPlayerLink {
+                        macos: Some(format!("mpv://{url}")),
+                       ..Default::default()
+                    }),
                     _ => None,
                 },
                 None => None,
