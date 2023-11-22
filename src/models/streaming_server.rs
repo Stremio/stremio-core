@@ -8,7 +8,9 @@ use crate::runtime::{Effect, EffectFuture, Effects, Env, EnvError, EnvFutureExt,
 use crate::types::addon::ResourcePath;
 use crate::types::api::SuccessResponse;
 use crate::types::profile::{AuthKey, Profile};
-use crate::types::streaming_server::{Settings, Statistics};
+use crate::types::streaming_server::{
+    GetHTTPSResponse, NetworkInfo, Settings, SettingsResponse, Statistics,
+};
 use enclose::enclose;
 use futures::{FutureExt, TryFutureExt};
 use http::request::Request;
@@ -33,14 +35,6 @@ pub struct StatisticsRequest {
     pub file_idx: u16,
 }
 
-#[derive(Clone, PartialEq, Eq, Serialize, Deserialize, Debug)]
-#[serde(rename_all = "camelCase")]
-pub struct GetHTTPSResponse {
-    pub ip_address: String,
-    pub domain: String,
-    pub port: u16,
-}
-
 #[derive(Clone, Serialize, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct Selected {
@@ -56,6 +50,7 @@ pub struct StreamingServer {
     pub base_url: Option<Url>,
     pub remote_url: Option<Url>,
     pub playback_devices: Loadable<Vec<PlaybackDevice>, EnvError>,
+    pub network_info: Loadable<NetworkInfo, EnvError>,
     pub torrent: Option<(String, Loadable<ResourcePath, EnvError>)>,
     pub statistics: Option<Loadable<Statistics, EnvError>>,
 }
@@ -65,6 +60,7 @@ impl StreamingServer {
         let effects = Effects::many(vec![
             get_settings::<E>(&profile.settings.streaming_server_url),
             get_playback_devices::<E>(&profile.settings.streaming_server_url),
+            get_network_info::<E>(&profile.settings.streaming_server_url),
         ]);
         (
             Self {
@@ -76,6 +72,7 @@ impl StreamingServer {
                 base_url: None,
                 remote_url: None,
                 playback_devices: Loadable::Loading,
+                network_info: Loadable::Loading,
                 torrent: None,
                 statistics: None,
             },
@@ -89,14 +86,17 @@ impl<E: Env + 'static> UpdateWithCtx<E> for StreamingServer {
         match msg {
             Msg::Action(Action::StreamingServer(ActionStreamingServer::Reload)) => {
                 let settings_effects = eq_update(&mut self.settings, Loadable::Loading);
+                let network_info_effects = eq_update(&mut self.network_info, Loadable::Loading);
                 let base_url_effects = eq_update(&mut self.base_url, None);
                 let remote_url_effects = eq_update(&mut self.remote_url, None);
                 Effects::many(vec![
                     get_settings::<E>(&self.selected.transport_url),
                     get_playback_devices::<E>(&self.selected.transport_url),
+                    get_network_info::<E>(&self.selected.transport_url),
                 ])
                 .unchanged()
                 .join(settings_effects)
+                .join(network_info_effects)
                 .join(base_url_effects)
                 .join(remote_url_effects)
             }
@@ -215,6 +215,7 @@ impl<E: Env + 'static> UpdateWithCtx<E> for StreamingServer {
                     statistics: None,
                 };
                 self.settings = Loadable::Loading;
+                self.network_info = Loadable::Loading;
                 self.base_url = None;
                 self.remote_url = None;
                 self.torrent = None;
@@ -222,6 +223,7 @@ impl<E: Env + 'static> UpdateWithCtx<E> for StreamingServer {
                 Effects::many(vec![
                     get_settings::<E>(&self.selected.transport_url),
                     get_playback_devices::<E>(&self.selected.transport_url),
+                    get_network_info::<E>(&self.selected.transport_url),
                 ])
             }
             Msg::Internal(Internal::StreamingServerSettingsResult(url, result))
@@ -229,14 +231,16 @@ impl<E: Env + 'static> UpdateWithCtx<E> for StreamingServer {
             {
                 match result {
                     Ok(settings) => {
-                        let settings_effects =
-                            eq_update(&mut self.settings, Loadable::Ready(settings.to_owned()));
+                        let settings_effects = eq_update(
+                            &mut self.settings,
+                            Loadable::Ready(settings.values.to_owned()),
+                        );
                         let base_url_effects =
                             eq_update(&mut self.base_url, Some(settings.base_url.to_owned()));
                         let remote_url_effects = update_remote_url::<E>(
                             &mut self.remote_url,
                             &self.selected,
-                            settings,
+                            &settings.values,
                             ctx,
                         );
                         settings_effects
@@ -248,12 +252,15 @@ impl<E: Env + 'static> UpdateWithCtx<E> for StreamingServer {
                         let remote_url_effects = eq_update(&mut self.remote_url, None);
                         let playback_devices_effects =
                             eq_update(&mut self.playback_devices, Loadable::Err(error.to_owned()));
+                        let network_info_effects =
+                            eq_update(&mut self.network_info, Loadable::Err(error.to_owned()));
                         let settings_effects =
                             eq_update(&mut self.settings, Loadable::Err(error.to_owned()));
                         let torrent_effects = eq_update(&mut self.torrent, None);
                         base_url_effects
                             .join(remote_url_effects)
                             .join(playback_devices_effects)
+                            .join(network_info_effects)
                             .join(settings_effects)
                             .join(torrent_effects)
                     }
@@ -272,12 +279,42 @@ impl<E: Env + 'static> UpdateWithCtx<E> for StreamingServer {
                         let remote_url_effects = eq_update(&mut self.remote_url, None);
                         let playback_devices_effects =
                             eq_update(&mut self.playback_devices, Loadable::Err(error.to_owned()));
+                        let network_info_effects =
+                            eq_update(&mut self.network_info, Loadable::Err(error.to_owned()));
                         let settings_effects =
                             eq_update(&mut self.settings, Loadable::Err(error.to_owned()));
                         let torrent_effects = eq_update(&mut self.torrent, None);
                         base_url_effects
                             .join(remote_url_effects)
                             .join(playback_devices_effects)
+                            .join(network_info_effects)
+                            .join(settings_effects)
+                            .join(torrent_effects)
+                    }
+                }
+            }
+            Msg::Internal(Internal::StreamingServerNetworkInfoResult(url, result))
+                if self.selected.transport_url == *url && self.network_info.is_loading() =>
+            {
+                match result {
+                    Ok(network_info) => eq_update(
+                        &mut self.network_info,
+                        Loadable::Ready(network_info.to_owned()),
+                    ),
+                    Err(error) => {
+                        let base_url_effects = eq_update(&mut self.base_url, None);
+                        let remote_url_effects = eq_update(&mut self.remote_url, None);
+                        let playback_devices_effects =
+                            eq_update(&mut self.playback_devices, Loadable::Err(error.to_owned()));
+                        let network_info_effects =
+                            eq_update(&mut self.network_info, Loadable::Err(error.to_owned()));
+                        let settings_effects =
+                            eq_update(&mut self.settings, Loadable::Err(error.to_owned()));
+                        let torrent_effects = eq_update(&mut self.torrent, None);
+                        base_url_effects
+                            .join(remote_url_effects)
+                            .join(playback_devices_effects)
+                            .join(network_info_effects)
                             .join(settings_effects)
                             .join(torrent_effects)
                     }
@@ -291,11 +328,17 @@ impl<E: Env + 'static> UpdateWithCtx<E> for StreamingServer {
                     Err(error) => {
                         let base_url_effects = eq_update(&mut self.base_url, None);
                         let remote_url_effects = eq_update(&mut self.remote_url, None);
+                        let playback_devices_effects =
+                            eq_update(&mut self.playback_devices, Loadable::Err(error.to_owned()));
+                        let network_info_effects =
+                            eq_update(&mut self.network_info, Loadable::Err(error.to_owned()));
                         let settings_effects =
                             eq_update(&mut self.settings, Loadable::Err(error.to_owned()));
                         let torrent_effects = eq_update(&mut self.torrent, None);
                         base_url_effects
                             .join(remote_url_effects)
+                            .join(playback_devices_effects)
+                            .join(network_info_effects)
                             .join(settings_effects)
                             .join(torrent_effects)
                     }
@@ -364,7 +407,7 @@ fn get_settings<E: Env + 'static>(url: &Url) -> Effect {
         .body(())
         .expect("request builder failed");
     EffectFuture::Concurrent(
-        E::fetch::<_, Settings>(request)
+        E::fetch::<_, SettingsResponse>(request)
             .map(enclose!((url) move |result| {
                 Msg::Internal(Internal::StreamingServerSettingsResult(
                     url, result,
@@ -391,6 +434,22 @@ fn get_playback_devices<E: Env + 'static>(url: &Url) -> Effect {
     .into()
 }
 
+fn get_network_info<E: Env + 'static>(url: &Url) -> Effect {
+    let endpoint = url.join("network-info").expect("url builder failed");
+    let request = Request::get(endpoint.as_str())
+        .body(())
+        .expect("request builder failed");
+    EffectFuture::Concurrent(
+        E::fetch::<_, NetworkInfo>(request)
+            .map_ok(|resp| resp)
+            .map(enclose!((url) move |result|
+                Msg::Internal(Internal::StreamingServerNetworkInfoResult(url, result))
+            ))
+            .boxed_env(),
+    )
+    .into()
+}
+
 fn set_settings<E: Env + 'static>(url: &Url, settings: &Settings) -> Effect {
     #[derive(Serialize)]
     #[serde(rename_all = "camelCase")]
@@ -405,14 +464,14 @@ fn set_settings<E: Env + 'static>(url: &Url, settings: &Settings) -> Effect {
         bt_min_peers_for_stable: u64,
     }
     let body = Body {
-        remote_https: settings.values.remote_https.to_owned(),
-        cache_size: settings.values.cache_size.to_owned(),
-        bt_max_connections: settings.values.bt_max_connections.to_owned(),
-        bt_handshake_timeout: settings.values.bt_handshake_timeout.to_owned(),
-        bt_request_timeout: settings.values.bt_request_timeout.to_owned(),
-        bt_download_speed_soft_limit: settings.values.bt_download_speed_soft_limit.to_owned(),
-        bt_download_speed_hard_limit: settings.values.bt_download_speed_hard_limit.to_owned(),
-        bt_min_peers_for_stable: settings.values.bt_min_peers_for_stable.to_owned(),
+        remote_https: settings.remote_https.to_owned(),
+        cache_size: settings.cache_size.to_owned(),
+        bt_max_connections: settings.bt_max_connections.to_owned(),
+        bt_handshake_timeout: settings.bt_handshake_timeout.to_owned(),
+        bt_request_timeout: settings.bt_request_timeout.to_owned(),
+        bt_download_speed_soft_limit: settings.bt_download_speed_soft_limit.to_owned(),
+        bt_download_speed_hard_limit: settings.bt_download_speed_hard_limit.to_owned(),
+        bt_min_peers_for_stable: settings.bt_min_peers_for_stable.to_owned(),
     };
     let endpoint = url.join("settings").expect("url builder failed");
     let request = Request::post(endpoint.as_str())
@@ -636,11 +695,8 @@ fn update_remote_url<E: Env + 'static>(
     settings: &Settings,
     ctx: &Ctx,
 ) -> Effects {
-    match (
-        settings.values.remote_https.as_ref(),
-        ctx.profile.auth_key(),
-    ) {
-        (Some(ip_address), Some(auth_key)) if ip_address.is_empty() => Effects::one(
+    match (settings.remote_https.as_ref(), ctx.profile.auth_key()) {
+        (Some(ip_address), Some(auth_key)) if !ip_address.is_empty() => Effects::one(
             get_https_endpoint::<E>(&selected.transport_url, auth_key, ip_address),
         )
         .unchanged(),

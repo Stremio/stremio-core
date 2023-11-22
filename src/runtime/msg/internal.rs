@@ -3,7 +3,7 @@ use url::Url;
 use crate::models::ctx::CtxError;
 use crate::models::link::LinkError;
 use crate::models::local_search::Searchable;
-use crate::models::streaming_server::{GetHTTPSResponse, PlaybackDevice, StatisticsRequest};
+use crate::models::streaming_server::{PlaybackDevice, StatisticsRequest};
 use crate::runtime::EnvError;
 use crate::types::addon::{Descriptor, Manifest, ResourceRequest, ResourceResponse};
 use crate::types::api::{
@@ -13,7 +13,7 @@ use crate::types::api::{
 use crate::types::library::{LibraryBucket, LibraryItem, LibraryItemId};
 use crate::types::profile::{Auth, AuthKey, Profile, User};
 use crate::types::resource::Stream;
-use crate::types::streaming_server::{Settings as StreamingServerSettings, Statistics};
+use crate::types::streaming_server::{GetHTTPSResponse, NetworkInfo, SettingsResponse, Statistics};
 
 pub type CtxStorageResponse = (
     Option<Profile>,
@@ -79,11 +79,13 @@ pub enum Internal {
     /// Result for loading link data.
     LinkDataResult(String, Result<LinkDataResponse, LinkError>),
     /// Result for loading streaming server settings.
-    StreamingServerSettingsResult(Url, Result<StreamingServerSettings, EnvError>),
+    StreamingServerSettingsResult(Url, Result<SettingsResponse, EnvError>),
     /// Result for loading streaming server base url.
     StreamingServerBaseURLResult(Url, Result<Url, EnvError>),
     // Result for loading streaming server playback devices.
     StreamingServerPlaybackDevicesResult(Url, Result<Vec<PlaybackDevice>, EnvError>),
+    // Result for network info.
+    StreamingServerNetworkInfoResult(Url, Result<NetworkInfo, EnvError>),
     /// Result for updating streaming server settings.
     StreamingServerUpdateSettingsResult(Url, Result<(), EnvError>),
     /// Result for creating a torrent.
