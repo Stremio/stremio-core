@@ -6,6 +6,7 @@ use crate::types::api::{APIResult, LibraryItemModified, LibraryItemsResponse, Su
 use crate::types::library::{LibraryBucket, LibraryItem};
 use crate::types::notifications::NotificationsBucket;
 use crate::types::profile::{Auth, AuthKey, GDPRConsent, Profile, User};
+use crate::types::search_history::SearchHistoryBucket;
 use crate::types::streams::StreamsBucket;
 use crate::types::True;
 use crate::unit_tests::{
@@ -32,6 +33,7 @@ fn actionctx_synclibrarywithapi() {
         LibraryBucket::default(),
         StreamsBucket::default(),
         NotificationsBucket::new::<TestEnv>(None, vec![]),
+        SearchHistoryBucket::default(),
     );
     let (runtime, _rx) = Runtime::<TestEnv, _>::new(TestModel { ctx }, vec![], 1000);
     TestEnv::run(|| {
@@ -290,6 +292,7 @@ fn actionctx_synclibrarywithapi_with_user() {
                 },
                 StreamsBucket::default(),
                 NotificationsBucket::new::<TestEnv>(None, vec![]),
+                SearchHistoryBucket::default(),
             ),
         },
         vec![],
@@ -426,6 +429,7 @@ fn actionctx_synclibrarywithapi_with_user_empty_library() {
                 LibraryBucket::default(),
                 StreamsBucket::default(),
                 NotificationsBucket::new::<TestEnv>(None, vec![]),
+                SearchHistoryBucket::default(),
             ),
         },
         vec![],

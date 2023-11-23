@@ -7,6 +7,7 @@ use crate::types::library::{LibraryBucket, LibraryItem, LibraryItemState};
 use crate::types::notifications::NotificationsBucket;
 use crate::types::profile::{Auth, AuthKey, GDPRConsent, Profile, User};
 use crate::types::resource::{MetaItemBehaviorHints, MetaItemPreview, PosterShape};
+use crate::types::search_history::SearchHistoryBucket;
 use crate::types::streams::StreamsBucket;
 use crate::types::True;
 use crate::unit_tests::{
@@ -106,6 +107,7 @@ fn actionctx_addtolibrary() {
                 },
                 StreamsBucket::default(),
                 NotificationsBucket::new::<TestEnv>(None, vec![]),
+                SearchHistoryBucket::default(),
             ),
         },
         vec![],
@@ -241,6 +243,7 @@ fn actionctx_addtolibrary_already_added() {
                 },
                 StreamsBucket::default(),
                 NotificationsBucket::new::<TestEnv>(None, vec![]),
+                SearchHistoryBucket::default(),
             ),
         },
         vec![],

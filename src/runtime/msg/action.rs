@@ -21,7 +21,7 @@ use crate::{
     types::{
         addon::Descriptor,
         api::AuthRequest,
-        library::LibraryItemId,
+        library::{LibraryItemId, LibraryItem},
         profile::Settings as ProfileSettings,
         resource::{MetaItemId, MetaItemPreview, Video},
     },
@@ -45,6 +45,7 @@ pub enum ActionCtx {
     ToggleLibraryItemNotifications(LibraryItemId, bool),
     /// Dismiss all Notification for a given [`MetaItemId`].
     DismissNotificationItem(MetaItemId),
+    ClearSearchHistory,
     PushUserToAPI,
     PullUserFromAPI,
     PushAddonsToAPI,
@@ -85,10 +86,14 @@ pub enum ActionMetaDetails {
     /// Marks the [`LibraryItem`] as watched.
     ///
     /// Applicable when you have single-video (e.g. a movie) and multi-video (e.g. a movie series) item.
+    ///
+    /// [`LibraryItem`]: crate::types::library::LibraryItem
     MarkAsWatched(bool),
     /// Marks the given [`Video`] of the [`LibraryItem`] as watched.
     ///
     /// Applicable only when you have a multi-video (e.g. movie series) item.
+    ///
+    /// [`LibraryItem`]: crate::types::library::LibraryItem
     MarkVideoAsWatched(Video, bool),
 }
 
