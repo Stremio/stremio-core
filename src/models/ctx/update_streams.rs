@@ -1,5 +1,6 @@
 use enclose::enclose;
 use futures::FutureExt;
+use std::collections::hash_map::Entry;
 
 use crate::constants::STREAMS_STORAGE_KEY;
 use crate::models::common::{Loadable, ResourceLoadable};
@@ -71,17 +72,13 @@ pub fn update_streams<E: Env + 'static>(
                 meta_id: meta_id.to_owned(),
                 video_id: video_id.to_owned(),
             };
-            let steam_item = streams.items.get(&key).cloned();
-            match steam_item {
-                Some(item) => {
-                    let new_stream_item = StreamsItem {
-                        state: Some(state.to_owned()),
-                        ..item
-                    };
-                    streams.items.insert(key, new_stream_item);
-                    Effects::msg(Msg::Internal(Internal::StreamsChanged(false)))
-                }
-                None => Effects::none().unchanged(),
+            let entry = streams
+                .items
+                .entry(key)
+                .and_modify(|item| item.state = Some(state.to_owned()));
+            match entry {
+                Entry::Occupied(_) => Effects::msg(Msg::Internal(Internal::StreamsChanged(false))),
+                _ => Effects::none().unchanged(),
             }
         }
         Msg::Internal(Internal::StreamsChanged(persisted)) if !persisted => {
