@@ -21,7 +21,7 @@ use crate::{
     types::{
         addon::Descriptor,
         api::AuthRequest,
-        library::{LibraryItemId, LibraryItem},
+        library::LibraryItemId,
         profile::Settings as ProfileSettings,
         resource::{MetaItemId, MetaItemPreview, Video},
     },
@@ -143,6 +143,13 @@ pub enum ActionPlayer {
     PausedChanged {
         paused: bool,
     },
+    /// Play next video, if there is one, applicable to e.g.
+    /// movie series and playing the next episode.
+    NextVideo,
+    /// Video player has ended.
+    /// 2 scenarios are possible:
+    /// - We've watched a movie to the last second
+    /// - We've watched a movie series to the last episode and the last second
     Ended,
 }
 

@@ -10,7 +10,7 @@ use crate::runtime::EnvError;
 use crate::types::addon::{Descriptor, Manifest, ResourceRequest, ResourceResponse};
 use crate::types::api::{
     APIRequest, AuthRequest, DataExportResponse, DatastoreRequest, LinkCodeResponse,
-    LinkDataResponse,
+    LinkDataResponse, SeekLogRequest, SuccessResponse,
 };
 use crate::types::library::{LibraryBucket, LibraryItem, LibraryItemId};
 use crate::types::profile::{Auth, AuthKey, Profile, User};
@@ -104,6 +104,10 @@ pub enum Internal {
     NotificationsRequestResult(ResourceRequest, Box<Result<ResourceResponse, EnvError>>),
     /// Result for requesting a `dataExport` of user data.
     DataExportResult(AuthKey, Result<DataExportResponse, CtxError>),
+    /// Result for submitting SeekLogs request for a played stream.
+    ///
+    /// Applicable only to movie series and torrents.
+    SeekLogsResult(SeekLogRequest, Result<SuccessResponse, CtxError>),
     /// The result of querying the data for LocalSearch
     LoadLocalSearchResult(Url, Result<Vec<Searchable>, EnvError>),
 }

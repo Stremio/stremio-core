@@ -1,7 +1,9 @@
 use crate::constants::{API_URL, LINK_API_URL};
+use crate::models::player::SeekLog;
 use crate::types::addon::Descriptor;
 use crate::types::library::LibraryItem;
 use crate::types::profile::{AuthKey, GDPRConsent, User};
+use crate::types::resource::SeriesInfo;
 #[cfg(test)]
 use derivative::Derivative;
 use http::Method;
@@ -53,6 +55,28 @@ pub enum APIRequest {
         auth_key: AuthKey,
         events: Vec<serde_json::Value>,
     },
+    #[serde(rename_all = "camelCase")]
+    SeekLog(SeekLogRequest),
+}
+
+#[derive(Clone, PartialEq, Eq, Serialize, Debug)]
+#[serde(rename_all = "camelCase")]
+pub struct SeekLogRequest {
+    /// Opensubtitles hash returned by the server
+    #[serde(rename = "osId")]
+    pub opensubtitles_hash: String,
+    pub item_id: String,
+    #[serde(flatten)]
+    pub series_info: SeriesInfo,
+    /// Filename hash
+    ///
+    /// base64 encoded SHA-256 hash of the Stream filename.
+    #[serde(rename = "stHash")]
+    pub filename_hash: String,
+    pub duration: u64,
+    pub seek_history: Vec<SeekLog>,
+    /// The time (in milliseconds) when the user decided to play the next video/episode
+    pub skip_outro: Vec<u64>,
 }
 
 impl FetchRequestParams<APIRequest> for APIRequest {
@@ -74,6 +98,7 @@ impl FetchRequestParams<APIRequest> for APIRequest {
             APIRequest::SaveUser { .. } => "saveUser".to_owned(),
             APIRequest::DataExport { .. } => "dataExport".to_owned(),
             APIRequest::Events { .. } => "events".to_owned(),
+            APIRequest::SeekLog { .. } => "seekLog".to_owned(),
         }
     }
     fn query(&self) -> Option<String> {
