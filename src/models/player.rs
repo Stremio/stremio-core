@@ -296,22 +296,18 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                 video_params_effects.join(subtitles_effects)
             }
             Msg::Action(Action::Player(ActionPlayer::StreamStateChanged { state })) => {
-                let stream_state_effects =
-                    eq_update(&mut self.stream_state, Some(state.to_owned()));
-                let state_changed_effects =
-                    Effects::msg(Msg::Internal(Internal::StreamStateChanged {
-                        state: state.to_owned(),
-                        stream_request: self
-                            .selected
-                            .as_ref()
-                            .and_then(|selected| selected.stream_request.to_owned()),
-                        meta_request: self
-                            .selected
-                            .as_ref()
-                            .and_then(|selected| selected.meta_request.to_owned()),
-                    }))
-                    .unchanged();
-                stream_state_effects.join(state_changed_effects)
+                Effects::msg(Msg::Internal(Internal::StreamStateChanged {
+                    state: state.to_owned(),
+                    stream_request: self
+                        .selected
+                        .as_ref()
+                        .and_then(|selected| selected.stream_request.to_owned()),
+                    meta_request: self
+                        .selected
+                        .as_ref()
+                        .and_then(|selected| selected.meta_request.to_owned()),
+                }))
+                .unchanged()
             }
             Msg::Action(Action::Player(ActionPlayer::TimeChanged {
                 time,
@@ -464,6 +460,9 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                 }))
                 .unchanged()
             }
+            Msg::Internal(Internal::StreamsChanged(_)) => {
+                stream_state_update(&mut self.stream_state, &self.selected, &ctx.streams)
+            }
             Msg::Internal(Internal::ResourceRequestResult(request, result)) => {
                 let meta_item_effects = match &mut self.meta_item {
                     Some(meta_item) => resource_update::<E, _>(
@@ -485,8 +484,6 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                     }
                     _ => Effects::none().unchanged(),
                 };
-                let stream_state_effects =
-                    stream_state_update(&mut self.stream_state, &self.selected, &ctx.streams);
                 let subtitles_effects = resources_update_with_vector_content::<E, _>(
                     &mut self.subtitles,
                     ResourcesAction::ResourceRequestResult { request, result },
@@ -552,7 +549,6 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                 };
                 meta_item_effects
                     .join(update_streams_effects)
-                    .join(stream_state_effects)
                     .join(subtitles_effects)
                     .join(next_video_effects)
                     .join(next_streams_effects)
