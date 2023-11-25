@@ -933,7 +933,7 @@ dependencies = [
 [[package]]
 name = "stremio-core"
 version = "0.1.0"
-source = "git+https://github.com/Stremio/stremio-core?branch=surround_sound_enabled#bef68af6b0db125358a23096a5b92f4eb3f8ad54"
+source = "git+https://github.com/Stremio/stremio-core?branch=surround_sound_enabled#b9c1df41cc5e1a923c23c90af378ac1c6655ba8f"
 dependencies = [
  "anyhow",
  "base64 0.21.2",
@@ -1008,7 +1008,7 @@ dependencies = [
 [[package]]
 name = "stremio-derive"
 version = "0.1.0"
-source = "git+https://github.com/Stremio/stremio-core?branch=surround_sound_enabled#bef68af6b0db125358a23096a5b92f4eb3f8ad54"
+source = "git+https://github.com/Stremio/stremio-core?branch=surround_sound_enabled#b9c1df41cc5e1a923c23c90af378ac1c6655ba8f"
 dependencies = [
  "case",
  "proc-macro-crate",
@@ -1038,7 +1038,7 @@ dependencies = [
 [[package]]
 name = "stremio-watched-bitfield"
 version = "0.1.0"
-source = "git+https://github.com/Stremio/stremio-core?branch=surround_sound_enabled#bef68af6b0db125358a23096a5b92f4eb3f8ad54"
+source = "git+https://github.com/Stremio/stremio-core?branch=surround_sound_enabled#b9c1df41cc5e1a923c23c90af378ac1c6655ba8f"
 dependencies = [
  "base64 0.13.1",
  "flate2",
