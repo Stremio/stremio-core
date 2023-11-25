@@ -9,6 +9,7 @@ pub const PROFILE_STORAGE_KEY: &str = "profile";
 pub const LIBRARY_STORAGE_KEY: &str = "library";
 pub const LIBRARY_RECENT_STORAGE_KEY: &str = "library_recent";
 pub const STREAMS_STORAGE_KEY: &str = "streams";
+pub const SEARCH_HISTORY_STORAGE_KEY: &str = "search_history";
 pub const NOTIFICATIONS_STORAGE_KEY: &str = "notifications";
 pub const LIBRARY_COLLECTION_NAME: &str = "libraryItem";
 pub const SEARCH_EXTRA_NAME: &str = "search";

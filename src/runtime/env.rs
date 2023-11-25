@@ -1,7 +1,7 @@
 use crate::addon_transport::{AddonHTTPTransport, AddonTransport, UnsupportedTransport};
 use crate::constants::{
     LIBRARY_RECENT_STORAGE_KEY, LIBRARY_STORAGE_KEY, PROFILE_STORAGE_KEY, SCHEMA_VERSION,
-    SCHEMA_VERSION_STORAGE_KEY, STREAMS_STORAGE_KEY,
+    SCHEMA_VERSION_STORAGE_KEY, SEARCH_HISTORY_STORAGE_KEY, STREAMS_STORAGE_KEY,
 };
 use crate::models::ctx::Ctx;
 use crate::models::streaming_server::StreamingServer;
@@ -498,6 +498,12 @@ fn migrate_storage_schema_to_v9<E: Env>() -> TryEnvFuture<()> {
 }
 
 fn migrate_storage_schema_to_v10<E: Env>() -> TryEnvFuture<()> {
+    E::set_storage::<()>(SEARCH_HISTORY_STORAGE_KEY, None)
+        .and_then(|_| E::set_storage(SCHEMA_VERSION_STORAGE_KEY, Some(&10)))
+        .boxed_env()
+}
+
+fn migrate_storage_schema_to_v11<E: Env>() -> TryEnvFuture<()> {
     E::get_storage::<serde_json::Value>(PROFILE_STORAGE_KEY)
         .and_then(|mut profile| {
             match profile
@@ -569,6 +575,18 @@ mod test {
         assert!(
             no_profile.is_none(),
             "Current profile should be empty for this test"
+        );
+    }
+
+    fn assert_storage_shema_version(schema_v: u32) {
+        let storage = STORAGE.read().expect("Should lock");
+
+        assert_eq!(
+            &schema_v.to_string(),
+            storage
+                .get(SCHEMA_VERSION_STORAGE_KEY)
+                .expect("Should have the schema set"),
+            "Scheme version should be {schema_v}"
         );
     }
 
@@ -898,6 +916,18 @@ mod test {
 
     #[tokio::test]
     async fn test_migration_from_9_to_10() {
+        let _test_env_guard = TestEnv::reset().expect("Should lock TestEnv");
+
+        migrate_storage_schema_to_v10::<TestEnv>()
+            .await
+            .expect("Should migrate");
+
+        {
+            assert_storage_shema_version(10);
+        }
+    }
+
+    async fn test_migration_from_10_to_11() {
         {
             let _test_env_guard = TestEnv::reset().expect("Should lock TestEnv");
             let profile_before = json!({

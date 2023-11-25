@@ -49,7 +49,7 @@ pub struct ExternalPlayerLink {
     pub file_name: Option<String>,
 }
 
-/// Using &Option<Url> is not encouraged, use `.as_ref()` to get an `Option<&Url>` instead!
+/// Using `&Option<Url>` is not encouraged, use `.as_ref()` to get an `Option<&Url>` instead!
 impl From<(&Stream, &Option<Url>, &Settings)> for ExternalPlayerLink {
     fn from((stream, streaming_server_url, settings): (&Stream, &Option<Url>, &Settings)) -> Self {
         Self::from((stream, streaming_server_url.as_ref(), settings))
@@ -64,6 +64,8 @@ impl From<(&Stream, Option<&Url>, &Settings)> for ExternalPlayerLink {
     ///
     /// [`StreamingServer::base_url`]: crate::models::streaming_server::StreamingServer::base_url
     fn from((stream, streaming_server_url, settings): (&Stream, Option<&Url>, &Settings)) -> Self {
+        // Use streaming_server_url from settings if streaming_server is reachable
+        let streaming_server_url = streaming_server_url.map(|_| &settings.streaming_server_url);
         let http_regex = Regex::new(r"https?://").unwrap();
         let download = stream.download_url();
         let streaming = stream.streaming_url(streaming_server_url);
@@ -108,6 +110,14 @@ impl From<(&Stream, Option<&Url>, &Settings)> for ExternalPlayerLink {
                     }),
                     "infuse" => Some(OpenPlayerLink {
                         ios: Some(format!("infuse://x-callback-url/play?url={url}")),
+                       ..Default::default()
+                    }),
+                    "iina" => Some(OpenPlayerLink {
+                        macos: Some(format!("iina://weblink?url={url}")),
+                       ..Default::default()
+                    }),
+                    "mpv" => Some(OpenPlayerLink {
+                        macos: Some(format!("mpv://{url}")),
                        ..Default::default()
                     }),
                     _ => None,

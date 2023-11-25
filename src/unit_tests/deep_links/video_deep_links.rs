@@ -8,7 +8,7 @@ use std::convert::TryFrom;
 use std::str::FromStr;
 use url::Url;
 
-const STREAMING_SERVER_URL: &str = "http://127.0.0.1:11471/";
+const STREAMING_SERVER_URL: &str = "http://127.0.0.1:11470/";
 const YT_ID: &str = "aqz-KE-bpKQ";
 
 #[test]
