@@ -35,7 +35,7 @@ pub struct Settings {
     pub seek_short_time_duration: u32,
     /// Whether we should pause the playback when the application get's minimized
     pub pause_on_minimize: bool,
-    pub surround_sound_enabled: bool,
+    pub surround_sound: bool,
     pub streaming_server_warning_dismissed: Option<DateTime<Utc>>,
 }
 
@@ -73,7 +73,7 @@ impl Default for Settings {
             seek_time_duration: 10000,
             seek_short_time_duration: 3000,
             pause_on_minimize: false,
-            surround_sound_enabled: false,
+            surround_sound: false,
             streaming_server_warning_dismissed: None,
         }
     }

@@ -520,7 +520,7 @@ fn migrate_storage_schema_to_v11<E: Env>() -> TryEnvFuture<()> {
             {
                 Some(settings) => {
                     settings.insert(
-                        "surroundSoundEnabled".to_owned(),
+                        "surroundSound".to_owned(),
                         serde_json::Value::Bool(false),
                     );
                     E::set_storage(PROFILE_STORAGE_KEY, Some(&profile))
@@ -942,7 +942,7 @@ mod test {
 
             let migrated_profile = json!({
                 "settings": {
-                    "surroundSoundEnabled": false,
+                    "surroundSound": false,
                 }
             });
 

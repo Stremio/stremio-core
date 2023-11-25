@@ -424,7 +424,7 @@ impl DefaultTokens for Settings {
             Token::U32(3000),
             Token::Str("pauseOnMinimize"),
             Token::Bool(false),
-            Token::Str("surroundSoundEnabled"),
+            Token::Str("surroundSound"),
             Token::Bool(false),
             Token::Str("streamingServerWarningDismissed"),
             Token::None,
