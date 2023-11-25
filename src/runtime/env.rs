@@ -519,10 +519,7 @@ fn migrate_storage_schema_to_v11<E: Env>() -> TryEnvFuture<()> {
                 .and_then(|settings| settings.as_object_mut())
             {
                 Some(settings) => {
-                    settings.insert(
-                        "surroundSound".to_owned(),
-                        serde_json::Value::Bool(false),
-                    );
+                    settings.insert("surroundSound".to_owned(), serde_json::Value::Bool(false));
                     E::set_storage(PROFILE_STORAGE_KEY, Some(&profile))
                 }
                 _ => E::set_storage::<()>(PROFILE_STORAGE_KEY, None),
