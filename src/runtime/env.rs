@@ -528,7 +528,7 @@ fn migrate_storage_schema_to_v11<E: Env>() -> TryEnvFuture<()> {
                 _ => E::set_storage::<()>(PROFILE_STORAGE_KEY, None),
             }
         })
-        .and_then(|_| E::set_storage(SCHEMA_VERSION_STORAGE_KEY, Some(&10)))
+        .and_then(|_| E::set_storage(SCHEMA_VERSION_STORAGE_KEY, Some(&11)))
         .boxed_env()
 }
 
@@ -947,17 +947,17 @@ mod test {
             });
 
             // setup storage for migration
-            set_profile_and_schema_version(&profile_before, 9);
+            set_profile_and_schema_version(&profile_before, 10);
 
             // migrate storage
-            migrate_storage_schema_to_v10::<TestEnv>()
+            migrate_storage_schema_to_v11::<TestEnv>()
                 .await
                 .expect("Should migrate");
 
             let storage = STORAGE.read().expect("Should lock");
 
             assert_eq!(
-                &10.to_string(),
+                &11.to_string(),
                 storage
                     .get(SCHEMA_VERSION_STORAGE_KEY)
                     .expect("Should have the schema set"),
