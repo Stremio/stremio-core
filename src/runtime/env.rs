@@ -238,6 +238,12 @@ pub trait Env {
                         .await?;
                     schema_version = 10;
                 }
+                if schema_version == 10 {
+                    migrate_storage_schema_to_v11::<Self>()
+                        .map_err(|error| EnvError::StorageSchemaVersionUpgrade(Box::new(error)))
+                        .await?;
+                    schema_version = 11;
+                }
                 if schema_version != SCHEMA_VERSION {
                     panic!(
                         "Storage schema version must be upgraded from {} to {}",
@@ -536,9 +542,9 @@ mod test {
         },
         runtime::{
             env::{
-                migrate_storage_schema_to_v10, migrate_storage_schema_to_v6,
-                migrate_storage_schema_to_v7, migrate_storage_schema_to_v8,
-                migrate_storage_schema_to_v9,
+                migrate_storage_schema_to_v10, migrate_storage_schema_to_v11,
+                migrate_storage_schema_to_v6, migrate_storage_schema_to_v7,
+                migrate_storage_schema_to_v8, migrate_storage_schema_to_v9,
             },
             Env,
         },

@@ -21,7 +21,7 @@ use crate::{
     types::{
         addon::Descriptor,
         api::AuthRequest,
-        library::{LibraryItemId, LibraryItem},
+        library::{LibraryItem, LibraryItemId},
         profile::Settings as ProfileSettings,
         resource::{MetaItemId, MetaItemPreview, Video},
     },
