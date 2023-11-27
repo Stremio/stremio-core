@@ -358,17 +358,7 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                 ) => {
                     let seeking = library_item.state.time_offset.abs_diff(*time) > 1000;
 
-                    // seek logging
-                    if seeking
-                        && library_item.r#type == "series"
-                        && time < &PLAYER_IGNORE_SEEK_AFTER
-                    {
-                        self.seek_history.push(SeekLog {
-                            from: library_item.state.time_offset,
-                            to: *time,
-                        });
-                    }
-
+                    // if we've selected a new video (like the next episode)
                     library_item.state.last_watched = Some(E::now());
                     if library_item.state.video_id != Some(video_id.to_owned()) {
                         library_item.state.video_id = Some(video_id.to_owned());
@@ -379,6 +369,18 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                         library_item.state.time_watched = 0;
                         library_item.state.flagged_watched = 0;
                     } else {
+                        // else we have added to the currently selected video/stream
+                        // seek logging
+                        if seeking
+                            && library_item.r#type == "series"
+                            && time < &PLAYER_IGNORE_SEEK_AFTER
+                        {
+                            self.seek_history.push(SeekLog {
+                                from: library_item.state.time_offset,
+                                to: *time,
+                            });
+                        }
+
                         let time_watched =
                             1000.min(time.saturating_sub(library_item.state.time_offset));
                         library_item.state.time_watched =
@@ -944,21 +946,8 @@ fn seek_update<E: Env + 'static>(
     seek_history: &mut Vec<SeekLog>,
     outro: Option<u64>,
 ) -> Effects {
-    // todo: Remove
-    tracing::info!(
-        "seek update starting... selected: {}; video_params: {}, series_info: {}, library_item: {}",
-        selected.is_some(),
-        video_params.is_some(),
-        series_info.is_some(),
-        library_item.is_some()
-    );
-
     let seek_request_effects = match (selected, video_params, series_info, library_item) {
         (Some(selected), Some(video_params), Some(series_info), Some(library_item)) => {
-            // todo: Remove
-            tracing::info!("seek update continues... is stream a torrent: {}; stream name: {}, video_params.hash: {}", matches!(selected.stream.source, StreamSource::Torrent { .. }), selected.stream.name.is_some(),
-            video_params.hash.is_some());
-
             match (
                 &selected.stream.source,
                 selected.stream.name.as_ref(),
@@ -983,9 +972,6 @@ fn seek_update<E: Env + 'static>(
                         seek_history: seek_history.to_owned(),
                         skip_outro: outro.map(|time| vec![time]).unwrap_or_default(),
                     };
-
-                    // todo: Remove
-                    tracing::info!("SeekLog API request: {seek_log_req:?}");
 
                     Effects::one(push_seek_to_api::<E>(seek_log_req)).unchanged()
                 }
