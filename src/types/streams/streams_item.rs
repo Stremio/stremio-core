@@ -27,16 +27,46 @@ pub struct StreamsItem {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct StreamItemState {
-    pub subtitle_track_id: Option<String>,
-    pub subtitle_language: Option<String>,
-    /// In milliseconds
-    pub subtitle_delay: Option<i64>,
-    pub audio_track_id: Option<String>,
-    pub audio_language: Option<String>,
-    /// In milliseconds
-    pub audio_delay: Option<i64>,
+    pub subtitle_track: Option<SubtitleTrack>,
+    pub audio_track: Option<AudioTrack>,
     pub playback_speed: Option<f32>,
     pub player_type: Option<String>,
+}
+
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct SubtitleTrack {
+    /// Id of the subtitle track
+    pub id: String,
+    /// Flag indicating whether this is an embedded subtitles or an addon subtitle
+    pub embedded: bool,
+    /// Optional string indicating subtitle language.
+    /// This value should be used when playing next stream with the same bingeGroup
+    /// and user had selected an embedded subtitle previously, as next stream in the same bingeGroup
+    /// usually will have the same embedded subtitle tracks, but might be the case that
+    /// they are not in the same order, and just checking based on id might select an incorrect track.
+    /// Thus when setting the embedded subtitle based on stream state,
+    /// we should set it based on id and language.
+    pub language: Option<String>,
+    /// In milliseconds
+    pub delay: Option<i64>,
+}
+
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct AudioTrack {
+    /// Id of the audio track
+    pub id: String,
+    /// Optional string indicating audio language.
+    /// This value should be used when playing next stream with the same bingeGroup
+    /// and user had selected an audio track previously, as next stream in the same bingeGroup
+    /// usually will have the same audio tracks, but might be the case that they are not
+    /// in the same order, and just checking based on id might select an incorrect track.
+    /// Thus when setting the audio track based on stream state,
+    /// we should set it based on id and language.
+    pub language: Option<String>,
+    /// In milliseconds
+    pub delay: Option<i64>,
 }
 
 impl StreamsItem {
@@ -59,18 +89,22 @@ impl StreamsItem {
                 return state;
             } else if is_binge_match {
                 return StreamItemState {
-                    subtitle_delay: None,
-                    audio_delay: None,
+                    subtitle_track: state.subtitle_track.filter(|track| track.embedded).map(
+                        |track| SubtitleTrack {
+                            delay: None,
+                            ..track
+                        },
+                    ),
+                    audio_track: state.audio_track.map(|track| AudioTrack {
+                        delay: None,
+                        ..track
+                    }),
                     ..state
                 };
             }
             StreamItemState {
-                subtitle_track_id: None,
-                subtitle_language: None,
-                subtitle_delay: None,
-                audio_track_id: None,
-                audio_language: None,
-                audio_delay: None,
+                subtitle_track: None,
+                audio_track: None,
                 ..state
             }
         })
