@@ -143,13 +143,13 @@ pub enum ActionPlayer {
     PausedChanged {
         paused: bool,
     },
-    /// Play next video, if there is one, applicable to e.g.
-    /// movie series and playing the next episode.
+    /// User has clicked on the next video button.
     NextVideo,
     /// Video player has ended.
+    ///
     /// 2 scenarios are possible:
     /// - We've watched a movie to the last second
-    /// - We've watched a movie series to the last episode and the last second
+    /// - We've watched a movie series to the last second
     Ended,
 }
 
