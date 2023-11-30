@@ -27,9 +27,19 @@ pub struct StreamsItem {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct StreamItemState {
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub subtitle_track: Option<SubtitleTrack>,
+    /// In milliseconds
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub subtitle_delay: Option<i64>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub audio_track: Option<AudioTrack>,
+    /// In milliseconds
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub audio_delay: Option<i64>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub playback_speed: Option<f32>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub player_type: Option<String>,
 }
 
@@ -47,9 +57,8 @@ pub struct SubtitleTrack {
     /// they are not in the same order, and just checking based on id might select an incorrect track.
     /// Thus when setting the embedded subtitle based on stream state,
     /// we should set it based on id and language.
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub language: Option<String>,
-    /// In milliseconds
-    pub delay: Option<i64>,
 }
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -64,9 +73,8 @@ pub struct AudioTrack {
     /// in the same order, and just checking based on id might select an incorrect track.
     /// Thus when setting the audio track based on stream state,
     /// we should set it based on id and language.
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub language: Option<String>,
-    /// In milliseconds
-    pub delay: Option<i64>,
 }
 
 impl StreamsItem {
@@ -89,16 +97,9 @@ impl StreamsItem {
                 return state;
             } else if is_binge_match {
                 return StreamItemState {
-                    subtitle_track: state.subtitle_track.filter(|track| track.embedded).map(
-                        |track| SubtitleTrack {
-                            delay: None,
-                            ..track
-                        },
-                    ),
-                    audio_track: state.audio_track.map(|track| AudioTrack {
-                        delay: None,
-                        ..track
-                    }),
+                    subtitle_track: state.subtitle_track.filter(|track| track.embedded),
+                    subtitle_delay: None,
+                    audio_delay: None,
                     ..state
                 };
             }

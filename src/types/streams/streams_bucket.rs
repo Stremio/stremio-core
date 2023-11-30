@@ -30,11 +30,7 @@ impl StreamsBucket {
         }
     }
 
-    pub fn last_stream_item(
-        &self,
-        video_id: &String,
-        meta_item: &MetaItem,
-    ) -> Option<&StreamsItem> {
+    pub fn last_stream_item(&self, video_id: &str, meta_item: &MetaItem) -> Option<&StreamsItem> {
         match meta_item.videos.len() {
             0 => self.items.get(&StreamsItemKey {
                 meta_id: meta_item.preview.id.to_string(),
@@ -43,7 +39,7 @@ impl StreamsBucket {
             _ => meta_item
                 .videos
                 .iter()
-                .position(|video| video.id == *video_id)
+                .position(|video| video.id == video_id)
                 .and_then(|max_index| {
                     meta_item.videos[max_index.saturating_sub(30)..=max_index]
                         .iter()
@@ -51,7 +47,7 @@ impl StreamsBucket {
                         .find_map(|video| {
                             self.items.get(&StreamsItemKey {
                                 meta_id: meta_item.preview.id.to_string(),
-                                video_id: video.id.to_owned(),
+                                video_id: video.id.to_string(),
                             })
                         })
                 }),
