@@ -77,6 +77,20 @@ impl LibraryItem {
             && !self.removed
             && !self.temp
     }
+
+    #[inline]
+    pub fn eq_no_mtime(&self, other: &LibraryItem) -> bool {
+        self.id == other.id
+            && self.removed == other.removed
+            && self.temp == other.temp
+            && self.ctime == other.ctime
+            && self.state == other.state
+            && self.name == other.name
+            && self.r#type == other.r#type
+            && self.poster == other.poster
+            && self.poster_shape == other.poster_shape
+            && self.behavior_hints == other.behavior_hints
+    }
 }
 
 impl<E: Env + 'static> From<(&MetaItemPreview, PhantomData<E>)> for LibraryItem {
