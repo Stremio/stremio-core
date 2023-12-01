@@ -66,6 +66,7 @@ pub struct VideoParams {
     /// It's used for requesting subtitles from Opensubtitles.
     pub hash: Option<String>,
     pub size: Option<u64>,
+    pub filename: Option<String>,
 }
 
 #[derive(Clone, PartialEq, Eq, Serialize, Deserialize, Debug)]
@@ -928,7 +929,8 @@ fn subtitles_update<E: Env + 'static>(
                         .extend_one(
                             &VIDEO_SIZE_EXTRA_PROP,
                             video_params.size.as_ref().map(|size| size.to_string()),
-                        ),
+                        )
+                        .extend_one(&VIDEO_FILENAME_EXTRA_PROP, video_params.filename.to_owned()),
                     ..subtitles_path.to_owned()
                 }),
                 addons,
