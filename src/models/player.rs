@@ -4,8 +4,8 @@ use base64::Engine;
 use futures::{future, FutureExt, TryFutureExt};
 
 use crate::constants::{
-    BASE64, CREDITS_THRESHOLD_COEF, PLAYER_IGNORE_SEEK_AFTER, VIDEO_HASH_EXTRA_PROP,
-    VIDEO_SIZE_EXTRA_PROP, WATCHED_THRESHOLD_COEF,
+    BASE64, CREDITS_THRESHOLD_COEF, PLAYER_IGNORE_SEEK_AFTER, VIDEO_FILENAME_EXTRA_PROP,
+    VIDEO_HASH_EXTRA_PROP, VIDEO_SIZE_EXTRA_PROP, WATCHED_THRESHOLD_COEF,
 };
 use crate::models::common::{
     eq_update, resource_update, resource_update_with_vector_content,
