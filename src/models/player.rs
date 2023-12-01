@@ -1,8 +1,8 @@
 use std::marker::PhantomData;
 
 use crate::constants::{
-    CREDITS_THRESHOLD_COEF, META_RESOURCE_NAME, VIDEO_FILENAME_EXTRA_PROP, 
-    VIDEO_HASH_EXTRA_PROP, VIDEO_SIZE_EXTRA_PROP, WATCHED_THRESHOLD_COEF,
+    CREDITS_THRESHOLD_COEF, META_RESOURCE_NAME, VIDEO_FILENAME_EXTRA_PROP, VIDEO_HASH_EXTRA_PROP,
+    VIDEO_SIZE_EXTRA_PROP, WATCHED_THRESHOLD_COEF,
 };
 use crate::models::common::{
     eq_update, resource_update, resources_update_with_vector_content, Loadable, ResourceAction,
