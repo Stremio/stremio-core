@@ -143,7 +143,9 @@ pub fn update_library<E: Env + 'static>(
             }))
             .unchanged(),
         },
-        Msg::Internal(Internal::UpdateLibraryItem(library_item)) => {
+        Msg::Internal(Internal::UpdateLibraryItem(library_item))
+            if Some(library_item) != library.items.get(&library_item.id) =>
+        {
             let mut library_item = library_item.to_owned();
             library_item.mtime = E::now();
 
