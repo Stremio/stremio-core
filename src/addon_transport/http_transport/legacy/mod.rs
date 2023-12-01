@@ -215,18 +215,18 @@ fn build_legacy_req(transport_url: &Url, path: &ResourcePath) -> Result<Request<
             let video_size = path
                 .get_extra_first_value(VIDEO_SIZE_EXTRA_PROP.name.as_str())
                 .and_then(|video_size| video_size.parse().ok());
+            if let Some(video_size) = video_size {
+                query.insert(
+                    VIDEO_SIZE_EXTRA_PROP.name.as_str(),
+                    serde_json::Value::Number(video_size),
+                );
+            }
             let video_filename =
                 path.get_extra_first_value(VIDEO_FILENAME_EXTRA_PROP.name.as_str());
             if let Some(video_filename) = video_filename {
                 query.insert(
                     VIDEO_FILENAME_EXTRA_PROP.name.as_str(),
                     serde_json::Value::String(video_filename.to_owned()),
-                );
-            }
-            if let Some(video_size) = video_size {
-                query.insert(
-                    VIDEO_SIZE_EXTRA_PROP.name.as_str(),
-                    serde_json::Value::Number(video_size),
                 );
             }
             build_jsonrpc("subtitles.find", json!({ "query": query }))
