@@ -88,6 +88,12 @@ lazy_static! {
         options: vec![],
         options_limit: OptionsLimit::default(),
     };
+    pub static ref VIDEO_FILENAME_EXTRA_PROP: ExtraProp = ExtraProp {
+        name: "filename".to_owned(),
+        is_required: false,
+        options: vec![],
+        options_limit: OptionsLimit::default(),
+    };
     pub static ref LAST_VIDEOS_IDS_EXTRA_PROP: ExtraProp = ExtraProp {
         name: "lastVideosIds".to_owned(),
         is_required: false,
