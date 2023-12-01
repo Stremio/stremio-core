@@ -1,5 +1,7 @@
 use crate::addon_transport::AddonTransport;
-use crate::constants::{BASE64, VIDEO_HASH_EXTRA_PROP, VIDEO_SIZE_EXTRA_PROP};
+use crate::constants::{
+    BASE64, VIDEO_FILENAME_EXTRA_PROP, VIDEO_HASH_EXTRA_PROP, VIDEO_SIZE_EXTRA_PROP,
+};
 use crate::runtime::{ConditionalSend, Env, EnvError, EnvFutureExt, TryEnvFuture};
 use crate::types::addon::{Manifest, ResourcePath, ResourceResponse};
 use crate::types::resource::{MetaItem, MetaItemPreview, Stream, Subtitles};
@@ -217,6 +219,14 @@ fn build_legacy_req(transport_url: &Url, path: &ResourcePath) -> Result<Request<
                 query.insert(
                     VIDEO_SIZE_EXTRA_PROP.name.as_str(),
                     serde_json::Value::Number(video_size),
+                );
+            }
+            let video_filename =
+                path.get_extra_first_value(VIDEO_FILENAME_EXTRA_PROP.name.as_str());
+            if let Some(video_filename) = video_filename {
+                query.insert(
+                    VIDEO_FILENAME_EXTRA_PROP.name.as_str(),
+                    serde_json::Value::String(video_filename.to_owned()),
                 );
             }
             build_jsonrpc("subtitles.find", json!({ "query": query }))

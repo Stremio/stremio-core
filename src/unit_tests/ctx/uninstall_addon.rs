@@ -8,6 +8,7 @@ use crate::types::library::LibraryBucket;
 use crate::types::notifications::NotificationsBucket;
 use crate::types::profile::{Auth, AuthKey, GDPRConsent, Profile, User};
 use crate::types::resource::{Stream, StreamBehaviorHints, StreamSource};
+use crate::types::search_history::SearchHistoryBucket;
 use crate::types::streams::{StreamsBucket, StreamsItem, StreamsItemKey};
 use crate::types::True;
 use crate::unit_tests::{
@@ -107,6 +108,7 @@ fn actionctx_uninstalladdon() {
                 LibraryBucket::default(),
                 StreamsBucket::default(),
                 NotificationsBucket::new::<TestEnv>(None, vec![]),
+                SearchHistoryBucket::default(),
             ),
         },
         vec![],
@@ -218,6 +220,7 @@ fn actionctx_uninstalladdon_with_user() {
                 LibraryBucket::default(),
                 StreamsBucket::default(),
                 NotificationsBucket::new::<TestEnv>(None, vec![]),
+                SearchHistoryBucket::default(),
             ),
         },
         vec![],
@@ -309,6 +312,7 @@ fn actionctx_uninstalladdon_protected() {
                 LibraryBucket::default(),
                 StreamsBucket::default(),
                 NotificationsBucket::new::<TestEnv>(None, vec![]),
+                SearchHistoryBucket::default(),
             ),
         },
         vec![],
@@ -383,6 +387,7 @@ fn actionctx_uninstalladdon_not_installed() {
                 LibraryBucket::default(),
                 StreamsBucket::default(),
                 NotificationsBucket::new::<TestEnv>(None, vec![]),
+                SearchHistoryBucket::default(),
             ),
         },
         vec![],
@@ -465,6 +470,7 @@ fn actionctx_uninstalladdon_streams_bucket() {
                 LibraryBucket::default(),
                 streams,
                 NotificationsBucket::new::<TestEnv>(None, vec![]),
+                SearchHistoryBucket::default(),
             ),
         },
         vec![],

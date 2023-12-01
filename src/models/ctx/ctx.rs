@@ -1,8 +1,8 @@
 use crate::constants::LIBRARY_COLLECTION_NAME;
 use crate::models::common::{DescriptorLoadable, ResourceLoadable};
 use crate::models::ctx::{
-    update_library, update_notifications, update_profile, update_streams, update_trakt_addon,
-    CtxError,
+    update_library, update_notifications, update_profile, update_search_history, update_streams,
+    update_trakt_addon, CtxError,
 };
 use crate::runtime::msg::{Action, ActionCtx, Event, Internal, Msg};
 use crate::runtime::{Effect, EffectFuture, Effects, Env, EnvFutureExt, Update};
@@ -14,6 +14,7 @@ use crate::types::library::LibraryBucket;
 use crate::types::notifications::NotificationsBucket;
 use crate::types::profile::{Auth, AuthKey, Profile};
 use crate::types::resource::MetaItem;
+use crate::types::search_history::SearchHistoryBucket;
 use crate::types::streams::StreamsBucket;
 
 #[cfg(test)]
@@ -44,6 +45,8 @@ pub struct Ctx {
     #[serde(skip)]
     pub streams: StreamsBucket,
     #[serde(skip)]
+    pub search_history: SearchHistoryBucket,
+    #[serde(skip)]
     #[cfg_attr(test, derivative(Default(value = "CtxStatus::Ready")))]
     pub status: CtxStatus,
     #[serde(skip)]
@@ -59,11 +62,13 @@ impl Ctx {
         library: LibraryBucket,
         streams: StreamsBucket,
         notifications: NotificationsBucket,
+        search_history: SearchHistoryBucket,
     ) -> Self {
         Self {
             profile,
             library,
             streams,
+            search_history,
             notifications,
             trakt_addon: None,
             notification_catalogs: vec![],
@@ -90,6 +95,8 @@ impl<E: Env + 'static> Update<E> for Ctx {
                 let library_effects =
                     update_library::<E>(&mut self.library, &self.profile, &self.status, msg);
                 let streams_effects = update_streams::<E>(&mut self.streams, &self.status, msg);
+                let search_history_effects =
+                    update_search_history::<E>(&mut self.search_history, &self.status, msg);
                 let trakt_addon_effects = update_trakt_addon::<E>(
                     &mut self.trakt_addon,
                     &self.profile,
@@ -111,6 +118,7 @@ impl<E: Env + 'static> Update<E> for Ctx {
                     .join(profile_effects)
                     .join(library_effects)
                     .join(streams_effects)
+                    .join(search_history_effects)
                     .join(trakt_addon_effects)
                     .join(notifications_effects)
             }
@@ -134,6 +142,8 @@ impl<E: Env + 'static> Update<E> for Ctx {
                     msg,
                 );
                 let streams_effects = update_streams::<E>(&mut self.streams, &self.status, msg);
+                let search_history_effects =
+                    update_search_history::<E>(&mut self.search_history, &self.status, msg);
                 let ctx_effects = match &self.status {
                     CtxStatus::Loading(loading_auth_request)
                         if loading_auth_request == auth_request =>
@@ -160,6 +170,7 @@ impl<E: Env + 'static> Update<E> for Ctx {
                     .join(streams_effects)
                     .join(trakt_addon_effects)
                     .join(notifications_effects)
+                    .join(search_history_effects)
                     .join(ctx_effects)
             }
             _ => {
@@ -182,11 +193,14 @@ impl<E: Env + 'static> Update<E> for Ctx {
                     &self.status,
                     msg,
                 );
+                let search_history_effects =
+                    update_search_history::<E>(&mut self.search_history, &self.status, msg);
                 profile_effects
                     .join(library_effects)
                     .join(streams_effects)
                     .join(trakt_addon_effects)
                     .join(notifications_effects)
+                    .join(search_history_effects)
             }
         }
     }

@@ -66,6 +66,10 @@ pub enum Internal {
         stream_request: Option<ResourceRequest>,
         meta_request: Option<ResourceRequest>,
     },
+    /// Dispatched when requesting search on catalogs.
+    CatalogsWithExtraSearch {
+        query: String,
+    },
     /// Dispatched when library item needs to be updated in the memory, storage and API.
     UpdateLibraryItem(LibraryItem),
     /// Dispatched when some of auth, addons or settings changed.
@@ -74,9 +78,13 @@ pub enum Internal {
     LibraryChanged(bool),
     /// Dispatched when streams bucket changes with a flag if its already persisted.
     StreamsChanged(bool),
+    /// Search history has changed.
+    SearchHistoryChanged,
     /// User notifications have changed
     NotificationsChanged,
     /// Dismiss all Notifications for a given [`MetaItemId`].
+    ///
+    /// [`MetaItemId`]: crate::types::resource::MetaItemId
     DismissNotificationItem(LibraryItemId),
     /// Result for loading link code.
     LinkCodeResult(Result<LinkCodeResponse, LinkError>),
