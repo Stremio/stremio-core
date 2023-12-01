@@ -23,7 +23,7 @@ use crate::{
         library::{LibraryBucket, LibraryItem},
         profile::Profile,
         resource::{MetaItem, Stream},
-        streams::{StreamsBucket, StreamsItemKey},
+        streams::StreamsBucket,
     },
 };
 
@@ -445,72 +445,59 @@ fn suggested_stream_update(
     streams: &[ResourceLoadable<Vec<Stream>>],
     stream_bucket: &StreamsBucket,
 ) -> Effects {
+    let all_streams = [meta_streams, streams].concat();
     let next_suggested_stream = match selected {
         Some(Selected {
-            meta_path,
             stream_path: Some(stream_path),
             ..
-        }) => {
-            meta_items
-                .iter()
-                .find_map(|meta_item| match &meta_item.content {
-                    Some(Loadable::Ready(meta_item)) => Some(&meta_item.videos),
-                    _ => None,
-                })
-                .and_then(|videos| {
-                    // Check saved stream only for last 30 videos starting from the current video
-                    videos
-                        .iter()
-                        .position(|video| video.id == stream_path.id)
-                        .and_then(|max_index| {
-                            videos[max_index.saturating_sub(30)..=max_index]
-                                .iter()
-                                .rev()
-                                .find_map(|video| {
-                                    stream_bucket.items.get(&StreamsItemKey {
-                                        meta_id: meta_path.id.to_string(),
-                                        video_id: video.id.to_owned(),
-                                    })
-                                })
-                        })
-                })
-                .and_then(|stream_item| {
-                    [meta_streams, streams]
-                        .concat()
-                        .iter()
-                        .find(|resource| resource.request.base == stream_item.stream_transport_url)
-                        .and_then(|resource| match &resource.content {
-                            Some(Loadable::Ready(streams)) => Some(ResourceLoadable {
-                                request: resource.request.clone(),
-                                content: Some(Loadable::Ready(
-                                    streams
-                                        .iter()
-                                        .find(|stream| *stream == &stream_item.stream)
-                                        .or_else(|| {
-                                            streams.iter().find(|stream| {
-                                                stream.behavior_hints.binge_group.as_deref()
-                                                    == stream_item
-                                                        .stream
-                                                        .behavior_hints
-                                                        .binge_group
-                                                        .as_deref()
+        }) => meta_items
+            .iter()
+            .filter(|_| !all_streams.is_empty())
+            .find_map(|meta_item_res| match &meta_item_res.content {
+                Some(Loadable::Ready(meta_item)) => stream_bucket
+                    .last_stream_item(&stream_path.id, meta_item)
+                    .and_then(|stream_item| {
+                        all_streams
+                            .iter()
+                            .find(|resource| {
+                                resource.request.base == stream_item.stream_transport_url
+                            })
+                            .and_then(|resource| match &resource.content {
+                                Some(Loadable::Ready(streams)) => Some(ResourceLoadable {
+                                    request: resource.request.clone(),
+                                    content: Some(Loadable::Ready(
+                                        streams
+                                            .iter()
+                                            .find(|stream| {
+                                                stream.is_source_match(&stream_item.stream)
                                             })
-                                        })
-                                        .cloned(),
-                                )),
-                            }),
-                            Some(Loadable::Loading) => Some(ResourceLoadable {
-                                request: resource.request.clone(),
-                                content: Some(Loadable::Loading),
-                            }),
-                            Some(Loadable::Err(error)) => Some(ResourceLoadable {
-                                request: resource.request.clone(),
-                                content: Some(Loadable::Err(error.clone())),
-                            }),
-                            _ => None,
+                                            .or_else(|| {
+                                                streams.iter().find(|stream| {
+                                                    stream.is_binge_match(&stream_item.stream)
+                                                })
+                                            })
+                                            .cloned(),
+                                    )),
+                                }),
+                                Some(Loadable::Loading) => Some(ResourceLoadable {
+                                    request: resource.request.clone(),
+                                    content: Some(Loadable::Loading),
+                                }),
+                                Some(Loadable::Err(error)) => Some(ResourceLoadable {
+                                    request: resource.request.clone(),
+                                    content: Some(Loadable::Err(error.clone())),
+                                }),
+                                _ => None,
+                            })
+                    })
+                    .or_else(|| {
+                        Some(ResourceLoadable {
+                            request: meta_item_res.request.clone(),
+                            content: Some(Loadable::Ready(None)),
                         })
-                })
-        }
+                    }),
+                _ => None,
+            }),
         _ => None,
     };
     eq_update(suggested_stream, next_suggested_stream)

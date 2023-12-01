@@ -1,7 +1,7 @@
 use std::marker::PhantomData;
 
 use crate::constants::{
-    CREDITS_THRESHOLD_COEF, VIDEO_FILENAME_EXTRA_PROP, VIDEO_HASH_EXTRA_PROP,
+    CREDITS_THRESHOLD_COEF, META_RESOURCE_NAME, VIDEO_FILENAME_EXTRA_PROP, VIDEO_HASH_EXTRA_PROP,
     VIDEO_SIZE_EXTRA_PROP, WATCHED_THRESHOLD_COEF,
 };
 use crate::models::common::{
@@ -15,6 +15,7 @@ use crate::types::addon::{AggrRequest, Descriptor, ExtraExt, ResourcePath, Resou
 use crate::types::library::{LibraryBucket, LibraryItem};
 use crate::types::profile::Settings as ProfileSettings;
 use crate::types::resource::{MetaItem, SeriesInfo, Stream, Subtitles, Video};
+use crate::types::streams::{StreamItemState, StreamsBucket, StreamsItemKey};
 
 use stremio_watched_bitfield::WatchedBitField;
 
@@ -86,6 +87,7 @@ pub struct Player {
     pub next_stream: Option<Stream>,
     pub series_info: Option<SeriesInfo>,
     pub library_item: Option<LibraryItem>,
+    pub stream_state: Option<StreamItemState>,
     #[serde(skip_serializing)]
     pub watched: Option<WatchedBitField>,
     #[serde(skip_serializing)]
@@ -121,26 +123,6 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                 } else {
                     Effects::none().unchanged()
                 };
-                let update_streams_effects = if self.selected.as_ref().map(|selected| {
-                    (
-                        &selected.stream,
-                        &selected.stream_request,
-                        &selected.meta_request,
-                    )
-                }) != Some((
-                    &selected.stream,
-                    &selected.stream_request,
-                    &selected.meta_request,
-                )) {
-                    Effects::msg(Msg::Internal(Internal::StreamLoaded {
-                        stream: selected.stream.to_owned(),
-                        stream_request: selected.stream_request.to_owned(),
-                        meta_request: selected.meta_request.to_owned(),
-                    }))
-                    .unchanged()
-                } else {
-                    Effects::none().unchanged()
-                };
                 let selected_effects = eq_update(&mut self.selected, Some(*selected.to_owned()));
                 let meta_item_effects = match &selected.meta_request {
                     Some(meta_request) => match &mut self.meta_item {
@@ -167,6 +149,7 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                     },
                     _ => eq_update(&mut self.meta_item, None),
                 };
+                let stream_state_effects = eq_update(&mut self.stream_state, None);
                 let video_params_effects = eq_update(&mut self.video_params, None);
                 let subtitles_effects = subtitles_update::<E>(
                     &mut self.subtitles,
@@ -240,9 +223,9 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                 self.ended = false;
                 self.paused = None;
                 switch_to_next_video_effects
-                    .join(update_streams_effects)
                     .join(selected_effects)
                     .join(meta_item_effects)
+                    .join(stream_state_effects)
                     .join(video_params_effects)
                     .join(subtitles_effects)
                     .join(next_video_effects)
@@ -274,6 +257,7 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                 let selected_effects = eq_update(&mut self.selected, None);
                 let video_params_effects = eq_update(&mut self.video_params, None);
                 let meta_item_effects = eq_update(&mut self.meta_item, None);
+                let stream_state_effects = eq_update(&mut self.stream_state, None);
                 let subtitles_effects = eq_update(&mut self.subtitles, vec![]);
                 let next_video_effects = eq_update(&mut self.next_video, None);
                 let next_streams_effects = eq_update(&mut self.next_streams, None);
@@ -291,6 +275,7 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                     .join(selected_effects)
                     .join(video_params_effects)
                     .join(meta_item_effects)
+                    .join(stream_state_effects)
                     .join(subtitles_effects)
                     .join(next_video_effects)
                     .join(next_streams_effects)
@@ -310,6 +295,20 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                     &ctx.profile.addons,
                 );
                 video_params_effects.join(subtitles_effects)
+            }
+            Msg::Action(Action::Player(ActionPlayer::StreamStateChanged { state })) => {
+                Effects::msg(Msg::Internal(Internal::StreamStateChanged {
+                    state: state.to_owned(),
+                    stream_request: self
+                        .selected
+                        .as_ref()
+                        .and_then(|selected| selected.stream_request.to_owned()),
+                    meta_request: self
+                        .selected
+                        .as_ref()
+                        .and_then(|selected| selected.meta_request.to_owned()),
+                }))
+                .unchanged()
             }
             Msg::Action(Action::Player(ActionPlayer::TimeChanged {
                 time,
@@ -462,12 +461,28 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                 }))
                 .unchanged()
             }
+            Msg::Internal(Internal::StreamsChanged(_)) => {
+                stream_state_update(&mut self.stream_state, &self.selected, &ctx.streams)
+            }
             Msg::Internal(Internal::ResourceRequestResult(request, result)) => {
                 let meta_item_effects = match &mut self.meta_item {
                     Some(meta_item) => resource_update::<E, _>(
                         meta_item,
                         ResourceAction::ResourceRequestResult { request, result },
                     ),
+                    _ => Effects::none().unchanged(),
+                };
+                let update_streams_effects = match (&self.selected, &self.meta_item) {
+                    (Some(selected), Some(meta_item))
+                        if request.path.resource == META_RESOURCE_NAME =>
+                    {
+                        Effects::msg(Msg::Internal(Internal::StreamLoaded {
+                            stream: selected.stream.to_owned(),
+                            stream_request: selected.stream_request.to_owned(),
+                            meta_item: meta_item.to_owned(),
+                        }))
+                        .unchanged()
+                    }
                     _ => Effects::none().unchanged(),
                 };
                 let subtitles_effects = resources_update_with_vector_content::<E, _>(
@@ -534,6 +549,7 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                     analytics_context.duration = duration;
                 };
                 meta_item_effects
+                    .join(update_streams_effects)
                     .join(subtitles_effects)
                     .join(next_video_effects)
                     .join(next_streams_effects)
@@ -577,6 +593,31 @@ fn switch_to_next_video(
         _ => {}
     };
     Effects::none().unchanged()
+}
+
+fn stream_state_update(
+    state: &mut Option<StreamItemState>,
+    selected: &Option<Selected>,
+    streams: &StreamsBucket,
+) -> Effects {
+    let next_state = match selected {
+        Some(Selected {
+            stream_request: Some(stream_request),
+            meta_request: Some(meta_request),
+            ..
+        }) => {
+            let key = StreamsItemKey {
+                meta_id: meta_request.path.id.to_owned(),
+                video_id: stream_request.path.id.to_owned(),
+            };
+            streams
+                .items
+                .get(&key)
+                .and_then(|stream_item| stream_item.state.to_owned())
+        }
+        _ => None,
+    };
+    eq_update(state, next_state)
 }
 
 fn next_video_update(
@@ -718,9 +759,7 @@ fn next_stream_update(
             }),
         ) if settings.binge_watching => streams
             .iter()
-            .find(|Stream { behavior_hints, .. }| {
-                behavior_hints.binge_group == stream.behavior_hints.binge_group
-            })
+            .find(|next_stream| next_stream.is_binge_match(stream))
             .cloned(),
         _ => None,
     };
