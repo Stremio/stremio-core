@@ -3,6 +3,7 @@ use std::ops::Range;
 use serde::Deserialize;
 use url::Url;
 
+use crate::types::streams::StreamItemState;
 use crate::{
     models::{
         addon_details::Selected as AddonDetailsSelected,
@@ -134,6 +135,9 @@ pub enum ActionPlayer {
     #[serde(rename_all = "camelCase")]
     VideoParamsChanged {
         video_params: Option<VideoParams>,
+    },
+    StreamStateChanged {
+        state: StreamItemState,
     },
     TimeChanged {
         time: u64,

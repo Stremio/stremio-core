@@ -1,3 +1,4 @@
+use crate::models::common::ResourceLoadable;
 use url::Url;
 
 use crate::models::ctx::CtxError;
@@ -14,8 +15,9 @@ use crate::types::api::{
 };
 use crate::types::library::{LibraryBucket, LibraryItem, LibraryItemId};
 use crate::types::profile::{Auth, AuthKey, Profile, User};
-use crate::types::resource::Stream;
+use crate::types::resource::{MetaItem, Stream};
 use crate::types::streaming_server::Statistics;
+use crate::types::streams::StreamItemState;
 
 pub type CtxStorageResponse = (
     Option<Profile>,
@@ -55,6 +57,12 @@ pub enum Internal {
     /// Dispatched when a new stream is loaded into the Player.
     StreamLoaded {
         stream: Stream,
+        stream_request: Option<ResourceRequest>,
+        meta_item: ResourceLoadable<MetaItem>,
+    },
+    /// Dispatched when stream item's state has changed
+    StreamStateChanged {
+        state: StreamItemState,
         stream_request: Option<ResourceRequest>,
         meta_request: Option<ResourceRequest>,
     },

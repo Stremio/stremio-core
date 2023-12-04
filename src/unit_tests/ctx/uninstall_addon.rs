@@ -61,6 +61,7 @@ fn create_addon_streams_item(addon: &Descriptor) -> StreamsItem {
         video_id: "tt123456:1:0".to_owned(),
         meta_transport_url: addon.transport_url.clone(),
         stream_transport_url: addon.transport_url.clone(),
+        state: None,
         mtime: TestEnv::now(),
     }
 }
