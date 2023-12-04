@@ -17,7 +17,9 @@ use crate::models::ctx::{Ctx, CtxError};
 use crate::runtime::msg::{Action, ActionLoad, ActionPlayer, Event, Internal, Msg};
 use crate::runtime::{Effect, EffectFuture, Effects, Env, EnvFutureExt, UpdateWithCtx};
 use crate::types::addon::{AggrRequest, Descriptor, ExtraExt, ResourcePath, ResourceRequest};
-use crate::types::api::{fetch_api, APIRequest, APIResult, SeekLogRequest, SuccessResponse};
+use crate::types::api::{
+    fetch_api, APIRequest, APIResult, SeekLog, SeekLogRequest, SuccessResponse,
+};
 use crate::types::library::{LibraryBucket, LibraryItem};
 use crate::types::profile::Settings as ProfileSettings;
 use crate::types::resource::{MetaItem, SeriesInfo, Stream, StreamSource, Subtitles, Video};
@@ -112,15 +114,6 @@ pub struct Player {
     pub paused: Option<bool>,
     #[serde(skip_serializing)]
     pub seek_history: Vec<SeekLog>,
-}
-
-#[derive(Debug, Clone, Copy, Serialize, PartialEq, Eq)]
-#[serde(rename_all = "camelCase")]
-pub struct SeekLog {
-    /// in milliseconds
-    pub from: u64,
-    /// in milliseconds
-    pub to: u64,
 }
 
 impl<E: Env + 'static> UpdateWithCtx<E> for Player {

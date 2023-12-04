@@ -1,5 +1,4 @@
 use crate::constants::{API_URL, LINK_API_URL};
-use crate::models::player::SeekLog;
 use crate::types::addon::Descriptor;
 use crate::types::library::LibraryItem;
 use crate::types::profile::{AuthKey, GDPRConsent, User};
@@ -57,6 +56,15 @@ pub enum APIRequest {
     },
     #[serde(rename_all = "camelCase")]
     SeekLog(SeekLogRequest),
+}
+
+#[derive(Debug, Clone, Copy, Serialize, PartialEq, Eq)]
+#[serde(rename_all = "camelCase")]
+pub struct SeekLog {
+    /// in milliseconds
+    pub from: u64,
+    /// in milliseconds
+    pub to: u64,
 }
 
 #[derive(Clone, PartialEq, Eq, Serialize, Debug)]
