@@ -948,8 +948,9 @@ fn seek_update<E: Env + 'static>(
     seek_history: &mut Vec<SeekLog>,
     outro: Option<u64>,
 ) -> Effects {
-    let seek_request_effects = match (selected, video_params, series_info, library_item) {
-        (Some(selected), Some(video_params), Some(series_info), Some(library_item)) => {
+    let has_seeks_or_outro = !seek_history.is_empty() || matches!(outro, Some(outro) if outro > 0);
+    let seek_request_effects = match (has_seeks_or_outro, selected, video_params, series_info, library_item) {
+        (true, Some(selected), Some(video_params), Some(series_info), Some(library_item)) => {
             match (
                 &selected.stream.source,
                 selected.stream.name.as_ref(),
