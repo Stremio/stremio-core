@@ -4,8 +4,9 @@ use base64::Engine;
 use futures::{future, FutureExt, TryFutureExt};
 
 use crate::constants::{
-    BASE64, CREDITS_THRESHOLD_COEF, META_RESOURCE_NAME, PLAYER_IGNORE_SEEK_AFTER, VIDEO_FILENAME_EXTRA_PROP, VIDEO_HASH_EXTRA_PROP,
-    VIDEO_SIZE_EXTRA_PROP, WATCHED_THRESHOLD_COEF,
+    BASE64, CREDITS_THRESHOLD_COEF, META_RESOURCE_NAME, PLAYER_IGNORE_SEEK_AFTER,
+    VIDEO_FILENAME_EXTRA_PROP, VIDEO_HASH_EXTRA_PROP, VIDEO_SIZE_EXTRA_PROP,
+    WATCHED_THRESHOLD_COEF,
 };
 use crate::models::common::{
     eq_update, resource_update, resource_update_with_vector_content,
@@ -988,7 +989,13 @@ fn seek_update<E: Env + 'static>(
     outro: Option<u64>,
 ) -> Effects {
     let has_seeks_or_outro = !seek_history.is_empty() || matches!(outro, Some(outro) if outro > 0);
-    let seek_request_effects = match (has_seeks_or_outro, selected, video_params, series_info, library_item) {
+    let seek_request_effects = match (
+        has_seeks_or_outro,
+        selected,
+        video_params,
+        series_info,
+        library_item,
+    ) {
         (true, Some(selected), Some(video_params), Some(series_info), Some(library_item)) => {
             match (
                 &selected.stream.source,
