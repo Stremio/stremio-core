@@ -930,6 +930,7 @@ mod test {
         }
     }
 
+    #[tokio::test]
     async fn test_migration_from_10_to_11() {
         {
             let _test_env_guard = TestEnv::reset().expect("Should lock TestEnv");
