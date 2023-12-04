@@ -68,11 +68,11 @@ pub struct SeekLogRequest {
     pub item_id: String,
     #[serde(flatten)]
     pub series_info: SeriesInfo,
-    /// Filename hash
+    /// Stream name hash
     ///
-    /// base64 encoded SHA-256 hash of the Stream filename.
+    /// base64 encoded SHA-256 hash of the Stream file name.
     #[serde(rename = "stHash")]
-    pub filename_hash: String,
+    pub stream_name_hash: String,
     pub duration: u64,
     pub seek_history: Vec<SeekLog>,
     /// The time (in milliseconds) when the user decided to play the next video/episode

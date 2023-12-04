@@ -1003,7 +1003,7 @@ fn seek_update<E: Env + 'static>(
                 video_params.hash.clone(),
             ) {
                 (StreamSource::Torrent { .. }, Some(stream_name), Some(opensubtitles_hash)) => {
-                    let filename_hash = {
+                    let stream_name_hash = {
                         use sha2::Digest;
                         let mut sha256 = sha2::Sha256::new();
                         sha256.update(stream_name);
@@ -1016,7 +1016,7 @@ fn seek_update<E: Env + 'static>(
                         opensubtitles_hash,
                         item_id: library_item.id.to_owned(),
                         series_info: series_info.to_owned(),
-                        filename_hash,
+                        stream_name_hash,
                         duration: library_item.state.duration,
                         seek_history: seek_history.to_owned(),
                         skip_outro: outro.map(|time| vec![time]).unwrap_or_default(),
