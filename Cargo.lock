@@ -904,6 +904,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "sha2"
+version = "0.10.8"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "793db75ad2bcafc3ffa7c68b215fee268f537982cd901d132f89c6343f3a3dc8"
+dependencies = [
+ "cfg-if",
+ "cpufeatures",
+ "digest",
+]
+
+[[package]]
 name = "sharded-slab"
 version = "0.1.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -933,7 +944,7 @@ dependencies = [
 [[package]]
 name = "stremio-core"
 version = "0.1.0"
-source = "git+https://github.com/Stremio/stremio-core?branch=development#df9b51067c082015dddfe2c2f4d6581e524a2329"
+source = "git+https://github.com/Stremio/stremio-core?branch=development#261af8613311ae7105a8fe6a1f4e68d424a4ee2d"
 dependencies = [
  "anyhow",
  "base64 0.21.2",
@@ -963,6 +974,7 @@ dependencies = [
  "serde_url_params",
  "serde_with",
  "sha1",
+ "sha2",
  "stremio-derive",
  "stremio-official-addons",
  "stremio-serde-hex",
@@ -1008,7 +1020,7 @@ dependencies = [
 [[package]]
 name = "stremio-derive"
 version = "0.1.0"
-source = "git+https://github.com/Stremio/stremio-core?branch=development#df9b51067c082015dddfe2c2f4d6581e524a2329"
+source = "git+https://github.com/Stremio/stremio-core?branch=development#261af8613311ae7105a8fe6a1f4e68d424a4ee2d"
 dependencies = [
  "case",
  "proc-macro-crate",
@@ -1038,7 +1050,7 @@ dependencies = [
 [[package]]
 name = "stremio-watched-bitfield"
 version = "0.1.0"
-source = "git+https://github.com/Stremio/stremio-core?branch=development#df9b51067c082015dddfe2c2f4d6581e524a2329"
+source = "git+https://github.com/Stremio/stremio-core?branch=development#261af8613311ae7105a8fe6a1f4e68d424a4ee2d"
 dependencies = [
  "base64 0.13.1",
  "flate2",
