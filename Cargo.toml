@@ -59,6 +59,8 @@ chrono = { version = "0.4", features = ["serde"] }
 semver = { version = "1", features = ["serde"] }
 base64 = "0.21"
 sha1 = "0.10"
+sha2 = "0.10"
+
 either = "1.6"
 enclose = "1.1"
 derivative = "2.2"

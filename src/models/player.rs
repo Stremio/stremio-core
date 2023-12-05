@@ -1,20 +1,28 @@
 use std::marker::PhantomData;
 
+use base64::Engine;
+use futures::{future, FutureExt, TryFutureExt};
+
 use crate::constants::{
-    CREDITS_THRESHOLD_COEF, META_RESOURCE_NAME, VIDEO_FILENAME_EXTRA_PROP, VIDEO_HASH_EXTRA_PROP,
-    VIDEO_SIZE_EXTRA_PROP, WATCHED_THRESHOLD_COEF,
+    BASE64, CREDITS_THRESHOLD_COEF, META_RESOURCE_NAME, PLAYER_IGNORE_SEEK_AFTER,
+    VIDEO_FILENAME_EXTRA_PROP, VIDEO_HASH_EXTRA_PROP, VIDEO_SIZE_EXTRA_PROP,
+    WATCHED_THRESHOLD_COEF,
 };
 use crate::models::common::{
-    eq_update, resource_update, resources_update_with_vector_content, Loadable, ResourceAction,
-    ResourceLoadable, ResourcesAction,
+    eq_update, resource_update, resource_update_with_vector_content,
+    resources_update_with_vector_content, Loadable, ResourceAction, ResourceLoadable,
+    ResourcesAction,
 };
-use crate::models::ctx::Ctx;
+use crate::models::ctx::{Ctx, CtxError};
 use crate::runtime::msg::{Action, ActionLoad, ActionPlayer, Event, Internal, Msg};
-use crate::runtime::{Effects, Env, UpdateWithCtx};
+use crate::runtime::{Effect, EffectFuture, Effects, Env, EnvFutureExt, UpdateWithCtx};
 use crate::types::addon::{AggrRequest, Descriptor, ExtraExt, ResourcePath, ResourceRequest};
+use crate::types::api::{
+    fetch_api, APIRequest, APIResult, SeekLog, SeekLogRequest, SuccessResponse,
+};
 use crate::types::library::{LibraryBucket, LibraryItem};
 use crate::types::profile::Settings as ProfileSettings;
-use crate::types::resource::{MetaItem, SeriesInfo, Stream, Subtitles, Video};
+use crate::types::resource::{MetaItem, SeriesInfo, Stream, StreamSource, Subtitles, Video};
 use crate::types::streams::{StreamItemState, StreamsBucket, StreamsItemKey};
 
 use stremio_watched_bitfield::WatchedBitField;
@@ -25,8 +33,6 @@ use itertools::Itertools;
 use serde::{Deserialize, Serialize};
 
 use lazy_static::lazy_static;
-
-use super::common::resource_update_with_vector_content;
 
 lazy_static! {
     /// The duration that must have passed in order for a library item to be updated.
@@ -59,6 +65,9 @@ pub struct AnalyticsContext {
 #[derive(Clone, PartialEq, Eq, Serialize, Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct VideoParams {
+    /// Opensubtitles hash usually retrieved from a streaming server endpoint.
+    ///
+    /// It's used for requesting subtitles from Opensubtitles.
     pub hash: Option<String>,
     pub size: Option<u64>,
     pub filename: Option<String>,
@@ -103,6 +112,8 @@ pub struct Player {
     pub ended: bool,
     #[serde(skip_serializing)]
     pub paused: Option<bool>,
+    #[serde(skip_serializing)]
+    pub seek_history: Vec<SeekLog>,
 }
 
 impl<E: Env + 'static> UpdateWithCtx<E> for Player {
@@ -245,6 +256,17 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                 } else {
                     Effects::none().unchanged()
                 };
+                let seek_history_effects = seek_update::<E>(
+                    self.selected.as_ref(),
+                    self.video_params.as_ref(),
+                    self.series_info.as_ref(),
+                    self.library_item.as_ref(),
+                    &mut self.seek_history,
+                    // we do not have information whether the user is currently
+                    // skipping the outro by Unloading the player.
+                    None,
+                );
+
                 let switch_to_next_video_effects =
                     switch_to_next_video(&mut self.library_item, &self.next_video);
                 let push_to_library_effects = match &self.library_item {
@@ -270,7 +292,9 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                 self.loaded = false;
                 self.ended = false;
                 self.paused = None;
-                switch_to_next_video_effects
+
+                seek_history_effects
+                    .join(switch_to_next_video_effects)
                     .join(push_to_library_effects)
                     .join(selected_effects)
                     .join(video_params_effects)
@@ -327,7 +351,8 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                     Some(library_item),
                 ) => {
                     let seeking = library_item.state.time_offset.abs_diff(*time) > 1000;
-                    // library_item.state.last_watched = Some(E::now() - chrono::Duration::days(1));
+
+                    // if we've selected a new video (like the next episode)
                     library_item.state.last_watched = Some(E::now());
                     if library_item.state.video_id != Some(video_id.to_owned()) {
                         library_item.state.video_id = Some(video_id.to_owned());
@@ -338,6 +363,18 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                         library_item.state.time_watched = 0;
                         library_item.state.flagged_watched = 0;
                     } else {
+                        // else we have added to the currently selected video/stream
+                        // seek logging
+                        if seeking
+                            && library_item.r#type == "series"
+                            && time < &PLAYER_IGNORE_SEEK_AFTER
+                        {
+                            self.seek_history.push(SeekLog {
+                                from: library_item.state.time_offset,
+                                to: *time,
+                            });
+                        }
+
                         let time_watched =
                             1000.min(time.saturating_sub(library_item.state.time_offset));
                         library_item.state.time_watched =
@@ -451,6 +488,30 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                     _ => Effects::none().unchanged(),
                 };
                 trakt_event_effects.join(update_library_item_effects)
+            }
+            Msg::Action(Action::Player(ActionPlayer::NextVideo)) => {
+                let seek_history_effects = seek_update::<E>(
+                    self.selected.as_ref(),
+                    self.video_params.as_ref(),
+                    self.series_info.as_ref(),
+                    self.library_item.as_ref(),
+                    &mut self.seek_history,
+                    // use the current LibraryItem time offset as the outro time.
+                    self.library_item
+                        .as_ref()
+                        .map(|library_item| library_item.state.time_offset),
+                );
+
+                // Load will actually take care of loading the next video
+
+                seek_history_effects.join(
+                    Effects::msg(Msg::Event(Event::PlayerNextVideo {
+                        context: self.analytics_context.as_ref().cloned().unwrap_or_default(),
+                        is_binge_enabled: ctx.profile.settings.binge_watching,
+                        is_playing_next_video: self.next_video.is_some(),
+                    }))
+                    .unchanged(),
+                )
             }
             Msg::Action(Action::Player(ActionPlayer::Ended)) if self.selected.is_some() => {
                 self.ended = true;
@@ -910,6 +971,75 @@ fn subtitles_update<E: Env + 'static>(
         ),
         _ => eq_update(subtitles, vec![]),
     }
+}
+
+fn seek_update<E: Env + 'static>(
+    selected: Option<&Selected>,
+    video_params: Option<&VideoParams>,
+    series_info: Option<&SeriesInfo>,
+    library_item: Option<&LibraryItem>,
+    seek_history: &mut Vec<SeekLog>,
+    outro: Option<u64>,
+) -> Effects {
+    let has_seeks_or_outro = !seek_history.is_empty() || matches!(outro, Some(outro) if outro > 0);
+    let seek_request_effects = match (
+        has_seeks_or_outro,
+        selected,
+        video_params,
+        series_info,
+        library_item,
+    ) {
+        (true, Some(selected), Some(video_params), Some(series_info), Some(library_item)) => {
+            match (
+                &selected.stream.source,
+                selected.stream.name.as_ref(),
+                video_params.hash.clone(),
+            ) {
+                (StreamSource::Torrent { .. }, Some(stream_name), Some(opensubtitles_hash)) => {
+                    let stream_name_hash = {
+                        use sha2::Digest;
+                        let mut sha256 = sha2::Sha256::new();
+                        sha256.update(stream_name);
+                        let sha256_encoded = sha256.finalize();
+
+                        BASE64.encode(sha256_encoded)
+                    };
+
+                    let seek_log_req = SeekLogRequest {
+                        opensubtitles_hash,
+                        item_id: library_item.id.to_owned(),
+                        series_info: series_info.to_owned(),
+                        stream_name_hash,
+                        duration: library_item.state.duration,
+                        seek_history: seek_history.to_owned(),
+                        skip_outro: outro.map(|time| vec![time]).unwrap_or_default(),
+                    };
+
+                    Effects::one(push_seek_to_api::<E>(seek_log_req)).unchanged()
+                }
+                _ => Effects::none().unchanged(),
+            }
+        }
+        _ => Effects::none().unchanged(),
+    };
+
+    seek_request_effects.join(eq_update(seek_history, vec![]))
+}
+
+fn push_seek_to_api<E: Env + 'static>(seek_log_req: SeekLogRequest) -> Effect {
+    let api_request = APIRequest::SeekLog(seek_log_req.clone());
+
+    EffectFuture::Concurrent(
+        fetch_api::<E, _, _, SuccessResponse>(&api_request)
+            .map_err(CtxError::from)
+            .and_then(|result| match result {
+                APIResult::Ok { result } => future::ok(result),
+                APIResult::Err { error } => future::err(CtxError::from(error)),
+            })
+            .map(move |result| Msg::Internal(Internal::SeekLogsResult(seek_log_req, result)))
+            .boxed_env(),
+    )
+    .into()
 }
 
 #[cfg(test)]
