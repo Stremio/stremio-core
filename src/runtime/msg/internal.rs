@@ -100,10 +100,13 @@ pub enum Internal {
     StreamingServerUpdateSettingsResult(Url, Result<(), EnvError>),
     /// Result for creating a torrent.
     StreamingServerCreateTorrentResult(String, Result<(), EnvError>),
-    // Result for playing on device.
+    /// Result for playing on device.
     StreamingServerPlayOnDeviceResult(String, Result<(), EnvError>),
-    // Result for streaming server statistics.
-    StreamingServerStatisticsResult((Url, StatisticsRequest), Result<Statistics, EnvError>),
+    /// Result for streaming server statistics.
+    ///
+    /// Server will return None (or `null`) in response for [`Statistics`]`,
+    /// when stream has been fully loaded up to 100%
+    StreamingServerStatisticsResult((Url, StatisticsRequest), Result<Option<Statistics>, EnvError>),
     /// Result for fetching resource from addons.
     ResourceRequestResult(ResourceRequest, Box<Result<ResourceResponse, EnvError>>),
     /// Result for fetching manifest from addon.
