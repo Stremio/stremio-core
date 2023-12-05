@@ -106,7 +106,10 @@ pub enum Internal {
     ///
     /// Server will return None (or `null`) in response for [`Statistics`]`,
     /// when stream has been fully loaded up to 100%
-    StreamingServerStatisticsResult((Url, StatisticsRequest), Result<Option<Statistics>, EnvError>),
+    StreamingServerStatisticsResult(
+        (Url, StatisticsRequest),
+        Result<Option<Statistics>, EnvError>,
+    ),
     /// Result for fetching resource from addons.
     ResourceRequestResult(ResourceRequest, Box<Result<ResourceResponse, EnvError>>),
     /// Result for fetching manifest from addon.
