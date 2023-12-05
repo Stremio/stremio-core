@@ -1,3 +1,4 @@
+use crate::models::common::ResourceLoadable;
 use url::Url;
 
 use crate::models::ctx::CtxError;
@@ -12,8 +13,9 @@ use crate::types::api::{
 };
 use crate::types::library::{LibraryBucket, LibraryItem, LibraryItemId};
 use crate::types::profile::{Auth, AuthKey, Profile, User};
-use crate::types::resource::Stream;
+use crate::types::resource::{MetaItem, Stream};
 use crate::types::streaming_server::{GetHTTPSResponse, NetworkInfo, SettingsResponse, Statistics};
+use crate::types::streams::StreamItemState;
 
 pub type CtxStorageResponse = (
     Option<Profile>,
@@ -54,6 +56,12 @@ pub enum Internal {
     StreamLoaded {
         stream: Stream,
         stream_request: Option<ResourceRequest>,
+        meta_item: ResourceLoadable<MetaItem>,
+    },
+    /// Dispatched when stream item's state has changed
+    StreamStateChanged {
+        state: StreamItemState,
+        stream_request: Option<ResourceRequest>,
         meta_request: Option<ResourceRequest>,
     },
     /// Dispatched when requesting search on catalogs.
@@ -68,11 +76,13 @@ pub enum Internal {
     LibraryChanged(bool),
     /// Dispatched when streams bucket changes with a flag if its already persisted.
     StreamsChanged(bool),
-    /// Search history haschanged.
+    /// Search history has changed.
     SearchHistoryChanged,
     /// User notifications have changed
     NotificationsChanged,
     /// Dismiss all Notifications for a given [`MetaItemId`].
+    ///
+    /// [`MetaItemId`]: crate::types::resource::MetaItemId
     DismissNotificationItem(LibraryItemId),
     /// Result for loading link code.
     LinkCodeResult(Result<LinkCodeResponse, LinkError>),

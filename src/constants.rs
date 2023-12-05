@@ -32,7 +32,7 @@ pub const NOTIFICATION_ITEMS_COUNT: usize = 100;
 pub const WATCHED_THRESHOLD_COEF: f64 = 0.7;
 pub const CREDITS_THRESHOLD_COEF: f64 = 0.9;
 /// The latest migration scheme version
-pub const SCHEMA_VERSION: u32 = 10;
+pub const SCHEMA_VERSION: u32 = 11;
 pub const IMDB_LINK_CATEGORY: &str = "imdb";
 pub const GENRES_LINK_CATEGORY: &str = "Genres";
 pub const CINEMETA_TOP_CATALOG_ID: &str = "top";
@@ -84,6 +84,12 @@ lazy_static! {
     };
     pub static ref VIDEO_SIZE_EXTRA_PROP: ExtraProp = ExtraProp {
         name: "videoSize".to_owned(),
+        is_required: false,
+        options: vec![],
+        options_limit: OptionsLimit::default(),
+    };
+    pub static ref VIDEO_FILENAME_EXTRA_PROP: ExtraProp = ExtraProp {
+        name: "filename".to_owned(),
         is_required: false,
         options: vec![],
         options_limit: OptionsLimit::default(),

@@ -49,7 +49,7 @@ pub struct ExternalPlayerLink {
     pub file_name: Option<String>,
 }
 
-/// Using &Option<Url> is not encouraged, use `.as_ref()` to get an `Option<&Url>` instead!
+/// Using `&Option<Url>` is not encouraged, use `.as_ref()` to get an `Option<&Url>` instead!
 impl From<(&Stream, &Option<Url>, &Settings)> for ExternalPlayerLink {
     fn from((stream, streaming_server_url, settings): (&Stream, &Option<Url>, &Settings)) -> Self {
         Self::from((stream, streaming_server_url.as_ref(), settings))
@@ -110,6 +110,14 @@ impl From<(&Stream, Option<&Url>, &Settings)> for ExternalPlayerLink {
                     }),
                     "infuse" => Some(OpenPlayerLink {
                         ios: Some(format!("infuse://x-callback-url/play?url={url}")),
+                       ..Default::default()
+                    }),
+                    "iina" => Some(OpenPlayerLink {
+                        macos: Some(format!("iina://weblink?url={url}")),
+                       ..Default::default()
+                    }),
+                    "mpv" => Some(OpenPlayerLink {
+                        macos: Some(format!("mpv://{url}")),
                        ..Default::default()
                     }),
                     _ => None,

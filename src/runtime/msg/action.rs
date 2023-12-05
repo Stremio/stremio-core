@@ -3,6 +3,7 @@ use std::ops::Range;
 use serde::Deserialize;
 use url::Url;
 
+use crate::types::streams::StreamItemState;
 use crate::{
     models::{
         addon_details::Selected as AddonDetailsSelected,
@@ -84,10 +85,14 @@ pub enum ActionMetaDetails {
     /// Marks the [`LibraryItem`] as watched.
     ///
     /// Applicable when you have single-video (e.g. a movie) and multi-video (e.g. a movie series) item.
+    ///
+    /// [`LibraryItem`]: crate::types::library::LibraryItem
     MarkAsWatched(bool),
     /// Marks the given [`Video`] of the [`LibraryItem`] as watched.
     ///
     /// Applicable only when you have a multi-video (e.g. movie series) item.
+    ///
+    /// [`LibraryItem`]: crate::types::library::LibraryItem
     MarkVideoAsWatched(Video, bool),
 }
 
@@ -128,6 +133,9 @@ pub enum ActionPlayer {
     #[serde(rename_all = "camelCase")]
     VideoParamsChanged {
         video_params: Option<VideoParams>,
+    },
+    StreamStateChanged {
+        state: StreamItemState,
     },
     TimeChanged {
         time: u64,
