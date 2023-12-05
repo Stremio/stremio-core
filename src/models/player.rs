@@ -157,7 +157,7 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                     &self.video_params,
                     &ctx.profile.addons,
                 );
-                let next_video_effects = next_video_update(
+                let next_video_effects = next_video_update::<E>(
                     &mut self.next_video,
                     &self.next_stream,
                     &self.selected,
@@ -497,7 +497,7 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                     None => Effects::none().unchanged(),
                 };
 
-                let next_video_effects = next_video_update(
+                let next_video_effects = next_video_update::<E>(
                     &mut self.next_video,
                     &self.next_stream,
                     &self.selected,
@@ -620,7 +620,11 @@ fn stream_state_update(
     eq_update(state, next_state)
 }
 
-fn next_video_update(
+/// Updates the next video when:
+/// 1. User has enabled Binge watching
+/// and
+/// 2. When the next video released date has passed (now > released)
+fn next_video_update<E: Env + 'static>(
     video: &mut Option<Video>,
     stream: &Option<Stream>,
     selected: &Option<Selected>,
@@ -664,12 +668,18 @@ fn next_video_update(
                     .unwrap_or_default();
                 next_season != 0 || current_season == next_season
             })
-            .map(|(_, next_video)| {
-                let mut next_video = next_video.clone();
-                if let Some(stream) = stream {
-                    next_video.streams = vec![stream.clone()];
+            .and_then(|(_, next_video)| {
+                match next_video.released {
+                    Some(released) if released > E::now() => None,
+                    // if no `released` is known or released is in the past
+                    _ => {
+                        let mut next_video = next_video.clone();
+                        if let Some(stream) = stream {
+                            next_video.streams = vec![stream.clone()];
+                        }
+                        Some(next_video)
+                    }
                 }
-                next_video
             }),
         _ => None,
     };
