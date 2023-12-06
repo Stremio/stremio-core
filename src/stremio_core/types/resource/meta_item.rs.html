@@ -1,4 +1,4 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `src/types/resource/meta_item.rs`."><title>meta_item.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/SourceSerif4-Regular-46f98efaafac5295.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../../../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../../../static.files/rustdoc-9ee3a5e31a2afa3e.css"><meta name="rustdoc-vars" data-root-path="../../../../" data-static-root-path="../../../../static.files/" data-current-crate="stremio_core" data-themes="" data-resource-suffix="" data-rustdoc-version="1.76.0-nightly (3a85a5cfe 2023-11-20)" data-channel="nightly" data-search-js="search-d23a059ec093b287.js" data-settings-js="settings-74424d7eec62a23e.js" ><script src="../../../../static.files/storage-fec3eaa3851e447d.js"></script><script defer src="../../../../static.files/src-script-3280b574d94e47b4.js"></script><script defer src="../../../../src-files.js"></script><script defer src="../../../../static.files/main-f06f02fd918e3bb3.js"></script><noscript><link rel="stylesheet" href="../../../../static.files/noscript-5d8b3c7633ad77ba.css"></noscript><link rel="alternate icon" type="image/png" href="../../../../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../../../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"></nav><main><nav class="sub"><form class="search-form"><span></span><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><a href="../../../../help.html">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../../../static.files/wheel-7b819b6101059cd0.svg"></a></div></form></nav><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `src/types/resource/meta_item.rs`."><title>meta_item.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/SourceSerif4-Regular-46f98efaafac5295.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../../../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../../../static.files/rustdoc-c67e44d78ab2db17.css"><meta name="rustdoc-vars" data-root-path="../../../../" data-static-root-path="../../../../static.files/" data-current-crate="stremio_core" data-themes="" data-resource-suffix="" data-rustdoc-version="1.76.0-nightly (e9013ac0e 2023-12-05)" data-channel="nightly" data-search-js="search-5a66c239c06b3a66.js" data-settings-js="settings-fe03fdc259827cd2.js" ><script src="../../../../static.files/storage-fec3eaa3851e447d.js"></script><script defer src="../../../../static.files/src-script-3280b574d94e47b4.js"></script><script defer src="../../../../src-files.js"></script><script defer src="../../../../static.files/main-77dede896d6ac08e.js"></script><noscript><link rel="stylesheet" href="../../../../static.files/noscript-5d8b3c7633ad77ba.css"></noscript><link rel="alternate icon" type="image/png" href="../../../../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../../../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"></nav><main><nav class="sub"><form class="search-form"><span></span><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><a href="../../../../help.html">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../../../static.files/wheel-7b819b6101059cd0.svg"></a></div></form></nav><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
 <a href="#2" id="2">2</a>
 <a href="#3" id="3">3</a>
 <a href="#4" id="4">4</a>
@@ -378,18 +378,18 @@
     r#type: String,
 }
 
-<span class="kw">impl</span>&lt;<span class="lifetime">&#39;de</span>&gt; DeserializeAs&lt;<span class="lifetime">&#39;de</span>, Trailer&gt; <span class="kw">for </span>Stream {
+<span class="kw">impl</span>&lt;<span class="lifetime">'de</span>&gt; DeserializeAs&lt;<span class="lifetime">'de</span>, Trailer&gt; <span class="kw">for </span>Stream {
     <span class="kw">fn </span>deserialize_as&lt;D&gt;(deserializer: D) -&gt; <span class="prelude-ty">Result</span>&lt;Trailer, D::Error&gt;
     <span class="kw">where
-        </span>D: serde::Deserializer&lt;<span class="lifetime">&#39;de</span>&gt;,
+        </span>D: serde::Deserializer&lt;<span class="lifetime">'de</span>&gt;,
     {
         <span class="kw">let </span>stream = Stream::deserialize(deserializer)<span class="question-mark">?</span>;
         <span class="kw">match </span><span class="kw-2">&amp;</span>stream.source {
             StreamSource::YouTube { yt_id } =&gt; <span class="prelude-val">Ok</span>(Trailer {
                 source: yt_id.to_owned(),
-                r#type: <span class="string">&quot;Trailer&quot;</span>.to_owned(),
+                r#type: <span class="string">"Trailer"</span>.to_owned(),
             }),
-            <span class="kw">_ </span>=&gt; <span class="prelude-val">Err</span>(serde::de::Error::custom(<span class="string">&quot;Unsuported Trailer StreamSource&quot;</span>)),
+            <span class="kw">_ </span>=&gt; <span class="prelude-val">Err</span>(serde::de::Error::custom(<span class="string">"Unsuported Trailer StreamSource"</span>)),
         }
     }
 }
@@ -397,42 +397,42 @@
 <span class="attr">#[serde_as]
 #[derive(Clone, PartialEq, Deserialize, Debug)]
 #[cfg_attr(test, derive(Default))]
-#[serde(rename_all = <span class="string">&quot;camelCase&quot;</span>)]
+#[serde(rename_all = <span class="string">"camelCase"</span>)]
 </span><span class="kw">struct </span>MetaItemPreviewLegacy {
     id: MetaItemId,
     r#type: String,
     <span class="attr">#[serde(default)]
     </span>name: String,
     <span class="attr">#[serde(default)]
-    #[serde_as(deserialize_as = <span class="string">&quot;DefaultOnNull&lt;NoneAsEmptyString&gt;&quot;</span>)]
+    #[serde_as(deserialize_as = <span class="string">"DefaultOnNull&lt;NoneAsEmptyString&gt;"</span>)]
     </span>poster: <span class="prelude-ty">Option</span>&lt;Url&gt;,
     <span class="attr">#[serde(default)]
-    #[serde_as(deserialize_as = <span class="string">&quot;DefaultOnNull&lt;NoneAsEmptyString&gt;&quot;</span>)]
+    #[serde_as(deserialize_as = <span class="string">"DefaultOnNull&lt;NoneAsEmptyString&gt;"</span>)]
     </span>background: <span class="prelude-ty">Option</span>&lt;Url&gt;,
     <span class="attr">#[serde(default)]
-    #[serde_as(deserialize_as = <span class="string">&quot;DefaultOnNull&lt;NoneAsEmptyString&gt;&quot;</span>)]
+    #[serde_as(deserialize_as = <span class="string">"DefaultOnNull&lt;NoneAsEmptyString&gt;"</span>)]
     </span>logo: <span class="prelude-ty">Option</span>&lt;Url&gt;,
     description: <span class="prelude-ty">Option</span>&lt;String&gt;,
     <span class="attr">#[serde(default)]
-    #[serde_as(deserialize_as = <span class="string">&quot;Option&lt;NumberAsString&gt;&quot;</span>)]
+    #[serde_as(deserialize_as = <span class="string">"Option&lt;NumberAsString&gt;"</span>)]
     </span>release_info: <span class="prelude-ty">Option</span>&lt;String&gt;,
     <span class="attr">#[serde(default)]
-    #[serde_as(deserialize_as = <span class="string">&quot;Option&lt;NumberAsString&gt;&quot;</span>)]
+    #[serde_as(deserialize_as = <span class="string">"Option&lt;NumberAsString&gt;"</span>)]
     </span>runtime: <span class="prelude-ty">Option</span>&lt;String&gt;,
     <span class="attr">#[serde(default)]
-    #[serde_as(deserialize_as = <span class="string">&quot;PickFirst&lt;(_, Option&lt;TimestampMilliSeconds&lt;i64&gt;&gt;)&gt;&quot;</span>)]
+    #[serde_as(deserialize_as = <span class="string">"PickFirst&lt;(_, Option&lt;TimestampMilliSeconds&lt;i64&gt;&gt;)&gt;"</span>)]
     </span>released: <span class="prelude-ty">Option</span>&lt;DateTime&lt;Utc&gt;&gt;,
     <span class="attr">#[serde(default)]
     </span>poster_shape: PosterShape,
     <span class="attr">#[serde(default)]
-    #[serde_as(deserialize_as = <span class="string">&quot;Option&lt;NumberAsString&gt;&quot;</span>)]
+    #[serde_as(deserialize_as = <span class="string">"Option&lt;NumberAsString&gt;"</span>)]
     </span>imdb_rating: <span class="prelude-ty">Option</span>&lt;String&gt;,
     <span class="attr">#[serde(default)]
-    #[serde_as(deserialize_as = <span class="string">&quot;DefaultOnNull&quot;</span>)]
+    #[serde_as(deserialize_as = <span class="string">"DefaultOnNull"</span>)]
     </span>genres: Vec&lt;String&gt;,
     links: <span class="prelude-ty">Option</span>&lt;Vec&lt;Link&gt;&gt;,
     <span class="attr">#[serde(default)]
-    #[serde_as(deserialize_as = <span class="string">&quot;DefaultOnNull&lt;Vec&lt;PickFirst&lt;(_, Stream)&gt;&gt;&gt;&quot;</span>)]
+    #[serde_as(deserialize_as = <span class="string">"DefaultOnNull&lt;Vec&lt;PickFirst&lt;(_, Stream)&gt;&gt;&gt;"</span>)]
     </span>trailers: Vec&lt;Trailer&gt;,
     trailer_streams: <span class="prelude-ty">Option</span>&lt;Vec&lt;Stream&gt;&gt;,
     <span class="attr">#[serde(default)]
@@ -441,7 +441,7 @@
 
 <span class="attr">#[derive(Clone, PartialEq, Eq, Serialize, Deserialize, Debug)]
 #[cfg_attr(test, derive(Default))]
-#[serde(rename_all = <span class="string">&quot;camelCase&quot;</span>, try_from = <span class="string">&quot;MetaItemPreviewLegacy&quot;</span>)]
+#[serde(rename_all = <span class="string">"camelCase"</span>, try_from = <span class="string">"MetaItemPreviewLegacy"</span>)]
 </span><span class="kw">pub struct </span>MetaItemPreview {
     <span class="kw">pub </span>id: String,
     <span class="kw">pub </span>r#type: String,
@@ -470,10 +470,10 @@
                     name: imdb_rating,
                     category: IMDB_LINK_CATEGORY.to_owned(),
                     url: IMDB_URL
-                        .join(<span class="kw-2">&amp;</span><span class="macro">format!</span>(<span class="string">&quot;{IMDB_TITLE_PATH}/&quot;</span>))
-                        .expect(<span class="string">&quot;IMDB url build failed&quot;</span>)
+                        .join(<span class="kw-2">&amp;</span><span class="macro">format!</span>(<span class="string">"{IMDB_TITLE_PATH}/"</span>))
+                        .expect(<span class="string">"IMDB url build failed"</span>)
                         .join(<span class="kw-2">&amp;</span>utf8_percent_encode(<span class="kw-2">&amp;</span>id, URI_COMPONENT_ENCODE_SET).to_string())
-                        .expect(<span class="string">&quot;IMDB url build failed&quot;</span>),
+                        .expect(<span class="string">"IMDB url build failed"</span>),
                 });
                 <span class="kw">let </span>genres_links = legacy_item.genres.into_iter().map(|genre| {
                     <span class="kw">let </span>deep_links = DiscoverDeepLinks::from(<span class="kw-2">&amp;</span>ResourceRequest {
@@ -483,7 +483,7 @@
                             resource: CATALOG_RESOURCE_NAME.to_owned(),
                             r#type: r#type.to_owned(),
                             extra: <span class="macro">vec!</span>[ExtraValue {
-                                name: <span class="string">&quot;genre&quot;</span>.to_owned(),
+                                name: <span class="string">"genre"</span>.to_owned(),
                                 value: genre.to_owned(),
                             }],
                         },
@@ -491,7 +491,7 @@
                     Link {
                         name: genre,
                         category: GENRES_LINK_CATEGORY.to_owned(),
-                        url: Url::parse(<span class="kw-2">&amp;</span>deep_links.discover).expect(<span class="string">&quot;Link url parse failed&quot;</span>),
+                        url: Url::parse(<span class="kw-2">&amp;</span>deep_links.discover).expect(<span class="string">"Link url parse failed"</span>),
                     }
                 });
                 imdb_link.into_iter().chain(genres_links).collect()
@@ -502,7 +502,7 @@
             <span class="kw">_ </span>=&gt; legacy_item
                 .trailers
                 .into_iter()
-                .filter(|trailer| trailer.r#type == <span class="string">&quot;Trailer&quot;</span>)
+                .filter(|trailer| trailer.r#type == <span class="string">"Trailer"</span>)
                 .map(|trailer| Stream {
                     source: StreamSource::YouTube {
                         yt_id: trailer.source,
@@ -537,13 +537,13 @@
 <span class="attr">#[serde_as]
 #[derive(Clone, PartialEq, Eq, Serialize, Deserialize, Debug)]
 #[cfg_attr(test, derive(Default))]
-#[serde(rename_all = <span class="string">&quot;camelCase&quot;</span>)]
+#[serde(rename_all = <span class="string">"camelCase"</span>)]
 </span><span class="kw">pub struct </span>MetaItem {
     <span class="attr">#[serde(flatten)]
     </span><span class="kw">pub </span>preview: MetaItemPreview,
     <span class="attr">#[serde(default)]
     #[serde_as(
-        deserialize_as = <span class="string">&quot;SortedVec&lt;UniqueVec&lt;Vec&lt;_&gt;, VideoUniqueVecAdapter&gt;, VideoSortedVecAdapter&gt;&quot;
+        deserialize_as = <span class="string">"SortedVec&lt;UniqueVec&lt;Vec&lt;_&gt;, VideoUniqueVecAdapter&gt;, VideoSortedVecAdapter&gt;"
     </span>)]
     </span><span class="kw">pub </span>videos: Vec&lt;Video&gt;,
 }
@@ -551,7 +551,7 @@
 <span class="kw">impl </span>MetaItem {
     <span class="doccomment">/// Returns an iterator over references to Video, skipping special episodes, sorted by released and series_info, oldest first
     </span><span class="kw">pub fn </span>videos_iter(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="kw">impl </span>Iterator&lt;Item = <span class="kw-2">&amp;</span>Video&gt; + DoubleEndedIterator {
-        <span class="kw">if </span><span class="self">self</span>.preview.r#type == <span class="string">&quot;series&quot; </span>{
+        <span class="kw">if </span><span class="self">self</span>.preview.r#type == <span class="string">"series" </span>{
             Either::Left(<span class="self">self</span>.videos.iter().filter(|video| <span class="kw">match </span>video.series_info {
                 <span class="prelude-val">Some</span>(SeriesInfo { season, .. }) =&gt; season != <span class="number">0</span>,
                 <span class="kw">_ </span>=&gt; <span class="bool-val">false</span>,
@@ -564,7 +564,7 @@
 
 <span class="attr">#[derive(Derivative, Clone, PartialEq, Eq, Serialize, Deserialize, Debug)]
 #[derivative(Default)]
-#[serde(rename_all = <span class="string">&quot;camelCase&quot;</span>)]
+#[serde(rename_all = <span class="string">"camelCase"</span>)]
 </span><span class="kw">pub enum </span>PosterShape {
     Square,
     Landscape,
@@ -588,16 +588,16 @@
 <span class="attr">#[serde_as]
 #[derive(Clone, PartialEq, Eq, Serialize, Deserialize, Debug)]
 #[cfg_attr(test, derive(Default))]
-#[serde(rename_all = <span class="string">&quot;camelCase&quot;</span>)]
+#[serde(rename_all = <span class="string">"camelCase"</span>)]
 </span><span class="kw">pub struct </span>Video {
     <span class="kw">pub </span>id: String,
-    <span class="attr">#[serde(default, alias = <span class="string">&quot;name&quot;</span>)]
+    <span class="attr">#[serde(default, alias = <span class="string">"name"</span>)]
     </span><span class="kw">pub </span>title: String,
     <span class="kw">pub </span>released: <span class="prelude-ty">Option</span>&lt;DateTime&lt;Utc&gt;&gt;,
     <span class="kw">pub </span>overview: <span class="prelude-ty">Option</span>&lt;String&gt;,
     <span class="kw">pub </span>thumbnail: <span class="prelude-ty">Option</span>&lt;String&gt;,
-    <span class="attr">#[serde(alias = <span class="string">&quot;stream&quot;</span>, default)]
-    #[serde_as(deserialize_as = <span class="string">&quot;OneOrMany&lt;_, PreferMany&gt;&quot;</span>)]
+    <span class="attr">#[serde(alias = <span class="string">"stream"</span>, default)]
+    #[serde_as(deserialize_as = <span class="string">"OneOrMany&lt;_, PreferMany&gt;"</span>)]
     </span><span class="kw">pub </span>streams: Vec&lt;Stream&gt;,
     <span class="attr">#[serde(flatten)]
     </span><span class="kw">pub </span>series_info: <span class="prelude-ty">Option</span>&lt;SeriesInfo&gt;,
@@ -675,7 +675,7 @@
 }
 
 <span class="attr">#[derive(Default, Clone, PartialEq, Eq, Serialize, Deserialize, Debug)]
-#[serde(rename_all = <span class="string">&quot;camelCase&quot;</span>)]
+#[serde(rename_all = <span class="string">"camelCase"</span>)]
 </span><span class="kw">pub struct </span>MetaItemBehaviorHints {
     <span class="attr">#[serde(default)]
     </span><span class="kw">pub </span>default_video_id: <span class="prelude-ty">Option</span>&lt;String&gt;,

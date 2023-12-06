@@ -1,4 +1,4 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `src/addon_transport/http_transport/legacy/legacy_manifest.rs`."><title>legacy_manifest.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../../static.files/SourceSerif4-Regular-46f98efaafac5295.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../../../../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../../../../static.files/rustdoc-9ee3a5e31a2afa3e.css"><meta name="rustdoc-vars" data-root-path="../../../../../" data-static-root-path="../../../../../static.files/" data-current-crate="stremio_core" data-themes="" data-resource-suffix="" data-rustdoc-version="1.76.0-nightly (3a85a5cfe 2023-11-20)" data-channel="nightly" data-search-js="search-d23a059ec093b287.js" data-settings-js="settings-74424d7eec62a23e.js" ><script src="../../../../../static.files/storage-fec3eaa3851e447d.js"></script><script defer src="../../../../../static.files/src-script-3280b574d94e47b4.js"></script><script defer src="../../../../../src-files.js"></script><script defer src="../../../../../static.files/main-f06f02fd918e3bb3.js"></script><noscript><link rel="stylesheet" href="../../../../../static.files/noscript-5d8b3c7633ad77ba.css"></noscript><link rel="alternate icon" type="image/png" href="../../../../../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../../../../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../../../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"></nav><main><nav class="sub"><form class="search-form"><span></span><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><a href="../../../../../help.html">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../../../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../../../../static.files/wheel-7b819b6101059cd0.svg"></a></div></form></nav><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `src/addon_transport/http_transport/legacy/legacy_manifest.rs`."><title>legacy_manifest.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../../static.files/SourceSerif4-Regular-46f98efaafac5295.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../../../../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../../../../static.files/rustdoc-c67e44d78ab2db17.css"><meta name="rustdoc-vars" data-root-path="../../../../../" data-static-root-path="../../../../../static.files/" data-current-crate="stremio_core" data-themes="" data-resource-suffix="" data-rustdoc-version="1.76.0-nightly (e9013ac0e 2023-12-05)" data-channel="nightly" data-search-js="search-5a66c239c06b3a66.js" data-settings-js="settings-fe03fdc259827cd2.js" ><script src="../../../../../static.files/storage-fec3eaa3851e447d.js"></script><script defer src="../../../../../static.files/src-script-3280b574d94e47b4.js"></script><script defer src="../../../../../src-files.js"></script><script defer src="../../../../../static.files/main-77dede896d6ac08e.js"></script><noscript><link rel="stylesheet" href="../../../../../static.files/noscript-5d8b3c7633ad77ba.css"></noscript><link rel="alternate icon" type="image/png" href="../../../../../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../../../../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../../../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"></nav><main><nav class="sub"><form class="search-form"><span></span><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><a href="../../../../../help.html">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../../../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../../../../static.files/wheel-7b819b6101059cd0.svg"></a></div></form></nav><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
 <a href="#2" id="2">2</a>
 <a href="#3" id="3">3</a>
 <a href="#4" id="4">4</a>
@@ -151,7 +151,7 @@
 <span class="attr">#[derive(Deserialize)]
 </span><span class="kw">pub struct </span>LegacySort {
     name: <span class="prelude-ty">Option</span>&lt;String&gt;,
-    <span class="attr">#[serde(rename = <span class="string">&quot;prop&quot;</span>)]
+    <span class="attr">#[serde(rename = <span class="string">"prop"</span>)]
     </span>id: String,
     types: <span class="prelude-ty">Option</span>&lt;Vec&lt;String&gt;&gt;,
 }
@@ -159,7 +159,7 @@
 <span class="comment">// A wrapper is needed cause of the way the legacy
 // system returns the results
 // the JSON RPC response contains { manifest, methods }
-// We don&#39;t need methods cause we have them in the manifest
+// We don't need methods cause we have them in the manifest
 </span><span class="attr">#[derive(Deserialize)]
 </span><span class="kw">pub struct </span>LegacyManifestResp {
     manifest: LegacyManifest,
@@ -171,7 +171,7 @@
 }
 
 <span class="attr">#[derive(Deserialize)]
-#[serde(rename_all = <span class="string">&quot;camelCase&quot;</span>)]
+#[serde(rename_all = <span class="string">"camelCase"</span>)]
 </span><span class="kw">pub struct </span>LegacyManifest {
     id: String,
     name: String,
@@ -190,7 +190,7 @@
         <span class="comment">// Catalogs: if there are sorts, add a catalog for each type for each sort
         // if there are no sorts, do that just for the types
         </span><span class="kw">let </span>types = m.types.to_owned();
-        <span class="kw">let </span>is_find = m.methods.iter().any(|x| x == <span class="string">&quot;meta.find&quot;</span>);
+        <span class="kw">let </span>is_find = m.methods.iter().any(|x| x == <span class="string">"meta.find"</span>);
         <span class="kw">let </span>catalogs: Vec&lt;ManifestCatalog&gt; = <span class="kw">if </span>is_find {
             <span class="kw">match </span>m.sorts {
                 <span class="prelude-val">Some</span>(sorts) =&gt; sorts
@@ -209,7 +209,7 @@
                     .iter()
                     .map(|t| ManifestCatalog {
                         r#type: t.to_owned(),
-                        id: <span class="string">&quot;top&quot;</span>.to_owned(),
+                        id: <span class="string">"top"</span>.to_owned(),
                         name: <span class="prelude-val">None</span>,
                         extra: Default::default(),
                     })
@@ -228,23 +228,23 @@
             };
             all.iter()
                 .map(|p| <span class="kw">match </span>p <span class="kw">as </span><span class="kw-2">&amp;</span>str {
-                    <span class="string">&quot;imdb_id&quot; </span>=&gt; <span class="string">&quot;tt&quot;</span>.to_owned(),
-                    <span class="string">&quot;yt_id&quot; </span>=&gt; <span class="string">&quot;UC&quot;</span>.to_owned(),
-                    id =&gt; <span class="macro">format!</span>(<span class="string">&quot;{id}:&quot;</span>),
+                    <span class="string">"imdb_id" </span>=&gt; <span class="string">"tt"</span>.to_owned(),
+                    <span class="string">"yt_id" </span>=&gt; <span class="string">"UC"</span>.to_owned(),
+                    id =&gt; <span class="macro">format!</span>(<span class="string">"{id}:"</span>),
                 })
                 .collect()
         });
 
         <span class="comment">// resources: only those two are supported by the legacy mapper
         </span><span class="kw">let </span><span class="kw-2">mut </span>resources: Vec&lt;ManifestResource&gt; = <span class="macro">vec!</span>[];
-        <span class="kw">if </span>m.methods.iter().any(|x| x == <span class="string">&quot;meta.get&quot;</span>) {
-            resources.push(ManifestResource::Short(<span class="string">&quot;meta&quot;</span>.into()))
+        <span class="kw">if </span>m.methods.iter().any(|x| x == <span class="string">"meta.get"</span>) {
+            resources.push(ManifestResource::Short(<span class="string">"meta"</span>.into()))
         }
-        <span class="kw">if </span>m.methods.iter().any(|x| x == <span class="string">&quot;stream.find&quot;</span>) {
-            resources.push(ManifestResource::Short(<span class="string">&quot;stream&quot;</span>.into()))
+        <span class="kw">if </span>m.methods.iter().any(|x| x == <span class="string">"stream.find"</span>) {
+            resources.push(ManifestResource::Short(<span class="string">"stream"</span>.into()))
         }
-        <span class="kw">if </span>m.methods.iter().any(|x| x == <span class="string">&quot;subtitles.get&quot;</span>) {
-            resources.push(ManifestResource::Short(<span class="string">&quot;subtitles&quot;</span>.into()))
+        <span class="kw">if </span>m.methods.iter().any(|x| x == <span class="string">"subtitles.get"</span>) {
+            resources.push(ManifestResource::Short(<span class="string">"subtitles"</span>.into()))
         }
 
         Manifest {
@@ -262,7 +262,7 @@
             id_prefixes,
             description: m.description,
             contact_email: m.contact_email,
-            <span class="comment">// The JS implementation infers `adult`, but it&#39;s such a rare case, it&#39;s not worth it:
+            <span class="comment">// The JS implementation infers `adult`, but it's such a rare case, it's not worth it:
             // https://github.com/Stremio/stremio-addon-client/blob/4f4dbbf55498d7fdc6bd41bf49cb2f05915b3f8e/lib/transports/legacy/mapper.js#L70
             </span>behavior_hints: Default::default(),
         }

@@ -1,4 +1,4 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `src/runtime/msg/action.rs`."><title>action.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/SourceSerif4-Regular-46f98efaafac5295.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../../../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../../../static.files/rustdoc-9ee3a5e31a2afa3e.css"><meta name="rustdoc-vars" data-root-path="../../../../" data-static-root-path="../../../../static.files/" data-current-crate="stremio_core" data-themes="" data-resource-suffix="" data-rustdoc-version="1.76.0-nightly (3a85a5cfe 2023-11-20)" data-channel="nightly" data-search-js="search-d23a059ec093b287.js" data-settings-js="settings-74424d7eec62a23e.js" ><script src="../../../../static.files/storage-fec3eaa3851e447d.js"></script><script defer src="../../../../static.files/src-script-3280b574d94e47b4.js"></script><script defer src="../../../../src-files.js"></script><script defer src="../../../../static.files/main-f06f02fd918e3bb3.js"></script><noscript><link rel="stylesheet" href="../../../../static.files/noscript-5d8b3c7633ad77ba.css"></noscript><link rel="alternate icon" type="image/png" href="../../../../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../../../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"></nav><main><nav class="sub"><form class="search-form"><span></span><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><a href="../../../../help.html">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../../../static.files/wheel-7b819b6101059cd0.svg"></a></div></form></nav><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `src/runtime/msg/action.rs`."><title>action.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/SourceSerif4-Regular-46f98efaafac5295.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../../../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../../../static.files/rustdoc-c67e44d78ab2db17.css"><meta name="rustdoc-vars" data-root-path="../../../../" data-static-root-path="../../../../static.files/" data-current-crate="stremio_core" data-themes="" data-resource-suffix="" data-rustdoc-version="1.76.0-nightly (e9013ac0e 2023-12-05)" data-channel="nightly" data-search-js="search-5a66c239c06b3a66.js" data-settings-js="settings-fe03fdc259827cd2.js" ><script src="../../../../static.files/storage-fec3eaa3851e447d.js"></script><script defer src="../../../../static.files/src-script-3280b574d94e47b4.js"></script><script defer src="../../../../src-files.js"></script><script defer src="../../../../static.files/main-77dede896d6ac08e.js"></script><noscript><link rel="stylesheet" href="../../../../static.files/noscript-5d8b3c7633ad77ba.css"></noscript><link rel="alternate icon" type="image/png" href="../../../../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../../../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"></nav><main><nav class="sub"><form class="search-form"><span></span><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><a href="../../../../help.html">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../../../static.files/wheel-7b819b6101059cd0.svg"></a></div></form></nav><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
 <a href="#2" id="2">2</a>
 <a href="#3" id="3">3</a>
 <a href="#4" id="4">4</a>
@@ -193,11 +193,23 @@
 <a href="#193" id="193">193</a>
 <a href="#194" id="194">194</a>
 <a href="#195" id="195">195</a>
+<a href="#196" id="196">196</a>
+<a href="#197" id="197">197</a>
+<a href="#198" id="198">198</a>
+<a href="#199" id="199">199</a>
+<a href="#200" id="200">200</a>
+<a href="#201" id="201">201</a>
+<a href="#202" id="202">202</a>
+<a href="#203" id="203">203</a>
+<a href="#204" id="204">204</a>
+<a href="#205" id="205">205</a>
+<a href="#206" id="206">206</a>
 </pre></div><pre class="rust"><code><span class="kw">use </span>std::ops::Range;
 
 <span class="kw">use </span>serde::Deserialize;
 <span class="kw">use </span>url::Url;
 
+<span class="kw">use </span><span class="kw">crate</span>::types::streams::StreamItemState;
 <span class="kw">use crate</span>::{
     models::{
         addon_details::Selected <span class="kw">as </span>AddonDetailsSelected,
@@ -216,14 +228,14 @@
     types::{
         addon::Descriptor,
         api::AuthRequest,
-        library::{LibraryItemId, LibraryItem},
+        library::LibraryItemId,
         profile::Settings <span class="kw">as </span>ProfileSettings,
         resource::{MetaItemId, MetaItemPreview, Video},
     },
 };
 
 <span class="attr">#[derive(Clone, Deserialize, Debug)]
-#[serde(tag = <span class="string">&quot;action&quot;</span>, content = <span class="string">&quot;args&quot;</span>)]
+#[serde(tag = <span class="string">"action"</span>, content = <span class="string">"args"</span>)]
 </span><span class="kw">pub enum </span>ActionCtx {
     Authenticate(AuthRequest),
     Logout,
@@ -257,26 +269,26 @@
 }
 
 <span class="attr">#[derive(Clone, Deserialize, Debug)]
-#[serde(tag = <span class="string">&quot;action&quot;</span>, content = <span class="string">&quot;args&quot;</span>)]
+#[serde(tag = <span class="string">"action"</span>, content = <span class="string">"args"</span>)]
 </span><span class="kw">pub enum </span>ActionCatalogWithFilters {
     LoadNextPage,
 }
 
 <span class="attr">#[derive(Clone, Deserialize, Debug)]
-#[serde(tag = <span class="string">&quot;action&quot;</span>, content = <span class="string">&quot;args&quot;</span>)]
+#[serde(tag = <span class="string">"action"</span>, content = <span class="string">"args"</span>)]
 </span><span class="kw">pub enum </span>ActionCatalogsWithExtra {
     LoadRange(Range&lt;usize&gt;),
     LoadNextPage(usize),
 }
 
 <span class="attr">#[derive(Clone, Deserialize, Debug)]
-#[serde(tag = <span class="string">&quot;action&quot;</span>, content = <span class="string">&quot;args&quot;</span>)]
+#[serde(tag = <span class="string">"action"</span>, content = <span class="string">"args"</span>)]
 </span><span class="kw">pub enum </span>ActionLibraryByType {
     LoadNextPage(usize),
 }
 
 <span class="attr">#[derive(Clone, Deserialize, Debug)]
-#[serde(tag = <span class="string">&quot;action&quot;</span>, content = <span class="string">&quot;args&quot;</span>)]
+#[serde(tag = <span class="string">"action"</span>, content = <span class="string">"args"</span>)]
 </span><span class="kw">pub enum </span>ActionMetaDetails {
     <span class="doccomment">/// Marks the [`LibraryItem`] as watched.
     ///
@@ -300,7 +312,7 @@
 }
 
 <span class="attr">#[derive(Clone, Deserialize, Debug)]
-#[serde(rename_all = <span class="string">&quot;camelCase&quot;</span>)]
+#[serde(rename_all = <span class="string">"camelCase"</span>)]
 </span><span class="kw">pub struct </span>PlayOnDeviceArgs {
     <span class="kw">pub </span>device: String,
     <span class="kw">pub </span>source: String,
@@ -308,7 +320,7 @@
 }
 
 <span class="attr">#[derive(Clone, Deserialize, Debug)]
-#[serde(tag = <span class="string">&quot;action&quot;</span>, content = <span class="string">&quot;args&quot;</span>)]
+#[serde(tag = <span class="string">"action"</span>, content = <span class="string">"args"</span>)]
 </span><span class="kw">pub enum </span>ActionStreamingServer {
     Reload,
     UpdateSettings(StreamingServerSettings),
@@ -318,17 +330,20 @@
 }
 
 <span class="attr">#[derive(Clone, Deserialize, Debug)]
-#[serde(tag = <span class="string">&quot;action&quot;</span>, content = <span class="string">&quot;args&quot;</span>)]
+#[serde(tag = <span class="string">"action"</span>, content = <span class="string">"args"</span>)]
 </span><span class="kw">pub enum </span>ActionLink {
     ReadData,
 }
 
 <span class="attr">#[derive(Clone, Deserialize, Debug)]
-#[serde(tag = <span class="string">&quot;action&quot;</span>, content = <span class="string">&quot;args&quot;</span>)]
+#[serde(tag = <span class="string">"action"</span>, content = <span class="string">"args"</span>)]
 </span><span class="kw">pub enum </span>ActionPlayer {
-    <span class="attr">#[serde(rename_all = <span class="string">&quot;camelCase&quot;</span>)]
+    <span class="attr">#[serde(rename_all = <span class="string">"camelCase"</span>)]
     </span>VideoParamsChanged {
         video_params: <span class="prelude-ty">Option</span>&lt;VideoParams&gt;,
+    },
+    StreamStateChanged {
+        state: StreamItemState,
     },
     TimeChanged {
         time: u64,
@@ -338,11 +353,18 @@
     PausedChanged {
         paused: bool,
     },
-    Ended,
+    <span class="doccomment">/// User has clicked on the next video button.
+    </span>NextVideo,
+    <span class="doccomment">/// Video player has ended.
+    ///
+    /// 2 scenarios are possible:
+    /// - We've watched a movie to the last second
+    /// - We've watched a movie series to the last second
+    </span>Ended,
 }
 
 <span class="attr">#[derive(Clone, Deserialize, Debug)]
-#[serde(tag = <span class="string">&quot;model&quot;</span>, content = <span class="string">&quot;args&quot;</span>)]
+#[serde(tag = <span class="string">"model"</span>, content = <span class="string">"args"</span>)]
 </span><span class="kw">pub enum </span>ActionLoad {
     AddonDetails(AddonDetailsSelected),
     CatalogWithFilters(<span class="prelude-ty">Option</span>&lt;CatalogWithFiltersSelected&gt;),
@@ -359,10 +381,10 @@
 }
 
 <span class="attr">#[derive(Clone, Deserialize, Debug)]
-#[serde(tag = <span class="string">&quot;action&quot;</span>, content = <span class="string">&quot;args&quot;</span>)]
+#[serde(tag = <span class="string">"action"</span>, content = <span class="string">"args"</span>)]
 </span><span class="kw">pub enum </span>ActionSearch {
     <span class="doccomment">/// Request for Search queries
-    </span><span class="attr">#[serde(rename_all = <span class="string">&quot;camelCase&quot;</span>)]
+    </span><span class="attr">#[serde(rename_all = <span class="string">"camelCase"</span>)]
     </span>Search {
         search_query: String,
         max_results: usize,
@@ -374,7 +396,7 @@
 /// Those messages are meant to be dispatched only by the users of the
 /// `stremio-core` crate and handled by the `stremio-core` crate.
 </span><span class="attr">#[derive(Clone, Deserialize, Debug)]
-#[serde(tag = <span class="string">&quot;action&quot;</span>, content = <span class="string">&quot;args&quot;</span>)]
+#[serde(tag = <span class="string">"action"</span>, content = <span class="string">"args"</span>)]
 </span><span class="kw">pub enum </span>Action {
     Ctx(ActionCtx),
     Link(ActionLink),

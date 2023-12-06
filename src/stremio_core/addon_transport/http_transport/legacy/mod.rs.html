@@ -1,4 +1,4 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `src/addon_transport/http_transport/legacy/mod.rs`."><title>mod.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../../static.files/SourceSerif4-Regular-46f98efaafac5295.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../../../../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../../../../static.files/rustdoc-9ee3a5e31a2afa3e.css"><meta name="rustdoc-vars" data-root-path="../../../../../" data-static-root-path="../../../../../static.files/" data-current-crate="stremio_core" data-themes="" data-resource-suffix="" data-rustdoc-version="1.76.0-nightly (3a85a5cfe 2023-11-20)" data-channel="nightly" data-search-js="search-d23a059ec093b287.js" data-settings-js="settings-74424d7eec62a23e.js" ><script src="../../../../../static.files/storage-fec3eaa3851e447d.js"></script><script defer src="../../../../../static.files/src-script-3280b574d94e47b4.js"></script><script defer src="../../../../../src-files.js"></script><script defer src="../../../../../static.files/main-f06f02fd918e3bb3.js"></script><noscript><link rel="stylesheet" href="../../../../../static.files/noscript-5d8b3c7633ad77ba.css"></noscript><link rel="alternate icon" type="image/png" href="../../../../../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../../../../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../../../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"></nav><main><nav class="sub"><form class="search-form"><span></span><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><a href="../../../../../help.html">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../../../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../../../../static.files/wheel-7b819b6101059cd0.svg"></a></div></form></nav><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `src/addon_transport/http_transport/legacy/mod.rs`."><title>mod.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../../static.files/SourceSerif4-Regular-46f98efaafac5295.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../../../../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../../../../static.files/rustdoc-c67e44d78ab2db17.css"><meta name="rustdoc-vars" data-root-path="../../../../../" data-static-root-path="../../../../../static.files/" data-current-crate="stremio_core" data-themes="" data-resource-suffix="" data-rustdoc-version="1.76.0-nightly (e9013ac0e 2023-12-05)" data-channel="nightly" data-search-js="search-5a66c239c06b3a66.js" data-settings-js="settings-fe03fdc259827cd2.js" ><script src="../../../../../static.files/storage-fec3eaa3851e447d.js"></script><script defer src="../../../../../static.files/src-script-3280b574d94e47b4.js"></script><script defer src="../../../../../src-files.js"></script><script defer src="../../../../../static.files/main-77dede896d6ac08e.js"></script><noscript><link rel="stylesheet" href="../../../../../static.files/noscript-5d8b3c7633ad77ba.css"></noscript><link rel="alternate icon" type="image/png" href="../../../../../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../../../../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../../../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"></nav><main><nav class="sub"><form class="search-form"><span></span><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><a href="../../../../../help.html">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../../../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../../../../static.files/wheel-7b819b6101059cd0.svg"></a></div></form></nav><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
 <a href="#2" id="2">2</a>
 <a href="#3" id="3">3</a>
 <a href="#4" id="4">4</a>
@@ -356,8 +356,20 @@
 <a href="#356" id="356">356</a>
 <a href="#357" id="357">357</a>
 <a href="#358" id="358">358</a>
+<a href="#359" id="359">359</a>
+<a href="#360" id="360">360</a>
+<a href="#361" id="361">361</a>
+<a href="#362" id="362">362</a>
+<a href="#363" id="363">363</a>
+<a href="#364" id="364">364</a>
+<a href="#365" id="365">365</a>
+<a href="#366" id="366">366</a>
+<a href="#367" id="367">367</a>
+<a href="#368" id="368">368</a>
 </pre></div><pre class="rust"><code><span class="kw">use </span><span class="kw">crate</span>::addon_transport::AddonTransport;
-<span class="kw">use </span><span class="kw">crate</span>::constants::{BASE64, VIDEO_HASH_EXTRA_PROP, VIDEO_SIZE_EXTRA_PROP};
+<span class="kw">use </span><span class="kw">crate</span>::constants::{
+    BASE64, VIDEO_FILENAME_EXTRA_PROP, VIDEO_HASH_EXTRA_PROP, VIDEO_SIZE_EXTRA_PROP,
+};
 <span class="kw">use </span><span class="kw">crate</span>::runtime::{ConditionalSend, Env, EnvError, EnvFutureExt, TryEnvFuture};
 <span class="kw">use </span><span class="kw">crate</span>::types::addon::{Manifest, ResourcePath, ResourceResponse};
 <span class="kw">use </span><span class="kw">crate</span>::types::resource::{MetaItem, MetaItemPreview, Stream, Subtitles};
@@ -373,12 +385,12 @@
 <span class="kw">mod </span>legacy_manifest;
 <span class="kw">use </span><span class="self">self</span>::legacy_manifest::LegacyManifestResp;
 
-<span class="kw">const </span>IMDB_PREFIX: <span class="kw-2">&amp;</span>str = <span class="string">&quot;tt&quot;</span>;
-<span class="kw">const </span>YT_PREFIX: <span class="kw-2">&amp;</span>str = <span class="string">&quot;UC&quot;</span>;
+<span class="kw">const </span>IMDB_PREFIX: <span class="kw-2">&amp;</span>str = <span class="string">"tt"</span>;
+<span class="kw">const </span>YT_PREFIX: <span class="kw-2">&amp;</span>str = <span class="string">"UC"</span>;
 
-<span class="comment">// this is base64 for {&quot;params&quot;:[],&quot;method&quot;:&quot;meta&quot;,&quot;id&quot;:1,&quot;jsonrpc&quot;:&quot;2.0&quot;}
+<span class="comment">// this is base64 for {"params":[],"method":"meta","id":1,"jsonrpc":"2.0"}
 </span><span class="kw">const </span>MANIFEST_REQUEST_PARAM: <span class="kw-2">&amp;</span>str =
-    <span class="string">&quot;eyJwYXJhbXMiOltdLCJtZXRob2QiOiJtZXRhIiwiaWQiOjEsImpzb25ycGMiOiIyLjAifQ==&quot;</span>;
+    <span class="string">"eyJwYXJhbXMiOltdLCJtZXRob2QiOiJtZXRhIiwiaWQiOjEsImpzb25ycGMiOiIyLjAifQ=="</span>;
 
 <span class="comment">//
 // Errors
@@ -393,9 +405,9 @@
 <span class="kw">impl </span>From&lt;LegacyErr&gt; <span class="kw">for </span>EnvError {
     <span class="kw">fn </span>from(err: LegacyErr) -&gt; EnvError {
         EnvError::AddonTransport(<span class="kw">match </span>err {
-            LegacyErr::JsonRPC(error) =&gt; <span class="macro">format!</span>(<span class="string">&quot;rpc error {}: {}&quot;</span>, error.code, error.message),
-            LegacyErr::UnsupportedResource =&gt; <span class="string">&quot;legacy transport: unsupported resource&quot;</span>.to_owned(),
-            LegacyErr::UnsupportedRequest =&gt; <span class="string">&quot;legacy transport: unsupported request&quot;</span>.to_owned(),
+            LegacyErr::JsonRPC(error) =&gt; <span class="macro">format!</span>(<span class="string">"rpc error {}: {}"</span>, error.code, error.message),
+            LegacyErr::UnsupportedResource =&gt; <span class="string">"legacy transport: unsupported resource"</span>.to_owned(),
+            LegacyErr::UnsupportedRequest =&gt; <span class="string">"legacy transport: unsupported request"</span>.to_owned(),
         })
     }
 }
@@ -446,7 +458,7 @@
     }
 }
 
-<span class="kw">fn </span>map_response&lt;T: Sized + ConditionalSend + <span class="lifetime">&#39;static</span>&gt;(resp: JsonRPCResp&lt;T&gt;) -&gt; TryEnvFuture&lt;T&gt; {
+<span class="kw">fn </span>map_response&lt;T: Sized + ConditionalSend + <span class="lifetime">'static</span>&gt;(resp: JsonRPCResp&lt;T&gt;) -&gt; TryEnvFuture&lt;T&gt; {
     <span class="kw">match </span>resp {
         JsonRPCResp::Result { result } =&gt; future::ok(result).boxed_env(),
         JsonRPCResp::Error { error } =&gt; future::err(LegacyErr::JsonRPC(error).into()).boxed_env(),
@@ -456,13 +468,13 @@
 <span class="comment">//
 // Transport implementation
 //
-</span><span class="kw">pub struct </span>AddonLegacyTransport&lt;<span class="lifetime">&#39;a</span>, T: Env&gt; {
+</span><span class="kw">pub struct </span>AddonLegacyTransport&lt;<span class="lifetime">'a</span>, T: Env&gt; {
     env: PhantomData&lt;T&gt;,
-    transport_url: <span class="kw-2">&amp;</span><span class="lifetime">&#39;a </span>Url,
+    transport_url: <span class="kw-2">&amp;</span><span class="lifetime">'a </span>Url,
 }
 
-<span class="kw">impl</span>&lt;<span class="lifetime">&#39;a</span>, T: Env&gt; AddonLegacyTransport&lt;<span class="lifetime">&#39;a</span>, T&gt; {
-    <span class="kw">pub fn </span>new(transport_url: <span class="kw-2">&amp;</span><span class="lifetime">&#39;a </span>Url) -&gt; <span class="self">Self </span>{
+<span class="kw">impl</span>&lt;<span class="lifetime">'a</span>, T: Env&gt; AddonLegacyTransport&lt;<span class="lifetime">'a</span>, T&gt; {
+    <span class="kw">pub fn </span>new(transport_url: <span class="kw-2">&amp;</span><span class="lifetime">'a </span>Url) -&gt; <span class="self">Self </span>{
         AddonLegacyTransport {
             env: PhantomData,
             transport_url,
@@ -470,7 +482,7 @@
     }
 }
 
-<span class="kw">impl</span>&lt;<span class="lifetime">&#39;a</span>, T: Env&gt; AddonTransport <span class="kw">for </span>AddonLegacyTransport&lt;<span class="lifetime">&#39;a</span>, T&gt; {
+<span class="kw">impl</span>&lt;<span class="lifetime">'a</span>, T: Env&gt; AddonTransport <span class="kw">for </span>AddonLegacyTransport&lt;<span class="lifetime">'a</span>, T&gt; {
     <span class="kw">fn </span>resource(<span class="kw-2">&amp;</span><span class="self">self</span>, path: <span class="kw-2">&amp;</span>ResourcePath) -&gt; TryEnvFuture&lt;ResourceResponse&gt; {
         <span class="kw">let </span>fetch_req = <span class="kw">match </span>build_legacy_req(<span class="self">self</span>.transport_url, path) {
             <span class="prelude-val">Ok</span>(r) =&gt; r,
@@ -478,19 +490,19 @@
         };
 
         <span class="kw">match </span><span class="kw-2">&amp;</span>path.resource <span class="kw">as </span><span class="kw-2">&amp;</span>str {
-            <span class="string">&quot;catalog&quot; </span>=&gt; T::fetch::&lt;<span class="kw">_</span>, JsonRPCResp&lt;Vec&lt;MetaItemPreview&gt;&gt;&gt;(fetch_req)
+            <span class="string">"catalog" </span>=&gt; T::fetch::&lt;<span class="kw">_</span>, JsonRPCResp&lt;Vec&lt;MetaItemPreview&gt;&gt;&gt;(fetch_req)
                 .and_then(map_response)
                 .map_ok(Into::into)
                 .boxed_env(),
-            <span class="string">&quot;meta&quot; </span>=&gt; T::fetch::&lt;<span class="kw">_</span>, JsonRPCResp&lt;MetaItem&gt;&gt;(fetch_req)
+            <span class="string">"meta" </span>=&gt; T::fetch::&lt;<span class="kw">_</span>, JsonRPCResp&lt;MetaItem&gt;&gt;(fetch_req)
                 .and_then(map_response)
                 .map_ok(Into::into)
                 .boxed_env(),
-            <span class="string">&quot;stream&quot; </span>=&gt; T::fetch::&lt;<span class="kw">_</span>, JsonRPCResp&lt;Vec&lt;Stream&gt;&gt;&gt;(fetch_req)
+            <span class="string">"stream" </span>=&gt; T::fetch::&lt;<span class="kw">_</span>, JsonRPCResp&lt;Vec&lt;Stream&gt;&gt;&gt;(fetch_req)
                 .and_then(map_response)
                 .map_ok(Into::into)
                 .boxed_env(),
-            <span class="string">&quot;subtitles&quot; </span>=&gt; T::fetch::&lt;<span class="kw">_</span>, JsonRPCResp&lt;SubtitlesResult&gt;&gt;(fetch_req)
+            <span class="string">"subtitles" </span>=&gt; T::fetch::&lt;<span class="kw">_</span>, JsonRPCResp&lt;SubtitlesResult&gt;&gt;(fetch_req)
                 .and_then(map_response)
                 .map_ok(Into::into)
                 .boxed_env(),
@@ -498,8 +510,8 @@
         }
     }
     <span class="kw">fn </span>manifest(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; TryEnvFuture&lt;Manifest&gt; {
-        <span class="kw">let </span>url = <span class="macro">format!</span>(<span class="string">&quot;{}/q.json?b={}&quot;</span>, <span class="self">self</span>.transport_url, MANIFEST_REQUEST_PARAM);
-        <span class="kw">let </span>r = Request::get(url).body(()).expect(<span class="string">&quot;request builder failed&quot;</span>);
+        <span class="kw">let </span>url = <span class="macro">format!</span>(<span class="string">"{}/q.json?b={}"</span>, <span class="self">self</span>.transport_url, MANIFEST_REQUEST_PARAM);
+        <span class="kw">let </span>r = Request::get(url).body(()).expect(<span class="string">"request builder failed"</span>);
         T::fetch::&lt;<span class="kw">_</span>, JsonRPCResp&lt;LegacyManifestResp&gt;&gt;(r)
             .and_then(map_response)
             .map_ok(Into::into)
@@ -513,54 +525,54 @@
     // * does not support searching (meta.search)
     // Those limitations are intentional, to avoid this getting complicated
     // They affect functionality very little - there are no subtitles add-ons using the legacy
-    // protocol (other than OpenSubtitles, which will be ported) and there&#39;s only one
+    // protocol (other than OpenSubtitles, which will be ported) and there's only one
     // known legacy add-on that support search (Stremio/stremio #379)
     </span><span class="kw">let </span>r#type = <span class="kw-2">&amp;</span>path.r#type;
     <span class="kw">let </span>id = <span class="kw-2">&amp;</span>path.id;
     <span class="kw">let </span>q_json = <span class="kw">match </span><span class="kw-2">&amp;</span>path.resource <span class="kw">as </span><span class="kw-2">&amp;</span>str {
-        <span class="string">&quot;catalog&quot; </span>=&gt; {
-            <span class="kw">let </span>genre = path.get_extra_first_value(<span class="string">&quot;genre&quot;</span>);
+        <span class="string">"catalog" </span>=&gt; {
+            <span class="kw">let </span>genre = path.get_extra_first_value(<span class="string">"genre"</span>);
             <span class="kw">let </span>query = <span class="kw">if let </span><span class="prelude-val">Some</span>(genre) = genre {
-                <span class="macro">json!</span>({ <span class="string">&quot;type&quot;</span>: r#type, <span class="string">&quot;genre&quot;</span>: genre })
+                <span class="macro">json!</span>({ <span class="string">"type"</span>: r#type, <span class="string">"genre"</span>: genre })
             } <span class="kw">else </span>{
-                <span class="macro">json!</span>({ <span class="string">&quot;type&quot;</span>: r#type })
+                <span class="macro">json!</span>({ <span class="string">"type"</span>: r#type })
             };
             <span class="comment">// Just follows the convention set out by stremboard
             // L287 cffb94e4a9c57f5872e768eff25164b53f004a2b
-            </span><span class="kw">let </span>sort = <span class="kw">if </span>id != <span class="string">&quot;top&quot; </span>{
-                <span class="macro">json!</span>({ id.to_owned(): -<span class="number">1</span>, <span class="string">&quot;popularity&quot;</span>: -<span class="number">1 </span>})
+            </span><span class="kw">let </span>sort = <span class="kw">if </span>id != <span class="string">"top" </span>{
+                <span class="macro">json!</span>({ id.to_owned(): -<span class="number">1</span>, <span class="string">"popularity"</span>: -<span class="number">1 </span>})
             } <span class="kw">else </span>{
                 serde_json::Value::Null
             };
             build_jsonrpc(
-                <span class="string">&quot;meta.find&quot;</span>,
+                <span class="string">"meta.find"</span>,
                 <span class="macro">json!</span>({
-                    <span class="string">&quot;query&quot;</span>: query,
-                    <span class="string">&quot;limit&quot;</span>: <span class="number">100</span>,
-                    <span class="string">&quot;sort&quot;</span>: sort,
-                    <span class="string">&quot;skip&quot;</span>: path.get_extra_first_value(<span class="string">&quot;skip&quot;</span>)
+                    <span class="string">"query"</span>: query,
+                    <span class="string">"limit"</span>: <span class="number">100</span>,
+                    <span class="string">"sort"</span>: sort,
+                    <span class="string">"skip"</span>: path.get_extra_first_value(<span class="string">"skip"</span>)
                         .map(|s| s.parse::&lt;u32&gt;().unwrap_or(<span class="number">0</span>))
                         .unwrap_or(<span class="number">0</span>),
                 }),
             )
         }
-        <span class="string">&quot;meta&quot; </span>=&gt; build_jsonrpc(<span class="string">&quot;meta.get&quot;</span>, <span class="macro">json!</span>({ <span class="string">&quot;query&quot;</span>: query_from_id(id) })),
-        <span class="string">&quot;stream&quot; </span>=&gt; {
-            <span class="comment">// Just use the query, but add &quot;type&quot; to it
+        <span class="string">"meta" </span>=&gt; build_jsonrpc(<span class="string">"meta.get"</span>, <span class="macro">json!</span>({ <span class="string">"query"</span>: query_from_id(id) })),
+        <span class="string">"stream" </span>=&gt; {
+            <span class="comment">// Just use the query, but add "type" to it
             </span><span class="kw">let </span><span class="kw-2">mut </span>query = <span class="kw">match </span>query_from_id(id) {
                 serde_json::Value::Object(q) =&gt; q,
                 <span class="kw">_ </span>=&gt; {
                     <span class="kw">return </span><span class="prelude-val">Err</span>(EnvError::AddonTransport(
-                        <span class="string">&quot;legacy: stream request without a valid id&quot;</span>.to_owned(),
+                        <span class="string">"legacy: stream request without a valid id"</span>.to_owned(),
                     ))
                 }
             };
-            query.insert(<span class="string">&quot;type&quot;</span>.into(), serde_json::Value::String(r#type.to_owned()));
-            build_jsonrpc(<span class="string">&quot;stream.find&quot;</span>, <span class="macro">json!</span>({ <span class="string">&quot;query&quot;</span>: query }))
+            query.insert(<span class="string">"type"</span>.into(), serde_json::Value::String(r#type.to_owned()));
+            build_jsonrpc(<span class="string">"stream.find"</span>, <span class="macro">json!</span>({ <span class="string">"query"</span>: query }))
         }
-        <span class="string">&quot;subtitles&quot; </span>=&gt; {
+        <span class="string">"subtitles" </span>=&gt; {
             <span class="kw">let </span><span class="kw-2">mut </span>query = HashMap::new();
-            query.insert(<span class="string">&quot;itemHash&quot;</span>, serde_json::Value::String(id.replace(<span class="string">&#39;:&#39;</span>, <span class="string">&quot; &quot;</span>)));
+            query.insert(<span class="string">"itemHash"</span>, serde_json::Value::String(id.replace(<span class="string">':'</span>, <span class="string">" "</span>)));
             <span class="kw">let </span>video_hash = path.get_extra_first_value(VIDEO_HASH_EXTRA_PROP.name.as_str());
             <span class="kw">if let </span><span class="prelude-val">Some</span>(video_hash) = video_hash {
                 query.insert(
@@ -577,57 +589,65 @@
                     serde_json::Value::Number(video_size),
                 );
             }
-            build_jsonrpc(<span class="string">&quot;subtitles.find&quot;</span>, <span class="macro">json!</span>({ <span class="string">&quot;query&quot;</span>: query }))
+            <span class="kw">let </span>video_filename =
+                path.get_extra_first_value(VIDEO_FILENAME_EXTRA_PROP.name.as_str());
+            <span class="kw">if let </span><span class="prelude-val">Some</span>(video_filename) = video_filename {
+                query.insert(
+                    VIDEO_FILENAME_EXTRA_PROP.name.as_str(),
+                    serde_json::Value::String(video_filename.to_owned()),
+                );
+            }
+            build_jsonrpc(<span class="string">"subtitles.find"</span>, <span class="macro">json!</span>({ <span class="string">"query"</span>: query }))
         }
         <span class="kw">_ </span>=&gt; <span class="kw">return </span><span class="prelude-val">Err</span>(LegacyErr::UnsupportedRequest.into()),
     };
     <span class="comment">// NOTE: this is not using a URL safe base64 standard, which means that technically this is
     // not safe; however, the original implementation of stremio-addons work the same way,
-    // so we&#39;re technically replicating a legacy bug on purpose
+    // so we're technically replicating a legacy bug on purpose
     // https://github.com/Stremio/stremio-addons/blob/v2.8.14/rpc.js#L53
     </span><span class="kw">let </span>param_str = BASE64.encode(
         serde_json::to_string(<span class="kw-2">&amp;</span>q_json).map_err(|error| EnvError::Serde(error.to_string()))<span class="question-mark">?</span>,
     );
-    <span class="kw">let </span>url = <span class="macro">format!</span>(<span class="string">&quot;{transport_url}/q.json?b={param_str}&quot;</span>);
-    <span class="prelude-val">Ok</span>(Request::get(<span class="kw-2">&amp;</span>url).body(()).expect(<span class="string">&quot;request builder failed&quot;</span>))
+    <span class="kw">let </span>url = <span class="macro">format!</span>(<span class="string">"{transport_url}/q.json?b={param_str}"</span>);
+    <span class="prelude-val">Ok</span>(Request::get(<span class="kw-2">&amp;</span>url).body(()).expect(<span class="string">"request builder failed"</span>))
 }
 
 <span class="kw">fn </span>build_jsonrpc(method: <span class="kw-2">&amp;</span>str, params: serde_json::Value) -&gt; serde_json::Value {
     <span class="macro">json!</span>({
-        <span class="string">&quot;params&quot;</span>: [serde_json::Value::Null, params],
-        <span class="string">&quot;method&quot;</span>: method,
-        <span class="string">&quot;id&quot;</span>: <span class="number">1</span>,
-        <span class="string">&quot;jsonrpc&quot;</span>: <span class="string">&quot;2.0&quot;</span>,
+        <span class="string">"params"</span>: [serde_json::Value::Null, params],
+        <span class="string">"method"</span>: method,
+        <span class="string">"id"</span>: <span class="number">1</span>,
+        <span class="string">"jsonrpc"</span>: <span class="string">"2.0"</span>,
     })
 }
 
 <span class="kw">fn </span>query_from_id(id: <span class="kw-2">&amp;</span>str) -&gt; serde_json::Value {
-    <span class="kw">let </span>parts: Vec&lt;<span class="kw-2">&amp;</span>str&gt; = id.split(<span class="string">&#39;:&#39;</span>).collect();
+    <span class="kw">let </span>parts: Vec&lt;<span class="kw-2">&amp;</span>str&gt; = id.split(<span class="string">':'</span>).collect();
     <span class="comment">// IMDb format: tt...:(season:episode)?
     </span><span class="kw">if </span>id.starts_with(IMDB_PREFIX) {
         <span class="kw">if </span>parts.len() == <span class="number">3 </span>{
             <span class="kw">return </span><span class="macro">json!</span>({
-                <span class="string">&quot;imdb_id&quot;</span>: parts[<span class="number">0</span>],
-                <span class="string">&quot;season&quot;</span>: parts[<span class="number">1</span>].parse::&lt;u16&gt;().unwrap_or(<span class="number">1</span>),
-                <span class="string">&quot;episode&quot;</span>: parts[<span class="number">2</span>].parse::&lt;u16&gt;().unwrap_or(<span class="number">1</span>),
+                <span class="string">"imdb_id"</span>: parts[<span class="number">0</span>],
+                <span class="string">"season"</span>: parts[<span class="number">1</span>].parse::&lt;u16&gt;().unwrap_or(<span class="number">1</span>),
+                <span class="string">"episode"</span>: parts[<span class="number">2</span>].parse::&lt;u16&gt;().unwrap_or(<span class="number">1</span>),
             });
         } <span class="kw">else </span>{
-            <span class="kw">return </span><span class="macro">json!</span>({ <span class="string">&quot;imdb_id&quot;</span>: parts[<span class="number">0</span>] });
+            <span class="kw">return </span><span class="macro">json!</span>({ <span class="string">"imdb_id"</span>: parts[<span class="number">0</span>] });
         }
     }
     <span class="comment">// YouTube format: UC...:video_id?
     </span><span class="kw">if </span>id.starts_with(YT_PREFIX) {
         <span class="kw">if </span>parts.len() == <span class="number">2 </span>{
-            <span class="kw">return </span><span class="macro">json!</span>({ <span class="string">&quot;yt_id&quot;</span>: parts[<span class="number">0</span>], <span class="string">&quot;video_id&quot;</span>: parts[<span class="number">1</span>] });
+            <span class="kw">return </span><span class="macro">json!</span>({ <span class="string">"yt_id"</span>: parts[<span class="number">0</span>], <span class="string">"video_id"</span>: parts[<span class="number">1</span>] });
         } <span class="kw">else </span>{
-            <span class="kw">return </span><span class="macro">json!</span>({ <span class="string">&quot;yt_id&quot;</span>: parts[<span class="number">0</span>] });
+            <span class="kw">return </span><span class="macro">json!</span>({ <span class="string">"yt_id"</span>: parts[<span class="number">0</span>] });
         }
     }
     <span class="comment">// generic format: id_prefix:id:video_id?
     </span><span class="kw">if </span>parts.len() == <span class="number">3 </span>{
         <span class="kw">return </span><span class="macro">json!</span>({
             parts[<span class="number">0</span>].to_owned(): parts[<span class="number">1</span>],
-            <span class="string">&quot;video_id&quot;</span>: parts[<span class="number">2</span>]
+            <span class="string">"video_id"</span>: parts[<span class="number">2</span>]
         });
     }
     <span class="kw">if </span>parts.len() == <span class="number">2 </span>{
@@ -641,76 +661,76 @@
     <span class="kw">use super</span>::<span class="kw-2">*</span>;
     <span class="kw">use </span><span class="kw">crate</span>::types::addon::{ExtraExt, ResourcePath};
 
-    <span class="comment">// Those are a bit sensitive for now, but that&#39;s a good thing, since it will force us
+    <span class="comment">// Those are a bit sensitive for now, but that's a good thing, since it will force us
     // to pay attention to minor details that might matter with the legacy system
     // (e.g. omitting values vs `null` values)
     </span><span class="attr">#[test]
     </span><span class="kw">fn </span>catalog() {
-        <span class="kw">let </span>transport_url = Url::parse(<span class="string">&quot;https://stremio-mixer.schneider.ax/stremioget/stremio/v1&quot;</span>)
-            .expect(<span class="string">&quot;url parse failed&quot;</span>);
-        <span class="kw">let </span>path = ResourcePath::without_extra(<span class="string">&quot;catalog&quot;</span>, <span class="string">&quot;tv&quot;</span>, <span class="string">&quot;popularities.mixer&quot;</span>);
+        <span class="kw">let </span>transport_url = Url::parse(<span class="string">"https://stremio-mixer.schneider.ax/stremioget/stremio/v1"</span>)
+            .expect(<span class="string">"url parse failed"</span>);
+        <span class="kw">let </span>path = ResourcePath::without_extra(<span class="string">"catalog"</span>, <span class="string">"tv"</span>, <span class="string">"popularities.mixer"</span>);
         <span class="macro">assert_eq!</span>(
             <span class="kw-2">&amp;</span>build_legacy_req(<span class="kw-2">&amp;</span>transport_url, <span class="kw-2">&amp;</span>path).unwrap().uri().to_string(),
-            <span class="string">&quot;https://stremio-mixer.schneider.ax/stremioget/stremio/v1/q.json?b=eyJpZCI6MSwianNvbnJwYyI6IjIuMCIsIm1ldGhvZCI6Im1ldGEuZmluZCIsInBhcmFtcyI6W251bGwseyJsaW1pdCI6MTAwLCJxdWVyeSI6eyJ0eXBlIjoidHYifSwic2tpcCI6MCwic29ydCI6eyJwb3B1bGFyaXRpZXMubWl4ZXIiOi0xLCJwb3B1bGFyaXR5IjotMX19XX0=&quot;</span>,
+            <span class="string">"https://stremio-mixer.schneider.ax/stremioget/stremio/v1/q.json?b=eyJpZCI6MSwianNvbnJwYyI6IjIuMCIsIm1ldGhvZCI6Im1ldGEuZmluZCIsInBhcmFtcyI6W251bGwseyJsaW1pdCI6MTAwLCJxdWVyeSI6eyJ0eXBlIjoidHYifSwic2tpcCI6MCwic29ydCI6eyJwb3B1bGFyaXRpZXMubWl4ZXIiOi0xLCJwb3B1bGFyaXR5IjotMX19XX0="</span>,
         );
     }
 
     <span class="attr">#[test]
     </span><span class="kw">fn </span>stream_imdb() {
         <span class="kw">let </span>transport_url =
-            Url::parse(<span class="string">&quot;https://legacywatchhub.strem.io/stremio/v1&quot;</span>).expect(<span class="string">&quot;url parse failed&quot;</span>);
-        <span class="kw">let </span>path = ResourcePath::without_extra(<span class="string">&quot;stream&quot;</span>, <span class="string">&quot;series&quot;</span>, <span class="string">&quot;tt0386676:5:1&quot;</span>);
+            Url::parse(<span class="string">"https://legacywatchhub.strem.io/stremio/v1"</span>).expect(<span class="string">"url parse failed"</span>);
+        <span class="kw">let </span>path = ResourcePath::without_extra(<span class="string">"stream"</span>, <span class="string">"series"</span>, <span class="string">"tt0386676:5:1"</span>);
         <span class="macro">assert_eq!</span>(
             <span class="kw-2">&amp;</span>build_legacy_req(<span class="kw-2">&amp;</span>transport_url, <span class="kw-2">&amp;</span>path).unwrap().uri().to_string(),
-            <span class="string">&quot;https://legacywatchhub.strem.io/stremio/v1/q.json?b=eyJpZCI6MSwianNvbnJwYyI6IjIuMCIsIm1ldGhvZCI6InN0cmVhbS5maW5kIiwicGFyYW1zIjpbbnVsbCx7InF1ZXJ5Ijp7ImVwaXNvZGUiOjEsImltZGJfaWQiOiJ0dDAzODY2NzYiLCJzZWFzb24iOjUsInR5cGUiOiJzZXJpZXMifX1dfQ==&quot;
+            <span class="string">"https://legacywatchhub.strem.io/stremio/v1/q.json?b=eyJpZCI6MSwianNvbnJwYyI6IjIuMCIsIm1ldGhvZCI6InN0cmVhbS5maW5kIiwicGFyYW1zIjpbbnVsbCx7InF1ZXJ5Ijp7ImVwaXNvZGUiOjEsImltZGJfaWQiOiJ0dDAzODY2NzYiLCJzZWFzb24iOjUsInR5cGUiOiJzZXJpZXMifX1dfQ=="
         </span>);
     }
 
     <span class="attr">#[test]
     </span><span class="kw">fn </span>subtitles_only_id() {
         <span class="kw">let </span>transport_url =
-            Url::parse(<span class="string">&quot;https://legacywatchhub.strem.io/stremio/v1&quot;</span>).expect(<span class="string">&quot;url parse failed&quot;</span>);
-        <span class="kw">let </span>path = ResourcePath::without_extra(<span class="string">&quot;subtitles&quot;</span>, <span class="string">&quot;series&quot;</span>, <span class="string">&quot;tt0386676:5:1&quot;</span>);
+            Url::parse(<span class="string">"https://legacywatchhub.strem.io/stremio/v1"</span>).expect(<span class="string">"url parse failed"</span>);
+        <span class="kw">let </span>path = ResourcePath::without_extra(<span class="string">"subtitles"</span>, <span class="string">"series"</span>, <span class="string">"tt0386676:5:1"</span>);
         <span class="macro">assert_eq!</span>(
             <span class="kw-2">&amp;</span>build_legacy_req(<span class="kw-2">&amp;</span>transport_url, <span class="kw-2">&amp;</span>path).unwrap().uri().to_string(),
-            <span class="string">&quot;https://legacywatchhub.strem.io/stremio/v1/q.json?b=eyJpZCI6MSwianNvbnJwYyI6IjIuMCIsIm1ldGhvZCI6InN1YnRpdGxlcy5maW5kIiwicGFyYW1zIjpbbnVsbCx7InF1ZXJ5Ijp7Iml0ZW1IYXNoIjoidHQwMzg2Njc2IDUgMSJ9fV19&quot;
+            <span class="string">"https://legacywatchhub.strem.io/stremio/v1/q.json?b=eyJpZCI6MSwianNvbnJwYyI6IjIuMCIsIm1ldGhvZCI6InN1YnRpdGxlcy5maW5kIiwicGFyYW1zIjpbbnVsbCx7InF1ZXJ5Ijp7Iml0ZW1IYXNoIjoidHQwMzg2Njc2IDUgMSJ9fV19"
         </span>);
     }
 
     <span class="attr">#[test]
     </span><span class="kw">fn </span>subtitles_with_hash() {
         <span class="kw">let </span>transport_url =
-            Url::parse(<span class="string">&quot;https://legacywatchhub.strem.io/stremio/v1&quot;</span>).expect(<span class="string">&quot;url parse failed&quot;</span>);
+            Url::parse(<span class="string">"https://legacywatchhub.strem.io/stremio/v1"</span>).expect(<span class="string">"url parse failed"</span>);
         <span class="kw">let </span>extra = <span class="kw-2">&amp;</span><span class="macro">vec!</span>[]
-            .extend_one(<span class="kw-2">&amp;</span>VIDEO_HASH_EXTRA_PROP, <span class="prelude-val">Some</span>(<span class="string">&quot;ffffffffff&quot;</span>.to_string()))
-            .extend_one(<span class="kw-2">&amp;</span>VIDEO_SIZE_EXTRA_PROP, <span class="prelude-val">Some</span>(<span class="string">&quot;1000000000&quot;</span>.to_string()));
-        <span class="kw">let </span>path = ResourcePath::with_extra(<span class="string">&quot;subtitles&quot;</span>, <span class="string">&quot;series&quot;</span>, <span class="string">&quot;tt0386676:5:1&quot;</span>, extra);
+            .extend_one(<span class="kw-2">&amp;</span>VIDEO_HASH_EXTRA_PROP, <span class="prelude-val">Some</span>(<span class="string">"ffffffffff"</span>.to_string()))
+            .extend_one(<span class="kw-2">&amp;</span>VIDEO_SIZE_EXTRA_PROP, <span class="prelude-val">Some</span>(<span class="string">"1000000000"</span>.to_string()));
+        <span class="kw">let </span>path = ResourcePath::with_extra(<span class="string">"subtitles"</span>, <span class="string">"series"</span>, <span class="string">"tt0386676:5:1"</span>, extra);
         <span class="macro">assert_eq!</span>(
             <span class="kw-2">&amp;</span>build_legacy_req(<span class="kw-2">&amp;</span>transport_url, <span class="kw-2">&amp;</span>path).unwrap().uri().to_string(),
-            <span class="string">&quot;https://legacywatchhub.strem.io/stremio/v1/q.json?b=eyJpZCI6MSwianNvbnJwYyI6IjIuMCIsIm1ldGhvZCI6InN1YnRpdGxlcy5maW5kIiwicGFyYW1zIjpbbnVsbCx7InF1ZXJ5Ijp7Iml0ZW1IYXNoIjoidHQwMzg2Njc2IDUgMSIsInZpZGVvSGFzaCI6ImZmZmZmZmZmZmYiLCJ2aWRlb1NpemUiOjEwMDAwMDAwMDB9fV19&quot;
+            <span class="string">"https://legacywatchhub.strem.io/stremio/v1/q.json?b=eyJpZCI6MSwianNvbnJwYyI6IjIuMCIsIm1ldGhvZCI6InN1YnRpdGxlcy5maW5kIiwicGFyYW1zIjpbbnVsbCx7InF1ZXJ5Ijp7Iml0ZW1IYXNoIjoidHQwMzg2Njc2IDUgMSIsInZpZGVvSGFzaCI6ImZmZmZmZmZmZmYiLCJ2aWRlb1NpemUiOjEwMDAwMDAwMDB9fV19"
         </span>);
     }
 
     <span class="attr">#[test]
     </span><span class="kw">fn </span>query_meta() {
         <span class="macro">assert_eq!</span>(
-            query_from_id(<span class="string">&quot;tt0386676&quot;</span>),
-            <span class="macro">json!</span>({ <span class="string">&quot;imdb_id&quot;</span>: <span class="string">&quot;tt0386676&quot; </span>})
+            query_from_id(<span class="string">"tt0386676"</span>),
+            <span class="macro">json!</span>({ <span class="string">"imdb_id"</span>: <span class="string">"tt0386676" </span>})
         );
-        <span class="macro">assert_eq!</span>(query_from_id(<span class="string">&quot;UC2312&quot;</span>), <span class="macro">json!</span>({ <span class="string">&quot;yt_id&quot;</span>: <span class="string">&quot;UC2312&quot; </span>}));
-        <span class="macro">assert_eq!</span>(query_from_id(<span class="string">&quot;custom:test&quot;</span>), <span class="macro">json!</span>({ <span class="string">&quot;custom&quot;</span>: <span class="string">&quot;test&quot; </span>}));
+        <span class="macro">assert_eq!</span>(query_from_id(<span class="string">"UC2312"</span>), <span class="macro">json!</span>({ <span class="string">"yt_id"</span>: <span class="string">"UC2312" </span>}));
+        <span class="macro">assert_eq!</span>(query_from_id(<span class="string">"custom:test"</span>), <span class="macro">json!</span>({ <span class="string">"custom"</span>: <span class="string">"test" </span>}));
     }
 
     <span class="attr">#[test]
     </span><span class="kw">fn </span>query_stream() {
         <span class="macro">assert_eq!</span>(
-            query_from_id(<span class="string">&quot;tt0386676:5:2&quot;</span>),
-            <span class="macro">json!</span>({ <span class="string">&quot;imdb_id&quot;</span>: <span class="string">&quot;tt0386676&quot;</span>, <span class="string">&quot;season&quot;</span>: <span class="number">5</span>, <span class="string">&quot;episode&quot;</span>: <span class="number">2 </span>})
+            query_from_id(<span class="string">"tt0386676:5:2"</span>),
+            <span class="macro">json!</span>({ <span class="string">"imdb_id"</span>: <span class="string">"tt0386676"</span>, <span class="string">"season"</span>: <span class="number">5</span>, <span class="string">"episode"</span>: <span class="number">2 </span>})
         );
-        <span class="macro">assert_eq!</span>(query_from_id(<span class="string">&quot;yt_id:video&quot;</span>), <span class="macro">json!</span>({ <span class="string">&quot;yt_id&quot;</span>: <span class="string">&quot;video&quot; </span>}));
+        <span class="macro">assert_eq!</span>(query_from_id(<span class="string">"yt_id:video"</span>), <span class="macro">json!</span>({ <span class="string">"yt_id"</span>: <span class="string">"video" </span>}));
         <span class="macro">assert_eq!</span>(
-            query_from_id(<span class="string">&quot;custom:test:vid&quot;</span>),
-            <span class="macro">json!</span>({ <span class="string">&quot;custom&quot;</span>: <span class="string">&quot;test&quot;</span>, <span class="string">&quot;video_id&quot;</span>: <span class="string">&quot;vid&quot; </span>})
+            query_from_id(<span class="string">"custom:test:vid"</span>),
+            <span class="macro">json!</span>({ <span class="string">"custom"</span>: <span class="string">"test"</span>, <span class="string">"video_id"</span>: <span class="string">"vid" </span>})
         );
     }
 }

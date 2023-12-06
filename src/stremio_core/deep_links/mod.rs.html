@@ -1,4 +1,4 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `src/deep_links/mod.rs`."><title>mod.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceSerif4-Regular-46f98efaafac5295.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../../static.files/rustdoc-9ee3a5e31a2afa3e.css"><meta name="rustdoc-vars" data-root-path="../../../" data-static-root-path="../../../static.files/" data-current-crate="stremio_core" data-themes="" data-resource-suffix="" data-rustdoc-version="1.76.0-nightly (3a85a5cfe 2023-11-20)" data-channel="nightly" data-search-js="search-d23a059ec093b287.js" data-settings-js="settings-74424d7eec62a23e.js" ><script src="../../../static.files/storage-fec3eaa3851e447d.js"></script><script defer src="../../../static.files/src-script-3280b574d94e47b4.js"></script><script defer src="../../../src-files.js"></script><script defer src="../../../static.files/main-f06f02fd918e3bb3.js"></script><noscript><link rel="stylesheet" href="../../../static.files/noscript-5d8b3c7633ad77ba.css"></noscript><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"></nav><main><nav class="sub"><form class="search-form"><span></span><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><a href="../../../help.html">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../../static.files/wheel-7b819b6101059cd0.svg"></a></div></form></nav><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `src/deep_links/mod.rs`."><title>mod.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceSerif4-Regular-46f98efaafac5295.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../../static.files/rustdoc-c67e44d78ab2db17.css"><meta name="rustdoc-vars" data-root-path="../../../" data-static-root-path="../../../static.files/" data-current-crate="stremio_core" data-themes="" data-resource-suffix="" data-rustdoc-version="1.76.0-nightly (e9013ac0e 2023-12-05)" data-channel="nightly" data-search-js="search-5a66c239c06b3a66.js" data-settings-js="settings-fe03fdc259827cd2.js" ><script src="../../../static.files/storage-fec3eaa3851e447d.js"></script><script defer src="../../../static.files/src-script-3280b574d94e47b4.js"></script><script defer src="../../../src-files.js"></script><script defer src="../../../static.files/main-77dede896d6ac08e.js"></script><noscript><link rel="stylesheet" href="../../../static.files/noscript-5d8b3c7633ad77ba.css"></noscript><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"></nav><main><nav class="sub"><form class="search-form"><span></span><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><a href="../../../help.html">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../../static.files/wheel-7b819b6101059cd0.svg"></a></div></form></nav><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
 <a href="#2" id="2">2</a>
 <a href="#3" id="3">3</a>
 <a href="#4" id="4">4</a>
@@ -531,6 +531,14 @@
 <a href="#531" id="531">531</a>
 <a href="#532" id="532">532</a>
 <a href="#533" id="533">533</a>
+<a href="#534" id="534">534</a>
+<a href="#535" id="535">535</a>
+<a href="#536" id="536">536</a>
+<a href="#537" id="537">537</a>
+<a href="#538" id="538">538</a>
+<a href="#539" id="539">539</a>
+<a href="#540" id="540">540</a>
+<a href="#541" id="541">541</a>
 </pre></div><pre class="rust"><code><span class="kw">use </span>percent_encoding::utf8_percent_encode;
 <span class="kw">use </span>regex::Regex;
 <span class="kw">use </span>serde::Serialize;
@@ -556,7 +564,7 @@
 <span class="kw">mod </span>error_link;
 
 <span class="attr">#[derive(Default, Serialize, Debug, PartialEq, Eq)]
-#[serde(rename_all = <span class="string">&quot;camelCase&quot;</span>)]
+#[serde(rename_all = <span class="string">"camelCase"</span>)]
 </span><span class="kw">pub struct </span>OpenPlayerLink {
     <span class="kw">pub </span>ios: <span class="prelude-ty">Option</span>&lt;String&gt;,
     <span class="kw">pub </span>android: <span class="prelude-ty">Option</span>&lt;String&gt;,
@@ -570,7 +578,7 @@
 }
 
 <span class="attr">#[derive(Default, Serialize, Debug, PartialEq, Eq)]
-#[serde(rename_all = <span class="string">&quot;camelCase&quot;</span>)]
+#[serde(rename_all = <span class="string">"camelCase"</span>)]
 </span><span class="kw">pub struct </span>ExternalPlayerLink {
     <span class="kw">pub </span>href: <span class="prelude-ty">Option</span>&lt;String&gt;,
     <span class="kw">pub </span>download: <span class="prelude-ty">Option</span>&lt;String&gt;,
@@ -582,7 +590,7 @@
     <span class="kw">pub </span>file_name: <span class="prelude-ty">Option</span>&lt;String&gt;,
 }
 
-<span class="doccomment">/// Using `&amp;Option&lt;Url&gt;`` is not encouraged, use `.as_ref()` to get an `Option&lt;&amp;Url&gt;` instead!
+<span class="doccomment">/// Using `&amp;Option&lt;Url&gt;` is not encouraged, use `.as_ref()` to get an `Option&lt;&amp;Url&gt;` instead!
 </span><span class="kw">impl </span>From&lt;(<span class="kw-2">&amp;</span>Stream, <span class="kw-2">&amp;</span><span class="prelude-ty">Option</span>&lt;Url&gt;, <span class="kw-2">&amp;</span>Settings)&gt; <span class="kw">for </span>ExternalPlayerLink {
     <span class="kw">fn </span>from((stream, streaming_server_url, settings): (<span class="kw-2">&amp;</span>Stream, <span class="kw-2">&amp;</span><span class="prelude-ty">Option</span>&lt;Url&gt;, <span class="kw-2">&amp;</span>Settings)) -&gt; <span class="self">Self </span>{
         <span class="self">Self</span>::from((stream, streaming_server_url.as_ref(), settings))
@@ -592,57 +600,65 @@
 <span class="kw">impl </span>From&lt;(<span class="kw-2">&amp;</span>Stream, <span class="prelude-ty">Option</span>&lt;<span class="kw-2">&amp;</span>Url&gt;, <span class="kw-2">&amp;</span>Settings)&gt; <span class="kw">for </span>ExternalPlayerLink {
     <span class="doccomment">/// Create an [`ExternalPlayerLink`] using the [`Stream`],
     /// the server url (from [`StreamingServer::base_url`] which indicates a running or not server)
-    /// and the user&#39;s [`Settings`] in order to use the [`Settings::player_type`] for generating a
+    /// and the user's [`Settings`] in order to use the [`Settings::player_type`] for generating a
     /// player-specific url.
     ///
     /// [`StreamingServer::base_url`]: crate::models::streaming_server::StreamingServer::base_url
     </span><span class="kw">fn </span>from((stream, streaming_server_url, settings): (<span class="kw-2">&amp;</span>Stream, <span class="prelude-ty">Option</span>&lt;<span class="kw-2">&amp;</span>Url&gt;, <span class="kw-2">&amp;</span>Settings)) -&gt; <span class="self">Self </span>{
         <span class="comment">// Use streaming_server_url from settings if streaming_server is reachable
         </span><span class="kw">let </span>streaming_server_url = streaming_server_url.map(|<span class="kw">_</span>| <span class="kw-2">&amp;</span>settings.streaming_server_url);
-        <span class="kw">let </span>http_regex = Regex::new(<span class="string">r&quot;https?://&quot;</span>).unwrap();
+        <span class="kw">let </span>http_regex = Regex::new(<span class="string">r"https?://"</span>).unwrap();
         <span class="kw">let </span>download = stream.download_url();
         <span class="kw">let </span>streaming = stream.streaming_url(streaming_server_url);
         <span class="kw">let </span>m3u_uri = stream.m3u_data_uri(streaming_server_url);
-        <span class="kw">let </span>file_name = m3u_uri.as_ref().map(|<span class="kw">_</span>| <span class="string">&quot;playlist.m3u&quot;</span>.to_owned());
+        <span class="kw">let </span>file_name = m3u_uri.as_ref().map(|<span class="kw">_</span>| <span class="string">"playlist.m3u"</span>.to_owned());
         <span class="kw">let </span>href = m3u_uri.or_else(|| download.to_owned());
         <span class="kw">let </span>open_player = <span class="kw">match </span><span class="kw-2">&amp;</span>streaming {
             <span class="prelude-val">Some</span>(url) =&gt; <span class="kw">match </span>settings.player_type.as_ref() {
                 <span class="prelude-val">Some</span>(player_type) =&gt; <span class="kw">match </span>player_type.as_str() {
-                    <span class="string">&quot;choose&quot; </span>=&gt; <span class="prelude-val">Some</span>(OpenPlayerLink {
+                    <span class="string">"choose" </span>=&gt; <span class="prelude-val">Some</span>(OpenPlayerLink {
                         android: <span class="prelude-val">Some</span>(<span class="macro">format!</span>(
-                            <span class="string">&quot;{}#Intent;type=video/any;scheme=https;end&quot;</span>,
-                            http_regex.replace(url, <span class="string">&quot;intent://&quot;</span>),
+                            <span class="string">"{}#Intent;type=video/any;scheme=https;end"</span>,
+                            http_regex.replace(url, <span class="string">"intent://"</span>),
                         )),
                         ..Default::default()
                     }),
-                    <span class="string">&quot;vlc&quot; </span>=&gt; <span class="prelude-val">Some</span>(OpenPlayerLink {
-                        ios: <span class="prelude-val">Some</span>(<span class="macro">format!</span>(<span class="string">&quot;vlc-x-callback://x-callback-url/stream?url={url}&quot;</span>)),
+                    <span class="string">"vlc" </span>=&gt; <span class="prelude-val">Some</span>(OpenPlayerLink {
+                        ios: <span class="prelude-val">Some</span>(<span class="macro">format!</span>(<span class="string">"vlc-x-callback://x-callback-url/stream?url={url}"</span>)),
                         android: <span class="prelude-val">Some</span>(<span class="macro">format!</span>(
-                            <span class="string">&quot;{}#Intent;package=org.videolan.vlc;type=video;scheme=https;end&quot;</span>,
-                            http_regex.replace(url, <span class="string">&quot;intent://&quot;</span>),
+                            <span class="string">"{}#Intent;package=org.videolan.vlc;type=video;scheme=https;end"</span>,
+                            http_regex.replace(url, <span class="string">"intent://"</span>),
                         )),
                         ..Default::default()
                     }),
-                    <span class="string">&quot;mxplayer&quot; </span>=&gt; <span class="prelude-val">Some</span>(OpenPlayerLink {
+                    <span class="string">"mxplayer" </span>=&gt; <span class="prelude-val">Some</span>(OpenPlayerLink {
                         android: <span class="prelude-val">Some</span>(<span class="macro">format!</span>(
-                            <span class="string">&quot;{}#Intent;package=com.mxtech.videoplayer.ad;type=video;scheme=https;end&quot;</span>,
-                            http_regex.replace(url, <span class="string">&quot;intent://&quot;</span>),
+                            <span class="string">"{}#Intent;package=com.mxtech.videoplayer.ad;type=video;scheme=https;end"</span>,
+                            http_regex.replace(url, <span class="string">"intent://"</span>),
                         )),
                         ..Default::default()
                     }),
-                    <span class="string">&quot;justplayer&quot; </span>=&gt; <span class="prelude-val">Some</span>(OpenPlayerLink {
+                    <span class="string">"justplayer" </span>=&gt; <span class="prelude-val">Some</span>(OpenPlayerLink {
                         android: <span class="prelude-val">Some</span>(<span class="macro">format!</span>(
-                            <span class="string">&quot;{}#Intent;package=com.brouken.player;type=video;scheme=https;end&quot;</span>,
-                            http_regex.replace(url, <span class="string">&quot;intent://&quot;</span>),
+                            <span class="string">"{}#Intent;package=com.brouken.player;type=video;scheme=https;end"</span>,
+                            http_regex.replace(url, <span class="string">"intent://"</span>),
                         )),
                         ..Default::default()
                     }),
-                    <span class="string">&quot;outplayer&quot; </span>=&gt; <span class="prelude-val">Some</span>(OpenPlayerLink {
-                        ios: <span class="prelude-val">Some</span>(<span class="macro">format!</span>(<span class="string">&quot;{}&quot;</span>, http_regex.replace(url, <span class="string">&quot;outplayer://&quot;</span>))),
+                    <span class="string">"outplayer" </span>=&gt; <span class="prelude-val">Some</span>(OpenPlayerLink {
+                        ios: <span class="prelude-val">Some</span>(<span class="macro">format!</span>(<span class="string">"{}"</span>, http_regex.replace(url, <span class="string">"outplayer://"</span>))),
                         ..Default::default()
                     }),
-                    <span class="string">&quot;infuse&quot; </span>=&gt; <span class="prelude-val">Some</span>(OpenPlayerLink {
-                        ios: <span class="prelude-val">Some</span>(<span class="macro">format!</span>(<span class="string">&quot;infuse://x-callback-url/play?url={url}&quot;</span>)),
+                    <span class="string">"infuse" </span>=&gt; <span class="prelude-val">Some</span>(OpenPlayerLink {
+                        ios: <span class="prelude-val">Some</span>(<span class="macro">format!</span>(<span class="string">"infuse://x-callback-url/play?url={url}"</span>)),
+                       ..Default::default()
+                    }),
+                    <span class="string">"iina" </span>=&gt; <span class="prelude-val">Some</span>(OpenPlayerLink {
+                        macos: <span class="prelude-val">Some</span>(<span class="macro">format!</span>(<span class="string">"iina://weblink?url={url}"</span>)),
+                       ..Default::default()
+                    }),
+                    <span class="string">"mpv" </span>=&gt; <span class="prelude-val">Some</span>(OpenPlayerLink {
+                        macos: <span class="prelude-val">Some</span>(<span class="macro">format!</span>(<span class="string">"mpv://{url}"</span>)),
                        ..Default::default()
                     }),
                     <span class="kw">_ </span>=&gt; <span class="prelude-val">None</span>,
@@ -678,7 +694,7 @@
 }
 
 <span class="attr">#[derive(Serialize)]
-#[serde(rename_all = <span class="string">&quot;camelCase&quot;</span>)]
+#[serde(rename_all = <span class="string">"camelCase"</span>)]
 </span><span class="kw">pub struct </span>LibraryItemDeepLinks {
     <span class="kw">pub </span>meta_details_videos: <span class="prelude-ty">Option</span>&lt;String&gt;,
     <span class="kw">pub </span>meta_details_streams: <span class="prelude-ty">Option</span>&lt;String&gt;,
@@ -702,7 +718,7 @@
                 .as_ref()
                 .cloned()
                 .xor(<span class="prelude-val">Some</span>(<span class="macro">format!</span>(
-                    <span class="string">&quot;stremio:///detail/{}/{}&quot;</span>,
+                    <span class="string">"stremio:///detail/{}/{}"</span>,
                     utf8_percent_encode(<span class="kw-2">&amp;</span>item.r#type, URI_COMPONENT_ENCODE_SET),
                     utf8_percent_encode(<span class="kw-2">&amp;</span>item.id, URI_COMPONENT_ENCODE_SET)
                 ))),
@@ -714,7 +730,7 @@
                 .or(item.behavior_hints.default_video_id.as_ref())
                 .map(|video_id| {
                     <span class="macro">format!</span>(
-                        <span class="string">&quot;stremio:///detail/{}/{}/{}&quot;</span>,
+                        <span class="string">"stremio:///detail/{}/{}/{}"</span>,
                         utf8_percent_encode(<span class="kw-2">&amp;</span>item.r#type, URI_COMPONENT_ENCODE_SET),
                         utf8_percent_encode(<span class="kw-2">&amp;</span>item.id, URI_COMPONENT_ENCODE_SET),
                         utf8_percent_encode(video_id, URI_COMPONENT_ENCODE_SET)
@@ -723,7 +739,7 @@
             <span class="comment">// We have the stream so use the same logic as in StreamDeepLinks
             </span>player: streams_item.map(|streams_item| <span class="kw">match </span>streams_item.stream.encode() {
                 <span class="prelude-val">Ok</span>(encoded_stream) =&gt; <span class="macro">format!</span>(
-                    <span class="string">&quot;stremio:///player/{}/{}/{}/{}/{}/{}&quot;</span>,
+                    <span class="string">"stremio:///player/{}/{}/{}/{}/{}/{}"</span>,
                     utf8_percent_encode(<span class="kw-2">&amp;</span>encoded_stream, URI_COMPONENT_ENCODE_SET),
                     utf8_percent_encode(
                         streams_item.stream_transport_url.as_str(),
@@ -748,7 +764,7 @@
 }
 
 <span class="attr">#[derive(Serialize, Debug, PartialEq, Eq)]
-#[serde(rename_all = <span class="string">&quot;camelCase&quot;</span>)]
+#[serde(rename_all = <span class="string">"camelCase"</span>)]
 </span><span class="kw">pub struct </span>MetaItemDeepLinks {
     <span class="kw">pub </span>meta_details_videos: <span class="prelude-ty">Option</span>&lt;String&gt;,
     <span class="kw">pub </span>meta_details_streams: <span class="prelude-ty">Option</span>&lt;String&gt;,
@@ -759,7 +775,7 @@
     <span class="kw">fn </span>from(resource_path: <span class="kw-2">&amp;</span>ResourcePath) -&gt; <span class="self">Self </span>{
         MetaItemDeepLinks {
             meta_details_videos: <span class="prelude-val">Some</span>(<span class="macro">format!</span>(
-                <span class="string">&quot;stremio:///detail/{}/{}&quot;</span>,
+                <span class="string">"stremio:///detail/{}/{}"</span>,
                 utf8_percent_encode(<span class="kw-2">&amp;</span>resource_path.r#type, URI_COMPONENT_ENCODE_SET),
                 utf8_percent_encode(<span class="kw-2">&amp;</span>resource_path.id, URI_COMPONENT_ENCODE_SET)
             )),
@@ -784,7 +800,7 @@
                 .as_ref()
                 .cloned()
                 .xor(<span class="prelude-val">Some</span>(<span class="macro">format!</span>(
-                    <span class="string">&quot;stremio:///detail/{}/{}&quot;</span>,
+                    <span class="string">"stremio:///detail/{}/{}"</span>,
                     utf8_percent_encode(<span class="kw-2">&amp;</span>item.r#type, URI_COMPONENT_ENCODE_SET),
                     utf8_percent_encode(<span class="kw-2">&amp;</span>item.id, URI_COMPONENT_ENCODE_SET)
                 ))),
@@ -794,7 +810,7 @@
                 .as_ref()
                 .map(|video_id| {
                     <span class="macro">format!</span>(
-                        <span class="string">&quot;stremio:///detail/{}/{}/{}&quot;</span>,
+                        <span class="string">"stremio:///detail/{}/{}/{}"</span>,
                         utf8_percent_encode(<span class="kw-2">&amp;</span>item.r#type, URI_COMPONENT_ENCODE_SET),
                         utf8_percent_encode(<span class="kw-2">&amp;</span>item.id, URI_COMPONENT_ENCODE_SET),
                         utf8_percent_encode(video_id, URI_COMPONENT_ENCODE_SET)
@@ -809,7 +825,7 @@
                 })
                 .map(|(default_video_id, stream)| {
                     <span class="prelude-val">Ok</span>::&lt;<span class="kw">_</span>, anyhow::Error&gt;(<span class="macro">format!</span>(
-                        <span class="string">&quot;stremio:///player/{}/{}/{}/{}/{}/{}&quot;</span>,
+                        <span class="string">"stremio:///player/{}/{}/{}/{}/{}/{}"</span>,
                         utf8_percent_encode(<span class="kw-2">&amp;</span>stream.encode()<span class="question-mark">?</span>, URI_COMPONENT_ENCODE_SET),
                         utf8_percent_encode(request.base.as_str(), URI_COMPONENT_ENCODE_SET),
                         utf8_percent_encode(request.base.as_str(), URI_COMPONENT_ENCODE_SET),
@@ -831,7 +847,7 @@
 }
 
 <span class="attr">#[derive(Serialize)]
-#[serde(rename_all = <span class="string">&quot;camelCase&quot;</span>)]
+#[serde(rename_all = <span class="string">"camelCase"</span>)]
 </span><span class="kw">pub struct </span>VideoDeepLinks {
     <span class="kw">pub </span>meta_details_streams: String,
     <span class="kw">pub </span>player: <span class="prelude-ty">Option</span>&lt;String&gt;,
@@ -850,7 +866,7 @@
         <span class="kw">let </span>stream = video.stream();
         VideoDeepLinks {
             meta_details_streams: <span class="macro">format!</span>(
-                <span class="string">&quot;stremio:///detail/{}/{}/{}&quot;</span>,
+                <span class="string">"stremio:///detail/{}/{}/{}"</span>,
                 utf8_percent_encode(<span class="kw-2">&amp;</span>request.path.r#type, URI_COMPONENT_ENCODE_SET),
                 utf8_percent_encode(<span class="kw-2">&amp;</span>request.path.id, URI_COMPONENT_ENCODE_SET),
                 utf8_percent_encode(<span class="kw-2">&amp;</span>video.id, URI_COMPONENT_ENCODE_SET)
@@ -859,7 +875,7 @@
                 .as_ref()
                 .map(|stream| {
                     <span class="prelude-val">Ok</span>::&lt;<span class="kw">_</span>, anyhow::Error&gt;(<span class="macro">format!</span>(
-                        <span class="string">&quot;stremio:///player/{}/{}/{}/{}/{}/{}&quot;</span>,
+                        <span class="string">"stremio:///player/{}/{}/{}/{}/{}/{}"</span>,
                         utf8_percent_encode(<span class="kw-2">&amp;</span>stream.encode()<span class="question-mark">?</span>, URI_COMPONENT_ENCODE_SET),
                         utf8_percent_encode(request.base.as_str(), URI_COMPONENT_ENCODE_SET),
                         utf8_percent_encode(request.base.as_str(), URI_COMPONENT_ENCODE_SET),
@@ -878,7 +894,7 @@
 }
 
 <span class="attr">#[derive(Serialize)]
-#[serde(rename_all = <span class="string">&quot;camelCase&quot;</span>)]
+#[serde(rename_all = <span class="string">"camelCase"</span>)]
 </span><span class="kw">pub struct </span>StreamDeepLinks {
     <span class="kw">pub </span>player: String,
     <span class="kw">pub </span>external_player: ExternalPlayerLink,
@@ -887,7 +903,7 @@
 <span class="kw">impl </span>From&lt;(<span class="kw-2">&amp;</span>Stream, <span class="kw-2">&amp;</span><span class="prelude-ty">Option</span>&lt;Url&gt;, <span class="kw-2">&amp;</span>Settings)&gt; <span class="kw">for </span>StreamDeepLinks {
     <span class="doccomment">/// Create a [`StreamDeepLinks`] using the [`Stream`],
     /// the server url (from [`StreamingServer::base_url`] which indicates a running or not server)
-    /// and the user&#39;s [`Settings`] in order to use the [`Settings::player_type`] for generating a
+    /// and the user's [`Settings`] in order to use the [`Settings::player_type`] for generating a
     /// player-specific url.
     ///
     /// [`StreamingServer::base_url`]: crate::models::streaming_server::StreamingServer::base_url
@@ -897,7 +913,7 @@
                 .encode()
                 .map(|stream| {
                     <span class="macro">format!</span>(
-                        <span class="string">&quot;stremio:///player/{}&quot;</span>,
+                        <span class="string">"stremio:///player/{}"</span>,
                         utf8_percent_encode(<span class="kw-2">&amp;</span>stream, URI_COMPONENT_ENCODE_SET),
                     )
                 })
@@ -918,7 +934,7 @@
 {
     <span class="doccomment">/// Create a [`StreamDeepLinks`] using the [`Stream`], stream request, meta request,
     /// the server url (from [`StreamingServer::base_url`] which indicates a running or not server)
-    /// and the user&#39;s [`Settings`] in order to use the [`Settings::player_type`] for generating a
+    /// and the user's [`Settings`] in order to use the [`Settings::player_type`] for generating a
     /// player-specific url.
     ///
     /// [`StreamingServer::base_url`]: crate::models::streaming_server::StreamingServer::base_url
@@ -936,7 +952,7 @@
                 .encode()
                 .map(|stream| {
                     <span class="macro">format!</span>(
-                        <span class="string">&quot;stremio:///player/{}/{}/{}/{}/{}/{}&quot;</span>,
+                        <span class="string">"stremio:///player/{}/{}/{}/{}/{}/{}"</span>,
                         utf8_percent_encode(<span class="kw-2">&amp;</span>stream, URI_COMPONENT_ENCODE_SET),
                         utf8_percent_encode(stream_request.base.as_str(), URI_COMPONENT_ENCODE_SET),
                         utf8_percent_encode(meta_request.base.as_str(), URI_COMPONENT_ENCODE_SET),
@@ -952,7 +968,7 @@
 }
 
 <span class="attr">#[derive(Serialize)]
-#[serde(rename_all = <span class="string">&quot;camelCase&quot;</span>)]
+#[serde(rename_all = <span class="string">"camelCase"</span>)]
 </span><span class="kw">pub struct </span>DiscoverDeepLinks {
     <span class="kw">pub </span>discover: String,
 }
@@ -961,7 +977,7 @@
     <span class="kw">fn </span>from(request: <span class="kw-2">&amp;</span>ResourceRequest) -&gt; <span class="self">Self </span>{
         DiscoverDeepLinks {
             discover: <span class="macro">format!</span>(
-                <span class="string">&quot;stremio:///discover/{}/{}/{}?{}&quot;</span>,
+                <span class="string">"stremio:///discover/{}/{}/{}?{}"</span>,
                 utf8_percent_encode(request.base.as_str(), URI_COMPONENT_ENCODE_SET),
                 utf8_percent_encode(<span class="kw-2">&amp;</span>request.path.r#type, URI_COMPONENT_ENCODE_SET),
                 utf8_percent_encode(<span class="kw-2">&amp;</span>request.path.id, URI_COMPONENT_ENCODE_SET),
@@ -978,7 +994,7 @@
 }
 
 <span class="attr">#[derive(Serialize)]
-#[serde(rename_all = <span class="string">&quot;camelCase&quot;</span>)]
+#[serde(rename_all = <span class="string">"camelCase"</span>)]
 </span><span class="kw">pub struct </span>AddonsDeepLinks {
     <span class="kw">pub </span>addons: String,
 }
@@ -987,7 +1003,7 @@
     <span class="kw">fn </span>from(request: <span class="kw-2">&amp;</span>ResourceRequest) -&gt; <span class="self">Self </span>{
         AddonsDeepLinks {
             addons: <span class="macro">format!</span>(
-                <span class="string">&quot;stremio:///addons/{}/{}/{}&quot;</span>,
+                <span class="string">"stremio:///addons/{}/{}/{}"</span>,
                 utf8_percent_encode(<span class="kw-2">&amp;</span>request.path.r#type, URI_COMPONENT_ENCODE_SET),
                 utf8_percent_encode(request.base.as_str(), URI_COMPONENT_ENCODE_SET),
                 utf8_percent_encode(<span class="kw-2">&amp;</span>request.path.id, URI_COMPONENT_ENCODE_SET),
@@ -1004,17 +1020,17 @@
                 .as_ref()
                 .map(|r#type| {
                     <span class="macro">format!</span>(
-                        <span class="string">&quot;stremio:///addons/{}&quot;</span>,
+                        <span class="string">"stremio:///addons/{}"</span>,
                         utf8_percent_encode(r#type, URI_COMPONENT_ENCODE_SET)
                     )
                 })
-                .unwrap_or_else(|| <span class="string">&quot;stremio:///addons&quot;</span>.to_owned()),
+                .unwrap_or_else(|| <span class="string">"stremio:///addons"</span>.to_owned()),
         }
     }
 }
 
 <span class="attr">#[derive(Serialize)]
-#[serde(rename_all = <span class="string">&quot;camelCase&quot;</span>)]
+#[serde(rename_all = <span class="string">"camelCase"</span>)]
 </span><span class="kw">pub struct </span>LibraryDeepLinks {
     <span class="kw">pub </span>library: String,
 }
@@ -1022,7 +1038,7 @@
 <span class="kw">impl </span>From&lt;<span class="kw-2">&amp;</span>String&gt; <span class="kw">for </span>LibraryDeepLinks {
     <span class="kw">fn </span>from(root: <span class="kw-2">&amp;</span>String) -&gt; <span class="self">Self </span>{
         LibraryDeepLinks {
-            library: <span class="macro">format!</span>(<span class="string">&quot;stremio:///{root}&quot;</span>),
+            library: <span class="macro">format!</span>(<span class="string">"stremio:///{root}"</span>),
         }
     }
 }
@@ -1032,32 +1048,32 @@
         LibraryDeepLinks {
             library: <span class="kw">match </span><span class="kw-2">&amp;</span>request.r#type {
                 <span class="prelude-val">Some</span>(r#type) =&gt; <span class="macro">format!</span>(
-                    <span class="string">&quot;stremio:///{}/{}?{}&quot;</span>,
+                    <span class="string">"stremio:///{}/{}?{}"</span>,
                     root,
                     utf8_percent_encode(r#type, URI_COMPONENT_ENCODE_SET),
                     query_params_encode(<span class="kw-2">&amp;</span>[
                         (
-                            <span class="string">&quot;sort&quot;</span>,
+                            <span class="string">"sort"</span>,
                             serde_json::to_value(<span class="kw-2">&amp;</span>request.sort)
                                 .unwrap()
                                 .as_str()
                                 .unwrap()
                         ),
-                        (<span class="string">&quot;page&quot;</span>, <span class="kw-2">&amp;</span>request.page.to_string())
+                        (<span class="string">"page"</span>, <span class="kw-2">&amp;</span>request.page.to_string())
                     ]),
                 ),
                 <span class="kw">_ </span>=&gt; <span class="macro">format!</span>(
-                    <span class="string">&quot;stremio:///{}?{}&quot;</span>,
+                    <span class="string">"stremio:///{}?{}"</span>,
                     root,
                     query_params_encode(<span class="kw-2">&amp;</span>[
                         (
-                            <span class="string">&quot;sort&quot;</span>,
+                            <span class="string">"sort"</span>,
                             serde_json::to_value(<span class="kw-2">&amp;</span>request.sort)
                                 .unwrap()
                                 .as_str()
                                 .unwrap()
                         ),
-                        (<span class="string">&quot;page&quot;</span>, <span class="kw-2">&amp;</span>request.page.to_string())
+                        (<span class="string">"page"</span>, <span class="kw-2">&amp;</span>request.page.to_string())
                     ]),
                 ),
             },

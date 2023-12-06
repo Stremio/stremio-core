@@ -1,4 +1,4 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `stremio-derive/src/lib.rs`."><title>lib.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceSerif4-Regular-46f98efaafac5295.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../static.files/rustdoc-9ee3a5e31a2afa3e.css"><meta name="rustdoc-vars" data-root-path="../../" data-static-root-path="../../static.files/" data-current-crate="stremio_derive" data-themes="" data-resource-suffix="" data-rustdoc-version="1.76.0-nightly (3a85a5cfe 2023-11-20)" data-channel="nightly" data-search-js="search-d23a059ec093b287.js" data-settings-js="settings-74424d7eec62a23e.js" ><script src="../../static.files/storage-fec3eaa3851e447d.js"></script><script defer src="../../static.files/src-script-3280b574d94e47b4.js"></script><script defer src="../../src-files.js"></script><script defer src="../../static.files/main-f06f02fd918e3bb3.js"></script><noscript><link rel="stylesheet" href="../../static.files/noscript-5d8b3c7633ad77ba.css"></noscript><link rel="alternate icon" type="image/png" href="../../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"></nav><main><nav class="sub"><form class="search-form"><span></span><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><a href="../../help.html">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../static.files/wheel-7b819b6101059cd0.svg"></a></div></form></nav><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `stremio-derive/src/lib.rs`."><title>lib.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceSerif4-Regular-46f98efaafac5295.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../static.files/rustdoc-c67e44d78ab2db17.css"><meta name="rustdoc-vars" data-root-path="../../" data-static-root-path="../../static.files/" data-current-crate="stremio_derive" data-themes="" data-resource-suffix="" data-rustdoc-version="1.76.0-nightly (e9013ac0e 2023-12-05)" data-channel="nightly" data-search-js="search-5a66c239c06b3a66.js" data-settings-js="settings-fe03fdc259827cd2.js" ><script src="../../static.files/storage-fec3eaa3851e447d.js"></script><script defer src="../../static.files/src-script-3280b574d94e47b4.js"></script><script defer src="../../src-files.js"></script><script defer src="../../static.files/main-77dede896d6ac08e.js"></script><noscript><link rel="stylesheet" href="../../static.files/noscript-5d8b3c7633ad77ba.css"></noscript><link rel="alternate icon" type="image/png" href="../../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"></nav><main><nav class="sub"><form class="search-form"><span></span><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><a href="../../help.html">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../static.files/wheel-7b819b6101059cd0.svg"></a></div></form></nav><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
 <a href="#2" id="2">2</a>
 <a href="#3" id="3">3</a>
 <a href="#4" id="4">4</a>
@@ -156,7 +156,7 @@
 <span class="kw">use </span>std::{env, iter};
 <span class="kw">use </span>syn::{parse_macro_input, Data, DataStruct, DeriveInput, Fields, Ident};
 
-<span class="kw">const </span>CORE_CRATE_ORIGINAL_NAME: <span class="kw-2">&amp;</span>str = <span class="string">&quot;stremio-core&quot;</span>;
+<span class="kw">const </span>CORE_CRATE_ORIGINAL_NAME: <span class="kw-2">&amp;</span>str = <span class="string">"stremio-core"</span>;
 
 <span class="attr">#[proc_macro_derive(Model, attributes(model))]
 </span><span class="kw">pub fn </span>model_derive(input: TokenStream) -&gt; TokenStream {
@@ -170,19 +170,19 @@
                 fields
                     .named
                     .iter()
-                    .any(|field| field.ident.as_ref().unwrap() == <span class="string">&quot;ctx&quot;</span>),
-                <span class="string">&quot;ctx field is required&quot;
+                    .any(|field| field.ident.as_ref().unwrap() == <span class="string">"ctx"</span>),
+                <span class="string">"ctx field is required"
             </span>);
             <span class="kw">let </span>core_ident = get_core_ident().unwrap();
             <span class="kw">let </span>struct_ident = input.ident;
             <span class="kw">let </span>env_ident = input
                 .attrs
                 .iter()
-                .find(|attr| attr.path().is_ident(<span class="string">&quot;model&quot;</span>))
-                .expect(<span class="string">&quot;model attribute required&quot;</span>)
+                .find(|attr| attr.path().is_ident(<span class="string">"model"</span>))
+                .expect(<span class="string">"model attribute required"</span>)
                 .parse_args::&lt;Ident&gt;()
-                .expect(<span class="string">&quot;model attribute parse failed&quot;</span>);
-            <span class="kw">let </span>field_enum_ident = struct_ident.append(<span class="string">&quot;Field&quot;</span>);
+                .expect(<span class="string">"model attribute parse failed"</span>);
+            <span class="kw">let </span>field_enum_ident = struct_ident.append(<span class="string">"Field"</span>);
             <span class="kw">let </span>field_enum_variant_idents = fields
                 .named
                 .iter()
@@ -199,7 +199,7 @@
                 .zip(field_enum_variant_idents.iter())
                 .map(|(field, variant_ident)| {
                     <span class="kw">let </span>field_ident = field.ident.as_ref().unwrap();
-                    <span class="kw">if </span>field_ident == <span class="string">&quot;ctx&quot; </span>{
+                    <span class="kw">if </span>field_ident == <span class="string">"ctx" </span>{
                         <span class="macro">quote! </span>{
                             <span class="self">Self</span>::Field::#variant_ident =&gt; {
                                 <span class="kw">let </span>ctx_effects = #core_ident::runtime::Update::&lt;#env_ident&gt;::update(<span class="kw-2">&amp;mut </span><span class="self">self</span>.#field_ident, <span class="kw-2">&amp;</span>msg);
@@ -232,7 +232,7 @@
                 .named
                 .iter()
                 .zip(field_enum_variant_idents.iter())
-                .filter(|(field, <span class="kw">_</span>)| field.ident.as_ref().unwrap() != <span class="string">&quot;ctx&quot;</span>)
+                .filter(|(field, <span class="kw">_</span>)| field.ident.as_ref().unwrap() != <span class="string">"ctx"</span>)
                 .map(|(field, variant_ident)| {
                     <span class="kw">let </span>field_ident = field.ident.as_ref().unwrap();
                     <span class="macro">quote! </span>{
@@ -260,7 +260,7 @@
                 .collect::&lt;Vec&lt;<span class="kw">_</span>&gt;&gt;();
             TokenStream::from(<span class="macro">quote! </span>{
                 <span class="attr">#[derive(serde::Serialize, serde::Deserialize, Debug, PartialEq, Eq)]
-                #[serde(rename_all = <span class="string">&quot;snake_case&quot;</span>)]
+                #[serde(rename_all = <span class="string">"snake_case"</span>)]
                 </span><span class="kw">pub enum </span>#field_enum_ident {
                     #(#field_enum_variant_idents),*
                 }
@@ -280,15 +280,15 @@
                 }
             })
         }
-        <span class="kw">_ </span>=&gt; <span class="macro">panic!</span>(<span class="string">&quot;#[derive(Model)] is only defined for structs with named fields&quot;</span>),
+        <span class="kw">_ </span>=&gt; <span class="macro">panic!</span>(<span class="string">"#[derive(Model)] is only defined for structs with named fields"</span>),
     }
 }
 
 <span class="kw">fn </span>get_core_ident() -&gt; <span class="prelude-ty">Result</span>&lt;Ident, proc_macro_crate::Error&gt; {
-    <span class="kw">let </span>core_crate_name = <span class="kw">match </span>env::var(<span class="string">&quot;CARGO_PKG_NAME&quot;</span>) {
-        <span class="prelude-val">Ok</span>(cargo_pkg_name) <span class="kw">if </span>cargo_pkg_name == CORE_CRATE_ORIGINAL_NAME =&gt; Cow::Borrowed(<span class="string">&quot;crate&quot;</span>),
+    <span class="kw">let </span>core_crate_name = <span class="kw">match </span>env::var(<span class="string">"CARGO_PKG_NAME"</span>) {
+        <span class="prelude-val">Ok</span>(cargo_pkg_name) <span class="kw">if </span>cargo_pkg_name == CORE_CRATE_ORIGINAL_NAME =&gt; Cow::Borrowed(<span class="string">"crate"</span>),
         <span class="kw">_ </span>=&gt; <span class="kw">match </span>crate_name(CORE_CRATE_ORIGINAL_NAME)<span class="question-mark">? </span>{
-            FoundCrate::Itself =&gt; Cow::Borrowed(<span class="string">&quot;crate&quot;</span>),
+            FoundCrate::Itself =&gt; Cow::Borrowed(<span class="string">"crate"</span>),
             FoundCrate::Name(name) =&gt; Cow::Owned(name),
         },
     };

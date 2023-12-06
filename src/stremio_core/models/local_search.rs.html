@@ -1,4 +1,4 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `src/models/local_search.rs`."><title>local_search.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceSerif4-Regular-46f98efaafac5295.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../../static.files/rustdoc-9ee3a5e31a2afa3e.css"><meta name="rustdoc-vars" data-root-path="../../../" data-static-root-path="../../../static.files/" data-current-crate="stremio_core" data-themes="" data-resource-suffix="" data-rustdoc-version="1.76.0-nightly (3a85a5cfe 2023-11-20)" data-channel="nightly" data-search-js="search-d23a059ec093b287.js" data-settings-js="settings-74424d7eec62a23e.js" ><script src="../../../static.files/storage-fec3eaa3851e447d.js"></script><script defer src="../../../static.files/src-script-3280b574d94e47b4.js"></script><script defer src="../../../src-files.js"></script><script defer src="../../../static.files/main-f06f02fd918e3bb3.js"></script><noscript><link rel="stylesheet" href="../../../static.files/noscript-5d8b3c7633ad77ba.css"></noscript><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"></nav><main><nav class="sub"><form class="search-form"><span></span><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><a href="../../../help.html">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../../static.files/wheel-7b819b6101059cd0.svg"></a></div></form></nav><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `src/models/local_search.rs`."><title>local_search.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceSerif4-Regular-46f98efaafac5295.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../../static.files/rustdoc-c67e44d78ab2db17.css"><meta name="rustdoc-vars" data-root-path="../../../" data-static-root-path="../../../static.files/" data-current-crate="stremio_core" data-themes="" data-resource-suffix="" data-rustdoc-version="1.76.0-nightly (e9013ac0e 2023-12-05)" data-channel="nightly" data-search-js="search-5a66c239c06b3a66.js" data-settings-js="settings-fe03fdc259827cd2.js" ><script src="../../../static.files/storage-fec3eaa3851e447d.js"></script><script defer src="../../../static.files/src-script-3280b574d94e47b4.js"></script><script defer src="../../../src-files.js"></script><script defer src="../../../static.files/main-77dede896d6ac08e.js"></script><noscript><link rel="stylesheet" href="../../../static.files/noscript-5d8b3c7633ad77ba.css"></noscript><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"></nav><main><nav class="sub"><form class="search-form"><span></span><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><a href="../../../help.html">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../../static.files/wheel-7b819b6101059cd0.svg"></a></div></form></nav><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
 <a href="#2" id="2">2</a>
 <a href="#3" id="3">3</a>
 <a href="#4" id="4">4</a>
@@ -436,7 +436,7 @@
 
 <span class="doccomment">/// The response returned when fetching the searchable items list.
 ///
-/// Currently this is fetched from Cinemeta&#39;s `feed.json`
+/// Currently this is fetched from Cinemeta's `feed.json`
 </span><span class="attr">#[derive(Deserialize, Serialize, Clone)]
 #[serde(transparent)]
 </span><span class="kw">pub struct </span>SearchableItemsResponse(<span class="kw">pub </span>Vec&lt;Searchable&gt;);
@@ -450,7 +450,7 @@
 <span class="doccomment">/// A searchable item
 </span><span class="attr">#[serde_as]
 #[derive(Clone, PartialEq, Serialize, Deserialize, Debug)]
-#[serde(rename_all = <span class="string">&quot;camelCase&quot;</span>)]
+#[serde(rename_all = <span class="string">"camelCase"</span>)]
 </span><span class="kw">pub struct </span>Searchable {
     <span class="kw">pub </span>id: String,
     <span class="doccomment">/// Some deleted or duplicated ids might not have the name
@@ -460,18 +460,18 @@
     </span><span class="kw">pub </span>name: String,
     <span class="kw">pub </span>r#type: String,
     <span class="attr">#[serde(default)]
-    #[serde_as(deserialize_as = <span class="string">&quot;DefaultOnError&lt;NoneAsEmptyString&gt;&quot;</span>)]
+    #[serde_as(deserialize_as = <span class="string">"DefaultOnError&lt;NoneAsEmptyString&gt;"</span>)]
     </span><span class="kw">pub </span>poster: <span class="prelude-ty">Option</span>&lt;Url&gt;,
     <span class="attr">#[serde(default)]
-    #[serde_as(deserialize_as = <span class="string">&quot;DefaultOnError&lt;NoneAsEmptyString&gt;&quot;</span>)]
+    #[serde_as(deserialize_as = <span class="string">"DefaultOnError&lt;NoneAsEmptyString&gt;"</span>)]
     </span><span class="kw">pub </span>imdb_rating: <span class="prelude-ty">Option</span>&lt;ImdbRating&gt;,
     <span class="kw">pub </span>popularity: <span class="prelude-ty">Option</span>&lt;u64&gt;,
     <span class="kw">pub </span>release_info: <span class="prelude-ty">Option</span>&lt;String&gt;,
 }
 
-<span class="doccomment">/// Local search functionality for the search engine&#39;s suggestions when typing
+<span class="doccomment">/// Local search functionality for the search engine's suggestions when typing
 </span><span class="attr">#[derive(Default, Serialize, Debug, Clone)]
-#[serde(rename_all = <span class="string">&quot;camelCase&quot;</span>)]
+#[serde(rename_all = <span class="string">"camelCase"</span>)]
 </span><span class="kw">pub struct </span>LocalSearch {
     <span class="doccomment">/// The Searchable items that will be used for the local search.
     </span><span class="attr">#[serde(skip)]
@@ -486,7 +486,7 @@
 }
 
 <span class="kw">impl </span>LocalSearch {
-    <span class="kw">pub fn </span>new&lt;E: Env + <span class="lifetime">&#39;static</span>&gt;() -&gt; (<span class="self">Self</span>, Effects) {
+    <span class="kw">pub fn </span>new&lt;E: Env + <span class="lifetime">'static</span>&gt;() -&gt; (<span class="self">Self</span>, Effects) {
         (
             <span class="self">Self </span>{
                 current_records: <span class="macro">vec!</span>[],
@@ -499,14 +499,14 @@
     }
 
     <span class="doccomment">/// fetches the `/feed.js` using the given [`Url`]
-    </span><span class="kw">fn </span>get_searchable_items&lt;E: Env + <span class="lifetime">&#39;static</span>&gt;(url: <span class="kw-2">&amp;</span>Url) -&gt; Effect {
+    </span><span class="kw">fn </span>get_searchable_items&lt;E: Env + <span class="lifetime">'static</span>&gt;(url: <span class="kw-2">&amp;</span>Url) -&gt; Effect {
         <span class="kw">let </span>endpoint = url
             .join(CINEMETA_FEED_CATALOG_ID)
-            .expect(<span class="string">&quot;url builder failed&quot;</span>);
+            .expect(<span class="string">"url builder failed"</span>);
 
         <span class="kw">let </span>request = Request::get(endpoint.as_str())
             .body(())
-            .expect(<span class="string">&quot;request builder failed&quot;</span>);
+            .expect(<span class="string">"request builder failed"</span>);
 
         EffectFuture::Concurrent(
             E::fetch::&lt;<span class="kw">_</span>, SearchableItemsResponse&gt;(request)
@@ -526,7 +526,7 @@
         <span class="kw">let </span>max_imdb_rating = <span class="self">self
             </span>.current_records
             .iter()
-            <span class="comment">// it&#39;s ok to set rating to 0 for the max if no items are present
+            <span class="comment">// it's ok to set rating to 0 for the max if no items are present
             </span>.map(|searchable| searchable.imdb_rating.unwrap_or_default())
             .max_by(|rating_a, rating_b| rating_a.partial_cmp(rating_b).unwrap())
             .unwrap_or_default();
@@ -535,7 +535,7 @@
             </span>.current_records
             .iter()
             .map(|searchable| searchable.popularity.unwrap_or_default())
-            <span class="comment">// it&#39;s ok to set popularity to 0 for the max if no items are present
+            <span class="comment">// it's ok to set popularity to 0 for the max if no items are present
             </span>.max_by(|popularity_a, popularity_b| popularity_a.partial_cmp(popularity_b).unwrap())
             .unwrap_or_default();
 
@@ -570,7 +570,7 @@
     }
 }
 
-<span class="kw">impl</span>&lt;E: Env + <span class="lifetime">&#39;static</span>&gt; UpdateWithCtx&lt;E&gt; <span class="kw">for </span>LocalSearch {
+<span class="kw">impl</span>&lt;E: Env + <span class="lifetime">'static</span>&gt; UpdateWithCtx&lt;E&gt; <span class="kw">for </span>LocalSearch {
     <span class="kw">fn </span>update(<span class="kw-2">&amp;mut </span><span class="self">self</span>, msg: <span class="kw-2">&amp;</span>Msg, _ctx: <span class="kw-2">&amp;</span>Ctx) -&gt; Effects {
         <span class="kw">match </span>msg {
             Msg::Action(Action::Load(ActionLoad::LocalSearch)) =&gt; {
@@ -674,10 +674,10 @@
         </span>}
     }
 
-    <span class="kw">impl</span>&lt;<span class="lifetime">&#39;de</span>&gt; Deserialize&lt;<span class="lifetime">&#39;de</span>&gt; <span class="kw">for </span>ImdbRating {
+    <span class="kw">impl</span>&lt;<span class="lifetime">'de</span>&gt; Deserialize&lt;<span class="lifetime">'de</span>&gt; <span class="kw">for </span>ImdbRating {
         <span class="kw">fn </span>deserialize&lt;D&gt;(deserializer: D) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="self">Self</span>, D::Error&gt;
         <span class="kw">where
-            </span>D: serde::Deserializer&lt;<span class="lifetime">&#39;de</span>&gt;,
+            </span>D: serde::Deserializer&lt;<span class="lifetime">'de</span>&gt;,
         {
             <span class="attr">#[derive(Deserialize)]
             #[serde(untagged)]
@@ -710,10 +710,10 @@
     <span class="attr">#[derive(Error, Debug)]
     </span><span class="kw">pub enum </span>ParseError {
         <span class="doccomment">/// Failed to parse number.
-        </span><span class="attr">#[error(<span class="string">&quot;Failed to parse percent number: {0:?}&quot;</span>)]
+        </span><span class="attr">#[error(<span class="string">"Failed to parse percent number: {0:?}"</span>)]
         </span>Parsing(ParseFloatError),
         <span class="doccomment">/// A percentage can only be between 0 and 100.
-        </span><span class="attr">#[error(<span class="string">&quot;Rating should be between 0.0 and 10.0&quot;</span>)]
+        </span><span class="attr">#[error(<span class="string">"Rating should be between 0.0 and 10.0"</span>)]
         </span>OutOfRange,
     }
 
@@ -754,18 +754,18 @@
         <span class="comment">// Strings
         </span>{
             <span class="kw">let </span>good_values = [
-                (<span class="string">&quot;10&quot;</span>, ImdbRating::try_from(<span class="number">10.0_f64</span>).unwrap()),
-                (<span class="string">&quot;0&quot;</span>, ImdbRating::try_from(<span class="number">0.0_f64</span>).unwrap()),
-                (<span class="string">&quot;5.5&quot;</span>, ImdbRating::try_from(<span class="number">5.5_f64</span>).unwrap()),
+                (<span class="string">"10"</span>, ImdbRating::try_from(<span class="number">10.0_f64</span>).unwrap()),
+                (<span class="string">"0"</span>, ImdbRating::try_from(<span class="number">0.0_f64</span>).unwrap()),
+                (<span class="string">"5.5"</span>, ImdbRating::try_from(<span class="number">5.5_f64</span>).unwrap()),
             ];
 
             <span class="kw">let </span>bad_values = [
                 <span class="comment">// larger than 10
-                </span><span class="string">&quot;11&quot;</span>,
+                </span><span class="string">"11"</span>,
                 <span class="comment">// lower than 0
-                </span><span class="string">&quot;-10&quot;</span>,
+                </span><span class="string">"-10"</span>,
                 <span class="comment">// a text
-                </span><span class="string">&quot;Not a number&quot;</span>,
+                </span><span class="string">"Not a number"</span>,
             ];
 
             <span class="kw">let </span>good_results = good_values
@@ -774,7 +774,7 @@
                 .collect::&lt;Vec&lt;<span class="kw">_</span>&gt;&gt;();
 
             <span class="kw">for </span>(good_result, expected) <span class="kw">in </span>good_results {
-                <span class="macro">assert_eq!</span>(<span class="kw-2">&amp;</span>good_result.expect(<span class="string">&quot;Should parse successfully&quot;</span>), expected);
+                <span class="macro">assert_eq!</span>(<span class="kw-2">&amp;</span>good_result.expect(<span class="string">"Should parse successfully"</span>), expected);
             }
 
             <span class="kw">let </span>bad_results = bad_values
@@ -793,12 +793,12 @@
     </span><span class="kw">fn </span>test_deserialization_of_searchable() {
         <span class="comment">// json with the same movie series in IMDB but one of the ids is only a redirect to the other
         </span><span class="kw">let </span>json = <span class="macro">serde_json::json! </span>{
-            [{<span class="string">&quot;id&quot;</span>:<span class="string">&quot;tt22054878&quot;</span>,<span class="string">&quot;type&quot;</span>:<span class="string">&quot;series&quot;</span>,<span class="string">&quot;popularity&quot;</span>:<span class="number">6880</span>},
-            {<span class="string">&quot;id&quot;</span>:<span class="string">&quot;tt15264452&quot;</span>,<span class="string">&quot;name&quot;</span>:<span class="string">&quot;The Lørenskog Disappearance&quot;</span>,<span class="string">&quot;releaseInfo&quot;</span>:<span class="string">&quot;2022&quot;</span>,<span class="string">&quot;type&quot;</span>:<span class="string">&quot;series&quot;</span>,<span class="string">&quot;poster&quot;</span>:<span class="string">&quot;https://images.metahub.space/poster/small/tt15264452/img&quot;</span>,<span class="string">&quot;imdbRating&quot;</span>:<span class="string">&quot;6.0&quot;</span>,<span class="string">&quot;popularity&quot;</span>:<span class="number">6879</span>}]
+            [{<span class="string">"id"</span>:<span class="string">"tt22054878"</span>,<span class="string">"type"</span>:<span class="string">"series"</span>,<span class="string">"popularity"</span>:<span class="number">6880</span>},
+            {<span class="string">"id"</span>:<span class="string">"tt15264452"</span>,<span class="string">"name"</span>:<span class="string">"The Lørenskog Disappearance"</span>,<span class="string">"releaseInfo"</span>:<span class="string">"2022"</span>,<span class="string">"type"</span>:<span class="string">"series"</span>,<span class="string">"poster"</span>:<span class="string">"https://images.metahub.space/poster/small/tt15264452/img"</span>,<span class="string">"imdbRating"</span>:<span class="string">"6.0"</span>,<span class="string">"popularity"</span>:<span class="number">6879</span>}]
         };
 
         <span class="kw">let </span>searchable_results =
-            serde_json::from_value::&lt;Vec&lt;Searchable&gt;&gt;(json).expect(<span class="string">&quot;Should deserialize json value&quot;</span>);
+            serde_json::from_value::&lt;Vec&lt;Searchable&gt;&gt;(json).expect(<span class="string">"Should deserialize json value"</span>);
 
         <span class="macro">assert_eq!</span>(<span class="number">2</span>, searchable_results.len());
 

@@ -1,4 +1,4 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `src/types/api/request.rs`."><title>request.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/SourceSerif4-Regular-46f98efaafac5295.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../../../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../../../static.files/rustdoc-9ee3a5e31a2afa3e.css"><meta name="rustdoc-vars" data-root-path="../../../../" data-static-root-path="../../../../static.files/" data-current-crate="stremio_core" data-themes="" data-resource-suffix="" data-rustdoc-version="1.76.0-nightly (3a85a5cfe 2023-11-20)" data-channel="nightly" data-search-js="search-d23a059ec093b287.js" data-settings-js="settings-74424d7eec62a23e.js" ><script src="../../../../static.files/storage-fec3eaa3851e447d.js"></script><script defer src="../../../../static.files/src-script-3280b574d94e47b4.js"></script><script defer src="../../../../src-files.js"></script><script defer src="../../../../static.files/main-f06f02fd918e3bb3.js"></script><noscript><link rel="stylesheet" href="../../../../static.files/noscript-5d8b3c7633ad77ba.css"></noscript><link rel="alternate icon" type="image/png" href="../../../../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../../../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"></nav><main><nav class="sub"><form class="search-form"><span></span><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><a href="../../../../help.html">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../../../static.files/wheel-7b819b6101059cd0.svg"></a></div></form></nav><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `src/types/api/request.rs`."><title>request.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/SourceSerif4-Regular-46f98efaafac5295.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../../../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../../../static.files/rustdoc-c67e44d78ab2db17.css"><meta name="rustdoc-vars" data-root-path="../../../../" data-static-root-path="../../../../static.files/" data-current-crate="stremio_core" data-themes="" data-resource-suffix="" data-rustdoc-version="1.76.0-nightly (e9013ac0e 2023-12-05)" data-channel="nightly" data-search-js="search-5a66c239c06b3a66.js" data-settings-js="settings-fe03fdc259827cd2.js" ><script src="../../../../static.files/storage-fec3eaa3851e447d.js"></script><script defer src="../../../../static.files/src-script-3280b574d94e47b4.js"></script><script defer src="../../../../src-files.js"></script><script defer src="../../../../static.files/main-77dede896d6ac08e.js"></script><noscript><link rel="stylesheet" href="../../../../static.files/noscript-5d8b3c7633ad77ba.css"></noscript><link rel="alternate icon" type="image/png" href="../../../../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../../../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"></nav><main><nav class="sub"><form class="search-form"><span></span><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><a href="../../../../help.html">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../../../static.files/wheel-7b819b6101059cd0.svg"></a></div></form></nav><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
 <a href="#2" id="2">2</a>
 <a href="#3" id="3">3</a>
 <a href="#4" id="4">4</a>
@@ -185,10 +185,44 @@
 <a href="#185" id="185">185</a>
 <a href="#186" id="186">186</a>
 <a href="#187" id="187">187</a>
+<a href="#188" id="188">188</a>
+<a href="#189" id="189">189</a>
+<a href="#190" id="190">190</a>
+<a href="#191" id="191">191</a>
+<a href="#192" id="192">192</a>
+<a href="#193" id="193">193</a>
+<a href="#194" id="194">194</a>
+<a href="#195" id="195">195</a>
+<a href="#196" id="196">196</a>
+<a href="#197" id="197">197</a>
+<a href="#198" id="198">198</a>
+<a href="#199" id="199">199</a>
+<a href="#200" id="200">200</a>
+<a href="#201" id="201">201</a>
+<a href="#202" id="202">202</a>
+<a href="#203" id="203">203</a>
+<a href="#204" id="204">204</a>
+<a href="#205" id="205">205</a>
+<a href="#206" id="206">206</a>
+<a href="#207" id="207">207</a>
+<a href="#208" id="208">208</a>
+<a href="#209" id="209">209</a>
+<a href="#210" id="210">210</a>
+<a href="#211" id="211">211</a>
+<a href="#212" id="212">212</a>
+<a href="#213" id="213">213</a>
+<a href="#214" id="214">214</a>
+<a href="#215" id="215">215</a>
+<a href="#216" id="216">216</a>
+<a href="#217" id="217">217</a>
+<a href="#218" id="218">218</a>
+<a href="#219" id="219">219</a>
+<a href="#220" id="220">220</a>
 </pre></div><pre class="rust"><code><span class="kw">use </span><span class="kw">crate</span>::constants::{API_URL, LINK_API_URL};
 <span class="kw">use </span><span class="kw">crate</span>::types::addon::Descriptor;
 <span class="kw">use </span><span class="kw">crate</span>::types::library::LibraryItem;
 <span class="kw">use </span><span class="kw">crate</span>::types::profile::{AuthKey, GDPRConsent, User};
+<span class="kw">use </span><span class="kw">crate</span>::types::resource::SeriesInfo;
 <span class="attr">#[cfg(test)]
 </span><span class="kw">use </span>derivative::Derivative;
 <span class="kw">use </span>http::Method;
@@ -204,42 +238,73 @@
 }
 
 <span class="attr">#[derive(Clone, PartialEq, Eq, Serialize, Debug)]
-#[serde(tag = <span class="string">&quot;type&quot;</span>)]
+#[serde(tag = <span class="string">"type"</span>)]
 </span><span class="kw">pub enum </span>APIRequest {
     Auth(AuthRequest),
-    <span class="attr">#[serde(rename_all = <span class="string">&quot;camelCase&quot;</span>)]
+    <span class="attr">#[serde(rename_all = <span class="string">"camelCase"</span>)]
     </span>Logout {
         auth_key: AuthKey,
     },
-    <span class="attr">#[serde(rename_all = <span class="string">&quot;camelCase&quot;</span>)]
+    <span class="attr">#[serde(rename_all = <span class="string">"camelCase"</span>)]
     </span>AddonCollectionGet {
         auth_key: AuthKey,
         update: bool,
     },
-    <span class="attr">#[serde(rename_all = <span class="string">&quot;camelCase&quot;</span>)]
+    <span class="attr">#[serde(rename_all = <span class="string">"camelCase"</span>)]
     </span>AddonCollectionSet {
         auth_key: AuthKey,
         addons: Vec&lt;Descriptor&gt;,
     },
-    <span class="attr">#[serde(rename_all = <span class="string">&quot;camelCase&quot;</span>)]
+    <span class="attr">#[serde(rename_all = <span class="string">"camelCase"</span>)]
     </span>GetUser {
         auth_key: AuthKey,
     },
-    <span class="attr">#[serde(rename_all = <span class="string">&quot;camelCase&quot;</span>)]
+    <span class="attr">#[serde(rename_all = <span class="string">"camelCase"</span>)]
     </span>SaveUser {
         auth_key: AuthKey,
         <span class="attr">#[serde(flatten)]
         </span>user: User,
     },
-    <span class="attr">#[serde(rename_all = <span class="string">&quot;camelCase&quot;</span>)]
+    <span class="attr">#[serde(rename_all = <span class="string">"camelCase"</span>)]
     </span>DataExport {
         auth_key: AuthKey,
     },
-    <span class="attr">#[serde(rename_all = <span class="string">&quot;camelCase&quot;</span>)]
+    <span class="attr">#[serde(rename_all = <span class="string">"camelCase"</span>)]
     </span>Events {
         auth_key: AuthKey,
         events: Vec&lt;serde_json::Value&gt;,
     },
+    <span class="attr">#[serde(rename_all = <span class="string">"camelCase"</span>)]
+    </span>SeekLog(SeekLogRequest),
+}
+
+<span class="attr">#[derive(Debug, Clone, Copy, Serialize, PartialEq, Eq)]
+#[serde(rename_all = <span class="string">"camelCase"</span>)]
+</span><span class="kw">pub struct </span>SeekLog {
+    <span class="doccomment">/// in milliseconds
+    </span><span class="kw">pub </span>from: u64,
+    <span class="doccomment">/// in milliseconds
+    </span><span class="kw">pub </span>to: u64,
+}
+
+<span class="attr">#[derive(Clone, PartialEq, Eq, Serialize, Debug)]
+#[serde(rename_all = <span class="string">"camelCase"</span>)]
+</span><span class="kw">pub struct </span>SeekLogRequest {
+    <span class="doccomment">/// Opensubtitles hash returned by the server
+    </span><span class="attr">#[serde(rename = <span class="string">"osId"</span>)]
+    </span><span class="kw">pub </span>opensubtitles_hash: String,
+    <span class="kw">pub </span>item_id: String,
+    <span class="attr">#[serde(flatten)]
+    </span><span class="kw">pub </span>series_info: SeriesInfo,
+    <span class="doccomment">/// Stream name hash
+    ///
+    /// base64 encoded SHA-256 hash of the Stream file name.
+    </span><span class="attr">#[serde(rename = <span class="string">"stHash"</span>)]
+    </span><span class="kw">pub </span>stream_name_hash: String,
+    <span class="kw">pub </span>duration: u64,
+    <span class="kw">pub </span>seek_history: Vec&lt;SeekLog&gt;,
+    <span class="doccomment">/// The time (in milliseconds) when the user decided to play the next video/episode
+    </span><span class="kw">pub </span>skip_outro: Vec&lt;u64&gt;,
 }
 
 <span class="kw">impl </span>FetchRequestParams&lt;APIRequest&gt; <span class="kw">for </span>APIRequest {
@@ -251,16 +316,17 @@
     }
     <span class="kw">fn </span>path(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; String {
         <span class="kw">match </span><span class="self">self </span>{
-            APIRequest::Auth(AuthRequest::Login { .. }) =&gt; <span class="string">&quot;login&quot;</span>.to_owned(),
-            APIRequest::Auth(AuthRequest::LoginWithToken { .. }) =&gt; <span class="string">&quot;loginWithToken&quot;</span>.to_owned(),
-            APIRequest::Auth(AuthRequest::Register { .. }) =&gt; <span class="string">&quot;register&quot;</span>.to_owned(),
-            APIRequest::Logout { .. } =&gt; <span class="string">&quot;logout&quot;</span>.to_owned(),
-            APIRequest::AddonCollectionGet { .. } =&gt; <span class="string">&quot;addonCollectionGet&quot;</span>.to_owned(),
-            APIRequest::AddonCollectionSet { .. } =&gt; <span class="string">&quot;addonCollectionSet&quot;</span>.to_owned(),
-            APIRequest::GetUser { .. } =&gt; <span class="string">&quot;getUser&quot;</span>.to_owned(),
-            APIRequest::SaveUser { .. } =&gt; <span class="string">&quot;saveUser&quot;</span>.to_owned(),
-            APIRequest::DataExport { .. } =&gt; <span class="string">&quot;dataExport&quot;</span>.to_owned(),
-            APIRequest::Events { .. } =&gt; <span class="string">&quot;events&quot;</span>.to_owned(),
+            APIRequest::Auth(AuthRequest::Login { .. }) =&gt; <span class="string">"login"</span>.to_owned(),
+            APIRequest::Auth(AuthRequest::LoginWithToken { .. }) =&gt; <span class="string">"loginWithToken"</span>.to_owned(),
+            APIRequest::Auth(AuthRequest::Register { .. }) =&gt; <span class="string">"register"</span>.to_owned(),
+            APIRequest::Logout { .. } =&gt; <span class="string">"logout"</span>.to_owned(),
+            APIRequest::AddonCollectionGet { .. } =&gt; <span class="string">"addonCollectionGet"</span>.to_owned(),
+            APIRequest::AddonCollectionSet { .. } =&gt; <span class="string">"addonCollectionSet"</span>.to_owned(),
+            APIRequest::GetUser { .. } =&gt; <span class="string">"getUser"</span>.to_owned(),
+            APIRequest::SaveUser { .. } =&gt; <span class="string">"saveUser"</span>.to_owned(),
+            APIRequest::DataExport { .. } =&gt; <span class="string">"dataExport"</span>.to_owned(),
+            APIRequest::Events { .. } =&gt; <span class="string">"events"</span>.to_owned(),
+            APIRequest::SeekLog { .. } =&gt; <span class="string">"seekLog"</span>.to_owned(),
         }
     }
     <span class="kw">fn </span>query(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Option</span>&lt;String&gt; {
@@ -274,7 +340,7 @@
 <span class="attr">#[derive(Clone, PartialEq, Eq, Serialize, Deserialize, Debug)]
 #[cfg_attr(test, derive(Derivative))]
 #[cfg_attr(test, derivative(Default))]
-#[serde(tag = <span class="string">&quot;type&quot;</span>)]
+#[serde(tag = <span class="string">"type"</span>)]
 </span><span class="kw">pub enum </span>AuthRequest {
     <span class="attr">#[cfg_attr(test, derivative(Default))]
     </span>Login {
@@ -296,7 +362,7 @@
 <span class="attr">#[derive(Clone, PartialEq, Eq, Serialize, Deserialize, Debug)]
 #[cfg_attr(test, derive(Derivative))]
 #[cfg_attr(test, derivative(Default))]
-#[serde(tag = <span class="string">&quot;type&quot;</span>)]
+#[serde(tag = <span class="string">"type"</span>)]
 </span><span class="kw">pub enum </span>LinkRequest {
     <span class="attr">#[cfg_attr(test, derivative(Default))]
     </span>Create,
@@ -314,18 +380,18 @@
     }
     <span class="kw">fn </span>path(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; String {
         <span class="kw">match </span><span class="self">self </span>{
-            LinkRequest::Create =&gt; <span class="string">&quot;create&quot;</span>.to_owned(),
-            LinkRequest::Read { .. } =&gt; <span class="string">&quot;read&quot;</span>.to_owned(),
+            LinkRequest::Create =&gt; <span class="string">"create"</span>.to_owned(),
+            LinkRequest::Read { .. } =&gt; <span class="string">"read"</span>.to_owned(),
         }
     }
     <span class="kw">fn </span>query(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Option</span>&lt;String&gt; {
-        <span class="prelude-val">Some</span>(serde_url_params::to_string(<span class="kw-2">&amp;</span><span class="self">self</span>).expect(<span class="string">&quot;Serialize query params failed&quot;</span>))
+        <span class="prelude-val">Some</span>(serde_url_params::to_string(<span class="kw-2">&amp;</span><span class="self">self</span>).expect(<span class="string">"Serialize query params failed"</span>))
     }
     <span class="kw">fn </span>body(<span class="self">self</span>) {}
 }
 
 <span class="attr">#[derive(Clone, PartialEq, Eq, Serialize, Debug)]
-#[serde(rename_all = <span class="string">&quot;camelCase&quot;</span>)]
+#[serde(rename_all = <span class="string">"camelCase"</span>)]
 </span><span class="kw">pub struct </span>DatastoreRequest {
     <span class="kw">pub </span>auth_key: AuthKey,
     <span class="kw">pub </span>collection: String,
@@ -342,9 +408,9 @@
     }
     <span class="kw">fn </span>path(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; String {
         <span class="kw">match </span><span class="kw-2">&amp;</span><span class="self">self</span>.command {
-            DatastoreCommand::Meta =&gt; <span class="string">&quot;datastoreMeta&quot;</span>.to_owned(),
-            DatastoreCommand::Get { .. } =&gt; <span class="string">&quot;datastoreGet&quot;</span>.to_owned(),
-            DatastoreCommand::Put { .. } =&gt; <span class="string">&quot;datastorePut&quot;</span>.to_owned(),
+            DatastoreCommand::Meta =&gt; <span class="string">"datastoreMeta"</span>.to_owned(),
+            DatastoreCommand::Get { .. } =&gt; <span class="string">"datastoreGet"</span>.to_owned(),
+            DatastoreCommand::Put { .. } =&gt; <span class="string">"datastorePut"</span>.to_owned(),
         }
     }
     <span class="kw">fn </span>query(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Option</span>&lt;String&gt; {

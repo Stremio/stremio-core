@@ -1,4 +1,4 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `src/types/resource/stream.rs`."><title>stream.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/SourceSerif4-Regular-46f98efaafac5295.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../../../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../../../static.files/rustdoc-9ee3a5e31a2afa3e.css"><meta name="rustdoc-vars" data-root-path="../../../../" data-static-root-path="../../../../static.files/" data-current-crate="stremio_core" data-themes="" data-resource-suffix="" data-rustdoc-version="1.76.0-nightly (3a85a5cfe 2023-11-20)" data-channel="nightly" data-search-js="search-d23a059ec093b287.js" data-settings-js="settings-74424d7eec62a23e.js" ><script src="../../../../static.files/storage-fec3eaa3851e447d.js"></script><script defer src="../../../../static.files/src-script-3280b574d94e47b4.js"></script><script defer src="../../../../src-files.js"></script><script defer src="../../../../static.files/main-f06f02fd918e3bb3.js"></script><noscript><link rel="stylesheet" href="../../../../static.files/noscript-5d8b3c7633ad77ba.css"></noscript><link rel="alternate icon" type="image/png" href="../../../../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../../../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"></nav><main><nav class="sub"><form class="search-form"><span></span><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><a href="../../../../help.html">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../../../static.files/wheel-7b819b6101059cd0.svg"></a></div></form></nav><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `src/types/resource/stream.rs`."><title>stream.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/SourceSerif4-Regular-46f98efaafac5295.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../../../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../../../static.files/rustdoc-c67e44d78ab2db17.css"><meta name="rustdoc-vars" data-root-path="../../../../" data-static-root-path="../../../../static.files/" data-current-crate="stremio_core" data-themes="" data-resource-suffix="" data-rustdoc-version="1.76.0-nightly (e9013ac0e 2023-12-05)" data-channel="nightly" data-search-js="search-5a66c239c06b3a66.js" data-settings-js="settings-fe03fdc259827cd2.js" ><script src="../../../../static.files/storage-fec3eaa3851e447d.js"></script><script defer src="../../../../static.files/src-script-3280b574d94e47b4.js"></script><script defer src="../../../../src-files.js"></script><script defer src="../../../../static.files/main-77dede896d6ac08e.js"></script><noscript><link rel="stylesheet" href="../../../../static.files/noscript-5d8b3c7633ad77ba.css"></noscript><link rel="alternate icon" type="image/png" href="../../../../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../../../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"></nav><main><nav class="sub"><form class="search-form"><span></span><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><a href="../../../../help.html">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../../../static.files/wheel-7b819b6101059cd0.svg"></a></div></form></nav><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
 <a href="#2" id="2">2</a>
 <a href="#3" id="3">3</a>
 <a href="#4" id="4">4</a>
@@ -320,6 +320,22 @@
 <a href="#320" id="320">320</a>
 <a href="#321" id="321">321</a>
 <a href="#322" id="322">322</a>
+<a href="#323" id="323">323</a>
+<a href="#324" id="324">324</a>
+<a href="#325" id="325">325</a>
+<a href="#326" id="326">326</a>
+<a href="#327" id="327">327</a>
+<a href="#328" id="328">328</a>
+<a href="#329" id="329">329</a>
+<a href="#330" id="330">330</a>
+<a href="#331" id="331">331</a>
+<a href="#332" id="332">332</a>
+<a href="#333" id="333">333</a>
+<a href="#334" id="334">334</a>
+<a href="#335" id="335">335</a>
+<a href="#336" id="336">336</a>
+<a href="#337" id="337">337</a>
+<a href="#338" id="338">338</a>
 </pre></div><pre class="rust"><code><span class="kw">use </span><span class="kw">crate</span>::constants::{BASE64, URI_COMPONENT_ENCODE_SET, YOUTUBE_ADDON_ID_PREFIX};
 <span class="kw">use </span><span class="kw">crate</span>::types::resource::Subtitles;
 <span class="kw">use </span>base64::Engine;
@@ -339,33 +355,33 @@
 <span class="kw">use </span>url::{form_urlencoded, Url};
 
 <span class="attr">#[derive(Clone, PartialEq, Eq, Serialize, Deserialize, Debug)]
-#[serde(rename_all = <span class="string">&quot;camelCase&quot;</span>)]
+#[serde(rename_all = <span class="string">"camelCase"</span>)]
 </span><span class="kw">pub struct </span>Stream {
     <span class="attr">#[serde(flatten)]
     </span><span class="kw">pub </span>source: StreamSource,
-    <span class="attr">#[serde(skip_serializing_if = <span class="string">&quot;Option::is_none&quot;</span>)]
+    <span class="attr">#[serde(skip_serializing_if = <span class="string">"Option::is_none"</span>)]
     </span><span class="kw">pub </span>name: <span class="prelude-ty">Option</span>&lt;String&gt;,
-    <span class="attr">#[serde(alias = <span class="string">&quot;title&quot;</span>, skip_serializing_if = <span class="string">&quot;Option::is_none&quot;</span>)]
+    <span class="attr">#[serde(alias = <span class="string">"title"</span>, skip_serializing_if = <span class="string">"Option::is_none"</span>)]
     </span><span class="kw">pub </span>description: <span class="prelude-ty">Option</span>&lt;String&gt;,
-    <span class="attr">#[serde(skip_serializing_if = <span class="string">&quot;Option::is_none&quot;</span>)]
+    <span class="attr">#[serde(skip_serializing_if = <span class="string">"Option::is_none"</span>)]
     </span><span class="kw">pub </span>thumbnail: <span class="prelude-ty">Option</span>&lt;String&gt;,
-    <span class="attr">#[serde(default, skip_serializing_if = <span class="string">&quot;Vec::is_empty&quot;</span>)]
+    <span class="attr">#[serde(default, skip_serializing_if = <span class="string">"Vec::is_empty"</span>)]
     </span><span class="kw">pub </span>subtitles: Vec&lt;Subtitles&gt;,
-    <span class="attr">#[serde(default, skip_serializing_if = <span class="string">&quot;is_default_value&quot;</span>)]
+    <span class="attr">#[serde(default, skip_serializing_if = <span class="string">"is_default_value"</span>)]
     </span><span class="kw">pub </span>behavior_hints: StreamBehaviorHints,
 }
 
 <span class="kw">impl </span>Stream {
     <span class="kw">pub fn </span>magnet_url(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Option</span>&lt;Magnet&gt; {
         <span class="kw">match </span><span class="kw-2">&amp;</span><span class="self">self</span>.source {
-            StreamSource::Url { url } <span class="kw">if </span>url.scheme() == <span class="string">&quot;magnet&quot; </span>=&gt; Magnet::new(url.as_str()).ok(),
+            StreamSource::Url { url } <span class="kw">if </span>url.scheme() == <span class="string">"magnet" </span>=&gt; Magnet::new(url.as_str()).ok(),
             StreamSource::Torrent {
                 info_hash,
                 announce,
                 ..
             } =&gt; <span class="prelude-val">Some</span>(Magnet {
                 dn: <span class="self">self</span>.name.to_owned(),
-                hash_type: <span class="prelude-val">Some</span>(<span class="string">&quot;btih&quot;</span>.to_string()),
+                hash_type: <span class="prelude-val">Some</span>(<span class="string">"btih"</span>.to_string()),
                 xt: <span class="prelude-val">Some</span>(hex::encode(info_hash)),
                 xl: <span class="prelude-val">None</span>,
                 tr: announce
@@ -374,13 +390,13 @@
                     // we need to remove those prefixes when generating the magnet URL
                     </span>.map(|tracker| {
                         tracker
-                            .strip_prefix(<span class="string">&quot;tracker:&quot;</span>)
+                            .strip_prefix(<span class="string">"tracker:"</span>)
                             .map(ToString::to_string)
                             .unwrap_or_else(|| tracker.to_owned())
                     })
                     .map(|tracker| {
                         tracker
-                            .strip_prefix(<span class="string">&quot;dht:&quot;</span>)
+                            .strip_prefix(<span class="string">"dht:"</span>)
                             .map(ToString::to_string)
                             .unwrap_or_else(|| tracker.to_owned())
                     })
@@ -420,7 +436,7 @@
             .starts_with(YOUTUBE_ADDON_ID_PREFIX)
             .as_option()
             <span class="comment">// video id is in format: yt_id:YT_CHANNEL_ID:YT_VIDEO_ID
-            </span>.and_then(|<span class="kw">_</span>| video_id.split(<span class="string">&#39;:&#39;</span>).nth(<span class="number">2</span>))
+            </span>.and_then(|<span class="kw">_</span>| video_id.split(<span class="string">':'</span>).nth(<span class="number">2</span>))
             .map(|yt_id| <span class="self">Self </span>{
                 source: StreamSource::YouTube {
                     yt_id: yt_id.to_owned(),
@@ -434,7 +450,7 @@
     }
     <span class="kw">pub fn </span>download_url(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Option</span>&lt;String&gt; {
         <span class="kw">match </span><span class="kw-2">&amp;</span><span class="self">self</span>.source {
-            StreamSource::Url { url } <span class="kw">if </span>url.scheme() == <span class="string">&quot;magnet&quot; </span>=&gt; {
+            StreamSource::Url { url } <span class="kw">if </span>url.scheme() == <span class="string">"magnet" </span>=&gt; {
                 <span class="self">self</span>.magnet_url().map(|magnet_url| magnet_url.to_string())
             }
             StreamSource::Url { url } =&gt; <span class="prelude-val">Some</span>(url.to_string()),
@@ -451,34 +467,34 @@
     <span class="kw">pub fn </span>m3u_data_uri(<span class="kw-2">&amp;</span><span class="self">self</span>, streaming_server_url: <span class="prelude-ty">Option</span>&lt;<span class="kw-2">&amp;</span>Url&gt;) -&gt; <span class="prelude-ty">Option</span>&lt;String&gt; {
         <span class="self">self</span>.streaming_url(streaming_server_url).map(|url| {
             <span class="macro">format!</span>(
-                <span class="string">&quot;data:application/octet-stream;charset=utf-8;base64,{}&quot;</span>,
-                BASE64.encode(<span class="macro">format!</span>(<span class="string">&quot;#EXTM3U\n#EXTINF:0\n{url}&quot;</span>))
+                <span class="string">"data:application/octet-stream;charset=utf-8;base64,{}"</span>,
+                BASE64.encode(<span class="macro">format!</span>(<span class="string">"#EXTM3U\n#EXTINF:0\n{url}"</span>))
             )
         })
     }
     <span class="kw">pub fn </span>streaming_url(<span class="kw-2">&amp;</span><span class="self">self</span>, streaming_server_url: <span class="prelude-ty">Option</span>&lt;<span class="kw-2">&amp;</span>Url&gt;) -&gt; <span class="prelude-ty">Option</span>&lt;String&gt; {
         <span class="kw">match </span>(<span class="kw-2">&amp;</span><span class="self">self</span>.source, streaming_server_url) {
-            (StreamSource::Url { url }, <span class="prelude-val">Some</span>(streaming_server_url)) <span class="kw">if </span>url.scheme() != <span class="string">&quot;magnet&quot; </span>=&gt; {
+            (StreamSource::Url { url }, <span class="prelude-val">Some</span>(streaming_server_url)) <span class="kw">if </span>url.scheme() != <span class="string">"magnet" </span>=&gt; {
                 <span class="kw">match </span><span class="kw-2">&amp;</span><span class="self">self</span>.behavior_hints.proxy_headers {
                     <span class="prelude-val">Some</span>(StreamProxyHeaders { request, response }) =&gt; {
                         <span class="kw">let </span><span class="kw-2">mut </span>streaming_url = streaming_server_url.to_owned();
                         <span class="kw">let </span><span class="kw-2">mut </span>proxy_query = form_urlencoded::Serializer::new(String::new());
-                        <span class="kw">let </span>origin = <span class="macro">format!</span>(<span class="string">&quot;{}://{}&quot;</span>, url.scheme(), url.authority());
-                        proxy_query.append_pair(<span class="string">&quot;d&quot;</span>, origin.as_str());
+                        <span class="kw">let </span>origin = <span class="macro">format!</span>(<span class="string">"{}://{}"</span>, url.scheme(), url.authority());
+                        proxy_query.append_pair(<span class="string">"d"</span>, origin.as_str());
                         proxy_query.extend_pairs(
                             request
                                 .iter()
-                                .map(|header| (<span class="string">&quot;h&quot;</span>, <span class="macro">format!</span>(<span class="string">&quot;{}:{}&quot;</span>, header.<span class="number">0</span>, header.<span class="number">1</span>))),
+                                .map(|header| (<span class="string">"h"</span>, <span class="macro">format!</span>(<span class="string">"{}:{}"</span>, header.<span class="number">0</span>, header.<span class="number">1</span>))),
                         );
                         proxy_query.extend_pairs(
                             response
                                 .iter()
-                                .map(|header| (<span class="string">&quot;r&quot;</span>, <span class="macro">format!</span>(<span class="string">&quot;{}:{}&quot;</span>, header.<span class="number">0</span>, header.<span class="number">1</span>))),
+                                .map(|header| (<span class="string">"r"</span>, <span class="macro">format!</span>(<span class="string">"{}:{}"</span>, header.<span class="number">0</span>, header.<span class="number">1</span>))),
                         );
                         streaming_url
                             .path_segments_mut()
                             .ok()<span class="question-mark">?
-                            </span>.push(<span class="string">&quot;proxy&quot;</span>)
+                            </span>.push(<span class="string">"proxy"</span>)
                             .push(proxy_query.finish().as_str())
                             .push(<span class="kw-2">&amp;</span>url.path()[<span class="number">1</span>..]);
                         streaming_url.set_query(url.query());
@@ -502,14 +518,14 @@
                         <span class="comment">// When fileIndex is not provided use -1, which will tell the
                         // streaming server to choose the file with the largest size from the torrent
                         </span>path.push(
-                            <span class="kw-2">&amp;</span>file_idx.map_or_else(|| <span class="string">&quot;-1&quot;</span>.to_string(), |idx| idx.to_string()),
+                            <span class="kw-2">&amp;</span>file_idx.map_or_else(|| <span class="string">"-1"</span>.to_string(), |idx| idx.to_string()),
                         );
                     }
                     <span class="kw">_ </span>=&gt; <span class="kw">return </span><span class="prelude-val">None</span>,
                 };
                 <span class="kw">if </span>!announce.is_empty() {
                     <span class="kw">let </span><span class="kw-2">mut </span>query = url.query_pairs_mut();
-                    query.extend_pairs(announce.iter().map(|tracker| (<span class="string">&quot;tr&quot;</span>, tracker)));
+                    query.extend_pairs(announce.iter().map(|tracker| (<span class="string">"tr"</span>, tracker)));
                 };
                 <span class="prelude-val">Some</span>(url.to_string())
             }
@@ -517,7 +533,7 @@
                 <span class="kw">let </span><span class="kw-2">mut </span>url = streaming_server_url.to_owned();
                 <span class="kw">match </span>url.path_segments_mut() {
                     <span class="prelude-val">Ok</span>(<span class="kw-2">mut </span>path) =&gt; {
-                        path.push(<span class="string">&quot;yt&quot;</span>);
+                        path.push(<span class="string">"yt"</span>);
                         path.push(
                             <span class="kw-2">&amp;</span>utf8_percent_encode(yt_id, URI_COMPONENT_ENCODE_SET).to_string(),
                         );
@@ -532,10 +548,26 @@
     <span class="kw">pub fn </span>youtube_url(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Option</span>&lt;String&gt; {
         <span class="kw">match </span><span class="kw-2">&amp;</span><span class="self">self</span>.source {
             StreamSource::YouTube { yt_id } =&gt; <span class="prelude-val">Some</span>(<span class="macro">format!</span>(
-                <span class="string">&quot;https://youtube.com/watch?v={}&quot;</span>,
+                <span class="string">"https://youtube.com/watch?v={}"</span>,
                 utf8_percent_encode(yt_id, URI_COMPONENT_ENCODE_SET)
             )),
             <span class="kw">_ </span>=&gt; <span class="prelude-val">None</span>,
+        }
+    }
+
+    <span class="attr">#[inline]
+    </span><span class="kw">pub fn </span>is_source_match(<span class="kw-2">&amp;</span><span class="self">self</span>, other_stream: <span class="kw-2">&amp;</span>Stream) -&gt; bool {
+        <span class="self">self</span>.source == other_stream.source
+    }
+
+    <span class="attr">#[inline]
+    </span><span class="kw">pub fn </span>is_binge_match(<span class="kw-2">&amp;</span><span class="self">self</span>, other_stream: <span class="kw-2">&amp;</span>Stream) -&gt; bool {
+        <span class="kw">match </span>(
+            <span class="kw-2">&amp;</span><span class="self">self</span>.behavior_hints.binge_group,
+            <span class="kw-2">&amp;</span>other_stream.behavior_hints.binge_group,
+        ) {
+            (<span class="prelude-val">Some</span>(a), <span class="prelude-val">Some</span>(b)) =&gt; a == b,
+            <span class="kw">_ </span>=&gt; <span class="bool-val">false</span>,
         }
     }
 }
@@ -550,49 +582,49 @@
         url: Url,
     },
     <span class="attr">#[cfg_attr(test, derivative(Default))]
-    #[serde(rename_all = <span class="string">&quot;camelCase&quot;</span>)]
+    #[serde(rename_all = <span class="string">"camelCase"</span>)]
     </span>YouTube {
         yt_id: String,
     },
-    <span class="attr">#[serde(rename_all = <span class="string">&quot;camelCase&quot;</span>)]
+    <span class="attr">#[serde(rename_all = <span class="string">"camelCase"</span>)]
     </span>Torrent {
-        <span class="attr">#[serde(with = <span class="string">&quot;SerHex::&lt;Strict&gt;&quot;</span>)]
+        <span class="attr">#[serde(with = <span class="string">"SerHex::&lt;Strict&gt;"</span>)]
         </span>info_hash: [u8; <span class="number">20</span>],
         file_idx: <span class="prelude-ty">Option</span>&lt;u16&gt;,
-        <span class="attr">#[serde_as(deserialize_as = <span class="string">&quot;DefaultOnNull&quot;</span>)]
-        #[serde(default, alias = <span class="string">&quot;sources&quot;</span>)]
+        <span class="attr">#[serde_as(deserialize_as = <span class="string">"DefaultOnNull"</span>)]
+        #[serde(default, alias = <span class="string">"sources"</span>)]
         </span>announce: Vec&lt;String&gt;,
     },
-    <span class="attr">#[serde(rename_all = <span class="string">&quot;camelCase&quot;</span>)]
+    <span class="attr">#[serde(rename_all = <span class="string">"camelCase"</span>)]
     </span>PlayerFrame {
         player_frame_url: Url,
     },
     <span class="attr">#[serde(
-        rename_all = <span class="string">&quot;camelCase&quot;</span>,
-        deserialize_with = <span class="string">&quot;deserialize_stream_source_external&quot;
+        rename_all = <span class="string">"camelCase"</span>,
+        deserialize_with = <span class="string">"deserialize_stream_source_external"
     </span>)]
     </span>External {
-        <span class="attr">#[serde(skip_serializing_if = <span class="string">&quot;Option::is_none&quot;</span>)]
+        <span class="attr">#[serde(skip_serializing_if = <span class="string">"Option::is_none"</span>)]
         </span>external_url: <span class="prelude-ty">Option</span>&lt;Url&gt;,
-        <span class="attr">#[serde(skip_serializing_if = <span class="string">&quot;Option::is_none&quot;</span>)]
+        <span class="attr">#[serde(skip_serializing_if = <span class="string">"Option::is_none"</span>)]
         </span>android_tv_url: <span class="prelude-ty">Option</span>&lt;Url&gt;,
-        <span class="attr">#[serde(skip_serializing_if = <span class="string">&quot;Option::is_none&quot;</span>)]
+        <span class="attr">#[serde(skip_serializing_if = <span class="string">"Option::is_none"</span>)]
         </span>tizen_url: <span class="prelude-ty">Option</span>&lt;String&gt;,
-        <span class="attr">#[serde(skip_serializing_if = <span class="string">&quot;Option::is_none&quot;</span>)]
+        <span class="attr">#[serde(skip_serializing_if = <span class="string">"Option::is_none"</span>)]
         </span>webos_url: <span class="prelude-ty">Option</span>&lt;String&gt;,
     },
 }
 
 <span class="kw">type </span>ExternalStreamSource = (<span class="prelude-ty">Option</span>&lt;Url&gt;, <span class="prelude-ty">Option</span>&lt;Url&gt;, <span class="prelude-ty">Option</span>&lt;String&gt;, <span class="prelude-ty">Option</span>&lt;String&gt;);
 
-<span class="kw">fn </span>deserialize_stream_source_external&lt;<span class="lifetime">&#39;de</span>, D&gt;(
+<span class="kw">fn </span>deserialize_stream_source_external&lt;<span class="lifetime">'de</span>, D&gt;(
     deserializer: D,
 ) -&gt; <span class="prelude-ty">Result</span>&lt;ExternalStreamSource, D::Error&gt;
 <span class="kw">where
-    </span>D: Deserializer&lt;<span class="lifetime">&#39;de</span>&gt;,
+    </span>D: Deserializer&lt;<span class="lifetime">'de</span>&gt;,
 {
     <span class="attr">#[derive(Deserialize)]
-    #[serde(rename_all = <span class="string">&quot;camelCase&quot;</span>)]
+    #[serde(rename_all = <span class="string">"camelCase"</span>)]
     </span><span class="kw">struct </span>Helper {
         external_url: <span class="prelude-ty">Option</span>&lt;Url&gt;,
         android_tv_url: <span class="prelude-ty">Option</span>&lt;Url&gt;,
@@ -605,7 +637,7 @@
         &amp;&amp; source.tizen_url.is_none()
         &amp;&amp; source.webos_url.is_none()
     {
-        <span class="kw">return </span><span class="prelude-val">Err</span>(D::Error::custom(<span class="string">&quot;Invalid StreamSource::External&quot;</span>));
+        <span class="kw">return </span><span class="prelude-val">Err</span>(D::Error::custom(<span class="string">"Invalid StreamSource::External"</span>));
     };
     <span class="prelude-val">Ok</span>((
         source.external_url,
@@ -616,24 +648,24 @@
 }
 
 <span class="attr">#[derive(Default, Clone, PartialEq, Eq, Serialize, Deserialize, Debug)]
-#[serde(rename_all = <span class="string">&quot;camelCase&quot;</span>)]
+#[serde(rename_all = <span class="string">"camelCase"</span>)]
 </span><span class="kw">pub struct </span>StreamProxyHeaders {
-    <span class="attr">#[serde(default, skip_serializing_if = <span class="string">&quot;HashMap::is_empty&quot;</span>)]
+    <span class="attr">#[serde(default, skip_serializing_if = <span class="string">"HashMap::is_empty"</span>)]
     </span><span class="kw">pub </span>request: HashMap&lt;String, String&gt;,
-    <span class="attr">#[serde(default, skip_serializing_if = <span class="string">&quot;HashMap::is_empty&quot;</span>)]
+    <span class="attr">#[serde(default, skip_serializing_if = <span class="string">"HashMap::is_empty"</span>)]
     </span><span class="kw">pub </span>response: HashMap&lt;String, String&gt;,
 }
 
 <span class="attr">#[derive(Default, Clone, PartialEq, Eq, Serialize, Deserialize, Debug)]
-#[serde(rename_all = <span class="string">&quot;camelCase&quot;</span>)]
+#[serde(rename_all = <span class="string">"camelCase"</span>)]
 </span><span class="kw">pub struct </span>StreamBehaviorHints {
-    <span class="attr">#[serde(default, skip_serializing_if = <span class="string">&quot;is_default_value&quot;</span>)]
+    <span class="attr">#[serde(default, skip_serializing_if = <span class="string">"is_default_value"</span>)]
     </span><span class="kw">pub </span>not_web_ready: bool,
-    <span class="attr">#[serde(skip_serializing_if = <span class="string">&quot;Option::is_none&quot;</span>)]
+    <span class="attr">#[serde(skip_serializing_if = <span class="string">"Option::is_none"</span>)]
     </span><span class="kw">pub </span>binge_group: <span class="prelude-ty">Option</span>&lt;String&gt;,
-    <span class="attr">#[serde(skip_serializing_if = <span class="string">&quot;Option::is_none&quot;</span>)]
+    <span class="attr">#[serde(skip_serializing_if = <span class="string">"Option::is_none"</span>)]
     </span><span class="kw">pub </span>country_whitelist: <span class="prelude-ty">Option</span>&lt;Vec&lt;String&gt;&gt;,
-    <span class="attr">#[serde(skip_serializing_if = <span class="string">&quot;Option::is_none&quot;</span>)]
+    <span class="attr">#[serde(skip_serializing_if = <span class="string">"Option::is_none"</span>)]
     </span><span class="kw">pub </span>proxy_headers: <span class="prelude-ty">Option</span>&lt;StreamProxyHeaders&gt;,
     <span class="attr">#[serde(flatten)]
     </span><span class="kw">pub </span>other: HashMap&lt;String, serde_json::Value&gt;,

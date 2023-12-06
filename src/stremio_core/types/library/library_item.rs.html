@@ -1,4 +1,4 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `src/types/library/library_item.rs`."><title>library_item.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/SourceSerif4-Regular-46f98efaafac5295.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../../../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../../../static.files/rustdoc-9ee3a5e31a2afa3e.css"><meta name="rustdoc-vars" data-root-path="../../../../" data-static-root-path="../../../../static.files/" data-current-crate="stremio_core" data-themes="" data-resource-suffix="" data-rustdoc-version="1.76.0-nightly (3a85a5cfe 2023-11-20)" data-channel="nightly" data-search-js="search-d23a059ec093b287.js" data-settings-js="settings-74424d7eec62a23e.js" ><script src="../../../../static.files/storage-fec3eaa3851e447d.js"></script><script defer src="../../../../static.files/src-script-3280b574d94e47b4.js"></script><script defer src="../../../../src-files.js"></script><script defer src="../../../../static.files/main-f06f02fd918e3bb3.js"></script><noscript><link rel="stylesheet" href="../../../../static.files/noscript-5d8b3c7633ad77ba.css"></noscript><link rel="alternate icon" type="image/png" href="../../../../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../../../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"></nav><main><nav class="sub"><form class="search-form"><span></span><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><a href="../../../../help.html">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../../../static.files/wheel-7b819b6101059cd0.svg"></a></div></form></nav><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `src/types/library/library_item.rs`."><title>library_item.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/SourceSerif4-Regular-46f98efaafac5295.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../../../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../../../static.files/rustdoc-c67e44d78ab2db17.css"><meta name="rustdoc-vars" data-root-path="../../../../" data-static-root-path="../../../../static.files/" data-current-crate="stremio_core" data-themes="" data-resource-suffix="" data-rustdoc-version="1.76.0-nightly (e9013ac0e 2023-12-05)" data-channel="nightly" data-search-js="search-5a66c239c06b3a66.js" data-settings-js="settings-fe03fdc259827cd2.js" ><script src="../../../../static.files/storage-fec3eaa3851e447d.js"></script><script defer src="../../../../static.files/src-script-3280b574d94e47b4.js"></script><script defer src="../../../../src-files.js"></script><script defer src="../../../../static.files/main-77dede896d6ac08e.js"></script><noscript><link rel="stylesheet" href="../../../../static.files/noscript-5d8b3c7633ad77ba.css"></noscript><link rel="alternate icon" type="image/png" href="../../../../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../../../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"></nav><main><nav class="sub"><form class="search-form"><span></span><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><a href="../../../../help.html">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../../../static.files/wheel-7b819b6101059cd0.svg"></a></div></form></nav><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
 <a href="#2" id="2">2</a>
 <a href="#3" id="3">3</a>
 <a href="#4" id="4">4</a>
@@ -223,6 +223,20 @@
 <a href="#223" id="223">223</a>
 <a href="#224" id="224">224</a>
 <a href="#225" id="225">225</a>
+<a href="#226" id="226">226</a>
+<a href="#227" id="227">227</a>
+<a href="#228" id="228">228</a>
+<a href="#229" id="229">229</a>
+<a href="#230" id="230">230</a>
+<a href="#231" id="231">231</a>
+<a href="#232" id="232">232</a>
+<a href="#233" id="233">233</a>
+<a href="#234" id="234">234</a>
+<a href="#235" id="235">235</a>
+<a href="#236" id="236">236</a>
+<a href="#237" id="237">237</a>
+<a href="#238" id="238">238</a>
+<a href="#239" id="239">239</a>
 </pre></div><pre class="rust"><code><span class="kw">use </span>std::marker::PhantomData;
 
 <span class="kw">use </span>chrono::{DateTime, Duration, Utc};
@@ -241,25 +255,25 @@
 
 <span class="attr">#[serde_as]
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
-#[serde(rename_all = <span class="string">&quot;camelCase&quot;</span>)]
+#[serde(rename_all = <span class="string">"camelCase"</span>)]
 </span><span class="kw">pub struct </span>LibraryItem {
-    <span class="attr">#[serde(rename = <span class="string">&quot;_id&quot;</span>)]
+    <span class="attr">#[serde(rename = <span class="string">"_id"</span>)]
     </span><span class="kw">pub </span>id: LibraryItemId,
     <span class="kw">pub </span>name: String,
     <span class="kw">pub </span>r#type: String,
     <span class="attr">#[serde(default)]
-    #[serde_as(deserialize_as = <span class="string">&quot;DefaultOnError&lt;NoneAsEmptyString&gt;&quot;</span>)]
+    #[serde_as(deserialize_as = <span class="string">"DefaultOnError&lt;NoneAsEmptyString&gt;"</span>)]
     </span><span class="kw">pub </span>poster: <span class="prelude-ty">Option</span>&lt;Url&gt;,
     <span class="attr">#[serde(default)]
     </span><span class="kw">pub </span>poster_shape: PosterShape,
     <span class="kw">pub </span>removed: bool,
     <span class="kw">pub </span>temp: bool,
     <span class="doccomment">/// Creation time
-    </span><span class="attr">#[serde(default, rename = <span class="string">&quot;_ctime&quot;</span>)]
-    #[serde_as(deserialize_as = <span class="string">&quot;DefaultOnNull&lt;NoneAsEmptyString&gt;&quot;</span>)]
+    </span><span class="attr">#[serde(default, rename = <span class="string">"_ctime"</span>)]
+    #[serde_as(deserialize_as = <span class="string">"DefaultOnNull&lt;NoneAsEmptyString&gt;"</span>)]
     </span><span class="kw">pub </span>ctime: <span class="prelude-ty">Option</span>&lt;DateTime&lt;Utc&gt;&gt;,
     <span class="doccomment">/// Modification time
-    </span><span class="attr">#[serde(rename = <span class="string">&quot;_mtime&quot;</span>)]
+    </span><span class="attr">#[serde(rename = <span class="string">"_mtime"</span>)]
     </span><span class="kw">pub </span>mtime: DateTime&lt;Utc&gt;,
     <span class="kw">pub </span>state: LibraryItemState,
     <span class="attr">#[serde(default)]
@@ -268,14 +282,14 @@
 
 <span class="kw">impl </span>LibraryItem {
     <span class="attr">#[inline]
-    </span><span class="kw">pub fn </span>should_sync&lt;E: Env + <span class="lifetime">&#39;static</span>&gt;(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; bool {
+    </span><span class="kw">pub fn </span>should_sync&lt;E: Env + <span class="lifetime">'static</span>&gt;(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; bool {
         <span class="kw">let </span>year_ago = E::now() - Duration::days(<span class="number">365</span>);
         <span class="kw">let </span>recently_removed = <span class="self">self</span>.removed &amp;&amp; <span class="self">self</span>.mtime &gt; year_ago;
-        <span class="self">self</span>.r#type != <span class="string">&quot;other&quot; </span>&amp;&amp; (!<span class="self">self</span>.removed || recently_removed)
+        <span class="self">self</span>.r#type != <span class="string">"other" </span>&amp;&amp; (!<span class="self">self</span>.removed || recently_removed)
     }
     <span class="attr">#[inline]
     </span><span class="kw">pub fn </span>is_in_continue_watching(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; bool {
-        <span class="self">self</span>.r#type != <span class="string">&quot;other&quot; </span>&amp;&amp; (!<span class="self">self</span>.removed || <span class="self">self</span>.temp) &amp;&amp; <span class="self">self</span>.state.time_offset &gt; <span class="number">0
+        <span class="self">self</span>.r#type != <span class="string">"other" </span>&amp;&amp; (!<span class="self">self</span>.removed || <span class="self">self</span>.temp) &amp;&amp; <span class="self">self</span>.state.time_offset &gt; <span class="number">0
     </span>}
 
     <span class="doccomment">/// Returns watch progress percentage
@@ -290,21 +304,35 @@
 
     <span class="doccomment">/// Pulling notifications relies on a few key things:
     ///
-    /// - LibraryItem should not be &quot;other&quot; or &quot;movie&quot;, i.e. if you have &quot;series&quot; it will pull notifications
+    /// - LibraryItem should not be "other" or "movie", i.e. if you have "series" it will pull notifications
     /// - `LibraryItem.behavior_hints.default_video_id` should be `None`
     /// - The LibraryItem should not have been removed from the Library
     /// - The LibraryItem should not be temporary but in your LibraryItem
     </span><span class="kw">pub fn </span>should_pull_notifications(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; bool {
         !<span class="self">self</span>.state.no_notif
-            &amp;&amp; <span class="self">self</span>.r#type != <span class="string">&quot;other&quot;
-            </span>&amp;&amp; <span class="self">self</span>.r#type != <span class="string">&quot;movie&quot;
+            &amp;&amp; <span class="self">self</span>.r#type != <span class="string">"other"
+            </span>&amp;&amp; <span class="self">self</span>.r#type != <span class="string">"movie"
             </span>&amp;&amp; <span class="self">self</span>.behavior_hints.default_video_id.is_none()
             &amp;&amp; !<span class="self">self</span>.removed
             &amp;&amp; !<span class="self">self</span>.temp
     }
+
+    <span class="attr">#[inline]
+    </span><span class="kw">pub fn </span>eq_no_mtime(<span class="kw-2">&amp;</span><span class="self">self</span>, other: <span class="kw-2">&amp;</span>LibraryItem) -&gt; bool {
+        <span class="self">self</span>.id == other.id
+            &amp;&amp; <span class="self">self</span>.removed == other.removed
+            &amp;&amp; <span class="self">self</span>.temp == other.temp
+            &amp;&amp; <span class="self">self</span>.ctime == other.ctime
+            &amp;&amp; <span class="self">self</span>.state == other.state
+            &amp;&amp; <span class="self">self</span>.name == other.name
+            &amp;&amp; <span class="self">self</span>.r#type == other.r#type
+            &amp;&amp; <span class="self">self</span>.poster == other.poster
+            &amp;&amp; <span class="self">self</span>.poster_shape == other.poster_shape
+            &amp;&amp; <span class="self">self</span>.behavior_hints == other.behavior_hints
+    }
 }
 
-<span class="kw">impl</span>&lt;E: Env + <span class="lifetime">&#39;static</span>&gt; From&lt;(<span class="kw-2">&amp;</span>MetaItemPreview, PhantomData&lt;E&gt;)&gt; <span class="kw">for </span>LibraryItem {
+<span class="kw">impl</span>&lt;E: Env + <span class="lifetime">'static</span>&gt; From&lt;(<span class="kw-2">&amp;</span>MetaItemPreview, PhantomData&lt;E&gt;)&gt; <span class="kw">for </span>LibraryItem {
     <span class="kw">fn </span>from((meta_item, <span class="kw">_</span>): (<span class="kw-2">&amp;</span>MetaItemPreview, PhantomData&lt;E&gt;)) -&gt; <span class="self">Self </span>{
         LibraryItem {
             id: meta_item.id.to_owned(),
@@ -345,16 +373,16 @@
 
 <span class="attr">#[serde_as]
 #[derive(Default, Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
-#[serde(rename_all = <span class="string">&quot;camelCase&quot;</span>)]
+#[serde(rename_all = <span class="string">"camelCase"</span>)]
 </span><span class="kw">pub struct </span>LibraryItemState {
     <span class="doccomment">/// Indicates the last time this [`LibraryItem`] was watched and:
-    /// - When we&#39;re playing the LibraryItem we&#39;re constantly updating the field
+    /// - When we're playing the LibraryItem we're constantly updating the field
     /// - Marking the whole [`LibraryItem`] as watched will update the field
     /// to the latest released video if `last_watched &lt; released date`.
     /// - Marking a video from the [`LibraryItem`] will update the field
     /// to the video released date if `last_watched &lt; released date`.
     </span><span class="attr">#[serde(default)]
-    #[serde_as(deserialize_as = <span class="string">&quot;DefaultOnNull&lt;NoneAsEmptyString&gt;&quot;</span>)]
+    #[serde_as(deserialize_as = <span class="string">"DefaultOnNull&lt;NoneAsEmptyString&gt;"</span>)]
     </span><span class="kw">pub </span>last_watched: <span class="prelude-ty">Option</span>&lt;DateTime&lt;Utc&gt;&gt;,
     <span class="doccomment">/// In milliseconds
     </span><span class="kw">pub </span>time_watched: u64,
@@ -373,15 +401,15 @@
     </span><span class="kw">pub </span>duration: u64,
     <span class="doccomment">/// The last video watched.
     ///
-    /// - For meta&#39;s without videos it&#39;s either `behavior_hints.default_video_id` (if present) or the `meta.id`
-    /// - For meta&#39;s with video - the played video.
-    </span><span class="attr">#[serde(default, rename = <span class="string">&quot;video_id&quot;</span>)]
-    #[serde_as(deserialize_as = <span class="string">&quot;DefaultOnNull&lt;NoneAsEmptyString&gt;&quot;</span>)]
+    /// - For meta's without videos it's either `behavior_hints.default_video_id` (if present) or the `meta.id`
+    /// - For meta's with video - the played video.
+    </span><span class="attr">#[serde(default, rename = <span class="string">"video_id"</span>)]
+    #[serde_as(deserialize_as = <span class="string">"DefaultOnNull&lt;NoneAsEmptyString&gt;"</span>)]
     </span><span class="kw">pub </span>video_id: <span class="prelude-ty">Option</span>&lt;String&gt;,
     <span class="doccomment">/// Field tracking watched videos.
     /// For [`LibraryItem`]s without videos, this field should [`None`].
     </span><span class="attr">#[serde(default)]
-    #[serde_as(deserialize_as = <span class="string">&quot;DefaultOnNull&lt;NoneAsEmptyString&gt;&quot;</span>)]
+    #[serde_as(deserialize_as = <span class="string">"DefaultOnNull&lt;NoneAsEmptyString&gt;"</span>)]
     </span><span class="kw">pub </span>watched: <span class="prelude-ty">Option</span>&lt;WatchedField&gt;,
     <span class="doccomment">/// Weather or not to receive notification for the given [`LibraryItem`].
     ///

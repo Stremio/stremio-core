@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"struct":["StreamsBucket","StreamsItem","StreamsItemKey"]};
+window.SIDEBAR_ITEMS = {"struct":["AudioTrack","StreamItemState","StreamsBucket","StreamsItem","StreamsItemKey","SubtitleTrack"]};

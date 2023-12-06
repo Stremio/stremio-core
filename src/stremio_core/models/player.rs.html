@@ -1,4 +1,4 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `src/models/player.rs`."><title>player.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceSerif4-Regular-46f98efaafac5295.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../../static.files/rustdoc-9ee3a5e31a2afa3e.css"><meta name="rustdoc-vars" data-root-path="../../../" data-static-root-path="../../../static.files/" data-current-crate="stremio_core" data-themes="" data-resource-suffix="" data-rustdoc-version="1.76.0-nightly (3a85a5cfe 2023-11-20)" data-channel="nightly" data-search-js="search-d23a059ec093b287.js" data-settings-js="settings-74424d7eec62a23e.js" ><script src="../../../static.files/storage-fec3eaa3851e447d.js"></script><script defer src="../../../static.files/src-script-3280b574d94e47b4.js"></script><script defer src="../../../src-files.js"></script><script defer src="../../../static.files/main-f06f02fd918e3bb3.js"></script><noscript><link rel="stylesheet" href="../../../static.files/noscript-5d8b3c7633ad77ba.css"></noscript><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"></nav><main><nav class="sub"><form class="search-form"><span></span><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><a href="../../../help.html">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../../static.files/wheel-7b819b6101059cd0.svg"></a></div></form></nav><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `src/models/player.rs`."><title>player.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceSerif4-Regular-46f98efaafac5295.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../../static.files/rustdoc-c67e44d78ab2db17.css"><meta name="rustdoc-vars" data-root-path="../../../" data-static-root-path="../../../static.files/" data-current-crate="stremio_core" data-themes="" data-resource-suffix="" data-rustdoc-version="1.76.0-nightly (e9013ac0e 2023-12-05)" data-channel="nightly" data-search-js="search-5a66c239c06b3a66.js" data-settings-js="settings-fe03fdc259827cd2.js" ><script src="../../../static.files/storage-fec3eaa3851e447d.js"></script><script defer src="../../../static.files/src-script-3280b574d94e47b4.js"></script><script defer src="../../../src-files.js"></script><script defer src="../../../static.files/main-77dede896d6ac08e.js"></script><noscript><link rel="stylesheet" href="../../../static.files/noscript-5d8b3c7633ad77ba.css"></noscript><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"></nav><main><nav class="sub"><form class="search-form"><span></span><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><a href="../../../help.html">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../../static.files/wheel-7b819b6101059cd0.svg"></a></div></form></nav><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
 <a href="#2" id="2">2</a>
 <a href="#3" id="3">3</a>
 <a href="#4" id="4">4</a>
@@ -1034,22 +1034,204 @@
 <a href="#1034" id="1034">1034</a>
 <a href="#1035" id="1035">1035</a>
 <a href="#1036" id="1036">1036</a>
+<a href="#1037" id="1037">1037</a>
+<a href="#1038" id="1038">1038</a>
+<a href="#1039" id="1039">1039</a>
+<a href="#1040" id="1040">1040</a>
+<a href="#1041" id="1041">1041</a>
+<a href="#1042" id="1042">1042</a>
+<a href="#1043" id="1043">1043</a>
+<a href="#1044" id="1044">1044</a>
+<a href="#1045" id="1045">1045</a>
+<a href="#1046" id="1046">1046</a>
+<a href="#1047" id="1047">1047</a>
+<a href="#1048" id="1048">1048</a>
+<a href="#1049" id="1049">1049</a>
+<a href="#1050" id="1050">1050</a>
+<a href="#1051" id="1051">1051</a>
+<a href="#1052" id="1052">1052</a>
+<a href="#1053" id="1053">1053</a>
+<a href="#1054" id="1054">1054</a>
+<a href="#1055" id="1055">1055</a>
+<a href="#1056" id="1056">1056</a>
+<a href="#1057" id="1057">1057</a>
+<a href="#1058" id="1058">1058</a>
+<a href="#1059" id="1059">1059</a>
+<a href="#1060" id="1060">1060</a>
+<a href="#1061" id="1061">1061</a>
+<a href="#1062" id="1062">1062</a>
+<a href="#1063" id="1063">1063</a>
+<a href="#1064" id="1064">1064</a>
+<a href="#1065" id="1065">1065</a>
+<a href="#1066" id="1066">1066</a>
+<a href="#1067" id="1067">1067</a>
+<a href="#1068" id="1068">1068</a>
+<a href="#1069" id="1069">1069</a>
+<a href="#1070" id="1070">1070</a>
+<a href="#1071" id="1071">1071</a>
+<a href="#1072" id="1072">1072</a>
+<a href="#1073" id="1073">1073</a>
+<a href="#1074" id="1074">1074</a>
+<a href="#1075" id="1075">1075</a>
+<a href="#1076" id="1076">1076</a>
+<a href="#1077" id="1077">1077</a>
+<a href="#1078" id="1078">1078</a>
+<a href="#1079" id="1079">1079</a>
+<a href="#1080" id="1080">1080</a>
+<a href="#1081" id="1081">1081</a>
+<a href="#1082" id="1082">1082</a>
+<a href="#1083" id="1083">1083</a>
+<a href="#1084" id="1084">1084</a>
+<a href="#1085" id="1085">1085</a>
+<a href="#1086" id="1086">1086</a>
+<a href="#1087" id="1087">1087</a>
+<a href="#1088" id="1088">1088</a>
+<a href="#1089" id="1089">1089</a>
+<a href="#1090" id="1090">1090</a>
+<a href="#1091" id="1091">1091</a>
+<a href="#1092" id="1092">1092</a>
+<a href="#1093" id="1093">1093</a>
+<a href="#1094" id="1094">1094</a>
+<a href="#1095" id="1095">1095</a>
+<a href="#1096" id="1096">1096</a>
+<a href="#1097" id="1097">1097</a>
+<a href="#1098" id="1098">1098</a>
+<a href="#1099" id="1099">1099</a>
+<a href="#1100" id="1100">1100</a>
+<a href="#1101" id="1101">1101</a>
+<a href="#1102" id="1102">1102</a>
+<a href="#1103" id="1103">1103</a>
+<a href="#1104" id="1104">1104</a>
+<a href="#1105" id="1105">1105</a>
+<a href="#1106" id="1106">1106</a>
+<a href="#1107" id="1107">1107</a>
+<a href="#1108" id="1108">1108</a>
+<a href="#1109" id="1109">1109</a>
+<a href="#1110" id="1110">1110</a>
+<a href="#1111" id="1111">1111</a>
+<a href="#1112" id="1112">1112</a>
+<a href="#1113" id="1113">1113</a>
+<a href="#1114" id="1114">1114</a>
+<a href="#1115" id="1115">1115</a>
+<a href="#1116" id="1116">1116</a>
+<a href="#1117" id="1117">1117</a>
+<a href="#1118" id="1118">1118</a>
+<a href="#1119" id="1119">1119</a>
+<a href="#1120" id="1120">1120</a>
+<a href="#1121" id="1121">1121</a>
+<a href="#1122" id="1122">1122</a>
+<a href="#1123" id="1123">1123</a>
+<a href="#1124" id="1124">1124</a>
+<a href="#1125" id="1125">1125</a>
+<a href="#1126" id="1126">1126</a>
+<a href="#1127" id="1127">1127</a>
+<a href="#1128" id="1128">1128</a>
+<a href="#1129" id="1129">1129</a>
+<a href="#1130" id="1130">1130</a>
+<a href="#1131" id="1131">1131</a>
+<a href="#1132" id="1132">1132</a>
+<a href="#1133" id="1133">1133</a>
+<a href="#1134" id="1134">1134</a>
+<a href="#1135" id="1135">1135</a>
+<a href="#1136" id="1136">1136</a>
+<a href="#1137" id="1137">1137</a>
+<a href="#1138" id="1138">1138</a>
+<a href="#1139" id="1139">1139</a>
+<a href="#1140" id="1140">1140</a>
+<a href="#1141" id="1141">1141</a>
+<a href="#1142" id="1142">1142</a>
+<a href="#1143" id="1143">1143</a>
+<a href="#1144" id="1144">1144</a>
+<a href="#1145" id="1145">1145</a>
+<a href="#1146" id="1146">1146</a>
+<a href="#1147" id="1147">1147</a>
+<a href="#1148" id="1148">1148</a>
+<a href="#1149" id="1149">1149</a>
+<a href="#1150" id="1150">1150</a>
+<a href="#1151" id="1151">1151</a>
+<a href="#1152" id="1152">1152</a>
+<a href="#1153" id="1153">1153</a>
+<a href="#1154" id="1154">1154</a>
+<a href="#1155" id="1155">1155</a>
+<a href="#1156" id="1156">1156</a>
+<a href="#1157" id="1157">1157</a>
+<a href="#1158" id="1158">1158</a>
+<a href="#1159" id="1159">1159</a>
+<a href="#1160" id="1160">1160</a>
+<a href="#1161" id="1161">1161</a>
+<a href="#1162" id="1162">1162</a>
+<a href="#1163" id="1163">1163</a>
+<a href="#1164" id="1164">1164</a>
+<a href="#1165" id="1165">1165</a>
+<a href="#1166" id="1166">1166</a>
+<a href="#1167" id="1167">1167</a>
+<a href="#1168" id="1168">1168</a>
+<a href="#1169" id="1169">1169</a>
+<a href="#1170" id="1170">1170</a>
+<a href="#1171" id="1171">1171</a>
+<a href="#1172" id="1172">1172</a>
+<a href="#1173" id="1173">1173</a>
+<a href="#1174" id="1174">1174</a>
+<a href="#1175" id="1175">1175</a>
+<a href="#1176" id="1176">1176</a>
+<a href="#1177" id="1177">1177</a>
+<a href="#1178" id="1178">1178</a>
+<a href="#1179" id="1179">1179</a>
+<a href="#1180" id="1180">1180</a>
+<a href="#1181" id="1181">1181</a>
+<a href="#1182" id="1182">1182</a>
+<a href="#1183" id="1183">1183</a>
+<a href="#1184" id="1184">1184</a>
+<a href="#1185" id="1185">1185</a>
+<a href="#1186" id="1186">1186</a>
+<a href="#1187" id="1187">1187</a>
+<a href="#1188" id="1188">1188</a>
+<a href="#1189" id="1189">1189</a>
+<a href="#1190" id="1190">1190</a>
+<a href="#1191" id="1191">1191</a>
+<a href="#1192" id="1192">1192</a>
+<a href="#1193" id="1193">1193</a>
+<a href="#1194" id="1194">1194</a>
+<a href="#1195" id="1195">1195</a>
+<a href="#1196" id="1196">1196</a>
+<a href="#1197" id="1197">1197</a>
+<a href="#1198" id="1198">1198</a>
+<a href="#1199" id="1199">1199</a>
+<a href="#1200" id="1200">1200</a>
+<a href="#1201" id="1201">1201</a>
+<a href="#1202" id="1202">1202</a>
+<a href="#1203" id="1203">1203</a>
+<a href="#1204" id="1204">1204</a>
+<a href="#1205" id="1205">1205</a>
+<a href="#1206" id="1206">1206</a>
+<a href="#1207" id="1207">1207</a>
+<a href="#1208" id="1208">1208</a>
 </pre></div><pre class="rust"><code><span class="kw">use </span>std::marker::PhantomData;
 
+<span class="kw">use </span>base64::Engine;
+<span class="kw">use </span>futures::{future, FutureExt, TryFutureExt};
+
 <span class="kw">use </span><span class="kw">crate</span>::constants::{
-    CREDITS_THRESHOLD_COEF, VIDEO_HASH_EXTRA_PROP, VIDEO_SIZE_EXTRA_PROP, WATCHED_THRESHOLD_COEF,
+    BASE64, CREDITS_THRESHOLD_COEF, META_RESOURCE_NAME, PLAYER_IGNORE_SEEK_AFTER,
+    VIDEO_FILENAME_EXTRA_PROP, VIDEO_HASH_EXTRA_PROP, VIDEO_SIZE_EXTRA_PROP,
+    WATCHED_THRESHOLD_COEF,
 };
 <span class="kw">use </span><span class="kw">crate</span>::models::common::{
-    eq_update, resource_update, resources_update_with_vector_content, Loadable, ResourceAction,
-    ResourceLoadable, ResourcesAction,
+    eq_update, resource_update, resource_update_with_vector_content,
+    resources_update_with_vector_content, Loadable, ResourceAction, ResourceLoadable,
+    ResourcesAction,
 };
-<span class="kw">use </span><span class="kw">crate</span>::models::ctx::Ctx;
+<span class="kw">use </span><span class="kw">crate</span>::models::ctx::{Ctx, CtxError};
 <span class="kw">use </span><span class="kw">crate</span>::runtime::msg::{Action, ActionLoad, ActionPlayer, Event, Internal, Msg};
-<span class="kw">use </span><span class="kw">crate</span>::runtime::{Effects, Env, UpdateWithCtx};
+<span class="kw">use </span><span class="kw">crate</span>::runtime::{Effect, EffectFuture, Effects, Env, EnvFutureExt, UpdateWithCtx};
 <span class="kw">use </span><span class="kw">crate</span>::types::addon::{AggrRequest, Descriptor, ExtraExt, ResourcePath, ResourceRequest};
+<span class="kw">use </span><span class="kw">crate</span>::types::api::{
+    fetch_api, APIRequest, APIResult, SeekLog, SeekLogRequest, SuccessResponse,
+};
 <span class="kw">use </span><span class="kw">crate</span>::types::library::{LibraryBucket, LibraryItem};
 <span class="kw">use </span><span class="kw">crate</span>::types::profile::Settings <span class="kw">as </span>ProfileSettings;
-<span class="kw">use </span><span class="kw">crate</span>::types::resource::{MetaItem, SeriesInfo, Stream, Subtitles, Video};
+<span class="kw">use </span><span class="kw">crate</span>::types::resource::{MetaItem, SeriesInfo, Stream, StreamSource, Subtitles, Video};
+<span class="kw">use </span><span class="kw">crate</span>::types::streams::{StreamItemState, StreamsBucket, StreamsItemKey};
 
 <span class="kw">use </span>stremio_watched_bitfield::WatchedBitField;
 
@@ -1060,27 +1242,25 @@
 
 <span class="kw">use </span>lazy_static::lazy_static;
 
-<span class="kw">use </span><span class="kw">super</span>::common::resource_update_with_vector_content;
-
 <span class="macro">lazy_static! </span>{
     <span class="doccomment">/// The duration that must have passed in order for a library item to be updated.
     </span><span class="kw">pub static </span><span class="kw-2">ref </span>PUSH_TO_LIBRARY_EVERY: Duration = Duration::seconds(<span class="number">30</span>);
 }
 
 <span class="attr">#[derive(Clone, Default, PartialEq, Eq, Serialize, Deserialize, Debug)]
-#[serde(rename_all = <span class="string">&quot;camelCase&quot;</span>)]
+#[serde(rename_all = <span class="string">"camelCase"</span>)]
 </span><span class="kw">pub struct </span>AnalyticsContext {
-    <span class="attr">#[serde(rename = <span class="string">&quot;libItemID&quot;</span>)]
+    <span class="attr">#[serde(rename = <span class="string">"libItemID"</span>)]
     </span><span class="kw">pub </span>id: <span class="prelude-ty">Option</span>&lt;String&gt;,
-    <span class="attr">#[serde(rename = <span class="string">&quot;libItemType&quot;</span>)]
+    <span class="attr">#[serde(rename = <span class="string">"libItemType"</span>)]
     </span><span class="kw">pub </span>r#type: <span class="prelude-ty">Option</span>&lt;String&gt;,
-    <span class="attr">#[serde(rename = <span class="string">&quot;libItemName&quot;</span>)]
+    <span class="attr">#[serde(rename = <span class="string">"libItemName"</span>)]
     </span><span class="kw">pub </span>name: <span class="prelude-ty">Option</span>&lt;String&gt;,
-    <span class="attr">#[serde(rename = <span class="string">&quot;libItemVideoID&quot;</span>)]
+    <span class="attr">#[serde(rename = <span class="string">"libItemVideoID"</span>)]
     </span><span class="kw">pub </span>video_id: <span class="prelude-ty">Option</span>&lt;String&gt;,
-    <span class="attr">#[serde(rename = <span class="string">&quot;libItemTimeOffset&quot;</span>)]
+    <span class="attr">#[serde(rename = <span class="string">"libItemTimeOffset"</span>)]
     </span><span class="kw">pub </span>time: <span class="prelude-ty">Option</span>&lt;u64&gt;,
-    <span class="attr">#[serde(rename = <span class="string">&quot;libItemTimeDuration&quot;</span>)]
+    <span class="attr">#[serde(rename = <span class="string">"libItemTimeDuration"</span>)]
     </span><span class="kw">pub </span>duration: <span class="prelude-ty">Option</span>&lt;u64&gt;,
     <span class="kw">pub </span>device_type: <span class="prelude-ty">Option</span>&lt;String&gt;,
     <span class="kw">pub </span>device_name: <span class="prelude-ty">Option</span>&lt;String&gt;,
@@ -1091,14 +1271,18 @@
 }
 
 <span class="attr">#[derive(Clone, PartialEq, Eq, Serialize, Deserialize, Debug)]
-#[serde(rename_all = <span class="string">&quot;camelCase&quot;</span>)]
+#[serde(rename_all = <span class="string">"camelCase"</span>)]
 </span><span class="kw">pub struct </span>VideoParams {
-    <span class="kw">pub </span>hash: <span class="prelude-ty">Option</span>&lt;String&gt;,
+    <span class="doccomment">/// Opensubtitles hash usually retrieved from a streaming server endpoint.
+    ///
+    /// It's used for requesting subtitles from Opensubtitles.
+    </span><span class="kw">pub </span>hash: <span class="prelude-ty">Option</span>&lt;String&gt;,
     <span class="kw">pub </span>size: <span class="prelude-ty">Option</span>&lt;u64&gt;,
+    <span class="kw">pub </span>filename: <span class="prelude-ty">Option</span>&lt;String&gt;,
 }
 
 <span class="attr">#[derive(Clone, PartialEq, Eq, Serialize, Deserialize, Debug)]
-#[serde(rename_all = <span class="string">&quot;camelCase&quot;</span>)]
+#[serde(rename_all = <span class="string">"camelCase"</span>)]
 </span><span class="kw">pub struct </span>Selected {
     <span class="kw">pub </span>stream: Stream,
     <span class="kw">pub </span>stream_request: <span class="prelude-ty">Option</span>&lt;ResourceRequest&gt;,
@@ -1109,7 +1293,7 @@
 
 <span class="attr">#[derive(Clone, Derivative, Serialize, Debug)]
 #[derivative(Default)]
-#[serde(rename_all = <span class="string">&quot;camelCase&quot;</span>)]
+#[serde(rename_all = <span class="string">"camelCase"</span>)]
 </span><span class="kw">pub struct </span>Player {
     <span class="kw">pub </span>selected: <span class="prelude-ty">Option</span>&lt;Selected&gt;,
     <span class="kw">pub </span>video_params: <span class="prelude-ty">Option</span>&lt;VideoParams&gt;,
@@ -1120,6 +1304,7 @@
     <span class="kw">pub </span>next_stream: <span class="prelude-ty">Option</span>&lt;Stream&gt;,
     <span class="kw">pub </span>series_info: <span class="prelude-ty">Option</span>&lt;SeriesInfo&gt;,
     <span class="kw">pub </span>library_item: <span class="prelude-ty">Option</span>&lt;LibraryItem&gt;,
+    <span class="kw">pub </span>stream_state: <span class="prelude-ty">Option</span>&lt;StreamItemState&gt;,
     <span class="attr">#[serde(skip_serializing)]
     </span><span class="kw">pub </span>watched: <span class="prelude-ty">Option</span>&lt;WatchedBitField&gt;,
     <span class="attr">#[serde(skip_serializing)]
@@ -1127,7 +1312,7 @@
     <span class="attr">#[serde(skip_serializing)]
     </span><span class="kw">pub </span>load_time: <span class="prelude-ty">Option</span>&lt;DateTime&lt;Utc&gt;&gt;,
     <span class="attr">#[serde(skip_serializing)]
-    #[derivative(Default(value = <span class="string">&quot;Utc.timestamp_opt(0, 0).unwrap()&quot;</span>))]
+    #[derivative(Default(value = <span class="string">"Utc.timestamp_opt(0, 0).unwrap()"</span>))]
     </span><span class="kw">pub </span>push_library_item_time: DateTime&lt;Utc&gt;,
     <span class="attr">#[serde(skip_serializing)]
     </span><span class="kw">pub </span>loaded: bool,
@@ -1135,9 +1320,11 @@
     </span><span class="kw">pub </span>ended: bool,
     <span class="attr">#[serde(skip_serializing)]
     </span><span class="kw">pub </span>paused: <span class="prelude-ty">Option</span>&lt;bool&gt;,
+    <span class="attr">#[serde(skip_serializing)]
+    </span><span class="kw">pub </span>seek_history: Vec&lt;SeekLog&gt;,
 }
 
-<span class="kw">impl</span>&lt;E: Env + <span class="lifetime">&#39;static</span>&gt; UpdateWithCtx&lt;E&gt; <span class="kw">for </span>Player {
+<span class="kw">impl</span>&lt;E: Env + <span class="lifetime">'static</span>&gt; UpdateWithCtx&lt;E&gt; <span class="kw">for </span>Player {
     <span class="kw">fn </span>update(<span class="kw-2">&amp;mut </span><span class="self">self</span>, msg: <span class="kw-2">&amp;</span>Msg, ctx: <span class="kw-2">&amp;</span>Ctx) -&gt; Effects {
         <span class="kw">match </span>msg {
             Msg::Action(Action::Load(ActionLoad::Player(selected))) =&gt; {
@@ -1152,26 +1339,6 @@
                         .map(|meta_request| <span class="kw-2">&amp;</span>meta_request.path.id)
                 {
                     switch_to_next_video(<span class="kw-2">&amp;mut </span><span class="self">self</span>.library_item, <span class="kw-2">&amp;</span><span class="self">self</span>.next_video)
-                } <span class="kw">else </span>{
-                    Effects::none().unchanged()
-                };
-                <span class="kw">let </span>update_streams_effects = <span class="kw">if </span><span class="self">self</span>.selected.as_ref().map(|selected| {
-                    (
-                        <span class="kw-2">&amp;</span>selected.stream,
-                        <span class="kw-2">&amp;</span>selected.stream_request,
-                        <span class="kw-2">&amp;</span>selected.meta_request,
-                    )
-                }) != <span class="prelude-val">Some</span>((
-                    <span class="kw-2">&amp;</span>selected.stream,
-                    <span class="kw-2">&amp;</span>selected.stream_request,
-                    <span class="kw-2">&amp;</span>selected.meta_request,
-                )) {
-                    Effects::msg(Msg::Internal(Internal::StreamLoaded {
-                        stream: selected.stream.to_owned(),
-                        stream_request: selected.stream_request.to_owned(),
-                        meta_request: selected.meta_request.to_owned(),
-                    }))
-                    .unchanged()
                 } <span class="kw">else </span>{
                     Effects::none().unchanged()
                 };
@@ -1201,6 +1368,7 @@
                     },
                     <span class="kw">_ </span>=&gt; eq_update(<span class="kw-2">&amp;mut </span><span class="self">self</span>.meta_item, <span class="prelude-val">None</span>),
                 };
+                <span class="kw">let </span>stream_state_effects = eq_update(<span class="kw-2">&amp;mut </span><span class="self">self</span>.stream_state, <span class="prelude-val">None</span>);
                 <span class="kw">let </span>video_params_effects = eq_update(<span class="kw-2">&amp;mut </span><span class="self">self</span>.video_params, <span class="prelude-val">None</span>);
                 <span class="kw">let </span>subtitles_effects = subtitles_update::&lt;E&gt;(
                     <span class="kw-2">&amp;mut </span><span class="self">self</span>.subtitles,
@@ -1274,9 +1442,9 @@
                 <span class="self">self</span>.ended = <span class="bool-val">false</span>;
                 <span class="self">self</span>.paused = <span class="prelude-val">None</span>;
                 switch_to_next_video_effects
-                    .join(update_streams_effects)
                     .join(selected_effects)
                     .join(meta_item_effects)
+                    .join(stream_state_effects)
                     .join(video_params_effects)
                     .join(subtitles_effects)
                     .join(next_video_effects)
@@ -1296,6 +1464,17 @@
                 } <span class="kw">else </span>{
                     Effects::none().unchanged()
                 };
+                <span class="kw">let </span>seek_history_effects = seek_update::&lt;E&gt;(
+                    <span class="self">self</span>.selected.as_ref(),
+                    <span class="self">self</span>.video_params.as_ref(),
+                    <span class="self">self</span>.series_info.as_ref(),
+                    <span class="self">self</span>.library_item.as_ref(),
+                    <span class="kw-2">&amp;mut </span><span class="self">self</span>.seek_history,
+                    <span class="comment">// we do not have information whether the user is currently
+                    // skipping the outro by Unloading the player.
+                    </span><span class="prelude-val">None</span>,
+                );
+
                 <span class="kw">let </span>switch_to_next_video_effects =
                     switch_to_next_video(<span class="kw-2">&amp;mut </span><span class="self">self</span>.library_item, <span class="kw-2">&amp;</span><span class="self">self</span>.next_video);
                 <span class="kw">let </span>push_to_library_effects = <span class="kw">match </span><span class="kw-2">&amp;</span><span class="self">self</span>.library_item {
@@ -1308,6 +1487,7 @@
                 <span class="kw">let </span>selected_effects = eq_update(<span class="kw-2">&amp;mut </span><span class="self">self</span>.selected, <span class="prelude-val">None</span>);
                 <span class="kw">let </span>video_params_effects = eq_update(<span class="kw-2">&amp;mut </span><span class="self">self</span>.video_params, <span class="prelude-val">None</span>);
                 <span class="kw">let </span>meta_item_effects = eq_update(<span class="kw-2">&amp;mut </span><span class="self">self</span>.meta_item, <span class="prelude-val">None</span>);
+                <span class="kw">let </span>stream_state_effects = eq_update(<span class="kw-2">&amp;mut </span><span class="self">self</span>.stream_state, <span class="prelude-val">None</span>);
                 <span class="kw">let </span>subtitles_effects = eq_update(<span class="kw-2">&amp;mut </span><span class="self">self</span>.subtitles, <span class="macro">vec!</span>[]);
                 <span class="kw">let </span>next_video_effects = eq_update(<span class="kw-2">&amp;mut </span><span class="self">self</span>.next_video, <span class="prelude-val">None</span>);
                 <span class="kw">let </span>next_streams_effects = eq_update(<span class="kw-2">&amp;mut </span><span class="self">self</span>.next_streams, <span class="prelude-val">None</span>);
@@ -1320,11 +1500,14 @@
                 <span class="self">self</span>.loaded = <span class="bool-val">false</span>;
                 <span class="self">self</span>.ended = <span class="bool-val">false</span>;
                 <span class="self">self</span>.paused = <span class="prelude-val">None</span>;
-                switch_to_next_video_effects
+
+                seek_history_effects
+                    .join(switch_to_next_video_effects)
                     .join(push_to_library_effects)
                     .join(selected_effects)
                     .join(video_params_effects)
                     .join(meta_item_effects)
+                    .join(stream_state_effects)
                     .join(subtitles_effects)
                     .join(next_video_effects)
                     .join(next_streams_effects)
@@ -1345,6 +1528,20 @@
                 );
                 video_params_effects.join(subtitles_effects)
             }
+            Msg::Action(Action::Player(ActionPlayer::StreamStateChanged { state })) =&gt; {
+                Effects::msg(Msg::Internal(Internal::StreamStateChanged {
+                    state: state.to_owned(),
+                    stream_request: <span class="self">self
+                        </span>.selected
+                        .as_ref()
+                        .and_then(|selected| selected.stream_request.to_owned()),
+                    meta_request: <span class="self">self
+                        </span>.selected
+                        .as_ref()
+                        .and_then(|selected| selected.meta_request.to_owned()),
+                }))
+                .unchanged()
+            }
             Msg::Action(Action::Player(ActionPlayer::TimeChanged {
                 time,
                 duration,
@@ -1362,7 +1559,8 @@
                     <span class="prelude-val">Some</span>(library_item),
                 ) =&gt; {
                     <span class="kw">let </span>seeking = library_item.state.time_offset.abs_diff(<span class="kw-2">*</span>time) &gt; <span class="number">1000</span>;
-                    <span class="comment">// library_item.state.last_watched = Some(E::now() - chrono::Duration::days(1));
+
+                    <span class="comment">// if we've selected a new video (like the next episode)
                     </span>library_item.state.last_watched = <span class="prelude-val">Some</span>(E::now());
                     <span class="kw">if </span>library_item.state.video_id != <span class="prelude-val">Some</span>(video_id.to_owned()) {
                         library_item.state.video_id = <span class="prelude-val">Some</span>(video_id.to_owned());
@@ -1373,6 +1571,18 @@
                         library_item.state.time_watched = <span class="number">0</span>;
                         library_item.state.flagged_watched = <span class="number">0</span>;
                     } <span class="kw">else </span>{
+                        <span class="comment">// else we have added to the currently selected video/stream
+                        // seek logging
+                        </span><span class="kw">if </span>seeking
+                            &amp;&amp; library_item.r#type == <span class="string">"series"
+                            </span>&amp;&amp; time &lt; <span class="kw-2">&amp;</span>PLAYER_IGNORE_SEEK_AFTER
+                        {
+                            <span class="self">self</span>.seek_history.push(SeekLog {
+                                from: library_item.state.time_offset,
+                                to: <span class="kw-2">*</span>time,
+                            });
+                        }
+
                         <span class="kw">let </span>time_watched =
                             <span class="number">1000</span>.min(time.saturating_sub(library_item.state.time_offset));
                         library_item.state.time_watched =
@@ -1412,7 +1622,7 @@
                         analytics_context.player_duration = <span class="prelude-val">Some</span>(duration.to_owned());
                     };
                     <span class="kw">let </span>trakt_event_effects = <span class="kw">if </span>seeking &amp;&amp; <span class="self">self</span>.loaded &amp;&amp; <span class="self">self</span>.paused.is_some() {
-                        <span class="kw">if </span><span class="self">self</span>.paused.expect(<span class="string">&quot;paused is None&quot;</span>) {
+                        <span class="kw">if </span><span class="self">self</span>.paused.expect(<span class="string">"paused is None"</span>) {
                             Effects::msg(Msg::Event(Event::TraktPaused {
                                 context: <span class="self">self
                                     </span>.analytics_context
@@ -1487,6 +1697,30 @@
                 };
                 trakt_event_effects.join(update_library_item_effects)
             }
+            Msg::Action(Action::Player(ActionPlayer::NextVideo)) =&gt; {
+                <span class="kw">let </span>seek_history_effects = seek_update::&lt;E&gt;(
+                    <span class="self">self</span>.selected.as_ref(),
+                    <span class="self">self</span>.video_params.as_ref(),
+                    <span class="self">self</span>.series_info.as_ref(),
+                    <span class="self">self</span>.library_item.as_ref(),
+                    <span class="kw-2">&amp;mut </span><span class="self">self</span>.seek_history,
+                    <span class="comment">// use the current LibraryItem time offset as the outro time.
+                    </span><span class="self">self</span>.library_item
+                        .as_ref()
+                        .map(|library_item| library_item.state.time_offset),
+                );
+
+                <span class="comment">// Load will actually take care of loading the next video
+
+                </span>seek_history_effects.join(
+                    Effects::msg(Msg::Event(Event::PlayerNextVideo {
+                        context: <span class="self">self</span>.analytics_context.as_ref().cloned().unwrap_or_default(),
+                        is_binge_enabled: ctx.profile.settings.binge_watching,
+                        is_playing_next_video: <span class="self">self</span>.next_video.is_some(),
+                    }))
+                    .unchanged(),
+                )
+            }
             Msg::Action(Action::Player(ActionPlayer::Ended)) <span class="kw">if </span><span class="self">self</span>.selected.is_some() =&gt; {
                 <span class="self">self</span>.ended = <span class="bool-val">true</span>;
                 Effects::msg(Msg::Event(Event::PlayerEnded {
@@ -1496,12 +1730,28 @@
                 }))
                 .unchanged()
             }
+            Msg::Internal(Internal::StreamsChanged(<span class="kw">_</span>)) =&gt; {
+                stream_state_update(<span class="kw-2">&amp;mut </span><span class="self">self</span>.stream_state, <span class="kw-2">&amp;</span><span class="self">self</span>.selected, <span class="kw-2">&amp;</span>ctx.streams)
+            }
             Msg::Internal(Internal::ResourceRequestResult(request, result)) =&gt; {
                 <span class="kw">let </span>meta_item_effects = <span class="kw">match </span><span class="kw-2">&amp;mut </span><span class="self">self</span>.meta_item {
                     <span class="prelude-val">Some</span>(meta_item) =&gt; resource_update::&lt;E, <span class="kw">_</span>&gt;(
                         meta_item,
                         ResourceAction::ResourceRequestResult { request, result },
                     ),
+                    <span class="kw">_ </span>=&gt; Effects::none().unchanged(),
+                };
+                <span class="kw">let </span>update_streams_effects = <span class="kw">match </span>(<span class="kw-2">&amp;</span><span class="self">self</span>.selected, <span class="kw-2">&amp;</span><span class="self">self</span>.meta_item) {
+                    (<span class="prelude-val">Some</span>(selected), <span class="prelude-val">Some</span>(meta_item))
+                        <span class="kw">if </span>request.path.resource == META_RESOURCE_NAME =&gt;
+                    {
+                        Effects::msg(Msg::Internal(Internal::StreamLoaded {
+                            stream: selected.stream.to_owned(),
+                            stream_request: selected.stream_request.to_owned(),
+                            meta_item: meta_item.to_owned(),
+                        }))
+                        .unchanged()
+                    }
                     <span class="kw">_ </span>=&gt; Effects::none().unchanged(),
                 };
                 <span class="kw">let </span>subtitles_effects = resources_update_with_vector_content::&lt;E, <span class="kw">_</span>&gt;(
@@ -1568,6 +1818,7 @@
                     analytics_context.duration = duration;
                 };
                 meta_item_effects
+                    .join(update_streams_effects)
                     .join(subtitles_effects)
                     .join(next_video_effects)
                     .join(next_streams_effects)
@@ -1611,6 +1862,31 @@
         <span class="kw">_ </span>=&gt; {}
     };
     Effects::none().unchanged()
+}
+
+<span class="kw">fn </span>stream_state_update(
+    state: <span class="kw-2">&amp;mut </span><span class="prelude-ty">Option</span>&lt;StreamItemState&gt;,
+    selected: <span class="kw-2">&amp;</span><span class="prelude-ty">Option</span>&lt;Selected&gt;,
+    streams: <span class="kw-2">&amp;</span>StreamsBucket,
+) -&gt; Effects {
+    <span class="kw">let </span>next_state = <span class="kw">match </span>selected {
+        <span class="prelude-val">Some</span>(Selected {
+            stream_request: <span class="prelude-val">Some</span>(stream_request),
+            meta_request: <span class="prelude-val">Some</span>(meta_request),
+            ..
+        }) =&gt; {
+            <span class="kw">let </span>key = StreamsItemKey {
+                meta_id: meta_request.path.id.to_owned(),
+                video_id: stream_request.path.id.to_owned(),
+            };
+            streams
+                .items
+                .get(<span class="kw-2">&amp;</span>key)
+                .and_then(|stream_item| stream_item.state.to_owned())
+        }
+        <span class="kw">_ </span>=&gt; <span class="prelude-val">None</span>,
+    };
+    eq_update(state, next_state)
 }
 
 <span class="kw">fn </span>next_video_update(
@@ -1675,7 +1951,7 @@
     selected: <span class="kw-2">&amp;</span><span class="prelude-ty">Option</span>&lt;Selected&gt;,
 ) -&gt; Effects
 <span class="kw">where
-    </span>E: Env + <span class="lifetime">&#39;static</span>,
+    </span>E: Env + <span class="lifetime">'static</span>,
 {
     <span class="kw">let </span>next_video = <span class="kw">match </span>next_video {
         <span class="prelude-val">Some</span>(next_video) =&gt; next_video,
@@ -1752,9 +2028,7 @@
             }),
         ) <span class="kw">if </span>settings.binge_watching =&gt; streams
             .iter()
-            .find(|Stream { behavior_hints, .. }| {
-                behavior_hints.binge_group == stream.behavior_hints.binge_group
-            })
+            .find(|next_stream| next_stream.is_binge_match(stream))
             .cloned(),
         <span class="kw">_ </span>=&gt; <span class="prelude-val">None</span>,
     };
@@ -1792,7 +2066,7 @@
     eq_update(series_info, next_series_info)
 }
 
-<span class="kw">fn </span>library_item_update&lt;E: Env + <span class="lifetime">&#39;static</span>&gt;(
+<span class="kw">fn </span>library_item_update&lt;E: Env + <span class="lifetime">'static</span>&gt;(
     library_item: <span class="kw-2">&amp;mut </span><span class="prelude-ty">Option</span>&lt;LibraryItem&gt;,
     selected: <span class="kw-2">&amp;</span><span class="prelude-ty">Option</span>&lt;Selected&gt;,
     meta_item: <span class="kw-2">&amp;</span><span class="prelude-ty">Option</span>&lt;ResourceLoadable&lt;MetaItem&gt;&gt;,
@@ -1872,7 +2146,7 @@
     eq_update(watched, next_watched)
 }
 
-<span class="kw">fn </span>subtitles_update&lt;E: Env + <span class="lifetime">&#39;static</span>&gt;(
+<span class="kw">fn </span>subtitles_update&lt;E: Env + <span class="lifetime">'static</span>&gt;(
     subtitles: <span class="kw-2">&amp;mut </span>Vec&lt;ResourceLoadable&lt;Vec&lt;Subtitles&gt;&gt;&gt;,
     selected: <span class="kw-2">&amp;</span><span class="prelude-ty">Option</span>&lt;Selected&gt;,
     video_params: <span class="kw-2">&amp;</span><span class="prelude-ty">Option</span>&lt;VideoParams&gt;,
@@ -1896,7 +2170,8 @@
                         .extend_one(
                             <span class="kw-2">&amp;</span>VIDEO_SIZE_EXTRA_PROP,
                             video_params.size.as_ref().map(|size| size.to_string()),
-                        ),
+                        )
+                        .extend_one(<span class="kw-2">&amp;</span>VIDEO_FILENAME_EXTRA_PROP, video_params.filename.to_owned()),
                     ..subtitles_path.to_owned()
                 }),
                 addons,
@@ -1904,6 +2179,75 @@
         ),
         <span class="kw">_ </span>=&gt; eq_update(subtitles, <span class="macro">vec!</span>[]),
     }
+}
+
+<span class="kw">fn </span>seek_update&lt;E: Env + <span class="lifetime">'static</span>&gt;(
+    selected: <span class="prelude-ty">Option</span>&lt;<span class="kw-2">&amp;</span>Selected&gt;,
+    video_params: <span class="prelude-ty">Option</span>&lt;<span class="kw-2">&amp;</span>VideoParams&gt;,
+    series_info: <span class="prelude-ty">Option</span>&lt;<span class="kw-2">&amp;</span>SeriesInfo&gt;,
+    library_item: <span class="prelude-ty">Option</span>&lt;<span class="kw-2">&amp;</span>LibraryItem&gt;,
+    seek_history: <span class="kw-2">&amp;mut </span>Vec&lt;SeekLog&gt;,
+    outro: <span class="prelude-ty">Option</span>&lt;u64&gt;,
+) -&gt; Effects {
+    <span class="kw">let </span>has_seeks_or_outro = !seek_history.is_empty() || <span class="macro">matches!</span>(outro, <span class="prelude-val">Some</span>(outro) <span class="kw">if </span>outro &gt; <span class="number">0</span>);
+    <span class="kw">let </span>seek_request_effects = <span class="kw">match </span>(
+        has_seeks_or_outro,
+        selected,
+        video_params,
+        series_info,
+        library_item,
+    ) {
+        (<span class="bool-val">true</span>, <span class="prelude-val">Some</span>(selected), <span class="prelude-val">Some</span>(video_params), <span class="prelude-val">Some</span>(series_info), <span class="prelude-val">Some</span>(library_item)) =&gt; {
+            <span class="kw">match </span>(
+                <span class="kw-2">&amp;</span>selected.stream.source,
+                selected.stream.name.as_ref(),
+                video_params.hash.clone(),
+            ) {
+                (StreamSource::Torrent { .. }, <span class="prelude-val">Some</span>(stream_name), <span class="prelude-val">Some</span>(opensubtitles_hash)) =&gt; {
+                    <span class="kw">let </span>stream_name_hash = {
+                        <span class="kw">use </span>sha2::Digest;
+                        <span class="kw">let </span><span class="kw-2">mut </span>sha256 = sha2::Sha256::new();
+                        sha256.update(stream_name);
+                        <span class="kw">let </span>sha256_encoded = sha256.finalize();
+
+                        BASE64.encode(sha256_encoded)
+                    };
+
+                    <span class="kw">let </span>seek_log_req = SeekLogRequest {
+                        opensubtitles_hash,
+                        item_id: library_item.id.to_owned(),
+                        series_info: series_info.to_owned(),
+                        stream_name_hash,
+                        duration: library_item.state.duration,
+                        seek_history: seek_history.to_owned(),
+                        skip_outro: outro.map(|time| <span class="macro">vec!</span>[time]).unwrap_or_default(),
+                    };
+
+                    Effects::one(push_seek_to_api::&lt;E&gt;(seek_log_req)).unchanged()
+                }
+                <span class="kw">_ </span>=&gt; Effects::none().unchanged(),
+            }
+        }
+        <span class="kw">_ </span>=&gt; Effects::none().unchanged(),
+    };
+
+    seek_request_effects.join(eq_update(seek_history, <span class="macro">vec!</span>[]))
+}
+
+<span class="kw">fn </span>push_seek_to_api&lt;E: Env + <span class="lifetime">'static</span>&gt;(seek_log_req: SeekLogRequest) -&gt; Effect {
+    <span class="kw">let </span>api_request = APIRequest::SeekLog(seek_log_req.clone());
+
+    EffectFuture::Concurrent(
+        fetch_api::&lt;E, <span class="kw">_</span>, <span class="kw">_</span>, SuccessResponse&gt;(<span class="kw-2">&amp;</span>api_request)
+            .map_err(CtxError::from)
+            .and_then(|result| <span class="kw">match </span>result {
+                APIResult::Ok { result } =&gt; future::ok(result),
+                APIResult::Err { error } =&gt; future::err(CtxError::from(error)),
+            })
+            .map(<span class="kw">move </span>|result| Msg::Internal(Internal::SeekLogsResult(seek_log_req, result)))
+            .boxed_env(),
+    )
+    .into()
 }
 
 <span class="attr">#[cfg(test)]
@@ -1925,18 +2269,18 @@
 
     <span class="attr">#[test]
     </span><span class="kw">fn </span>next_streams_update_with_a_stream_from_next_video() {
-        <span class="kw">let </span>current_youtube_1 = <span class="macro">format!</span>(<span class="string">&quot;{YOUTUBE_ADDON_ID_PREFIX}666:1&quot;</span>);
+        <span class="kw">let </span>current_youtube_1 = <span class="macro">format!</span>(<span class="string">"{YOUTUBE_ADDON_ID_PREFIX}666:1"</span>);
         <span class="kw">let </span>current_youtube_stream = Stream::youtube(<span class="kw-2">&amp;</span>current_youtube_1).unwrap();
-        <span class="kw">let </span>next_youtube_1234 = <span class="macro">format!</span>(<span class="string">&quot;{YOUTUBE_ADDON_ID_PREFIX}666:1234&quot;</span>);
+        <span class="kw">let </span>next_youtube_1234 = <span class="macro">format!</span>(<span class="string">"{YOUTUBE_ADDON_ID_PREFIX}666:1234"</span>);
         <span class="kw">let </span>next_youtube_stream = Stream::youtube(<span class="kw-2">&amp;</span>next_youtube_1234).unwrap();
 
-        <span class="kw">let </span>youtube_base = <span class="string">&quot;https://youtube.com&quot;
+        <span class="kw">let </span>youtube_base = <span class="string">"https://youtube.com"
             </span>.parse::&lt;Url&gt;()
-            .expect(<span class="string">&quot;Valid youtube url&quot;</span>);
+            .expect(<span class="string">"Valid youtube url"</span>);
         <span class="kw">let </span>next_streams = ResourceLoadable {
             request: ResourceRequest {
                 base: youtube_base.clone(),
-                path: ResourcePath::without_extra(<span class="string">&quot;stream&quot;</span>, <span class="string">&quot;movie&quot;</span>, <span class="kw-2">&amp;</span>next_youtube_1234),
+                path: ResourcePath::without_extra(<span class="string">"stream"</span>, <span class="string">"movie"</span>, <span class="kw-2">&amp;</span>next_youtube_1234),
             },
             content: <span class="prelude-val">None</span>,
         };
@@ -1945,7 +2289,7 @@
             stream: current_youtube_stream,
             stream_request: <span class="prelude-val">Some</span>(ResourceRequest {
                 base: youtube_base,
-                path: ResourcePath::without_extra(<span class="string">&quot;stream&quot;</span>, <span class="string">&quot;movie&quot;</span>, <span class="kw-2">&amp;</span>current_youtube_1),
+                path: ResourcePath::without_extra(<span class="string">"stream"</span>, <span class="string">"movie"</span>, <span class="kw-2">&amp;</span>current_youtube_1),
             }),
             meta_request: <span class="prelude-val">None</span>,
             subtitles_path: <span class="prelude-val">None</span>,
@@ -1955,11 +2299,11 @@
         </span>{
             <span class="kw">let </span><span class="kw-2">mut </span>next_streams = <span class="prelude-val">Some</span>(next_streams.clone());
             <span class="kw">let </span>next_video = Video {
-                id: <span class="string">&quot;next_video&quot;</span>.to_owned(),
-                title: <span class="string">&quot;title&quot;</span>.to_owned(),
+                id: <span class="string">"next_video"</span>.to_owned(),
+                title: <span class="string">"title"</span>.to_owned(),
                 released: <span class="prelude-val">Some</span>(Utc.with_ymd_and_hms(<span class="number">2020</span>, <span class="number">1</span>, <span class="number">1</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>).unwrap()),
-                overview: <span class="prelude-val">Some</span>(<span class="string">&quot;overview&quot;</span>.to_owned()),
-                thumbnail: <span class="prelude-val">Some</span>(<span class="string">&quot;thumbnail&quot;</span>.to_owned()),
+                overview: <span class="prelude-val">Some</span>(<span class="string">"overview"</span>.to_owned()),
+                thumbnail: <span class="prelude-val">Some</span>(<span class="string">"thumbnail"</span>.to_owned()),
                 streams: <span class="macro">vec!</span>[next_youtube_stream.clone()],
                 series_info: <span class="prelude-val">Some</span>(SeriesInfo::default()),
                 trailer_streams: <span class="macro">vec!</span>[],
@@ -1974,8 +2318,8 @@
             <span class="macro">assert!</span>(result_effects.into_iter().next().is_none());
             <span class="macro">assert_eq!</span>(
                 next_streams.as_ref().unwrap().request.path.id,
-                <span class="string">&quot;next_video&quot;</span>,
-                <span class="string">&quot;request should contain the next youtube video&quot;
+                <span class="string">"next_video"</span>,
+                <span class="string">"request should contain the next youtube video"
             </span>);
 
             <span class="macro">assert_eq!</span>(
@@ -1985,22 +2329,22 @@
                     .unwrap()
                     .content
                     .as_ref()
-                    .expect(<span class="string">&quot;Should have content&quot;</span>)
+                    .expect(<span class="string">"Should have content"</span>)
             );
         }
 
         <span class="comment">// Test that it should update next_streams using all streams in Video
         </span>{
-            <span class="kw">let </span>another_youtube_5678 = <span class="macro">format!</span>(<span class="string">&quot;{YOUTUBE_ADDON_ID_PREFIX}666:5678&quot;</span>);
+            <span class="kw">let </span>another_youtube_5678 = <span class="macro">format!</span>(<span class="string">"{YOUTUBE_ADDON_ID_PREFIX}666:5678"</span>);
             <span class="kw">let </span>another_youtube_stream = Stream::youtube(<span class="kw-2">&amp;</span>another_youtube_5678).unwrap();
             <span class="kw">let </span>youtube_streams = <span class="macro">vec!</span>[next_youtube_stream, another_youtube_stream];
             <span class="kw">let </span><span class="kw-2">mut </span>next_streams = <span class="prelude-val">Some</span>(next_streams.clone());
             <span class="kw">let </span>next_video = Video {
-                id: <span class="string">&quot;next_video_2&quot;</span>.to_owned(),
-                title: <span class="string">&quot;title&quot;</span>.to_owned(),
+                id: <span class="string">"next_video_2"</span>.to_owned(),
+                title: <span class="string">"title"</span>.to_owned(),
                 released: <span class="prelude-val">Some</span>(Utc.with_ymd_and_hms(<span class="number">2020</span>, <span class="number">1</span>, <span class="number">1</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>).unwrap()),
-                overview: <span class="prelude-val">Some</span>(<span class="string">&quot;overview&quot;</span>.to_owned()),
-                thumbnail: <span class="prelude-val">Some</span>(<span class="string">&quot;thumbnail&quot;</span>.to_owned()),
+                overview: <span class="prelude-val">Some</span>(<span class="string">"overview"</span>.to_owned()),
+                thumbnail: <span class="prelude-val">Some</span>(<span class="string">"thumbnail"</span>.to_owned()),
                 streams: youtube_streams.clone(),
                 series_info: <span class="prelude-val">Some</span>(SeriesInfo::default()),
                 trailer_streams: <span class="macro">vec!</span>[],
@@ -2016,8 +2360,8 @@
 
             <span class="macro">assert_eq!</span>(
                 next_streams.as_ref().unwrap().request.path.id,
-                <span class="string">&quot;next_video_2&quot;</span>,
-                <span class="string">&quot;request should contain the next youtube video&quot;
+                <span class="string">"next_video_2"</span>,
+                <span class="string">"request should contain the next youtube video"
             </span>);
 
             <span class="macro">assert_eq!</span>(
@@ -2027,7 +2371,7 @@
                     .unwrap()
                     .content
                     .as_ref()
-                    .expect(<span class="string">&quot;Should have content&quot;</span>)
+                    .expect(<span class="string">"Should have content"</span>)
             );
         }
 
@@ -2035,11 +2379,11 @@
         </span>{
             <span class="kw">let </span><span class="kw-2">mut </span>next_streams = <span class="prelude-val">Some</span>(next_streams);
             <span class="kw">let </span>next_video = Video {
-                id: <span class="string">&quot;next_video_3&quot;</span>.to_owned(),
-                title: <span class="string">&quot;title&quot;</span>.to_owned(),
+                id: <span class="string">"next_video_3"</span>.to_owned(),
+                title: <span class="string">"title"</span>.to_owned(),
                 released: <span class="prelude-val">Some</span>(Utc.with_ymd_and_hms(<span class="number">2020</span>, <span class="number">1</span>, <span class="number">1</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>).unwrap()),
-                overview: <span class="prelude-val">Some</span>(<span class="string">&quot;overview&quot;</span>.to_owned()),
-                thumbnail: <span class="prelude-val">Some</span>(<span class="string">&quot;thumbnail&quot;</span>.to_owned()),
+                overview: <span class="prelude-val">Some</span>(<span class="string">"overview"</span>.to_owned()),
+                thumbnail: <span class="prelude-val">Some</span>(<span class="string">"thumbnail"</span>.to_owned()),
                 <span class="comment">// empty streams will cause a request to be made
                 </span>streams: <span class="macro">vec!</span>[],
                 series_info: <span class="prelude-val">Some</span>(SeriesInfo::default()),
@@ -2055,8 +2399,8 @@
             <span class="macro">assert_eq!</span>(<span class="number">1</span>, result_effects.into_iter().count());
             <span class="macro">assert_eq!</span>(
                 next_streams.as_ref().unwrap().request.path.id,
-                <span class="string">&quot;next_video_3&quot;</span>,
-                <span class="string">&quot;request should contain the next youtube video&quot;
+                <span class="string">"next_video_3"</span>,
+                <span class="string">"request should contain the next youtube video"
             </span>);
             <span class="macro">assert_eq!</span>(
                 <span class="kw-2">&amp;</span>Loadable::Loading,
@@ -2065,7 +2409,7 @@
                     .unwrap()
                     .content
                     .as_ref()
-                    .expect(<span class="string">&quot;Should have content&quot;</span>)
+                    .expect(<span class="string">"Should have content"</span>)
             );
         }
     }

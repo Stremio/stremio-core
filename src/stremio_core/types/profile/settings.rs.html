@@ -1,4 +1,4 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `src/types/profile/settings.rs`."><title>settings.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/SourceSerif4-Regular-46f98efaafac5295.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../../../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../../../static.files/rustdoc-9ee3a5e31a2afa3e.css"><meta name="rustdoc-vars" data-root-path="../../../../" data-static-root-path="../../../../static.files/" data-current-crate="stremio_core" data-themes="" data-resource-suffix="" data-rustdoc-version="1.76.0-nightly (3a85a5cfe 2023-11-20)" data-channel="nightly" data-search-js="search-d23a059ec093b287.js" data-settings-js="settings-74424d7eec62a23e.js" ><script src="../../../../static.files/storage-fec3eaa3851e447d.js"></script><script defer src="../../../../static.files/src-script-3280b574d94e47b4.js"></script><script defer src="../../../../src-files.js"></script><script defer src="../../../../static.files/main-f06f02fd918e3bb3.js"></script><noscript><link rel="stylesheet" href="../../../../static.files/noscript-5d8b3c7633ad77ba.css"></noscript><link rel="alternate icon" type="image/png" href="../../../../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../../../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"></nav><main><nav class="sub"><form class="search-form"><span></span><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><a href="../../../../help.html">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../../../static.files/wheel-7b819b6101059cd0.svg"></a></div></form></nav><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `src/types/profile/settings.rs`."><title>settings.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/SourceSerif4-Regular-46f98efaafac5295.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../../../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../../../static.files/rustdoc-c67e44d78ab2db17.css"><meta name="rustdoc-vars" data-root-path="../../../../" data-static-root-path="../../../../static.files/" data-current-crate="stremio_core" data-themes="" data-resource-suffix="" data-rustdoc-version="1.76.0-nightly (e9013ac0e 2023-12-05)" data-channel="nightly" data-search-js="search-5a66c239c06b3a66.js" data-settings-js="settings-fe03fdc259827cd2.js" ><script src="../../../../static.files/storage-fec3eaa3851e447d.js"></script><script defer src="../../../../static.files/src-script-3280b574d94e47b4.js"></script><script defer src="../../../../src-files.js"></script><script defer src="../../../../static.files/main-77dede896d6ac08e.js"></script><noscript><link rel="stylesheet" href="../../../../static.files/noscript-5d8b3c7633ad77ba.css"></noscript><link rel="alternate icon" type="image/png" href="../../../../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../../../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"></nav><main><nav class="sub"><form class="search-form"><span></span><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><a href="../../../../help.html">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../../../static.files/wheel-7b819b6101059cd0.svg"></a></div></form></nav><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
 <a href="#2" id="2">2</a>
 <a href="#3" id="3">3</a>
 <a href="#4" id="4">4</a>
@@ -76,13 +76,15 @@
 <a href="#76" id="76">76</a>
 <a href="#77" id="77">77</a>
 <a href="#78" id="78">78</a>
+<a href="#79" id="79">79</a>
+<a href="#80" id="80">80</a>
 </pre></div><pre class="rust"><code><span class="kw">use </span><span class="kw">crate</span>::constants::STREAMING_SERVER_URL;
 <span class="kw">use </span>chrono::{DateTime, Utc};
 <span class="kw">use </span>serde::{Deserialize, Serialize};
 <span class="kw">use </span>url::Url;
 
 <span class="attr">#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
-#[serde(rename_all = <span class="string">&quot;camelCase&quot;</span>)]
+#[serde(rename_all = <span class="string">"camelCase"</span>)]
 </span><span class="kw">pub struct </span>Settings {
     <span class="kw">pub </span>interface_language: String,
     <span class="kw">pub </span>streaming_server_url: Url,
@@ -111,8 +113,9 @@
     <span class="doccomment">/// The Seek short time duration (in milliseconds) is when we are finer seeking,
     /// e.g. using the Arrow keys + Shift
     </span><span class="kw">pub </span>seek_short_time_duration: u32,
-    <span class="doccomment">/// Whether we should pause the playback when the application get&#39;s minimized
+    <span class="doccomment">/// Whether we should pause the playback when the application get's minimized
     </span><span class="kw">pub </span>pause_on_minimize: bool,
+    <span class="kw">pub </span>surround_sound: bool,
     <span class="kw">pub </span>streaming_server_warning_dismissed: <span class="prelude-ty">Option</span>&lt;DateTime&lt;Utc&gt;&gt;,
 }
 
@@ -134,22 +137,23 @@
             next_video_notification_duration: <span class="number">35000</span>,
             audio_passthrough: <span class="bool-val">false</span>,
             streaming_server_url: STREAMING_SERVER_URL.to_owned(),
-            interface_language: <span class="string">&quot;eng&quot;</span>.to_owned(),
-            audio_language: <span class="string">&quot;eng&quot;</span>.to_owned(),
+            interface_language: <span class="string">"eng"</span>.to_owned(),
+            audio_language: <span class="string">"eng"</span>.to_owned(),
             secondary_audio_language: <span class="prelude-val">None</span>,
-            subtitles_language: <span class="string">&quot;eng&quot;</span>.to_owned(),
+            subtitles_language: <span class="string">"eng"</span>.to_owned(),
             secondary_subtitles_language: <span class="prelude-val">None</span>,
             subtitles_size: <span class="number">100</span>,
-            subtitles_font: <span class="string">&quot;Roboto&quot;</span>.to_owned(),
+            subtitles_font: <span class="string">"Roboto"</span>.to_owned(),
             subtitles_bold: <span class="bool-val">false</span>,
             subtitles_offset: <span class="number">5</span>,
-            subtitles_text_color: <span class="string">&quot;#FFFFFFFF&quot;</span>.to_owned(),
-            subtitles_background_color: <span class="string">&quot;#00000000&quot;</span>.to_owned(),
-            subtitles_outline_color: <span class="string">&quot;#000000&quot;</span>.to_owned(),
+            subtitles_text_color: <span class="string">"#FFFFFFFF"</span>.to_owned(),
+            subtitles_background_color: <span class="string">"#00000000"</span>.to_owned(),
+            subtitles_outline_color: <span class="string">"#000000"</span>.to_owned(),
             esc_exit_fullscreen: <span class="bool-val">true</span>,
             seek_time_duration: <span class="number">10000</span>,
             seek_short_time_duration: <span class="number">3000</span>,
             pause_on_minimize: <span class="bool-val">false</span>,
+            surround_sound: <span class="bool-val">false</span>,
             streaming_server_warning_dismissed: <span class="prelude-val">None</span>,
         }
     }

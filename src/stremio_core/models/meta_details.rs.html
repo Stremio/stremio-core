@@ -1,4 +1,4 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `src/models/meta_details.rs`."><title>meta_details.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceSerif4-Regular-46f98efaafac5295.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../../static.files/rustdoc-9ee3a5e31a2afa3e.css"><meta name="rustdoc-vars" data-root-path="../../../" data-static-root-path="../../../static.files/" data-current-crate="stremio_core" data-themes="" data-resource-suffix="" data-rustdoc-version="1.76.0-nightly (3a85a5cfe 2023-11-20)" data-channel="nightly" data-search-js="search-d23a059ec093b287.js" data-settings-js="settings-74424d7eec62a23e.js" ><script src="../../../static.files/storage-fec3eaa3851e447d.js"></script><script defer src="../../../static.files/src-script-3280b574d94e47b4.js"></script><script defer src="../../../src-files.js"></script><script defer src="../../../static.files/main-f06f02fd918e3bb3.js"></script><noscript><link rel="stylesheet" href="../../../static.files/noscript-5d8b3c7633ad77ba.css"></noscript><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"></nav><main><nav class="sub"><form class="search-form"><span></span><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><a href="../../../help.html">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../../static.files/wheel-7b819b6101059cd0.svg"></a></div></form></nav><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `src/models/meta_details.rs`."><title>meta_details.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceSerif4-Regular-46f98efaafac5295.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../../static.files/rustdoc-c67e44d78ab2db17.css"><meta name="rustdoc-vars" data-root-path="../../../" data-static-root-path="../../../static.files/" data-current-crate="stremio_core" data-themes="" data-resource-suffix="" data-rustdoc-version="1.76.0-nightly (e9013ac0e 2023-12-05)" data-channel="nightly" data-search-js="search-5a66c239c06b3a66.js" data-settings-js="settings-fe03fdc259827cd2.js" ><script src="../../../static.files/storage-fec3eaa3851e447d.js"></script><script defer src="../../../static.files/src-script-3280b574d94e47b4.js"></script><script defer src="../../../src-files.js"></script><script defer src="../../../static.files/main-77dede896d6ac08e.js"></script><noscript><link rel="stylesheet" href="../../../static.files/noscript-5d8b3c7633ad77ba.css"></noscript><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"></nav><main><nav class="sub"><form class="search-form"><span></span><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><a href="../../../help.html">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../../static.files/wheel-7b819b6101059cd0.svg"></a></div></form></nav><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
 <a href="#2" id="2">2</a>
 <a href="#3" id="3">3</a>
 <a href="#4" id="4">4</a>
@@ -552,19 +552,6 @@
 <a href="#552" id="552">552</a>
 <a href="#553" id="553">553</a>
 <a href="#554" id="554">554</a>
-<a href="#555" id="555">555</a>
-<a href="#556" id="556">556</a>
-<a href="#557" id="557">557</a>
-<a href="#558" id="558">558</a>
-<a href="#559" id="559">559</a>
-<a href="#560" id="560">560</a>
-<a href="#561" id="561">561</a>
-<a href="#562" id="562">562</a>
-<a href="#563" id="563">563</a>
-<a href="#564" id="564">564</a>
-<a href="#565" id="565">565</a>
-<a href="#566" id="566">566</a>
-<a href="#567" id="567">567</a>
 </pre></div><pre class="rust"><code><span class="kw">use </span>std::{borrow::Cow, marker::PhantomData};
 
 <span class="kw">use </span>serde::{Deserialize, Serialize};
@@ -590,12 +577,12 @@
         library::{LibraryBucket, LibraryItem},
         profile::Profile,
         resource::{MetaItem, Stream},
-        streams::{StreamsBucket, StreamsItemKey},
+        streams::StreamsBucket,
     },
 };
 
 <span class="attr">#[derive(Clone, PartialEq, Eq, Serialize, Deserialize, Debug)]
-#[serde(rename_all = <span class="string">&quot;camelCase&quot;</span>)]
+#[serde(rename_all = <span class="string">"camelCase"</span>)]
 </span><span class="kw">pub struct </span>Selected {
     <span class="kw">pub </span>meta_path: ResourcePath,
     <span class="kw">pub </span>stream_path: <span class="prelude-ty">Option</span>&lt;ResourcePath&gt;,
@@ -606,7 +593,7 @@
 }
 
 <span class="attr">#[derive(Default, Serialize, Clone, Debug)]
-#[serde(rename_all = <span class="string">&quot;camelCase&quot;</span>)]
+#[serde(rename_all = <span class="string">"camelCase"</span>)]
 </span><span class="kw">pub struct </span>MetaDetails {
     <span class="kw">pub </span>selected: <span class="prelude-ty">Option</span>&lt;Selected&gt;,
     <span class="kw">pub </span>meta_items: Vec&lt;ResourceLoadable&lt;MetaItem&gt;&gt;,
@@ -618,7 +605,7 @@
     </span><span class="kw">pub </span>watched: <span class="prelude-ty">Option</span>&lt;WatchedBitField&gt;,
 }
 
-<span class="kw">impl</span>&lt;E: Env + <span class="lifetime">&#39;static</span>&gt; UpdateWithCtx&lt;E&gt; <span class="kw">for </span>MetaDetails {
+<span class="kw">impl</span>&lt;E: Env + <span class="lifetime">'static</span>&gt; UpdateWithCtx&lt;E&gt; <span class="kw">for </span>MetaDetails {
     <span class="kw">fn </span>update(<span class="kw-2">&amp;mut </span><span class="self">self</span>, msg: <span class="kw-2">&amp;</span>Msg, ctx: <span class="kw-2">&amp;</span>Ctx) -&gt; Effects {
         <span class="kw">match </span>msg {
             Msg::Action(Action::Load(ActionLoad::MetaDetails(selected))) =&gt; {
@@ -836,18 +823,18 @@
 }
 
 <span class="doccomment">/// If `Selected::guess_stream` is `true` then we will override the selected stream
-/// no matter if it&#39;s set (`Some`) or not (`None`).
+/// no matter if it's set (`Some`) or not (`None`).
 ///
 /// How we override the stream:
 ///
-/// 1. We find the first `MetaItem` that&#39;s successfully loaded from the addons.
+/// 1. We find the first `MetaItem` that's successfully loaded from the addons.
 /// 2. Selecting the video id for the stream request:
-/// 2.1 If there&#39;s a `MetaItem.preview.behavior_hints.default_video_id`
+/// 2.1 If there's a `MetaItem.preview.behavior_hints.default_video_id`
 /// we use it for the request
-/// 2.2 If there&#39;s no `default_video_id` and no `MetaItem.videos` returned by the addon,
+/// 2.2 If there's no `default_video_id` and no `MetaItem.videos` returned by the addon,
 /// we use the `MetaItem.preview.id`
 ///
-/// If we haven&#39;t found a suitable `video_id`, then we do not override the `Selected::stream_path`.
+/// If we haven't found a suitable `video_id`, then we do not override the `Selected::stream_path`.
 </span><span class="kw">fn </span>selected_guess_stream_update(
     selected: <span class="kw-2">&amp;mut </span><span class="prelude-ty">Option</span>&lt;Selected&gt;,
     meta_items: <span class="kw-2">&amp;</span>[ResourceLoadable&lt;MetaItem&gt;],
@@ -889,14 +876,14 @@
                 id: video_id,
                 extra: <span class="macro">vec!</span>[],
             }),
-            <span class="comment">// we must set the `guess_stream` to `false` after we&#39;ve overridden it
+            <span class="comment">// we must set the `guess_stream` to `false` after we've overridden it
             // to make it consistent
             </span>guess_stream: <span class="bool-val">false</span>,
         }),
     )
 }
 
-<span class="kw">fn </span>meta_items_update&lt;E: Env + <span class="lifetime">&#39;static</span>&gt;(
+<span class="kw">fn </span>meta_items_update&lt;E: Env + <span class="lifetime">'static</span>&gt;(
     meta_items: <span class="kw-2">&amp;mut </span>Vec&lt;ResourceLoadable&lt;MetaItem&gt;&gt;,
     selected: <span class="kw-2">&amp;</span><span class="prelude-ty">Option</span>&lt;Selected&gt;,
     profile: <span class="kw-2">&amp;</span>Profile,
@@ -970,7 +957,7 @@
     }
 }
 
-<span class="kw">fn </span>streams_update&lt;E: Env + <span class="lifetime">&#39;static</span>&gt;(
+<span class="kw">fn </span>streams_update&lt;E: Env + <span class="lifetime">'static</span>&gt;(
     streams: <span class="kw-2">&amp;mut </span>Vec&lt;ResourceLoadable&lt;Vec&lt;Stream&gt;&gt;&gt;,
     selected: <span class="kw-2">&amp;</span><span class="prelude-ty">Option</span>&lt;Selected&gt;,
     profile: <span class="kw-2">&amp;</span>Profile,
@@ -993,17 +980,17 @@
 }
 
 <span class="doccomment">/// Find a stream from addon responses, which should be played if binge watching or continuing to watch.
-/// We&#39;ve already loaded the next Video id and we need to find a proper stream for the binge watching.
+/// We've already loaded the next Video id and we need to find a proper stream for the binge watching.
 ///
 /// First find the latest `StreamItem` stored based on last **30** videos from current video
-/// (ie. we&#39;re in E4, so we&#39;re going to check E4, E3, E2, E1 in this order until we hit a stored `StreamItem`).
+/// (ie. we're in E4, so we're going to check E4, E3, E2, E1 in this order until we hit a stored `StreamItem`).
 /// Then with the stream item we try to find a stream from addon responses (including the streams inside the meta itself `meta_streams`) -
 /// we find the responses from the addon based on `StreamItem.stream_transport_url`,
 /// then first we try to find the stream based on equality (as otherwise stored stream might be expired/no longer valid),
-/// if not found we try to find a stream based on it&#39;s `StreamBehaviorHints.bingeGroup`.
-/// One note, why we cannot return `StreamItem.stream` directly if it&#39;s for the same episode,
+/// if not found we try to find a stream based on it's `StreamBehaviorHints.bingeGroup`.
+/// One note, why we cannot return `StreamItem.stream` directly if it's for the same episode,
 /// is that user might have played a stream from an addon which he no longer has due to some constrains (ie p2p addon),
-/// that&#39;s why we have to try to find it first and verify that&#39;s it&#39;s still available.
+/// that's why we have to try to find it first and verify that's it's still available.
 </span><span class="kw">fn </span>suggested_stream_update(
     suggested_stream: <span class="kw-2">&amp;mut </span><span class="prelude-ty">Option</span>&lt;ResourceLoadable&lt;<span class="prelude-ty">Option</span>&lt;Stream&gt;&gt;&gt;,
     selected: <span class="kw-2">&amp;</span><span class="prelude-ty">Option</span>&lt;Selected&gt;,
@@ -1012,78 +999,65 @@
     streams: <span class="kw-2">&amp;</span>[ResourceLoadable&lt;Vec&lt;Stream&gt;&gt;],
     stream_bucket: <span class="kw-2">&amp;</span>StreamsBucket,
 ) -&gt; Effects {
+    <span class="kw">let </span>all_streams = [meta_streams, streams].concat();
     <span class="kw">let </span>next_suggested_stream = <span class="kw">match </span>selected {
         <span class="prelude-val">Some</span>(Selected {
-            meta_path,
             stream_path: <span class="prelude-val">Some</span>(stream_path),
             ..
-        }) =&gt; {
-            meta_items
-                .iter()
-                .find_map(|meta_item| <span class="kw">match </span><span class="kw-2">&amp;</span>meta_item.content {
-                    <span class="prelude-val">Some</span>(Loadable::Ready(meta_item)) =&gt; <span class="prelude-val">Some</span>(<span class="kw-2">&amp;</span>meta_item.videos),
-                    <span class="kw">_ </span>=&gt; <span class="prelude-val">None</span>,
-                })
-                .and_then(|videos| {
-                    <span class="comment">// Check saved stream only for last 30 videos starting from the current video
-                    </span>videos
-                        .iter()
-                        .position(|video| video.id == stream_path.id)
-                        .and_then(|max_index| {
-                            videos[max_index.saturating_sub(<span class="number">30</span>)..=max_index]
-                                .iter()
-                                .rev()
-                                .find_map(|video| {
-                                    stream_bucket.items.get(<span class="kw-2">&amp;</span>StreamsItemKey {
-                                        meta_id: meta_path.id.to_string(),
-                                        video_id: video.id.to_owned(),
-                                    })
-                                })
-                        })
-                })
-                .and_then(|stream_item| {
-                    [meta_streams, streams]
-                        .concat()
-                        .iter()
-                        .find(|resource| resource.request.base == stream_item.stream_transport_url)
-                        .and_then(|resource| <span class="kw">match </span><span class="kw-2">&amp;</span>resource.content {
-                            <span class="prelude-val">Some</span>(Loadable::Ready(streams)) =&gt; <span class="prelude-val">Some</span>(ResourceLoadable {
-                                request: resource.request.clone(),
-                                content: <span class="prelude-val">Some</span>(Loadable::Ready(
-                                    streams
-                                        .iter()
-                                        .find(|stream| <span class="kw-2">*</span>stream == <span class="kw-2">&amp;</span>stream_item.stream)
-                                        .or_else(|| {
-                                            streams.iter().find(|stream| {
-                                                stream.behavior_hints.binge_group.as_deref()
-                                                    == stream_item
-                                                        .stream
-                                                        .behavior_hints
-                                                        .binge_group
-                                                        .as_deref()
+        }) =&gt; meta_items
+            .iter()
+            .filter(|<span class="kw">_</span>| !all_streams.is_empty())
+            .find_map(|meta_item_res| <span class="kw">match </span><span class="kw-2">&amp;</span>meta_item_res.content {
+                <span class="prelude-val">Some</span>(Loadable::Ready(meta_item)) =&gt; stream_bucket
+                    .last_stream_item(<span class="kw-2">&amp;</span>stream_path.id, meta_item)
+                    .and_then(|stream_item| {
+                        all_streams
+                            .iter()
+                            .find(|resource| {
+                                resource.request.base == stream_item.stream_transport_url
+                            })
+                            .and_then(|resource| <span class="kw">match </span><span class="kw-2">&amp;</span>resource.content {
+                                <span class="prelude-val">Some</span>(Loadable::Ready(streams)) =&gt; <span class="prelude-val">Some</span>(ResourceLoadable {
+                                    request: resource.request.clone(),
+                                    content: <span class="prelude-val">Some</span>(Loadable::Ready(
+                                        streams
+                                            .iter()
+                                            .find(|stream| {
+                                                stream.is_source_match(<span class="kw-2">&amp;</span>stream_item.stream)
                                             })
-                                        })
-                                        .cloned(),
-                                )),
-                            }),
-                            <span class="prelude-val">Some</span>(Loadable::Loading) =&gt; <span class="prelude-val">Some</span>(ResourceLoadable {
-                                request: resource.request.clone(),
-                                content: <span class="prelude-val">Some</span>(Loadable::Loading),
-                            }),
-                            <span class="prelude-val">Some</span>(Loadable::Err(error)) =&gt; <span class="prelude-val">Some</span>(ResourceLoadable {
-                                request: resource.request.clone(),
-                                content: <span class="prelude-val">Some</span>(Loadable::Err(error.clone())),
-                            }),
-                            <span class="kw">_ </span>=&gt; <span class="prelude-val">None</span>,
+                                            .or_else(|| {
+                                                streams.iter().find(|stream| {
+                                                    stream.is_binge_match(<span class="kw-2">&amp;</span>stream_item.stream)
+                                                })
+                                            })
+                                            .cloned(),
+                                    )),
+                                }),
+                                <span class="prelude-val">Some</span>(Loadable::Loading) =&gt; <span class="prelude-val">Some</span>(ResourceLoadable {
+                                    request: resource.request.clone(),
+                                    content: <span class="prelude-val">Some</span>(Loadable::Loading),
+                                }),
+                                <span class="prelude-val">Some</span>(Loadable::Err(error)) =&gt; <span class="prelude-val">Some</span>(ResourceLoadable {
+                                    request: resource.request.clone(),
+                                    content: <span class="prelude-val">Some</span>(Loadable::Err(error.clone())),
+                                }),
+                                <span class="kw">_ </span>=&gt; <span class="prelude-val">None</span>,
+                            })
+                    })
+                    .or_else(|| {
+                        <span class="prelude-val">Some</span>(ResourceLoadable {
+                            request: meta_item_res.request.clone(),
+                            content: <span class="prelude-val">Some</span>(Loadable::Ready(<span class="prelude-val">None</span>)),
                         })
-                })
-        }
+                    }),
+                <span class="kw">_ </span>=&gt; <span class="prelude-val">None</span>,
+            }),
         <span class="kw">_ </span>=&gt; <span class="prelude-val">None</span>,
     };
     eq_update(suggested_stream, next_suggested_stream)
 }
 
-<span class="kw">fn </span>library_item_update&lt;E: Env + <span class="lifetime">&#39;static</span>&gt;(
+<span class="kw">fn </span>library_item_update&lt;E: Env + <span class="lifetime">'static</span>&gt;(
     library_item: <span class="kw-2">&amp;mut </span><span class="prelude-ty">Option</span>&lt;LibraryItem&gt;,
     selected: <span class="kw-2">&amp;</span><span class="prelude-ty">Option</span>&lt;Selected&gt;,
     meta_items: <span class="kw-2">&amp;</span>[ResourceLoadable&lt;MetaItem&gt;],
