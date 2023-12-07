@@ -638,7 +638,7 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                     Ok(response) => Loadable::Ready(response),
                     Err(err) => Loadable::Err(err),
                 };
-                
+
                 eq_update(&mut self.skip_gaps, Some(skip_gaps_next))
             }
             Msg::Internal(Internal::ProfileChanged) => {
@@ -1076,6 +1076,7 @@ fn skip_gaps_update<E: Env + 'static>(
         auth.user
             .premium_expire
             .filter(|premium_expire| premium_expire > &E::now())
+            .map(|premium_expire| (premium_expire, auth.key.clone()))
     });
 
     let skip_gaps_request_effects = match (
@@ -1086,7 +1087,7 @@ fn skip_gaps_update<E: Env + 'static>(
         library_item,
     ) {
         (
-            Some(_expires),
+            Some((_expires, auth_key)),
             Some(selected),
             Some(video_params),
             Some(series_info),
@@ -1108,6 +1109,7 @@ fn skip_gaps_update<E: Env + 'static>(
                     };
 
                     let skip_gaps_request = SkipGapsRequest {
+                        auth_key,
                         opensubtitles_hash,
                         item_id: library_item.id.to_owned(),
                         series_info: series_info.to_owned(),

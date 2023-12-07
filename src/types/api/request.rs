@@ -94,6 +94,8 @@ pub struct SeekLogRequest {
 #[derive(Clone, PartialEq, Eq, Serialize, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct SkipGapsRequest {
+    /// User's Auth Key, this requests requires premium account.
+    pub auth_key: AuthKey,
     /// Opensubtitles hash returned by the server
     #[serde(rename = "osId")]
     pub opensubtitles_hash: String,
