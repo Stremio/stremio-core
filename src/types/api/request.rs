@@ -54,8 +54,12 @@ pub enum APIRequest {
         auth_key: AuthKey,
         events: Vec<serde_json::Value>,
     },
+    /// Sends Seek log request to the API
     #[serde(rename_all = "camelCase")]
     SeekLog(SeekLogRequest),
+    /// Retrieve Skip gaps for Intro and Outro in movie series from the API
+    #[serde(rename_all = "camelCase")]
+    SkipGaps(SkipGapsRequest),
 }
 
 #[derive(Debug, Clone, Copy, Serialize, PartialEq, Eq)]
@@ -87,6 +91,50 @@ pub struct SeekLogRequest {
     pub skip_outro: Vec<u64>,
 }
 
+#[derive(Clone, PartialEq, Eq, Serialize, Debug)]
+#[serde(rename_all = "camelCase")]
+pub struct SkipGapsRequest {
+    /// Opensubtitles hash returned by the server
+    #[serde(rename = "osId")]
+    pub opensubtitles_hash: String,
+    pub item_id: String,
+    #[serde(flatten)]
+    pub series_info: SeriesInfo,
+    /// Stream name hash
+    ///
+    /// base64 encoded SHA-256 hash of the Stream file name.
+    #[serde(rename = "stHash")]
+    pub stream_name_hash: String,
+}
+
+#[derive(Clone, PartialEq, Eq, Serialize, Deserialize, Debug)]
+#[serde(rename_all = "camelCase")]
+pub struct SkipGapsResponse {
+    /// Returns the matched attribute: Opensubtitles Hash, File name or season with episode
+    ///
+    /// Primarily used for debugging
+    pub accuracy: String,
+    pub gaps: Vec<SkipGaps>,
+}
+
+#[derive(Clone, PartialEq, Eq, Serialize, Deserialize, Debug)]
+#[serde(rename_all = "camelCase")]
+pub struct SkipGaps {
+    pub seek_history: Vec<SeekEvent>,
+    pub outro: Option<u64>,
+}
+
+#[derive(Clone, PartialEq, Eq, Serialize, Deserialize, Debug)]
+#[serde(rename_all = "camelCase")]
+pub struct SeekEvent {
+    pub insert_id: u64,
+    // pub rank: u64,
+    #[serde(rename = "seekFrom")]
+    pub from: u64,
+    #[serde(rename = "seekTo")]
+    pub to: u64,
+}
+
 impl FetchRequestParams<APIRequest> for APIRequest {
     fn endpoint(&self) -> Url {
         API_URL.to_owned()
@@ -107,6 +155,7 @@ impl FetchRequestParams<APIRequest> for APIRequest {
             APIRequest::DataExport { .. } => "dataExport".to_owned(),
             APIRequest::Events { .. } => "events".to_owned(),
             APIRequest::SeekLog { .. } => "seekLog".to_owned(),
+            APIRequest::SkipGaps { .. } => "getSkipGaps".to_owned(),
         }
     }
     fn query(&self) -> Option<String> {

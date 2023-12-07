@@ -18,10 +18,11 @@ use crate::runtime::msg::{Action, ActionLoad, ActionPlayer, Event, Internal, Msg
 use crate::runtime::{Effect, EffectFuture, Effects, Env, EnvFutureExt, UpdateWithCtx};
 use crate::types::addon::{AggrRequest, Descriptor, ExtraExt, ResourcePath, ResourceRequest};
 use crate::types::api::{
-    fetch_api, APIRequest, APIResult, SeekLog, SeekLogRequest, SuccessResponse,
+    fetch_api, APIRequest, APIResult, SeekLog, SeekLogRequest, SkipGapsRequest, SkipGapsResponse,
+    SuccessResponse,
 };
 use crate::types::library::{LibraryBucket, LibraryItem};
-use crate::types::profile::Settings as ProfileSettings;
+use crate::types::profile::{Profile, Settings as ProfileSettings};
 use crate::types::resource::{MetaItem, SeriesInfo, Stream, StreamSource, Subtitles, Video};
 use crate::types::streams::{StreamItemState, StreamsBucket, StreamsItemKey};
 
@@ -97,6 +98,7 @@ pub struct Player {
     pub series_info: Option<SeriesInfo>,
     pub library_item: Option<LibraryItem>,
     pub stream_state: Option<StreamItemState>,
+    pub skip_gaps: Option<Loadable<SkipGapsResponse, CtxError>>,
     #[serde(skip_serializing)]
     pub watched: Option<WatchedBitField>,
     #[serde(skip_serializing)]
@@ -197,6 +199,15 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                 let watched_effects =
                     watched_update(&mut self.watched, &self.meta_item, &self.library_item);
 
+                let skip_gaps_effects = skip_gaps_update::<E>(
+                    &ctx.profile,
+                    self.selected.as_ref(),
+                    self.video_params.as_ref(),
+                    self.series_info.as_ref(),
+                    self.library_item.as_ref(),
+                    &mut self.skip_gaps,
+                );
+
                 // dismiss LibraryItem notification if we have a LibraryItem to begin with
                 let notification_effects = match &self.library_item {
                     Some(library_item) => Effects::msg(Msg::Internal(
@@ -245,6 +256,7 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                     .join(series_info_effects)
                     .join(library_item_effects)
                     .join(watched_effects)
+                    .join(skip_gaps_effects)
                     .join(notification_effects)
             }
             Msg::Action(Action::Unload) => {
@@ -287,6 +299,7 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                 let series_info_effects = eq_update(&mut self.series_info, None);
                 let library_item_effects = eq_update(&mut self.library_item, None);
                 let watched_effects = eq_update(&mut self.watched, None);
+                let skip_gaps_effects = eq_update(&mut self.skip_gaps, None);
                 self.analytics_context = None;
                 self.load_time = None;
                 self.loaded = false;
@@ -307,6 +320,7 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                     .join(series_info_effects)
                     .join(library_item_effects)
                     .join(watched_effects)
+                    .join(skip_gaps_effects)
                     .join(ended_effects)
             }
             Msg::Action(Action::Player(ActionPlayer::VideoParamsChanged { video_params })) => {
@@ -618,6 +632,14 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                     .join(series_info_effects)
                     .join(library_item_effects)
                     .join(watched_effects)
+            }
+            Msg::Internal(Internal::SkipGapsResult(_skip_gaps_request, result)) => {
+                let skip_gaps_next = match result.to_owned() {
+                    Ok(response) => Loadable::Ready(response),
+                    Err(err) => Loadable::Err(err),
+                };
+                
+                eq_update(&mut self.skip_gaps, Some(skip_gaps_next))
             }
             Msg::Internal(Internal::ProfileChanged) => {
                 if let Some(analytics_context) = &mut self.analytics_context {
@@ -1037,6 +1059,90 @@ fn push_seek_to_api<E: Env + 'static>(seek_log_req: SeekLogRequest) -> Effect {
                 APIResult::Err { error } => future::err(CtxError::from(error)),
             })
             .map(move |result| Msg::Internal(Internal::SeekLogsResult(seek_log_req, result)))
+            .boxed_env(),
+    )
+    .into()
+}
+
+fn skip_gaps_update<E: Env + 'static>(
+    profile: &Profile,
+    selected: Option<&Selected>,
+    video_params: Option<&VideoParams>,
+    series_info: Option<&SeriesInfo>,
+    library_item: Option<&LibraryItem>,
+    skip_gaps: &mut Option<Loadable<SkipGapsResponse, CtxError>>,
+) -> Effects {
+    let active_premium = profile.auth.as_ref().and_then(|auth| {
+        auth.user
+            .premium_expire
+            .filter(|premium_expire| premium_expire > &E::now())
+    });
+
+    let skip_gaps_request_effects = match (
+        active_premium,
+        selected,
+        video_params,
+        series_info,
+        library_item,
+    ) {
+        (
+            Some(_expires),
+            Some(selected),
+            Some(video_params),
+            Some(series_info),
+            Some(library_item),
+        ) => {
+            match (
+                &selected.stream.source,
+                selected.stream.name.as_ref(),
+                video_params.hash.clone(),
+            ) {
+                (StreamSource::Torrent { .. }, Some(stream_name), Some(opensubtitles_hash)) => {
+                    let stream_name_hash = {
+                        use sha2::Digest;
+                        let mut sha256 = sha2::Sha256::new();
+                        sha256.update(stream_name);
+                        let sha256_encoded = sha256.finalize();
+
+                        BASE64.encode(sha256_encoded)
+                    };
+
+                    let skip_gaps_request = SkipGapsRequest {
+                        opensubtitles_hash,
+                        item_id: library_item.id.to_owned(),
+                        series_info: series_info.to_owned(),
+                        stream_name_hash,
+                    };
+                    let skip_gaps_request_effects = get_skip_gaps::<E>(skip_gaps_request);
+
+                    let skip_gaps_effects = eq_update(skip_gaps, Some(Loadable::Loading));
+
+                    Effects::one(skip_gaps_request_effects)
+                        .unchanged()
+                        .join(skip_gaps_effects)
+                }
+                _ => Effects::none().unchanged(),
+            }
+        }
+        _ => Effects::none().unchanged(),
+    };
+
+    skip_gaps_request_effects
+}
+
+fn get_skip_gaps<E: Env + 'static>(skip_gaps_request: SkipGapsRequest) -> Effect {
+    let api_request = APIRequest::SkipGaps(skip_gaps_request.clone());
+
+    EffectFuture::Concurrent(
+        fetch_api::<E, _, _, SkipGapsResponse>(&api_request)
+            .map_err(CtxError::from)
+            .and_then(|result| match result {
+                APIResult::Ok { result } => future::ok(result),
+                APIResult::Err { error } => future::err(CtxError::from(error)),
+            })
+            .map(move |result: Result<SkipGapsResponse, CtxError>| {
+                Msg::Internal(Internal::SkipGapsResult(skip_gaps_request, result))
+            })
             .boxed_env(),
     )
     .into()
