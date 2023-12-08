@@ -1,5 +1,4 @@
 use crate::model::deep_links_ext::DeepLinksExt;
-use inflector::Inflector;
 use itertools::Itertools;
 use serde::Serialize;
 use stremio_core::deep_links::{DiscoverDeepLinks, MetaItemDeepLinks};
@@ -14,6 +13,17 @@ mod model {
     use super::*;
     #[derive(Serialize)]
     #[serde(rename_all = "camelCase")]
+    pub struct ManifestPreview<'a> {
+        pub id: &'a String,
+        pub name: &'a String,
+    }
+    #[derive(Serialize)]
+    #[serde(rename_all = "camelCase")]
+    pub struct DescriptorPreview<'a> {
+        pub manifest: ManifestPreview<'a>,
+    }
+    #[derive(Serialize)]
+    #[serde(rename_all = "camelCase")]
     pub struct MetaItemPreview<'a> {
         #[serde(flatten)]
         pub meta_item: &'a stremio_core::types::resource::MetaItemPreview,
@@ -23,7 +33,10 @@ mod model {
     #[derive(Serialize)]
     #[serde(rename_all = "camelCase")]
     pub struct ResourceLoadable<'a> {
-        pub title: String,
+        pub id: String,
+        pub name: String,
+        pub r#type: String,
+        pub addon: DescriptorPreview<'a>,
         pub content: Option<Loadable<Vec<MetaItemPreview<'a>>, String>>,
         pub deep_links: DiscoverDeepLinks,
     }
@@ -64,15 +77,19 @@ pub fn serialize_catalogs_with_extra(
             })
             .map(
                 |(addon, manifest_catalog, catalog)| model::ResourceLoadable {
-                    title: format!(
-                        "{} - {}",
-                        &manifest_catalog
-                            .name
-                            .as_ref()
-                            .unwrap_or(&addon.manifest.name)
-                            .to_title_case(),
-                        &manifest_catalog.r#type.to_title_case(),
-                    ),
+                    id: manifest_catalog.id.to_string(),
+                    name: manifest_catalog
+                        .name
+                        .as_ref()
+                        .unwrap_or(&addon.manifest.name)
+                        .to_string(),
+                    r#type: manifest_catalog.r#type.to_string(),
+                    addon: model::DescriptorPreview {
+                        manifest: model::ManifestPreview {
+                            id: &addon.manifest.id,
+                            name: &addon.manifest.name,
+                        },
+                    },
                     content: match &catalog.content {
                         Some(Loadable::Ready(meta_items)) => {
                             let poster_shape =

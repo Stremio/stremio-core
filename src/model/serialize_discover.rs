@@ -20,6 +20,7 @@ mod model {
     #[derive(Serialize)]
     #[serde(rename_all = "camelCase")]
     pub struct ManifestPreview<'a> {
+        pub id: &'a String,
         pub name: &'a String,
     }
     #[derive(Serialize)]
@@ -46,6 +47,7 @@ mod model {
     pub struct SelectableCatalog<'a> {
         pub id: &'a String,
         pub name: &'a String,
+        pub r#type: &'a String,
         pub addon: DescriptorPreview<'a>,
         pub selected: &'a bool,
         pub deep_links: DiscoverDeepLinks,
@@ -133,8 +135,10 @@ pub fn serialize_discover(
                 .map(|(addon, selectable_catalog)| model::SelectableCatalog {
                     id: &selectable_catalog.request.path.id,
                     name: &selectable_catalog.catalog,
+                    r#type: &selectable_catalog.request.path.r#type,
                     addon: model::DescriptorPreview {
                         manifest: model::ManifestPreview {
+                            id: &addon.manifest.id,
                             name: &addon.manifest.name,
                         },
                     },
