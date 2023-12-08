@@ -98,7 +98,6 @@ pub struct Player {
     pub series_info: Option<SeriesInfo>,
     pub library_item: Option<LibraryItem>,
     pub stream_state: Option<StreamItemState>,
-    pub skip_gaps: Option<(SkipGapsRequest, Loadable<SkipGapsResponse, CtxError>)>,
     #[serde(skip_serializing)]
     pub watched: Option<WatchedBitField>,
     #[serde(skip_serializing)]
@@ -116,6 +115,8 @@ pub struct Player {
     pub paused: Option<bool>,
     #[serde(skip_serializing)]
     pub seek_history: Vec<SeekLog>,
+    #[serde(skip_serializing)]
+    pub skip_gaps: Option<(SkipGapsRequest, Loadable<SkipGapsResponse, CtxError>)>,
 }
 
 impl<E: Env + 'static> UpdateWithCtx<E> for Player {
