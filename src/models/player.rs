@@ -98,7 +98,7 @@ pub struct Player {
     pub series_info: Option<SeriesInfo>,
     pub library_item: Option<LibraryItem>,
     pub stream_state: Option<StreamItemState>,
-    pub skip_gaps: Option<Loadable<SkipGapsResponse, CtxError>>,
+    pub skip_gaps: Option<(SkipGapsRequest, Loadable<SkipGapsResponse, CtxError>)>,
     #[serde(skip_serializing)]
     pub watched: Option<WatchedBitField>,
     #[serde(skip_serializing)]
@@ -332,7 +332,18 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                     &self.video_params,
                     &ctx.profile.addons,
                 );
-                video_params_effects.join(subtitles_effects)
+                let skip_gaps_effects = skip_gaps_update::<E>(
+                    &ctx.profile,
+                    self.selected.as_ref(),
+                    self.video_params.as_ref(),
+                    self.series_info.as_ref(),
+                    self.library_item.as_ref(),
+                    &mut self.skip_gaps,
+                );
+
+                video_params_effects
+                    .join(subtitles_effects)
+                    .join(skip_gaps_effects)
             }
             Msg::Action(Action::Player(ActionPlayer::StreamStateChanged { state })) => {
                 Effects::msg(Msg::Internal(Internal::StreamStateChanged {
@@ -601,6 +612,16 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                 );
                 let watched_effects =
                     watched_update(&mut self.watched, &self.meta_item, &self.library_item);
+
+                let skip_gaps_effects = skip_gaps_update::<E>(
+                    &ctx.profile,
+                    self.selected.as_ref(),
+                    self.video_params.as_ref(),
+                    self.series_info.as_ref(),
+                    self.library_item.as_ref(),
+                    &mut self.skip_gaps,
+                );
+
                 let (id, r#type, name, video_id, time, duration) = self
                     .library_item
                     .as_ref()
@@ -632,14 +653,20 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                     .join(series_info_effects)
                     .join(library_item_effects)
                     .join(watched_effects)
+                    .join(skip_gaps_effects)
             }
-            Msg::Internal(Internal::SkipGapsResult(_skip_gaps_request, result)) => {
+            Msg::Internal(Internal::SkipGapsResult(skip_gaps_request, result)) => {
                 let skip_gaps_next = match result.to_owned() {
                     Ok(response) => Loadable::Ready(response),
                     Err(err) => Loadable::Err(err),
                 };
 
-                eq_update(&mut self.skip_gaps, Some(skip_gaps_next))
+                tracing::info!("New skip_gaps: {:#?}", skip_gaps_next);
+
+                eq_update(
+                    &mut self.skip_gaps,
+                    Some((skip_gaps_request.to_owned(), skip_gaps_next)),
+                )
             }
             Msg::Internal(Internal::ProfileChanged) => {
                 if let Some(analytics_context) = &mut self.analytics_context {
@@ -1070,7 +1097,7 @@ fn skip_gaps_update<E: Env + 'static>(
     video_params: Option<&VideoParams>,
     series_info: Option<&SeriesInfo>,
     library_item: Option<&LibraryItem>,
-    skip_gaps: &mut Option<Loadable<SkipGapsResponse, CtxError>>,
+    skip_gaps: &mut Option<(SkipGapsRequest, Loadable<SkipGapsResponse, CtxError>)>,
 ) -> Effects {
     let active_premium = profile.auth.as_ref().and_then(|auth| {
         auth.user
@@ -1115,18 +1142,42 @@ fn skip_gaps_update<E: Env + 'static>(
                         series_info: series_info.to_owned(),
                         stream_name_hash,
                     };
-                    let skip_gaps_request_effects = get_skip_gaps::<E>(skip_gaps_request);
 
-                    let skip_gaps_effects = eq_update(skip_gaps, Some(Loadable::Loading));
+                    // no previous request, error, or different request
+                    if skip_gaps.is_none()
+                        || matches!(skip_gaps, Some((request, Loadable::Err(_))) | Some((request, _)) if request != &skip_gaps_request)
+                    {
+                        let skip_gaps_request_effects =
+                            get_skip_gaps::<E>(skip_gaps_request.clone());
 
-                    Effects::one(skip_gaps_request_effects)
-                        .unchanged()
-                        .join(skip_gaps_effects)
+                        let skip_gaps_effects =
+                            eq_update(skip_gaps, Some((skip_gaps_request, Loadable::Loading)));
+
+                        Effects::one(skip_gaps_request_effects)
+                            .unchanged()
+                            .join(skip_gaps_effects)
+                    } else {
+                        Effects::none().unchanged()
+                    }
                 }
-                _ => Effects::none().unchanged(),
+                (debug_1, debug_2, debug_3) => {
+                    tracing::info!("{:#?} {:#?} {:#?}", debug_1, debug_2, debug_3);
+                    Effects::none().unchanged()
+                }
             }
         }
-        _ => Effects::none().unchanged(),
+        (debug_1, debug_2, debug_3, debug_4, debug_5) => {
+            tracing::info!(
+                "{:#?} {:#?} {:#?} {:#?} {:#?}",
+                debug_1,
+                debug_2,
+                debug_3,
+                debug_4,
+                debug_5
+            );
+
+            Effects::none().unchanged()
+        }
     };
 
     skip_gaps_request_effects

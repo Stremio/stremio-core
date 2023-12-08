@@ -109,34 +109,6 @@ pub struct SkipGapsRequest {
     pub stream_name_hash: String,
 }
 
-#[derive(Clone, PartialEq, Eq, Serialize, Deserialize, Debug)]
-#[serde(rename_all = "camelCase")]
-pub struct SkipGapsResponse {
-    /// Returns the matched attribute: Opensubtitles Hash, File name or season with episode
-    ///
-    /// Primarily used for debugging
-    pub accuracy: String,
-    pub gaps: Vec<SkipGaps>,
-}
-
-#[derive(Clone, PartialEq, Eq, Serialize, Deserialize, Debug)]
-#[serde(rename_all = "camelCase")]
-pub struct SkipGaps {
-    pub seek_history: Vec<SeekEvent>,
-    pub outro: Option<u64>,
-}
-
-#[derive(Clone, PartialEq, Eq, Serialize, Deserialize, Debug)]
-#[serde(rename_all = "camelCase")]
-pub struct SeekEvent {
-    pub insert_id: u64,
-    // pub rank: u64,
-    #[serde(rename = "seekFrom")]
-    pub from: u64,
-    #[serde(rename = "seekTo")]
-    pub to: u64,
-}
-
 impl FetchRequestParams<APIRequest> for APIRequest {
     fn endpoint(&self) -> Url {
         API_URL.to_owned()
