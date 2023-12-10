@@ -18,6 +18,7 @@ mod model {
         #[serde(flatten)]
         pub meta_item: &'a stremio_core::types::resource::MetaItemPreview,
         pub poster_shape: &'a PosterShape,
+        pub watched: bool,
         pub deep_links: MetaItemDeepLinks,
     }
     #[derive(Serialize)]
@@ -86,6 +87,12 @@ pub fn serialize_catalogs_with_extra(
                                         meta_item,
                                         poster_shape: poster_shape
                                             .unwrap_or(&meta_item.poster_shape),
+                                        watched: ctx
+                                            .library
+                                            .items
+                                            .get(&meta_item.id)
+                                            .map(|library_item| library_item.watched())
+                                            .unwrap_or_default(),
                                         deep_links: MetaItemDeepLinks::from((
                                             meta_item,
                                             &catalog.request,

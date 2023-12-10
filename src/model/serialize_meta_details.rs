@@ -206,7 +206,7 @@ pub fn serialize_meta_details(
                             .library
                             .items
                             .get(&meta_item.preview.id)
-                            .map(|library_item| library_item.state.times_watched > 0)
+                            .map(|library_item| library_item.watched())
                             .unwrap_or_default(),
                         deep_links: MetaItemDeepLinks::from((meta_item, request))
                             .into_web_deep_links(),
