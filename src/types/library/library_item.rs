@@ -63,6 +63,11 @@ impl LibraryItem {
         }
     }
 
+    #[inline]
+    pub fn watched(&self) -> bool {
+        self.state.times_watched > 0 || self.state.flagged_watched == 1
+    }
+
     /// Pulling notifications relies on a few key things:
     ///
     /// - LibraryItem should not be "other" or "movie", i.e. if you have "series" it will pull notifications
