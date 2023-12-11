@@ -40,7 +40,7 @@ mod model {
     #[derive(Serialize)]
     #[serde(rename_all = "camelCase")]
     pub struct SearchHistoryItem<'a> {
-        pub value: &'a String,
+        pub query: &'a String,
         pub deep_links: SearchHistoryItemDeepLinks,
     }
 
@@ -66,7 +66,7 @@ mod model {
                     .iter()
                     .sorted_by(|(_, a_date), (_, b_date)| Ord::cmp(b_date, a_date))
                     .map(|(query, ..)| SearchHistoryItem {
-                        value: query,
+                        query,
                         deep_links: SearchHistoryItemDeepLinks::from(query),
                     })
                     .collect(),
