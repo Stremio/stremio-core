@@ -63,6 +63,7 @@ impl LibraryItem {
         }
     }
 
+    /// Returns whether the item has been watched
     #[inline]
     pub fn watched(&self) -> bool {
         self.state.times_watched > 0 || self.state.flagged_watched == 1
