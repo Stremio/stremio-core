@@ -74,6 +74,33 @@ pub enum LinkDataResponse {
     AuthKey(LinkAuthKey),
 }
 
+#[derive(Clone, PartialEq, Eq, Serialize, Deserialize, Debug)]
+#[serde(rename_all = "camelCase")]
+pub struct ModalAddon {
+    pub name: String,
+    pub manifest_url: String,
+}
+
+#[derive(Clone, PartialEq, Eq, Serialize, Deserialize, Debug)]
+#[serde(rename_all = "camelCase")]
+pub struct GetModalResponse {
+    pub id: String,
+    pub title: String,
+    pub message: String,
+    pub image_url: String,
+    pub addon: Option<ModalAddon>,
+    pub external_url: Option<String>,
+}
+
+#[derive(Clone, PartialEq, Eq, Serialize, Deserialize, Debug)]
+#[serde(rename_all = "camelCase")]
+pub struct GetNotificationResponse {
+    pub id: String,
+    pub title: String,
+    pub message: String,
+    pub external_url: Option<String>,
+}
+
 /// API response for the [`LibraryItem`]s which skips invalid items
 /// when deserializing.
 #[derive(Debug, Clone, Serialize, Deserialize, Default, PartialEq, Eq)]

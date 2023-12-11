@@ -1,8 +1,8 @@
 use crate::constants::LIBRARY_COLLECTION_NAME;
-use crate::models::common::{DescriptorLoadable, ResourceLoadable};
+use crate::models::common::{DescriptorLoadable, Loadable, ResourceLoadable};
 use crate::models::ctx::{
-    update_library, update_notifications, update_profile, update_search_history, update_streams,
-    update_trakt_addon, CtxError,
+    update_events, update_library, update_notifications, update_profile, update_search_history,
+    update_streams, update_trakt_addon, CtxError,
 };
 use crate::runtime::msg::{Action, ActionCtx, Event, Internal, Msg};
 use crate::runtime::{Effect, EffectFuture, Effects, Env, EnvFutureExt, Update};
@@ -10,6 +10,7 @@ use crate::types::api::{
     fetch_api, APIRequest, APIResult, AuthRequest, AuthResponse, CollectionResponse,
     DatastoreCommand, DatastoreRequest, LibraryItemsResponse, SuccessResponse,
 };
+use crate::types::events::Events;
 use crate::types::library::LibraryBucket;
 use crate::types::notifications::NotificationsBucket;
 use crate::types::profile::{Auth, AuthKey, Profile};
@@ -21,7 +22,7 @@ use crate::types::streams::StreamsBucket;
 use derivative::Derivative;
 use enclose::enclose;
 use futures::{future, FutureExt, TryFutureExt};
-use serde::{Deserialize, Serialize};
+use serde::Serialize;
 
 use tracing::{event, trace, Level};
 
@@ -32,7 +33,7 @@ pub enum CtxStatus {
     Ready,
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug)]
+#[derive(Serialize, Clone, Debug)]
 #[cfg_attr(test, derive(Derivative))]
 #[cfg_attr(test, derivative(Default))]
 pub struct Ctx {
@@ -54,6 +55,7 @@ pub struct Ctx {
     pub trakt_addon: Option<DescriptorLoadable>,
     #[serde(skip)]
     pub notification_catalogs: Vec<ResourceLoadable<Vec<MetaItem>>>,
+    pub events: Events,
 }
 
 impl Ctx {
@@ -73,6 +75,10 @@ impl Ctx {
             trakt_addon: None,
             notification_catalogs: vec![],
             status: CtxStatus::Ready,
+            events: Events {
+                modal: Loadable::Loading,
+                notification: Loadable::Loading,
+            },
         }
     }
 }
@@ -195,12 +201,14 @@ impl<E: Env + 'static> Update<E> for Ctx {
                 );
                 let search_history_effects =
                     update_search_history::<E>(&mut self.search_history, &self.status, msg);
+                let events_effects = update_events::<E>(&mut self.events, msg);
                 profile_effects
                     .join(library_effects)
                     .join(streams_effects)
                     .join(trakt_addon_effects)
                     .join(notifications_effects)
                     .join(search_history_effects)
+                    .join(events_effects)
             }
         }
     }

@@ -60,6 +60,7 @@ pub enum ActionCtx {
     ///
     /// [`LibraryItem`]: crate::types::library::LibraryItem
     PullNotifications,
+    GetEvents,
 }
 
 #[derive(Clone, Deserialize, Debug)]
