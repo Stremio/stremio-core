@@ -15,7 +15,7 @@ mod model {
     use chrono::{DateTime, Utc};
 
     use stremio_core::types::{
-        notifications::NotificationItem, profile::Profile, resource::MetaItemId, events::Events
+        events::Events, notifications::NotificationItem, profile::Profile, resource::MetaItemId,
     };
 
     #[derive(Serialize)]
