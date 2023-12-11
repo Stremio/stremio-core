@@ -15,7 +15,7 @@ mod model {
     use chrono::{DateTime, Utc};
 
     use stremio_core::types::{
-        notifications::NotificationItem, profile::Profile, resource::MetaItemId,
+        notifications::NotificationItem, profile::Profile, resource::MetaItemId, events::Events
     };
 
     #[derive(Serialize)]
@@ -25,6 +25,7 @@ mod model {
         pub profile: &'a Profile,
         pub notifications: Notifications<'a>,
         pub search_history: Vec<&'a str>,
+        pub events: &'a Events,
     }
 
     #[derive(Serialize)]
@@ -59,6 +60,7 @@ mod model {
                     .sorted_by(|(_, a_date), (_, b_date)| Ord::cmp(b_date, a_date))
                     .map(|(query, ..)| query.as_str())
                     .collect_vec(),
+                events: &ctx.events,
             }
         }
     }
