@@ -4,9 +4,7 @@ use url::Url;
 use crate::models::ctx::CtxError;
 use crate::models::link::LinkError;
 use crate::models::local_search::Searchable;
-use crate::models::streaming_server::{
-    PlaybackDevice, Settings as StreamingServerSettings, StatisticsRequest,
-};
+use crate::models::streaming_server::{PlaybackDevice, StatisticsRequest};
 use crate::runtime::EnvError;
 use crate::types::addon::{Descriptor, Manifest, ResourceRequest, ResourceResponse};
 use crate::types::api::{
@@ -16,7 +14,7 @@ use crate::types::api::{
 use crate::types::library::{LibraryBucket, LibraryItem, LibraryItemId};
 use crate::types::profile::{Auth, AuthKey, Profile, User};
 use crate::types::resource::{MetaItem, Stream};
-use crate::types::streaming_server::Statistics;
+use crate::types::streaming_server::{GetHTTPSResponse, NetworkInfo, SettingsResponse, Statistics};
 use crate::types::streams::StreamItemState;
 
 pub type CtxStorageResponse = (
@@ -91,17 +89,21 @@ pub enum Internal {
     /// Result for loading link data.
     LinkDataResult(String, Result<LinkDataResponse, LinkError>),
     /// Result for loading streaming server settings.
-    StreamingServerSettingsResult(Url, Result<StreamingServerSettings, EnvError>),
+    StreamingServerSettingsResult(Url, Result<SettingsResponse, EnvError>),
     /// Result for loading streaming server base url.
     StreamingServerBaseURLResult(Url, Result<Url, EnvError>),
     // Result for loading streaming server playback devices.
     StreamingServerPlaybackDevicesResult(Url, Result<Vec<PlaybackDevice>, EnvError>),
+    // Result for network info.
+    StreamingServerNetworkInfoResult(Url, Result<NetworkInfo, EnvError>),
     /// Result for updating streaming server settings.
     StreamingServerUpdateSettingsResult(Url, Result<(), EnvError>),
     /// Result for creating a torrent.
     StreamingServerCreateTorrentResult(String, Result<(), EnvError>),
     /// Result for playing on device.
     StreamingServerPlayOnDeviceResult(String, Result<(), EnvError>),
+    // Result for get https endpoint request
+    StreamingServerGetHTTPSResult(Url, Result<GetHTTPSResponse, EnvError>),
     /// Result for streaming server statistics.
     ///
     /// Server will return None (or `null`) in response for [`Statistics`]`,
