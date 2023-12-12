@@ -51,6 +51,9 @@ pub const URI_COMPONENT_ENCODE_SET: &AsciiSet = &NON_ALPHANUMERIC
     .remove(b'(')
     .remove(b')');
 
+/// In milliseconds
+pub const PLAYER_IGNORE_SEEK_AFTER: u64 = 600_000;
+
 pub static BASE64: base64::engine::general_purpose::GeneralPurpose =
     base64::engine::general_purpose::STANDARD;
 

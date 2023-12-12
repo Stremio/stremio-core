@@ -58,6 +58,8 @@ pub enum ActionCtx {
     ///
     /// [`LibraryItem`]: crate::types::library::LibraryItem
     PullNotifications,
+    /// Make request to api to get events modal and notification
+    GetEvents,
 }
 
 #[derive(Clone, Deserialize, Debug)]
@@ -145,6 +147,13 @@ pub enum ActionPlayer {
     PausedChanged {
         paused: bool,
     },
+    /// User has clicked on the next video button.
+    NextVideo,
+    /// Video player has ended.
+    ///
+    /// 2 scenarios are possible:
+    /// - We've watched a movie to the last second
+    /// - We've watched a movie series to the last second
     Ended,
 }
 

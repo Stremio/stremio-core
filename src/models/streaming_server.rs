@@ -178,6 +178,7 @@ impl<E: Env + 'static> UpdateWithCtx<E> for StreamingServer {
                 let selected_effects =
                     eq_update(&mut self.selected.statistics, Some(request.to_owned()));
                 let statistics_effects = eq_update(&mut self.statistics, Some(Loadable::Loading));
+
                 Effects::one(get_torrent_statistics::<E>(
                     &self.selected.transport_url,
                     request,
@@ -349,7 +350,9 @@ impl<E: Env + 'static> UpdateWithCtx<E> for StreamingServer {
                     && self.selected.statistics.as_ref() == Some(request) =>
             {
                 let loadable = match result {
-                    Ok(statistics) => Loadable::Ready(statistics.to_owned()),
+                    Ok(Some(statistics)) => Loadable::Ready(statistics.to_owned()),
+                    // we've loaded the whole stream, no need to update the statistics.
+                    Ok(None) => return Effects::none().unchanged(),
                     Err(error) => Loadable::Err(error.to_owned()),
                 };
                 eq_update(&mut self.statistics, Some(loadable))
@@ -624,8 +627,12 @@ fn get_torrent_statistics<E: Env + 'static>(url: &Url, request: &StatisticsReque
         .header(http::header::CONTENT_TYPE, "application/json")
         .body(())
         .expect("request builder failed");
+
+    // It's happening when the engine is destroyed for inactivity:
+    // If it was downloaded to 100% and that the stream is paused, then played,
+    // it will create a new engine and return the correct stats
     EffectFuture::Concurrent(
-        E::fetch::<_, Statistics>(request)
+        E::fetch::<_, Option<Statistics>>(request)
             .map(enclose!((url) move |result|
                 Msg::Internal(Internal::StreamingServerStatisticsResult((url, statistics_request), result))
             ))

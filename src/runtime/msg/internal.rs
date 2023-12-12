@@ -8,8 +8,8 @@ use crate::models::streaming_server::{PlaybackDevice, StatisticsRequest};
 use crate::runtime::EnvError;
 use crate::types::addon::{Descriptor, Manifest, ResourceRequest, ResourceResponse};
 use crate::types::api::{
-    APIRequest, AuthRequest, DataExportResponse, DatastoreRequest, LinkCodeResponse,
-    LinkDataResponse,
+    APIRequest, AuthRequest, DataExportResponse, DatastoreRequest, GetModalResponse,
+    GetNotificationResponse, LinkCodeResponse, LinkDataResponse, SeekLogRequest, SuccessResponse,
 };
 use crate::types::library::{LibraryBucket, LibraryItem, LibraryItemId};
 use crate::types::profile::{Auth, AuthKey, Profile, User};
@@ -100,12 +100,18 @@ pub enum Internal {
     StreamingServerUpdateSettingsResult(Url, Result<(), EnvError>),
     /// Result for creating a torrent.
     StreamingServerCreateTorrentResult(String, Result<(), EnvError>),
-    // Result for playing on device.
+    /// Result for playing on device.
     StreamingServerPlayOnDeviceResult(String, Result<(), EnvError>),
-    // Result for streaming server statistics.
-    StreamingServerStatisticsResult((Url, StatisticsRequest), Result<Statistics, EnvError>),
     // Result for get https endpoint request
     StreamingServerGetHTTPSResult(Url, Result<GetHTTPSResponse, EnvError>),
+    /// Result for streaming server statistics.
+    ///
+    /// Server will return None (or `null`) in response for [`Statistics`]`,
+    /// when stream has been fully loaded up to 100%
+    StreamingServerStatisticsResult(
+        (Url, StatisticsRequest),
+        Result<Option<Statistics>, EnvError>,
+    ),
     /// Result for fetching resource from addons.
     ResourceRequestResult(ResourceRequest, Box<Result<ResourceResponse, EnvError>>),
     /// Result for fetching manifest from addon.
@@ -114,6 +120,17 @@ pub enum Internal {
     NotificationsRequestResult(ResourceRequest, Box<Result<ResourceResponse, EnvError>>),
     /// Result for requesting a `dataExport` of user data.
     DataExportResult(AuthKey, Result<DataExportResponse, CtxError>),
+    /// Result for submitting SeekLogs request for a played stream.
+    ///
+    /// Applicable only to movie series and torrents.
+    SeekLogsResult(SeekLogRequest, Result<SuccessResponse, CtxError>),
     /// The result of querying the data for LocalSearch
     LoadLocalSearchResult(Url, Result<Vec<Searchable>, EnvError>),
+    /// Result for getModal request
+    GetModalResult(APIRequest, Result<Option<GetModalResponse>, CtxError>),
+    /// Result for getNotification request
+    GetNotificationResult(
+        APIRequest,
+        Result<Option<GetNotificationResponse>, CtxError>,
+    ),
 }
