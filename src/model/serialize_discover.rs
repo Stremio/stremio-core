@@ -101,10 +101,6 @@ pub fn serialize_discover(
     ctx: &Ctx,
     streaming_server: &StreamingServer,
 ) -> JsValue {
-    let streaming_server_url = match streaming_server.base_url.clone() {
-        Loadable::Ready(url) => Some(url),
-        _ => None,
-    };
     JsValue::from_serde(&model::CatalogWithFilters {
         selected: &discover.selected,
         selectable: model::Selectable {
@@ -185,7 +181,7 @@ pub fn serialize_discover(
                                             stream,
                                             deep_links: StreamDeepLinks::from((
                                                 stream,
-                                                &streaming_server_url,
+                                                &streaming_server.base_url,
                                                 &ctx.profile.settings,
                                             ))
                                             .into_web_deep_links(),
