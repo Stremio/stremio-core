@@ -662,8 +662,6 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                     Err(err) => Loadable::Err(err),
                 };
 
-                tracing::info!("New skip_gaps: {:#?}", skip_gaps_next);
-
                 eq_update(
                     &mut self.skip_gaps,
                     Some((skip_gaps_request.to_owned(), skip_gaps_next)),
@@ -1161,24 +1159,10 @@ fn skip_gaps_update<E: Env + 'static>(
                         Effects::none().unchanged()
                     }
                 }
-                (debug_1, debug_2, debug_3) => {
-                    tracing::info!("{:#?} {:#?} {:#?}", debug_1, debug_2, debug_3);
-                    Effects::none().unchanged()
-                }
+                _ => Effects::none().unchanged(),
             }
         }
-        (debug_1, debug_2, debug_3, debug_4, debug_5) => {
-            tracing::info!(
-                "{:#?} {:#?} {:#?} {:#?} {:#?}",
-                debug_1,
-                debug_2,
-                debug_3,
-                debug_4,
-                debug_5
-            );
-
-            Effects::none().unchanged()
-        }
+        _ => Effects::none().unchanged(),
     };
 
     skip_gaps_request_effects
