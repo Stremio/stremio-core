@@ -32,12 +32,10 @@ use derivative::Derivative;
 use itertools::Itertools;
 use serde::{Deserialize, Serialize};
 
-use lazy_static::lazy_static;
+use once_cell::sync::Lazy;
 
-lazy_static! {
-    /// The duration that must have passed in order for a library item to be updated.
-    pub static ref PUSH_TO_LIBRARY_EVERY: Duration = Duration::seconds(30);
-}
+/// The duration that must have passed in order for a library item to be updated.
+pub static PUSH_TO_LIBRARY_EVERY: Lazy<Duration> = Lazy::new(|| Duration::seconds(90));
 
 #[derive(Clone, Default, PartialEq, Eq, Serialize, Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
@@ -438,16 +436,7 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                     };
 
                     let push_to_library_effects =
-                        if E::now() - self.push_library_item_time >= *PUSH_TO_LIBRARY_EVERY {
-                            self.push_library_item_time = E::now();
-
-                            Effects::msg(Msg::Internal(Internal::UpdateLibraryItem(
-                                library_item.to_owned(),
-                            )))
-                            .unchanged()
-                        } else {
-                            Effects::none().unchanged()
-                        };
+                        push_to_library::<E>(&mut self.push_library_item_time, library_item);
 
                     trakt_event_effects.join(push_to_library_effects)
                 }
@@ -627,6 +616,24 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
             }
             _ => Effects::none().unchanged(),
         }
+    }
+}
+
+/// We will push an [`Internal::UpdateLibraryItem`] message only if
+/// at least [`PUSH_TO_LIBRARY_EVERY`] time has passed since the last update.
+fn push_to_library<E: Env + 'static>(
+    push_library_item_time: &mut DateTime<Utc>,
+    library_item: &mut LibraryItem,
+) -> Effects {
+    if E::now() - *push_library_item_time >= *PUSH_TO_LIBRARY_EVERY {
+        *push_library_item_time = E::now();
+
+        Effects::msg(Msg::Internal(Internal::UpdateLibraryItem(
+            library_item.to_owned(),
+        )))
+        .unchanged()
+    } else {
+        Effects::none().unchanged()
     }
 }
 
