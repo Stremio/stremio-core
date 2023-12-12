@@ -42,7 +42,7 @@ fn get_modal<E: Env + 'static>() -> Effect {
     };
 
     EffectFuture::Concurrent(
-        fetch_api::<E, _, _, GetModalResponse>(&request)
+        fetch_api::<E, _, _, Option<GetModalResponse>>(&request)
             .map_err(CtxError::from)
             .and_then(|result| match result {
                 APIResult::Ok { result } => future::ok(result),
@@ -60,7 +60,7 @@ fn get_notification<E: Env + 'static>() -> Effect {
     };
 
     EffectFuture::Concurrent(
-        fetch_api::<E, _, _, GetNotificationResponse>(&request)
+        fetch_api::<E, _, _, Option<GetNotificationResponse>>(&request)
             .map_err(CtxError::from)
             .and_then(|result| match result {
                 APIResult::Ok { result } => future::ok(result),

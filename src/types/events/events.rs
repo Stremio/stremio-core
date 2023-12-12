@@ -7,6 +7,6 @@ use crate::{
 
 #[derive(Default, PartialEq, Eq, Serialize, Clone, Debug)]
 pub struct Events {
-    pub modal: Loadable<GetModalResponse, CtxError>,
-    pub notification: Loadable<GetNotificationResponse, CtxError>,
+    pub modal: Loadable<Option<GetModalResponse>, CtxError>,
+    pub notification: Loadable<Option<GetNotificationResponse>, CtxError>,
 }

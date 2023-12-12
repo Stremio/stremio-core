@@ -119,7 +119,10 @@ pub enum Internal {
     /// The result of querying the data for LocalSearch
     LoadLocalSearchResult(Url, Result<Vec<Searchable>, EnvError>),
     /// Result for getModal request
-    GetModalResult(APIRequest, Result<GetModalResponse, CtxError>),
+    GetModalResult(APIRequest, Result<Option<GetModalResponse>, CtxError>),
     /// Result for getNotification request
-    GetNotificationResult(APIRequest, Result<GetNotificationResponse, CtxError>),
+    GetNotificationResult(
+        APIRequest,
+        Result<Option<GetNotificationResponse>, CtxError>,
+    ),
 }

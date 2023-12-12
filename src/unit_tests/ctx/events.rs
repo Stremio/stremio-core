@@ -25,25 +25,25 @@ fn test_events() {
         match request {
             Request { url, .. } if url == "https://api.strem.io/api/getModal" => {
                 future::ok(Box::new(APIResult::Ok {
-                    result: GetModalResponse {
+                    result: Some(GetModalResponse {
                         id: "id".to_owned(),
                         title: "title".to_owned(),
                         message: "message".to_owned(),
                         image_url: "https://image_url".parse().unwrap(),
                         addon: None,
                         external_url: None,
-                    },
+                    }),
                 }) as Box<dyn Any + Send>)
                 .boxed_env()
             }
             Request { url, .. } if url == "https://api.strem.io/api/getNotification" => {
                 future::ok(Box::new(APIResult::Ok {
-                    result: GetNotificationResponse {
+                    result: Some(GetNotificationResponse {
                         id: "id".to_owned(),
                         title: "title".to_owned(),
                         message: "message".to_owned(),
                         external_url: None,
-                    },
+                    }),
                 }) as Box<dyn Any + Send>)
                 .boxed_env()
             }
