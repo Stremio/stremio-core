@@ -10,8 +10,8 @@ use crate::models::streaming_server::{
 use crate::runtime::EnvError;
 use crate::types::addon::{Descriptor, Manifest, ResourceRequest, ResourceResponse};
 use crate::types::api::{
-    APIRequest, AuthRequest, DataExportResponse, DatastoreRequest, LinkCodeResponse,
-    LinkDataResponse, SeekLogRequest, SuccessResponse,
+    APIRequest, AuthRequest, DataExportResponse, DatastoreRequest, GetModalResponse,
+    GetNotificationResponse, LinkCodeResponse, LinkDataResponse, SeekLogRequest, SuccessResponse,
 };
 use crate::types::library::{LibraryBucket, LibraryItem, LibraryItemId};
 use crate::types::profile::{Auth, AuthKey, Profile, User};
@@ -124,4 +124,11 @@ pub enum Internal {
     SeekLogsResult(SeekLogRequest, Result<SuccessResponse, CtxError>),
     /// The result of querying the data for LocalSearch
     LoadLocalSearchResult(Url, Result<Vec<Searchable>, EnvError>),
+    /// Result for getModal request
+    GetModalResult(APIRequest, Result<Option<GetModalResponse>, CtxError>),
+    /// Result for getNotification request
+    GetNotificationResult(
+        APIRequest,
+        Result<Option<GetNotificationResponse>, CtxError>,
+    ),
 }

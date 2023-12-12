@@ -1,5 +1,6 @@
 mod add_to_library;
 mod authenticate;
+mod events;
 mod install_addon;
 mod logout;
 mod notifications {
