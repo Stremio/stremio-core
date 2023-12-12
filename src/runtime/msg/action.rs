@@ -60,6 +60,7 @@ pub enum ActionCtx {
     ///
     /// [`LibraryItem`]: crate::types::library::LibraryItem
     PullNotifications,
+    /// Make request to api to get events modal and notification
     GetEvents,
 }
 
