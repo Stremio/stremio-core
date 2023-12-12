@@ -944,7 +944,7 @@ dependencies = [
 [[package]]
 name = "stremio-core"
 version = "0.1.0"
-source = "git+https://github.com/Stremio/stremio-core?branch=feat/implement-ctx-events#b2c633683830c6f5baa1659449d613fdeb9c8373"
+source = "git+https://github.com/Stremio/stremio-core?branch=development#39fb65e8c28586b8214d14f1316053ba190a571d"
 dependencies = [
  "anyhow",
  "base64 0.21.2",
@@ -1020,7 +1020,7 @@ dependencies = [
 [[package]]
 name = "stremio-derive"
 version = "0.1.0"
-source = "git+https://github.com/Stremio/stremio-core?branch=feat/implement-ctx-events#b2c633683830c6f5baa1659449d613fdeb9c8373"
+source = "git+https://github.com/Stremio/stremio-core?branch=development#39fb65e8c28586b8214d14f1316053ba190a571d"
 dependencies = [
  "case",
  "proc-macro-crate",
@@ -1050,7 +1050,7 @@ dependencies = [
 [[package]]
 name = "stremio-watched-bitfield"
 version = "0.1.0"
-source = "git+https://github.com/Stremio/stremio-core?branch=feat/implement-ctx-events#b2c633683830c6f5baa1659449d613fdeb9c8373"
+source = "git+https://github.com/Stremio/stremio-core?branch=development#39fb65e8c28586b8214d14f1316053ba190a571d"
 dependencies = [
  "base64 0.13.1",
  "flate2",
