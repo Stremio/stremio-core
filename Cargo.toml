@@ -1,6 +1,6 @@
 [package]
 name = "stremio-core-web"
-version = "0.44.28"
+version = "0.44.30"
 authors = ["Smart Code OOD"]
 edition = "2021"
 
@@ -12,7 +12,7 @@ lto = true
 opt-level = 's'
 
 [dependencies]
-stremio-core = { git = "https://github.com/Stremio/stremio-core", features = ["derive", "analytics"], branch = "feat/streaming-server-remote-endpoint" }
+stremio-core = { git = "https://github.com/Stremio/stremio-core", features = ["derive", "analytics"], branch = "development" }
 serde = { version = "1.0.*", features = ["derive"] }
 serde_json = "1.0.*"
 futures = "0.3.*"
