@@ -8,6 +8,7 @@ use chrono::{serde::ts_milliseconds, DateTime, Utc};
 use derive_more::TryInto;
 use serde::{Deserialize, Serialize};
 use serde_with::serde_as;
+use url::Url;
 
 #[derive(Serialize, Deserialize, Debug)]
 #[serde(untagged)]
@@ -78,7 +79,7 @@ pub enum LinkDataResponse {
 #[serde(rename_all = "camelCase")]
 pub struct ModalAddon {
     pub name: String,
-    pub manifest_url: String,
+    pub manifest_url: Url,
 }
 
 #[derive(Clone, PartialEq, Eq, Serialize, Deserialize, Debug)]
@@ -87,9 +88,9 @@ pub struct GetModalResponse {
     pub id: String,
     pub title: String,
     pub message: String,
-    pub image_url: String,
+    pub image_url: Url,
     pub addon: Option<ModalAddon>,
-    pub external_url: Option<String>,
+    pub external_url: Option<Url>,
 }
 
 #[derive(Clone, PartialEq, Eq, Serialize, Deserialize, Debug)]
@@ -98,7 +99,7 @@ pub struct GetNotificationResponse {
     pub id: String,
     pub title: String,
     pub message: String,
-    pub external_url: Option<String>,
+    pub external_url: Option<Url>,
 }
 
 /// API response for the [`LibraryItem`]s which skips invalid items
