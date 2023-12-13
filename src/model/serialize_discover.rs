@@ -78,6 +78,7 @@ mod model {
         #[serde(flatten)]
         pub meta_item: &'a stremio_core::types::resource::MetaItemPreview,
         pub trailer_streams: Vec<Stream<'a>>,
+        pub watched: bool,
         pub in_library: bool,
         pub deep_links: MetaItemDeepLinks,
     }
@@ -187,6 +188,12 @@ pub fn serialize_discover(
                                             .into_web_deep_links(),
                                         })
                                         .collect::<Vec<_>>(),
+                                    watched: ctx
+                                        .library
+                                        .items
+                                        .get(&meta_item.id)
+                                        .map(|library_item| library_item.watched())
+                                        .unwrap_or_default(),
                                     in_library: ctx
                                         .library
                                         .items

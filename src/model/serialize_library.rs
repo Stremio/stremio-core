@@ -20,6 +20,7 @@ mod model {
         pub poster: &'a Option<Url>,
         pub poster_shape: &'a PosterShape,
         pub progress: f64,
+        pub watched: bool,
         pub deep_links: LibraryItemDeepLinks,
     }
     #[derive(Serialize)]
@@ -125,13 +126,8 @@ pub fn serialize_library<F>(
                     } else {
                         &library_item.poster_shape
                     },
-                    progress: if library_item.state.time_offset > 0
-                        && library_item.state.duration > 0
-                    {
-                        library_item.state.time_offset as f64 / library_item.state.duration as f64
-                    } else {
-                        0.0
-                    },
+                    progress: library_item.progress(),
+                    watched: library_item.watched(),
                     deep_links: LibraryItemDeepLinks::from((
                         library_item,
                         streams_item,
