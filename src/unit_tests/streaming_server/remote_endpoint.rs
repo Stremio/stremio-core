@@ -56,7 +56,7 @@ fn remote_endpoint() {
                 if method == "GET" && url == "http://127.0.0.1:11470/settings" =>
             {
                 future::ok(Box::new(SettingsResponse {
-                    base_url: Url::parse(&STREAMING_SERVER_URL.to_string()).unwrap(),
+                    base_url: Url::parse(STREAMING_SERVER_URL).unwrap(),
                     values: STREAMING_SERVER_SETTINGS,
                 }) as Box<dyn Any + Send>)
                 .boxed_env()
@@ -68,7 +68,7 @@ fn remote_endpoint() {
                     .boxed_env()
             }
             Request { url, .. } if url == "http://127.0.0.1:11470/casting" => {
-                future::ok(Box::new(Vec::<PlaybackDevice>::new()) as Box<dyn Any + Send>)
+                future::ok(Box::<Vec<PlaybackDevice>>::default() as Box<dyn Any + Send>)
                     .boxed_env()
             }
             Request { url, .. } if url == "http://127.0.0.1:11470/network-info" => {
