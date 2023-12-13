@@ -10,7 +10,7 @@ use crate::types::api::{
     fetch_api, APIRequest, APIResult, AuthRequest, AuthResponse, CollectionResponse,
     DatastoreCommand, DatastoreRequest, LibraryItemsResponse, SuccessResponse,
 };
-use crate::types::events::Events;
+use crate::types::events::{DismissedEventsBucket, Events};
 use crate::types::library::LibraryBucket;
 use crate::types::notifications::NotificationsBucket;
 use crate::types::profile::{Auth, AuthKey, Profile};
@@ -48,6 +48,8 @@ pub struct Ctx {
     #[serde(skip)]
     pub search_history: SearchHistoryBucket,
     #[serde(skip)]
+    pub dismissed_events: DismissedEventsBucket,
+    #[serde(skip)]
     #[cfg_attr(test, derivative(Default(value = "CtxStatus::Ready")))]
     pub status: CtxStatus,
     #[serde(skip)]
@@ -65,12 +67,14 @@ impl Ctx {
         streams: StreamsBucket,
         notifications: NotificationsBucket,
         search_history: SearchHistoryBucket,
+        dismissed_events: DismissedEventsBucket,
     ) -> Self {
         Self {
             profile,
             library,
             streams,
             search_history,
+            dismissed_events,
             notifications,
             trakt_addon: None,
             notification_catalogs: vec![],
@@ -103,6 +107,8 @@ impl<E: Env + 'static> Update<E> for Ctx {
                 let streams_effects = update_streams::<E>(&mut self.streams, &self.status, msg);
                 let search_history_effects =
                     update_search_history::<E>(&mut self.search_history, &self.status, msg);
+                let events_effects =
+                    update_events::<E>(&mut self.events, &mut self.dismissed_events, msg);
                 let trakt_addon_effects = update_trakt_addon::<E>(
                     &mut self.trakt_addon,
                     &self.profile,
@@ -125,6 +131,7 @@ impl<E: Env + 'static> Update<E> for Ctx {
                     .join(library_effects)
                     .join(streams_effects)
                     .join(search_history_effects)
+                    .join(events_effects)
                     .join(trakt_addon_effects)
                     .join(notifications_effects)
             }
@@ -150,6 +157,8 @@ impl<E: Env + 'static> Update<E> for Ctx {
                 let streams_effects = update_streams::<E>(&mut self.streams, &self.status, msg);
                 let search_history_effects =
                     update_search_history::<E>(&mut self.search_history, &self.status, msg);
+                let events_effects =
+                    update_events::<E>(&mut self.events, &mut self.dismissed_events, msg);
                 let ctx_effects = match &self.status {
                     CtxStatus::Loading(loading_auth_request)
                         if loading_auth_request == auth_request =>
@@ -177,6 +186,7 @@ impl<E: Env + 'static> Update<E> for Ctx {
                     .join(trakt_addon_effects)
                     .join(notifications_effects)
                     .join(search_history_effects)
+                    .join(events_effects)
                     .join(ctx_effects)
             }
             _ => {
@@ -201,7 +211,8 @@ impl<E: Env + 'static> Update<E> for Ctx {
                 );
                 let search_history_effects =
                     update_search_history::<E>(&mut self.search_history, &self.status, msg);
-                let events_effects = update_events::<E>(&mut self.events, msg);
+                let events_effects =
+                    update_events::<E>(&mut self.events, &mut self.dismissed_events, msg);
                 profile_effects
                     .join(library_effects)
                     .join(streams_effects)

@@ -133,4 +133,6 @@ pub enum Internal {
         APIRequest,
         Result<Option<GetNotificationResponse>, CtxError>,
     ),
+    /// When dismissed events changed
+    DismissedEventsChanged,
 }

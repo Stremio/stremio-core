@@ -1,3 +1,4 @@
+use crate::types::events::DismissedEventsBucket;
 use crate::types::notifications::NotificationsBucket;
 use crate::types::search_history::SearchHistoryBucket;
 use crate::types::streams::StreamsBucket;
@@ -91,6 +92,7 @@ fn actionctx_authenticate_login() {
         StreamsBucket::default(),
         NotificationsBucket::new::<TestEnv>(None, vec![]),
         SearchHistoryBucket::default(),
+        DismissedEventsBucket::default(),
     );
     let (runtime, _rx) = Runtime::<TestEnv, _>::new(TestModel { ctx }, vec![], 1000);
     TestEnv::run(|| {
@@ -297,6 +299,7 @@ fn actionctx_authenticate_login_with_token() {
         StreamsBucket::default(),
         NotificationsBucket::new::<TestEnv>(None, vec![]),
         SearchHistoryBucket::default(),
+        DismissedEventsBucket::default(),
     );
     let (runtime, _rx) = Runtime::<TestEnv, _>::new(TestModel { ctx }, vec![], 1000);
     TestEnv::run(|| {
@@ -502,6 +505,7 @@ fn actionctx_authenticate_register() {
         StreamsBucket::default(),
         NotificationsBucket::new::<TestEnv>(None, vec![]),
         SearchHistoryBucket::default(),
+        DismissedEventsBucket::default(),
     );
     let (runtime, _rx) = Runtime::<TestEnv, _>::new(TestModel { ctx }, vec![], 1000);
     TestEnv::run(|| {
