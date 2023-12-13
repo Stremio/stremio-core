@@ -539,3 +539,20 @@ impl From<(&String, &LibraryRequest)> for LibraryDeepLinks {
         }
     }
 }
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct SearchHistoryItemDeepLinks {
+    pub search: String,
+}
+
+impl From<&String> for SearchHistoryItemDeepLinks {
+    fn from(query: &String) -> Self {
+        SearchHistoryItemDeepLinks {
+            search: format!(
+                "stremio:///search?query={}",
+                utf8_percent_encode(query, URI_COMPONENT_ENCODE_SET),
+            ),
+        }
+    }
+}

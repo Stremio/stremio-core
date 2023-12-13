@@ -63,6 +63,15 @@ impl LibraryItem {
         }
     }
 
+    /// Returns whether the item has been watched when either of the state fields are:
+    /// - `times_watched > 0`
+    /// or
+    /// - `flagged_watched == 1` (true)
+    #[inline]
+    pub fn watched(&self) -> bool {
+        self.state.times_watched > 0 || self.state.flagged_watched == 1
+    }
+
     /// Pulling notifications relies on a few key things:
     ///
     /// - LibraryItem should not be "other" or "movie", i.e. if you have "series" it will pull notifications

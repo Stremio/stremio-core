@@ -1,3 +1,6 @@
+mod update_events;
+use update_events::*;
+
 mod update_library;
 use update_library::*;
 

@@ -20,6 +20,11 @@ pub enum Event {
     PlayerStopped {
         context: PlayerAnalyticsContext,
     },
+    PlayerNextVideo {
+        context: PlayerAnalyticsContext,
+        is_binge_enabled: bool,
+        is_playing_next_video: bool,
+    },
     PlayerEnded {
         context: PlayerAnalyticsContext,
         is_binge_enabled: bool,
