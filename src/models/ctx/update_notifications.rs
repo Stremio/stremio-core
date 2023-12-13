@@ -1,8 +1,10 @@
 use std::collections::{hash_map::Entry, HashMap};
 
+use chrono::Duration;
 use either::Either;
 use futures::FutureExt;
 use lazysort::SortedBy;
+use once_cell::sync::Lazy;
 
 use crate::{
     constants::{LAST_VIDEOS_IDS_EXTRA_PROP, NOTIFICATIONS_STORAGE_KEY, NOTIFICATION_ITEMS_COUNT},
@@ -26,6 +28,8 @@ use crate::{
     },
 };
 
+const REQUEST_LAST_VIDEOS_EVERY: Lazy<Duration> = Lazy::new(|| Duration::hours(6));
+
 pub fn update_notifications<E: Env + 'static>(
     notifications: &mut NotificationsBucket,
     notification_catalogs: &mut Vec<ResourceLoadable<Vec<MetaItem>>>,
@@ -36,6 +40,16 @@ pub fn update_notifications<E: Env + 'static>(
 ) -> Effects {
     match msg {
         Msg::Action(Action::Ctx(ActionCtx::PullNotifications)) => {
+            let should_make_request = match notifications.last_updated {
+                Some(last_updated) if last_updated + *REQUEST_LAST_VIDEOS_EVERY >= E::now() => true,
+                None => true,
+                _ => false,
+            };
+
+            if !should_make_request {
+                return Effects::none().unchanged();
+            }
+
             let library_item_ids = library
                 .items
                 .values()
