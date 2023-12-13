@@ -68,8 +68,7 @@ fn remote_endpoint() {
                     .boxed_env()
             }
             Request { url, .. } if url == "http://127.0.0.1:11470/casting" => {
-                future::ok(Box::<Vec<PlaybackDevice>>::default() as Box<dyn Any + Send>)
-                    .boxed_env()
+                future::ok(Box::<Vec<PlaybackDevice>>::default() as Box<dyn Any + Send>).boxed_env()
             }
             Request { url, .. } if url == "http://127.0.0.1:11470/network-info" => {
                 future::ok(Box::new(NetworkInfo {
