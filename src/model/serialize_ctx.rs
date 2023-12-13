@@ -14,8 +14,9 @@ mod model {
 
     use chrono::{DateTime, Utc};
 
-    use stremio_core::types::{
-        events::Events, notifications::NotificationItem, profile::Profile, resource::MetaItemId,
+    use stremio_core::{
+        deep_links::SearchHistoryItemDeepLinks,
+        types::{events::Events, notifications::NotificationItem, profile::Profile, resource::MetaItemId},
     };
 
     #[derive(Serialize)]
@@ -24,7 +25,7 @@ mod model {
         /// keep the original Profile model inside.
         pub profile: &'a Profile,
         pub notifications: Notifications<'a>,
-        pub search_history: Vec<&'a str>,
+        pub search_history: Vec<SearchHistoryItem<'a>>,
         pub events: &'a Events,
     }
 
@@ -35,6 +36,13 @@ mod model {
         pub items: HashMap<MetaItemId, Vec<&'a NotificationItem>>,
         pub last_updated: Option<DateTime<Utc>>,
         pub created: DateTime<Utc>,
+    }
+
+    #[derive(Serialize)]
+    #[serde(rename_all = "camelCase")]
+    pub struct SearchHistoryItem<'a> {
+        pub query: &'a String,
+        pub deep_links: SearchHistoryItemDeepLinks,
     }
 
     impl<'a> From<&'a stremio_core::models::ctx::Ctx> for Ctx<'a> {
@@ -58,8 +66,11 @@ mod model {
                     .items
                     .iter()
                     .sorted_by(|(_, a_date), (_, b_date)| Ord::cmp(b_date, a_date))
-                    .map(|(query, ..)| query.as_str())
-                    .collect_vec(),
+                    .map(|(query, ..)| SearchHistoryItem {
+                        query,
+                        deep_links: SearchHistoryItemDeepLinks::from(query),
+                    })
+                    .collect(),
                 events: &ctx.events,
             }
         }
