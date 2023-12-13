@@ -371,7 +371,7 @@ fn test_pull_notifications_test_cases() {
                 return future::ok(Box::new(result.to_owned()) as Box<dyn Any + Send>).boxed_env();
             }
 
-            return default_fetch_handler(request);
+            default_fetch_handler(request)
         });
         *FETCH_HANDLER.write().unwrap() = Box::new(fetch_handler);
 

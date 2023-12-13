@@ -28,7 +28,7 @@ use crate::{
     },
 };
 
-const REQUEST_LAST_VIDEOS_EVERY: Lazy<Duration> = Lazy::new(|| Duration::hours(6));
+static REQUEST_LAST_VIDEOS_EVERY: Lazy<Duration> = Lazy::new(|| Duration::hours(6));
 
 pub fn update_notifications<E: Env + 'static>(
     notifications: &mut NotificationsBucket,
@@ -40,11 +40,33 @@ pub fn update_notifications<E: Env + 'static>(
 ) -> Effects {
     match msg {
         Msg::Action(Action::Ctx(ActionCtx::PullNotifications)) => {
-            let should_make_request = match notifications.last_updated {
-                Some(last_updated) if last_updated + *REQUEST_LAST_VIDEOS_EVERY >= E::now() => true,
-                None => true,
-                _ => false,
+            let (reason, should_make_request) = match notifications.last_updated {
+                Some(last_updated) if last_updated + *REQUEST_LAST_VIDEOS_EVERY <= E::now() => (
+                    format!(
+                        "`true` since {last_updated} + {hours} <= {now}",
+                        hours = REQUEST_LAST_VIDEOS_EVERY.num_hours(),
+                        now = E::now()
+                    ),
+                    true,
+                ),
+                None => ("`true` since last updated is `None`".to_string(), true),
+                Some(last_updated) => (
+                    format!(
+                        "`false` since {last_updated} + {hours} > {now}",
+                        hours = REQUEST_LAST_VIDEOS_EVERY.num_hours(),
+                        now = E::now()
+                    ),
+                    false,
+                ),
             };
+
+            tracing::debug!(
+                name = "Notifications",
+                reason = reason,
+                last_updated = notifications.last_updated.as_ref().map(ToString::to_string),
+                hours = REQUEST_LAST_VIDEOS_EVERY.num_hours(),
+                "Should last-videos addon resource be called? {should_make_request}"
+            );
 
             if !should_make_request {
                 return Effects::none().unchanged();
