@@ -60,7 +60,7 @@ pub enum ActionCtx {
     PullNotifications,
     /// Make request to api to get events modal and notification
     GetEvents,
-    /// Dismiss an event
+    /// Dismiss an event by id, either a Modal or Notification
     DismissEvent(String),
 }
 
