@@ -74,7 +74,7 @@ pub fn update_events<E: Env + 'static>(
                 Some(GetModalResponse { id, .. }) if !dismissed_events.items.contains_key(id) => {
                     eq_update(&mut events.modal, Loadable::Ready(response.to_owned()))
                 }
-                _ => eq_update(&mut events.modal, Loadable::Ready(response.to_owned())),
+                _ => eq_update(&mut events.modal, Loadable::Ready(None)),
             },
             Err(error) => eq_update(&mut events.modal, Loadable::Err(error.to_owned())),
         },
@@ -88,10 +88,7 @@ pub fn update_events<E: Env + 'static>(
                         Loadable::Ready(response.to_owned()),
                     )
                 }
-                _ => eq_update(
-                    &mut events.notification,
-                    Loadable::Ready(response.to_owned()),
-                ),
+                _ => eq_update(&mut events.notification, Loadable::Ready(None)),
             },
             Err(error) => eq_update(&mut events.notification, Loadable::Err(error.to_owned())),
         },
