@@ -10,14 +10,16 @@ use wasm_bindgen::JsValue;
 
 use stremio_core::{
     constants::{
-        LIBRARY_RECENT_STORAGE_KEY, LIBRARY_STORAGE_KEY, NOTIFICATIONS_STORAGE_KEY,
-        PROFILE_STORAGE_KEY, SEARCH_HISTORY_STORAGE_KEY, STREAMS_STORAGE_KEY,
+        DISMISSED_EVENTS_STORAGE_KEY, LIBRARY_RECENT_STORAGE_KEY, LIBRARY_STORAGE_KEY,
+        NOTIFICATIONS_STORAGE_KEY, PROFILE_STORAGE_KEY, SEARCH_HISTORY_STORAGE_KEY,
+        STREAMS_STORAGE_KEY,
     },
     models::common::Loadable,
     runtime::{msg::Action, Env, EnvError, Runtime, RuntimeAction, RuntimeEvent},
     types::{
-        library::LibraryBucket, notifications::NotificationsBucket, profile::Profile,
-        resource::Stream, search_history::SearchHistoryBucket, streams::StreamsBucket,
+        events::DismissedEventsBucket, library::LibraryBucket, notifications::NotificationsBucket,
+        profile::Profile, resource::Stream, search_history::SearchHistoryBucket,
+        streams::StreamsBucket,
     },
 };
 
@@ -65,6 +67,7 @@ pub async fn initialize_runtime(emit_to_ui: js_sys::Function) -> Result<(), JsVa
                 WebEnv::get_storage::<StreamsBucket>(STREAMS_STORAGE_KEY),
                 WebEnv::get_storage::<NotificationsBucket>(NOTIFICATIONS_STORAGE_KEY),
                 WebEnv::get_storage::<SearchHistoryBucket>(SEARCH_HISTORY_STORAGE_KEY),
+                WebEnv::get_storage::<DismissedEventsBucket>(DISMISSED_EVENTS_STORAGE_KEY),
             );
             match storage_result {
                 Ok((
@@ -74,6 +77,7 @@ pub async fn initialize_runtime(emit_to_ui: js_sys::Function) -> Result<(), JsVa
                     streams_bucket,
                     notifications_bucket,
                     search_history_bucket,
+                    dismissed_events_bucket,
                 )) => {
                     let profile = profile.unwrap_or_default();
                     let mut library = LibraryBucket::new(profile.uid(), vec![]);
@@ -89,12 +93,15 @@ pub async fn initialize_runtime(emit_to_ui: js_sys::Function) -> Result<(), JsVa
                         .unwrap_or(NotificationsBucket::new::<WebEnv>(profile.uid(), vec![]));
                     let search_history_bucket =
                         search_history_bucket.unwrap_or(SearchHistoryBucket::new(profile.uid()));
+                    let dismissed_events_bucket = dismissed_events_bucket
+                        .unwrap_or(DismissedEventsBucket::new(profile.uid()));
                     let (model, effects) = WebModel::new(
                         profile,
                         library,
                         streams_bucket,
                         notifications_bucket,
                         search_history_bucket,
+                        dismissed_events_bucket,
                     );
                     let (runtime, rx) = Runtime::<WebEnv, _>::new(
                         model,

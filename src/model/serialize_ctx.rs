@@ -16,7 +16,9 @@ mod model {
 
     use stremio_core::{
         deep_links::SearchHistoryItemDeepLinks,
-        types::{notifications::NotificationItem, profile::Profile, resource::MetaItemId},
+        types::{
+            events::Events, notifications::NotificationItem, profile::Profile, resource::MetaItemId,
+        },
     };
 
     #[derive(Serialize)]
@@ -26,6 +28,7 @@ mod model {
         pub profile: &'a Profile,
         pub notifications: Notifications<'a>,
         pub search_history: Vec<SearchHistoryItem<'a>>,
+        pub events: &'a Events,
     }
 
     #[derive(Serialize)]
@@ -70,6 +73,7 @@ mod model {
                         deep_links: SearchHistoryItemDeepLinks::from(query),
                     })
                     .collect(),
+                events: &ctx.events,
             }
         }
     }
