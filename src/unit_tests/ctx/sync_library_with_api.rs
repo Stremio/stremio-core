@@ -3,6 +3,7 @@ use crate::models::ctx::Ctx;
 use crate::runtime::msg::{Action, ActionCtx};
 use crate::runtime::{Env, EnvFutureExt, Runtime, RuntimeAction, TryEnvFuture};
 use crate::types::api::{APIResult, LibraryItemModified, LibraryItemsResponse, SuccessResponse};
+use crate::types::events::DismissedEventsBucket;
 use crate::types::library::{LibraryBucket, LibraryItem};
 use crate::types::notifications::NotificationsBucket;
 use crate::types::profile::{Auth, AuthKey, GDPRConsent, Profile, User};
@@ -34,6 +35,7 @@ fn actionctx_synclibrarywithapi() {
         StreamsBucket::default(),
         NotificationsBucket::new::<TestEnv>(None, vec![]),
         SearchHistoryBucket::default(),
+        DismissedEventsBucket::default(),
     );
     let (runtime, _rx) = Runtime::<TestEnv, _>::new(TestModel { ctx }, vec![], 1000);
     TestEnv::run(|| {
@@ -293,6 +295,7 @@ fn actionctx_synclibrarywithapi_with_user() {
                 StreamsBucket::default(),
                 NotificationsBucket::new::<TestEnv>(None, vec![]),
                 SearchHistoryBucket::default(),
+                DismissedEventsBucket::default(),
             ),
         },
         vec![],
@@ -430,6 +433,7 @@ fn actionctx_synclibrarywithapi_with_user_empty_library() {
                 StreamsBucket::default(),
                 NotificationsBucket::new::<TestEnv>(None, vec![]),
                 SearchHistoryBucket::default(),
+                DismissedEventsBucket::default(),
             ),
         },
         vec![],

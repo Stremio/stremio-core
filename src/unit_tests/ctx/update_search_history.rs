@@ -11,8 +11,9 @@ use crate::{
         Env, Runtime, RuntimeAction,
     },
     types::{
-        addon::ExtraValue, library::LibraryBucket, notifications::NotificationsBucket,
-        profile::Profile, search_history::SearchHistoryBucket, streams::StreamsBucket,
+        addon::ExtraValue, events::DismissedEventsBucket, library::LibraryBucket,
+        notifications::NotificationsBucket, profile::Profile, search_history::SearchHistoryBucket,
+        streams::StreamsBucket,
     },
     unit_tests::{TestEnv, STORAGE},
 };
@@ -34,6 +35,7 @@ fn test_search_history_update() {
         StreamsBucket::default(),
         NotificationsBucket::new::<TestEnv>(None, vec![]),
         SearchHistoryBucket::default(),
+        DismissedEventsBucket::default(),
     );
 
     let catalogs_with_extra = CatalogsWithExtra::default();
@@ -107,6 +109,7 @@ fn test_search_history_clear_items() {
         StreamsBucket::default(),
         NotificationsBucket::new::<TestEnv>(None, vec![]),
         SearchHistoryBucket::default(),
+        DismissedEventsBucket::default(),
     );
 
     let catalogs_with_extra = CatalogsWithExtra::default();
