@@ -21,9 +21,9 @@ use stremio_core::{
     },
     runtime::Effects,
     types::{
-        addon::DescriptorPreview, api::LinkAuthKey, library::LibraryBucket,
-        notifications::NotificationsBucket, profile::Profile, resource::MetaItemPreview,
-        search_history::SearchHistoryBucket, streams::StreamsBucket,
+        addon::DescriptorPreview, api::LinkAuthKey, events::DismissedEventsBucket,
+        library::LibraryBucket, notifications::NotificationsBucket, profile::Profile,
+        resource::MetaItemPreview, search_history::SearchHistoryBucket, streams::StreamsBucket,
     },
     Model,
 };
@@ -68,6 +68,7 @@ impl WebModel {
         streams: StreamsBucket,
         notifications: NotificationsBucket,
         search_history: SearchHistoryBucket,
+        dismissed_events: DismissedEventsBucket,
     ) -> (WebModel, Effects) {
         let (continue_watching_preview, continue_watching_preview_effects) =
             ContinueWatchingPreview::new(&library, &notifications);
@@ -83,7 +84,14 @@ impl WebModel {
         let (streaming_server, streaming_server_effects) = StreamingServer::new::<WebEnv>(&profile);
         let (local_search, local_search_effects) = LocalSearch::new::<WebEnv>();
         let model = WebModel {
-            ctx: Ctx::new(profile, library, streams, notifications, search_history),
+            ctx: Ctx::new(
+                profile,
+                library,
+                streams,
+                notifications,
+                search_history,
+                dismissed_events,
+            ),
             auth_link: Default::default(),
             data_export: Default::default(),
             local_search,
