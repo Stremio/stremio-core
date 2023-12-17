@@ -1,3 +1,5 @@
+use std::fmt::Display;
+
 use crate::types::profile::User;
 use serde::{Deserialize, Serialize};
 
@@ -5,9 +7,9 @@ use serde::{Deserialize, Serialize};
 #[cfg_attr(test, derive(Default))]
 pub struct AuthKey(pub String);
 
-impl ToString for AuthKey {
-    fn to_string(&self) -> String {
-        self.0.to_owned()
+impl Display for AuthKey {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.0)
     }
 }
 
