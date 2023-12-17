@@ -379,8 +379,8 @@ impl<E: Env + 'static> UpdateWithCtx<E> for StreamingServer {
                 if self.selected.transport_url == *url =>
             {
                 match result {
-                    Ok(GetHTTPSResponse { domain, .. }) => {
-                        let remote_url = Url::parse(&format!("https://{domain}")).ok();
+                    Ok(GetHTTPSResponse { domain, port, .. }) => {
+                        let remote_url = Url::parse(&format!("https://{domain}:{port}")).ok();
                         eq_update(&mut self.remote_url, remote_url)
                     }
                     Err(_) => Effects::none().unchanged(),
