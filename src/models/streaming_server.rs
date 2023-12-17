@@ -685,8 +685,9 @@ fn get_https_endpoint<E: Env + 'static>(
 ) -> Effect {
     let endpoint = url
         .join(&format!(
-            "/get-https?authKey={:?}&ipAddress={}",
-            auth_key, ip_address,
+            "/get-https?authKey={}&ipAddress={}",
+            auth_key.to_string(),
+            ip_address,
         ))
         .expect("url builder failed");
     let request = Request::get(endpoint.as_str())
