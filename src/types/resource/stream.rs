@@ -137,6 +137,8 @@ impl Stream {
     pub fn streaming_url(&self, streaming_server_url: Option<&Url>) -> Option<String> {
         match (&self.source, streaming_server_url) {
             (StreamSource::Url { url }, streaming_server_url) if url.scheme() != "magnet" => {
+                // If proxy headers are set and streaming server is available, build the proxied streaming url from streaming server url
+                // Otherwise return the url
                 match (&self.behavior_hints.proxy_headers, streaming_server_url) {
                     (
                         Some(StreamProxyHeaders { request, response }),
