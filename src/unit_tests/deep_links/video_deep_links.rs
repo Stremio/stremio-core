@@ -45,7 +45,7 @@ fn video_deep_links() {
     assert_eq!(
         vdl.external_player,
         Some(ExternalPlayerLink {
-            href: Some(format!(
+            playlist: Some(format!(
                 "data:application/octet-stream;charset=utf-8;base64,{}",
                 BASE64.encode(format!(
                     "#EXTM3U\n#EXTINF:0\n{}yt/{}",
