@@ -138,7 +138,10 @@ impl Stream {
         match (&self.source, streaming_server_url) {
             (StreamSource::Url { url }, streaming_server_url) if url.scheme() != "magnet" => {
                 match (&self.behavior_hints.proxy_headers, streaming_server_url) {
-                    (Some(StreamProxyHeaders { request, response }), Some(streaming_server_url)) => {
+                    (
+                        Some(StreamProxyHeaders { request, response }),
+                        Some(streaming_server_url),
+                    ) => {
                         let mut streaming_url = streaming_server_url.to_owned();
                         let mut proxy_query = form_urlencoded::Serializer::new(String::new());
                         let origin = format!("{}://{}", url.scheme(), url.authority());

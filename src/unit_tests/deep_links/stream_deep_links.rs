@@ -33,7 +33,10 @@ fn stream_deep_links_magnet() {
     let settings = Settings::default();
     let sdl = StreamDeepLinks::try_from((&stream, &streaming_server_url, &settings)).unwrap();
     assert_eq!(sdl.player, "stremio:///player/eAEBRgC5%2F3sidXJsIjoibWFnbmV0Oj94dD11cm46YnRpaDpkZDgyNTVlY2RjN2NhNTVmYjBiYmY4MTMyM2Q4NzA2MmRiMWY2ZDFjIn0%2BMhZF".to_string());
-    assert_eq!(sdl.external_player.download, Some(MAGNET_STR_URL.to_owned()));
+    assert_eq!(
+        sdl.external_player.download,
+        Some(MAGNET_STR_URL.to_owned()),
+    );
     assert_eq!(sdl.external_player.file_name, None);
 }
 
@@ -57,7 +60,10 @@ fn stream_deep_links_http() {
         "stremio:///player/eAEBIQDe%2F3sidXJsIjoiaHR0cDovL2RvbWFpbi5yb290L3BhdGgifcEEC6w%3D"
             .to_string()
     );
-    assert_eq!(sdl.external_player.playlist, Some(BASE64_HTTP_URL.to_owned()));
+    assert_eq!(
+        sdl.external_player.playlist,
+        Some(BASE64_HTTP_URL.to_owned()),
+    );
     assert_eq!(sdl.external_player.streaming, Some(HTTP_STR_URL.to_owned()));
     assert_eq!(
         sdl.external_player.file_name,
@@ -280,7 +286,10 @@ fn stream_deep_links_external() {
     let settings = Settings::default();
     let sdl = StreamDeepLinks::try_from((&stream, &streaming_server_url, &settings)).unwrap();
     assert_eq!(sdl.player, "stremio:///player/eAEBKQDW%2F3siZXh0ZXJuYWxVcmwiOiJodHRwOi8vZG9tYWluLnJvb3QvcGF0aCJ9OoEO7w%3D%3D".to_string());
-    assert_eq!(sdl.external_player.web, Some(Url::from_str(HTTP_STR_URL).unwrap()));
+    assert_eq!(
+        sdl.external_player.web,
+        Some(Url::from_str(HTTP_STR_URL).unwrap()),
+    );
     assert_eq!(sdl.external_player.file_name, None);
 }
 
