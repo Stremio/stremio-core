@@ -14,8 +14,8 @@ mod model {
     #[derive(Serialize)]
     #[serde(rename_all = "camelCase")]
     pub struct ManifestPreview<'a> {
-        pub id: &'a String,
-        pub name: &'a String,
+        pub id: &'a str,
+        pub name: &'a str,
     }
     #[derive(Serialize)]
     #[serde(rename_all = "camelCase")]
