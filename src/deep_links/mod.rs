@@ -39,14 +39,15 @@ pub struct OpenPlayerLink {
 #[derive(Default, Serialize, Debug, PartialEq, Eq)]
 #[serde(rename_all = "camelCase")]
 pub struct ExternalPlayerLink {
-    pub href: Option<String>,
     pub download: Option<String>,
     pub streaming: Option<String>,
+    pub playlist: Option<String>,
+    pub file_name: Option<String>,
     pub open_player: Option<OpenPlayerLink>,
-    pub android_tv: Option<String>,
+    pub web: Option<Url>,
+    pub android_tv: Option<Url>,
     pub tizen: Option<String>,
     pub webos: Option<String>,
-    pub file_name: Option<String>,
 }
 
 /// Using `&Option<Url>` is not encouraged, use `.as_ref()` to get an `Option<&Url>` instead!
@@ -69,9 +70,8 @@ impl From<(&Stream, Option<&Url>, &Settings)> for ExternalPlayerLink {
         let http_regex = Regex::new(r"https?://").unwrap();
         let download = stream.download_url();
         let streaming = stream.streaming_url(streaming_server_url);
-        let m3u_uri = stream.m3u_data_uri(streaming_server_url);
-        let file_name = m3u_uri.as_ref().map(|_| "playlist.m3u".to_owned());
-        let href = m3u_uri.or_else(|| download.to_owned());
+        let playlist = stream.m3u_data_uri(streaming_server_url);
+        let file_name = playlist.as_ref().map(|_| "playlist.m3u".to_owned());
         let open_player = match &streaming {
             Some(url) => match settings.player_type.as_ref() {
                 Some(player_type) => match player_type.as_str() {
@@ -126,28 +126,31 @@ impl From<(&Stream, Option<&Url>, &Settings)> for ExternalPlayerLink {
             },
             None => None,
         };
-        let (android_tv, tizen, webos) = match &stream.source {
+        let (web, android_tv, tizen, webos) = match &stream.source {
             StreamSource::External {
+                external_url,
                 android_tv_url,
                 tizen_url,
                 webos_url,
                 ..
             } => (
-                android_tv_url.as_ref().map(|url| url.to_string()),
+                external_url.to_owned(),
+                android_tv_url.to_owned(),
                 tizen_url.to_owned(),
                 webos_url.to_owned(),
             ),
-            _ => (None, None, None),
+            _ => (None, None, None, None),
         };
         ExternalPlayerLink {
-            href,
             download,
             streaming,
+            playlist,
+            file_name,
             open_player,
+            web,
             android_tv,
             tizen,
             webos,
-            file_name,
         }
     }
 }

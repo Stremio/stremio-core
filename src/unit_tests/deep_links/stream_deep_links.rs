@@ -33,7 +33,7 @@ fn stream_deep_links_magnet() {
     let settings = Settings::default();
     let sdl = StreamDeepLinks::try_from((&stream, &streaming_server_url, &settings)).unwrap();
     assert_eq!(sdl.player, "stremio:///player/eAEBRgC5%2F3sidXJsIjoibWFnbmV0Oj94dD11cm46YnRpaDpkZDgyNTVlY2RjN2NhNTVmYjBiYmY4MTMyM2Q4NzA2MmRiMWY2ZDFjIn0%2BMhZF".to_string());
-    assert_eq!(sdl.external_player.href, Some(MAGNET_STR_URL.to_owned()));
+    assert_eq!(sdl.external_player.download, Some(MAGNET_STR_URL.to_owned()));
     assert_eq!(sdl.external_player.file_name, None);
 }
 
@@ -57,7 +57,7 @@ fn stream_deep_links_http() {
         "stremio:///player/eAEBIQDe%2F3sidXJsIjoiaHR0cDovL2RvbWFpbi5yb290L3BhdGgifcEEC6w%3D"
             .to_string()
     );
-    assert_eq!(sdl.external_player.href, Some(BASE64_HTTP_URL.to_owned()));
+    assert_eq!(sdl.external_player.playlist, Some(BASE64_HTTP_URL.to_owned()));
     assert_eq!(sdl.external_player.streaming, Some(HTTP_STR_URL.to_owned()));
     assert_eq!(
         sdl.external_player.file_name,
@@ -163,7 +163,7 @@ fn stream_deep_links_torrent() {
     let sdl = StreamDeepLinks::try_from((&stream, &streaming_server_url, &settings)).unwrap();
     assert_eq!(sdl.player, "stremio:///player/eAEBdwCI%2F3siaW5mb0hhc2giOiJkZDgyNTVlY2RjN2NhNTVmYjBiYmY4MTMyM2Q4NzA2MmRiMWY2ZDFjIiwiZmlsZUlkeCI6MCwiYW5ub3VuY2UiOlsiaHR0cDovL2J0MS5hcmNoaXZlLm9yZzo2OTY5L2Fubm91bmNlIl19ndAlsw%3D%3D".to_string());
     assert_eq!(
-        sdl.external_player.href,
+        sdl.external_player.playlist,
         Some(format!(
             "data:application/octet-stream;charset=utf-8;base64,{}",
             BASE64.encode(format!(
@@ -224,7 +224,7 @@ fn stream_deep_links_torrent_without_file_index() {
     let sdl = StreamDeepLinks::try_from((&stream, &streaming_server_url, &settings)).unwrap();
     assert_eq!(sdl.player, "stremio:///player/eAEBegCF%2F3siaW5mb0hhc2giOiJkZDgyNTVlY2RjN2NhNTVmYjBiYmY4MTMyM2Q4NzA2MmRiMWY2ZDFjIiwiZmlsZUlkeCI6bnVsbCwiYW5ub3VuY2UiOlsiaHR0cDovL2J0MS5hcmNoaXZlLm9yZzo2OTY5L2Fubm91bmNlIl19LmMnPg%3D%3D".to_string());
     assert_eq!(
-        sdl.external_player.href,
+        sdl.external_player.playlist,
         Some(format!(
             "data:application/octet-stream;charset=utf-8;base64,{}",
             BASE64.encode(format!(
@@ -280,7 +280,7 @@ fn stream_deep_links_external() {
     let settings = Settings::default();
     let sdl = StreamDeepLinks::try_from((&stream, &streaming_server_url, &settings)).unwrap();
     assert_eq!(sdl.player, "stremio:///player/eAEBKQDW%2F3siZXh0ZXJuYWxVcmwiOiJodHRwOi8vZG9tYWluLnJvb3QvcGF0aCJ9OoEO7w%3D%3D".to_string());
-    assert_eq!(sdl.external_player.href, Some(HTTP_STR_URL.to_owned()));
+    assert_eq!(sdl.external_player.web, Some(Url::from_str(HTTP_STR_URL).unwrap()));
     assert_eq!(sdl.external_player.file_name, None);
 }
 
@@ -304,7 +304,7 @@ fn stream_deep_links_youtube() {
         "stremio:///player/eAEBFgDp%2F3sieXRJZCI6ImFxei1LRS1icEtRIn1RRQb5".to_string()
     );
     assert_eq!(
-        sdl.external_player.href,
+        sdl.external_player.playlist,
         Some(format!(
             "data:application/octet-stream;charset=utf-8;base64,{}",
             BASE64.encode(format!(
@@ -335,7 +335,7 @@ fn stream_deep_links_player_frame() {
     let settings = Settings::default();
     let sdl = StreamDeepLinks::try_from((&stream, &streaming_server_url, &settings)).unwrap();
     assert_eq!(sdl.player, "stremio:///player/eAEBLADT%2F3sicGxheWVyRnJhbWVVcmwiOiJodHRwOi8vZG9tYWluLnJvb3QvcGF0aCJ9abUQBA%3D%3D".to_string());
-    assert_eq!(sdl.external_player.href, Some(HTTP_STR_URL.to_owned()));
+    assert_eq!(sdl.external_player.playlist, None);
     assert_eq!(sdl.external_player.file_name, None);
 }
 
@@ -375,7 +375,7 @@ fn stream_deep_links_requests() {
         YT_ID, YT_ID
     ));
     assert_eq!(
-        sdl.external_player.href,
+        sdl.external_player.playlist,
         Some(format!(
             "data:application/octet-stream;charset=utf-8;base64,{}",
             BASE64.encode(format!(
