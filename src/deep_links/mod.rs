@@ -41,6 +41,7 @@ pub struct OpenPlayerLink {
 pub struct ExternalPlayerLink {
     pub download: Option<String>,
     pub streaming: Option<String>,
+    /// Playlist contains a m3u data URI
     pub playlist: Option<String>,
     pub file_name: Option<String>,
     pub open_player: Option<OpenPlayerLink>,
