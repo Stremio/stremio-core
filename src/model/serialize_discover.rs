@@ -47,7 +47,7 @@ mod model {
     pub struct SelectableCatalog<'a> {
         pub id: &'a String,
         pub name: &'a String,
-        pub r#type: &'a String,
+        pub r#type: &'a str,
         pub addon: DescriptorPreview<'a>,
         pub selected: &'a bool,
         pub deep_links: DiscoverDeepLinks,
