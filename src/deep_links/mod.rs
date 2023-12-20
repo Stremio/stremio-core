@@ -41,13 +41,18 @@ pub struct OpenPlayerLink {
 pub struct ExternalPlayerLink {
     pub download: Option<String>,
     pub streaming: Option<String>,
-    /// Playlist contains a m3u data URI
+    /// m3u data URI
     pub playlist: Option<String>,
+    /// Filename of the playlist
     pub file_name: Option<String>,
     pub open_player: Option<OpenPlayerLink>,
+    /// External URL for Web
     pub web: Option<Url>,
+    /// External URI for Android TV
     pub android_tv: Option<Url>,
+    /// External payload for Tizen
     pub tizen: Option<String>,
+    /// External payload for webOS
     pub webos: Option<String>,
 }
 
