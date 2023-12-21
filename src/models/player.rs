@@ -184,6 +184,19 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                     &self.selected,
                     &ctx.profile.settings,
                 );
+                // Make sure to update the steams and in term the StreamsBucket
+                // once the player loads the newly selected item
+                let update_streams_effects = match (&self.selected, &self.meta_item) {
+                    (Some(selected), Some(meta_item)) => {
+                        Effects::msg(Msg::Internal(Internal::StreamLoaded {
+                            stream: selected.stream.to_owned(),
+                            stream_request: selected.stream_request.to_owned(),
+                            meta_item: meta_item.to_owned(),
+                        }))
+                        .unchanged()
+                    }
+                    _ => Effects::none().unchanged(),
+                };
                 let series_info_effects =
                     series_info_update(&mut self.series_info, &self.selected, &self.meta_item);
                 let library_item_effects = library_item_update::<E>(
@@ -240,6 +253,7 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                     .join(next_video_effects)
                     .join(next_streams_effects)
                     .join(next_stream_effects)
+                    .join(update_streams_effects)
                     .join(series_info_effects)
                     .join(library_item_effects)
                     .join(watched_effects)
