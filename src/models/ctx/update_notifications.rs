@@ -43,7 +43,7 @@ pub fn update_notifications<E: Env + 'static>(
             let (reason, should_make_request) = match notifications.last_updated {
                 Some(last_updated) if last_updated + *REQUEST_LAST_VIDEOS_EVERY <= E::now() => (
                     format!(
-                        "`true` since {last_updated} + {hours} <= {now}",
+                        "`true` since {last_updated} + {hours} hours <= {now}",
                         hours = REQUEST_LAST_VIDEOS_EVERY.num_hours(),
                         now = E::now()
                     ),
@@ -52,7 +52,7 @@ pub fn update_notifications<E: Env + 'static>(
                 None => ("`true` since last updated is `None`".to_string(), true),
                 Some(last_updated) => (
                     format!(
-                        "`false` since {last_updated} + {hours} > {now}",
+                        "`false` since {last_updated} + {hours} hours > {now}",
                         hours = REQUEST_LAST_VIDEOS_EVERY.num_hours(),
                         now = E::now()
                     ),
