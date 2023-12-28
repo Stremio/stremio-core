@@ -1,7 +1,9 @@
 use std::marker::PhantomData;
+use std::ops::Div;
 
 use base64::Engine;
 use futures::{future, FutureExt, TryFutureExt};
+use num::rational::Ratio;
 
 use crate::constants::{
     BASE64, CREDITS_THRESHOLD_COEF, META_RESOURCE_NAME, PLAYER_IGNORE_SEEK_AFTER,
@@ -82,6 +84,23 @@ pub struct Selected {
     pub subtitles_path: Option<ResourcePath>,
 }
 
+#[derive(Clone, Serialize, Debug, PartialEq, Eq)]
+#[serde(rename_all = "camelCase")]
+pub struct IntroOutro {
+    pub intro: Option<IntroData>,
+    pub outro: Option<u64>,
+}
+
+#[derive(Clone, Serialize, Debug, PartialEq, Eq)]
+#[serde(rename_all = "camelCase")]
+pub struct IntroData {
+    pub from: u64,
+    pub to: u64,
+    /// `Some` if the difference between the skip gap data
+    /// and stream duration ([`LibraryItem.state.duration`]) > 0!
+    pub duration: Option<u64>,
+}
+
 #[derive(Clone, Derivative, Serialize, Debug)]
 #[derivative(Default)]
 #[serde(rename_all = "camelCase")]
@@ -96,6 +115,8 @@ pub struct Player {
     pub series_info: Option<SeriesInfo>,
     pub library_item: Option<LibraryItem>,
     pub stream_state: Option<StreamItemState>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub intro_outro: Option<IntroOutro>,
     #[serde(skip_serializing)]
     pub watched: Option<WatchedBitField>,
     #[serde(skip_serializing)]
@@ -211,7 +232,8 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                 let watched_effects =
                     watched_update(&mut self.watched, &self.meta_item, &self.library_item);
 
-                let skip_gaps_effects = skip_gaps_update::<E>(
+                let intro_outro_effects = intro_outro_update::<E>(
+                    &mut self.intro_outro,
                     &ctx.profile,
                     self.selected.as_ref(),
                     self.video_params.as_ref(),
@@ -269,7 +291,7 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                     .join(series_info_effects)
                     .join(library_item_effects)
                     .join(watched_effects)
-                    .join(skip_gaps_effects)
+                    .join(intro_outro_effects)
                     .join(notification_effects)
             }
             Msg::Action(Action::Unload) => {
@@ -1109,6 +1131,135 @@ fn push_seek_to_api<E: Env + 'static>(seek_log_req: SeekLogRequest) -> Effect {
             .boxed_env(),
     )
     .into()
+}
+
+fn intro_outro_update<E: Env + 'static>(
+    intro_outro: &mut Option<IntroOutro>,
+    profile: &Profile,
+    selected: Option<&Selected>,
+    video_params: Option<&VideoParams>,
+    series_info: Option<&SeriesInfo>,
+    library_item: Option<&LibraryItem>,
+    skip_gaps: &mut Option<(SkipGapsRequest, Loadable<SkipGapsResponse, CtxError>)>,
+) -> Effects {
+    let skip_gaps_effects = skip_gaps_update::<E>(
+        profile,
+        selected,
+        video_params,
+        series_info,
+        library_item,
+        skip_gaps,
+    );
+
+    let intro_outro_effects = match (skip_gaps, library_item) {
+        (Some((_, Loadable::Ready(response))), Some(library_item)) => {
+            let outro_time = {
+                // durations = Object.keys(intro.gaps || {}).filter(function(d) {
+                //     return !!intro.gaps[d].outro
+                // })
+                let outro_durations = response.gaps.iter().filter_map(|(duration, skip_gaps)| {
+                    skip_gaps.outro.map(|outro| (duration, outro))
+                });
+
+                // var closestDuration = durations.reduce(function(prev, curr) {
+                //     return (Math.abs(curr - player.length) < Math.abs(prev - player.length) ? curr : prev);
+                // }, 0);
+                let closest_duration = outro_durations.reduce(
+                    |(previous_duration, previous_outro), (current_duration, current_outro)| {
+                        if current_duration.abs_diff(library_item.state.duration)
+                            < previous_duration.abs_diff(library_item.state.duration)
+                        {
+                            (current_duration, current_outro)
+                        } else {
+                            (previous_duration, previous_outro)
+                        }
+                    },
+                );
+                // if (!closestDuration) return
+                let outro_time = closest_duration.map(|(closest_duration, closest_outro)| {
+                    // var durationDiffInSec = Math.round((player.length - closestDuration) / 1000 * 10) / 10
+                    let duration_diff_in_secs = (library_item.state.duration - closest_duration).div(1000 * 10) / 10;
+                    // console.log('outro match by duration difference: ' + durationDiffInSec + 's')
+                    tracing::info!("Player: Outro match by duration with difference of {duration_diff_in_secs} seconds");
+
+                    // outroTime = player.length - (closestDuration - intro.gaps[closestDuration].outro)
+                    library_item.state.duration - closest_duration - closest_outro
+                });
+
+                outro_time
+            };
+
+            let intro_time = {
+                // var durations = Object.keys(intro.gaps || {}).filter(function(d) {
+                //     return (intro.gaps[d].seekHistory || []).length > 0
+                // })
+                let intro_durations = response
+                    .gaps
+                    .iter()
+                    .filter(|(_duration, skip_gaps)| skip_gaps.seek_history.len() > 0);
+                // var closestDuration = durations.reduce(function(prev, curr) {
+                //     return (Math.abs(curr - player.length) < Math.abs(prev - player.length) ? curr : prev);
+                // }, 0);
+                let closest_duration = intro_durations.reduce(
+                    |(previous_duration, previous_skip_gaps),
+                     (current_duration, current_skip_gaps)| {
+                        if current_duration.abs_diff(library_item.state.duration)
+                            < previous_duration.abs_diff(library_item.state.duration)
+                        {
+                            (current_duration, current_skip_gaps)
+                        } else {
+                            (previous_duration, previous_skip_gaps)
+                        }
+                    },
+                );
+
+                // if(!closestDuration) return
+                let intro_time = closest_duration.and_then(|(closest_duration, skip_gaps)| {
+                // var durationDiffInSec = Math.round((player.length - closestDuration) / 1000 * 10) / 10
+                let duration_diff_in_secs = (library_item.state.duration - closest_duration).div(1000 * 10) / 10;
+                // console.log('intro match by duration difference: ' + durationDiffInSec + 's')
+                tracing::info!("Player: Intro match by duration with difference of {duration_diff_in_secs} seconds");
+
+                // var durationRatio = player.length / closestDuration
+                let duration_ration = Ratio::new(library_item.state.duration, *closest_duration);
+
+                // even though we checked for len() > 0 make sure we don't panic if somebody decides to remove that check!
+                // introData = intro.gaps[closestDuration].seekHistory[0]
+                let intro_data = skip_gaps.seek_history.get(0).map(|seek_event| {
+                    IntroData {
+                        // introData.seekFrom *= durationRatio
+                        from: (duration_ration * seek_event.from).to_integer(),
+                        // introData.seekTo *= durationRatio
+                        to: (duration_ration * seek_event.to).to_integer(),
+                        // if (durationDiffInSec) {
+                        //     introData.seekDuration = introData.seekTo - introData.seekFrom
+                        // }
+                        duration: if duration_diff_in_secs > 0 { Some(seek_event.to - seek_event.from) } else { None }
+                    }
+                });
+
+                // TODO?!
+                // var correction = skipIntroCorrection()
+                // smallSkipButtonFrom = introData.seekFrom - correction.start
+                // smallSkipButtonTo = introData.seekTo + correction.end - 3000
+                    intro_data
+                });
+
+                intro_time
+            };
+
+            eq_update(
+                intro_outro,
+                Some(IntroOutro {
+                    intro: intro_time,
+                    outro: outro_time,
+                }),
+            )
+        }
+        _ => Effects::none().unchanged(),
+    };
+
+    skip_gaps_effects.join(intro_outro_effects)
 }
 
 fn skip_gaps_update<E: Env + 'static>(
