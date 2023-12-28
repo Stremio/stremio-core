@@ -24,6 +24,7 @@ use crate::types::api::{
     SuccessResponse,
 };
 use crate::types::library::{LibraryBucket, LibraryItem};
+use crate::types::player::{IntroData, IntroOutro};
 use crate::types::profile::{Profile, Settings as ProfileSettings};
 use crate::types::resource::{MetaItem, SeriesInfo, Stream, StreamSource, Subtitles, Video};
 use crate::types::streams::{StreamItemState, StreamsBucket, StreamsItemKey};
@@ -82,23 +83,6 @@ pub struct Selected {
     /// A request to fetch the selected [`MetaItem`].
     pub meta_request: Option<ResourceRequest>,
     pub subtitles_path: Option<ResourcePath>,
-}
-
-#[derive(Clone, Serialize, Debug, PartialEq, Eq)]
-#[serde(rename_all = "camelCase")]
-pub struct IntroOutro {
-    pub intro: Option<IntroData>,
-    pub outro: Option<u64>,
-}
-
-#[derive(Clone, Serialize, Debug, PartialEq, Eq)]
-#[serde(rename_all = "camelCase")]
-pub struct IntroData {
-    pub from: u64,
-    pub to: u64,
-    /// `Some` if the difference between the skip gap data
-    /// and stream duration ([`LibraryItem.state.duration`]) > 0!
-    pub duration: Option<u64>,
 }
 
 #[derive(Clone, Derivative, Serialize, Debug)]
@@ -687,10 +671,22 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                     Err(err) => Loadable::Err(err),
                 };
 
-                eq_update(
+                let skip_gaps_effects = eq_update(
                     &mut self.skip_gaps,
                     Some((skip_gaps_request.to_owned(), skip_gaps_next)),
-                )
+                );
+
+                let intro_outro_effects = intro_outro_update::<E>(
+                    &mut self.intro_outro,
+                    &ctx.profile,
+                    self.selected.as_ref(),
+                    self.video_params.as_ref(),
+                    self.series_info.as_ref(),
+                    self.library_item.as_ref(),
+                    &mut self.skip_gaps,
+                );
+
+                skip_gaps_effects.join(intro_outro_effects)
             }
             Msg::Internal(Internal::ProfileChanged) => {
                 if let Some(analytics_context) = &mut self.analytics_context {

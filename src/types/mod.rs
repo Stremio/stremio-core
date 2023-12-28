@@ -3,6 +3,7 @@ pub mod api;
 pub mod events;
 pub mod library;
 pub mod notifications;
+pub mod player;
 pub mod profile;
 pub mod resource;
 pub mod search_history;
