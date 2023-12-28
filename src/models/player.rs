@@ -33,12 +33,10 @@ use derivative::Derivative;
 use itertools::Itertools;
 use serde::{Deserialize, Serialize};
 
-use lazy_static::lazy_static;
+use once_cell::sync::Lazy;
 
-lazy_static! {
-    /// The duration that must have passed in order for a library item to be updated.
-    pub static ref PUSH_TO_LIBRARY_EVERY: Duration = Duration::seconds(30);
-}
+/// The duration that must have passed in order for a library item to be updated.
+pub static PUSH_TO_LIBRARY_EVERY: Lazy<Duration> = Lazy::new(|| Duration::seconds(90));
 
 #[derive(Clone, Default, PartialEq, Eq, Serialize, Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
@@ -189,6 +187,19 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                     &self.selected,
                     &ctx.profile.settings,
                 );
+                // Make sure to update the steams and in term the StreamsBucket
+                // once the player loads the newly selected item
+                let update_streams_effects = match (&self.selected, &self.meta_item) {
+                    (Some(selected), Some(meta_item)) => {
+                        Effects::msg(Msg::Internal(Internal::StreamLoaded {
+                            stream: selected.stream.to_owned(),
+                            stream_request: selected.stream_request.to_owned(),
+                            meta_item: meta_item.to_owned(),
+                        }))
+                        .unchanged()
+                    }
+                    _ => Effects::none().unchanged(),
+                };
                 let series_info_effects =
                     series_info_update(&mut self.series_info, &self.selected, &self.meta_item);
                 let library_item_effects = library_item_update::<E>(
@@ -254,6 +265,7 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                     .join(next_video_effects)
                     .join(next_streams_effects)
                     .join(next_stream_effects)
+                    .join(update_streams_effects)
                     .join(series_info_effects)
                     .join(library_item_effects)
                     .join(watched_effects)
@@ -464,16 +476,7 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                     };
 
                     let push_to_library_effects =
-                        if E::now() - self.push_library_item_time >= *PUSH_TO_LIBRARY_EVERY {
-                            self.push_library_item_time = E::now();
-
-                            Effects::msg(Msg::Internal(Internal::UpdateLibraryItem(
-                                library_item.to_owned(),
-                            )))
-                            .unchanged()
-                        } else {
-                            Effects::none().unchanged()
-                        };
+                        push_to_library::<E>(&mut self.push_library_item_time, library_item);
 
                     trakt_event_effects.join(push_to_library_effects)
                 }
@@ -675,6 +678,24 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
             }
             _ => Effects::none().unchanged(),
         }
+    }
+}
+
+/// We will push an [`Internal::UpdateLibraryItem`] message only if
+/// at least [`PUSH_TO_LIBRARY_EVERY`] time has passed since the last update.
+fn push_to_library<E: Env + 'static>(
+    push_library_item_time: &mut DateTime<Utc>,
+    library_item: &mut LibraryItem,
+) -> Effects {
+    if E::now() - *push_library_item_time >= *PUSH_TO_LIBRARY_EVERY {
+        *push_library_item_time = E::now();
+
+        Effects::msg(Msg::Internal(Internal::UpdateLibraryItem(
+            library_item.to_owned(),
+        )))
+        .unchanged()
+    } else {
+        Effects::none().unchanged()
     }
 }
 

@@ -3,6 +3,7 @@ use crate::types::addon::Descriptor;
 use crate::types::library::LibraryItem;
 use crate::types::profile::{AuthKey, GDPRConsent, User};
 use crate::types::resource::SeriesInfo;
+use chrono::{DateTime, Local};
 #[cfg(test)]
 use derivative::Derivative;
 use http::Method;
@@ -60,6 +61,14 @@ pub enum APIRequest {
     /// Retrieve Skip gaps for Intro and Outro in movie series from the API
     #[serde(rename_all = "camelCase")]
     SkipGaps(SkipGapsRequest),
+    #[serde(rename_all = "camelCase")]
+    GetModal {
+        date: DateTime<Local>,
+    },
+    #[serde(rename_all = "camelCase")]
+    GetNotification {
+        date: DateTime<Local>,
+    },
 }
 
 #[derive(Debug, Clone, Copy, Serialize, PartialEq, Eq)]
@@ -130,6 +139,8 @@ impl FetchRequestParams<APIRequest> for APIRequest {
             APIRequest::Events { .. } => "events".to_owned(),
             APIRequest::SeekLog { .. } => "seekLog".to_owned(),
             APIRequest::SkipGaps { .. } => "getSkipGaps".to_owned(),
+            APIRequest::GetModal { .. } => "getModal".to_owned(),
+            APIRequest::GetNotification { .. } => "getNotification".to_owned(),
         }
     }
     fn query(&self) -> Option<String> {
