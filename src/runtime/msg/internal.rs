@@ -4,14 +4,13 @@ use url::Url;
 use crate::models::ctx::CtxError;
 use crate::models::link::LinkError;
 use crate::models::local_search::Searchable;
-use crate::models::streaming_server::{
-    PlaybackDevice, Settings as StreamingServerSettings, StatisticsRequest,
-};
+use crate::models::streaming_server::{PlaybackDevice, StatisticsRequest};
 use crate::runtime::EnvError;
 use crate::types::addon::{Descriptor, Manifest, ResourceRequest, ResourceResponse};
 use crate::types::api::{
     APIRequest, AuthRequest, DataExportResponse, DatastoreRequest, GetModalResponse,
-    GetNotificationResponse, LinkCodeResponse, LinkDataResponse, SeekLogRequest, , SkipGapsRequest, SkipGapsResponse, SuccessResponse,
+    GetNotificationResponse, LinkCodeResponse, LinkDataResponse, SeekLogRequest, SkipGapsRequest,
+    SkipGapsResponse, SuccessResponse,
 };
 use crate::types::library::{LibraryBucket, LibraryItem, LibraryItemId};
 use crate::types::profile::{Auth, AuthKey, Profile, User};
