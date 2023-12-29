@@ -1172,7 +1172,8 @@ fn intro_outro_update<E: Env + 'static>(
                     },
                 );
                 // if (!closestDuration) return
-                let outro_time = closest_duration.map(|(closest_duration, closest_outro)| {
+
+                closest_duration.map(|(closest_duration, closest_outro)| {
                     // var durationDiffInSec = Math.round((player.length - closestDuration) / 1000 * 10) / 10
                     let duration_diff_in_secs = (library_item.state.duration - closest_duration).div(1000 * 10) / 10;
                     // console.log('outro match by duration difference: ' + durationDiffInSec + 's')
@@ -1180,9 +1181,7 @@ fn intro_outro_update<E: Env + 'static>(
 
                     // outroTime = player.length - (closestDuration - intro.gaps[closestDuration].outro)
                     library_item.state.duration - closest_duration - closest_outro
-                });
-
-                outro_time
+                })
             };
 
             let intro_time = {
@@ -1192,7 +1191,7 @@ fn intro_outro_update<E: Env + 'static>(
                 let intro_durations = response
                     .gaps
                     .iter()
-                    .filter(|(_duration, skip_gaps)| skip_gaps.seek_history.len() > 0);
+                    .filter(|(_duration, skip_gaps)| !skip_gaps.seek_history.is_empty());
                 // var closestDuration = durations.reduce(function(prev, curr) {
                 //     return (Math.abs(curr - player.length) < Math.abs(prev - player.length) ? curr : prev);
                 // }, 0);
@@ -1210,7 +1209,9 @@ fn intro_outro_update<E: Env + 'static>(
                 );
 
                 // if(!closestDuration) return
-                let intro_time = closest_duration.and_then(|(closest_duration, skip_gaps)| {
+                
+
+                closest_duration.and_then(|(closest_duration, skip_gaps)| {
                 // var durationDiffInSec = Math.round((player.length - closestDuration) / 1000 * 10) / 10
                 let duration_diff_in_secs = (library_item.state.duration - closest_duration).div(1000 * 10) / 10;
                 // console.log('intro match by duration difference: ' + durationDiffInSec + 's')
@@ -1239,9 +1240,7 @@ fn intro_outro_update<E: Env + 'static>(
                 // smallSkipButtonFrom = introData.seekFrom - correction.start
                 // smallSkipButtonTo = introData.seekTo + correction.end - 3000
                     intro_data
-                });
-
-                intro_time
+                })
             };
 
             eq_update(
