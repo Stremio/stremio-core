@@ -1,4 +1,4 @@
-use std::collections::{hash_map::Entry, HashMap};
+use std::collections::{hash_map::Entry, HashMap, HashSet};
 
 use chrono::Duration;
 use either::Either;
@@ -20,7 +20,7 @@ use crate::{
         Effect, EffectFuture, Effects, Env, EnvFutureExt,
     },
     types::{
-        addon::{AggrRequest, ExtraValue},
+        addon::{AggrRequest, ExtraType},
         library::LibraryBucket,
         notifications::{NotificationItem, NotificationsBucket},
         profile::Profile,
@@ -72,12 +72,26 @@ pub fn update_notifications<E: Env + 'static>(
                 return Effects::none().unchanged();
             }
 
-            let library_item_ids = library
+            let notifications_library_items = library
                 .items
                 .values()
                 .filter(|library_item| library_item.should_pull_notifications())
                 .sorted_by(|a, b| b.mtime.cmp(&a.mtime))
                 .take(NOTIFICATION_ITEMS_COUNT)
+                .cloned()
+                .collect::<Vec<_>>();
+
+            // all the types of the library items that are present in the list of LibraryItems that require notifications pulling
+            let library_item_types = notifications_library_items
+                .iter()
+                .map(|library_item| library_item.r#type.to_owned())
+                // deduplicate same types
+                .collect::<HashSet<_>>()
+                .into_iter()
+                .collect::<Vec<_>>();
+
+            let library_item_ids = notifications_library_items
+                .iter()
                 .map(|library_item| &library_item.id)
                 .cloned()
                 .collect::<Vec<_>>();
@@ -87,13 +101,11 @@ pub fn update_notifications<E: Env + 'static>(
                     notification_catalogs,
                     // force the making of a requests every time PullNotifications is called.
                     ResourcesAction::force_request(
-                        &AggrRequest::AllCatalogs {
-                            extra: &vec![ExtraValue {
-                                name: LAST_VIDEOS_IDS_EXTRA_PROP.name.to_owned(),
-                                value: library_item_ids.join(","),
-                            }],
-                            r#type: &None,
-                        },
+                        &AggrRequest::CatalogsFiltered(vec![ExtraType::Ids {
+                            extra_name: LAST_VIDEOS_IDS_EXTRA_PROP.name.to_owned(),
+                            ids: library_item_ids,
+                            types: Some(library_item_types),
+                        }]),
                         &profile.addons,
                     ),
                 )
