@@ -155,6 +155,24 @@ impl ManifestCatalog {
             });
         all_supported && required_satisfied
     }
+    pub fn are_extra_names_supported(&self, extra_names: &[String]) -> bool {
+        let all_supported = extra_names.iter().all(|extra_name| {
+            self.extra
+                .iter()
+                .any(|extra_prop| &extra_prop.name == extra_name)
+        });
+        let required_satisfied = self
+            .extra
+            .iter()
+            .filter(|extra_prop| extra_prop.is_required)
+            .all(|extra_prop| {
+                extra_names
+                    .iter()
+                    .any(|extra_name| extra_name == &extra_prop.name)
+            });
+        all_supported && required_satisfied
+    }
+
     pub fn default_required_extra(&self) -> Option<Vec<ExtraValue>> {
         self.extra
             .iter()
@@ -231,6 +249,8 @@ pub struct ExtraProp {
     #[serde(default)]
     #[serde_as(deserialize_as = "DefaultOnNull")]
     pub options: Vec<String>,
+
+    /// The maximum options that should be passed for this addon extra property.
     #[serde(default)]
     pub options_limit: OptionsLimit,
 }
@@ -269,7 +289,7 @@ impl<'de> DeserializeAs<'de, ExtraProp> for ExtraPropValid {
     }
 }
 
-#[derive(Clone, Deref, PartialEq, Eq, Serialize, Deserialize, Debug)]
+#[derive(Clone, Copy, Deref, PartialEq, Eq, Serialize, Deserialize, Debug)]
 pub struct OptionsLimit(pub usize);
 
 impl Default for OptionsLimit {
