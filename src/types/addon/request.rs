@@ -138,10 +138,13 @@ pub enum ExtraType {
         /// It will be checked against the addon manifest to validate it's supported
         extra_name: String,
         /// Ids must be ordered if we want to correctly limit the request ids,
-        /// based on the ExtraValue OptionsLimit supported by the addon
-        ids: Vec<String>,
+        /// based on the ExtraValue OptionsLimit supported by the addon.
         ///
-        types: Option<Vec<String>>,
+        /// The first value is the id of the item while the second is an optional type
+        id_types: Vec<(String, String)>,
+        /// A set limit on the requested ids per addon.
+        /// The smaller value of the two will be taken: defined limit or the ExtraValues OptionsLimit.
+        limit: Option<usize>,
     },
 }
 
@@ -152,11 +155,6 @@ pub enum AggrRequest<'a> {
         r#type: &'a Option<String>,
     },
     CatalogsFiltered(Vec<ExtraType>),
-    // CatalogsFiltered {
-    //     extra: &'a [ExtraValue],
-    //     ids: &'a [String],
-    //     r#type: Option<&'a str>,
-    // },
     AllOfResource(ResourcePath),
 }
 
@@ -206,18 +204,10 @@ impl AggrRequest<'_> {
                     .flat_map(|extra_type| match extra_type {
                         ExtraType::Ids {
                             extra_name,
-                            ids,
-                            types,
+                            id_types,
+                            limit: requested_limit,
                         } => {
-                            // TODO: Filter by types
-                            // supported_catalogs.contains(library_item.type)
-
-                            // TODO: Filter by ids prefixes
-                            // addon: support prefix id?
-
-                            // TODO: Limit by addon Manifest extra OptionLimit
-
-                            let resp = addons
+                            addons
                                 .iter()
                                 .flat_map(|addon| {
                                     addon
@@ -227,22 +217,30 @@ impl AggrRequest<'_> {
                                         .filter(|catalog| {
                                             // check if all extras are supported
                                             catalog.are_extra_names_supported(&extra_names)
-                                            // Validate if the passed types are supported by the catalog
-                                            && types.as_ref()
-                                                .map(|types| types.contains(&catalog.r#type))
-                                                .unwrap_or(true)
                                         })
                                         // handle the supported catalogs
                                         .filter_map(move |catalog| {
-                                            // filter out unsupported by the addon ids
+                                            // filter out unsupported by the addon - ids and types
                                             let supported_ids =
                                                 addon.manifest.id_prefixes.as_ref().map(
                                                     |prefixes| {
-                                                        ids.iter()
-                                                            .filter_map(|id| {
-                                                                if prefixes.iter().any(|prefix| {
-                                                                    id.starts_with(prefix)
-                                                                }) {
+                                                        id_types
+                                                            .iter()
+                                                            .filter_map(|(id, r#type)| {
+                                                                // if the ID prefix, e.g. `tt` in `tt13622776`, is supported by the addon -
+                                                                let id_prefix_supported =
+                                                                    prefixes.iter().any(|prefix| {
+                                                                        id.starts_with(prefix)
+                                                                    });
+
+                                                                // if the id type, e.g. `series` is supported by the addon
+                                                                let id_type_supported = addon
+                                                                    .manifest
+                                                                    .types
+                                                                    .contains(r#type);
+                                                                if id_prefix_supported
+                                                                    && id_type_supported
+                                                                {
                                                                     Some(id.to_owned())
                                                                 } else {
                                                                     None
@@ -251,6 +249,11 @@ impl AggrRequest<'_> {
                                                             .collect::<Vec<_>>()
                                                     },
                                                 )?;
+
+                                            if supported_ids.is_empty() {
+                                                return None;
+                                            }
+
                                             // make sure we respect the addon specified OptionsLimit
                                             let extra_limit =
                                                 catalog.extra.iter().find_map(|extra_prop| {
@@ -261,13 +264,27 @@ impl AggrRequest<'_> {
                                                     }
                                                 });
 
-                                            let supported_ids_trimmed = match extra_limit {
-                                                Some(options_limit) => {
-                                                    let last_index = options_limit.0.min(ids.len());
-                                                    supported_ids[..last_index].join(",")
+                                            let request_limit = match (extra_limit, requested_limit)
+                                            {
+                                                // take the smaller value for limiting the ids in the request, either:
+                                                // - the options limit defined by the addon
+                                                // - the limit passed to the request
+                                                (Some(options_limit), Some(requested_limit)) => {
+                                                    options_limit.0.min(*requested_limit)
                                                 }
-                                                None => supported_ids.join(","),
+                                                (Some(options_limit), None) => options_limit.0,
+                                                (None, Some(requested_limit)) => *requested_limit,
+                                                // limited only by the size of the array
+                                                (None, None) => usize::MAX,
                                             };
+
+                                            // make sure we don't make an out-of-bound on the array
+                                            let last_index = request_limit.min(supported_ids.len());
+                                            let supported_ids_trimmed =
+                                                match supported_ids.get(..last_index) {
+                                                    Some(ids) if !ids.is_empty() => ids.join(","),
+                                                    _ => return None,
+                                                };
                                             // build the extra values
                                             let extra = &[ExtraValue {
                                                 name: extra_name.to_owned(),
@@ -288,9 +305,7 @@ impl AggrRequest<'_> {
                                             ))
                                         })
                                 })
-                                .collect::<Vec<_>>();
-
-                            resp
+                                .collect::<Vec<_>>()
                         }
                     })
                     .collect();

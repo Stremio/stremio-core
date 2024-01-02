@@ -1,4 +1,4 @@
-use std::collections::{hash_map::Entry, HashMap, HashSet};
+use std::collections::{hash_map::Entry, HashMap};
 
 use chrono::Duration;
 use either::Either;
@@ -72,46 +72,31 @@ pub fn update_notifications<E: Env + 'static>(
                 return Effects::none().unchanged();
             }
 
-            let notifications_library_items = library
+            let sorted_library_items_id_types = library
                 .items
                 .values()
                 .filter(|library_item| library_item.should_pull_notifications())
                 .sorted_by(|a, b| b.mtime.cmp(&a.mtime))
-                .take(NOTIFICATION_ITEMS_COUNT)
-                .cloned()
+                .map(|library_item| (library_item.id.to_owned(), library_item.r#type.to_owned()))
                 .collect::<Vec<_>>();
 
-            // all the types of the library items that are present in the list of LibraryItems that require notifications pulling
-            let library_item_types = notifications_library_items
-                .iter()
-                .map(|library_item| library_item.r#type.to_owned())
-                // deduplicate same types
-                .collect::<HashSet<_>>()
-                .into_iter()
-                .collect::<Vec<_>>();
-
-            let library_item_ids = notifications_library_items
-                .iter()
-                .map(|library_item| &library_item.id)
-                .cloned()
-                .collect::<Vec<_>>();
-
-            let notifications_catalog_resource_effects = if !library_item_ids.is_empty() {
-                resources_update_with_vector_content::<E, _>(
-                    notification_catalogs,
-                    // force the making of a requests every time PullNotifications is called.
-                    ResourcesAction::force_request(
-                        &AggrRequest::CatalogsFiltered(vec![ExtraType::Ids {
-                            extra_name: LAST_VIDEOS_IDS_EXTRA_PROP.name.to_owned(),
-                            ids: library_item_ids,
-                            types: Some(library_item_types),
-                        }]),
-                        &profile.addons,
-                    ),
-                )
-            } else {
-                Effects::none().unchanged()
-            };
+            let notifications_catalog_resource_effects =
+                if !sorted_library_items_id_types.is_empty() {
+                    resources_update_with_vector_content::<E, _>(
+                        notification_catalogs,
+                        // force the making of a requests every time PullNotifications is called.
+                        ResourcesAction::force_request(
+                            &AggrRequest::CatalogsFiltered(vec![ExtraType::Ids {
+                                extra_name: LAST_VIDEOS_IDS_EXTRA_PROP.name.to_owned(),
+                                id_types: sorted_library_items_id_types,
+                                limit: Some(NOTIFICATION_ITEMS_COUNT),
+                            }]),
+                            &profile.addons,
+                        ),
+                    )
+                } else {
+                    Effects::none().unchanged()
+                };
 
             notifications.last_updated = Some(E::now());
 
