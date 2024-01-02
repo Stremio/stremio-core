@@ -1209,7 +1209,6 @@ fn intro_outro_update<E: Env + 'static>(
                 );
 
                 // if(!closestDuration) return
-                
 
                 closest_duration.and_then(|(closest_duration, skip_gaps)| {
                 // var durationDiffInSec = Math.round((player.length - closestDuration) / 1000 * 10) / 10
@@ -1222,7 +1221,7 @@ fn intro_outro_update<E: Env + 'static>(
 
                 // even though we checked for len() > 0 make sure we don't panic if somebody decides to remove that check!
                 // introData = intro.gaps[closestDuration].seekHistory[0]
-                let intro_data = skip_gaps.seek_history.get(0).map(|seek_event| {
+                let intro_data = skip_gaps.seek_history.first().map(|seek_event| {
                     IntroData {
                         // introData.seekFrom *= durationRatio
                         from: (duration_ration * seek_event.from).to_integer(),
