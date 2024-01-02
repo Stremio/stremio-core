@@ -944,7 +944,7 @@ dependencies = [
 [[package]]
 name = "stremio-core"
 version = "0.1.0"
-source = "git+https://github.com/Stremio/stremio-core?branch=feat/local-search-item-deep-links#49b40d8f9702d4058150dd1810c4f32a8fe62eb9"
+source = "git+https://github.com/Stremio/stremio-core?branch=development#3f6e8907f290ab2fdf6e01c1041ecaca6a1c55f3"
 dependencies = [
  "anyhow",
  "base64 0.21.2",
@@ -1020,7 +1020,7 @@ dependencies = [
 [[package]]
 name = "stremio-derive"
 version = "0.1.0"
-source = "git+https://github.com/Stremio/stremio-core?branch=feat/local-search-item-deep-links#49b40d8f9702d4058150dd1810c4f32a8fe62eb9"
+source = "git+https://github.com/Stremio/stremio-core?branch=development#3f6e8907f290ab2fdf6e01c1041ecaca6a1c55f3"
 dependencies = [
  "case",
  "proc-macro-crate",
@@ -1050,7 +1050,7 @@ dependencies = [
 [[package]]
 name = "stremio-watched-bitfield"
 version = "0.1.0"
-source = "git+https://github.com/Stremio/stremio-core?branch=feat/local-search-item-deep-links#49b40d8f9702d4058150dd1810c4f32a8fe62eb9"
+source = "git+https://github.com/Stremio/stremio-core?branch=development#3f6e8907f290ab2fdf6e01c1041ecaca6a1c55f3"
 dependencies = [
  "base64 0.13.1",
  "flate2",
