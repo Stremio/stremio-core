@@ -1,24 +1,24 @@
-use std::collections::HashMap;
-
-use chrono::{DateTime, Utc};
-use itertools::Itertools;
-use serde::Serialize;
 use wasm_bindgen::JsValue;
 
-use stremio_core::deep_links::SearchHistoryItemDeepLinks;
 use stremio_core::models::ctx::Ctx;
-use stremio_core::types::{
-    events::Events, notifications::NotificationItem, profile::Profile, resource::MetaItemId,
-};
-
-use crate::model::deep_links_ext::DeepLinksExt;
 
 pub fn serialize_ctx(ctx: &Ctx) -> JsValue {
     JsValue::from_serde(&model::Ctx::from(ctx)).unwrap()
 }
 
 mod model {
-    use super::*;
+    use std::collections::HashMap;
+
+    use chrono::{DateTime, Utc};
+    use itertools::Itertools;
+    use serde::Serialize;
+
+    use stremio_core::deep_links::SearchHistoryItemDeepLinks;
+    use stremio_core::types::{
+        events::Events, notifications::NotificationItem, profile::Profile, resource::MetaItemId,
+    };
+
+    use crate::model::deep_links_ext::DeepLinksExt;
 
     #[derive(Serialize)]
     #[serde(rename_all = "camelCase")]
