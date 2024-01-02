@@ -86,6 +86,7 @@ struct MetaItemPreviewLegacy {
     #[serde(default)]
     #[serde_as(deserialize_as = "DefaultOnNull")]
     genres: Vec<String>,
+    #[serde(default)]
     links: Option<Vec<Link>>,
     #[serde(default)]
     #[serde_as(deserialize_as = "DefaultOnNull<Vec<PickFirst<(_, Stream)>>>")]
@@ -199,7 +200,7 @@ pub struct MetaItem {
     pub preview: MetaItemPreview,
     #[serde(default)]
     #[serde_as(
-        deserialize_as = "SortedVec<UniqueVec<Vec<_>, VideoUniqueVecAdapter>, VideoSortedVecAdapter>"
+        deserialize_as = "DefaultOnNull<SortedVec<UniqueVec<Vec<_>, VideoUniqueVecAdapter>, VideoSortedVecAdapter>>"
     )]
     pub videos: Vec<Video>,
 }
