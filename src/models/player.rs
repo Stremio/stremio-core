@@ -200,7 +200,8 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                 let watched_effects =
                     watched_update(&mut self.watched, &self.meta_item, &self.library_item);
 
-                let skip_gaps_effects = skip_gaps_update::<E>(
+                let skip_gaps_effects = eq_update(&mut self.skip_gaps, None);
+                let skip_gaps_update_effects = skip_gaps_update::<E>(
                     &ctx.profile,
                     self.selected.as_ref(),
                     self.video_params.as_ref(),
@@ -258,6 +259,7 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                     .join(library_item_effects)
                     .join(watched_effects)
                     .join(skip_gaps_effects)
+                    .join(skip_gaps_update_effects)
                     .join(notification_effects)
             }
             Msg::Action(Action::Unload) => {
