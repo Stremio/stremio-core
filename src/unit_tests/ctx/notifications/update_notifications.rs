@@ -30,6 +30,7 @@ use crate::{
             Descriptor, Manifest, ManifestCatalog, ManifestExtra, ResourcePath, ResourceRequest,
             ResourceResponse,
         },
+        events::DismissedEventsBucket,
         library::{LibraryBucket, LibraryItem, LibraryItemState},
         notifications::{NotificationItem, NotificationsBucket},
         profile::Profile,
@@ -239,6 +240,7 @@ fn test_pull_notifications_and_play_in_player() {
                 StreamsBucket::default(),
                 NotificationsBucket::new::<TestEnv>(None, vec![]),
                 SearchHistoryBucket::default(),
+                DismissedEventsBucket::default(),
             ),
             player: Default::default(),
         },
@@ -371,7 +373,7 @@ fn test_pull_notifications_test_cases() {
                 return future::ok(Box::new(result.to_owned()) as Box<dyn Any + Send>).boxed_env();
             }
 
-            return default_fetch_handler(request);
+            default_fetch_handler(request)
         });
         *FETCH_HANDLER.write().unwrap() = Box::new(fetch_handler);
 
@@ -386,6 +388,7 @@ fn test_pull_notifications_test_cases() {
                     StreamsBucket::default(),
                     NotificationsBucket::new::<TestEnv>(None, test.notification_items),
                     SearchHistoryBucket::default(),
+                    DismissedEventsBucket::default(),
                 ),
             },
             vec![],
@@ -496,6 +499,7 @@ fn test_dismiss_notification() {
                     ],
                 ),
                 SearchHistoryBucket::default(),
+                DismissedEventsBucket::default(),
             ),
         },
         vec![],

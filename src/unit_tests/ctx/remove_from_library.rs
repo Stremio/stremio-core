@@ -3,6 +3,7 @@ use crate::models::ctx::Ctx;
 use crate::runtime::msg::{Action, ActionCtx};
 use crate::runtime::{Env, EnvFutureExt, Runtime, RuntimeAction, TryEnvFuture};
 use crate::types::api::{APIResult, SuccessResponse};
+use crate::types::events::DismissedEventsBucket;
 use crate::types::library::{LibraryBucket, LibraryItem};
 use crate::types::notifications::NotificationsBucket;
 use crate::types::profile::{Auth, AuthKey, GDPRConsent, Profile, User};
@@ -102,6 +103,7 @@ fn actionctx_removefromlibrary() {
                 StreamsBucket::default(),
                 NotificationsBucket::new::<TestEnv>(None, vec![]),
                 SearchHistoryBucket::default(),
+                DismissedEventsBucket::default(),
             ),
         },
         vec![],
@@ -189,6 +191,7 @@ fn actionctx_removefromlibrary_not_added() {
                 StreamsBucket::default(),
                 NotificationsBucket::new::<TestEnv>(None, vec![]),
                 SearchHistoryBucket::default(),
+                DismissedEventsBucket::default(),
             ),
         },
         vec![],

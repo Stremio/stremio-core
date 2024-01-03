@@ -14,10 +14,7 @@ use crate::{
         library_with_filters::Selected as LibraryWithFiltersSelected,
         meta_details::Selected as MetaDetailsSelected,
         player::{Selected as PlayerSelected, VideoParams},
-        streaming_server::{
-            Settings as StreamingServerSettings,
-            StatisticsRequest as StreamingServerStatisticsRequest,
-        },
+        streaming_server::StatisticsRequest as StreamingServerStatisticsRequest,
     },
     types::{
         addon::Descriptor,
@@ -25,6 +22,7 @@ use crate::{
         library::LibraryItemId,
         profile::Settings as ProfileSettings,
         resource::{MetaItemId, MetaItemPreview, Video},
+        streaming_server::Settings as StreamingServerSettings,
     },
 };
 
@@ -60,6 +58,10 @@ pub enum ActionCtx {
     ///
     /// [`LibraryItem`]: crate::types::library::LibraryItem
     PullNotifications,
+    /// Make request to api to get events modal and notification
+    GetEvents,
+    /// Dismiss an event by id, either a Modal or Notification
+    DismissEvent(String),
 }
 
 #[derive(Clone, Deserialize, Debug)]

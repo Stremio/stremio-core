@@ -1,5 +1,6 @@
 pub mod addon;
 pub mod api;
+pub mod events;
 pub mod library;
 pub mod notifications;
 pub mod profile;
