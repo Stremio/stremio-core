@@ -149,8 +149,6 @@ pub struct SeekEvent {
     pub from: u64,
     #[serde(rename = "seekTo")]
     pub to: u64,
-    #[serde(rename = "seekDuration")]
-    pub duration: u64,
 }
 
 #[cfg(test)]

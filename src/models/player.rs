@@ -1172,15 +1172,15 @@ fn intro_outro_update<E: Env + 'static>(
                     },
                 );
                 // if (!closestDuration) return
-
                 closest_duration.map(|(closest_duration, closest_outro)| {
+                    // we first divide by 10 seconds (1000 * 10) and then divide for 10 more, why?!
                     // var durationDiffInSec = Math.round((player.length - closestDuration) / 1000 * 10) / 10
                     let duration_diff_in_secs = (library_item.state.duration - closest_duration).div(1000 * 10) / 10;
                     // console.log('outro match by duration difference: ' + durationDiffInSec + 's')
-                    tracing::info!("Player: Outro match by duration with difference of {duration_diff_in_secs} seconds");
+                    tracing::debug!("Player: Outro match by duration with difference of {duration_diff_in_secs} seconds");
 
                     // outroTime = player.length - (closestDuration - intro.gaps[closestDuration].outro)
-                    library_item.state.duration - closest_duration - closest_outro
+                    library_item.state.duration - (closest_duration - closest_outro)
                 })
             };
 
@@ -1209,19 +1209,18 @@ fn intro_outro_update<E: Env + 'static>(
                 );
 
                 // if(!closestDuration) return
-
                 closest_duration.and_then(|(closest_duration, skip_gaps)| {
                 // var durationDiffInSec = Math.round((player.length - closestDuration) / 1000 * 10) / 10
                 let duration_diff_in_secs = (library_item.state.duration - closest_duration).div(1000 * 10) / 10;
                 // console.log('intro match by duration difference: ' + durationDiffInSec + 's')
-                tracing::info!("Player: Intro match by duration with difference of {duration_diff_in_secs} seconds");
+                tracing::trace!("Player: Intro match by duration with difference of {duration_diff_in_secs} seconds");
 
                 // var durationRatio = player.length / closestDuration
                 let duration_ration = Ratio::new(library_item.state.duration, *closest_duration);
 
                 // even though we checked for len() > 0 make sure we don't panic if somebody decides to remove that check!
                 // introData = intro.gaps[closestDuration].seekHistory[0]
-                let intro_data = skip_gaps.seek_history.first().map(|seek_event| {
+                skip_gaps.seek_history.first().map(|seek_event| {
                     IntroData {
                         // introData.seekFrom *= durationRatio
                         from: (duration_ration * seek_event.from).to_integer(),
@@ -1232,14 +1231,13 @@ fn intro_outro_update<E: Env + 'static>(
                         // }
                         duration: if duration_diff_in_secs > 0 { Some(seek_event.to - seek_event.from) } else { None }
                     }
-                });
+                })
 
+              })
                 // TODO?!
                 // var correction = skipIntroCorrection()
                 // smallSkipButtonFrom = introData.seekFrom - correction.start
                 // smallSkipButtonTo = introData.seekTo + correction.end - 3000
-                    intro_data
-                })
             };
 
             eq_update(
