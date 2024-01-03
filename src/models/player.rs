@@ -216,7 +216,8 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                 let watched_effects =
                     watched_update(&mut self.watched, &self.meta_item, &self.library_item);
 
-                let intro_outro_effects = intro_outro_update::<E>(
+                let skip_gaps_effects = eq_update(&mut self.skip_gaps, None);
+                let intro_outro_update_effects = intro_outro_update::<E>(
                     &mut self.intro_outro,
                     &ctx.profile,
                     self.selected.as_ref(),
@@ -275,7 +276,8 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                     .join(series_info_effects)
                     .join(library_item_effects)
                     .join(watched_effects)
-                    .join(intro_outro_effects)
+                    .join(skip_gaps_effects)
+                    .join(intro_outro_update_effects)
                     .join(notification_effects)
             }
             Msg::Action(Action::Unload) => {
