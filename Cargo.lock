@@ -944,7 +944,7 @@ dependencies = [
 [[package]]
 name = "stremio-core"
 version = "0.1.0"
-source = "git+https://github.com/Stremio/stremio-core?branch=feat/player-intro-outro#3b93a7416bad61095f4092fd3e5a5a723982c613"
+source = "git+https://github.com/Stremio/stremio-core?branch=feat/player-intro-outro#57b7b70680d44659cc0a9f30bd2ff4143e2ba054"
 dependencies = [
  "anyhow",
  "base64 0.21.2",
@@ -1020,7 +1020,7 @@ dependencies = [
 [[package]]
 name = "stremio-derive"
 version = "0.1.0"
-source = "git+https://github.com/Stremio/stremio-core?branch=feat/player-intro-outro#3b93a7416bad61095f4092fd3e5a5a723982c613"
+source = "git+https://github.com/Stremio/stremio-core?branch=feat/player-intro-outro#57b7b70680d44659cc0a9f30bd2ff4143e2ba054"
 dependencies = [
  "case",
  "proc-macro-crate",
@@ -1050,7 +1050,7 @@ dependencies = [
 [[package]]
 name = "stremio-watched-bitfield"
 version = "0.1.0"
-source = "git+https://github.com/Stremio/stremio-core?branch=feat/player-intro-outro#3b93a7416bad61095f4092fd3e5a5a723982c613"
+source = "git+https://github.com/Stremio/stremio-core?branch=feat/player-intro-outro#57b7b70680d44659cc0a9f30bd2ff4143e2ba054"
 dependencies = [
  "base64 0.13.1",
  "flate2",
