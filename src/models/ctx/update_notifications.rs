@@ -68,10 +68,6 @@ pub fn update_notifications<E: Env + 'static>(
                 "Should last-videos addon resource be called? {should_make_request}"
             );
 
-            if !should_make_request {
-                return Effects::none().unchanged();
-            }
-
             let sorted_library_items_id_types = library
                 .items
                 .values()
@@ -81,8 +77,8 @@ pub fn update_notifications<E: Env + 'static>(
                 .collect::<Vec<_>>();
 
             let notifications_catalog_resource_effects =
-                if !sorted_library_items_id_types.is_empty() {
-                    resources_update_with_vector_content::<E, _>(
+                if !sorted_library_items_id_types.is_empty() && should_make_request {
+                    let catalog_resource_effects = resources_update_with_vector_content::<E, _>(
                         notification_catalogs,
                         // force the making of a requests every time PullNotifications is called.
                         ResourcesAction::force_request(
@@ -93,12 +89,14 @@ pub fn update_notifications<E: Env + 'static>(
                             }]),
                             &profile.addons,
                         ),
-                    )
+                    );
+
+                    notifications.last_updated = Some(E::now());
+
+                    catalog_resource_effects
                 } else {
                     Effects::none().unchanged()
                 };
-
-            notifications.last_updated = Some(E::now());
 
             // first update the notification items
             let notification_items_effects = update_notification_items::<E>(
