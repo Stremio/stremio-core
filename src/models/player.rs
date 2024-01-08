@@ -1079,12 +1079,17 @@ fn seek_update<E: Env + 'static>(
         library_item,
     ) {
         (true, Some(selected), Some(video_params), Some(series_info), Some(library_item)) => {
-            match (
+            // live streams will not have opensubtitle hash so just relying on URL and Torrent is enough.
+            let stream_source_supported = matches!(
                 &selected.stream.source,
+                StreamSource::Url { .. } | StreamSource::Torrent { .. }
+            );
+            match (
+                stream_source_supported,
                 selected.stream.name.as_ref(),
                 video_params.hash.clone(),
             ) {
-                (StreamSource::Torrent { .. }, Some(stream_name), Some(opensubtitles_hash)) => {
+                (true, Some(stream_name), Some(opensubtitles_hash)) => {
                     let stream_name_hash = {
                         use sha2::Digest;
                         let mut sha256 = sha2::Sha256::new();
@@ -1285,12 +1290,17 @@ fn skip_gaps_update<E: Env + 'static>(
             Some(series_info),
             Some(library_item),
         ) => {
-            match (
+            let stream_source_supported = matches!(
                 &selected.stream.source,
+                StreamSource::Url { .. } | StreamSource::Torrent { .. }
+            );
+            // live streams will not have opensubtitle hash so just relying on URL and Torrent is enough.
+            match (
+                stream_source_supported,
                 selected.stream.name.as_ref(),
                 video_params.hash.clone(),
             ) {
-                (StreamSource::Torrent { .. }, Some(stream_name), Some(opensubtitles_hash)) => {
+                (true, Some(stream_name), Some(opensubtitles_hash)) => {
                     let stream_name_hash = {
                         use sha2::Digest;
                         let mut sha256 = sha2::Sha256::new();
