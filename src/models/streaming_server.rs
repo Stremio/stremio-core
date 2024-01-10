@@ -283,21 +283,7 @@ impl<E: Env + 'static> UpdateWithCtx<E> for StreamingServer {
                         Loadable::Ready(playback_devices.to_owned()),
                     ),
                     Err(error) => {
-                        let base_url_effects = eq_update(&mut self.base_url, None);
-                        let remote_url_effects = eq_update(&mut self.remote_url, None);
-                        let playback_devices_effects =
-                            eq_update(&mut self.playback_devices, Loadable::Err(error.to_owned()));
-                        let network_info_effects =
-                            eq_update(&mut self.network_info, Loadable::Err(error.to_owned()));
-                        let settings_effects =
-                            eq_update(&mut self.settings, Loadable::Err(error.to_owned()));
-                        let torrent_effects = eq_update(&mut self.torrent, None);
-                        base_url_effects
-                            .join(remote_url_effects)
-                            .join(playback_devices_effects)
-                            .join(network_info_effects)
-                            .join(settings_effects)
-                            .join(torrent_effects)
+                        eq_update(&mut self.playback_devices, Loadable::Err(error.to_owned()))
                     }
                 }
             }
@@ -310,21 +296,7 @@ impl<E: Env + 'static> UpdateWithCtx<E> for StreamingServer {
                         Loadable::Ready(network_info.to_owned()),
                     ),
                     Err(error) => {
-                        let base_url_effects = eq_update(&mut self.base_url, None);
-                        let remote_url_effects = eq_update(&mut self.remote_url, None);
-                        let playback_devices_effects =
-                            eq_update(&mut self.playback_devices, Loadable::Err(error.to_owned()));
-                        let network_info_effects =
-                            eq_update(&mut self.network_info, Loadable::Err(error.to_owned()));
-                        let settings_effects =
-                            eq_update(&mut self.settings, Loadable::Err(error.to_owned()));
-                        let torrent_effects = eq_update(&mut self.torrent, None);
-                        base_url_effects
-                            .join(remote_url_effects)
-                            .join(playback_devices_effects)
-                            .join(network_info_effects)
-                            .join(settings_effects)
-                            .join(torrent_effects)
+                        eq_update(&mut self.network_info, Loadable::Err(error.to_owned()))
                     }
                 }
             }
