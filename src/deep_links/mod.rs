@@ -565,3 +565,20 @@ impl From<&String> for SearchHistoryItemDeepLinks {
         }
     }
 }
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct LocalSearchItemDeepLinks {
+    pub search: String,
+}
+
+impl From<&String> for LocalSearchItemDeepLinks {
+    fn from(query: &String) -> Self {
+        LocalSearchItemDeepLinks {
+            search: format!(
+                "stremio:///search?query={}",
+                utf8_percent_encode(query, URI_COMPONENT_ENCODE_SET),
+            ),
+        }
+    }
+}
