@@ -181,7 +181,7 @@ pub fn update_notifications<E: Env + 'static>(
 }
 
 fn update_notification_items<E: Env + 'static>(
-    notification_items: &mut HashMap<MetaItemId, HashMap<VideoId, NotificationItem>>,
+    notification_items: &mut NotificationsBucket,
     notification_catalogs: &[ResourceLoadable<Vec<MetaItem>>],
     library: &LibraryBucket,
 ) -> Effects {
@@ -282,7 +282,14 @@ fn update_notification_items<E: Env + 'static>(
         map
     });
 
-    eq_update(notification_items, next_notification_items)
+    let next_calendar_items = Default::default();
+
+    let update_notification_items_effects =
+        eq_update(&mut notification_items.items, next_notification_items);
+    let update_calendar_items_effects =
+        eq_update(&mut notification_items.calendar, next_calendar_items);
+
+    update_notification_items_effects.join(update_calendar_items_effects)
 }
 
 fn push_notifications_to_storage<E: Env + 'static>(notifications: &NotificationsBucket) -> Effect {
