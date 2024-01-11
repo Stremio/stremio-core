@@ -221,7 +221,7 @@ impl AggrRequest<'_> {
                                         // handle the supported catalogs
                                         .filter_map(move |catalog| {
                                             // filter out unsupported by the addon - ids and types
-                                            let supported_ids =
+                                            let mut supported_ids =
                                                 addon.manifest.id_prefixes.as_ref().map(
                                                     |prefixes| {
                                                         id_types
@@ -249,6 +249,7 @@ impl AggrRequest<'_> {
                                                             .collect::<Vec<_>>()
                                                     },
                                                 )?;
+
 
                                             if supported_ids.is_empty() {
                                                 return None;
@@ -281,8 +282,15 @@ impl AggrRequest<'_> {
                                             // make sure we don't make an out-of-bound on the array
                                             let last_index = request_limit.min(supported_ids.len());
                                             let supported_ids_trimmed =
-                                                match supported_ids.get(..last_index) {
-                                                    Some(ids) if !ids.is_empty() => ids.join(","),
+                                                match supported_ids.get_mut(..last_index) {
+                                                    Some(ids) if !ids.is_empty() => {
+                                                        // after we've filtered by recency
+                                                        // we order the ids "alphabetically" for our needs (check `sort()` for more details)
+                                                        // to improve caching in addons
+                                                        ids.sort();
+
+                                                        ids.join(",")
+                                                },
                                                     _ => return None,
                                                 };
                                             // build the extra values
