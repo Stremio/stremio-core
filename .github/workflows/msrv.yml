@@ -1,6 +1,7 @@
 name: MSRV build
 
 on:
+  push:
   # will checkout the default branch `development`
   schedule:
     # run every Friday at 17:00
@@ -29,10 +30,7 @@ jobs:
         toolchain: ${{ env.RUST_MSRV_VERSION }}
 
     - name: Checkout
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
 
-    - name: Test
-      run: cargo test
-
-    - name: Build
-      run: cargo build
+    - run: cargo check
+    - run: cargo test
