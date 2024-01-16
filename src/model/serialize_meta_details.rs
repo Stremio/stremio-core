@@ -106,11 +106,13 @@ pub fn serialize_meta_details(
     let meta_item = meta_details
         .meta_items
         .iter()
-        .find(|meta_item| if matches!(&meta_item.content, Some(Loadable::Ready(_))) {
-            tracing::info!("matched content: {:?}", meta_item.content);
-            true
-        } else {
-            false
+        .find(|meta_item| {
+            if matches!(&meta_item.content, Some(Loadable::Ready(_))) {
+                tracing::info!("matched content: {:?}", meta_item.content);
+                true
+            } else {
+                false
+            }
         })
         .or_else(|| {
             if meta_details
