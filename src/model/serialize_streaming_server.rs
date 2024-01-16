@@ -1,4 +1,5 @@
 use crate::model::deep_links_ext::DeepLinksExt;
+use gloo_utils::format::JsValueSerdeExt;
 use serde::Serialize;
 use stremio_core::deep_links::MetaItemDeepLinks;
 use stremio_core::models::common::Loadable;
@@ -27,7 +28,7 @@ mod model {
 }
 
 pub fn serialize_streaming_server(streaming_server: &StreamingServer) -> JsValue {
-    JsValue::from_serde(&model::StreamingServer {
+    <JsValue as JsValueSerdeExt>::from_serde(&model::StreamingServer {
         selected: &streaming_server.selected,
         settings: &streaming_server.settings,
         base_url: &streaming_server.base_url,

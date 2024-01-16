@@ -1,3 +1,4 @@
+use gloo_utils::format::JsValueSerdeExt;
 use serde::Serialize;
 use wasm_bindgen::JsValue;
 
@@ -25,7 +26,7 @@ mod model {
 }
 
 pub fn serialize_local_search(local_search: &LocalSearch) -> JsValue {
-    JsValue::from_serde(&model::LocalSearch {
+    <JsValue as JsValueSerdeExt>::from_serde(&model::LocalSearch {
         items: local_search
             .search_results
             .to_owned()

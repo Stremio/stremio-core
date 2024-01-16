@@ -1,6 +1,7 @@
 use crate::{env::WebEnv, model::deep_links_ext::DeepLinksExt};
 
 use either::Either;
+use gloo_utils::format::JsValueSerdeExt;
 use itertools::Itertools;
 use serde::Serialize;
 use std::iter;
@@ -105,13 +106,19 @@ pub fn serialize_meta_details(
     let meta_item = meta_details
         .meta_items
         .iter()
-        .find(|meta_item| matches!(&meta_item.content, Some(Loadable::Ready(_))))
+        .find(|meta_item| if matches!(&meta_item.content, Some(Loadable::Ready(_))) {
+            tracing::info!("matched content: {:?}", meta_item.content);
+            true
+        } else {
+            false
+        })
         .or_else(|| {
             if meta_details
                 .meta_items
                 .iter()
                 .all(|meta_item| matches!(&meta_item.content, Some(Loadable::Err(_))))
             {
+                tracing::info!("All errored: {:?}", meta_details.meta_items);
                 meta_details.meta_items.first()
             } else {
                 meta_details
@@ -126,7 +133,7 @@ pub fn serialize_meta_details(
     } else {
         meta_details.meta_streams.iter()
     };
-    JsValue::from_serde(&model::MetaDetails {
+    <JsValue as JsValueSerdeExt>::from_serde(&model::MetaDetails {
         selected: &meta_details.selected,
         meta_item: meta_item
             .and_then(|meta_item| {
