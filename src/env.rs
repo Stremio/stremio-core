@@ -39,10 +39,10 @@ const INSTALLATION_ID_STORAGE_KEY: &str = "installation_id";
 
 #[wasm_bindgen]
 extern "C" {
-    #[wasm_bindgen(catch, js_namespace = ["self"])]
-    static app_version: String;
-    #[wasm_bindgen(catch, js_namespace = ["self"])]
-    static shell_version: Option<String>;
+    #[wasm_bindgen(js_namespace = ["self"])]
+    static APP_VERSION: String;
+    #[wasm_bindgen(js_namespace = ["self"])]
+    static SHELL_VERSION: Option<String>;
     #[wasm_bindgen(catch, js_namespace = ["self"])]
     async fn get_location_hash() -> Result<JsValue, JsValue>;
     #[wasm_bindgen(catch, js_namespace = ["self"])]
@@ -425,13 +425,13 @@ impl Env for WebEnv {
     ) -> serde_json::Value {
         serde_json::to_value(AnalyticsContext {
             app_type: "stremio-web".to_owned(),
-            app_version: app_version.to_owned(),
+            app_version: APP_VERSION.to_owned(),
             server_version: streaming_server
                 .settings
                 .as_ref()
                 .ready()
                 .map(|settings| settings.server_version.to_owned()),
-            shell_version: shell_version.to_owned(),
+            shell_version: SHELL_VERSION.to_owned(),
             system_language: global()
                 .navigator()
                 .language()
