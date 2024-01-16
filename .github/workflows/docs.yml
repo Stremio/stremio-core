@@ -1,15 +1,16 @@
-# keep the workflow only for manual deployment because of Github monthly CI quota
-on:
-  workflow_dispatch:
-
 name: Deploy docs
+
+on:
+  push:
+    branches:
+      - development
 
 jobs:
   deploy-docs:
     name: Deploy docs on gh-pages
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           submodules: true
 
