@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"fn":["query_params_encode"],"mod":["addon","api","library","notifications","profile","resource","search_history","streaming_server","streams"],"struct":["NumberAsString","SortedVec","True","UniqueVec"],"trait":["SortedVecAdapter","UniqueVecAdapter"]};
+window.SIDEBAR_ITEMS = {"fn":["query_params_encode"],"mod":["addon","api","events","library","notifications","profile","resource","search_history","streaming_server","streams"],"struct":["NumberAsString","SortedVec","True","UniqueVec"],"trait":["SortedVecAdapter","UniqueVecAdapter"]};

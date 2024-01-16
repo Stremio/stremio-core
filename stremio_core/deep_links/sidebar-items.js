@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"struct":["AddonsDeepLinks","DiscoverDeepLinks","ErrorLink","ExternalPlayerLink","LibraryDeepLinks","LibraryItemDeepLinks","MetaItemDeepLinks","OpenPlayerLink","StreamDeepLinks","VideoDeepLinks"]};
+window.SIDEBAR_ITEMS = {"struct":["AddonsDeepLinks","DiscoverDeepLinks","ErrorLink","ExternalPlayerLink","LibraryDeepLinks","LibraryItemDeepLinks","LocalSearchItemDeepLinks","MetaItemDeepLinks","OpenPlayerLink","SearchHistoryItemDeepLinks","StreamDeepLinks","VideoDeepLinks"]};

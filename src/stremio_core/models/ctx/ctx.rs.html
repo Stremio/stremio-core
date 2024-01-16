@@ -1,4 +1,6 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `src/models/ctx/ctx.rs`."><title>ctx.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/SourceSerif4-Regular-46f98efaafac5295.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../../../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../../../static.files/rustdoc-c67e44d78ab2db17.css"><meta name="rustdoc-vars" data-root-path="../../../../" data-static-root-path="../../../../static.files/" data-current-crate="stremio_core" data-themes="" data-resource-suffix="" data-rustdoc-version="1.76.0-nightly (e9013ac0e 2023-12-05)" data-channel="nightly" data-search-js="search-5a66c239c06b3a66.js" data-settings-js="settings-fe03fdc259827cd2.js" ><script src="../../../../static.files/storage-fec3eaa3851e447d.js"></script><script defer src="../../../../static.files/src-script-3280b574d94e47b4.js"></script><script defer src="../../../../src-files.js"></script><script defer src="../../../../static.files/main-77dede896d6ac08e.js"></script><noscript><link rel="stylesheet" href="../../../../static.files/noscript-5d8b3c7633ad77ba.css"></noscript><link rel="alternate icon" type="image/png" href="../../../../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../../../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"></nav><main><nav class="sub"><form class="search-form"><span></span><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><a href="../../../../help.html">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../../../static.files/wheel-7b819b6101059cd0.svg"></a></div></form></nav><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `src/models/ctx/ctx.rs`."><title>ctx.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/SourceSerif4-Regular-46f98efaafac5295.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../../../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../../../static.files/rustdoc-4e54bb2b497cc83f.css"><meta name="rustdoc-vars" data-root-path="../../../../" data-static-root-path="../../../../static.files/" data-current-crate="stremio_core" data-themes="" data-resource-suffix="" data-rustdoc-version="1.77.0-nightly (714b29a17 2024-01-15)" data-channel="nightly" data-search-js="search-dd67cee4cfa65049.js" data-settings-js="settings-4313503d2e1961c2.js" ><script src="../../../../static.files/storage-f2adc0d6ca4d09fb.js"></script><script defer src="../../../../static.files/src-script-e66d777a5a92e9b2.js"></script><script defer src="../../../../src-files.js"></script><script defer src="../../../../static.files/main-0b2e2def73e61cbe.js"></script><noscript><link rel="stylesheet" href="../../../../static.files/noscript-04d5337699b92874.css"></noscript><link rel="alternate icon" type="image/png" href="../../../../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../../../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title">
+            <h2>Files</h2></div></nav><div class="sidebar-resizer"></div>
+    <main><nav class="sub"><form class="search-form"><span></span><div id="sidebar-button" tabindex="-1"><a href="../../../../stremio_core/all.html" title="show sidebar"></a></div><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" tabindex="-1"><a href="../../../../help.html" title="help">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../../../static.files/wheel-7b819b6101059cd0.svg"></a></div></form></nav><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
 <a href="#2" id="2">2</a>
 <a href="#3" id="3">3</a>
 <a href="#4" id="4">4</a>
@@ -301,11 +303,30 @@
 <a href="#301" id="301">301</a>
 <a href="#302" id="302">302</a>
 <a href="#303" id="303">303</a>
+<a href="#304" id="304">304</a>
+<a href="#305" id="305">305</a>
+<a href="#306" id="306">306</a>
+<a href="#307" id="307">307</a>
+<a href="#308" id="308">308</a>
+<a href="#309" id="309">309</a>
+<a href="#310" id="310">310</a>
+<a href="#311" id="311">311</a>
+<a href="#312" id="312">312</a>
+<a href="#313" id="313">313</a>
+<a href="#314" id="314">314</a>
+<a href="#315" id="315">315</a>
+<a href="#316" id="316">316</a>
+<a href="#317" id="317">317</a>
+<a href="#318" id="318">318</a>
+<a href="#319" id="319">319</a>
+<a href="#320" id="320">320</a>
+<a href="#321" id="321">321</a>
+<a href="#322" id="322">322</a>
 </pre></div><pre class="rust"><code><span class="kw">use </span><span class="kw">crate</span>::constants::LIBRARY_COLLECTION_NAME;
-<span class="kw">use </span><span class="kw">crate</span>::models::common::{DescriptorLoadable, ResourceLoadable};
+<span class="kw">use </span><span class="kw">crate</span>::models::common::{DescriptorLoadable, Loadable, ResourceLoadable};
 <span class="kw">use </span><span class="kw">crate</span>::models::ctx::{
-    update_library, update_notifications, update_profile, update_search_history, update_streams,
-    update_trakt_addon, CtxError,
+    update_events, update_library, update_notifications, update_profile, update_search_history,
+    update_streams, update_trakt_addon, CtxError,
 };
 <span class="kw">use </span><span class="kw">crate</span>::runtime::msg::{Action, ActionCtx, Event, Internal, Msg};
 <span class="kw">use </span><span class="kw">crate</span>::runtime::{Effect, EffectFuture, Effects, Env, EnvFutureExt, Update};
@@ -313,6 +334,7 @@
     fetch_api, APIRequest, APIResult, AuthRequest, AuthResponse, CollectionResponse,
     DatastoreCommand, DatastoreRequest, LibraryItemsResponse, SuccessResponse,
 };
+<span class="kw">use </span><span class="kw">crate</span>::types::events::{DismissedEventsBucket, Events};
 <span class="kw">use </span><span class="kw">crate</span>::types::library::LibraryBucket;
 <span class="kw">use </span><span class="kw">crate</span>::types::notifications::NotificationsBucket;
 <span class="kw">use </span><span class="kw">crate</span>::types::profile::{Auth, AuthKey, Profile};
@@ -324,7 +346,7 @@
 </span><span class="kw">use </span>derivative::Derivative;
 <span class="kw">use </span>enclose::enclose;
 <span class="kw">use </span>futures::{future, FutureExt, TryFutureExt};
-<span class="kw">use </span>serde::{Deserialize, Serialize};
+<span class="kw">use </span>serde::Serialize;
 
 <span class="kw">use </span>tracing::{event, trace, Level};
 
@@ -335,7 +357,7 @@
     </span>Ready,
 }
 
-<span class="attr">#[derive(Serialize, Deserialize, Clone, Debug)]
+<span class="attr">#[derive(Serialize, Clone, Debug)]
 #[cfg_attr(test, derive(Derivative))]
 #[cfg_attr(test, derivative(Default))]
 </span><span class="kw">pub struct </span>Ctx {
@@ -350,6 +372,8 @@
     <span class="attr">#[serde(skip)]
     </span><span class="kw">pub </span>search_history: SearchHistoryBucket,
     <span class="attr">#[serde(skip)]
+    </span><span class="kw">pub </span>dismissed_events: DismissedEventsBucket,
+    <span class="attr">#[serde(skip)]
     #[cfg_attr(test, derivative(Default(value = <span class="string">"CtxStatus::Ready"</span>)))]
     </span><span class="kw">pub </span>status: CtxStatus,
     <span class="attr">#[serde(skip)]
@@ -357,6 +381,7 @@
     </span><span class="kw">pub </span>trakt_addon: <span class="prelude-ty">Option</span>&lt;DescriptorLoadable&gt;,
     <span class="attr">#[serde(skip)]
     </span><span class="kw">pub </span>notification_catalogs: Vec&lt;ResourceLoadable&lt;Vec&lt;MetaItem&gt;&gt;&gt;,
+    <span class="kw">pub </span>events: Events,
 }
 
 <span class="kw">impl </span>Ctx {
@@ -366,16 +391,22 @@
         streams: StreamsBucket,
         notifications: NotificationsBucket,
         search_history: SearchHistoryBucket,
+        dismissed_events: DismissedEventsBucket,
     ) -&gt; <span class="self">Self </span>{
         <span class="self">Self </span>{
             profile,
             library,
             streams,
             search_history,
+            dismissed_events,
             notifications,
             trakt_addon: <span class="prelude-val">None</span>,
             notification_catalogs: <span class="macro">vec!</span>[],
             status: CtxStatus::Ready,
+            events: Events {
+                modal: Loadable::Loading,
+                notification: Loadable::Loading,
+            },
         }
     }
 }
@@ -400,6 +431,8 @@
                 <span class="kw">let </span>streams_effects = update_streams::&lt;E&gt;(<span class="kw-2">&amp;mut </span><span class="self">self</span>.streams, <span class="kw-2">&amp;</span><span class="self">self</span>.status, msg);
                 <span class="kw">let </span>search_history_effects =
                     update_search_history::&lt;E&gt;(<span class="kw-2">&amp;mut </span><span class="self">self</span>.search_history, <span class="kw-2">&amp;</span><span class="self">self</span>.status, msg);
+                <span class="kw">let </span>events_effects =
+                    update_events::&lt;E&gt;(<span class="kw-2">&amp;mut </span><span class="self">self</span>.events, <span class="kw-2">&amp;mut </span><span class="self">self</span>.dismissed_events, msg);
                 <span class="kw">let </span>trakt_addon_effects = update_trakt_addon::&lt;E&gt;(
                     <span class="kw-2">&amp;mut </span><span class="self">self</span>.trakt_addon,
                     <span class="kw-2">&amp;</span><span class="self">self</span>.profile,
@@ -422,6 +455,7 @@
                     .join(library_effects)
                     .join(streams_effects)
                     .join(search_history_effects)
+                    .join(events_effects)
                     .join(trakt_addon_effects)
                     .join(notifications_effects)
             }
@@ -447,6 +481,8 @@
                 <span class="kw">let </span>streams_effects = update_streams::&lt;E&gt;(<span class="kw-2">&amp;mut </span><span class="self">self</span>.streams, <span class="kw-2">&amp;</span><span class="self">self</span>.status, msg);
                 <span class="kw">let </span>search_history_effects =
                     update_search_history::&lt;E&gt;(<span class="kw-2">&amp;mut </span><span class="self">self</span>.search_history, <span class="kw-2">&amp;</span><span class="self">self</span>.status, msg);
+                <span class="kw">let </span>events_effects =
+                    update_events::&lt;E&gt;(<span class="kw-2">&amp;mut </span><span class="self">self</span>.events, <span class="kw-2">&amp;mut </span><span class="self">self</span>.dismissed_events, msg);
                 <span class="kw">let </span>ctx_effects = <span class="kw">match </span><span class="kw-2">&amp;</span><span class="self">self</span>.status {
                     CtxStatus::Loading(loading_auth_request)
                         <span class="kw">if </span>loading_auth_request == auth_request =&gt;
@@ -474,6 +510,7 @@
                     .join(trakt_addon_effects)
                     .join(notifications_effects)
                     .join(search_history_effects)
+                    .join(events_effects)
                     .join(ctx_effects)
             }
             <span class="kw">_ </span>=&gt; {
@@ -498,12 +535,15 @@
                 );
                 <span class="kw">let </span>search_history_effects =
                     update_search_history::&lt;E&gt;(<span class="kw-2">&amp;mut </span><span class="self">self</span>.search_history, <span class="kw-2">&amp;</span><span class="self">self</span>.status, msg);
+                <span class="kw">let </span>events_effects =
+                    update_events::&lt;E&gt;(<span class="kw-2">&amp;mut </span><span class="self">self</span>.events, <span class="kw-2">&amp;mut </span><span class="self">self</span>.dismissed_events, msg);
                 profile_effects
                     .join(library_effects)
                     .join(streams_effects)
                     .join(trakt_addon_effects)
                     .join(notifications_effects)
                     .join(search_history_effects)
+                    .join(events_effects)
             }
         }
     }

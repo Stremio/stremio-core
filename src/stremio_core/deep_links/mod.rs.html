@@ -1,4 +1,6 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `src/deep_links/mod.rs`."><title>mod.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceSerif4-Regular-46f98efaafac5295.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../../static.files/rustdoc-c67e44d78ab2db17.css"><meta name="rustdoc-vars" data-root-path="../../../" data-static-root-path="../../../static.files/" data-current-crate="stremio_core" data-themes="" data-resource-suffix="" data-rustdoc-version="1.76.0-nightly (e9013ac0e 2023-12-05)" data-channel="nightly" data-search-js="search-5a66c239c06b3a66.js" data-settings-js="settings-fe03fdc259827cd2.js" ><script src="../../../static.files/storage-fec3eaa3851e447d.js"></script><script defer src="../../../static.files/src-script-3280b574d94e47b4.js"></script><script defer src="../../../src-files.js"></script><script defer src="../../../static.files/main-77dede896d6ac08e.js"></script><noscript><link rel="stylesheet" href="../../../static.files/noscript-5d8b3c7633ad77ba.css"></noscript><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"></nav><main><nav class="sub"><form class="search-form"><span></span><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><a href="../../../help.html">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../../static.files/wheel-7b819b6101059cd0.svg"></a></div></form></nav><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `src/deep_links/mod.rs`."><title>mod.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceSerif4-Regular-46f98efaafac5295.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../../static.files/rustdoc-4e54bb2b497cc83f.css"><meta name="rustdoc-vars" data-root-path="../../../" data-static-root-path="../../../static.files/" data-current-crate="stremio_core" data-themes="" data-resource-suffix="" data-rustdoc-version="1.77.0-nightly (714b29a17 2024-01-15)" data-channel="nightly" data-search-js="search-dd67cee4cfa65049.js" data-settings-js="settings-4313503d2e1961c2.js" ><script src="../../../static.files/storage-f2adc0d6ca4d09fb.js"></script><script defer src="../../../static.files/src-script-e66d777a5a92e9b2.js"></script><script defer src="../../../src-files.js"></script><script defer src="../../../static.files/main-0b2e2def73e61cbe.js"></script><noscript><link rel="stylesheet" href="../../../static.files/noscript-04d5337699b92874.css"></noscript><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title">
+            <h2>Files</h2></div></nav><div class="sidebar-resizer"></div>
+    <main><nav class="sub"><form class="search-form"><span></span><div id="sidebar-button" tabindex="-1"><a href="../../../stremio_core/all.html" title="show sidebar"></a></div><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" tabindex="-1"><a href="../../../help.html" title="help">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../../static.files/wheel-7b819b6101059cd0.svg"></a></div></form></nav><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
 <a href="#2" id="2">2</a>
 <a href="#3" id="3">3</a>
 <a href="#4" id="4">4</a>
@@ -539,6 +541,49 @@
 <a href="#539" id="539">539</a>
 <a href="#540" id="540">540</a>
 <a href="#541" id="541">541</a>
+<a href="#542" id="542">542</a>
+<a href="#543" id="543">543</a>
+<a href="#544" id="544">544</a>
+<a href="#545" id="545">545</a>
+<a href="#546" id="546">546</a>
+<a href="#547" id="547">547</a>
+<a href="#548" id="548">548</a>
+<a href="#549" id="549">549</a>
+<a href="#550" id="550">550</a>
+<a href="#551" id="551">551</a>
+<a href="#552" id="552">552</a>
+<a href="#553" id="553">553</a>
+<a href="#554" id="554">554</a>
+<a href="#555" id="555">555</a>
+<a href="#556" id="556">556</a>
+<a href="#557" id="557">557</a>
+<a href="#558" id="558">558</a>
+<a href="#559" id="559">559</a>
+<a href="#560" id="560">560</a>
+<a href="#561" id="561">561</a>
+<a href="#562" id="562">562</a>
+<a href="#563" id="563">563</a>
+<a href="#564" id="564">564</a>
+<a href="#565" id="565">565</a>
+<a href="#566" id="566">566</a>
+<a href="#567" id="567">567</a>
+<a href="#568" id="568">568</a>
+<a href="#569" id="569">569</a>
+<a href="#570" id="570">570</a>
+<a href="#571" id="571">571</a>
+<a href="#572" id="572">572</a>
+<a href="#573" id="573">573</a>
+<a href="#574" id="574">574</a>
+<a href="#575" id="575">575</a>
+<a href="#576" id="576">576</a>
+<a href="#577" id="577">577</a>
+<a href="#578" id="578">578</a>
+<a href="#579" id="579">579</a>
+<a href="#580" id="580">580</a>
+<a href="#581" id="581">581</a>
+<a href="#582" id="582">582</a>
+<a href="#583" id="583">583</a>
+<a href="#584" id="584">584</a>
 </pre></div><pre class="rust"><code><span class="kw">use </span>percent_encoding::utf8_percent_encode;
 <span class="kw">use </span>regex::Regex;
 <span class="kw">use </span>serde::Serialize;
@@ -580,14 +625,21 @@
 <span class="attr">#[derive(Default, Serialize, Debug, PartialEq, Eq)]
 #[serde(rename_all = <span class="string">"camelCase"</span>)]
 </span><span class="kw">pub struct </span>ExternalPlayerLink {
-    <span class="kw">pub </span>href: <span class="prelude-ty">Option</span>&lt;String&gt;,
     <span class="kw">pub </span>download: <span class="prelude-ty">Option</span>&lt;String&gt;,
     <span class="kw">pub </span>streaming: <span class="prelude-ty">Option</span>&lt;String&gt;,
+    <span class="doccomment">/// m3u data URI
+    </span><span class="kw">pub </span>playlist: <span class="prelude-ty">Option</span>&lt;String&gt;,
+    <span class="doccomment">/// Filename of the playlist
+    </span><span class="kw">pub </span>file_name: <span class="prelude-ty">Option</span>&lt;String&gt;,
     <span class="kw">pub </span>open_player: <span class="prelude-ty">Option</span>&lt;OpenPlayerLink&gt;,
-    <span class="kw">pub </span>android_tv: <span class="prelude-ty">Option</span>&lt;String&gt;,
-    <span class="kw">pub </span>tizen: <span class="prelude-ty">Option</span>&lt;String&gt;,
-    <span class="kw">pub </span>webos: <span class="prelude-ty">Option</span>&lt;String&gt;,
-    <span class="kw">pub </span>file_name: <span class="prelude-ty">Option</span>&lt;String&gt;,
+    <span class="doccomment">/// External URL for Web
+    </span><span class="kw">pub </span>web: <span class="prelude-ty">Option</span>&lt;Url&gt;,
+    <span class="doccomment">/// External URI for Android TV
+    </span><span class="kw">pub </span>android_tv: <span class="prelude-ty">Option</span>&lt;Url&gt;,
+    <span class="doccomment">/// External payload for Tizen
+    </span><span class="kw">pub </span>tizen: <span class="prelude-ty">Option</span>&lt;String&gt;,
+    <span class="doccomment">/// External payload for webOS
+    </span><span class="kw">pub </span>webos: <span class="prelude-ty">Option</span>&lt;String&gt;,
 }
 
 <span class="doccomment">/// Using `&amp;Option&lt;Url&gt;` is not encouraged, use `.as_ref()` to get an `Option&lt;&amp;Url&gt;` instead!
@@ -610,9 +662,8 @@
         <span class="kw">let </span>http_regex = Regex::new(<span class="string">r"https?://"</span>).unwrap();
         <span class="kw">let </span>download = stream.download_url();
         <span class="kw">let </span>streaming = stream.streaming_url(streaming_server_url);
-        <span class="kw">let </span>m3u_uri = stream.m3u_data_uri(streaming_server_url);
-        <span class="kw">let </span>file_name = m3u_uri.as_ref().map(|<span class="kw">_</span>| <span class="string">"playlist.m3u"</span>.to_owned());
-        <span class="kw">let </span>href = m3u_uri.or_else(|| download.to_owned());
+        <span class="kw">let </span>playlist = stream.m3u_data_uri(streaming_server_url);
+        <span class="kw">let </span>file_name = playlist.as_ref().map(|<span class="kw">_</span>| <span class="string">"playlist.m3u"</span>.to_owned());
         <span class="kw">let </span>open_player = <span class="kw">match </span><span class="kw-2">&amp;</span>streaming {
             <span class="prelude-val">Some</span>(url) =&gt; <span class="kw">match </span>settings.player_type.as_ref() {
                 <span class="prelude-val">Some</span>(player_type) =&gt; <span class="kw">match </span>player_type.as_str() {
@@ -667,28 +718,31 @@
             },
             <span class="prelude-val">None </span>=&gt; <span class="prelude-val">None</span>,
         };
-        <span class="kw">let </span>(android_tv, tizen, webos) = <span class="kw">match </span><span class="kw-2">&amp;</span>stream.source {
+        <span class="kw">let </span>(web, android_tv, tizen, webos) = <span class="kw">match </span><span class="kw-2">&amp;</span>stream.source {
             StreamSource::External {
+                external_url,
                 android_tv_url,
                 tizen_url,
                 webos_url,
                 ..
             } =&gt; (
-                android_tv_url.as_ref().map(|url| url.to_string()),
+                external_url.to_owned(),
+                android_tv_url.to_owned(),
                 tizen_url.to_owned(),
                 webos_url.to_owned(),
             ),
-            <span class="kw">_ </span>=&gt; (<span class="prelude-val">None</span>, <span class="prelude-val">None</span>, <span class="prelude-val">None</span>),
+            <span class="kw">_ </span>=&gt; (<span class="prelude-val">None</span>, <span class="prelude-val">None</span>, <span class="prelude-val">None</span>, <span class="prelude-val">None</span>),
         };
         ExternalPlayerLink {
-            href,
             download,
             streaming,
+            playlist,
+            file_name,
             open_player,
+            web,
             android_tv,
             tizen,
             webos,
-            file_name,
         }
     }
 }
@@ -1077,6 +1131,40 @@
                     ]),
                 ),
             },
+        }
+    }
+}
+
+<span class="attr">#[derive(Serialize)]
+#[serde(rename_all = <span class="string">"camelCase"</span>)]
+</span><span class="kw">pub struct </span>SearchHistoryItemDeepLinks {
+    <span class="kw">pub </span>search: String,
+}
+
+<span class="kw">impl </span>From&lt;<span class="kw-2">&amp;</span>String&gt; <span class="kw">for </span>SearchHistoryItemDeepLinks {
+    <span class="kw">fn </span>from(query: <span class="kw-2">&amp;</span>String) -&gt; <span class="self">Self </span>{
+        SearchHistoryItemDeepLinks {
+            search: <span class="macro">format!</span>(
+                <span class="string">"stremio:///search?query={}"</span>,
+                utf8_percent_encode(query, URI_COMPONENT_ENCODE_SET),
+            ),
+        }
+    }
+}
+
+<span class="attr">#[derive(Serialize)]
+#[serde(rename_all = <span class="string">"camelCase"</span>)]
+</span><span class="kw">pub struct </span>LocalSearchItemDeepLinks {
+    <span class="kw">pub </span>search: String,
+}
+
+<span class="kw">impl </span>From&lt;<span class="kw-2">&amp;</span>String&gt; <span class="kw">for </span>LocalSearchItemDeepLinks {
+    <span class="kw">fn </span>from(query: <span class="kw-2">&amp;</span>String) -&gt; <span class="self">Self </span>{
+        LocalSearchItemDeepLinks {
+            search: <span class="macro">format!</span>(
+                <span class="string">"stremio:///search?query={}"</span>,
+                utf8_percent_encode(query, URI_COMPONENT_ENCODE_SET),
+            ),
         }
     }
 }

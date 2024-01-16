@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"struct":["File","Growler","Options","PeerSearch","Source","Statistics","SwarmCap"]};
+window.SIDEBAR_ITEMS = {"struct":["File","GetHTTPSResponse","Growler","NetworkInfo","Options","PeerSearch","Settings","SettingsResponse","Source","Statistics","SwarmCap"]};
