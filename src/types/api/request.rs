@@ -157,7 +157,7 @@ impl fmt::Debug for AuthRequest {
         match self {
             Self::Login {
                 email,
-                password,
+                password: _,
                 facebook,
             } => f
                 .debug_struct("Login")
@@ -167,7 +167,7 @@ impl fmt::Debug for AuthRequest {
                 .finish(),
             Self::Register {
                 email,
-                password,
+                password: _,
                 gdpr_consent,
             } => f
                 .debug_struct("Register")
