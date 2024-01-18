@@ -19,6 +19,13 @@ pub struct Profile {
     pub auth: Option<Auth>,
     #[serde_as(deserialize_as = "UniqueVec<Vec<_>, DescriptorUniqueVecAdapter>")]
     pub addons: Vec<Descriptor>,
+    /// This locking flag is raised when the API addon fetch request has failed
+    /// in order to avoid overwriting the user's addons in the API
+    /// if they install a new addon locally when we have defaulted to the official ones
+    pub addons_locked: bool,
+    /// This missing library flag is raised when the API Library Collection fetch request on login
+    /// has failed to indicate why the user has an empty Library
+    pub library_missing: bool,
     pub settings: Settings,
 }
 
@@ -27,6 +34,8 @@ impl Default for Profile {
         Profile {
             auth: None,
             addons: OFFICIAL_ADDONS.to_owned(),
+            addons_locked: false,
+            library_missing: false,
             settings: Settings::default(),
         }
     }

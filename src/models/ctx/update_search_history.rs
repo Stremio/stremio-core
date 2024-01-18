@@ -3,7 +3,7 @@ use futures::FutureExt;
 
 use crate::constants::SEARCH_HISTORY_STORAGE_KEY;
 use crate::models::ctx::{CtxError, CtxStatus};
-use crate::runtime::msg::{Action, ActionCtx, Event, Internal};
+use crate::runtime::msg::{Action, ActionCtx, CtxAuthResponse, Event, Internal};
 use crate::runtime::{Effect, EffectFuture, Effects, Env, EnvFutureExt};
 use crate::{runtime::msg::Msg, types::search_history::SearchHistoryBucket};
 
@@ -27,7 +27,7 @@ pub fn update_search_history<E: Env + 'static>(
             Effects::msg(Msg::Internal(Internal::SearchHistoryChanged))
         }
         Msg::Internal(Internal::CtxAuthResult(auth_request, result)) => match (status, result) {
-            (CtxStatus::Loading(loading_auth_request), Ok((auth, ..)))
+            (CtxStatus::Loading(loading_auth_request), Ok(CtxAuthResponse { auth, .. }))
                 if loading_auth_request == auth_request =>
             {
                 let next_search_history = SearchHistoryBucket::new(Some(auth.user.id.to_owned()));

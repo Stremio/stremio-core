@@ -1,6 +1,6 @@
 use crate::constants::{OFFICIAL_ADDONS, PROFILE_STORAGE_KEY};
 use crate::models::ctx::{CtxError, CtxStatus, OtherError};
-use crate::runtime::msg::{Action, ActionCtx, Event, Internal, Msg};
+use crate::runtime::msg::{Action, ActionCtx, CtxAuthResponse, Event, Internal, Msg};
 use crate::runtime::{Effect, EffectFuture, Effects, Env, EnvFutureExt};
 use crate::types::addon::Descriptor;
 use crate::types::api::{
@@ -153,6 +153,10 @@ pub fn update_profile<E: Env + 'static>(
             .join(Effects::msg(Msg::Internal(Internal::ProfileChanged)))
         }
         Msg::Internal(Internal::UninstallAddon(addon)) => {
+            if profile.addons_locked {
+                return addon_install_error_effects(addon, OtherError::UserAddonsAreLocked);
+            }
+
             let addon_position = profile
                 .addons
                 .iter()
@@ -229,6 +233,10 @@ pub fn update_profile<E: Env + 'static>(
             Effects::one(push_profile_to_storage::<E>(profile)).unchanged()
         }
         Msg::Internal(Internal::InstallAddon(addon)) => {
+            if profile.addons_locked {
+                return addon_install_error_effects(addon, OtherError::UserAddonsAreLocked);
+            }
+
             if !profile.addons.contains(addon) {
                 if !addon.manifest.behavior_hints.configuration_required {
                     let addon_position = profile
@@ -263,12 +271,21 @@ pub fn update_profile<E: Env + 'static>(
             }
         }
         Msg::Internal(Internal::CtxAuthResult(auth_request, result)) => match (status, result) {
-            (CtxStatus::Loading(loading_auth_request), Ok((auth, addons, _)))
-                if loading_auth_request == auth_request =>
-            {
+            (
+                CtxStatus::Loading(loading_auth_request),
+                Ok(CtxAuthResponse {
+                    auth,
+                    addons,
+                    addons_locked,
+                    library_missing,
+                    ..
+                }),
+            ) if loading_auth_request == auth_request => {
                 let next_profile = Profile {
                     auth: Some(auth.to_owned()),
                     addons: addons.to_owned(),
+                    addons_locked: *addons_locked,
+                    library_missing: *library_missing,
                     settings: Settings::default(),
                 };
                 if *profile != next_profile {
@@ -285,6 +302,9 @@ pub fn update_profile<E: Env + 'static>(
             result,
         )) if profile.auth_key() == Some(auth_key) => match result {
             Ok(addons) => {
+                // on successful AddonsApi result, unlock the addons if they have been locked
+                profile.addons_locked = false;
+
                 let prev_transport_urls = profile
                     .addons
                     .iter()

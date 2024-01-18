@@ -23,7 +23,19 @@ pub type CtxStorageResponse = (
     Option<LibraryBucket>,
 );
 
-pub type AuthResponse = (Auth, Vec<Descriptor>, Vec<LibraryItem>);
+#[derive(Debug)]
+pub struct CtxAuthResponse {
+    pub auth: Auth,
+    pub addons: Vec<Descriptor>,
+    /// If the addon get request fails, this flag will be `true`
+    /// to disallow the user to install addons and override his addons in the API
+    pub addons_locked: bool,
+    pub library_items: Vec<LibraryItem>,
+    /// If the Library datastore Get request fails on initial logging
+    /// this flag will be set to `true` to indicate why the user doesn't see
+    /// their library items.
+    pub library_missing: bool,
+}
 
 pub type LibraryPlanResponse = (Vec<String>, Vec<String>);
 
@@ -33,7 +45,7 @@ pub type LibraryPlanResponse = (Vec<String>, Vec<String>);
 #[derive(Debug)]
 pub enum Internal {
     /// Result for authenticate to API.
-    CtxAuthResult(AuthRequest, Result<AuthResponse, CtxError>),
+    CtxAuthResult(AuthRequest, Result<CtxAuthResponse, CtxError>),
     /// Result for pull addons from API.
     AddonsAPIResult(APIRequest, Result<Vec<Descriptor>, CtxError>),
     /// Result for pull user from API.
