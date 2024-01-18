@@ -26,6 +26,8 @@ use serde::Serialize;
 
 use tracing::{event, trace, Level};
 
+use super::OtherError;
+
 #[derive(Default, PartialEq, Eq, Serialize, Clone, Debug)]
 pub enum CtxStatus {
     Loading(AuthRequest),
@@ -165,10 +167,43 @@ impl<E: Env + 'static> Update<E> for Ctx {
                     {
                         self.status = CtxStatus::Ready;
                         match result {
-                            Ok(_) => Effects::msg(Msg::Event(Event::UserAuthenticated {
-                                auth_request: auth_request.to_owned(),
-                            }))
-                            .unchanged(),
+                            Ok(ctx_auth) => {
+                                let authentication_effects =
+                                    Effects::msg(Msg::Event(Event::UserAuthenticated {
+                                        auth_request: auth_request.to_owned(),
+                                    }))
+                                    .unchanged();
+
+                                let addons_locked_event = Event::UserAddonsLocked {
+                                    addons_locked: ctx_auth.addons_locked,
+                                };
+                                let addons_locked_effects = if ctx_auth.addons_locked {
+                                    Effects::msg(Msg::Event(Event::Error {
+                                        error: CtxError::Other(OtherError::UserAddonsAreLocked),
+                                        source: Box::new(addons_locked_event),
+                                    }))
+                                    .unchanged()
+                                } else {
+                                    Effects::msg(Msg::Event(addons_locked_event)).unchanged()
+                                };
+
+                                let library_missing_event = Event::UserLibraryMissing {
+                                    library_missing: ctx_auth.library_missing,
+                                };
+                                let library_missing_effects = if ctx_auth.library_missing {
+                                    Effects::msg(Msg::Event(Event::Error {
+                                        error: CtxError::Other(OtherError::UserLibraryIsMissing),
+                                        source: Box::new(library_missing_event),
+                                    }))
+                                    .unchanged()
+                                } else {
+                                    Effects::msg(Msg::Event(library_missing_event)).unchanged()
+                                };
+
+                                authentication_effects
+                                    .join(addons_locked_effects)
+                                    .join(library_missing_effects)
+                            }
                             Err(error) => Effects::msg(Msg::Event(Event::Error {
                                 error: error.to_owned(),
                                 source: Box::new(Event::UserAuthenticated {
@@ -243,7 +278,7 @@ fn authenticate<E: Env + 'static>(auth_request: &AuthRequest) -> Effect {
                 })
                 .map(|AuthResponse { key, user }| Auth { key, user })?;
 
-            let addon_collection_fut = {
+            let addon_collection_fut = async {
                 let request = APIRequest::AddonCollectionGet {
                     auth_key: auth.key.to_owned(),
                     update: true,
@@ -252,15 +287,16 @@ fn authenticate<E: Env + 'static>(auth_request: &AuthRequest) -> Effect {
                     .inspect(move |result| {
                         trace!(?result, ?request, "Get user's Addon Collection request")
                     })
+                    .await
                     .map_err(CtxError::from)
-                    .and_then(|result| match result {
-                        APIResult::Ok { result } => future::ok(result),
-                        APIResult::Err { error } => future::err(CtxError::from(error)),
+                    .and_then(|result: APIResult<CollectionResponse>| match result {
+                        APIResult::Ok { result } => Ok(result),
+                        APIResult::Err { error } => Err(CtxError::from(error)),
                     })
-                    .map_ok(|CollectionResponse { addons, .. }| addons)
+                    .map(|CollectionResponse { addons, .. }| addons)
             };
 
-            let datastore_library_fut = {
+            let datastore_library_fut = async {
                 let request = DatastoreRequest {
                     auth_key: auth.key.to_owned(),
                     collection: LIBRARY_COLLECTION_NAME.to_owned(),
@@ -274,10 +310,11 @@ fn authenticate<E: Env + 'static>(auth_request: &AuthRequest) -> Effect {
                     .inspect(move |result| {
                         trace!(?result, ?request, "Get user's Addon Collection request")
                     })
+                    .await
                     .map_err(CtxError::from)
                     .and_then(|result| match result {
-                        APIResult::Ok { result } => future::ok(result.0),
-                        APIResult::Err { error } => future::err(CtxError::from(error)),
+                        APIResult::Ok { result } => Ok(result.0),
+                        APIResult::Err { error } => Err(CtxError::from(error)),
                     })
             };
 

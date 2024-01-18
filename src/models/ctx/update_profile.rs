@@ -304,6 +304,11 @@ pub fn update_profile<E: Env + 'static>(
             Ok(addons) => {
                 // on successful AddonsApi result, unlock the addons if they have been locked
                 profile.addons_locked = false;
+                let addons_locked_event = Event::UserAddonsLocked {
+                    addons_locked: profile.addons_locked,
+                };
+                let addons_locked_effects =
+                    Effects::msg(Msg::Event(addons_locked_event)).unchanged();
 
                 let prev_transport_urls = profile
                     .addons
@@ -322,14 +327,19 @@ pub fn update_profile<E: Env + 'static>(
                     .into_iter()
                     .chain(removed_transport_urls)
                     .collect();
-                if profile.addons != *addons {
+                let profile_changed_effects = if profile.addons != *addons {
                     profile.addons = addons.to_owned();
-                    Effects::msg(Msg::Event(Event::AddonsPulledFromAPI { transport_urls }))
-                        .join(Effects::msg(Msg::Internal(Internal::ProfileChanged)))
+
+                    Effects::msg(Msg::Internal(Internal::ProfileChanged))
                 } else {
-                    Effects::msg(Msg::Event(Event::AddonsPulledFromAPI { transport_urls }))
-                        .unchanged()
-                }
+                    Effects::none().unchanged()
+                };
+
+                addons_locked_effects
+                    .join(Effects::msg(Msg::Event(Event::AddonsPulledFromAPI {
+                        transport_urls,
+                    })))
+                    .join(profile_changed_effects)
             }
             Err(error) => Effects::msg(Msg::Event(Event::Error {
                 error: error.to_owned(),
