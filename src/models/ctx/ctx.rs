@@ -24,7 +24,7 @@ use enclose::enclose;
 use futures::{future, FutureExt, TryFutureExt};
 use serde::Serialize;
 
-use tracing::{event, trace, Level};
+use tracing::trace;
 
 use super::OtherError;
 
@@ -334,10 +334,7 @@ fn authenticate<E: Env + 'static>(auth_request: &AuthRequest) -> Effect {
             })
         }
         .map(enclose!((auth_request) move |result| {
-            let internal_msg = Msg::Internal(Internal::CtxAuthResult(auth_request, result));
-
-            event!(Level::TRACE, internal_message = ?internal_msg);
-            internal_msg
+            Msg::Internal(Internal::CtxAuthResult(auth_request, result))
         }))
         .boxed_env(),
     )
