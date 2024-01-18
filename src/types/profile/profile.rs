@@ -23,9 +23,11 @@ pub struct Profile {
     /// This locking flag is raised when the API addon fetch request has failed
     /// in order to avoid overwriting the user's addons in the API
     /// if they install a new addon locally when we have defaulted to the official ones
+    #[serde(default)]
     pub addons_locked: bool,
     /// This missing library flag is raised when the API Library Collection fetch request on login
     /// has failed to indicate why the user has an empty Library
+    #[serde(default)]
     pub library_missing: bool,
     pub settings: Settings,
 }
