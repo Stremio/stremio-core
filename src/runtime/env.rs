@@ -1032,7 +1032,7 @@ mod test {
             });
 
             // setup storage for migration
-            set_profile_and_schema_version(&profile_before, 10);
+            set_profile_and_schema_version(&profile_before, 12);
 
             // migrate storage
             migrate_storage_schema_to_v13::<TestEnv>()
@@ -1042,7 +1042,7 @@ mod test {
             let storage = STORAGE.read().expect("Should lock");
 
             assert_eq!(
-                &11.to_string(),
+                &13.to_string(),
                 storage
                     .get(SCHEMA_VERSION_STORAGE_KEY)
                     .expect("Should have the schema set"),
