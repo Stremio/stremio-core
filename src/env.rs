@@ -39,9 +39,9 @@ const INSTALLATION_ID_STORAGE_KEY: &str = "installation_id";
 
 #[wasm_bindgen]
 extern "C" {
-    #[wasm_bindgen(js_namespace = ["self"])]
+    #[wasm_bindgen(js_namespace = ["self"], js_name = app_version)]
     static APP_VERSION: String;
-    #[wasm_bindgen(js_namespace = ["self"])]
+    #[wasm_bindgen(js_namespace = ["self"], js_name = shell_version)]
     static SHELL_VERSION: Option<String>;
     #[wasm_bindgen(catch, js_namespace = ["self"])]
     async fn get_location_hash() -> Result<JsValue, JsValue>;
