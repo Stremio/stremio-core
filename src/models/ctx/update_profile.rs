@@ -4,7 +4,8 @@ use crate::runtime::msg::{Action, ActionCtx, CtxAuthResponse, Event, Internal, M
 use crate::runtime::{Effect, EffectFuture, Effects, Env, EnvFutureExt};
 use crate::types::addon::Descriptor;
 use crate::types::api::{
-    fetch_api, APIError, APIRequest, APIResult, CollectionResponse, SuccessResponse,
+    fetch_api, APIError, APIRequest, APIResult, CollectionResponse, DatastoreCommand,
+    DatastoreRequest, SuccessResponse,
 };
 use crate::types::profile::{Auth, AuthKey, Profile, Settings, User};
 use crate::types::streams::StreamsBucket;
@@ -276,16 +277,14 @@ pub fn update_profile<E: Env + 'static>(
                 Ok(CtxAuthResponse {
                     auth,
                     addons,
-                    addons_locked,
-                    library_missing,
-                    ..
+                    library_items,
                 }),
             ) if loading_auth_request == auth_request => {
                 let next_profile = Profile {
                     auth: Some(auth.to_owned()),
-                    addons: addons.to_owned(),
-                    addons_locked: *addons_locked,
-                    library_missing: *library_missing,
+                    addons: addons.to_owned().unwrap_or(OFFICIAL_ADDONS.to_owned()),
+                    addons_locked: addons.is_err(),
+                    library_missing: library_items.is_err(),
                     settings: Settings::default(),
                 };
                 if *profile != next_profile {
@@ -302,7 +301,6 @@ pub fn update_profile<E: Env + 'static>(
             result,
         )) if profile.auth_key() == Some(auth_key) => match result {
             Ok(addons) => {
-                // on successful AddonsApi result, unlock the addons if they have been locked
                 profile.addons_locked = false;
                 let addons_locked_event = Event::UserAddonsLocked {
                     addons_locked: profile.addons_locked,
@@ -377,6 +375,17 @@ pub fn update_profile<E: Env + 'static>(
                     .join(session_expired_effects)
                 }
             }
+        }
+        Msg::Internal(Internal::LibraryPullResult(
+            DatastoreRequest {
+                auth_key: loading_auth_key,
+                command: DatastoreCommand::Get { .. },
+                ..
+            },
+            result,
+        )) if Some(loading_auth_key) == profile.auth_key() && result.is_ok() => {
+            profile.library_missing = false;
+            Effects::msg(Msg::Internal(Internal::ProfileChanged))
         }
         _ => Effects::none().unchanged(),
     }
