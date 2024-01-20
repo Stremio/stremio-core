@@ -1,4 +1,5 @@
 use crate::model::deep_links_ext::DeepLinksExt;
+use gloo_utils::format::JsValueSerdeExt;
 use itertools::Itertools;
 use serde::Serialize;
 use stremio_core::deep_links::{DiscoverDeepLinks, MetaItemDeepLinks};
@@ -53,7 +54,7 @@ pub fn serialize_catalogs_with_extra(
     catalogs_with_extra: &CatalogsWithExtra,
     ctx: &Ctx,
 ) -> JsValue {
-    JsValue::from_serde(&model::CatalogsWithExtra {
+    <JsValue as JsValueSerdeExt>::from_serde(&model::CatalogsWithExtra {
         selected: &catalogs_with_extra.selected,
         catalogs: catalogs_with_extra
             .catalogs

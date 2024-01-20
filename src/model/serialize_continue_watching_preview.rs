@@ -1,3 +1,4 @@
+use gloo_utils::format::JsValueSerdeExt;
 use url::Url;
 use wasm_bindgen::JsValue;
 
@@ -12,7 +13,7 @@ pub fn serialize_continue_watching_preview(
     streaming_server_url: Option<&Url>,
     settings: &Settings,
 ) -> JsValue {
-    JsValue::from_serde(&model::ContinueWatchingPreview::from((
+    <JsValue as JsValueSerdeExt>::from_serde(&model::ContinueWatchingPreview::from((
         continue_watching_preview,
         streams_bucket,
         streaming_server_url,
