@@ -132,7 +132,6 @@ impl ResourceRequest {
 #[derive(Clone, Debug)]
 pub enum ExtraType {
     /// the extra supports a list of ids
-    ///
     Ids {
         /// The extra name.
         /// It will be checked against the addon manifest to validate it's supported
@@ -250,7 +249,6 @@ impl AggrRequest<'_> {
                                                     },
                                                 )?;
 
-
                                             if supported_ids.is_empty() {
                                                 return None;
                                             }
@@ -290,7 +288,7 @@ impl AggrRequest<'_> {
                                                         ids.sort();
 
                                                         ids.join(",")
-                                                },
+                                                    }
                                                     _ => return None,
                                                 };
                                             // build the extra values

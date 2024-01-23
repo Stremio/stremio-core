@@ -79,7 +79,10 @@ pub fn update_notifications<E: Env + 'static>(
 
             let notifications_catalog_resource_effects =
                 if !sorted_library_items_id_types.is_empty() && should_make_request {
-                    trace!("Sorted by `mtime` LibraryItem id and type: {:?}", sorted_library_items_id_types);
+                    trace!(
+                        "Sorted by `mtime` LibraryItem id and type: {:?}",
+                        sorted_library_items_id_types
+                    );
                     let catalog_resource_effects = resources_update_with_vector_content::<E, _>(
                         notification_catalogs,
                         // force the making of a requests every time PullNotifications is called.
