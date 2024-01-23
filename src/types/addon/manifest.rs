@@ -31,6 +31,50 @@ pub struct Manifest {
     #[serde_as(deserialize_as = "DefaultOnError<NoneAsEmptyString>")]
     pub background: Option<Url>,
     pub types: Vec<String>,
+    /// # Resources
+    ///
+    /// # Examples
+    ///
+    /// ## Short format
+    /// ```
+    /// use std::vec::Vec;
+    /// use stremio_core::types::addon::ManifestResource;
+    ///
+    /// let manifest_resources_short = serde_json::json!({
+    ///     // Addon manifest.json ....
+    ///
+    ///     // short-format of resources:
+    ///     "resources": ["catalog", "meta", "subtitles"],
+    /// }).get("resources").unwrap().clone();
+    ///
+    /// let resources = serde_json::from_value::<Vec<ManifestResource>>(manifest_resources_short).expect("Failed to deserialize ManifestResource");
+    /// ```
+    ///
+    /// ## Long format
+    ///
+    /// ```
+    /// use std::vec::Vec;
+    /// use stremio_core::types::addon::ManifestResource;
+    ///
+    /// let manifest_resources_long = serde_json::json!({
+    ///     // Addon manifest.json ....
+    ///
+    ///     // long-format of resources:
+    ///     "resources": [
+    ///         {
+    ///             "name": "catalog",
+    ///             // optional, i.e. can be null
+    ///             "types": ["anime", "series", "movies"],
+    ///             // optional, i.e. can be null
+    ///             "idPrefixes": ["tt", "kitsu"],
+    ///         },
+    ///         "meta",
+    ///         "subtitles"
+    ///     ]
+    /// }).get("resources").unwrap().clone();
+    ///
+    /// let resources = serde_json::from_value::<Vec<ManifestResource>>(manifest_resources_long).expect("Failed to deserialize ManifestResource");
+    /// ```
     pub resources: Vec<ManifestResource>,
     pub id_prefixes: Option<Vec<String>>,
     #[serde(default)]
@@ -155,6 +199,24 @@ impl ManifestCatalog {
             });
         all_supported && required_satisfied
     }
+    pub fn are_extra_names_supported(&self, extra_names: &[String]) -> bool {
+        let all_supported = extra_names.iter().all(|extra_name| {
+            self.extra
+                .iter()
+                .any(|extra_prop| &extra_prop.name == extra_name)
+        });
+        let required_satisfied = self
+            .extra
+            .iter()
+            .filter(|extra_prop| extra_prop.is_required)
+            .all(|extra_prop| {
+                extra_names
+                    .iter()
+                    .any(|extra_name| extra_name == &extra_prop.name)
+            });
+        all_supported && required_satisfied
+    }
+
     pub fn default_required_extra(&self) -> Option<Vec<ExtraValue>> {
         self.extra
             .iter()
@@ -231,6 +293,8 @@ pub struct ExtraProp {
     #[serde(default)]
     #[serde_as(deserialize_as = "DefaultOnNull")]
     pub options: Vec<String>,
+
+    /// The maximum options that should be passed for this addon extra property.
     #[serde(default)]
     pub options_limit: OptionsLimit,
 }
@@ -269,7 +333,7 @@ impl<'de> DeserializeAs<'de, ExtraProp> for ExtraPropValid {
     }
 }
 
-#[derive(Clone, Deref, PartialEq, Eq, Serialize, Deserialize, Debug)]
+#[derive(Clone, Copy, Deref, PartialEq, Eq, Serialize, Deserialize, Debug)]
 pub struct OptionsLimit(pub usize);
 
 impl Default for OptionsLimit {
