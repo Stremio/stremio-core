@@ -12,9 +12,6 @@ members = [
     "stremio-watched-bitfield",
 ]
 
-[lib]
-doctest = false
-
 [features]
 # TODO: env-future-send should be enabled by default
 # but our `TestEnv` for `unit_tests` uses a MutexGuard which is not Send.
