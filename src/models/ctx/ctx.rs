@@ -105,7 +105,7 @@ impl<E: Env + 'static> Update<E> for Ctx {
                 let profile_effects =
                     update_profile::<E>(&mut self.profile, &mut self.streams, &self.status, msg);
                 let library_effects =
-                    update_library::<E>(&mut self.library, &mut self.profile, &self.status, msg);
+                    update_library::<E>(&mut self.library, &self.profile, &self.status, msg);
                 let streams_effects = update_streams::<E>(&mut self.streams, &self.status, msg);
                 let search_history_effects =
                     update_search_history::<E>(&mut self.search_history, &self.status, msg);
@@ -141,7 +141,7 @@ impl<E: Env + 'static> Update<E> for Ctx {
                 let profile_effects =
                     update_profile::<E>(&mut self.profile, &mut self.streams, &self.status, msg);
                 let library_effects =
-                    update_library::<E>(&mut self.library, &mut self.profile, &self.status, msg);
+                    update_library::<E>(&mut self.library, &self.profile, &self.status, msg);
                 let trakt_addon_effects = update_trakt_addon::<E>(
                     &mut self.trakt_addon,
                     &self.profile,
@@ -235,7 +235,7 @@ impl<E: Env + 'static> Update<E> for Ctx {
                 let profile_effects =
                     update_profile::<E>(&mut self.profile, &mut self.streams, &self.status, msg);
                 let library_effects =
-                    update_library::<E>(&mut self.library, &mut self.profile, &self.status, msg);
+                    update_library::<E>(&mut self.library, &self.profile, &self.status, msg);
                 let streams_effects = update_streams::<E>(&mut self.streams, &self.status, msg);
                 let trakt_addon_effects = update_trakt_addon::<E>(
                     &mut self.trakt_addon,

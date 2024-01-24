@@ -27,7 +27,7 @@ use crate::{
 
 pub fn update_library<E: Env + 'static>(
     library: &mut LibraryBucket,
-    profile: &mut Profile,
+    profile: &Profile,
     status: &CtxStatus,
     msg: &Msg,
 ) -> Effects {
