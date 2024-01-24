@@ -179,12 +179,14 @@ pub fn update_library<E: Env + 'static>(
                 CtxStatus::Loading(loading_auth_request),
                 Ok(CtxAuthResponse {
                     auth,
-                    library_items,
+                    library_items_result,
                     ..
                 }),
             ) if loading_auth_request == auth_request => {
-                let next_library =
-                    LibraryBucket::new(Some(auth.user.id.to_owned()), library_items.to_owned());
+                let next_library = LibraryBucket::new(
+                    Some(auth.user.id.to_owned()),
+                    library_items_result.to_owned().unwrap_or_default(),
+                );
                 if *library != next_library {
                     *library = next_library;
                     Effects::msg(Msg::Internal(Internal::LibraryChanged(false)))
@@ -249,10 +251,9 @@ pub fn update_library<E: Env + 'static>(
             result,
         )) if Some(loading_auth_key) == auth_key => match result {
             Ok(items) => {
-                // override the missing library flag to indicate that we've successfully updated the local library
-                profile.library_missing = false;
+                // send an event that the missing library is now present
                 let library_missing_effects = Effects::msg(Msg::Event(Event::UserLibraryMissing {
-                    library_missing: profile.library_missing,
+                    library_missing: false,
                 }))
                 .unchanged();
 

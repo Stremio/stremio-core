@@ -1,4 +1,4 @@
-use crate::constants::{LIBRARY_COLLECTION_NAME, OFFICIAL_ADDONS};
+use crate::constants::LIBRARY_COLLECTION_NAME;
 use crate::models::common::{DescriptorLoadable, Loadable, ResourceLoadable};
 use crate::models::ctx::{
     update_events, update_library, update_notifications, update_profile, update_search_history,
@@ -24,7 +24,7 @@ use enclose::enclose;
 use futures::{future, FutureExt, TryFutureExt};
 use serde::Serialize;
 
-use tracing::trace;
+use tracing::{error, trace};
 
 use super::OtherError;
 
@@ -175,33 +175,40 @@ impl<E: Env + 'static> Update<E> for Ctx {
                                     .unchanged();
 
                                 let addons_locked_event = Event::UserAddonsLocked {
-                                    addons_locked: ctx_auth.addons_locked,
+                                    addons_locked: ctx_auth.addons_result.is_err(),
                                 };
-                                let addons_locked_effects = if ctx_auth.addons_locked {
-                                    Effects::msg(Msg::Event(Event::Error {
+
+                                let addons_effects = match ctx_auth.addons_result.as_ref() {
+                                    Ok(_addons) => {
+                                        Effects::msg(Msg::Event(addons_locked_event)).unchanged()
+                                    }
+                                    Err(_err) => Effects::msg(Msg::Event(Event::Error {
                                         error: CtxError::Other(OtherError::UserAddonsAreLocked),
                                         source: Box::new(addons_locked_event),
                                     }))
-                                    .unchanged()
-                                } else {
-                                    Effects::msg(Msg::Event(addons_locked_event)).unchanged()
+                                    .unchanged(),
                                 };
 
                                 let library_missing_event = Event::UserLibraryMissing {
-                                    library_missing: ctx_auth.library_missing,
+                                    library_missing: ctx_auth.library_items_result.is_err(),
                                 };
-                                let library_missing_effects = if ctx_auth.library_missing {
-                                    Effects::msg(Msg::Event(Event::Error {
+
+                                let library_missing_effects = match ctx_auth
+                                    .library_items_result
+                                    .as_ref()
+                                {
+                                    Ok(_library) => {
+                                        Effects::msg(Msg::Event(library_missing_event)).unchanged()
+                                    }
+                                    Err(_err) => Effects::msg(Msg::Event(Event::Error {
                                         error: CtxError::Other(OtherError::UserLibraryIsMissing),
                                         source: Box::new(library_missing_event),
                                     }))
-                                    .unchanged()
-                                } else {
-                                    Effects::msg(Msg::Event(library_missing_event)).unchanged()
+                                    .unchanged(),
                                 };
 
                                 authentication_effects
-                                    .join(addons_locked_effects)
+                                    .join(addons_effects)
                                     .join(library_missing_effects)
                             }
                             Err(error) => Effects::msg(Msg::Event(Event::Error {
@@ -321,16 +328,17 @@ fn authenticate<E: Env + 'static>(auth_request: &AuthRequest) -> Effect {
             let (addon_collection_result, datastore_library_result) =
                 future::join(addon_collection_fut, datastore_library_fut).await;
 
-            // lock if the result from fetching the addons has failed
-            let addons_locked = addon_collection_result.is_err();
-            // set the flag to true if fetching of the library has failed
-            let library_missing = datastore_library_result.is_err();
+            if let Err(error) = addon_collection_result.as_ref() {
+                error!("Failed to fetch Addon collection from API: {error:?}");
+            }
+            if let Err(error) = datastore_library_result.as_ref() {
+                error!("Failed to fetch LibraryItems for user from API: {error:?}");
+            }
+
             Ok(CtxAuthResponse {
                 auth,
-                addons: addon_collection_result.unwrap_or(OFFICIAL_ADDONS.clone()),
-                addons_locked,
-                library_items: datastore_library_result.unwrap_or_default(),
-                library_missing,
+                addons_result: addon_collection_result,
+                library_items_result: datastore_library_result,
             })
         }
         .map(enclose!((auth_request) move |result| {

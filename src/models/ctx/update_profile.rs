@@ -275,17 +275,14 @@ pub fn update_profile<E: Env + 'static>(
                 CtxStatus::Loading(loading_auth_request),
                 Ok(CtxAuthResponse {
                     auth,
-                    addons,
-                    addons_locked,
-                    library_missing,
+                    addons_result,
                     ..
                 }),
             ) if loading_auth_request == auth_request => {
                 let next_profile = Profile {
                     auth: Some(auth.to_owned()),
-                    addons: addons.to_owned(),
-                    addons_locked: *addons_locked,
-                    library_missing: *library_missing,
+                    addons: addons_result.to_owned().unwrap_or(OFFICIAL_ADDONS.clone()),
+                    addons_locked: addons_result.is_err(),
                     settings: Settings::default(),
                 };
                 if *profile != next_profile {

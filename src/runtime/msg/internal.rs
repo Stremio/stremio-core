@@ -26,15 +26,8 @@ pub type CtxStorageResponse = (
 #[derive(Debug)]
 pub struct CtxAuthResponse {
     pub auth: Auth,
-    pub addons: Vec<Descriptor>,
-    /// If the addon get request fails, this flag will be `true`
-    /// to disallow the user to install addons and override his addons in the API
-    pub addons_locked: bool,
-    pub library_items: Vec<LibraryItem>,
-    /// If the Library datastore Get request fails on initial logging
-    /// this flag will be set to `true` to indicate why the user doesn't see
-    /// their library items.
-    pub library_missing: bool,
+    pub addons_result: Result<Vec<Descriptor>, CtxError>,
+    pub library_items_result: Result<Vec<LibraryItem>, CtxError>,
 }
 
 pub type LibraryPlanResponse = (Vec<String>, Vec<String>);

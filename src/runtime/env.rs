@@ -554,7 +554,6 @@ fn migrate_storage_schema_to_v13<E: Env>() -> TryEnvFuture<()> {
             match profile.as_mut().and_then(|profile| profile.as_object_mut()) {
                 Some(profile) => {
                     profile.insert("addonsLocked".to_owned(), serde_json::Value::Bool(false));
-                    profile.insert("libraryMissing".to_owned(), serde_json::Value::Bool(false));
                     E::set_storage(PROFILE_STORAGE_KEY, Some(&profile))
                 }
                 _ => E::set_storage::<()>(PROFILE_STORAGE_KEY, None),
@@ -1028,7 +1027,6 @@ mod test {
 
             let migrated_profile = json!({
                 "addonsLocked": false,
-                "libraryMissing": false,
             });
 
             // setup storage for migration

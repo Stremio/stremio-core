@@ -25,10 +25,6 @@ pub struct Profile {
     /// if they install a new addon locally when we have defaulted to the official ones
     #[serde(default)]
     pub addons_locked: bool,
-    /// This missing library flag is raised when the API Library Collection fetch request on login
-    /// has failed to indicate why the user has an empty Library
-    #[serde(default)]
-    pub library_missing: bool,
     pub settings: Settings,
 }
 
@@ -38,7 +34,6 @@ impl Default for Profile {
             auth: None,
             addons: OFFICIAL_ADDONS.to_owned(),
             addons_locked: false,
-            library_missing: false,
             settings: Settings::default(),
         }
     }
