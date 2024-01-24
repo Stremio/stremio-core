@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"static":["PUSH_TO_LIBRARY_EVERY"],"struct":["AnalyticsContext","Player","Selected","VideoParams"]};
+window.SIDEBAR_ITEMS = {"fn":["library_item_update","next_stream_update","next_streams_update","next_video_update","push_seek_to_api","push_to_library","seek_update","series_info_update","stream_state_update","subtitles_update","switch_to_next_video","watched_update"],"static":["PUSH_TO_LIBRARY_EVERY"],"struct":["AnalyticsContext","Player","Selected","VideoParams"]};

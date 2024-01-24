@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"struct":["DismissedEventsBucket","Events"]};
+window.SIDEBAR_ITEMS = {"mod":["dimissed_events_bucket","events"],"struct":["DismissedEventsBucket","Events"]};

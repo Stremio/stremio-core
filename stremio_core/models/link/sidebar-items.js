@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"enum":["LinkError"],"struct":["Link"]};
+window.SIDEBAR_ITEMS = {"enum":["LinkError"],"fn":["create_code","read_data"],"struct":["Link"]};

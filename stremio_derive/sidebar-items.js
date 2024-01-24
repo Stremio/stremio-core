@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"derive":["Model"]};
+window.SIDEBAR_ITEMS = {"constant":["CORE_CRATE_ORIGINAL_NAME"],"derive":["Model"],"fn":["get_core_ident"]};

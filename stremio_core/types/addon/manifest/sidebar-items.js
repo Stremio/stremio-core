@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"enum":["ManifestExtra","ManifestResource"],"struct":["ExtraProp","ExtraPropFullUniqueVecAdapter","ExtraPropShortUniqueVecAdapter","ExtraPropValid","Manifest","ManifestBehaviorHints","ManifestCatalog","ManifestCatalogUniqueVecAdapter","ManifestPreview","OptionsLimit","Version"]};

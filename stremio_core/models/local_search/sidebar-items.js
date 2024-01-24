@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"enum":["ParseError"],"struct":["ImdbRating","IndexOptions","LocalSearch","Searchable","SearchableItemsResponse"]};
+window.SIDEBAR_ITEMS = {"constant":["INDEX_OPTIONS"],"enum":["ParseError"],"mod":["imdb_rating"],"struct":["ImdbRating","IndexOptions","LocalSearch","Searchable","SearchableItemsResponse"]};

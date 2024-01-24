@@ -1,4 +1,4 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `src/types/addon/manifest.rs`."><title>manifest.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/SourceSerif4-Regular-46f98efaafac5295.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../../../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../../../static.files/rustdoc-4e54bb2b497cc83f.css"><meta name="rustdoc-vars" data-root-path="../../../../" data-static-root-path="../../../../static.files/" data-current-crate="stremio_core" data-themes="" data-resource-suffix="" data-rustdoc-version="1.77.0-nightly (714b29a17 2024-01-15)" data-channel="nightly" data-search-js="search-dd67cee4cfa65049.js" data-settings-js="settings-4313503d2e1961c2.js" ><script src="../../../../static.files/storage-f2adc0d6ca4d09fb.js"></script><script defer src="../../../../static.files/src-script-e66d777a5a92e9b2.js"></script><script defer src="../../../../src-files.js"></script><script defer src="../../../../static.files/main-0b2e2def73e61cbe.js"></script><noscript><link rel="stylesheet" href="../../../../static.files/noscript-04d5337699b92874.css"></noscript><link rel="alternate icon" type="image/png" href="../../../../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../../../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title">
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `src/types/addon/manifest.rs`."><title>manifest.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/SourceSerif4-Regular-46f98efaafac5295.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../../../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../../../static.files/rustdoc-b1a3e7f8283b8434.css"><meta name="rustdoc-vars" data-root-path="../../../../" data-static-root-path="../../../../static.files/" data-current-crate="stremio_core" data-themes="" data-resource-suffix="" data-rustdoc-version="1.77.0-nightly (5d3d3479d 2024-01-23)" data-channel="nightly" data-search-js="search-dd67cee4cfa65049.js" data-settings-js="settings-4313503d2e1961c2.js" ><script src="../../../../static.files/storage-f2adc0d6ca4d09fb.js"></script><script defer src="../../../../static.files/src-script-e66d777a5a92e9b2.js"></script><script defer src="../../../../src-files.js"></script><script defer src="../../../../static.files/main-48f368f3872407c8.js"></script><noscript><link rel="stylesheet" href="../../../../static.files/noscript-04d5337699b92874.css"></noscript><link rel="alternate icon" type="image/png" href="../../../../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../../../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title">
             <h2>Files</h2></div></nav><div class="sidebar-resizer"></div>
     <main><nav class="sub"><form class="search-form"><span></span><div id="sidebar-button" tabindex="-1"><a href="../../../../stremio_core/all.html" title="show sidebar"></a></div><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" tabindex="-1"><a href="../../../../help.html" title="help">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../../../static.files/wheel-7b819b6101059cd0.svg"></a></div></form></nav><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
 <a href="#2" id="2">2</a>
@@ -292,6 +292,70 @@
 <a href="#290" id="290">290</a>
 <a href="#291" id="291">291</a>
 <a href="#292" id="292">292</a>
+<a href="#293" id="293">293</a>
+<a href="#294" id="294">294</a>
+<a href="#295" id="295">295</a>
+<a href="#296" id="296">296</a>
+<a href="#297" id="297">297</a>
+<a href="#298" id="298">298</a>
+<a href="#299" id="299">299</a>
+<a href="#300" id="300">300</a>
+<a href="#301" id="301">301</a>
+<a href="#302" id="302">302</a>
+<a href="#303" id="303">303</a>
+<a href="#304" id="304">304</a>
+<a href="#305" id="305">305</a>
+<a href="#306" id="306">306</a>
+<a href="#307" id="307">307</a>
+<a href="#308" id="308">308</a>
+<a href="#309" id="309">309</a>
+<a href="#310" id="310">310</a>
+<a href="#311" id="311">311</a>
+<a href="#312" id="312">312</a>
+<a href="#313" id="313">313</a>
+<a href="#314" id="314">314</a>
+<a href="#315" id="315">315</a>
+<a href="#316" id="316">316</a>
+<a href="#317" id="317">317</a>
+<a href="#318" id="318">318</a>
+<a href="#319" id="319">319</a>
+<a href="#320" id="320">320</a>
+<a href="#321" id="321">321</a>
+<a href="#322" id="322">322</a>
+<a href="#323" id="323">323</a>
+<a href="#324" id="324">324</a>
+<a href="#325" id="325">325</a>
+<a href="#326" id="326">326</a>
+<a href="#327" id="327">327</a>
+<a href="#328" id="328">328</a>
+<a href="#329" id="329">329</a>
+<a href="#330" id="330">330</a>
+<a href="#331" id="331">331</a>
+<a href="#332" id="332">332</a>
+<a href="#333" id="333">333</a>
+<a href="#334" id="334">334</a>
+<a href="#335" id="335">335</a>
+<a href="#336" id="336">336</a>
+<a href="#337" id="337">337</a>
+<a href="#338" id="338">338</a>
+<a href="#339" id="339">339</a>
+<a href="#340" id="340">340</a>
+<a href="#341" id="341">341</a>
+<a href="#342" id="342">342</a>
+<a href="#343" id="343">343</a>
+<a href="#344" id="344">344</a>
+<a href="#345" id="345">345</a>
+<a href="#346" id="346">346</a>
+<a href="#347" id="347">347</a>
+<a href="#348" id="348">348</a>
+<a href="#349" id="349">349</a>
+<a href="#350" id="350">350</a>
+<a href="#351" id="351">351</a>
+<a href="#352" id="352">352</a>
+<a href="#353" id="353">353</a>
+<a href="#354" id="354">354</a>
+<a href="#355" id="355">355</a>
+<a href="#356" id="356">356</a>
 </pre></div><pre class="rust"><code><span class="kw">use </span><span class="kw">crate</span>::constants::SKIP_EXTRA_PROP;
 <span class="kw">use </span><span class="kw">crate</span>::types::addon::{ExtraValue, ResourcePath};
 <span class="kw">use </span><span class="kw">crate</span>::types::{UniqueVec, UniqueVecAdapter};
@@ -325,7 +389,51 @@
     #[serde_as(deserialize_as = <span class="string">"DefaultOnError&lt;NoneAsEmptyString&gt;"</span>)]
     </span><span class="kw">pub </span>background: <span class="prelude-ty">Option</span>&lt;Url&gt;,
     <span class="kw">pub </span>types: Vec&lt;String&gt;,
-    <span class="kw">pub </span>resources: Vec&lt;ManifestResource&gt;,
+    <span class="doccomment">/// # Resources
+    ///
+    /// # Examples
+    ///
+    /// ## Short format
+    /// ```
+    /// use std::vec::Vec;
+    /// use stremio_core::types::addon::ManifestResource;
+    ///
+    /// let manifest_resources_short = serde_json::json!({
+    ///     // Addon manifest.json ....
+    ///
+    ///     // short-format of resources:
+    ///     "resources": ["catalog", "meta", "subtitles"],
+    /// }).get("resources").unwrap().clone();
+    ///
+    /// let resources = serde_json::from_value::&lt;Vec&lt;ManifestResource&gt;&gt;(manifest_resources_short).expect("Failed to deserialize ManifestResource");
+    /// ```
+    ///
+    /// ## Long format
+    ///
+    /// ```
+    /// use std::vec::Vec;
+    /// use stremio_core::types::addon::ManifestResource;
+    ///
+    /// let manifest_resources_long = serde_json::json!({
+    ///     // Addon manifest.json ....
+    ///
+    ///     // long-format of resources:
+    ///     "resources": [
+    ///         {
+    ///             "name": "catalog",
+    ///             // optional, i.e. can be null
+    ///             "types": ["anime", "series", "movies"],
+    ///             // optional, i.e. can be null
+    ///             "idPrefixes": ["tt", "kitsu"],
+    ///         },
+    ///         "meta",
+    ///         "subtitles"
+    ///     ]
+    /// }).get("resources").unwrap().clone();
+    ///
+    /// let resources = serde_json::from_value::&lt;Vec&lt;ManifestResource&gt;&gt;(manifest_resources_long).expect("Failed to deserialize ManifestResource");
+    /// ```
+    </span><span class="kw">pub </span>resources: Vec&lt;ManifestResource&gt;,
     <span class="kw">pub </span>id_prefixes: <span class="prelude-ty">Option</span>&lt;Vec&lt;String&gt;&gt;,
     <span class="attr">#[serde(default)]
     #[serde_as(deserialize_as = <span class="string">"UniqueVec&lt;Vec&lt;_&gt;, ManifestCatalogUniqueVecAdapter&gt;"</span>)]
@@ -449,6 +557,24 @@
             });
         all_supported &amp;&amp; required_satisfied
     }
+    <span class="kw">pub fn </span>are_extra_names_supported(<span class="kw-2">&amp;</span><span class="self">self</span>, extra_names: <span class="kw-2">&amp;</span>[String]) -&gt; bool {
+        <span class="kw">let </span>all_supported = extra_names.iter().all(|extra_name| {
+            <span class="self">self</span>.extra
+                .iter()
+                .any(|extra_prop| <span class="kw-2">&amp;</span>extra_prop.name == extra_name)
+        });
+        <span class="kw">let </span>required_satisfied = <span class="self">self
+            </span>.extra
+            .iter()
+            .filter(|extra_prop| extra_prop.is_required)
+            .all(|extra_prop| {
+                extra_names
+                    .iter()
+                    .any(|extra_name| extra_name == <span class="kw-2">&amp;</span>extra_prop.name)
+            });
+        all_supported &amp;&amp; required_satisfied
+    }
+
     <span class="kw">pub fn </span>default_required_extra(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Option</span>&lt;Vec&lt;ExtraValue&gt;&gt; {
         <span class="self">self</span>.extra
             .iter()
@@ -525,7 +651,9 @@
     <span class="attr">#[serde(default)]
     #[serde_as(deserialize_as = <span class="string">"DefaultOnNull"</span>)]
     </span><span class="kw">pub </span>options: Vec&lt;String&gt;,
-    <span class="attr">#[serde(default)]
+
+    <span class="doccomment">/// The maximum options that should be passed for this addon extra property.
+    </span><span class="attr">#[serde(default)]
     </span><span class="kw">pub </span>options_limit: OptionsLimit,
 }
 
@@ -563,7 +691,7 @@
     }
 }
 
-<span class="attr">#[derive(Clone, Deref, PartialEq, Eq, Serialize, Deserialize, Debug)]
+<span class="attr">#[derive(Clone, Copy, Deref, PartialEq, Eq, Serialize, Deserialize, Debug)]
 </span><span class="kw">pub struct </span>OptionsLimit(<span class="kw">pub </span>usize);
 
 <span class="kw">impl </span>Default <span class="kw">for </span>OptionsLimit {

@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"struct":["AddonsDeepLinks","DiscoverDeepLinks","ErrorLink","ExternalPlayerLink","LibraryDeepLinks","LibraryItemDeepLinks","LocalSearchItemDeepLinks","MetaItemDeepLinks","OpenPlayerLink","SearchHistoryItemDeepLinks","StreamDeepLinks","VideoDeepLinks"]};
+window.SIDEBAR_ITEMS = {"mod":["error_link"],"struct":["AddonsDeepLinks","DiscoverDeepLinks","ErrorLink","ExternalPlayerLink","LibraryDeepLinks","LibraryItemDeepLinks","LocalSearchItemDeepLinks","MetaItemDeepLinks","OpenPlayerLink","SearchHistoryItemDeepLinks","StreamDeepLinks","VideoDeepLinks"]};

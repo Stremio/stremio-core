@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"struct":["ContinueWatchingPreview","Item"]};
+window.SIDEBAR_ITEMS = {"fn":["library_items_update"],"struct":["ContinueWatchingPreview","Item"]};

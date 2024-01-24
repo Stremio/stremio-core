@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"struct":["NotificationItem","NotificationsBucket"]};
+window.SIDEBAR_ITEMS = {"mod":["notification_item","notifications_bucket"],"struct":["NotificationItem","NotificationsBucket"]};

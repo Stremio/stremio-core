@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"enum":["StreamSource"],"fn":["deserialize_stream_source_external","is_default_value"],"struct":["Stream","StreamBehaviorHints","StreamProxyHeaders"],"type":["ExternalStreamSource"]};

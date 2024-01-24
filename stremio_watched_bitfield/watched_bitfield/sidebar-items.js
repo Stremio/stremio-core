@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"mod":["serde"],"struct":["WatchedBitField","WatchedField"]};

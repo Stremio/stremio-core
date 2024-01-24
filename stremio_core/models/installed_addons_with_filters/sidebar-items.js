@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"struct":["InstalledAddonsRequest","InstalledAddonsWithFilters","Selectable","SelectableType","Selected"]};
+window.SIDEBAR_ITEMS = {"fn":["catalog_update","selectable_update"],"struct":["InstalledAddonsRequest","InstalledAddonsWithFilters","Selectable","SelectableType","Selected"]};

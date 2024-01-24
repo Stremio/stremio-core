@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"enum":["AggrRequest"],"struct":["ExtraValue","ResourcePath","ResourceRequest"],"trait":["ExtraExt"]};

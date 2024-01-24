@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"struct":["AddonDetails","Selected"]};
+window.SIDEBAR_ITEMS = {"fn":["deserialize_transport_url","local_addon_update"],"struct":["AddonDetails","Selected"]};

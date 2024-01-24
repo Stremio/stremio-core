@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"enum":["ResourceAction","ResourceError","ResourcesAction"],"fn":["resource_content_from_result","resource_update","resource_update_with_vector_content","resource_vector_content_from_result","resources_update","resources_update_with_vector_content"],"struct":["ResourceLoadable"]};
