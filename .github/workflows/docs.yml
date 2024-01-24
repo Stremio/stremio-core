@@ -24,7 +24,7 @@ jobs:
       - name: Build docs
         # Building locally:
         # for `--enable-index-page` it is required to pass `-Z unstable-options` to rustdocs
-        run: RUSTDOCFLAGS="--cfg docsrs -Z unstable-options --enable-index-page" cargo +nightly doc --all-features --no-deps --workspace
+        run: RUSTDOCFLAGS="--cfg docsrs -Z unstable-options --enable-index-page" cargo +nightly build-docs
 
       - name: Prepare /docs
         run: |
