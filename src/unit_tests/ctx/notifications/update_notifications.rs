@@ -16,7 +16,7 @@ use url::Url;
 use stremio_derive::Model;
 
 use crate::{
-    constants::LAST_VIDEOS_IDS_EXTRA_PROP,
+    constants::{CATALOG_RESOURCE_NAME, LAST_VIDEOS_IDS_EXTRA_PROP},
     models::{
         ctx::Ctx,
         player::{Player, Selected as PlayerSelected},
@@ -76,8 +76,8 @@ fn test_pull_notifications_and_play_in_player() {
             description: None,
             logo: None,
             background: None,
-            types: vec![],
-            resources: vec![],
+            types: vec!["series".into()],
+            resources: vec![CATALOG_RESOURCE_NAME.into()],
             id_prefixes: Some(vec!["tt".to_owned()]),
             catalogs: vec![ManifestCatalog {
                 id: "lastVideosIds".to_owned(),

@@ -2,7 +2,10 @@ use derive_more::{From, Into};
 use serde::{Deserialize, Serialize};
 use url::Url;
 
-use crate::types::addon::{Descriptor, ExtraProp};
+use crate::{
+    constants::CATALOG_RESOURCE_NAME,
+    types::addon::{Descriptor, ExtraProp, ManifestResource},
+};
 
 #[derive(Clone, From, Into, PartialEq, Eq, Serialize, Deserialize, Debug)]
 #[serde(from = "(String, String)", into = "(String, String)")]
@@ -180,7 +183,7 @@ impl AggrRequest<'_> {
                                 ResourceRequest::new(
                                     addon.transport_url.to_owned(),
                                     ResourcePath::with_extra(
-                                        "catalog",
+                                        CATALOG_RESOURCE_NAME,
                                         &catalog.r#type,
                                         &catalog.id,
                                         extra,
@@ -219,35 +222,66 @@ impl AggrRequest<'_> {
                                         })
                                         // handle the supported catalogs
                                         .filter_map(move |catalog| {
-                                            // filter out unsupported by the addon - ids and types
                                             let mut supported_ids =
-                                                addon.manifest.id_prefixes.as_ref().map(
-                                                    |prefixes| {
-                                                        id_types
-                                                            .iter()
-                                                            .filter_map(|(id, r#type)| {
-                                                                // if the ID prefix, e.g. `tt` in `tt13622776`, is supported by the addon -
-                                                                let id_prefix_supported =
-                                                                    prefixes.iter().any(|prefix| {
-                                                                        id.starts_with(prefix)
-                                                                    });
+                                                id_types.iter().filter_map(|(id, item_type)| {
+                                                    // is `catalog` Resource supported and it's types and id prefixes (if applicable) respected?
+                                                    let catalog_resource_supported = addon.manifest.resources.iter().any(|resource| {
+                                                        match resource {
+                                                            // if we have a short `catalog` resource, they we support it
+                                                            ManifestResource::Short(name) if name == CATALOG_RESOURCE_NAME => true,
+                                                            // if we have a log `catalog` resource, check if the id prefix and type are supported
+                                                            ManifestResource::Full { name, types, id_prefixes } if name == CATALOG_RESOURCE_NAME => {
+                                                                // do we have types?
+                                                                // if we do - check if the type is included / supported
+                                                                // if no types are listed - we default to no types supported!
+                                                                let item_type_supported = types
+                                                                    .as_ref()
+                                                                    .map(|supported_types| supported_types.contains(item_type))
+                                                                    .unwrap_or(true);
+                                                                let id_supported = id_prefixes
+                                                                    .as_ref()
+                                                                    .map(|supported_prefixes| {
+                                                                        // on empty prefixes we consider the id supported!
+                                                                        // otherwise check in the list
+                                                                        supported_prefixes.is_empty() || supported_prefixes.iter().any(|prefix| {
+                                                                            id.starts_with(prefix)
+                                                                        })
+                                                                    })
+                                                                    .unwrap_or(true);
 
-                                                                // if the id type, e.g. `series` is supported by the addon
-                                                                let id_type_supported = addon
-                                                                    .manifest
-                                                                    .types
-                                                                    .contains(r#type);
-                                                                if id_prefix_supported
-                                                                    && id_type_supported
-                                                                {
-                                                                    Some(id.to_owned())
-                                                                } else {
-                                                                    None
-                                                                }
-                                                            })
-                                                            .collect::<Vec<_>>()
-                                                    },
-                                                )?;
+                                                                item_type_supported && id_supported
+                                                            },
+                                                            // in any other case, for any other resource, we do not support this id
+                                                            _ => false
+                                                        }
+                                                    });
+
+                                                    // if catalog resource doesn't support the id or if the catalog is not the same type
+                                                    if !catalog_resource_supported || &catalog.r#type != item_type {
+                                                        // we do not support the id
+                                                        return None;
+                                                    }
+
+                                                    // check if the addon supports the specified id in it's the global manifest id prefixes
+                                                    let manifest_id_prefixes_supported = addon.manifest.id_prefixes.as_ref().map(|supported_prefixes| {
+                                                        // on empty prefixes we consider the id supported!
+                                                        // otherwise check in the list
+                                                        supported_prefixes.is_empty() || supported_prefixes.iter().any(|prefix| {
+                                                            id.starts_with(prefix)
+                                                        })
+                                                    }).unwrap_or(true);
+
+                                                    let manifest_type_supported = addon
+                                                        .manifest
+                                                        .types
+                                                        .contains(item_type);
+
+                                                    if !manifest_id_prefixes_supported || !manifest_type_supported {
+                                                        return None;
+                                                    }
+
+                                                    Some(id.clone())
+                                                }).collect::<Vec<String>>();
 
                                             if supported_ids.is_empty() {
                                                 return None;
@@ -302,7 +336,7 @@ impl AggrRequest<'_> {
                                                 ResourceRequest::new(
                                                     addon.transport_url.to_owned(),
                                                     ResourcePath::with_extra(
-                                                        "catalog",
+                                                        CATALOG_RESOURCE_NAME,
                                                         &catalog.r#type,
                                                         &catalog.id,
                                                         extra,
