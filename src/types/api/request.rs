@@ -177,7 +177,7 @@ impl fmt::Debug for AuthRequest {
                 .finish(),
             Self::LoginWithToken { token } => f
                 .debug_struct("LoginWithToken")
-                .field("token", token)
+                .field("token", &"<SENSITIVE>")
                 .finish(),
         }
     }
