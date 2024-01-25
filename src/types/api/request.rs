@@ -175,7 +175,7 @@ impl fmt::Debug for AuthRequest {
                 .field("password", &"<SENSITIVE>")
                 .field("gdpr_consent", gdpr_consent)
                 .finish(),
-            Self::LoginWithToken { token } => f
+            Self::LoginWithToken { token: _ } => f
                 .debug_struct("LoginWithToken")
                 .field("token", &"<SENSITIVE>")
                 .finish(),
