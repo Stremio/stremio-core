@@ -4,7 +4,7 @@ use crate::types::resource::{
 };
 use crate::unit_tests::serde::default_tokens_ext::DefaultTokens;
 use chrono::{TimeZone, Utc};
-use serde_test::{assert_de_tokens, assert_ser_tokens, Token};
+use serde_test::{assert_de_tokens, assert_ser_tokens, Configure, Token};
 use url::Url;
 
 #[test]
@@ -43,7 +43,8 @@ fn meta_item_preview_serizlize() {
                 trailer_streams: vec![],
                 behavior_hints: MetaItemBehaviorHints::default(),
             },
-        ],
+        ]
+        .readable(),
         &[
             vec![
                 Token::Seq { len: Some(2) },
@@ -172,7 +173,8 @@ fn meta_item_preview_de() {
                 trailer_streams: vec![],
                 behavior_hints: MetaItemBehaviorHints::default(),
             },
-        ],
+        ]
+        .readable(),
         &[
             vec![
                 Token::Seq { len: Some(2) },
@@ -287,7 +289,8 @@ fn meta_item_preview_de_minimal() {
             links: vec![],
             trailer_streams: vec![],
             behavior_hints: MetaItemBehaviorHints::default(),
-        },
+        }
+        .readable(),
         &[
             Token::Struct {
                 name: "MetaItemPreviewLegacy",
@@ -324,7 +327,8 @@ fn meta_item_preview_de_numeric_imdb() {
             }],
             trailer_streams: vec![],
             behavior_hints: MetaItemBehaviorHints::default(),
-        },
+        }
+        .readable(),
         &[
             Token::Struct {
                 name: "MetaItemPreviewLegacy",
@@ -391,7 +395,7 @@ fn meta_item_preview_de_legacy_links() {
                 }
             ],
             behavior_hints: MetaItemBehaviorHints::default(),
-        },
+        }.readable(),
         &[
             Token::Struct {
                 name: "MetaItemPreviewLegacy",
@@ -470,7 +474,7 @@ fn meta_item_preview_de_ignore_legacy_when_links() {
                 behavior_hints: StreamBehaviorHints::default(),
             }],
             behavior_hints: MetaItemBehaviorHints::default(),
-        },
+        }.readable(),
         &[
             Token::Struct {
                 name: "MetaItemPreviewLegacy",

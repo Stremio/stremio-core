@@ -1,7 +1,7 @@
 use crate::types::addon::{Manifest, ManifestBehaviorHints};
 use crate::unit_tests::serde::default_tokens_ext::DefaultTokens;
 use semver::Version;
-use serde_test::{assert_de_tokens, assert_ser_tokens, Token};
+use serde_test::{assert_de_tokens, assert_ser_tokens, Configure, Token};
 use url::Url;
 
 #[test]
@@ -38,7 +38,8 @@ fn manifest() {
                 addon_catalogs: vec![],
                 behavior_hints: ManifestBehaviorHints::default(),
             },
-        ],
+        ]
+        .readable(),
         &[
             vec![
                 Token::Seq { len: Some(2) },
@@ -158,7 +159,8 @@ fn manifest() {
                 addon_catalogs: vec![],
                 behavior_hints: ManifestBehaviorHints::default(),
             },
-        ],
+        ]
+        .readable(),
         &[
             vec![
                 Token::Seq { len: Some(2) },

@@ -1,7 +1,10 @@
-use crate::types::addon::{Descriptor, DescriptorFlags, Manifest};
-use crate::unit_tests::serde::default_tokens_ext::DefaultTokens;
-use serde_test::{assert_de_tokens, assert_tokens, Token};
+use serde_test::{assert_de_tokens, assert_tokens, Configure, Token};
 use url::Url;
+
+use crate::{
+    types::addon::{Descriptor, DescriptorFlags, Manifest},
+    unit_tests::serde::default_tokens_ext::DefaultTokens,
+};
 
 #[test]
 fn descriptor() {
@@ -10,7 +13,8 @@ fn descriptor() {
             manifest: Manifest::default(),
             transport_url: Url::parse("https://transport_url").unwrap(),
             flags: DescriptorFlags::default(),
-        },
+        }
+        .compact(),
         &[
             vec![
                 Token::Struct {
@@ -35,7 +39,8 @@ fn descriptor() {
             manifest: Manifest::default(),
             transport_url: Url::parse("https://transport_url").unwrap(),
             flags: DescriptorFlags::default(),
-        },
+        }
+        .compact(),
         &[
             vec![
                 Token::Struct {
