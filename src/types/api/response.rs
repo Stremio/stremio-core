@@ -73,10 +73,18 @@ pub struct LinkCodeResponse {
     pub qrcode: String,
 }
 
-#[derive(Clone, PartialEq, Eq, Serialize, Deserialize, Debug)]
+#[derive(Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct LinkAuthKey {
     pub auth_key: String,
+}
+
+impl fmt::Debug for LinkAuthKey {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("LinkAuthKey")
+            .field("auth_key", &"<SENSITIVE>")
+            .finish()
+    }
 }
 
 #[derive(Clone, TryInto, Serialize, Deserialize, Debug)]
