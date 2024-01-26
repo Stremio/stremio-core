@@ -1,3 +1,5 @@
+use core::fmt;
+
 use crate::types::{
     addon::Descriptor,
     library::LibraryItem,
@@ -31,11 +33,20 @@ pub struct CollectionResponse {
     pub last_modified: DateTime<Utc>,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Serialize, Deserialize)]
 pub struct AuthResponse {
     #[serde(rename = "authKey")]
     pub key: AuthKey,
     pub user: User,
+}
+
+impl fmt::Debug for AuthResponse {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("AuthResponse")
+            .field("key", &"<SENSITIVE>")
+            .field("user", &self.user)
+            .finish()
+    }
 }
 
 #[derive(Debug, Deserialize)]
@@ -62,10 +73,18 @@ pub struct LinkCodeResponse {
     pub qrcode: String,
 }
 
-#[derive(Clone, PartialEq, Eq, Serialize, Deserialize, Debug)]
+#[derive(Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct LinkAuthKey {
     pub auth_key: String,
+}
+
+impl fmt::Debug for LinkAuthKey {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("LinkAuthKey")
+            .field("auth_key", &"<SENSITIVE>")
+            .finish()
+    }
 }
 
 #[derive(Clone, TryInto, Serialize, Deserialize, Debug)]
