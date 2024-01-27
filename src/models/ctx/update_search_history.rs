@@ -27,7 +27,7 @@ pub fn update_search_history<E: Env + 'static>(
             Effects::msg(Msg::Internal(Internal::SearchHistoryChanged))
         }
         Msg::Internal(Internal::CtxAuthResult(auth_request, result)) => match (status, result) {
-            (CtxStatus::Loading(loading_auth_request), Ok((auth, ..)))
+            (CtxStatus::Loading(loading_auth_request), Ok(auth))
                 if loading_auth_request == auth_request =>
             {
                 let next_search_history = SearchHistoryBucket::new(Some(auth.user.id.to_owned()));

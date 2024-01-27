@@ -85,7 +85,7 @@ pub fn update_streams<E: Env + 'static>(
             Effects::one(push_streams_to_storage::<E>(streams)).unchanged()
         }
         Msg::Internal(Internal::CtxAuthResult(auth_request, result)) => match (status, result) {
-            (CtxStatus::Loading(loading_auth_request), Ok((auth, _, _)))
+            (CtxStatus::Loading(loading_auth_request), Ok(auth))
                 if loading_auth_request == auth_request =>
             {
                 let next_streams = StreamsBucket::new(Some(auth.user.id.to_owned()));

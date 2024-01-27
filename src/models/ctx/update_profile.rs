@@ -6,7 +6,7 @@ use crate::types::addon::Descriptor;
 use crate::types::api::{
     fetch_api, APIError, APIRequest, APIResult, CollectionResponse, SuccessResponse,
 };
-use crate::types::profile::{Auth, AuthKey, Profile, Settings, User};
+use crate::types::profile::{Auth, AuthKey, Profile, User};
 use crate::types::streams::StreamsBucket;
 use enclose::enclose;
 use futures::{future, FutureExt, TryFutureExt};
@@ -20,13 +20,8 @@ pub fn update_profile<E: Env + 'static>(
 ) -> Effects {
     match msg {
         Msg::Action(Action::Ctx(ActionCtx::Logout)) | Msg::Internal(Internal::Logout) => {
-            let next_profile = Profile::default();
-            if *profile != next_profile {
-                *profile = next_profile;
-                Effects::msg(Msg::Internal(Internal::ProfileChanged))
-            } else {
-                Effects::none().unchanged()
-            }
+            *profile = Profile::default();
+            Effects::msg(Msg::Internal(Internal::ProfileChanged))
         }
         Msg::Action(Action::Ctx(ActionCtx::PushUserToAPI)) => match &profile.auth {
             Some(Auth { key, user }) => {
@@ -263,20 +258,17 @@ pub fn update_profile<E: Env + 'static>(
             }
         }
         Msg::Internal(Internal::CtxAuthResult(auth_request, result)) => match (status, result) {
-            (CtxStatus::Loading(loading_auth_request), Ok((auth, addons, _)))
+            (CtxStatus::Loading(loading_auth_request), Ok(auth))
                 if loading_auth_request == auth_request =>
             {
-                let next_profile = Profile {
+                *profile = Profile {
                     auth: Some(auth.to_owned()),
-                    addons: addons.to_owned(),
-                    settings: Settings::default(),
+                    ..Default::default()
                 };
-                if *profile != next_profile {
-                    *profile = next_profile;
-                    Effects::msg(Msg::Internal(Internal::ProfileChanged))
-                } else {
-                    Effects::none().unchanged()
-                }
+
+                let changed_effects = Effects::msg(Msg::Internal(Internal::ProfileChanged));
+                let pull_effects = Effects::one(pull_addons_from_api::<E>(&auth.key));
+                changed_effects.join(pull_effects)
             }
             _ => Effects::none().unchanged(),
         },

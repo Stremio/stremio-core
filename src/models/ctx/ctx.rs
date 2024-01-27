@@ -1,4 +1,3 @@
-use crate::constants::LIBRARY_COLLECTION_NAME;
 use crate::models::common::{DescriptorLoadable, Loadable, ResourceLoadable};
 use crate::models::ctx::{
     update_events, update_library, update_notifications, update_profile, update_search_history,
@@ -7,8 +6,7 @@ use crate::models::ctx::{
 use crate::runtime::msg::{Action, ActionCtx, Event, Internal, Msg};
 use crate::runtime::{Effect, EffectFuture, Effects, Env, EnvFutureExt, Update};
 use crate::types::api::{
-    fetch_api, APIRequest, APIResult, AuthRequest, AuthResponse, CollectionResponse,
-    DatastoreCommand, DatastoreRequest, LibraryItemsResponse, SuccessResponse,
+    fetch_api, APIRequest, APIResult, AuthRequest, AuthResponse, SuccessResponse,
 };
 use crate::types::events::{DismissedEventsBucket, Events};
 use crate::types::library::LibraryBucket;
@@ -240,48 +238,6 @@ fn authenticate<E: Env + 'static>(auth_request: &AuthRequest) -> Effect {
                 APIResult::Err { error } => future::err(CtxError::from(error)),
             })
             .map_ok(|AuthResponse { key, user }| Auth { key, user })
-            .and_then(|auth| {
-                let addon_collection_fut = {
-                    let request = APIRequest::AddonCollectionGet {
-                        auth_key: auth.key.to_owned(),
-                        update: true,
-                    };
-                    fetch_api::<E, _, _, _>(&request)
-                        .inspect(move |result| {
-                            trace!(?result, ?request, "Get user's Addon Collection request")
-                        })
-                        .map_err(CtxError::from)
-                        .and_then(|result| match result {
-                            APIResult::Ok { result } => future::ok(result),
-                            APIResult::Err { error } => future::err(CtxError::from(error)),
-                        })
-                        .map_ok(|CollectionResponse { addons, .. }| addons)
-                };
-
-                let datastore_library_fut = {
-                    let request = DatastoreRequest {
-                        auth_key: auth.key.to_owned(),
-                        collection: LIBRARY_COLLECTION_NAME.to_owned(),
-                        command: DatastoreCommand::Get {
-                            ids: vec![],
-                            all: true,
-                        },
-                    };
-
-                    fetch_api::<E, _, _, LibraryItemsResponse>(&request)
-                        .inspect(move |result| {
-                            trace!(?result, ?request, "Get user's Addon Collection request")
-                        })
-                        .map_err(CtxError::from)
-                        .and_then(|result| match result {
-                            APIResult::Ok { result } => future::ok(result.0),
-                            APIResult::Err { error } => future::err(CtxError::from(error)),
-                        })
-                };
-
-                future::try_join(addon_collection_fut, datastore_library_fut)
-                    .map_ok(move |(addons, library_items)| (auth, addons, library_items))
-            })
             .map(enclose!((auth_request) move |result| {
                 let internal_msg = Msg::Internal(Internal::CtxAuthResult(auth_request, result));
 
