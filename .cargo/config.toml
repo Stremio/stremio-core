@@ -1,0 +1,7 @@
+[build]
+# for `--enable-index-page` it is required to pass `-Z unstable-options` to rustdocs
+# rustdocflags = ["--cfg", "docsrs", "-Z", "unstable-options", "--enable-index-page"]
+
+[alias]
+build-docs = "doc --no-deps --workspace --document-private-items"
+

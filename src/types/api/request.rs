@@ -1,3 +1,5 @@
+use core::fmt;
+
 use crate::constants::{API_URL, LINK_API_URL};
 use crate::types::addon::Descriptor;
 use crate::types::library::LibraryItem;
@@ -128,7 +130,7 @@ impl FetchRequestParams<APIRequest> for APIRequest {
     }
 }
 
-#[derive(Clone, PartialEq, Eq, Serialize, Deserialize, Debug)]
+#[derive(Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[cfg_attr(test, derive(Derivative))]
 #[cfg_attr(test, derivative(Default))]
 #[serde(tag = "type")]
@@ -148,6 +150,37 @@ pub enum AuthRequest {
     LoginWithToken {
         token: String,
     },
+}
+
+impl fmt::Debug for AuthRequest {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::Login {
+                email,
+                password: _,
+                facebook,
+            } => f
+                .debug_struct("Login")
+                .field("email", email)
+                .field("password", &"<SENSITIVE>")
+                .field("facebook", facebook)
+                .finish(),
+            Self::Register {
+                email,
+                password: _,
+                gdpr_consent,
+            } => f
+                .debug_struct("Register")
+                .field("email", email)
+                .field("password", &"<SENSITIVE>")
+                .field("gdpr_consent", gdpr_consent)
+                .finish(),
+            Self::LoginWithToken { token: _ } => f
+                .debug_struct("LoginWithToken")
+                .field("token", &"<SENSITIVE>")
+                .finish(),
+        }
+    }
 }
 
 #[derive(Clone, PartialEq, Eq, Serialize, Deserialize, Debug)]
