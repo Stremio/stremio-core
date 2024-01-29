@@ -41,7 +41,7 @@ serde_json = "1.0.*"
 serde_url_params = "0.2"
 serde_bencode = "0.2.*"
 stremio-serde-hex = "0.1.*" # keep track of https://github.com/fspmarshall/serde-hex/pull/8
-serde_with = { version = "1.14.*", features = ["macros", "chrono"] }
+serde_with = { version = "3.5", features = ["macros", "chrono_0_4"] }
 
 flate2 = "1.0.*"
 futures = "0.3.*"

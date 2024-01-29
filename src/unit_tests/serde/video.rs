@@ -4,7 +4,7 @@ use crate::types::resource::{
 };
 use crate::unit_tests::serde::default_tokens_ext::{DefaultFlattenTokens, DefaultTokens};
 use chrono::{TimeZone, Utc};
-use serde_test::{assert_de_tokens, assert_tokens, Token};
+use serde_test::{assert_de_tokens, assert_tokens, Configure, Token};
 
 #[test]
 fn video() {
@@ -30,7 +30,8 @@ fn video() {
                 series_info: None,
                 trailer_streams: vec![],
             },
-        ],
+        ]
+        .readable(),
         &[
             vec![
                 Token::Seq { len: Some(2) },
@@ -127,7 +128,8 @@ fn video() {
                 series_info: None,
                 trailer_streams: vec![],
             },
-        ],
+        ]
+        .readable(),
         &[
             vec![
                 Token::Seq { len: Some(3) },
@@ -255,7 +257,8 @@ fn videos_minimal() {
                     trailer_streams: vec![],
                 },
             ],
-        },
+        }
+        .readable(),
         &[
             Token::Struct {
                 name: "MetaItem",
@@ -328,7 +331,8 @@ fn videos_released_equal() {
                     trailer_streams: vec![],
                 },
             ],
-        },
+        }
+        .readable(),
         &[
             Token::Struct {
                 name: "MetaItem",
@@ -431,7 +435,8 @@ fn videos_released_sequal() {
                     trailer_streams: vec![],
                 },
             ],
-        },
+        }
+        .readable(),
         &[
             Token::Struct {
                 name: "MetaItem",
@@ -598,7 +603,8 @@ fn various_videos_deserialization() {
                     trailer_streams: vec![],
                 },
             ],
-        },
+        }
+        .readable(),
         &[
             Token::Struct {
                 name: "MetaItem",

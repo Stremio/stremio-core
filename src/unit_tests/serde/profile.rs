@@ -1,6 +1,6 @@
 use crate::types::profile::{Auth, Profile, Settings};
 use crate::unit_tests::serde::default_tokens_ext::DefaultTokens;
-use serde_test::{assert_de_tokens, assert_tokens, Token};
+use serde_test::{assert_de_tokens, assert_tokens, Configure, Token};
 
 #[test]
 fn profile() {
@@ -16,7 +16,8 @@ fn profile() {
                 addons: vec![],
                 settings: Settings::default(),
             },
-        ],
+        ]
+        .readable(),
         &[
             vec![
                 Token::Seq { len: Some(2) },
@@ -58,7 +59,8 @@ fn profile() {
             auth: None,
             addons: vec![],
             settings: Settings::default(),
-        },
+        }
+        .readable(),
         &[
             vec![
                 Token::Struct {

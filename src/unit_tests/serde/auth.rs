@@ -1,6 +1,6 @@
 use crate::types::profile::{Auth, AuthKey, User};
 use crate::unit_tests::serde::default_tokens_ext::DefaultTokens;
-use serde_test::{assert_tokens, Token};
+use serde_test::{assert_tokens, Configure, Token};
 
 #[test]
 fn auth() {
@@ -8,7 +8,8 @@ fn auth() {
         &Auth {
             key: AuthKey::default(),
             user: User::default(),
-        },
+        }
+        .compact(),
         &[
             vec![
                 Token::Struct {
