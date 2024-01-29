@@ -1,4 +1,5 @@
 use gloo_utils::format::JsValueSerdeExt;
+use itertools::Itertools;
 use serde::Serialize;
 use wasm_bindgen::JsValue;
 
@@ -35,6 +36,7 @@ pub fn serialize_local_search(local_search: &LocalSearch) -> JsValue {
                 query: name,
                 deep_links: LocalSearchItemDeepLinks::from(name).into_web_deep_links(),
             })
+            .unique_by(|i| i.query)
             .collect(),
     })
     .unwrap()
