@@ -119,7 +119,10 @@ pub fn update_profile<E: Env + 'static>(
                     return addon_upgrade_error_effects(addon, OtherError::AddonAlreadyInstalled);
                 }
                 if addon.manifest.behavior_hints.configuration_required {
-                    return addon_upgrade_error_effects(addon, OtherError::AddonConfigurationRequired);
+                    return addon_upgrade_error_effects(
+                        addon,
+                        OtherError::AddonConfigurationRequired,
+                    );
                 }
                 let addon_position = match profile
                     .addons
@@ -128,7 +131,9 @@ pub fn update_profile<E: Env + 'static>(
                     .position(|transport_url| *transport_url == addon.transport_url)
                 {
                     Some(addon_position) => addon_position,
-                    None => return addon_upgrade_error_effects(addon, OtherError::AddonNotInstalled),
+                    None => {
+                        return addon_upgrade_error_effects(addon, OtherError::AddonNotInstalled);
+                    }
                 };
                 if addon.flags.protected || profile.addons[addon_position].flags.protected {
                     return addon_upgrade_error_effects(addon, OtherError::AddonIsProtected);
