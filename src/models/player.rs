@@ -1152,16 +1152,10 @@ fn intro_outro_update<E: Env + 'static>(
     let intro_outro_effects = match (skip_gaps, library_item) {
         (Some((_, Loadable::Ready(response))), Some(library_item)) => {
             let outro_time = {
-                // durations = Object.keys(intro.gaps || {}).filter(function(d) {
-                //     return !!intro.gaps[d].outro
-                // })
                 let outro_durations = response.gaps.iter().filter_map(|(duration, skip_gaps)| {
                     skip_gaps.outro.map(|outro| (duration, outro))
                 });
 
-                // var closestDuration = durations.reduce(function(prev, curr) {
-                //     return (Math.abs(curr - player.length) < Math.abs(prev - player.length) ? curr : prev);
-                // }, 0);
                 let closest_duration = outro_durations.reduce(
                     |(previous_duration, previous_outro), (current_duration, current_outro)| {
                         if current_duration.abs_diff(library_item.state.duration)
@@ -1173,30 +1167,20 @@ fn intro_outro_update<E: Env + 'static>(
                         }
                     },
                 );
-                // if (!closestDuration) return
                 closest_duration.map(|(closest_duration, closest_outro)| {
-                    // we first divide by 10 seconds (1000 * 10) and then divide for 10 more, why?!
-                    // var durationDiffInSec = Math.round((player.length - closestDuration) / 1000 * 10) / 10
+                    // will floor the result before dividing by 10 again
                     let duration_diff_in_secs = (library_item.state.duration - closest_duration).div(1000 * 10) / 10;
-                    // console.log('outro match by duration difference: ' + durationDiffInSec + 's')
                     tracing::debug!("Player: Outro match by duration with difference of {duration_diff_in_secs} seconds");
 
-                    // outroTime = player.length - (closestDuration - intro.gaps[closestDuration].outro)
                     library_item.state.duration - (closest_duration - closest_outro)
                 })
             };
 
             let intro_time = {
-                // var durations = Object.keys(intro.gaps || {}).filter(function(d) {
-                //     return (intro.gaps[d].seekHistory || []).length > 0
-                // })
                 let intro_durations = response
                     .gaps
                     .iter()
                     .filter(|(_duration, skip_gaps)| !skip_gaps.seek_history.is_empty());
-                // var closestDuration = durations.reduce(function(prev, curr) {
-                //     return (Math.abs(curr - player.length) < Math.abs(prev - player.length) ? curr : prev);
-                // }, 0);
                 let closest_duration = intro_durations.reduce(
                     |(previous_duration, previous_skip_gaps),
                      (current_duration, current_skip_gaps)| {
@@ -1210,36 +1194,21 @@ fn intro_outro_update<E: Env + 'static>(
                     },
                 );
 
-                // if(!closestDuration) return
                 closest_duration.and_then(|(closest_duration, skip_gaps)| {
-                // var durationDiffInSec = Math.round((player.length - closestDuration) / 1000 * 10) / 10
                 let duration_diff_in_secs = (library_item.state.duration - closest_duration).div(1000 * 10) / 10;
-                // console.log('intro match by duration difference: ' + durationDiffInSec + 's')
                 tracing::trace!("Player: Intro match by duration with difference of {duration_diff_in_secs} seconds");
 
-                // var durationRatio = player.length / closestDuration
                 let duration_ration = Ratio::new(library_item.state.duration, *closest_duration);
 
                 // even though we checked for len() > 0 make sure we don't panic if somebody decides to remove that check!
-                // introData = intro.gaps[closestDuration].seekHistory[0]
                 skip_gaps.seek_history.first().map(|seek_event| {
                     IntroData {
-                        // introData.seekFrom *= durationRatio
                         from: (duration_ration * seek_event.from).to_integer(),
-                        // introData.seekTo *= durationRatio
                         to: (duration_ration * seek_event.to).to_integer(),
-                        // if (durationDiffInSec) {
-                        //     introData.seekDuration = introData.seekTo - introData.seekFrom
-                        // }
                         duration: if duration_diff_in_secs > 0 { Some(seek_event.to - seek_event.from) } else { None }
                     }
                 })
-
               })
-                // TODO?!
-                // var correction = skipIntroCorrection()
-                // smallSkipButtonFrom = introData.seekFrom - correction.start
-                // smallSkipButtonTo = introData.seekTo + correction.end - 3000
             };
 
             eq_update(
