@@ -19,6 +19,8 @@ pub struct Profile {
     pub auth: Option<Auth>,
     #[serde_as(deserialize_as = "UniqueVec<Vec<_>, DescriptorUniqueVecAdapter>")]
     pub addons: Vec<Descriptor>,
+    #[serde(skip)]
+    pub addons_locked: bool,
     pub settings: Settings,
 }
 
@@ -27,6 +29,7 @@ impl Default for Profile {
         Profile {
             auth: None,
             addons: OFFICIAL_ADDONS.to_owned(),
+            addons_locked: false,
             settings: Settings::default(),
         }
     }

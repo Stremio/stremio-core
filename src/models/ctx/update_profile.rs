@@ -107,13 +107,13 @@ pub fn update_profile<E: Env + 'static>(
                 }
             }
         },
-        Msg::Action(Action::Ctx(ActionCtx::InstallAddon(addon))) => {
+        Msg::Action(Action::Ctx(ActionCtx::InstallAddon(addon))) if !profile.addons_locked => {
             Effects::msg(Msg::Internal(Internal::InstallAddon(addon.to_owned()))).unchanged()
         }
-        Msg::Action(Action::Ctx(ActionCtx::UninstallAddon(addon))) => {
+        Msg::Action(Action::Ctx(ActionCtx::UninstallAddon(addon))) if !profile.addons_locked => {
             Effects::msg(Msg::Internal(Internal::UninstallAddon(addon.to_owned()))).unchanged()
         }
-        Msg::Action(Action::Ctx(ActionCtx::UpgradeAddon(addon))) => {
+        Msg::Action(Action::Ctx(ActionCtx::UpgradeAddon(addon))) if !profile.addons_locked => {
             if profile.addons.contains(addon) {
                 return addon_upgrade_error_effects(addon, OtherError::AddonAlreadyInstalled);
             }
@@ -294,6 +294,8 @@ pub fn update_profile<E: Env + 'static>(
                     .into_iter()
                     .chain(removed_transport_urls)
                     .collect();
+
+                profile.addons_locked = false;
                 if profile.addons != *addons {
                     profile.addons = addons.to_owned();
                     Effects::msg(Msg::Event(Event::AddonsPulledFromAPI { transport_urls }))
@@ -303,13 +305,16 @@ pub fn update_profile<E: Env + 'static>(
                         .unchanged()
                 }
             }
-            Err(error) => Effects::msg(Msg::Event(Event::Error {
-                error: error.to_owned(),
-                source: Box::new(Event::AddonsPulledFromAPI {
-                    transport_urls: Default::default(),
-                }),
-            }))
-            .unchanged(),
+            Err(error) => {
+                profile.addons_locked = true;
+                Effects::msg(Msg::Event(Event::Error {
+                    error: error.to_owned(),
+                    source: Box::new(Event::AddonsPulledFromAPI {
+                        transport_urls: Default::default(),
+                    }),
+                }))
+                .unchanged()
+            }
         },
         Msg::Internal(Internal::UserAPIResult(APIRequest::GetUser { auth_key }, result))
             if profile.auth_key() == Some(auth_key) =>
