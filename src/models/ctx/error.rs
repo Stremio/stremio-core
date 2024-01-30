@@ -38,6 +38,7 @@ pub enum OtherError {
     AddonNotInstalled,
     AddonIsProtected,
     AddonConfigurationRequired,
+    AddonsAreLocked,
 }
 
 impl OtherError {
@@ -49,6 +50,7 @@ impl OtherError {
             OtherError::AddonNotInstalled => "Addon is not installed".to_owned(),
             OtherError::AddonIsProtected => "Addon is protected".to_owned(),
             OtherError::AddonConfigurationRequired => "Addon requires configuration".to_owned(),
+            OtherError::AddonsAreLocked => "Addons are locked".to_owned(),
         }
     }
     pub fn code(&self) -> u64 {
@@ -59,6 +61,7 @@ impl OtherError {
             OtherError::AddonNotInstalled => 4,
             OtherError::AddonIsProtected => 5,
             OtherError::AddonConfigurationRequired => 6,
+            OtherError::AddonsAreLocked => 7,
         }
     }
 }
