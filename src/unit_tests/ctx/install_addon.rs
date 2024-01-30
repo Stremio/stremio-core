@@ -3,7 +3,7 @@ use crate::models::ctx::Ctx;
 use crate::runtime::msg::{Action, ActionCtx};
 use crate::runtime::{Env, EnvFutureExt, Runtime, RuntimeAction, TryEnvFuture};
 use crate::types::addon::{Descriptor, Manifest};
-use crate::types::api::{APIResult, SuccessResponse};
+use crate::types::api::{APIError, APIResult, CollectionResponse, SuccessResponse};
 use crate::types::events::DismissedEventsBucket;
 use crate::types::library::LibraryBucket;
 use crate::types::notifications::NotificationsBucket;
@@ -394,5 +394,108 @@ fn actionctx_installaddon_already_installed() {
     assert!(
         REQUESTS.read().unwrap().is_empty(),
         "No requests have been sent"
+    );
+}
+
+#[test]
+fn actionctx_installaddon_install_with_user_and_pull_addons_failed() {
+    #[derive(Model, Clone, Default)]
+    #[model(TestEnv)]
+    struct TestModel {
+        ctx: Ctx,
+    }
+    fn fetch_handler(request: Request) -> TryEnvFuture<Box<dyn Any + Send>> {
+        match request {
+            Request {
+                url, method, body, ..
+            } if url == "https://api.strem.io/api/addonCollectionGet"
+                && method == "POST"
+                && body == "{\"type\":\"AddonCollectionGet\",\"authKey\":\"auth_key\",\"update\":true}" =>
+            {
+                future::ok(Box::new(APIResult::<CollectionResponse>::Err {
+                    error: APIError::default(),
+                }) as Box<dyn Any + Send>).boxed_env()
+            }
+            _ => default_fetch_handler(request),
+        }
+    }
+    let addon = Descriptor {
+        manifest: Manifest {
+            id: "id".to_owned(),
+            version: Version::new(0, 0, 1),
+            name: "name".to_owned(),
+            contact_email: None,
+            description: None,
+            logo: None,
+            background: None,
+            types: vec![],
+            resources: vec![],
+            id_prefixes: None,
+            catalogs: vec![],
+            addon_catalogs: vec![],
+            behavior_hints: Default::default(),
+        },
+        transport_url: Url::parse("https://transport_url").unwrap(),
+        flags: Default::default(),
+    };
+    let _env_mutex = TestEnv::reset().expect("Should have exclusive lock to TestEnv");
+    *FETCH_HANDLER.write().unwrap() = Box::new(fetch_handler);
+    let (runtime, _rx) = Runtime::<TestEnv, _>::new(
+        TestModel {
+            ctx: Ctx::new(
+                Profile {
+                    auth: Some(Auth {
+                        key: AuthKey("auth_key".to_owned()),
+                        user: User {
+                            id: "user_id".to_owned(),
+                            email: "user_email".to_owned(),
+                            fb_id: None,
+                            avatar: None,
+                            last_modified: TestEnv::now(),
+                            date_registered: TestEnv::now(),
+                            trakt: None,
+                            premium_expire: None,
+                            gdpr_consent: GDPRConsent {
+                                tos: true,
+                                privacy: true,
+                                marketing: true,
+                                from: Some("tests".to_owned()),
+                            },
+                        },
+                    }),
+                    addons: vec![],
+                    ..Default::default()
+                },
+                LibraryBucket::default(),
+                StreamsBucket::default(),
+                NotificationsBucket::new::<TestEnv>(None, vec![]),
+                SearchHistoryBucket::default(),
+                DismissedEventsBucket::default(),
+            ),
+        },
+        vec![],
+        1000,
+    );
+    TestEnv::run(|| {
+        runtime.dispatch(RuntimeAction {
+            field: None,
+            action: Action::Ctx(ActionCtx::PullAddonsFromAPI),
+        })
+    });
+    TestEnv::run(|| {
+        runtime.dispatch(RuntimeAction {
+            field: None,
+            action: Action::Ctx(ActionCtx::InstallAddon(addon.to_owned())),
+        })
+    });
+    assert_eq!(
+        runtime.model().unwrap().ctx.profile.addons,
+        vec![],
+        "addon should not be installed"
+    );
+    assert_eq!(
+        REQUESTS.read().unwrap().len(),
+        1,
+        "One request has been sent"
     );
 }
