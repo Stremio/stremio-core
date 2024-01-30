@@ -2,7 +2,7 @@ use crate::types::library::{LibraryItem, LibraryItemState};
 use crate::types::resource::{MetaItemBehaviorHints, PosterShape};
 use crate::unit_tests::serde::default_tokens_ext::DefaultTokens;
 use chrono::{TimeZone, Utc};
-use serde_test::{assert_de_tokens, assert_ser_tokens, Token};
+use serde_test::{assert_de_tokens, assert_ser_tokens, Configure, Token};
 use url::Url;
 
 #[test]
@@ -35,7 +35,8 @@ fn library_item() {
                 state: LibraryItemState::default(),
                 behavior_hints: MetaItemBehaviorHints::default(),
             },
-        ],
+        ]
+        .readable(),
         &[
             vec![
                 Token::Seq { len: Some(2) },
@@ -172,7 +173,8 @@ fn library_item() {
                 state: LibraryItemState::default(),
                 behavior_hints: MetaItemBehaviorHints::default(),
             },
-        ],
+        ]
+        .readable(),
         &[
             vec![
                 Token::Seq { len: Some(2) },
