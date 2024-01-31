@@ -160,7 +160,7 @@ pub fn update_profile<E: Env + 'static>(
         }
         Msg::Internal(Internal::UninstallAddon(addon)) => {
             if profile.addons_locked {
-                return addon_install_error_effects(addon, OtherError::UserAddonsAreLocked);
+                return addon_uninstall_error_effects(addon, OtherError::UserAddonsAreLocked);
             }
 
             let addon_position = profile
