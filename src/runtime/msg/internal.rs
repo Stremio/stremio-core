@@ -9,7 +9,8 @@ use crate::runtime::EnvError;
 use crate::types::addon::{Descriptor, Manifest, ResourceRequest, ResourceResponse};
 use crate::types::api::{
     APIRequest, AuthRequest, DataExportResponse, DatastoreRequest, GetModalResponse,
-    GetNotificationResponse, LinkCodeResponse, LinkDataResponse, SeekLogRequest, SuccessResponse,
+    GetNotificationResponse, LinkCodeResponse, LinkDataResponse, SeekLogRequest, SkipGapsRequest,
+    SkipGapsResponse, SuccessResponse,
 };
 use crate::types::library::{LibraryBucket, LibraryItem, LibraryItemId};
 use crate::types::profile::{Auth, AuthKey, Profile, User};
@@ -124,6 +125,8 @@ pub enum Internal {
     ///
     /// Applicable only to movie series and torrents.
     SeekLogsResult(SeekLogRequest, Result<SuccessResponse, CtxError>),
+    /// Retrieve the skip gaps for skipping intro and outro.
+    SkipGapsResult(SkipGapsRequest, Result<SkipGapsResponse, CtxError>),
     /// The result of querying the data for LocalSearch
     LoadLocalSearchResult(Url, Result<Vec<Searchable>, EnvError>),
     /// Result for getModal request

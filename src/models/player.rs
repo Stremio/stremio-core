@@ -1,7 +1,9 @@
 use std::marker::PhantomData;
+use std::ops::Div;
 
 use base64::Engine;
 use futures::{future, FutureExt, TryFutureExt};
+use num::rational::Ratio;
 
 use crate::constants::{
     BASE64, CREDITS_THRESHOLD_COEF, META_RESOURCE_NAME, PLAYER_IGNORE_SEEK_AFTER,
@@ -18,10 +20,12 @@ use crate::runtime::msg::{Action, ActionLoad, ActionPlayer, Event, Internal, Msg
 use crate::runtime::{Effect, EffectFuture, Effects, Env, EnvFutureExt, UpdateWithCtx};
 use crate::types::addon::{AggrRequest, Descriptor, ExtraExt, ResourcePath, ResourceRequest};
 use crate::types::api::{
-    fetch_api, APIRequest, APIResult, SeekLog, SeekLogRequest, SuccessResponse,
+    fetch_api, APIRequest, APIResult, SeekLog, SeekLogRequest, SkipGapsRequest, SkipGapsResponse,
+    SuccessResponse,
 };
 use crate::types::library::{LibraryBucket, LibraryItem};
-use crate::types::profile::Settings as ProfileSettings;
+use crate::types::player::{IntroData, IntroOutro};
+use crate::types::profile::{Profile, Settings as ProfileSettings};
 use crate::types::resource::{MetaItem, SeriesInfo, Stream, StreamSource, Subtitles, Video};
 use crate::types::streams::{StreamItemState, StreamsBucket, StreamsItemKey};
 
@@ -95,6 +99,8 @@ pub struct Player {
     pub series_info: Option<SeriesInfo>,
     pub library_item: Option<LibraryItem>,
     pub stream_state: Option<StreamItemState>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub intro_outro: Option<IntroOutro>,
     #[serde(skip_serializing)]
     pub watched: Option<WatchedBitField>,
     #[serde(skip_serializing)]
@@ -112,6 +118,8 @@ pub struct Player {
     pub paused: Option<bool>,
     #[serde(skip_serializing)]
     pub seek_history: Vec<SeekLog>,
+    #[serde(skip_serializing)]
+    pub skip_gaps: Option<(SkipGapsRequest, Loadable<SkipGapsResponse, CtxError>)>,
 }
 
 impl<E: Env + 'static> UpdateWithCtx<E> for Player {
@@ -208,6 +216,17 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                 let watched_effects =
                     watched_update(&mut self.watched, &self.meta_item, &self.library_item);
 
+                let skip_gaps_effects = eq_update(&mut self.skip_gaps, None);
+                let intro_outro_update_effects = intro_outro_update::<E>(
+                    &mut self.intro_outro,
+                    &ctx.profile,
+                    self.selected.as_ref(),
+                    self.video_params.as_ref(),
+                    self.series_info.as_ref(),
+                    self.library_item.as_ref(),
+                    &mut self.skip_gaps,
+                );
+
                 // dismiss LibraryItem notification if we have a LibraryItem to begin with
                 let notification_effects = match &self.library_item {
                     Some(library_item) => Effects::msg(Msg::Internal(
@@ -257,6 +276,8 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                     .join(series_info_effects)
                     .join(library_item_effects)
                     .join(watched_effects)
+                    .join(skip_gaps_effects)
+                    .join(intro_outro_update_effects)
                     .join(notification_effects)
             }
             Msg::Action(Action::Unload) => {
@@ -299,6 +320,7 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                 let series_info_effects = eq_update(&mut self.series_info, None);
                 let library_item_effects = eq_update(&mut self.library_item, None);
                 let watched_effects = eq_update(&mut self.watched, None);
+                let skip_gaps_effects = eq_update(&mut self.skip_gaps, None);
                 self.analytics_context = None;
                 self.load_time = None;
                 self.loaded = false;
@@ -319,6 +341,7 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                     .join(series_info_effects)
                     .join(library_item_effects)
                     .join(watched_effects)
+                    .join(skip_gaps_effects)
                     .join(ended_effects)
             }
             Msg::Action(Action::Player(ActionPlayer::VideoParamsChanged { video_params })) => {
@@ -330,7 +353,18 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                     &self.video_params,
                     &ctx.profile.addons,
                 );
-                video_params_effects.join(subtitles_effects)
+                let skip_gaps_effects = skip_gaps_update::<E>(
+                    &ctx.profile,
+                    self.selected.as_ref(),
+                    self.video_params.as_ref(),
+                    self.series_info.as_ref(),
+                    self.library_item.as_ref(),
+                    &mut self.skip_gaps,
+                );
+
+                video_params_effects
+                    .join(subtitles_effects)
+                    .join(skip_gaps_effects)
             }
             Msg::Action(Action::Player(ActionPlayer::StreamStateChanged { state })) => {
                 Effects::msg(Msg::Internal(Internal::StreamStateChanged {
@@ -590,6 +624,16 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                 );
                 let watched_effects =
                     watched_update(&mut self.watched, &self.meta_item, &self.library_item);
+
+                let skip_gaps_effects = skip_gaps_update::<E>(
+                    &ctx.profile,
+                    self.selected.as_ref(),
+                    self.video_params.as_ref(),
+                    self.series_info.as_ref(),
+                    self.library_item.as_ref(),
+                    &mut self.skip_gaps,
+                );
+
                 let (id, r#type, name, video_id, time, duration) = self
                     .library_item
                     .as_ref()
@@ -621,6 +665,30 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                     .join(series_info_effects)
                     .join(library_item_effects)
                     .join(watched_effects)
+                    .join(skip_gaps_effects)
+            }
+            Msg::Internal(Internal::SkipGapsResult(skip_gaps_request, result)) => {
+                let skip_gaps_next = match result.to_owned() {
+                    Ok(response) => Loadable::Ready(response),
+                    Err(err) => Loadable::Err(err),
+                };
+
+                let skip_gaps_effects = eq_update(
+                    &mut self.skip_gaps,
+                    Some((skip_gaps_request.to_owned(), skip_gaps_next)),
+                );
+
+                let intro_outro_effects = intro_outro_update::<E>(
+                    &mut self.intro_outro,
+                    &ctx.profile,
+                    self.selected.as_ref(),
+                    self.video_params.as_ref(),
+                    self.series_info.as_ref(),
+                    self.library_item.as_ref(),
+                    &mut self.skip_gaps,
+                );
+
+                skip_gaps_effects.join(intro_outro_effects)
             }
             Msg::Internal(Internal::ProfileChanged) => {
                 if let Some(analytics_context) = &mut self.analytics_context {
@@ -1058,6 +1126,196 @@ fn push_seek_to_api<E: Env + 'static>(seek_log_req: SeekLogRequest) -> Effect {
                 APIResult::Err { error } => future::err(CtxError::from(error)),
             })
             .map(move |result| Msg::Internal(Internal::SeekLogsResult(seek_log_req, result)))
+            .boxed_env(),
+    )
+    .into()
+}
+
+fn intro_outro_update<E: Env + 'static>(
+    intro_outro: &mut Option<IntroOutro>,
+    profile: &Profile,
+    selected: Option<&Selected>,
+    video_params: Option<&VideoParams>,
+    series_info: Option<&SeriesInfo>,
+    library_item: Option<&LibraryItem>,
+    skip_gaps: &mut Option<(SkipGapsRequest, Loadable<SkipGapsResponse, CtxError>)>,
+) -> Effects {
+    let skip_gaps_effects = skip_gaps_update::<E>(
+        profile,
+        selected,
+        video_params,
+        series_info,
+        library_item,
+        skip_gaps,
+    );
+
+    let intro_outro_effects = match (skip_gaps, library_item) {
+        (Some((_, Loadable::Ready(response))), Some(library_item)) => {
+            let outro_time = {
+                let outro_durations = response.gaps.iter().filter_map(|(duration, skip_gaps)| {
+                    skip_gaps.outro.map(|outro| (duration, outro))
+                });
+
+                let closest_duration = outro_durations.reduce(
+                    |(previous_duration, previous_outro), (current_duration, current_outro)| {
+                        if current_duration.abs_diff(library_item.state.duration)
+                            < previous_duration.abs_diff(library_item.state.duration)
+                        {
+                            (current_duration, current_outro)
+                        } else {
+                            (previous_duration, previous_outro)
+                        }
+                    },
+                );
+                closest_duration.map(|(closest_duration, closest_outro)| {
+                    // will floor the result before dividing by 10 again
+                    let duration_diff_in_secs = (library_item.state.duration - closest_duration).div(1000 * 10) / 10;
+                    tracing::debug!("Player: Outro match by duration with difference of {duration_diff_in_secs} seconds");
+
+                    library_item.state.duration - (closest_duration - closest_outro)
+                })
+            };
+
+            let intro_time = {
+                let intro_durations = response
+                    .gaps
+                    .iter()
+                    .filter(|(_duration, skip_gaps)| !skip_gaps.seek_history.is_empty());
+                let closest_duration = intro_durations.reduce(
+                    |(previous_duration, previous_skip_gaps),
+                     (current_duration, current_skip_gaps)| {
+                        if current_duration.abs_diff(library_item.state.duration)
+                            < previous_duration.abs_diff(library_item.state.duration)
+                        {
+                            (current_duration, current_skip_gaps)
+                        } else {
+                            (previous_duration, previous_skip_gaps)
+                        }
+                    },
+                );
+
+                closest_duration.and_then(|(closest_duration, skip_gaps)| {
+                let duration_diff_in_secs = (library_item.state.duration - closest_duration).div(1000 * 10) / 10;
+                tracing::trace!("Player: Intro match by duration with difference of {duration_diff_in_secs} seconds");
+
+                let duration_ration = Ratio::new(library_item.state.duration, *closest_duration);
+
+                // even though we checked for len() > 0 make sure we don't panic if somebody decides to remove that check!
+                skip_gaps.seek_history.first().map(|seek_event| {
+                    IntroData {
+                        from: (duration_ration * seek_event.from).to_integer(),
+                        to: (duration_ration * seek_event.to).to_integer(),
+                        duration: if duration_diff_in_secs > 0 { Some(seek_event.to - seek_event.from) } else { None }
+                    }
+                })
+              })
+            };
+
+            eq_update(
+                intro_outro,
+                Some(IntroOutro {
+                    intro: intro_time,
+                    outro: outro_time,
+                }),
+            )
+        }
+        _ => Effects::none().unchanged(),
+    };
+
+    skip_gaps_effects.join(intro_outro_effects)
+}
+
+fn skip_gaps_update<E: Env + 'static>(
+    profile: &Profile,
+    selected: Option<&Selected>,
+    video_params: Option<&VideoParams>,
+    series_info: Option<&SeriesInfo>,
+    library_item: Option<&LibraryItem>,
+    skip_gaps: &mut Option<(SkipGapsRequest, Loadable<SkipGapsResponse, CtxError>)>,
+) -> Effects {
+    let active_premium = profile.auth.as_ref().and_then(|auth| {
+        auth.user
+            .premium_expire
+            .filter(|premium_expire| premium_expire > &E::now())
+            .map(|premium_expire| (premium_expire, auth.key.clone()))
+    });
+
+    let skip_gaps_request_effects = match (
+        active_premium,
+        selected,
+        video_params,
+        series_info,
+        library_item,
+    ) {
+        (
+            Some((_expires, auth_key)),
+            Some(selected),
+            Some(video_params),
+            Some(series_info),
+            Some(library_item),
+        ) => {
+            match (
+                &selected.stream.source,
+                selected.stream.name.as_ref(),
+                video_params.hash.clone(),
+            ) {
+                (StreamSource::Torrent { .. }, Some(stream_name), Some(opensubtitles_hash)) => {
+                    let stream_name_hash = {
+                        use sha2::Digest;
+                        let mut sha256 = sha2::Sha256::new();
+                        sha256.update(stream_name);
+                        let sha256_encoded = sha256.finalize();
+
+                        BASE64.encode(sha256_encoded)
+                    };
+
+                    let skip_gaps_request = SkipGapsRequest {
+                        auth_key,
+                        opensubtitles_hash,
+                        item_id: library_item.id.to_owned(),
+                        series_info: series_info.to_owned(),
+                        stream_name_hash,
+                    };
+
+                    // no previous request, error, or different request
+                    if skip_gaps.is_none()
+                        || matches!(skip_gaps, Some((request, Loadable::Err(_))) | Some((request, _)) if request != &skip_gaps_request)
+                    {
+                        let skip_gaps_request_effects =
+                            get_skip_gaps::<E>(skip_gaps_request.clone());
+
+                        let skip_gaps_effects =
+                            eq_update(skip_gaps, Some((skip_gaps_request, Loadable::Loading)));
+
+                        Effects::one(skip_gaps_request_effects)
+                            .unchanged()
+                            .join(skip_gaps_effects)
+                    } else {
+                        Effects::none().unchanged()
+                    }
+                }
+                _ => Effects::none().unchanged(),
+            }
+        }
+        _ => Effects::none().unchanged(),
+    };
+
+    skip_gaps_request_effects
+}
+
+fn get_skip_gaps<E: Env + 'static>(skip_gaps_request: SkipGapsRequest) -> Effect {
+    let api_request = APIRequest::SkipGaps(skip_gaps_request.clone());
+
+    EffectFuture::Concurrent(
+        fetch_api::<E, _, _, SkipGapsResponse>(&api_request)
+            .map_err(CtxError::from)
+            .and_then(|result| match result {
+                APIResult::Ok { result } => future::ok(result),
+                APIResult::Err { error } => future::err(CtxError::from(error)),
+            })
+            .map(move |result: Result<SkipGapsResponse, CtxError>| {
+                Msg::Internal(Internal::SkipGapsResult(skip_gaps_request, result))
+            })
             .boxed_env(),
     )
     .into()
