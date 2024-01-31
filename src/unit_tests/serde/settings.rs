@@ -27,6 +27,7 @@ fn settings() {
             subtitles_text_color: "subtitles_text_color".to_owned(),
             subtitles_background_color: "subtitles_background_color".to_owned(),
             subtitles_outline_color: "subtitles_outline_color".to_owned(),
+            subtitles_opacity: 1,
             esc_exit_fullscreen: true,
             seek_time_duration: 10,
             seek_short_time_duration: 3,
@@ -39,7 +40,7 @@ fn settings() {
         &[
             Token::Struct {
                 name: "Settings",
-                len: 26,
+                len: 27,
             },
             Token::Str("interfaceLanguage"),
             Token::Str("interface_language"),
@@ -87,6 +88,8 @@ fn settings() {
             Token::Str("subtitles_background_color"),
             Token::Str("subtitlesOutlineColor"),
             Token::Str("subtitles_outline_color"),
+            Token::Str("subtitlesOpacity"),
+            Token::U8(1),
             Token::Str("escExitFullscreen"),
             Token::Bool(true),
             Token::Str("seekTimeDuration"),
@@ -112,7 +115,7 @@ fn settings_de() {
         &[
             Token::Struct {
                 name: "Settings",
-                len: 21,
+                len: 22,
             },
             Token::Str("interfaceLanguage"),
             Token::Str("eng"),
@@ -153,6 +156,8 @@ fn settings_de() {
             Token::Str("#00000000"),
             Token::Str("subtitlesOutlineColor"),
             Token::Str("#000000"),
+            Token::Str("subtitlesOpacity"),
+            Token::U8(100),
             Token::Str("escExitFullscreen"),
             Token::Bool(true),
             Token::Str("seekTimeDuration"),
