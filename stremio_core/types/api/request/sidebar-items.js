@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"enum":["APIRequest","AuthRequest","DatastoreCommand","LinkRequest"],"struct":["DatastoreRequest","SeekLog","SeekLogRequest"],"trait":["FetchRequestParams"]};
+window.SIDEBAR_ITEMS = {"enum":["APIRequest","AuthRequest","DatastoreCommand","LinkRequest"],"struct":["DatastoreRequest","SeekLog","SeekLogRequest","SkipGapsRequest"],"trait":["FetchRequestParams"]};
