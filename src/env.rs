@@ -340,7 +340,7 @@ impl Env for WebEnv {
                                 }),
                         )
                     } else {
-                        future::ready(resp.into_serde().map_err(EnvError::from))
+                        future::ready(<JsValue as JsValueSerdeExt>::into_serde(&resp).map_err(EnvError::from))
                     }
                 }
             })
