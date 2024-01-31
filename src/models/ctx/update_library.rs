@@ -12,7 +12,7 @@ use crate::{
     },
     models::ctx::{CtxError, CtxStatus, OtherError},
     runtime::{
-        msg::{Action, ActionCtx, Event, Internal, Msg},
+        msg::{Action, ActionCtx, CtxAuthResponse, Event, Internal, Msg},
         Effect, EffectFuture, Effects, Env, EnvFutureExt,
     },
     types::{
@@ -175,11 +175,18 @@ pub fn update_library<E: Env + 'static>(
             Effects::one(push_library_to_storage::<E>(library)).unchanged()
         }
         Msg::Internal(Internal::CtxAuthResult(auth_request, result)) => match (status, result) {
-            (CtxStatus::Loading(loading_auth_request), Ok((auth, _, library_items)))
-                if loading_auth_request == auth_request =>
-            {
-                let next_library =
-                    LibraryBucket::new(Some(auth.user.id.to_owned()), library_items.to_owned());
+            (
+                CtxStatus::Loading(loading_auth_request),
+                Ok(CtxAuthResponse {
+                    auth,
+                    library_items_result,
+                    ..
+                }),
+            ) if loading_auth_request == auth_request => {
+                let next_library = LibraryBucket::new(
+                    Some(auth.user.id.to_owned()),
+                    library_items_result.to_owned().unwrap_or_default(),
+                );
                 if *library != next_library {
                     *library = next_library;
                     Effects::msg(Msg::Internal(Internal::LibraryChanged(false)))
@@ -243,14 +250,23 @@ pub fn update_library<E: Env + 'static>(
             },
             result,
         )) if Some(loading_auth_key) == auth_key => match result {
-            Ok(items) => Effects::msg(Msg::Event(Event::LibraryItemsPulledFromAPI {
-                ids: ids.to_owned(),
-            }))
-            .join(Effects::one(update_and_push_items_to_storage::<E>(
-                library,
-                items.to_owned(),
-            )))
-            .join(Effects::msg(Msg::Internal(Internal::LibraryChanged(true)))),
+            Ok(items) => {
+                // send an event that the missing library is now present
+                let library_missing_effects = Effects::msg(Msg::Event(Event::UserLibraryMissing {
+                    library_missing: false,
+                }))
+                .unchanged();
+
+                library_missing_effects
+                    .join(Effects::msg(Msg::Event(Event::LibraryItemsPulledFromAPI {
+                        ids: ids.to_owned(),
+                    })))
+                    .join(Effects::one(update_and_push_items_to_storage::<E>(
+                        library,
+                        items.to_owned(),
+                    )))
+                    .join(Effects::msg(Msg::Internal(Internal::LibraryChanged(true))))
+            }
             Err(error) => Effects::msg(Msg::Event(Event::Error {
                 error: error.to_owned(),
                 source: Box::new(Event::LibraryItemsPulledFromAPI {

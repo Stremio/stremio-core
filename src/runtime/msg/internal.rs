@@ -24,7 +24,12 @@ pub type CtxStorageResponse = (
     Option<LibraryBucket>,
 );
 
-pub type AuthResponse = (Auth, Vec<Descriptor>, Vec<LibraryItem>);
+#[derive(Debug)]
+pub struct CtxAuthResponse {
+    pub auth: Auth,
+    pub addons_result: Result<Vec<Descriptor>, CtxError>,
+    pub library_items_result: Result<Vec<LibraryItem>, CtxError>,
+}
 
 pub type LibraryPlanResponse = (Vec<String>, Vec<String>);
 
@@ -34,7 +39,7 @@ pub type LibraryPlanResponse = (Vec<String>, Vec<String>);
 #[derive(Debug)]
 pub enum Internal {
     /// Result for authenticate to API.
-    CtxAuthResult(AuthRequest, Result<AuthResponse, CtxError>),
+    CtxAuthResult(AuthRequest, Result<CtxAuthResponse, CtxError>),
     /// Result for pull addons from API.
     AddonsAPIResult(APIRequest, Result<Vec<Descriptor>, CtxError>),
     /// Result for pull user from API.

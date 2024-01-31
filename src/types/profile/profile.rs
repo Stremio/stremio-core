@@ -15,10 +15,16 @@ pub type UID = Option<String>;
 
 #[serde_as]
 #[derive(Clone, PartialEq, Eq, Serialize, Deserialize, Debug)]
+#[serde(rename_all = "camelCase")]
 pub struct Profile {
     pub auth: Option<Auth>,
     #[serde_as(deserialize_as = "UniqueVec<Vec<_>, DescriptorUniqueVecAdapter>")]
     pub addons: Vec<Descriptor>,
+    /// This locking flag is raised when the API addon fetch request has failed
+    /// in order to avoid overwriting the user's addons in the API
+    /// if they install a new addon locally when we have defaulted to the official ones
+    #[serde(default)]
+    pub addons_locked: bool,
     pub settings: Settings,
 }
 
@@ -27,6 +33,7 @@ impl Default for Profile {
         Profile {
             auth: None,
             addons: OFFICIAL_ADDONS.to_owned(),
+            addons_locked: false,
             settings: Settings::default(),
         }
     }

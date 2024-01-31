@@ -38,6 +38,8 @@ pub enum OtherError {
     AddonNotInstalled,
     AddonIsProtected,
     AddonConfigurationRequired,
+    UserAddonsAreLocked,
+    UserLibraryIsMissing,
 }
 
 impl OtherError {
@@ -49,6 +51,8 @@ impl OtherError {
             OtherError::AddonNotInstalled => "Addon is not installed".to_owned(),
             OtherError::AddonIsProtected => "Addon is protected".to_owned(),
             OtherError::AddonConfigurationRequired => "Addon requires configuration".to_owned(),
+            OtherError::UserAddonsAreLocked => "Fetching Addons from the API failed and we have defaulted the addons to the officials ones until the request succeeds".to_owned(),
+            OtherError::UserLibraryIsMissing => "Fetching Library from the API failed and we have defaulted to empty library until the request succeeds".to_owned(),
         }
     }
     pub fn code(&self) -> u64 {
@@ -59,6 +63,8 @@ impl OtherError {
             OtherError::AddonNotInstalled => 4,
             OtherError::AddonIsProtected => 5,
             OtherError::AddonConfigurationRequired => 6,
+            OtherError::UserAddonsAreLocked => 7,
+            OtherError::UserLibraryIsMissing => 8,
         }
     }
 }

@@ -9,11 +9,13 @@ fn profile() {
             Profile {
                 auth: Some(Auth::default()),
                 addons: vec![],
+                addons_locked: false,
                 settings: Settings::default(),
             },
             Profile {
                 auth: None,
                 addons: vec![],
+                addons_locked: false,
                 settings: Settings::default(),
             },
         ]
@@ -23,7 +25,7 @@ fn profile() {
                 Token::Seq { len: Some(2) },
                 Token::Struct {
                     name: "Profile",
-                    len: 3,
+                    len: 4,
                 },
                 Token::Str("auth"),
                 Token::Some,
@@ -33,6 +35,8 @@ fn profile() {
                 Token::Str("addons"),
                 Token::Seq { len: Some(0) },
                 Token::SeqEnd,
+                Token::Str("addonsLocked"),
+                Token::Bool(false),
                 Token::Str("settings"),
             ],
             Settings::default_tokens(),
@@ -40,13 +44,15 @@ fn profile() {
                 Token::StructEnd,
                 Token::Struct {
                     name: "Profile",
-                    len: 3,
+                    len: 4,
                 },
                 Token::Str("auth"),
                 Token::None,
                 Token::Str("addons"),
                 Token::Seq { len: Some(0) },
                 Token::SeqEnd,
+                Token::Str("addonsLocked"),
+                Token::Bool(false),
                 Token::Str("settings"),
             ],
             Settings::default_tokens(),
@@ -58,6 +64,7 @@ fn profile() {
         &Profile {
             auth: None,
             addons: vec![],
+            addons_locked: false,
             settings: Settings::default(),
         }
         .readable(),
@@ -65,11 +72,13 @@ fn profile() {
             vec![
                 Token::Struct {
                     name: "Profile",
-                    len: 2,
+                    len: 3,
                 },
                 Token::Str("addons"),
                 Token::Seq { len: Some(0) },
                 Token::SeqEnd,
+                Token::Str("addonsLocked"),
+                Token::Bool(false),
                 Token::Str("settings"),
             ],
             Settings::default_tokens(),

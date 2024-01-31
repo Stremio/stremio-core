@@ -79,6 +79,12 @@ pub enum Event {
     UserAuthenticated {
         auth_request: AuthRequest,
     },
+    UserAddonsLocked {
+        addons_locked: bool,
+    },
+    UserLibraryMissing {
+        library_missing: bool,
+    },
     UserLoggedOut {
         uid: UID,
     },
