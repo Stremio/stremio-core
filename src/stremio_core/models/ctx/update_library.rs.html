@@ -449,6 +449,22 @@
 <a href="#447" id="447">447</a>
 <a href="#448" id="448">448</a>
 <a href="#449" id="449">449</a>
+<a href="#450" id="450">450</a>
+<a href="#451" id="451">451</a>
+<a href="#452" id="452">452</a>
+<a href="#453" id="453">453</a>
+<a href="#454" id="454">454</a>
+<a href="#455" id="455">455</a>
+<a href="#456" id="456">456</a>
+<a href="#457" id="457">457</a>
+<a href="#458" id="458">458</a>
+<a href="#459" id="459">459</a>
+<a href="#460" id="460">460</a>
+<a href="#461" id="461">461</a>
+<a href="#462" id="462">462</a>
+<a href="#463" id="463">463</a>
+<a href="#464" id="464">464</a>
+<a href="#465" id="465">465</a>
 </pre></div><pre class="rust"><code><span class="kw">use </span>std::{collections::HashMap, marker::PhantomData};
 
 <span class="kw">use </span>futures::{
@@ -463,7 +479,7 @@
     },
     models::ctx::{CtxError, CtxStatus, OtherError},
     runtime::{
-        msg::{Action, ActionCtx, Event, Internal, Msg},
+        msg::{Action, ActionCtx, CtxAuthResponse, Event, Internal, Msg},
         Effect, EffectFuture, Effects, Env, EnvFutureExt,
     },
     types::{
@@ -626,11 +642,18 @@
             Effects::one(push_library_to_storage::&lt;E&gt;(library)).unchanged()
         }
         Msg::Internal(Internal::CtxAuthResult(auth_request, result)) =&gt; <span class="kw">match </span>(status, result) {
-            (CtxStatus::Loading(loading_auth_request), <span class="prelude-val">Ok</span>((auth, <span class="kw">_</span>, library_items)))
-                <span class="kw">if </span>loading_auth_request == auth_request =&gt;
-            {
-                <span class="kw">let </span>next_library =
-                    LibraryBucket::new(<span class="prelude-val">Some</span>(auth.user.id.to_owned()), library_items.to_owned());
+            (
+                CtxStatus::Loading(loading_auth_request),
+                <span class="prelude-val">Ok</span>(CtxAuthResponse {
+                    auth,
+                    library_items_result,
+                    ..
+                }),
+            ) <span class="kw">if </span>loading_auth_request == auth_request =&gt; {
+                <span class="kw">let </span>next_library = LibraryBucket::new(
+                    <span class="prelude-val">Some</span>(auth.user.id.to_owned()),
+                    library_items_result.to_owned().unwrap_or_default(),
+                );
                 <span class="kw">if </span><span class="kw-2">*</span>library != next_library {
                     <span class="kw-2">*</span>library = next_library;
                     Effects::msg(Msg::Internal(Internal::LibraryChanged(<span class="bool-val">false</span>)))
@@ -694,14 +717,23 @@
             },
             result,
         )) <span class="kw">if </span><span class="prelude-val">Some</span>(loading_auth_key) == auth_key =&gt; <span class="kw">match </span>result {
-            <span class="prelude-val">Ok</span>(items) =&gt; Effects::msg(Msg::Event(Event::LibraryItemsPulledFromAPI {
-                ids: ids.to_owned(),
-            }))
-            .join(Effects::one(update_and_push_items_to_storage::&lt;E&gt;(
-                library,
-                items.to_owned(),
-            )))
-            .join(Effects::msg(Msg::Internal(Internal::LibraryChanged(<span class="bool-val">true</span>)))),
+            <span class="prelude-val">Ok</span>(items) =&gt; {
+                <span class="comment">// send an event that the missing library is now present
+                </span><span class="kw">let </span>library_missing_effects = Effects::msg(Msg::Event(Event::UserLibraryMissing {
+                    library_missing: <span class="bool-val">false</span>,
+                }))
+                .unchanged();
+
+                library_missing_effects
+                    .join(Effects::msg(Msg::Event(Event::LibraryItemsPulledFromAPI {
+                        ids: ids.to_owned(),
+                    })))
+                    .join(Effects::one(update_and_push_items_to_storage::&lt;E&gt;(
+                        library,
+                        items.to_owned(),
+                    )))
+                    .join(Effects::msg(Msg::Internal(Internal::LibraryChanged(<span class="bool-val">true</span>))))
+            }
             <span class="prelude-val">Err</span>(error) =&gt; Effects::msg(Msg::Event(Event::Error {
                 error: error.to_owned(),
                 source: Box::new(Event::LibraryItemsPulledFromAPI {

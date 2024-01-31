@@ -141,6 +141,11 @@
 <a href="#139" id="139">139</a>
 <a href="#140" id="140">140</a>
 <a href="#141" id="141">141</a>
+<a href="#142" id="142">142</a>
+<a href="#143" id="143">143</a>
+<a href="#144" id="144">144</a>
+<a href="#145" id="145">145</a>
+<a href="#146" id="146">146</a>
 </pre></div><pre class="rust"><code><span class="kw">use </span><span class="kw">crate</span>::models::common::ResourceLoadable;
 <span class="kw">use </span>url::Url;
 
@@ -167,7 +172,12 @@
     <span class="prelude-ty">Option</span>&lt;LibraryBucket&gt;,
 );
 
-<span class="kw">pub type </span>AuthResponse = (Auth, Vec&lt;Descriptor&gt;, Vec&lt;LibraryItem&gt;);
+<span class="attr">#[derive(Debug)]
+</span><span class="kw">pub struct </span>CtxAuthResponse {
+    <span class="kw">pub </span>auth: Auth,
+    <span class="kw">pub </span>addons_result: <span class="prelude-ty">Result</span>&lt;Vec&lt;Descriptor&gt;, CtxError&gt;,
+    <span class="kw">pub </span>library_items_result: <span class="prelude-ty">Result</span>&lt;Vec&lt;LibraryItem&gt;, CtxError&gt;,
+}
 
 <span class="kw">pub type </span>LibraryPlanResponse = (Vec&lt;String&gt;, Vec&lt;String&gt;);
 
@@ -177,7 +187,7 @@
 </span><span class="attr">#[derive(Debug)]
 </span><span class="kw">pub enum </span>Internal {
     <span class="doccomment">/// Result for authenticate to API.
-    </span>CtxAuthResult(AuthRequest, <span class="prelude-ty">Result</span>&lt;AuthResponse, CtxError&gt;),
+    </span>CtxAuthResult(AuthRequest, <span class="prelude-ty">Result</span>&lt;CtxAuthResponse, CtxError&gt;),
     <span class="doccomment">/// Result for pull addons from API.
     </span>AddonsAPIResult(APIRequest, <span class="prelude-ty">Result</span>&lt;Vec&lt;Descriptor&gt;, CtxError&gt;),
     <span class="doccomment">/// Result for pull user from API.

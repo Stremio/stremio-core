@@ -76,6 +76,12 @@
 <a href="#74" id="74">74</a>
 <a href="#75" id="75">75</a>
 <a href="#76" id="76">76</a>
+<a href="#77" id="77">77</a>
+<a href="#78" id="78">78</a>
+<a href="#79" id="79">79</a>
+<a href="#80" id="80">80</a>
+<a href="#81" id="81">81</a>
+<a href="#82" id="82">82</a>
 </pre></div><pre class="rust"><code><span class="kw">use </span><span class="kw">crate</span>::runtime::EnvError;
 <span class="kw">use </span><span class="kw">crate</span>::types::api::APIError;
 <span class="kw">use </span>serde::ser::{SerializeStruct, Serializer};
@@ -116,6 +122,8 @@
     AddonNotInstalled,
     AddonIsProtected,
     AddonConfigurationRequired,
+    UserAddonsAreLocked,
+    UserLibraryIsMissing,
 }
 
 <span class="kw">impl </span>OtherError {
@@ -127,6 +135,8 @@
             OtherError::AddonNotInstalled =&gt; <span class="string">"Addon is not installed"</span>.to_owned(),
             OtherError::AddonIsProtected =&gt; <span class="string">"Addon is protected"</span>.to_owned(),
             OtherError::AddonConfigurationRequired =&gt; <span class="string">"Addon requires configuration"</span>.to_owned(),
+            OtherError::UserAddonsAreLocked =&gt; <span class="string">"Fetching Addons from the API failed and we have defaulted the addons to the officials ones until the request succeeds"</span>.to_owned(),
+            OtherError::UserLibraryIsMissing =&gt; <span class="string">"Fetching Library from the API failed and we have defaulted to empty library until the request succeeds"</span>.to_owned(),
         }
     }
     <span class="kw">pub fn </span>code(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; u64 {
@@ -137,6 +147,8 @@
             OtherError::AddonNotInstalled =&gt; <span class="number">4</span>,
             OtherError::AddonIsProtected =&gt; <span class="number">5</span>,
             OtherError::AddonConfigurationRequired =&gt; <span class="number">6</span>,
+            OtherError::UserAddonsAreLocked =&gt; <span class="number">7</span>,
+            OtherError::UserLibraryIsMissing =&gt; <span class="number">8</span>,
         }
     }
 }

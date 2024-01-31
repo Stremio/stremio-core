@@ -138,6 +138,12 @@
 <a href="#136" id="136">136</a>
 <a href="#137" id="137">137</a>
 <a href="#138" id="138">138</a>
+<a href="#139" id="139">139</a>
+<a href="#140" id="140">140</a>
+<a href="#141" id="141">141</a>
+<a href="#142" id="142">142</a>
+<a href="#143" id="143">143</a>
+<a href="#144" id="144">144</a>
 </pre></div><pre class="rust"><code><span class="kw">use </span><span class="kw">crate</span>::models::ctx::CtxError;
 <span class="kw">use </span><span class="kw">crate</span>::models::player::AnalyticsContext <span class="kw">as </span>PlayerAnalyticsContext;
 <span class="kw">use </span><span class="kw">crate</span>::types::api::AuthRequest;
@@ -218,6 +224,12 @@
     },
     UserAuthenticated {
         auth_request: AuthRequest,
+    },
+    UserAddonsLocked {
+        addons_locked: bool,
+    },
+    UserLibraryMissing {
+        library_missing: bool,
     },
     UserLoggedOut {
         uid: UID,

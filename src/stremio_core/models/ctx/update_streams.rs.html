@@ -125,7 +125,7 @@
 <span class="kw">use </span><span class="kw">crate</span>::constants::STREAMS_STORAGE_KEY;
 <span class="kw">use </span><span class="kw">crate</span>::models::common::{Loadable, ResourceLoadable};
 <span class="kw">use </span><span class="kw">crate</span>::models::ctx::{CtxError, CtxStatus};
-<span class="kw">use </span><span class="kw">crate</span>::runtime::msg::{Action, ActionCtx, Event, Internal, Msg};
+<span class="kw">use </span><span class="kw">crate</span>::runtime::msg::{Action, ActionCtx, CtxAuthResponse, Event, Internal, Msg};
 <span class="kw">use </span><span class="kw">crate</span>::runtime::{Effect, EffectFuture, Effects, Env, EnvFutureExt};
 <span class="kw">use </span><span class="kw">crate</span>::types::streams::{StreamsBucket, StreamsItem, StreamsItemKey};
 
@@ -205,7 +205,7 @@
             Effects::one(push_streams_to_storage::&lt;E&gt;(streams)).unchanged()
         }
         Msg::Internal(Internal::CtxAuthResult(auth_request, result)) =&gt; <span class="kw">match </span>(status, result) {
-            (CtxStatus::Loading(loading_auth_request), <span class="prelude-val">Ok</span>((auth, <span class="kw">_</span>, <span class="kw">_</span>)))
+            (CtxStatus::Loading(loading_auth_request), <span class="prelude-val">Ok</span>(CtxAuthResponse { auth, .. }))
                 <span class="kw">if </span>loading_auth_request == auth_request =&gt;
             {
                 <span class="kw">let </span>next_streams = StreamsBucket::new(<span class="prelude-val">Some</span>(auth.user.id.to_owned()));

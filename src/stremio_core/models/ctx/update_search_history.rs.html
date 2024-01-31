@@ -68,7 +68,7 @@
 
 <span class="kw">use </span><span class="kw">crate</span>::constants::SEARCH_HISTORY_STORAGE_KEY;
 <span class="kw">use </span><span class="kw">crate</span>::models::ctx::{CtxError, CtxStatus};
-<span class="kw">use </span><span class="kw">crate</span>::runtime::msg::{Action, ActionCtx, Event, Internal};
+<span class="kw">use </span><span class="kw">crate</span>::runtime::msg::{Action, ActionCtx, CtxAuthResponse, Event, Internal};
 <span class="kw">use </span><span class="kw">crate</span>::runtime::{Effect, EffectFuture, Effects, Env, EnvFutureExt};
 <span class="kw">use crate</span>::{runtime::msg::Msg, types::search_history::SearchHistoryBucket};
 
@@ -92,7 +92,7 @@
             Effects::msg(Msg::Internal(Internal::SearchHistoryChanged))
         }
         Msg::Internal(Internal::CtxAuthResult(auth_request, result)) =&gt; <span class="kw">match </span>(status, result) {
-            (CtxStatus::Loading(loading_auth_request), <span class="prelude-val">Ok</span>((auth, ..)))
+            (CtxStatus::Loading(loading_auth_request), <span class="prelude-val">Ok</span>(CtxAuthResponse { auth, .. }))
                 <span class="kw">if </span>loading_auth_request == auth_request =&gt;
             {
                 <span class="kw">let </span>next_search_history = SearchHistoryBucket::new(<span class="prelude-val">Some</span>(auth.user.id.to_owned()));

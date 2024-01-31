@@ -322,13 +322,69 @@
 <a href="#320" id="320">320</a>
 <a href="#321" id="321">321</a>
 <a href="#322" id="322">322</a>
+<a href="#323" id="323">323</a>
+<a href="#324" id="324">324</a>
+<a href="#325" id="325">325</a>
+<a href="#326" id="326">326</a>
+<a href="#327" id="327">327</a>
+<a href="#328" id="328">328</a>
+<a href="#329" id="329">329</a>
+<a href="#330" id="330">330</a>
+<a href="#331" id="331">331</a>
+<a href="#332" id="332">332</a>
+<a href="#333" id="333">333</a>
+<a href="#334" id="334">334</a>
+<a href="#335" id="335">335</a>
+<a href="#336" id="336">336</a>
+<a href="#337" id="337">337</a>
+<a href="#338" id="338">338</a>
+<a href="#339" id="339">339</a>
+<a href="#340" id="340">340</a>
+<a href="#341" id="341">341</a>
+<a href="#342" id="342">342</a>
+<a href="#343" id="343">343</a>
+<a href="#344" id="344">344</a>
+<a href="#345" id="345">345</a>
+<a href="#346" id="346">346</a>
+<a href="#347" id="347">347</a>
+<a href="#348" id="348">348</a>
+<a href="#349" id="349">349</a>
+<a href="#350" id="350">350</a>
+<a href="#351" id="351">351</a>
+<a href="#352" id="352">352</a>
+<a href="#353" id="353">353</a>
+<a href="#354" id="354">354</a>
+<a href="#355" id="355">355</a>
+<a href="#356" id="356">356</a>
+<a href="#357" id="357">357</a>
+<a href="#358" id="358">358</a>
+<a href="#359" id="359">359</a>
+<a href="#360" id="360">360</a>
+<a href="#361" id="361">361</a>
+<a href="#362" id="362">362</a>
+<a href="#363" id="363">363</a>
+<a href="#364" id="364">364</a>
+<a href="#365" id="365">365</a>
+<a href="#366" id="366">366</a>
+<a href="#367" id="367">367</a>
+<a href="#368" id="368">368</a>
+<a href="#369" id="369">369</a>
+<a href="#370" id="370">370</a>
+<a href="#371" id="371">371</a>
+<a href="#372" id="372">372</a>
+<a href="#373" id="373">373</a>
+<a href="#374" id="374">374</a>
+<a href="#375" id="375">375</a>
+<a href="#376" id="376">376</a>
+<a href="#377" id="377">377</a>
+<a href="#378" id="378">378</a>
 </pre></div><pre class="rust"><code><span class="kw">use </span><span class="kw">crate</span>::constants::LIBRARY_COLLECTION_NAME;
 <span class="kw">use </span><span class="kw">crate</span>::models::common::{DescriptorLoadable, Loadable, ResourceLoadable};
 <span class="kw">use </span><span class="kw">crate</span>::models::ctx::{
     update_events, update_library, update_notifications, update_profile, update_search_history,
     update_streams, update_trakt_addon, CtxError,
 };
-<span class="kw">use </span><span class="kw">crate</span>::runtime::msg::{Action, ActionCtx, Event, Internal, Msg};
+<span class="kw">use </span><span class="kw">crate</span>::runtime::msg::{Action, ActionCtx, CtxAuthResponse, Event, Internal, Msg};
 <span class="kw">use </span><span class="kw">crate</span>::runtime::{Effect, EffectFuture, Effects, Env, EnvFutureExt, Update};
 <span class="kw">use </span><span class="kw">crate</span>::types::api::{
     fetch_api, APIRequest, APIResult, AuthRequest, AuthResponse, CollectionResponse,
@@ -348,7 +404,9 @@
 <span class="kw">use </span>futures::{future, FutureExt, TryFutureExt};
 <span class="kw">use </span>serde::Serialize;
 
-<span class="kw">use </span>tracing::{event, trace, Level};
+<span class="kw">use </span>tracing::{error, trace};
+
+<span class="kw">use </span><span class="kw">super</span>::OtherError;
 
 <span class="attr">#[derive(Default, PartialEq, Eq, Serialize, Clone, Debug)]
 </span><span class="kw">pub enum </span>CtxStatus {
@@ -489,10 +547,50 @@
                     {
                         <span class="self">self</span>.status = CtxStatus::Ready;
                         <span class="kw">match </span>result {
-                            <span class="prelude-val">Ok</span>(<span class="kw">_</span>) =&gt; Effects::msg(Msg::Event(Event::UserAuthenticated {
-                                auth_request: auth_request.to_owned(),
-                            }))
-                            .unchanged(),
+                            <span class="prelude-val">Ok</span>(ctx_auth) =&gt; {
+                                <span class="kw">let </span>authentication_effects =
+                                    Effects::msg(Msg::Event(Event::UserAuthenticated {
+                                        auth_request: auth_request.to_owned(),
+                                    }))
+                                    .unchanged();
+
+                                <span class="kw">let </span>addons_locked_event = Event::UserAddonsLocked {
+                                    addons_locked: ctx_auth.addons_result.is_err(),
+                                };
+
+                                <span class="kw">let </span>addons_effects = <span class="kw">match </span>ctx_auth.addons_result.as_ref() {
+                                    <span class="prelude-val">Ok</span>(_addons) =&gt; {
+                                        Effects::msg(Msg::Event(addons_locked_event)).unchanged()
+                                    }
+                                    <span class="prelude-val">Err</span>(_err) =&gt; Effects::msg(Msg::Event(Event::Error {
+                                        error: CtxError::Other(OtherError::UserAddonsAreLocked),
+                                        source: Box::new(addons_locked_event),
+                                    }))
+                                    .unchanged(),
+                                };
+
+                                <span class="kw">let </span>library_missing_event = Event::UserLibraryMissing {
+                                    library_missing: ctx_auth.library_items_result.is_err(),
+                                };
+
+                                <span class="kw">let </span>library_missing_effects = <span class="kw">match </span>ctx_auth
+                                    .library_items_result
+                                    .as_ref()
+                                {
+                                    <span class="prelude-val">Ok</span>(_library) =&gt; {
+                                        Effects::msg(Msg::Event(library_missing_event)).unchanged()
+                                    }
+                                    <span class="prelude-val">Err</span>(_err) =&gt; Effects::msg(Msg::Event(Event::Error {
+                                        error: CtxError::Other(OtherError::UserLibraryIsMissing),
+                                        source: Box::new(library_missing_event),
+                                    }))
+                                    .unchanged(),
+                                };
+
+                                authentication_effects
+                                    .join(addons_effects)
+                                    .join(library_missing_effects)
+                            }
                             <span class="prelude-val">Err</span>(error) =&gt; Effects::msg(Msg::Event(Event::Error {
                                 error: error.to_owned(),
                                 source: Box::new(Event::UserAuthenticated {
@@ -553,66 +651,80 @@
     <span class="kw">let </span>auth_api = APIRequest::Auth(auth_request.clone());
 
     EffectFuture::Concurrent(
-        E::flush_analytics()
-            .then(<span class="kw">move </span>|<span class="kw">_</span>| {
-                fetch_api::&lt;E, <span class="kw">_</span>, <span class="kw">_</span>, <span class="kw">_</span>&gt;(<span class="kw-2">&amp;</span>auth_api)
-                    .inspect(<span class="kw">move </span>|result| <span class="macro">trace!</span>(<span class="question-mark">?</span>result, <span class="question-mark">?</span>auth_api, <span class="string">"Auth request"</span>))
-            })
-            .map_err(CtxError::from)
-            .and_then(|result| <span class="kw">match </span>result {
-                APIResult::Ok { result } =&gt; future::ok(result),
-                APIResult::Err { error } =&gt; future::err(CtxError::from(error)),
-            })
-            .map_ok(|AuthResponse { key, user }| Auth { key, user })
-            .and_then(|auth| {
-                <span class="kw">let </span>addon_collection_fut = {
-                    <span class="kw">let </span>request = APIRequest::AddonCollectionGet {
-                        auth_key: auth.key.to_owned(),
-                        update: <span class="bool-val">true</span>,
-                    };
-                    fetch_api::&lt;E, <span class="kw">_</span>, <span class="kw">_</span>, <span class="kw">_</span>&gt;(<span class="kw-2">&amp;</span>request)
-                        .inspect(<span class="kw">move </span>|result| {
-                            <span class="macro">trace!</span>(<span class="question-mark">?</span>result, <span class="question-mark">?</span>request, <span class="string">"Get user's Addon Collection request"</span>)
-                        })
-                        .map_err(CtxError::from)
-                        .and_then(|result| <span class="kw">match </span>result {
-                            APIResult::Ok { result } =&gt; future::ok(result),
-                            APIResult::Err { error } =&gt; future::err(CtxError::from(error)),
-                        })
-                        .map_ok(|CollectionResponse { addons, .. }| addons)
+        <span class="kw">async </span>{
+            E::flush_analytics().<span class="kw">await</span>;
+
+            <span class="comment">// return an error only if the auth request fails
+            </span><span class="kw">let </span>auth = fetch_api::&lt;E, <span class="kw">_</span>, <span class="kw">_</span>, <span class="kw">_</span>&gt;(<span class="kw-2">&amp;</span>auth_api)
+                .inspect(<span class="kw">move </span>|result| <span class="macro">trace!</span>(<span class="question-mark">?</span>result, <span class="question-mark">?</span>auth_api, <span class="string">"Auth request"</span>))
+                .<span class="kw">await
+                </span>.map_err(CtxError::from)
+                .and_then(|result| <span class="kw">match </span>result {
+                    APIResult::Ok { result } =&gt; <span class="prelude-val">Ok</span>(result),
+                    APIResult::Err { error } =&gt; <span class="prelude-val">Err</span>(CtxError::from(error)),
+                })
+                .map(|AuthResponse { key, user }| Auth { key, user })<span class="question-mark">?</span>;
+
+            <span class="kw">let </span>addon_collection_fut = <span class="kw">async </span>{
+                <span class="kw">let </span>request = APIRequest::AddonCollectionGet {
+                    auth_key: auth.key.to_owned(),
+                    update: <span class="bool-val">true</span>,
+                };
+                fetch_api::&lt;E, <span class="kw">_</span>, <span class="kw">_</span>, <span class="kw">_</span>&gt;(<span class="kw-2">&amp;</span>request)
+                    .inspect(<span class="kw">move </span>|result| {
+                        <span class="macro">trace!</span>(<span class="question-mark">?</span>result, <span class="question-mark">?</span>request, <span class="string">"Get user's Addon Collection request"</span>)
+                    })
+                    .<span class="kw">await
+                    </span>.map_err(CtxError::from)
+                    .and_then(|result: APIResult&lt;CollectionResponse&gt;| <span class="kw">match </span>result {
+                        APIResult::Ok { result } =&gt; <span class="prelude-val">Ok</span>(result),
+                        APIResult::Err { error } =&gt; <span class="prelude-val">Err</span>(CtxError::from(error)),
+                    })
+                    .map(|CollectionResponse { addons, .. }| addons)
+            };
+
+            <span class="kw">let </span>datastore_library_fut = <span class="kw">async </span>{
+                <span class="kw">let </span>request = DatastoreRequest {
+                    auth_key: auth.key.to_owned(),
+                    collection: LIBRARY_COLLECTION_NAME.to_owned(),
+                    command: DatastoreCommand::Get {
+                        ids: <span class="macro">vec!</span>[],
+                        all: <span class="bool-val">true</span>,
+                    },
                 };
 
-                <span class="kw">let </span>datastore_library_fut = {
-                    <span class="kw">let </span>request = DatastoreRequest {
-                        auth_key: auth.key.to_owned(),
-                        collection: LIBRARY_COLLECTION_NAME.to_owned(),
-                        command: DatastoreCommand::Get {
-                            ids: <span class="macro">vec!</span>[],
-                            all: <span class="bool-val">true</span>,
-                        },
-                    };
+                fetch_api::&lt;E, <span class="kw">_</span>, <span class="kw">_</span>, LibraryItemsResponse&gt;(<span class="kw-2">&amp;</span>request)
+                    .inspect(<span class="kw">move </span>|result| {
+                        <span class="macro">trace!</span>(<span class="question-mark">?</span>result, <span class="question-mark">?</span>request, <span class="string">"Get user's Addon Collection request"</span>)
+                    })
+                    .<span class="kw">await
+                    </span>.map_err(CtxError::from)
+                    .and_then(|result| <span class="kw">match </span>result {
+                        APIResult::Ok { result } =&gt; <span class="prelude-val">Ok</span>(result.<span class="number">0</span>),
+                        APIResult::Err { error } =&gt; <span class="prelude-val">Err</span>(CtxError::from(error)),
+                    })
+            };
 
-                    fetch_api::&lt;E, <span class="kw">_</span>, <span class="kw">_</span>, LibraryItemsResponse&gt;(<span class="kw-2">&amp;</span>request)
-                        .inspect(<span class="kw">move </span>|result| {
-                            <span class="macro">trace!</span>(<span class="question-mark">?</span>result, <span class="question-mark">?</span>request, <span class="string">"Get user's Addon Collection request"</span>)
-                        })
-                        .map_err(CtxError::from)
-                        .and_then(|result| <span class="kw">match </span>result {
-                            APIResult::Ok { result } =&gt; future::ok(result.<span class="number">0</span>),
-                            APIResult::Err { error } =&gt; future::err(CtxError::from(error)),
-                        })
-                };
+            <span class="kw">let </span>(addon_collection_result, datastore_library_result) =
+                future::join(addon_collection_fut, datastore_library_fut).<span class="kw">await</span>;
 
-                future::try_join(addon_collection_fut, datastore_library_fut)
-                    .map_ok(<span class="kw">move </span>|(addons, library_items)| (auth, addons, library_items))
+            <span class="kw">if let </span><span class="prelude-val">Err</span>(error) = addon_collection_result.as_ref() {
+                <span class="macro">error!</span>(<span class="string">"Failed to fetch Addon collection from API: {error:?}"</span>);
+            }
+            <span class="kw">if let </span><span class="prelude-val">Err</span>(error) = datastore_library_result.as_ref() {
+                <span class="macro">error!</span>(<span class="string">"Failed to fetch LibraryItems for user from API: {error:?}"</span>);
+            }
+
+            <span class="prelude-val">Ok</span>(CtxAuthResponse {
+                auth,
+                addons_result: addon_collection_result,
+                library_items_result: datastore_library_result,
             })
-            .map(<span class="macro">enclose!</span>((auth_request) <span class="kw">move </span>|result| {
-                <span class="kw">let </span>internal_msg = Msg::Internal(Internal::CtxAuthResult(auth_request, result));
-
-                <span class="macro">event!</span>(Level::TRACE, internal_message = <span class="question-mark">?</span>internal_msg);
-                internal_msg
-            }))
-            .boxed_env(),
+        }
+        .map(<span class="macro">enclose!</span>((auth_request) <span class="kw">move </span>|result| {
+            Msg::Internal(Internal::CtxAuthResult(auth_request, result))
+        }))
+        .boxed_env(),
     )
     .into()
 }

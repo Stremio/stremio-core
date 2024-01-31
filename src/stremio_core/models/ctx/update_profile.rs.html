@@ -496,9 +496,48 @@
 <a href="#494" id="494">494</a>
 <a href="#495" id="495">495</a>
 <a href="#496" id="496">496</a>
-</pre></div><pre class="rust"><code><span class="kw">use </span><span class="kw">crate</span>::constants::{OFFICIAL_ADDONS, PROFILE_STORAGE_KEY};
+<a href="#497" id="497">497</a>
+<a href="#498" id="498">498</a>
+<a href="#499" id="499">499</a>
+<a href="#500" id="500">500</a>
+<a href="#501" id="501">501</a>
+<a href="#502" id="502">502</a>
+<a href="#503" id="503">503</a>
+<a href="#504" id="504">504</a>
+<a href="#505" id="505">505</a>
+<a href="#506" id="506">506</a>
+<a href="#507" id="507">507</a>
+<a href="#508" id="508">508</a>
+<a href="#509" id="509">509</a>
+<a href="#510" id="510">510</a>
+<a href="#511" id="511">511</a>
+<a href="#512" id="512">512</a>
+<a href="#513" id="513">513</a>
+<a href="#514" id="514">514</a>
+<a href="#515" id="515">515</a>
+<a href="#516" id="516">516</a>
+<a href="#517" id="517">517</a>
+<a href="#518" id="518">518</a>
+<a href="#519" id="519">519</a>
+<a href="#520" id="520">520</a>
+<a href="#521" id="521">521</a>
+<a href="#522" id="522">522</a>
+<a href="#523" id="523">523</a>
+<a href="#524" id="524">524</a>
+<a href="#525" id="525">525</a>
+<a href="#526" id="526">526</a>
+<a href="#527" id="527">527</a>
+<a href="#528" id="528">528</a>
+<a href="#529" id="529">529</a>
+<a href="#530" id="530">530</a>
+</pre></div><pre class="rust"><code><span class="kw">use </span>std::collections::HashSet;
+
+<span class="kw">use </span>enclose::enclose;
+<span class="kw">use </span>futures::{future, FutureExt, TryFutureExt};
+
+<span class="kw">use </span><span class="kw">crate</span>::constants::{OFFICIAL_ADDONS, PROFILE_STORAGE_KEY};
 <span class="kw">use </span><span class="kw">crate</span>::models::ctx::{CtxError, CtxStatus, OtherError};
-<span class="kw">use </span><span class="kw">crate</span>::runtime::msg::{Action, ActionCtx, Event, Internal, Msg};
+<span class="kw">use </span><span class="kw">crate</span>::runtime::msg::{Action, ActionCtx, CtxAuthResponse, Event, Internal, Msg};
 <span class="kw">use </span><span class="kw">crate</span>::runtime::{Effect, EffectFuture, Effects, Env, EnvFutureExt};
 <span class="kw">use </span><span class="kw">crate</span>::types::addon::Descriptor;
 <span class="kw">use </span><span class="kw">crate</span>::types::api::{
@@ -506,9 +545,6 @@
 };
 <span class="kw">use </span><span class="kw">crate</span>::types::profile::{Auth, AuthKey, Profile, Settings, User};
 <span class="kw">use </span><span class="kw">crate</span>::types::streams::StreamsBucket;
-<span class="kw">use </span>enclose::enclose;
-<span class="kw">use </span>futures::{future, FutureExt, TryFutureExt};
-<span class="kw">use </span>std::collections::HashSet;
 
 <span class="kw">pub fn </span>update_profile&lt;E: Env + <span class="lifetime">'static</span>&gt;(
     profile: <span class="kw-2">&amp;mut </span>Profile,
@@ -617,6 +653,10 @@
             Effects::msg(Msg::Internal(Internal::UninstallAddon(addon.to_owned()))).unchanged()
         }
         Msg::Action(Action::Ctx(ActionCtx::UpgradeAddon(addon))) =&gt; {
+            <span class="kw">if </span>profile.addons_locked {
+                <span class="kw">return </span>addon_upgrade_error_effects(addon, OtherError::UserAddonsAreLocked);
+            }
+
             <span class="kw">if </span>profile.addons.contains(addon) {
                 <span class="kw">return </span>addon_upgrade_error_effects(addon, OtherError::AddonAlreadyInstalled);
             }
@@ -651,6 +691,10 @@
             .join(Effects::msg(Msg::Internal(Internal::ProfileChanged)))
         }
         Msg::Internal(Internal::UninstallAddon(addon)) =&gt; {
+            <span class="kw">if </span>profile.addons_locked {
+                <span class="kw">return </span>addon_uninstall_error_effects(addon, OtherError::UserAddonsAreLocked);
+            }
+
             <span class="kw">let </span>addon_position = profile
                 .addons
                 .iter()
@@ -727,6 +771,10 @@
             Effects::one(push_profile_to_storage::&lt;E&gt;(profile)).unchanged()
         }
         Msg::Internal(Internal::InstallAddon(addon)) =&gt; {
+            <span class="kw">if </span>profile.addons_locked {
+                <span class="kw">return </span>addon_install_error_effects(addon, OtherError::UserAddonsAreLocked);
+            }
+
             <span class="kw">if </span>!profile.addons.contains(addon) {
                 <span class="kw">if </span>!addon.manifest.behavior_hints.configuration_required {
                     <span class="kw">let </span>addon_position = profile
@@ -761,12 +809,18 @@
             }
         }
         Msg::Internal(Internal::CtxAuthResult(auth_request, result)) =&gt; <span class="kw">match </span>(status, result) {
-            (CtxStatus::Loading(loading_auth_request), <span class="prelude-val">Ok</span>((auth, addons, <span class="kw">_</span>)))
-                <span class="kw">if </span>loading_auth_request == auth_request =&gt;
-            {
+            (
+                CtxStatus::Loading(loading_auth_request),
+                <span class="prelude-val">Ok</span>(CtxAuthResponse {
+                    auth,
+                    addons_result,
+                    ..
+                }),
+            ) <span class="kw">if </span>loading_auth_request == auth_request =&gt; {
                 <span class="kw">let </span>next_profile = Profile {
                     auth: <span class="prelude-val">Some</span>(auth.to_owned()),
-                    addons: addons.to_owned(),
+                    addons: addons_result.to_owned().unwrap_or(OFFICIAL_ADDONS.clone()),
+                    addons_locked: addons_result.is_err(),
                     settings: Settings::default(),
                 };
                 <span class="kw">if </span><span class="kw-2">*</span>profile != next_profile {
@@ -781,42 +835,56 @@
         Msg::Internal(Internal::AddonsAPIResult(
             APIRequest::AddonCollectionGet { auth_key, .. },
             result,
-        )) <span class="kw">if </span>profile.auth_key() == <span class="prelude-val">Some</span>(auth_key) =&gt; <span class="kw">match </span>result {
-            <span class="prelude-val">Ok</span>(addons) =&gt; {
-                <span class="kw">let </span>prev_transport_urls = profile
-                    .addons
-                    .iter()
-                    .map(|addon| <span class="kw-2">&amp;</span>addon.transport_url)
-                    .cloned()
-                    .collect::&lt;HashSet&lt;<span class="kw">_</span>&gt;&gt;();
-                <span class="kw">let </span>next_transport_urls = addons
-                    .iter()
-                    .map(|addon| <span class="kw-2">&amp;</span>addon.transport_url)
-                    .cloned()
-                    .collect::&lt;HashSet&lt;<span class="kw">_</span>&gt;&gt;();
-                <span class="kw">let </span>added_transport_urls = <span class="kw-2">&amp;</span>next_transport_urls - <span class="kw-2">&amp;</span>prev_transport_urls;
-                <span class="kw">let </span>removed_transport_urls = <span class="kw-2">&amp;</span>prev_transport_urls - <span class="kw-2">&amp;</span>next_transport_urls;
-                <span class="kw">let </span>transport_urls = added_transport_urls
-                    .into_iter()
-                    .chain(removed_transport_urls)
-                    .collect();
-                <span class="kw">if </span>profile.addons != <span class="kw-2">*</span>addons {
-                    profile.addons = addons.to_owned();
+        )) <span class="kw">if </span>profile.auth_key() == <span class="prelude-val">Some</span>(auth_key) =&gt; {
+            <span class="kw">let </span>profile_effects = <span class="kw">match </span>result {
+                <span class="prelude-val">Ok</span>(addons) =&gt; {
+                    <span class="kw">let </span>prev_transport_urls = profile
+                        .addons
+                        .iter()
+                        .map(|addon| <span class="kw-2">&amp;</span>addon.transport_url)
+                        .cloned()
+                        .collect::&lt;HashSet&lt;<span class="kw">_</span>&gt;&gt;();
+                    <span class="kw">let </span>next_transport_urls = addons
+                        .iter()
+                        .map(|addon| <span class="kw-2">&amp;</span>addon.transport_url)
+                        .cloned()
+                        .collect::&lt;HashSet&lt;<span class="kw">_</span>&gt;&gt;();
+                    <span class="kw">let </span>added_transport_urls = <span class="kw-2">&amp;</span>next_transport_urls - <span class="kw-2">&amp;</span>prev_transport_urls;
+                    <span class="kw">let </span>removed_transport_urls = <span class="kw-2">&amp;</span>prev_transport_urls - <span class="kw-2">&amp;</span>next_transport_urls;
+                    <span class="kw">let </span>transport_urls = added_transport_urls
+                        .into_iter()
+                        .chain(removed_transport_urls)
+                        .collect();
+                    <span class="kw">let </span>profile_changed_effects = <span class="kw">if </span>profile.addons != <span class="kw-2">*</span>addons {
+                        profile.addons = addons.to_owned();
+
+                        Effects::msg(Msg::Internal(Internal::ProfileChanged))
+                    } <span class="kw">else </span>{
+                        Effects::none().unchanged()
+                    };
+
                     Effects::msg(Msg::Event(Event::AddonsPulledFromAPI { transport_urls }))
-                        .join(Effects::msg(Msg::Internal(Internal::ProfileChanged)))
-                } <span class="kw">else </span>{
-                    Effects::msg(Msg::Event(Event::AddonsPulledFromAPI { transport_urls }))
-                        .unchanged()
+                        .join(profile_changed_effects)
                 }
-            }
-            <span class="prelude-val">Err</span>(error) =&gt; Effects::msg(Msg::Event(Event::Error {
-                error: error.to_owned(),
-                source: Box::new(Event::AddonsPulledFromAPI {
-                    transport_urls: Default::default(),
-                }),
-            }))
-            .unchanged(),
-        },
+                <span class="prelude-val">Err</span>(error) =&gt; Effects::msg(Msg::Event(Event::Error {
+                    error: error.to_owned(),
+                    source: Box::new(Event::AddonsPulledFromAPI {
+                        transport_urls: Default::default(),
+                    }),
+                }))
+                .unchanged(),
+            };
+
+            <span class="comment">// on successful AddonsApi result, unlock the addons if they have been locked
+            // on failed AddonsApi result, lock the addons
+            </span>profile.addons_locked = result.is_err();
+            <span class="kw">let </span>addons_locked_event = Event::UserAddonsLocked {
+                addons_locked: profile.addons_locked,
+            };
+            <span class="kw">let </span>addons_locked_effects = Effects::msg(Msg::Event(addons_locked_event)).unchanged();
+
+            addons_locked_effects.join(profile_effects)
+        }
         Msg::Internal(Internal::UserAPIResult(APIRequest::GetUser { auth_key }, result))
             <span class="kw">if </span>profile.auth_key() == <span class="prelude-val">Some</span>(auth_key) =&gt;
         {
