@@ -24,7 +24,7 @@ pub type CtxStorageResponse = (
     Option<LibraryBucket>,
 );
 
-pub type AuthResponse = (Auth, Vec<Descriptor>, Vec<LibraryItem>);
+pub type AuthResponse = Auth;
 
 pub type LibraryPlanResponse = (Vec<String>, Vec<String>);
 

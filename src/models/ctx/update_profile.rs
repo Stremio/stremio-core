@@ -6,7 +6,7 @@ use crate::types::addon::Descriptor;
 use crate::types::api::{
     fetch_api, APIError, APIRequest, APIResult, CollectionResponse, SuccessResponse,
 };
-use crate::types::profile::{Auth, AuthKey, Profile, Settings, User};
+use crate::types::profile::{Auth, AuthKey, Profile, User};
 use crate::types::streams::StreamsBucket;
 use enclose::enclose;
 use futures::{future, FutureExt, TryFutureExt};
@@ -20,13 +20,8 @@ pub fn update_profile<E: Env + 'static>(
 ) -> Effects {
     match msg {
         Msg::Action(Action::Ctx(ActionCtx::Logout)) | Msg::Internal(Internal::Logout) => {
-            let next_profile = Profile::default();
-            if *profile != next_profile {
-                *profile = next_profile;
-                Effects::msg(Msg::Internal(Internal::ProfileChanged))
-            } else {
-                Effects::none().unchanged()
-            }
+            *profile = Profile::default();
+            Effects::msg(Msg::Internal(Internal::ProfileChanged))
         }
         Msg::Action(Action::Ctx(ActionCtx::PushUserToAPI)) => match &profile.auth {
             Some(Auth { key, user }) => {
@@ -119,73 +114,86 @@ pub fn update_profile<E: Env + 'static>(
             Effects::msg(Msg::Internal(Internal::UninstallAddon(addon.to_owned()))).unchanged()
         }
         Msg::Action(Action::Ctx(ActionCtx::UpgradeAddon(addon))) => {
-            if profile.addons.contains(addon) {
-                return addon_upgrade_error_effects(addon, OtherError::AddonAlreadyInstalled);
-            }
-            if addon.manifest.behavior_hints.configuration_required {
-                return addon_upgrade_error_effects(addon, OtherError::AddonConfigurationRequired);
-            }
-            let addon_position = match profile
-                .addons
-                .iter()
-                .map(|addon| &addon.transport_url)
-                .position(|transport_url| *transport_url == addon.transport_url)
-            {
-                Some(addon_position) => addon_position,
-                None => return addon_upgrade_error_effects(addon, OtherError::AddonNotInstalled),
-            };
-            if addon.flags.protected || profile.addons[addon_position].flags.protected {
-                return addon_upgrade_error_effects(addon, OtherError::AddonIsProtected);
-            }
-            profile.addons[addon_position] = addon.to_owned();
-            let push_to_api_effects = match profile.auth_key() {
-                Some(auth_key) => {
-                    Effects::one(push_addons_to_api::<E>(profile.addons.to_owned(), auth_key))
-                        .unchanged()
+            if !profile.addons_locked {
+                if profile.addons.contains(addon) {
+                    return addon_upgrade_error_effects(addon, OtherError::AddonAlreadyInstalled);
                 }
-                _ => Effects::none().unchanged(),
-            };
-            Effects::msg(Msg::Event(Event::AddonUpgraded {
-                transport_url: addon.transport_url.to_owned(),
-                id: addon.manifest.id.to_owned(),
-            }))
-            .join(push_to_api_effects)
-            .join(Effects::msg(Msg::Internal(Internal::ProfileChanged)))
+                if addon.manifest.behavior_hints.configuration_required {
+                    return addon_upgrade_error_effects(
+                        addon,
+                        OtherError::AddonConfigurationRequired,
+                    );
+                }
+                let addon_position = match profile
+                    .addons
+                    .iter()
+                    .map(|addon| &addon.transport_url)
+                    .position(|transport_url| *transport_url == addon.transport_url)
+                {
+                    Some(addon_position) => addon_position,
+                    None => {
+                        return addon_upgrade_error_effects(addon, OtherError::AddonNotInstalled);
+                    }
+                };
+                if addon.flags.protected || profile.addons[addon_position].flags.protected {
+                    return addon_upgrade_error_effects(addon, OtherError::AddonIsProtected);
+                }
+                profile.addons[addon_position] = addon.to_owned();
+                let push_to_api_effects = match profile.auth_key() {
+                    Some(auth_key) => {
+                        Effects::one(push_addons_to_api::<E>(profile.addons.to_owned(), auth_key))
+                            .unchanged()
+                    }
+                    _ => Effects::none().unchanged(),
+                };
+                Effects::msg(Msg::Event(Event::AddonUpgraded {
+                    transport_url: addon.transport_url.to_owned(),
+                    id: addon.manifest.id.to_owned(),
+                }))
+                .join(push_to_api_effects)
+                .join(Effects::msg(Msg::Internal(Internal::ProfileChanged)))
+            } else {
+                addon_upgrade_error_effects(addon, OtherError::AddonsAreLocked)
+            }
         }
         Msg::Internal(Internal::UninstallAddon(addon)) => {
-            let addon_position = profile
-                .addons
-                .iter()
-                .map(|addon| &addon.transport_url)
-                .position(|transport_url| *transport_url == addon.transport_url);
-            if let Some(addon_position) = addon_position {
-                if !profile.addons[addon_position].flags.protected && !addon.flags.protected {
-                    profile.addons.remove(addon_position);
+            if !profile.addons_locked {
+                let addon_position = profile
+                    .addons
+                    .iter()
+                    .map(|addon| &addon.transport_url)
+                    .position(|transport_url| *transport_url == addon.transport_url);
+                if let Some(addon_position) = addon_position {
+                    if !profile.addons[addon_position].flags.protected && !addon.flags.protected {
+                        profile.addons.remove(addon_position);
 
-                    // Remove stream related to this addon from the streams bucket
-                    streams
-                        .items
-                        .retain(|_key, item| item.stream_transport_url != addon.transport_url);
+                        // Remove stream related to this addon from the streams bucket
+                        streams
+                            .items
+                            .retain(|_key, item| item.stream_transport_url != addon.transport_url);
 
-                    let push_to_api_effects = match profile.auth_key() {
-                        Some(auth_key) => Effects::one(push_addons_to_api::<E>(
-                            profile.addons.to_owned(),
-                            auth_key,
-                        ))
-                        .unchanged(),
-                        _ => Effects::none().unchanged(),
-                    };
-                    Effects::msg(Msg::Event(Event::AddonUninstalled {
-                        transport_url: addon.transport_url.to_owned(),
-                        id: addon.manifest.id.to_owned(),
-                    }))
-                    .join(push_to_api_effects)
-                    .join(Effects::msg(Msg::Internal(Internal::ProfileChanged)))
+                        let push_to_api_effects = match profile.auth_key() {
+                            Some(auth_key) => Effects::one(push_addons_to_api::<E>(
+                                profile.addons.to_owned(),
+                                auth_key,
+                            ))
+                            .unchanged(),
+                            _ => Effects::none().unchanged(),
+                        };
+                        Effects::msg(Msg::Event(Event::AddonUninstalled {
+                            transport_url: addon.transport_url.to_owned(),
+                            id: addon.manifest.id.to_owned(),
+                        }))
+                        .join(push_to_api_effects)
+                        .join(Effects::msg(Msg::Internal(Internal::ProfileChanged)))
+                    } else {
+                        addon_uninstall_error_effects(addon, OtherError::AddonIsProtected)
+                    }
                 } else {
-                    addon_uninstall_error_effects(addon, OtherError::AddonIsProtected)
+                    addon_uninstall_error_effects(addon, OtherError::AddonNotInstalled)
                 }
             } else {
-                addon_uninstall_error_effects(addon, OtherError::AddonNotInstalled)
+                addon_uninstall_error_effects(addon, OtherError::AddonsAreLocked)
             }
         }
         Msg::Action(Action::Ctx(ActionCtx::LogoutTrakt)) => match &mut profile.auth {
@@ -229,54 +237,55 @@ pub fn update_profile<E: Env + 'static>(
             Effects::one(push_profile_to_storage::<E>(profile)).unchanged()
         }
         Msg::Internal(Internal::InstallAddon(addon)) => {
-            if !profile.addons.contains(addon) {
-                if !addon.manifest.behavior_hints.configuration_required {
-                    let addon_position = profile
-                        .addons
-                        .iter()
-                        .map(|addon| &addon.transport_url)
-                        .position(|transport_url| *transport_url == addon.transport_url);
-                    if let Some(addon_position) = addon_position {
-                        profile.addons[addon_position] = addon.to_owned();
+            if !profile.addons_locked {
+                if !profile.addons.contains(addon) {
+                    if !addon.manifest.behavior_hints.configuration_required {
+                        let addon_position = profile
+                            .addons
+                            .iter()
+                            .map(|addon| &addon.transport_url)
+                            .position(|transport_url| *transport_url == addon.transport_url);
+                        if let Some(addon_position) = addon_position {
+                            profile.addons[addon_position] = addon.to_owned();
+                        } else {
+                            profile.addons.push(addon.to_owned());
+                        };
+                        let push_to_api_effects = match profile.auth_key() {
+                            Some(auth_key) => Effects::one(push_addons_to_api::<E>(
+                                profile.addons.to_owned(),
+                                auth_key,
+                            ))
+                            .unchanged(),
+                            _ => Effects::none().unchanged(),
+                        };
+                        Effects::msg(Msg::Event(Event::AddonInstalled {
+                            transport_url: addon.transport_url.to_owned(),
+                            id: addon.manifest.id.to_owned(),
+                        }))
+                        .join(push_to_api_effects)
+                        .join(Effects::msg(Msg::Internal(Internal::ProfileChanged)))
                     } else {
-                        profile.addons.push(addon.to_owned());
-                    };
-                    let push_to_api_effects = match profile.auth_key() {
-                        Some(auth_key) => Effects::one(push_addons_to_api::<E>(
-                            profile.addons.to_owned(),
-                            auth_key,
-                        ))
-                        .unchanged(),
-                        _ => Effects::none().unchanged(),
-                    };
-                    Effects::msg(Msg::Event(Event::AddonInstalled {
-                        transport_url: addon.transport_url.to_owned(),
-                        id: addon.manifest.id.to_owned(),
-                    }))
-                    .join(push_to_api_effects)
-                    .join(Effects::msg(Msg::Internal(Internal::ProfileChanged)))
+                        addon_install_error_effects(addon, OtherError::AddonConfigurationRequired)
+                    }
                 } else {
-                    addon_install_error_effects(addon, OtherError::AddonConfigurationRequired)
+                    addon_install_error_effects(addon, OtherError::AddonAlreadyInstalled)
                 }
             } else {
-                addon_install_error_effects(addon, OtherError::AddonAlreadyInstalled)
+                addon_install_error_effects(addon, OtherError::AddonsAreLocked)
             }
         }
         Msg::Internal(Internal::CtxAuthResult(auth_request, result)) => match (status, result) {
-            (CtxStatus::Loading(loading_auth_request), Ok((auth, addons, _)))
+            (CtxStatus::Loading(loading_auth_request), Ok(auth))
                 if loading_auth_request == auth_request =>
             {
-                let next_profile = Profile {
+                *profile = Profile {
                     auth: Some(auth.to_owned()),
-                    addons: addons.to_owned(),
-                    settings: Settings::default(),
+                    ..Default::default()
                 };
-                if *profile != next_profile {
-                    *profile = next_profile;
-                    Effects::msg(Msg::Internal(Internal::ProfileChanged))
-                } else {
-                    Effects::none().unchanged()
-                }
+
+                let changed_effects = Effects::msg(Msg::Internal(Internal::ProfileChanged));
+                let pull_effects = Effects::one(pull_addons_from_api::<E>(&auth.key));
+                changed_effects.join(pull_effects)
             }
             _ => Effects::none().unchanged(),
         },
@@ -302,6 +311,8 @@ pub fn update_profile<E: Env + 'static>(
                     .into_iter()
                     .chain(removed_transport_urls)
                     .collect();
+
+                profile.addons_locked = false;
                 if profile.addons != *addons {
                     profile.addons = addons.to_owned();
                     Effects::msg(Msg::Event(Event::AddonsPulledFromAPI { transport_urls }))
@@ -311,13 +322,16 @@ pub fn update_profile<E: Env + 'static>(
                         .unchanged()
                 }
             }
-            Err(error) => Effects::msg(Msg::Event(Event::Error {
-                error: error.to_owned(),
-                source: Box::new(Event::AddonsPulledFromAPI {
-                    transport_urls: Default::default(),
-                }),
-            }))
-            .unchanged(),
+            Err(error) => {
+                profile.addons_locked = true;
+                Effects::msg(Msg::Event(Event::Error {
+                    error: error.to_owned(),
+                    source: Box::new(Event::AddonsPulledFromAPI {
+                        transport_urls: Default::default(),
+                    }),
+                }))
+                .unchanged()
+            }
         },
         Msg::Internal(Internal::UserAPIResult(APIRequest::GetUser { auth_key }, result))
             if profile.auth_key() == Some(auth_key) =>

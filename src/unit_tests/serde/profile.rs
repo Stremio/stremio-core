@@ -9,11 +9,13 @@ fn profile() {
             Profile {
                 auth: Some(Auth::default()),
                 addons: vec![],
+                addons_locked: false,
                 settings: Settings::default(),
             },
             Profile {
                 auth: None,
                 addons: vec![],
+                addons_locked: false,
                 settings: Settings::default(),
             },
         ]
@@ -58,6 +60,7 @@ fn profile() {
         &Profile {
             auth: None,
             addons: vec![],
+            addons_locked: false,
             settings: Settings::default(),
         }
         .readable(),

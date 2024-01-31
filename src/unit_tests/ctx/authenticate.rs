@@ -180,13 +180,9 @@ fn actionctx_authenticate_login() {
         LibraryBucket::new(Some("user_id".to_owned()), vec![]),
         "recent library updated successfully in storage"
     );
-    assert_eq!(
-        serde_json::from_str::<LibraryBucket>(
-            STORAGE.read().unwrap().get(LIBRARY_STORAGE_KEY).unwrap()
-        )
-        .unwrap(),
-        LibraryBucket::new(Some("user_id".to_owned()), vec![]),
-        "library updated successfully in storage"
+    assert!(
+        STORAGE.read().unwrap().get(LIBRARY_STORAGE_KEY).is_none(),
+        "Library slot updated successfully in storage"
     );
     assert_eq!(
         REQUESTS.read().unwrap().len(),
@@ -385,13 +381,9 @@ fn actionctx_authenticate_login_with_token() {
         LibraryBucket::new(Some("user_id".to_owned()), vec![]),
         "recent library updated successfully in storage"
     );
-    assert_eq!(
-        serde_json::from_str::<LibraryBucket>(
-            STORAGE.read().unwrap().get(LIBRARY_STORAGE_KEY).unwrap()
-        )
-        .unwrap(),
-        LibraryBucket::new(Some("user_id".to_owned()), vec![]),
-        "library updated successfully in storage"
+    assert!(
+        STORAGE.read().unwrap().get(LIBRARY_STORAGE_KEY).is_none(),
+        "Library slot updated successfully in storage"
     );
     assert_eq!(
         REQUESTS.read().unwrap().len(),
@@ -598,13 +590,9 @@ fn actionctx_authenticate_register() {
         LibraryBucket::new(Some("user_id".to_owned()), vec![]),
         "recent library updated successfully in storage"
     );
-    assert_eq!(
-        serde_json::from_str::<LibraryBucket>(
-            STORAGE.read().unwrap().get(LIBRARY_STORAGE_KEY).unwrap()
-        )
-        .unwrap(),
-        LibraryBucket::new(Some("user_id".to_owned()), vec![]),
-        "library updated successfully in storage"
+    assert!(
+        STORAGE.read().unwrap().get(LIBRARY_STORAGE_KEY).is_none(),
+        "Library slot updated successfully in storage"
     );
     assert_eq!(
         REQUESTS.read().unwrap().len(),

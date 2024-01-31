@@ -34,13 +34,8 @@ pub fn update_library<E: Env + 'static>(
     let auth_key = profile.auth_key();
     match msg {
         Msg::Action(Action::Ctx(ActionCtx::Logout)) | Msg::Internal(Internal::Logout) => {
-            let next_library = LibraryBucket::default();
-            if *library != next_library {
-                *library = next_library;
-                Effects::msg(Msg::Internal(Internal::LibraryChanged(false)))
-            } else {
-                Effects::none().unchanged()
-            }
+            *library = LibraryBucket::default();
+            Effects::msg(Msg::Internal(Internal::LibraryChanged(false)))
         }
         Msg::Action(Action::Ctx(ActionCtx::AddToLibrary(meta_preview))) => {
             let mut library_item = match library.items.get(&meta_preview.id) {
@@ -175,17 +170,13 @@ pub fn update_library<E: Env + 'static>(
             Effects::one(push_library_to_storage::<E>(library)).unchanged()
         }
         Msg::Internal(Internal::CtxAuthResult(auth_request, result)) => match (status, result) {
-            (CtxStatus::Loading(loading_auth_request), Ok((auth, _, library_items)))
+            (CtxStatus::Loading(loading_auth_request), Ok(auth))
                 if loading_auth_request == auth_request =>
             {
-                let next_library =
-                    LibraryBucket::new(Some(auth.user.id.to_owned()), library_items.to_owned());
-                if *library != next_library {
-                    *library = next_library;
-                    Effects::msg(Msg::Internal(Internal::LibraryChanged(false)))
-                } else {
-                    Effects::none().unchanged()
-                }
+                *library = LibraryBucket::new(Some(auth.user.id.to_owned()), vec![]);
+                let changed_effects = Effects::msg(Msg::Internal(Internal::LibraryChanged(false)));
+                let pull_effects = Effects::one(pull_items_from_api::<E>(vec![], true, &auth.key));
+                changed_effects.join(pull_effects)
             }
             _ => Effects::none().unchanged(),
         },
@@ -214,6 +205,7 @@ pub fn update_library<E: Env + 'static>(
                 } else {
                     Effects::one(pull_items_from_api::<E>(
                         pull_ids.to_owned(),
+                        false,
                         loading_auth_key,
                     ))
                     .unchanged()
@@ -370,11 +362,15 @@ fn push_items_to_api<E: Env + 'static>(items: Vec<LibraryItem>, auth_key: &AuthK
     .into()
 }
 
-fn pull_items_from_api<E: Env + 'static>(ids: Vec<String>, auth_key: &AuthKey) -> Effect {
+fn pull_items_from_api<E: Env + 'static>(
+    ids: Vec<String>,
+    all: bool,
+    auth_key: &AuthKey,
+) -> Effect {
     let request = DatastoreRequest {
         auth_key: auth_key.to_owned(),
         collection: LIBRARY_COLLECTION_NAME.to_owned(),
-        command: DatastoreCommand::Get { ids, all: false },
+        command: DatastoreCommand::Get { ids, all },
     };
     EffectFuture::Concurrent(
         fetch_api::<E, _, _, LibraryItemsResponse>(&request)
