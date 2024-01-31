@@ -122,7 +122,7 @@ pub fn update_profile<E: Env + 'static>(
         }
         Msg::Action(Action::Ctx(ActionCtx::UpgradeAddon(addon))) => {
             if profile.addons_locked {
-                return addon_install_error_effects(addon, OtherError::UserAddonsAreLocked);
+                return addon_upgrade_error_effects(addon, OtherError::UserAddonsAreLocked);
             }
 
             if profile.addons.contains(addon) {
