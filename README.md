@@ -9,7 +9,7 @@ Bridge between [stremio-core](https://github.com/stremio/stremio-core) and [stre
 
 Builds a production wasm package and prepares the rest of the dependencies for the npm package.
 
-```
+```bash
 npm install
 npm run build
 ```
@@ -18,9 +18,18 @@ npm run build
 
 Building the package using [`./scripts/build.sh`](./scripts/build.sh) with `--dev` would allow you to see more logging messages being emitted, this is intended **only** for debugging as it will log messages with sensitive information!
 
-```
+```bash
 ./scripts/build.sh --dev
 ```
+
+Or you can also use the development-specific Rust's `wasm-watch` alias from [`./.cargo/config.toml`](./.cargo/config.toml).
+It will automatically re-compile the package when a change on the files or dependencies is detected,
+including when you're using a local patch for `stremio-core`.
+
+1. Install `cargo-watch`
+   - `cargo install cargo-watch`
+   - With `cargo-binstall` (prebuilt binaries): `cargo binstall cargo-watch`
+2. Run `cargo wasm-watch`
 
 ## Publishing
 
