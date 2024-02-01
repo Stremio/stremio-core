@@ -2,10 +2,10 @@ use crate::model::deep_links_ext::DeepLinksExt;
 use gloo_utils::format::JsValueSerdeExt;
 use serde::Serialize;
 use stremio_core::deep_links::{LibraryDeepLinks, LibraryItemDeepLinks};
+use stremio_core::models::ctx::Ctx;
 use stremio_core::models::library_with_filters::{LibraryWithFilters, Selected, Sort};
-use stremio_core::types::profile::Settings;
 use stremio_core::types::resource::PosterShape;
-use stremio_core::types::streams::{StreamsBucket, StreamsItemKey};
+use stremio_core::types::streams::StreamsItemKey;
 use url::Url;
 use wasm_bindgen::JsValue;
 
@@ -20,6 +20,7 @@ mod model {
         pub r#type: &'a String,
         pub poster: &'a Option<Url>,
         pub poster_shape: &'a PosterShape,
+        pub notifications: u8,
         pub progress: f64,
         pub watched: bool,
         pub deep_links: LibraryItemDeepLinks,
@@ -61,9 +62,8 @@ mod model {
 
 pub fn serialize_library<F>(
     library: &LibraryWithFilters<F>,
-    streams_bucket: &StreamsBucket,
+    ctx: &Ctx,
     streaming_server_url: Option<&Url>,
-    settings: &Settings,
     root: String,
 ) -> JsValue {
     <JsValue as JsValueSerdeExt>::from_serde(&model::LibraryWithFilters {
@@ -111,7 +111,7 @@ pub fn serialize_library<F>(
                 // Try to get the stream from the StreamBucket
                 // given that we have a video_id in the LibraryItemState!
                 let streams_item = library_item.state.video_id.as_ref().and_then(|video_id| {
-                    streams_bucket.items.get(&StreamsItemKey {
+                    ctx.streams.items.get(&StreamsItemKey {
                         meta_id: library_item.id.to_owned(),
                         video_id: video_id.to_owned(),
                     })
@@ -127,13 +127,18 @@ pub fn serialize_library<F>(
                     } else {
                         &library_item.poster_shape
                     },
+                    notifications: ctx
+                        .notifications
+                        .items
+                        .get(&library_item.id)
+                        .map_or(0, |item| item.len() as u8),
                     progress: library_item.progress(),
                     watched: library_item.watched(),
                     deep_links: LibraryItemDeepLinks::from((
                         library_item,
                         streams_item,
                         streaming_server_url,
-                        settings,
+                        &ctx.profile.settings,
                     ))
                     .into_web_deep_links(),
                 }
