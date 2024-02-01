@@ -1,25 +1,25 @@
+use gloo_utils::format::JsValueSerdeExt;
 use wasm_bindgen::JsValue;
 
 use stremio_core::models::ctx::Ctx;
 
 pub fn serialize_ctx(ctx: &Ctx) -> JsValue {
-    JsValue::from_serde(&model::Ctx::from(ctx)).unwrap()
+    <JsValue as JsValueSerdeExt>::from_serde(&model::Ctx::from(ctx)).unwrap()
 }
 
 mod model {
     use std::collections::HashMap;
 
+    use chrono::{DateTime, Utc};
     use itertools::Itertools;
     use serde::Serialize;
 
-    use chrono::{DateTime, Utc};
-
-    use stremio_core::{
-        deep_links::SearchHistoryItemDeepLinks,
-        types::{
-            events::Events, notifications::NotificationItem, profile::Profile, resource::MetaItemId,
-        },
+    use stremio_core::deep_links::SearchHistoryItemDeepLinks;
+    use stremio_core::types::{
+        events::Events, notifications::NotificationItem, profile::Profile, resource::MetaItemId,
     };
+
+    use crate::model::deep_links_ext::DeepLinksExt;
 
     #[derive(Serialize)]
     #[serde(rename_all = "camelCase")]
@@ -70,7 +70,7 @@ mod model {
                     .sorted_by(|(_, a_date), (_, b_date)| Ord::cmp(b_date, a_date))
                     .map(|(query, ..)| SearchHistoryItem {
                         query,
-                        deep_links: SearchHistoryItemDeepLinks::from(query),
+                        deep_links: SearchHistoryItemDeepLinks::from(query).into_web_deep_links(),
                     })
                     .collect(),
                 events: &ctx.events,

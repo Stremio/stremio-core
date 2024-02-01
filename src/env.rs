@@ -5,11 +5,19 @@ use futures::{
     future::{self, Either},
     Future, FutureExt, TryFutureExt,
 };
+use gloo_utils::format::JsValueSerdeExt;
 use http::{Method, Request};
 use lazy_static::lazy_static;
 use regex::Regex;
 use serde::{Deserialize, Serialize};
 use serde_json::json;
+
+use tracing::trace;
+use url::Url;
+
+use wasm_bindgen::{closure::Closure, prelude::wasm_bindgen, JsCast, JsValue};
+use wasm_bindgen_futures::{spawn_local, JsFuture};
+use web_sys::WorkerGlobalScope;
 
 use stremio_core::{
     analytics::Analytics,
@@ -21,15 +29,6 @@ use stremio_core::{
     types::{api::AuthRequest, resource::StreamSource},
 };
 
-use tracing::trace;
-use url::Url;
-
-use wasm_bindgen::closure::Closure;
-use wasm_bindgen::prelude::wasm_bindgen;
-use wasm_bindgen::{JsCast, JsValue};
-use wasm_bindgen_futures::{spawn_local, JsFuture};
-use web_sys::WorkerGlobalScope;
-
 use crate::{
     event::{UIEvent, WebEvent},
     model::WebModel,
@@ -40,10 +39,10 @@ const INSTALLATION_ID_STORAGE_KEY: &str = "installation_id";
 
 #[wasm_bindgen]
 extern "C" {
-    #[wasm_bindgen(catch, js_namespace = ["self"])]
-    static app_version: String;
-    #[wasm_bindgen(catch, js_namespace = ["self"])]
-    static shell_version: Option<String>;
+    #[wasm_bindgen(js_namespace = ["self"], js_name = app_version)]
+    static APP_VERSION: String;
+    #[wasm_bindgen(js_namespace = ["self"], js_name = shell_version)]
+    static SHELL_VERSION: Option<String>;
     #[wasm_bindgen(catch, js_namespace = ["self"])]
     async fn get_location_hash() -> Result<JsValue, JsValue>;
     #[wasm_bindgen(catch, js_namespace = ["self"])]
@@ -276,7 +275,7 @@ impl Env for WebEnv {
                 let value = String::from_utf8_lossy(value.as_bytes()).into_owned();
                 headers.entry(key).or_insert_with(Vec::new).push(value);
             }
-            JsValue::from_serde(&headers).unwrap()
+            <JsValue as JsValueSerdeExt>::from_serde(&headers).unwrap()
         };
         let body = match serde_json::to_string(&body) {
             Ok(ref body) if body != "null" && parts.method != Method::GET => {
@@ -341,7 +340,7 @@ impl Env for WebEnv {
                                 }),
                         )
                     } else {
-                        future::ready(resp.into_serde().map_err(EnvError::from))
+                        future::ready(<JsValue as JsValueSerdeExt>::into_serde(&resp).map_err(EnvError::from))
                     }
                 }
             })
@@ -426,13 +425,13 @@ impl Env for WebEnv {
     ) -> serde_json::Value {
         serde_json::to_value(AnalyticsContext {
             app_type: "stremio-web".to_owned(),
-            app_version: app_version.to_owned(),
+            app_version: APP_VERSION.to_owned(),
             server_version: streaming_server
                 .settings
                 .as_ref()
                 .ready()
                 .map(|settings| settings.server_version.to_owned()),
-            shell_version: shell_version.to_owned(),
+            shell_version: SHELL_VERSION.to_owned(),
             system_language: global()
                 .navigator()
                 .language()

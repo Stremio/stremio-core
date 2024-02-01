@@ -1,5 +1,6 @@
 use crate::env::WebEnv;
 use crate::model::deep_links_ext::DeepLinksExt;
+use gloo_utils::format::JsValueSerdeExt;
 use semver::Version;
 use serde::Serialize;
 use stremio_core::deep_links::{StreamDeepLinks, VideoDeepLinks};
@@ -107,7 +108,7 @@ mod model {
 }
 
 pub fn serialize_player(player: &Player, ctx: &Ctx, streaming_server: &StreamingServer) -> JsValue {
-    JsValue::from_serde(&model::Player {
+    <JsValue as JsValueSerdeExt>::from_serde(&model::Player {
         selected: player.selected.as_ref().map(|selected| model::Selected {
             stream: model::Stream {
                 stream: &selected.stream,

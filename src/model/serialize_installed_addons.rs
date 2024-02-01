@@ -1,4 +1,5 @@
 use crate::model::deep_links_ext::DeepLinksExt;
+use gloo_utils::format::JsValueSerdeExt;
 use serde::Serialize;
 use stremio_core::deep_links::AddonsDeepLinks;
 use stremio_core::models::installed_addons_with_filters::{
@@ -45,7 +46,7 @@ mod model {
 }
 
 pub fn serialize_installed_addons(installed_addons: &InstalledAddonsWithFilters) -> JsValue {
-    JsValue::from_serde(&model::InstalledAddonsWithFilters {
+    <JsValue as JsValueSerdeExt>::from_serde(&model::InstalledAddonsWithFilters {
         selected: &installed_addons.selected,
         selectable: model::Selectable {
             types: installed_addons

@@ -1,3 +1,4 @@
+use gloo_utils::format::JsValueSerdeExt;
 use serde::Serialize;
 use stremio_core::models::common::Loadable;
 use stremio_core::models::ctx::CtxError;
@@ -15,7 +16,7 @@ mod model {
 }
 
 pub fn serialize_data_export(data_export: &DataExport) -> JsValue {
-    JsValue::from_serde(&model::DataExport {
+    <JsValue as JsValueSerdeExt>::from_serde(&model::DataExport {
         export_url: data_export
             .export_url
             .as_ref()

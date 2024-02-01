@@ -1,29 +1,43 @@
+use gloo_utils::format::JsValueSerdeExt;
+use itertools::Itertools;
 use serde::Serialize;
-use stremio_core::models::local_search::LocalSearch;
 use wasm_bindgen::JsValue;
 
-mod model {
-    use stremio_core::{
-        models::{common::Loadable, local_search::Searchable},
-        runtime::EnvError,
-    };
+use stremio_core::deep_links::LocalSearchItemDeepLinks;
+use stremio_core::models::local_search::{LocalSearch, Searchable};
 
+use crate::model::deep_links_ext::DeepLinksExt;
+
+mod model {
     use super::*;
+
     #[derive(Serialize)]
     #[serde(rename_all = "camelCase")]
-    pub struct LocalSearch {
-        pub current_records: Vec<Searchable>,
+    pub struct LocalSearch<'a> {
         /// The results of the search autocompletion
-        pub search_results: Vec<Searchable>,
-        pub latest_records: Option<Loadable<Vec<Searchable>, EnvError>>,
+        pub items: Vec<LocalSearchItem<'a>>,
+    }
+
+    #[derive(Serialize)]
+    #[serde(rename_all = "camelCase")]
+    pub struct LocalSearchItem<'a> {
+        pub query: &'a String,
+        pub deep_links: LocalSearchItemDeepLinks,
     }
 }
 
 pub fn serialize_local_search(local_search: &LocalSearch) -> JsValue {
-    JsValue::from_serde(&model::LocalSearch {
-        current_records: local_search.current_records.to_owned(),
-        search_results: local_search.search_results.to_owned(),
-        latest_records: local_search.latest_records.to_owned(),
+    <JsValue as JsValueSerdeExt>::from_serde(&model::LocalSearch {
+        items: local_search
+            .search_results
+            .to_owned()
+            .iter()
+            .map(|Searchable { name, .. }| model::LocalSearchItem {
+                query: name,
+                deep_links: LocalSearchItemDeepLinks::from(name).into_web_deep_links(),
+            })
+            .unique_by(|i| i.query)
+            .collect(),
     })
     .unwrap()
 }

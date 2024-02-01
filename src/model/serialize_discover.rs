@@ -1,4 +1,5 @@
 use boolinator::Boolinator;
+use gloo_utils::format::JsValueSerdeExt;
 use itertools::Itertools;
 
 use serde::Serialize;
@@ -104,7 +105,7 @@ pub fn serialize_discover(
     ctx: &Ctx,
     streaming_server: &StreamingServer,
 ) -> JsValue {
-    JsValue::from_serde(&model::CatalogWithFilters {
+    <JsValue as JsValueSerdeExt>::from_serde(&model::CatalogWithFilters {
         selected: &discover.selected,
         selectable: model::Selectable {
             types: discover

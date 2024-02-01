@@ -1,4 +1,5 @@
 use crate::model::deep_links_ext::DeepLinksExt;
+use gloo_utils::format::JsValueSerdeExt;
 use serde::Serialize;
 use stremio_core::deep_links::AddonsDeepLinks;
 use stremio_core::models::catalog_with_filters::{CatalogWithFilters, Selected};
@@ -55,7 +56,7 @@ pub fn serialize_remote_addons(
     remote_addons: &CatalogWithFilters<DescriptorPreview>,
     ctx: &Ctx,
 ) -> JsValue {
-    JsValue::from_serde(&model::CatalogWithFilters {
+    <JsValue as JsValueSerdeExt>::from_serde(&model::CatalogWithFilters {
         selected: &remote_addons.selected,
         selectable: model::Selectable {
             catalogs: remote_addons
