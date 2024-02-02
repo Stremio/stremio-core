@@ -47,7 +47,7 @@
                         "series"
                     ],
                     "resources": [
-                        "catalogs"
+                        "catalog"
                     ],
                     "idPrefixes": [
                         "tt"
