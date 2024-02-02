@@ -80,6 +80,9 @@ pub enum Internal {
     SearchHistoryChanged,
     /// User notifications have changed
     NotificationsChanged,
+    /// Pulling of notifications triggered either by the user (with an action) or
+    /// internally in core.
+    PullNotifications,
     /// Dismiss all Notifications for a given [`MetaItemId`].
     ///
     /// [`MetaItemId`]: crate::types::resource::MetaItemId

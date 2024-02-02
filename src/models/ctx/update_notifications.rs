@@ -40,6 +40,9 @@ pub fn update_notifications<E: Env + 'static>(
 ) -> Effects {
     match msg {
         Msg::Action(Action::Ctx(ActionCtx::PullNotifications)) => {
+            Effects::msg(Msg::Internal(Internal::PullNotifications)).unchanged()
+        }
+        Msg::Internal(Internal::PullNotifications) => {
             let (reason, should_make_request) = match notifications.last_updated {
                 Some(last_updated) if last_updated + *REQUEST_LAST_VIDEOS_EVERY <= E::now() => (
                     format!(
@@ -144,8 +147,12 @@ pub fn update_notifications<E: Env + 'static>(
                 } else {
                     Effects::none().unchanged()
                 };
+
+                let pull_notifications_effects =
+                    Effects::msg(Msg::Internal(Internal::PullNotifications)).unchanged();
                 notification_catalogs_effects
                     .join(notifications_effects)
+                    .join(pull_notifications_effects)
                     .unchanged()
             }
             _ => Effects::none().unchanged(),
@@ -250,26 +257,24 @@ fn update_notification_items<E: Env + 'static>(
                         // try to default to currently existing notifications in the bucket before returning
                         match notification_items.get(meta_id) {
                             Some(existing_notifications) if !existing_notifications.is_empty() => {
-                                map.insert(
-                                    meta_id.to_owned(),
-                                    existing_notifications
-                                        .iter()
-                                        .filter_map(|(video_id, notif_item)| {
-                                            // filter by the same requirements as new videos
-                                            // to remove videos that no longer match
-                                            if should_retail_video_released(
-                                                library_item.state.last_watched.as_ref(),
-                                                Some(&notif_item.video_released),
-                                            )
-                                            .is_some()
-                                            {
-                                                Some((video_id.to_owned(), notif_item.to_owned()))
-                                            } else {
-                                                None
-                                            }
-                                        })
-                                        .collect(),
-                                );
+                                let filtered_current_notifs = existing_notifications
+                                    .iter()
+                                    .filter_map(|(video_id, notif_item)| {
+                                        // filter by the same requirements as new videos
+                                        // to remove videos that no longer match
+                                        if should_retail_video_released(
+                                            library_item.state.last_watched.as_ref(),
+                                            Some(&notif_item.video_released),
+                                        )
+                                        .is_some()
+                                        {
+                                            Some((video_id.to_owned(), notif_item.to_owned()))
+                                        } else {
+                                            None
+                                        }
+                                    })
+                                    .collect();
+                                map.insert(meta_id.to_owned(), filtered_current_notifs);
                             }
                             _ => {
                                 // in any other case - skip it, e.g. meta_id not found or empty notifications
@@ -290,7 +295,7 @@ fn update_notification_items<E: Env + 'static>(
                         |video| match (&library_item.state.last_watched, video.released) {
                             (Some(last_watched), Some(video_released)) => {
                                 if should_retail_video_released(
-                                    Some(&last_watched),
+                                    Some(last_watched),
                                     Some(&video_released),
                                 )
                                 .is_some()
