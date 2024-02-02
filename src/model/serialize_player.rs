@@ -100,6 +100,8 @@ mod model {
         pub series_info: Option<&'a stremio_core::types::resource::SeriesInfo>,
         pub library_item: Option<LibraryItem<'a>>,
         pub stream_state: Option<&'a StreamItemState>,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        pub into_outro: Option<&'a stremio_core::types::player::IntroOutro>,
         pub title: Option<String>,
         pub addon: Option<model::DescriptorPreview<'a>>,
     }
@@ -243,6 +245,7 @@ pub fn serialize_player(player: &Player, ctx: &Ctx, streaming_server: &Streaming
                 },
             }),
         stream_state: player.stream_state.as_ref(),
+        into_outro: player.intro_outro.as_ref(),
         title: player.selected.as_ref().and_then(|selected| {
             player
                 .meta_item
