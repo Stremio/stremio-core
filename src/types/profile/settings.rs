@@ -26,6 +26,7 @@ pub struct Settings {
     pub subtitles_text_color: String,
     pub subtitles_background_color: String,
     pub subtitles_outline_color: String,
+    pub subtitles_opacity: u8,
     /// Whether or not the Escape key should exists from the app when in Full screen.
     pub esc_exit_fullscreen: bool,
     /// The Seek time duration (in milliseconds) is when using the Arrow keys
@@ -69,6 +70,7 @@ impl Default for Settings {
             subtitles_text_color: "#FFFFFFFF".to_owned(),
             subtitles_background_color: "#00000000".to_owned(),
             subtitles_outline_color: "#000000".to_owned(),
+            subtitles_opacity: 100,
             esc_exit_fullscreen: true,
             seek_time_duration: 10000,
             seek_short_time_duration: 3000,
