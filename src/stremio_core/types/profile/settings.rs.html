@@ -80,6 +80,8 @@
 <a href="#78" id="78">78</a>
 <a href="#79" id="79">79</a>
 <a href="#80" id="80">80</a>
+<a href="#81" id="81">81</a>
+<a href="#82" id="82">82</a>
 </pre></div><pre class="rust"><code><span class="kw">use </span><span class="kw">crate</span>::constants::STREAMING_SERVER_URL;
 <span class="kw">use </span>chrono::{DateTime, Utc};
 <span class="kw">use </span>serde::{Deserialize, Serialize};
@@ -108,6 +110,7 @@
     <span class="kw">pub </span>subtitles_text_color: String,
     <span class="kw">pub </span>subtitles_background_color: String,
     <span class="kw">pub </span>subtitles_outline_color: String,
+    <span class="kw">pub </span>subtitles_opacity: u8,
     <span class="doccomment">/// Whether or not the Escape key should exists from the app when in Full screen.
     </span><span class="kw">pub </span>esc_exit_fullscreen: bool,
     <span class="doccomment">/// The Seek time duration (in milliseconds) is when using the Arrow keys
@@ -151,6 +154,7 @@
             subtitles_text_color: <span class="string">"#FFFFFFFF"</span>.to_owned(),
             subtitles_background_color: <span class="string">"#00000000"</span>.to_owned(),
             subtitles_outline_color: <span class="string">"#000000"</span>.to_owned(),
+            subtitles_opacity: <span class="number">100</span>,
             esc_exit_fullscreen: <span class="bool-val">true</span>,
             seek_time_duration: <span class="number">10000</span>,
             seek_short_time_duration: <span class="number">3000</span>,
