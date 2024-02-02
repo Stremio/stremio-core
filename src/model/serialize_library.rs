@@ -20,7 +20,7 @@ mod model {
         pub r#type: &'a String,
         pub poster: &'a Option<Url>,
         pub poster_shape: &'a PosterShape,
-        pub notifications: u8,
+        pub notifications: usize,
         pub progress: f64,
         pub watched: bool,
         pub deep_links: LibraryItemDeepLinks,
@@ -131,7 +131,7 @@ pub fn serialize_library<F>(
                         .notifications
                         .items
                         .get(&library_item.id)
-                        .map_or(0, |item| item.len() as u8),
+                        .map_or(0, |item| item.len()),
                     progress: library_item.progress(),
                     watched: library_item.watched(),
                     deep_links: LibraryItemDeepLinks::from((
