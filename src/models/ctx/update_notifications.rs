@@ -1,7 +1,6 @@
 use std::collections::{hash_map::Entry, HashMap};
 
-use chrono::Duration;
-use either::Either;
+use chrono::{DateTime, Duration, Utc};
 use futures::FutureExt;
 use lazysort::SortedBy;
 use once_cell::sync::Lazy;
@@ -192,8 +191,8 @@ fn update_notification_items<E: Env + 'static>(
 ) -> Effects {
     let selected_catalogs = notification_catalogs
         .iter()
-        // take any catalog while the catalog has successful result or resulted in error
-        .take_while(|catalog| {
+        // take all catalogs with successful result or error
+        .filter(|catalog| {
             matches!(
                 &catalog.content,
                 Some(Loadable::Ready(_)) | Some(Loadable::Err(_))
@@ -201,91 +200,140 @@ fn update_notification_items<E: Env + 'static>(
         })
         .collect::<Vec<_>>();
 
-    // Get next notifications ids from lastVideosIds request's extra value
-    let next_notification_ids = notification_catalogs
-        .first()
-        .map(|resource| &resource.request.path.extra)
-        .map(|extra| Either::Left(extra.iter()))
-        .unwrap_or_else(|| Either::Right(std::iter::empty()))
-        .find(|extra_value| extra_value.name == LAST_VIDEOS_IDS_EXTRA_PROP.name)
-        .map(|extra_value| Either::Left(extra_value.value.split(',')))
-        .unwrap_or_else(|| Either::Right(std::iter::empty()));
-
-    let next_notification_items = next_notification_ids.fold(HashMap::new(), |mut map, meta_id| {
-        // Get the LibraryItem from user's library
-        // Exit early if library item does not exist in the Library
-        // or we do not need to pull notifications for it
-        let library_item = match library.items.get(meta_id) {
-            Some(library_item) if library_item.should_pull_notifications() => library_item,
-            _ => return map,
-        };
-
-        // find the first occurrence of the meta item inside the catalogs
-        let meta_item = match selected_catalogs.iter().find_map(|catalog| {
-            catalog
-                .content
-                .as_ref()
-                .and_then(|content| content.ready())
-                .and_then(|content| {
-                    content
-                        .iter()
-                        .find(|meta_item| meta_item.preview.id == meta_id)
-                })
-        }) {
-            Some(meta_item) if !meta_item.videos.is_empty() => meta_item,
-            _ => return map,
-        };
-
-        let mut meta_notifs: &mut HashMap<_, _> = map.entry(meta_id.to_string()).or_default();
-
-        // meta items videos
-        meta_item
-            .videos_iter()
-            .filter_map(|video| {
-                match (&library_item.state.last_watched, video.released) {
-                    (Some(last_watched), Some(video_released)) => {
-                        if last_watched < &video_released &&
-                                    // exclude future videos (i.e. that will air in the future)
-                                    video_released <= E::now()
-                        {
-                            Some((&library_item.id, &video.id, video_released))
-                        } else {
-                            None
-                        }
-                    }
-                    _ => None,
+    // shared function to decide if a given video should be included in notifications
+    // or excluded
+    // returns the video_released DateTime extracted from the arguments if it should be retained
+    let should_retail_video_released = |last_watched: Option<&DateTime<Utc>>,
+                                        video_released: Option<&DateTime<Utc>>|
+     -> Option<DateTime<Utc>> {
+        match (last_watched, video_released) {
+            (Some(last_watched), Some(video_released)) => {
+                if last_watched < video_released &&
+                        // exclude future videos (i.e. that will air in the future)
+                        video_released <= &E::now()
+                {
+                    Some(*video_released)
+                } else {
+                    None
                 }
-            })
-            // We need to manually fold, otherwise the last seen element with a given key
-            // will be present in the final HashMap instead of the first occurrence.
-            .fold(
-                &mut meta_notifs,
-                |meta_notifs, (meta_id, video_id, video_released)| {
-                    let notif_entry = meta_notifs.entry(video_id.to_owned());
-
-                    // for now just skip same videos that already exist
-                    // leave the first one found in the Vec.
-                    if let Entry::Vacant(new) = notif_entry {
-                        let notification = NotificationItem {
-                            meta_id: meta_id.to_owned(),
-                            video_id: video_id.to_owned(),
-                            video_released,
-                        };
-
-                        new.insert(notification);
-                    }
-
-                    meta_notifs
-                },
-            );
-
-        // if not videos were added and the hashmap is empty, just remove the MetaItem record all together
-        if meta_notifs.is_empty() {
-            map.remove(meta_id);
+            }
+            // if you've never watched an episode, then we want to include new videos
+            (None, Some(video_released)) => Some(*video_released),
+            _ => None,
         }
+    };
 
-        map
-    });
+    let next_notification_items =
+        library
+            .items
+            .iter()
+            .fold(HashMap::new(), |mut map, (meta_id, library_item)| {
+                // Exit early if we don't need to pull notifications for the library item
+                if !library_item.should_pull_notifications() {
+                    return map;
+                }
+
+                // find the first occurrence of the meta item inside the catalogs
+                let meta_item = match selected_catalogs.iter().find_map(|catalog| {
+                    catalog
+                        .content
+                        .as_ref()
+                        .and_then(|content| content.ready())
+                        .and_then(|content| {
+                            content.iter().find(|meta_item| {
+                                &meta_item.preview.id == meta_id && !meta_item.videos.is_empty()
+                            })
+                        })
+                }) {
+                    Some(meta_item) => meta_item,
+                    _ => {
+                        // try to default to currently existing notifications in the bucket before returning
+                        match notification_items.get(meta_id) {
+                            Some(existing_notifications) if !existing_notifications.is_empty() => {
+                                map.insert(
+                                    meta_id.to_owned(),
+                                    existing_notifications
+                                        .iter()
+                                        .filter_map(|(video_id, notif_item)| {
+                                            // filter by the same requirements as new videos
+                                            // to remove videos that no longer match
+                                            if should_retail_video_released(
+                                                library_item.state.last_watched.as_ref(),
+                                                Some(&notif_item.video_released),
+                                            )
+                                            .is_some()
+                                            {
+                                                Some((video_id.to_owned(), notif_item.to_owned()))
+                                            } else {
+                                                None
+                                            }
+                                        })
+                                        .collect(),
+                                );
+                            }
+                            _ => {
+                                // in any other case - skip it, e.g. meta_id not found or empty notifications
+                            }
+                        }
+
+                        return map;
+                    }
+                };
+
+                let mut meta_notifs: &mut HashMap<_, _> =
+                    map.entry(meta_id.to_owned()).or_default();
+
+                // meta items videos
+                meta_item
+                    .videos_iter()
+                    .filter_map(
+                        |video| match (&library_item.state.last_watched, video.released) {
+                            (Some(last_watched), Some(video_released)) => {
+                                if should_retail_video_released(
+                                    Some(&last_watched),
+                                    Some(&video_released),
+                                )
+                                .is_some()
+                                {
+                                    Some((&library_item.id, &video.id, video_released))
+                                } else {
+                                    None
+                                }
+                            }
+                            _ => None,
+                        },
+                    )
+                    // We need to manually `fold()` instead of `collect()`,
+                    // otherwise the last seen element with a given key
+                    // will be present in the final HashMap instead of the first occurrence.
+                    .fold(
+                        &mut meta_notifs,
+                        |meta_notifs, (meta_id, video_id, video_released)| {
+                            let notif_entry = meta_notifs.entry(video_id.to_owned());
+
+                            // for now just skip same videos that already exist
+                            // leave the first one found in the Vec.
+                            if let Entry::Vacant(new) = notif_entry {
+                                let notification = NotificationItem {
+                                    meta_id: meta_id.to_owned(),
+                                    video_id: video_id.to_owned(),
+                                    video_released,
+                                };
+
+                                new.insert(notification);
+                            }
+
+                            meta_notifs
+                        },
+                    );
+
+                // if not videos were added and the hashmap is empty, just remove the MetaItem record all together
+                if meta_notifs.is_empty() {
+                    map.remove(meta_id);
+                }
+
+                map
+            });
 
     eq_update(notification_items, next_notification_items)
 }
