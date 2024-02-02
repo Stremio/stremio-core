@@ -658,18 +658,6 @@ mod test {
         );
     }
 
-    fn assert_storage_profile(profile: Value) {
-        let storage = STORAGE.read().expect("Should lock");
-
-        assert_eq!(
-            &profile.to_string(),
-            storage
-                .get(PROFILE_STORAGE_KEY)
-                .expect("Should have the schema set"),
-            "Profile should match"
-        );
-    }
-
     #[tokio::test]
     async fn test_migration_to_latest_version() {
         {
@@ -1118,7 +1106,21 @@ mod test {
             .await
             .expect("Should migrate");
 
-        assert_storage_schema_version(14);
-        assert_storage_profile(migrated_profile);
+        let storage = STORAGE.read().expect("Should lock");
+
+        assert_eq!(
+            &14.to_string(),
+            storage
+                .get(SCHEMA_VERSION_STORAGE_KEY)
+                .expect("Should have the schema set"),
+            "Scheme version should now be updated"
+        );
+        assert_eq!(
+            &migrated_profile.to_string(),
+            storage
+                .get(PROFILE_STORAGE_KEY)
+                .expect("Should have the profile set"),
+            "Profile should match"
+        );
     }
 }
