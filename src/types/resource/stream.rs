@@ -116,6 +116,10 @@ impl Stream {
                 self.magnet_url().map(|magnet_url| magnet_url.to_string())
             }
             StreamSource::Url { url } => Some(url.to_string()),
+            StreamSource::RelativeUrl { relative_url: _ } => {
+                // we cannot return a downloadable link for a third-party, dynamic addon
+                None
+            }
             StreamSource::Torrent { .. } => {
                 self.magnet_url().map(|magnet_url| magnet_url.to_string())
             }
@@ -247,6 +251,26 @@ impl Stream {
 pub enum StreamSource {
     Url {
         url: Url,
+    },
+    /// A relative url (url encoded) which will be appended to the addon transport url.
+    ///
+    /// # Examples
+    ///
+    ///
+    ///
+    /// ```
+    /// use url::Url;
+    ///
+    /// let watchhub_transport_url: Url = "https://watchhub.strem.io/manifest.json".parse().unwrap();
+    /// 
+    /// let relative_url = "/stream/movie/tt21860836.json";
+    ///
+    /// let addon_call_url: Url = "https://watchhub.strem.io/stream/movie/tt21860836.json".parse().unwrap();
+    /// assert_eq!(watchhub_transport_url.join(relative_url), addon_call_url);
+    /// ```
+    #[serde(rename_all = "camelCase")]
+    RelativeUrl {
+        relative_url: String,
     },
     #[cfg_attr(test, derivative(Default))]
     #[serde(rename_all = "camelCase")]
