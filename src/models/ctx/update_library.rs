@@ -275,6 +275,30 @@ pub fn update_library<E: Env + 'static>(
             }))
             .unchanged(),
         },
+        Msg::Internal(Internal::LibraryItemMarkAsWatched { id, is_watched }) => {
+            match library.items.get(id) {
+                Some(library_item) => {
+                    let mut library_item = library_item.to_owned();
+                    library_item.state.watched = *is_watched;
+
+                    Effects::msg(Msg::Internal(Internal::UpdateLibraryItem(library_item)))
+                        .join(Effects::msg(Msg::Event(Event::LibraryItemMarkedAsWatched {
+                            id: id.to_owned(),
+                            is_watched: *is_watched,
+                        }))
+                        .unchanged())
+                        .unchanged()
+                }
+                _ => Effects::msg(Msg::Event(Event::Error {
+                    error: CtxError::from(OtherError::LibraryItemNotFound),
+                    source: Box::new(Event::LibraryItemMarkedAsWatched {
+                        id: id.to_owned(),
+                        is_watched: *is_watched,
+                    }),
+                }))
+                .unchanged(),
+            }
+        }
         _ => Effects::none().unchanged(),
     }
 }

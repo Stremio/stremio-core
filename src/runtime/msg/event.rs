@@ -124,6 +124,10 @@ pub enum Event {
     LibraryItemNotificationsToggled {
         id: LibraryItemId,
     },
+    LibraryItemMarkedAsWatched {
+        id: LibraryItemId,
+        is_watched: bool,
+    },
     /// The notifications for the given LibraryItemId have been dismissed
     NotificationsDismissed {
         id: LibraryItemId,
