@@ -11,7 +11,7 @@ use crate::{
             eq_update, resources_update, resources_update_with_vector_content, Loadable,
             ResourceLoadable, ResourcesAction,
         },
-        ctx::Ctx,
+        ctx::{Ctx, update_library::watched_update},
     },
     runtime::{
         msg::{Action, ActionLoad, ActionMetaDetails, Internal, Msg},
@@ -531,24 +531,4 @@ fn library_item_update<E: Env + 'static>(
         _ => None,
     };
     eq_update(library_item, next_library_item)
-}
-
-fn watched_update(
-    watched: &mut Option<WatchedBitField>,
-    meta_items: &[ResourceLoadable<MetaItem>],
-    library_item: &Option<LibraryItem>,
-) -> Effects {
-    let next_watched = meta_items
-        .iter()
-        .find_map(|meta_item| match &meta_item.content {
-            Some(Loadable::Ready(meta_item)) => Some(meta_item),
-            _ => None,
-        })
-        .and_then(|meta_item| {
-            library_item
-                .as_ref()
-                .map(|library_item| (meta_item, library_item))
-        })
-        .map(|(meta_item, library_item)| library_item.state.watched_bitfield(&meta_item.videos));
-    eq_update(watched, next_watched)
 }

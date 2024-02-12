@@ -1,5 +1,7 @@
 use std::{collections::HashMap, marker::PhantomData};
 
+use stremio_watched_bitfield::WatchedBitField;
+
 use futures::{
     future::{self, Either},
     FutureExt, TryFutureExt,
@@ -10,7 +12,10 @@ use crate::{
         LIBRARY_COLLECTION_NAME, LIBRARY_RECENT_COUNT, LIBRARY_RECENT_STORAGE_KEY,
         LIBRARY_STORAGE_KEY,
     },
-    models::ctx::{CtxError, CtxStatus, OtherError},
+    models::{
+        common::{Loadable, ResourceLoadable, eq_update},
+        ctx::{CtxError, CtxStatus, OtherError}
+},
     runtime::{
         msg::{Action, ActionCtx, CtxAuthResponse, Event, Internal, Msg},
         Effect, EffectFuture, Effects, Env, EnvFutureExt,
@@ -21,6 +26,7 @@ use crate::{
             LibraryItemsResponse, SuccessResponse,
         },
         library::{LibraryBucket, LibraryBucketRef, LibraryItem},
+        resource::MetaItem,
         profile::{AuthKey, Profile},
     },
 };
@@ -279,7 +285,10 @@ pub fn update_library<E: Env + 'static>(
             match library.items.get(id) {
                 Some(library_item) => {
                     let mut library_item = library_item.to_owned();
-                    library_item.state.watched = *is_watched;
+                    // println!("{:?}", library_item);
+
+                    // watched is a Option<WatchedField> ? how do i change it to true / false
+                    // library_item.state.watched = *is_watched;
 
                     Effects::msg(Msg::Internal(Internal::UpdateLibraryItem(library_item)))
                         .join(Effects::msg(Msg::Event(Event::LibraryItemMarkedAsWatched {
@@ -486,4 +495,24 @@ fn plan_sync_with_api<E: Env + 'static>(library: &LibraryBucket, auth_key: &Auth
             .boxed_env(),
     )
     .into()
+}
+
+pub fn watched_update(
+    watched: &mut Option<WatchedBitField>,
+    meta_items: &[ResourceLoadable<MetaItem>],
+    library_item: &Option<LibraryItem>,
+) -> Effects {
+    let next_watched = meta_items
+        .iter()
+        .find_map(|meta_item| match &meta_item.content {
+            Some(Loadable::Ready(meta_item)) => Some(meta_item),
+            _ => None,
+        })
+        .and_then(|meta_item| {
+            library_item
+                .as_ref()
+                .map(|library_item| (meta_item, library_item))
+        })
+        .map(|(meta_item, library_item)| library_item.state.watched_bitfield(&meta_item.videos));
+    eq_update(watched, next_watched)
 }
