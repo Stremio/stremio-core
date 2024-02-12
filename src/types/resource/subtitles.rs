@@ -1,6 +1,7 @@
 #[cfg(test)]
 use derivative::Derivative;
 use serde::{Deserialize, Serialize};
+use url::{ParseError, Url};
 
 use super::UrlExtended;
 
@@ -16,4 +17,16 @@ pub struct Subtitles {
         ))
     )]
     pub url: UrlExtended,
+}
+
+impl Subtitles {
+    /// This method will replace the relative path with absolute one using the provided addon transport URL,
+    /// only if the url is [`UrlExtended::RelativePath`].
+    ///
+    /// Otherwise, it leaves the [`Subtitles`] unchanged.
+    pub fn with_addon_url(&mut self, addon_transport_url: &Url) -> Result<(), ParseError> {
+        self.url.with_addon_url(addon_transport_url)?;
+
+        Ok(())
+    }
 }

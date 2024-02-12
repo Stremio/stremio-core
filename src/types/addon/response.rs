@@ -115,7 +115,7 @@ impl ResourceResponse {
                 .collect(),
             ResourceResponse::Subtitles { subtitles } => subtitles
                 .iter_mut()
-                .filter_map(|subtitle| subtitle.url.with_addon_url(&addon_transport_url).ok())
+                .filter_map(|subtitle| subtitle.with_addon_url(&addon_transport_url).ok())
                 .collect(),
             ResourceResponse::Addons { .. } => {
                 // for addons - do nothing
