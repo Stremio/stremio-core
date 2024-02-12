@@ -60,11 +60,23 @@ pub enum Sort {
     TimesWatched,
 }
 
+#[derive(Derivative, Clone, PartialEq, Eq, EnumIter, Serialize, Deserialize, Debug)]
+#[derivative(Default)]
+#[serde(rename_all = "lowercase")]
+pub enum StateFilter {
+    #[derivative(Default)]
+    NotWatched,
+    Watched,
+    Any,
+}
+
 #[derive(Clone, PartialEq, Eq, Serialize, Deserialize, Debug)]
 pub struct LibraryRequest {
     pub r#type: Option<String>,
     #[serde(default)]
     pub sort: Sort,
+    #[serde(default)]
+    pub stateFilter: StateFilter,
     #[serde(default)]
     pub page: LibraryRequestPage,
 }
@@ -98,6 +110,13 @@ pub struct SelectableSort {
 }
 
 #[derive(Clone, PartialEq, Eq, Serialize, Debug)]
+pub struct SelectableStateFilter {
+    pub stateFilter: StateFilter,
+    pub selected: bool,
+    pub request: LibraryRequest,
+}
+
+#[derive(Clone, PartialEq, Eq, Serialize, Debug)]
 pub struct SelectablePage {
     pub request: LibraryRequest,
 }
@@ -106,6 +125,7 @@ pub struct SelectablePage {
 pub struct Selectable {
     pub types: Vec<SelectableType>,
     pub sorts: Vec<SelectableSort>,
+    pub stateFilters: Vec<SelectableStateFilter>,
     pub prev_page: Option<SelectablePage>,
     pub next_page: Option<SelectablePage>,
 }
@@ -219,6 +239,10 @@ fn selectable_update<F: LibraryFilter>(
                     .as_ref()
                     .map(|selected| selected.request.sort.to_owned())
                     .unwrap_or_default(),
+                stateFilter: selected
+                    .as_ref()
+                    .map(|selected| selected.request.stateFilter.to_owned())
+                    .unwrap_or_default(),
                 page: LibraryRequestPage::default(),
             },
             selected: selected
@@ -233,6 +257,10 @@ fn selectable_update<F: LibraryFilter>(
             sort: selected
                 .as_ref()
                 .map(|selected| selected.request.sort.to_owned())
+                .unwrap_or_default(),
+            stateFilter: selected
+                .as_ref()
+                .map(|selected| selected.request.stateFilter.to_owned())
                 .unwrap_or_default(),
             page: LibraryRequestPage::default(),
         },
@@ -251,11 +279,35 @@ fn selectable_update<F: LibraryFilter>(
                     .as_ref()
                     .and_then(|selected| selected.request.r#type.to_owned()),
                 sort: sort.to_owned(),
+                stateFilter: selected
+                    .as_ref()
+                    .map(|selected| selected.request.stateFilter.to_owned())
+                    .unwrap_or_default(),
                 page: LibraryRequestPage::default(),
             },
             selected: selected
                 .as_ref()
                 .map(|selected| selected.request.sort == sort)
+                .unwrap_or_default(),
+        })
+        .collect();
+    let selectable_filters = StateFilter::iter()
+        .map(|stateFilter| SelectableStateFilter {
+            stateFilter: stateFilter.to_owned(),
+            request: LibraryRequest {
+                r#type: selected
+                    .as_ref()
+                    .and_then(|selected| selected.request.r#type.to_owned()),
+                sort: selected
+                    .as_ref()
+                    .map(|selected| selected.request.sort.to_owned())
+                    .unwrap_or_default(),
+                stateFilter: stateFilter.to_owned(),
+                page: LibraryRequestPage::default(),
+            },
+            selected: selected
+                .as_ref()
+                .map(|selected| selected.request.stateFilter == stateFilter)
                 .unwrap_or_default(),
         })
         .collect();
@@ -295,6 +347,7 @@ fn selectable_update<F: LibraryFilter>(
     let next_selectable = Selectable {
         types: selectable_types,
         sorts: selectable_sorts,
+        stateFilters: selectable_filters,
         prev_page,
         next_page,
     };
@@ -315,6 +368,11 @@ fn catalog_update<F: LibraryFilter>(
             .filter(|library_item| match &selected.request.r#type {
                 Some(r#type) => library_item.r#type == *r#type,
                 None => true,
+            })          
+            .filter(|library_item| match &selected.request.stateFilter {
+                StateFilter::NotWatched => !library_item.watched(),
+                StateFilter::Watched => library_item.watched(),
+                StateFilter::Any => true,
             })
             .sorted_by(|a, b| match &selected.request.sort {
                 Sort::LastWatched => b.state.last_watched.cmp(&a.state.last_watched),

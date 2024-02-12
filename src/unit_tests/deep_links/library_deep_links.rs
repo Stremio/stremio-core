@@ -1,5 +1,5 @@
 use crate::deep_links::LibraryDeepLinks;
-use crate::models::library_with_filters::{LibraryRequest, Sort};
+use crate::models::library_with_filters::{LibraryRequest, Sort, StateFilter};
 use std::convert::TryFrom;
 
 #[test]
@@ -15,6 +15,7 @@ fn library_deep_links_request_type() {
     let request = LibraryRequest {
         r#type: Some("movie".to_string()),
         sort: Sort::LastWatched,
+        stateFilter: StateFilter::NotWatched,
         page: Default::default(),
     };
     let ldl = LibraryDeepLinks::try_from((&root, &request)).unwrap();
@@ -30,6 +31,7 @@ fn library_deep_links_request_no_type() {
     let request = LibraryRequest {
         r#type: None,
         sort: Sort::LastWatched,
+        stateFilter: StateFilter::NotWatched,
         page: Default::default(),
     };
     let ldl = LibraryDeepLinks::try_from((&root, &request)).unwrap();

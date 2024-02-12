@@ -527,6 +527,13 @@ impl From<(&String, &LibraryRequest)> for LibraryDeepLinks {
                                 .as_str()
                                 .unwrap()
                         ),
+                        (
+                            "stateFilter",
+                            serde_json::to_value(&request.stateFilter)
+                                .unwrap()
+                                .as_str()
+                                .unwrap()
+                        ),
                         ("page", &request.page.to_string())
                     ]),
                 ),
@@ -537,6 +544,13 @@ impl From<(&String, &LibraryRequest)> for LibraryDeepLinks {
                         (
                             "sort",
                             serde_json::to_value(&request.sort)
+                                .unwrap()
+                                .as_str()
+                                .unwrap()
+                        ),
+                        (
+                            "stateFilter",
+                            serde_json::to_value(&request.stateFilter)
                                 .unwrap()
                                 .as_str()
                                 .unwrap()
