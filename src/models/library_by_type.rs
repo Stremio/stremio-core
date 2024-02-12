@@ -1,7 +1,7 @@
 use crate::constants::{CATALOG_PAGE_SIZE, TYPE_PRIORITIES};
 use crate::models::common::{compare_with_priorities, eq_update};
 use crate::models::ctx::Ctx;
-use crate::models::library_with_filters::{LibraryFilter, Sort, StateFilter};
+use crate::models::library_with_filters::{LibraryFilter, Sort, Watched};
 use crate::runtime::msg::{Action, ActionLibraryByType, ActionLoad, Internal, Msg};
 use crate::runtime::{Effects, Env, UpdateWithCtx};
 use crate::types::library::{LibraryBucket, LibraryItem};
@@ -18,7 +18,7 @@ pub struct Selected {
     #[serde(default)]
     pub sort: Sort,
     #[serde(default)]
-    pub stateFilter: StateFilter,
+    pub watched: Watched,
 }
 
 #[derive(Clone, PartialEq, Eq, Serialize, Debug)]
@@ -29,8 +29,8 @@ pub struct SelectableSort {
 
 
 #[derive(Clone, PartialEq, Eq, Serialize, Debug)]
-pub struct SelectableStateFilter {
-    pub stateFilter: StateFilter,
+pub struct SelectableWatched {
+    pub watched: Watched,
     pub selected: bool,
 }
 
@@ -38,7 +38,7 @@ pub struct SelectableStateFilter {
 #[derive(Default, Clone, PartialEq, Eq, Serialize, Debug)]
 pub struct Selectable {
     pub sorts: Vec<SelectableSort>,
-    pub stateFilters: Vec<SelectableStateFilter>,
+    pub watcheds: Vec<SelectableWatched>,
 }
 
 pub type CatalogPage = Vec<LibraryItem>;
@@ -142,18 +142,18 @@ fn selectable_update(selectable: &mut Selectable, selected: &Option<Selected>) -
                 .unwrap_or_default(),
         })
         .collect();
-    let selectable_stateFilters = StateFilter::iter()
-        .map(|stateFilter| SelectableStateFilter {
-            stateFilter: stateFilter.to_owned(),
+    let selectable_watcheds = Watched::iter()
+        .map(|watched| SelectableWatched {
+            watched: watched.to_owned(),
             selected: selected
                 .as_ref()
-                .map(|selected| selected.stateFilter == stateFilter)
+                .map(|selected| selected.watched == watched)
                 .unwrap_or_default(),
         })
         .collect();
     let next_selectable = Selectable {
         sorts: selectable_sorts,
-        stateFilters: selectable_stateFilters,
+        watcheds: selectable_watcheds,
     };
     eq_update(selectable, next_selectable)
 }
@@ -204,10 +204,10 @@ fn catalogs_update<F: LibraryFilter>(
                     .unwrap_or(CATALOG_PAGE_SIZE);
                 library_items
                     .into_iter()
-                    .filter(|library_item| match &selected.stateFilter {
-                        StateFilter::NotWatched => !library_item.watched(),
-                        StateFilter::Watched => library_item.watched(),
-                        StateFilter::Any => true,
+                    .filter(|library_item| match &selected.watched {
+                        Watched::NotWatched => !library_item.watched(),
+                        Watched::Watched => library_item.watched(),
+                        Watched::Any => true,
                     })
                     .sorted_by(|a, b| match &selected.sort {
                         Sort::LastWatched => b.state.last_watched.cmp(&a.state.last_watched),
@@ -239,10 +239,10 @@ fn next_page<F: LibraryFilter>(
             .values()
             .filter(|library_item| F::predicate(library_item, notifications))
             .filter(|library_item: &&LibraryItem| library_item.r#type == *r#type)
-            .filter(|library_item| match &selected.stateFilter {
-                StateFilter::NotWatched => !library_item.watched(),
-                StateFilter::Watched => library_item.watched(),
-                StateFilter::Any => true,
+            .filter(|library_item| match &selected.watched {
+                Watched::NotWatched => !library_item.watched(),
+                Watched::Watched => library_item.watched(),
+                Watched::Any => true,
             })
             .sorted_by(|a, b| match &selected.sort {
                 Sort::LastWatched => b.state.last_watched.cmp(&a.state.last_watched),

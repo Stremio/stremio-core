@@ -9,7 +9,7 @@ use url::Url;
 
 use crate::{
     runtime::Env,
-    types::resource::{MetaItemBehaviorHints, MetaItemPreview, PosterShape, Video},
+    types::{notifications, resource::{MetaItemBehaviorHints, MetaItemPreview, PosterShape, Video}},
 };
 
 pub type LibraryItemId = String;
