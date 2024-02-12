@@ -80,8 +80,8 @@ impl<E: Env + 'static> UpdateWithCtx<E> for MetaDetails {
                 );
                 let watched_effects =
                     watched_update(&mut self.watched, &self.meta_items, &self.library_item);
-                let libraty_item_sync_effects = library_item_sync(&self.library_item, &ctx.profile);
-                libraty_item_sync_effects
+                let library_item_sync_effects = library_item_sync(&self.library_item, &ctx.profile);
+                library_item_sync_effects
                     .join(selected_effects)
                     .join(selected_override_effects)
                     .join(meta_items_effects)

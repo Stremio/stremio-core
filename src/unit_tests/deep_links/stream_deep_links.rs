@@ -2,7 +2,9 @@ use crate::constants::{BASE64, URI_COMPONENT_ENCODE_SET};
 use crate::deep_links::StreamDeepLinks;
 use crate::types::addon::{ResourcePath, ResourceRequest};
 use crate::types::profile::Settings;
-use crate::types::resource::{Stream, StreamBehaviorHints, StreamProxyHeaders, StreamSource};
+use crate::types::resource::{
+    Stream, StreamBehaviorHints, StreamProxyHeaders, StreamSource, UrlExtended,
+};
 use base64::Engine;
 use percent_encoding::utf8_percent_encode;
 use std::collections::HashMap;
@@ -21,7 +23,7 @@ const YT_ID: &str = "aqz-KE-bpKQ";
 fn stream_deep_links_magnet() {
     let stream = Stream {
         source: StreamSource::Url {
-            url: Url::from_str(MAGNET_STR_URL).unwrap(),
+            url: UrlExtended::Url(MAGNET_STR_URL.parse().unwrap()),
         },
         name: None,
         description: None,
@@ -44,7 +46,7 @@ fn stream_deep_links_magnet() {
 fn stream_deep_links_http() {
     let stream = Stream {
         source: StreamSource::Url {
-            url: Url::from_str(HTTP_STR_URL).unwrap(),
+            url: UrlExtended::Url(HTTP_STR_URL.parse().unwrap()),
         },
         name: None,
         description: None,
@@ -75,7 +77,7 @@ fn stream_deep_links_http() {
 fn stream_deep_links_http_with_request_headers() {
     let stream = Stream {
         source: StreamSource::Url {
-            url: Url::from_str(HTTP_STR_URL).unwrap(),
+            url: UrlExtended::Url(HTTP_STR_URL.parse().unwrap()),
         },
         name: None,
         description: None,
@@ -110,7 +112,7 @@ fn stream_deep_links_http_with_request_headers() {
 fn stream_deep_links_http_with_request_response_headers_and_query_params() {
     let stream = Stream {
         source: StreamSource::Url {
-            url: Url::from_str(HTTP_WITH_QUERY_STR_URL).unwrap(),
+            url: UrlExtended::Url(HTTP_WITH_QUERY_STR_URL.parse().unwrap()),
         },
         name: None,
         description: None,

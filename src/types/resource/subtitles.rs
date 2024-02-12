@@ -1,7 +1,8 @@
 #[cfg(test)]
 use derivative::Derivative;
 use serde::{Deserialize, Serialize};
-use url::Url;
+
+use super::UrlExtended;
 
 #[derive(Clone, PartialEq, Eq, Serialize, Deserialize, Debug)]
 #[cfg_attr(test, derive(Derivative))]
@@ -10,7 +11,7 @@ pub struct Subtitles {
     pub lang: String,
     #[cfg_attr(
         test,
-        derivative(Default(value = "Url::parse(\"protocol://host\").unwrap()"))
+        derivative(Default(value = "UrlExtended::Url(url::Url::parse(\"protocol://host\").unwrap())"))
     )]
-    pub url: Url,
+    pub url: UrlExtended,
 }

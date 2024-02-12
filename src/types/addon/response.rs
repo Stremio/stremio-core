@@ -1,6 +1,8 @@
 use derive_more::TryInto;
+use itertools::Itertools;
 use serde::{de::Deserializer, Deserialize, Serialize};
 use serde_with::{serde_as, VecSkipError};
+use url::Url;
 
 use crate::types::{
     addon::DescriptorPreview,
@@ -34,6 +36,97 @@ pub enum ResourceResponse {
     Addons {
         addons: Vec<DescriptorPreview>,
     },
+}
+
+impl ResourceResponse {
+    /// Convert any relative path in `Stream.source` with absolute url using the provided addon's transport url
+    pub fn convert_relative_paths(&mut self, addon_transport_url: Url) {
+        match self {
+            ResourceResponse::Metas { ref mut metas } => {
+                metas
+                    .iter_mut()
+                    .map(|meta_item_preview| {
+                        meta_item_preview
+                            .trailer_streams
+                            .iter_mut()
+                            .filter_map(|stream| stream.with_addon_url(&addon_transport_url).ok())
+                        // .collect::<Result<_, _>>()
+                    })
+                    .flatten()
+                    .collect()
+            }
+            ResourceResponse::MetasDetailed {
+                ref mut metas_detailed,
+            } => {
+                metas_detailed
+                    .iter_mut()
+                    .map(|meta_item| {
+                        // MetaItem videos
+                        meta_item
+                            .videos
+                            .iter_mut()
+                            .map(|video| {
+                                // MetaItem video streams
+                                video
+                                    .streams
+                                    .iter_mut()
+                                    .filter_map(|stream| {
+                                        stream.with_addon_url(&addon_transport_url).ok()
+                                    })
+                                    .chain(
+                                        // MetaItem videos' trailer streams
+                                        video.trailer_streams.iter_mut().filter_map(|stream| {
+                                            stream.with_addon_url(&addon_transport_url).ok()
+                                        }),
+                                    )
+                            })
+                            .flatten()
+                            // Trailer Streams of the MetaItemPreview
+                            .chain(meta_item.preview.trailer_streams.iter_mut().filter_map(
+                                |stream| stream.with_addon_url(&addon_transport_url).ok(),
+                            ))
+                    })
+                    .flatten()
+                    .collect()
+            }
+            ResourceResponse::Meta { meta } => meta
+                .videos
+                .iter_mut()
+                .map(|video| {
+                    // MetaItem video streams
+                    video
+                        .streams
+                        .iter_mut()
+                        .filter_map(|stream| stream.with_addon_url(&addon_transport_url).ok())
+                        .chain(
+                            // MetaItem videos' trailer streams
+                            video.trailer_streams.iter_mut().filter_map(|stream| {
+                                stream.with_addon_url(&addon_transport_url).ok()
+                            }),
+                        )
+                })
+                .flatten()
+                // Trailer Streams of the MetaItemPreview
+                .chain(
+                    meta.preview
+                        .trailer_streams
+                        .iter_mut()
+                        .filter_map(|stream| stream.with_addon_url(&addon_transport_url).ok()),
+                )
+                .collect(),
+            ResourceResponse::Streams { streams } => streams
+                .iter_mut()
+                .filter_map(|stream| stream.with_addon_url(&addon_transport_url).ok())
+                .collect(),
+            ResourceResponse::Subtitles { subtitles } => subtitles
+                .iter_mut()
+                .filter_map(|subtitle| subtitle.url.with_addon_url(&addon_transport_url).ok())
+                .collect(),
+            ResourceResponse::Addons { addons } => {
+                // for addons - do nothing
+            },
+        }
+    }
 }
 
 #[serde_as]
@@ -93,6 +186,132 @@ impl<'de> Deserialize<'de> for ResourceResponse {
             Err(serde::de::Error::custom(
                 "Cannot deserialize as ResourceResponse",
             ))
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use once_cell::sync::Lazy;
+    use url::Url;
+
+    use crate::types::resource::{
+        MetaItem, MetaItemPreview, Stream, StreamBehaviorHints, StreamSource, UrlExtended, Video,
+    };
+
+    use super::ResourceResponse;
+
+    pub static ADDON_TRANSPORT_URL: Lazy<Url> =
+        Lazy::new(|| "https://example-addon.com/manifest.json".parse().unwrap());
+
+    #[test]
+    fn replace_relative_path_for_meta() {
+        let relative_stream = Stream {
+            source: StreamSource::Url {
+                url: UrlExtended::RelativePath("/stream/path/tt123456.json".into()),
+            },
+            name: None,
+            description: None,
+            thumbnail: None,
+            subtitles: vec![],
+            behavior_hints: StreamBehaviorHints::default(),
+        };
+
+        let relative_video_trailer_stream = Stream {
+            source: StreamSource::Url {
+                url: UrlExtended::RelativePath("/stream/video/trailer/path/tt123456:1.json".into()),
+            },
+            name: None,
+            description: None,
+            thumbnail: None,
+            subtitles: vec![],
+            behavior_hints: StreamBehaviorHints::default(),
+        };
+
+        let relative_trailer_stream = Stream {
+            source: StreamSource::Url {
+                url: UrlExtended::RelativePath("/stream/trailer/path/tt123456.json".into()),
+            },
+            name: None,
+            description: None,
+            thumbnail: None,
+            subtitles: vec![],
+            behavior_hints: StreamBehaviorHints::default(),
+        };
+
+        let relative_meta_preview = {
+            let mut preview = MetaItemPreview::default();
+            preview
+                .trailer_streams
+                .push(relative_trailer_stream.clone());
+            preview
+        };
+
+        let relative_video_stream = {
+            let mut video = Video::default();
+            video
+                .trailer_streams
+                .push(relative_video_trailer_stream.clone());
+
+            video.streams.push(relative_stream.clone());
+            video
+        };
+
+        // Meta response with relative path
+        {
+            let mut resource_response = ResourceResponse::Meta {
+                meta: MetaItem {
+                    preview: relative_meta_preview.clone(),
+                    videos: vec![relative_video_stream.clone()],
+                },
+            };
+
+            resource_response.convert_relative_paths(ADDON_TRANSPORT_URL.clone());
+
+            let meta = match resource_response {
+                ResourceResponse::Meta { meta } => meta,
+                _ => unreachable!(),
+            };
+            // Meta trailer stream
+            assert_eq!(
+                "https://example-addon.com/stream/trailer/path/tt123456.json",
+                &meta
+                    .preview
+                    .trailer_streams
+                    .first()
+                    .unwrap()
+                    .download_url()
+                    .unwrap()
+            );
+
+            // Video stream
+            assert_eq!(
+                "https://example-addon.com/stream/path/tt123456.json",
+                &meta
+                    .videos
+                    .first()
+                    .unwrap()
+                    .streams
+                    .first()
+                    .unwrap()
+                    .download_url()
+                    .unwrap()
+            );
+
+            // Video trailer stream
+
+            assert_eq!(
+                "https://example-addon.com/stream/video/trailer/path/tt123456:1.json",
+                &meta
+                    .videos
+                    .first()
+                    .unwrap()
+                    .trailer_streams
+                    .first()
+                    .unwrap()
+                    .download_url()
+                    .unwrap()
+            );
         }
     }
 }

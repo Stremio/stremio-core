@@ -1,7 +1,7 @@
 use crate::constants::{BASE64, URI_COMPONENT_ENCODE_SET};
 use crate::deep_links::ExternalPlayerLink;
 use crate::types::profile::Settings;
-use crate::types::resource::{Stream, StreamSource};
+use crate::types::resource::{Stream, StreamSource, UrlExtended};
 use base64::Engine;
 use percent_encoding::utf8_percent_encode;
 use std::convert::TryFrom;
@@ -17,7 +17,7 @@ const STREAMING_SERVER_URL: &str = "http://127.0.0.1:11470";
 fn external_player_link_magnet() {
     let stream = Stream {
         source: StreamSource::Url {
-            url: Url::from_str(MAGNET_STR_URL).unwrap(),
+            url: MAGNET_STR_URL.parse().unwrap(),
         },
         name: None,
         description: None,
@@ -36,7 +36,7 @@ fn external_player_link_magnet() {
 fn external_player_link_http() {
     let stream = Stream {
         source: StreamSource::Url {
-            url: Url::from_str(HTTP_STR_URL).unwrap(),
+            url: UrlExtended::Url(Url::from_str(HTTP_STR_URL).unwrap()),
         },
         name: None,
         description: None,

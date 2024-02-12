@@ -36,7 +36,7 @@ use crate::{
         profile::Profile,
         resource::{
             MetaItem, MetaItemId, MetaItemPreview, PosterShape, SeriesInfo, Stream, StreamSource,
-            Video, VideoId,
+            UrlExtended, Video, VideoId,
         },
         search_history::SearchHistoryBucket,
         streams::StreamsBucket,
@@ -90,7 +90,7 @@ fn test_pull_notifications_and_play_in_player() {
             addon_catalogs: vec![],
             behavior_hints: Default::default(),
         },
-        transport_url: Url::parse("https://addon_1.com/manifest.json").unwrap(),
+        transport_url: "https://addon_1.com/manifest.json".parse().unwrap(),
         flags: Default::default(),
     });
 
@@ -294,7 +294,7 @@ fn test_pull_notifications_and_play_in_player() {
             action: Action::Load(ActionLoad::Player(Box::new(PlayerSelected {
                 stream: Stream {
                     source: StreamSource::Url {
-                        url: Url::parse("https://example.com/stream.mp4").unwrap(),
+                        url: UrlExtended::Url("https://example.com/stream.mp4".parse().unwrap()),
                     },
                     name: None,
                     description: None,
