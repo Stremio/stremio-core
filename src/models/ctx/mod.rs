@@ -1,7 +1,7 @@
 mod update_events;
 use update_events::*;
 
-pub mod update_library;
+mod update_library;
 use update_library::*;
 
 mod update_notifications;
