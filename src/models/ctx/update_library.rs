@@ -279,24 +279,17 @@ pub fn update_library<E: Env + 'static>(
             match library.items.get(id) {
                 Some(library_item) => {
                     let mut library_item = library_item.to_owned();
-                    library_item.state.watched = *is_watched;
+                    library_item.state.times_watched = match *is_watched {
+                        true => library_item.state.times_watched + 1,
+                        false => 0,
+                    };
+                    // update the last_watched for the LibraryItem
+                    library_item.state.last_watched = Some(E::now());
 
                     Effects::msg(Msg::Internal(Internal::UpdateLibraryItem(library_item)))
-                        .join(Effects::msg(Msg::Event(Event::LibraryItemMarkedAsWatched {
-                            id: id.to_owned(),
-                            is_watched: *is_watched,
-                        }))
-                        .unchanged())
                         .unchanged()
                 }
-                _ => Effects::msg(Msg::Event(Event::Error {
-                    error: CtxError::from(OtherError::LibraryItemNotFound),
-                    source: Box::new(Event::LibraryItemMarkedAsWatched {
-                        id: id.to_owned(),
-                        is_watched: *is_watched,
-                    }),
-                }))
-                .unchanged(),
+                _ => Effects::none().unchanged(),
             }
         }
         _ => Effects::none().unchanged(),
