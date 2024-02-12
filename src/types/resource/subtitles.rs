@@ -11,7 +11,9 @@ pub struct Subtitles {
     pub lang: String,
     #[cfg_attr(
         test,
-        derivative(Default(value = "UrlExtended::Url(url::Url::parse(\"protocol://host\").unwrap())"))
+        derivative(Default(
+            value = "UrlExtended::Url(url::Url::parse(\"protocol://host\").unwrap())"
+        ))
     )]
     pub url: UrlExtended,
 }

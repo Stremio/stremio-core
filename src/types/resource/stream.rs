@@ -52,12 +52,9 @@ impl UrlExtended {
     ///
     /// Otherwise, it leaves the [`UrlExtended`] unchanged.
     pub fn with_addon_url(&mut self, addon_transport_url: &Url) -> Result<(), ParseError> {
-        match &self {
-            UrlExtended::RelativePath(path) => {
-                *self = UrlExtended::Url(addon_transport_url.join(&path)?);
-            }
-            _ => {}
-        };
+        if let UrlExtended::RelativePath(path) = &self {
+            *self = UrlExtended::Url(addon_transport_url.join(path)?);
+        }
 
         Ok(())
     }

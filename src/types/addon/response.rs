@@ -1,5 +1,4 @@
 use derive_more::TryInto;
-use itertools::Itertools;
 use serde::{de::Deserializer, Deserialize, Serialize};
 use serde_with::{serde_as, VecSkipError};
 use url::Url;
@@ -45,14 +44,13 @@ impl ResourceResponse {
             ResourceResponse::Metas { ref mut metas } => {
                 metas
                     .iter_mut()
-                    .map(|meta_item_preview| {
+                    .flat_map(|meta_item_preview| {
                         meta_item_preview
                             .trailer_streams
                             .iter_mut()
                             .filter_map(|stream| stream.with_addon_url(&addon_transport_url).ok())
                         // .collect::<Result<_, _>>()
                     })
-                    .flatten()
                     .collect()
             }
             ResourceResponse::MetasDetailed {
@@ -60,12 +58,12 @@ impl ResourceResponse {
             } => {
                 metas_detailed
                     .iter_mut()
-                    .map(|meta_item| {
+                    .flat_map(|meta_item| {
                         // MetaItem videos
                         meta_item
                             .videos
                             .iter_mut()
-                            .map(|video| {
+                            .flat_map(|video| {
                                 // MetaItem video streams
                                 video
                                     .streams
@@ -80,19 +78,17 @@ impl ResourceResponse {
                                         }),
                                     )
                             })
-                            .flatten()
                             // Trailer Streams of the MetaItemPreview
                             .chain(meta_item.preview.trailer_streams.iter_mut().filter_map(
                                 |stream| stream.with_addon_url(&addon_transport_url).ok(),
                             ))
                     })
-                    .flatten()
                     .collect()
             }
             ResourceResponse::Meta { meta } => meta
                 .videos
                 .iter_mut()
-                .map(|video| {
+                .flat_map(|video| {
                     // MetaItem video streams
                     video
                         .streams
@@ -105,7 +101,6 @@ impl ResourceResponse {
                             }),
                         )
                 })
-                .flatten()
                 // Trailer Streams of the MetaItemPreview
                 .chain(
                     meta.preview
@@ -122,9 +117,9 @@ impl ResourceResponse {
                 .iter_mut()
                 .filter_map(|subtitle| subtitle.url.with_addon_url(&addon_transport_url).ok())
                 .collect(),
-            ResourceResponse::Addons { addons } => {
+            ResourceResponse::Addons { .. } => {
                 // for addons - do nothing
-            },
+            }
         }
     }
 }
