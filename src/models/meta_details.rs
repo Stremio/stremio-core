@@ -122,9 +122,6 @@ impl<E: Env + 'static> UpdateWithCtx<E> for MetaDetails {
                             id: library_item.id.clone(),
                             is_watched: *is_watched,
                         }))
-                        .join(Effects::msg(Msg::Internal(Internal::UpdateLibraryItem(
-                            library_item,
-                        ))))
                         .unchanged()
                     }
                     _ => Effects::none().unchanged(),
