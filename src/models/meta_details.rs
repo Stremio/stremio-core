@@ -143,6 +143,8 @@ impl<E: Env + 'static> UpdateWithCtx<E> for MetaDetails {
                                 (last_watched, _) => last_watched.to_owned(),
                             };
                     }
+                    Effects::msg(Msg::Internal(Internal::LibraryItemMarkAsWatched {id: video.id.clone(), is_watched: (*is_watched) }))
+                        .unchanged();
                     Effects::msg(Msg::Internal(Internal::UpdateLibraryItem(library_item)))
                         .unchanged()
                 }
