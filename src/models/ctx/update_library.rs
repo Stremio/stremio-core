@@ -143,6 +143,10 @@ pub fn update_library<E: Env + 'static>(
             }))
             .unchanged(),
         },
+        Msg::Action(Action::Ctx(ActionCtx::LibraryItemMarkAsWatched { id, is_watched })) => {
+            Effects::msg(Msg::Internal(Internal::LibraryItemMarkAsWatched { id: id.clone(), is_watched: *is_watched }))
+                .unchanged()
+        },
         Msg::Internal(Internal::UpdateLibraryItem(library_item))
             if library
                 .items
@@ -279,16 +283,14 @@ pub fn update_library<E: Env + 'static>(
             match library.items.get(id) {
                 Some(library_item) => {
                     let mut library_item = library_item.to_owned();
-                    library_item.state.times_watched = match *is_watched {
-                        true => library_item.state.times_watched + 1,
-                        false => 0,
-                    };
-                    // update the last_watched for the LibraryItem
-                    library_item.state.last_watched = Some(E::now());
+                    if *is_watched {
+                        library_item.state.last_watched = Some(E::now());
+                    } else {
+                        library_item.state.times_watched = 0;
+                    }
 
                     Effects::msg(Msg::Internal(Internal::UpdateLibraryItem(library_item)))
-                        .join(Effects::msg(Msg::Action(Action::Ctx(ActionCtx::LibraryItemMarkAsWatched(id.to_string(), *is_watched)))))
-                            .unchanged()
+                        .unchanged()
                 }
                 _ => Effects::none().unchanged(),
             }
