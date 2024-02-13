@@ -144,8 +144,14 @@ pub fn update_library<E: Env + 'static>(
             .unchanged(),
         },
         Msg::Action(Action::Ctx(ActionCtx::LibraryItemMarkAsWatched { id, is_watched })) => {
-            Effects::msg(Msg::Internal(Internal::LibraryItemMarkAsWatched { id: id.clone(), is_watched: *is_watched }))
-                .unchanged()
+            match library.items.get(id) {
+                Some(library_item) => {
+                    Effects::msg(Msg::Internal(Internal::LibraryItemMarkAsWatched { id: library_item.id.clone(), is_watched: *is_watched }))
+                        .unchanged()
+                }
+                _ => Effects::none().unchanged(),
+                
+            }
         },
         Msg::Internal(Internal::UpdateLibraryItem(library_item))
             if library
