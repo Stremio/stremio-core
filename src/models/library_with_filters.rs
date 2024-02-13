@@ -63,7 +63,7 @@ pub enum Sort {
 #[derive(Derivative, Clone, PartialEq, Eq, EnumIter, Serialize, Deserialize, Debug)]
 #[derivative(Default)]
 #[serde(rename_all = "lowercase")]
-pub enum Watched {
+pub enum Filter {
     #[derivative(Default)]
     NotWatched,
     Watched,
@@ -76,7 +76,7 @@ pub struct LibraryRequest {
     #[serde(default)]
     pub sort: Sort,
     #[serde(default)]
-    pub watched: Watched,
+    pub filter: Filter,
     #[serde(default)]
     pub page: LibraryRequestPage,
 }
@@ -110,8 +110,8 @@ pub struct SelectableSort {
 }
 
 #[derive(Clone, PartialEq, Eq, Serialize, Debug)]
-pub struct SelectableWatched {
-    pub watched: Watched,
+pub struct SelectableFilter {
+    pub filter: Filter,
     pub selected: bool,
     pub request: LibraryRequest,
 }
@@ -125,7 +125,7 @@ pub struct SelectablePage {
 pub struct Selectable {
     pub types: Vec<SelectableType>,
     pub sorts: Vec<SelectableSort>,
-    pub watcheds: Vec<SelectableWatched>,
+    pub filters: Vec<SelectableFilter>,
     pub prev_page: Option<SelectablePage>,
     pub next_page: Option<SelectablePage>,
 }
@@ -239,9 +239,9 @@ fn selectable_update<F: LibraryFilter>(
                     .as_ref()
                     .map(|selected| selected.request.sort.to_owned())
                     .unwrap_or_default(),
-                watched: selected
+                filter: selected
                     .as_ref()
-                    .map(|selected| selected.request.watched.to_owned())
+                    .map(|selected| selected.request.filter.to_owned())
                     .unwrap_or_default(),
                 page: LibraryRequestPage::default(),
             },
@@ -258,9 +258,9 @@ fn selectable_update<F: LibraryFilter>(
                 .as_ref()
                 .map(|selected| selected.request.sort.to_owned())
                 .unwrap_or_default(),
-            watched: selected
+            filter: selected
                 .as_ref()
-                .map(|selected| selected.request.watched.to_owned())
+                .map(|selected| selected.request.filter.to_owned())
                 .unwrap_or_default(),
             page: LibraryRequestPage::default(),
         },
@@ -279,9 +279,9 @@ fn selectable_update<F: LibraryFilter>(
                     .as_ref()
                     .and_then(|selected| selected.request.r#type.to_owned()),
                 sort: sort.to_owned(),
-                watched: selected
+                filter: selected
                     .as_ref()
-                    .map(|selected| selected.request.watched.to_owned())
+                    .map(|selected| selected.request.filter.to_owned())
                     .unwrap_or_default(),
                 page: LibraryRequestPage::default(),
             },
@@ -291,9 +291,9 @@ fn selectable_update<F: LibraryFilter>(
                 .unwrap_or_default(),
         })
         .collect();
-    let selectable_filters = Watched::iter()
-        .map(|watched| SelectableWatched {
-            watched: watched.to_owned(),
+    let selectable_filters = Filter::iter()
+        .map(|filter| SelectableFilter {
+            filter: filter.to_owned(),
             request: LibraryRequest {
                 r#type: selected
                     .as_ref()
@@ -302,12 +302,12 @@ fn selectable_update<F: LibraryFilter>(
                     .as_ref()
                     .map(|selected| selected.request.sort.to_owned())
                     .unwrap_or_default(),
-                watched: watched.to_owned(),
+                filter: filter.to_owned(),
                 page: LibraryRequestPage::default(),
             },
             selected: selected
                 .as_ref()
-                .map(|selected| selected.request.watched == watched)
+                .map(|selected| selected.request.filter == filter)
                 .unwrap_or_default(),
         })
         .collect();
@@ -347,7 +347,7 @@ fn selectable_update<F: LibraryFilter>(
     let next_selectable = Selectable {
         types: selectable_types,
         sorts: selectable_sorts,
-        watcheds: selectable_filters,
+        filters: selectable_filters,
         prev_page,
         next_page,
     };
@@ -369,10 +369,10 @@ fn catalog_update<F: LibraryFilter>(
                 Some(r#type) => library_item.r#type == *r#type,
                 None => true,
             })          
-            .filter(|library_item| match &selected.request.watched {
-                Watched::NotWatched => !library_item.watched(),
-                Watched::Watched => library_item.watched(),
-                Watched::Any => true,
+            .filter(|library_item| match &selected.request.filter {
+                Filter::NotWatched => !library_item.watched(),
+                Filter::Watched => library_item.watched(),
+                Filter::Any => true,
             })
             .sorted_by(|a, b| match &selected.request.sort {
                 Sort::LastWatched => b.state.last_watched.cmp(&a.state.last_watched),

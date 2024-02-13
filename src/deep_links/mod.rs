@@ -528,8 +528,8 @@ impl From<(&String, &LibraryRequest)> for LibraryDeepLinks {
                                 .unwrap()
                         ),
                         (
-                            "watched",
-                            serde_json::to_value(&request.watched)
+                            "filter",
+                            serde_json::to_value(&request.filter)
                                 .unwrap()
                                 .as_str()
                                 .unwrap()
@@ -549,8 +549,8 @@ impl From<(&String, &LibraryRequest)> for LibraryDeepLinks {
                                 .unwrap()
                         ),
                         (
-                            "watched",
-                            serde_json::to_value(&request.watched)
+                            "filter",
+                            serde_json::to_value(&request.filter)
                                 .unwrap()
                                 .as_str()
                                 .unwrap()
