@@ -12,7 +12,7 @@ use crate::{
     },
     models::ctx::{CtxError, CtxStatus, OtherError},
     runtime::{
-        msg::{Action, ActionCtx, ActionMetaDetails, CtxAuthResponse, Event, Internal, Msg},
+        msg::{Action, ActionCtx, CtxAuthResponse, Event, Internal, Msg},
         Effect, EffectFuture, Effects, Env, EnvFutureExt,
     },
     types::{
@@ -287,9 +287,8 @@ pub fn update_library<E: Env + 'static>(
                     library_item.state.last_watched = Some(E::now());
 
                     Effects::msg(Msg::Internal(Internal::UpdateLibraryItem(library_item)))
-                        .unchanged();
-                    Effects::msg(Msg::Action(Action::MetaDetails(ActionMetaDetails::MarkAsWatched(*is_watched))))
-                        .unchanged()
+                        .join(Effects::msg(Msg::Action(Action::Ctx(ActionCtx::LibraryItemMarkAsWatched(id.to_string(), *is_watched)))))
+                            .unchanged()
                 }
                 _ => Effects::none().unchanged(),
             }
