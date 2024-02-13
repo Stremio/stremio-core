@@ -20,7 +20,7 @@ use crate::{
     types::{
         addon::{AggrRequest, ResourcePath, ResourceRequest},
         api::{DatastoreCommand, DatastoreRequest},
-        library::{LibraryBucket, LibraryItem, LibraryItemId},
+        library::{LibraryBucket, LibraryItem},
         profile::Profile,
         resource::{MetaItem, Stream},
         streams::StreamsBucket,
@@ -118,9 +118,14 @@ impl<E: Env + 'static> UpdateWithCtx<E> for MetaDetails {
                         // update the last_watched for the LibraryItem
                         library_item.state.last_watched = Some(E::now());
 
-                        Effects::msg(Msg::Internal(Internal::LibraryItemMarkAsWatched {id: library_item.id.clone(), is_watched: *is_watched }))
-                            .join(Effects::msg(Msg::Internal(Internal::UpdateLibraryItem(library_item))))
-                                .unchanged()
+                        Effects::msg(Msg::Internal(Internal::LibraryItemMarkAsWatched {
+                            id: library_item.id.clone(),
+                            is_watched: *is_watched,
+                        }))
+                        .join(Effects::msg(Msg::Internal(Internal::UpdateLibraryItem(
+                            library_item,
+                        ))))
+                        .unchanged()
                     }
                     _ => Effects::none().unchanged(),
                 }
