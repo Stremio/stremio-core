@@ -124,6 +124,7 @@ pub enum Event {
     LibraryItemNotificationsToggled {
         id: LibraryItemId,
     },
+    /// The LibraryItem with the given id has been marked as watched or unwatched (Overrides the previous watched state)
     LibraryItemMarkedAsWatched {
         id: LibraryItemId,
         is_watched: bool,
