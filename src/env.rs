@@ -319,30 +319,24 @@ impl Env for WebEnv {
                 }
             })
             .and_then(|resp| {
-                cfg_if::cfg_if! {
-                    if #[cfg(debug_assertions)] {
-                        future::ready(
-                            js_sys::JSON::stringify(&resp)
-                                .map_err(|error| {
-                                    EnvError::Fetch(
-                                        error
-                                            .dyn_into::<js_sys::Error>()
-                                            .map(|error| String::from(error.message()))
-                                            .unwrap_or_else(|_| UNKNOWN_ERROR.to_owned()),
-                                    )
-                                })
-                                .and_then(|resp| {
-                                    let resp = Into::<String>::into(resp);
-                                    let mut deserializer =
-                                        serde_json::Deserializer::from_str(resp.as_str());
-                                    serde_path_to_error::deserialize::<_, OUT>(&mut deserializer)
-                                        .map_err(|error| EnvError::Fetch(error.to_string()))
-                                }),
-                        )
-                    } else {
-                        future::ready(<JsValue as JsValueSerdeExt>::into_serde(&resp).map_err(EnvError::from))
-                    }
-                }
+                future::ready(
+                    js_sys::JSON::stringify(&resp)
+                        .map_err(|error| {
+                            EnvError::Fetch(
+                                error
+                                    .dyn_into::<js_sys::Error>()
+                                    .map(|error| String::from(error.message()))
+                                    .unwrap_or_else(|_| UNKNOWN_ERROR.to_owned()),
+                            )
+                        })
+                        .and_then(|resp| {
+                            let resp = Into::<String>::into(resp);
+                            let mut deserializer =
+                                serde_json::Deserializer::from_str(resp.as_str());
+                            serde_path_to_error::deserialize::<_, OUT>(&mut deserializer)
+                                .map_err(|error| EnvError::Fetch(error.to_string()))
+                        }),
+                )
             })
             .boxed_local()
     }
