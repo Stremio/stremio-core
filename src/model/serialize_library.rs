@@ -49,8 +49,7 @@ mod model {
     pub struct Selectable<'a> {
         pub types: Vec<SelectableType<'a>>,
         pub sorts: Vec<SelectableSort<'a>>,
-        pub prev_page: Option<SelectablePage>,
-        pub next_page: Option<SelectablePage>,
+        pub next_page: bool,
     }
     #[derive(Serialize)]
     pub struct LibraryWithFilters<'a> {
@@ -91,18 +90,7 @@ pub fn serialize_library<F>(
                         .into_web_deep_links(),
                 })
                 .collect(),
-            prev_page: library.selectable.prev_page.as_ref().map(|prev_page| {
-                model::SelectablePage {
-                    deep_links: LibraryDeepLinks::from((&root, &prev_page.request))
-                        .into_web_deep_links(),
-                }
-            }),
-            next_page: library.selectable.next_page.as_ref().map(|next_page| {
-                model::SelectablePage {
-                    deep_links: LibraryDeepLinks::from((&root, &next_page.request))
-                        .into_web_deep_links(),
-                }
-            }),
+            next_page: library.selectable.next_page.is_some(),
         },
         catalog: library
             .catalog
