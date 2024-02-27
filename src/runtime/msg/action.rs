@@ -85,6 +85,12 @@ pub enum ActionLibraryByType {
 
 #[derive(Clone, Deserialize, Debug)]
 #[serde(tag = "action", content = "args")]
+pub enum ActionLibraryWithFilters {
+    LoadNextPage,
+}
+
+#[derive(Clone, Deserialize, Debug)]
+#[serde(tag = "action", content = "args")]
 pub enum ActionMetaDetails {
     /// Marks the [`LibraryItem`] as watched.
     ///
@@ -199,6 +205,7 @@ pub enum Action {
     CatalogWithFilters(ActionCatalogWithFilters),
     CatalogsWithExtra(ActionCatalogsWithExtra),
     LibraryByType(ActionLibraryByType),
+    LibraryWithFilters(ActionLibraryWithFilters),
     MetaDetails(ActionMetaDetails),
     StreamingServer(ActionStreamingServer),
     Player(ActionPlayer),

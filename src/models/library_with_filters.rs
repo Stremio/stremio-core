@@ -1,6 +1,5 @@
 use std::{iter, marker::PhantomData, num::NonZeroUsize};
 
-use boolinator::Boolinator;
 use derivative::Derivative;
 use derive_more::Deref;
 use itertools::Itertools;
@@ -14,7 +13,7 @@ use crate::{
         ctx::Ctx,
     },
     runtime::{
-        msg::{Action, ActionLoad, Internal, Msg},
+        msg::{Action, ActionLibraryWithFilters, ActionLoad, Internal, Msg},
         Effects, Env, UpdateWithCtx,
     },
     types::{
@@ -106,7 +105,6 @@ pub struct SelectablePage {
 pub struct Selectable {
     pub types: Vec<SelectableType>,
     pub sorts: Vec<SelectableSort>,
-    pub prev_page: Option<SelectablePage>,
     pub next_page: Option<SelectablePage>,
 }
 
@@ -174,6 +172,32 @@ impl<E: Env + 'static, F: LibraryFilter> UpdateWithCtx<E> for LibraryWithFilters
                 selected_effects
                     .join(selectable_effects)
                     .join(catalog_effects)
+            }
+            Msg::Action(Action::LibraryWithFilters(ActionLibraryWithFilters::LoadNextPage)) => {
+                match self.selectable.next_page.as_ref() {
+                    Some(next_page) => {
+                        let next_selected = Some(Selected {
+                            request: next_page.request.to_owned(),
+                        });
+                        let selected_effects = eq_update(&mut self.selected, next_selected);
+                        let selectable_effects = selectable_update::<F>(
+                            &mut self.selectable,
+                            &self.selected,
+                            &ctx.library,
+                            &ctx.notifications,
+                        );
+                        let catalog_effects = catalog_update::<F>(
+                            &mut self.catalog,
+                            &self.selected,
+                            &ctx.library,
+                            &ctx.notifications,
+                        );
+                        selected_effects
+                            .join(selectable_effects)
+                            .join(catalog_effects)
+                    }
+                    _ => Effects::none().unchanged(),
+                }
             }
             Msg::Internal(Internal::LibraryChanged(_)) => {
                 let selectable_effects = selectable_update::<F>(
@@ -259,43 +283,29 @@ fn selectable_update<F: LibraryFilter>(
                 .unwrap_or_default(),
         })
         .collect();
-    let (prev_page, next_page) = match selected {
-        Some(selected) => {
-            let prev_page = (selected.request.page.get() > 1)
-                .as_option()
-                .map(|_| SelectablePage {
-                    request: LibraryRequest {
-                        page: LibraryRequestPage(
-                            NonZeroUsize::new(selected.request.page.get() - 1).unwrap(),
-                        ),
-                        ..selected.request.to_owned()
-                    },
-                });
-            let next_page = library
-                .items
-                .values()
-                .filter(|library_item| F::predicate(library_item, notifications))
-                .filter(|library_item| match &selected.request.r#type {
-                    Some(r#type) => library_item.r#type == *r#type,
-                    None => true,
-                })
-                .nth(selected.request.page.get() * CATALOG_PAGE_SIZE)
-                .map(|_| SelectablePage {
-                    request: LibraryRequest {
-                        page: LibraryRequestPage(
-                            NonZeroUsize::new(selected.request.page.get() + 1).unwrap(),
-                        ),
-                        ..selected.request.to_owned()
-                    },
-                });
-            (prev_page, next_page)
-        }
+    let next_page = match selected {
+        Some(selected) => library
+            .items
+            .values()
+            .filter(|library_item| F::predicate(library_item, notifications))
+            .filter(|library_item| match &selected.request.r#type {
+                Some(r#type) => library_item.r#type == *r#type,
+                None => true,
+            })
+            .nth(selected.request.page.get() * CATALOG_PAGE_SIZE)
+            .map(|_| SelectablePage {
+                request: LibraryRequest {
+                    page: LibraryRequestPage(
+                        NonZeroUsize::new(selected.request.page.get() + 1).unwrap(),
+                    ),
+                    ..selected.request.to_owned()
+                },
+            }),
         _ => Default::default(),
     };
     let next_selectable = Selectable {
         types: selectable_types,
         sorts: selectable_sorts,
-        prev_page,
         next_page,
     };
     eq_update(selectable, next_selectable)
@@ -321,8 +331,7 @@ fn catalog_update<F: LibraryFilter>(
                 Sort::TimesWatched => b.state.times_watched.cmp(&a.state.times_watched),
                 Sort::Name => a.name.to_lowercase().cmp(&b.name.to_lowercase()),
             })
-            .skip((selected.request.page.get() - 1) * CATALOG_PAGE_SIZE)
-            .take(CATALOG_PAGE_SIZE)
+            .take(selected.request.page.get() * CATALOG_PAGE_SIZE)
             .cloned()
             .collect(),
         _ => vec![],

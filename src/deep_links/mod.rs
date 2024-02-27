@@ -519,30 +519,24 @@ impl From<(&String, &LibraryRequest)> for LibraryDeepLinks {
                     "stremio:///{}/{}?{}",
                     root,
                     utf8_percent_encode(r#type, URI_COMPONENT_ENCODE_SET),
-                    query_params_encode(&[
-                        (
-                            "sort",
-                            serde_json::to_value(&request.sort)
-                                .unwrap()
-                                .as_str()
-                                .unwrap()
-                        ),
-                        ("page", &request.page.to_string())
-                    ]),
+                    query_params_encode(&[(
+                        "sort",
+                        serde_json::to_value(&request.sort)
+                            .unwrap()
+                            .as_str()
+                            .unwrap()
+                    )]),
                 ),
                 _ => format!(
                     "stremio:///{}?{}",
                     root,
-                    query_params_encode(&[
-                        (
-                            "sort",
-                            serde_json::to_value(&request.sort)
-                                .unwrap()
-                                .as_str()
-                                .unwrap()
-                        ),
-                        ("page", &request.page.to_string())
-                    ]),
+                    query_params_encode(&[(
+                        "sort",
+                        serde_json::to_value(&request.sort)
+                            .unwrap()
+                            .as_str()
+                            .unwrap()
+                    )]),
                 ),
             },
         }
