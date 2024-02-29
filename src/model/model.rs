@@ -140,16 +140,14 @@ impl WebModel {
             }
             WebModelField::Library => serialize_library(
                 &self.library,
-                &self.ctx.streams,
+                &self.ctx,
                 self.streaming_server.base_url.as_ref(),
-                &self.ctx.profile.settings,
                 "library".to_owned(),
             ),
             WebModelField::ContinueWatching => serialize_library(
                 &self.continue_watching,
-                &self.ctx.streams,
+                &self.ctx,
                 self.streaming_server.base_url.as_ref(),
-                &self.ctx.profile.settings,
                 "continuewatching".to_owned(),
             ),
             WebModelField::Search => serialize_catalogs_with_extra(&self.search, &self.ctx),
