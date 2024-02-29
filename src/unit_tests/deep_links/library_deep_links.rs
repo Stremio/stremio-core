@@ -20,7 +20,7 @@ fn library_deep_links_request_type() {
     let ldl = LibraryDeepLinks::try_from((&root, &request)).unwrap();
     assert_eq!(
         ldl.library,
-        "stremio:///library/movie?sort=lastwatched&page=1".to_string()
+        "stremio:///library/movie?sort=lastwatched".to_string()
     );
 }
 
@@ -35,6 +35,6 @@ fn library_deep_links_request_no_type() {
     let ldl = LibraryDeepLinks::try_from((&root, &request)).unwrap();
     assert_eq!(
         ldl.library,
-        "stremio:///library?sort=lastwatched&page=1".to_string()
+        "stremio:///library?sort=lastwatched".to_string()
     );
 }
