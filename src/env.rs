@@ -291,55 +291,57 @@ impl Env for WebEnv {
         let request = web_sys::Request::new_with_str_and_init(&url, &request_options)
             .expect("request builder failed");
         let promise = global().fetch_with_request(&request);
-        JsFuture::from(promise)
-            .map_err(|error| {
+        async {
+            let resp = JsFuture::from(promise).await.map_err(|error| {
                 EnvError::Fetch(
                     error
                         .dyn_into::<js_sys::Error>()
                         .map(|error| String::from(error.message()))
                         .unwrap_or_else(|_| UNKNOWN_ERROR.to_owned()),
                 )
-            })
-            .and_then(|resp| {
-                let resp = resp.dyn_into::<web_sys::Response>().unwrap();
-                if resp.status() != 200 {
-                    Either::Right(future::err(EnvError::Fetch(format!(
-                        "Unexpected HTTP status code {}",
-                        resp.status(),
-                    ))))
-                } else {
-                    Either::Left(JsFuture::from(resp.json().unwrap()).map_err(|error| {
+            })?;
+
+            let resp = resp.dyn_into::<web_sys::Response>().unwrap();
+            // status check and JSON extraction from response.
+            let resp = if resp.status() != 200 {
+                Err(EnvError::Fetch(format!(
+                    "Unexpected HTTP status code {}",
+                    resp.status(),
+                )))
+            } else {
+                // extract JSON from response
+                JsFuture::from(resp.json().unwrap())
+                    .map_err(|error| {
                         EnvError::Fetch(
                             error
                                 .dyn_into::<js_sys::Error>()
                                 .map(|error| String::from(error.message()))
                                 .unwrap_or_else(|_| UNKNOWN_ERROR.to_owned()),
                         )
-                    }))
-                }
-            })
-            .and_then(|resp| {
-                future::ready(
-                    js_sys::JSON::stringify(&resp)
-                        .map_err(|error| {
-                            EnvError::Fetch(
-                                error
-                                    .dyn_into::<js_sys::Error>()
-                                    .map(|error| String::from(error.message()))
-                                    .unwrap_or_else(|_| UNKNOWN_ERROR.to_owned()),
-                            )
-                        })
-                        .and_then(|resp| {
-                            let resp = Into::<String>::into(resp);
-                            let mut deserializer =
-                                serde_json::Deserializer::from_str(resp.as_str());
-                            serde_path_to_error::deserialize::<_, OUT>(&mut deserializer)
-                                .map_err(|error| EnvError::Fetch(error.to_string()))
-                        }),
+                    })
+                    .await
+            }?;
+
+            // convert the JSON JsValue to JSON JsString
+            let resp = js_sys::JSON::stringify(&resp).map_err(|error| {
+                EnvError::Fetch(
+                    error
+                        .dyn_into::<js_sys::Error>()
+                        .map(|error| String::from(error.message()))
+                        .unwrap_or_else(|_| UNKNOWN_ERROR.to_owned()),
                 )
-            })
-            .boxed_local()
+            })?;
+
+            let resp = Into::<String>::into(resp);
+            let mut deserializer = serde_json::Deserializer::from_str(resp.as_str());
+
+            // deserialize into the final OUT struct
+            serde_path_to_error::deserialize::<_, OUT>(&mut deserializer)
+                .map_err(|error| EnvError::Fetch(error.to_string()))
+        }
+        .boxed_local()
     }
+
     fn get_storage<T>(key: &str) -> TryEnvFuture<Option<T>>
     where
         for<'de> T: Deserialize<'de> + 'static,
@@ -362,6 +364,7 @@ impl Env for WebEnv {
             })
             .boxed_local()
     }
+
     fn set_storage<T: Serialize>(key: &str, value: Option<&T>) -> TryEnvFuture<()> {
         let key = key.to_owned();
         match value {
@@ -390,18 +393,21 @@ impl Env for WebEnv {
                 .boxed_local(),
         }
     }
+
     fn exec_concurrent<F>(future: F)
     where
         F: Future<Output = ()> + 'static,
     {
         spawn_local(future)
     }
+
     fn exec_sequential<F>(future: F)
     where
         F: Future<Output = ()> + 'static,
     {
         spawn_local(future)
     }
+
     fn now() -> DateTime<Utc> {
         let msecs = js_sys::Date::now() as i64;
         let (secs, nsecs) = (msecs / 1000, msecs % 1000 * 1_000_000);
@@ -409,9 +415,11 @@ impl Env for WebEnv {
             .single()
             .expect("Invalid timestamp")
     }
+
     fn flush_analytics() -> EnvFuture<'static, ()> {
         ANALYTICS.flush().boxed_local()
     }
+
     fn analytics_context(
         ctx: &Ctx,
         streaming_server: &StreamingServer,
@@ -442,6 +450,7 @@ impl Env for WebEnv {
         })
         .unwrap()
     }
+
     #[cfg(debug_assertions)]
     fn log(message: String) {
         web_sys::console::log_1(&JsValue::from(message));
