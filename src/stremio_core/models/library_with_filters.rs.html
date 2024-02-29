@@ -1,4 +1,4 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `src/models/library_with_filters.rs`."><title>library_with_filters.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceSerif4-Regular-46f98efaafac5295.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../../static.files/rustdoc-e935ef01ae1c1829.css"><meta name="rustdoc-vars" data-root-path="../../../" data-static-root-path="../../../static.files/" data-current-crate="stremio_core" data-themes="" data-resource-suffix="" data-rustdoc-version="1.78.0-nightly (ef324565d 2024-02-27)" data-channel="nightly" data-search-js="search-dd67cee4cfa65049.js" data-settings-js="settings-4313503d2e1961c2.js" ><script src="../../../static.files/storage-4c98445ec4002617.js"></script><script defer src="../../../static.files/src-script-e66d777a5a92e9b2.js"></script><script defer src="../../../src-files.js"></script><script defer src="../../../static.files/main-12cf3b4f4f9dc36d.js"></script><noscript><link rel="stylesheet" href="../../../static.files/noscript-04d5337699b92874.css"></noscript><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title">
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `src/models/library_with_filters.rs`."><title>library_with_filters.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceSerif4-Regular-46f98efaafac5295.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../../static.files/rustdoc-e935ef01ae1c1829.css"><meta name="rustdoc-vars" data-root-path="../../../" data-static-root-path="../../../static.files/" data-current-crate="stremio_core" data-themes="" data-resource-suffix="" data-rustdoc-version="1.78.0-nightly (c475e2303 2024-02-28)" data-channel="nightly" data-search-js="search-dd67cee4cfa65049.js" data-settings-js="settings-4313503d2e1961c2.js" ><script src="../../../static.files/storage-4c98445ec4002617.js"></script><script defer src="../../../static.files/src-script-e66d777a5a92e9b2.js"></script><script defer src="../../../src-files.js"></script><script defer src="../../../static.files/main-12cf3b4f4f9dc36d.js"></script><noscript><link rel="stylesheet" href="../../../static.files/noscript-04d5337699b92874.css"></noscript><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title">
             <h2>Files</h2></div></nav><div class="sidebar-resizer"></div>
     <main><nav class="sub"><form class="search-form"><span></span><div id="sidebar-button" tabindex="-1"><a href="../../../stremio_core/all.html" title="show sidebar"></a></div><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" tabindex="-1"><a href="../../../help.html" title="help">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../../static.files/wheel-7b819b6101059cd0.svg"></a></div></form></nav><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
 <a href="#2" id="2">2</a>
@@ -331,9 +331,17 @@
 <a href="#329" id="329">329</a>
 <a href="#330" id="330">330</a>
 <a href="#331" id="331">331</a>
+<a href="#332" id="332">332</a>
+<a href="#333" id="333">333</a>
+<a href="#334" id="334">334</a>
+<a href="#335" id="335">335</a>
+<a href="#336" id="336">336</a>
+<a href="#337" id="337">337</a>
+<a href="#338" id="338">338</a>
+<a href="#339" id="339">339</a>
+<a href="#340" id="340">340</a>
 </pre></div><pre class="rust"><code><span class="kw">use </span>std::{iter, marker::PhantomData, num::NonZeroUsize};
 
-<span class="kw">use </span>boolinator::Boolinator;
 <span class="kw">use </span>derivative::Derivative;
 <span class="kw">use </span>derive_more::Deref;
 <span class="kw">use </span>itertools::Itertools;
@@ -347,7 +355,7 @@
         ctx::Ctx,
     },
     runtime::{
-        msg::{Action, ActionLoad, Internal, Msg},
+        msg::{Action, ActionLibraryWithFilters, ActionLoad, Internal, Msg},
         Effects, Env, UpdateWithCtx,
     },
     types::{
@@ -439,7 +447,6 @@
 </span><span class="kw">pub struct </span>Selectable {
     <span class="kw">pub </span>types: Vec&lt;SelectableType&gt;,
     <span class="kw">pub </span>sorts: Vec&lt;SelectableSort&gt;,
-    <span class="kw">pub </span>prev_page: <span class="prelude-ty">Option</span>&lt;SelectablePage&gt;,
     <span class="kw">pub </span>next_page: <span class="prelude-ty">Option</span>&lt;SelectablePage&gt;,
 }
 
@@ -507,6 +514,32 @@
                 selected_effects
                     .join(selectable_effects)
                     .join(catalog_effects)
+            }
+            Msg::Action(Action::LibraryWithFilters(ActionLibraryWithFilters::LoadNextPage)) =&gt; {
+                <span class="kw">match </span><span class="self">self</span>.selectable.next_page.as_ref() {
+                    <span class="prelude-val">Some</span>(next_page) =&gt; {
+                        <span class="kw">let </span>next_selected = <span class="prelude-val">Some</span>(Selected {
+                            request: next_page.request.to_owned(),
+                        });
+                        <span class="kw">let </span>selected_effects = eq_update(<span class="kw-2">&amp;mut </span><span class="self">self</span>.selected, next_selected);
+                        <span class="kw">let </span>selectable_effects = selectable_update::&lt;F&gt;(
+                            <span class="kw-2">&amp;mut </span><span class="self">self</span>.selectable,
+                            <span class="kw-2">&amp;</span><span class="self">self</span>.selected,
+                            <span class="kw-2">&amp;</span>ctx.library,
+                            <span class="kw-2">&amp;</span>ctx.notifications,
+                        );
+                        <span class="kw">let </span>catalog_effects = catalog_update::&lt;F&gt;(
+                            <span class="kw-2">&amp;mut </span><span class="self">self</span>.catalog,
+                            <span class="kw-2">&amp;</span><span class="self">self</span>.selected,
+                            <span class="kw-2">&amp;</span>ctx.library,
+                            <span class="kw-2">&amp;</span>ctx.notifications,
+                        );
+                        selected_effects
+                            .join(selectable_effects)
+                            .join(catalog_effects)
+                    }
+                    <span class="kw">_ </span>=&gt; Effects::none().unchanged(),
+                }
             }
             Msg::Internal(Internal::LibraryChanged(<span class="kw">_</span>)) =&gt; {
                 <span class="kw">let </span>selectable_effects = selectable_update::&lt;F&gt;(
@@ -592,43 +625,29 @@
                 .unwrap_or_default(),
         })
         .collect();
-    <span class="kw">let </span>(prev_page, next_page) = <span class="kw">match </span>selected {
-        <span class="prelude-val">Some</span>(selected) =&gt; {
-            <span class="kw">let </span>prev_page = (selected.request.page.get() &gt; <span class="number">1</span>)
-                .as_option()
-                .map(|<span class="kw">_</span>| SelectablePage {
-                    request: LibraryRequest {
-                        page: LibraryRequestPage(
-                            NonZeroUsize::new(selected.request.page.get() - <span class="number">1</span>).unwrap(),
-                        ),
-                        ..selected.request.to_owned()
-                    },
-                });
-            <span class="kw">let </span>next_page = library
-                .items
-                .values()
-                .filter(|library_item| F::predicate(library_item, notifications))
-                .filter(|library_item| <span class="kw">match </span><span class="kw-2">&amp;</span>selected.request.r#type {
-                    <span class="prelude-val">Some</span>(r#type) =&gt; library_item.r#type == <span class="kw-2">*</span>r#type,
-                    <span class="prelude-val">None </span>=&gt; <span class="bool-val">true</span>,
-                })
-                .nth(selected.request.page.get() * CATALOG_PAGE_SIZE)
-                .map(|<span class="kw">_</span>| SelectablePage {
-                    request: LibraryRequest {
-                        page: LibraryRequestPage(
-                            NonZeroUsize::new(selected.request.page.get() + <span class="number">1</span>).unwrap(),
-                        ),
-                        ..selected.request.to_owned()
-                    },
-                });
-            (prev_page, next_page)
-        }
+    <span class="kw">let </span>next_page = <span class="kw">match </span>selected {
+        <span class="prelude-val">Some</span>(selected) =&gt; library
+            .items
+            .values()
+            .filter(|library_item| F::predicate(library_item, notifications))
+            .filter(|library_item| <span class="kw">match </span><span class="kw-2">&amp;</span>selected.request.r#type {
+                <span class="prelude-val">Some</span>(r#type) =&gt; library_item.r#type == <span class="kw-2">*</span>r#type,
+                <span class="prelude-val">None </span>=&gt; <span class="bool-val">true</span>,
+            })
+            .nth(selected.request.page.get() * CATALOG_PAGE_SIZE)
+            .map(|<span class="kw">_</span>| SelectablePage {
+                request: LibraryRequest {
+                    page: LibraryRequestPage(
+                        NonZeroUsize::new(selected.request.page.get() + <span class="number">1</span>).unwrap(),
+                    ),
+                    ..selected.request.to_owned()
+                },
+            }),
         <span class="kw">_ </span>=&gt; Default::default(),
     };
     <span class="kw">let </span>next_selectable = Selectable {
         types: selectable_types,
         sorts: selectable_sorts,
-        prev_page,
         next_page,
     };
     eq_update(selectable, next_selectable)
@@ -654,8 +673,7 @@
                 Sort::TimesWatched =&gt; b.state.times_watched.cmp(<span class="kw-2">&amp;</span>a.state.times_watched),
                 Sort::Name =&gt; a.name.to_lowercase().cmp(<span class="kw-2">&amp;</span>b.name.to_lowercase()),
             })
-            .skip((selected.request.page.get() - <span class="number">1</span>) * CATALOG_PAGE_SIZE)
-            .take(CATALOG_PAGE_SIZE)
+            .take(selected.request.page.get() * CATALOG_PAGE_SIZE)
             .cloned()
             .collect(),
         <span class="kw">_ </span>=&gt; <span class="macro">vec!</span>[],
