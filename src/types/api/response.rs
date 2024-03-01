@@ -15,11 +15,37 @@ use crate::types::{
     True,
 };
 
+/// This shim exists only because the API returns a `null` error field
+/// even when requests have succeeded.
+///
+/// # Examples
+/// Successful API response:
+///
+/// ```json
+/// { result: ...., error: null }
+/// ```
+#[derive(Deserialize, Debug)]
+struct APIResultShim<T> {
+    result: T,
+    error: Option<APIError>,
+}
+
+impl<T> From<APIResultShim<T>> for APIResult<T> {
+    fn from(value: APIResultShim<T>) -> Self {
+        match value.error {
+            Some(error) => APIResult::Err(error),
+            None => APIResult::Ok(value.result),
+        }
+    }
+}
+
 #[derive(Serialize, Deserialize, Debug)]
-#[serde(untagged)]
+#[serde(rename_all = "camelCase", from = "APIResultShim<T>")]
 pub enum APIResult<T> {
-    Err { error: APIError },
-    Ok { result: T },
+    #[serde(rename = "error")]
+    Err(APIError),
+    #[serde(rename = "result")]
+    Ok(T),
 }
 
 #[derive(Clone, PartialEq, Eq, Serialize, Deserialize, Debug)]
@@ -190,7 +216,7 @@ mod test {
                     .expect("Should deserialize empty response");
 
             match response {
-                APIResult::Ok { result } => {
+                APIResult::Ok(result) => {
                     assert_eq!(
                         result,
                         SkipGapsResponse {
@@ -199,7 +225,7 @@ mod test {
                         }
                     )
                 }
-                APIResult::Err { error } => panic!("Expected success and not an error: {error:?}"),
+                APIResult::Err(error) => panic!("Expected success and not an error: {error:?}"),
             }
         }
 
@@ -238,11 +264,11 @@ mod test {
                 serde_json::from_value::<APIResult<SkipGapsResponse>>(skip_outro_response)
                     .expect("Should deserialize response");
             match response {
-                APIResult::Ok { result } => {
+                APIResult::Ok(result) => {
                     assert_eq!("byEpisode", result.accuracy,);
                     assert_eq!(4, result.gaps.len());
                 }
-                APIResult::Err { error } => panic!("Expected success and not an error: {error:?}"),
+                APIResult::Err(error) => panic!("Expected success and not an error: {error:?}"),
             }
         }
     }

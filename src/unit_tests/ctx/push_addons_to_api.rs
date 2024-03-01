@@ -87,9 +87,9 @@ fn actionctx_pushaddonstoapi_with_user() {
                 && method == "POST"
                 && body == "{\"type\":\"AddonCollectionSet\",\"authKey\":\"auth_key\",\"addons\":[{\"manifest\":{\"id\":\"id\",\"version\":\"0.0.1\",\"name\":\"name\",\"contactEmail\":null,\"description\":null,\"logo\":null,\"background\":null,\"types\":[],\"resources\":[],\"idPrefixes\":null,\"catalogs\":[],\"addonCatalogs\":[],\"behaviorHints\":{\"adult\":false,\"p2p\":false,\"configurable\":false,\"configurationRequired\":false}},\"transportUrl\":\"https://transport_url/\",\"flags\":{\"official\":false,\"protected\":false}}]}" =>
             {
-                future::ok(Box::new(APIResult::Ok {
-                    result: SuccessResponse { success: True {} },
-                }) as Box<dyn Any + Send>).boxed_env()
+                future::ok(Box::new(APIResult::Ok(
+                    SuccessResponse { success: True {} },
+                )) as Box<dyn Any + Send>).boxed_env()
             }
             _ => default_fetch_handler(request),
         }

@@ -1122,8 +1122,8 @@ fn push_seek_to_api<E: Env + 'static>(seek_log_req: SeekLogRequest) -> Effect {
         fetch_api::<E, _, _, SuccessResponse>(&api_request)
             .map_err(CtxError::from)
             .and_then(|result| match result {
-                APIResult::Ok { result } => future::ok(result),
-                APIResult::Err { error } => future::err(CtxError::from(error)),
+                APIResult::Ok(result) => future::ok(result),
+                APIResult::Err(error) => future::err(CtxError::from(error)),
             })
             .map(move |result| Msg::Internal(Internal::SeekLogsResult(seek_log_req, result)))
             .boxed_env(),
@@ -1310,8 +1310,8 @@ fn get_skip_gaps<E: Env + 'static>(skip_gaps_request: SkipGapsRequest) -> Effect
         fetch_api::<E, _, _, SkipGapsResponse>(&api_request)
             .map_err(CtxError::from)
             .and_then(|result| match result {
-                APIResult::Ok { result } => future::ok(result),
-                APIResult::Err { error } => future::err(CtxError::from(error)),
+                APIResult::Ok(result) => future::ok(result),
+                APIResult::Err(error) => future::err(CtxError::from(error)),
             })
             .map(move |result: Result<SkipGapsResponse, CtxError>| {
                 Msg::Internal(Internal::SkipGapsResult(skip_gaps_request, result))

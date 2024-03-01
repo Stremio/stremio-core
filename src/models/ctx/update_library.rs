@@ -400,8 +400,8 @@ fn push_items_to_api<E: Env + 'static>(items: Vec<LibraryItem>, auth_key: &AuthK
         })
         .map_err(CtxError::from)
         .and_then(|result| match result {
-            APIResult::Ok { result } => future::ok(result),
-            APIResult::Err { error } => future::err(CtxError::from(error)),
+            APIResult::Ok(result) => future::ok(result),
+            APIResult::Err(error) => future::err(CtxError::from(error)),
         })
         .map(move |result| match result {
             Ok(_) => Msg::Event(Event::LibraryItemsPushedToAPI { ids }),
@@ -425,8 +425,8 @@ fn pull_items_from_api<E: Env + 'static>(ids: Vec<String>, auth_key: &AuthKey) -
         fetch_api::<E, _, _, LibraryItemsResponse>(&request)
             .map_err(CtxError::from)
             .and_then(|result| match result {
-                APIResult::Ok { result } => future::ok(result.0),
-                APIResult::Err { error } => future::err(CtxError::from(error)),
+                APIResult::Ok(result) => future::ok(result.0),
+                APIResult::Err(error) => future::err(CtxError::from(error)),
             })
             .map(move |result| Msg::Internal(Internal::LibraryPullResult(request, result)))
             .boxed_env(),
@@ -454,8 +454,8 @@ fn plan_sync_with_api<E: Env + 'static>(library: &LibraryBucket, auth_key: &Auth
         fetch_api::<E, _, _, Vec<LibraryItemModified>>(&request)
             .map_err(CtxError::from)
             .and_then(|result| match result {
-                APIResult::Ok { result } => future::ok(result),
-                APIResult::Err { error } => future::err(CtxError::from(error)),
+                APIResult::Ok(result) => future::ok(result),
+                APIResult::Err(error) => future::err(CtxError::from(error)),
             })
             .map_ok(|remote_mtimes| {
                 remote_mtimes

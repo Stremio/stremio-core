@@ -117,8 +117,8 @@ fn create_code<E: Env + 'static>() -> Effect {
         fetch_api::<E, _, _, LinkCodeResponse>(&LinkRequest::Create)
             .map_err(LinkError::from)
             .and_then(|result| match result {
-                APIResult::Ok { result } => future::ok(result),
-                APIResult::Err { error } => future::err(LinkError::from(error)),
+                APIResult::Ok(result) => future::ok(result),
+                APIResult::Err(error) => future::err(LinkError::from(error)),
             })
             .map(|result| Msg::Internal(Internal::LinkCodeResult(result)))
             .boxed_env(),
@@ -133,8 +133,8 @@ fn read_data<E: Env + 'static>(code: &str) -> Effect {
         })
         .map_err(LinkError::from)
         .and_then(|result| match result {
-            APIResult::Ok { result } => future::ok(result),
-            APIResult::Err { error } => future::err(LinkError::from(error)),
+            APIResult::Ok(result) => future::ok(result),
+            APIResult::Err(error) => future::err(LinkError::from(error)),
         })
         .map(enclose!((code.to_owned() => code) move |result| {
             Msg::Internal(Internal::LinkDataResult(code, result))
