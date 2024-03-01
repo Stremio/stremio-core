@@ -18,8 +18,10 @@ pub use conditional_types::{ConditionalSend, EnvFuture, EnvFutureExt};
 
 #[derive(Clone, PartialEq, Eq, Debug)]
 pub enum EnvError {
+    /// Error returned on [`Env::fetch`]
     Fetch(String),
     AddonTransport(String),
+    /// Serde error when serializing
     Serde(String),
     StorageUnavailable,
     StorageSchemaVersionDowngrade(u32, u32),
