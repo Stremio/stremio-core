@@ -186,7 +186,6 @@ mod test {
                     "accuracy": "",
                     "gaps": {},
                 },
-                "error":null
             });
 
             let response =
@@ -235,7 +234,6 @@ mod test {
                         }
                     }
                 },
-                "error":null
             });
 
             let response =
