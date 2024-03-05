@@ -126,6 +126,14 @@ impl From<(&Stream, Option<&Url>, &Settings)> for ExternalPlayerLink {
                         macos: Some(format!("mpv://{url}")),
                        ..Default::default()
                     }),
+                    "m3u" => Some(OpenPlayerLink {
+                        linux: playlist.to_owned(),
+                        windows: playlist.to_owned(),
+                        macos: playlist.to_owned(),
+                        android: playlist.to_owned(),
+                        ios: playlist.to_owned(),
+                       ..Default::default()
+                    }),
                     _ => None,
                 },
                 None => None,
