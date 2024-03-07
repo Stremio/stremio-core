@@ -25,11 +25,6 @@ pub struct SelectableSort {
     pub selected: bool,
 }
 
-#[derive(Clone, PartialEq, Eq, Serialize, Debug)]
-pub struct SelectableFilter {
-    pub selected: bool,
-}
-
 #[derive(Default, Clone, PartialEq, Eq, Serialize, Debug)]
 pub struct Selectable {
     pub sorts: Vec<SelectableSort>,
