@@ -1,7 +1,7 @@
 use crate::constants::{CATALOG_PAGE_SIZE, TYPE_PRIORITIES};
 use crate::models::common::{compare_with_priorities, eq_update};
 use crate::models::ctx::Ctx;
-use crate::models::library_with_filters::{LibraryFilter, Sort, Filter};
+use crate::models::library_with_filters::{LibraryFilter, Sort};
 use crate::runtime::msg::{Action, ActionLibraryByType, ActionLoad, Internal, Msg};
 use crate::runtime::{Effects, Env, UpdateWithCtx};
 use crate::types::library::{LibraryBucket, LibraryItem};
@@ -17,8 +17,6 @@ use strum::IntoEnumIterator;
 pub struct Selected {
     #[serde(default)]
     pub sort: Sort,
-    #[serde(default)]
-    pub filter: Filter,
 }
 
 #[derive(Clone, PartialEq, Eq, Serialize, Debug)]
@@ -27,18 +25,14 @@ pub struct SelectableSort {
     pub selected: bool,
 }
 
-
 #[derive(Clone, PartialEq, Eq, Serialize, Debug)]
 pub struct SelectableFilter {
-    pub filter: Filter,
     pub selected: bool,
 }
-
 
 #[derive(Default, Clone, PartialEq, Eq, Serialize, Debug)]
 pub struct Selectable {
     pub sorts: Vec<SelectableSort>,
-    pub filters: Vec<SelectableFilter>,
 }
 
 pub type CatalogPage = Vec<LibraryItem>;
@@ -142,18 +136,8 @@ fn selectable_update(selectable: &mut Selectable, selected: &Option<Selected>) -
                 .unwrap_or_default(),
         })
         .collect();
-    let selectable_filters = Filter::iter()
-        .map(|filter| SelectableFilter {
-            filter: filter.to_owned(),
-            selected: selected
-                .as_ref()
-                .map(|selected| selected.filter == filter)
-                .unwrap_or_default(),
-        })
-        .collect();
     let next_selectable = Selectable {
         sorts: selectable_sorts,
-        filters: selectable_filters,
     };
     eq_update(selectable, next_selectable)
 }
@@ -204,16 +188,7 @@ fn catalogs_update<F: LibraryFilter>(
                     .unwrap_or(CATALOG_PAGE_SIZE);
                 library_items
                     .into_iter()
-                    .filter(|library_item| match &selected.filter {
-                        Filter::NotWatched => !library_item.watched(),
-                        Filter::Watched => library_item.watched(),
-                        Filter::Any => true,
-                    })
-                    .sorted_by(|a, b| match &selected.sort {
-                        Sort::LastWatched => b.state.last_watched.cmp(&a.state.last_watched),
-                        Sort::TimesWatched => b.state.times_watched.cmp(&a.state.times_watched),
-                        Sort::Name => a.name.to_lowercase().cmp(&b.name.to_lowercase()),
-                    })
+                    .sorted_by(|a, b| selected.sort.sort_items(a, b))
                     .take(take)
                     .collect::<Vec<_>>()
                     .chunks(CATALOG_PAGE_SIZE)
@@ -239,16 +214,7 @@ fn next_page<F: LibraryFilter>(
             .values()
             .filter(|library_item| F::predicate(library_item, notifications))
             .filter(|library_item: &&LibraryItem| library_item.r#type == *r#type)
-            .filter(|library_item| match &selected.filter {
-                Filter::NotWatched => !library_item.watched(),
-                Filter::Watched => library_item.watched(),
-                Filter::Any => true,
-            })
-            .sorted_by(|a, b| match &selected.sort {
-                Sort::LastWatched => b.state.last_watched.cmp(&a.state.last_watched),
-                Sort::TimesWatched => b.state.times_watched.cmp(&a.state.times_watched),
-                Sort::Name => a.name.to_lowercase().cmp(&b.name.to_lowercase()),
-            })
+            .sorted_by(|a, b| selected.sort.sort_items(a, b))
             .skip(skip)
             .take(CATALOG_PAGE_SIZE)
             .map(|library_item| (*library_item).to_owned())
