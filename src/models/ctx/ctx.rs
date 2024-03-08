@@ -280,8 +280,8 @@ fn authenticate<E: Env + 'static>(auth_request: &AuthRequest) -> Effect {
                 .await
                 .map_err(CtxError::from)
                 .and_then(|result| match result {
-                    APIResult::Ok { result } => Ok(result),
-                    APIResult::Err { error } => Err(CtxError::from(error)),
+                    APIResult::Ok(result) => Ok(result),
+                    APIResult::Err(error) => Err(CtxError::from(error)),
                 })
                 .map(|AuthResponse { key, user }| Auth { key, user })?;
 
@@ -297,8 +297,8 @@ fn authenticate<E: Env + 'static>(auth_request: &AuthRequest) -> Effect {
                     .await
                     .map_err(CtxError::from)
                     .and_then(|result: APIResult<CollectionResponse>| match result {
-                        APIResult::Ok { result } => Ok(result),
-                        APIResult::Err { error } => Err(CtxError::from(error)),
+                        APIResult::Ok(result) => Ok(result),
+                        APIResult::Err(error) => Err(CtxError::from(error)),
                     })
                     .map(|CollectionResponse { addons, .. }| addons)
             };
@@ -320,8 +320,8 @@ fn authenticate<E: Env + 'static>(auth_request: &AuthRequest) -> Effect {
                     .await
                     .map_err(CtxError::from)
                     .and_then(|result| match result {
-                        APIResult::Ok { result } => Ok(result.0),
-                        APIResult::Err { error } => Err(CtxError::from(error)),
+                        APIResult::Ok(result) => Ok(result.0),
+                        APIResult::Err(error) => Err(CtxError::from(error)),
                     })
             };
 
@@ -362,8 +362,8 @@ fn delete_session<E: Env + 'static>(auth_key: &AuthKey) -> Effect {
             })
             .map_err(CtxError::from)
             .and_then(|result| match result {
-                APIResult::Ok { result } => future::ok(result),
-                APIResult::Err { error } => future::err(CtxError::from(error)),
+                APIResult::Ok(result) => future::ok(result),
+                APIResult::Err(error) => future::err(CtxError::from(error)),
             })
             .map(enclose!((auth_key) move |result| match result {
                 Ok(_) => Msg::Event(Event::SessionDeleted { auth_key }),

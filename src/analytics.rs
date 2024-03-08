@@ -116,7 +116,7 @@ impl<E: Env + 'static> Analytics<E> {
                 return Either::Left(
                     send_events_batch_to_api::<E>(&batch)
                         .map(|result| match result {
-                            Ok(APIResult::Err { error }) if error.code != 1 => Err(()),
+                            Ok(APIResult::Err(error)) if error.code != 1 => Err(()),
                             Err(EnvError::Fetch(_)) | Err(EnvError::Serde(_)) => Err(()),
                             _ => Ok(()),
                         })
@@ -157,10 +157,7 @@ fn send_events_batch_to_api<E: Env>(
     #[cfg(debug_assertions)]
     if cfg!(debug_assertions) {
         E::log(format!("send_events_batch_to_api: {:#?}", &batch));
-        return future::ok(APIResult::Ok {
-            result: SuccessResponse { success: True },
-        })
-        .boxed_env();
+        return future::ok(APIResult::Ok(SuccessResponse { success: True })).boxed_env();
     };
 
     fetch_api::<E, _, _, _>(&APIRequest::Events {
