@@ -358,8 +358,7 @@ fn catalog_update<F: LibraryFilter>(
                 None => true,
             })
             .sorted_by(|a, b| selected.request.sort.sort_items(a, b))
-            .skip((selected.request.page.get() - 1) * CATALOG_PAGE_SIZE)
-            .take(CATALOG_PAGE_SIZE)
+            .take(selected.request.page.get() * CATALOG_PAGE_SIZE)
             .cloned()
             .collect(),
         _ => vec![],
