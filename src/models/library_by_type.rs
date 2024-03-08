@@ -183,11 +183,7 @@ fn catalogs_update<F: LibraryFilter>(
                     .unwrap_or(CATALOG_PAGE_SIZE);
                 library_items
                     .into_iter()
-                    .sorted_by(|a, b| match &selected.sort {
-                        Sort::LastWatched => b.state.last_watched.cmp(&a.state.last_watched),
-                        Sort::TimesWatched => b.state.times_watched.cmp(&a.state.times_watched),
-                        Sort::Name => a.name.to_lowercase().cmp(&b.name.to_lowercase()),
-                    })
+                    .sorted_by(|a, b| selected.sort.sort_items(a, b))
                     .take(take)
                     .collect::<Vec<_>>()
                     .chunks(CATALOG_PAGE_SIZE)
@@ -212,12 +208,8 @@ fn next_page<F: LibraryFilter>(
             .items
             .values()
             .filter(|library_item| F::predicate(library_item, notifications))
-            .filter(|library_item| library_item.r#type == *r#type)
-            .sorted_by(|a, b| match &selected.sort {
-                Sort::LastWatched => b.state.last_watched.cmp(&a.state.last_watched),
-                Sort::TimesWatched => b.state.times_watched.cmp(&a.state.times_watched),
-                Sort::Name => a.name.to_lowercase().cmp(&b.name.to_lowercase()),
-            })
+            .filter(|library_item: &&LibraryItem| library_item.r#type == *r#type)
+            .sorted_by(|a, b| selected.sort.sort_items(a, b))
             .skip(skip)
             .take(CATALOG_PAGE_SIZE)
             .map(|library_item| (*library_item).to_owned())

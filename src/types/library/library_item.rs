@@ -162,10 +162,11 @@ pub struct LibraryItemState {
     pub overall_time_watched: u64,
     /// Shows how many times this item has been watched.
     ///
-    /// Incremented once for each video watched
-    /// or in the case of no videos - every time
+    /// Incremented once for each video watched (series)
+    /// or in the case of no videos (e.g. movies) - every time
     pub times_watched: u32,
     // @TODO: consider bool that can be deserialized from an integer
+    /// Flag indicating that a movie has been watched
     pub flagged_watched: u32,
     /// In milliseconds
     pub duration: u64,
