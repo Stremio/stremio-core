@@ -108,8 +108,8 @@ fn get_modal<E: Env + 'static>() -> Effect {
         fetch_api::<E, _, _, Option<GetModalResponse>>(&request)
             .map_err(CtxError::from)
             .and_then(|result| match result {
-                APIResult::Ok { result } => future::ok(result),
-                APIResult::Err { error } => future::err(CtxError::from(error)),
+                APIResult::Ok(result) => future::ok(result),
+                APIResult::Err(error) => future::err(CtxError::from(error)),
             })
             .map(move |result| Msg::Internal(Internal::GetModalResult(request, result)))
             .boxed_env(),
@@ -126,8 +126,8 @@ fn get_notification<E: Env + 'static>() -> Effect {
         fetch_api::<E, _, _, Option<GetNotificationResponse>>(&request)
             .map_err(CtxError::from)
             .and_then(|result| match result {
-                APIResult::Ok { result } => future::ok(result),
-                APIResult::Err { error } => future::err(CtxError::from(error)),
+                APIResult::Ok(result) => future::ok(result),
+                APIResult::Err(error) => future::err(CtxError::from(error)),
             })
             .map(move |result| Msg::Internal(Internal::GetNotificationResult(request, result)))
             .boxed_env(),

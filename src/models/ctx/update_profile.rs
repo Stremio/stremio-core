@@ -400,8 +400,8 @@ fn push_addons_to_api<E: Env + 'static>(addons: Vec<Descriptor>, auth_key: &Auth
         fetch_api::<E, _, _, SuccessResponse>(&request)
             .map_err(CtxError::from)
             .and_then(|result| match result {
-                APIResult::Ok { result } => future::ok(result),
-                APIResult::Err { error } => future::err(CtxError::from(error)),
+                APIResult::Ok(result) => future::ok(result),
+                APIResult::Err(error) => future::err(CtxError::from(error)),
             })
             .map(move |result| match result {
                 Ok(_) => Msg::Event(Event::AddonsPushedToAPI { transport_urls }),
@@ -423,8 +423,8 @@ fn pull_user_from_api<E: Env + 'static>(auth_key: &AuthKey) -> Effect {
         fetch_api::<E, _, _, _>(&request)
             .map_err(CtxError::from)
             .and_then(|result| match result {
-                APIResult::Ok { result } => future::ok(result),
-                APIResult::Err { error } => future::err(CtxError::from(error)),
+                APIResult::Ok(result) => future::ok(result),
+                APIResult::Err(error) => future::err(CtxError::from(error)),
             })
             .map(move |result| Msg::Internal(Internal::UserAPIResult(request, result)))
             .boxed_env(),
@@ -442,8 +442,8 @@ fn push_user_to_api<E: Env + 'static>(user: User, auth_key: &AuthKey) -> Effect 
         fetch_api::<E, _, _, SuccessResponse>(&request)
             .map_err(CtxError::from)
             .and_then(|result| match result {
-                APIResult::Ok { result } => future::ok(result),
-                APIResult::Err { error } => future::err(CtxError::from(error)),
+                APIResult::Ok(result) => future::ok(result),
+                APIResult::Err(error) => future::err(CtxError::from(error)),
             })
             .map(move |result| match result {
                 Ok(_) => Msg::Event(Event::UserPushedToAPI { uid }),
@@ -466,8 +466,8 @@ fn pull_addons_from_api<E: Env + 'static>(auth_key: &AuthKey) -> Effect {
         fetch_api::<E, _, _, _>(&request)
             .map_err(CtxError::from)
             .and_then(|result| match result {
-                APIResult::Ok { result } => future::ok(result),
-                APIResult::Err { error } => future::err(CtxError::from(error)),
+                APIResult::Ok(result) => future::ok(result),
+                APIResult::Err(error) => future::err(CtxError::from(error)),
             })
             .map_ok(|CollectionResponse { addons, .. }| addons)
             .map(move |result| Msg::Internal(Internal::AddonsAPIResult(request, result)))

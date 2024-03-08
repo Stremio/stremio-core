@@ -55,6 +55,10 @@ impl ExtraExt for Vec<ExtraValue> {
 }
 
 /// The full resource path, query, etc. for Addon requests
+///
+/// The url paths look as follows:
+/// - Without extra values: `{resource}/{type}/{id}.json`
+/// - With extra values: `{resource}/{type}/{id}/{extra}.json`
 #[derive(Clone, PartialEq, Eq, Serialize, Deserialize, Debug)]
 #[cfg_attr(test, derive(Default))]
 pub struct ResourcePath {

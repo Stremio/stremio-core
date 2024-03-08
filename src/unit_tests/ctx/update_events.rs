@@ -19,27 +19,23 @@ use crate::{
 fn fetch_handler(request: Request) -> TryEnvFuture<Box<dyn Any + Send>> {
     match request {
         Request { url, .. } if url == "https://api.strem.io/api/getModal" => {
-            future::ok(Box::new(APIResult::Ok {
-                result: Some(GetModalResponse {
-                    id: "modal_id".to_owned(),
-                    title: "title".to_owned(),
-                    message: "message".to_owned(),
-                    image_url: "https://image_url".parse().unwrap(),
-                    addon: None,
-                    external_url: None,
-                }),
-            }) as Box<dyn Any + Send>)
+            future::ok(Box::new(APIResult::Ok(Some(GetModalResponse {
+                id: "modal_id".to_owned(),
+                title: "title".to_owned(),
+                message: "message".to_owned(),
+                image_url: "https://image_url".parse().unwrap(),
+                addon: None,
+                external_url: None,
+            }))) as Box<dyn Any + Send>)
             .boxed_env()
         }
         Request { url, .. } if url == "https://api.strem.io/api/getNotification" => {
-            future::ok(Box::new(APIResult::Ok {
-                result: Some(GetNotificationResponse {
-                    id: "notification_id".to_owned(),
-                    title: "title".to_owned(),
-                    message: "message".to_owned(),
-                    external_url: None,
-                }),
-            }) as Box<dyn Any + Send>)
+            future::ok(Box::new(APIResult::Ok(Some(GetNotificationResponse {
+                id: "notification_id".to_owned(),
+                title: "title".to_owned(),
+                message: "message".to_owned(),
+                external_url: None,
+            }))) as Box<dyn Any + Send>)
             .boxed_env()
         }
         _ => default_fetch_handler(request),
