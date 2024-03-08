@@ -69,48 +69,23 @@ impl Sort {
             Sort::TimesWatched => b.state.times_watched.cmp(&a.state.times_watched),
             // the only difference between the Watched and Not watched sorting
             // is the ordering of the `a` and `b` items
-            Sort::Watched => Self::sort_watched(a, b),
-            Sort::NotWatched => Self::sort_watched(b, a),
+            Sort::Watched => b
+                .watched()
+                .cmp(&a.watched())
+                .then(b.state.last_watched.cmp(&a.state.last_watched))
+                // only as fallback
+                // when a new item is added to the library, `last_watched` is always set to now
+                // same as `ctime`
+                .then(b.ctime.cmp(&a.ctime)),
+            Sort::NotWatched => a
+                .watched()
+                .cmp(&b.watched())
+                .then(a.state.last_watched.cmp(&b.state.last_watched))
+                // only as fallback
+                // when a new item is added to the library, `last_watched` is always set to now
+                // same as `ctime`
+                .then(a.ctime.cmp(&b.ctime)),
             Sort::Name => a.name.to_lowercase().cmp(&b.name.to_lowercase()),
-        }
-    }
-
-    /// Helper function that sorts by watched
-    /// The only difference between sorting by Watched and Not Watched is the ordering of `a` and `b`.
-    ///
-    /// Watched items are sorted by:
-    /// 1. Show **watched** items ([`LibraryItem::watched()`]` == true`) and sort them by
-    /// [`LibraryItem.state.last_watched`] descending (first show the most recently watched)
-    /// 2. Show **not watched** items next - [`LibraryItem::watched()`]` == false`
-    /// and sort them by [`LibraryItem::ctime`] ascending
-    ///
-    /// Not watched items are just sorted the exact opposite way:
-    /// 1. Show **not watched** items sorted by `ctime` descending (oldest to newest)
-    /// 2. Show **watched** items sorted by `last_watched` ascending
-    fn sort_watched(a: &LibraryItem, b: &LibraryItem) -> Ordering {
-        let a_is_watched = a.watched();
-        let b_is_watched = b.watched();
-
-        match b_is_watched.cmp(&a_is_watched) {
-            Ordering::Equal => {
-                // doesn't matter if we check a or b
-                if a_is_watched {
-                    match (&a.state.last_watched, &b.state.last_watched) {
-                        (Some(a_last_watched), Some(b_last_watched)) => {
-                            b_last_watched.cmp(a_last_watched)
-                        }
-                        _ => Ordering::Equal,
-                    }
-                } else {
-                    // there should always be ctime for LibraryItems added to the Library
-                    match (&b.ctime, &a.ctime) {
-                        (Some(b_ctime), Some(a_ctime)) => b_ctime.cmp(a_ctime),
-                        // if one or both are missing, we just leave the ordering by default
-                        _ => Ordering::Equal,
-                    }
-                }
-            }
-            ordering => ordering,
         }
     }
 }
@@ -429,7 +404,7 @@ mod test {
             },
             behavior_hints: crate::types::resource::MetaItemBehaviorHints::default(),
         };
-        let watched_movie_a_week_ago = LibraryItem {
+        let watched_movie_1_week_ago = LibraryItem {
             id: "tt15398776".into(),
             name: "Oppenheimer".into(),
             r#type: "movie".into(),
@@ -447,7 +422,7 @@ mod test {
             behavior_hints: crate::types::resource::MetaItemBehaviorHints::default(),
         };
 
-        let not_watched_movie_added_1_weeks_ago = LibraryItem {
+        let not_watched_movie_added_3_weeks_ago = LibraryItem {
             id: "tt2267998".into(),
             name: "Gone Girl".into(),
             r#type: "movie".into(),
@@ -455,10 +430,10 @@ mod test {
             poster_shape: PosterShape::Poster,
             removed: false,
             temp: false,
-            ctime: Some(Utc::now() - Duration::weeks(1)),
+            ctime: Some(Utc::now() - Duration::weeks(3)),
             mtime: Utc::now(),
             state: LibraryItemState {
-                last_watched: None,
+                last_watched: Some(Utc::now() - Duration::weeks(3)),
                 flagged_watched: 0,
                 times_watched: 0,
                 ..Default::default()
@@ -477,7 +452,26 @@ mod test {
             ctime: Some(Utc::now() - Duration::weeks(2)),
             mtime: Utc::now(),
             state: LibraryItemState {
-                last_watched: None,
+                last_watched: Some(Utc::now() - Duration::weeks(2)),
+                flagged_watched: 0,
+                times_watched: 0,
+                ..Default::default()
+            },
+            behavior_hints: crate::types::resource::MetaItemBehaviorHints::default(),
+        };
+
+        let watched_movie_1_week_ago_marked_not_watched = LibraryItem {
+            id: "tt1462764".into(),
+            name: "Indiana Jones and the Dial of Destiny".into(),
+            r#type: "movie".into(),
+            poster: None,
+            poster_shape: PosterShape::Poster,
+            removed: false,
+            temp: false,
+            ctime: Some(Utc::now() - Duration::weeks(4)),
+            mtime: Utc::now(),
+            state: LibraryItemState {
+                last_watched: Some(Utc::now() - Duration::weeks(1)),
                 flagged_watched: 0,
                 times_watched: 0,
                 ..Default::default()
@@ -489,9 +483,10 @@ mod test {
         // and then not watched and creation time (`ctime`) desc
         {
             let mut items = vec![
-                &not_watched_movie_added_1_weeks_ago,
+                &not_watched_movie_added_3_weeks_ago,
+                &watched_movie_1_week_ago_marked_not_watched,
                 &not_watched_movie_added_2_weeks_ago,
-                &watched_movie_a_week_ago,
+                &watched_movie_1_week_ago,
                 &watched_latest_series,
             ];
 
@@ -501,19 +496,21 @@ mod test {
                 items,
                 vec![
                     &watched_latest_series,
-                    &watched_movie_a_week_ago,
-                    &not_watched_movie_added_1_weeks_ago,
+                    &watched_movie_1_week_ago,
+                    &watched_movie_1_week_ago_marked_not_watched,
                     &not_watched_movie_added_2_weeks_ago,
+                    &not_watched_movie_added_3_weeks_ago,
                 ]
             )
         }
 
         {
             let mut items = vec![
-                &not_watched_movie_added_1_weeks_ago,
+                &not_watched_movie_added_3_weeks_ago,
                 &watched_latest_series,
                 &not_watched_movie_added_2_weeks_ago,
-                &watched_movie_a_week_ago,
+                &watched_movie_1_week_ago,
+                &watched_movie_1_week_ago_marked_not_watched,
             ];
 
             items.sort_by(|a, b| Sort::NotWatched.sort_items(a, b));
@@ -521,9 +518,10 @@ mod test {
             pretty_assertions::assert_eq!(
                 items,
                 vec![
+                    &not_watched_movie_added_3_weeks_ago,
                     &not_watched_movie_added_2_weeks_ago,
-                    &not_watched_movie_added_1_weeks_ago,
-                    &watched_movie_a_week_ago,
+                    &watched_movie_1_week_ago_marked_not_watched,
+                    &watched_movie_1_week_ago,
                     &watched_latest_series,
                 ]
             )
