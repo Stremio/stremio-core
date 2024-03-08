@@ -1,4 +1,4 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `src/types/api/response.rs`."><title>response.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/SourceSerif4-Regular-46f98efaafac5295.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../../../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../../../static.files/rustdoc-e935ef01ae1c1829.css"><meta name="rustdoc-vars" data-root-path="../../../../" data-static-root-path="../../../../static.files/" data-current-crate="stremio_core" data-themes="" data-resource-suffix="" data-rustdoc-version="1.78.0-nightly (c475e2303 2024-02-28)" data-channel="nightly" data-search-js="search-dd67cee4cfa65049.js" data-settings-js="settings-4313503d2e1961c2.js" ><script src="../../../../static.files/storage-4c98445ec4002617.js"></script><script defer src="../../../../static.files/src-script-e66d777a5a92e9b2.js"></script><script defer src="../../../../src-files.js"></script><script defer src="../../../../static.files/main-12cf3b4f4f9dc36d.js"></script><noscript><link rel="stylesheet" href="../../../../static.files/noscript-04d5337699b92874.css"></noscript><link rel="alternate icon" type="image/png" href="../../../../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../../../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title">
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `src/types/api/response.rs`."><title>response.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/SourceSerif4-Regular-46f98efaafac5295.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../../../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../../../static.files/rustdoc-e935ef01ae1c1829.css"><meta name="rustdoc-vars" data-root-path="../../../../" data-static-root-path="../../../../static.files/" data-current-crate="stremio_core" data-themes="" data-resource-suffix="" data-rustdoc-version="1.78.0-nightly (9c3ad802d 2024-03-07)" data-channel="nightly" data-search-js="search-dd67cee4cfa65049.js" data-settings-js="settings-4313503d2e1961c2.js" ><script src="../../../../static.files/storage-4c98445ec4002617.js"></script><script defer src="../../../../static.files/src-script-e66d777a5a92e9b2.js"></script><script defer src="../../../../src-files.js"></script><script defer src="../../../../static.files/main-12cf3b4f4f9dc36d.js"></script><noscript><link rel="stylesheet" href="../../../../static.files/noscript-04d5337699b92874.css"></noscript><link rel="alternate icon" type="image/png" href="../../../../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../../../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title">
             <h2>Files</h2></div></nav><div class="sidebar-resizer"></div>
     <main><nav class="sub"><form class="search-form"><span></span><div id="sidebar-button" tabindex="-1"><a href="../../../../stremio_core/all.html" title="show sidebar"></a></div><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" tabindex="-1"><a href="../../../../help.html" title="help">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../../../static.files/wheel-7b819b6101059cd0.svg"></a></div></form></nav><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
 <a href="#2" id="2">2</a>
@@ -249,6 +249,80 @@
 <a href="#247" id="247">247</a>
 <a href="#248" id="248">248</a>
 <a href="#249" id="249">249</a>
+<a href="#250" id="250">250</a>
+<a href="#251" id="251">251</a>
+<a href="#252" id="252">252</a>
+<a href="#253" id="253">253</a>
+<a href="#254" id="254">254</a>
+<a href="#255" id="255">255</a>
+<a href="#256" id="256">256</a>
+<a href="#257" id="257">257</a>
+<a href="#258" id="258">258</a>
+<a href="#259" id="259">259</a>
+<a href="#260" id="260">260</a>
+<a href="#261" id="261">261</a>
+<a href="#262" id="262">262</a>
+<a href="#263" id="263">263</a>
+<a href="#264" id="264">264</a>
+<a href="#265" id="265">265</a>
+<a href="#266" id="266">266</a>
+<a href="#267" id="267">267</a>
+<a href="#268" id="268">268</a>
+<a href="#269" id="269">269</a>
+<a href="#270" id="270">270</a>
+<a href="#271" id="271">271</a>
+<a href="#272" id="272">272</a>
+<a href="#273" id="273">273</a>
+<a href="#274" id="274">274</a>
+<a href="#275" id="275">275</a>
+<a href="#276" id="276">276</a>
+<a href="#277" id="277">277</a>
+<a href="#278" id="278">278</a>
+<a href="#279" id="279">279</a>
+<a href="#280" id="280">280</a>
+<a href="#281" id="281">281</a>
+<a href="#282" id="282">282</a>
+<a href="#283" id="283">283</a>
+<a href="#284" id="284">284</a>
+<a href="#285" id="285">285</a>
+<a href="#286" id="286">286</a>
+<a href="#287" id="287">287</a>
+<a href="#288" id="288">288</a>
+<a href="#289" id="289">289</a>
+<a href="#290" id="290">290</a>
+<a href="#291" id="291">291</a>
+<a href="#292" id="292">292</a>
+<a href="#293" id="293">293</a>
+<a href="#294" id="294">294</a>
+<a href="#295" id="295">295</a>
+<a href="#296" id="296">296</a>
+<a href="#297" id="297">297</a>
+<a href="#298" id="298">298</a>
+<a href="#299" id="299">299</a>
+<a href="#300" id="300">300</a>
+<a href="#301" id="301">301</a>
+<a href="#302" id="302">302</a>
+<a href="#303" id="303">303</a>
+<a href="#304" id="304">304</a>
+<a href="#305" id="305">305</a>
+<a href="#306" id="306">306</a>
+<a href="#307" id="307">307</a>
+<a href="#308" id="308">308</a>
+<a href="#309" id="309">309</a>
+<a href="#310" id="310">310</a>
+<a href="#311" id="311">311</a>
+<a href="#312" id="312">312</a>
+<a href="#313" id="313">313</a>
+<a href="#314" id="314">314</a>
+<a href="#315" id="315">315</a>
+<a href="#316" id="316">316</a>
+<a href="#317" id="317">317</a>
+<a href="#318" id="318">318</a>
+<a href="#319" id="319">319</a>
+<a href="#320" id="320">320</a>
+<a href="#321" id="321">321</a>
+<a href="#322" id="322">322</a>
+<a href="#323" id="323">323</a>
 </pre></div><pre class="rust"><code><span class="kw">use </span>core::fmt;
 
 <span class="kw">use </span>std::collections::HashMap;
@@ -266,11 +340,13 @@
     True,
 };
 
-<span class="attr">#[derive(Serialize, Deserialize, Debug)]
-#[serde(untagged)]
+<span class="attr">#[derive(Serialize, Deserialize, Debug, PartialEq, Eq)]
+#[serde(rename_all = <span class="string">"camelCase"</span>)]
 </span><span class="kw">pub enum </span>APIResult&lt;T&gt; {
-    <span class="prelude-val">Err </span>{ error: APIError },
-    <span class="prelude-val">Ok </span>{ result: T },
+    <span class="attr">#[serde(rename = <span class="string">"error"</span>)]
+    </span><span class="prelude-val">Err</span>(APIError),
+    <span class="attr">#[serde(rename = <span class="string">"result"</span>)]
+    </span><span class="prelude-val">Ok</span>(T),
 }
 
 <span class="attr">#[derive(Clone, PartialEq, Eq, Serialize, Deserialize, Debug)]
@@ -423,17 +499,18 @@
 
 <span class="attr">#[cfg(test)]
 </span><span class="kw">mod </span>test {
+    <span class="kw">use </span>serde_json::json;
+
     <span class="kw">use super</span>::<span class="kw-2">*</span>;
 
     <span class="attr">#[test]
     </span><span class="kw">fn </span>deserialize_skip_gaps_response() {
         {
-            <span class="kw">let </span>skip_outro_response = <span class="macro">serde_json::json!</span>({
+            <span class="kw">let </span>skip_outro_response = <span class="macro">json!</span>({
                 <span class="string">"result"</span>: {
                     <span class="string">"accuracy"</span>: <span class="string">""</span>,
                     <span class="string">"gaps"</span>: {},
                 },
-                <span class="string">"error"</span>:null
             });
 
             <span class="kw">let </span>response =
@@ -441,7 +518,7 @@
                     .expect(<span class="string">"Should deserialize empty response"</span>);
 
             <span class="kw">match </span>response {
-                APIResult::Ok { result } =&gt; {
+                APIResult::Ok(result) =&gt; {
                     <span class="macro">assert_eq!</span>(
                         result,
                         SkipGapsResponse {
@@ -450,13 +527,13 @@
                         }
                     )
                 }
-                APIResult::Err { error } =&gt; <span class="macro">panic!</span>(<span class="string">"Expected success and not an error: {error:?}"</span>),
+                APIResult::Err(error) =&gt; <span class="macro">panic!</span>(<span class="string">"Expected success and not an error: {error:?}"</span>),
             }
         }
 
         <span class="comment">// Gaps returned - intro and outro gaps
         </span>{
-            <span class="kw">let </span>skip_outro_response = <span class="macro">serde_json::json!</span>({
+            <span class="kw">let </span>skip_outro_response = <span class="macro">json!</span>({
                 <span class="string">"result"</span>: {
                     <span class="string">"accuracy"</span>: <span class="string">"byEpisode"</span>,
                     <span class="string">"gaps"</span>: {
@@ -482,19 +559,90 @@
                         </span>}
                     }
                 },
-                <span class="string">"error"</span>:null
             });
 
             <span class="kw">let </span>response =
                 serde_json::from_value::&lt;APIResult&lt;SkipGapsResponse&gt;&gt;(skip_outro_response)
                     .expect(<span class="string">"Should deserialize response"</span>);
             <span class="kw">match </span>response {
-                APIResult::Ok { result } =&gt; {
+                APIResult::Ok(result) =&gt; {
                     <span class="macro">assert_eq!</span>(<span class="string">"byEpisode"</span>, result.accuracy,);
                     <span class="macro">assert_eq!</span>(<span class="number">4</span>, result.gaps.len());
                 }
-                APIResult::Err { error } =&gt; <span class="macro">panic!</span>(<span class="string">"Expected success and not an error: {error:?}"</span>),
+                APIResult::Err(error) =&gt; <span class="macro">panic!</span>(<span class="string">"Expected success and not an error: {error:?}"</span>),
             }
+        }
+    }
+
+    <span class="attr">#[test]
+    </span><span class="kw">fn </span>deserialization_of_api_response_with_path_and_without() {
+        {
+            <span class="kw">let </span>api_response_error = <span class="macro">json!</span>({
+                <span class="string">"error"</span>: {
+                    <span class="string">"message"</span>: <span class="string">"Failed to do XX"</span>,
+                    <span class="string">"code"</span>: <span class="number">400</span>,
+                }
+            });
+            <span class="kw">let </span>deserialized_result =
+                serde_json::from_value::&lt;APIResult&lt;Vec&lt;()&gt;&gt;&gt;(api_response_error)
+                    .expect(<span class="string">"Should deserialize"</span>);
+            <span class="macro">assert_eq!</span>(
+                APIResult::Err(APIError {
+                    message: <span class="string">"Failed to do XX"</span>.into(),
+                    code: <span class="number">400
+                </span>}),
+                deserialized_result
+            );
+        }
+
+        {
+            <span class="kw">let </span>api_response_result = <span class="macro">json!</span>({
+                <span class="string">"result"</span>: [],
+            });
+
+            <span class="kw">let </span>deserialized_result =
+                serde_json::from_value::&lt;APIResult&lt;Vec&lt;()&gt;&gt;&gt;(api_response_result)
+                    .expect(<span class="string">"Should deserialize"</span>);
+            <span class="macro">assert_eq!</span>(APIResult::&lt;Vec&lt;()&gt;&gt;::Ok(<span class="macro">vec!</span>[]), deserialized_result);
+        }
+
+        <span class="comment">// bad API response - error and result present, should return error
+        </span>{
+            <span class="kw">let </span>api_response_result = <span class="macro">json!</span>({
+                <span class="string">"error"</span>: {
+                    <span class="string">"message"</span>: <span class="string">"Failed to do XX"</span>,
+                    <span class="string">"code"</span>: <span class="number">400</span>,
+                },
+                <span class="string">"result"</span>: [],
+            });
+
+            <span class="kw">let </span>deserialized_err =
+                serde_json::from_value::&lt;APIResult&lt;Vec&lt;()&gt;&gt;&gt;(api_response_result)
+                    .expect_err(<span class="string">"Should return an error"</span>);
+
+            <span class="macro">assert_eq!</span>(
+                deserialized_err.to_string(),
+                <span class="string">"invalid value: map, expected map with a single key"
+            </span>)
+        }
+
+        <span class="comment">// bad API response - error and result present, should return error
+        </span>{
+            <span class="kw">let </span>api_response_result = <span class="macro">json!</span>({
+                <span class="string">"error"</span>: null,
+                <span class="string">"result"</span>: [],
+            })
+            .to_string();
+
+            <span class="kw">let </span><span class="kw-2">mut </span>deserializer = serde_json::Deserializer::from_str(api_response_result.as_str());
+
+            <span class="kw">let </span>deserialized_err =
+                serde_path_to_error::deserialize::&lt;<span class="kw">_</span>, APIResult&lt;Vec&lt;()&gt;&gt;&gt;(<span class="kw-2">&amp;mut </span>deserializer)
+                    .expect_err(<span class="string">"Should return an error being null"</span>);
+            <span class="macro">assert_eq!</span>(
+                deserialized_err.inner().to_string(),
+                <span class="string">"invalid type: null, expected struct APIError at line 1 column 13"
+            </span>)
         }
     }
 }
