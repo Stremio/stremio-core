@@ -248,6 +248,7 @@
 <a href="#246" id="246">246</a>
 <a href="#247" id="247">247</a>
 <a href="#248" id="248">248</a>
+<a href="#249" id="249">249</a>
 </pre></div><pre class="rust"><code><span class="kw">use </span>std::marker::PhantomData;
 
 <span class="kw">use </span>chrono::{DateTime, Duration, Utc};
@@ -412,10 +413,11 @@
     </span><span class="kw">pub </span>overall_time_watched: u64,
     <span class="doccomment">/// Shows how many times this item has been watched.
     ///
-    /// Incremented once for each video watched
-    /// or in the case of no videos - every time
+    /// Incremented once for each video watched (series)
+    /// or in the case of no videos (e.g. movies) - every time
     </span><span class="kw">pub </span>times_watched: u32,
     <span class="comment">// @TODO: consider bool that can be deserialized from an integer
+    </span><span class="doccomment">/// Flag indicating that a movie has been watched
     </span><span class="kw">pub </span>flagged_watched: u32,
     <span class="doccomment">/// In milliseconds
     </span><span class="kw">pub </span>duration: u64,

@@ -219,14 +219,6 @@
 <a href="#217" id="217">217</a>
 <a href="#218" id="218">218</a>
 <a href="#219" id="219">219</a>
-<a href="#220" id="220">220</a>
-<a href="#221" id="221">221</a>
-<a href="#222" id="222">222</a>
-<a href="#223" id="223">223</a>
-<a href="#224" id="224">224</a>
-<a href="#225" id="225">225</a>
-<a href="#226" id="226">226</a>
-<a href="#227" id="227">227</a>
 </pre></div><pre class="rust"><code><span class="kw">use </span><span class="kw">crate</span>::constants::{CATALOG_PAGE_SIZE, TYPE_PRIORITIES};
 <span class="kw">use </span><span class="kw">crate</span>::models::common::{compare_with_priorities, eq_update};
 <span class="kw">use </span><span class="kw">crate</span>::models::ctx::Ctx;
@@ -412,11 +404,7 @@
                     .unwrap_or(CATALOG_PAGE_SIZE);
                 library_items
                     .into_iter()
-                    .sorted_by(|a, b| <span class="kw">match </span><span class="kw-2">&amp;</span>selected.sort {
-                        Sort::LastWatched =&gt; b.state.last_watched.cmp(<span class="kw-2">&amp;</span>a.state.last_watched),
-                        Sort::TimesWatched =&gt; b.state.times_watched.cmp(<span class="kw-2">&amp;</span>a.state.times_watched),
-                        Sort::Name =&gt; a.name.to_lowercase().cmp(<span class="kw-2">&amp;</span>b.name.to_lowercase()),
-                    })
+                    .sorted_by(|a, b| selected.sort.sort_items(a, b))
                     .take(take)
                     .collect::&lt;Vec&lt;<span class="kw">_</span>&gt;&gt;()
                     .chunks(CATALOG_PAGE_SIZE)
@@ -441,12 +429,8 @@
             .items
             .values()
             .filter(|library_item| F::predicate(library_item, notifications))
-            .filter(|library_item| library_item.r#type == <span class="kw-2">*</span>r#type)
-            .sorted_by(|a, b| <span class="kw">match </span><span class="kw-2">&amp;</span>selected.sort {
-                Sort::LastWatched =&gt; b.state.last_watched.cmp(<span class="kw-2">&amp;</span>a.state.last_watched),
-                Sort::TimesWatched =&gt; b.state.times_watched.cmp(<span class="kw-2">&amp;</span>a.state.times_watched),
-                Sort::Name =&gt; a.name.to_lowercase().cmp(<span class="kw-2">&amp;</span>b.name.to_lowercase()),
-            })
+            .filter(|library_item: &amp;&amp;LibraryItem| library_item.r#type == <span class="kw-2">*</span>r#type)
+            .sorted_by(|a, b| selected.sort.sort_items(a, b))
             .skip(skip)
             .take(CATALOG_PAGE_SIZE)
             .map(|library_item| (<span class="kw-2">*</span>library_item).to_owned())
