@@ -578,6 +578,14 @@
 <a href="#576" id="576">576</a>
 <a href="#577" id="577">577</a>
 <a href="#578" id="578">578</a>
+<a href="#579" id="579">579</a>
+<a href="#580" id="580">580</a>
+<a href="#581" id="581">581</a>
+<a href="#582" id="582">582</a>
+<a href="#583" id="583">583</a>
+<a href="#584" id="584">584</a>
+<a href="#585" id="585">585</a>
+<a href="#586" id="586">586</a>
 </pre></div><pre class="rust"><code><span class="kw">use </span>percent_encoding::utf8_percent_encode;
 <span class="kw">use </span>regex::Regex;
 <span class="kw">use </span>serde::Serialize;
@@ -704,6 +712,14 @@
                     }),
                     <span class="string">"mpv" </span>=&gt; <span class="prelude-val">Some</span>(OpenPlayerLink {
                         macos: <span class="prelude-val">Some</span>(<span class="macro">format!</span>(<span class="string">"mpv://{url}"</span>)),
+                       ..Default::default()
+                    }),
+                    <span class="string">"m3u" </span>=&gt; <span class="prelude-val">Some</span>(OpenPlayerLink {
+                        linux: playlist.to_owned(),
+                        windows: playlist.to_owned(),
+                        macos: playlist.to_owned(),
+                        android: playlist.to_owned(),
+                        ios: playlist.to_owned(),
                        ..Default::default()
                     }),
                     <span class="kw">_ </span>=&gt; <span class="prelude-val">None</span>,
