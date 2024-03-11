@@ -72,6 +72,12 @@ impl LibraryItem {
         self.state.times_watched > 0 || self.state.flagged_watched == 1
     }
 
+    /// Mark item as watched using `flagged_watched`
+    #[inline]
+    pub fn mark_as_watched(&mut self, state: &bool) {
+        self.state.flagged_watched = (*state).into();
+    }
+
     /// Pulling notifications relies on a few key things:
     ///
     /// - LibraryItem should not be "other" or "movie", i.e. if you have "series" it will pull notifications
