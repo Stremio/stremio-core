@@ -47,7 +47,7 @@ mod model {
     pub struct Video<'a> {
         #[serde(flatten)]
         pub video: &'a stremio_core::types::resource::Video,
-        pub upcomming: bool,
+        pub upcoming: bool,
         pub watched: bool,
         pub progress: Option<u32>,
         pub scheduled: bool,
@@ -137,12 +137,8 @@ pub fn serialize_player(player: &Player, ctx: &Ctx, streaming_server: &Streaming
                             .iter()
                             .map(|video| model::Video {
                                 video,
-                                upcomming: meta_item.preview.behavior_hints.has_scheduled_videos
-                                    && meta_item
-                                        .preview
-                                        .released
-                                        .map(|released| released > WebEnv::now())
-                                        .unwrap_or(true),
+                                upcoming: meta_item.preview.behavior_hints.has_scheduled_videos
+                                    && video.released > Some(WebEnv::now()),
                                 watched: false, // TODO use library
                                 progress: None, // TODO use library,
                                 scheduled: meta_item.preview.behavior_hints.has_scheduled_videos,
@@ -193,7 +189,7 @@ pub fn serialize_player(player: &Player, ctx: &Ctx, streaming_server: &Streaming
             .zip(player.next_video.as_ref())
             .map(|(request, video)| model::Video {
                 video,
-                upcomming: player
+                upcoming: player
                     .meta_item
                     .as_ref()
                     .and_then(|meta_item| match meta_item {
@@ -205,11 +201,7 @@ pub fn serialize_player(player: &Player, ctx: &Ctx, streaming_server: &Streaming
                     })
                     .map(|meta_item| {
                         meta_item.preview.behavior_hints.has_scheduled_videos
-                            && meta_item
-                                .preview
-                                .released
-                                .map(|released| released > WebEnv::now())
-                                .unwrap_or(true)
+                            && video.released > Some(WebEnv::now())
                     })
                     .unwrap_or_default(),
                 watched: false, // TODO use library
