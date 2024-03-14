@@ -33,11 +33,19 @@ fn stream_source() {
                 info_hash: [1; 20],
                 file_idx: Some(1),
                 announce: vec!["announce".to_owned()],
+                file_must_include: None,
             },
             StreamSource::Torrent {
                 info_hash: [1; 20],
                 file_idx: None,
                 announce: vec![],
+                file_must_include: None,
+            },
+            StreamSource::Torrent {
+                info_hash: [1; 20],
+                file_idx: Some(2),
+                announce: vec![],
+                file_must_include: Some("text".into()),
             },
             StreamSource::External {
                 external_url: Some(Url::parse("https://external_url").unwrap()),
@@ -50,7 +58,8 @@ fn stream_source() {
             },
         ],
         &[
-            Token::Seq { len: Some(6) },
+            Token::Seq { len: Some(7) },
+            // 1st
             Token::Struct {
                 name: "StreamSource",
                 len: 1,
@@ -58,6 +67,7 @@ fn stream_source() {
             Token::Str("url"),
             Token::Str("https://url/"),
             Token::StructEnd,
+            // 2nd
             Token::Struct {
                 name: "StreamSource",
                 len: 1,
@@ -79,6 +89,7 @@ fn stream_source() {
             Token::Str("announce"),
             Token::SeqEnd,
             Token::StructEnd,
+            // 3rd
             Token::Struct {
                 name: "StreamSource",
                 len: 3,
@@ -91,6 +102,24 @@ fn stream_source() {
             Token::Seq { len: Some(0) },
             Token::SeqEnd,
             Token::StructEnd,
+            // 4th
+            Token::Struct {
+                name: "StreamSource",
+                len: 4,
+            },
+            Token::Str("infoHash"),
+            Token::Str("0101010101010101010101010101010101010101"),
+            Token::Str("fileIdx"),
+            Token::Some,
+            Token::U16(2),
+            Token::Str("announce"),
+            Token::Seq { len: Some(0) },
+            Token::SeqEnd,
+            Token::Str("fileMustInclude"),
+            Token::Some,
+            Token::Str("text"),
+            Token::StructEnd,
+            // 5th
             Token::Struct {
                 name: "StreamSource",
                 len: 1,
@@ -99,6 +128,7 @@ fn stream_source() {
             Token::Some,
             Token::Str("https://external_url/"),
             Token::StructEnd,
+            // 6th
             Token::Struct {
                 name: "StreamSource",
                 len: 1,
@@ -121,21 +151,31 @@ fn stream_source() {
                 info_hash: [1; 20],
                 file_idx: Some(1),
                 announce: vec!["announce".to_owned()],
+                file_must_include: None,
             },
             StreamSource::Torrent {
                 info_hash: [1; 20],
                 file_idx: Some(1),
                 announce: vec!["announce".to_owned()],
+                file_must_include: None,
             },
             StreamSource::Torrent {
                 info_hash: [1; 20],
                 file_idx: None,
                 announce: vec![],
+                file_must_include: None,
             },
             StreamSource::Torrent {
                 info_hash: [1; 20],
                 file_idx: None,
                 announce: vec![],
+                file_must_include: None,
+            },
+            StreamSource::Torrent {
+                info_hash: [1; 20],
+                file_idx: Some(2),
+                announce: vec![],
+                file_must_include: Some("text".into()),
             },
             StreamSource::External {
                 external_url: Some(Url::parse("https://external_url").unwrap()),
@@ -148,7 +188,8 @@ fn stream_source() {
             },
         ],
         &[
-            Token::Seq { len: Some(8) },
+            Token::Seq { len: Some(9) },
+            // Youtube
             Token::Struct {
                 name: "StreamSource",
                 len: 1,
@@ -163,9 +204,10 @@ fn stream_source() {
             Token::Str("ytId"),
             Token::Str("yt_id"),
             Token::StructEnd,
+            // 1st Torrent
             Token::Struct {
                 name: "StreamSource",
-                len: 3,
+                len: 4,
             },
             Token::Str("infoHash"),
             Token::BorrowedBytes(b"0101010101010101010101010101010101010101"),
@@ -177,9 +219,10 @@ fn stream_source() {
             Token::Str("announce"),
             Token::SeqEnd,
             Token::StructEnd,
+            // 2nd Torrent
             Token::Struct {
                 name: "StreamSource",
-                len: 3,
+                len: 4,
             },
             Token::Str("infoHash"),
             Token::BorrowedBytes(b"0101010101010101010101010101010101010101"),
@@ -191,9 +234,10 @@ fn stream_source() {
             Token::Str("announce"),
             Token::SeqEnd,
             Token::StructEnd,
+            // 3rd Torrent
             Token::Struct {
                 name: "StreamSource",
-                len: 3,
+                len: 4,
             },
             Token::Str("infoHash"),
             Token::BorrowedBytes(b"0101010101010101010101010101010101010101"),
@@ -203,6 +247,7 @@ fn stream_source() {
             Token::Seq { len: Some(0) },
             Token::SeqEnd,
             Token::StructEnd,
+            // 4th Torrent
             Token::Struct {
                 name: "StreamSource",
                 len: 1,
@@ -210,6 +255,24 @@ fn stream_source() {
             Token::Str("infoHash"),
             Token::BorrowedBytes(b"0101010101010101010101010101010101010101"),
             Token::StructEnd,
+            // 5th Torrent
+            Token::Struct {
+                name: "StreamSource",
+                len: 4,
+            },
+            Token::Str("infoHash"),
+            Token::BorrowedBytes(b"0101010101010101010101010101010101010101"),
+            Token::Str("fileIdx"),
+            Token::Some,
+            Token::U16(2),
+            Token::Str("announce"),
+            Token::Seq { len: Some(0) },
+            Token::SeqEnd,
+            Token::Str("fileMustInclude"),
+            Token::Some,
+            Token::Str("text"),
+            Token::StructEnd,
+            // External Url
             Token::Struct {
                 name: "StreamSource",
                 len: 1,
@@ -217,6 +280,7 @@ fn stream_source() {
             Token::Str("externalUrl"),
             Token::Str("https://external_url/"),
             Token::StructEnd,
+            // Player Frame
             Token::Struct {
                 name: "StreamSource",
                 len: 1,

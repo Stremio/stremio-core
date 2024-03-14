@@ -300,49 +300,55 @@ impl Stream {
 /// [`StreamSource::Rar`] with `rarUrls` field:
 ///
 /// ```
-/// let streams_json = serde_json::json!([{
+/// use stremio_core::types::resource::StreamSource;
+///
+/// let streams_json = serde_json::json!([
+/// {
 ///     "rarUrls": ["https://example-source.com/file.rar", "https://example-source2.com/file2.rar"],
 ///     // ...Stream
 /// },
 /// {
 ///     "rarUrls": ["https://example-source3.com/file.rar", "https://example-source4.com/file2.rar"],
 ///     "fileIdx": 1,
-///     "fileMustInclude": ["includeFile1", "includeFile2"],
+///     "fileMustInclude": "includeFile1",
 ///     // ...Stream
 /// },
 /// {
 ///     "rarUrls": ["https://example-source5.com/file.rar", "https://example-source6.com/file2.rar"],
-///     "fileMustInclude": ["includeFile1", "includeFile2"],
+///     "fileMustInclude": "includeFile2",
 ///     // ...Stream
 /// },
 /// {
 ///     "rarUrls": ["https://example-source7.com/file.rar", "https://example-source8.com/file2.rar"],
 ///     "fileIdx": 2,
+///     // ...Stream
 /// }
 /// ]);
 ///
 /// let expected = vec![
 ///     StreamSource::Rar {
-///         rar_urls: vec!["https://example-source.com/file.rar".parse().unwrap(), "https://example-source2.com/file2.rar".parse().unwrap()];
-///     },
-///     StreamSource::Rar {
-///         rar_urls: vec!["https://example-source3.com/file.rar".parse().unwrap(), "https://example-source4.com/file2.rar".parse().unwrap()];
-///         file_idx: Some(1),
-///         file_must_include: Some("includeFile2".into())
-///     },
-///     StreamSource::Rar {
-///         rar_urls: vec!["https://example-source5.com/file.rar".parse().unwrap(), "https://example-source6.com/file2.rar".parse().unwrap()];
+///         rar_urls: vec!["https://example-source.com/file.rar".parse().unwrap(), "https://example-source2.com/file2.rar".parse().unwrap()],
 ///         file_idx: None,
+///         file_must_include: None,
+///     },
+///     StreamSource::Rar {
+///         rar_urls: vec!["https://example-source3.com/file.rar".parse().unwrap(), "https://example-source4.com/file2.rar".parse().unwrap()],
+///         file_idx: Some(1),
 ///         file_must_include: Some("includeFile1".into())
 ///     },
 ///     StreamSource::Rar {
-///         rar_urls: vec!["https://example-source7.com/file.rar".parse().unwrap(), "https://example-source8.com/file2.rar".parse().unwrap()];
+///         rar_urls: vec!["https://example-source5.com/file.rar".parse().unwrap(), "https://example-source6.com/file2.rar".parse().unwrap()],
+///         file_idx: None,
+///         file_must_include: Some("includeFile2".into())
+///     },
+///     StreamSource::Rar {
+///         rar_urls: vec!["https://example-source7.com/file.rar".parse().unwrap(), "https://example-source8.com/file2.rar".parse().unwrap()],
 ///         file_idx: Some(2),
 ///         file_must_include: None,
 ///     },
 /// ];
 ///
-/// let streams: Vec<StreamSource> = serde_json::from_value(streams).expect("Deserialize all StreamSources");
+/// let streams: Vec<StreamSource> = serde_json::from_value(streams_json).expect("Deserialize all StreamSources");
 ///
 /// pretty_assertions::assert_eq!(streams, expected);
 /// ```
@@ -350,49 +356,55 @@ impl Stream {
 /// [`StreamSource::Zip`] with `zipUrls` field:
 ///
 /// ```
-/// let streams_json = serde_json::json!([{
+/// use stremio_core::types::resource::StreamSource;
+///
+/// let streams_json = serde_json::json!([
+/// {
 ///     "zipUrls": ["https://example-source.com/file.rar", "https://example-source2.com/file2.rar"],
 ///     // ...Stream
 /// },
 /// {
 ///     "zipUrls": ["https://example-source3.com/file.rar", "https://example-source4.com/file2.rar"],
 ///     "fileIdx": 1,
-///     "fileMustInclude": ["includeFile1", "includeFile2"],
+///     "fileMustInclude": "includeFile1",
 ///     // ...Stream
 /// },
 /// {
 ///     "zipUrls": ["https://example-source5.com/file.rar", "https://example-source6.com/file2.rar"],
-///     "fileMustInclude": ["includeFile1", "includeFile2"],
+///     "fileMustInclude": "includeFile2",
 ///     // ...Stream
 /// },
 /// {
 ///     "zipUrls": ["https://example-source7.com/file.rar", "https://example-source8.com/file2.rar"],
 ///     "fileIdx": 2,
+///     // ...Stream
 /// }
 /// ]);
 ///
 /// let expected = vec![
 ///     StreamSource::Zip {
-///         zip_urls: vec!["https://example-source.com/file.rar".parse().unwrap(), "https://example-source2.com/file2.rar".parse().unwrap()];
-///     },
-///     StreamSource::Zip {
-///         zip_urls: vec!["https://example-source3.com/file.rar".parse().unwrap(), "https://example-source4.com/file2.rar".parse().unwrap()];
-///         file_idx: Some(1),
-///         file_must_include: Some("includeFile2".into())
-///     },
-///     StreamSource::Zip {
-///         zip_urls: vec!["https://example-source5.com/file.rar".parse().unwrap(), "https://example-source6.com/file2.rar".parse().unwrap()];
+///         zip_urls: vec!["https://example-source.com/file.rar".parse().unwrap(), "https://example-source2.com/file2.rar".parse().unwrap()],
 ///         file_idx: None,
+///         file_must_include: None,
+///     },
+///     StreamSource::Zip {
+///         zip_urls: vec!["https://example-source3.com/file.rar".parse().unwrap(), "https://example-source4.com/file2.rar".parse().unwrap()],
+///         file_idx: Some(1),
 ///         file_must_include: Some("includeFile1".into())
 ///     },
 ///     StreamSource::Zip {
-///         zip_urls: vec!["https://example-source7.com/file.rar".parse().unwrap(), "https://example-source8.com/file2.rar".parse().unwrap()];
+///         zip_urls: vec!["https://example-source5.com/file.rar".parse().unwrap(), "https://example-source6.com/file2.rar".parse().unwrap()],
+///         file_idx: None,
+///         file_must_include: Some("includeFile2".into())
+///     },
+///     StreamSource::Zip {
+///         zip_urls: vec!["https://example-source7.com/file.rar".parse().unwrap(), "https://example-source8.com/file2.rar".parse().unwrap()],
 ///         file_idx: Some(2),
 ///         file_must_include: None,
 ///     },
 /// ];
 ///
-/// let streams: Vec<StreamSource> = serde_json::from_value(streams).expect("Deserialize all StreamSources");
+/// let streams: Vec<StreamSource> = serde_json::from_value(streams_json).expect("Deserialize all StreamSources");
 ///
 /// pretty_assertions::assert_eq!(streams, expected);
 /// ```
