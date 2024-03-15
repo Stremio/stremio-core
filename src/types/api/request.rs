@@ -19,6 +19,24 @@ pub trait FetchRequestParams<T> {
     fn endpoint(&self) -> Url;
     fn method(&self) -> Method;
     fn path(&self) -> String;
+    
+    /// Returns the versioned path for the API request.
+    ///
+    /// In case of v1 we do not have any prefix and the default [`FetchRequestParams::VERSION`] is an empty string.
+    ///
+    /// V1 path: `create`
+    /// V2 path: `v2/create` (where version prefix is `"v2"`)
+    fn version_path(&self) -> String {
+        if Self::VERSION.is_empty() {
+            self.path()
+        } else {
+            format!(
+                "{version}/{path}",
+                version = Self::VERSION,
+                path = &self.path(),
+            )
+        }
+    }
     fn query(&self) -> Option<String>;
     fn body(self) -> T;
 }
@@ -220,8 +238,7 @@ pub enum LinkRequest {
         code: String,
     },
 }
-impl LinkRequest {
-}
+impl LinkRequest {}
 
 impl FetchRequestParams<()> for LinkRequest {
     const VERSION: &'static str = "v2";
@@ -233,12 +250,10 @@ impl FetchRequestParams<()> for LinkRequest {
         Method::GET
     }
     fn path(&self) -> String {
-        let path = match self {
-            LinkRequest::Create => "create",
-            LinkRequest::Read { .. } => "read",
-        };
-
-        format!("{version}/{path}", version = Self::VERSION)
+        match self {
+            LinkRequest::Create => "create".to_owned(),
+            LinkRequest::Read { .. } => "read".to_owned(),
+        }
     }
     fn query(&self) -> Option<String> {
         Some(serde_url_params::to_string(&self).expect("Serialize query params failed"))
@@ -293,4 +308,41 @@ pub enum DatastoreCommand {
         #[serde(default)]
         changes: Vec<LibraryItem>,
     },
+}
+
+#[cfg(test)]
+mod tests {
+    use http::Method;
+
+    use crate::types::api::FetchRequestParams;
+
+    #[test]
+    fn test_versioning_of_api_fetch_request_params() {
+        struct V2Request;
+        impl FetchRequestParams<()> for V2Request {
+            const VERSION: &'static str = "v2";
+            fn endpoint(&self) -> url::Url {
+                "https://example.com/".parse().unwrap()
+            }
+
+            fn method(&self) -> Method {
+                Method::POST
+            }
+
+            fn path(&self) -> String {
+                "create".into()
+            }
+
+            fn query(&self) -> Option<String> {
+                None
+            }
+
+            fn body(self) -> () {
+                ()
+            }
+        }
+
+        let v2 = V2Request;
+        assert_eq!("v2/create", v2.version_path());
+    }
 }
