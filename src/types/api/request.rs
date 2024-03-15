@@ -19,7 +19,7 @@ pub trait FetchRequestParams<T> {
     fn endpoint(&self) -> Url;
     fn method(&self) -> Method;
     fn path(&self) -> String;
-    
+
     /// Returns the versioned path for the API request.
     ///
     /// In case of v1 we do not have any prefix and the default [`FetchRequestParams::VERSION`] is an empty string.
