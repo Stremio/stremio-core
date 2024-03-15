@@ -7,7 +7,7 @@ use crate::models::ctx::{
 use crate::runtime::msg::{Action, ActionCtx, CtxAuthResponse, Event, Internal, Msg};
 use crate::runtime::{Effect, EffectFuture, Effects, Env, EnvFutureExt, Update};
 use crate::types::api::{
-    fetch_api, APIRequest, APIResult, AuthRequest, AuthResponse, CollectionResponse,
+    fetch_api, APIRequest, APIResult, APIVersion, AuthRequest, AuthResponse, CollectionResponse,
     DatastoreCommand, DatastoreRequest, LibraryItemsResponse, SuccessResponse,
 };
 use crate::types::events::{DismissedEventsBucket, Events};
@@ -275,7 +275,7 @@ fn authenticate<E: Env + 'static>(auth_request: &AuthRequest) -> Effect {
             E::flush_analytics().await;
 
             // return an error only if the auth request fails
-            let auth = fetch_api::<E, _, _, _>(&auth_api)
+            let auth = fetch_api::<E, _, _, _>(APIVersion::V1, &auth_api)
                 .inspect(move |result| trace!(?result, ?auth_api, "Auth request"))
                 .await
                 .map_err(CtxError::from)
@@ -290,7 +290,7 @@ fn authenticate<E: Env + 'static>(auth_request: &AuthRequest) -> Effect {
                     auth_key: auth.key.to_owned(),
                     update: true,
                 };
-                fetch_api::<E, _, _, _>(&request)
+                fetch_api::<E, _, _, _>(APIVersion::V1, &request)
                     .inspect(move |result| {
                         trace!(?result, ?request, "Get user's Addon Collection request")
                     })
@@ -313,7 +313,7 @@ fn authenticate<E: Env + 'static>(auth_request: &AuthRequest) -> Effect {
                     },
                 };
 
-                fetch_api::<E, _, _, LibraryItemsResponse>(&request)
+                fetch_api::<E, _, _, LibraryItemsResponse>(APIVersion::V1, &request)
                     .inspect(move |result| {
                         trace!(?result, ?request, "Get user's Addon Collection request")
                     })
@@ -357,7 +357,7 @@ fn delete_session<E: Env + 'static>(auth_key: &AuthKey) -> Effect {
     EffectFuture::Concurrent(
         E::flush_analytics()
             .then(|_| {
-                fetch_api::<E, _, _, SuccessResponse>(&request)
+                fetch_api::<E, _, _, SuccessResponse>(APIVersion::V1, &request)
                     .inspect(move |result| trace!(?result, ?request, "Logout request"))
             })
             .map_err(CtxError::from)

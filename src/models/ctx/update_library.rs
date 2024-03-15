@@ -17,8 +17,8 @@ use crate::{
     },
     types::{
         api::{
-            fetch_api, APIResult, DatastoreCommand, DatastoreRequest, LibraryItemModified,
-            LibraryItemsResponse, SuccessResponse,
+            fetch_api, APIResult, APIVersion, DatastoreCommand, DatastoreRequest,
+            LibraryItemModified, LibraryItemsResponse, SuccessResponse,
         },
         library::{LibraryBucket, LibraryBucketRef, LibraryItem},
         profile::{AuthKey, Profile},
@@ -393,11 +393,14 @@ fn push_library_to_storage<E: Env + 'static>(library: &LibraryBucket) -> Effect 
 fn push_items_to_api<E: Env + 'static>(items: Vec<LibraryItem>, auth_key: &AuthKey) -> Effect {
     let ids = items.iter().map(|item| &item.id).cloned().collect();
     EffectFuture::Concurrent(
-        fetch_api::<E, _, _, SuccessResponse>(&DatastoreRequest {
-            auth_key: auth_key.to_owned(),
-            collection: LIBRARY_COLLECTION_NAME.to_owned(),
-            command: DatastoreCommand::Put { changes: items },
-        })
+        fetch_api::<E, _, _, SuccessResponse>(
+            APIVersion::V1,
+            &DatastoreRequest {
+                auth_key: auth_key.to_owned(),
+                collection: LIBRARY_COLLECTION_NAME.to_owned(),
+                command: DatastoreCommand::Put { changes: items },
+            },
+        )
         .map_err(CtxError::from)
         .and_then(|result| match result {
             APIResult::Ok(result) => future::ok(result),
@@ -422,7 +425,7 @@ fn pull_items_from_api<E: Env + 'static>(ids: Vec<String>, auth_key: &AuthKey) -
         command: DatastoreCommand::Get { ids, all: false },
     };
     EffectFuture::Concurrent(
-        fetch_api::<E, _, _, LibraryItemsResponse>(&request)
+        fetch_api::<E, _, _, LibraryItemsResponse>(APIVersion::V1, &request)
             .map_err(CtxError::from)
             .and_then(|result| match result {
                 APIResult::Ok(result) => future::ok(result.0),
@@ -451,7 +454,7 @@ fn plan_sync_with_api<E: Env + 'static>(library: &LibraryBucket, auth_key: &Auth
         command: DatastoreCommand::Meta {},
     };
     EffectFuture::Concurrent(
-        fetch_api::<E, _, _, Vec<LibraryItemModified>>(&request)
+        fetch_api::<E, _, _, Vec<LibraryItemModified>>(APIVersion::V1, &request)
             .map_err(CtxError::from)
             .and_then(|result| match result {
                 APIResult::Ok(result) => future::ok(result),

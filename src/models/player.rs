@@ -20,8 +20,8 @@ use crate::runtime::msg::{Action, ActionLoad, ActionPlayer, Event, Internal, Msg
 use crate::runtime::{Effect, EffectFuture, Effects, Env, EnvFutureExt, UpdateWithCtx};
 use crate::types::addon::{AggrRequest, Descriptor, ExtraExt, ResourcePath, ResourceRequest};
 use crate::types::api::{
-    fetch_api, APIRequest, APIResult, SeekLog, SeekLogRequest, SkipGapsRequest, SkipGapsResponse,
-    SuccessResponse,
+    fetch_api, APIRequest, APIResult, APIVersion, SeekLog, SeekLogRequest, SkipGapsRequest,
+    SkipGapsResponse, SuccessResponse,
 };
 use crate::types::library::{LibraryBucket, LibraryItem};
 use crate::types::player::{IntroData, IntroOutro};
@@ -1119,7 +1119,7 @@ fn push_seek_to_api<E: Env + 'static>(seek_log_req: SeekLogRequest) -> Effect {
     let api_request = APIRequest::SeekLog(seek_log_req.clone());
 
     EffectFuture::Concurrent(
-        fetch_api::<E, _, _, SuccessResponse>(&api_request)
+        fetch_api::<E, _, _, SuccessResponse>(APIVersion::V1, &api_request)
             .map_err(CtxError::from)
             .and_then(|result| match result {
                 APIResult::Ok(result) => future::ok(result),
@@ -1307,7 +1307,7 @@ fn get_skip_gaps<E: Env + 'static>(skip_gaps_request: SkipGapsRequest) -> Effect
     let api_request = APIRequest::SkipGaps(skip_gaps_request.clone());
 
     EffectFuture::Concurrent(
-        fetch_api::<E, _, _, SkipGapsResponse>(&api_request)
+        fetch_api::<E, _, _, SkipGapsResponse>(APIVersion::V1, &api_request)
             .map_err(CtxError::from)
             .and_then(|result| match result {
                 APIResult::Ok(result) => future::ok(result),

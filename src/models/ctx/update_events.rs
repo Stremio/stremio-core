@@ -8,7 +8,7 @@ use crate::models::ctx::CtxError;
 use crate::runtime::msg::{Action, ActionCtx, Event, Internal, Msg};
 use crate::runtime::{Effect, EffectFuture, Effects, Env, EnvFutureExt};
 use crate::types::api::{
-    fetch_api, APIRequest, APIResult, GetModalResponse, GetNotificationResponse,
+    fetch_api, APIRequest, APIResult, APIVersion, GetModalResponse, GetNotificationResponse,
 };
 use crate::types::events::{DismissedEventsBucket, Events};
 
@@ -105,7 +105,7 @@ fn get_modal<E: Env + 'static>() -> Effect {
     };
 
     EffectFuture::Concurrent(
-        fetch_api::<E, _, _, Option<GetModalResponse>>(&request)
+        fetch_api::<E, _, _, Option<GetModalResponse>>(APIVersion::V1, &request)
             .map_err(CtxError::from)
             .and_then(|result| match result {
                 APIResult::Ok(result) => future::ok(result),
@@ -123,7 +123,7 @@ fn get_notification<E: Env + 'static>() -> Effect {
     };
 
     EffectFuture::Concurrent(
-        fetch_api::<E, _, _, Option<GetNotificationResponse>>(&request)
+        fetch_api::<E, _, _, Option<GetNotificationResponse>>(APIVersion::V1, &request)
             .map_err(CtxError::from)
             .and_then(|result| match result {
                 APIResult::Ok(result) => future::ok(result),

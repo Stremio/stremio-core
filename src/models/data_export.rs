@@ -10,7 +10,7 @@ use crate::{
         Effect, EffectFuture, Effects, Env, EnvFutureExt, UpdateWithCtx,
     },
     types::{
-        api::{fetch_api, APIRequest, APIResult, DataExportResponse},
+        api::{fetch_api, APIRequest, APIResult, APIVersion, DataExportResponse},
         profile::AuthKey,
     },
 };
@@ -95,7 +95,7 @@ fn export_data_from_api<E: Env + 'static>(auth_key: AuthKey) -> Effect {
     };
 
     EffectFuture::Concurrent(
-        fetch_api::<E, _, _, DataExportResponse>(&api_request)
+        fetch_api::<E, _, _, DataExportResponse>(APIVersion::V1, &api_request)
             .map_err(CtxError::from)
             .and_then(|result| match result {
                 APIResult::Ok(result) => future::ok(result),

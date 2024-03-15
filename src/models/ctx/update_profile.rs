@@ -9,7 +9,7 @@ use crate::runtime::msg::{Action, ActionCtx, CtxAuthResponse, Event, Internal, M
 use crate::runtime::{Effect, EffectFuture, Effects, Env, EnvFutureExt};
 use crate::types::addon::Descriptor;
 use crate::types::api::{
-    fetch_api, APIError, APIRequest, APIResult, CollectionResponse, SuccessResponse,
+    fetch_api, APIError, APIRequest, APIResult, APIVersion, CollectionResponse, SuccessResponse,
 };
 use crate::types::profile::{Auth, AuthKey, Profile, Settings, User};
 use crate::types::streams::StreamsBucket;
@@ -397,7 +397,7 @@ fn push_addons_to_api<E: Env + 'static>(addons: Vec<Descriptor>, auth_key: &Auth
         addons,
     };
     EffectFuture::Concurrent(
-        fetch_api::<E, _, _, SuccessResponse>(&request)
+        fetch_api::<E, _, _, SuccessResponse>(APIVersion::V1, &request)
             .map_err(CtxError::from)
             .and_then(|result| match result {
                 APIResult::Ok(result) => future::ok(result),
@@ -420,7 +420,7 @@ fn pull_user_from_api<E: Env + 'static>(auth_key: &AuthKey) -> Effect {
         auth_key: auth_key.to_owned(),
     };
     EffectFuture::Concurrent(
-        fetch_api::<E, _, _, _>(&request)
+        fetch_api::<E, _, _, _>(APIVersion::V1, &request)
             .map_err(CtxError::from)
             .and_then(|result| match result {
                 APIResult::Ok(result) => future::ok(result),
@@ -439,7 +439,7 @@ fn push_user_to_api<E: Env + 'static>(user: User, auth_key: &AuthKey) -> Effect 
         user,
     };
     EffectFuture::Concurrent(
-        fetch_api::<E, _, _, SuccessResponse>(&request)
+        fetch_api::<E, _, _, SuccessResponse>(APIVersion::V1, &request)
             .map_err(CtxError::from)
             .and_then(|result| match result {
                 APIResult::Ok(result) => future::ok(result),
@@ -463,7 +463,7 @@ fn pull_addons_from_api<E: Env + 'static>(auth_key: &AuthKey) -> Effect {
         update: true,
     };
     EffectFuture::Concurrent(
-        fetch_api::<E, _, _, _>(&request)
+        fetch_api::<E, _, _, _>(APIVersion::V1, &request)
             .map_err(CtxError::from)
             .and_then(|result| match result {
                 APIResult::Ok(result) => future::ok(result),
