@@ -231,8 +231,8 @@ impl FetchRequestParams<()> for LinkRequest {
     }
     fn path(&self) -> String {
         let path = match self {
-            LinkRequest::Create => "create".to_owned(),
-            LinkRequest::Read { .. } => "read".to_owned(),
+            LinkRequest::Create => "create",
+            LinkRequest::Read { .. } => "read",
         };
 
         format!("{version}/{path}", version = Self::VERSION)
