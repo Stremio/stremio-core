@@ -3,7 +3,7 @@ use crate::models::ctx::Ctx;
 use crate::runtime::msg::{Action, ActionLink, ActionLoad, Internal, Msg};
 use crate::runtime::{Effect, EffectFuture, Effects, Env, EnvError, EnvFutureExt, UpdateWithCtx};
 use crate::types::api::{
-    fetch_api_v2, APIError, APIResult, LinkCodeResponse, LinkDataResponse, LinkRequest
+    fetch_api_v2, APIError, APIResult, LinkCodeResponse, LinkDataResponse, LinkRequest,
 };
 use derivative::Derivative;
 use derive_more::From;
