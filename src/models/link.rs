@@ -3,7 +3,7 @@ use crate::models::ctx::Ctx;
 use crate::runtime::msg::{Action, ActionLink, ActionLoad, Internal, Msg};
 use crate::runtime::{Effect, EffectFuture, Effects, Env, EnvError, EnvFutureExt, UpdateWithCtx};
 use crate::types::api::{
-    fetch_api, APIError, APIResult, LinkCodeResponse, LinkDataResponse, LinkRequest,
+    fetch_api_v2, APIError, APIResult, LinkCodeResponse, LinkDataResponse, LinkRequest
 };
 use derivative::Derivative;
 use derive_more::From;
@@ -114,7 +114,7 @@ where
 
 fn create_code<E: Env + 'static>() -> Effect {
     EffectFuture::Concurrent(
-        fetch_api::<E, _, _, LinkCodeResponse>(&LinkRequest::Create)
+        fetch_api_v2::<E, _, _, LinkCodeResponse>(&LinkRequest::Create)
             .map_err(LinkError::from)
             .and_then(|result| match result {
                 APIResult::Ok(result) => future::ok(result),
@@ -128,7 +128,7 @@ fn create_code<E: Env + 'static>() -> Effect {
 
 fn read_data<E: Env + 'static>(code: &str) -> Effect {
     EffectFuture::Concurrent(
-        fetch_api::<E, _, _, LinkDataResponse>(&LinkRequest::Read {
+        fetch_api_v2::<E, _, _, LinkDataResponse>(&LinkRequest::Read {
             code: code.to_owned(),
         })
         .map_err(LinkError::from)
