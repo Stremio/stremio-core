@@ -13,6 +13,9 @@ use serde::{Deserialize, Serialize};
 use url::Url;
 
 pub trait FetchRequestParams<T> {
+    /// Version path prefix for the request
+    const VERSION: &'static str = "";
+
     fn endpoint(&self) -> Url;
     fn method(&self) -> Method;
     fn path(&self) -> String;
@@ -218,11 +221,11 @@ pub enum LinkRequest {
     },
 }
 impl LinkRequest {
-    /// Version path prefix for the request
-    pub const VERSION: &'static str = "v2";
 }
 
 impl FetchRequestParams<()> for LinkRequest {
+    const VERSION: &'static str = "v2";
+
     fn endpoint(&self) -> Url {
         LINK_API_URL.to_owned()
     }
