@@ -56,6 +56,7 @@ pub enum Sort {
     #[derivative(Default)]
     LastWatched,
     Name,
+    NameReverse,
     TimesWatched,
     Watched,
     NotWatched,
@@ -86,6 +87,7 @@ impl Sort {
                 // same as `ctime`
                 .then(a.ctime.cmp(&b.ctime)),
             Sort::Name => a.name.to_lowercase().cmp(&b.name.to_lowercase()),
+            Sort::NameReverse => b.name.to_lowercase().cmp(&a.name.to_lowercase()),
         }
     }
 }
