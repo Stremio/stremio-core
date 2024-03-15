@@ -217,6 +217,10 @@ pub enum LinkRequest {
         code: String,
     },
 }
+impl LinkRequest {
+    /// Version path prefix for the request
+    pub const VERSION: &'static str = "v2";
+}
 
 impl FetchRequestParams<()> for LinkRequest {
     fn endpoint(&self) -> Url {
@@ -226,10 +230,12 @@ impl FetchRequestParams<()> for LinkRequest {
         Method::GET
     }
     fn path(&self) -> String {
-        match self {
+        let path = match self {
             LinkRequest::Create => "create".to_owned(),
             LinkRequest::Read { .. } => "read".to_owned(),
-        }
+        };
+
+        format!("{version}/{path}", version = Self::VERSION)
     }
     fn query(&self) -> Option<String> {
         Some(serde_url_params::to_string(&self).expect("Serialize query params failed"))
