@@ -132,19 +132,46 @@ struct SkipError<T: for<'a> Deserialize<'a> + Serialize>(
 );
 
 impl<'de> Deserialize<'de> for ResourceResponse {
+    /// Custom deserialize for ResourceResponse which expects only 1 of the required fields
+    /// to be set in the response object
     fn deserialize<D>(deserializer: D) -> Result<ResourceResponse, D::Error>
     where
         D: Deserializer<'de>,
     {
-        let value = serde_json::Value::deserialize(deserializer)?;
+        let keys = [
+            "metas",
+            "metasDetailed",
+            "meta",
+            "streams",
+            "subtitles",
+            "addons",
+        ];
+
+        let value =
+            serde_path_to_error::deserialize(deserializer).map_err(serde::de::Error::custom)?;
         let mut value = match value {
             serde_json::Value::Object(value) => value,
             _ => {
                 return Err(serde::de::Error::custom(
-                    "Cannot deserialize as ResourceResponse",
+                    "Cannot deserialize as ResourceResponse, expected an Object response",
                 ))
             }
         };
+
+        // check whether we have one of the expected keys or if we have more than 1 which is not allowed!
+        let unique_keys_count = keys.iter().filter(|key| value.contains_key(**key)).count();
+        if unique_keys_count == 0 {
+            return Err(serde::de::Error::custom(
+                format!("Cannot deserialize as ResourceResponse, the expected Object response didn't contain any of the required keys: {}",
+                keys.join(", ")),
+            ));
+        }
+        if unique_keys_count > 1 {
+            return Err(serde::de::Error::custom(
+                format!("Cannot deserialize as ResourceResponse, the expected Object response contained more than 1 of the unique keys: {}",
+                keys.join(", ")),
+            ));
+        }
 
         if let Some(value) = value.get_mut("metas") {
             let skip = serde_json::from_value::<SkipError<_>>(value.take())
@@ -178,8 +205,12 @@ impl<'de> Deserialize<'de> for ResourceResponse {
 
             Ok(ResourceResponse::Addons { addons: skip.0 })
         } else {
+            // we should never get to this else, as we already check for missing required key
+            // but we're leaving it to remove the danger of a developer forgetting to add a new key to the list.
             Err(serde::de::Error::custom(
-                "Cannot deserialize as ResourceResponse",
+                format!("Cannot deserialize as ResourceResponse, the expected Object response didn't contain any of the required keys: {}",
+                keys.join(", ")
+            )
             ))
         }
     }
@@ -188,6 +219,7 @@ impl<'de> Deserialize<'de> for ResourceResponse {
 #[cfg(test)]
 mod tests {
     use once_cell::sync::Lazy;
+    use serde_json::from_value;
     use url::Url;
 
     use crate::types::resource::{
@@ -198,6 +230,88 @@ mod tests {
 
     pub static ADDON_TRANSPORT_URL: Lazy<Url> =
         Lazy::new(|| "https://example-addon.com/manifest.json".parse().unwrap());
+
+    #[test]
+    fn test_response_deserialization_keys() {
+        // Bad json, should trigger the serde_error_to_path
+        {
+            // object key must be a string, number provided
+            let json_response = r#"{
+                "some_key": {
+                    "valid_value": 9999999999999999999999999,
+                    5
+                }
+            }"#;
+            let result_err = serde_json::from_str::<ResourceResponse>(json_response)
+                .expect_err("Should be an error");
+
+            assert_eq!(
+                result_err.to_string(),
+                "some_key.?: key must be a string at line 4 column 21"
+            );
+            assert_eq!(4, result_err.line());
+            assert_eq!(21, result_err.column());
+        }
+
+        // Wrong ResourceResponse, not an object response
+        {
+            let json_response = serde_json::json!(256);
+            let result = from_value::<ResourceResponse>(json_response);
+
+            assert!(
+                result
+                    .expect_err("Should be an error")
+                    .to_string()
+                    .contains("expected an Object response"),
+                "Message does not include the text 'expected an Object response'"
+            );
+        }
+
+        // Wrong ResourceResponse, missing a required key, i.e. non-existing variant
+        {
+            let json_response = serde_json::json!({
+                "unknownVariant": {"test": 1}
+            });
+            let result = from_value::<ResourceResponse>(json_response);
+
+            assert!(
+                result
+                    .expect_err("Should be an error")
+                    .to_string()
+                    .contains("didn't contain any of the required keys"),
+                "Message does not include the text 'didn't contain any of the required keys'"
+            );
+        }
+
+        // Wrong ResourceResponse, multiple exclusive keys, i.e. bad variant values
+        {
+            let json_response = serde_json::json!({
+                "metas": {},
+                "metasDetailed": {},
+            });
+            let result = from_value::<ResourceResponse>(json_response);
+
+            assert!(
+                result.expect_err("Should be an error").to_string().contains("Object response contained more than 1 of the unique keys"),
+                "Message does not include the text 'Object response contained more than 1 of the unique keys'"
+            );
+        }
+        // Wrong ResourceResponse, invalid type, expected sequence (Vec) got map (Object)
+        {
+            let json_response = serde_json::json!({
+                "metas": {"object_key": "value"}
+            });
+            let result = from_value::<ResourceResponse>(json_response);
+
+            assert!(
+                result
+                    .expect_err("Should be an error")
+                    .to_string()
+                    .contains("invalid type: map, expected a sequence"),
+                "Message does not include the text 'invalid type: map, expected a sequence'"
+            );
+        }
+    }
 
     #[test]
     fn replace_relative_path_for_meta() {

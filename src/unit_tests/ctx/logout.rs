@@ -32,9 +32,10 @@ fn actionctx_logout() {
                 && method == "POST"
                 && body == "{\"type\":\"Logout\",\"authKey\":\"auth_key\"}" =>
             {
-                future::ok(Box::new(APIResult::Ok {
-                    result: SuccessResponse { success: True {} },
-                }) as Box<dyn Any + Send>)
+                future::ok(
+                    Box::new(APIResult::Ok(SuccessResponse { success: True {} }))
+                        as Box<dyn Any + Send>,
+                )
                 .boxed_env()
             }
             _ => default_fetch_handler(request),

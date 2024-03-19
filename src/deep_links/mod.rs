@@ -126,6 +126,14 @@ impl From<(&Stream, Option<&Url>, &Settings)> for ExternalPlayerLink {
                         macos: Some(format!("mpv://{url}")),
                        ..Default::default()
                     }),
+                    "m3u" => Some(OpenPlayerLink {
+                        linux: playlist.to_owned(),
+                        windows: playlist.to_owned(),
+                        macos: playlist.to_owned(),
+                        android: playlist.to_owned(),
+                        ios: playlist.to_owned(),
+                       ..Default::default()
+                    }),
                     _ => None,
                 },
                 None => None,
@@ -519,30 +527,24 @@ impl From<(&String, &LibraryRequest)> for LibraryDeepLinks {
                     "stremio:///{}/{}?{}",
                     root,
                     utf8_percent_encode(r#type, URI_COMPONENT_ENCODE_SET),
-                    query_params_encode(&[
-                        (
-                            "sort",
-                            serde_json::to_value(&request.sort)
-                                .unwrap()
-                                .as_str()
-                                .unwrap()
-                        ),
-                        ("page", &request.page.to_string())
-                    ]),
+                    query_params_encode(&[(
+                        "sort",
+                        serde_json::to_value(&request.sort)
+                            .unwrap()
+                            .as_str()
+                            .unwrap()
+                    )]),
                 ),
                 _ => format!(
                     "stremio:///{}?{}",
                     root,
-                    query_params_encode(&[
-                        (
-                            "sort",
-                            serde_json::to_value(&request.sort)
-                                .unwrap()
-                                .as_str()
-                                .unwrap()
-                        ),
-                        ("page", &request.page.to_string())
-                    ]),
+                    query_params_encode(&[(
+                        "sort",
+                        serde_json::to_value(&request.sort)
+                            .unwrap()
+                            .as_str()
+                            .unwrap()
+                    )]),
                 ),
             },
         }

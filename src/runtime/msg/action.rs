@@ -40,6 +40,10 @@ pub enum ActionCtx {
     AddToLibrary(MetaItemPreview),
     RemoveFromLibrary(String),
     RewindLibraryItem(String),
+    LibraryItemMarkAsWatched {
+        id: LibraryItemId,
+        is_watched: bool,
+    },
     /// If boolean is set to `true` it will disable notifications for the LibraryItem.
     ToggleLibraryItemNotifications(LibraryItemId, bool),
     /// Dismiss all Notification for a given [`MetaItemId`].
@@ -81,6 +85,12 @@ pub enum ActionCatalogsWithExtra {
 #[serde(tag = "action", content = "args")]
 pub enum ActionLibraryByType {
     LoadNextPage(usize),
+}
+
+#[derive(Clone, Deserialize, Debug)]
+#[serde(tag = "action", content = "args")]
+pub enum ActionLibraryWithFilters {
+    LoadNextPage,
 }
 
 #[derive(Clone, Deserialize, Debug)]
@@ -199,6 +209,7 @@ pub enum Action {
     CatalogWithFilters(ActionCatalogWithFilters),
     CatalogsWithExtra(ActionCatalogsWithExtra),
     LibraryByType(ActionLibraryByType),
+    LibraryWithFilters(ActionLibraryWithFilters),
     MetaDetails(ActionMetaDetails),
     StreamingServer(ActionStreamingServer),
     Player(ActionPlayer),

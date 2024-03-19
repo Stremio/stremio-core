@@ -158,22 +158,20 @@ fn actionctx_synclibrarywithapi_with_user() {
                 && method == "POST"
                 && body == "{\"authKey\":\"auth_key\",\"collection\":\"libraryItem\"}" =>
             {
-                future::ok(Box::new(APIResult::Ok {
-                    result: vec![
-                        LibraryItemModified(
-                            REMOTE_ONLY_ITEM.id.to_owned(),
-                            REMOTE_ONLY_ITEM.mtime.to_owned(),
-                        ),
-                        LibraryItemModified(
-                            LOCAL_NEWER_ITEM.id.to_owned(),
-                            LOCAL_NEWER_ITEM.mtime - Duration::days(1),
-                        ),
-                        LibraryItemModified(
-                            REMOTE_NEWER_ITEM.id.to_owned(),
-                            REMOTE_NEWER_ITEM.mtime.to_owned(),
-                        ),
-                    ],
-                }) as Box<dyn Any + Send>)
+                future::ok(Box::new(APIResult::Ok(vec![
+                    LibraryItemModified(
+                        REMOTE_ONLY_ITEM.id.to_owned(),
+                        REMOTE_ONLY_ITEM.mtime.to_owned(),
+                    ),
+                    LibraryItemModified(
+                        LOCAL_NEWER_ITEM.id.to_owned(),
+                        LOCAL_NEWER_ITEM.mtime - Duration::days(1),
+                    ),
+                    LibraryItemModified(
+                        REMOTE_NEWER_ITEM.id.to_owned(),
+                        REMOTE_NEWER_ITEM.mtime.to_owned(),
+                    ),
+                ])) as Box<dyn Any + Send>)
                 .boxed_env()
             }
             Request {
@@ -195,9 +193,10 @@ fn actionctx_synclibrarywithapi_with_user() {
                             && body.changes.contains(&LOCAL_ONLY_ITEM)
                             && body.changes.contains(&LOCAL_NEW_REMOVED_ITEM) =>
                     {
-                        future::ok(Box::new(APIResult::Ok {
-                            result: SuccessResponse { success: True {} },
-                        }) as Box<dyn Any + Send>)
+                        future::ok(
+                            Box::new(APIResult::Ok(SuccessResponse { success: True {} }))
+                                as Box<dyn Any + Send>,
+                        )
                         .boxed_env()
                     }
                     _ => default_fetch_handler(request),
@@ -223,12 +222,10 @@ fn actionctx_synclibrarywithapi_with_user() {
                             && body.ids.contains(&REMOTE_ONLY_ITEM.id)
                             && body.ids.contains(&REMOTE_NEWER_ITEM.id) =>
                     {
-                        future::ok(Box::new(APIResult::Ok {
-                            result: LibraryItemsResponse(vec![
-                                REMOTE_ONLY_ITEM.to_owned(),
-                                REMOTE_NEWER_ITEM.to_owned(),
-                            ]),
-                        }) as Box<dyn Any + Send>)
+                        future::ok(Box::new(APIResult::Ok(LibraryItemsResponse(vec![
+                            REMOTE_ONLY_ITEM.to_owned(),
+                            REMOTE_NEWER_ITEM.to_owned(),
+                        ]))) as Box<dyn Any + Send>)
                         .boxed_env()
                     }
                     _ => default_fetch_handler(request),
@@ -394,9 +391,8 @@ fn actionctx_synclibrarywithapi_with_user_empty_library() {
                 && method == "POST"
                 && body == "{\"authKey\":\"auth_key\",\"collection\":\"libraryItem\"}" =>
             {
-                future::ok(Box::new(APIResult::Ok {
-                    result: Vec::<LibraryItemModified>::new(),
-                }) as Box<dyn Any + Send>)
+                future::ok(Box::new(APIResult::Ok(Vec::<LibraryItemModified>::new()))
+                    as Box<dyn Any + Send>)
                 .boxed_env()
             }
             _ => default_fetch_handler(request),

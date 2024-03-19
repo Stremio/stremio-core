@@ -36,11 +36,9 @@ fn data_export_fetch_handler(request: Request) -> TryEnvFuture<Box<dyn Any + Sen
             && method == "POST"
             && &body == r#"{"type":"DataExport","authKey":"user_key"}"# =>
         {
-            future::ok(Box::new(APIResult::Ok {
-                result: DataExportResponse {
-                    export_id: "user_export_id".into(),
-                },
-            }) as Box<dyn Any + Send>)
+            future::ok(Box::new(APIResult::Ok(DataExportResponse {
+                export_id: "user_export_id".into(),
+            })) as Box<dyn Any + Send>)
             .boxed_env()
         }
         _ => default_fetch_handler(request),

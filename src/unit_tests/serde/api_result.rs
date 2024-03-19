@@ -5,33 +5,22 @@ use serde_test::{assert_ser_tokens, Token};
 #[test]
 fn api_result() {
     assert_ser_tokens(
-        &vec![
-            APIResult::Err {
-                error: APIError::default(),
-            },
-            APIResult::Ok { result: () },
-        ],
+        &vec![APIResult::Err(APIError::default()), APIResult::Ok(())],
         &[
-            vec![
-                Token::Seq { len: Some(2) },
-                Token::Struct {
-                    name: "APIResult",
-                    len: 1,
-                },
-                Token::Str("error"),
-            ],
+            vec![Token::Seq { len: Some(2) }],
+            vec![Token::NewtypeVariant {
+                name: "APIResult",
+                variant: "error",
+            }],
             APIError::default_tokens(),
             vec![
-                Token::StructEnd,
-                Token::Struct {
+                Token::NewtypeVariant {
                     name: "APIResult",
-                    len: 1,
+                    variant: "result",
                 },
-                Token::Str("result"),
                 Token::Unit,
-                Token::StructEnd,
-                Token::SeqEnd,
             ],
+            vec![Token::SeqEnd],
         ]
         .concat(),
     );
