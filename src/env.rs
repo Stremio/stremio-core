@@ -308,7 +308,8 @@ impl Env for WebEnv {
                 )));
             } else {
                 // Response.json() to JSON::Stringify
-                let resp_string = JsFuture::from(resp.text().unwrap())
+
+                JsFuture::from(resp.text().unwrap())
                     .map_err(|error| {
                         EnvError::Fetch(
                             error
@@ -327,9 +328,7 @@ impl Env for WebEnv {
                                     .unwrap_or_else(|_| UNKNOWN_ERROR.to_owned()),
                             )
                         })
-                    })?;
-
-                resp_string
+                    })?
             };
 
             response_deserialize(resp)
