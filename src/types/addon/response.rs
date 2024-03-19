@@ -12,7 +12,60 @@ use crate::types::{
 /// for the [`ResourceResponse`] enum.
 ///
 /// See <https://github.com/Stremio/stremio-addon-sdk/tree/master/docs/api/requests>
-#[derive(Clone, Debug, Serialize, Deserialize)]
+///
+/// - [`ResourceResponse::Metas`]`: <https://github.com/Stremio/stremio-addon-sdk/blob/master/docs/api/requests/defineCatalogHandler.md#returns>
+/// - [`ResourceResponse::MetaDetailed`]: None
+/// - [`ResourceResponse::Meta`]: <https://github.com/Stremio/stremio-addon-sdk/blob/master/docs/api/requests/defineMetaHandler.md#returns>
+/// - [`ResourceResponse::Addons`]: <https://github.com/Stremio/stremio-addon-sdk/blob/master/docs/api/requests/defineResourceHandler.md#returns>
+/// - [`ResourceResponse::Streams`]: <https://github.com/Stremio/stremio-addon-sdk/blob/master/docs/api/requests/defineStreamHandler.md#returns>
+/// - [`ResourceResponse::Subtitles`]: <https://github.com/Stremio/stremio-addon-sdk/blob/master/docs/api/requests/defineSubtitlesHandler.md#returns>
+/// -
+///
+/// # Examples
+///
+/// ```
+/// use serde_json::json;
+///
+/// use stremio_core::types::{
+///     addon::{ResourceResponseCache, ResourceResponse},
+///     resource::{Stream, StreamSource, StreamBehaviorHints},
+/// };
+///
+/// let cache_info_json = json!({
+///     "streams": [
+///         {
+///             "name": "Addon\n4k",
+///             "title": "South Park - Seasons 1 to 25 (S01-S25) Collectors Edition The Movie and Extras [NVEnc 10Bit 1080p to 2160p HEVC][DD DDP & TrueHD 5.1Ch]\nSeason 02/South Park - S02E05 - Conjoined Fetus Lady.mp4",
+///             "url": "https://example-url-stream.com/South_Park_S02_E05.mp4",
+///         },
+///     ],
+///     "cacheMaxAge": 3600,
+///     "staleRevalidate": 14400,
+///     "staleError": 604800,
+///
+/// });
+///
+/// let response_cache = serde_json::from_value(cache_info_json).expect("Should deserialize");
+/// assert_eq!(ResourceResponseCache {
+///     cache_max_age: Some(3600),
+///     stale_revalidate: Some(14400),
+///     stale_error: Some(604800),
+///     resource: ResourceResponse::Streams{
+///         streams: vec![
+///             Stream {
+///                 source: StreamSource::Url { url: "https://example-url-stream.com/South_Park_S02_E05.mp4".parse().unwrap() },
+///                 name: Some("Addon\n4k".into()),
+///                 description: Some("South Park - Seasons 1 to 25 (S01-S25) Collectors Edition The Movie and Extras [NVEnc 10Bit 1080p to 2160p HEVC][DD DDP & TrueHD 5.1Ch]\nSeason 02/South Park - S02E05 - Conjoined Fetus Lady.mp4".into()),
+///                 thumbnail: None,
+///                 subtitles: vec![],
+///                 behavior_hints: StreamBehaviorHints::default(),
+///             }
+///         ]
+///     }
+/// }, response_cache);
+/// ```
+
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
 #[serde(rename_all = "camelCase")]
 pub struct ResourceResponseCache {
     /// (in seconds) which sets the `Cache-Control` header to `max-age=$cacheMaxAge` and overwrites the global cache time set in serveHTTP options
@@ -25,19 +78,10 @@ pub struct ResourceResponseCache {
     pub resource: ResourceResponse,
 }
 
-
 /// Resource Response from an addon.
 ///
 /// Deserializing the struct from json will skip any invalid Vec items
 /// and will skip any unknown to the variants fields.
-///
-/// ```
-/// use stremio_core::types::addon::ResourceResponse;
-///
-/// {
-/// }
-///
-/// ```
 #[derive(Clone, TryInto, Serialize, Debug, PartialEq, Eq)]
 #[serde(untagged)]
 #[serde_as]
