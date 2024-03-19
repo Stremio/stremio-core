@@ -1,10 +1,7 @@
 use std::{collections::HashMap, sync::RwLock};
 
 use chrono::{offset::TimeZone, DateTime, Utc};
-use futures::{
-    future::{self, Either},
-    Future, FutureExt, TryFutureExt,
-};
+use futures::{future, Future, FutureExt, TryFutureExt};
 use gloo_utils::format::JsValueSerdeExt;
 use http::{Method, Request};
 use lazy_static::lazy_static;
@@ -288,6 +285,7 @@ impl Env for WebEnv {
             .method(method)
             .headers(&headers)
             .body(body.as_ref());
+
         let request = web_sys::Request::new_with_str_and_init(&url, &request_options)
             .expect("request builder failed");
         let promise = global().fetch_with_request(&request);
@@ -304,13 +302,13 @@ impl Env for WebEnv {
             let resp = resp.dyn_into::<web_sys::Response>().unwrap();
             // status check and JSON extraction from response.
             let resp = if resp.status() != 200 {
-                Err(EnvError::Fetch(format!(
+                return Err(EnvError::Fetch(format!(
                     "Unexpected HTTP status code {}",
                     resp.status(),
-                )))
+                )));
             } else {
-                // extract JSON from response
-                JsFuture::from(resp.json().unwrap())
+                // Response.json() to JSON::Stringify
+                let resp_string = JsFuture::from(resp.text().unwrap())
                     .map_err(|error| {
                         EnvError::Fetch(
                             error
@@ -320,24 +318,21 @@ impl Env for WebEnv {
                         )
                     })
                     .await
-            }?;
+                    .and_then(|js_value| {
+                        js_value.dyn_into::<js_sys::JsString>().map_err(|error| {
+                            EnvError::Fetch(
+                                error
+                                    .dyn_into::<js_sys::Error>()
+                                    .map(|error| String::from(error.message()))
+                                    .unwrap_or_else(|_| UNKNOWN_ERROR.to_owned()),
+                            )
+                        })
+                    })?;
 
-            // convert the JSON JsValue to JSON JsString
-            let resp = js_sys::JSON::stringify(&resp).map_err(|error| {
-                EnvError::Fetch(
-                    error
-                        .dyn_into::<js_sys::Error>()
-                        .map(|error| String::from(error.message()))
-                        .unwrap_or_else(|_| UNKNOWN_ERROR.to_owned()),
-                )
-            })?;
+                resp_string
+            };
 
-            let resp = Into::<String>::into(resp);
-            let mut deserializer = serde_json::Deserializer::from_str(resp.as_str());
-
-            // deserialize into the final OUT struct
-            serde_path_to_error::deserialize::<_, OUT>(&mut deserializer)
-                .map_err(|error| EnvError::Fetch(error.to_string()))
+            response_deserialize(resp)
         }
         .boxed_local()
     }
@@ -494,4 +489,76 @@ fn global() -> WorkerGlobalScope {
     js_sys::global()
         .dyn_into::<WorkerGlobalScope>()
         .expect("worker global scope is not available")
+}
+
+fn response_deserialize<OUT>(response: js_sys::JsString) -> Result<OUT, EnvError>
+where
+    for<'de> OUT: Deserialize<'de> + 'static,
+{
+    let response = Into::<String>::into(response);
+    let mut deserializer = serde_json::Deserializer::from_str(response.as_str());
+
+    // deserialize into the final OUT struct
+
+    serde_path_to_error::deserialize::<_, OUT>(&mut deserializer)
+        .map_err(|error| EnvError::Fetch(error.to_string()))
+}
+
+/// > One other difference is that the tests must be in the root of the crate,
+/// > or within a pub mod. Putting them inside a private module will not work.
+#[cfg(test)]
+pub mod tests {
+    wasm_bindgen_test::wasm_bindgen_test_configure!(run_in_browser);
+
+    use wasm_bindgen_test::wasm_bindgen_test;
+
+    use stremio_core::{
+        runtime::EnvError,
+        types::{
+            addon::ResourceResponse,
+            api::{APIResult, CollectionResponse},
+        },
+    };
+
+    use super::response_deserialize;
+
+    #[wasm_bindgen_test]
+    fn test_deserialization_path_error() {
+        let json_string = serde_json::json!({
+            "result": []
+        })
+        .to_string();
+        let result = response_deserialize::<APIResult<Vec<String>>>(json_string.into());
+        assert!(result.is_ok());
+
+        // Bad ApiResult response, non-existing variant
+        {
+            let json_string = serde_json::json!({
+                "unknown_variant": {"test": 1}
+            })
+            .to_string();
+            let result = response_deserialize::<APIResult<CollectionResponse>>(json_string.into());
+
+            assert_eq!(
+                result.expect_err("Should be an error"),
+                EnvError::Fetch("unknown variant `unknown_variant`, expected `error` or `result` at line 1 column 18".to_string()),
+                "Message does not include the text 'unknown variant `unknown_variant`, expected `error` or `result` at line 1 column 18'"
+            );
+        }
+
+        // Addon ResourceResponse error, bad variant values
+        {
+            let json_string = serde_json::json!({
+                "metas": {"object_key": "value"}
+            })
+            .to_string();
+            let result = response_deserialize::<ResourceResponse>(json_string.into());
+
+            assert_eq!(
+                result.expect_err("Should be an error"),
+                EnvError::Fetch("invalid type: map, expected a sequence".to_string()),
+                "Message does not include the text 'Cannot deserialize as ResourceResponse'"
+            );
+        }
+    }
 }
