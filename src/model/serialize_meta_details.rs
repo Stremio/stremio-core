@@ -50,7 +50,7 @@ mod model {
     pub struct Video<'a> {
         #[serde(flatten)]
         pub video: &'a stremio_core::types::resource::Video,
-        pub upcomming: bool,
+        pub upcoming: bool,
         pub watched: bool,
         // Watch progress percentage
         pub progress: Option<f64>,
@@ -150,12 +150,8 @@ pub fn serialize_meta_details(
                             .iter()
                             .map(|video| model::Video {
                                 video,
-                                upcomming: meta_item.preview.behavior_hints.has_scheduled_videos
-                                    && meta_item
-                                        .preview
-                                        .released
-                                        .map(|released| released > WebEnv::now())
-                                        .unwrap_or(true),
+                                upcoming: meta_item.preview.behavior_hints.has_scheduled_videos
+                                    && video.released > Some(WebEnv::now()),
                                 watched: meta_details
                                     .watched
                                     .as_ref()
