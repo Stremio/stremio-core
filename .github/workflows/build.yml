@@ -29,6 +29,8 @@ jobs:
           components: rustfmt, clippy
           targets: wasm32-unknown-unknown
 
+      - uses: Swatinem/rust-cache@v2
+
       - name: Lint - rustfmt
         run: cargo fmt --all -- --check
 
