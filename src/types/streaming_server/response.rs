@@ -17,3 +17,9 @@ pub struct GetHTTPSResponse {
     pub domain: String,
     pub port: u16,
 }
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ArchiveCreateResponse {
+    pub key: Option<String>,
+}
