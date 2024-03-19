@@ -3,6 +3,7 @@ name = "stremio-core-web"
 version = "0.47.1"
 authors = ["Smart Code OOD"]
 edition = "2021"
+resolver = "2"
 
 [lib]
 crate-type = ["cdylib"]
@@ -51,6 +52,9 @@ serde_path_to_error = "0.1.*"
 # Tracing
 tracing = "0.1"
 tracing-wasm = "0.2"
+
+[dev-dependencies]
+wasm-bindgen-test = "0.3.0"
 
 # A way to quickly test with local version of `core` crates
 # [patch.'https://github.com/Stremio/stremio-core']
