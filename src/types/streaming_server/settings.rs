@@ -7,6 +7,7 @@ pub struct Settings {
     pub cache_root: String,
     pub server_version: String,
     pub remote_https: Option<String>,
+    pub transcode_profile: Option<String>,
     pub cache_size: Option<f64>,
     pub bt_max_connections: u64,
     pub bt_handshake_timeout: u64,

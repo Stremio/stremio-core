@@ -17,7 +17,8 @@ use crate::{
         api::SuccessResponse,
         profile::{Auth, AuthKey, Profile},
         streaming_server::{
-            GetHTTPSResponse, NetworkInfo, Settings as StreamingServerSettings, SettingsResponse,
+            DeviceInfo, GetHTTPSResponse, NetworkInfo, Settings as StreamingServerSettings,
+            SettingsResponse,
         },
         True,
     },
@@ -26,7 +27,6 @@ use crate::{
 
 const STREAMING_SERVER_URL: &str = "http://127.0.0.1:11470";
 const STREAMING_SERVER_SETTINGS: StreamingServerSettings = StreamingServerSettings {
-    remote_https: None,
     app_path: String::new(),
     cache_root: String::new(),
     server_version: String::new(),
@@ -37,6 +37,8 @@ const STREAMING_SERVER_SETTINGS: StreamingServerSettings = StreamingServerSettin
     bt_download_speed_soft_limit: 0.0,
     bt_download_speed_hard_limit: 0.0,
     bt_min_peers_for_stable: 0,
+    remote_https: None,
+    transcode_profile: None,
 };
 
 const AVAILABLE_INTERFACE: &str = "192.168.0.10";
@@ -75,6 +77,9 @@ fn remote_endpoint() {
                     available_interfaces: vec![AVAILABLE_INTERFACE.to_string()],
                 }) as Box<dyn Any + Send>)
                 .boxed_env()
+            }
+            Request { url, .. } if url == "http://127.0.0.1:11470/device-info" => {
+                future::ok(Box::<Vec<DeviceInfo>>::default() as Box<dyn Any + Send>).boxed_env()
             }
             Request { url, .. } if url.starts_with("http://127.0.0.1:11470/get-https") => {
                 future::ok(Box::new(GetHTTPSResponse {

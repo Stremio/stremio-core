@@ -15,7 +15,9 @@ use crate::types::api::{
 use crate::types::library::{LibraryBucket, LibraryItem, LibraryItemId};
 use crate::types::profile::{Auth, AuthKey, Profile, User};
 use crate::types::resource::{MetaItem, Stream};
-use crate::types::streaming_server::{GetHTTPSResponse, NetworkInfo, SettingsResponse, Statistics};
+use crate::types::streaming_server::{
+    DeviceInfo, GetHTTPSResponse, NetworkInfo, SettingsResponse, Statistics,
+};
 use crate::types::streams::StreamItemState;
 
 pub type CtxStorageResponse = (
@@ -105,6 +107,8 @@ pub enum Internal {
     StreamingServerPlaybackDevicesResult(Url, Result<Vec<PlaybackDevice>, EnvError>),
     // Result for network info.
     StreamingServerNetworkInfoResult(Url, Result<NetworkInfo, EnvError>),
+    // Result for device info.
+    StreamingServerDeviceInfoResult(Url, Result<DeviceInfo, EnvError>),
     /// Result for updating streaming server settings.
     StreamingServerUpdateSettingsResult(Url, Result<(), EnvError>),
     /// Result for creating a torrent.
