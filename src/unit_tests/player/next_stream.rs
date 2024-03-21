@@ -148,6 +148,7 @@ fn next_stream() {
             .next_stream
             .as_ref()
             .unwrap()
+            .1
             .behavior_hints
             .binge_group,
         stream.behavior_hints.binge_group,

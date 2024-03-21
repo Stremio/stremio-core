@@ -759,36 +759,34 @@ fn push_to_library<E: Env + 'static>(
     }
 }
 
-/// You can also force the switch to the next video.
-///
+/// You can also force the switch to the next video
 /// no matter what per cent % you have watched frome the [`LibraryItem`].
+///
 /// This percentage is defined by [`CREDITS_THRESHOLD_COEF`]
 fn switch_to_next_video(
     library_item: &mut Option<LibraryItem>,
     next_video: &Option<(ResourceRequest, Video)>,
     force: bool,
 ) -> Effects {
-    match library_item {
-        Some(library_item) => {
-            let watched_percent_reached = library_item.state.time_offset as f64
-                > library_item.state.duration as f64 * CREDITS_THRESHOLD_COEF;
+    if let Some(library_item) = library_item {
+        let watched_percent_reached = library_item.state.time_offset as f64
+            > library_item.state.duration as f64 * CREDITS_THRESHOLD_COEF;
 
-            if watched_percent_reached || force {
-                library_item.state.time_offset = 0;
-                if let Some((_request, next_video)) = next_video {
-                    library_item.state.video_id = Some(next_video.id.to_owned());
-                    library_item.state.overall_time_watched = library_item
-                        .state
-                        .overall_time_watched
-                        .saturating_add(library_item.state.time_watched);
-                    library_item.state.time_watched = 0;
-                    library_item.state.flagged_watched = 0;
-                    library_item.state.time_offset = 1;
-                };
-            }
+        if watched_percent_reached || force {
+            library_item.state.time_offset = 0;
+            if let Some((_request, next_video)) = next_video {
+                library_item.state.video_id = Some(next_video.id.to_owned());
+                library_item.state.overall_time_watched = library_item
+                    .state
+                    .overall_time_watched
+                    .saturating_add(library_item.state.time_watched);
+                library_item.state.time_watched = 0;
+                library_item.state.flagged_watched = 0;
+                library_item.state.time_offset = 1;
+            };
         }
-        _ => {}
     };
+
     Effects::none().unchanged()
 }
 
@@ -1379,7 +1377,7 @@ mod test {
     use url::Url;
 
     use crate::{
-        constants::YOUTUBE_ADDON_ID_PREFIX,
+        constants::{META_RESOURCE_NAME, YOUTUBE_ADDON_ID_PREFIX},
         models::common::{Loadable, ResourceLoadable},
         types::{
             addon::{ResourcePath, ResourceRequest},
@@ -1431,9 +1429,18 @@ mod test {
                 series_info: Some(SeriesInfo::default()),
                 trailer_streams: vec![],
             };
+            let next_video_request = ResourceRequest {
+                base: "https://video-url.com/".parse().unwrap(),
+                path: ResourcePath {
+                    resource: META_RESOURCE_NAME.to_owned(),
+                    r#type: "channel".to_owned(),
+                    id: "next_video".to_owned(),
+                    extra: vec![],
+                },
+            };
             let result_effects = next_streams_update::<TestEnv>(
                 &mut next_streams,
-                &Some(next_video),
+                &Some((next_video_request, next_video)),
                 &Some(selected.clone()),
             );
 
@@ -1472,9 +1479,18 @@ mod test {
                 series_info: Some(SeriesInfo::default()),
                 trailer_streams: vec![],
             };
+            let next_video_request = ResourceRequest {
+                base: "https://video-url.com/".parse().unwrap(),
+                path: ResourcePath {
+                    resource: META_RESOURCE_NAME.to_owned(),
+                    r#type: "channel".to_owned(),
+                    id: "next_video_2".to_owned(),
+                    extra: vec![],
+                },
+            };
             let result_effects = next_streams_update::<TestEnv>(
                 &mut next_streams,
-                &Some(next_video),
+                &Some((next_video_request, next_video)),
                 &Some(selected.clone()),
             );
 
@@ -1512,9 +1528,18 @@ mod test {
                 series_info: Some(SeriesInfo::default()),
                 trailer_streams: vec![],
             };
+            let next_video_request = ResourceRequest {
+                base: "https://video-url.com/".parse().unwrap(),
+                path: ResourcePath {
+                    resource: META_RESOURCE_NAME.to_owned(),
+                    r#type: "channel".to_owned(),
+                    id: "next_video_3".to_owned(),
+                    extra: vec![],
+                },
+            };
             let result_effects = next_streams_update::<TestEnv>(
                 &mut next_streams,
-                &Some(next_video),
+                &Some((next_video_request, next_video)),
                 &Some(selected),
             );
 
