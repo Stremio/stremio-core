@@ -151,9 +151,8 @@ impl Stream {
 
     // }
 
-    /// For Rar and Zip urls, the streaming server should be online.
-    /// Me perform a POST requests to create a stream `/rar/create`
-    /// and then use the `/rar/stream` as the streaming url.
+    
+    #[deprecated = "For ZIP and RAR urls we need to make requests to server"]
     pub fn streaming_url(&self, streaming_server_url: Option<&Url>) -> Option<String> {
         match (&self.source, streaming_server_url) {
             (StreamSource::Url { url }, streaming_server_url) if url.scheme() != "magnet" => {
@@ -236,7 +235,7 @@ impl Stream {
                 },
                 Some(streaming_server_url),
             ) => {
-                todo!()
+                None
             }
             (
                 StreamSource::Rar {
@@ -246,7 +245,7 @@ impl Stream {
                 },
                 Some(streaming_server_url),
             ) => {
-                todo!()
+                None
             }
             (StreamSource::YouTube { yt_id }, Some(streaming_server_url)) => {
                 let mut url = streaming_server_url.to_owned();

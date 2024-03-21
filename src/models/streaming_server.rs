@@ -694,10 +694,21 @@ fn update_remote_url<E: Env + 'static>(
     }
 }
 
+// pub fn update_streaming_url(transport_url: Optiin<Url>, stream_source: StreamSource) -> Effects {
+//     Effects::one(Effect::Future(EffectFuture::Concurrent(
+//         update_stream_source_streaming_url(transport_url, stream_source).map(
+//             enclose!((url) move |result|
+//                 Msg::Internal(Internal::StreamingServerGetHTTPSResult(url, result))
+//             ),
+//         ),
+//     )))
+//     .unchanged()
+// }
+
 /// Updates a StreamSource if it's RAR or ZIP urls by calling the server (if present)
 /// and creating a streaming url for a given file (either with `file_idx` or `file_must_include`).
-pub async fn update_stream_source_streaming_url<E: Env + 'static>(
-    transport_url: &mut Option<Url>,
+async fn update_stream_source_streaming_url<E: Env + 'static>(
+    transport_url: Option<&Url>,
     stream_source: StreamSource,
 ) -> Result<StreamSource, EnvError> {
     match (transport_url, stream_source) {
