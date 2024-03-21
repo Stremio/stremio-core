@@ -93,9 +93,9 @@ pub struct Player {
     pub video_params: Option<VideoParams>,
     pub meta_item: Option<ResourceLoadable<MetaItem>>,
     pub subtitles: Vec<ResourceLoadable<Vec<Subtitles>>>,
-    pub next_video: Option<Video>,
+    pub next_video: Option<(ResourceRequest, Video)>,
     pub next_streams: Option<ResourceLoadable<Vec<Stream>>>,
-    pub next_stream: Option<Stream>,
+    pub next_stream: Option<(ResourceRequest, Stream)>,
     pub series_info: Option<SeriesInfo>,
     pub library_item: Option<LibraryItem>,
     pub stream_state: Option<StreamItemState>,
@@ -136,7 +136,7 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                         .as_ref()
                         .map(|meta_request| &meta_request.path.id)
                 {
-                    switch_to_next_video(&mut self.library_item, &self.next_video)
+                    switch_to_next_video(&mut self.library_item, &self.next_video, false)
                 } else {
                     Effects::none().unchanged()
                 };
@@ -192,6 +192,7 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                     &self.selected,
                     &ctx.profile.settings,
                 );
+
                 // Make sure to update the steams and in term the StreamsBucket
                 // once the player loads the newly selected item
                 let update_streams_effects = match (&self.selected, &self.meta_item) {
@@ -301,7 +302,7 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                 );
 
                 let switch_to_next_video_effects =
-                    switch_to_next_video(&mut self.library_item, &self.next_video);
+                    switch_to_next_video(&mut self.library_item, &self.next_video, false);
                 let push_to_library_effects = match &self.library_item {
                     Some(library_item) => Effects::msg(Msg::Internal(Internal::UpdateLibraryItem(
                         library_item.to_owned(),
@@ -539,16 +540,54 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                         .map(|library_item| library_item.state.time_offset),
                 );
 
-                // Load will actually take care of loading the next video
+                // Load will only care of loading the next video if we have watched > 80% which
+                // is not always the case, you can switch to the next video in the middle of the current one.
+                let switch_to_next_video_effects =
+                    switch_to_next_video(&mut self.library_item, &self.next_video, true);
 
-                seek_history_effects.join(
-                    Effects::msg(Msg::Event(Event::PlayerNextVideo {
-                        context: self.analytics_context.as_ref().cloned().unwrap_or_default(),
-                        is_binge_enabled: ctx.profile.settings.binge_watching,
-                        is_playing_next_video: self.next_video.is_some(),
-                    }))
+                let next_video_effects = next_video_update(
+                    &mut self.next_video,
+                    &self.next_stream,
+                    &self.selected,
+                    &self.meta_item,
+                    &ctx.profile.settings,
+                );
+                let next_streams_effects = next_streams_update::<E>(
+                    &mut self.next_streams,
+                    &self.next_video,
+                    &self.selected,
+                );
+
+                let next_stream_effects = next_stream_update(
+                    &mut self.next_stream,
+                    &self.next_streams,
+                    &self.selected,
+                    &ctx.profile.settings,
+                );
+
+                // make sure to push the updated library!
+                let push_to_library_effects = match &self.library_item {
+                    Some(library_item) => Effects::msg(Msg::Internal(Internal::UpdateLibraryItem(
+                        library_item.to_owned(),
+                    )))
                     .unchanged(),
-                )
+                    _ => Effects::none().unchanged(),
+                };
+
+                seek_history_effects
+                    .join(switch_to_next_video_effects)
+                    .join(next_video_effects)
+                    .join(next_streams_effects)
+                    .join(next_stream_effects)
+                    .join(push_to_library_effects)
+                    .join(
+                        Effects::msg(Msg::Event(Event::PlayerNextVideo {
+                            context: self.analytics_context.as_ref().cloned().unwrap_or_default(),
+                            is_binge_enabled: ctx.profile.settings.binge_watching,
+                            is_playing_next_video: self.next_video.is_some(),
+                        }))
+                        .unchanged(),
+                    )
             }
             Msg::Action(Action::Player(ActionPlayer::Ended)) if self.selected.is_some() => {
                 self.ended = true;
@@ -607,6 +646,7 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                     &self.next_video,
                     &self.selected,
                 ));
+
                 let next_stream_effects = next_stream_update(
                     &mut self.next_stream,
                     &self.next_streams,
@@ -719,26 +759,33 @@ fn push_to_library<E: Env + 'static>(
     }
 }
 
+/// You can also force the switch to the next video.
+///
+/// no matter what per cent % you have watched frome the [`LibraryItem`].
+/// This percentage is defined by [`CREDITS_THRESHOLD_COEF`]
 fn switch_to_next_video(
     library_item: &mut Option<LibraryItem>,
-    next_video: &Option<Video>,
+    next_video: &Option<(ResourceRequest, Video)>,
+    force: bool,
 ) -> Effects {
     match library_item {
-        Some(library_item)
-            if library_item.state.time_offset as f64
-                > library_item.state.duration as f64 * CREDITS_THRESHOLD_COEF =>
-        {
-            library_item.state.time_offset = 0;
-            if let Some(next_video) = next_video {
-                library_item.state.video_id = Some(next_video.id.to_owned());
-                library_item.state.overall_time_watched = library_item
-                    .state
-                    .overall_time_watched
-                    .saturating_add(library_item.state.time_watched);
-                library_item.state.time_watched = 0;
-                library_item.state.flagged_watched = 0;
-                library_item.state.time_offset = 1;
-            };
+        Some(library_item) => {
+            let watched_percent_reached = library_item.state.time_offset as f64
+                > library_item.state.duration as f64 * CREDITS_THRESHOLD_COEF;
+
+            if watched_percent_reached || force {
+                library_item.state.time_offset = 0;
+                if let Some((_request, next_video)) = next_video {
+                    library_item.state.video_id = Some(next_video.id.to_owned());
+                    library_item.state.overall_time_watched = library_item
+                        .state
+                        .overall_time_watched
+                        .saturating_add(library_item.state.time_watched);
+                    library_item.state.time_watched = 0;
+                    library_item.state.flagged_watched = 0;
+                    library_item.state.time_offset = 1;
+                };
+            }
         }
         _ => {}
     };
@@ -771,8 +818,8 @@ fn stream_state_update(
 }
 
 fn next_video_update(
-    video: &mut Option<Video>,
-    stream: &Option<Stream>,
+    video: &mut Option<(ResourceRequest, Video)>,
+    next_video_stream: &Option<(ResourceRequest, Stream)>,
     selected: &Option<Selected>,
     meta_item: &Option<ResourceLoadable<MetaItem>>,
     settings: &ProfileSettings,
@@ -789,7 +836,7 @@ fn next_video_update(
             }),
             Some(ResourceLoadable {
                 content: Some(Loadable::Ready(meta_item)),
-                ..
+                request: meta_request,
             }),
         ) if settings.binge_watching => meta_item
             .videos
@@ -816,10 +863,14 @@ fn next_video_update(
             })
             .map(|(_, next_video)| {
                 let mut next_video = next_video.clone();
-                if let Some(stream) = stream {
-                    next_video.streams = vec![stream.clone()];
+                if let Some(stream) = next_video_stream {
+                    next_video.streams = vec![stream.1.clone()];
                 }
-                next_video
+
+                let mut next_request = meta_request.to_owned();
+                next_request.path.id = next_video.id.to_owned();
+
+                (next_request, next_video)
             }),
         _ => None,
     };
@@ -828,14 +879,14 @@ fn next_video_update(
 
 fn next_streams_update<E>(
     next_streams: &mut Option<ResourceLoadable<Vec<Stream>>>,
-    next_video: &Option<Video>,
+    next_video: &Option<(ResourceRequest, Video)>,
     selected: &Option<Selected>,
 ) -> Effects
 where
     E: Env + 'static,
 {
     let next_video = match next_video {
-        Some(next_video) => next_video,
+        Some((_next_video_request, next_video)) => next_video,
         None => return Effects::none().unchanged(),
     };
 
@@ -895,7 +946,7 @@ where
 }
 
 fn next_stream_update(
-    stream: &mut Option<Stream>,
+    stream: &mut Option<(ResourceRequest, Stream)>,
     next_streams: &Option<ResourceLoadable<Vec<Stream>>>,
     selected: &Option<Selected>,
     settings: &ProfileSettings,
@@ -905,12 +956,13 @@ fn next_stream_update(
             Some(Selected { stream, .. }),
             Some(ResourceLoadable {
                 content: Some(Loadable::Ready(streams)),
-                ..
+                request,
             }),
         ) if settings.binge_watching => streams
             .iter()
             .find(|next_stream| next_stream.is_binge_match(stream))
-            .cloned(),
+            .cloned()
+            .map(|stream| (request.to_owned(), stream)),
         _ => None,
     };
 
