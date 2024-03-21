@@ -7,8 +7,8 @@ use num::rational::Ratio;
 
 use crate::constants::{
     BASE64, CREDITS_THRESHOLD_COEF, META_RESOURCE_NAME, PLAYER_IGNORE_SEEK_AFTER,
-    VIDEO_FILENAME_EXTRA_PROP, VIDEO_HASH_EXTRA_PROP, VIDEO_SIZE_EXTRA_PROP,
-    WATCHED_THRESHOLD_COEF,
+    STREAM_RESOURCE_NAME, SUBTITLES_RESOURCE_NAME, VIDEO_FILENAME_EXTRA_PROP,
+    VIDEO_HASH_EXTRA_PROP, VIDEO_SIZE_EXTRA_PROP, WATCHED_THRESHOLD_COEF,
 };
 use crate::models::common::{
     eq_update, resource_update, resource_update_with_vector_content,
@@ -126,7 +126,7 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
     fn update(&mut self, msg: &Msg, ctx: &Ctx) -> Effects {
         match msg {
             Msg::Action(Action::Load(ActionLoad::Player(selected))) => {
-                let switch_to_next_video_effects = if self
+                let item_state_update_effects = if self
                     .selected
                     .as_ref()
                     .and_then(|selected| selected.meta_request.as_ref())
@@ -136,7 +136,7 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                         .as_ref()
                         .map(|meta_request| &meta_request.path.id)
                 {
-                    switch_to_next_video(&mut self.library_item, &self.next_video)
+                    item_state_update(&mut self.library_item, &self.next_video)
                 } else {
                     Effects::none().unchanged()
                 };
@@ -263,7 +263,7 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                 self.loaded = false;
                 self.ended = false;
                 self.paused = None;
-                switch_to_next_video_effects
+                item_state_update_effects
                     .join(selected_effects)
                     .join(meta_item_effects)
                     .join(stream_state_effects)
@@ -300,8 +300,8 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                     None,
                 );
 
-                let switch_to_next_video_effects =
-                    switch_to_next_video(&mut self.library_item, &self.next_video);
+                let item_state_update_effects =
+                    item_state_update(&mut self.library_item, &self.next_video);
                 let push_to_library_effects = match &self.library_item {
                     Some(library_item) => Effects::msg(Msg::Internal(Internal::UpdateLibraryItem(
                         library_item.to_owned(),
@@ -328,7 +328,7 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                 self.paused = None;
 
                 seek_history_effects
-                    .join(switch_to_next_video_effects)
+                    .join(item_state_update_effects)
                     .join(push_to_library_effects)
                     .join(selected_effects)
                     .join(video_params_effects)
@@ -562,14 +562,19 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
             Msg::Internal(Internal::StreamsChanged(_)) => {
                 stream_state_update(&mut self.stream_state, &self.selected, &ctx.streams)
             }
-            Msg::Internal(Internal::ResourceRequestResult(request, result)) => {
+            Msg::Internal(Internal::ResourceRequestResult(request, result))
+                if self.selected.is_some() =>
+            {
                 let meta_item_effects = match &mut self.meta_item {
-                    Some(meta_item) => resource_update::<E, _>(
-                        meta_item,
-                        ResourceAction::ResourceRequestResult { request, result },
-                    ),
+                    Some(meta_item) if request.path.resource == META_RESOURCE_NAME => {
+                        resource_update::<E, _>(
+                            meta_item,
+                            ResourceAction::ResourceRequestResult { request, result },
+                        )
+                    }
                     _ => Effects::none().unchanged(),
                 };
+
                 let update_streams_effects = match (&self.selected, &self.meta_item) {
                     (Some(selected), Some(meta_item))
                         if request.path.resource == META_RESOURCE_NAME =>
@@ -583,16 +588,24 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                     }
                     _ => Effects::none().unchanged(),
                 };
-                let subtitles_effects = resources_update_with_vector_content::<E, _>(
-                    &mut self.subtitles,
-                    ResourcesAction::ResourceRequestResult { request, result },
-                );
+
+                let subtitles_effects = if request.path.resource == SUBTITLES_RESOURCE_NAME {
+                    resources_update_with_vector_content::<E, _>(
+                        &mut self.subtitles,
+                        ResourcesAction::ResourceRequestResult { request, result },
+                    )
+                } else {
+                    Effects::none().unchanged()
+                };
+
                 let next_streams_effects = match self.next_streams.as_mut() {
-                    Some(next_streams) => resource_update_with_vector_content::<E, _>(
-                        next_streams,
-                        ResourceAction::ResourceRequestResult { request, result },
-                    ),
-                    None => Effects::none().unchanged(),
+                    Some(next_streams) if request.path.resource == STREAM_RESOURCE_NAME => {
+                        resource_update_with_vector_content::<E, _>(
+                            next_streams,
+                            ResourceAction::ResourceRequestResult { request, result },
+                        )
+                    }
+                    _ => Effects::none().unchanged(),
                 };
 
                 let next_video_effects = next_video_update(
@@ -602,11 +615,13 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                     &self.meta_item,
                     &ctx.profile.settings,
                 );
+
                 let next_streams_effects = next_streams_effects.join(next_streams_update::<E>(
                     &mut self.next_streams,
                     &self.next_video,
                     &self.selected,
                 ));
+
                 let next_stream_effects = next_stream_update(
                     &mut self.next_stream,
                     &self.next_streams,
@@ -719,7 +734,7 @@ fn push_to_library<E: Env + 'static>(
     }
 }
 
-fn switch_to_next_video(
+fn item_state_update(
     library_item: &mut Option<LibraryItem>,
     next_video: &Option<Video>,
 ) -> Effects {
@@ -834,11 +849,6 @@ fn next_streams_update<E>(
 where
     E: Env + 'static,
 {
-    let next_video = match next_video {
-        Some(next_video) => next_video,
-        None => return Effects::none().unchanged(),
-    };
-
     let mut stream_request = match selected
         .as_ref()
         .and_then(|selected| selected.stream_request.as_ref())
@@ -846,51 +856,36 @@ where
         Some(stream_request) => stream_request.clone(),
         None => return Effects::none().unchanged(),
     };
-    // use the next video id to update the stream request
-    stream_request.path.id = next_video.id.clone();
 
-    if let Some(stream) = next_video.stream() {
-        return eq_update(
-            next_streams,
-            Some(ResourceLoadable {
-                request: stream_request,
-                content: Some(Loadable::Ready(vec![stream.into_owned()])),
-            }),
-        );
-    }
+    match next_video {
+        Some(next_video) => {
+            stream_request.path.id = next_video.id.clone();
 
-    if !next_video.streams.is_empty() {
-        return eq_update(
-            next_streams,
-            Some(ResourceLoadable {
-                request: stream_request,
-                content: Some(Loadable::Ready(next_video.streams.clone())),
-            }),
-        );
-    }
+            match next_streams.as_mut() {
+                Some(next_streams) => resource_update_with_vector_content::<E, _>(
+                    next_streams,
+                    ResourceAction::ResourceRequested {
+                        request: &stream_request,
+                    },
+                ),
+                None => {
+                    let mut new_next_streams = ResourceLoadable {
+                        request: stream_request.to_owned(),
+                        content: None,
+                    };
+                    let next_streams_effects = resource_update_with_vector_content::<E, _>(
+                        &mut new_next_streams,
+                        ResourceAction::ResourceRequested {
+                            request: &stream_request,
+                        },
+                    );
 
-    // otherwise, fetch te next streams using a request
-    match next_streams.as_mut() {
-        Some(next_streams) => resource_update_with_vector_content::<E, _>(
-            next_streams,
-            ResourceAction::ResourceRequested {
-                request: &stream_request,
-            },
-        ),
-        None => {
-            let mut new_next_streams = ResourceLoadable {
-                request: stream_request.to_owned(),
-                content: None,
-            };
-            let next_streams_effects = resource_update::<E, _>(
-                &mut new_next_streams,
-                ResourceAction::ResourceRequested {
-                    request: &stream_request,
-                },
-            );
-            *next_streams = Some(new_next_streams);
-            next_streams_effects
+                    *next_streams = Some(new_next_streams);
+                    next_streams_effects
+                }
+            }
         }
+        None => Effects::none().unchanged(),
     }
 }
 

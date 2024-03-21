@@ -369,6 +369,54 @@ impl From<(&Video, &ResourceRequest, &Option<Url>, &Settings)> for VideoDeepLink
     }
 }
 
+impl
+    From<(
+        &Video,
+        &ResourceRequest,
+        &ResourceRequest,
+        &Option<Url>,
+        &Settings,
+    )> for VideoDeepLinks
+{
+    fn from(
+        (video, stream_request, meta_request, streaming_server_url, settings): (
+            &Video,
+            &ResourceRequest,
+            &ResourceRequest,
+            &Option<Url>,
+            &Settings,
+        ),
+    ) -> Self {
+        let stream = video.stream();
+        VideoDeepLinks {
+            meta_details_streams: format!(
+                "stremio:///detail/{}/{}/{}",
+                utf8_percent_encode(&meta_request.path.r#type, URI_COMPONENT_ENCODE_SET),
+                utf8_percent_encode(&meta_request.path.id, URI_COMPONENT_ENCODE_SET),
+                utf8_percent_encode(&video.id, URI_COMPONENT_ENCODE_SET)
+            ),
+            player: stream
+                .as_ref()
+                .map(|stream| {
+                    Ok::<_, anyhow::Error>(format!(
+                        "stremio:///player/{}/{}/{}/{}/{}/{}",
+                        utf8_percent_encode(&stream.encode()?, URI_COMPONENT_ENCODE_SET),
+                        utf8_percent_encode(stream_request.base.as_str(), URI_COMPONENT_ENCODE_SET),
+                        utf8_percent_encode(meta_request.base.as_str(), URI_COMPONENT_ENCODE_SET),
+                        utf8_percent_encode(&meta_request.path.r#type, URI_COMPONENT_ENCODE_SET),
+                        utf8_percent_encode(&meta_request.path.id, URI_COMPONENT_ENCODE_SET),
+                        utf8_percent_encode(&video.id, URI_COMPONENT_ENCODE_SET)
+                    ))
+                })
+                .transpose()
+                .unwrap_or_else(|error| Some(ErrorLink::from(error).into())),
+            external_player: stream.as_ref().map(|stream| {
+                ExternalPlayerLink::from((stream.as_ref(), streaming_server_url, settings))
+            }),
+        }
+    }
+}
+
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct StreamDeepLinks {
