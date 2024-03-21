@@ -337,8 +337,8 @@ mod tests {
                 None
             }
 
-            fn body(self) -> () {
-                ()
+            fn body(self) {
+                
             }
         }
 
