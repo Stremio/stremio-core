@@ -337,9 +337,7 @@ mod tests {
                 None
             }
 
-            fn body(self) -> () {
-                ()
-            }
+            fn body(self) {}
         }
 
         let v2 = V2Request;

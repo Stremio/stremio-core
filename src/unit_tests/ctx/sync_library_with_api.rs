@@ -360,7 +360,7 @@ fn actionctx_synclibrarywithapi_with_user() {
         "Three requests have been sent"
     );
     assert_eq!(
-        REQUESTS.read().unwrap().get(0).unwrap().url,
+        REQUESTS.read().unwrap().first().unwrap().url,
         "https://api.strem.io/api/datastoreMeta".to_owned(),
         "datastoreMeta request has been sent"
     );
@@ -447,7 +447,7 @@ fn actionctx_synclibrarywithapi_with_user_empty_library() {
         "One request has been sent"
     );
     assert_eq!(
-        REQUESTS.read().unwrap().get(0).unwrap().url,
+        REQUESTS.read().unwrap().first().unwrap().url,
         "https://api.strem.io/api/datastoreMeta".to_owned(),
         "datastoreMeta request has been sent"
     );
