@@ -539,16 +539,27 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                         .map(|library_item| library_item.state.time_offset),
                 );
 
-                // Load will actually take care of loading the next video
+                // Set time_offset to 0 as we switch to next video
+                let library_item_effects = self
+                    .library_item
+                    .as_mut()
+                    .map(|library_item| {
+                        library_item.state.time_offset = 0;
+                        push_to_library::<E>(&mut self.push_library_item_time, library_item)
+                    })
+                    .unwrap_or(Effects::none().unchanged());
 
-                seek_history_effects.join(
-                    Effects::msg(Msg::Event(Event::PlayerNextVideo {
-                        context: self.analytics_context.as_ref().cloned().unwrap_or_default(),
-                        is_binge_enabled: ctx.profile.settings.binge_watching,
-                        is_playing_next_video: self.next_video.is_some(),
-                    }))
-                    .unchanged(),
-                )
+                // Load will actually take care of loading the next video
+                seek_history_effects
+                    .join(
+                        Effects::msg(Msg::Event(Event::PlayerNextVideo {
+                            context: self.analytics_context.as_ref().cloned().unwrap_or_default(),
+                            is_binge_enabled: ctx.profile.settings.binge_watching,
+                            is_playing_next_video: self.next_video.is_some(),
+                        }))
+                        .unchanged(),
+                    )
+                    .join(library_item_effects)
             }
             Msg::Action(Action::Player(ActionPlayer::Ended)) if self.selected.is_some() => {
                 self.ended = true;
