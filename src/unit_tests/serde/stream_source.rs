@@ -1,4 +1,4 @@
-use crate::types::resource::StreamSource;
+use crate::types::resource::{StreamSource, UrlExtended};
 use serde_test::{assert_de_tokens, assert_de_tokens_error, assert_ser_tokens, Token};
 use url::Url;
 
@@ -24,7 +24,7 @@ fn stream_source() {
     assert_ser_tokens(
         &vec![
             StreamSource::Url {
-                url: Url::parse("https://url").unwrap(),
+                url: UrlExtended::Url(Url::parse("https://url").unwrap()),
             },
             StreamSource::YouTube {
                 yt_id: "yt_id".to_owned(),
@@ -112,7 +112,7 @@ fn stream_source() {
     assert_de_tokens(
         &vec![
             StreamSource::Url {
-                url: Url::parse("https://url").unwrap(),
+                url: UrlExtended::Url(Url::parse("https://url").unwrap()),
             },
             StreamSource::YouTube {
                 yt_id: "yt_id".to_owned(),

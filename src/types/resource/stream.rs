@@ -13,8 +13,9 @@ use serde::{Deserialize, Deserializer, Serialize};
 use serde_with::{serde_as, DefaultOnNull};
 use std::collections::HashMap;
 use std::io::Write;
+use std::str::FromStr;
 use stremio_serde_hex::{SerHex, Strict};
-use url::{form_urlencoded, Url};
+use url::{form_urlencoded, ParseError, Url};
 
 #[derive(Clone, PartialEq, Eq, Serialize, Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
@@ -33,10 +34,61 @@ pub struct Stream {
     pub behavior_hints: StreamBehaviorHints,
 }
 
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(untagged, from = "String")]
+pub enum UrlExtended {
+    Url(Url),
+    RelativePath(String),
+}
+
+impl From<String> for UrlExtended {
+    fn from(value: String) -> Self {
+        value.parse().unwrap()
+    }
+}
+impl UrlExtended {
+    /// This method will replace the relative path with absolute one using the provided addon transport URL,
+    /// only if the we have a [`UrlExtended::RelativePath`].
+    ///
+    /// Otherwise, it leaves the [`UrlExtended`] unchanged.
+    pub fn with_addon_url(&mut self, addon_transport_url: &Url) -> Result<(), ParseError> {
+        if let UrlExtended::RelativePath(path) = &self {
+            *self = UrlExtended::Url(addon_transport_url.join(path)?);
+        }
+
+        Ok(())
+    }
+}
+
+impl FromStr for UrlExtended {
+    type Err = ();
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s.parse::<Url>() {
+            Ok(url) => Ok(Self::Url(url)),
+            Err(_err) => Ok(Self::RelativePath(s.into())),
+        }
+    }
+}
+
 impl Stream {
+    /// This method will replace the relative path with absolute one using the provided addon transport URL,
+    /// only if the stream source is [`StreamSource::Url`] and contains a [`UrlExtended::RelativePath`].
+    ///
+    /// Otherwise, it leaves the [`Stream`] unchanged.
+    pub fn with_addon_url(&mut self, addon_transport_url: &Url) -> Result<(), ParseError> {
+        if let StreamSource::Url { url } = &mut self.source {
+            url.with_addon_url(addon_transport_url)?;
+        }
+
+        Ok(())
+    }
+
     pub fn magnet_url(&self) -> Option<Magnet> {
         match &self.source {
-            StreamSource::Url { url } if url.scheme() == "magnet" => Magnet::new(url.as_str()).ok(),
+            StreamSource::Url {
+                url: UrlExtended::Url(url),
+            } if url.scheme() == "magnet" => Magnet::new(url.as_str()).ok(),
             StreamSource::Torrent {
                 info_hash,
                 announce,
@@ -112,10 +164,13 @@ impl Stream {
     }
     pub fn download_url(&self) -> Option<String> {
         match &self.source {
-            StreamSource::Url { url } if url.scheme() == "magnet" => {
-                self.magnet_url().map(|magnet_url| magnet_url.to_string())
-            }
-            StreamSource::Url { url } => Some(url.to_string()),
+            StreamSource::Url { url } => match url {
+                UrlExtended::Url(url) if url.scheme() == "magnet" => {
+                    self.magnet_url().map(|magnet_url| magnet_url.to_string())
+                }
+                UrlExtended::Url(url) => Some(url.to_string()),
+                UrlExtended::RelativePath(_) => None,
+            },
             StreamSource::Torrent { .. } => {
                 self.magnet_url().map(|magnet_url| magnet_url.to_string())
             }
@@ -136,7 +191,12 @@ impl Stream {
     }
     pub fn streaming_url(&self, streaming_server_url: Option<&Url>) -> Option<String> {
         match (&self.source, streaming_server_url) {
-            (StreamSource::Url { url }, streaming_server_url) if url.scheme() != "magnet" => {
+            (
+                StreamSource::Url {
+                    url: UrlExtended::Url(url),
+                },
+                streaming_server_url,
+            ) if url.scheme() != "magnet" => {
                 // If proxy headers are set and streaming server is available, build the proxied streaming url from streaming server url
                 // Otherwise return the url
                 match (&self.behavior_hints.proxy_headers, streaming_server_url) {
@@ -246,7 +306,7 @@ impl Stream {
 #[serde(untagged)]
 pub enum StreamSource {
     Url {
-        url: Url,
+        url: UrlExtended,
     },
     #[cfg_attr(test, derivative(Default))]
     #[serde(rename_all = "camelCase")]
