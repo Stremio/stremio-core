@@ -118,15 +118,15 @@ impl Stream {
             }
             StreamSource::Url { url } => Some(url.to_string()),
             StreamSource::Rar {
-                rar_urls,
-                file_idx,
-                file_must_include,
-            } => todo!(),
+                rar_urls: _,
+                file_idx: _,
+                file_must_include: _,
+            } => None,
             StreamSource::Zip {
-                zip_urls,
-                file_idx,
-                file_must_include,
-            } => todo!(),
+                zip_urls: _,
+                file_idx: _,
+                file_must_include: _,
+            } => None,
             StreamSource::Torrent { .. } => {
                 self.magnet_url().map(|magnet_url| magnet_url.to_string())
             }
@@ -146,6 +146,7 @@ impl Stream {
             )
         })
     }
+
     pub fn streaming_url(&self, streaming_server_url: Option<&Url>) -> Option<String> {
         match (&self.source, streaming_server_url) {
             (StreamSource::Url { url }, streaming_server_url) if url.scheme() != "magnet" => {
@@ -206,49 +207,20 @@ impl Stream {
 
                 let mut query = vec![];
                 if !announce.is_empty() {
-                    query.extend(announce.iter().map(|tracker| ("tr", tracker)));
+                    query.extend(announce.iter().map(|tracker| ("tr", tracker.to_owned())));
                 }
 
-                match file_must_include {
-                    Some(file_must_include) if !file_must_include.is_empty() => {
-                        query.push(("f", file_must_include));
-                    }
-                    _ => {}
+                if !file_must_include.is_empty() {
+                    let json_string = serde_json::to_value(file_must_include).ok()?.to_string();
+                    query.push(("f", json_string));
                 }
 
                 url.query_pairs_mut().extend_pairs(query);
 
                 Some(url.to_string())
             }
-            (
-                StreamSource::Zip {
-                    zip_urls,
-                    file_idx,
-                    file_must_include,
-                },
-                Some(streaming_server_url),
-            ) => {
-                todo!()
-            }
-            (
-                StreamSource::Rar {
-                    rar_urls,
-                    file_idx,
-                    file_must_include,
-                },
-                Some(streaming_server_url),
-            ) => {
-                // Url::join should never happen.
-                // let mut rar_url = streaming_server_url.join("rar/stream").ok()?;
-                // struct StreamQueryParams {
-                //     key:
-                // }
-                // rar_url.set_query(Some(serde_url_params::to_string()))
-
-                // Some(rar_url.to_string())
-
-                todo!()
-            }
+            (StreamSource::Zip { .. }, Some(_streaming_server_url)) => None,
+            (StreamSource::Rar { .. }, Some(_streaming_server_url)) => None,
             (StreamSource::YouTube { yt_id }, Some(streaming_server_url)) => {
                 let mut url = streaming_server_url.to_owned();
                 match url.path_segments_mut() {
@@ -310,12 +282,12 @@ impl Stream {
 /// {
 ///     "rarUrls": ["https://example-source3.com/file.rar", "https://example-source4.com/file2.rar"],
 ///     "fileIdx": 1,
-///     "fileMustInclude": "includeFile1",
+///     "fileMustInclude": ["includeFile1"],
 ///     // ...Stream
 /// },
 /// {
 ///     "rarUrls": ["https://example-source5.com/file.rar", "https://example-source6.com/file2.rar"],
-///     "fileMustInclude": "includeFile2",
+///     "fileMustInclude": ["includeFile2"],
 ///     // ...Stream
 /// },
 /// {
@@ -329,22 +301,22 @@ impl Stream {
 ///     StreamSource::Rar {
 ///         rar_urls: vec!["https://example-source.com/file.rar".parse().unwrap(), "https://example-source2.com/file2.rar".parse().unwrap()],
 ///         file_idx: None,
-///         file_must_include: None,
+///         file_must_include: vec![],
 ///     },
 ///     StreamSource::Rar {
 ///         rar_urls: vec!["https://example-source3.com/file.rar".parse().unwrap(), "https://example-source4.com/file2.rar".parse().unwrap()],
 ///         file_idx: Some(1),
-///         file_must_include: Some("includeFile1".into())
+///         file_must_include: vec!["includeFile1".into()]
 ///     },
 ///     StreamSource::Rar {
 ///         rar_urls: vec!["https://example-source5.com/file.rar".parse().unwrap(), "https://example-source6.com/file2.rar".parse().unwrap()],
 ///         file_idx: None,
-///         file_must_include: Some("includeFile2".into())
+///         file_must_include: vec!["includeFile2".into()]
 ///     },
 ///     StreamSource::Rar {
 ///         rar_urls: vec!["https://example-source7.com/file.rar".parse().unwrap(), "https://example-source8.com/file2.rar".parse().unwrap()],
 ///         file_idx: Some(2),
-///         file_must_include: None,
+///         file_must_include: vec![],
 ///     },
 /// ];
 ///
@@ -366,12 +338,12 @@ impl Stream {
 /// {
 ///     "zipUrls": ["https://example-source3.com/file.rar", "https://example-source4.com/file2.rar"],
 ///     "fileIdx": 1,
-///     "fileMustInclude": "includeFile1",
+///     "fileMustInclude": ["includeFile1"],
 ///     // ...Stream
 /// },
 /// {
 ///     "zipUrls": ["https://example-source5.com/file.rar", "https://example-source6.com/file2.rar"],
-///     "fileMustInclude": "includeFile2",
+///     "fileMustInclude": ["includeFile2"],
 ///     // ...Stream
 /// },
 /// {
@@ -385,22 +357,22 @@ impl Stream {
 ///     StreamSource::Zip {
 ///         zip_urls: vec!["https://example-source.com/file.rar".parse().unwrap(), "https://example-source2.com/file2.rar".parse().unwrap()],
 ///         file_idx: None,
-///         file_must_include: None,
+///         file_must_include: vec![],
 ///     },
 ///     StreamSource::Zip {
 ///         zip_urls: vec!["https://example-source3.com/file.rar".parse().unwrap(), "https://example-source4.com/file2.rar".parse().unwrap()],
 ///         file_idx: Some(1),
-///         file_must_include: Some("includeFile1".into())
+///         file_must_include: vec!["includeFile1".into()],
 ///     },
 ///     StreamSource::Zip {
 ///         zip_urls: vec!["https://example-source5.com/file.rar".parse().unwrap(), "https://example-source6.com/file2.rar".parse().unwrap()],
 ///         file_idx: None,
-///         file_must_include: Some("includeFile2".into())
+///         file_must_include: vec!["includeFile2".into()],
 ///     },
 ///     StreamSource::Zip {
 ///         zip_urls: vec!["https://example-source7.com/file.rar".parse().unwrap(), "https://example-source8.com/file2.rar".parse().unwrap()],
 ///         file_idx: Some(2),
-///         file_must_include: None,
+///         file_must_include: vec![],
 ///     },
 /// ];
 ///
@@ -427,16 +399,16 @@ pub enum StreamSource {
         rar_urls: Vec<Url>,
         #[serde(default)]
         file_idx: Option<u16>,
-        #[serde(default, skip_serializing_if = "Option::is_none")]
-        file_must_include: Option<String>,
+        #[serde(default, skip_serializing_if = "Vec::is_empty")]
+        file_must_include: Vec<String>,
     },
     #[serde(rename_all = "camelCase")]
     Zip {
         zip_urls: Vec<Url>,
         #[serde(default)]
         file_idx: Option<u16>,
-        #[serde(default, skip_serializing_if = "Option::is_none")]
-        file_must_include: Option<String>,
+        #[serde(default, skip_serializing_if = "Vec::is_empty")]
+        file_must_include: Vec<String>,
     },
     #[serde(rename_all = "camelCase")]
     Torrent {
@@ -446,8 +418,9 @@ pub enum StreamSource {
         #[serde_as(deserialize_as = "DefaultOnNull")]
         #[serde(default, alias = "sources")]
         announce: Vec<String>,
-        #[serde(default, skip_serializing_if = "Option::is_none")]
-        file_must_include: Option<String>,
+        #[serde_as(deserialize_as = "DefaultOnNull")]
+        #[serde(default, skip_serializing_if = "Vec::is_empty")]
+        file_must_include: Vec<String>,
     },
     #[serde(rename_all = "camelCase")]
     PlayerFrame {

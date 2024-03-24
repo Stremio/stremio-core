@@ -33,19 +33,19 @@ fn stream_source() {
                 info_hash: [1; 20],
                 file_idx: Some(1),
                 announce: vec!["announce".to_owned()],
-                file_must_include: None,
+                file_must_include: vec![],
             },
             StreamSource::Torrent {
                 info_hash: [1; 20],
                 file_idx: None,
                 announce: vec![],
-                file_must_include: None,
+                file_must_include: vec![],
             },
             StreamSource::Torrent {
                 info_hash: [1; 20],
                 file_idx: Some(2),
                 announce: vec![],
-                file_must_include: Some("text".into()),
+                file_must_include: vec!["text".into()],
             },
             StreamSource::External {
                 external_url: Some(Url::parse("https://external_url").unwrap()),
@@ -116,8 +116,9 @@ fn stream_source() {
             Token::Seq { len: Some(0) },
             Token::SeqEnd,
             Token::Str("fileMustInclude"),
-            Token::Some,
+            Token::Seq { len: Some(1) },
             Token::Str("text"),
+            Token::SeqEnd,
             Token::StructEnd,
             // 5th
             Token::Struct {
@@ -151,31 +152,31 @@ fn stream_source() {
                 info_hash: [1; 20],
                 file_idx: Some(1),
                 announce: vec!["announce".to_owned()],
-                file_must_include: None,
+                file_must_include: vec![],
             },
             StreamSource::Torrent {
                 info_hash: [1; 20],
                 file_idx: Some(1),
                 announce: vec!["announce".to_owned()],
-                file_must_include: None,
+                file_must_include: vec![],
             },
             StreamSource::Torrent {
                 info_hash: [1; 20],
                 file_idx: None,
                 announce: vec![],
-                file_must_include: None,
+                file_must_include: vec![],
             },
             StreamSource::Torrent {
                 info_hash: [1; 20],
                 file_idx: None,
                 announce: vec![],
-                file_must_include: None,
+                file_must_include: vec![],
             },
             StreamSource::Torrent {
                 info_hash: [1; 20],
                 file_idx: Some(2),
                 announce: vec![],
-                file_must_include: Some("text".into()),
+                file_must_include: vec!["text".into()],
             },
             StreamSource::External {
                 external_url: Some(Url::parse("https://external_url").unwrap()),
@@ -269,8 +270,9 @@ fn stream_source() {
             Token::Seq { len: Some(0) },
             Token::SeqEnd,
             Token::Str("fileMustInclude"),
-            Token::Some,
+            Token::Seq { len: Some(0) },
             Token::Str("text"),
+            Token::SeqEnd,
             Token::StructEnd,
             // External Url
             Token::Struct {
