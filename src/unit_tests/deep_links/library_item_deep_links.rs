@@ -30,6 +30,7 @@ const TORRENT_STREAMS_ITEM: Lazy<StreamsItem> = Lazy::new(|| {
                 .unwrap(),
             file_idx: Some(0),
             announce: vec![],
+            file_must_include: vec![],
         },
         name: Some("PaidTV".to_owned()),
         description: Some("Ahsoka S01E05 Part Five 1080p".to_owned()),
