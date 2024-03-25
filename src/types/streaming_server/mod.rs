@@ -1,3 +1,6 @@
+mod device_info;
+pub use device_info::*;
+
 mod network_info;
 pub use network_info::*;
 
