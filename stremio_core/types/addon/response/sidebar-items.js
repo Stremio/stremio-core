@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"enum":["ResourceResponse"],"struct":["SkipError"]};
+window.SIDEBAR_ITEMS = {"enum":["ResourceResponse"],"struct":["ResourceResponseCache","SkipError"]};

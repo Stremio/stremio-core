@@ -218,6 +218,82 @@
 <a href="#216" id="216">216</a>
 <a href="#217" id="217">217</a>
 <a href="#218" id="218">218</a>
+<a href="#219" id="219">219</a>
+<a href="#220" id="220">220</a>
+<a href="#221" id="221">221</a>
+<a href="#222" id="222">222</a>
+<a href="#223" id="223">223</a>
+<a href="#224" id="224">224</a>
+<a href="#225" id="225">225</a>
+<a href="#226" id="226">226</a>
+<a href="#227" id="227">227</a>
+<a href="#228" id="228">228</a>
+<a href="#229" id="229">229</a>
+<a href="#230" id="230">230</a>
+<a href="#231" id="231">231</a>
+<a href="#232" id="232">232</a>
+<a href="#233" id="233">233</a>
+<a href="#234" id="234">234</a>
+<a href="#235" id="235">235</a>
+<a href="#236" id="236">236</a>
+<a href="#237" id="237">237</a>
+<a href="#238" id="238">238</a>
+<a href="#239" id="239">239</a>
+<a href="#240" id="240">240</a>
+<a href="#241" id="241">241</a>
+<a href="#242" id="242">242</a>
+<a href="#243" id="243">243</a>
+<a href="#244" id="244">244</a>
+<a href="#245" id="245">245</a>
+<a href="#246" id="246">246</a>
+<a href="#247" id="247">247</a>
+<a href="#248" id="248">248</a>
+<a href="#249" id="249">249</a>
+<a href="#250" id="250">250</a>
+<a href="#251" id="251">251</a>
+<a href="#252" id="252">252</a>
+<a href="#253" id="253">253</a>
+<a href="#254" id="254">254</a>
+<a href="#255" id="255">255</a>
+<a href="#256" id="256">256</a>
+<a href="#257" id="257">257</a>
+<a href="#258" id="258">258</a>
+<a href="#259" id="259">259</a>
+<a href="#260" id="260">260</a>
+<a href="#261" id="261">261</a>
+<a href="#262" id="262">262</a>
+<a href="#263" id="263">263</a>
+<a href="#264" id="264">264</a>
+<a href="#265" id="265">265</a>
+<a href="#266" id="266">266</a>
+<a href="#267" id="267">267</a>
+<a href="#268" id="268">268</a>
+<a href="#269" id="269">269</a>
+<a href="#270" id="270">270</a>
+<a href="#271" id="271">271</a>
+<a href="#272" id="272">272</a>
+<a href="#273" id="273">273</a>
+<a href="#274" id="274">274</a>
+<a href="#275" id="275">275</a>
+<a href="#276" id="276">276</a>
+<a href="#277" id="277">277</a>
+<a href="#278" id="278">278</a>
+<a href="#279" id="279">279</a>
+<a href="#280" id="280">280</a>
+<a href="#281" id="281">281</a>
+<a href="#282" id="282">282</a>
+<a href="#283" id="283">283</a>
+<a href="#284" id="284">284</a>
+<a href="#285" id="285">285</a>
+<a href="#286" id="286">286</a>
+<a href="#287" id="287">287</a>
+<a href="#288" id="288">288</a>
+<a href="#289" id="289">289</a>
+<a href="#290" id="290">290</a>
+<a href="#291" id="291">291</a>
+<a href="#292" id="292">292</a>
+<a href="#293" id="293">293</a>
+<a href="#294" id="294">294</a>
 </pre></div><pre class="rust"><code><span class="kw">use </span>derive_more::TryInto;
 <span class="kw">use </span>serde::{de::Deserializer, Deserialize, Serialize};
 <span class="kw">use </span>serde_with::{serde_as, VecSkipError};
@@ -226,6 +302,77 @@
     addon::DescriptorPreview,
     resource::{MetaItem, MetaItemPreview, Stream, Subtitles},
 };
+
+<span class="doccomment">/// Resource response that handles the optional cache values defined in the SDK.
+/// This is a shim struct to avoid the custom Deserialize impl that skips those fields
+/// for the [`ResourceResponse`] enum.
+///
+/// See &lt;https://github.com/Stremio/stremio-addon-sdk/tree/master/docs/api/requests&gt;
+///
+/// - [`ResourceResponse::Metas`]`: &lt;https://github.com/Stremio/stremio-addon-sdk/blob/master/docs/api/requests/defineCatalogHandler.md#returns&gt;
+/// - [`ResourceResponse::MetaDetailed`]: None
+/// - [`ResourceResponse::Meta`]: &lt;https://github.com/Stremio/stremio-addon-sdk/blob/master/docs/api/requests/defineMetaHandler.md#returns&gt;
+/// - [`ResourceResponse::Addons`]: &lt;https://github.com/Stremio/stremio-addon-sdk/blob/master/docs/api/requests/defineResourceHandler.md#returns&gt;
+/// - [`ResourceResponse::Streams`]: &lt;https://github.com/Stremio/stremio-addon-sdk/blob/master/docs/api/requests/defineStreamHandler.md#returns&gt;
+/// - [`ResourceResponse::Subtitles`]: &lt;https://github.com/Stremio/stremio-addon-sdk/blob/master/docs/api/requests/defineSubtitlesHandler.md#returns&gt;
+/// -
+///
+/// # Examples
+///
+/// ```
+/// use serde_json::json;
+///
+/// use stremio_core::types::{
+///     addon::{ResourceResponseCache, ResourceResponse},
+///     resource::{Stream, StreamSource, StreamBehaviorHints},
+/// };
+///
+/// let cache_info_json = json!({
+///     "streams": [
+///         {
+///             "name": "Addon\n4k",
+///             "title": "South Park - Seasons 1 to 25 (S01-S25) Collectors Edition The Movie and Extras [NVEnc 10Bit 1080p to 2160p HEVC][DD DDP &amp; TrueHD 5.1Ch]\nSeason 02/South Park - S02E05 - Conjoined Fetus Lady.mp4",
+///             "url": "https://example-url-stream.com/South_Park_S02_E05.mp4",
+///         },
+///     ],
+///     "cacheMaxAge": 3600,
+///     "staleRevalidate": 14400,
+///     "staleError": 604800,
+///
+/// });
+///
+/// let response_cache = serde_json::from_value(cache_info_json).expect("Should deserialize");
+/// assert_eq!(ResourceResponseCache {
+///     cache_max_age: Some(3600),
+///     stale_revalidate: Some(14400),
+///     stale_error: Some(604800),
+///     resource: ResourceResponse::Streams{
+///         streams: vec![
+///             Stream {
+///                 source: StreamSource::Url { url: "https://example-url-stream.com/South_Park_S02_E05.mp4".parse().unwrap() },
+///                 name: Some("Addon\n4k".into()),
+///                 description: Some("South Park - Seasons 1 to 25 (S01-S25) Collectors Edition The Movie and Extras [NVEnc 10Bit 1080p to 2160p HEVC][DD DDP &amp; TrueHD 5.1Ch]\nSeason 02/South Park - S02E05 - Conjoined Fetus Lady.mp4".into()),
+///                 thumbnail: None,
+///                 subtitles: vec![],
+///                 behavior_hints: StreamBehaviorHints::default(),
+///             }
+///         ]
+///     }
+/// }, response_cache);
+/// ```
+
+</span><span class="attr">#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(rename_all = <span class="string">"camelCase"</span>)]
+</span><span class="kw">pub struct </span>ResourceResponseCache {
+    <span class="doccomment">/// (in seconds) which sets the `Cache-Control` header to `max-age=$cacheMaxAge` and overwrites the global cache time set in serveHTTP options
+    </span><span class="kw">pub </span>cache_max_age: <span class="prelude-ty">Option</span>&lt;u64&gt;,
+    <span class="doccomment">/// (in seconds) which sets the `Cache-Control` header to `stale-while-revalidate=$staleRevalidate`
+    </span><span class="kw">pub </span>stale_revalidate: <span class="prelude-ty">Option</span>&lt;u64&gt;,
+    <span class="doccomment">/// (in seconds) which sets the `Cache-Control` header to `stale-if-error=$staleError`
+    </span><span class="kw">pub </span>stale_error: <span class="prelude-ty">Option</span>&lt;u64&gt;,
+    <span class="attr">#[serde(flatten)]
+    </span><span class="kw">pub </span>resource: ResourceResponse,
+}
 
 <span class="doccomment">/// Resource Response from an addon.
 ///
@@ -236,23 +383,28 @@
 #[serde_as]
 </span><span class="kw">pub enum </span>ResourceResponse {
     Metas {
-        metas: Vec&lt;MetaItemPreview&gt;,
+        <span class="attr">#[serde_as(<span class="kw">as </span>= <span class="string">"VecSkipError&lt;_&gt;"</span>)]
+        </span>metas: Vec&lt;MetaItemPreview&gt;,
     },
     <span class="attr">#[serde(rename_all = <span class="string">"camelCase"</span>)]
     </span>MetasDetailed {
-        metas_detailed: Vec&lt;MetaItem&gt;,
+        <span class="attr">#[serde_as(<span class="kw">as </span>= <span class="string">"VecSkipError&lt;_&gt;"</span>)]
+        </span>metas_detailed: Vec&lt;MetaItem&gt;,
     },
     Meta {
         meta: MetaItem,
     },
     Streams {
-        streams: Vec&lt;Stream&gt;,
+        <span class="attr">#[serde_as(<span class="kw">as </span>= <span class="string">"VecSkipError&lt;_&gt;"</span>)]
+        </span>streams: Vec&lt;Stream&gt;,
     },
     Subtitles {
-        subtitles: Vec&lt;Subtitles&gt;,
+        <span class="attr">#[serde_as(<span class="kw">as </span>= <span class="string">"VecSkipError&lt;_&gt;"</span>)]
+        </span>subtitles: Vec&lt;Subtitles&gt;,
     },
     Addons {
-        addons: Vec&lt;DescriptorPreview&gt;,
+        <span class="attr">#[serde_as(<span class="kw">as </span>= <span class="string">"VecSkipError&lt;_&gt;"</span>)]
+        </span>addons: Vec&lt;DescriptorPreview&gt;,
     },
 }
 
