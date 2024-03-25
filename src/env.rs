@@ -140,6 +140,8 @@ impl WebEnv {
                         StreamSource::Url { .. } => "Url",
                         StreamSource::YouTube { .. } => "YouTube",
                         StreamSource::Torrent { .. } => "Torrent",
+                        StreamSource::Rar { .. } => "Rar",
+                        StreamSource::Zip { .. } => "Zip",
                         StreamSource::External { .. } => "External",
                         StreamSource::PlayerFrame { .. } => "PlayerFrame"
                     }
