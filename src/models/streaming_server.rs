@@ -98,6 +98,7 @@ impl<E: Env + 'static> UpdateWithCtx<E> for StreamingServer {
                     get_settings::<E>(&self.selected.transport_url),
                     get_playback_devices::<E>(&self.selected.transport_url),
                     get_network_info::<E>(&self.selected.transport_url),
+                    get_device_info::<E>(&self.selected.transport_url),
                 ])
                 .unchanged()
                 .join(settings_effects)
