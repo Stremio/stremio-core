@@ -79,7 +79,10 @@ fn remote_endpoint() {
                 .boxed_env()
             }
             Request { url, .. } if url == "http://127.0.0.1:11470/device-info" => {
-                future::ok(Box::<Vec<DeviceInfo>>::default() as Box<dyn Any + Send>).boxed_env()
+                future::ok(Box::new(DeviceInfo {
+                    available_hardware_accelerations: vec![],
+                }) as Box<dyn Any + Send>)
+                .boxed_env()
             }
             Request { url, .. } if url.starts_with("http://127.0.0.1:11470/get-https") => {
                 future::ok(Box::new(GetHTTPSResponse {
