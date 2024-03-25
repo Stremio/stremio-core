@@ -64,12 +64,16 @@ impl LibraryItem {
     }
 
     /// Returns whether the item has been watched when either of the state fields are:
-    /// - `times_watched > 0`
-    /// or
-    /// - `flagged_watched == 1` (true)
     #[inline]
     pub fn watched(&self) -> bool {
-        self.state.times_watched > 0 || self.state.flagged_watched == 1
+        (self.state.flagged_watched == 0 && self.state.times_watched > 0)
+            || self.state.flagged_watched == 1
+    }
+
+    /// Mark item as watched using `flagged_watched`
+    #[inline]
+    pub fn mark_as_watched(&mut self, state: &bool) {
+        self.state.flagged_watched = (*state).into();
     }
 
     /// Pulling notifications relies on a few key things:
