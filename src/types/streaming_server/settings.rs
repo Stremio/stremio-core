@@ -1,5 +1,7 @@
 use serde::{Deserialize, Serialize};
+use serde_with::{serde_as, DefaultOnError};
 
+#[serde_as]
 #[derive(Clone, PartialEq, Serialize, Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct Settings {
@@ -7,6 +9,9 @@ pub struct Settings {
     pub cache_root: String,
     pub server_version: String,
     pub remote_https: Option<String>,
+    // Set to default in case the value is anything other than a string or null
+    #[serde(default)]
+    #[serde_as(deserialize_as = "DefaultOnError")]
     pub transcode_profile: Option<String>,
     pub cache_size: Option<f64>,
     pub bt_max_connections: u64,
