@@ -7,8 +7,8 @@ use num::rational::Ratio;
 
 use crate::constants::{
     BASE64, CREDITS_THRESHOLD_COEF, META_RESOURCE_NAME, PLAYER_IGNORE_SEEK_AFTER,
-    VIDEO_FILENAME_EXTRA_PROP, VIDEO_HASH_EXTRA_PROP, VIDEO_SIZE_EXTRA_PROP,
-    WATCHED_THRESHOLD_COEF,
+    STREAM_RESOURCE_NAME, SUBTITLES_RESOURCE_NAME, VIDEO_FILENAME_EXTRA_PROP,
+    VIDEO_HASH_EXTRA_PROP, VIDEO_SIZE_EXTRA_PROP, WATCHED_THRESHOLD_COEF,
 };
 use crate::models::common::{
     eq_update, resource_update, resource_update_with_vector_content,
@@ -126,7 +126,7 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
     fn update(&mut self, msg: &Msg, ctx: &Ctx) -> Effects {
         match msg {
             Msg::Action(Action::Load(ActionLoad::Player(selected))) => {
-                let switch_to_next_video_effects = if self
+                let item_state_update_effects = if self
                     .selected
                     .as_ref()
                     .and_then(|selected| selected.meta_request.as_ref())
@@ -136,7 +136,7 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                         .as_ref()
                         .map(|meta_request| &meta_request.path.id)
                 {
-                    switch_to_next_video(&mut self.library_item, &self.next_video)
+                    item_state_update(&mut self.library_item, &self.next_video)
                 } else {
                     Effects::none().unchanged()
                 };
@@ -263,7 +263,7 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                 self.loaded = false;
                 self.ended = false;
                 self.paused = None;
-                switch_to_next_video_effects
+                item_state_update_effects
                     .join(selected_effects)
                     .join(meta_item_effects)
                     .join(stream_state_effects)
@@ -300,8 +300,8 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                     None,
                 );
 
-                let switch_to_next_video_effects =
-                    switch_to_next_video(&mut self.library_item, &self.next_video);
+                let item_state_update_effects =
+                    item_state_update(&mut self.library_item, &self.next_video);
                 let push_to_library_effects = match &self.library_item {
                     Some(library_item) => Effects::msg(Msg::Internal(Internal::UpdateLibraryItem(
                         library_item.to_owned(),
@@ -328,7 +328,7 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                 self.paused = None;
 
                 seek_history_effects
-                    .join(switch_to_next_video_effects)
+                    .join(item_state_update_effects)
                     .join(push_to_library_effects)
                     .join(selected_effects)
                     .join(video_params_effects)
@@ -539,16 +539,27 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                         .map(|library_item| library_item.state.time_offset),
                 );
 
-                // Load will actually take care of loading the next video
+                // Set time_offset to 0 as we switch to next video
+                let library_item_effects = self
+                    .library_item
+                    .as_mut()
+                    .map(|library_item| {
+                        library_item.state.time_offset = 0;
+                        push_to_library::<E>(&mut self.push_library_item_time, library_item)
+                    })
+                    .unwrap_or(Effects::none().unchanged());
 
-                seek_history_effects.join(
-                    Effects::msg(Msg::Event(Event::PlayerNextVideo {
-                        context: self.analytics_context.as_ref().cloned().unwrap_or_default(),
-                        is_binge_enabled: ctx.profile.settings.binge_watching,
-                        is_playing_next_video: self.next_video.is_some(),
-                    }))
-                    .unchanged(),
-                )
+                // Load will actually take care of loading the next video
+                seek_history_effects
+                    .join(
+                        Effects::msg(Msg::Event(Event::PlayerNextVideo {
+                            context: self.analytics_context.as_ref().cloned().unwrap_or_default(),
+                            is_binge_enabled: ctx.profile.settings.binge_watching,
+                            is_playing_next_video: self.next_video.is_some(),
+                        }))
+                        .unchanged(),
+                    )
+                    .join(library_item_effects)
             }
             Msg::Action(Action::Player(ActionPlayer::Ended)) if self.selected.is_some() => {
                 self.ended = true;
@@ -562,14 +573,19 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
             Msg::Internal(Internal::StreamsChanged(_)) => {
                 stream_state_update(&mut self.stream_state, &self.selected, &ctx.streams)
             }
-            Msg::Internal(Internal::ResourceRequestResult(request, result)) => {
+            Msg::Internal(Internal::ResourceRequestResult(request, result))
+                if self.selected.is_some() =>
+            {
                 let meta_item_effects = match &mut self.meta_item {
-                    Some(meta_item) => resource_update::<E, _>(
-                        meta_item,
-                        ResourceAction::ResourceRequestResult { request, result },
-                    ),
+                    Some(meta_item) if request.path.resource == META_RESOURCE_NAME => {
+                        resource_update::<E, _>(
+                            meta_item,
+                            ResourceAction::ResourceRequestResult { request, result },
+                        )
+                    }
                     _ => Effects::none().unchanged(),
                 };
+
                 let update_streams_effects = match (&self.selected, &self.meta_item) {
                     (Some(selected), Some(meta_item))
                         if request.path.resource == META_RESOURCE_NAME =>
@@ -583,16 +599,24 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                     }
                     _ => Effects::none().unchanged(),
                 };
-                let subtitles_effects = resources_update_with_vector_content::<E, _>(
-                    &mut self.subtitles,
-                    ResourcesAction::ResourceRequestResult { request, result },
-                );
+
+                let subtitles_effects = if request.path.resource == SUBTITLES_RESOURCE_NAME {
+                    resources_update_with_vector_content::<E, _>(
+                        &mut self.subtitles,
+                        ResourcesAction::ResourceRequestResult { request, result },
+                    )
+                } else {
+                    Effects::none().unchanged()
+                };
+
                 let next_streams_effects = match self.next_streams.as_mut() {
-                    Some(next_streams) => resource_update_with_vector_content::<E, _>(
-                        next_streams,
-                        ResourceAction::ResourceRequestResult { request, result },
-                    ),
-                    None => Effects::none().unchanged(),
+                    Some(next_streams) if request.path.resource == STREAM_RESOURCE_NAME => {
+                        resource_update_with_vector_content::<E, _>(
+                            next_streams,
+                            ResourceAction::ResourceRequestResult { request, result },
+                        )
+                    }
+                    _ => Effects::none().unchanged(),
                 };
 
                 let next_video_effects = next_video_update(
@@ -602,11 +626,13 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                     &self.meta_item,
                     &ctx.profile.settings,
                 );
+
                 let next_streams_effects = next_streams_effects.join(next_streams_update::<E>(
                     &mut self.next_streams,
                     &self.next_video,
                     &self.selected,
                 ));
+
                 let next_stream_effects = next_stream_update(
                     &mut self.next_stream,
                     &self.next_streams,
@@ -719,7 +745,7 @@ fn push_to_library<E: Env + 'static>(
     }
 }
 
-fn switch_to_next_video(
+fn item_state_update(
     library_item: &mut Option<LibraryItem>,
     next_video: &Option<Video>,
 ) -> Effects {
@@ -834,11 +860,6 @@ fn next_streams_update<E>(
 where
     E: Env + 'static,
 {
-    let next_video = match next_video {
-        Some(next_video) => next_video,
-        None => return Effects::none().unchanged(),
-    };
-
     let mut stream_request = match selected
         .as_ref()
         .and_then(|selected| selected.stream_request.as_ref())
@@ -846,51 +867,36 @@ where
         Some(stream_request) => stream_request.clone(),
         None => return Effects::none().unchanged(),
     };
-    // use the next video id to update the stream request
-    stream_request.path.id = next_video.id.clone();
 
-    if let Some(stream) = next_video.stream() {
-        return eq_update(
-            next_streams,
-            Some(ResourceLoadable {
-                request: stream_request,
-                content: Some(Loadable::Ready(vec![stream.into_owned()])),
-            }),
-        );
-    }
+    match next_video {
+        Some(next_video) => {
+            stream_request.path.id = next_video.id.clone();
 
-    if !next_video.streams.is_empty() {
-        return eq_update(
-            next_streams,
-            Some(ResourceLoadable {
-                request: stream_request,
-                content: Some(Loadable::Ready(next_video.streams.clone())),
-            }),
-        );
-    }
+            match next_streams.as_mut() {
+                Some(next_streams) => resource_update_with_vector_content::<E, _>(
+                    next_streams,
+                    ResourceAction::ResourceRequested {
+                        request: &stream_request,
+                    },
+                ),
+                None => {
+                    let mut new_next_streams = ResourceLoadable {
+                        request: stream_request.to_owned(),
+                        content: None,
+                    };
+                    let next_streams_effects = resource_update_with_vector_content::<E, _>(
+                        &mut new_next_streams,
+                        ResourceAction::ResourceRequested {
+                            request: &stream_request,
+                        },
+                    );
 
-    // otherwise, fetch te next streams using a request
-    match next_streams.as_mut() {
-        Some(next_streams) => resource_update_with_vector_content::<E, _>(
-            next_streams,
-            ResourceAction::ResourceRequested {
-                request: &stream_request,
-            },
-        ),
-        None => {
-            let mut new_next_streams = ResourceLoadable {
-                request: stream_request.to_owned(),
-                content: None,
-            };
-            let next_streams_effects = resource_update::<E, _>(
-                &mut new_next_streams,
-                ResourceAction::ResourceRequested {
-                    request: &stream_request,
-                },
-            );
-            *next_streams = Some(new_next_streams);
-            next_streams_effects
+                    *next_streams = Some(new_next_streams);
+                    next_streams_effects
+                }
+            }
         }
+        None => Effects::none().unchanged(),
     }
 }
 
@@ -1319,169 +1325,4 @@ fn get_skip_gaps<E: Env + 'static>(skip_gaps_request: SkipGapsRequest) -> Effect
             .boxed_env(),
     )
     .into()
-}
-
-#[cfg(test)]
-mod test {
-    use chrono::{TimeZone, Utc};
-    use url::Url;
-
-    use crate::{
-        constants::YOUTUBE_ADDON_ID_PREFIX,
-        models::common::{Loadable, ResourceLoadable},
-        types::{
-            addon::{ResourcePath, ResourceRequest},
-            resource::{SeriesInfo, Stream, Video},
-        },
-        unit_tests::TestEnv,
-    };
-
-    use super::{next_streams_update, Selected};
-
-    #[test]
-    fn next_streams_update_with_a_stream_from_next_video() {
-        let current_youtube_1 = format!("{YOUTUBE_ADDON_ID_PREFIX}666:1");
-        let current_youtube_stream = Stream::youtube(&current_youtube_1).unwrap();
-        let next_youtube_1234 = format!("{YOUTUBE_ADDON_ID_PREFIX}666:1234");
-        let next_youtube_stream = Stream::youtube(&next_youtube_1234).unwrap();
-
-        let youtube_base = "https://youtube.com"
-            .parse::<Url>()
-            .expect("Valid youtube url");
-        let next_streams = ResourceLoadable {
-            request: ResourceRequest {
-                base: youtube_base.clone(),
-                path: ResourcePath::without_extra("stream", "movie", &next_youtube_1234),
-            },
-            content: None,
-        };
-
-        let selected = Selected {
-            stream: current_youtube_stream,
-            stream_request: Some(ResourceRequest {
-                base: youtube_base,
-                path: ResourcePath::without_extra("stream", "movie", &current_youtube_1),
-            }),
-            meta_request: None,
-            subtitles_path: None,
-        };
-
-        // Test that it should update the next_streams from the next_video if Video has one stream
-        {
-            let mut next_streams = Some(next_streams.clone());
-            let next_video = Video {
-                id: "next_video".to_owned(),
-                title: "title".to_owned(),
-                released: Some(Utc.with_ymd_and_hms(2020, 1, 1, 0, 0, 0).unwrap()),
-                overview: Some("overview".to_owned()),
-                thumbnail: Some("thumbnail".to_owned()),
-                streams: vec![next_youtube_stream.clone()],
-                series_info: Some(SeriesInfo::default()),
-                trailer_streams: vec![],
-            };
-            let result_effects = next_streams_update::<TestEnv>(
-                &mut next_streams,
-                &Some(next_video),
-                &Some(selected.clone()),
-            );
-
-            assert!(result_effects.has_changed);
-            assert!(result_effects.into_iter().next().is_none());
-            assert_eq!(
-                next_streams.as_ref().unwrap().request.path.id,
-                "next_video",
-                "request should contain the next youtube video"
-            );
-
-            assert_eq!(
-                &Loadable::Ready(vec![next_youtube_stream.clone()]),
-                next_streams
-                    .as_ref()
-                    .unwrap()
-                    .content
-                    .as_ref()
-                    .expect("Should have content")
-            );
-        }
-
-        // Test that it should update next_streams using all streams in Video
-        {
-            let another_youtube_5678 = format!("{YOUTUBE_ADDON_ID_PREFIX}666:5678");
-            let another_youtube_stream = Stream::youtube(&another_youtube_5678).unwrap();
-            let youtube_streams = vec![next_youtube_stream, another_youtube_stream];
-            let mut next_streams = Some(next_streams.clone());
-            let next_video = Video {
-                id: "next_video_2".to_owned(),
-                title: "title".to_owned(),
-                released: Some(Utc.with_ymd_and_hms(2020, 1, 1, 0, 0, 0).unwrap()),
-                overview: Some("overview".to_owned()),
-                thumbnail: Some("thumbnail".to_owned()),
-                streams: youtube_streams.clone(),
-                series_info: Some(SeriesInfo::default()),
-                trailer_streams: vec![],
-            };
-            let result_effects = next_streams_update::<TestEnv>(
-                &mut next_streams,
-                &Some(next_video),
-                &Some(selected.clone()),
-            );
-
-            assert!(result_effects.has_changed);
-            assert!(result_effects.into_iter().next().is_none());
-
-            assert_eq!(
-                next_streams.as_ref().unwrap().request.path.id,
-                "next_video_2",
-                "request should contain the next youtube video"
-            );
-
-            assert_eq!(
-                &Loadable::Ready(youtube_streams),
-                next_streams
-                    .as_ref()
-                    .unwrap()
-                    .content
-                    .as_ref()
-                    .expect("Should have content")
-            );
-        }
-
-        // Test that it should make a request to get next_streams if no streams are available in Video
-        {
-            let mut next_streams = Some(next_streams);
-            let next_video = Video {
-                id: "next_video_3".to_owned(),
-                title: "title".to_owned(),
-                released: Some(Utc.with_ymd_and_hms(2020, 1, 1, 0, 0, 0).unwrap()),
-                overview: Some("overview".to_owned()),
-                thumbnail: Some("thumbnail".to_owned()),
-                // empty streams will cause a request to be made
-                streams: vec![],
-                series_info: Some(SeriesInfo::default()),
-                trailer_streams: vec![],
-            };
-            let result_effects = next_streams_update::<TestEnv>(
-                &mut next_streams,
-                &Some(next_video),
-                &Some(selected),
-            );
-
-            assert!(result_effects.has_changed);
-            assert_eq!(1, result_effects.into_iter().count());
-            assert_eq!(
-                next_streams.as_ref().unwrap().request.path.id,
-                "next_video_3",
-                "request should contain the next youtube video"
-            );
-            assert_eq!(
-                &Loadable::Loading,
-                next_streams
-                    .as_ref()
-                    .unwrap()
-                    .content
-                    .as_ref()
-                    .expect("Should have content")
-            );
-        }
-    }
 }
