@@ -205,17 +205,24 @@ impl Stream {
                     _ => return None,
                 }
 
-                let mut query = vec![];
-                if !announce.is_empty() {
-                    query.extend(announce.iter().map(|tracker| ("tr", tracker.to_owned())));
-                }
+                // setup query params
+                {
+                    let mut query_params = url.query_pairs_mut();
 
-                if !file_must_include.is_empty() {
-                    let json_string = serde_json::to_value(file_must_include).ok()?.to_string();
-                    query.push(("f", json_string));
-                }
+                    if !announce.is_empty() {
+                        query_params.extend_pairs(
+                            announce.iter().map(|tracker| ("tr", tracker.to_owned())),
+                        );
+                    }
 
-                url.query_pairs_mut().extend_pairs(query);
+                    if !file_must_include.is_empty() {
+                        query_params.extend_pairs(
+                            file_must_include
+                                .iter()
+                                .map(|file_must_include| ("f", file_must_include.to_owned())),
+                        );
+                    }
+                }
 
                 Some(url.to_string())
             }
