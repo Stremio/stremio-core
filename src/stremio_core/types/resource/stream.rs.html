@@ -497,6 +497,12 @@
 <a href="#495" id="495">495</a>
 <a href="#496" id="496">496</a>
 <a href="#497" id="497">497</a>
+<a href="#498" id="498">498</a>
+<a href="#499" id="499">499</a>
+<a href="#500" id="500">500</a>
+<a href="#501" id="501">501</a>
+<a href="#502" id="502">502</a>
+<a href="#503" id="503">503</a>
 </pre></div><pre class="rust"><code><span class="kw">use </span><span class="kw">crate</span>::constants::{BASE64, URI_COMPONENT_ENCODE_SET, YOUTUBE_ADDON_ID_PREFIX};
 <span class="kw">use </span><span class="kw">crate</span>::types::resource::Subtitles;
 <span class="kw">use </span>base64::Engine;
@@ -752,8 +758,14 @@
     }
 
     <span class="attr">#[inline]
-    </span><span class="kw">pub fn </span>is_binge_match(<span class="kw-2">&amp;</span><span class="self">self</span>, stream: <span class="kw-2">&amp;</span>Stream) -&gt; bool {
-        <span class="self">self</span>.behavior_hints.binge_group == stream.behavior_hints.binge_group
+    </span><span class="kw">pub fn </span>is_binge_match(<span class="kw-2">&amp;</span><span class="self">self</span>, other_stream: <span class="kw-2">&amp;</span>Stream) -&gt; bool {
+        <span class="kw">match </span>(
+            <span class="kw-2">&amp;</span><span class="self">self</span>.behavior_hints.binge_group,
+            <span class="kw-2">&amp;</span>other_stream.behavior_hints.binge_group,
+        ) {
+            (<span class="prelude-val">Some</span>(a), <span class="prelude-val">Some</span>(b)) =&gt; a == b,
+            <span class="kw">_ </span>=&gt; <span class="bool-val">false</span>,
+        }
     }
 }
 
