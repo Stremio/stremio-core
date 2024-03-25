@@ -1,4 +1,4 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `src/models/player.rs`."><title>player.rs - source</title><script> if (window.location.protocol !== "file:") document.write(`<link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceSerif4-Regular-46f98efaafac5295.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2">`)</script><link rel="stylesheet" href="../../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../../static.files/rustdoc-e935ef01ae1c1829.css"><meta name="rustdoc-vars" data-root-path="../../../" data-static-root-path="../../../static.files/" data-current-crate="stremio_core" data-themes="" data-resource-suffix="" data-rustdoc-version="1.79.0-nightly (0ad927c0c 2024-03-21)" data-channel="nightly" data-search-js="search-42d8da7a6b9792c2.js" data-settings-js="settings-4313503d2e1961c2.js" ><script src="../../../static.files/storage-4c98445ec4002617.js"></script><script defer src="../../../static.files/src-script-e66d777a5a92e9b2.js"></script><script defer src="../../../src-files.js"></script><script defer src="../../../static.files/main-12cf3b4f4f9dc36d.js"></script><noscript><link rel="stylesheet" href="../../../static.files/noscript-04d5337699b92874.css"></noscript><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title">
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `src/models/player.rs`."><title>player.rs - source</title><script> if (window.location.protocol !== "file:") document.write(`<link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceSerif4-Regular-46f98efaafac5295.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2">`)</script><link rel="stylesheet" href="../../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../../static.files/rustdoc-e935ef01ae1c1829.css"><meta name="rustdoc-vars" data-root-path="../../../" data-static-root-path="../../../static.files/" data-current-crate="stremio_core" data-themes="" data-resource-suffix="" data-rustdoc-version="1.79.0-nightly (0824b300e 2024-03-24)" data-channel="nightly" data-search-js="search-42d8da7a6b9792c2.js" data-settings-js="settings-4313503d2e1961c2.js" ><script src="../../../static.files/storage-4c98445ec4002617.js"></script><script defer src="../../../static.files/src-script-e66d777a5a92e9b2.js"></script><script defer src="../../../src-files.js"></script><script defer src="../../../static.files/main-12cf3b4f4f9dc36d.js"></script><noscript><link rel="stylesheet" href="../../../static.files/noscript-04d5337699b92874.css"></noscript><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title">
             <h2>Files</h2></div></nav><div class="sidebar-resizer"></div>
     <main><nav class="sub"><form class="search-form"><span></span><div id="sidebar-button" tabindex="-1"><a href="../../../stremio_core/all.html" title="show sidebar"></a></div><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" tabindex="-1"><a href="../../../help.html" title="help">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../../static.files/wheel-7b819b6101059cd0.svg"></a></div></form></nav><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
 <a href="#2" id="2">2</a>
@@ -1328,165 +1328,6 @@
 <a href="#1326" id="1326">1326</a>
 <a href="#1327" id="1327">1327</a>
 <a href="#1328" id="1328">1328</a>
-<a href="#1329" id="1329">1329</a>
-<a href="#1330" id="1330">1330</a>
-<a href="#1331" id="1331">1331</a>
-<a href="#1332" id="1332">1332</a>
-<a href="#1333" id="1333">1333</a>
-<a href="#1334" id="1334">1334</a>
-<a href="#1335" id="1335">1335</a>
-<a href="#1336" id="1336">1336</a>
-<a href="#1337" id="1337">1337</a>
-<a href="#1338" id="1338">1338</a>
-<a href="#1339" id="1339">1339</a>
-<a href="#1340" id="1340">1340</a>
-<a href="#1341" id="1341">1341</a>
-<a href="#1342" id="1342">1342</a>
-<a href="#1343" id="1343">1343</a>
-<a href="#1344" id="1344">1344</a>
-<a href="#1345" id="1345">1345</a>
-<a href="#1346" id="1346">1346</a>
-<a href="#1347" id="1347">1347</a>
-<a href="#1348" id="1348">1348</a>
-<a href="#1349" id="1349">1349</a>
-<a href="#1350" id="1350">1350</a>
-<a href="#1351" id="1351">1351</a>
-<a href="#1352" id="1352">1352</a>
-<a href="#1353" id="1353">1353</a>
-<a href="#1354" id="1354">1354</a>
-<a href="#1355" id="1355">1355</a>
-<a href="#1356" id="1356">1356</a>
-<a href="#1357" id="1357">1357</a>
-<a href="#1358" id="1358">1358</a>
-<a href="#1359" id="1359">1359</a>
-<a href="#1360" id="1360">1360</a>
-<a href="#1361" id="1361">1361</a>
-<a href="#1362" id="1362">1362</a>
-<a href="#1363" id="1363">1363</a>
-<a href="#1364" id="1364">1364</a>
-<a href="#1365" id="1365">1365</a>
-<a href="#1366" id="1366">1366</a>
-<a href="#1367" id="1367">1367</a>
-<a href="#1368" id="1368">1368</a>
-<a href="#1369" id="1369">1369</a>
-<a href="#1370" id="1370">1370</a>
-<a href="#1371" id="1371">1371</a>
-<a href="#1372" id="1372">1372</a>
-<a href="#1373" id="1373">1373</a>
-<a href="#1374" id="1374">1374</a>
-<a href="#1375" id="1375">1375</a>
-<a href="#1376" id="1376">1376</a>
-<a href="#1377" id="1377">1377</a>
-<a href="#1378" id="1378">1378</a>
-<a href="#1379" id="1379">1379</a>
-<a href="#1380" id="1380">1380</a>
-<a href="#1381" id="1381">1381</a>
-<a href="#1382" id="1382">1382</a>
-<a href="#1383" id="1383">1383</a>
-<a href="#1384" id="1384">1384</a>
-<a href="#1385" id="1385">1385</a>
-<a href="#1386" id="1386">1386</a>
-<a href="#1387" id="1387">1387</a>
-<a href="#1388" id="1388">1388</a>
-<a href="#1389" id="1389">1389</a>
-<a href="#1390" id="1390">1390</a>
-<a href="#1391" id="1391">1391</a>
-<a href="#1392" id="1392">1392</a>
-<a href="#1393" id="1393">1393</a>
-<a href="#1394" id="1394">1394</a>
-<a href="#1395" id="1395">1395</a>
-<a href="#1396" id="1396">1396</a>
-<a href="#1397" id="1397">1397</a>
-<a href="#1398" id="1398">1398</a>
-<a href="#1399" id="1399">1399</a>
-<a href="#1400" id="1400">1400</a>
-<a href="#1401" id="1401">1401</a>
-<a href="#1402" id="1402">1402</a>
-<a href="#1403" id="1403">1403</a>
-<a href="#1404" id="1404">1404</a>
-<a href="#1405" id="1405">1405</a>
-<a href="#1406" id="1406">1406</a>
-<a href="#1407" id="1407">1407</a>
-<a href="#1408" id="1408">1408</a>
-<a href="#1409" id="1409">1409</a>
-<a href="#1410" id="1410">1410</a>
-<a href="#1411" id="1411">1411</a>
-<a href="#1412" id="1412">1412</a>
-<a href="#1413" id="1413">1413</a>
-<a href="#1414" id="1414">1414</a>
-<a href="#1415" id="1415">1415</a>
-<a href="#1416" id="1416">1416</a>
-<a href="#1417" id="1417">1417</a>
-<a href="#1418" id="1418">1418</a>
-<a href="#1419" id="1419">1419</a>
-<a href="#1420" id="1420">1420</a>
-<a href="#1421" id="1421">1421</a>
-<a href="#1422" id="1422">1422</a>
-<a href="#1423" id="1423">1423</a>
-<a href="#1424" id="1424">1424</a>
-<a href="#1425" id="1425">1425</a>
-<a href="#1426" id="1426">1426</a>
-<a href="#1427" id="1427">1427</a>
-<a href="#1428" id="1428">1428</a>
-<a href="#1429" id="1429">1429</a>
-<a href="#1430" id="1430">1430</a>
-<a href="#1431" id="1431">1431</a>
-<a href="#1432" id="1432">1432</a>
-<a href="#1433" id="1433">1433</a>
-<a href="#1434" id="1434">1434</a>
-<a href="#1435" id="1435">1435</a>
-<a href="#1436" id="1436">1436</a>
-<a href="#1437" id="1437">1437</a>
-<a href="#1438" id="1438">1438</a>
-<a href="#1439" id="1439">1439</a>
-<a href="#1440" id="1440">1440</a>
-<a href="#1441" id="1441">1441</a>
-<a href="#1442" id="1442">1442</a>
-<a href="#1443" id="1443">1443</a>
-<a href="#1444" id="1444">1444</a>
-<a href="#1445" id="1445">1445</a>
-<a href="#1446" id="1446">1446</a>
-<a href="#1447" id="1447">1447</a>
-<a href="#1448" id="1448">1448</a>
-<a href="#1449" id="1449">1449</a>
-<a href="#1450" id="1450">1450</a>
-<a href="#1451" id="1451">1451</a>
-<a href="#1452" id="1452">1452</a>
-<a href="#1453" id="1453">1453</a>
-<a href="#1454" id="1454">1454</a>
-<a href="#1455" id="1455">1455</a>
-<a href="#1456" id="1456">1456</a>
-<a href="#1457" id="1457">1457</a>
-<a href="#1458" id="1458">1458</a>
-<a href="#1459" id="1459">1459</a>
-<a href="#1460" id="1460">1460</a>
-<a href="#1461" id="1461">1461</a>
-<a href="#1462" id="1462">1462</a>
-<a href="#1463" id="1463">1463</a>
-<a href="#1464" id="1464">1464</a>
-<a href="#1465" id="1465">1465</a>
-<a href="#1466" id="1466">1466</a>
-<a href="#1467" id="1467">1467</a>
-<a href="#1468" id="1468">1468</a>
-<a href="#1469" id="1469">1469</a>
-<a href="#1470" id="1470">1470</a>
-<a href="#1471" id="1471">1471</a>
-<a href="#1472" id="1472">1472</a>
-<a href="#1473" id="1473">1473</a>
-<a href="#1474" id="1474">1474</a>
-<a href="#1475" id="1475">1475</a>
-<a href="#1476" id="1476">1476</a>
-<a href="#1477" id="1477">1477</a>
-<a href="#1478" id="1478">1478</a>
-<a href="#1479" id="1479">1479</a>
-<a href="#1480" id="1480">1480</a>
-<a href="#1481" id="1481">1481</a>
-<a href="#1482" id="1482">1482</a>
-<a href="#1483" id="1483">1483</a>
-<a href="#1484" id="1484">1484</a>
-<a href="#1485" id="1485">1485</a>
-<a href="#1486" id="1486">1486</a>
-<a href="#1487" id="1487">1487</a>
 </pre></div><pre class="rust"><code><span class="kw">use </span>std::marker::PhantomData;
 <span class="kw">use </span>std::ops::Div;
 
@@ -1496,8 +1337,8 @@
 
 <span class="kw">use </span><span class="kw">crate</span>::constants::{
     BASE64, CREDITS_THRESHOLD_COEF, META_RESOURCE_NAME, PLAYER_IGNORE_SEEK_AFTER,
-    VIDEO_FILENAME_EXTRA_PROP, VIDEO_HASH_EXTRA_PROP, VIDEO_SIZE_EXTRA_PROP,
-    WATCHED_THRESHOLD_COEF,
+    STREAM_RESOURCE_NAME, SUBTITLES_RESOURCE_NAME, VIDEO_FILENAME_EXTRA_PROP,
+    VIDEO_HASH_EXTRA_PROP, VIDEO_SIZE_EXTRA_PROP, WATCHED_THRESHOLD_COEF,
 };
 <span class="kw">use </span><span class="kw">crate</span>::models::common::{
     eq_update, resource_update, resource_update_with_vector_content,
@@ -1615,7 +1456,7 @@
     <span class="kw">fn </span>update(<span class="kw-2">&amp;mut </span><span class="self">self</span>, msg: <span class="kw-2">&amp;</span>Msg, ctx: <span class="kw-2">&amp;</span>Ctx) -&gt; Effects {
         <span class="kw">match </span>msg {
             Msg::Action(Action::Load(ActionLoad::Player(selected))) =&gt; {
-                <span class="kw">let </span>switch_to_next_video_effects = <span class="kw">if </span><span class="self">self
+                <span class="kw">let </span>item_state_update_effects = <span class="kw">if </span><span class="self">self
                     </span>.selected
                     .as_ref()
                     .and_then(|selected| selected.meta_request.as_ref())
@@ -1625,7 +1466,7 @@
                         .as_ref()
                         .map(|meta_request| <span class="kw-2">&amp;</span>meta_request.path.id)
                 {
-                    switch_to_next_video(<span class="kw-2">&amp;mut </span><span class="self">self</span>.library_item, <span class="kw-2">&amp;</span><span class="self">self</span>.next_video)
+                    item_state_update(<span class="kw-2">&amp;mut </span><span class="self">self</span>.library_item, <span class="kw-2">&amp;</span><span class="self">self</span>.next_video)
                 } <span class="kw">else </span>{
                     Effects::none().unchanged()
                 };
@@ -1752,7 +1593,7 @@
                 <span class="self">self</span>.loaded = <span class="bool-val">false</span>;
                 <span class="self">self</span>.ended = <span class="bool-val">false</span>;
                 <span class="self">self</span>.paused = <span class="prelude-val">None</span>;
-                switch_to_next_video_effects
+                item_state_update_effects
                     .join(selected_effects)
                     .join(meta_item_effects)
                     .join(stream_state_effects)
@@ -1789,8 +1630,8 @@
                     </span><span class="prelude-val">None</span>,
                 );
 
-                <span class="kw">let </span>switch_to_next_video_effects =
-                    switch_to_next_video(<span class="kw-2">&amp;mut </span><span class="self">self</span>.library_item, <span class="kw-2">&amp;</span><span class="self">self</span>.next_video);
+                <span class="kw">let </span>item_state_update_effects =
+                    item_state_update(<span class="kw-2">&amp;mut </span><span class="self">self</span>.library_item, <span class="kw-2">&amp;</span><span class="self">self</span>.next_video);
                 <span class="kw">let </span>push_to_library_effects = <span class="kw">match </span><span class="kw-2">&amp;</span><span class="self">self</span>.library_item {
                     <span class="prelude-val">Some</span>(library_item) =&gt; Effects::msg(Msg::Internal(Internal::UpdateLibraryItem(
                         library_item.to_owned(),
@@ -1817,7 +1658,7 @@
                 <span class="self">self</span>.paused = <span class="prelude-val">None</span>;
 
                 seek_history_effects
-                    .join(switch_to_next_video_effects)
+                    .join(item_state_update_effects)
                     .join(push_to_library_effects)
                     .join(selected_effects)
                     .join(video_params_effects)
@@ -2028,16 +1869,27 @@
                         .map(|library_item| library_item.state.time_offset),
                 );
 
-                <span class="comment">// Load will actually take care of loading the next video
+                <span class="comment">// Set time_offset to 0 as we switch to next video
+                </span><span class="kw">let </span>library_item_effects = <span class="self">self
+                    </span>.library_item
+                    .as_mut()
+                    .map(|library_item| {
+                        library_item.state.time_offset = <span class="number">0</span>;
+                        push_to_library::&lt;E&gt;(<span class="kw-2">&amp;mut </span><span class="self">self</span>.push_library_item_time, library_item)
+                    })
+                    .unwrap_or(Effects::none().unchanged());
 
-                </span>seek_history_effects.join(
-                    Effects::msg(Msg::Event(Event::PlayerNextVideo {
-                        context: <span class="self">self</span>.analytics_context.as_ref().cloned().unwrap_or_default(),
-                        is_binge_enabled: ctx.profile.settings.binge_watching,
-                        is_playing_next_video: <span class="self">self</span>.next_video.is_some(),
-                    }))
-                    .unchanged(),
-                )
+                <span class="comment">// Load will actually take care of loading the next video
+                </span>seek_history_effects
+                    .join(
+                        Effects::msg(Msg::Event(Event::PlayerNextVideo {
+                            context: <span class="self">self</span>.analytics_context.as_ref().cloned().unwrap_or_default(),
+                            is_binge_enabled: ctx.profile.settings.binge_watching,
+                            is_playing_next_video: <span class="self">self</span>.next_video.is_some(),
+                        }))
+                        .unchanged(),
+                    )
+                    .join(library_item_effects)
             }
             Msg::Action(Action::Player(ActionPlayer::Ended)) <span class="kw">if </span><span class="self">self</span>.selected.is_some() =&gt; {
                 <span class="self">self</span>.ended = <span class="bool-val">true</span>;
@@ -2051,14 +1903,19 @@
             Msg::Internal(Internal::StreamsChanged(<span class="kw">_</span>)) =&gt; {
                 stream_state_update(<span class="kw-2">&amp;mut </span><span class="self">self</span>.stream_state, <span class="kw-2">&amp;</span><span class="self">self</span>.selected, <span class="kw-2">&amp;</span>ctx.streams)
             }
-            Msg::Internal(Internal::ResourceRequestResult(request, result)) =&gt; {
+            Msg::Internal(Internal::ResourceRequestResult(request, result))
+                <span class="kw">if </span><span class="self">self</span>.selected.is_some() =&gt;
+            {
                 <span class="kw">let </span>meta_item_effects = <span class="kw">match </span><span class="kw-2">&amp;mut </span><span class="self">self</span>.meta_item {
-                    <span class="prelude-val">Some</span>(meta_item) =&gt; resource_update::&lt;E, <span class="kw">_</span>&gt;(
-                        meta_item,
-                        ResourceAction::ResourceRequestResult { request, result },
-                    ),
+                    <span class="prelude-val">Some</span>(meta_item) <span class="kw">if </span>request.path.resource == META_RESOURCE_NAME =&gt; {
+                        resource_update::&lt;E, <span class="kw">_</span>&gt;(
+                            meta_item,
+                            ResourceAction::ResourceRequestResult { request, result },
+                        )
+                    }
                     <span class="kw">_ </span>=&gt; Effects::none().unchanged(),
                 };
+
                 <span class="kw">let </span>update_streams_effects = <span class="kw">match </span>(<span class="kw-2">&amp;</span><span class="self">self</span>.selected, <span class="kw-2">&amp;</span><span class="self">self</span>.meta_item) {
                     (<span class="prelude-val">Some</span>(selected), <span class="prelude-val">Some</span>(meta_item))
                         <span class="kw">if </span>request.path.resource == META_RESOURCE_NAME =&gt;
@@ -2072,16 +1929,24 @@
                     }
                     <span class="kw">_ </span>=&gt; Effects::none().unchanged(),
                 };
-                <span class="kw">let </span>subtitles_effects = resources_update_with_vector_content::&lt;E, <span class="kw">_</span>&gt;(
-                    <span class="kw-2">&amp;mut </span><span class="self">self</span>.subtitles,
-                    ResourcesAction::ResourceRequestResult { request, result },
-                );
+
+                <span class="kw">let </span>subtitles_effects = <span class="kw">if </span>request.path.resource == SUBTITLES_RESOURCE_NAME {
+                    resources_update_with_vector_content::&lt;E, <span class="kw">_</span>&gt;(
+                        <span class="kw-2">&amp;mut </span><span class="self">self</span>.subtitles,
+                        ResourcesAction::ResourceRequestResult { request, result },
+                    )
+                } <span class="kw">else </span>{
+                    Effects::none().unchanged()
+                };
+
                 <span class="kw">let </span>next_streams_effects = <span class="kw">match </span><span class="self">self</span>.next_streams.as_mut() {
-                    <span class="prelude-val">Some</span>(next_streams) =&gt; resource_update_with_vector_content::&lt;E, <span class="kw">_</span>&gt;(
-                        next_streams,
-                        ResourceAction::ResourceRequestResult { request, result },
-                    ),
-                    <span class="prelude-val">None </span>=&gt; Effects::none().unchanged(),
+                    <span class="prelude-val">Some</span>(next_streams) <span class="kw">if </span>request.path.resource == STREAM_RESOURCE_NAME =&gt; {
+                        resource_update_with_vector_content::&lt;E, <span class="kw">_</span>&gt;(
+                            next_streams,
+                            ResourceAction::ResourceRequestResult { request, result },
+                        )
+                    }
+                    <span class="kw">_ </span>=&gt; Effects::none().unchanged(),
                 };
 
                 <span class="kw">let </span>next_video_effects = next_video_update(
@@ -2091,11 +1956,13 @@
                     <span class="kw-2">&amp;</span><span class="self">self</span>.meta_item,
                     <span class="kw-2">&amp;</span>ctx.profile.settings,
                 );
+
                 <span class="kw">let </span>next_streams_effects = next_streams_effects.join(next_streams_update::&lt;E&gt;(
                     <span class="kw-2">&amp;mut </span><span class="self">self</span>.next_streams,
                     <span class="kw-2">&amp;</span><span class="self">self</span>.next_video,
                     <span class="kw-2">&amp;</span><span class="self">self</span>.selected,
                 ));
+
                 <span class="kw">let </span>next_stream_effects = next_stream_update(
                     <span class="kw-2">&amp;mut </span><span class="self">self</span>.next_stream,
                     <span class="kw-2">&amp;</span><span class="self">self</span>.next_streams,
@@ -2208,7 +2075,7 @@
     }
 }
 
-<span class="kw">fn </span>switch_to_next_video(
+<span class="kw">fn </span>item_state_update(
     library_item: <span class="kw-2">&amp;mut </span><span class="prelude-ty">Option</span>&lt;LibraryItem&gt;,
     next_video: <span class="kw-2">&amp;</span><span class="prelude-ty">Option</span>&lt;Video&gt;,
 ) -&gt; Effects {
@@ -2323,11 +2190,6 @@
 <span class="kw">where
     </span>E: Env + <span class="lifetime">'static</span>,
 {
-    <span class="kw">let </span>next_video = <span class="kw">match </span>next_video {
-        <span class="prelude-val">Some</span>(next_video) =&gt; next_video,
-        <span class="prelude-val">None </span>=&gt; <span class="kw">return </span>Effects::none().unchanged(),
-    };
-
     <span class="kw">let </span><span class="kw-2">mut </span>stream_request = <span class="kw">match </span>selected
         .as_ref()
         .and_then(|selected| selected.stream_request.as_ref())
@@ -2335,51 +2197,36 @@
         <span class="prelude-val">Some</span>(stream_request) =&gt; stream_request.clone(),
         <span class="prelude-val">None </span>=&gt; <span class="kw">return </span>Effects::none().unchanged(),
     };
-    <span class="comment">// use the next video id to update the stream request
-    </span>stream_request.path.id = next_video.id.clone();
 
-    <span class="kw">if let </span><span class="prelude-val">Some</span>(stream) = next_video.stream() {
-        <span class="kw">return </span>eq_update(
-            next_streams,
-            <span class="prelude-val">Some</span>(ResourceLoadable {
-                request: stream_request,
-                content: <span class="prelude-val">Some</span>(Loadable::Ready(<span class="macro">vec!</span>[stream.into_owned()])),
-            }),
-        );
-    }
+    <span class="kw">match </span>next_video {
+        <span class="prelude-val">Some</span>(next_video) =&gt; {
+            stream_request.path.id = next_video.id.clone();
 
-    <span class="kw">if </span>!next_video.streams.is_empty() {
-        <span class="kw">return </span>eq_update(
-            next_streams,
-            <span class="prelude-val">Some</span>(ResourceLoadable {
-                request: stream_request,
-                content: <span class="prelude-val">Some</span>(Loadable::Ready(next_video.streams.clone())),
-            }),
-        );
-    }
+            <span class="kw">match </span>next_streams.as_mut() {
+                <span class="prelude-val">Some</span>(next_streams) =&gt; resource_update_with_vector_content::&lt;E, <span class="kw">_</span>&gt;(
+                    next_streams,
+                    ResourceAction::ResourceRequested {
+                        request: <span class="kw-2">&amp;</span>stream_request,
+                    },
+                ),
+                <span class="prelude-val">None </span>=&gt; {
+                    <span class="kw">let </span><span class="kw-2">mut </span>new_next_streams = ResourceLoadable {
+                        request: stream_request.to_owned(),
+                        content: <span class="prelude-val">None</span>,
+                    };
+                    <span class="kw">let </span>next_streams_effects = resource_update_with_vector_content::&lt;E, <span class="kw">_</span>&gt;(
+                        <span class="kw-2">&amp;mut </span>new_next_streams,
+                        ResourceAction::ResourceRequested {
+                            request: <span class="kw-2">&amp;</span>stream_request,
+                        },
+                    );
 
-    <span class="comment">// otherwise, fetch te next streams using a request
-    </span><span class="kw">match </span>next_streams.as_mut() {
-        <span class="prelude-val">Some</span>(next_streams) =&gt; resource_update_with_vector_content::&lt;E, <span class="kw">_</span>&gt;(
-            next_streams,
-            ResourceAction::ResourceRequested {
-                request: <span class="kw-2">&amp;</span>stream_request,
-            },
-        ),
-        <span class="prelude-val">None </span>=&gt; {
-            <span class="kw">let </span><span class="kw-2">mut </span>new_next_streams = ResourceLoadable {
-                request: stream_request.to_owned(),
-                content: <span class="prelude-val">None</span>,
-            };
-            <span class="kw">let </span>next_streams_effects = resource_update::&lt;E, <span class="kw">_</span>&gt;(
-                <span class="kw-2">&amp;mut </span>new_next_streams,
-                ResourceAction::ResourceRequested {
-                    request: <span class="kw-2">&amp;</span>stream_request,
-                },
-            );
-            <span class="kw-2">*</span>next_streams = <span class="prelude-val">Some</span>(new_next_streams);
-            next_streams_effects
+                    <span class="kw-2">*</span>next_streams = <span class="prelude-val">Some</span>(new_next_streams);
+                    next_streams_effects
+                }
+            }
         }
+        <span class="prelude-val">None </span>=&gt; Effects::none().unchanged(),
     }
 }
 
@@ -2808,170 +2655,5 @@
             .boxed_env(),
     )
     .into()
-}
-
-<span class="attr">#[cfg(test)]
-</span><span class="kw">mod </span>test {
-    <span class="kw">use </span>chrono::{TimeZone, Utc};
-    <span class="kw">use </span>url::Url;
-
-    <span class="kw">use crate</span>::{
-        constants::YOUTUBE_ADDON_ID_PREFIX,
-        models::common::{Loadable, ResourceLoadable},
-        types::{
-            addon::{ResourcePath, ResourceRequest},
-            resource::{SeriesInfo, Stream, Video},
-        },
-        unit_tests::TestEnv,
-    };
-
-    <span class="kw">use super</span>::{next_streams_update, Selected};
-
-    <span class="attr">#[test]
-    </span><span class="kw">fn </span>next_streams_update_with_a_stream_from_next_video() {
-        <span class="kw">let </span>current_youtube_1 = <span class="macro">format!</span>(<span class="string">"{YOUTUBE_ADDON_ID_PREFIX}666:1"</span>);
-        <span class="kw">let </span>current_youtube_stream = Stream::youtube(<span class="kw-2">&amp;</span>current_youtube_1).unwrap();
-        <span class="kw">let </span>next_youtube_1234 = <span class="macro">format!</span>(<span class="string">"{YOUTUBE_ADDON_ID_PREFIX}666:1234"</span>);
-        <span class="kw">let </span>next_youtube_stream = Stream::youtube(<span class="kw-2">&amp;</span>next_youtube_1234).unwrap();
-
-        <span class="kw">let </span>youtube_base = <span class="string">"https://youtube.com"
-            </span>.parse::&lt;Url&gt;()
-            .expect(<span class="string">"Valid youtube url"</span>);
-        <span class="kw">let </span>next_streams = ResourceLoadable {
-            request: ResourceRequest {
-                base: youtube_base.clone(),
-                path: ResourcePath::without_extra(<span class="string">"stream"</span>, <span class="string">"movie"</span>, <span class="kw-2">&amp;</span>next_youtube_1234),
-            },
-            content: <span class="prelude-val">None</span>,
-        };
-
-        <span class="kw">let </span>selected = Selected {
-            stream: current_youtube_stream,
-            stream_request: <span class="prelude-val">Some</span>(ResourceRequest {
-                base: youtube_base,
-                path: ResourcePath::without_extra(<span class="string">"stream"</span>, <span class="string">"movie"</span>, <span class="kw-2">&amp;</span>current_youtube_1),
-            }),
-            meta_request: <span class="prelude-val">None</span>,
-            subtitles_path: <span class="prelude-val">None</span>,
-        };
-
-        <span class="comment">// Test that it should update the next_streams from the next_video if Video has one stream
-        </span>{
-            <span class="kw">let </span><span class="kw-2">mut </span>next_streams = <span class="prelude-val">Some</span>(next_streams.clone());
-            <span class="kw">let </span>next_video = Video {
-                id: <span class="string">"next_video"</span>.to_owned(),
-                title: <span class="string">"title"</span>.to_owned(),
-                released: <span class="prelude-val">Some</span>(Utc.with_ymd_and_hms(<span class="number">2020</span>, <span class="number">1</span>, <span class="number">1</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>).unwrap()),
-                overview: <span class="prelude-val">Some</span>(<span class="string">"overview"</span>.to_owned()),
-                thumbnail: <span class="prelude-val">Some</span>(<span class="string">"thumbnail"</span>.to_owned()),
-                streams: <span class="macro">vec!</span>[next_youtube_stream.clone()],
-                series_info: <span class="prelude-val">Some</span>(SeriesInfo::default()),
-                trailer_streams: <span class="macro">vec!</span>[],
-            };
-            <span class="kw">let </span>result_effects = next_streams_update::&lt;TestEnv&gt;(
-                <span class="kw-2">&amp;mut </span>next_streams,
-                <span class="kw-2">&amp;</span><span class="prelude-val">Some</span>(next_video),
-                <span class="kw-2">&amp;</span><span class="prelude-val">Some</span>(selected.clone()),
-            );
-
-            <span class="macro">assert!</span>(result_effects.has_changed);
-            <span class="macro">assert!</span>(result_effects.into_iter().next().is_none());
-            <span class="macro">assert_eq!</span>(
-                next_streams.as_ref().unwrap().request.path.id,
-                <span class="string">"next_video"</span>,
-                <span class="string">"request should contain the next youtube video"
-            </span>);
-
-            <span class="macro">assert_eq!</span>(
-                <span class="kw-2">&amp;</span>Loadable::Ready(<span class="macro">vec!</span>[next_youtube_stream.clone()]),
-                next_streams
-                    .as_ref()
-                    .unwrap()
-                    .content
-                    .as_ref()
-                    .expect(<span class="string">"Should have content"</span>)
-            );
-        }
-
-        <span class="comment">// Test that it should update next_streams using all streams in Video
-        </span>{
-            <span class="kw">let </span>another_youtube_5678 = <span class="macro">format!</span>(<span class="string">"{YOUTUBE_ADDON_ID_PREFIX}666:5678"</span>);
-            <span class="kw">let </span>another_youtube_stream = Stream::youtube(<span class="kw-2">&amp;</span>another_youtube_5678).unwrap();
-            <span class="kw">let </span>youtube_streams = <span class="macro">vec!</span>[next_youtube_stream, another_youtube_stream];
-            <span class="kw">let </span><span class="kw-2">mut </span>next_streams = <span class="prelude-val">Some</span>(next_streams.clone());
-            <span class="kw">let </span>next_video = Video {
-                id: <span class="string">"next_video_2"</span>.to_owned(),
-                title: <span class="string">"title"</span>.to_owned(),
-                released: <span class="prelude-val">Some</span>(Utc.with_ymd_and_hms(<span class="number">2020</span>, <span class="number">1</span>, <span class="number">1</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>).unwrap()),
-                overview: <span class="prelude-val">Some</span>(<span class="string">"overview"</span>.to_owned()),
-                thumbnail: <span class="prelude-val">Some</span>(<span class="string">"thumbnail"</span>.to_owned()),
-                streams: youtube_streams.clone(),
-                series_info: <span class="prelude-val">Some</span>(SeriesInfo::default()),
-                trailer_streams: <span class="macro">vec!</span>[],
-            };
-            <span class="kw">let </span>result_effects = next_streams_update::&lt;TestEnv&gt;(
-                <span class="kw-2">&amp;mut </span>next_streams,
-                <span class="kw-2">&amp;</span><span class="prelude-val">Some</span>(next_video),
-                <span class="kw-2">&amp;</span><span class="prelude-val">Some</span>(selected.clone()),
-            );
-
-            <span class="macro">assert!</span>(result_effects.has_changed);
-            <span class="macro">assert!</span>(result_effects.into_iter().next().is_none());
-
-            <span class="macro">assert_eq!</span>(
-                next_streams.as_ref().unwrap().request.path.id,
-                <span class="string">"next_video_2"</span>,
-                <span class="string">"request should contain the next youtube video"
-            </span>);
-
-            <span class="macro">assert_eq!</span>(
-                <span class="kw-2">&amp;</span>Loadable::Ready(youtube_streams),
-                next_streams
-                    .as_ref()
-                    .unwrap()
-                    .content
-                    .as_ref()
-                    .expect(<span class="string">"Should have content"</span>)
-            );
-        }
-
-        <span class="comment">// Test that it should make a request to get next_streams if no streams are available in Video
-        </span>{
-            <span class="kw">let </span><span class="kw-2">mut </span>next_streams = <span class="prelude-val">Some</span>(next_streams);
-            <span class="kw">let </span>next_video = Video {
-                id: <span class="string">"next_video_3"</span>.to_owned(),
-                title: <span class="string">"title"</span>.to_owned(),
-                released: <span class="prelude-val">Some</span>(Utc.with_ymd_and_hms(<span class="number">2020</span>, <span class="number">1</span>, <span class="number">1</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>).unwrap()),
-                overview: <span class="prelude-val">Some</span>(<span class="string">"overview"</span>.to_owned()),
-                thumbnail: <span class="prelude-val">Some</span>(<span class="string">"thumbnail"</span>.to_owned()),
-                <span class="comment">// empty streams will cause a request to be made
-                </span>streams: <span class="macro">vec!</span>[],
-                series_info: <span class="prelude-val">Some</span>(SeriesInfo::default()),
-                trailer_streams: <span class="macro">vec!</span>[],
-            };
-            <span class="kw">let </span>result_effects = next_streams_update::&lt;TestEnv&gt;(
-                <span class="kw-2">&amp;mut </span>next_streams,
-                <span class="kw-2">&amp;</span><span class="prelude-val">Some</span>(next_video),
-                <span class="kw-2">&amp;</span><span class="prelude-val">Some</span>(selected),
-            );
-
-            <span class="macro">assert!</span>(result_effects.has_changed);
-            <span class="macro">assert_eq!</span>(<span class="number">1</span>, result_effects.into_iter().count());
-            <span class="macro">assert_eq!</span>(
-                next_streams.as_ref().unwrap().request.path.id,
-                <span class="string">"next_video_3"</span>,
-                <span class="string">"request should contain the next youtube video"
-            </span>);
-            <span class="macro">assert_eq!</span>(
-                <span class="kw-2">&amp;</span>Loadable::Loading,
-                next_streams
-                    .as_ref()
-                    .unwrap()
-                    .content
-                    .as_ref()
-                    .expect(<span class="string">"Should have content"</span>)
-            );
-        }
-    }
 }
 </code></pre></div></section></main></body></html>
