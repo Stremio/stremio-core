@@ -187,7 +187,7 @@ fn actionctx_pulladdonsfromapi_with_user() {
         "One request has been sent"
     );
     assert_eq!(
-        REQUESTS.read().unwrap().get(0).unwrap().url,
+        REQUESTS.read().unwrap().first().unwrap().url,
         "https://api.strem.io/api/addonCollectionGet".to_owned(),
         "addonCollectionGet request has been sent"
     );

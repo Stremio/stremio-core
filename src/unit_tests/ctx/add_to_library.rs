@@ -157,7 +157,7 @@ fn actionctx_addtolibrary() {
         "One request has been sent"
     );
     assert_eq!(
-        REQUESTS.read().unwrap().get(0).unwrap().url.to_owned(),
+        REQUESTS.read().unwrap().first().unwrap().url.to_owned(),
         "https://api.strem.io/api/datastorePut".to_owned(),
         "datastorePut request has been sent"
     );

@@ -147,7 +147,7 @@ fn actionctx_logout() {
         "One request has been sent"
     );
     assert_eq!(
-        REQUESTS.read().unwrap().get(0).unwrap().to_owned(),
+        REQUESTS.read().unwrap().first().unwrap().to_owned(),
         Request {
             url: "https://api.strem.io/api/logout".to_owned(),
             method: "POST".to_owned(),

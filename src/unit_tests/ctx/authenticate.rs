@@ -194,7 +194,7 @@ fn actionctx_authenticate_login() {
         "Three requests have been sent"
     );
     assert_eq!(
-        REQUESTS.read().unwrap().get(0).unwrap().to_owned(),
+        REQUESTS.read().unwrap().first().unwrap().to_owned(),
         Request {
             url: "https://api.strem.io/api/login".to_owned(),
             method: "POST".to_owned(),
@@ -396,7 +396,7 @@ fn actionctx_authenticate_login_with_token() {
         "Three requests have been sent"
     );
     assert_eq!(
-        REQUESTS.read().unwrap().get(0).unwrap().to_owned(),
+        REQUESTS.read().unwrap().first().unwrap().to_owned(),
         Request {
             url: "https://api.strem.io/api/loginWithToken".to_owned(),
             method: "POST".to_owned(),
@@ -607,7 +607,7 @@ fn actionctx_authenticate_register() {
         "Three requests have been sent"
     );
     assert_eq!(
-        REQUESTS.read().unwrap().get(0).unwrap().to_owned(),
+        REQUESTS.read().unwrap().first().unwrap().to_owned(),
         Request {
             url: "https://api.strem.io/api/register".to_owned(),
             method: "POST".to_owned(),

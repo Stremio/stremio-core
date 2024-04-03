@@ -5,7 +5,7 @@ use crate::{
         player::{Player, Selected},
     },
     runtime::{
-        msg::{Action, ActionLoad},
+        msg::{Action, ActionLoad, ActionPlayer},
         EnvFutureExt, Runtime, RuntimeAction, TryEnvFuture,
     },
     types::{
@@ -82,6 +82,14 @@ fn next_stream() {
                 }) as Box<dyn Any + Send>)
                 .boxed_env()
             }
+            Request { url, .. }
+                if url == "https://transport_url/stream/series/tt123456%3A1%3A3.json" =>
+            {
+                future::ok(Box::new(ResourceResponse::Streams {
+                    streams: vec![create_stream("binge_group"), create_stream("binge_group_1")],
+                }) as Box<dyn Any + Send>)
+                .boxed_env()
+            }
             _ => default_fetch_handler(request),
         }
     }
@@ -140,6 +148,17 @@ fn next_stream() {
         });
     });
 
+    TestEnv::run(|| {
+        runtime.dispatch(RuntimeAction {
+            field: None,
+            action: Action::Player(ActionPlayer::TimeChanged {
+                time: 50,
+                duration: 100,
+                device: "device".to_owned(),
+            }),
+        });
+    });
+
     assert_eq!(
         runtime
             .model()
@@ -152,5 +171,40 @@ fn next_stream() {
             .binge_group,
         stream.behavior_hints.binge_group,
         "next stream has same binge group"
+    );
+
+    TestEnv::run(|| {
+        runtime.dispatch(RuntimeAction {
+            field: None,
+            action: Action::Player(ActionPlayer::NextVideo),
+        });
+    });
+
+    assert_eq!(
+        runtime
+            .model()
+            .unwrap()
+            .player
+            .next_stream
+            .as_ref()
+            .unwrap()
+            .behavior_hints
+            .binge_group,
+        stream.behavior_hints.binge_group,
+        "next stream has same binge group"
+    );
+
+    assert_eq!(
+        runtime
+            .model()
+            .unwrap()
+            .player
+            .library_item
+            .as_ref()
+            .unwrap()
+            .state
+            .time_offset,
+        0,
+        "library item time_offset was reset"
     );
 }

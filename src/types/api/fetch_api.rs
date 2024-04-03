@@ -18,7 +18,7 @@ pub fn fetch_api<
         .endpoint()
         .join("api/")
         .expect("url builder failed")
-        .join(&api_request.path())
+        .join(&api_request.version_path())
         .expect("url builder failed");
     url.set_query(api_request.query().as_deref());
     let request = Request::builder()
