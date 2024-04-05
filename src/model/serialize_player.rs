@@ -185,9 +185,14 @@ pub fn serialize_player(player: &Player, ctx: &Ctx, streaming_server: &Streaming
         next_video: player
             .selected
             .as_ref()
-            .and_then(|selected| selected.meta_request.as_ref())
+            .and_then(|selected| {
+                selected
+                    .meta_request
+                    .as_ref()
+                    .zip(selected.stream_request.as_ref())
+            })
             .zip(player.next_video.as_ref())
-            .map(|(request, video)| model::Video {
+            .map(|((meta_request, stream_request), video)| model::Video {
                 video,
                 upcoming: player
                     .meta_item
@@ -219,7 +224,8 @@ pub fn serialize_player(player: &Player, ctx: &Ctx, streaming_server: &Streaming
                     .unwrap_or_default(),
                 deep_links: VideoDeepLinks::from((
                     video,
-                    request,
+                    stream_request,
+                    meta_request,
                     &streaming_server.base_url,
                     &ctx.profile.settings,
                 ))
