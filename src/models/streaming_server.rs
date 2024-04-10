@@ -1,3 +1,12 @@
+use enclose::enclose;
+use futures::{FutureExt, TryFutureExt};
+use http::request::Request;
+use magnet_url::{Magnet, MagnetError};
+use serde::{Deserialize, Serialize};
+use sha1::{Digest, Sha1};
+use std::iter;
+use url::Url;
+
 use crate::constants::META_RESOURCE_NAME;
 use crate::models::common::{eq_update, Loadable};
 use crate::models::ctx::{Ctx, CtxError};
@@ -8,17 +17,11 @@ use crate::runtime::{Effect, EffectFuture, Effects, Env, EnvError, EnvFutureExt,
 use crate::types::addon::ResourcePath;
 use crate::types::api::SuccessResponse;
 use crate::types::profile::{AuthKey, Profile};
+use crate::types::resource::{Stream, StreamSource};
 use crate::types::streaming_server::{
-    DeviceInfo, GetHTTPSResponse, NetworkInfo, Settings, SettingsResponse, Statistics,
+    ArchiveCreateResponse, ArchiveStreamOptions, ArchiveStreamRequest, DeviceInfo,
+    GetHTTPSResponse, NetworkInfo, Settings, SettingsResponse, Statistics,
 };
-use enclose::enclose;
-use futures::{FutureExt, TryFutureExt};
-use http::request::Request;
-use magnet_url::{Magnet, MagnetError};
-use serde::{Deserialize, Serialize};
-use sha1::{Digest, Sha1};
-use std::iter;
-use url::Url;
 
 #[derive(Clone, PartialEq, Eq, Serialize, Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
@@ -403,6 +406,13 @@ impl<E: Env + 'static> UpdateWithCtx<E> for StreamingServer {
                 }
                 _ => Effects::none().unchanged(),
             },
+            Msg::Internal(Internal::UpdateStreamSource { stream }) => {
+                let effects =
+                    update_stream_source_effects::<E>(self.base_url.as_ref(), stream.to_owned());
+
+                effects
+            }
+            // Msg::Internal(Internal::StreamingServerStreamSourceResult { original, result }) => {}
             _ => Effects::none().unchanged(),
         }
     }
@@ -730,5 +740,124 @@ fn update_remote_url<E: Env + 'static>(
         )
         .unchanged(),
         _ => eq_update(remote_url, None),
+    }
+}
+
+/// Updates the stream_source and generates a correct streaming_url
+pub fn update_stream_source_effects<E: Env + 'static>(
+    transport_url: Option<&Url>,
+    stream: Stream,
+) -> Effects {
+    let streaming_server_url = transport_url.cloned();
+
+    let effect = EffectFuture::Concurrent(
+        update_stream_source_streaming_url::<E>(streaming_server_url.clone(), stream.clone())
+            .map(enclose!((stream) move |result|
+                Msg::Internal(Internal::StreamingServerStreamSourceResult{ original: stream, result, streaming_server_url })
+            ))
+            .boxed_env()
+    );
+
+    Effects::one(effect.into())
+}
+
+/// Updates a StreamSource if it's RAR or ZIP urls by calling the server (if present)
+/// and creating a streaming url for a given file (either with `file_idx` or `file_must_include`).
+pub async fn update_stream_source_streaming_url<E: Env + 'static>(
+    transport_url: Option<Url>,
+    mut stream: Stream,
+) -> Result<Stream, EnvError> {
+    match (transport_url, stream.source.to_owned()) {
+        (
+            Some(streaming_server_url),
+            StreamSource::Rar {
+                file_idx,
+                file_must_include,
+                rar_urls,
+            },
+        ) => {
+            if rar_urls.is_empty() {
+                return Err(EnvError::Other("No RAR URLs provided".into()));
+            }
+
+            // error on Url::join should never happen.
+            let create_stream_url = streaming_server_url
+                .join("rar/stream")
+                .map_err(|err| EnvError::Other(err.to_string()))?;
+
+            let request = Request::post(create_stream_url.as_str())
+                .header(http::header::CONTENT_TYPE, "application/json")
+                .body(rar_urls)
+                .expect("request builder failed");
+
+            let response = E::fetch::<_, ArchiveCreateResponse>(request).await?;
+            let response_key = response
+                .key
+                .filter(|key| !key.is_empty())
+                .ok_or_else(|| EnvError::Other("Could not create RAR key".into()))?;
+
+            let mut stream_url = streaming_server_url
+                .join("rar/stream")
+                .map_err(|err| EnvError::Other(err.to_string()))?;
+
+            let query_pairs = ArchiveStreamRequest {
+                response_key,
+                options: ArchiveStreamOptions {
+                    file_idx,
+                    file_must_include,
+                },
+            }
+            .to_query_pairs();
+            stream_url.query_pairs_mut().extend_pairs(query_pairs);
+
+            stream.source = StreamSource::Url { url: stream_url };
+            Ok(stream)
+        }
+        (
+            Some(streaming_server_url),
+            StreamSource::Zip {
+                file_idx,
+                file_must_include,
+                zip_urls,
+            },
+        ) => {
+            if zip_urls.is_empty() {
+                return Err(EnvError::Other("No RAR URLs provided".into()));
+            }
+
+            let create_stream_url = streaming_server_url
+                .join("zip/create")
+                .map_err(|err| EnvError::Other(err.to_string()))?;
+
+            let request = Request::post(create_stream_url.as_str())
+                .header(http::header::CONTENT_TYPE, "application/json")
+                .body(zip_urls)
+                .expect("request builder failed");
+
+            let response = E::fetch::<_, ArchiveCreateResponse>(request).await?;
+            let response_key = response
+                .key
+                .filter(|key| !key.is_empty())
+                .ok_or_else(|| EnvError::Other("Could not create RAR key".into()))?;
+
+            let mut stream_url = streaming_server_url
+                .join("zip/stream")
+                .map_err(|err| EnvError::Other(err.to_string()))?;
+
+            let query_pairs = ArchiveStreamRequest {
+                response_key,
+                options: ArchiveStreamOptions {
+                    file_idx,
+                    file_must_include,
+                },
+            }
+            .to_query_pairs();
+            stream_url.query_pairs_mut().extend_pairs(query_pairs);
+
+            stream.source = StreamSource::Url { url: stream_url };
+            Ok(stream)
+        }
+        // no further changes are needed
+        (_, _stream_source) => Ok(stream),
     }
 }

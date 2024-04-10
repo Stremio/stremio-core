@@ -1,8 +1,7 @@
-use crate::constants::{BASE64, URI_COMPONENT_ENCODE_SET, YOUTUBE_ADDON_ID_PREFIX};
-use crate::types::resource::Subtitles;
+use std::{collections::HashMap, io::Write};
+
 use base64::Engine;
 use boolinator::Boolinator;
-#[cfg(test)]
 use derivative::Derivative;
 use flate2::write::{ZlibDecoder, ZlibEncoder};
 use flate2::Compression;
@@ -11,10 +10,11 @@ use percent_encoding::utf8_percent_encode;
 use serde::de::Error;
 use serde::{Deserialize, Deserializer, Serialize};
 use serde_with::{serde_as, DefaultOnNull};
-use std::collections::HashMap;
-use std::io::Write;
 use stremio_serde_hex::{SerHex, Strict};
 use url::{form_urlencoded, Url};
+
+use crate::constants::{BASE64, URI_COMPONENT_ENCODE_SET, YOUTUBE_ADDON_ID_PREFIX};
+use crate::types::resource::Subtitles;
 
 #[derive(Clone, PartialEq, Eq, Serialize, Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
@@ -111,6 +111,7 @@ impl Stream {
             })
     }
 
+    #[deprecated = "Because of RAR & ZIP require request to create an archive url in Server"]
     pub fn download_url(&self) -> Option<String> {
         match &self.source {
             StreamSource::Url { url } if url.scheme() == "magnet" => {
@@ -138,6 +139,7 @@ impl Stream {
         }
     }
 
+    #[deprecated]
     pub fn m3u_data_uri(&self, streaming_server_url: Option<&Url>) -> Option<String> {
         self.streaming_url(streaming_server_url).map(|url| {
             format!(
@@ -147,7 +149,7 @@ impl Stream {
         })
     }
 
-    pub fn streaming_url(&self, streaming_server_url: Option<&Url>) -> Option<String> {
+    pub fn streaming_url(&self, streaming_server_url: Option<&Url>) -> Option<Url> {
         match (&self.source, streaming_server_url) {
             (StreamSource::Url { url }, streaming_server_url) if url.scheme() != "magnet" => {
                 // If proxy headers are set and streaming server is available, build the proxied streaming url from streaming server url
@@ -178,9 +180,9 @@ impl Stream {
                             .push(proxy_query.finish().as_str())
                             .push(&url.path()[1..]);
                         streaming_url.set_query(url.query());
-                        Some(streaming_url.to_string())
+                        Some(streaming_url)
                     }
-                    _ => Some(url.to_string()),
+                    _ => Some(url.to_owned()),
                 }
             }
             (
@@ -224,7 +226,7 @@ impl Stream {
                     }
                 }
 
-                Some(url.to_string())
+                Some(url)
             }
             (StreamSource::Zip { .. }, Some(_streaming_server_url)) => None,
             (StreamSource::Rar { .. }, Some(_streaming_server_url)) => None,
@@ -239,7 +241,7 @@ impl Stream {
                     }
                     _ => return None,
                 };
-                Some(url.to_string())
+                Some(url)
             }
             _ => None,
         }
@@ -514,4 +516,73 @@ pub struct StreamBehaviorHints {
 
 fn is_default_value<T: Default + PartialEq>(value: &T) -> bool {
     *value == T::default()
+}
+
+#[derive(Clone, Derivative, Serialize, Debug, PartialEq, Eq)]
+pub struct StreamUrls {
+    pub magnet_url: Option<Url>,
+    pub download_url: Option<Url>,
+    pub streaming_url: Option<Url>,
+    pub m3u_data_uri: Option<String>,
+    /// The Stream for which the Urls were generated
+    /// This is very important to have since the stream can change in a model
+    /// and allows us it check if the Urls are generated for the same Stream.
+    pub stream: Stream,
+}
+
+impl StreamUrls {
+    pub fn new(stream: &Stream, streaming_server_url: Option<&Url>) -> Self {
+        let streaming_url = stream.streaming_url(streaming_server_url);
+
+        let download_url = match &stream.source {
+            StreamSource::Url { url } if url.scheme() == "magnet" => stream
+                .magnet_url()
+                .and_then(|magnet_url| Url::parse(&magnet_url.to_string()).ok()),
+            StreamSource::Url { url } => Some(url.to_owned()),
+            // at this point, Rar & Zip sources should have been converted to StreamSource::Url
+            StreamSource::Rar {
+                rar_urls: _,
+                file_idx: _,
+                file_must_include: _,
+            } => None,
+            StreamSource::Zip {
+                zip_urls: _,
+                file_idx: _,
+                file_must_include: _,
+            } => None,
+            StreamSource::Torrent { .. } => {
+                streaming_url.clone().map(|mut torrent_stream_url| {
+                    {
+                        let mut query_pairs = torrent_stream_url.query_pairs_mut();
+                        query_pairs
+                            // clear any existing query parameters!
+                            .clear()
+                            .append_pair("external", "1")
+                            .append_pair("download", "1");
+                    }
+                    torrent_stream_url
+                })
+            }
+            StreamSource::YouTube { .. } => stream.youtube_url().and_then(|url| url.parse().ok()),
+            StreamSource::External { external_url, .. } => {
+                external_url.as_ref().map(|url| url.to_owned())
+            }
+            StreamSource::PlayerFrame { player_frame_url } => Some(player_frame_url.to_owned()),
+        };
+
+        let m3u_data_uri = streaming_url.as_ref().map(|url| {
+            format!(
+                "data:application/octet-stream;charset=utf-8;base64,{}",
+                BASE64.encode(format!("#EXTM3U\n#EXTINF:0\n{url}"))
+            )
+        });
+
+        Self {
+            magnet_url: None,
+            download_url,
+            streaming_url,
+            m3u_data_uri,
+            stream: stream.to_owned(),
+        }
+    }
 }
