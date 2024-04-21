@@ -100,6 +100,15 @@ impl LibraryItem {
             && self.poster_shape == other.poster_shape
             && self.behavior_hints == other.behavior_hints
     }
+
+    pub fn mark_as_watched<E: Env>(&mut self, is_watched: bool) {
+        if is_watched {
+            self.state.times_watched += 1;
+            self.state.last_watched = Some(E::now());
+        } else {
+            self.state.times_watched = 0;
+        }
+    }
 }
 
 impl<E: Env + 'static> From<(&MetaItemPreview, PhantomData<E>)> for LibraryItem {
