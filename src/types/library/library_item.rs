@@ -103,7 +103,7 @@ impl LibraryItem {
 
     pub fn mark_as_watched<E: Env>(&mut self, is_watched: bool) {
         if is_watched {
-            self.state.times_watched += 1;
+            self.state.times_watched = self.state.times_watched.saturating_add(1);
             self.state.last_watched = Some(E::now());
         } else {
             self.state.times_watched = 0;
