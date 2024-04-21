@@ -110,11 +110,15 @@ impl<E: Env + 'static> UpdateWithCtx<E> for MetaDetails {
             Msg::Action(Action::MetaDetails(ActionMetaDetails::MarkAsWatched(is_watched))) => {
                 match &self.library_item {
                     Some(library_item) => {
-                        Effects::msg(Msg::Internal(Internal::LibraryItemMarkAsWatched {
-                            id: library_item.id.clone(),
-                            is_watched: *is_watched,
-                        }))
-                        .unchanged()
+                        let mut library_item = library_item.to_owned();
+                        if *is_watched {
+                            library_item.state.times_watched += 1;
+                            library_item.state.last_watched = Some(E::now());
+                        } else {
+                            library_item.state.times_watched = 0;
+                        }
+                        Effects::msg(Msg::Internal(Internal::UpdateLibraryItem(library_item)))
+                            .unchanged()
                     }
                     _ => Effects::none().unchanged(),
                 }

@@ -150,9 +150,4 @@ pub enum Internal {
     ),
     /// When dismissed events changed
     DismissedEventsChanged,
-    /// Marks a library item as watched or unwatched. (Overrides the current state)
-    LibraryItemMarkAsWatched {
-        id: LibraryItemId,
-        is_watched: bool,
-    },
 }
