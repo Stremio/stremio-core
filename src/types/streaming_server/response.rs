@@ -1,7 +1,13 @@
 use serde::{Deserialize, Serialize};
 use url::Url;
 
-use crate::types::streaming_server::Settings;
+use crate::types::{resource::InfoHash, streaming_server::Settings};
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ArchiveCreateResponse {
+    pub key: Option<String>,
+}
 
 #[derive(Clone, PartialEq, Serialize, Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
@@ -18,8 +24,8 @@ pub struct GetHTTPSResponse {
     pub port: u16,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct ArchiveCreateResponse {
-    pub key: Option<String>,
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct OpensubtitlesParamsResponse {
+    pub hash: InfoHash,
+    pub size: u64,
 }

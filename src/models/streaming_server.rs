@@ -3,6 +3,7 @@ use futures::{FutureExt, TryFutureExt};
 use http::request::Request;
 use magnet_url::{Magnet, MagnetError};
 use serde::{Deserialize, Serialize};
+use serde_with::serde_as;
 use sha1::{Digest, Sha1};
 use std::iter;
 use url::Url;
@@ -17,11 +18,12 @@ use crate::runtime::{Effect, EffectFuture, Effects, Env, EnvError, EnvFutureExt,
 use crate::types::addon::ResourcePath;
 use crate::types::api::SuccessResponse;
 use crate::types::profile::{AuthKey, Profile};
-use crate::types::resource::{Stream, StreamSource};
+use crate::types::resource::{ConvertedStreamSource, InfoHash, SeriesInfo, Stream, StreamSource};
 use crate::types::streaming_server::{
-    ArchiveCreateResponse, ArchiveStreamOptions, ArchiveStreamRequest, DeviceInfo,
-    GetHTTPSResponse, NetworkInfo, Settings, SettingsResponse, Statistics,
+    ArchiveCreateResponse, ArchiveStreamOptions, ArchiveStreamRequest, CreateTorrentRequest, DeviceInfo, FileNameRequest, GetHTTPSResponse, NetworkInfo, OpensubtitlesParamsRequest, OpensubtitlesParamsResponse, PeerSearch, Settings, SettingsResponse, Statistics
 };
+
+use super::player::VideoParams;
 
 #[derive(Clone, PartialEq, Eq, Serialize, Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
@@ -162,7 +164,11 @@ impl<E: Env + 'static> UpdateWithCtx<E> for StreamingServer {
                         Some((info_hash.to_owned(), Loadable::Loading)),
                     );
                     Effects::many(vec![
-                        create_torrent::<E>(&self.selected.transport_url, &info_hash, torrent),
+                        create_torrent_request::<E>(
+                            &self.selected.transport_url,
+                            &info_hash,
+                            torrent,
+                        ),
                         Effect::Msg(Box::new(Msg::Event(Event::TorrentParsed {
                             torrent: torrent.to_owned(),
                         }))),
@@ -526,6 +532,58 @@ fn set_settings<E: Env + 'static>(url: &Url, settings: &Settings) -> Effect {
     .into()
 }
 
+pub async fn create_magnet_request<E: Env + 'static>(url: &Url, info_hash: InfoHash, announce: &[String]) -> Result<(), EnvError> {
+    #[derive(Serialize)]
+    #[serde(rename_all = "camelCase")]
+    struct Torrent {
+        info_hash: InfoHash,
+    }
+    #[derive(Serialize)]
+    #[serde(rename_all = "camelCase")]
+    struct Body {
+        torrent: Torrent,
+        peer_search: Option<PeerSearch>,
+    }
+    let info_hash = info_hash.to_owned();
+    let endpoint = url
+        .join(&format!("{info_hash}/"))
+        .expect("url builder failed")
+        .join("create")
+        .expect("url builder failed");
+    let body = Body {
+        torrent: Torrent {
+            info_hash: info_hash.to_owned(),
+        },
+        peer_search: if !announce.is_empty() {
+            Some(PeerSearch {
+                sources: iter::once(&format!("dht:{info_hash}"))
+                    .chain(announce.iter())
+                    .cloned()
+                    .collect(),
+                min: 40,
+                max: 200,
+            })
+        } else {
+            None
+        },
+    };
+    let request = Request::post(endpoint.as_str())
+        .header(http::header::CONTENT_TYPE, "application/json")
+        .body(body)
+        .expect("request builder failed");
+    EffectFuture::Concurrent(
+        E::fetch::<_, serde_json::Value>(request)
+            .map_ok(|_| ())
+            .map(enclose!((info_hash) move |result| {
+                Msg::Internal(Internal::StreamingServerCreateTorrentResult(
+                    info_hash, result,
+                ))
+            }))
+            .boxed_env(),
+    )
+    .into()
+}
+
 fn create_magnet<E: Env + 'static>(url: &Url, info_hash: &str, announce: &[String]) -> Effect {
     #[derive(Serialize)]
     #[serde(rename_all = "camelCase")]
@@ -585,7 +643,11 @@ fn create_magnet<E: Env + 'static>(url: &Url, info_hash: &str, announce: &[Strin
     .into()
 }
 
-fn create_torrent<E: Env + 'static>(url: &Url, info_hash: &str, torrent: &[u8]) -> Effect {
+pub fn create_torrent_request<E: Env + 'static>(
+    url: &Url,
+    info_hash: &str,
+    torrent: &[u8],
+) -> Effect {
     #[derive(Serialize)]
     struct Body {
         blob: String,
@@ -743,6 +805,266 @@ fn update_remote_url<E: Env + 'static>(
     }
 }
 
+/// TODO: <https://github.com/Stremio/stremio-video/blob/5c50f9caa5bee2a66b5c6d3bbc967536a1305cbb/src/withStreamingServer/convertStream.js>
+pub fn convert_stream<E: Env + 'static>(
+    transport_url: Option<&Url>,
+    stream: Stream,
+) -> Result<Option<Stream<ConvertedStreamSource>>, EnvError> {
+    // TODO: Convert the StreamSource to ConvertedStreamSource, i.e. resolved and setup stream in the server
+    let converted_stream = match &stream.source {
+        StreamSource::Url { url } => ConvertedStreamSource::Url(url.clone()),
+        StreamSource::Url { url } if url.scheme() == "magnet" => {
+            let magnet = stream
+                .magnet_url()
+                .ok_or(EnvError::Other("Not a valid magent url".to_owned()))?;
+
+            let info_hash = todo!("from magnet");
+            // let sources = ;
+            // magnet.bti
+            let series_info = SeriesInfo {
+                season: todo!(),
+                episode: todo!(),
+            };
+
+            let magnet_url = todo!();
+            // let magnet_url = create_torrent_request(url, info_hash, torrent);
+
+            // .and_then(|magnet_url| Url::parse(&magnet_url.to_string())
+            // .map_err(|_err| EnvError::Other("Magnets should always be a valid url!".to_owned())))?;
+            // TODO: Create torrent
+            // Magnet
+
+            //     var parsedMagnetURI;
+            //     try {
+            //         parsedMagnetURI = magnet.decode(stream.url);
+            //         if (!parsedMagnetURI || typeof parsedMagnetURI.infoHash !== 'string') {
+            //             throw new Error('Failed to decode magnet url');
+            //         }
+            //     } catch (error) {
+            //         reject(error);
+            //         return;
+            //     }
+
+            //     var sources = Array.isArray(parsedMagnetURI.announce) ?
+            //         parsedMagnetURI.announce.map(function(source) {
+            //             return 'tracker:' + source;
+            //         })
+            //         :
+            //         [];
+            //     createTorrent(streamingServerURL, parsedMagnetURI.infoHash, null, sources, seriesInfo)
+            //         .then(function(torrent) {
+            //             resolve({ url: torrent.url, infoHash: torrent.infoHash, fileIdx: torrent.fileIdx });
+            //         })
+            //         .catch(function(error) {
+            //             reject(error);
+            //         });
+            // } else {
+            //     resolve({ url: stream.url });
+            // }
+
+            // createTorrent(streamingServerURL, parsedMagnetURI.infoHash, null, sources, seriesInfo)
+            // .then(function(torrent) {
+            //     resolve({ url: torrent.url, infoHash: torrent.infoHash, fileIdx: torrent.fileIdx });
+            // })
+            ConvertedStreamSource::Url(todo!())
+        }
+        StreamSource::Torrent {
+            info_hash,
+            file_idx,
+            announce,
+            ..
+        } => {
+            // Torrent
+            // createTorrent(streamingServerURL, stream.infoHash, stream.fileIdx, stream.announce, seriesInfo)
+            // .then(function(torrent) {
+            //     resolve({ url: torrent.url, infoHash: torrent.infoHash, fileIdx: torrent.fileIdx });
+
+            todo!("Create torrent in server and create torrent when magnet!");
+            ConvertedStreamSource::Torrent {
+                url: todo!("Convert the stream by resolving it with the server"),
+                info_hash: InfoHash::new(*info_hash),
+                file_idx: *file_idx,
+                announce: announce.to_owned(),
+            }
+        }
+        _ => return Ok(None),
+    };
+
+    match transport_url {
+        Some(server_url) => Ok(Some(Stream {
+            source: converted_stream,
+            name: stream.name,
+            description: stream.description,
+            thumbnail: stream.thumbnail,
+            subtitles: stream.subtitles,
+            behavior_hints: stream.behavior_hints,
+        })),
+        _ => Err(EnvError::Other("Fix me!".into())),
+    }
+}
+/// <https://github.com/Stremio/stremio-video/blob/5c50f9caa5bee2a66b5c6d3bbc967536a1305cbb/src/withStreamingServer/createTorrent.js#L18>
+pub async fn create_torrent<E: Env + 'static>(
+    mut server_url: Url,
+    info_hash: InfoHash,
+    file_idx: u64,
+    sources: &[Url],
+    // series_info: SeriesInfo,
+) -> Result<Option<CreatedTorrent>, EnvError> {
+
+    let request = CreateTorrentRequest {
+        server_url,
+        sources: sources.to_vec(),
+        info_hash,
+        file_idx,
+    };
+
+    // returns Null on invalid params
+    Ok(E::fetch(request.into()).await?)
+    
+    // create_torrent_request
+    // todo!()
+}
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+#[serde_as]
+pub struct CreatedTorrent {
+    pub torrent: Torrent,
+    pub peer_search: PeerSearch,
+    // Stremio-video sends `false` when no Guessing should be done.
+    // #[serde_as(deserialize_as = "DefaultOnError")]
+    /// If `None, the server will perform no guessing
+    pub guess_file_idx: Option<SeriesInfo>,
+}
+
+// #[derive(Default, Debug, Clone, Serialize, Deserialize)]
+// pub enum GuessFileIdx {
+//     #[default]
+//     NoGuessing,
+//     SeriesInfo(SeriesInfo)
+// }
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct Torrent {
+    info_hash: InfoHash,
+}
+
+
+/// Updates the stream_source and generates a correct streaming_url
+/// video params in stremio-video: <https://github.com/Stremio/stremio-video/blob/master/src/withVideoParams/withVideoParams.js#L48-L57>
+///
+/// ```js
+/// var hash = stream.behaviorHints && typeof stream.behaviorHints.videoHash === 'string' ? stream.behaviorHints.videoHash : null;
+/// var size = stream.behaviorHints && stream.behaviorHints.videoSize !== null && isFinite(stream.behaviorHints.videoSize) ? stream.behaviorHints.videoSize : null;
+/// var filename = stream.behaviorHints && typeof stream.behaviorHints.filename === 'string' ? stream.behaviorHints.filename : null;
+/// return { hash: hash, size: size, filename: filename };
+/// ```
+pub async fn get_video_params_effects<E: Env + 'static>(
+    transport_url: Option<&Url>,
+    stream: Stream<ConvertedStreamSource>,
+) -> Result<Option<VideoParams>, EnvError> {
+    let streaming_server_url = transport_url.cloned();
+    let stream_opensubtitles = stream.clone();
+    let opensubitiles_params_fut = async move {
+        match (
+            transport_url,
+            stream_opensubtitles.behavior_hints.video_hash.clone(),
+            stream_opensubtitles.behavior_hints.video_size.clone(),
+        ) {
+            (_, Some(info_hash), Some(size)) => {
+                let info_hash = info_hash
+                    .parse::<InfoHash>()
+                    .map_err(|e| EnvError::Serde(e.to_string()))?;
+
+                Ok(Some((info_hash, size)))
+            }
+            (Some(transport_url), _, _) => {
+                let media_url = match stream_opensubtitles.source.clone() {
+                    ConvertedStreamSource::Url(url) => url.to_owned(),
+                    ConvertedStreamSource::Torrent { url, .. } => url.to_owned(),
+                };
+
+                get_opensubtitles_params::<E>(transport_url.to_owned(), media_url)
+                    .await
+                    .map(|response| response.map(|response| (response.hash, response.size)))
+            }
+            _ => Ok(None),
+        }
+    };
+
+    let filename_fut = async move {
+        match (
+            transport_url.to_owned(),
+            stream.source,
+            stream.behavior_hints.filename,
+        ) {
+            (_, _, Some(filename)) => Ok(Some(filename)),
+            (
+                Some(transport_url),
+                ConvertedStreamSource::Torrent {
+                    info_hash,
+                    file_idx: Some(file_idx),
+                    ..
+                },
+                _,
+            ) => get_filename::<E>(transport_url.to_owned(), info_hash, file_idx).await,
+            _ => Ok(None),
+        }
+    };
+
+    match futures::future::try_join(opensubitiles_params_fut, filename_fut).await? {
+        (Some((info_hash, size)), Some(filename)) => Ok(Some(VideoParams {
+            // todo: improve VideoParams struct!
+            hash: Some(info_hash.to_string()),
+            size: Some(size),
+            filename: Some(filename),
+        })),
+        _ => Ok(None),
+    }
+}
+
+pub async fn get_opensubtitles_params<E: Env + 'static>(
+    transport_url: Url,
+    media_url: Url,
+) -> Result<Option<OpensubtitlesParamsResponse>, EnvError> {
+    let request = OpensubtitlesParamsRequest {
+        server_url: transport_url,
+        media_url,
+    };
+    // var queryParams = new URLSearchParams([['videoUrl', mediaURL]]);
+    // return fetch(url.resolve(streamingServerURL, '/opensubHash?' + queryParams.toString()))
+
+    // returns Null on invalid params
+    Ok(E::fetch(request.into()).await?)
+}
+
+/// Get the filename of the played torrent.
+///
+/// We need both the `info_hash` and the `file_idx` to pass to the server when
+/// requesting Statistics for the filename.
+///
+/// # Returns
+/// Returns the [`Statistics::stream_name`] field.
+///
+/// `None` if stats.json returns `null`, e.g. torrent has fully loaded.
+pub async fn get_filename<E: Env + 'static>(
+    transport_url: Url,
+    info_hash: InfoHash,
+    file_idx: u16,
+) -> Result<Option<String>, EnvError> {
+    let request = FileNameRequest {
+        server_url: transport_url,
+        request: StatisticsRequest {
+            info_hash: info_hash.to_string(),
+            file_idx,
+        },
+    };
+
+    let statistics: Option<Statistics> = E::fetch(request.into()).await?;
+
+    Ok(statistics.map(|statistics| statistics.stream_name))
+}
+
 /// Updates the stream_source and generates a correct streaming_url
 pub fn update_stream_source_effects<E: Env + 'static>(
     transport_url: Option<&Url>,
@@ -859,5 +1181,17 @@ pub async fn update_stream_source_streaming_url<E: Env + 'static>(
         }
         // no further changes are needed
         (_, _stream_source) => Ok(stream),
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use magnet_url::Magnet;
+
+    #[test]
+    fn test_magnet_hash() {
+        let magnet = Magnet::new("magnet:?xt=urn:btih:0d54e2339706f173ac20f4effb4ad42d9c7a84e9&dn=Halo.S02.1080p.WEBRip.x265.DDP5.1.Atmos-WAR");
+
+        dbg!(magnet);
     }
 }

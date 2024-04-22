@@ -1,3 +1,5 @@
+use core::fmt;
+use std::str::FromStr;
 use std::{collections::HashMap, io::Write};
 
 use base64::Engine;
@@ -18,9 +20,9 @@ use crate::types::resource::Subtitles;
 
 #[derive(Clone, PartialEq, Eq, Serialize, Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
-pub struct Stream {
+pub struct Stream<S: StreamSourceTrait = StreamSource> {
     #[serde(flatten)]
-    pub source: StreamSource,
+    pub source: S,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
     #[serde(alias = "title", skip_serializing_if = "Option::is_none")]
@@ -273,6 +275,13 @@ impl Stream {
     }
 }
 
+/// Trait which defines the StreamSource state data structures in Core.
+pub trait StreamSourceTrait: sealed::Sealed {}
+/// only we should be able to define which data structures are StreamSource states!
+mod sealed {
+    pub trait Sealed {}
+}
+
 ///
 /// # Examples
 ///
@@ -449,6 +458,63 @@ pub enum StreamSource {
         #[serde(skip_serializing_if = "Option::is_none")]
         webos_url: Option<String>,
     },
+}
+
+impl sealed::Sealed for StreamSource {}
+impl StreamSourceTrait for StreamSource {}
+
+#[serde_as]
+#[derive(Clone, PartialEq, Eq, Debug)]
+pub enum ConvertedStreamSource {
+    Url(Url),
+    Torrent {
+        url: Url,
+        info_hash: InfoHash,
+        file_idx: Option<u16>,
+        announce: Vec<String>,
+    },
+}
+impl StreamSourceTrait for ConvertedStreamSource {}
+impl sealed::Sealed for ConvertedStreamSource {}
+
+///
+/// # Examples
+/// ```
+/// use core::types::resource::stream::InfoHash;
+///
+/// let info_hash = "".parse::<InfoHash>().unwrap();
+///
+///
+/// ```
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(transparent)]
+pub struct InfoHash(#[serde(with = "SerHex::<Strict>")] [u8; 20]);
+
+impl InfoHash {
+    pub fn new(info_hash: [u8; 20]) -> Self {
+        Self(info_hash)
+    }
+
+    pub fn as_array(&self) -> [u8; 20] {
+        self.0
+    }
+}
+
+impl FromStr for InfoHash {
+    type Err = hex::FromHexError;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        let mut array = [0_u8; 20];
+        hex::decode_to_slice(s, &mut array)?;
+
+        Ok(Self(array))
+    }
+}
+
+impl fmt::Display for InfoHash {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.write_str(&hex::encode(self.0))
+    }
 }
 
 type ExternalStreamSource = (Option<Url>, Option<Url>, Option<String>, Option<String>);

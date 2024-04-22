@@ -551,6 +551,22 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                         .map(|library_item| library_item.state.time_offset),
                 );
 
+                let item_state_update_effects = item_state_update(&mut self.library_item, &self.next_video);
+                // let item_state_update_effects = if self
+                //     .selected
+                //     .as_ref()
+                //     .and_then(|selected| selected.meta_request.as_ref())
+                //     .map(|meta_request| &meta_request.path.id)
+                //     != self.selected
+                //         .meta_request
+                //         .as_ref()
+                //         .map(|meta_request| &meta_request.path.id)
+                // {
+                    // item_state_update(&mut self.library_item, &self.next_video)
+                // } else {
+                //     Effects::none().unchanged()
+                // };
+
                 // Set time_offset to 0 as we switch to next video
                 let library_item_effects = self
                     .library_item
@@ -563,6 +579,7 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
 
                 // Load will actually take care of loading the next video
                 seek_history_effects
+                .join(item_state_update_effects)
                     .join(
                         Effects::msg(Msg::Event(Event::PlayerNextVideo {
                             context: self.analytics_context.as_ref().cloned().unwrap_or_default(),
@@ -745,15 +762,13 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                     Some(selected) if &selected.stream == original => {
                         let next_stream_url = match result {
                             Ok(stream) => Loadable::Ready(StreamUrls::new(
-                                &stream,
+                                stream,
                                 streaming_server_url.as_ref(),
                             )),
                             Err(err) => Loadable::Err(err.to_owned()),
                         };
-                        let update_stream_urls_effects =
-                            eq_update(&mut self.stream_urls, next_stream_url);
 
-                        update_stream_urls_effects
+                        eq_update(&mut self.stream_urls, next_stream_url)
                     }
                     _ => Effects::none().unchanged(),
                 };

@@ -76,6 +76,7 @@ pub struct Statistics {
     pub connection_tries: u64,
     pub peer_search_running: bool,
     pub stream_len: u64,
+    /// Filename for torrent
     pub stream_name: String,
     pub stream_progress: f64,
     pub swarm_connections: u64,
