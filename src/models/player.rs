@@ -544,8 +544,13 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                     .library_item
                     .as_mut()
                     .map(|library_item| {
+                        // instantly update the library item's time_offset.
                         library_item.state.time_offset = 0;
-                        push_to_library::<E>(&mut self.push_library_item_time, library_item)
+
+                        Effects::msg(Msg::Internal(Internal::UpdateLibraryItem(
+                            library_item.to_owned(),
+                        )))
+                        .unchanged()
                     })
                     .unwrap_or(Effects::none().unchanged());
 
