@@ -21,6 +21,43 @@ use futures::future;
 use std::any::Any;
 use stremio_derive::Model;
 
+fn user_fixture() -> User {
+    User {
+        id: "user_id".to_owned(),
+        email: "user_email".to_owned(),
+        fb_id: None,
+        avatar: None,
+        last_modified: TestEnv::now(),
+        date_registered: TestEnv::now(),
+        trakt: None,
+        premium_expire: None,
+        gdpr_consent: GDPRConsent {
+            tos: true,
+            privacy: true,
+            marketing: true,
+            from: Some("tests".to_owned()),
+        },
+    }
+}
+
+fn auth_response_fixture() -> AuthResponse {
+    AuthResponse {
+        key: AuthKey("auth_key".to_owned()),
+        user: user_fixture(),
+    }
+}
+
+fn profile_fixture() -> Profile {
+    Profile {
+        auth: Some(Auth {
+            key: AuthKey("auth_key".to_owned()),
+            user: user_fixture(),
+        }),
+        addons: vec![],
+        ..Default::default()
+    }
+}
+
 #[test]
 fn actionctx_authenticate_login() {
     #[derive(Model, Clone, Default)]
@@ -36,27 +73,7 @@ fn actionctx_authenticate_login() {
                 && method == "POST"
                 && body == "{\"type\":\"Auth\",\"type\":\"Login\",\"email\":\"user_email\",\"password\":\"user_password\",\"facebook\":false}" =>
             {
-                future::ok(Box::new(APIResult::Ok(
-                    AuthResponse {
-                        key: AuthKey("auth_key".to_owned()),
-                        user: User {
-                            id: "user_id".to_owned(),
-                            email: "user_email".to_owned(),
-                            fb_id: None,
-                            avatar: None,
-                            last_modified: TestEnv::now(),
-                            date_registered: TestEnv::now(),
-                            trakt: None,
-                            premium_expire: None,
-                            gdpr_consent: GDPRConsent {
-                                tos: true,
-                                privacy: true,
-                                marketing: true,
-                                from: Some("tests".to_owned()),
-                            },
-                        }
-                    },
-                )) as Box<dyn Any + Send>).boxed_env()
+                future::ok(Box::new(APIResult::Ok(auth_response_fixture())) as Box<dyn Any + Send>).boxed_env()
             }
             Request {
                 url, method, body, ..
@@ -107,29 +124,7 @@ fn actionctx_authenticate_login() {
     });
     assert_eq!(
         runtime.model().unwrap().ctx.profile,
-        Profile {
-            auth: Some(Auth {
-                key: AuthKey("auth_key".to_owned()),
-                user: User {
-                    id: "user_id".to_owned(),
-                    email: "user_email".to_owned(),
-                    fb_id: None,
-                    avatar: None,
-                    last_modified: TestEnv::now(),
-                    date_registered: TestEnv::now(),
-                    trakt: None,
-                    premium_expire: None,
-                    gdpr_consent: GDPRConsent {
-                        tos: true,
-                        privacy: true,
-                        marketing: true,
-                        from: Some("tests".to_owned()),
-                    },
-                },
-            }),
-            addons: vec![],
-            ..Default::default()
-        },
+        profile_fixture(),
         "profile updated successfully in memory"
     );
     assert_eq!(
@@ -143,29 +138,7 @@ fn actionctx_authenticate_login() {
     assert_eq!(
         serde_json::from_str::<Profile>(STORAGE.read().unwrap().get(PROFILE_STORAGE_KEY).unwrap())
             .unwrap(),
-        Profile {
-            auth: Some(Auth {
-                key: AuthKey("auth_key".to_owned()),
-                user: User {
-                    id: "user_id".to_owned(),
-                    email: "user_email".to_owned(),
-                    fb_id: None,
-                    avatar: None,
-                    last_modified: TestEnv::now(),
-                    date_registered: TestEnv::now(),
-                    trakt: None,
-                    premium_expire: None,
-                    gdpr_consent: GDPRConsent {
-                        tos: true,
-                        privacy: true,
-                        marketing: true,
-                        from: Some("tests".to_owned()),
-                    },
-                },
-            }),
-            addons: vec![],
-            ..Default::default()
-        },
+        profile_fixture(),
         "profile updated successfully in storage"
     );
     assert_eq!(
@@ -243,26 +216,7 @@ fn actionctx_authenticate_login_with_token() {
                 && method == "POST"
                 && body == "{\"type\":\"Auth\",\"type\":\"LoginWithToken\",\"token\":\"auth_key\"}" =>
             {
-                future::ok(Box::new(APIResult::Ok(AuthResponse {
-                        key: AuthKey("auth_key".to_owned()),
-                        user: User {
-                            id: "user_id".to_owned(),
-                            email: "user_email".to_owned(),
-                            fb_id: None,
-                            avatar: None,
-                            last_modified: TestEnv::now(),
-                            date_registered: TestEnv::now(),
-                            trakt: None,
-                            premium_expire: None,
-                            gdpr_consent: GDPRConsent {
-                                tos: true,
-                                privacy: true,
-                                marketing: true,
-                                from: Some("tests".to_owned()),
-                            },
-                        }
-                    },
-                )) as Box<dyn Any + Send>).boxed_env()
+                future::ok(Box::new(APIResult::Ok(auth_response_fixture())) as Box<dyn Any + Send>).boxed_env()
             }
             Request {
                 url, method, body, ..
@@ -309,29 +263,7 @@ fn actionctx_authenticate_login_with_token() {
     });
     assert_eq!(
         runtime.model().unwrap().ctx.profile,
-        Profile {
-            auth: Some(Auth {
-                key: AuthKey("auth_key".to_owned()),
-                user: User {
-                    id: "user_id".to_owned(),
-                    email: "user_email".to_owned(),
-                    fb_id: None,
-                    avatar: None,
-                    last_modified: TestEnv::now(),
-                    date_registered: TestEnv::now(),
-                    trakt: None,
-                    premium_expire: None,
-                    gdpr_consent: GDPRConsent {
-                        tos: true,
-                        privacy: true,
-                        marketing: true,
-                        from: Some("tests".to_owned()),
-                    },
-                },
-            }),
-            addons: vec![],
-            ..Default::default()
-        },
+        profile_fixture(),
         "profile updated successfully in memory"
     );
     assert_eq!(
@@ -345,29 +277,7 @@ fn actionctx_authenticate_login_with_token() {
     assert_eq!(
         serde_json::from_str::<Profile>(STORAGE.read().unwrap().get(PROFILE_STORAGE_KEY).unwrap())
             .unwrap(),
-        Profile {
-            auth: Some(Auth {
-                key: AuthKey("auth_key".to_owned()),
-                user: User {
-                    id: "user_id".to_owned(),
-                    email: "user_email".to_owned(),
-                    fb_id: None,
-                    avatar: None,
-                    last_modified: TestEnv::now(),
-                    date_registered: TestEnv::now(),
-                    trakt: None,
-                    premium_expire: None,
-                    gdpr_consent: GDPRConsent {
-                        tos: true,
-                        privacy: true,
-                        marketing: true,
-                        from: Some("tests".to_owned()),
-                    },
-                },
-            }),
-            addons: vec![],
-            ..Default::default()
-        },
+        profile_fixture(),
         "profile updated successfully in storage"
     );
     assert_eq!(
@@ -446,26 +356,7 @@ fn actionctx_authenticate_facebook() {
                 && method == "POST"
                 && body == "{\"type\":\"Auth\",\"type\":\"Facebook\",\"token\":\"access_token\"}" =>
             {
-                future::ok(Box::new(APIResult::Ok(AuthResponse {
-                        key: AuthKey("auth_key".to_owned()),
-                        user: User {
-                            id: "user_id".to_owned(),
-                            email: "user_email".to_owned(),
-                            fb_id: None,
-                            avatar: None,
-                            last_modified: TestEnv::now(),
-                            date_registered: TestEnv::now(),
-                            trakt: None,
-                            premium_expire: None,
-                            gdpr_consent: GDPRConsent {
-                                tos: true,
-                                privacy: true,
-                                marketing: true,
-                                from: Some("tests".to_owned()),
-                            },
-                        }
-                    },
-                )) as Box<dyn Any + Send>).boxed_env()
+                future::ok(Box::new(APIResult::Ok(auth_response_fixture())) as Box<dyn Any + Send>).boxed_env()
             }
             Request {
                 url, method, body, ..
@@ -512,29 +403,7 @@ fn actionctx_authenticate_facebook() {
     });
     assert_eq!(
         runtime.model().unwrap().ctx.profile,
-        Profile {
-            auth: Some(Auth {
-                key: AuthKey("auth_key".to_owned()),
-                user: User {
-                    id: "user_id".to_owned(),
-                    email: "user_email".to_owned(),
-                    fb_id: None,
-                    avatar: None,
-                    last_modified: TestEnv::now(),
-                    date_registered: TestEnv::now(),
-                    trakt: None,
-                    premium_expire: None,
-                    gdpr_consent: GDPRConsent {
-                        tos: true,
-                        privacy: true,
-                        marketing: true,
-                        from: Some("tests".to_owned()),
-                    },
-                },
-            }),
-            addons: vec![],
-            ..Default::default()
-        },
+        profile_fixture(),
         "profile updated successfully in memory"
     );
     assert_eq!(
@@ -548,29 +417,7 @@ fn actionctx_authenticate_facebook() {
     assert_eq!(
         serde_json::from_str::<Profile>(STORAGE.read().unwrap().get(PROFILE_STORAGE_KEY).unwrap())
             .unwrap(),
-        Profile {
-            auth: Some(Auth {
-                key: AuthKey("auth_key".to_owned()),
-                user: User {
-                    id: "user_id".to_owned(),
-                    email: "user_email".to_owned(),
-                    fb_id: None,
-                    avatar: None,
-                    last_modified: TestEnv::now(),
-                    date_registered: TestEnv::now(),
-                    trakt: None,
-                    premium_expire: None,
-                    gdpr_consent: GDPRConsent {
-                        tos: true,
-                        privacy: true,
-                        marketing: true,
-                        from: Some("tests".to_owned()),
-                    },
-                },
-            }),
-            addons: vec![],
-            ..Default::default()
-        },
+        profile_fixture(),
         "profile updated successfully in storage"
     );
     assert_eq!(
@@ -603,8 +450,7 @@ fn actionctx_authenticate_facebook() {
         Request {
             url: "https://api.strem.io/api/authWithFacebook".to_owned(),
             method: "POST".to_owned(),
-            body: "{\"type\":\"Auth\",\"type\":\"Facebook\",\"token\":\"access_token\"}"
-                .to_owned(),
+            body: "{\"type\":\"Auth\",\"type\":\"Facebook\",\"token\":\"access_token\"}".to_owned(),
             ..Default::default()
         },
         "Login request has been sent"
@@ -649,26 +495,7 @@ fn actionctx_authenticate_register() {
                 && method == "POST"
                 && body == "{\"type\":\"Auth\",\"type\":\"Register\",\"email\":\"user_email\",\"password\":\"user_password\",\"gdpr_consent\":{\"tos\":true,\"privacy\":true,\"marketing\":false,\"from\":\"tests\"}}" =>
             {
-                future::ok(Box::new(APIResult::Ok(AuthResponse {
-                        key: AuthKey("auth_key".to_owned()),
-                        user: User {
-                            id: "user_id".to_owned(),
-                            email: "user_email".to_owned(),
-                            fb_id: None,
-                            avatar: None,
-                            last_modified: TestEnv::now(),
-                            date_registered: TestEnv::now(),
-                            trakt: None,
-                            premium_expire: None,
-                            gdpr_consent: GDPRConsent {
-                                tos: true,
-                                privacy: true,
-                                marketing: true,
-                                from: Some("tests".to_owned()),
-                            },
-                        }
-                    },
-                )) as Box<dyn Any + Send>).boxed_env()
+                future::ok(Box::new(APIResult::Ok(auth_response_fixture())) as Box<dyn Any + Send>).boxed_env()
             }
             Request {
                 url, method, body, ..
@@ -723,29 +550,7 @@ fn actionctx_authenticate_register() {
     });
     assert_eq!(
         runtime.model().unwrap().ctx.profile,
-        Profile {
-            auth: Some(Auth {
-                key: AuthKey("auth_key".to_owned()),
-                user: User {
-                    id: "user_id".to_owned(),
-                    email: "user_email".to_owned(),
-                    fb_id: None,
-                    avatar: None,
-                    last_modified: TestEnv::now(),
-                    date_registered: TestEnv::now(),
-                    trakt: None,
-                    premium_expire: None,
-                    gdpr_consent: GDPRConsent {
-                        tos: true,
-                        privacy: true,
-                        marketing: true,
-                        from: Some("tests".to_owned()),
-                    },
-                },
-            }),
-            addons: vec![],
-            ..Default::default()
-        },
+        profile_fixture(),
         "profile updated successfully in memory"
     );
     assert_eq!(
@@ -759,29 +564,7 @@ fn actionctx_authenticate_register() {
     assert_eq!(
         serde_json::from_str::<Profile>(STORAGE.read().unwrap().get(PROFILE_STORAGE_KEY).unwrap())
             .unwrap(),
-        Profile {
-            auth: Some(Auth {
-                key: AuthKey("auth_key".to_owned()),
-                user: User {
-                    id: "user_id".to_owned(),
-                    email: "user_email".to_owned(),
-                    fb_id: None,
-                    avatar: None,
-                    last_modified: TestEnv::now(),
-                    date_registered: TestEnv::now(),
-                    trakt: None,
-                    premium_expire: None,
-                    gdpr_consent: GDPRConsent {
-                        tos: true,
-                        privacy: true,
-                        marketing: true,
-                        from: Some("tests".to_owned()),
-                    },
-                },
-            }),
-            addons: vec![],
-            ..Default::default()
-        },
+        profile_fixture(),
         "profile updated successfully in storage"
     );
     assert_eq!(
