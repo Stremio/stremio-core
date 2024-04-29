@@ -40,9 +40,9 @@ pub fn start() {
     // This is not needed for tracing_wasm to work, but it is a common tool for getting proper error line numbers for panics.
     console_error_panic_hook::set_once();
 
-    #[cfg(debug_assertions)]
+    #[cfg(any(debug_assertions, feature = "log-trace"))]
     let max_level = Level::TRACE;
-    #[cfg(not(debug_assertions))]
+    #[cfg(all(not(debug_assertions), not(feature = "log-trace")))]
     let max_level = Level::ERROR;
 
     let config = WASMLayerConfigBuilder::default()
