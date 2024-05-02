@@ -452,7 +452,10 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                         library_item.temp = true;
                     };
                     if let Some(analytics_context) = &mut self.analytics_context {
-                        library_item.state.video_id.clone_into(&mut analytics_context.video_id);
+                        library_item
+                            .state
+                            .video_id
+                            .clone_into(&mut analytics_context.video_id);
                         analytics_context.time = Some(library_item.state.time_offset);
                         analytics_context.duration = Some(library_item.state.duration);
                         analytics_context.device_type = Some(device.to_owned());
