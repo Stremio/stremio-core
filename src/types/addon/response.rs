@@ -78,7 +78,10 @@ pub struct ResourceResponseCache {
     pub resource: ResourceResponse,
 }
 
-/// All the possible Addon resource responses
+/// Resource Response from an addon.
+///
+/// Deserializing the struct from json will skip any invalid Vec items
+/// and will skip any unknown to the variants fields.
 #[derive(Clone, TryInto, Serialize, Debug, PartialEq, Eq)]
 #[serde(untagged)]
 #[serde_as]
