@@ -143,7 +143,7 @@ pub fn update_profile<E: Env + 'static>(
             if addon.flags.protected || profile.addons[addon_position].flags.protected {
                 return addon_upgrade_error_effects(addon, OtherError::AddonIsProtected);
             }
-            profile.addons[addon_position] = addon.to_owned();
+            addon.clone_into(&mut profile.addons[addon_position]);
             let push_to_api_effects = match profile.auth_key() {
                 Some(auth_key) => {
                     Effects::one(push_addons_to_api::<E>(profile.addons.to_owned(), auth_key))
@@ -223,7 +223,7 @@ pub fn update_profile<E: Env + 'static>(
         },
         Msg::Action(Action::Ctx(ActionCtx::UpdateSettings(settings))) => {
             if profile.settings != *settings {
-                profile.settings = settings.to_owned();
+                settings.clone_into(&mut profile.settings);
                 Effects::msg(Msg::Event(Event::SettingsUpdated {
                     settings: settings.to_owned(),
                 }))
@@ -251,7 +251,7 @@ pub fn update_profile<E: Env + 'static>(
                         .map(|addon| &addon.transport_url)
                         .position(|transport_url| *transport_url == addon.transport_url);
                     if let Some(addon_position) = addon_position {
-                        profile.addons[addon_position] = addon.to_owned();
+                        addon.clone_into(&mut profile.addons[addon_position]);
                     } else {
                         profile.addons.push(addon.to_owned());
                     };
@@ -324,7 +324,7 @@ pub fn update_profile<E: Env + 'static>(
                         .chain(removed_transport_urls)
                         .collect();
                     let profile_changed_effects = if profile.addons != *addons {
-                        profile.addons = addons.to_owned();
+                        addons.clone_into(&mut profile.addons);
 
                         Effects::msg(Msg::Internal(Internal::ProfileChanged))
                     } else {
@@ -359,7 +359,7 @@ pub fn update_profile<E: Env + 'static>(
             match result {
                 Ok(user) => match &mut profile.auth {
                     Some(auth) if auth.user != *user => {
-                        auth.user = user.to_owned();
+                        user.clone_into(&mut auth.user);
                         Effects::msg(Msg::Event(Event::UserPulledFromAPI { uid: profile.uid() }))
                             .join(Effects::msg(Msg::Internal(Internal::ProfileChanged)))
                     }
