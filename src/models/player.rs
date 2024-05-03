@@ -430,8 +430,8 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                             .overall_time_watched
                             .saturating_add(time_watched);
                     };
-                    library_item.state.time_offset = time.to_owned();
-                    library_item.state.duration = duration.to_owned();
+                    time.clone_into(&mut library_item.state.time_offset);
+                    duration.clone_into(&mut library_item.state.duration);
                     if library_item.state.flagged_watched == 0
                         && library_item.state.time_watched as f64
                             > library_item.state.duration as f64 * WATCHED_THRESHOLD_COEF
@@ -452,7 +452,10 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                         library_item.temp = true;
                     };
                     if let Some(analytics_context) = &mut self.analytics_context {
-                        analytics_context.video_id = library_item.state.video_id.to_owned();
+                        library_item
+                            .state
+                            .video_id
+                            .clone_into(&mut analytics_context.video_id);
                         analytics_context.time = Some(library_item.state.time_offset);
                         analytics_context.duration = Some(library_item.state.duration);
                         analytics_context.device_type = Some(device.to_owned());
@@ -870,7 +873,7 @@ where
 
     match next_video {
         Some(next_video) => {
-            stream_request.path.id = next_video.id.clone();
+            stream_request.path.id.clone_from(&next_video.id);
 
             match next_streams.as_mut() {
                 Some(next_streams) => resource_update_with_vector_content::<E, _>(
