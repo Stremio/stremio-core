@@ -1,4 +1,4 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `src/types/resource/stream.rs`."><title>stream.rs - source</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-46f98efaafac5295.ttf.woff2,FiraSans-Regular-018c141bf0843ffd.woff2,FiraSans-Medium-8f9a781e4970d388.woff2,SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2,SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../../../static.files/rustdoc-b21aa549bf6d91ff.css"><meta name="rustdoc-vars" data-root-path="../../../../" data-static-root-path="../../../../static.files/" data-current-crate="stremio_core" data-themes="" data-resource-suffix="" data-rustdoc-version="1.80.0-nightly (79734f1db 2024-05-02)" data-channel="nightly" data-search-js="search-bf21c90c8c1d92b1.js" data-settings-js="settings-4313503d2e1961c2.js" ><script src="../../../../static.files/storage-e32f0c247825364d.js"></script><script defer src="../../../../static.files/src-script-e66d777a5a92e9b2.js"></script><script defer src="../../../../src-files.js"></script><script defer src="../../../../static.files/main-20a3ad099b048cf2.js"></script><noscript><link rel="stylesheet" href="../../../../static.files/noscript-09095024cf37855e.css"></noscript><link rel="alternate icon" type="image/png" href="../../../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title"><h2>Files</h2></div></nav><div class="sidebar-resizer"></div><main><nav class="sub"><form class="search-form"><span></span><div id="sidebar-button" tabindex="-1"><a href="../../../../stremio_core/all.html" title="show sidebar"></a></div><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Type ‘S’ or ‘/’ to search, ‘?’ for more options…" type="search"><div id="help-button" tabindex="-1"><a href="../../../../help.html" title="help">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../../../settings.html" title="settings">Settings</a></div></form></nav><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `src/types/resource/stream.rs`."><title>stream.rs - source</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-46f98efaafac5295.ttf.woff2,FiraSans-Regular-018c141bf0843ffd.woff2,FiraSans-Medium-8f9a781e4970d388.woff2,SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2,SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../../../static.files/rustdoc-dd39b87e5fcfba68.css"><meta name="rustdoc-vars" data-root-path="../../../../" data-static-root-path="../../../../static.files/" data-current-crate="stremio_core" data-themes="" data-resource-suffix="" data-rustdoc-version="1.80.0-nightly (7d83a4c13 2024-05-06)" data-channel="nightly" data-search-js="search-d52510db62a78183.js" data-settings-js="settings-4313503d2e1961c2.js" ><script src="../../../../static.files/storage-e32f0c247825364d.js"></script><script defer src="../../../../static.files/src-script-e66d777a5a92e9b2.js"></script><script defer src="../../../../src-files.js"></script><script defer src="../../../../static.files/main-20a3ad099b048cf2.js"></script><noscript><link rel="stylesheet" href="../../../../static.files/noscript-df360f571f6edeae.css"></noscript><link rel="alternate icon" type="image/png" href="../../../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title"><h2>Files</h2></div></nav><div class="sidebar-resizer"></div><main><nav class="sub"><form class="search-form"><span></span><div id="sidebar-button" tabindex="-1"><a href="../../../../stremio_core/all.html" title="show sidebar"></a></div><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Type ‘S’ or ‘/’ to search, ‘?’ for more options…" type="search"><div id="help-button" tabindex="-1"><a href="../../../../help.html" title="help">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../../../settings.html" title="settings">Settings</a></div></form></nav><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
 <a href="#2" id="2">2</a>
 <a href="#3" id="3">3</a>
 <a href="#4" id="4">4</a>
@@ -508,38 +508,123 @@
 <a href="#508" id="508">508</a>
 <a href="#509" id="509">509</a>
 <a href="#510" id="510">510</a>
-</pre></div><pre class="rust"><code><span class="kw">use </span><span class="kw">crate</span>::constants::{BASE64, URI_COMPONENT_ENCODE_SET, YOUTUBE_ADDON_ID_PREFIX};
-<span class="kw">use </span><span class="kw">crate</span>::types::resource::Subtitles;
+<a href="#511" id="511">511</a>
+<a href="#512" id="512">512</a>
+<a href="#513" id="513">513</a>
+<a href="#514" id="514">514</a>
+<a href="#515" id="515">515</a>
+<a href="#516" id="516">516</a>
+<a href="#517" id="517">517</a>
+<a href="#518" id="518">518</a>
+<a href="#519" id="519">519</a>
+<a href="#520" id="520">520</a>
+<a href="#521" id="521">521</a>
+<a href="#522" id="522">522</a>
+<a href="#523" id="523">523</a>
+<a href="#524" id="524">524</a>
+<a href="#525" id="525">525</a>
+<a href="#526" id="526">526</a>
+<a href="#527" id="527">527</a>
+<a href="#528" id="528">528</a>
+<a href="#529" id="529">529</a>
+<a href="#530" id="530">530</a>
+<a href="#531" id="531">531</a>
+<a href="#532" id="532">532</a>
+<a href="#533" id="533">533</a>
+<a href="#534" id="534">534</a>
+<a href="#535" id="535">535</a>
+<a href="#536" id="536">536</a>
+<a href="#537" id="537">537</a>
+<a href="#538" id="538">538</a>
+<a href="#539" id="539">539</a>
+<a href="#540" id="540">540</a>
+<a href="#541" id="541">541</a>
+<a href="#542" id="542">542</a>
+<a href="#543" id="543">543</a>
+<a href="#544" id="544">544</a>
+<a href="#545" id="545">545</a>
+<a href="#546" id="546">546</a>
+<a href="#547" id="547">547</a>
+<a href="#548" id="548">548</a>
+<a href="#549" id="549">549</a>
+<a href="#550" id="550">550</a>
+<a href="#551" id="551">551</a>
+<a href="#552" id="552">552</a>
+<a href="#553" id="553">553</a>
+<a href="#554" id="554">554</a>
+</pre></div><pre class="rust"><code><span class="kw">use </span>std::collections::HashMap;
+<span class="kw">use </span>std::io::Write;
+
 <span class="kw">use </span>base64::Engine;
 <span class="kw">use </span>boolinator::Boolinator;
 <span class="attr">#[cfg(test)]
 </span><span class="kw">use </span>derivative::Derivative;
-<span class="kw">use </span>flate2::write::{ZlibDecoder, ZlibEncoder};
-<span class="kw">use </span>flate2::Compression;
+<span class="kw">use </span>flate2::{
+    write::{ZlibDecoder, ZlibEncoder},
+    Compression,
+};
 <span class="kw">use </span>magnet_url::Magnet;
 <span class="kw">use </span>percent_encoding::utf8_percent_encode;
-<span class="kw">use </span>serde::de::Error;
-<span class="kw">use </span>serde::{Deserialize, Deserializer, Serialize};
-<span class="kw">use </span>serde_with::{serde_as, DefaultOnNull};
-<span class="kw">use </span>std::collections::HashMap;
-<span class="kw">use </span>std::io::Write;
-<span class="kw">use </span>stremio_serde_hex::{SerHex, Strict};
+<span class="kw">use </span>serde::{de::Error, Deserialize, Deserializer, Serialize};
+<span class="kw">use </span>serde_with::{serde_as, DefaultOnNull, VecSkipError};
 <span class="kw">use </span>url::{form_urlencoded, Url};
 
-<span class="attr">#[derive(Clone, PartialEq, Eq, Serialize, Deserialize, Debug)]
+<span class="kw">use </span>stremio_serde_hex::{SerHex, Strict};
+
+<span class="kw">use </span><span class="kw">crate</span>::constants::{BASE64, URI_COMPONENT_ENCODE_SET, YOUTUBE_ADDON_ID_PREFIX};
+<span class="kw">use </span><span class="kw">crate</span>::types::resource::Subtitles;
+
+<span class="doccomment">/// # Examples
+///
+/// ```
+/// use stremio_core::types::resource::{Stream, StreamSource, StreamBehaviorHints};
+///
+/// let expected_stream = Stream {
+///     source: StreamSource::Url { url: "https://example.com/some-awesome-video-file.mp4".parse().unwrap()},
+///     name: None,
+///     description: None,
+///     thumbnail: None,
+///     subtitles: vec![],
+///     behavior_hints: StreamBehaviorHints::default(),
+/// };
+///
+/// let default_fields_json = serde_json::json!({
+///     "url": "https://example.com/some-awesome-video-file.mp4",
+/// });
+/// let default_fields = serde_json::from_value::&lt;Stream&gt;(default_fields_json).unwrap();
+///
+/// assert_eq!(default_fields, expected_stream);
+///
+/// let null_fields_json = serde_json::json!({
+///     "url": "https://example.com/some-awesome-video-file.mp4",
+///     "name": null,
+///     "description": null,
+///     "thumbnail": null,
+///     "subtitles": null,
+///     "behaviorHints": null,
+/// });
+///
+/// let null_fields = serde_json::from_value::&lt;Stream&gt;(null_fields_json).unwrap();
+///
+/// assert_eq!(null_fields, expected_stream);
+/// ```
+</span><span class="attr">#[serde_as]
+#[derive(Clone, PartialEq, Eq, Serialize, Deserialize, Debug)]
 #[serde(rename_all = <span class="string">"camelCase"</span>)]
 </span><span class="kw">pub struct </span>Stream {
     <span class="attr">#[serde(flatten)]
     </span><span class="kw">pub </span>source: StreamSource,
-    <span class="attr">#[serde(skip_serializing_if = <span class="string">"Option::is_none"</span>)]
+    <span class="attr">#[serde(default, skip_serializing_if = <span class="string">"Option::is_none"</span>)]
     </span><span class="kw">pub </span>name: <span class="prelude-ty">Option</span>&lt;String&gt;,
-    <span class="attr">#[serde(alias = <span class="string">"title"</span>, skip_serializing_if = <span class="string">"Option::is_none"</span>)]
+    <span class="attr">#[serde(default, alias = <span class="string">"title"</span>, skip_serializing_if = <span class="string">"Option::is_none"</span>)]
     </span><span class="kw">pub </span>description: <span class="prelude-ty">Option</span>&lt;String&gt;,
-    <span class="attr">#[serde(skip_serializing_if = <span class="string">"Option::is_none"</span>)]
+    <span class="attr">#[serde(default, skip_serializing_if = <span class="string">"Option::is_none"</span>)]
     </span><span class="kw">pub </span>thumbnail: <span class="prelude-ty">Option</span>&lt;String&gt;,
     <span class="attr">#[serde(default, skip_serializing_if = <span class="string">"Vec::is_empty"</span>)]
+    #[serde_as(<span class="kw">as </span>= <span class="string">"DefaultOnNull&lt;VecSkipError&lt;_&gt;&gt;"</span>)]
     </span><span class="kw">pub </span>subtitles: Vec&lt;Subtitles&gt;,
     <span class="attr">#[serde(default, skip_serializing_if = <span class="string">"is_default_value"</span>)]
+    #[serde_as(<span class="kw">as </span>= <span class="string">"DefaultOnNull"</span>)]
     </span><span class="kw">pub </span>behavior_hints: StreamBehaviorHints,
 }
 
@@ -910,6 +995,7 @@
         <span class="attr">#[serde(default)]
         </span>file_idx: <span class="prelude-ty">Option</span>&lt;u16&gt;,
         <span class="attr">#[serde(default, skip_serializing_if = <span class="string">"Vec::is_empty"</span>)]
+        #[serde_as(deserialize_as = <span class="string">"DefaultOnNull"</span>)]
         </span>file_must_include: Vec&lt;String&gt;,
     },
     <span class="attr">#[serde(rename_all = <span class="string">"camelCase"</span>)]
@@ -918,13 +1004,15 @@
         <span class="attr">#[serde(default)]
         </span>file_idx: <span class="prelude-ty">Option</span>&lt;u16&gt;,
         <span class="attr">#[serde(default, skip_serializing_if = <span class="string">"Vec::is_empty"</span>)]
+        #[serde_as(deserialize_as = <span class="string">"DefaultOnNull"</span>)]
         </span>file_must_include: Vec&lt;String&gt;,
     },
     <span class="attr">#[serde(rename_all = <span class="string">"camelCase"</span>)]
     </span>Torrent {
         <span class="attr">#[serde(with = <span class="string">"SerHex::&lt;Strict&gt;"</span>)]
         </span>info_hash: [u8; <span class="number">20</span>],
-        file_idx: <span class="prelude-ty">Option</span>&lt;u16&gt;,
+        <span class="attr">#[serde(default)]
+        </span>file_idx: <span class="prelude-ty">Option</span>&lt;u16&gt;,
         <span class="attr">#[serde_as(deserialize_as = <span class="string">"DefaultOnNull"</span>)]
         #[serde(default, alias = <span class="string">"sources"</span>)]
         </span>announce: Vec&lt;String&gt;,
