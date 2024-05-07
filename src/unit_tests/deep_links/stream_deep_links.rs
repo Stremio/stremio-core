@@ -85,6 +85,9 @@ fn stream_deep_links_http_with_request_headers() {
             not_web_ready: false,
             binge_group: None,
             country_whitelist: None,
+            filename: None,
+            video_hash: None,
+            video_size: None,
             proxy_headers: Some(StreamProxyHeaders {
                 request: HashMap::from([("Authorization".to_string(), "my+token".to_string())]),
                 response: Default::default(),
@@ -120,6 +123,9 @@ fn stream_deep_links_http_with_request_response_headers_and_query_params() {
             not_web_ready: false,
             binge_group: None,
             country_whitelist: None,
+            filename: None,
+            video_hash: None,
+            video_size: None,
             proxy_headers: Some(StreamProxyHeaders {
                 request: HashMap::from([("Authorization".to_string(), "my+token".to_string())]),
                 response: HashMap::from([(
@@ -157,6 +163,7 @@ fn stream_deep_links_torrent() {
             info_hash,
             file_idx: Some(file_idx),
             announce,
+            file_must_include: vec![],
         },
         name: None,
         description: None,
@@ -218,6 +225,7 @@ fn stream_deep_links_torrent_without_file_index() {
             info_hash,
             file_idx: None,
             announce,
+            file_must_include: vec![],
         },
         name: None,
         description: None,

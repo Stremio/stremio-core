@@ -1,3 +1,5 @@
+use core::fmt;
+
 use std::collections::HashMap;
 
 use chrono::{serde::ts_milliseconds, DateTime, Utc};
@@ -13,11 +15,13 @@ use crate::types::{
     True,
 };
 
-#[derive(Serialize, Deserialize, Debug)]
-#[serde(untagged)]
+#[derive(Serialize, Deserialize, Debug, PartialEq, Eq)]
+#[serde(rename_all = "camelCase")]
 pub enum APIResult<T> {
-    Err { error: APIError },
-    Ok { result: T },
+    #[serde(rename = "error")]
+    Err(APIError),
+    #[serde(rename = "result")]
+    Ok(T),
 }
 
 #[derive(Clone, PartialEq, Eq, Serialize, Deserialize, Debug)]
@@ -34,11 +38,20 @@ pub struct CollectionResponse {
     pub last_modified: DateTime<Utc>,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Serialize, Deserialize)]
 pub struct AuthResponse {
     #[serde(rename = "authKey")]
     pub key: AuthKey,
     pub user: User,
+}
+
+impl fmt::Debug for AuthResponse {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("AuthResponse")
+            .field("key", &"<SENSITIVE>")
+            .field("user", &self.user)
+            .finish()
+    }
 }
 
 #[derive(Debug, Deserialize)]
@@ -65,10 +78,18 @@ pub struct LinkCodeResponse {
     pub qrcode: String,
 }
 
-#[derive(Clone, PartialEq, Eq, Serialize, Deserialize, Debug)]
+#[derive(Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct LinkAuthKey {
     pub auth_key: String,
+}
+
+impl fmt::Debug for LinkAuthKey {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("LinkAuthKey")
+            .field("auth_key", &"<SENSITIVE>")
+            .finish()
+    }
 }
 
 #[derive(Clone, TryInto, Serialize, Deserialize, Debug)]
@@ -153,17 +174,18 @@ pub struct SeekEvent {
 
 #[cfg(test)]
 mod test {
+    use serde_json::json;
+
     use super::*;
 
     #[test]
     fn deserialize_skip_gaps_response() {
         {
-            let skip_outro_response = serde_json::json!({
+            let skip_outro_response = json!({
                 "result": {
                     "accuracy": "",
                     "gaps": {},
                 },
-                "error":null
             });
 
             let response =
@@ -171,7 +193,7 @@ mod test {
                     .expect("Should deserialize empty response");
 
             match response {
-                APIResult::Ok { result } => {
+                APIResult::Ok(result) => {
                     assert_eq!(
                         result,
                         SkipGapsResponse {
@@ -180,13 +202,13 @@ mod test {
                         }
                     )
                 }
-                APIResult::Err { error } => panic!("Expected success and not an error: {error:?}"),
+                APIResult::Err(error) => panic!("Expected success and not an error: {error:?}"),
             }
         }
 
         // Gaps returned - intro and outro gaps
         {
-            let skip_outro_response = serde_json::json!({
+            let skip_outro_response = json!({
                 "result": {
                     "accuracy": "byEpisode",
                     "gaps": {
@@ -212,19 +234,90 @@ mod test {
                         }
                     }
                 },
-                "error":null
             });
 
             let response =
                 serde_json::from_value::<APIResult<SkipGapsResponse>>(skip_outro_response)
                     .expect("Should deserialize response");
             match response {
-                APIResult::Ok { result } => {
+                APIResult::Ok(result) => {
                     assert_eq!("byEpisode", result.accuracy,);
                     assert_eq!(4, result.gaps.len());
                 }
-                APIResult::Err { error } => panic!("Expected success and not an error: {error:?}"),
+                APIResult::Err(error) => panic!("Expected success and not an error: {error:?}"),
             }
+        }
+    }
+
+    #[test]
+    fn deserialization_of_api_response_with_path_and_without() {
+        {
+            let api_response_error = json!({
+                "error": {
+                    "message": "Failed to do XX",
+                    "code": 400,
+                }
+            });
+            let deserialized_result =
+                serde_json::from_value::<APIResult<Vec<()>>>(api_response_error)
+                    .expect("Should deserialize");
+            assert_eq!(
+                APIResult::Err(APIError {
+                    message: "Failed to do XX".into(),
+                    code: 400
+                }),
+                deserialized_result
+            );
+        }
+
+        {
+            let api_response_result = json!({
+                "result": [],
+            });
+
+            let deserialized_result =
+                serde_json::from_value::<APIResult<Vec<()>>>(api_response_result)
+                    .expect("Should deserialize");
+            assert_eq!(APIResult::<Vec<()>>::Ok(vec![]), deserialized_result);
+        }
+
+        // bad API response - error and result present, should return error
+        {
+            let api_response_result = json!({
+                "error": {
+                    "message": "Failed to do XX",
+                    "code": 400,
+                },
+                "result": [],
+            });
+
+            let deserialized_err =
+                serde_json::from_value::<APIResult<Vec<()>>>(api_response_result)
+                    .expect_err("Should return an error");
+
+            assert_eq!(
+                deserialized_err.to_string(),
+                "invalid value: map, expected map with a single key"
+            )
+        }
+
+        // bad API response - error and result present, should return error
+        {
+            let api_response_result = json!({
+                "error": null,
+                "result": [],
+            })
+            .to_string();
+
+            let mut deserializer = serde_json::Deserializer::from_str(api_response_result.as_str());
+
+            let deserialized_err =
+                serde_path_to_error::deserialize::<_, APIResult<Vec<()>>>(&mut deserializer)
+                    .expect_err("Should return an error being null");
+            assert_eq!(
+                deserialized_err.inner().to_string(),
+                "invalid type: null, expected struct APIError at line 1 column 13"
+            )
         }
     }
 }

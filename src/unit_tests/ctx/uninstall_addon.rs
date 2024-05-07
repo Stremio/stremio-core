@@ -160,9 +160,9 @@ fn actionctx_uninstalladdon_with_user() {
                 && method == "POST"
                 && body == "{\"type\":\"AddonCollectionSet\",\"authKey\":\"auth_key\",\"addons\":[]}" =>
             {
-                future::ok(Box::new(APIResult::Ok {
-                    result: SuccessResponse { success: True {} },
-                }) as Box<dyn Any + Send>).boxed_env()
+                future::ok(Box::new(APIResult::Ok(
+                    SuccessResponse { success: True {} },
+                )) as Box<dyn Any + Send>).boxed_env()
             }
             _ => default_fetch_handler(request),
         }
@@ -258,7 +258,7 @@ fn actionctx_uninstalladdon_with_user() {
         "One request has been sent"
     );
     assert_eq!(
-        REQUESTS.read().unwrap().get(0).unwrap().to_owned(),
+        REQUESTS.read().unwrap().first().unwrap().to_owned(),
         Request {
             url: "https://api.strem.io/api/addonCollectionSet".to_owned(),
             method: "POST".to_owned(),

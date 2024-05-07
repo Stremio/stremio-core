@@ -110,12 +110,23 @@ impl Stream {
                 behavior_hints: Default::default(),
             })
     }
+
     pub fn download_url(&self) -> Option<String> {
         match &self.source {
             StreamSource::Url { url } if url.scheme() == "magnet" => {
                 self.magnet_url().map(|magnet_url| magnet_url.to_string())
             }
             StreamSource::Url { url } => Some(url.to_string()),
+            StreamSource::Rar {
+                rar_urls: _,
+                file_idx: _,
+                file_must_include: _,
+            } => None,
+            StreamSource::Zip {
+                zip_urls: _,
+                file_idx: _,
+                file_must_include: _,
+            } => None,
             StreamSource::Torrent { .. } => {
                 self.magnet_url().map(|magnet_url| magnet_url.to_string())
             }
@@ -126,6 +137,7 @@ impl Stream {
             StreamSource::PlayerFrame { player_frame_url } => Some(player_frame_url.to_string()),
         }
     }
+
     pub fn m3u_data_uri(&self, streaming_server_url: Option<&Url>) -> Option<String> {
         self.streaming_url(streaming_server_url).map(|url| {
             format!(
@@ -134,6 +146,7 @@ impl Stream {
             )
         })
     }
+
     pub fn streaming_url(&self, streaming_server_url: Option<&Url>) -> Option<String> {
         match (&self.source, streaming_server_url) {
             (StreamSource::Url { url }, streaming_server_url) if url.scheme() != "magnet" => {
@@ -175,27 +188,39 @@ impl Stream {
                     info_hash,
                     file_idx,
                     announce,
+                    file_must_include,
                 },
                 Some(streaming_server_url),
             ) => {
                 let mut url = streaming_server_url.to_owned();
                 match url.path_segments_mut() {
                     Ok(mut path) => {
-                        path.push(&hex::encode(info_hash));
-                        // When fileIndex is not provided use -1, which will tell the
-                        // streaming server to choose the file with the largest size from the torrent
-                        path.push(
+                        path.extend([
+                            &hex::encode(info_hash),
+                            // When fileIndex is not provided use -1, which will tell the
+                            // streaming server to choose the file with the largest size from the torrent
                             &file_idx.map_or_else(|| "-1".to_string(), |idx| idx.to_string()),
-                        );
+                        ]);
                     }
                     _ => return None,
-                };
+                }
+
+                let mut query = vec![];
                 if !announce.is_empty() {
-                    let mut query = url.query_pairs_mut();
-                    query.extend_pairs(announce.iter().map(|tracker| ("tr", tracker)));
-                };
+                    query.extend(announce.iter().map(|tracker| ("tr", tracker.to_owned())));
+                }
+
+                if !file_must_include.is_empty() {
+                    let json_string = serde_json::to_value(file_must_include).ok()?.to_string();
+                    query.push(("f", json_string));
+                }
+
+                url.query_pairs_mut().extend_pairs(query);
+
                 Some(url.to_string())
             }
+            (StreamSource::Zip { .. }, Some(_streaming_server_url)) => None,
+            (StreamSource::Rar { .. }, Some(_streaming_server_url)) => None,
             (StreamSource::YouTube { yt_id }, Some(streaming_server_url)) => {
                 let mut url = streaming_server_url.to_owned();
                 match url.path_segments_mut() {
@@ -239,6 +264,122 @@ impl Stream {
     }
 }
 
+///
+/// # Examples
+///
+/// Stream source Url
+///
+/// [`StreamSource::Rar`] with `rarUrls` field:
+///
+/// ```
+/// use stremio_core::types::resource::StreamSource;
+///
+/// let streams_json = serde_json::json!([
+/// {
+///     "rarUrls": ["https://example-source.com/file.rar", "https://example-source2.com/file2.rar"],
+///     // ...Stream
+/// },
+/// {
+///     "rarUrls": ["https://example-source3.com/file.rar", "https://example-source4.com/file2.rar"],
+///     "fileIdx": 1,
+///     "fileMustInclude": ["includeFile1"],
+///     // ...Stream
+/// },
+/// {
+///     "rarUrls": ["https://example-source5.com/file.rar", "https://example-source6.com/file2.rar"],
+///     "fileMustInclude": ["includeFile2"],
+///     // ...Stream
+/// },
+/// {
+///     "rarUrls": ["https://example-source7.com/file.rar", "https://example-source8.com/file2.rar"],
+///     "fileIdx": 2,
+///     // ...Stream
+/// }
+/// ]);
+///
+/// let expected = vec![
+///     StreamSource::Rar {
+///         rar_urls: vec!["https://example-source.com/file.rar".parse().unwrap(), "https://example-source2.com/file2.rar".parse().unwrap()],
+///         file_idx: None,
+///         file_must_include: vec![],
+///     },
+///     StreamSource::Rar {
+///         rar_urls: vec!["https://example-source3.com/file.rar".parse().unwrap(), "https://example-source4.com/file2.rar".parse().unwrap()],
+///         file_idx: Some(1),
+///         file_must_include: vec!["includeFile1".into()]
+///     },
+///     StreamSource::Rar {
+///         rar_urls: vec!["https://example-source5.com/file.rar".parse().unwrap(), "https://example-source6.com/file2.rar".parse().unwrap()],
+///         file_idx: None,
+///         file_must_include: vec!["includeFile2".into()]
+///     },
+///     StreamSource::Rar {
+///         rar_urls: vec!["https://example-source7.com/file.rar".parse().unwrap(), "https://example-source8.com/file2.rar".parse().unwrap()],
+///         file_idx: Some(2),
+///         file_must_include: vec![],
+///     },
+/// ];
+///
+/// let streams: Vec<StreamSource> = serde_json::from_value(streams_json).expect("Deserialize all StreamSources");
+///
+/// pretty_assertions::assert_eq!(streams, expected);
+/// ```
+///
+/// [`StreamSource::Zip`] with `zipUrls` field:
+///
+/// ```
+/// use stremio_core::types::resource::StreamSource;
+///
+/// let streams_json = serde_json::json!([
+/// {
+///     "zipUrls": ["https://example-source.com/file.rar", "https://example-source2.com/file2.rar"],
+///     // ...Stream
+/// },
+/// {
+///     "zipUrls": ["https://example-source3.com/file.rar", "https://example-source4.com/file2.rar"],
+///     "fileIdx": 1,
+///     "fileMustInclude": ["includeFile1"],
+///     // ...Stream
+/// },
+/// {
+///     "zipUrls": ["https://example-source5.com/file.rar", "https://example-source6.com/file2.rar"],
+///     "fileMustInclude": ["includeFile2"],
+///     // ...Stream
+/// },
+/// {
+///     "zipUrls": ["https://example-source7.com/file.rar", "https://example-source8.com/file2.rar"],
+///     "fileIdx": 2,
+///     // ...Stream
+/// }
+/// ]);
+///
+/// let expected = vec![
+///     StreamSource::Zip {
+///         zip_urls: vec!["https://example-source.com/file.rar".parse().unwrap(), "https://example-source2.com/file2.rar".parse().unwrap()],
+///         file_idx: None,
+///         file_must_include: vec![],
+///     },
+///     StreamSource::Zip {
+///         zip_urls: vec!["https://example-source3.com/file.rar".parse().unwrap(), "https://example-source4.com/file2.rar".parse().unwrap()],
+///         file_idx: Some(1),
+///         file_must_include: vec!["includeFile1".into()],
+///     },
+///     StreamSource::Zip {
+///         zip_urls: vec!["https://example-source5.com/file.rar".parse().unwrap(), "https://example-source6.com/file2.rar".parse().unwrap()],
+///         file_idx: None,
+///         file_must_include: vec!["includeFile2".into()],
+///     },
+///     StreamSource::Zip {
+///         zip_urls: vec!["https://example-source7.com/file.rar".parse().unwrap(), "https://example-source8.com/file2.rar".parse().unwrap()],
+///         file_idx: Some(2),
+///         file_must_include: vec![],
+///     },
+/// ];
+///
+/// let streams: Vec<StreamSource> = serde_json::from_value(streams_json).expect("Deserialize all StreamSources");
+///
+/// pretty_assertions::assert_eq!(streams, expected);
+/// ```
 #[serde_as]
 #[derive(Clone, PartialEq, Eq, Serialize, Deserialize, Debug)]
 #[cfg_attr(test, derive(Derivative))]
@@ -254,6 +395,22 @@ pub enum StreamSource {
         yt_id: String,
     },
     #[serde(rename_all = "camelCase")]
+    Rar {
+        rar_urls: Vec<Url>,
+        #[serde(default)]
+        file_idx: Option<u16>,
+        #[serde(default, skip_serializing_if = "Vec::is_empty")]
+        file_must_include: Vec<String>,
+    },
+    #[serde(rename_all = "camelCase")]
+    Zip {
+        zip_urls: Vec<Url>,
+        #[serde(default)]
+        file_idx: Option<u16>,
+        #[serde(default, skip_serializing_if = "Vec::is_empty")]
+        file_must_include: Vec<String>,
+    },
+    #[serde(rename_all = "camelCase")]
     Torrent {
         #[serde(with = "SerHex::<Strict>")]
         info_hash: [u8; 20],
@@ -261,6 +418,9 @@ pub enum StreamSource {
         #[serde_as(deserialize_as = "DefaultOnNull")]
         #[serde(default, alias = "sources")]
         announce: Vec<String>,
+        #[serde_as(deserialize_as = "DefaultOnNull")]
+        #[serde(default, skip_serializing_if = "Vec::is_empty")]
+        file_must_include: Vec<String>,
     },
     #[serde(rename_all = "camelCase")]
     PlayerFrame {
@@ -323,6 +483,7 @@ pub struct StreamProxyHeaders {
     pub response: HashMap<String, String>,
 }
 
+/// See https://github.com/Stremio/stremio-addon-sdk/blob/master/docs/api/responses/stream.md#additional-properties-to-provide-information--behaviour-flags for documentation
 #[derive(Default, Clone, PartialEq, Eq, Serialize, Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct StreamBehaviorHints {
@@ -334,6 +495,12 @@ pub struct StreamBehaviorHints {
     pub country_whitelist: Option<Vec<String>>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub proxy_headers: Option<StreamProxyHeaders>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub filename: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub video_hash: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub video_size: Option<u64>,
     #[serde(flatten)]
     pub other: HashMap<String, serde_json::Value>,
 }

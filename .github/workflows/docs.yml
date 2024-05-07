@@ -1,15 +1,16 @@
-# keep the workflow only for manual deployment because of Github monthly CI quota
-on:
-  workflow_dispatch:
-
 name: Deploy docs
+
+on:
+  push:
+    branches:
+      - development
 
 jobs:
   deploy-docs:
     name: Deploy docs on gh-pages
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           submodules: true
 
@@ -23,7 +24,7 @@ jobs:
       - name: Build docs
         # Building locally:
         # for `--enable-index-page` it is required to pass `-Z unstable-options` to rustdocs
-        run: RUSTDOCFLAGS="--cfg docsrs -Z unstable-options --enable-index-page" cargo +nightly doc --all-features --no-deps --workspace
+        run: RUSTDOCFLAGS="--cfg docsrs -Z unstable-options --enable-index-page" cargo +nightly build-docs
 
       - name: Prepare /docs
         run: |

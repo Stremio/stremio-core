@@ -19,7 +19,7 @@ fn actionctx_updatesettings() {
         ctx: Ctx,
     }
     let settings = Settings {
-        subtitles_language: "bg".to_string(),
+        subtitles_language: Some("bg".to_string()),
         subtitles_size: 150,
         ..Settings::default()
     };
@@ -68,7 +68,7 @@ fn actionctx_updatesettings_not_changed() {
         ctx: Ctx,
     }
     let settings = Settings {
-        subtitles_language: "bg".to_string(),
+        subtitles_language: Some("bg".to_string()),
         subtitles_size: 150,
         ..Settings::default()
     };

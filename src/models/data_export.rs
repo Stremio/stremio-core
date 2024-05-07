@@ -98,8 +98,8 @@ fn export_data_from_api<E: Env + 'static>(auth_key: AuthKey) -> Effect {
         fetch_api::<E, _, _, DataExportResponse>(&api_request)
             .map_err(CtxError::from)
             .and_then(|result| match result {
-                APIResult::Ok { result } => future::ok(result),
-                APIResult::Err { error } => future::err(CtxError::from(error)),
+                APIResult::Ok(result) => future::ok(result),
+                APIResult::Err(error) => future::err(CtxError::from(error)),
             })
             .map(move |result| Msg::Internal(Internal::DataExportResult(auth_key, result)))
             .boxed_env(),

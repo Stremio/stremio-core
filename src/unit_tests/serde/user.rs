@@ -1,7 +1,7 @@
 use crate::types::profile::{GDPRConsent, User};
 use crate::unit_tests::serde::default_tokens_ext::DefaultTokens;
 use chrono::{TimeZone, Utc};
-use serde_test::{assert_de_tokens, assert_tokens, Token};
+use serde_test::{assert_de_tokens, assert_tokens, Configure, Token};
 
 #[test]
 fn user() {
@@ -29,7 +29,8 @@ fn user() {
                 premium_expire: None,
                 gdpr_consent: GDPRConsent::default(),
             },
-        ],
+        ]
+        .compact(),
         &[
             vec![
                 Token::Seq { len: Some(2) },

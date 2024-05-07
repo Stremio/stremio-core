@@ -95,12 +95,11 @@ fn actionctx_pulladdonsfromapi_with_user() {
                 && method == "POST"
                 && body == "{\"type\":\"AddonCollectionGet\",\"authKey\":\"auth_key\",\"update\":true}" =>
             {
-                future::ok(Box::new(APIResult::Ok {
-                    result: CollectionResponse {
+                future::ok(Box::new(APIResult::Ok(CollectionResponse {
                         addons: OFFICIAL_ADDONS.to_owned(),
                         last_modified: TestEnv::now(),
                     },
-                }) as Box<dyn Any + Send>).boxed_env()
+                )) as Box<dyn Any + Send>).boxed_env()
             }
             _ => default_fetch_handler(request),
         }
@@ -188,7 +187,7 @@ fn actionctx_pulladdonsfromapi_with_user() {
         "One request has been sent"
     );
     assert_eq!(
-        REQUESTS.read().unwrap().get(0).unwrap().url,
+        REQUESTS.read().unwrap().first().unwrap().url,
         "https://api.strem.io/api/addonCollectionGet".to_owned(),
         "addonCollectionGet request has been sent"
     );

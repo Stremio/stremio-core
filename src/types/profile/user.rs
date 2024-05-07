@@ -1,3 +1,5 @@
+use core::fmt;
+
 #[cfg(test)]
 use chrono::offset::TimeZone;
 use chrono::serde::ts_seconds;
@@ -8,7 +10,7 @@ use serde::{Deserialize, Serialize};
 use serde_with::{serde_as, DefaultOnError, DefaultOnNull, DurationSeconds, NoneAsEmptyString};
 
 #[serde_as]
-#[derive(Clone, PartialEq, Eq, Serialize, Deserialize, Debug)]
+#[derive(Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[cfg_attr(test, derive(Derivative))]
 #[cfg_attr(test, derivative(Default))]
 pub struct TraktInfo {
@@ -20,6 +22,15 @@ pub struct TraktInfo {
     pub expires_in: Duration,
     #[cfg_attr(test, derivative(Default(value = r#"String::from("token")"#)))]
     pub access_token: String,
+}
+impl fmt::Debug for TraktInfo {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("TraktInfo")
+            .field("created_at", &self.created_at)
+            .field("expires_in", &self.expires_in)
+            .field("access_token", &"<SENSITIVE>")
+            .finish()
+    }
 }
 
 #[derive(Clone, PartialEq, Eq, Serialize, Deserialize, Debug)]

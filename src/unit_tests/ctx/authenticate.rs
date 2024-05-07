@@ -36,8 +36,8 @@ fn actionctx_authenticate_login() {
                 && method == "POST"
                 && body == "{\"type\":\"Auth\",\"type\":\"Login\",\"email\":\"user_email\",\"password\":\"user_password\",\"facebook\":false}" =>
             {
-                future::ok(Box::new(APIResult::Ok {
-                    result: AuthResponse {
+                future::ok(Box::new(APIResult::Ok(
+                    AuthResponse {
                         key: AuthKey("auth_key".to_owned()),
                         user: User {
                             id: "user_id".to_owned(),
@@ -56,7 +56,7 @@ fn actionctx_authenticate_login() {
                             },
                         }
                     },
-                }) as Box<dyn Any + Send>).boxed_env()
+                )) as Box<dyn Any + Send>).boxed_env()
             }
             Request {
                 url, method, body, ..
@@ -64,12 +64,12 @@ fn actionctx_authenticate_login() {
                 && method == "POST"
                 && body == "{\"type\":\"AddonCollectionGet\",\"authKey\":\"auth_key\",\"update\":true}" =>
             {
-                future::ok(Box::new(APIResult::Ok {
-                    result: CollectionResponse {
+                future::ok(Box::new(APIResult::Ok(
+                    CollectionResponse {
                         addons: vec![],
                         last_modified: TestEnv::now(),
                     },
-                }) as Box<dyn Any + Send>).boxed_env()
+                )) as Box<dyn Any + Send>).boxed_env()
             }
             Request {
                 url, method, body, ..
@@ -77,9 +77,9 @@ fn actionctx_authenticate_login() {
                 && method == "POST"
                 && body == "{\"authKey\":\"auth_key\",\"collection\":\"libraryItem\",\"ids\":[],\"all\":true}" =>
             {
-                future::ok(Box::new(APIResult::Ok {
-                    result: LibraryItemsResponse::new(),
-                }) as Box<dyn Any + Send>).boxed_env()
+                future::ok(Box::new(APIResult::Ok(
+                    LibraryItemsResponse::new(),
+                )) as Box<dyn Any + Send>).boxed_env()
             }
             _ => default_fetch_handler(request),
         }
@@ -194,7 +194,7 @@ fn actionctx_authenticate_login() {
         "Three requests have been sent"
     );
     assert_eq!(
-        REQUESTS.read().unwrap().get(0).unwrap().to_owned(),
+        REQUESTS.read().unwrap().first().unwrap().to_owned(),
         Request {
             url: "https://api.strem.io/api/login".to_owned(),
             method: "POST".to_owned(),
@@ -243,8 +243,7 @@ fn actionctx_authenticate_login_with_token() {
                 && method == "POST"
                 && body == "{\"type\":\"Auth\",\"type\":\"LoginWithToken\",\"token\":\"auth_key\"}" =>
             {
-                future::ok(Box::new(APIResult::Ok {
-                    result: AuthResponse {
+                future::ok(Box::new(APIResult::Ok(AuthResponse {
                         key: AuthKey("auth_key".to_owned()),
                         user: User {
                             id: "user_id".to_owned(),
@@ -263,7 +262,7 @@ fn actionctx_authenticate_login_with_token() {
                             },
                         }
                     },
-                }) as Box<dyn Any + Send>).boxed_env()
+                )) as Box<dyn Any + Send>).boxed_env()
             }
             Request {
                 url, method, body, ..
@@ -271,12 +270,12 @@ fn actionctx_authenticate_login_with_token() {
                 && method == "POST"
                 && body == "{\"type\":\"AddonCollectionGet\",\"authKey\":\"auth_key\",\"update\":true}" =>
             {
-                future::ok(Box::new(APIResult::Ok {
-                    result: CollectionResponse {
+                future::ok(Box::new(APIResult::Ok(
+                    CollectionResponse {
                         addons: vec![],
                         last_modified: TestEnv::now(),
-                    },
-                }) as Box<dyn Any + Send>).boxed_env()
+                    },)
+                ) as Box<dyn Any + Send>).boxed_env()
             }
             Request {
                 url, method, body, ..
@@ -284,9 +283,7 @@ fn actionctx_authenticate_login_with_token() {
                 && method == "POST"
                 && body == "{\"authKey\":\"auth_key\",\"collection\":\"libraryItem\",\"ids\":[],\"all\":true}" =>
             {
-                future::ok(Box::new(APIResult::Ok {
-                    result: LibraryItemsResponse::new(),
-                }) as Box<dyn Any + Send>).boxed_env()
+                future::ok(Box::new(APIResult::Ok(LibraryItemsResponse::new(),)) as Box<dyn Any + Send>).boxed_env()
             }
             _ => default_fetch_handler(request),
         }
@@ -399,7 +396,7 @@ fn actionctx_authenticate_login_with_token() {
         "Three requests have been sent"
     );
     assert_eq!(
-        REQUESTS.read().unwrap().get(0).unwrap().to_owned(),
+        REQUESTS.read().unwrap().first().unwrap().to_owned(),
         Request {
             url: "https://api.strem.io/api/loginWithToken".to_owned(),
             method: "POST".to_owned(),
@@ -449,8 +446,7 @@ fn actionctx_authenticate_register() {
                 && method == "POST"
                 && body == "{\"type\":\"Auth\",\"type\":\"Register\",\"email\":\"user_email\",\"password\":\"user_password\",\"gdpr_consent\":{\"tos\":true,\"privacy\":true,\"marketing\":false,\"from\":\"tests\"}}" =>
             {
-                future::ok(Box::new(APIResult::Ok {
-                    result: AuthResponse {
+                future::ok(Box::new(APIResult::Ok(AuthResponse {
                         key: AuthKey("auth_key".to_owned()),
                         user: User {
                             id: "user_id".to_owned(),
@@ -469,7 +465,7 @@ fn actionctx_authenticate_register() {
                             },
                         }
                     },
-                }) as Box<dyn Any + Send>).boxed_env()
+                )) as Box<dyn Any + Send>).boxed_env()
             }
             Request {
                 url, method, body, ..
@@ -477,12 +473,12 @@ fn actionctx_authenticate_register() {
                 && method == "POST"
                 && body == "{\"type\":\"AddonCollectionGet\",\"authKey\":\"auth_key\",\"update\":true}" =>
             {
-                future::ok(Box::new(APIResult::Ok {
-                    result: CollectionResponse {
+                future::ok(Box::new(APIResult::Ok(
+                    CollectionResponse {
                         addons: vec![],
                         last_modified: TestEnv::now(),
                     },
-                }) as Box<dyn Any + Send>).boxed_env()
+                )) as Box<dyn Any + Send>).boxed_env()
             }
             Request {
                 url, method, body, ..
@@ -490,9 +486,8 @@ fn actionctx_authenticate_register() {
                 && method == "POST"
                 && body == "{\"authKey\":\"auth_key\",\"collection\":\"libraryItem\",\"ids\":[],\"all\":true}" =>
             {
-                future::ok(Box::new(APIResult::Ok {
-                    result: LibraryItemsResponse::new(),
-                }) as Box<dyn Any + Send>).boxed_env()
+                future::ok(Box::new(APIResult::Ok(LibraryItemsResponse::new(),
+                )) as Box<dyn Any + Send>).boxed_env()
             }
             _ => default_fetch_handler(request),
         }
@@ -612,7 +607,7 @@ fn actionctx_authenticate_register() {
         "Three requests have been sent"
     );
     assert_eq!(
-        REQUESTS.read().unwrap().get(0).unwrap().to_owned(),
+        REQUESTS.read().unwrap().first().unwrap().to_owned(),
         Request {
             url: "https://api.strem.io/api/register".to_owned(),
             method: "POST".to_owned(),

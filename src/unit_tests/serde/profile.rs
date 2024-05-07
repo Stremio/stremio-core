@@ -1,6 +1,6 @@
 use crate::types::profile::{Auth, Profile, Settings};
 use crate::unit_tests::serde::default_tokens_ext::DefaultTokens;
-use serde_test::{assert_de_tokens, assert_tokens, Token};
+use serde_test::{assert_de_tokens, assert_tokens, Configure, Token};
 
 #[test]
 fn profile() {
@@ -9,20 +9,23 @@ fn profile() {
             Profile {
                 auth: Some(Auth::default()),
                 addons: vec![],
+                addons_locked: false,
                 settings: Settings::default(),
             },
             Profile {
                 auth: None,
                 addons: vec![],
+                addons_locked: false,
                 settings: Settings::default(),
             },
-        ],
+        ]
+        .readable(),
         &[
             vec![
                 Token::Seq { len: Some(2) },
                 Token::Struct {
                     name: "Profile",
-                    len: 3,
+                    len: 4,
                 },
                 Token::Str("auth"),
                 Token::Some,
@@ -32,6 +35,8 @@ fn profile() {
                 Token::Str("addons"),
                 Token::Seq { len: Some(0) },
                 Token::SeqEnd,
+                Token::Str("addonsLocked"),
+                Token::Bool(false),
                 Token::Str("settings"),
             ],
             Settings::default_tokens(),
@@ -39,13 +44,15 @@ fn profile() {
                 Token::StructEnd,
                 Token::Struct {
                     name: "Profile",
-                    len: 3,
+                    len: 4,
                 },
                 Token::Str("auth"),
                 Token::None,
                 Token::Str("addons"),
                 Token::Seq { len: Some(0) },
                 Token::SeqEnd,
+                Token::Str("addonsLocked"),
+                Token::Bool(false),
                 Token::Str("settings"),
             ],
             Settings::default_tokens(),
@@ -57,17 +64,21 @@ fn profile() {
         &Profile {
             auth: None,
             addons: vec![],
+            addons_locked: false,
             settings: Settings::default(),
-        },
+        }
+        .readable(),
         &[
             vec![
                 Token::Struct {
                     name: "Profile",
-                    len: 2,
+                    len: 3,
                 },
                 Token::Str("addons"),
                 Token::Seq { len: Some(0) },
                 Token::SeqEnd,
+                Token::Str("addonsLocked"),
+                Token::Bool(false),
                 Token::Str("settings"),
             ],
             Settings::default_tokens(),

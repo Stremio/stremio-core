@@ -4,7 +4,7 @@ use crate::models::ctx::{
     update_events, update_library, update_notifications, update_profile, update_search_history,
     update_streams, update_trakt_addon, CtxError,
 };
-use crate::runtime::msg::{Action, ActionCtx, Event, Internal, Msg};
+use crate::runtime::msg::{Action, ActionCtx, CtxAuthResponse, Event, Internal, Msg};
 use crate::runtime::{Effect, EffectFuture, Effects, Env, EnvFutureExt, Update};
 use crate::types::api::{
     fetch_api, APIRequest, APIResult, AuthRequest, AuthResponse, CollectionResponse,
@@ -24,7 +24,9 @@ use enclose::enclose;
 use futures::{future, FutureExt, TryFutureExt};
 use serde::Serialize;
 
-use tracing::{event, trace, Level};
+use tracing::{error, trace};
+
+use super::OtherError;
 
 #[derive(Default, PartialEq, Eq, Serialize, Clone, Debug)]
 pub enum CtxStatus {
@@ -165,10 +167,50 @@ impl<E: Env + 'static> Update<E> for Ctx {
                     {
                         self.status = CtxStatus::Ready;
                         match result {
-                            Ok(_) => Effects::msg(Msg::Event(Event::UserAuthenticated {
-                                auth_request: auth_request.to_owned(),
-                            }))
-                            .unchanged(),
+                            Ok(ctx_auth) => {
+                                let authentication_effects =
+                                    Effects::msg(Msg::Event(Event::UserAuthenticated {
+                                        auth_request: auth_request.to_owned(),
+                                    }))
+                                    .unchanged();
+
+                                let addons_locked_event = Event::UserAddonsLocked {
+                                    addons_locked: ctx_auth.addons_result.is_err(),
+                                };
+
+                                let addons_effects = match ctx_auth.addons_result.as_ref() {
+                                    Ok(_addons) => {
+                                        Effects::msg(Msg::Event(addons_locked_event)).unchanged()
+                                    }
+                                    Err(_err) => Effects::msg(Msg::Event(Event::Error {
+                                        error: CtxError::Other(OtherError::UserAddonsAreLocked),
+                                        source: Box::new(addons_locked_event),
+                                    }))
+                                    .unchanged(),
+                                };
+
+                                let library_missing_event = Event::UserLibraryMissing {
+                                    library_missing: ctx_auth.library_items_result.is_err(),
+                                };
+
+                                let library_missing_effects = match ctx_auth
+                                    .library_items_result
+                                    .as_ref()
+                                {
+                                    Ok(_library) => {
+                                        Effects::msg(Msg::Event(library_missing_event)).unchanged()
+                                    }
+                                    Err(_err) => Effects::msg(Msg::Event(Event::Error {
+                                        error: CtxError::Other(OtherError::UserLibraryIsMissing),
+                                        source: Box::new(library_missing_event),
+                                    }))
+                                    .unchanged(),
+                                };
+
+                                authentication_effects
+                                    .join(addons_effects)
+                                    .join(library_missing_effects)
+                            }
                             Err(error) => Effects::msg(Msg::Event(Event::Error {
                                 error: error.to_owned(),
                                 source: Box::new(Event::UserAuthenticated {
@@ -229,66 +271,80 @@ fn authenticate<E: Env + 'static>(auth_request: &AuthRequest) -> Effect {
     let auth_api = APIRequest::Auth(auth_request.clone());
 
     EffectFuture::Concurrent(
-        E::flush_analytics()
-            .then(move |_| {
-                fetch_api::<E, _, _, _>(&auth_api)
-                    .inspect(move |result| trace!(?result, ?auth_api, "Auth request"))
-            })
-            .map_err(CtxError::from)
-            .and_then(|result| match result {
-                APIResult::Ok { result } => future::ok(result),
-                APIResult::Err { error } => future::err(CtxError::from(error)),
-            })
-            .map_ok(|AuthResponse { key, user }| Auth { key, user })
-            .and_then(|auth| {
-                let addon_collection_fut = {
-                    let request = APIRequest::AddonCollectionGet {
-                        auth_key: auth.key.to_owned(),
-                        update: true,
-                    };
-                    fetch_api::<E, _, _, _>(&request)
-                        .inspect(move |result| {
-                            trace!(?result, ?request, "Get user's Addon Collection request")
-                        })
-                        .map_err(CtxError::from)
-                        .and_then(|result| match result {
-                            APIResult::Ok { result } => future::ok(result),
-                            APIResult::Err { error } => future::err(CtxError::from(error)),
-                        })
-                        .map_ok(|CollectionResponse { addons, .. }| addons)
+        async {
+            E::flush_analytics().await;
+
+            // return an error only if the auth request fails
+            let auth = fetch_api::<E, _, _, _>(&auth_api)
+                .inspect(move |result| trace!(?result, ?auth_api, "Auth request"))
+                .await
+                .map_err(CtxError::from)
+                .and_then(|result| match result {
+                    APIResult::Ok(result) => Ok(result),
+                    APIResult::Err(error) => Err(CtxError::from(error)),
+                })
+                .map(|AuthResponse { key, user }| Auth { key, user })?;
+
+            let addon_collection_fut = async {
+                let request = APIRequest::AddonCollectionGet {
+                    auth_key: auth.key.to_owned(),
+                    update: true,
+                };
+                fetch_api::<E, _, _, _>(&request)
+                    .inspect(move |result| {
+                        trace!(?result, ?request, "Get user's Addon Collection request")
+                    })
+                    .await
+                    .map_err(CtxError::from)
+                    .and_then(|result: APIResult<CollectionResponse>| match result {
+                        APIResult::Ok(result) => Ok(result),
+                        APIResult::Err(error) => Err(CtxError::from(error)),
+                    })
+                    .map(|CollectionResponse { addons, .. }| addons)
+            };
+
+            let datastore_library_fut = async {
+                let request = DatastoreRequest {
+                    auth_key: auth.key.to_owned(),
+                    collection: LIBRARY_COLLECTION_NAME.to_owned(),
+                    command: DatastoreCommand::Get {
+                        ids: vec![],
+                        all: true,
+                    },
                 };
 
-                let datastore_library_fut = {
-                    let request = DatastoreRequest {
-                        auth_key: auth.key.to_owned(),
-                        collection: LIBRARY_COLLECTION_NAME.to_owned(),
-                        command: DatastoreCommand::Get {
-                            ids: vec![],
-                            all: true,
-                        },
-                    };
+                fetch_api::<E, _, _, LibraryItemsResponse>(&request)
+                    .inspect(move |result| {
+                        trace!(?result, ?request, "Get user's Addon Collection request")
+                    })
+                    .await
+                    .map_err(CtxError::from)
+                    .and_then(|result| match result {
+                        APIResult::Ok(result) => Ok(result.0),
+                        APIResult::Err(error) => Err(CtxError::from(error)),
+                    })
+            };
 
-                    fetch_api::<E, _, _, LibraryItemsResponse>(&request)
-                        .inspect(move |result| {
-                            trace!(?result, ?request, "Get user's Addon Collection request")
-                        })
-                        .map_err(CtxError::from)
-                        .and_then(|result| match result {
-                            APIResult::Ok { result } => future::ok(result.0),
-                            APIResult::Err { error } => future::err(CtxError::from(error)),
-                        })
-                };
+            let (addon_collection_result, datastore_library_result) =
+                future::join(addon_collection_fut, datastore_library_fut).await;
 
-                future::try_join(addon_collection_fut, datastore_library_fut)
-                    .map_ok(move |(addons, library_items)| (auth, addons, library_items))
+            if let Err(error) = addon_collection_result.as_ref() {
+                error!("Failed to fetch Addon collection from API: {error:?}");
+            }
+            if let Err(error) = datastore_library_result.as_ref() {
+                error!("Failed to fetch LibraryItems for user from API: {error:?}");
+            }
+
+            Ok(CtxAuthResponse {
+                auth,
+                addons_result: addon_collection_result,
+                library_items_result: datastore_library_result,
             })
-            .map(enclose!((auth_request) move |result| {
-                let internal_msg = Msg::Internal(Internal::CtxAuthResult(auth_request, result));
-
-                event!(Level::TRACE, internal_message = ?internal_msg);
-                internal_msg
-            }))
-            .boxed_env(),
+        }
+        .map(enclose!((auth_request) move |result| {
+            Msg::Internal(Internal::CtxAuthResult(auth_request, result))
+        }))
+        .boxed_env(),
     )
     .into()
 }
@@ -306,8 +362,8 @@ fn delete_session<E: Env + 'static>(auth_key: &AuthKey) -> Effect {
             })
             .map_err(CtxError::from)
             .and_then(|result| match result {
-                APIResult::Ok { result } => future::ok(result),
-                APIResult::Err { error } => future::err(CtxError::from(error)),
+                APIResult::Ok(result) => future::ok(result),
+                APIResult::Err(error) => future::err(CtxError::from(error)),
             })
             .map(enclose!((auth_key) move |result| match result {
                 Ok(_) => Msg::Event(Event::SessionDeleted { auth_key }),

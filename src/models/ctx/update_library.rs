@@ -12,7 +12,7 @@ use crate::{
     },
     models::ctx::{CtxError, CtxStatus, OtherError},
     runtime::{
-        msg::{Action, ActionCtx, Event, Internal, Msg},
+        msg::{Action, ActionCtx, CtxAuthResponse, Event, Internal, Msg},
         Effect, EffectFuture, Effects, Env, EnvFutureExt,
     },
     types::{
@@ -143,6 +143,17 @@ pub fn update_library<E: Env + 'static>(
             }))
             .unchanged(),
         },
+        Msg::Action(Action::Ctx(ActionCtx::LibraryItemMarkAsWatched { id, is_watched })) => {
+            match library.items.get(id) {
+                Some(library_item) => {
+                    let mut library_item = library_item.to_owned();
+                    library_item.mark_as_watched::<E>(*is_watched);
+                    Effects::msg(Msg::Internal(Internal::UpdateLibraryItem(library_item)))
+                        .unchanged()
+                }
+                _ => Effects::none().unchanged(),
+            }
+        }
         Msg::Internal(Internal::UpdateLibraryItem(library_item))
             if library
                 .items
@@ -175,11 +186,18 @@ pub fn update_library<E: Env + 'static>(
             Effects::one(push_library_to_storage::<E>(library)).unchanged()
         }
         Msg::Internal(Internal::CtxAuthResult(auth_request, result)) => match (status, result) {
-            (CtxStatus::Loading(loading_auth_request), Ok((auth, _, library_items)))
-                if loading_auth_request == auth_request =>
-            {
-                let next_library =
-                    LibraryBucket::new(Some(auth.user.id.to_owned()), library_items.to_owned());
+            (
+                CtxStatus::Loading(loading_auth_request),
+                Ok(CtxAuthResponse {
+                    auth,
+                    library_items_result,
+                    ..
+                }),
+            ) if loading_auth_request == auth_request => {
+                let next_library = LibraryBucket::new(
+                    Some(auth.user.id.to_owned()),
+                    library_items_result.to_owned().unwrap_or_default(),
+                );
                 if *library != next_library {
                     *library = next_library;
                     Effects::msg(Msg::Internal(Internal::LibraryChanged(false)))
@@ -243,14 +261,23 @@ pub fn update_library<E: Env + 'static>(
             },
             result,
         )) if Some(loading_auth_key) == auth_key => match result {
-            Ok(items) => Effects::msg(Msg::Event(Event::LibraryItemsPulledFromAPI {
-                ids: ids.to_owned(),
-            }))
-            .join(Effects::one(update_and_push_items_to_storage::<E>(
-                library,
-                items.to_owned(),
-            )))
-            .join(Effects::msg(Msg::Internal(Internal::LibraryChanged(true)))),
+            Ok(items) => {
+                // send an event that the missing library is now present
+                let library_missing_effects = Effects::msg(Msg::Event(Event::UserLibraryMissing {
+                    library_missing: false,
+                }))
+                .unchanged();
+
+                library_missing_effects
+                    .join(Effects::msg(Msg::Event(Event::LibraryItemsPulledFromAPI {
+                        ids: ids.to_owned(),
+                    })))
+                    .join(Effects::one(update_and_push_items_to_storage::<E>(
+                        library,
+                        items.to_owned(),
+                    )))
+                    .join(Effects::msg(Msg::Internal(Internal::LibraryChanged(true))))
+            }
             Err(error) => Effects::msg(Msg::Event(Event::Error {
                 error: error.to_owned(),
                 source: Box::new(Event::LibraryItemsPulledFromAPI {
@@ -355,8 +382,8 @@ fn push_items_to_api<E: Env + 'static>(items: Vec<LibraryItem>, auth_key: &AuthK
         })
         .map_err(CtxError::from)
         .and_then(|result| match result {
-            APIResult::Ok { result } => future::ok(result),
-            APIResult::Err { error } => future::err(CtxError::from(error)),
+            APIResult::Ok(result) => future::ok(result),
+            APIResult::Err(error) => future::err(CtxError::from(error)),
         })
         .map(move |result| match result {
             Ok(_) => Msg::Event(Event::LibraryItemsPushedToAPI { ids }),
@@ -380,8 +407,8 @@ fn pull_items_from_api<E: Env + 'static>(ids: Vec<String>, auth_key: &AuthKey) -
         fetch_api::<E, _, _, LibraryItemsResponse>(&request)
             .map_err(CtxError::from)
             .and_then(|result| match result {
-                APIResult::Ok { result } => future::ok(result.0),
-                APIResult::Err { error } => future::err(CtxError::from(error)),
+                APIResult::Ok(result) => future::ok(result.0),
+                APIResult::Err(error) => future::err(CtxError::from(error)),
             })
             .map(move |result| Msg::Internal(Internal::LibraryPullResult(request, result)))
             .boxed_env(),
@@ -409,8 +436,8 @@ fn plan_sync_with_api<E: Env + 'static>(library: &LibraryBucket, auth_key: &Auth
         fetch_api::<E, _, _, Vec<LibraryItemModified>>(&request)
             .map_err(CtxError::from)
             .and_then(|result| match result {
-                APIResult::Ok { result } => future::ok(result),
-                APIResult::Err { error } => future::err(CtxError::from(error)),
+                APIResult::Ok(result) => future::ok(result),
+                APIResult::Err(error) => future::err(CtxError::from(error)),
             })
             .map_ok(|remote_mtimes| {
                 remote_mtimes

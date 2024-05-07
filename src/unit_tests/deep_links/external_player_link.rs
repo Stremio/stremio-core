@@ -64,6 +64,7 @@ fn external_player_link_torrent() {
             info_hash,
             file_idx: Some(file_idx),
             announce,
+            file_must_include: vec![],
         },
         name: None,
         description: None,

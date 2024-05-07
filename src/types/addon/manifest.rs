@@ -1,13 +1,15 @@
-use crate::constants::SKIP_EXTRA_PROP;
-use crate::types::addon::{ExtraValue, ResourcePath};
-use crate::types::{UniqueVec, UniqueVecAdapter};
+use std::borrow::Cow;
+
 use derivative::Derivative;
 use derive_more::Deref;
 use either::Either;
 use serde::{Deserialize, Deserializer, Serialize};
 use serde_with::{serde_as, DefaultOnError, DefaultOnNull, DeserializeAs, NoneAsEmptyString};
-use std::borrow::Cow;
 use url::Url;
+
+use crate::constants::SKIP_EXTRA_PROP;
+use crate::types::addon::{ExtraValue, ResourcePath};
+use crate::types::{UniqueVec, UniqueVecAdapter};
 
 /// Re-export the semver::Version
 pub use semver::Version;
@@ -30,8 +32,67 @@ pub struct Manifest {
     #[serde(default)]
     #[serde_as(deserialize_as = "DefaultOnError<NoneAsEmptyString>")]
     pub background: Option<Url>,
+    /// Globally supported types.
+    /// We consider the addon to not support any types if the list is empty.
+    ///
+    /// Any [`ManifestResource::Full`] in [`Manifest::resources`] which specifies id prefixes
+    /// should only include prefixes that are present in the globally supported id prefixes,
+    /// if they have been set, i.e. [`Option::Some`]!
+    ///
+    /// Types examples: `movie`, `series`, `anime`, `other`, `tv`, etc.
     pub types: Vec<String>,
+    /// # Resources
+    ///
+    /// # Examples
+    ///
+    /// ## Short format
+    /// ```
+    /// use std::vec::Vec;
+    /// use stremio_core::types::addon::ManifestResource;
+    ///
+    /// let manifest_resources_short = serde_json::json!({
+    ///     // Addon manifest.json ....
+    ///
+    ///     // short-format of resources:
+    ///     "resources": ["catalog", "meta", "subtitles"],
+    /// }).get("resources").unwrap().clone();
+    ///
+    /// let resources = serde_json::from_value::<Vec<ManifestResource>>(manifest_resources_short).expect("Failed to deserialize ManifestResource");
+    /// ```
+    ///
+    /// ## Long format
+    ///
+    /// ```
+    /// use std::vec::Vec;
+    /// use stremio_core::types::addon::ManifestResource;
+    ///
+    /// let manifest_resources_long = serde_json::json!({
+    ///     // Addon manifest.json ....
+    ///
+    ///     // long-format of resources:
+    ///     "resources": [
+    ///         {
+    ///             "name": "catalog",
+    ///             // optional, i.e. can be null
+    ///             "types": ["anime", "series", "movies"],
+    ///             // optional, i.e. can be null
+    ///             "idPrefixes": ["tt", "kitsu"],
+    ///         },
+    ///         "meta",
+    ///         "subtitles"
+    ///     ]
+    /// }).get("resources").unwrap().clone();
+    ///
+    /// let resources = serde_json::from_value::<Vec<ManifestResource>>(manifest_resources_long).expect("Failed to deserialize ManifestResource");
+    /// ```
     pub resources: Vec<ManifestResource>,
+    /// Globally supported id prefixes by the addon.
+    ///
+    /// Any [`ManifestResource::Full`] in [`Manifest::resources`] which specifies id prefixes
+    /// should only include prefixes that are present in the globally supported id prefixes,
+    /// if they have been set, i.e. [`Option::Some`]!
+    ///
+    /// Prefixes examples: `tt`, `anidb`, `kitsu`, etc.
     pub id_prefixes: Option<Vec<String>>,
     #[serde(default)]
     #[serde_as(deserialize_as = "UniqueVec<Vec<_>, ManifestCatalogUniqueVecAdapter>")]
@@ -105,16 +166,76 @@ pub struct ManifestPreview {
     pub behavior_hints: ManifestBehaviorHints,
 }
 
+/// Resources supported by the addon.
+///
+/// # Examples
+///
+/// ```
+/// use stremio_core::types::addon::ManifestResource;
+///
+/// let short_resource = serde_json::json!("name");
+/// let manifest_resource = serde_json::from_value::<ManifestResource>(short_resource).expect("Valid ManifestResource::Short");
+/// assert_eq!(ManifestResource::Short("name".into()), manifest_resource);
+///
+/// // Full resource definition with `types`` but no `idPrefixes` defined
+/// {
+///     let full_resource = serde_json::json!({
+///         "name": "no-idPrefixes",
+///         "types": ["series", "movies"],
+///     });
+///     let manifest_resource = serde_json::from_value::<ManifestResource>(full_resource).expect("Valid ManifestResource::Full");
+///     assert_eq!(ManifestResource::Full{ name: "no-idPrefixes".into(), types: Some(vec!["series".into(), "movies".into()]), id_prefixes: None}, manifest_resource);
+///
+///     // empty array for types
+///     let full_resource = serde_json::json!({
+///         "name": "no-idPrefixes",
+///         "types": [],
+///     });
+///     let manifest_resource = serde_json::from_value::<ManifestResource>(full_resource).expect("Valid ManifestResource::Full");
+///     assert_eq!(ManifestResource::Full{ name: "no-idPrefixes".into(), types: Some(vec![]), id_prefixes: None}, manifest_resource);
+/// }
+/// // Full resource definition with no `idPrefixes`` but no `types` defined
+/// {
+///     let full_resource = serde_json::json!({
+///         "name": "no-types",
+///         "idPrefixes": ["tt", "kitsu"],
+///     });
+///     let manifest_resource = serde_json::from_value::<ManifestResource>(full_resource).expect("Valid ManifestResource::Full");
+///     assert_eq!(ManifestResource::Full { name: "no-types".into(), types: None, id_prefixes: Some(vec!["tt".into(), "kitsu".into()]) }, manifest_resource);
+///
+///     // empty array for `idPrefixes`
+///     let full_resource = serde_json::json!({
+///         "name": "no-types",
+///         "idPrefixes": [],
+///     });
+///     let manifest_resource = serde_json::from_value::<ManifestResource>(full_resource).expect("Valid ManifestResource::Full");
+///     assert_eq!(ManifestResource::Full { name: "no-types".into(), types: None, id_prefixes: Some(vec![]) }, manifest_resource);
+/// }
+/// ```
 #[derive(Clone, PartialEq, Eq, Serialize, Deserialize, Debug)]
 #[serde(untagged)]
 pub enum ManifestResource {
+    /// Short resource format defines only the `name` of the resource
     Short(String),
     #[serde(rename_all = "camelCase")]
     Full {
         name: String,
+        /// The types should be a subset of the ones defined in [`Manifest::types`].
+        #[serde(default)]
         types: Option<Vec<String>>,
+        /// The id prefixes should be a subset of the ones defined in [`Manifest::id_prefixes`].
+        ///
+        /// If `None`, then [`Manifest::id_prefixes`] will be used.
+        #[serde(default)]
         id_prefixes: Option<Vec<String>>,
     },
+}
+
+/// Creates a [`ManifestResource::Short`] resource from a `&str`
+impl From<&str> for ManifestResource {
+    fn from(name: &str) -> Self {
+        ManifestResource::Short(name.to_string())
+    }
 }
 
 impl ManifestResource {
@@ -131,6 +252,7 @@ impl ManifestResource {
 #[serde(rename_all = "camelCase")]
 pub struct ManifestCatalog {
     pub id: String,
+    /// E.g. `movie`, `series`
     pub r#type: String,
     pub name: Option<String>,
     #[serde(flatten)]
@@ -155,6 +277,24 @@ impl ManifestCatalog {
             });
         all_supported && required_satisfied
     }
+    pub fn are_extra_names_supported(&self, extra_names: &[String]) -> bool {
+        let all_supported = extra_names.iter().all(|extra_name| {
+            self.extra
+                .iter()
+                .any(|extra_prop| &extra_prop.name == extra_name)
+        });
+        let required_satisfied = self
+            .extra
+            .iter()
+            .filter(|extra_prop| extra_prop.is_required)
+            .all(|extra_prop| {
+                extra_names
+                    .iter()
+                    .any(|extra_name| extra_name == &extra_prop.name)
+            });
+        all_supported && required_satisfied
+    }
+
     pub fn default_required_extra(&self) -> Option<Vec<ExtraValue>> {
         self.extra
             .iter()
@@ -231,6 +371,8 @@ pub struct ExtraProp {
     #[serde(default)]
     #[serde_as(deserialize_as = "DefaultOnNull")]
     pub options: Vec<String>,
+
+    /// The maximum options that should be passed for this addon extra property.
     #[serde(default)]
     pub options_limit: OptionsLimit,
 }
@@ -269,7 +411,7 @@ impl<'de> DeserializeAs<'de, ExtraProp> for ExtraPropValid {
     }
 }
 
-#[derive(Clone, Deref, PartialEq, Eq, Serialize, Deserialize, Debug)]
+#[derive(Clone, Copy, Deref, PartialEq, Eq, Serialize, Deserialize, Debug)]
 pub struct OptionsLimit(pub usize);
 
 impl Default for OptionsLimit {

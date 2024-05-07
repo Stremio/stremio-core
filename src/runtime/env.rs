@@ -18,8 +18,10 @@ pub use conditional_types::{ConditionalSend, EnvFuture, EnvFutureExt};
 
 #[derive(Clone, PartialEq, Eq, Debug)]
 pub enum EnvError {
+    /// Error returned on [`Env::fetch`]
     Fetch(String),
     AddonTransport(String),
+    /// Serde error when serializing
     Serde(String),
     StorageUnavailable,
     StorageSchemaVersionDowngrade(u32, u32),
@@ -250,6 +252,18 @@ pub trait Env {
                         .map_err(|error| EnvError::StorageSchemaVersionUpgrade(Box::new(error)))
                         .await?;
                     schema_version = 12;
+                }
+                if schema_version == 12 {
+                    migrate_storage_schema_to_v13::<Self>()
+                        .map_err(|error| EnvError::StorageSchemaVersionUpgrade(Box::new(error)))
+                        .await?;
+                    schema_version = 13;
+                }
+                if schema_version == 13 {
+                    migrate_storage_schema_to_v14::<Self>()
+                        .map_err(|error| EnvError::StorageSchemaVersionUpgrade(Box::new(error)))
+                        .await?;
+                    schema_version = 14;
                 }
                 if schema_version != SCHEMA_VERSION {
                     panic!(
@@ -542,6 +556,44 @@ fn migrate_storage_schema_to_v12<E: Env>() -> TryEnvFuture<()> {
         .boxed_env()
 }
 
+fn migrate_storage_schema_to_v13<E: Env>() -> TryEnvFuture<()> {
+    E::get_storage::<serde_json::Value>(PROFILE_STORAGE_KEY)
+        .and_then(|mut profile| {
+            match profile.as_mut().and_then(|profile| profile.as_object_mut()) {
+                Some(profile) => {
+                    profile.insert("addonsLocked".to_owned(), serde_json::Value::Bool(false));
+                    E::set_storage(PROFILE_STORAGE_KEY, Some(&profile))
+                }
+                _ => E::set_storage::<()>(PROFILE_STORAGE_KEY, None),
+            }
+        })
+        .and_then(|_| E::set_storage(SCHEMA_VERSION_STORAGE_KEY, Some(&13)))
+        .boxed_env()
+}
+
+fn migrate_storage_schema_to_v14<E: Env>() -> TryEnvFuture<()> {
+    E::get_storage::<serde_json::Value>(PROFILE_STORAGE_KEY)
+        .and_then(|mut profile| {
+            match profile
+                .as_mut()
+                .and_then(|profile| profile.as_object_mut())
+                .and_then(|profile| profile.get_mut("settings"))
+                .and_then(|settings| settings.as_object_mut())
+            {
+                Some(settings) => {
+                    settings.insert(
+                        "subtitlesOpacity".to_owned(),
+                        serde_json::Value::Number(100.into()),
+                    );
+                    E::set_storage(PROFILE_STORAGE_KEY, Some(&profile))
+                }
+                _ => E::set_storage::<()>(PROFILE_STORAGE_KEY, None),
+            }
+        })
+        .and_then(|_| E::set_storage(SCHEMA_VERSION_STORAGE_KEY, Some(&14)))
+        .boxed_env()
+}
+
 #[cfg(test)]
 mod test {
     use serde_json::{json, Value};
@@ -553,7 +605,8 @@ mod test {
         runtime::{
             env::{
                 migrate_storage_schema_to_v10, migrate_storage_schema_to_v11,
-                migrate_storage_schema_to_v12, migrate_storage_schema_to_v6,
+                migrate_storage_schema_to_v12, migrate_storage_schema_to_v13,
+                migrate_storage_schema_to_v14, migrate_storage_schema_to_v6,
                 migrate_storage_schema_to_v7, migrate_storage_schema_to_v8,
                 migrate_storage_schema_to_v9,
             },
@@ -996,5 +1049,80 @@ mod test {
         {
             assert_storage_schema_version(12);
         }
+    }
+
+    #[tokio::test]
+    async fn test_migration_from_12_to_13() {
+        {
+            let _test_env_guard = TestEnv::reset().expect("Should lock TestEnv");
+            let profile_before = json!({});
+
+            let migrated_profile = json!({
+                "addonsLocked": false,
+            });
+
+            // setup storage for migration
+            set_profile_and_schema_version(&profile_before, 12);
+
+            // migrate storage
+            migrate_storage_schema_to_v13::<TestEnv>()
+                .await
+                .expect("Should migrate");
+
+            let storage = STORAGE.read().expect("Should lock");
+
+            assert_eq!(
+                &13.to_string(),
+                storage
+                    .get(SCHEMA_VERSION_STORAGE_KEY)
+                    .expect("Should have the schema set"),
+                "Scheme version should now be updated"
+            );
+            assert_eq!(
+                &migrated_profile.to_string(),
+                storage
+                    .get(PROFILE_STORAGE_KEY)
+                    .expect("Should have the profile set"),
+                "Profile should match"
+            );
+        }
+    }
+
+    #[tokio::test]
+    async fn test_migration_from_13_to_14() {
+        let _test_env_guard = TestEnv::reset().expect("Should lock TestEnv");
+
+        let init_profile = json!({
+            "settings": {}
+        });
+
+        let migrated_profile = json!({
+            "settings": {
+                "subtitlesOpacity": 100
+            }
+        });
+
+        set_profile_and_schema_version(&init_profile, 13);
+
+        migrate_storage_schema_to_v14::<TestEnv>()
+            .await
+            .expect("Should migrate");
+
+        let storage = STORAGE.read().expect("Should lock");
+
+        assert_eq!(
+            &14.to_string(),
+            storage
+                .get(SCHEMA_VERSION_STORAGE_KEY)
+                .expect("Should have the schema set"),
+            "Scheme version should now be updated"
+        );
+        assert_eq!(
+            &migrated_profile.to_string(),
+            storage
+                .get(PROFILE_STORAGE_KEY)
+                .expect("Should have the profile set"),
+            "Profile should match"
+        );
     }
 }

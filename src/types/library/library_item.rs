@@ -63,13 +63,10 @@ impl LibraryItem {
         }
     }
 
-    /// Returns whether the item has been watched when either of the state fields are:
-    /// - `times_watched > 0`
-    /// or
-    /// - `flagged_watched == 1` (true)
+    /// Returns whether the item has been watched
     #[inline]
     pub fn watched(&self) -> bool {
-        self.state.times_watched > 0 || self.state.flagged_watched == 1
+        self.state.times_watched > 0
     }
 
     /// Pulling notifications relies on a few key things:
@@ -99,6 +96,15 @@ impl LibraryItem {
             && self.poster == other.poster
             && self.poster_shape == other.poster_shape
             && self.behavior_hints == other.behavior_hints
+    }
+
+    pub fn mark_as_watched<E: Env>(&mut self, is_watched: bool) {
+        if is_watched {
+            self.state.times_watched = self.state.times_watched.saturating_add(1);
+            self.state.last_watched = Some(E::now());
+        } else {
+            self.state.times_watched = 0;
+        }
     }
 }
 
@@ -162,10 +168,11 @@ pub struct LibraryItemState {
     pub overall_time_watched: u64,
     /// Shows how many times this item has been watched.
     ///
-    /// Incremented once for each video watched
-    /// or in the case of no videos - every time
+    /// Incremented once for each video watched (series)
+    /// or in the case of no videos (e.g. movies) - every time
     pub times_watched: u32,
     // @TODO: consider bool that can be deserialized from an integer
+    /// Flag indicating that a movie has been watched
     pub flagged_watched: u32,
     /// In milliseconds
     pub duration: u64,

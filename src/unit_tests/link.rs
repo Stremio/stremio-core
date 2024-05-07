@@ -27,30 +27,28 @@ fn create_link_code() {
         match request {
             Request {
                 url, method, body, ..
-            } if url == "https://link.stremio.com/api/create?type=Create"
+            } if url == "https://link.stremio.com/api/v2/create?type=Create"
                 && method == "GET"
                 && body == "null" =>
             {
-                future::ok(Box::new(APIResult::Ok {
-                    result: LinkCodeResponse {
-                        code: "CODE".to_owned(),
-                        link: "LINK".to_owned(),
-                        qrcode: "QRCODE".to_owned(),
-                    },
-                }) as Box<dyn Any + Send>)
+                future::ok(Box::new(APIResult::Ok(LinkCodeResponse {
+                    code: "CODE".to_owned(),
+                    link: "LINK".to_owned(),
+                    qrcode: "QRCODE".to_owned(),
+                })) as Box<dyn Any + Send>)
                 .boxed_env()
             }
             Request {
                 url, method, body, ..
-            } if url == "https://link.stremio.com/api/read?type=Read&code=CODE"
+            } if url == "https://link.stremio.com/api/v2/read?type=Read&code=CODE"
                 && method == "GET"
                 && body == "null" =>
             {
-                future::ok(Box::new(APIResult::Ok {
-                    result: LinkDataResponse::AuthKey(LinkAuthKey {
+                future::ok(
+                    Box::new(APIResult::Ok(LinkDataResponse::AuthKey(LinkAuthKey {
                         auth_key: "AUTH_KEY".to_owned(),
-                    }),
-                }) as Box<dyn Any + Send>)
+                    }))) as Box<dyn Any + Send>,
+                )
                 .boxed_env()
             }
             _ => default_fetch_handler(request),
@@ -118,9 +116,9 @@ fn create_link_code() {
         "Two requests have been sent"
     );
     assert_eq!(
-        REQUESTS.read().unwrap().get(0).unwrap().to_owned(),
+        REQUESTS.read().unwrap().first().unwrap().to_owned(),
         Request {
-            url: "https://link.stremio.com/api/create?type=Create".to_owned(),
+            url: "https://link.stremio.com/api/v2/create?type=Create".to_owned(),
             method: "GET".to_owned(),
             body: "null".to_owned(),
             ..Default::default()
@@ -130,7 +128,7 @@ fn create_link_code() {
     assert_eq!(
         REQUESTS.read().unwrap().get(1).unwrap().to_owned(),
         Request {
-            url: "https://link.stremio.com/api/read?type=Read&code=CODE".to_owned(),
+            url: "https://link.stremio.com/api/v2/read?type=Read&code=CODE".to_owned(),
             method: "GET".to_owned(),
             body: "null".to_owned(),
             ..Default::default()

@@ -15,7 +15,9 @@ use crate::types::api::{
 use crate::types::library::{LibraryBucket, LibraryItem, LibraryItemId};
 use crate::types::profile::{Auth, AuthKey, Profile, User};
 use crate::types::resource::{MetaItem, Stream};
-use crate::types::streaming_server::{GetHTTPSResponse, NetworkInfo, SettingsResponse, Statistics};
+use crate::types::streaming_server::{
+    DeviceInfo, GetHTTPSResponse, NetworkInfo, SettingsResponse, Statistics,
+};
 use crate::types::streams::StreamItemState;
 
 pub type CtxStorageResponse = (
@@ -24,7 +26,12 @@ pub type CtxStorageResponse = (
     Option<LibraryBucket>,
 );
 
-pub type AuthResponse = (Auth, Vec<Descriptor>, Vec<LibraryItem>);
+#[derive(Debug)]
+pub struct CtxAuthResponse {
+    pub auth: Auth,
+    pub addons_result: Result<Vec<Descriptor>, CtxError>,
+    pub library_items_result: Result<Vec<LibraryItem>, CtxError>,
+}
 
 pub type LibraryPlanResponse = (Vec<String>, Vec<String>);
 
@@ -34,7 +41,7 @@ pub type LibraryPlanResponse = (Vec<String>, Vec<String>);
 #[derive(Debug)]
 pub enum Internal {
     /// Result for authenticate to API.
-    CtxAuthResult(AuthRequest, Result<AuthResponse, CtxError>),
+    CtxAuthResult(AuthRequest, Result<CtxAuthResponse, CtxError>),
     /// Result for pull addons from API.
     AddonsAPIResult(APIRequest, Result<Vec<Descriptor>, CtxError>),
     /// Result for pull user from API.
@@ -81,6 +88,9 @@ pub enum Internal {
     SearchHistoryChanged,
     /// User notifications have changed
     NotificationsChanged,
+    /// Pulling of notifications triggered either by the user (with an action) or
+    /// internally in core.
+    PullNotifications,
     /// Dismiss all Notifications for a given [`MetaItemId`].
     ///
     /// [`MetaItemId`]: crate::types::resource::MetaItemId
@@ -97,6 +107,8 @@ pub enum Internal {
     StreamingServerPlaybackDevicesResult(Url, Result<Vec<PlaybackDevice>, EnvError>),
     // Result for network info.
     StreamingServerNetworkInfoResult(Url, Result<NetworkInfo, EnvError>),
+    // Result for device info.
+    StreamingServerDeviceInfoResult(Url, Result<DeviceInfo, EnvError>),
     /// Result for updating streaming server settings.
     StreamingServerUpdateSettingsResult(Url, Result<(), EnvError>),
     /// Result for creating a torrent.

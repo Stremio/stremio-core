@@ -16,7 +16,7 @@ use url::Url;
 use stremio_derive::Model;
 
 use crate::{
-    constants::LAST_VIDEOS_IDS_EXTRA_PROP,
+    constants::{CATALOG_RESOURCE_NAME, LAST_VIDEOS_IDS_EXTRA_PROP},
     models::{
         ctx::Ctx,
         player::{Player, Selected as PlayerSelected},
@@ -76,8 +76,8 @@ fn test_pull_notifications_and_play_in_player() {
             description: None,
             logo: None,
             background: None,
-            types: vec![],
-            resources: vec![],
+            types: vec!["series".into()],
+            resources: vec![CATALOG_RESOURCE_NAME.into()],
             id_prefixes: Some(vec!["tt".to_owned()]),
             catalogs: vec![ManifestCatalog {
                 id: "lastVideosIds".to_owned(),
@@ -202,6 +202,7 @@ fn test_pull_notifications_and_play_in_player() {
     }
     let _env_mutex = TestEnv::reset().expect("Should have exclusive lock to TestEnv");
     *FETCH_HANDLER.write().unwrap() = Box::new(fetch_handler);
+    *NOW.write().unwrap() = Utc.with_ymd_and_hms(2024, 1, 1, 10, 30, 0).unwrap();
     let (runtime, _rx) = Runtime::<TestEnv, _>::new(
         TestModel {
             ctx: Ctx::new(
@@ -343,6 +344,8 @@ fn test_pull_notifications_and_play_in_player() {
             .is_none(),
         "All notifications for this MetaItem should be now dismissed"
     );
+    // before pulling notifications, make sure to update the last_updated time
+    *NOW.write().unwrap() = Utc::now();
     TestEnv::run(|| {
         runtime.dispatch(RuntimeAction {
             field: None,

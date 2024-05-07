@@ -1,3 +1,5 @@
+use core::fmt;
+
 use crate::constants::{API_URL, LINK_API_URL};
 use crate::types::addon::Descriptor;
 use crate::types::library::LibraryItem;
@@ -11,9 +13,30 @@ use serde::{Deserialize, Serialize};
 use url::Url;
 
 pub trait FetchRequestParams<T> {
+    /// Version path prefix for the request
+    const VERSION: &'static str = "";
+
     fn endpoint(&self) -> Url;
     fn method(&self) -> Method;
     fn path(&self) -> String;
+
+    /// Returns the versioned path for the API request.
+    ///
+    /// In case of v1 we do not have any prefix and the default [`FetchRequestParams::VERSION`] is an empty string.
+    ///
+    /// V1 path: `create`
+    /// V2 path: `v2/create` (where version prefix is `"v2"`)
+    fn version_path(&self) -> String {
+        if Self::VERSION.is_empty() {
+            self.path()
+        } else {
+            format!(
+                "{version}/{path}",
+                version = Self::VERSION,
+                path = &self.path(),
+            )
+        }
+    }
     fn query(&self) -> Option<String>;
     fn body(self) -> T;
 }
@@ -151,7 +174,7 @@ impl FetchRequestParams<APIRequest> for APIRequest {
     }
 }
 
-#[derive(Clone, PartialEq, Eq, Serialize, Deserialize, Debug)]
+#[derive(Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[cfg_attr(test, derive(Derivative))]
 #[cfg_attr(test, derivative(Default))]
 #[serde(tag = "type")]
@@ -173,6 +196,37 @@ pub enum AuthRequest {
     },
 }
 
+impl fmt::Debug for AuthRequest {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::Login {
+                email,
+                password: _,
+                facebook,
+            } => f
+                .debug_struct("Login")
+                .field("email", email)
+                .field("password", &"<SENSITIVE>")
+                .field("facebook", facebook)
+                .finish(),
+            Self::Register {
+                email,
+                password: _,
+                gdpr_consent,
+            } => f
+                .debug_struct("Register")
+                .field("email", email)
+                .field("password", &"<SENSITIVE>")
+                .field("gdpr_consent", gdpr_consent)
+                .finish(),
+            Self::LoginWithToken { token: _ } => f
+                .debug_struct("LoginWithToken")
+                .field("token", &"<SENSITIVE>")
+                .finish(),
+        }
+    }
+}
+
 #[derive(Clone, PartialEq, Eq, Serialize, Deserialize, Debug)]
 #[cfg_attr(test, derive(Derivative))]
 #[cfg_attr(test, derivative(Default))]
@@ -184,8 +238,11 @@ pub enum LinkRequest {
         code: String,
     },
 }
+impl LinkRequest {}
 
 impl FetchRequestParams<()> for LinkRequest {
+    const VERSION: &'static str = "v2";
+
     fn endpoint(&self) -> Url {
         LINK_API_URL.to_owned()
     }
@@ -251,4 +308,39 @@ pub enum DatastoreCommand {
         #[serde(default)]
         changes: Vec<LibraryItem>,
     },
+}
+
+#[cfg(test)]
+mod tests {
+    use http::Method;
+
+    use crate::types::api::FetchRequestParams;
+
+    #[test]
+    fn test_versioning_of_api_fetch_request_params() {
+        struct V2Request;
+        impl FetchRequestParams<()> for V2Request {
+            const VERSION: &'static str = "v2";
+            fn endpoint(&self) -> url::Url {
+                "https://example.com/".parse().unwrap()
+            }
+
+            fn method(&self) -> Method {
+                Method::POST
+            }
+
+            fn path(&self) -> String {
+                "create".into()
+            }
+
+            fn query(&self) -> Option<String> {
+                None
+            }
+
+            fn body(self) {}
+        }
+
+        let v2 = V2Request;
+        assert_eq!("v2/create", v2.version_path());
+    }
 }

@@ -37,9 +37,9 @@ fn actionctx_rewindlibraryitem() {
             && method == "POST"
             && body == "{\"authKey\":\"auth_key\",\"collection\":\"libraryItem\",\"changes\":[{\"_id\":\"id\",\"name\":\"name\",\"type\":\"type\",\"poster\":null,\"posterShape\":\"poster\",\"removed\":false,\"temp\":false,\"_ctime\":\"2020-01-01T00:00:00Z\",\"_mtime\":\"2020-01-02T00:00:00Z\",\"state\":{\"lastWatched\":null,\"timeWatched\":0,\"timeOffset\":0,\"overallTimeWatched\":0,\"timesWatched\":0,\"flaggedWatched\":0,\"duration\":0,\"video_id\":null,\"watched\":null,\"noNotif\":false},\"behaviorHints\":{\"defaultVideoId\":null,\"featuredVideoId\":null,\"hasScheduledVideos\":false}}]}" =>
             {
-                future::ok(Box::new(APIResult::Ok {
-                    result: SuccessResponse { success: True {} },
-                }) as Box<dyn Any + Send>).boxed_env()
+                future::ok(Box::new(APIResult::Ok(
+                    SuccessResponse { success: True {} },
+                )) as Box<dyn Any + Send>).boxed_env()
             },
             _ => default_fetch_handler(request),
         }
@@ -155,7 +155,7 @@ fn actionctx_rewindlibraryitem() {
         "One request has been sent"
     );
     assert_eq!(
-        REQUESTS.read().unwrap().get(0).unwrap().url.to_owned(),
+        REQUESTS.read().unwrap().first().unwrap().url.to_owned(),
         "https://api.strem.io/api/datastorePut".to_owned(),
         "datastorePut request has been sent"
     );
