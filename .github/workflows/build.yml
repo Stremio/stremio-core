@@ -21,7 +21,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Rust setup
         uses: dtolnay/rust-toolchain@stable
@@ -29,24 +29,33 @@ jobs:
           components: rustfmt, clippy
           targets: wasm32-unknown-unknown
 
+      - uses: Swatinem/rust-cache@v2
+
       - name: Lint - rustfmt
         run: cargo fmt --all -- --check
 
       - name: Lint - clippy
         run: cargo clippy --all --no-deps -- -D warnings
 
+      - uses: taiki-e/install-action@v2
+        with:
+          tool: wasm-pack@${{ env.WASM_PACK_VERSION }}
+      - name: Setup chromedriver
+        uses: nanasess/setup-chromedriver@v2
+
+      - name: Run wasm tests (Chrome)
+        run: wasm-pack test --chromedriver "$(which chromedriver)" --chrome --headless
+
       - name: Setup NodeJS
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: "npm"
           registry-url: https://registry.npmjs.org/
 
-      - uses: taiki-e/install-action@v2
-        with:
-          tool: wasm-pack@${{ env.WASM_PACK_VERSION }}
       - name: Install NPM dependencies
         run: npm ci
 
       - name: Build
         run: npm run build
+    
