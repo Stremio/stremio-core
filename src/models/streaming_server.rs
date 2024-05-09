@@ -1,3 +1,13 @@
+use enclose::enclose;
+use futures::{FutureExt, TryFutureExt};
+use http::request::Request;
+use magnet_url::{Magnet, MagnetError};
+use serde::{Deserialize, Serialize};
+use sha1::{Digest, Sha1};
+use url::Url;
+
+#[cfg(feature = "experimental")]
+use super::player::VideoParams;
 use crate::constants::META_RESOURCE_NAME;
 use crate::models::common::{eq_update, Loadable};
 use crate::models::ctx::{Ctx, CtxError};
@@ -9,16 +19,19 @@ use crate::types::addon::ResourcePath;
 use crate::types::api::SuccessResponse;
 use crate::types::profile::{AuthKey, Profile};
 use crate::types::streaming_server::{
-    DeviceInfo, GetHTTPSResponse, NetworkInfo, Settings, SettingsResponse, Statistics,
+    CreateMagnetRequest, CreateTorrentBlobRequest, DeviceInfo, GetHTTPSResponse, NetworkInfo,
+    Settings, SettingsResponse, Statistics, StatisticsRequest, TorrentStatisticsRequest,
 };
-use enclose::enclose;
-use futures::{FutureExt, TryFutureExt};
-use http::request::Request;
-use magnet_url::{Magnet, MagnetError};
-use serde::{Deserialize, Serialize};
-use sha1::{Digest, Sha1};
-use std::iter;
-use url::Url;
+use crate::types::torrent::InfoHash;
+#[cfg(feature = "experimental")]
+use crate::types::{
+    resource::{Stream, StreamSource},
+    streaming_server::{
+        ArchiveCreateResponse, ArchiveStreamOptions, ArchiveStreamRequest, CreateTorrentRequest,
+        CreatedTorrent, OpensubtitlesParamsRequest, OpensubtitlesParamsResponse,
+    },
+    streams::ConvertedStreamSource,
+};
 
 #[derive(Clone, PartialEq, Eq, Serialize, Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
@@ -26,13 +39,6 @@ pub struct PlaybackDevice {
     pub id: String,
     pub name: String,
     pub r#type: String,
-}
-
-#[derive(Clone, PartialEq, Serialize, Deserialize, Debug)]
-#[serde(rename_all = "camelCase")]
-pub struct StatisticsRequest {
-    pub info_hash: String,
-    pub file_idx: u16,
 }
 
 #[derive(Clone, Serialize, Debug)]
@@ -52,7 +58,7 @@ pub struct StreamingServer {
     pub playback_devices: Loadable<Vec<PlaybackDevice>, EnvError>,
     pub network_info: Loadable<NetworkInfo, EnvError>,
     pub device_info: Loadable<DeviceInfo, EnvError>,
-    pub torrent: Option<(String, Loadable<ResourcePath, EnvError>)>,
+    pub torrent: Option<(InfoHash, Loadable<ResourcePath, EnvError>)>,
     /// [`Loadable::Loading`] is used only on the first statistics request.
     pub statistics: Option<Loadable<Statistics, EnvError>>,
 }
@@ -123,12 +129,10 @@ impl<E: Env + 'static> UpdateWithCtx<E> for StreamingServer {
                 CreateTorrentArgs::Magnet(magnet),
             ))) => match parse_magnet(magnet) {
                 Ok((info_hash, announce)) => {
-                    let torrent_effects = eq_update(
-                        &mut self.torrent,
-                        Some((info_hash.to_owned(), Loadable::Loading)),
-                    );
+                    let torrent_effects =
+                        eq_update(&mut self.torrent, Some((info_hash, Loadable::Loading)));
                     Effects::many(vec![
-                        create_magnet::<E>(&self.selected.transport_url, &info_hash, &announce),
+                        create_magnet::<E>(&self.selected.transport_url, info_hash, &announce),
                         Effect::Msg(Box::new(Msg::Event(Event::MagnetParsed {
                             magnet: magnet.to_owned(),
                         }))),
@@ -159,7 +163,11 @@ impl<E: Env + 'static> UpdateWithCtx<E> for StreamingServer {
                         Some((info_hash.to_owned(), Loadable::Loading)),
                     );
                     Effects::many(vec![
-                        create_torrent::<E>(&self.selected.transport_url, &info_hash, torrent),
+                        create_torrent_request::<E>(
+                            &self.selected.transport_url,
+                            info_hash,
+                            torrent,
+                        ),
                         Effect::Msg(Box::new(Msg::Event(Event::TorrentParsed {
                             torrent: torrent.to_owned(),
                         }))),
@@ -516,54 +524,46 @@ fn set_settings<E: Env + 'static>(url: &Url, settings: &Settings) -> Effect {
     .into()
 }
 
-fn create_magnet<E: Env + 'static>(url: &Url, info_hash: &str, announce: &[String]) -> Effect {
-    #[derive(Serialize)]
-    #[serde(rename_all = "camelCase")]
-    struct PeerSearch {
-        sources: Vec<String>,
-        min: u32,
-        max: u32,
-    }
-    #[derive(Serialize)]
-    #[serde(rename_all = "camelCase")]
-    struct Torrent {
-        info_hash: String,
-    }
-    #[derive(Serialize)]
-    #[serde(rename_all = "camelCase")]
-    struct Body {
-        torrent: Torrent,
-        peer_search: Option<PeerSearch>,
-    }
-    let info_hash = info_hash.to_owned();
-    let endpoint = url
-        .join(&format!("{info_hash}/"))
-        .expect("url builder failed")
-        .join("create")
-        .expect("url builder failed");
-    let body = Body {
-        torrent: Torrent {
-            info_hash: info_hash.to_owned(),
-        },
-        peer_search: if !announce.is_empty() {
-            Some(PeerSearch {
-                sources: iter::once(&format!("dht:{info_hash}"))
-                    .chain(announce.iter())
-                    .cloned()
-                    .collect(),
-                min: 40,
-                max: 200,
-            })
-        } else {
-            None
-        },
+pub async fn create_magnet_request<E: Env + 'static>(
+    url: Url,
+    info_hash: InfoHash,
+    announce: Vec<String>,
+) -> Result<serde_json::Value, EnvError> {
+    let request = CreateMagnetRequest {
+        server_url: url.to_owned(),
+        info_hash,
+        announce: announce.to_vec(),
     };
-    let request = Request::post(endpoint.as_str())
-        .header(http::header::CONTENT_TYPE, "application/json")
-        .body(body)
-        .expect("request builder failed");
+
+    E::fetch::<_, serde_json::Value>(request.into()).await
+}
+
+fn create_magnet<E: Env + 'static>(url: &Url, info_hash: InfoHash, announce: &[String]) -> Effect {
     EffectFuture::Concurrent(
-        E::fetch::<_, serde_json::Value>(request)
+        create_magnet_request::<E>(url.to_owned(), info_hash, announce.to_vec())
+            .map_ok(|_response| ())
+            .map(enclose!((info_hash) move |result| {
+                Msg::Internal(Internal::StreamingServerCreateTorrentResult(
+                    info_hash, result,
+                ))
+            }))
+            .boxed_env(),
+    )
+    .into()
+}
+
+pub fn create_torrent_request<E: Env + 'static>(
+    url: &Url,
+    info_hash: InfoHash,
+    torrent: &[u8],
+) -> Effect {
+    let request = CreateTorrentBlobRequest {
+        server_url: url.to_owned(),
+        torrent: torrent.to_vec(),
+    };
+
+    EffectFuture::Concurrent(
+        E::fetch::<_, serde_json::Value>(request.into())
             .map_ok(|_| ())
             .map(enclose!((info_hash) move |result| {
                 Msg::Internal(Internal::StreamingServerCreateTorrentResult(
@@ -575,40 +575,18 @@ fn create_magnet<E: Env + 'static>(url: &Url, info_hash: &str, announce: &[Strin
     .into()
 }
 
-fn create_torrent<E: Env + 'static>(url: &Url, info_hash: &str, torrent: &[u8]) -> Effect {
-    #[derive(Serialize)]
-    struct Body {
-        blob: String,
-    }
-    let info_hash = info_hash.to_owned();
-    let endpoint = url.join("/create").expect("url builder failed");
-    let request = Request::post(endpoint.as_str())
-        .header(http::header::CONTENT_TYPE, "application/json")
-        .body(Body {
-            blob: hex::encode(torrent),
-        })
-        .expect("request builder failed");
-    EffectFuture::Concurrent(
-        E::fetch::<_, serde_json::Value>(request)
-            .map_ok(|_| ())
-            .map(enclose!((info_hash) move |result| {
-                Msg::Internal(Internal::StreamingServerCreateTorrentResult(
-                    info_hash, result,
-                ))
-            }))
-            .boxed_env(),
-    )
-    .into()
-}
-
-fn parse_magnet(magnet: &Url) -> Result<(String, Vec<String>), MagnetError> {
+fn parse_magnet(magnet: &Url) -> Result<(InfoHash, Vec<String>), MagnetError> {
     let magnet = Magnet::new(magnet.as_str())?;
     let info_hash = magnet.xt.ok_or(MagnetError::NotAMagnetURL)?;
+    let info_hash = info_hash
+        .parse()
+        .map_err(|_err| MagnetError::NotAMagnetURL)?;
+
     let announce = magnet.tr;
     Ok((info_hash, announce))
 }
 
-fn parse_torrent(torrent: &[u8]) -> Result<(String, Vec<String>), serde_bencode::Error> {
+fn parse_torrent(torrent: &[u8]) -> Result<(InfoHash, Vec<String>), serde_bencode::Error> {
     #[derive(Deserialize)]
     struct TorrentFile {
         info: serde_bencode::value::Value,
@@ -622,7 +600,8 @@ fn parse_torrent(torrent: &[u8]) -> Result<(String, Vec<String>), serde_bencode:
     let info_bytes = serde_bencode::to_bytes(&torrent_file.info)?;
     let mut hasher = Sha1::new();
     hasher.update(info_bytes);
-    let info_hash = hex::encode(hasher.finalize());
+    let info_hash = InfoHash::new(hasher.finalize().into());
+
     let mut announce = vec![];
     if let Some(announce_entry) = torrent_file.announce {
         announce.push(announce_entry);
@@ -637,26 +616,25 @@ fn parse_torrent(torrent: &[u8]) -> Result<(String, Vec<String>), serde_bencode:
 }
 
 fn get_torrent_statistics<E: Env + 'static>(url: &Url, request: &StatisticsRequest) -> Effect {
-    let statistics_request = request.clone();
-    let endpoint = url
-        .join(&format!(
-            "/{}/{}/stats.json",
-            statistics_request.info_hash.clone(),
-            statistics_request.file_idx
-        ))
-        .expect("url builder failed");
-    let request = Request::get(endpoint.as_str())
-        .header(http::header::CONTENT_TYPE, "application/json")
-        .body(())
-        .expect("request builder failed");
+    let fetch_fut = enclose!((url, request) async move {
+        let request = TorrentStatisticsRequest {
+            server_url: url,
+            request,
+        };
 
+        let statistics: Option<Statistics> = E::fetch(request.into()).await?;
+
+        Ok(statistics)
+    });
+
+    // let statistics_request = request.to_owned();
     // It's happening when the engine is destroyed for inactivity:
     // If it was downloaded to 100% and that the stream is paused, then played,
     // it will create a new engine and return the correct stats
     EffectFuture::Concurrent(
-        E::fetch::<_, Option<Statistics>>(request)
-            .map(enclose!((url) move |result|
-                Msg::Internal(Internal::StreamingServerStatisticsResult((url, statistics_request), result))
+        fetch_fut
+            .map(enclose!((url, request) move |result|
+                Msg::Internal(Internal::StreamingServerStatisticsResult((url, request), result))
             ))
             .boxed_env(),
     )
@@ -730,5 +708,255 @@ fn update_remote_url<E: Env + 'static>(
         )
         .unchanged(),
         _ => eq_update(remote_url, None),
+    }
+}
+
+#[cfg(feature = "experimental")]
+/// <https://github.com/Stremio/stremio-video/blob/5c50f9caa5bee2a66b5c6d3bbc967536a1305cbb/src/withStreamingServer/createTorrent.js#L18>
+pub async fn create_torrent<E: Env + 'static>(
+    server_url: Url,
+    info_hash: InfoHash,
+    file_idx: u64,
+    sources: &[String],
+    // series_info: SeriesInfo,
+) -> Result<Option<CreatedTorrent>, EnvError> {
+    let request = CreateTorrentRequest {
+        server_url,
+        sources: sources.to_vec(),
+        info_hash,
+        file_idx,
+    };
+
+    // returns Null on invalid params
+    Ok(E::fetch(request.into()).await?)
+}
+
+/// Updates the stream_source and generates a correct streaming_url
+/// video params in stremio-video: <https://github.com/Stremio/stremio-video/blob/master/src/withVideoParams/withVideoParams.js#L48-L57>
+///
+/// ```js
+/// var hash = stream.behaviorHints && typeof stream.behaviorHints.videoHash === 'string' ? stream.behaviorHints.videoHash : null;
+/// var size = stream.behaviorHints && stream.behaviorHints.videoSize !== null && isFinite(stream.behaviorHints.videoSize) ? stream.behaviorHints.videoSize : null;
+/// var filename = stream.behaviorHints && typeof stream.behaviorHints.filename === 'string' ? stream.behaviorHints.filename : null;
+/// return { hash: hash, size: size, filename: filename };
+/// ```
+#[cfg(feature = "experimental")]
+pub async fn get_video_params_effects<E: Env + 'static>(
+    transport_url: Option<&Url>,
+    stream: Stream<ConvertedStreamSource>,
+) -> Result<Option<VideoParams>, EnvError> {
+    let stream_opensubtitles = stream.clone();
+    let opensubitiles_params_fut = async move {
+        match (
+            transport_url,
+            stream_opensubtitles.behavior_hints.video_hash.clone(),
+            stream_opensubtitles.behavior_hints.video_size.clone(),
+        ) {
+            (_, Some(info_hash), Some(size)) => {
+                let info_hash = info_hash
+                    .parse::<InfoHash>()
+                    .map_err(|e| EnvError::Serde(e.to_string()))?;
+
+                Ok(Some((info_hash, size)))
+            }
+            (Some(transport_url), _, _) => {
+                let media_url = match stream_opensubtitles.source.clone() {
+                    ConvertedStreamSource::Url(url) => url.to_owned(),
+                    ConvertedStreamSource::Torrent { url, .. } => url.to_owned(),
+                };
+
+                get_opensubtitles_params::<E>(transport_url.to_owned(), media_url)
+                    .await
+                    .map(|response| response.map(|response| (response.hash, response.size)))
+            }
+            _ => Ok(None),
+        }
+    };
+
+    let filename_fut = async move {
+        match (
+            transport_url.to_owned(),
+            stream.source,
+            stream.behavior_hints.filename,
+        ) {
+            (_, _, Some(filename)) => Ok(Some(filename)),
+            (
+                Some(transport_url),
+                ConvertedStreamSource::Torrent {
+                    info_hash,
+                    file_idx: Some(file_idx),
+                    ..
+                },
+                _,
+            ) => get_filename::<E>(transport_url.to_owned(), info_hash, file_idx).await,
+            _ => Ok(None),
+        }
+    };
+
+    match futures::future::try_join(opensubitiles_params_fut, filename_fut).await? {
+        (Some((info_hash, size)), Some(filename)) => Ok(Some(VideoParams {
+            // todo: improve VideoParams struct!
+            hash: Some(info_hash.to_string()),
+            size: Some(size),
+            filename: Some(filename),
+        })),
+        _ => Ok(None),
+    }
+}
+
+#[cfg(feature = "experimental")]
+pub async fn get_opensubtitles_params<E: Env + 'static>(
+    transport_url: Url,
+    media_url: Url,
+) -> Result<Option<OpensubtitlesParamsResponse>, EnvError> {
+    let request = OpensubtitlesParamsRequest {
+        server_url: transport_url,
+        media_url,
+    };
+
+    // returns Null on invalid params
+    Ok(E::fetch(request.into()).await?)
+}
+
+/// Get the filename of the played torrent.
+///
+/// We need both the `info_hash` and the `file_idx` to pass to the server when
+/// requesting Statistics for the filename.
+///
+/// # Returns
+/// Returns the [`Statistics::stream_name`] field.
+///
+/// `None` if stats.json returns `null`, e.g. torrent has fully loaded.
+#[cfg(feature = "experimental")]
+pub async fn get_filename<E: Env + 'static>(
+    transport_url: Url,
+    info_hash: InfoHash,
+    file_idx: u16,
+) -> Result<Option<String>, EnvError> {
+    let request = TorrentStatisticsRequest {
+        server_url: transport_url,
+        request: StatisticsRequest {
+            info_hash: info_hash.to_string(),
+            file_idx,
+        },
+    };
+
+    let statistics: Option<Statistics> = E::fetch(request.into()).await?;
+
+    Ok(statistics.map(|statistics| statistics.stream_name))
+}
+
+/// Updates a StreamSource if it's RAR or ZIP urls by calling the server (if present)
+/// and creating a streaming url for a given file (either with `file_idx` or `file_must_include`).
+#[cfg(feature = "experimental")]
+pub async fn update_stream_source_streaming_url<E: Env + 'static>(
+    transport_url: Option<Url>,
+    mut stream: Stream,
+) -> Result<Stream, EnvError> {
+    match (transport_url, stream.source.to_owned()) {
+        (
+            Some(streaming_server_url),
+            StreamSource::Rar {
+                file_idx,
+                file_must_include,
+                rar_urls,
+            },
+        ) => {
+            if rar_urls.is_empty() {
+                return Err(EnvError::Other("No RAR URLs provided".into()));
+            }
+
+            // error on Url::join should never happen.
+            let create_stream_url = streaming_server_url
+                .join("rar/stream")
+                .map_err(|err| EnvError::Other(err.to_string()))?;
+
+            let request = Request::post(create_stream_url.as_str())
+                .header(http::header::CONTENT_TYPE, "application/json")
+                .body(rar_urls)
+                .expect("request builder failed");
+
+            let response = E::fetch::<_, ArchiveCreateResponse>(request).await?;
+            let response_key = response
+                .key
+                .filter(|key| !key.is_empty())
+                .ok_or_else(|| EnvError::Other("Could not create RAR key".into()))?;
+
+            let mut stream_url = streaming_server_url
+                .join("rar/stream")
+                .map_err(|err| EnvError::Other(err.to_string()))?;
+
+            let query_pairs = ArchiveStreamRequest {
+                response_key,
+                options: ArchiveStreamOptions {
+                    file_idx,
+                    file_must_include,
+                },
+            }
+            .to_query_pairs();
+            stream_url.query_pairs_mut().extend_pairs(query_pairs);
+
+            stream.source = StreamSource::Url { url: stream_url };
+            Ok(stream)
+        }
+        (
+            Some(streaming_server_url),
+            StreamSource::Zip {
+                file_idx,
+                file_must_include,
+                zip_urls,
+            },
+        ) => {
+            if zip_urls.is_empty() {
+                return Err(EnvError::Other("No RAR URLs provided".into()));
+            }
+
+            let create_stream_url = streaming_server_url
+                .join("zip/create")
+                .map_err(|err| EnvError::Other(err.to_string()))?;
+
+            let request = Request::post(create_stream_url.as_str())
+                .header(http::header::CONTENT_TYPE, "application/json")
+                .body(zip_urls)
+                .expect("request builder failed");
+
+            let response = E::fetch::<_, ArchiveCreateResponse>(request).await?;
+            let response_key = response
+                .key
+                .filter(|key| !key.is_empty())
+                .ok_or_else(|| EnvError::Other("Could not create RAR key".into()))?;
+
+            let mut stream_url = streaming_server_url
+                .join("zip/stream")
+                .map_err(|err| EnvError::Other(err.to_string()))?;
+
+            let query_pairs = ArchiveStreamRequest {
+                response_key,
+                options: ArchiveStreamOptions {
+                    file_idx,
+                    file_must_include,
+                },
+            }
+            .to_query_pairs();
+            stream_url.query_pairs_mut().extend_pairs(query_pairs);
+
+            stream.source = StreamSource::Url { url: stream_url };
+            Ok(stream)
+        }
+        // no further changes are needed
+        (_, _stream_source) => Ok(stream),
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use magnet_url::Magnet;
+
+    #[test]
+    fn test_magnet_hash() {
+        let magnet = Magnet::new("magnet:?xt=urn:btih:0d54e2339706f173ac20f4effb4ad42d9c7a84e9&dn=Halo.S02.1080p.WEBRip.x265.DDP5.1.Atmos-WAR").expect("Should be valid magnet Url");
+
+        // assert_eq!(magnet.xt)
+        dbg!(magnet);
     }
 }

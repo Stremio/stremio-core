@@ -7,7 +7,7 @@ use stremio_serde_hex::{SerHex, Strict};
 ///
 /// # Examples
 /// ```
-/// use stremio_core::types::resource::InfoHash;
+/// use stremio_core::types::torrent::InfoHash;
 ///
 /// let info_hash = "df389295484b3059a4726dc6d8a57f71bb5f4c81"
 ///     .parse::<InfoHash>()

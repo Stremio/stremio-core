@@ -30,6 +30,9 @@ derive = []
 # Enable core analytics
 analytics = []
 
+# Experimental features not implemented or supported
+experimental = []
+
 [dependencies]
 stremio-derive = { path = "stremio-derive" }
 stremio-watched-bitfield = { path = "stremio-watched-bitfield" }

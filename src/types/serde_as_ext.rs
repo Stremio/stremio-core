@@ -162,7 +162,7 @@ enum BoolOrValue<T> {
 #[cfg(test)]
 mod tests {
     use super::DefaultOnBool;
-    
+
     use serde::Deserialize;
     use serde_with::serde_as;
 
