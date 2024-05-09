@@ -278,11 +278,11 @@ fn test_pull_notifications_and_play_in_player() {
 
     assert_eq!(2, meta_notifs.len(), "Should have 2 video notifications");
     assert!(
-        meta_notifs.get("tt1:1:6").is_some(),
+        meta_notifs.contains_key("tt1:1:6"),
         "Should have notification for tt1:1:6"
     );
     assert!(
-        meta_notifs.get("tt1:1:7").is_some(),
+        meta_notifs.contains_key("tt1:1:7"),
         "Should have notification for tt1:1:7"
     );
     // Start watching episode 6
@@ -334,14 +334,13 @@ fn test_pull_notifications_and_play_in_player() {
     });
 
     assert!(
-        runtime
+        !runtime
             .model()
             .unwrap()
             .ctx
             .notifications
             .items
-            .get("tt1")
-            .is_none(),
+            .contains_key("tt1"),
         "All notifications for this MetaItem should be now dismissed"
     );
     // before pulling notifications, make sure to update the last_updated time

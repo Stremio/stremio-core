@@ -340,8 +340,6 @@ mod imdb_rating {
 
 #[cfg(test)]
 mod test {
-    use std::convert::TryFrom;
-
     use super::*;
 
     #[test]
