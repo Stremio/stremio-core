@@ -10,8 +10,8 @@ fn meta_item() {
         &vec![
             MetaItem {
                 preview: MetaItemPreview {
-                    id: "id".to_owned(),
-                    r#type: "type".to_owned(),
+                    id: "tt:123456".to_owned(),
+                    r#type: "movie".to_owned(),
                     name: "name".to_owned(),
                     poster: Some(Url::parse("http://poster/").unwrap()),
                     background: Some(Url::parse("http://background/").unwrap()),
@@ -29,8 +29,8 @@ fn meta_item() {
             },
             MetaItem {
                 preview: MetaItemPreview {
-                    id: "id".to_owned(),
-                    r#type: "type".to_owned(),
+                    id: "tt:654321".to_owned(),
+                    r#type: "movie".to_owned(),
                     name: "name".to_owned(),
                     poster: None,
                     background: None,
@@ -48,13 +48,13 @@ fn meta_item() {
             },
         ],
         &[
+            vec![Token::Seq { len: Some(2) }],
             vec![
-                Token::Seq { len: Some(2) },
                 Token::Map { len: None },
                 Token::Str("id"),
-                Token::Str("id"),
+                Token::Str("tt:123456"),
                 Token::Str("type"),
-                Token::Str("type"),
+                Token::Str("movie"),
                 Token::Str("name"),
                 Token::Str("name"),
                 Token::Str("poster"),
@@ -83,16 +83,23 @@ fn meta_item() {
             PosterShape::default_tokens(),
             vec![
                 Token::Str("links"),
+                // Token::None,
+                // Token::Some,
                 Token::Seq { len: Some(0) },
                 Token::SeqEnd,
                 Token::Str("trailerStreams"),
+                // Token::None,
+                // Token::Some,
                 Token::Seq { len: Some(0) },
                 Token::SeqEnd,
                 Token::Str("behaviorHints"),
+                // Token::None,
             ],
             MetaItemBehaviorHints::default_tokens(),
             vec![
                 Token::Str("videos"),
+                // Token::None,
+                Token::Some,
                 Token::Seq { len: Some(0) },
                 Token::SeqEnd,
                 Token::MapEnd,
@@ -100,9 +107,9 @@ fn meta_item() {
             vec![
                 Token::Map { len: None },
                 Token::Str("id"),
-                Token::Str("id"),
+                Token::Str("tt:654321"),
                 Token::Str("type"),
-                Token::Str("type"),
+                Token::Str("movie"),
                 Token::Str("name"),
                 Token::Str("name"),
                 Token::Str("poster"),
@@ -134,11 +141,12 @@ fn meta_item() {
             MetaItemBehaviorHints::default_tokens(),
             vec![
                 Token::Str("videos"),
+                Token::Some,
                 Token::Seq { len: Some(0) },
                 Token::SeqEnd,
                 Token::MapEnd,
-                Token::SeqEnd,
             ],
+            vec![Token::SeqEnd],
         ]
         .concat(),
     );
@@ -196,6 +204,9 @@ fn meta_item() {
             Token::Str("released"),
             Token::Some,
             Token::I64(10_000),
+            // videos field
+            Token::Str("videos"),
+            Token::None,
             Token::StructEnd,
             Token::Struct {
                 name: "MetaItem",
@@ -209,6 +220,9 @@ fn meta_item() {
             Token::I32(1),
             Token::Str("runtime"),
             Token::I32(2),
+            // videos field
+            Token::Str("videos"),
+            Token::None,
             Token::StructEnd,
             Token::SeqEnd,
         ],
@@ -255,6 +269,8 @@ fn meta_item_de_urls_none_when_empty() {
             Token::Str("logo"),
             Token::Some,
             Token::Str(""),
+            Token::Str("videos"),
+            Token::None,
             Token::StructEnd,
         ],
     );

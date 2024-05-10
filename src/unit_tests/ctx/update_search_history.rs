@@ -85,8 +85,7 @@ fn test_search_history_update() {
                 serde_json::from_str::<SearchHistoryBucket>(data)
                     .unwrap()
                     .items
-                    .get(query)
-                    .is_some()
+                    .contains_key(query)
             }),
         "Should have stored updated search history"
     );

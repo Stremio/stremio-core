@@ -16,14 +16,12 @@ use crate::types::streams::StreamsItem;
 
 const META_DETAILS_VIDEOS: &str = "stremio:///detail/series/tt13622776";
 
-const INFUSE_PLAYER_SETTINGS: Lazy<Settings> = Lazy::new(|| {
-    let mut settings = Settings::default();
-    settings.player_type = Some("infuse".to_owned());
-
-    settings
+static INFUSE_PLAYER_SETTINGS: Lazy<Settings> = Lazy::new(|| Settings {
+    player_type: Some("infuse".to_owned()),
+    ..Settings::default()
 });
 
-const TORRENT_STREAMS_ITEM: Lazy<StreamsItem> = Lazy::new(|| {
+static TORRENT_STREAMS_ITEM: Lazy<StreamsItem> = Lazy::new(|| {
     let stream = Stream {
         source: StreamSource::Torrent {
             info_hash: SerHex::<Strict>::from_hex("df2c94aec35f97943c4e432f25081b590cd35326")
@@ -81,13 +79,12 @@ fn library_item_deep_links_no_video() {
         },
         behavior_hints: Default::default(),
     };
-    let lidl = LibraryItemDeepLinks::try_from((
+    let lidl = LibraryItemDeepLinks::from((
         &lib_item,
         None,
         Some(&*STREAMING_SERVER_URL),
         &*INFUSE_PLAYER_SETTINGS,
-    ))
-    .unwrap();
+    ));
     assert_eq!(
         lidl.meta_details_videos,
         Some(META_DETAILS_VIDEOS.to_string())
@@ -130,14 +127,13 @@ fn library_item_deep_links_state_video_id_no_time_offset_infuse_player() {
         },
         behavior_hints: Default::default(),
     };
-    let lidl = LibraryItemDeepLinks::try_from((
+    let lidl = LibraryItemDeepLinks::from((
         &lib_item,
         // We have a video so we can have a Stream pulled from the StreamBucket!
         Some(&*TORRENT_STREAMS_ITEM),
         Some(&*STREAMING_SERVER_URL),
         &*INFUSE_PLAYER_SETTINGS,
-    ))
-    .unwrap();
+    ));
     assert_eq!(
         lidl.meta_details_videos,
         Some(META_DETAILS_VIDEOS.to_string())
@@ -184,14 +180,13 @@ fn library_item_deep_links_state_video_id() {
         },
         behavior_hints: Default::default(),
     };
-    let lidl = LibraryItemDeepLinks::try_from((
+    let lidl = LibraryItemDeepLinks::from((
         &lib_item,
         // We have a video so we can have a Stream pulled from the StreamBucket!
         Some(&*TORRENT_STREAMS_ITEM),
         Some(&*STREAMING_SERVER_URL),
         &*INFUSE_PLAYER_SETTINGS,
-    ))
-    .unwrap();
+    ));
     assert_eq!(
         lidl.meta_details_videos,
         Some(META_DETAILS_VIDEOS.to_string())
@@ -241,14 +236,13 @@ fn library_item_deep_links_behavior_hints_default_video_id() {
             other: Default::default(),
         },
     };
-    let lidl = LibraryItemDeepLinks::try_from((
+    let lidl = LibraryItemDeepLinks::from((
         &lib_item,
         // We have a video so we can have a Stream pulled from the StreamBucket!
         Some(&*TORRENT_STREAMS_ITEM),
         Some(&*STREAMING_SERVER_URL),
         &*INFUSE_PLAYER_SETTINGS,
-    ))
-    .unwrap();
+    ));
     assert_eq!(lidl.meta_details_videos, None);
     assert_eq!(
         lidl.meta_details_streams,
@@ -298,14 +292,13 @@ fn library_item_deep_links_state_and_behavior_hints_default_video_id() {
             other: Default::default(),
         },
     };
-    let lidl = LibraryItemDeepLinks::try_from((
+    let lidl = LibraryItemDeepLinks::from((
         &lib_item,
         // We have a video so we can have a Stream pulled from the StreamBucket!
         Some(&*TORRENT_STREAMS_ITEM),
         Some(&*STREAMING_SERVER_URL),
         &*INFUSE_PLAYER_SETTINGS,
-    ))
-    .unwrap();
+    ));
     assert_eq!(lidl.meta_details_videos, None);
     assert_eq!(
         lidl.meta_details_streams,
@@ -355,14 +348,13 @@ fn library_item_deep_links_state_no_time_offset_and_behavior_hints_default_video
             other: Default::default(),
         },
     };
-    let lidl = LibraryItemDeepLinks::try_from((
+    let lidl = LibraryItemDeepLinks::from((
         &lib_item,
         // We have a video so we can have a Stream pulled from the StreamBucket!
         Some(&*TORRENT_STREAMS_ITEM),
         Some(&*STREAMING_SERVER_URL),
         &*INFUSE_PLAYER_SETTINGS,
-    ))
-    .unwrap();
+    ));
     assert_eq!(lidl.meta_details_videos, None);
     assert_eq!(
         lidl.meta_details_streams,
