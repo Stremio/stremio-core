@@ -34,7 +34,7 @@ enclose = "1.1.*"
 itertools = "0.10.*"
 boolinator = "2.4.*"
 Inflector = "0.11.*"
-wasm-bindgen = { version = "=0.2.78", features = ["serde-serialize"] }
+wasm-bindgen = { version = "=0.2.92", features = ["serde-serialize"] }
 wasm-bindgen-futures = "0.4"
 gloo-utils = { version = "0.2", features = ["serde"] }
 
