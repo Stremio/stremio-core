@@ -204,11 +204,13 @@ impl Stream {
                                 .iter()
                                 .map(|header| ("r", format!("{}:{}", header.0, header.1))),
                         );
+
                         streaming_url.set_path(&format!(
                             "proxy/{query}/{url_path}",
                             query = proxy_query.finish().as_str(),
                             url_path = &url.path().strip_prefix('/').unwrap_or(url.path()),
                         ));
+
                         streaming_url.set_query(url.query());
                         Some(streaming_url)
                     }
@@ -575,7 +577,7 @@ mod tests {
 
         let stream = serde_json::from_value::<Stream>(stream_json)
             .expect("Should be able to deserialize valid Stream");
-        let expected = "http://127.0.0.1:3000/proxy/d=https%253A%252F%252Fwebdav.premiumize.me&h=Authorization%253ABasic+%2527XXXXXXXXXXXXXXXXXXXXXXX%253D%2527/%255B%2520Torrent911.vc%2520%255D%2520The.Beekeeper.2024.FRENCH.1080p.WEBRip.x264-RZP.mkv".parse::<Url>().expect("Valid url");
+        let expected = "http://127.0.0.1:3000/proxy/d=https%3A%2F%2Fwebdav.premiumize.me&h=Authorization%3ABasic+%27XXXXXXXXXXXXXXXXXXXXXXX%3D%27/%5B%20Torrent911.vc%20%5D%20The.Beekeeper.2024.FRENCH.1080p.WEBRip.x264-RZP.mkv".parse::<Url>().expect("Valid url");
         assert_eq!(
             expected,
             stream
