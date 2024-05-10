@@ -21,6 +21,8 @@ jobs:
     - name: Rust setup (stable)
       uses: dtolnay/rust-toolchain@stable
 
+    - uses: Swatinem/rust-cache@v2
+
     - name: Lint - rustfmt
       run: cargo fmt --all -- --check
 
