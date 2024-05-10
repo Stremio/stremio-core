@@ -52,6 +52,7 @@ impl ArchiveStreamRequest {
 /// Where all parameters are url encoded.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
+#[cfg(feature = "experimental")]
 pub struct ArchiveStreamOptions {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub file_idx: Option<u16>,
@@ -277,10 +278,11 @@ impl From<TorrentStatisticsRequest> for Request<()> {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
-
+    
     #[test]
+    #[cfg(feature = "experimental")]
     fn test_options_to_serde_json_value_keys_length() {
+        use super::ArchiveStreamOptions;
         // 0 keys
         {
             let json_value = serde_json::to_value(ArchiveStreamOptions {
