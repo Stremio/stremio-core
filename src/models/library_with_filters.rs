@@ -418,6 +418,7 @@ mod test {
             state: LibraryItemState {
                 last_watched: Some(Utc::now() - Duration::weeks(1)),
                 flagged_watched: 1,
+                times_watched: 1,
                 ..Default::default()
             },
             behavior_hints: crate::types::resource::MetaItemBehaviorHints::default(),

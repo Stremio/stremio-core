@@ -36,6 +36,27 @@ where
     }
 }
 
+impl<T, V, A> SerializeAs<Vec<T>> for SortedVec<V, A>
+where
+    T: Clone + Serialize,
+    V: SerializeAs<Vec<T>>,
+    A: SortedVecAdapter<Input = T>,
+{
+    fn serialize_as<S>(source: &Vec<T>, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        let args = A::args(source);
+
+        let source = source
+            .iter()
+            .sorted_by(|a, b| A::cmp(a, b, &args))
+            .cloned()
+            .collect::<Vec<_>>();
+        V::serialize_as(&source, serializer)
+    }
+}
+
 pub trait UniqueVecAdapter {
     type Input;
     type Output: Eq + Hash;

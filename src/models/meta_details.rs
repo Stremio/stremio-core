@@ -110,11 +110,10 @@ impl<E: Env + 'static> UpdateWithCtx<E> for MetaDetails {
             Msg::Action(Action::MetaDetails(ActionMetaDetails::MarkAsWatched(is_watched))) => {
                 match &self.library_item {
                     Some(library_item) => {
-                        Effects::msg(Msg::Internal(Internal::LibraryItemMarkAsWatched {
-                            id: library_item.id.clone(),
-                            is_watched: *is_watched,
-                        }))
-                        .unchanged()
+                        let mut library_item = library_item.to_owned();
+                        library_item.mark_as_watched::<E>(*is_watched);
+                        Effects::msg(Msg::Internal(Internal::UpdateLibraryItem(library_item)))
+                            .unchanged()
                     }
                     _ => Effects::none().unchanged(),
                 }
@@ -289,16 +288,25 @@ fn selected_guess_stream_update(
         }) => meta_path,
         _ => return Effects::default(),
     };
-    let meta_item = match meta_items
-        .iter()
-        .find_map(|meta_item| match &meta_item.content {
-            Some(Loadable::Ready(meta_item)) => Some(meta_item),
-            Some(Loadable::Loading) => None,
-            _ => None,
-        }) {
-        Some(meta_item) => meta_item,
-        _ => return Effects::default(),
+
+    // Wait for all requests to finish before retrieving the meta_item
+    let meta_item = if meta_items.iter().all(|meta_item| {
+        matches!(meta_item.content, Some(Loadable::Ready(..)))
+            || matches!(meta_item.content, Some(Loadable::Err(..)))
+    }) {
+        match meta_items
+            .iter()
+            .find_map(|meta_item| match &meta_item.content {
+                Some(Loadable::Ready(meta_item)) => Some(meta_item),
+                _ => None,
+            }) {
+            Some(meta_item) => meta_item,
+            _ => return Effects::default(),
+        }
+    } else {
+        return Effects::default();
     };
+
     let video_id = match (
         meta_item.videos.len(),
         &meta_item.preview.behavior_hints.default_video_id,
@@ -307,6 +315,7 @@ fn selected_guess_stream_update(
         (0, None) => meta_item.preview.id.to_owned(),
         _ => return Effects::default(),
     };
+
     eq_update(
         selected,
         Some(Selected {

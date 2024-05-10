@@ -2,36 +2,75 @@ use std::{collections::HashMap, io::Write};
 
 use base64::Engine;
 use boolinator::Boolinator;
-use flate2::write::{ZlibDecoder, ZlibEncoder};
-use flate2::Compression;
+use flate2::{
+    write::{ZlibDecoder, ZlibEncoder},
+    Compression,
+};
 use magnet_url::Magnet;
 use percent_encoding::utf8_percent_encode;
-use serde::de::Error;
-use serde::{Deserialize, Deserializer, Serialize};
-use serde_with::{serde_as, DefaultOnNull};
-use stremio_serde_hex::{SerHex, Strict};
+use serde::{de::Error, Deserialize, Deserializer, Serialize};
+use serde_with::{serde_as, DefaultOnNull, VecSkipError};
 use url::{form_urlencoded, Url};
+
+use stremio_serde_hex::{SerHex, Strict};
 
 use crate::{
     constants::{BASE64, URI_COMPONENT_ENCODE_SET, YOUTUBE_ADDON_ID_PREFIX},
     types::{resource::Subtitles, streams::StreamSourceTrait},
 };
 
+/// # Examples
+///
+/// ```
+/// use stremio_core::types::resource::{Stream, StreamSource, StreamBehaviorHints};
+///
+/// let expected_stream = Stream {
+///     source: StreamSource::Url { url: "https://example.com/some-awesome-video-file.mp4".parse().unwrap()},
+///     name: None,
+///     description: None,
+///     thumbnail: None,
+///     subtitles: vec![],
+///     behavior_hints: StreamBehaviorHints::default(),
+/// };
+///
+/// let default_fields_json = serde_json::json!({
+///     "url": "https://example.com/some-awesome-video-file.mp4",
+/// });
+/// let default_fields = serde_json::from_value::<Stream>(default_fields_json).unwrap();
+///
+/// assert_eq!(default_fields, expected_stream);
+///
+/// let null_fields_json = serde_json::json!({
+///     "url": "https://example.com/some-awesome-video-file.mp4",
+///     "name": null,
+///     "description": null,
+///     "thumbnail": null,
+///     "subtitles": null,
+///     "behaviorHints": null,
+/// });
+///
+/// let null_fields = serde_json::from_value::<Stream>(null_fields_json).unwrap();
+///
+/// assert_eq!(null_fields, expected_stream);
+/// ```
+#[serde_as]
 #[derive(Clone, PartialEq, Eq, Serialize, Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct Stream<S: StreamSourceTrait = StreamSource> {
     // pub struct Stream {
     #[serde(flatten)]
     pub source: S,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
-    #[serde(alias = "title", skip_serializing_if = "Option::is_none")]
+    #[serde(default, alias = "title", skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub thumbnail: Option<String>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde_as(as = "DefaultOnNull<VecSkipError<_>>")]
     pub subtitles: Vec<Subtitles>,
     #[serde(default, skip_serializing_if = "is_default_value")]
+    #[serde_as(as = "DefaultOnNull")]
     pub behavior_hints: StreamBehaviorHints,
 }
 
@@ -402,6 +441,7 @@ pub enum StreamSource {
         #[serde(default)]
         file_idx: Option<u16>,
         #[serde(default, skip_serializing_if = "Vec::is_empty")]
+        #[serde_as(deserialize_as = "DefaultOnNull")]
         file_must_include: Vec<String>,
     },
     #[serde(rename_all = "camelCase")]
@@ -410,12 +450,14 @@ pub enum StreamSource {
         #[serde(default)]
         file_idx: Option<u16>,
         #[serde(default, skip_serializing_if = "Vec::is_empty")]
+        #[serde_as(deserialize_as = "DefaultOnNull")]
         file_must_include: Vec<String>,
     },
     #[serde(rename_all = "camelCase")]
     Torrent {
         #[serde(with = "SerHex::<Strict>")]
         info_hash: [u8; 20],
+        #[serde(default)]
         file_idx: Option<u16>,
         #[serde_as(deserialize_as = "DefaultOnNull")]
         #[serde(default, alias = "sources")]
