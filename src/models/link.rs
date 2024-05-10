@@ -10,7 +10,6 @@ use derive_more::From;
 use enclose::enclose;
 use futures::{future, FutureExt, TryFutureExt};
 use serde::Serialize;
-use std::convert::TryFrom;
 use std::fmt;
 
 #[derive(Clone, PartialEq, From, Serialize, Debug)]
