@@ -4,7 +4,6 @@ use crate::types::addon::{ResourcePath, ResourceRequest};
 use crate::types::profile::Settings;
 use crate::types::resource::Video;
 use base64::Engine;
-use std::convert::TryFrom;
 use std::str::FromStr;
 use url::Url;
 
@@ -29,8 +28,7 @@ fn video_deep_links() {
     };
     let streaming_server_url = Some(Url::parse(STREAMING_SERVER_URL).unwrap());
     let settings = Settings::default();
-    let vdl =
-        VideoDeepLinks::try_from((&video, &request, &streaming_server_url, &settings)).unwrap();
+    let vdl = VideoDeepLinks::from((&video, &request, &streaming_server_url, &settings));
     assert_eq!(
         vdl.meta_details_streams,
         format!(

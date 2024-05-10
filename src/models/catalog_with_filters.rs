@@ -16,7 +16,6 @@ use boolinator::Boolinator;
 use derivative::Derivative;
 use itertools::Itertools;
 use serde::{Deserialize, Serialize};
-use std::convert::TryFrom;
 use std::ops::Add;
 
 #[derive(PartialEq, Eq)]
