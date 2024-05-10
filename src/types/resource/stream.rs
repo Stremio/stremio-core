@@ -212,12 +212,11 @@ impl Stream {
                                 .iter()
                                 .map(|header| ("r", format!("{}:{}", header.0, header.1))),
                         );
-                        streaming_url
-                            .path_segments_mut()
-                            .ok()?
-                            .push("proxy")
-                            .push(proxy_query.finish().as_str())
-                            .push(&url.path()[1..]);
+                        streaming_url.set_path(&format!(
+                            "proxy/{query}/{url_path}",
+                            query = proxy_query.finish().as_str(),
+                            url_path = &url.path().strip_prefix('/').unwrap_or(url.path()),
+                        ));
                         streaming_url.set_query(url.query());
                         Some(streaming_url.to_string())
                     }

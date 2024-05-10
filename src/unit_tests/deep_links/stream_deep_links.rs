@@ -11,7 +11,7 @@ use url::Url;
 
 const MAGNET_STR_URL: &str = "magnet:?xt=urn:btih:dd8255ecdc7ca55fb0bbf81323d87062db1f6d1c";
 const HTTP_STR_URL: &str = "http://domain.root/path";
-const HTTP_WITH_QUERY_STR_URL: &str = "http://domain.root/path?param=some&foo=bar";
+const HTTP_WITH_QUERY_STR_URL: &str = "http://domain.root/some/path?param=some&foo=bar";
 const BASE64_HTTP_URL: &str = "data:application/octet-stream;charset=utf-8;base64,I0VYVE0zVQojRVhUSU5GOjAKaHR0cDovL2RvbWFpbi5yb290L3BhdGg=";
 const STREAMING_SERVER_URL: &str = "http://127.0.0.1:11470";
 const YT_ID: &str = "aqz-KE-bpKQ";
@@ -102,8 +102,7 @@ fn stream_deep_links_http_with_request_headers() {
         sdl.external_player.streaming,
         Some(format!(
             "{}/proxy/{}",
-            STREAMING_SERVER_URL,
-            "d=http%253A%252F%252Fdomain.root&h=Authorization%253Amy%252Btoken/path"
+            STREAMING_SERVER_URL, "d=http%3A%2F%2Fdomain.root&h=Authorization%3Amy%2Btoken/path"
         ))
     );
 }
@@ -138,13 +137,13 @@ fn stream_deep_links_http_with_request_response_headers_and_query_params() {
     let streaming_server_url = Some(Url::parse(STREAMING_SERVER_URL).unwrap());
     let settings = Settings::default();
     let sdl = StreamDeepLinks::from((&stream, &streaming_server_url, &settings));
-    assert_eq!(sdl.player, "stremio:///player/eAEBrABT%2F3sidXJsIjoiaHR0cDovL2RvbWFpbi5yb290L3BhdGg%2FcGFyYW09c29tZSZmb289YmFyIiwiYmVoYXZpb3JIaW50cyI6eyJwcm94eUhlYWRlcnMiOnsicmVxdWVzdCI6eyJBdXRob3JpemF0aW9uIjoibXkrdG9rZW4ifSwicmVzcG9uc2UiOnsiQ29udGVudC1UeXBlIjoiYXBwbGljYXRpb24veG1sIn19fX322z6q".to_string());
+    assert_eq!(sdl.player, "stremio:///player/eAEBsQBO%2F3sidXJsIjoiaHR0cDovL2RvbWFpbi5yb290L3NvbWUvcGF0aD9wYXJhbT1zb21lJmZvbz1iYXIiLCJiZWhhdmlvckhpbnRzIjp7InByb3h5SGVhZGVycyI6eyJyZXF1ZXN0Ijp7IkF1dGhvcml6YXRpb24iOiJteSt0b2tlbiJ9LCJyZXNwb25zZSI6eyJDb250ZW50LVR5cGUiOiJhcHBsaWNhdGlvbi94bWwifX19fT2nQI0%3D".to_string());
     assert_eq!(
         sdl.external_player.streaming,
         Some(format!(
             "{}/proxy/{}",
             STREAMING_SERVER_URL,
-            "d=http%253A%252F%252Fdomain.root&h=Authorization%253Amy%252Btoken&r=Content-Type%253Aapplication%252Fxml/path?param=some&foo=bar"
+            "d=http%3A%2F%2Fdomain.root&h=Authorization%3Amy%2Btoken&r=Content-Type%3Aapplication%2Fxml/some/path?param=some&foo=bar"
         ))
     );
 }
@@ -187,7 +186,7 @@ fn stream_deep_links_torrent() {
                     file_idx,
                     utf8_percent_encode(
                         "http://bt1.archive.org:6969/announce",
-                        URI_COMPONENT_ENCODE_SET
+                        URI_COMPONENT_ENCODE_SET,
                     ),
                 )
             ))
@@ -202,7 +201,7 @@ fn stream_deep_links_torrent() {
             file_idx,
             utf8_percent_encode(
                 "http://bt1.archive.org:6969/announce",
-                URI_COMPONENT_ENCODE_SET
+                URI_COMPONENT_ENCODE_SET,
             ),
         ))
     );
@@ -249,7 +248,7 @@ fn stream_deep_links_torrent_without_file_index() {
                     -1,
                     utf8_percent_encode(
                         "http://bt1.archive.org:6969/announce",
-                        URI_COMPONENT_ENCODE_SET
+                        URI_COMPONENT_ENCODE_SET,
                     ),
                 )
             ))
@@ -264,7 +263,7 @@ fn stream_deep_links_torrent_without_file_index() {
             -1,
             utf8_percent_encode(
                 "http://bt1.archive.org:6969/announce",
-                URI_COMPONENT_ENCODE_SET
+                URI_COMPONENT_ENCODE_SET,
             ),
         ))
     );
