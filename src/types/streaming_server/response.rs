@@ -3,13 +3,6 @@ use url::Url;
 
 use crate::types::{streaming_server::Settings, torrent::InfoHash};
 
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
-#[cfg(feature = "experimental")]
-pub struct ArchiveCreateResponse {
-    pub key: Option<String>,
-}
-
 #[derive(Clone, PartialEq, Serialize, Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct SettingsResponse {

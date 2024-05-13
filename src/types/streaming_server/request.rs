@@ -15,51 +15,6 @@ pub struct StatisticsRequest {
     pub file_idx: u16,
 }
 
-#[cfg(feature = "experimental")]
-pub struct ArchiveStreamRequest {
-    /// The `rar/create` or `zip/create` key returned in the response
-    pub response_key: String,
-    pub options: ArchiveStreamOptions,
-}
-
-#[cfg(feature = "experimental")]
-impl ArchiveStreamRequest {
-    pub fn to_query_pairs(self) -> Vec<(String, String)> {
-        let options = serde_json::to_value(&self.options).expect("should serialize");
-        let options_object = options.as_object().expect("Should be an object");
-
-        vec![
-            (
-                "key".into(),
-                // append the length of the options
-                // keep in mind that `None` options should always be treated as not-set
-                // i.e. should not be serialized
-                format!(
-                    "{key}{length}",
-                    key = self.response_key,
-                    length = options_object.len()
-                ),
-            ),
-            ("o".into(), options.to_string()),
-        ]
-    }
-}
-
-/// Server's `rar/stream` and `zip/stream` options of the query.
-///
-/// Format: `rar/stream?key={create_key}{options length}&o={options_json_string}`
-///
-/// Where all parameters are url encoded.
-#[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
-#[cfg(feature = "experimental")]
-pub struct ArchiveStreamOptions {
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub file_idx: Option<u16>,
-    #[serde(skip_serializing_if = "Vec::is_empty")]
-    pub file_must_include: Vec<String>,
-}
-
 pub struct CreateTorrentBlobRequest {
     pub server_url: Url,
     pub torrent: Vec<u8>,
@@ -195,54 +150,6 @@ impl From<CreateMagnetRequest> for Request<CreateMagnetBody> {
     }
 }
 
-/// # Examples
-///
-/// Example which creates a request url with no body for the server:
-/// `http://127.0.0.1:11470/opensubHash?videoUrl=https%3A%2F%2Fexample.com%2Fmy-awesome-video.mp4`
-///
-/// ```
-/// use stremio_core::types::streaming_server::OpensubtitlesParamsRequest;
-///
-/// let request: http::Request<()> = OpensubtitlesParamsRequest {
-///     server_url: "http://127.0.0.1:11470/".parse().unwrap(),
-///     media_url: "https://example.com/my-awesome-video.mp4".parse().unwrap(),
-///     
-/// }.into();
-///
-/// assert_eq!("http://127.0.0.1:11470/opensubHash?videoUrl=https%3A%2F%2Fexample.com%2Fmy-awesome-video.mp4", request.uri().to_string());
-/// assert_eq!(&(), request.body());
-/// ```
-#[cfg(feature = "experimental")]
-pub struct OpensubtitlesParamsRequest {
-    pub server_url: Url,
-    pub media_url: Url,
-}
-
-#[cfg(feature = "experimental")]
-impl Into<Request<()>> for OpensubtitlesParamsRequest {
-    fn into(self) -> Request<()> {
-        // var queryParams = new URLSearchParams([['videoUrl', mediaURL]]);
-        // return fetch(url.resolve(streamingServerURL, '/opensubHash?' + queryParams.toString()))
-        let url = {
-            let mut uri = self
-                .server_url
-                .join("opensubHash")
-                .expect("Should always be valid Url");
-            {
-                let mut x = uri.query_pairs_mut();
-                x.append_pair("videoUrl", self.media_url.as_str());
-            }
-
-            uri
-        };
-
-        Request::builder()
-            .uri(url.as_str())
-            .body(())
-            .expect("Should always be valid Request!")
-    }
-}
-
 /// Filename request to the server.
 ///
 /// `{streaming_sever_url}/{info_hash_url_encoded}/{file_idx_url_encoded}/stats.json`
@@ -273,51 +180,5 @@ impl From<TorrentStatisticsRequest> for Request<()> {
             .header(http::header::CONTENT_TYPE, "application/json")
             .body(())
             .expect("Always valid request!")
-    }
-}
-
-#[cfg(test)]
-mod tests {
-
-    #[test]
-    #[cfg(feature = "experimental")]
-    fn test_options_to_serde_json_value_keys_length() {
-        use super::ArchiveStreamOptions;
-        // 0 keys
-        {
-            let json_value = serde_json::to_value(ArchiveStreamOptions {
-                file_idx: None,
-                file_must_include: vec![],
-            })
-            .expect("Should serialize to Value");
-
-            let object = json_value.as_object().expect("It is a Map");
-            assert!(object.is_empty());
-        }
-
-        // only fileIdx
-        {
-            let json_value = serde_json::to_value(ArchiveStreamOptions {
-                file_idx: Some(1),
-                file_must_include: vec![],
-            })
-            .expect("Should serialize to Value");
-
-            let object = json_value.as_object().expect("It is a Map");
-            assert_eq!(1, object.len(), "Only fileIdx is set");
-            assert_eq!(object.keys().next().cloned(), Some("fileIdx".to_string()));
-        }
-
-        // both keys are set
-        {
-            let json_value = serde_json::to_value(ArchiveStreamOptions {
-                file_idx: Some(1),
-                file_must_include: vec!["fileName".into(), "nameFile".into()],
-            })
-            .expect("Should serialize to Value");
-
-            let object = json_value.as_object().expect("It is a Map");
-            assert_eq!(2, object.len(), "Only fileIdx is set");
-        }
     }
 }
