@@ -278,7 +278,7 @@ impl From<TorrentStatisticsRequest> for Request<()> {
 
 #[cfg(test)]
 mod tests {
-    
+
     #[test]
     #[cfg(feature = "experimental")]
     fn test_options_to_serde_json_value_keys_length() {
