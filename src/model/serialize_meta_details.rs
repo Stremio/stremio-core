@@ -113,7 +113,6 @@ pub fn serialize_meta_details(
                 .iter()
                 .all(|meta_item| matches!(&meta_item.content, Some(Loadable::Err(_))))
             {
-                tracing::info!("All errored: {:?}", meta_details.meta_items);
                 meta_details.meta_items.first()
             } else {
                 meta_details
