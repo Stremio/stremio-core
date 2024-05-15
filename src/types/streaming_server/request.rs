@@ -1,12 +1,8 @@
-use std::iter;
-
-use http::{header::CONTENT_TYPE, Request};
+use http::Request;
 use serde::{Deserialize, Serialize};
 use url::Url;
 
 use crate::types::{streaming_server::PeerSearch, torrent::InfoHash};
-
-use super::CreatedTorrent;
 
 #[derive(Clone, PartialEq, Serialize, Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
@@ -37,66 +33,6 @@ pub struct CreateTorrentBlobBody {
     pub blob: String,
 }
 
-/// # Examples
-///
-/// Example which creates a request url with body for the server:
-/// `http://127.0.0.1:11470/df389295484b3059a4726dc6d8a57f71bb5f4c81/1?tr=https%3A%2F%2Fexample.com%2Fmy-awesome-video.mp4`
-///
-/// ```
-/// use stremio_core::types::streaming_server::{CreateTorrentRequest, CreatedTorrent};
-///
-/// let request: http::Request<CreatedTorrent> = CreateTorrentRequest {
-///     server_url: "http://127.0.0.1:11470/".parse().unwrap(),
-///     sources: vec!["https://example.com/my-awesome-video.mp4".into()],
-///     info_hash: "df389295484b3059a4726dc6d8a57f71bb5f4c81".parse().unwrap(),
-///     file_idx: 1,
-/// }.into();
-///
-/// assert_eq!("http://127.0.0.1:11470/df389295484b3059a4726dc6d8a57f71bb5f4c81/1?tr=https%3A%2F%2Fexample.com%2Fmy-awesome-video.mp4", request.uri().to_string());
-///  // TODO: assert_eq!(&(), request.body());
-/// ```
-pub struct CreateTorrentRequest {
-    pub server_url: Url,
-    pub sources: Vec<String>,
-    pub info_hash: InfoHash,
-    pub file_idx: u64,
-}
-
-impl From<CreateTorrentRequest> for Request<CreatedTorrent> {
-    fn from(val: CreateTorrentRequest) -> Self {
-        let url = {
-            let mut uri = val
-                .server_url
-                .join(&format!("{}/{}", val.info_hash, val.file_idx))
-                .expect("Should always be valid Url");
-
-            {
-                let mut x = uri.query_pairs_mut();
-                for source in &val.sources {
-                    x.append_pair("tr", source);
-                }
-            }
-
-            uri
-        };
-
-        let create_torrent = CreatedTorrent {
-            torrent: super::Torrent {
-                info_hash: val.info_hash,
-            },
-            peer_search: PeerSearch::new(40, 200, val.info_hash, val.sources),
-            guess_file_idx: None,
-        };
-
-        Request::builder()
-            .uri(url.as_str())
-            .method("POST")
-            .header(CONTENT_TYPE, "application/json")
-            .body(create_torrent)
-            .expect("Should always be valid Request!")
-    }
-}
-
 pub struct CreateMagnetRequest {
     pub server_url: Url,
     pub info_hash: InfoHash,
@@ -124,14 +60,7 @@ impl From<CreateMagnetRequest> for Request<CreateMagnetBody> {
                 info_hash: val.info_hash.to_owned(),
             },
             peer_search: if !val.announce.is_empty() {
-                Some(PeerSearch {
-                    sources: iter::once(&format!("dht:{info_hash}"))
-                        .chain(val.announce.iter())
-                        .cloned()
-                        .collect(),
-                    min: 40,
-                    max: 200,
-                })
+                Some(PeerSearch::new(40, 200, info_hash, val.announce))
             } else {
                 None
             },
