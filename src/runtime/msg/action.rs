@@ -151,6 +151,13 @@ pub enum ActionPlayer {
     StreamStateChanged {
         state: StreamItemState,
     },
+    /// Seek performed by the user when using the seekbar or
+    /// the shortcuts for seeking
+    Seek {
+        time: u64,
+        duration: u64,
+        device: String,
+    },
     TimeChanged {
         time: u64,
         duration: u64,
