@@ -129,5 +129,5 @@ pub fn serialize_catalogs_with_extra(
             )
             .collect::<Vec<_>>(),
     })
-    .unwrap()
+    .expect("JsValue from model::CatalogsWithExtra")
 }

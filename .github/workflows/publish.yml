@@ -24,7 +24,7 @@ jobs:
 
       # For releasing we always use stable
       - name: Rust setup
-        uses: dtolnay/rust-toolchain@stable
+        uses: dtolnay/rust-toolchain@1.77
         with:
           targets: wasm32-unknown-unknown
       - uses: taiki-e/install-action@v2

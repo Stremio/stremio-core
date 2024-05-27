@@ -304,5 +304,5 @@ pub fn serialize_player(player: &Player, ctx: &Ctx, streaming_server: &Streaming
                 },
             }),
     })
-    .unwrap()
+    .expect("JsValue from model::Player")
 }

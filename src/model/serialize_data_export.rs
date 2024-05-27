@@ -22,5 +22,5 @@ pub fn serialize_data_export(data_export: &DataExport) -> JsValue {
             .as_ref()
             .map(|(_auth_key, loadable)| loadable),
     })
-    .unwrap()
+    .expect("JsValue from model::DataExport")
 }

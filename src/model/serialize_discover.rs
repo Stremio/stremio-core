@@ -167,7 +167,10 @@ pub fn serialize_discover(
             next_page: discover.selectable.next_page.is_some(),
         },
         catalog: (!discover.catalog.is_empty()).as_option().map(|_| {
-            let first_page = discover.catalog.first().unwrap();
+            let first_page = discover
+                .catalog
+                .first()
+                .expect("discover catalog first page");
             model::ResourceLoadable {
                 content: match &first_page.content {
                     Some(Loadable::Ready(_)) => Loadable::Ready(
@@ -228,5 +231,5 @@ pub fn serialize_discover(
             }
         }),
     })
-    .unwrap()
+    .expect("JsValue from Discover model::CatalogWithFilters")
 }
