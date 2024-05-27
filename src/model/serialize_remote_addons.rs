@@ -107,5 +107,5 @@ pub fn serialize_remote_addons(
                 },
             }),
     })
-    .unwrap()
+    .expect("JsValue from model::CatalogWithFilters")
 }

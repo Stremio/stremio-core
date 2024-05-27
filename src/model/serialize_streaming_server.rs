@@ -53,5 +53,5 @@ pub fn serialize_streaming_server(streaming_server: &StreamingServer) -> JsValue
             }),
         statistics: streaming_server.statistics.as_ref(),
     })
-    .unwrap()
+    .expect("JsValue from model::StreamingServer")
 }

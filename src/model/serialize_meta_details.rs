@@ -376,5 +376,5 @@ pub fn serialize_meta_details(
                     .unwrap_or_else(|| meta_item.preview.name.to_owned())
             }),
     })
-    .unwrap()
+    .expect("JsValue from model::MetaDetails")
 }

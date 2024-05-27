@@ -55,7 +55,8 @@ lazy_static! {
     static ref VISIT_ID: String = hex::encode(WebEnv::random_buffer(10));
     static ref ANALYTICS: Analytics<WebEnv> = Default::default();
     static ref PLAYER_REGEX: Regex =
-        Regex::new(r"^/player/([^/]*)(?:/([^/]*)/([^/]*)/([^/]*)/([^/]*)/([^/]*))?$").unwrap();
+        Regex::new(r"^/player/([^/]*)(?:/([^/]*)/([^/]*)/([^/]*)/([^/]*)/([^/]*))?$")
+            .expect("Player Regex failed to build");
 }
 
 #[derive(Serialize)]
@@ -274,7 +275,8 @@ impl Env for WebEnv {
                 let value = String::from_utf8_lossy(value.as_bytes()).into_owned();
                 headers.entry(key).or_insert_with(Vec::new).push(value);
             }
-            <JsValue as JsValueSerdeExt>::from_serde(&headers).unwrap()
+            <JsValue as JsValueSerdeExt>::from_serde(&headers)
+                .expect("WebEnv::fetch: JsValue from Headers failed to be built")
         };
         let body = match serde_json::to_string(&body) {
             Ok(ref body) if body != "null" && parts.method != Method::GET => {
@@ -301,7 +303,9 @@ impl Env for WebEnv {
                 )
             })?;
 
-            let resp = resp.dyn_into::<web_sys::Response>().unwrap();
+            let resp = resp
+                .dyn_into::<web_sys::Response>()
+                .expect("WebEnv::fetch: Response into web_sys::Response failed to be built");
             // status check and JSON extraction from response.
             let resp = if resp.status() != 200 {
                 return Err(EnvError::Fetch(format!(
@@ -311,8 +315,21 @@ impl Env for WebEnv {
             } else {
                 // Response.json() to JSON::Stringify
 
-                JsFuture::from(resp.text().unwrap())
-                    .map_err(|error| {
+                JsFuture::from(
+                    resp.text()
+                        .expect("WebEnv::fetch: Response text failed to be retrieved"),
+                )
+                .map_err(|error| {
+                    EnvError::Fetch(
+                        error
+                            .dyn_into::<js_sys::Error>()
+                            .map(|error| String::from(error.message()))
+                            .unwrap_or_else(|_| UNKNOWN_ERROR.to_owned()),
+                    )
+                })
+                .await
+                .and_then(|js_value| {
+                    js_value.dyn_into::<js_sys::JsString>().map_err(|error| {
                         EnvError::Fetch(
                             error
                                 .dyn_into::<js_sys::Error>()
@@ -320,17 +337,7 @@ impl Env for WebEnv {
                                 .unwrap_or_else(|_| UNKNOWN_ERROR.to_owned()),
                         )
                     })
-                    .await
-                    .and_then(|js_value| {
-                        js_value.dyn_into::<js_sys::JsString>().map_err(|error| {
-                            EnvError::Fetch(
-                                error
-                                    .dyn_into::<js_sys::Error>()
-                                    .map(|error| String::from(error.message()))
-                                    .unwrap_or_else(|_| UNKNOWN_ERROR.to_owned()),
-                            )
-                        })
-                    })?
+                })?
             };
 
             response_deserialize(resp)
@@ -444,7 +451,7 @@ impl Env for WebEnv {
             visit_id: VISIT_ID.to_owned(),
             path: sanitize_location_path(path),
         })
-        .unwrap()
+        .expect("AnalyticsContext to JSON")
     }
 
     #[cfg(debug_assertions)]
@@ -462,20 +469,22 @@ fn sanitize_location_path(path: &str) -> String {
                 .unwrap_or_default();
             let path = match PLAYER_REGEX.captures(url.path()) {
                 Some(captures) => {
-                    if captures.get(3).is_some()
-                        && captures.get(4).is_some()
-                        && captures.get(5).is_some()
-                        && captures.get(6).is_some()
-                    {
-                        format!(
-                            "/player/***/***/{}/{}/{}/{}",
-                            captures.get(3).unwrap().as_str(),
-                            captures.get(4).unwrap().as_str(),
-                            captures.get(5).unwrap().as_str(),
-                            captures.get(6).unwrap().as_str(),
-                        )
-                    } else {
-                        "/player/***".to_owned()
+                    match (
+                        captures.get(3),
+                        captures.get(4),
+                        captures.get(5),
+                        captures.get(6),
+                    ) {
+                        (Some(match_3), Some(match_4), Some(match_5), Some(match_6)) => {
+                            format!(
+                                "/player/***/***/{cap_3}/{cap_4}/{cap_5}/{cap_6}",
+                                cap_3 = match_3.as_str(),
+                                cap_4 = match_4.as_str(),
+                                cap_5 = match_5.as_str(),
+                                cap_6 = match_6.as_str(),
+                            )
+                        }
+                        _ => "/player/***".to_owned(),
                     }
                 }
                 _ => url.path().to_owned(),

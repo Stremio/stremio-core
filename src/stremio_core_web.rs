@@ -133,7 +133,7 @@ pub async fn initialize_runtime(emit_to_ui: js_sys::Function) -> Result<(), JsVa
                             ));
                         };
                         emit_to_ui
-                            .call1(&JsValue::NULL, &<JsValue as JsValueSerdeExt>::from_serde(&event).unwrap())
+                            .call1(&JsValue::NULL, &<JsValue as JsValueSerdeExt>::from_serde(&event).expect("Event handler: JsValue from Event"))
                             .expect("emit event failed");
                         future::ready(())
                     }));
@@ -144,13 +144,14 @@ pub async fn initialize_runtime(emit_to_ui: js_sys::Function) -> Result<(), JsVa
                 Err(error) => {
                     *RUNTIME.write().expect("runtime write failed") =
                         Some(Loadable::Err(error.to_owned()));
-                    Err(<JsValue as JsValueSerdeExt>::from_serde(&error).unwrap())
+                    Err(<JsValue as JsValueSerdeExt>::from_serde(&error)
+                        .expect("Storage: JsValue from Event"))
                 }
             }
         }
         Err(error) => {
             *RUNTIME.write().expect("runtime write failed") = Some(Loadable::Err(error.to_owned()));
-            Err(<JsValue as JsValueSerdeExt>::from_serde(&error).unwrap())
+            Err(<JsValue as JsValueSerdeExt>::from_serde(&error).expect("JsValue from Event"))
         }
     }
 }
@@ -165,7 +166,7 @@ pub fn get_debug_state() -> JsValue {
         .as_ref()
         .expect("runtime is not ready");
     let model = runtime.model().expect("model read failed");
-    <JsValue as JsValueSerdeExt>::from_serde(&*model).unwrap()
+    <JsValue as JsValueSerdeExt>::from_serde(&*model).expect("JsValue from WebModel")
 }
 
 #[wasm_bindgen]
@@ -230,7 +231,9 @@ pub fn analytics(event: JsValue, location_hash: JsValue) {
 pub fn decode_stream(stream: JsValue) -> JsValue {
     let stream = stream.as_string().map(Stream::decode);
     match stream {
-        Some(Ok(stream)) => <JsValue as JsValueSerdeExt>::from_serde(&stream).unwrap(),
+        Some(Ok(stream)) => {
+            <JsValue as JsValueSerdeExt>::from_serde(&stream).expect("JsValue from Stream")
+        }
         _ => JsValue::NULL,
     }
 }

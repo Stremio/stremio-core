@@ -39,5 +39,5 @@ pub fn serialize_local_search(local_search: &LocalSearch) -> JsValue {
             .unique_by(|i| i.query)
             .collect(),
     })
-    .unwrap()
+    .expect("JsValue from model::LocalSearch")
 }

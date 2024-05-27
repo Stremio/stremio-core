@@ -76,5 +76,5 @@ pub fn serialize_installed_addons(installed_addons: &InstalledAddonsWithFilters)
             })
             .collect(),
     })
-    .unwrap()
+    .expect("JsValue from model::InstalledAddonsWithFilters")
 }
