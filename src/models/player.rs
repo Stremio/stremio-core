@@ -479,8 +479,18 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                             .overall_time_watched
                             .saturating_add(time_watched);
                     };
-                    time.clone_into(&mut library_item.state.time_offset);
-                    duration.clone_into(&mut library_item.state.duration);
+
+                    // if we seek forward, time will be < time_offset
+                    // this is the only thing we can guard against!
+                    //
+                    // for both backward and forward seeking we expect the apps to
+                    // send the right actions and update the times accordingly
+                    // when the state changes (from seeking to playing and vice versa)
+                    if time > &library_item.state.time_offset {
+                        time.clone_into(&mut library_item.state.time_offset);
+                        duration.clone_into(&mut library_item.state.duration);
+                    }
+
                     if library_item.state.flagged_watched == 0
                         && library_item.state.time_watched as f64
                             > library_item.state.duration as f64 * WATCHED_THRESHOLD_COEF
