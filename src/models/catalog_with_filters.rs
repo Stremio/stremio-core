@@ -221,6 +221,7 @@ where
                 &self.catalog,
                 &ctx.profile,
             ),
+            Msg::Internal(Internal::LibraryChanged(_)) => Effects::none(),
             _ => Effects::none().unchanged(),
         }
     }
