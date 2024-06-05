@@ -51,6 +51,7 @@ fn create_addon_streams_item(addon: &Descriptor) -> StreamsItem {
         name: None,
         description: None,
         thumbnail: None,
+        tags: vec![],
         subtitles: vec![],
         behavior_hints: StreamBehaviorHints::default(),
     };

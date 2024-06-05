@@ -298,6 +298,7 @@ fn test_pull_notifications_and_play_in_player() {
                     },
                     name: None,
                     description: None,
+                    tags: vec![],
                     thumbnail: None,
                     subtitles: vec![],
                     behavior_hints: Default::default(),

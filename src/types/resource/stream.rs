@@ -31,6 +31,7 @@ use crate::types::resource::Subtitles;
 ///     description: None,
 ///     thumbnail: None,
 ///     subtitles: vec![],
+///     tags: vec![],
 ///     behavior_hints: StreamBehaviorHints::default(),
 /// };
 ///
@@ -47,6 +48,7 @@ use crate::types::resource::Subtitles;
 ///     "description": null,
 ///     "thumbnail": null,
 ///     "subtitles": null,
+///     "tags": null,
 ///     "behaviorHints": null,
 /// });
 ///
@@ -69,6 +71,9 @@ pub struct Stream {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     #[serde_as(as = "DefaultOnNull<VecSkipError<_>>")]
     pub subtitles: Vec<Subtitles>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde_as(as = "DefaultOnNull<VecSkipError<_>>")]
+    pub tags: Vec<Tag>,
     #[serde(default, skip_serializing_if = "is_default_value")]
     #[serde_as(as = "DefaultOnNull")]
     pub behavior_hints: StreamBehaviorHints,
@@ -146,6 +151,7 @@ impl Stream {
                 },
                 name: None,
                 description: None,
+                tags: vec![],
                 thumbnail: None,
                 subtitles: vec![],
                 behavior_hints: Default::default(),
@@ -546,6 +552,14 @@ pub struct StreamBehaviorHints {
     pub video_size: Option<u64>,
     #[serde(flatten)]
     pub other: HashMap<String, serde_json::Value>,
+}
+
+#[derive(Clone, PartialEq, Eq, Serialize, Deserialize, Debug)]
+#[cfg_attr(test, derive(Derivative))]
+#[cfg_attr(test, derivative(Default))]
+pub struct Tag {
+    pub name: String,
+    pub value: String,
 }
 
 fn is_default_value<T: Default + PartialEq>(value: &T) -> bool {

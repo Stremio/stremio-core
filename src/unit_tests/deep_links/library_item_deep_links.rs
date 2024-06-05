@@ -33,6 +33,7 @@ static TORRENT_STREAMS_ITEM: Lazy<StreamsItem> = Lazy::new(|| {
         name: Some("PaidTV".to_owned()),
         description: Some("Ahsoka S01E05 Part Five 1080p".to_owned()),
         thumbnail: None,
+        tags: vec![],
         subtitles: vec![],
         behavior_hints: StreamBehaviorHints::default(),
     };

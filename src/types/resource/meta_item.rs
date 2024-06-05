@@ -2,6 +2,7 @@ use core::cmp::Ordering;
 
 use std::borrow::Cow;
 use std::collections::HashMap;
+use std::vec;
 
 use chrono::{DateTime, Utc};
 use either::Either;
@@ -214,6 +215,7 @@ impl From<MetaItemPreviewLegacy> for MetaItemPreview {
                     },
                     name: None,
                     description: None,
+                    tags: vec![],
                     thumbnail: None,
                     subtitles: vec![],
                     behavior_hints: Default::default(),
