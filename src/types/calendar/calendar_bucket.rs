@@ -5,7 +5,7 @@ use chrono::offset::TimeZone;
 use chrono::{DateTime, Utc};
 #[cfg(test)]
 use derivative::Derivative;
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 
 use crate::{
     runtime::Env,
