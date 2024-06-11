@@ -22,7 +22,7 @@ jobs:
           registry-url: https://registry.npmjs.org/
 
       - name: Rust setup
-        uses: dtolnay/rust-toolchain@stable
+        uses: dtolnay/rust-toolchain@1.77
         with:
           targets: wasm32-unknown-unknown
 

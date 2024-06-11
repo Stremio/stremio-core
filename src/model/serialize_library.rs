@@ -133,5 +133,5 @@ pub fn serialize_library<F>(
             })
             .collect(),
     })
-    .unwrap()
+    .expect("JsValue from model::LibraryWithFilters")
 }

@@ -124,9 +124,8 @@ impl WebModel {
     pub fn get_state(&self, field: &WebModelField) -> JsValue {
         match field {
             WebModelField::Ctx => serialize_ctx(&self.ctx),
-            WebModelField::AuthLink => {
-                <JsValue as JsValueSerdeExt>::from_serde(&self.auth_link).unwrap()
-            }
+            WebModelField::AuthLink => <JsValue as JsValueSerdeExt>::from_serde(&self.auth_link)
+                .expect("JsValue from AuthLink"),
             WebModelField::DataExport => serialize_data_export(&self.data_export),
             WebModelField::ContinueWatchingPreview => serialize_continue_watching_preview(
                 &self.continue_watching_preview,
@@ -158,7 +157,8 @@ impl WebModel {
             WebModelField::RemoteAddons => serialize_remote_addons(&self.remote_addons, &self.ctx),
             WebModelField::InstalledAddons => serialize_installed_addons(&self.installed_addons),
             WebModelField::AddonDetails => {
-                <JsValue as JsValueSerdeExt>::from_serde(&self.addon_details).unwrap()
+                <JsValue as JsValueSerdeExt>::from_serde(&self.addon_details)
+                    .expect("JsValue from AddonDetails")
             }
             WebModelField::StreamingServer => serialize_streaming_server(&self.streaming_server),
             WebModelField::Player => {

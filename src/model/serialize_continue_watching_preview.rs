@@ -19,7 +19,7 @@ pub fn serialize_continue_watching_preview(
         streaming_server_url,
         settings,
     )))
-    .unwrap()
+    .expect("JsValue from model::ContinueWatchingPreview")
 }
 
 mod model {

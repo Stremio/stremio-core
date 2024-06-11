@@ -4,7 +4,7 @@ use wasm_bindgen::JsValue;
 use stremio_core::models::ctx::Ctx;
 
 pub fn serialize_ctx(ctx: &Ctx) -> JsValue {
-    <JsValue as JsValueSerdeExt>::from_serde(&model::Ctx::from(ctx)).unwrap()
+    <JsValue as JsValueSerdeExt>::from_serde(&model::Ctx::from(ctx)).expect("JsValue from Ctx")
 }
 
 mod model {
