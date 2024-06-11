@@ -11,6 +11,7 @@ pub const LIBRARY_RECENT_STORAGE_KEY: &str = "library_recent";
 pub const STREAMS_STORAGE_KEY: &str = "streams";
 pub const SEARCH_HISTORY_STORAGE_KEY: &str = "search_history";
 pub const NOTIFICATIONS_STORAGE_KEY: &str = "notifications";
+pub const CALENDAR_STORAGE_KEY: &str = "calendar";
 pub const DISMISSED_EVENTS_STORAGE_KEY: &str = "dismissed_events";
 pub const LIBRARY_COLLECTION_NAME: &str = "libraryItem";
 pub const SEARCH_EXTRA_NAME: &str = "search";
@@ -26,6 +27,8 @@ pub const CATALOG_PAGE_SIZE: usize = 100;
 pub const CATALOG_PREVIEW_SIZE: usize = 100;
 pub const LIBRARY_RECENT_COUNT: usize = 200;
 pub const NOTIFICATION_ITEMS_COUNT: usize = 100;
+/// Maximum calendar items to fetch from `calendarIds` resource
+pub const CALENDAR_ITEMS_COUNT: usize = 100;
 
 /// A `LibraryItem` is considered watched once we've watched more than the `duration * threshold`:
 ///
@@ -100,6 +103,12 @@ lazy_static! {
     };
     pub static ref LAST_VIDEOS_IDS_EXTRA_PROP: ExtraProp = ExtraProp {
         name: "lastVideosIds".to_owned(),
+        is_required: false,
+        options: vec![],
+        options_limit: OptionsLimit(1),
+    };
+    pub static ref CALENDAR_IDS_EXTRA_PROP: ExtraProp = ExtraProp {
+        name: "calendarVideosIds".to_owned(),
         is_required: false,
         options: vec![],
         options_limit: OptionsLimit(1),
