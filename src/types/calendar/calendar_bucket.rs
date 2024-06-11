@@ -20,6 +20,7 @@ use super::CalendarItem;
 /// - Calendar items for previous (up to ~1 month) and future (up to ~2 months) episodes
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 #[cfg_attr(test, derive(Derivative))]
+#[cfg_attr(test, derivative(Default))]
 #[serde(rename_all = "camelCase")]
 pub struct CalendarBucket {
     pub uid: UID,

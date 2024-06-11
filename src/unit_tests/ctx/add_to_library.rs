@@ -5,12 +5,12 @@ use crate::runtime::{Env, EnvFutureExt, Runtime, RuntimeAction, TryEnvFuture};
 use crate::types::api::{APIResult, SuccessResponse};
 use crate::types::events::DismissedEventsBucket;
 use crate::types::library::{LibraryBucket, LibraryItem, LibraryItemState};
-use crate::types::notifications::NotificationsBucket;
 use crate::types::profile::{Auth, AuthKey, GDPRConsent, Profile, User};
 use crate::types::resource::{MetaItemBehaviorHints, MetaItemPreview, PosterShape};
 use crate::types::search_history::SearchHistoryBucket;
 use crate::types::streams::StreamsBucket;
 use crate::types::True;
+use crate::types::{calendar::CalendarBucket, notifications::NotificationsBucket};
 use crate::unit_tests::{
     default_fetch_handler, Request, TestEnv, FETCH_HANDLER, NOW, REQUESTS, STORAGE,
 };
@@ -107,6 +107,7 @@ fn actionctx_addtolibrary() {
                 },
                 StreamsBucket::default(),
                 NotificationsBucket::new::<TestEnv>(None, vec![]),
+                CalendarBucket::new::<TestEnv>(None, vec![]),
                 SearchHistoryBucket::default(),
                 DismissedEventsBucket::default(),
             ),
@@ -244,6 +245,7 @@ fn actionctx_addtolibrary_already_added() {
                 },
                 StreamsBucket::default(),
                 NotificationsBucket::new::<TestEnv>(None, vec![]),
+                CalendarBucket::new::<TestEnv>(None, vec![]),
                 SearchHistoryBucket::default(),
                 DismissedEventsBucket::default(),
             ),

@@ -6,12 +6,12 @@ use crate::types::addon::{Descriptor, DescriptorFlags, Manifest};
 use crate::types::api::{APIResult, SuccessResponse};
 use crate::types::events::DismissedEventsBucket;
 use crate::types::library::LibraryBucket;
-use crate::types::notifications::NotificationsBucket;
 use crate::types::profile::{Auth, AuthKey, GDPRConsent, Profile, User};
 use crate::types::resource::{Stream, StreamBehaviorHints, StreamSource};
 use crate::types::search_history::SearchHistoryBucket;
 use crate::types::streams::{StreamsBucket, StreamsItem, StreamsItemKey};
 use crate::types::True;
+use crate::types::{calendar::CalendarBucket, notifications::NotificationsBucket};
 use crate::unit_tests::{
     default_fetch_handler, Request, TestEnv, FETCH_HANDLER, REQUESTS, STORAGE,
 };
@@ -109,6 +109,7 @@ fn actionctx_uninstalladdon() {
                 LibraryBucket::default(),
                 StreamsBucket::default(),
                 NotificationsBucket::new::<TestEnv>(None, vec![]),
+                CalendarBucket::new::<TestEnv>(None, vec![]),
                 SearchHistoryBucket::default(),
                 DismissedEventsBucket::default(),
             ),
@@ -222,6 +223,7 @@ fn actionctx_uninstalladdon_with_user() {
                 LibraryBucket::default(),
                 StreamsBucket::default(),
                 NotificationsBucket::new::<TestEnv>(None, vec![]),
+                CalendarBucket::new::<TestEnv>(None, vec![]),
                 SearchHistoryBucket::default(),
                 DismissedEventsBucket::default(),
             ),
@@ -315,6 +317,7 @@ fn actionctx_uninstalladdon_protected() {
                 LibraryBucket::default(),
                 StreamsBucket::default(),
                 NotificationsBucket::new::<TestEnv>(None, vec![]),
+                CalendarBucket::new::<TestEnv>(None, vec![]),
                 SearchHistoryBucket::default(),
                 DismissedEventsBucket::default(),
             ),
@@ -391,6 +394,7 @@ fn actionctx_uninstalladdon_not_installed() {
                 LibraryBucket::default(),
                 StreamsBucket::default(),
                 NotificationsBucket::new::<TestEnv>(None, vec![]),
+                CalendarBucket::new::<TestEnv>(None, vec![]),
                 SearchHistoryBucket::default(),
                 DismissedEventsBucket::default(),
             ),
@@ -475,6 +479,7 @@ fn actionctx_uninstalladdon_streams_bucket() {
                 LibraryBucket::default(),
                 streams,
                 NotificationsBucket::new::<TestEnv>(None, vec![]),
+                CalendarBucket::new::<TestEnv>(None, vec![]),
                 SearchHistoryBucket::default(),
                 DismissedEventsBucket::default(),
             ),
