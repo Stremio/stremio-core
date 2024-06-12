@@ -2,7 +2,7 @@ use std::collections::{hash_map::Entry, HashMap};
 
 #[cfg(test)]
 use chrono::offset::TimeZone;
-use chrono::{DateTime, Utc};
+use chrono::{DateTime, Months, Utc};
 #[cfg(test)]
 use derivative::Derivative;
 use serde::{Deserialize, Serialize};
@@ -17,7 +17,14 @@ use crate::{
 
 use super::CalendarItem;
 
-/// - Calendar items for previous (up to ~1 month) and future (up to ~2 months) episodes
+/// Used to filter out any episodes that have release dates (newer than) > 2 months in the future
+pub const MAXIMUM_FORWARD_RELEASE_DATE: Months = Months::new(2);
+/// Used to filter out any episodes that have release dates (older than) < 2 months in the past
+pub const MAXIMUM_BACKWARD_RELEASE_DATE: Months = Months::new(2);
+
+/// Calendar Bucket with items for past (up to ~2 months) and future (up to ~2 months) episodes.
+///
+/// See [`MAXIMUM_FORWARD_RELEASE_DATE`], [`MAXIMUM_BACKWARD_RELEASE_DATE`]
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 #[cfg_attr(test, derive(Derivative))]
 #[cfg_attr(test, derivative(Default))]
@@ -40,13 +47,14 @@ impl CalendarBucket {
         Self {
             uid,
             items: items.into_iter().fold(HashMap::new(), |mut acc, item| {
-                let meta_notifs: &mut HashMap<_, _> = acc.entry(item.meta_id.clone()).or_default();
+                let meta_calendar: &mut HashMap<_, _> =
+                    acc.entry(item.meta_id.clone()).or_default();
 
-                let notif_entry = meta_notifs.entry(item.video_id.clone());
+                let calendar_entry = meta_calendar.entry(item.video_id.clone());
 
                 // for now just skip same videos that already exist
                 // leave the first one found in the Vec.
-                if let Entry::Vacant(new) = notif_entry {
+                if let Entry::Vacant(new) = calendar_entry {
                     new.insert(item);
                 }
 

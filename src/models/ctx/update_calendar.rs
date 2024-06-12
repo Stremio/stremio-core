@@ -1,6 +1,6 @@
 use std::collections::{hash_map::Entry, HashMap};
 
-use chrono::{DateTime, Duration, Months, Utc};
+use chrono::{DateTime, Duration, Utc};
 use futures::FutureExt;
 use lazysort::SortedBy;
 use once_cell::sync::Lazy;
@@ -21,7 +21,10 @@ use crate::{
     },
     types::{
         addon::{AggrRequest, ExtraType},
-        calendar::{CalendarBucket, CalendarItem},
+        calendar::{
+            CalendarBucket, CalendarItem, MAXIMUM_BACKWARD_RELEASE_DATE,
+            MAXIMUM_FORWARD_RELEASE_DATE,
+        },
         library::LibraryBucket,
         profile::Profile,
         resource::{MetaItem, MetaItemId, VideoId},
@@ -333,15 +336,19 @@ fn push_calendar_to_storage<E: Env + 'static>(calendar: &CalendarBucket) -> Effe
 /// Shared function to decide if a given video should be included in calendar
 /// or excluded.
 ///
-/// # returns
+/// - [`MAXIMUM_FORWARD_RELEASE_DATE`]
+/// - [`MAXIMUM_BACKWARD_RELEASE_DATE`]
+///
+/// # Returns
+///
 /// The video_released DateTime extracted from the arguments if it should be retained
 fn should_retain_video_released<E: Env>(
     video_released: Option<&DateTime<Utc>>,
 ) -> Option<DateTime<Utc>> {
     match video_released {
         Some(video_released)
-            if *video_released > E::now() - Months::new(2)
-                && *video_released < E::now() + Months::new(2) =>
+            if *video_released > E::now() - MAXIMUM_FORWARD_RELEASE_DATE
+                && *video_released < E::now() + MAXIMUM_BACKWARD_RELEASE_DATE =>
         {
             Some(*video_released)
         }
