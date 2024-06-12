@@ -1334,6 +1334,16 @@
 <a href="#1334" id="1334">1334</a>
 <a href="#1335" id="1335">1335</a>
 <a href="#1336" id="1336">1336</a>
+<a href="#1337" id="1337">1337</a>
+<a href="#1338" id="1338">1338</a>
+<a href="#1339" id="1339">1339</a>
+<a href="#1340" id="1340">1340</a>
+<a href="#1341" id="1341">1341</a>
+<a href="#1342" id="1342">1342</a>
+<a href="#1343" id="1343">1343</a>
+<a href="#1344" id="1344">1344</a>
+<a href="#1345" id="1345">1345</a>
+<a href="#1346" id="1346">1346</a>
 </pre></div><pre class="rust"><code><span class="kw">use </span>std::marker::PhantomData;
 <span class="kw">use </span>std::ops::Div;
 
@@ -2429,12 +2439,17 @@
         library_item,
     ) {
         (<span class="bool-val">true</span>, <span class="prelude-val">Some</span>(selected), <span class="prelude-val">Some</span>(video_params), <span class="prelude-val">Some</span>(series_info), <span class="prelude-val">Some</span>(library_item)) =&gt; {
-            <span class="kw">match </span>(
+            <span class="comment">// live streams will not have opensubtitle hash so just relying on URL and Torrent is enough.
+            </span><span class="kw">let </span>stream_source_supported = <span class="macro">matches!</span>(
                 <span class="kw-2">&amp;</span>selected.stream.source,
+                StreamSource::Url { .. } | StreamSource::Torrent { .. }
+            );
+            <span class="kw">match </span>(
+                stream_source_supported,
                 selected.stream.name.as_ref(),
                 video_params.hash.clone(),
             ) {
-                (StreamSource::Torrent { .. }, <span class="prelude-val">Some</span>(stream_name), <span class="prelude-val">Some</span>(opensubtitles_hash)) =&gt; {
+                (<span class="bool-val">true</span>, <span class="prelude-val">Some</span>(stream_name), <span class="prelude-val">Some</span>(opensubtitles_hash)) =&gt; {
                     <span class="kw">let </span>stream_name_hash = {
                         <span class="kw">use </span>sha2::Digest;
                         <span class="kw">let </span><span class="kw-2">mut </span>sha256 = sha2::Sha256::new();
@@ -2604,12 +2619,17 @@
             <span class="prelude-val">Some</span>(series_info),
             <span class="prelude-val">Some</span>(library_item),
         ) =&gt; {
-            <span class="kw">match </span>(
+            <span class="kw">let </span>stream_source_supported = <span class="macro">matches!</span>(
                 <span class="kw-2">&amp;</span>selected.stream.source,
+                StreamSource::Url { .. } | StreamSource::Torrent { .. }
+            );
+            <span class="comment">// live streams will not have opensubtitle hash so just relying on URL and Torrent is enough.
+            </span><span class="kw">match </span>(
+                stream_source_supported,
                 selected.stream.name.as_ref(),
                 video_params.hash.clone(),
             ) {
-                (StreamSource::Torrent { .. }, <span class="prelude-val">Some</span>(stream_name), <span class="prelude-val">Some</span>(opensubtitles_hash)) =&gt; {
+                (<span class="bool-val">true</span>, <span class="prelude-val">Some</span>(stream_name), <span class="prelude-val">Some</span>(opensubtitles_hash)) =&gt; {
                     <span class="kw">let </span>stream_name_hash = {
                         <span class="kw">use </span>sha2::Digest;
                         <span class="kw">let </span><span class="kw-2">mut </span>sha256 = sha2::Sha256::new();
