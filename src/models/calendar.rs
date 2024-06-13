@@ -40,12 +40,13 @@ static REQUEST_CALENDAR_EVERY: Lazy<Duration> = Lazy::new(|| Duration::hours(6))
 #[cfg_attr(test, derive(Derivative))]
 #[cfg_attr(test, derivative(Default))]
 pub struct Calendar {
+    /// The calendar Model's bucket
     pub calendar: CalendarBucket,
     #[serde(skip)]
-    /// The catalogs response from all addons that support the `calendar`
+    /// The catalogs response from all addons that support the `calendarVideosIds`
     /// ([`CALENDAR_IDS_EXTRA_PROP`]) resource.
     ///
-    /// [`CALENDAR_IDS_EXTRA_PROP`]: static@crate::constants::CALENDAR_IDS_EXTRA_PROP
+    /// [`CALENDAR_IDS_EXTRA_PROP`]: static@crate::constants::`CALENDAR_IDS_EXTRA_PROP`
     pub calendar_catalogs: Vec<ResourceLoadable<Vec<MetaItem>>>,
 }
 
