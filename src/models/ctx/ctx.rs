@@ -3,7 +3,7 @@ use crate::{
     models::{
         common::{DescriptorLoadable, Loadable, ResourceLoadable},
         ctx::{
-            update_calendar, update_events, update_library, update_notifications, update_profile,
+            update_events, update_library, update_notifications, update_profile,
             update_search_history, update_streams, update_trakt_addon, CtxError, OtherError,
         },
     },
@@ -16,7 +16,6 @@ use crate::{
             fetch_api, APIRequest, APIResult, AuthRequest, AuthResponse, CollectionResponse,
             DatastoreCommand, DatastoreRequest, LibraryItemsResponse, SuccessResponse,
         },
-        calendar::CalendarBucket,
         events::{DismissedEventsBucket, Events},
         library::LibraryBucket,
         notifications::NotificationsBucket,
@@ -52,7 +51,6 @@ pub struct Ctx {
     #[serde(skip)]
     pub library: LibraryBucket,
     pub notifications: NotificationsBucket,
-    pub calendar: CalendarBucket,
     #[serde(skip)]
     pub streams: StreamsBucket,
     #[serde(skip)]
@@ -71,12 +69,7 @@ pub struct Ctx {
     ///
     /// [`LAST_VIDEOS_IDS_EXTRA_PROP`]: static@crate::constants::LAST_VIDEOS_IDS_EXTRA_PROP
     pub notification_catalogs: Vec<ResourceLoadable<Vec<MetaItem>>>,
-    #[serde(skip)]
-    /// The catalogs response from all addons that support the `calendar`
-    /// ([`CALENDAR_IDS_EXTRA_PROP`]) resource.
-    ///
-    /// [`CALENDAR_IDS_EXTRA_PROP`]: static@crate::constants::CALENDAR_IDS_EXTRA_PROP
-    pub calendar_catalogs: Vec<ResourceLoadable<Vec<MetaItem>>>,
+
     pub events: Events,
 }
 
@@ -86,7 +79,7 @@ impl Ctx {
         library: LibraryBucket,
         streams: StreamsBucket,
         notifications: NotificationsBucket,
-        calendar: CalendarBucket,
+
         search_history: SearchHistoryBucket,
         dismissed_events: DismissedEventsBucket,
     ) -> Self {
@@ -97,10 +90,8 @@ impl Ctx {
             search_history,
             dismissed_events,
             notifications,
-            calendar,
             trakt_addon: None,
             notification_catalogs: vec![],
-            calendar_catalogs: vec![],
             status: CtxStatus::Ready,
             events: Events {
                 modal: Loadable::Loading,
@@ -146,14 +137,6 @@ impl<E: Env + 'static> Update<E> for Ctx {
                     &self.status,
                     msg,
                 );
-                let calendar_effects = update_calendar::<E>(
-                    &mut self.calendar,
-                    &mut self.calendar_catalogs,
-                    &self.profile,
-                    &self.library,
-                    &self.status,
-                    msg,
-                );
                 self.status = CtxStatus::Ready;
                 Effects::msg(Msg::Event(Event::UserLoggedOut { uid }))
                     .unchanged()
@@ -165,7 +148,6 @@ impl<E: Env + 'static> Update<E> for Ctx {
                     .join(events_effects)
                     .join(trakt_addon_effects)
                     .join(notifications_effects)
-                    .join(calendar_effects)
             }
             Msg::Internal(Internal::CtxAuthResult(auth_request, result)) => {
                 let profile_effects =
@@ -181,14 +163,6 @@ impl<E: Env + 'static> Update<E> for Ctx {
                 let notifications_effects = update_notifications::<E>(
                     &mut self.notifications,
                     &mut self.notification_catalogs,
-                    &self.profile,
-                    &self.library,
-                    &self.status,
-                    msg,
-                );
-                let calendar_effects = update_calendar::<E>(
-                    &mut self.calendar,
-                    &mut self.calendar_catalogs,
                     &self.profile,
                     &self.library,
                     &self.status,
@@ -265,7 +239,6 @@ impl<E: Env + 'static> Update<E> for Ctx {
                     .join(streams_effects)
                     .join(trakt_addon_effects)
                     .join(notifications_effects)
-                    .join(calendar_effects)
                     .join(search_history_effects)
                     .join(events_effects)
                     .join(ctx_effects)
@@ -290,14 +263,6 @@ impl<E: Env + 'static> Update<E> for Ctx {
                     &self.status,
                     msg,
                 );
-                let calendar_effects = update_calendar::<E>(
-                    &mut self.calendar,
-                    &mut self.calendar_catalogs,
-                    &self.profile,
-                    &self.library,
-                    &self.status,
-                    msg,
-                );
                 let search_history_effects =
                     update_search_history::<E>(&mut self.search_history, &self.status, msg);
                 let events_effects =
@@ -307,7 +272,6 @@ impl<E: Env + 'static> Update<E> for Ctx {
                     .join(streams_effects)
                     .join(trakt_addon_effects)
                     .join(notifications_effects)
-                    .join(calendar_effects)
                     .join(search_history_effects)
                     .join(events_effects)
             }

@@ -1,6 +1,3 @@
-mod update_calendar;
-use update_calendar::*;
-
 mod update_events;
 use update_events::*;
 

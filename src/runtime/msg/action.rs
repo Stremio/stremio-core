@@ -172,6 +172,7 @@ pub enum ActionPlayer {
 
 #[derive(Clone, Deserialize, Debug)]
 #[serde(tag = "model", content = "args")]
+/// Action to load a specific Model.
 pub enum ActionLoad {
     AddonDetails(AddonDetailsSelected),
     CatalogWithFilters(Option<CatalogWithFiltersSelected>),
@@ -180,6 +181,8 @@ pub enum ActionLoad {
     InstalledAddonsWithFilters(InstalledAddonsWithFiltersSelected),
     LibraryWithFilters(LibraryWithFiltersSelected),
     LibraryByType(LibraryByTypeSelected),
+    /// Loads the Calendar Model
+    Calendar,
     /// Loads the data required for Local search
     LocalSearch,
     MetaDetails(MetaDetailsSelected),

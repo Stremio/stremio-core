@@ -4,6 +4,7 @@ use chrono::{DateTime, Duration, Utc};
 use futures::FutureExt;
 use lazysort::SortedBy;
 use once_cell::sync::Lazy;
+use serde::Serialize;
 use tracing::trace;
 
 use crate::{
@@ -16,8 +17,8 @@ use crate::{
         ctx::{CtxError, CtxStatus},
     },
     runtime::{
-        msg::{Action, ActionCtx, Event, Internal, Msg},
-        Effect, EffectFuture, Effects, Env, EnvFutureExt,
+        msg::{Action, ActionCtx, ActionLoad, Event, Internal, Msg},
+        Effect, EffectFuture, Effects, Env, EnvFutureExt, UpdateWithCtx,
     },
     types::{
         addon::{AggrRequest, ExtraType},
@@ -31,7 +32,44 @@ use crate::{
     },
 };
 
+use super::ctx::Ctx;
+
 static REQUEST_CALENDAR_EVERY: Lazy<Duration> = Lazy::new(|| Duration::hours(6));
+
+#[derive(Serialize, Clone, Debug)]
+#[cfg_attr(test, derive(Derivative))]
+#[cfg_attr(test, derivative(Default))]
+pub struct Calendar {
+    pub calendar: CalendarBucket,
+    #[serde(skip)]
+    /// The catalogs response from all addons that support the `calendar`
+    /// ([`CALENDAR_IDS_EXTRA_PROP`]) resource.
+    ///
+    /// [`CALENDAR_IDS_EXTRA_PROP`]: static@crate::constants::CALENDAR_IDS_EXTRA_PROP
+    pub calendar_catalogs: Vec<ResourceLoadable<Vec<MetaItem>>>,
+}
+
+impl Calendar {
+    pub fn new(calendar: CalendarBucket) -> Self {
+        Self {
+            calendar,
+            calendar_catalogs: vec![],
+        }
+    }
+}
+
+impl<E: Env + 'static> UpdateWithCtx<E> for Calendar {
+    fn update(&mut self, msg: &Msg, ctx: &Ctx) -> Effects {
+        update_calendar::<E>(
+            &mut self.calendar,
+            &mut self.calendar_catalogs,
+            &ctx.profile,
+            &ctx.library,
+            &ctx.status,
+            msg,
+        )
+    }
+}
 
 pub fn update_calendar<E: Env + 'static>(
     calendar: &mut CalendarBucket,
@@ -42,6 +80,9 @@ pub fn update_calendar<E: Env + 'static>(
     msg: &Msg,
 ) -> Effects {
     match msg {
+        Msg::Action(Action::Load(ActionLoad::Calendar)) => {
+            Effects::msg(Msg::Internal(Internal::PullCalendar)).unchanged()
+        }
         Msg::Action(Action::Ctx(ActionCtx::PullCalendar)) => {
             Effects::msg(Msg::Internal(Internal::PullCalendar)).unchanged()
         }
