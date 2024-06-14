@@ -3,7 +3,6 @@ name = "stremio-core-web"
 version = "0.47.4"
 authors = ["Smart Code OOD"]
 edition = "2021"
-resolver = "2"
 
 [lib]
 crate-type = ["cdylib"]

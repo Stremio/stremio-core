@@ -11,6 +11,7 @@ lto = true
 opt-level = 's'
 
 [workspace]
+resolver = "2"
 members = [
     "stremio-core-web",
     "stremio-derive",
