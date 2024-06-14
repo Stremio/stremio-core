@@ -35,9 +35,8 @@ use crate::{
 use super::ctx::Ctx;
 
 static REQUEST_CALENDAR_EVERY: Lazy<Duration> = Lazy::new(|| Duration::hours(6));
-
 #[derive(Serialize, Clone, Debug)]
-#[cfg_attr(test, derive(Derivative))]
+#[cfg_attr(test, derive(derivative::Derivative))]
 #[cfg_attr(test, derivative(Default))]
 pub struct Calendar {
     /// The calendar Model's bucket
