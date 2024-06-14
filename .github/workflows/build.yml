@@ -10,7 +10,7 @@ concurrency:
 
 jobs:
   build-core:
-    name: Lint, test and build
+    name: "stremio-core-*: Lint, test and build"
     runs-on: ubuntu-latest
 
     steps:
@@ -36,6 +36,8 @@ jobs:
       run: cargo build
 
   build-stremio-core-web:
+    name: "stremio-core-web: test (wasm) and build "
+
     env:
       NODE_VERSION: 12
       WASM_PACK_VERSION: 0.12.1
@@ -45,8 +47,6 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-
-      - run: cd stremio-core-web
 
       - name: Rust setup
         uses: dtolnay/rust-toolchain@1.77
@@ -59,11 +59,13 @@ jobs:
       - uses: taiki-e/install-action@v2
         with:
           tool: wasm-pack@${{ env.WASM_PACK_VERSION }}
+
       - name: Setup chromedriver
         uses: nanasess/setup-chromedriver@v2
 
       - name: Run wasm tests (Chrome)
-        run: wasm-pack test --chromedriver "$(which chromedriver)" --chrome --headless
+        working-directory: stremio-core-web
+        run: wasm-pack test --chromedriver "$(which chromedriver)" --chrome --headless stremio-core-web
 
       - name: Setup NodeJS
         uses: actions/setup-node@v4
@@ -71,9 +73,12 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
           cache: "npm"
           registry-url: https://registry.npmjs.org/
+          cache-dependency-path: stremio-core-web/package-lock.json
 
       - name: Install NPM dependencies
+        working-directory: stremio-core-web
         run: npm ci
 
       - name: Build
+        working-directory: stremio-core-web
         run: npm run build

@@ -16,14 +16,13 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - run: cd stremio-core-web
-
       - name: Setup NodeJS
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: "npm"
           registry-url: https://registry.npmjs.org/
+          cache-dependency-path: stremio-core-web/package-lock.json
 
       # For releasing we always use stable
       - name: Rust setup
@@ -35,12 +34,15 @@ jobs:
           tool: wasm-pack@${{ env.WASM_PACK_VERSION }}
 
       - name: Install NPM dependencies
+        working-directory: stremio-core-web
         run: npm ci
 
       - name: Build
+        working-directory: stremio-core-web
         run: npm run build
 
       - name: Publish to NPM
-        run: npm publish --access public
+        working-directory: stremio-core-web
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_PUBLISH_TOKEN }}
+        run: npm publish --access public
