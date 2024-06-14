@@ -15,6 +15,9 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
+      - run: cd stremio-core-web
+
       - name: Setup NodeJS
         uses: actions/setup-node@v4
         with:

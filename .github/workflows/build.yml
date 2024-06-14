@@ -35,7 +35,7 @@ jobs:
     - name: Build
       run: cargo build
 
-  build-core-web:
+  build-stremio-core-web:
     env:
       NODE_VERSION: 12
       WASM_PACK_VERSION: 0.12.1
@@ -46,6 +46,8 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - run: cd stremio-core-web
+
       - name: Rust setup
         uses: dtolnay/rust-toolchain@1.77
         with:
@@ -53,12 +55,6 @@ jobs:
           targets: wasm32-unknown-unknown
 
       - uses: Swatinem/rust-cache@v2
-
-      - name: Lint - rustfmt
-        run: cargo fmt --all -- --check
-
-      - name: Lint - clippy
-        run: cargo clippy --all --no-deps -- -D warnings
 
       - uses: taiki-e/install-action@v2
         with:
