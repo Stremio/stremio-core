@@ -64,7 +64,6 @@ jobs:
         uses: nanasess/setup-chromedriver@v2
 
       - name: Run wasm tests (Chrome)
-        working-directory: stremio-core-web
         run: wasm-pack test --chromedriver "$(which chromedriver)" --chrome --headless stremio-core-web
 
       - name: Setup NodeJS
