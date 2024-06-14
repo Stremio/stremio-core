@@ -1,0 +1,6 @@
+
+
+[alias]
+# Requires cargo-watch
+ww = ["watch-wasm"]
+watch-wasm = ["watch", "--shell", "./scripts/build.sh --dev"]

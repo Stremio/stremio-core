@@ -1,0 +1,61 @@
+name: Build
+
+on:
+  push:
+    branches:
+      - '**'
+    tags-ignore:
+      - '**'
+
+# Stops the running workflow of previous pushes
+concurrency:
+  group: ${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  NODE_VERSION: 12
+  WASM_PACK_VERSION: 0.12.1
+
+jobs:
+  lint-and-build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Rust setup
+        uses: dtolnay/rust-toolchain@1.77
+        with:
+          components: rustfmt, clippy
+          targets: wasm32-unknown-unknown
+
+      - uses: Swatinem/rust-cache@v2
+
+      - name: Lint - rustfmt
+        run: cargo fmt --all -- --check
+
+      - name: Lint - clippy
+        run: cargo clippy --all --no-deps -- -D warnings
+
+      - uses: taiki-e/install-action@v2
+        with:
+          tool: wasm-pack@${{ env.WASM_PACK_VERSION }}
+      - name: Setup chromedriver
+        uses: nanasess/setup-chromedriver@v2
+
+      - name: Run wasm tests (Chrome)
+        run: wasm-pack test --chromedriver "$(which chromedriver)" --chrome --headless
+
+      - name: Setup NodeJS
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: "npm"
+          registry-url: https://registry.npmjs.org/
+
+      - name: Install NPM dependencies
+        run: npm ci
+
+      - name: Build
+        run: npm run build
+    

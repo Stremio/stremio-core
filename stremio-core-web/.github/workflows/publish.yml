@@ -1,0 +1,43 @@
+name: Publish
+
+on:
+  release:
+    types: [released]
+
+env:
+  NODE_VERSION: 12
+  WASM_PACK_VERSION: 0.12.1
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Setup NodeJS
+        uses: actions/setup-node@v3
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: "npm"
+          registry-url: https://registry.npmjs.org/
+
+      # For releasing we always use stable
+      - name: Rust setup
+        uses: dtolnay/rust-toolchain@1.77
+        with:
+          targets: wasm32-unknown-unknown
+      - uses: taiki-e/install-action@v2
+        with:
+          tool: wasm-pack@${{ env.WASM_PACK_VERSION }}
+
+      - name: Install NPM dependencies
+        run: npm ci
+
+      - name: Build
+        run: npm run build
+
+      - name: Publish to NPM
+        run: npm publish --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_PUBLISH_TOKEN }}
