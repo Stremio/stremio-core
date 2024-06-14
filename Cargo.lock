@@ -1208,59 +1208,14 @@ dependencies = [
  "serde_with",
  "sha1",
  "sha2",
- "stremio-derive 0.1.0",
+ "stremio-derive",
  "stremio-official-addons",
  "stremio-serde-hex",
- "stremio-watched-bitfield 0.1.0",
+ "stremio-watched-bitfield",
  "strum",
  "thiserror",
  "tokio",
  "tokio-current-thread",
- "tracing",
- "url",
-]
-
-[[package]]
-name = "stremio-core"
-version = "0.1.0"
-source = "git+https://github.com/Stremio/stremio-core?branch=development#7005dbe0d5621418d759e924da42387f1dffe52d"
-dependencies = [
- "anyhow",
- "base64 0.21.2",
- "boolinator",
- "chrono",
- "derivative",
- "derive_more",
- "either",
- "enclose",
- "flate2",
- "futures",
- "hex",
- "http",
- "itertools 0.11.0",
- "lazy_static",
- "lazysort",
- "localsearch",
- "magnet-url",
- "num",
- "once_cell",
- "percent-encoding",
- "regex",
- "semver",
- "serde",
- "serde_bencode",
- "serde_json",
- "serde_path_to_error",
- "serde_url_params",
- "serde_with",
- "sha1",
- "sha2",
- "stremio-derive 0.1.0 (git+https://github.com/Stremio/stremio-core?branch=development)",
- "stremio-official-addons",
- "stremio-serde-hex",
- "stremio-watched-bitfield 0.1.0 (git+https://github.com/Stremio/stremio-core?branch=development)",
- "strum",
- "thiserror",
  "tracing",
  "url",
 ]
@@ -1289,7 +1244,7 @@ dependencies = [
  "serde",
  "serde_json",
  "serde_path_to_error",
- "stremio-core 0.1.0 (git+https://github.com/Stremio/stremio-core?branch=development)",
+ "stremio-core",
  "tracing",
  "tracing-wasm",
  "url",
@@ -1302,19 +1257,6 @@ dependencies = [
 [[package]]
 name = "stremio-derive"
 version = "0.1.0"
-dependencies = [
- "case",
- "proc-macro-crate",
- "proc-macro2",
- "proc_macro_roids",
- "quote",
- "syn 2.0.28",
-]
-
-[[package]]
-name = "stremio-derive"
-version = "0.1.0"
-source = "git+https://github.com/Stremio/stremio-core?branch=development#7005dbe0d5621418d759e924da42387f1dffe52d"
 dependencies = [
  "case",
  "proc-macro-crate",
@@ -1353,16 +1295,6 @@ dependencies = [
  "flate2",
  "serde",
  "serde_json",
-]
-
-[[package]]
-name = "stremio-watched-bitfield"
-version = "0.1.0"
-source = "git+https://github.com/Stremio/stremio-core?branch=development#7005dbe0d5621418d759e924da42387f1dffe52d"
-dependencies = [
- "base64 0.13.1",
- "flate2",
- "serde",
 ]
 
 [[package]]
