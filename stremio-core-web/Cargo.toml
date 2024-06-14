@@ -8,17 +8,13 @@ resolver = "2"
 [lib]
 crate-type = ["cdylib"]
 
-[profile.release]
-lto = true
-opt-level = 's'
-
 [features]
 default = []
 # enable TRACE level of logging in the crate using `tracing`.
 log-trace = []
 
 [dependencies]
-stremio-core = { git = "https://github.com/Stremio/stremio-core", features = ["derive", "analytics"], branch = "development" }
+stremio-core = { version = "0.1", features = ["derive", "analytics"], path = "../" }
 serde = { version = "1.0.*", features = ["derive"] }
 serde_json = "1.0.*"
 futures = "0.3.*"
