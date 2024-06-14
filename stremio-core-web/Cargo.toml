@@ -1,0 +1,67 @@
+[package]
+name = "stremio-core-web"
+version = "0.47.4"
+authors = ["Smart Code OOD"]
+edition = "2021"
+resolver = "2"
+
+[lib]
+crate-type = ["cdylib"]
+
+[profile.release]
+lto = true
+opt-level = 's'
+
+[features]
+default = []
+# enable TRACE level of logging in the crate using `tracing`.
+log-trace = []
+
+[dependencies]
+stremio-core = { version = "0.1", features = ["derive", "analytics"], path = "../" }
+serde = { version = "1.0.*", features = ["derive"] }
+serde_json = "1.0.*"
+futures = "0.3.*"
+http = "0.2.*"
+url = { version = "2.4.*", features = ["serde"] }
+chrono = "0.4.*"
+semver = { version = "1", features = ["serde"] }
+regex = "1.8"
+hex = "0.4.*"
+either = "1.6.*"
+lazy_static = "1.4.*"
+enclose = "1.1.*"
+itertools = "0.10.*"
+boolinator = "2.4.*"
+Inflector = "0.11.*"
+wasm-bindgen = { version = "=0.2.78", features = ["serde-serialize"] }
+wasm-bindgen-futures = "0.4"
+gloo-utils = { version = "0.2", features = ["serde"] }
+
+# panic hook for wasm
+console_error_panic_hook = "0.1.*"
+
+js-sys = "0.3"
+web-sys = { version = "0.3", features = [
+    "WorkerGlobalScope",
+    "WorkerNavigator",
+    "Request",
+    "RequestInit",
+    "Response",
+    "console",
+] }
+getrandom = { version = "0.2.*", features = ["js"] }
+cfg-if = "1.0"
+serde_path_to_error = "0.1.*"
+
+# Tracing
+tracing = "0.1"
+tracing-wasm = "0.2"
+
+[dev-dependencies]
+wasm-bindgen-test = "0.3.0"
+
+# A way to quickly test with local version of `core` crates
+# [patch.'https://github.com/Stremio/stremio-core']
+# stremio-core = { path = "../core" }
+

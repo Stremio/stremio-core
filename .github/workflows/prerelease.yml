@@ -1,0 +1,49 @@
+name: Prerelease
+
+on:
+  release:
+    types: [prereleased]
+
+env:
+  NODE_VERSION: 12
+  WASM_PACK_VERSION: 0.12.1
+
+jobs:
+  prerelease:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: Setup NodeJS
+        uses: actions/setup-node@v3
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: "npm"
+          registry-url: https://registry.npmjs.org/
+
+      - name: Rust setup
+        uses: dtolnay/rust-toolchain@1.77
+        with:
+          targets: wasm32-unknown-unknown
+
+      - uses: taiki-e/install-action@v2
+        with:
+          tool: wasm-pack@${{ env.WASM_PACK_VERSION }}
+
+      - name: Install NPM dependencies
+        run: npm ci
+
+      - name: Build
+        run: npm run build
+
+      - name: Package
+        run: npm pack
+
+      - name: Upload build artifact to GitHub release assets
+        uses: svenstaro/upload-release-action@v2
+        with:
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          file: ./*.tgz
+          tag: ${{ github.ref }}
+          overwrite: true
+          file_glob: true
