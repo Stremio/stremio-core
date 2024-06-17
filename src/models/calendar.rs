@@ -306,6 +306,7 @@ fn meta_items_update<E: Env + 'static>(
         let id_types = library
             .items
             .values()
+            .filter(|library_item| !library_item.removed && !library_item.temp)
             .sorted_by(|a, b| b.mtime.cmp(&a.mtime))
             .map(|library_item| (library_item.id.to_owned(), library_item.r#type.to_owned()))
             .collect_vec();
