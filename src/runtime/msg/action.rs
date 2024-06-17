@@ -7,6 +7,7 @@ use crate::types::streams::StreamItemState;
 use crate::{
     models::{
         addon_details::Selected as AddonDetailsSelected,
+        calendar::Selected as CalendarSelected,
         catalog_with_filters::Selected as CatalogWithFiltersSelected,
         catalogs_with_extra::Selected as CatalogsWithExtraSelected,
         installed_addons_with_filters::Selected as InstalledAddonsWithFiltersSelected,
@@ -182,7 +183,7 @@ pub enum ActionLoad {
     LibraryWithFilters(LibraryWithFiltersSelected),
     LibraryByType(LibraryByTypeSelected),
     /// Loads the Calendar Model
-    Calendar,
+    Calendar(Option<CalendarSelected>),
     /// Loads the data required for Local search
     LocalSearch,
     MetaDetails(MetaDetailsSelected),

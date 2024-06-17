@@ -6,7 +6,9 @@ use url::Url;
 use crate::{
     constants::URI_COMPONENT_ENCODE_SET,
     models::{
-        installed_addons_with_filters::InstalledAddonsRequest, library_with_filters::LibraryRequest,
+        calendar::{Month, Year},
+        installed_addons_with_filters::InstalledAddonsRequest,
+        library_with_filters::LibraryRequest,
     },
     types::{
         addon::{ExtraValue, ResourcePath, ResourceRequest},
@@ -595,6 +597,39 @@ impl From<(&String, &LibraryRequest)> for LibraryDeepLinks {
                     )]),
                 ),
             },
+        }
+    }
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct CalendarDeepLinks {
+    pub calendar: String,
+}
+
+impl From<(&Year, &Month)> for CalendarDeepLinks {
+    fn from((year, month): (&Year, &Month)) -> Self {
+        CalendarDeepLinks {
+            calendar: format!("stremio:///calendar/{}/{}", year, month,),
+        }
+    }
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct CalendarItemDeepLinks {
+    pub meta_details_streams: String,
+}
+
+impl From<(&MetaItem, &Video)> for CalendarItemDeepLinks {
+    fn from((meta_item, video): (&MetaItem, &Video)) -> Self {
+        CalendarItemDeepLinks {
+            meta_details_streams: format!(
+                "stremio:///detail/{}/{}/{}",
+                utf8_percent_encode(&meta_item.preview.r#type, URI_COMPONENT_ENCODE_SET),
+                utf8_percent_encode(&meta_item.preview.id, URI_COMPONENT_ENCODE_SET),
+                utf8_percent_encode(&video.id, URI_COMPONENT_ENCODE_SET)
+            ),
         }
     }
 }

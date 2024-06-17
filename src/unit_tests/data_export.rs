@@ -6,11 +6,11 @@ use crate::runtime::{EnvFutureExt, Runtime, RuntimeAction, RuntimeEvent, TryEnvF
 use crate::types::api::{APIResult, DataExportResponse};
 use crate::types::events::DismissedEventsBucket;
 use crate::types::library::LibraryBucket;
+use crate::types::notifications::NotificationsBucket;
 use crate::types::profile::Profile;
 use crate::types::profile::{Auth, AuthKey, User};
 use crate::types::search_history::SearchHistoryBucket;
 use crate::types::streams::StreamsBucket;
-use crate::types::{calendar::CalendarBucket, notifications::NotificationsBucket};
 use crate::unit_tests::{
     default_fetch_handler, Request, TestEnv, EVENTS, FETCH_HANDLER, REQUESTS, STATES,
 };
@@ -54,7 +54,6 @@ fn data_export_with_user() {
         LibraryBucket::default(),
         StreamsBucket::default(),
         NotificationsBucket::new::<TestEnv>(None, vec![]),
-        CalendarBucket::new::<TestEnv>(None, vec![]),
         SearchHistoryBucket::default(),
         DismissedEventsBucket::default(),
     );
@@ -137,7 +136,6 @@ fn data_export_without_a_user() {
         LibraryBucket::default(),
         StreamsBucket::default(),
         NotificationsBucket::new::<TestEnv>(None, vec![]),
-        CalendarBucket::new::<TestEnv>(None, vec![]),
         SearchHistoryBucket::default(),
         DismissedEventsBucket::default(),
     );

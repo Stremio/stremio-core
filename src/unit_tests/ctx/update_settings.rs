@@ -4,10 +4,10 @@ use crate::runtime::msg::{Action, ActionCtx};
 use crate::runtime::{Runtime, RuntimeAction};
 use crate::types::events::DismissedEventsBucket;
 use crate::types::library::LibraryBucket;
+use crate::types::notifications::NotificationsBucket;
 use crate::types::profile::{Profile, Settings};
 use crate::types::search_history::SearchHistoryBucket;
 use crate::types::streams::StreamsBucket;
-use crate::types::{calendar::CalendarBucket, notifications::NotificationsBucket};
 use crate::unit_tests::{TestEnv, REQUESTS, STORAGE};
 use stremio_derive::Model;
 
@@ -29,7 +29,6 @@ fn actionctx_updatesettings() {
         LibraryBucket::default(),
         StreamsBucket::default(),
         NotificationsBucket::new::<TestEnv>(None, vec![]),
-        CalendarBucket::new::<TestEnv>(None, vec![]),
         SearchHistoryBucket::default(),
         DismissedEventsBucket::default(),
     );
@@ -89,7 +88,6 @@ fn actionctx_updatesettings_not_changed() {
                 LibraryBucket::default(),
                 StreamsBucket::default(),
                 NotificationsBucket::new::<TestEnv>(None, vec![]),
-                CalendarBucket::new::<TestEnv>(None, vec![]),
                 SearchHistoryBucket::default(),
                 DismissedEventsBucket::default(),
             ),
