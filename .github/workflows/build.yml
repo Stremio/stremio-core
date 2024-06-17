@@ -36,7 +36,7 @@ jobs:
       run: cargo build
 
   build-stremio-core-web:
-    name: "stremio-core-web: test (wasm) and build "
+    name: "stremio-core-web: test (wasm) and build"
 
     env:
       NODE_VERSION: 12
@@ -79,6 +79,40 @@ jobs:
         working-directory: stremio-core-web
         run: npm ci
 
-      - name: Build
+      - name: Build (release)
         working-directory: stremio-core-web
         run: npm run build
+
+        # create folder for release and dev builds to be published on GH pages
+      - run: mkdir -p ./build/dev
+        working-directory: stremio-core-web
+      
+      - name: Package (release)
+        working-directory: stremio-core-web
+        run: npm pack
+
+      - name: Copy release package archive
+        working-directory: stremio-core-web
+        run: cp ./*.tgz ./build
+
+      - name: Build (dev)
+        working-directory: stremio-core-web
+        run: npm run build-dev
+
+      - name: Package (dev)
+        working-directory: stremio-core-web
+        run: npm pack
+        
+      - name: Copy dev package archive
+        working-directory: stremio-core-web
+        run: cp ./*.tgz ./build/dev
+        
+      - name: Deploy gh-pages
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./stremio-core-web/build
+          # in stremio, we use `feat/features-name` or `fix/this-bug`
+          # so we need a recursive creation of the destination dir
+          destination_dir: ./stremio-core-web/${{ github.ref_name }}
+          allow_empty_commit: true
