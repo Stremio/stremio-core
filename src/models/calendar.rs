@@ -94,6 +94,7 @@ pub struct Item {
 #[derive(Default, Clone, PartialEq, Eq, Serialize, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct MonthInfo {
+    pub today: Option<Day>,
     pub days: u32,
     pub first_weekday: u32,
 }
@@ -115,7 +116,8 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Calendar {
                 let meta_items_effects =
                     meta_items_update::<E>(&mut self.meta_items, &ctx.library, &ctx.profile.addons);
                 let selected_effects = selected_update::<E>(&mut self.selected, selected);
-                let month_info_effects = month_info_update(&mut self.month_info, &self.selected);
+                let month_info_effects =
+                    month_info_update::<E>(&mut self.month_info, &self.selected);
                 let selectable_effects = selectable_update(&mut self.selectable, &self.selected);
                 let items_effects = items_update(
                     &mut self.items,
@@ -206,10 +208,21 @@ fn selected_update<E: Env + 'static>(
     eq_update(selected, updated_selected)
 }
 
-fn month_info_update(month_info: &mut MonthInfo, selected: &Option<Selected>) -> Effects {
+fn month_info_update<E: Env + 'static>(
+    month_info: &mut MonthInfo,
+    selected: &Option<Selected>,
+) -> Effects {
     let updated_month_info = selected
         .as_ref()
         .map(|Selected { month, year, .. }| {
+            let current_date = E::now();
+
+            let today = if current_date.year() == *year && current_date.month() == *month {
+                Some(current_date.day())
+            } else {
+                None
+            };
+
             let date = NaiveDate::from_ymd_opt(*year, *month, 1).unwrap_or_default();
             let first_of_next_month = date_from_month_offset(date, 1);
 
@@ -220,6 +233,7 @@ fn month_info_update(month_info: &mut MonthInfo, selected: &Option<Selected>) ->
             let first_weekday = first_day_of_month.weekday().num_days_from_monday();
 
             MonthInfo {
+                today,
                 days,
                 first_weekday,
             }
