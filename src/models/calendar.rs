@@ -151,8 +151,6 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Calendar {
                     ResourcesAction::ResourceRequestResult { request, result },
                 );
 
-                let selectable_effects = selectable_update(&mut self.selectable, &self.selected);
-
                 let items_effects = items_update(
                     &mut self.items,
                     &self.selected,
@@ -161,7 +159,6 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Calendar {
                 );
 
                 meta_items_effects
-                    .join(selectable_effects)
                     .join(items_effects)
             }
             _ => Effects::none().unchanged(),
