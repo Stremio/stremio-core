@@ -158,8 +158,7 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Calendar {
                     &self.meta_items,
                 );
 
-                meta_items_effects
-                    .join(items_effects)
+                meta_items_effects.join(items_effects)
             }
             _ => Effects::none().unchanged(),
         }
