@@ -8,9 +8,17 @@ use url::Url;
 use crate::{
     constants::{CALENDAR_IDS_EXTRA_PROP, CATALOG_RESOURCE_NAME},
     models::{calendar::Calendar, ctx::Ctx},
-    runtime::{msg::{Action, ActionLoad}, Env, EnvFutureExt, Runtime, RuntimeAction, TryEnvFuture},
-    types::{addon::{Descriptor, Manifest, ManifestCatalog, ManifestExtra, ResourceResponse}, library::{LibraryBucket, LibraryItem}, profile::Profile, resource::{MetaItem, MetaItemPreview, SeriesInfo, Video}},
-    unit_tests::{default_fetch_handler, Request, TestEnv, FETCH_HANDLER, NOW, REQUESTS}
+    runtime::{
+        msg::{Action, ActionLoad},
+        Env, EnvFutureExt, Runtime, RuntimeAction, TryEnvFuture,
+    },
+    types::{
+        addon::{Descriptor, Manifest, ManifestCatalog, ManifestExtra, ResourceResponse},
+        library::{LibraryBucket, LibraryItem},
+        profile::Profile,
+        resource::{MetaItem, MetaItemPreview, SeriesInfo, Video},
+    },
+    unit_tests::{default_fetch_handler, Request, TestEnv, FETCH_HANDLER, NOW, REQUESTS},
 };
 
 fn library_item(id: &str, r#type: &str) -> LibraryItem {
@@ -36,17 +44,15 @@ fn meta_item(id: &str, r#type: &str) -> MetaItem {
             r#type: r#type.to_string(),
             ..MetaItemPreview::default()
         },
-        videos: vec![
-            Video {
-                id: format!("{id}:1:2").to_owned(),
-                released: Some(Utc.with_ymd_and_hms(2024, 1, 1, 0, 0, 0).unwrap()),
-                series_info: Some(SeriesInfo {
-                    season: 1,
-                    episode: 2,
-                }),
-                ..Video::default()
-            },
-        ],
+        videos: vec![Video {
+            id: format!("{id}:1:2").to_owned(),
+            released: Some(Utc.with_ymd_and_hms(2024, 1, 1, 0, 0, 0).unwrap()),
+            series_info: Some(SeriesInfo {
+                season: 1,
+                episode: 2,
+            }),
+            ..Video::default()
+        }],
     }
 }
 
@@ -77,11 +83,12 @@ fn calendar() {
             ..Default::default()
         },
     };
-    
+
     fn fetch_handler(request: Request) -> TryEnvFuture<Box<dyn Any + Send>> {
         match request {
             Request { url, method, .. }
-                if url == "https://addon/catalog/series/calendarVideosIds/calendarVideosIds=tt1.json"
+                if url
+                    == "https://addon/catalog/series/calendarVideosIds/calendarVideosIds=tt1.json"
                     && method == "GET" =>
             {
                 future::ok(Box::new(ResourceResponse::MetasDetailed {
@@ -105,10 +112,7 @@ fn calendar() {
                     addons: vec![addon],
                     ..Default::default()
                 },
-                library: LibraryBucket::new(
-                    None,
-                    vec![library_item("tt1", "series")],
-                ),
+                library: LibraryBucket::new(None, vec![library_item("tt1", "series")]),
                 ..Default::default()
             },
             calendar: Default::default(),
@@ -131,12 +135,7 @@ fn calendar() {
     );
 
     assert_eq!(
-        runtime
-            .model()
-            .unwrap()
-            .calendar
-            .items[0]
-            .items.len(),
+        runtime.model().unwrap().calendar.items[0].items.len(),
         1,
         "should have a calendar item"
     );
