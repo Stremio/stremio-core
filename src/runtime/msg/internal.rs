@@ -95,11 +95,6 @@ pub enum Internal {
     ///
     /// [`MetaItemId`]: crate::types::resource::MetaItemId
     DismissNotificationItem(LibraryItemId),
-    /// User calendar have changed
-    CalendarChanged,
-    /// Pulling of calendar triggered either by the user (with an action) or
-    /// internally in core.
-    PullCalendar,
     /// Result for loading link code.
     LinkCodeResult(Result<LinkCodeResponse, LinkError>),
     /// Result for loading link data.
