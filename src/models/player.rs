@@ -1150,6 +1150,19 @@ fn push_seek_to_api<E: Env + 'static>(seek_log_req: SeekLogRequest) -> Effect {
     .into()
 }
 
+fn calculate_outro(library_item: &LibraryItem, closest_duration: u64, closest_outro: u64) -> u64 {
+    // will floor the result before dividing by 10 again
+    let duration_diff_in_secs =
+        (library_item.state.duration.abs_diff(closest_duration)).div(1000 * 10) / 10;
+    tracing::debug!(
+        "Player: Outro match by duration with difference of {duration_diff_in_secs} seconds"
+    );
+    library_item
+        .state
+        .duration
+        .abs_diff(closest_duration.abs_diff(closest_outro))
+}
+
 fn intro_outro_update<E: Env + 'static>(
     intro_outro: &mut Option<IntroOutro>,
     profile: &Profile,
@@ -1187,11 +1200,7 @@ fn intro_outro_update<E: Env + 'static>(
                     },
                 );
                 closest_duration.map(|(closest_duration, closest_outro)| {
-                    // will floor the result before dividing by 10 again
-                    let duration_diff_in_secs = (library_item.state.duration - closest_duration).div(1000 * 10) / 10;
-                    tracing::debug!("Player: Outro match by duration with difference of {duration_diff_in_secs} seconds");
-
-                    library_item.state.duration - (closest_duration - closest_outro)
+                    calculate_outro(library_item, *closest_duration, closest_outro)
                 })
             };
 
@@ -1343,4 +1352,60 @@ fn get_skip_gaps<E: Env + 'static>(skip_gaps_request: SkipGapsRequest) -> Effect
             .boxed_env(),
     )
     .into()
+}
+#[cfg(test)]
+mod tests {
+    use chrono::Utc;
+
+    use crate::{
+        models::player::calculate_outro,
+        types::{
+            library::{LibraryItem, LibraryItemState},
+            resource::PosterShape,
+        },
+    };
+
+    #[test]
+    fn test_underflow_calculate_outro() {
+        let library_item = LibraryItem {
+            id: "tt13622776".to_string(),
+            name: "Ahsoka".to_string(),
+            r#type: "series".to_string(),
+            poster: None,
+            poster_shape: PosterShape::Poster,
+            removed: false,
+            temp: true,
+            ctime: None,
+            mtime: Utc::now(),
+            state: LibraryItemState {
+                last_watched: None,
+                time_watched: 999,
+                time_offset: 0,
+                overall_time_watched: 999,
+                times_watched: 999,
+                flagged_watched: 1,
+                duration: 10_000,
+                video_id: None,
+                watched: None,
+                no_notif: true,
+            },
+            behavior_hints: Default::default(),
+        };
+        {
+            let closest_duration = 11000;
+            let closest_outro = 1;
+            assert_eq!(
+                calculate_outro(&library_item, closest_duration, closest_outro),
+                999
+            );
+        }
+        {
+            let closest_duration = 11000;
+            let closest_outro = 12000;
+            assert_eq!(
+                calculate_outro(&library_item, closest_duration, closest_outro),
+                9000
+            );
+        }
+    }
 }
