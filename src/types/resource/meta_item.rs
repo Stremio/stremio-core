@@ -1,7 +1,6 @@
 use core::cmp::Ordering;
 
-use std::borrow::Cow;
-use std::collections::HashMap;
+use std::{borrow::Cow, collections::HashMap};
 
 use chrono::{DateTime, Utc};
 use either::Either;
@@ -14,14 +13,19 @@ use serde_with::{
 };
 use url::Url;
 
-use crate::constants::{
-    CATALOG_RESOURCE_NAME, CINEMETA_TOP_CATALOG_ID, CINEMETA_URL, GENRES_LINK_CATEGORY,
-    IMDB_LINK_CATEGORY, IMDB_TITLE_PATH, IMDB_URL, URI_COMPONENT_ENCODE_SET,
+use crate::{
+    constants::{
+        CATALOG_RESOURCE_NAME, CINEMETA_TOP_CATALOG_ID, CINEMETA_URL, GENRES_LINK_CATEGORY,
+        IMDB_LINK_CATEGORY, IMDB_TITLE_PATH, IMDB_URL, URI_COMPONENT_ENCODE_SET,
+    },
+    deep_links::DiscoverDeepLinks,
+    runtime::Env,
+    types::{
+        addon::{ExtraValue, ResourcePath, ResourceRequest},
+        resource::{Stream, StreamSource},
+        NumberAsString, SortedVec, SortedVecAdapter, UniqueVec, UniqueVecAdapter,
+    },
 };
-use crate::deep_links::DiscoverDeepLinks;
-use crate::types::addon::{ExtraValue, ResourcePath, ResourceRequest};
-use crate::types::resource::{Stream, StreamSource};
-use crate::types::{NumberAsString, SortedVec, SortedVecAdapter, UniqueVec, UniqueVecAdapter};
 
 /// The [`MetaItem`] Id type to improve the readability of the code.
 ///
@@ -46,7 +50,7 @@ impl<'de> DeserializeAs<'de, Trailer> for Stream {
                 source: yt_id.to_owned(),
                 r#type: "Trailer".to_owned(),
             }),
-            _ => Err(serde::de::Error::custom("Unsuported Trailer StreamSource")),
+            _ => Err(serde::de::Error::custom("Unsupported Trailer StreamSource")),
         }
     }
 }
@@ -162,6 +166,24 @@ pub struct MetaItemPreview {
     pub links: Vec<Link>,
     pub trailer_streams: Vec<Stream>,
     pub behavior_hints: MetaItemBehaviorHints,
+}
+
+impl MetaItemPreview {
+    /// 3.5 months period based on 30 days per month
+    const IN_THEATER_TIMEFRAME: chrono::Days = chrono::Days::new(105);
+
+    pub fn is_in_theater<E: Env + 'static>(&self) -> bool {
+        if self.r#type != "movie" {
+            return false;
+        }
+
+        //     if (this.dvdRelease) return new Date(this.dvdRelease).getTime() > Date.now(); // dvd is not released yet
+        match self.released {
+            Some(released) => released > E::now() - Self::IN_THEATER_TIMEFRAME,
+            None => false,
+        }
+        //     return (new Date().getFullYear()-parseInt(this.year)) < 1
+    }
 }
 
 impl From<MetaItemPreviewLegacy> for MetaItemPreview {
@@ -392,4 +414,62 @@ pub struct MetaItemBehaviorHints {
     pub has_scheduled_videos: bool,
     #[serde(flatten)]
     pub other: HashMap<String, serde_json::Value>,
+}
+
+#[cfg(test)]
+mod tests {
+    use chrono::Days;
+
+    use crate::unit_tests::TestEnv;
+
+    use super::*;
+
+    #[test]
+    fn test_meta_item_preview_is_in_theater() {
+        let _test_env_guard = TestEnv::reset().expect("Should lock TestEnv");
+
+        // not a movie
+        {
+            let meta_item_preview = MetaItemPreview {
+                r#type: "series".to_string(),
+                released: Some(Utc::now()),
+                ..MetaItemPreview::default()
+            };
+
+            assert!(!meta_item_preview.is_in_theater::<TestEnv>())
+        }
+
+        // outside of the timeframe considered for "In theater"
+        {
+            let out_of_timeframe = Days::new(106);
+            assert!(
+                out_of_timeframe > MetaItemPreview::IN_THEATER_TIMEFRAME,
+                "Test Timeframe should be outside of the In Theater timeframe"
+            );
+            let meta_item_preview = MetaItemPreview {
+                r#type: "movie".to_string(),
+                released: Some(Utc::now() - out_of_timeframe),
+                ..MetaItemPreview::default()
+            };
+
+            assert!(!meta_item_preview.is_in_theater::<TestEnv>())
+        }
+
+        // inside the timeframe and considered "In theater"
+        {
+            let in_timeframe = Days::new(103);
+            assert!(
+                in_timeframe < MetaItemPreview::IN_THEATER_TIMEFRAME,
+                "Test Timeframe should be inside of the In Theater timeframe"
+            );
+
+            let meta_item_preview = MetaItemPreview {
+                r#type: "movie".to_string(),
+                released: Some(Utc::now() - in_timeframe),
+                ..MetaItemPreview::default()
+            };
+
+            assert!(meta_item_preview.is_in_theater::<TestEnv>())
+        }
+    }
 }
