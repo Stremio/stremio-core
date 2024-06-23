@@ -485,6 +485,7 @@ fn set_settings<E: Env + 'static>(url: &Url, settings: &Settings) -> Effect {
         bt_download_speed_hard_limit: f64,
         bt_min_peers_for_stable: u64,
         remote_https: Option<String>,
+        proxy_streams_enabled: bool,
         transcode_profile: Option<String>,
     }
     let body = Body {
@@ -496,6 +497,7 @@ fn set_settings<E: Env + 'static>(url: &Url, settings: &Settings) -> Effect {
         bt_download_speed_hard_limit: settings.bt_download_speed_hard_limit.to_owned(),
         bt_min_peers_for_stable: settings.bt_min_peers_for_stable.to_owned(),
         remote_https: settings.remote_https.to_owned(),
+        proxy_streams_enabled: settings.proxy_streams_enabled.to_owned(),
         transcode_profile: settings.transcode_profile.to_owned(),
     };
     let endpoint = url.join("settings").expect("url builder failed");
