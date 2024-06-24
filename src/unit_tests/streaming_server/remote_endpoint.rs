@@ -37,6 +37,7 @@ const STREAMING_SERVER_SETTINGS: StreamingServerSettings = StreamingServerSettin
     bt_download_speed_soft_limit: 0.0,
     bt_download_speed_hard_limit: 0.0,
     bt_min_peers_for_stable: 0,
+    proxy_streams_enabled: false,
     remote_https: None,
     transcode_profile: None,
 };
