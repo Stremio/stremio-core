@@ -1,7 +1,7 @@
 pub mod deep_links_ext;
 
 mod serialize_catalogs_with_extra;
-use serialize_catalogs_with_extra::*;
+pub use serialize_catalogs_with_extra::*;
 
 mod serialize_continue_watching_preview;
 use serialize_continue_watching_preview::*;

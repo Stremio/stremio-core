@@ -32,12 +32,14 @@ use stremio_core::{
 use crate::{
     env::WebEnv,
     model::{
-        serialize_catalogs_with_extra, serialize_continue_watching_preview, serialize_ctx,
-        serialize_data_export, serialize_discover, serialize_installed_addons, serialize_library,
-        serialize_local_search, serialize_meta_details, serialize_player, serialize_remote_addons,
+        serialize_continue_watching_preview, serialize_ctx, serialize_data_export,
+        serialize_discover, serialize_installed_addons, serialize_library, serialize_local_search,
+        serialize_meta_details, serialize_player, serialize_remote_addons,
         serialize_streaming_server,
     },
 };
+
+use super::SerializeModel;
 
 #[derive(Model, Clone)]
 #[cfg_attr(debug_assertions, derive(Serialize))]
@@ -133,7 +135,12 @@ impl WebModel {
                 self.streaming_server.base_url.as_ref(),
                 &self.ctx.profile.settings,
             ),
-            WebModelField::Board => serialize_catalogs_with_extra(&self.board, &self.ctx),
+            WebModelField::Board => {
+                // let old = serialize_catalogs_with_extra(&self.board, &self.ctx);
+                crate::model::CatalogsWithExtra::new(&self.board, &self.ctx)
+                    .serialize_model()
+                    .expect("JsValue from model::CatalogsWithExtra")
+            }
             WebModelField::Discover => {
                 serialize_discover(&self.discover, &self.ctx, &self.streaming_server)
             }
@@ -149,7 +156,12 @@ impl WebModel {
                 self.streaming_server.base_url.as_ref(),
                 "continuewatching".to_owned(),
             ),
-            WebModelField::Search => serialize_catalogs_with_extra(&self.search, &self.ctx),
+            WebModelField::Search => {
+                // let old = serialize_catalogs_with_extra(&self.search, &self.ctx)
+                crate::model::CatalogsWithExtra::new(&self.search, &self.ctx)
+                    .serialize_model()
+                    .expect("JsValue from model::CatalogsWithExtra")
+            }
             WebModelField::LocalSearch => serialize_local_search(&self.local_search),
             WebModelField::MetaDetails => {
                 serialize_meta_details(&self.meta_details, &self.ctx, &self.streaming_server)
