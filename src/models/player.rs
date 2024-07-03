@@ -120,6 +120,11 @@ pub struct Player {
     pub seek_history: Vec<SeekLog>,
     #[serde(skip_serializing)]
     pub skip_gaps: Option<(SkipGapsRequest, Loadable<SkipGapsResponse, CtxError>)>,
+    /// Enable or disable Seek log collection.
+    ///
+    /// Default: `false` (Do not collect)
+    #[serde(default, skip_serializing)]
+    pub collect_seek_logs: bool,
 }
 
 impl<E: Env + 'static> UpdateWithCtx<E> for Player {
@@ -395,12 +400,15 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
 
                     // update the last_watched
                     library_item.state.last_watched = Some(E::now());
-                    // seek logging
-                    if library_item.r#type == "series" && time < &PLAYER_IGNORE_SEEK_AFTER {
-                        self.seek_history.push(SeekLog {
-                            from: library_item.state.time_offset,
-                            to: *time,
-                        });
+
+                    if self.collect_seek_logs {
+                        // collect seek history
+                        if library_item.r#type == "series" && time < &PLAYER_IGNORE_SEEK_AFTER {
+                            self.seek_history.push(SeekLog {
+                                from: library_item.state.time_offset,
+                                to: *time,
+                            });
+                        }
                     }
                     // };
                     time.clone_into(&mut library_item.state.time_offset);
