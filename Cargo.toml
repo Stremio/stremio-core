@@ -6,8 +6,14 @@ edition = "2021"
 
 rust-version = "1.67.1"
 
+[profile.release]
+lto = true
+opt-level = 's'
+
 [workspace]
+resolver = "2"
 members = [
+    "stremio-core-web",
     "stremio-derive",
     "stremio-watched-bitfield",
 ]
