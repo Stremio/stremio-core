@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"struct":["CatalogWithFilters","DescriptorPreview","ManifestPreview","MetaItemPreview","ResourceLoadable","Selectable","SelectableCatalog","SelectableExtra","SelectableExtraOption","SelectableType","Stream"]};
