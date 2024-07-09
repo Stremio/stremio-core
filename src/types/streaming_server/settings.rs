@@ -47,88 +47,49 @@ mod empty_string_as_null {
             Ok(Some(s))
         }
     }
-}
+    #[cfg(test)]
+    mod test {
+        use serde::{Deserialize, Serialize};
+        #[derive(Debug, Deserialize, Serialize, PartialEq, Eq)]
+        struct TestStruct {
+            #[serde(with = "super")]
+            field: Option<String>,
+        }
+        #[test]
+        fn test_empty_field() {
+            let empty_string = serde_json::json!({
+                "field": ""
+            });
 
-#[cfg(test)]
-mod test {
-    use crate::types::streaming_server::Settings;
+            let test_struct = TestStruct { field: None };
 
-    #[test]
-    fn test_serialize_remote_https_none() {
-        let settings = Settings {
-            app_path: "app_path".to_string(),
-            cache_root: "cache_root".to_string(),
-            server_version: "server_version".to_string(),
-            remote_https: None,
-            transcode_profile: None,
-            cache_size: None,
-            proxy_streams_enabled: true,
-            bt_max_connections: 10,
-            bt_handshake_timeout: 30,
-            bt_request_timeout: 60,
-            bt_download_speed_soft_limit: 100.0,
-            bt_download_speed_hard_limit: 200.0,
-            bt_min_peers_for_stable: 5,
-        };
+            assert_eq!(
+                test_struct,
+                serde_json::from_value::<TestStruct>(empty_string.clone()).expect("Valid Json")
+            );
+            assert_eq!(
+                empty_string,
+                serde_json::to_value(test_struct).expect("Should serialize")
+            );
+        }
+        #[test]
+        fn test_field() {
+            let string = serde_json::json!({
+                "field": "https://example.com"
+            });
 
-        let json = serde_json::to_string(&settings).unwrap();
+            let test_struct = TestStruct {
+                field: Some("https://example.com".to_string()),
+            };
 
-        println!("JSON: {}", json);
-
-        assert_eq!(
-            json,
-            r#"{"appPath":"app_path","cacheRoot":"cache_root","serverVersion":"server_version","remoteHttps":"","transcodeProfile":null,"cacheSize":null,"proxyStreamsEnabled":true,"btMaxConnections":10,"btHandshakeTimeout":30,"btRequestTimeout":60,"btDownloadSpeedSoftLimit":100.0,"btDownloadSpeedHardLimit":200.0,"btMinPeersForStable":5}"#
-        );
-    }
-
-    #[test]
-    fn test_serialize_remote_https_some() {
-        let settings = Settings {
-            app_path: "app_path".to_string(),
-            cache_root: "cache_root".to_string(),
-            server_version: "server_version".to_string(),
-            remote_https: Some("https://example.com".to_string()),
-            transcode_profile: None,
-            cache_size: None,
-            proxy_streams_enabled: true,
-            bt_max_connections: 10,
-            bt_handshake_timeout: 30,
-            bt_request_timeout: 60,
-            bt_download_speed_soft_limit: 100.0,
-            bt_download_speed_hard_limit: 200.0,
-            bt_min_peers_for_stable: 5,
-        };
-
-        let json = serde_json::to_string(&settings).unwrap();
-
-        println!("JSON: {}", json);
-
-        assert_eq!(
-            json,
-            r#"{"appPath":"app_path","cacheRoot":"cache_root","serverVersion":"server_version","remoteHttps":"https://example.com","transcodeProfile":null,"cacheSize":null,"proxyStreamsEnabled":true,"btMaxConnections":10,"btHandshakeTimeout":30,"btRequestTimeout":60,"btDownloadSpeedSoftLimit":100.0,"btDownloadSpeedHardLimit":200.0,"btMinPeersForStable":5}"#
-        );
-    }
-
-    #[test]
-
-    fn test_deserialize_remote_https_none() {
-        let json = r#"{"appPath":"app_path","cacheRoot":"cache_root","serverVersion":"server_version","remoteHttps":"","transcodeProfile":null,"cacheSize":null,"proxyStreamsEnabled":true,"btMaxConnections":10,"btHandshakeTimeout":30,"btRequestTimeout":60,"btDownloadSpeedSoftLimit":100.0,"btDownloadSpeedHardLimit":200.0,"btMinPeersForStable":5}"#;
-
-        let settings: Settings = serde_json::from_str(json).unwrap();
-
-        assert_eq!(settings.remote_https, None);
-    }
-
-    #[test]
-
-    fn test_deserialize_remote_https_some() {
-        let json = r#"{"appPath":"app_path","cacheRoot":"cache_root","serverVersion":"server_version","remoteHttps":"https://example.com","transcodeProfile":null,"cacheSize":null,"proxyStreamsEnabled":true,"btMaxConnections":10,"btHandshakeTimeout":30,"btRequestTimeout":60,"btDownloadSpeedSoftLimit":100.0,"btDownloadSpeedHardLimit":200.0,"btMinPeersForStable":5}"#;
-
-        let settings: Settings = serde_json::from_str(json).unwrap();
-
-        assert_eq!(
-            settings.remote_https,
-            Some("https://example.com".to_string())
-        );
+            assert_eq!(
+                test_struct,
+                serde_json::from_value::<TestStruct>(string.clone()).expect("Valid Json")
+            );
+            assert_eq!(
+                string,
+                serde_json::to_value(test_struct).expect("Should serialize")
+            );
+        }
     }
 }
