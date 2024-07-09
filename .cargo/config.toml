@@ -1,6 +1,7 @@
-
+[build]
+# for `--enable-index-page` it is required to pass `-Z unstable-options` to rustdocs
+# rustdocflags = ["--cfg", "docsrs", "-Z", "unstable-options", "--enable-index-page"]
 
 [alias]
-# Requires cargo-watch
-ww = ["watch-wasm"]
-watch-wasm = ["watch", "--shell", "./scripts/build.sh --dev"]
+build-docs = "doc --no-deps --workspace --document-private-items"
+

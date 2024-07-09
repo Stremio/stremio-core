@@ -1,42 +1,50 @@
-# Stremio Core Web
+## Stremio - the next generation media center
+[![Build Workflow Status](https://img.shields.io/github/actions/workflow/status/Stremio/stremio-core/build.yml?label=Build)](https://github.com/Stremio/stremio-core/actions/workflows/build.yml)
+[![Latest MSRV workflow Status](https://img.shields.io/github/actions/workflow/status/Stremio/stremio-core/msrv.yml?label=MSRV)](https://github.com/Stremio/stremio-core/actions/workflows/msrv.yml)
+[![Latest deployed docs on GH pages](https://img.shields.io/github/actions/workflow/status/Stremio/stremio-core/docs.yml?event=workflow_dispatch&label=Latest%20deployed%20Docs)](https://stremio.github.io/stremio-core)
 
-[![npm](https://img.shields.io/npm/v/@stremio/stremio-core-web?style=flat-square)](https://www.npmjs.com/package/@stremio/stremio-core-web)
+Stremio is a full-featured media center designed to help you organize and stream your favorite videos, movies and TV series. It will notify you for new episodes / movies, and allow you to find new content through Discover.
 
-Bridge between [stremio-core](https://github.com/stremio/stremio-core) and [stremio-web](https://github.com/stremio/stremio-web)
+Stremio allows, using its [Add-ons system](https://github.com/Stremio/stremio-addon-sdk), to play movies, TV series and channels instantly.
+
+## stremio-core
+
+`stremio-core` is a rust crate that's designed to contain all the reusable logic between Stremio versions.
+
+### Goals
+
+* Flexibility - can be integrated into existing code bases, across the entire stack, and in different paradigms
+	* use case: `types` can be used by add-ons
+	* use case: can be used with existing user authentication as an addition to an existing app
+	* use case: can use the `Context` model to manage the user authentication/addons, using it as a backbone to the entire Stremio app
+* Emphasis on correctness
+* No cruft / legacy - not burdened by obsolete decisions & solutions
+
+### Modules
+
+* `types`
+* `addon_transport` - handles communication with add-ons, implements legacy protocol adapter
+* `state_types`: types that describe application state; inspired by the Elm architecture
+	* Effects and Update traits
+	* `runtime`: helps using `stremio-core` in an application by handling the effects automatically
+	* `environment`: a trait describes the environment (fetch, storage)
+	* `msg`: messages: actions, events
+	* `models`: all stateful models, such as `Context` (handling user authentication, add-ons), `Library`, `CatalogFiltered`, etc.
 
 
-## Build
 
-Builds a production wasm package and prepares the rest of the dependencies for the npm package.
-
-```bash
-npm install
-npm run build
+```
+cargo clippy
+cargo fmt
 ```
 
-### Development
+## Optimizing WASM output
 
-Building the package using [`./scripts/build.sh`](./scripts/build.sh) with `--dev` would allow you to see more logging messages being emitted, this is intended **only** for debugging as it will log messages with sensitive information!
+WASM output binary can get large, especially if we derive Serialize/Deserialize in places we don't need to
 
-```bash
-./scripts/build.sh --dev
-```
+We can optimize it by running twiggy: `twiggy top ..._bg.wasm` and seeing what the biggest code size offenders are
 
-Or you can also use the development-specific Rust's `wasm-watch` alias from [`./.cargo/config.toml`](./.cargo/config.toml).
-It will automatically re-compile the package when a change on the files or dependencies is detected,
-including when you're using a local patch for `stremio-core`.
 
-1. Install `cargo-watch`
-   - `cargo install cargo-watch`
-   - With `cargo-binstall` (prebuilt binaries): `cargo binstall cargo-watch`
-2. Run `cargo wasm-watch`
+## Adding new actions
 
-## Publishing
-
-1. Update version to the next minor/major/patch version in Cargo (`Cargo.toml` and `Cargo.lock`) and npm (`package.json` and `package-lock.json`), e.g. from `0.44.13` to `0.44.14`.
-2. Commit the change with the new version as a message, e.g. `0.44.14`
-3. Wait for CI to build successfully
-4. Push a new tag starting with `v`, e.g. `git tag v0.44.14` `git push origin v0.44.14`
-5. Create a [new Release](https://github.com/Stremio/stremio-core-web/releases/new) with the created tag and the tag name as a title, e.g. `v0.44.14`
-6. Publish the Release
-7. CI will automatically build and release the `npm` package to the registry
+Defining actions and what middleware requests they should trigger is defined in `src/state_types/msg/actions`

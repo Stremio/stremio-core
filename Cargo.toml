@@ -1,67 +1,104 @@
 [package]
-name = "stremio-core-web"
-version = "0.47.7"
+name = "stremio-core"
+version = "0.1.0"
 authors = ["Smart Code OOD"]
 edition = "2021"
-resolver = "2"
 
-[lib]
-crate-type = ["cdylib"]
+rust-version = "1.67.1"
 
 [profile.release]
 lto = true
 opt-level = 's'
 
+[workspace]
+resolver = "2"
+members = [
+    "stremio-core-web",
+    "stremio-derive",
+    "stremio-watched-bitfield",
+]
+
 [features]
+# TODO: env-future-send should be enabled by default
+# but our `TestEnv` for `unit_tests` uses a MutexGuard which is not Send.
+# default = ["env-future-send"]
 default = []
-# enable TRACE level of logging in the crate using `tracing`.
-log-trace = []
+
+# Adds `Send` marker trait to the `Env` trait methods and `EnvFuture`.
+# It's required for environments that do not support `Send`.
+# If enabled for `wasm` it will cause a compile error!
+# see https://github.com/rustwasm/wasm-bindgen/issues/2833
+env-future-send = []
+
+# Exports the Model derive macro from `stremio-derive`
+derive = []
+
+# Enable core analytics
+analytics = []
 
 [dependencies]
-stremio-core = { git = "https://github.com/Stremio/stremio-core", features = ["derive", "analytics"], branch = "development" }
-serde = { version = "1.0.*", features = ["derive"] }
+stremio-derive = { path = "stremio-derive" }
+stremio-watched-bitfield = { path = "stremio-watched-bitfield" }
+stremio-official-addons = "=2.0.12"
+
+# (De)Serialization
+serde = { version = "1", features = ["derive"]}
 serde_json = "1.0.*"
+serde_path_to_error = "0.1"
+serde_url_params = "0.2"
+serde_bencode = "0.2.*"
+stremio-serde-hex = "0.1.*" # keep track of https://github.com/fspmarshall/serde-hex/pull/8
+serde_with = { version = "3.5", features = ["macros", "chrono_0_4"] }
+
+flate2 = "1.0.*"
 futures = "0.3.*"
+
 http = "0.2.*"
-url = { version = "2.4.*", features = ["serde"] }
-chrono = "0.4.*"
+url = { version = "2.4", features = ["serde"] }
+percent-encoding = "2.1"
+
+# Time
+chrono = { version = "0.4", features = ["serde"] }
+
 semver = { version = "1", features = ["serde"] }
+base64 = "0.21"
+sha1 = "0.10"
+sha2 = "0.10"
+
+either = "1.6"
+enclose = "1.1"
+derivative = "2.2"
+derive_more = "0.99"
+boolinator = "2.4"
+strum = { version = "0.25", features = ["derive"] }
+
+lazysort = "0.2"
+
+lazy_static = "1.4"
+once_cell = "1.4"
+itertools = "0.11"
+
+magnet-url = "2.0"
+hex = "0.4"
+
+# error handling
+anyhow = "1.0"
+thiserror = "1"
+
 regex = "1.8"
-hex = "0.4.*"
-either = "1.6.*"
-lazy_static = "1.4.*"
-enclose = "1.1.*"
-itertools = "0.10.*"
-boolinator = "2.4.*"
-Inflector = "0.11.*"
-wasm-bindgen = { version = "=0.2.78", features = ["serde-serialize"] }
-wasm-bindgen-futures = "0.4"
-gloo-utils = { version = "0.2", features = ["serde"] }
 
-# panic hook for wasm
-console_error_panic_hook = "0.1.*"
+# local search and autocomplete functionallity
+localsearch = { version = "0.1.0", git = "https://github.com/Stremio/local-search", branch = "main" }
 
-js-sys = "0.3"
-web-sys = { version = "0.3", features = [
-    "WorkerGlobalScope",
-    "WorkerNavigator",
-    "Request",
-    "RequestInit",
-    "Response",
-    "console",
-] }
-getrandom = { version = "0.2.*", features = ["js"] }
-cfg-if = "1.0"
-serde_path_to_error = "0.1.*"
+# Number operations
+num = { version = "0.4.0", default-features = false }
 
 # Tracing
 tracing = "0.1"
-tracing-wasm = "0.2"
 
 [dev-dependencies]
-wasm-bindgen-test = "0.3.0"
-
-# A way to quickly test with local version of `core` crates
-# [patch.'https://github.com/Stremio/stremio-core']
-# stremio-core = { path = "../core" }
-
+tokio = { version = "1.12", features = ["rt", "macros"] }
+tokio-current-thread = "=0.2.0-alpha.1"
+serde_test = "1.0"
+assert_matches = "1.5"
+pretty_assertions = "1"

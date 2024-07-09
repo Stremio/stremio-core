@@ -1,0 +1,108 @@
+[
+    {
+        "network_requests": {
+            "https://addon_1.com/catalog/series/lastVideosIds/lastVideosIds=tt1.json": {
+                "metasDetailed": [
+                    {
+                        "id": "tt1",
+                        "name": "name",
+                        "type": "series",
+                        "videos": [
+                            {
+                                "id": "tt1:1:4",
+                                "season": 1,
+                                "episode": 4,
+                                "released": "2019-12-20T00:00:00.000Z"
+                            },
+                            {
+                                "id": "tt1:1:5",
+                                "season": 1,
+                                "episode": 5,
+                                "released": "2020-01-01T00:00:00.000Z"
+                            },
+                            {
+                                "id": "tt1:1:6",
+                                "season": 1,
+                                "episode": 6,
+                                "released": "2020-01-05T00:00:00.000Z"
+                            },
+                            {
+                                "id": "tt1:1:7",
+                                "season": 1,
+                                "episode": 7,
+                                "released": "2020-01-15T00:00:00.000Z"
+                            }
+                        ]
+                    }
+                ]
+            }
+        },
+        "addons": [
+            {
+                "manifest": {
+                    "id": "id",
+                    "version": "0.0.1",
+                    "name": "name",
+                    "types": [
+                        "series"
+                    ],
+                    "resources": [
+                        "catalog"
+                    ],
+                    "idPrefixes": [
+                        "tt"
+                    ],
+                    "catalogs": [
+                        {
+                            "id": "lastVideosIds",
+                            "type": "series",
+                            "extra": [
+                                {
+                                    "name": "lastVideosIds"
+                                }
+                            ]
+                        }
+                    ]
+                },
+                "transportUrl": "https://addon_1.com/manifest.json"
+            }
+        ],
+        "library_items": [
+            {
+                "_id": "tt1",
+                "name": "name",
+                "type": "series",
+                "removed": false,
+                "temp": false,
+                "_ctime": "2019-12-10T00:00:00.000Z",
+                "_mtime": "2020-01-01T00:00:00.000Z",
+                "state": {
+                    "timeWatched": 1000,
+                    "overallTimeWatched": 900001,
+                    "lastWatched": "2020-01-01T10:00:00.000Z",
+                    "timesWatched": 5,
+                    "flaggedWatched": 1,
+                    "timeOffset": 100,
+                    "duration": 101,
+                    "video_id": "tt1:1:5",
+                    "noNotif": false
+                }
+            }
+        ],
+        "notification_items": [],
+        "result": {
+            "tt1": {
+                "tt1:1:6": {
+                    "metaId": "tt1",
+                    "videoId": "tt1:1:6",
+                    "videoReleased": "2020-01-05T00:00:00.000Z"
+                },
+                "tt1:1:7": {
+                    "metaId": "tt1",
+                    "videoId": "tt1:1:7",
+                    "videoReleased": "2020-01-15T00:00:00.000Z"
+                }
+            }
+        }
+    }
+]

@@ -1,0 +1,155 @@
+use crate::types::addon::{ManifestBehaviorHints, ManifestPreview};
+use crate::unit_tests::serde::default_tokens_ext::DefaultTokens;
+use semver::Version;
+use serde_test::{assert_de_tokens, assert_ser_tokens, Configure, Token};
+use url::Url;
+
+#[test]
+fn manifest_preview() {
+    assert_ser_tokens(
+        &vec![
+            ManifestPreview {
+                id: "id".to_owned(),
+                version: Version::new(0, 0, 1),
+                name: "name".to_owned(),
+                description: Some("description".to_owned()),
+                logo: Some(Url::parse("http://logo/").unwrap()),
+                background: Some(Url::parse("http://background/").unwrap()),
+                types: vec!["type".to_owned()],
+                behavior_hints: Default::default(),
+            },
+            ManifestPreview {
+                id: "id".to_owned(),
+                version: Version::new(0, 0, 1),
+                name: "name".to_owned(),
+                description: None,
+                logo: None,
+                background: None,
+                types: vec![],
+                behavior_hints: Default::default(),
+            },
+        ]
+        .readable(),
+        &[
+            vec![
+                Token::Seq { len: Some(2) },
+                Token::Struct {
+                    name: "ManifestPreview",
+                    len: 8,
+                },
+                Token::Str("id"),
+                Token::Str("id"),
+                Token::Str("version"),
+                Token::Str("0.0.1"),
+                Token::Str("name"),
+                Token::Str("name"),
+                Token::Str("description"),
+                Token::Some,
+                Token::Str("description"),
+                Token::Str("logo"),
+                Token::Some,
+                Token::Str("http://logo/"),
+                Token::Str("background"),
+                Token::Some,
+                Token::Str("http://background/"),
+                Token::Str("types"),
+                Token::Seq { len: Some(1) },
+                Token::Str("type"),
+                Token::SeqEnd,
+                Token::Str("behaviorHints"),
+            ],
+            ManifestBehaviorHints::default_tokens(),
+            vec![Token::StructEnd],
+            vec![
+                Token::Struct {
+                    name: "ManifestPreview",
+                    len: 8,
+                },
+                Token::Str("id"),
+                Token::Str("id"),
+                Token::Str("version"),
+                Token::Str("0.0.1"),
+                Token::Str("name"),
+                Token::Str("name"),
+                Token::Str("description"),
+                Token::None,
+                Token::Str("logo"),
+                Token::None,
+                Token::Str("background"),
+                Token::None,
+                Token::Str("types"),
+                Token::Seq { len: Some(0) },
+                Token::SeqEnd,
+                Token::Str("behaviorHints"),
+            ],
+            ManifestBehaviorHints::default_tokens(),
+            vec![Token::StructEnd, Token::SeqEnd],
+        ]
+        .concat(),
+    );
+    assert_de_tokens(
+        &vec![
+            ManifestPreview {
+                id: "id".to_owned(),
+                version: Version::new(0, 0, 1),
+                name: "name".to_owned(),
+                description: Some("description".to_owned()),
+                logo: Some(Url::parse("http://logo/").unwrap()),
+                background: Some(Url::parse("http://background/").unwrap()),
+                types: vec!["type".to_owned()],
+                behavior_hints: Default::default(),
+            },
+            ManifestPreview {
+                id: "id".to_owned(),
+                version: Version::new(0, 0, 1),
+                name: "name".to_owned(),
+                description: None,
+                logo: None,
+                background: None,
+                types: vec![],
+                behavior_hints: Default::default(),
+            },
+        ]
+        .readable(),
+        &[
+            Token::Seq { len: Some(2) },
+            Token::Struct {
+                name: "ManifestPreview",
+                len: 5,
+            },
+            Token::Str("id"),
+            Token::Str("id"),
+            Token::Str("version"),
+            Token::Str("0.0.1"),
+            Token::Str("name"),
+            Token::Str("name"),
+            Token::Str("description"),
+            Token::Some,
+            Token::Str("description"),
+            Token::Str("logo"),
+            Token::Str("http://logo/"),
+            Token::Str("background"),
+            Token::Str("http://background/"),
+            Token::Str("types"),
+            Token::Seq { len: Some(1) },
+            Token::Str("type"),
+            Token::SeqEnd,
+            Token::StructEnd,
+            Token::Struct {
+                name: "ManifestPreview",
+                len: 5,
+            },
+            Token::Str("id"),
+            Token::Str("id"),
+            Token::Str("version"),
+            Token::Str("0.0.1"),
+            Token::Str("name"),
+            Token::Str("name"),
+            Token::Str("types"),
+            Token::Seq { len: Some(0) },
+            Token::SeqEnd,
+            Token::StructEnd,
+            Token::SeqEnd,
+        ],
+    );
+}

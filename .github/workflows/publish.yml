@@ -9,18 +9,20 @@ env:
   WASM_PACK_VERSION: 0.12.1
 
 jobs:
-  publish:
+  publish-stremio-core-web:
+    if: ${{ ! startsWith(github.ref, 'refs/tags/stremio-core-web') }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Setup NodeJS
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: "npm"
           registry-url: https://registry.npmjs.org/
+          cache-dependency-path: stremio-core-web/package-lock.json
 
       # For releasing we always use stable
       - name: Rust setup
@@ -32,12 +34,15 @@ jobs:
           tool: wasm-pack@${{ env.WASM_PACK_VERSION }}
 
       - name: Install NPM dependencies
+        working-directory: stremio-core-web
         run: npm ci
 
       - name: Build
+        working-directory: stremio-core-web
         run: npm run build
 
       - name: Publish to NPM
-        run: npm publish --access public
+        working-directory: stremio-core-web
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_PUBLISH_TOKEN }}
+        run: npm publish --access public
