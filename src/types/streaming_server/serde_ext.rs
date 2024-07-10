@@ -15,15 +15,18 @@ pub mod empty_string_as_null {
     where
         D: Deserializer<'de>,
     {
-        let s: String = Deserialize::deserialize(deserializer)?;
-        if s.is_empty() {
-            Ok(None)
-        } else {
-            Ok(Some(s))
+        let s: Option<String> = Deserialize::deserialize(deserializer)?;
+        match s {
+            None => Ok(None),
+            Some(s) => match s.is_empty() {
+                true => Ok(None),
+                false => Ok(Some(s)),
+            }
         }
     }
     #[cfg(test)]
     mod test {
+
         use serde::{Deserialize, Serialize};
         #[derive(Debug, Deserialize, Serialize, PartialEq, Eq)]
         struct TestStruct {
@@ -37,6 +40,10 @@ pub mod empty_string_as_null {
             });
 
             let test_struct = TestStruct { field: None };
+            let test_struct_clone = TestStruct { field: None };
+            let null_json = serde_json::json!({
+                "field":null,
+            });
 
             assert_eq!(
                 test_struct,
@@ -46,6 +53,12 @@ pub mod empty_string_as_null {
                 empty_string,
                 serde_json::to_value(test_struct).expect("Should serialize")
             );
+            assert_eq!(
+                test_struct_clone,
+                serde_json::from_value::<TestStruct>(null_json.clone()).expect("Should serialize")
+            );
+            
+
         }
         #[test]
         fn test_field() {
