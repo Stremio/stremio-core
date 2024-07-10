@@ -12,3 +12,6 @@ pub use settings::*;
 
 mod statistics;
 pub use statistics::*;
+
+mod serde_ext;
+pub use serde_ext::*;
