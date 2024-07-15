@@ -38,6 +38,7 @@ pub mod empty_string_as_null {
             });
 
             let test_struct = TestStruct { field: None };
+
             let null_json = serde_json::json!({
                 "field":null,
             });
