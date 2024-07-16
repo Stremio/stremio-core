@@ -55,3 +55,7 @@ tracing-wasm = "0.2"
 
 [dev-dependencies]
 wasm-bindgen-test = "0.3.0"
+
+# iOS 14 Safari does not support WASM sign extension operations
+[package.metadata.wasm-pack.profile.release]
+wasm-opt = ["--signext-lowering"]
