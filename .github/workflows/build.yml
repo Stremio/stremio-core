@@ -85,8 +85,10 @@ jobs:
         working-directory: stremio-core-web
         run: npm run build
 
-        # create folder for release and dev builds to be published on GH pages
-      - run: mkdir -p ./build/dev
+      # if merge request, the ref_name will be e.g. `705/merge`
+      # so we need to recursively create these 2 folders
+      # create folder for release and dev builds to be published on GH pages
+      - run: mkdir -p ./build/${{ github.ref_name }}/dev
         working-directory: stremio-core-web
       
       - name: Package (release)
@@ -95,7 +97,7 @@ jobs:
 
       - name: Copy release package archive
         working-directory: stremio-core-web
-        run: cp ./*.tgz ./build
+        run: cp ./*.tgz ./build/${{ github.ref_name }}
 
       - name: Build (dev)
         working-directory: stremio-core-web
@@ -107,14 +109,15 @@ jobs:
         
       - name: Copy dev package archive
         working-directory: stremio-core-web
-        run: cp ./*.tgz ./build/dev
-        
+        run: cp ./*.tgz ./build/${{ github.ref_name }}/dev
       - name: Deploy gh-pages
+        if: ${{ github.actor != 'dependabot[bot]' }}
         uses: peaceiris/actions-gh-pages@v3
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
+          # the build directory already contains the `github.ref_name` as subfolder(s)
           publish_dir: ./stremio-core-web/build
           # in stremio, we use `feat/features-name` or `fix/this-bug`
-          # so we need a recursive creation of the destination dir
-          destination_dir: ./stremio-core-web/${{ github.ref_name }}
+          # so we need a recursive creation of the destination dir!
+          destination_dir: ./stremio-core-web/
           allow_empty_commit: true
