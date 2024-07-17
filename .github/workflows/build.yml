@@ -82,6 +82,7 @@ jobs:
         run: npm ci
 
       - name: Build (release)
+        if: ${{ ! startsWith(github.ref, 'refs/pull/') }}
         working-directory: stremio-core-web
         run: npm run build
 
@@ -89,13 +90,16 @@ jobs:
       # so we need to recursively create these 2 folders
       # create folder for release and dev builds to be published on GH pages
       - run: mkdir -p ./build/${{ github.ref_name }}/dev
+        if: ${{ ! startsWith(github.ref, 'refs/pull/') }}
         working-directory: stremio-core-web
-      
+
       - name: Package (release)
+        if: ${{ ! startsWith(github.ref, 'refs/pull/') }}
         working-directory: stremio-core-web
         run: npm pack
 
       - name: Copy release package archive
+        if: ${{ ! startsWith(github.ref, 'refs/pull/') }}
         working-directory: stremio-core-web
         run: cp ./*.tgz ./build/${{ github.ref_name }}
 
@@ -108,10 +112,12 @@ jobs:
         run: npm pack
         
       - name: Copy dev package archive
+        if: ${{ ! startsWith(github.ref, 'refs/pull/') }} 
         working-directory: stremio-core-web
         run: cp ./*.tgz ./build/${{ github.ref_name }}/dev
+        
       - name: Deploy gh-pages
-        if: ${{ ! startsWith(github.ref, 'refs/tags/') }}
+        if: ${{ ! startsWith(github.ref, 'refs/pull/')  &&  github.actor != 'dependabot[bot]' }}
         uses: peaceiris/actions-gh-pages@v3
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
@@ -121,4 +127,3 @@ jobs:
           # so we need a recursive creation of the destination dir!
           destination_dir: ./stremio-core-web/
           allow_empty_commit: true
-          
