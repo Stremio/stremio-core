@@ -121,3 +121,6 @@ jobs:
           # so we need a recursive creation of the destination dir!
           destination_dir: ./stremio-core-web/
           allow_empty_commit: true
+          user_name: 'github-actions[bot]'
+          user_email: 'github-actions[bot]@users.noreply.github.com'
+          
