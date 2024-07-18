@@ -108,6 +108,7 @@ jobs:
         run: npm run build-dev
 
       - name: Package (dev)
+        if: ${{ ! startsWith(github.ref, 'refs/pull/') }}
         working-directory: stremio-core-web
         run: npm pack
         
