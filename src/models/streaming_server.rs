@@ -9,11 +9,9 @@ use crate::types::addon::ResourcePath;
 use crate::types::api::SuccessResponse;
 use crate::types::empty_string_as_null;
 use crate::types::profile::{AuthKey, Profile};
-
 use crate::types::streaming_server::{
     DeviceInfo, GetHTTPSResponse, NetworkInfo, Settings, SettingsResponse, Statistics,
 };
-
 use enclose::enclose;
 use futures::{FutureExt, TryFutureExt};
 use http::request::Request;
