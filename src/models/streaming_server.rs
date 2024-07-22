@@ -8,10 +8,10 @@ use crate::runtime::{Effect, EffectFuture, Effects, Env, EnvError, EnvFutureExt,
 use crate::types::addon::ResourcePath;
 use crate::types::api::SuccessResponse;
 use crate::types::profile::{AuthKey, Profile};
+use crate::types::streaming_server::empty_string_as_null;
 use crate::types::streaming_server::{
     DeviceInfo, GetHTTPSResponse, NetworkInfo, Settings, SettingsResponse, Statistics,
 };
-use crate::types::streaming_server::empty_string_as_null;
 
 use enclose::enclose;
 use futures::{FutureExt, TryFutureExt};
