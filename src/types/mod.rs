@@ -18,3 +18,6 @@ pub use serde_as_ext::*;
 
 mod r#true;
 pub use r#true::*;
+
+mod serde_ext;
+pub use serde_ext::*;
