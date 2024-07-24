@@ -1,0 +1,26 @@
+{
+    "name": "@stremio/stremio-core-web",
+    "version": "0.47.7",
+    "description": "Bridge between stremio-core and stremio-web",
+    "author": "Smart Code OOD",
+    "main": "stremio_core_web.js",
+    "license": "MIT",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/stremio/stremio-core-web.git"
+    },
+    "scripts": {
+        "build": "./scripts/build.sh",
+        "build-dev": "./scripts/build.sh --dev"
+    },
+    "dependencies": {
+        "@babel/runtime": "7.24.1"
+    },
+    "devDependencies": {
+        "@babel/cli": "7.24.1",
+        "@babel/core": "7.24.3",
+        "@babel/plugin-transform-runtime": "7.24.3",
+        "@babel/preset-env": "7.24.3",
+        "babel-plugin-bundled-import-meta": "0.3.2"
+    }
+}
