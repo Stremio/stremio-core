@@ -2,6 +2,7 @@ mod deep_links_ext;
 pub use deep_links_ext::*;
 
 mod addons_deep_links;
+mod calendar_deep_links;
 mod discover_deep_links;
 mod library_deep_links;
 mod library_item_deep_links;
