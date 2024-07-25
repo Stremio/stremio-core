@@ -526,7 +526,7 @@ pub struct StreamProxyHeaders {
     pub response: HashMap<String, String>,
 }
 
-/// See https://github.com/Stremio/stremio-addon-sdk/blob/master/docs/api/responses/stream.md#additional-properties-to-provide-information--behaviour-flags for documentation
+/// See <https://github.com/Stremio/stremio-addon-sdk/blob/master/docs/api/responses/stream.md#additional-properties-to-provide-information--behaviour-flags> for documentation
 #[derive(Default, Clone, PartialEq, Eq, Serialize, Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct StreamBehaviorHints {
