@@ -8,12 +8,17 @@ use stremio_core::models::installed_addons_with_filters::{
 use wasm_bindgen::JsValue;
 
 mod model {
+    use stremio_core::types::addon::{DescriptorFlags, ManifestPreview};
+    use url::Url;
+
     use super::*;
     #[derive(Serialize)]
     #[serde(rename_all = "camelCase")]
-    pub struct Descriptor<'a> {
-        #[serde(flatten)]
-        pub addon: &'a stremio_core::types::addon::Descriptor,
+    pub struct DescriptorPreview {
+        pub manifest: ManifestPreview,
+        pub transport_url: Url,
+        #[serde(default)]
+        pub flags: DescriptorFlags,
         pub installed: bool,
     }
     #[derive(Serialize)]
@@ -41,7 +46,7 @@ mod model {
     pub struct InstalledAddonsWithFilters<'a> {
         pub selected: &'a Option<Selected>,
         pub selectable: Selectable<'a>,
-        pub catalog: Vec<Descriptor<'a>>,
+        pub catalog: Vec<DescriptorPreview>,
     }
 }
 
@@ -70,8 +75,10 @@ pub fn serialize_installed_addons(installed_addons: &InstalledAddonsWithFilters)
         catalog: installed_addons
             .catalog
             .iter()
-            .map(|addon| model::Descriptor {
-                addon,
+            .map(|addon| model::DescriptorPreview {
+                manifest: (&addon.manifest).into(),
+                transport_url: addon.transport_url.clone(),
+                flags: addon.flags.clone(),
                 installed: true,
             })
             .collect(),
