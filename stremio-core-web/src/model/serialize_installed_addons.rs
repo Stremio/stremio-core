@@ -12,6 +12,9 @@ mod model {
     use url::Url;
 
     use super::*;
+
+    /// Descriptor Preview serializing the [`ManifestPreview`] and
+    /// [`DescriptorFlags`] of an addon.
     #[derive(Serialize)]
     #[serde(rename_all = "camelCase")]
     pub struct DescriptorPreview {
@@ -19,6 +22,7 @@ mod model {
         pub transport_url: Url,
         #[serde(default)]
         pub flags: DescriptorFlags,
+        /// All addons in this model are installed by default!
         pub installed: bool,
     }
     #[derive(Serialize)]
