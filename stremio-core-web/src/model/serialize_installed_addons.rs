@@ -11,9 +11,9 @@ mod model {
     use super::*;
     #[derive(Serialize)]
     #[serde(rename_all = "camelCase")]
-    pub struct DescriptorPreview<'a> {
+    pub struct Descriptor<'a> {
         #[serde(flatten)]
-        pub addon: &'a stremio_core::types::addon::DescriptorPreview,
+        pub addon: &'a stremio_core::types::addon::Descriptor,
         pub installed: bool,
     }
     #[derive(Serialize)]
@@ -41,7 +41,7 @@ mod model {
     pub struct InstalledAddonsWithFilters<'a> {
         pub selected: &'a Option<Selected>,
         pub selectable: Selectable<'a>,
-        pub catalog: Vec<DescriptorPreview<'a>>,
+        pub catalog: Vec<Descriptor<'a>>,
     }
 }
 
@@ -70,7 +70,7 @@ pub fn serialize_installed_addons(installed_addons: &InstalledAddonsWithFilters)
         catalog: installed_addons
             .catalog
             .iter()
-            .map(|addon| model::DescriptorPreview {
+            .map(|addon| model::Descriptor {
                 addon,
                 installed: true,
             })
