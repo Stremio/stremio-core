@@ -3,7 +3,7 @@ use crate::models::common::{compare_with_priorities, eq_update};
 use crate::models::ctx::Ctx;
 use crate::runtime::msg::{Action, ActionLoad, Internal, Msg};
 use crate::runtime::{Effects, Env, UpdateWithCtx};
-use crate::types::addon::Descriptor;
+use crate::types::addon::DescriptorPreview;
 use crate::types::profile::Profile;
 use itertools::Itertools;
 use serde::{Deserialize, Serialize};
@@ -35,7 +35,7 @@ pub struct Selectable {
 pub struct InstalledAddonsWithFilters {
     pub selected: Option<Selected>,
     pub selectable: Selectable,
-    pub catalog: Vec<Descriptor>,
+    pub catalog: Vec<DescriptorPreview>,
 }
 
 impl InstalledAddonsWithFilters {
@@ -130,7 +130,7 @@ fn selectable_update(
 }
 
 fn catalog_update(
-    catalog: &mut Vec<Descriptor>,
+    catalog: &mut Vec<DescriptorPreview>,
     selected: &Option<Selected>,
     profile: &Profile,
 ) -> Effects {
@@ -142,7 +142,7 @@ fn catalog_update(
                 Some(r#type) => addon.manifest.types.contains(r#type),
                 None => true,
             })
-            .cloned()
+            .map(|addon| addon.into())
             .collect::<Vec<_>>(),
         _ => vec![],
     };

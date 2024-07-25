@@ -17,6 +17,8 @@ pub struct Descriptor {
 pub struct DescriptorPreview {
     pub manifest: ManifestPreview,
     pub transport_url: Url,
+    #[serde(default)]
+    pub flags: DescriptorFlags,
 }
 
 impl From<&Descriptor> for DescriptorPreview {
@@ -24,6 +26,7 @@ impl From<&Descriptor> for DescriptorPreview {
         Self {
             manifest: (&value.manifest).into(),
             transport_url: value.transport_url.clone(),
+            flags: value.flags.clone(),
         }
     }
 }
