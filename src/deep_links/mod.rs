@@ -34,6 +34,9 @@ pub struct OpenPlayerLink {
     pub webos: Option<String>,
     pub chromeos: Option<String>,
     pub roku: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    /// Vision Pro os
+    pub visionos: Option<String>,
 }
 
 #[derive(Default, Serialize, Debug, PartialEq, Eq)]
@@ -125,6 +128,10 @@ impl From<(&Stream, Option<&Url>, &Settings)> for ExternalPlayerLink {
                     "mpv" => Some(OpenPlayerLink {
                         macos: Some(format!("mpv://{url}")),
                        ..Default::default()
+                    }),
+                    "moonplayer" => Some(OpenPlayerLink {
+                        visionos: Some(format!("moonplayer://open?url={url}")),
+                        ..Default::default()
                     }),
                     "m3u" => Some(OpenPlayerLink {
                         linux: playlist.to_owned(),
