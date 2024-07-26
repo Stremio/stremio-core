@@ -35,7 +35,7 @@ pub struct OpenPlayerLink {
     pub chromeos: Option<String>,
     pub roku: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    /// Vision Pro os
+    /// VisionOS
     pub visionos: Option<String>,
 }
 
