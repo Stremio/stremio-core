@@ -325,6 +325,7 @@ impl From<(&MetaItem, &ResourceRequest)> for MetaItemDeepLinks {
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct VideoDeepLinks {
+    pub meta_details_videos: String,
     pub meta_details_streams: String,
     pub player: Option<String>,
     pub external_player: Option<ExternalPlayerLink>,
@@ -341,6 +342,11 @@ impl From<(&Video, &ResourceRequest, &Option<Url>, &Settings)> for VideoDeepLink
     ) -> Self {
         let stream = video.stream();
         VideoDeepLinks {
+            meta_details_videos: format!(
+                "stremio:///detail/{}/{}",
+                utf8_percent_encode(&request.path.r#type, URI_COMPONENT_ENCODE_SET),
+                utf8_percent_encode(&request.path.id, URI_COMPONENT_ENCODE_SET),
+            ),
             meta_details_streams: format!(
                 "stremio:///detail/{}/{}/{}",
                 utf8_percent_encode(&request.path.r#type, URI_COMPONENT_ENCODE_SET),
@@ -389,6 +395,11 @@ impl
     ) -> Self {
         let stream = video.stream();
         VideoDeepLinks {
+            meta_details_videos: format!(
+                "stremio:///detail/{}/{}",
+                utf8_percent_encode(&meta_request.path.r#type, URI_COMPONENT_ENCODE_SET),
+                utf8_percent_encode(&meta_request.path.id, URI_COMPONENT_ENCODE_SET),
+            ),
             meta_details_streams: format!(
                 "stremio:///detail/{}/{}/{}",
                 utf8_percent_encode(&meta_request.path.r#type, URI_COMPONENT_ENCODE_SET),
