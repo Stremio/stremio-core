@@ -8,9 +8,12 @@ edition = "2021"
 crate-type = ["cdylib"]
 
 [features]
-default = []
+default = ["wasm"]
 # enable TRACE level of logging in the crate using `tracing`.
 log-trace = []
+
+# enable wasm bindings exports
+wasm = ["dep:wasm-bindgen", "dep:wasm-bindgen-futures", "dep:gloo-utils", "dep:console_error_panic_hook", "dep:js-sys", "dep:web-sys", "dep:getrandom", "getrandom?/js"]
 
 [dependencies]
 stremio-core = { version = "0.1", features = ["derive", "analytics"], path = "../" }
@@ -29,14 +32,14 @@ enclose = "1.1.*"
 itertools = "0.10.*"
 boolinator = "2.4.*"
 Inflector = "0.11.*"
-wasm-bindgen = { version = "=0.2.78", features = ["serde-serialize"] }
-wasm-bindgen-futures = "0.4"
-gloo-utils = { version = "0.2", features = ["serde"] }
+wasm-bindgen = { version = "=0.2.78", features = ["serde-serialize"], optional = true }
+wasm-bindgen-futures = { version = "0.4", optional = true }
+gloo-utils = { version = "0.2", features = ["serde"], optional = true }
 
 # panic hook for wasm
-console_error_panic_hook = "0.1.*"
+console_error_panic_hook = { version = "0.1.*", optional = true }
 
-js-sys = "0.3"
+js-sys = { version = "0.3", optional = true }
 web-sys = { version = "0.3", features = [
     "WorkerGlobalScope",
     "WorkerNavigator",
@@ -44,14 +47,14 @@ web-sys = { version = "0.3", features = [
     "RequestInit",
     "Response",
     "console",
-] }
-getrandom = { version = "0.2.*", features = ["js"] }
+], optional = true }
+getrandom = { version = "0.2", optional = true }
 cfg-if = "1.0"
 serde_path_to_error = "0.1.*"
 
 # Tracing
 tracing = "0.1"
-tracing-wasm = "0.2"
+tracing-wasm = { version = "0.2", optional = true }
 
 [dev-dependencies]
 wasm-bindgen-test = "0.3.0"

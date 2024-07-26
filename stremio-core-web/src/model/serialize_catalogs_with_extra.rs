@@ -1,7 +1,10 @@
-use gloo_utils::format::JsValueSerdeExt;
 use itertools::Itertools;
 use serde::Serialize;
+
+#[cfg(feature = "wasm")]
 use wasm_bindgen::JsValue;
+#[cfg(feature = "wasm")]
+use gloo_utils::format::JsValueSerdeExt;
 
 use crate::model::deep_links_ext::DeepLinksExt;
 
@@ -137,24 +140,24 @@ pub trait SerializeModel<Out> {
     fn serialize_model(&self) -> Result<Out, Self::Error>;
 }
 
-impl<'a> SerializeModel<JsValue> for CatalogsWithExtra<'a> {
+#[cfg(feature = "wasm")]
+impl<'a> SerializeModel<wasm_bindgen::JsValue> for CatalogsWithExtra<'a> {
     type Error = serde_json::Error;
-    // type Out = JsValue;
 
-    fn serialize_model(&self) -> Result<JsValue, Self::Error> {
-        JsValue::try_from(self)
+    fn serialize_model(&self) -> Result<wasm_bindgen::JsValue, Self::Error> {
+        wasm_bindgen::JsValue::try_from(self)
     }
 }
 
 impl<'a> SerializeModel<AppleKotlinStruct> for CatalogsWithExtra<'a> {
     type Error = serde_json::Error;
-    // type Out = JsValue;
 
     fn serialize_model(&self) -> Result<AppleKotlinStruct, Self::Error> {
         Ok(AppleKotlinStruct {})
     }
 }
 
+#[cfg(feature = "wasm")]
 impl<'a> TryFrom<&CatalogsWithExtra<'a>> for JsValue {
     type Error = serde_json::Error;
 
