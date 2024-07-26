@@ -93,6 +93,7 @@ impl From<(&Stream, Option<&Url>, &Settings)> for ExternalPlayerLink {
                     }),
                     "vlc" => Some(OpenPlayerLink {
                         ios: Some(format!("vlc-x-callback://x-callback-url/stream?url={url}")),
+                        visionos: Some(format!("vlc-x-callback://x-callback-url/stream?url={url}")),
                         android: Some(format!(
                             "{}#Intent;package=org.videolan.vlc;type=video;scheme=https;end",
                             http_regex.replace(url, "intent://"),
@@ -115,6 +116,7 @@ impl From<(&Stream, Option<&Url>, &Settings)> for ExternalPlayerLink {
                     }),
                     "outplayer" => Some(OpenPlayerLink {
                         ios: Some(format!("{}", http_regex.replace(url, "outplayer://"))),
+                        visionos: Some(format!("{}", http_regex.replace(url, "outplayer://"))),
                         ..Default::default()
                     }),
                     "infuse" => Some(OpenPlayerLink {
