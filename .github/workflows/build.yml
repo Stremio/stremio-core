@@ -101,7 +101,7 @@ jobs:
       - name: Copy release package archive
         if: ${{ ! startsWith(github.ref, 'refs/pull/') }}
         working-directory: stremio-core-web
-        run: cp ./*.tgz ./build/${{ github.ref_name }}
+        run: mv ./*.tgz ./build/${{ github.ref_name }}
 
       - name: Build (dev)
         working-directory: stremio-core-web
@@ -115,7 +115,7 @@ jobs:
       - name: Copy dev package archive
         if: ${{ ! startsWith(github.ref, 'refs/pull/') }} 
         working-directory: stremio-core-web
-        run: cp ./*.tgz ./build/${{ github.ref_name }}/dev
+        run: mv ./*.tgz ./build/${{ github.ref_name }}/dev
         
       - name: Deploy gh-pages
         if: ${{ ! startsWith(github.ref, 'refs/pull/')  &&  github.actor != 'dependabot[bot]' }}
