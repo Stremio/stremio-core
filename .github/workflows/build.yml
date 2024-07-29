@@ -101,7 +101,7 @@ jobs:
       - name: Copy release package archive
         if: ${{ ! startsWith(github.ref, 'refs/pull/') }}
         working-directory: stremio-core-web
-        run: cp ./*.tgz ./build/${{ github.ref_name }}
+        run: mv ./*.tgz ./build/${{ github.ref_name }}
 
       - name: Build (dev)
         working-directory: stremio-core-web
@@ -115,7 +115,7 @@ jobs:
       - name: Copy dev package archive
         if: ${{ ! startsWith(github.ref, 'refs/pull/') }} 
         working-directory: stremio-core-web
-        run: cp ./*.tgz ./build/${{ github.ref_name }}/dev
+        run: mv ./*.tgz ./build/${{ github.ref_name }}/dev
         
       - name: Deploy gh-pages
         if: ${{ ! startsWith(github.ref, 'refs/pull/')  &&  github.actor != 'dependabot[bot]' }}
@@ -127,4 +127,6 @@ jobs:
           # in stremio, we use `feat/features-name` or `fix/this-bug`
           # so we need a recursive creation of the destination dir!
           destination_dir: ./stremio-core-web/
+          # otherwise it clears all existing files and folders in stremio-core-web subdir in gh-pages.
+          keep_files: true
           allow_empty_commit: true
