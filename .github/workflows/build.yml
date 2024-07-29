@@ -127,4 +127,6 @@ jobs:
           # in stremio, we use `feat/features-name` or `fix/this-bug`
           # so we need a recursive creation of the destination dir!
           destination_dir: ./stremio-core-web/
+          # otherwise it clears all existing files and folders in stremio-core-web subdir in gh-pages.
+          keep_files: true
           allow_empty_commit: true
