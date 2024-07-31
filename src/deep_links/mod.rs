@@ -34,6 +34,9 @@ pub struct OpenPlayerLink {
     pub webos: Option<String>,
     pub chromeos: Option<String>,
     pub roku: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    /// VisionOS
+    pub visionos: Option<String>,
 }
 
 #[derive(Default, Serialize, Debug, PartialEq, Eq)]
@@ -90,6 +93,7 @@ impl From<(&Stream, Option<&Url>, &Settings)> for ExternalPlayerLink {
                     }),
                     "vlc" => Some(OpenPlayerLink {
                         ios: Some(format!("vlc-x-callback://x-callback-url/stream?url={url}")),
+                        visionos: Some(format!("vlc-x-callback://x-callback-url/stream?url={url}")),
                         android: Some(format!(
                             "{}#Intent;package=org.videolan.vlc;type=video;scheme=https;end",
                             http_regex.replace(url, "intent://"),
@@ -112,6 +116,7 @@ impl From<(&Stream, Option<&Url>, &Settings)> for ExternalPlayerLink {
                     }),
                     "outplayer" => Some(OpenPlayerLink {
                         ios: Some(format!("{}", http_regex.replace(url, "outplayer://"))),
+                        visionos: Some(format!("{}", http_regex.replace(url, "outplayer://"))),
                         ..Default::default()
                     }),
                     "infuse" => Some(OpenPlayerLink {
@@ -125,6 +130,10 @@ impl From<(&Stream, Option<&Url>, &Settings)> for ExternalPlayerLink {
                     "mpv" => Some(OpenPlayerLink {
                         macos: Some(format!("mpv://{url}")),
                        ..Default::default()
+                    }),
+                    "moonplayer" => Some(OpenPlayerLink {
+                        visionos: Some(format!("moonplayer://open?url={url}")),
+                        ..Default::default()
                     }),
                     "m3u" => Some(OpenPlayerLink {
                         linux: playlist.to_owned(),
