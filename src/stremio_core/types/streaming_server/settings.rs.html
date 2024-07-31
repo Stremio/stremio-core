@@ -22,8 +22,13 @@
 <a href="#22" id="22">22</a>
 <a href="#23" id="23">23</a>
 <a href="#24" id="24">24</a>
+<a href="#25" id="25">25</a>
+<a href="#26" id="26">26</a>
+<a href="#27" id="27">27</a>
 </pre></div><pre class="rust"><code><span class="kw">use </span>serde::{Deserialize, Serialize};
 <span class="kw">use </span>serde_with::{serde_as, DefaultOnError};
+
+<span class="kw">use </span><span class="kw">crate</span>::types::serde_ext::empty_string_as_null;
 
 <span class="attr">#[serde_as]
 #[derive(Clone, PartialEq, Serialize, Deserialize, Debug)]
@@ -32,7 +37,8 @@
     <span class="kw">pub </span>app_path: String,
     <span class="kw">pub </span>cache_root: String,
     <span class="kw">pub </span>server_version: String,
-    <span class="kw">pub </span>remote_https: <span class="prelude-ty">Option</span>&lt;String&gt;,
+    <span class="attr">#[serde(with = <span class="string">"empty_string_as_null"</span>)]
+    </span><span class="kw">pub </span>remote_https: <span class="prelude-ty">Option</span>&lt;String&gt;,
     <span class="comment">// Set to default in case the value is anything other than a string or null
     </span><span class="attr">#[serde(default)]
     #[serde_as(deserialize_as = <span class="string">"DefaultOnError"</span>)]

@@ -734,6 +734,8 @@
 <a href="#734" id="734">734</a>
 <a href="#735" id="735">735</a>
 <a href="#736" id="736">736</a>
+<a href="#737" id="737">737</a>
+<a href="#738" id="738">738</a>
 </pre></div><pre class="rust"><code><span class="kw">use </span><span class="kw">crate</span>::constants::META_RESOURCE_NAME;
 <span class="kw">use </span><span class="kw">crate</span>::models::common::{eq_update, Loadable};
 <span class="kw">use </span><span class="kw">crate</span>::models::ctx::{Ctx, CtxError};
@@ -743,6 +745,7 @@
 <span class="kw">use </span><span class="kw">crate</span>::runtime::{Effect, EffectFuture, Effects, Env, EnvError, EnvFutureExt, UpdateWithCtx};
 <span class="kw">use </span><span class="kw">crate</span>::types::addon::ResourcePath;
 <span class="kw">use </span><span class="kw">crate</span>::types::api::SuccessResponse;
+<span class="kw">use </span><span class="kw">crate</span>::types::empty_string_as_null;
 <span class="kw">use </span><span class="kw">crate</span>::types::profile::{AuthKey, Profile};
 <span class="kw">use </span><span class="kw">crate</span>::types::streaming_server::{
     DeviceInfo, GetHTTPSResponse, NetworkInfo, Settings, SettingsResponse, Statistics,
@@ -1220,7 +1223,8 @@
         bt_download_speed_soft_limit: f64,
         bt_download_speed_hard_limit: f64,
         bt_min_peers_for_stable: u64,
-        remote_https: <span class="prelude-ty">Option</span>&lt;String&gt;,
+        <span class="attr">#[serde(with = <span class="string">"empty_string_as_null"</span>)]
+        </span>remote_https: <span class="prelude-ty">Option</span>&lt;String&gt;,
         proxy_streams_enabled: bool,
         transcode_profile: <span class="prelude-ty">Option</span>&lt;String&gt;,
     }
