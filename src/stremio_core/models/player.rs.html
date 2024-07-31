@@ -2634,7 +2634,7 @@
                 );
 
                 closest_duration.and_then(|(closest_duration, skip_gaps)| {
-                <span class="kw">let </span>duration_diff_in_secs = (library_item.state.duration - closest_duration).div(<span class="number">1000 </span>* <span class="number">10</span>) / <span class="number">10</span>;
+                <span class="kw">let </span>duration_diff_in_secs = (library_item.state.duration.abs_diff(<span class="kw-2">*</span>closest_duration)).div(<span class="number">1000 </span>* <span class="number">10</span>) / <span class="number">10</span>;
                 <span class="macro">tracing::trace!</span>(<span class="string">"Player: Intro match by duration with difference of {duration_diff_in_secs} seconds"</span>);
 
                 <span class="kw">let </span>duration_ration = Ratio::new(library_item.state.duration, <span class="kw-2">*</span>closest_duration);
@@ -2644,7 +2644,7 @@
                     IntroData {
                         from: (duration_ration * seek_event.from).to_integer(),
                         to: (duration_ration * seek_event.to).to_integer(),
-                        duration: <span class="kw">if </span>duration_diff_in_secs &gt; <span class="number">0 </span>{ <span class="prelude-val">Some</span>(seek_event.to - seek_event.from) } <span class="kw">else </span>{ <span class="prelude-val">None </span>}
+                        duration: <span class="kw">if </span>duration_diff_in_secs &gt; <span class="number">0 </span>{ <span class="prelude-val">Some</span>(seek_event.to.abs_diff(seek_event.from)) } <span class="kw">else </span>{ <span class="prelude-val">None </span>}
                     }
                 })
               })
