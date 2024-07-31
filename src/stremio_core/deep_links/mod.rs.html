@@ -1,4 +1,4 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `src/deep_links/mod.rs`."><title>mod.rs - source</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-46f98efaafac5295.ttf.woff2,FiraSans-Regular-018c141bf0843ffd.woff2,FiraSans-Medium-8f9a781e4970d388.woff2,SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2,SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../../static.files/rustdoc-99073656bbb10eb3.css"><meta name="rustdoc-vars" data-root-path="../../../" data-static-root-path="../../../static.files/" data-current-crate="stremio_core" data-themes="" data-resource-suffix="" data-rustdoc-version="1.82.0-nightly (2cbbe8b8b 2024-07-28)" data-channel="nightly" data-search-js="search-ef54e092fea9c776.js" data-settings-js="settings-4313503d2e1961c2.js" ><script src="../../../static.files/storage-118b08c4c78b968e.js"></script><script defer src="../../../static.files/src-script-e66d777a5a92e9b2.js"></script><script defer src="../../../src-files.js"></script><script defer src="../../../static.files/main-2a506944c89e7bb4.js"></script><noscript><link rel="stylesheet" href="../../../static.files/noscript-df360f571f6edeae.css"></noscript><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title"><h2>Files</h2></div></nav><div class="sidebar-resizer"></div><main><rustdoc-search></rustdoc-search><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `src/deep_links/mod.rs`."><title>mod.rs - source</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-46f98efaafac5295.ttf.woff2,FiraSans-Regular-018c141bf0843ffd.woff2,FiraSans-Medium-8f9a781e4970d388.woff2,SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2,SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../../static.files/rustdoc-970bf1bf55bd1c15.css"><meta name="rustdoc-vars" data-root-path="../../../" data-static-root-path="../../../static.files/" data-current-crate="stremio_core" data-themes="" data-resource-suffix="" data-rustdoc-version="1.82.0-nightly (f8060d282 2024-07-30)" data-channel="nightly" data-search-js="search-ef54e092fea9c776.js" data-settings-js="settings-4313503d2e1961c2.js" ><script src="../../../static.files/storage-118b08c4c78b968e.js"></script><script defer src="../../../static.files/src-script-e66d777a5a92e9b2.js"></script><script defer src="../../../src-files.js"></script><script defer src="../../../static.files/main-f9142fe437216fc3.js"></script><noscript><link rel="stylesheet" href="../../../static.files/noscript-df360f571f6edeae.css"></noscript><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title"><h2>Files</h2></div></nav><div class="sidebar-resizer"></div><main><rustdoc-search></rustdoc-search><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
 <a href="#2" id="2">2</a>
 <a href="#3" id="3">3</a>
 <a href="#4" id="4">4</a>
@@ -643,6 +643,15 @@
 <a href="#643" id="643">643</a>
 <a href="#644" id="644">644</a>
 <a href="#645" id="645">645</a>
+<a href="#646" id="646">646</a>
+<a href="#647" id="647">647</a>
+<a href="#648" id="648">648</a>
+<a href="#649" id="649">649</a>
+<a href="#650" id="650">650</a>
+<a href="#651" id="651">651</a>
+<a href="#652" id="652">652</a>
+<a href="#653" id="653">653</a>
+<a href="#654" id="654">654</a>
 </pre></div><pre class="rust"><code><span class="kw">use </span>percent_encoding::utf8_percent_encode;
 <span class="kw">use </span>regex::Regex;
 <span class="kw">use </span>serde::Serialize;
@@ -679,6 +688,9 @@
     <span class="kw">pub </span>webos: <span class="prelude-ty">Option</span>&lt;String&gt;,
     <span class="kw">pub </span>chromeos: <span class="prelude-ty">Option</span>&lt;String&gt;,
     <span class="kw">pub </span>roku: <span class="prelude-ty">Option</span>&lt;String&gt;,
+    <span class="attr">#[serde(default, skip_serializing_if = <span class="string">"Option::is_none"</span>)]
+    </span><span class="doccomment">/// VisionOS
+    </span><span class="kw">pub </span>visionos: <span class="prelude-ty">Option</span>&lt;String&gt;,
 }
 
 <span class="attr">#[derive(Default, Serialize, Debug, PartialEq, Eq)]
@@ -735,6 +747,7 @@
                     }),
                     <span class="string">"vlc" </span>=&gt; <span class="prelude-val">Some</span>(OpenPlayerLink {
                         ios: <span class="prelude-val">Some</span>(<span class="macro">format!</span>(<span class="string">"vlc-x-callback://x-callback-url/stream?url={url}"</span>)),
+                        visionos: <span class="prelude-val">Some</span>(<span class="macro">format!</span>(<span class="string">"vlc-x-callback://x-callback-url/stream?url={url}"</span>)),
                         android: <span class="prelude-val">Some</span>(<span class="macro">format!</span>(
                             <span class="string">"{}#Intent;package=org.videolan.vlc;type=video;scheme=https;end"</span>,
                             http_regex.replace(url, <span class="string">"intent://"</span>),
@@ -757,6 +770,7 @@
                     }),
                     <span class="string">"outplayer" </span>=&gt; <span class="prelude-val">Some</span>(OpenPlayerLink {
                         ios: <span class="prelude-val">Some</span>(<span class="macro">format!</span>(<span class="string">"{}"</span>, http_regex.replace(url, <span class="string">"outplayer://"</span>))),
+                        visionos: <span class="prelude-val">Some</span>(<span class="macro">format!</span>(<span class="string">"{}"</span>, http_regex.replace(url, <span class="string">"outplayer://"</span>))),
                         ..Default::default()
                     }),
                     <span class="string">"infuse" </span>=&gt; <span class="prelude-val">Some</span>(OpenPlayerLink {
@@ -770,6 +784,10 @@
                     <span class="string">"mpv" </span>=&gt; <span class="prelude-val">Some</span>(OpenPlayerLink {
                         macos: <span class="prelude-val">Some</span>(<span class="macro">format!</span>(<span class="string">"mpv://{url}"</span>)),
                        ..Default::default()
+                    }),
+                    <span class="string">"moonplayer" </span>=&gt; <span class="prelude-val">Some</span>(OpenPlayerLink {
+                        visionos: <span class="prelude-val">Some</span>(<span class="macro">format!</span>(<span class="string">"moonplayer://open?url={url}"</span>)),
+                        ..Default::default()
                     }),
                     <span class="string">"m3u" </span>=&gt; <span class="prelude-val">Some</span>(OpenPlayerLink {
                         linux: playlist.to_owned(),
