@@ -7,6 +7,7 @@ use crate::runtime::msg::{
 use crate::runtime::{Effect, EffectFuture, Effects, Env, EnvError, EnvFutureExt, UpdateWithCtx};
 use crate::types::addon::ResourcePath;
 use crate::types::api::SuccessResponse;
+use crate::types::empty_string_as_null;
 use crate::types::profile::{AuthKey, Profile};
 use crate::types::streaming_server::{
     DeviceInfo, GetHTTPSResponse, NetworkInfo, Settings, SettingsResponse, Statistics,
@@ -484,6 +485,7 @@ fn set_settings<E: Env + 'static>(url: &Url, settings: &Settings) -> Effect {
         bt_download_speed_soft_limit: f64,
         bt_download_speed_hard_limit: f64,
         bt_min_peers_for_stable: u64,
+        #[serde(with = "empty_string_as_null")]
         remote_https: Option<String>,
         proxy_streams_enabled: bool,
         transcode_profile: Option<String>,

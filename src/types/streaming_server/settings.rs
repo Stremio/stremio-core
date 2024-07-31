@@ -1,6 +1,8 @@
 use serde::{Deserialize, Serialize};
 use serde_with::{serde_as, DefaultOnError};
 
+use crate::types::serde_ext::empty_string_as_null;
+
 #[serde_as]
 #[derive(Clone, PartialEq, Serialize, Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
@@ -8,6 +10,7 @@ pub struct Settings {
     pub app_path: String,
     pub cache_root: String,
     pub server_version: String,
+    #[serde(with = "empty_string_as_null")]
     pub remote_https: Option<String>,
     // Set to default in case the value is anything other than a string or null
     #[serde(default)]
