@@ -1,4 +1,4 @@
-[package]
+ [package]
 name = "stremio-core-web"
 version = "0.47.7"
 authors = ["Smart Code OOD"]
@@ -8,12 +8,14 @@ edition = "2021"
 crate-type = ["cdylib"]
 
 [features]
-default = ["wasm"]
+default = ["std", "wasm"]
+
+std = []
+# enable wasm bindings exports, enabled by default (stremio-core-web crate after all)
+wasm = ["dep:wasm-bindgen", "dep:wasm-bindgen-futures", "dep:gloo-utils", "dep:tracing-wasm", "dep:console_error_panic_hook", "dep:js-sys", "dep:web-sys", "getrandom/js"]
+
 # enable TRACE level of logging in the crate using `tracing`.
 log-trace = []
-
-# enable wasm bindings exports
-wasm = ["dep:wasm-bindgen", "dep:wasm-bindgen-futures", "dep:gloo-utils", "dep:console_error_panic_hook", "dep:js-sys", "dep:web-sys", "dep:getrandom", "getrandom?/js"]
 
 [dependencies]
 stremio-core = { version = "0.1", features = ["derive", "analytics"], path = "../" }
@@ -57,4 +59,4 @@ tracing = "0.1"
 tracing-wasm = { version = "0.2", optional = true }
 
 [dev-dependencies]
-wasm-bindgen-test = "0.3.0"
+wasm-bindgen-test = { version = "0.3.0" }

@@ -457,7 +457,10 @@ impl Env for WebEnv {
 
     #[cfg(debug_assertions)]
     fn log(message: String) {
-        web_sys::console::log_1(&JsValue::from(message));
+        use tracing::info;
+
+        info!("{message}");
+        // web_sys::console::log_1();
     }
 }
 

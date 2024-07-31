@@ -1,6 +1,5 @@
-use crate::env::WebEnv;
 use crate::model::deep_links_ext::DeepLinksExt;
-use gloo_utils::format::JsValueSerdeExt;
+
 use semver::Version;
 use serde::Serialize;
 use stremio_core::deep_links::{StreamDeepLinks, VideoDeepLinks};
@@ -14,7 +13,8 @@ use stremio_core::types::{
     streams::StreamItemState,
 };
 use url::Url;
-use wasm_bindgen::JsValue;
+#[cfg(feature = "wasm")]
+use {crate::env::WebEnv, gloo_utils::format::JsValueSerdeExt, wasm_bindgen::JsValue};
 
 mod model {
     use super::*;
@@ -106,7 +106,7 @@ mod model {
         pub addon: Option<model::DescriptorPreview<'a>>,
     }
 }
-
+#[cfg(feature = "wasm")]
 pub fn serialize_player(player: &Player, ctx: &Ctx, streaming_server: &StreamingServer) -> JsValue {
     <JsValue as JsValueSerdeExt>::from_serde(&model::Player {
         selected: player.selected.as_ref().map(|selected| model::Selected {

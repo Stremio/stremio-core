@@ -2,9 +2,7 @@ use itertools::Itertools;
 use serde::Serialize;
 
 #[cfg(feature = "wasm")]
-use wasm_bindgen::JsValue;
-#[cfg(feature = "wasm")]
-use gloo_utils::format::JsValueSerdeExt;
+use {gloo_utils::format::JsValueSerdeExt, wasm_bindgen::JsValue};
 
 use crate::model::deep_links_ext::DeepLinksExt;
 
@@ -34,6 +32,7 @@ pub struct MetaItemPreview<'a> {
     pub watched: bool,
     pub deep_links: MetaItemDeepLinks,
 }
+
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ResourceLoadable<'a> {
@@ -44,6 +43,7 @@ pub struct ResourceLoadable<'a> {
     pub content: Option<Loadable<Vec<MetaItemPreview<'a>>, String>>,
     pub deep_links: DiscoverDeepLinks,
 }
+
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct CatalogsWithExtra<'a> {
@@ -102,7 +102,7 @@ impl<'a> CatalogsWithExtra<'a> {
                                     .iter()
                                     .unique_by(|meta_item| &meta_item.id)
                                     .take(10)
-                                    .map(|meta_item| crate::model::MetaItemPreview {
+                                    .map(|meta_item| MetaItemPreview {
                                         meta_item,
                                         poster_shape: poster_shape
                                             .unwrap_or(&meta_item.poster_shape),
