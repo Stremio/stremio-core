@@ -51,4 +51,7 @@ pub mod env;
 #[cfg(feature = "wasm")]
 pub mod event;
 #[cfg(feature = "wasm")]
-pub mod stremio_core_web;
+mod stremio_core_web;
+#[cfg(feature = "wasm")]
+// re-export all wasm-specific
+pub use stremio_core_web::*;
