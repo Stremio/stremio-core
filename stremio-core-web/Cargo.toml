@@ -4,8 +4,8 @@ version = "0.47.7"
 authors = ["Smart Code OOD"]
 edition = "2021"
 
-[lib]
-crate-type = ["cdylib"]
+# [lib]
+# crate-type = ["cdylib"]
 
 [features]
 default = ["std", "wasm"]
