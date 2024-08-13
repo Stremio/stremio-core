@@ -150,4 +150,13 @@ pub enum Internal {
     ),
     /// When dismissed events changed
     DismissedEventsChanged,
+    /// The action signals if the user has performed a given action on the library
+    /// added, removed, watched, unwatched
+    LibraryAction(LibraryAction),
+    /// The action signals if the user has performed a given action when playing a stream for the playback
+    /// play, pause
+    PlaybackAction(PlaybackAction),
+    /// The action signals if the user has performed a given action on the player itself
+    /// start, stop
+    PlayerAction(PlayerAction),
 }
