@@ -5,6 +5,7 @@ use std::collections::HashMap;
 use url::Url;
 
 pub const SCHEMA_VERSION_STORAGE_KEY: &str = "schema_version";
+
 pub const PROFILE_STORAGE_KEY: &str = "profile";
 pub const LIBRARY_STORAGE_KEY: &str = "library";
 pub const LIBRARY_RECENT_STORAGE_KEY: &str = "library_recent";
@@ -12,16 +13,28 @@ pub const STREAMS_STORAGE_KEY: &str = "streams";
 pub const SEARCH_HISTORY_STORAGE_KEY: &str = "search_history";
 pub const NOTIFICATIONS_STORAGE_KEY: &str = "notifications";
 pub const DISMISSED_EVENTS_STORAGE_KEY: &str = "dismissed_events";
+
 pub const LIBRARY_COLLECTION_NAME: &str = "libraryItem";
+
 pub const SEARCH_EXTRA_NAME: &str = "search";
 /// `https://{ADDON_UR}/meta/...` resource
 pub const META_RESOURCE_NAME: &str = "meta";
+/// `https://{ADDON_UR}/stream/...` resource
 pub const STREAM_RESOURCE_NAME: &str = "stream";
 /// `https://{ADDON_URL}/catalog/...` resource
 pub const CATALOG_RESOURCE_NAME: &str = "catalog";
+/// `https://{ADDON_URL}/library/...` resource
+pub const LIBRARY_RESOURCE_NAME: &str = "library";
+/// `https://{ADDON_URL}/player/...` resource
+pub const PLAYER_RESOURCE_NAME: &str = "player";
+/// `https://{ADDON_URL}/playback/...` resource
+pub const PLAYBACK_RESOURCE_NAME: &str = "playback";
+/// `https://{ADDON_URL}/subtitles/...` resource
 pub const SUBTITLES_RESOURCE_NAME: &str = "subtitles";
+
 pub const ADDON_MANIFEST_PATH: &str = "/manifest.json";
 pub const ADDON_LEGACY_PATH: &str = "/stremio/v1";
+
 pub const CATALOG_PAGE_SIZE: usize = 100;
 pub const CATALOG_PREVIEW_SIZE: usize = 100;
 pub const LIBRARY_RECENT_COUNT: usize = 200;
