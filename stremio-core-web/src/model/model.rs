@@ -162,9 +162,11 @@ impl WebModel {
                 .expect("JsValue from model::CatalogsWithExtra")
             }
             WebModelField::LocalSearch => serialize_local_search(&self.local_search),
-            WebModelField::MetaDetails => {
-                serialize_meta_details(&self.meta_details, &self.ctx, &self.streaming_server)
-            }
+            WebModelField::MetaDetails => serialize_meta_details::<WebEnv>(
+                &self.meta_details,
+                &self.ctx,
+                &self.streaming_server,
+            ),
             WebModelField::RemoteAddons => serialize_remote_addons(&self.remote_addons, &self.ctx),
             WebModelField::InstalledAddons => serialize_installed_addons(&self.installed_addons),
             WebModelField::AddonDetails => {

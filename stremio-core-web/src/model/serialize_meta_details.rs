@@ -102,7 +102,7 @@ mod model {
 /// 2. If all loaded resources have returned an error we show the first item's error
 /// 3. We show a loading state
 #[cfg(feature = "wasm")]
-pub fn serialize_meta_details(
+pub fn serialize_meta_details<E: Env + 'static>(
     meta_details: &MetaDetails,
     ctx: &Ctx,
     streaming_server: &StreamingServer,
@@ -154,7 +154,7 @@ pub fn serialize_meta_details(
                             .map(|video| model::Video {
                                 video,
                                 upcoming: meta_item.preview.behavior_hints.has_scheduled_videos
-                                    && video.released > Some(WebEnv::now()),
+                                    && video.released > Some(E::now()),
                                 watched: meta_details
                                     .watched
                                     .as_ref()
