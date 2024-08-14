@@ -132,28 +132,12 @@ impl<'a> CatalogsWithExtra<'a> {
     }
 }
 
-pub struct AppleKotlinStruct {}
-
-pub trait SerializeModel<Out> {
-    type Error;
-
-    fn serialize_model(&self) -> Result<Out, Self::Error>;
-}
-
 #[cfg(feature = "wasm")]
-impl<'a> SerializeModel<wasm_bindgen::JsValue> for CatalogsWithExtra<'a> {
+impl<'a> super::SerializeModel<wasm_bindgen::JsValue> for CatalogsWithExtra<'a> {
     type Error = serde_json::Error;
 
     fn serialize_model(&self) -> Result<wasm_bindgen::JsValue, Self::Error> {
         wasm_bindgen::JsValue::try_from(self)
-    }
-}
-
-impl<'a> SerializeModel<AppleKotlinStruct> for CatalogsWithExtra<'a> {
-    type Error = serde_json::Error;
-
-    fn serialize_model(&self) -> Result<AppleKotlinStruct, Self::Error> {
-        Ok(AppleKotlinStruct {})
     }
 }
 
