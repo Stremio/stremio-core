@@ -2,7 +2,7 @@
 pub mod model {
     #[cfg(feature = "wasm")]
     pub use {
-        deep_links_ext::DeepLinksExt, model::*, serialize_catalogs_with_extra::SerializeModel,
+        deep_links_ext::DeepLinksExt, model::*,
         serialize_continue_watching_preview::serialize_continue_watching_preview,
         serialize_ctx::serialize_ctx, serialize_data_export::serialize_data_export,
         serialize_discover::serialize_discover,
@@ -12,6 +12,18 @@ pub mod model {
         serialize_remote_addons::serialize_remote_addons,
         serialize_streaming_server::serialize_streaming_server,
     };
+
+    /// Trait which allows you to serialize one struct
+    /// on specific platform.
+    /// E.g.
+    /// - protobuf for kotlin
+    /// - JSON for wasm
+    /// - etc.
+    pub trait SerializeModel<Out> {
+        type Error;
+
+        fn serialize_model(&self) -> Result<Out, Self::Error>;
+    }
 
     pub mod deep_links_ext {
         pub trait DeepLinksExt {
