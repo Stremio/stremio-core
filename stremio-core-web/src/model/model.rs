@@ -175,7 +175,7 @@ impl WebModel {
             }
             WebModelField::StreamingServer => serialize_streaming_server(&self.streaming_server),
             WebModelField::Player => {
-                serialize_player(&self.player, &self.ctx, &self.streaming_server)
+                serialize_player::<WebEnv>(&self.player, &self.ctx, &self.streaming_server)
             }
         }
     }

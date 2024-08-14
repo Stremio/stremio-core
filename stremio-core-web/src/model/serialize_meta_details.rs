@@ -8,7 +8,7 @@ use serde::Serialize;
 use url::Url;
 #[cfg(feature = "wasm")]
 use {
-    crate::env::WebEnv, gloo_utils::format::JsValueSerdeExt, stremio_core::runtime::Env,
+    gloo_utils::format::JsValueSerdeExt, stremio_core::runtime::Env,
     wasm_bindgen::JsValue,
 };
 

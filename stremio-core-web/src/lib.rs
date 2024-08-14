@@ -58,12 +58,12 @@ pub mod model {
     pub mod serialize_streaming_server;
 }
 
-#[cfg(feature = "wasm")]
+#[cfg(all(feature = "wasm", feature = "env"))]
 pub mod env;
 #[cfg(feature = "wasm")]
 pub mod event;
-#[cfg(feature = "wasm")]
+#[cfg(all(feature = "wasm", feature = "env"))]
 mod stremio_core_web;
-#[cfg(feature = "wasm")]
+#[cfg(all(feature = "wasm", feature = "env"))]
 // re-export all wasm-specific
 pub use stremio_core_web::*;
