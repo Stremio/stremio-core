@@ -20,6 +20,10 @@ use crate::{
 #[cfg_attr(test, derive(Derivative))]
 #[cfg_attr(test, derivative(Default))]
 #[serde(rename_all = "camelCase")]
+/// Notification bucket using the `lastVideos` resource of user's addons
+///
+/// This bucket will extract from the addon responses:
+/// - Notifications for new episodes (movie series)
 pub struct NotificationsBucket {
     #[serde(default)]
     pub uid: UID,

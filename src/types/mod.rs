@@ -3,6 +3,13 @@ pub mod api;
 pub mod events;
 pub mod library;
 pub mod notifications;
+pub mod calendar {
+    pub use calendar_bucket::*;
+    pub use calendar_item::*;
+
+    mod calendar_bucket;
+    mod calendar_item;
+}
 pub mod player;
 pub mod profile;
 pub mod resource;

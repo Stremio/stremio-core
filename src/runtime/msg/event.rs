@@ -54,6 +54,9 @@ pub enum Event {
     DismissedEventsPushedToStorage {
         uid: UID,
     },
+    CalendarPushedToStorage {
+        ids: Vec<String>,
+    },
     UserPulledFromAPI {
         uid: UID,
     },
