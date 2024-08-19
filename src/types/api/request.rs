@@ -152,6 +152,7 @@ impl FetchRequestParams<APIRequest> for APIRequest {
         match self {
             APIRequest::Auth(AuthRequest::Login { .. }) => "login".to_owned(),
             APIRequest::Auth(AuthRequest::LoginWithToken { .. }) => "loginWithToken".to_owned(),
+            APIRequest::Auth(AuthRequest::Facebook { .. }) => "authWithFacebook".to_owned(),
             APIRequest::Auth(AuthRequest::Register { .. }) => "register".to_owned(),
             APIRequest::Logout { .. } => "logout".to_owned(),
             APIRequest::AddonCollectionGet { .. } => "addonCollectionGet".to_owned(),
@@ -191,6 +192,9 @@ pub enum AuthRequest {
         password: String,
         gdpr_consent: GDPRConsent,
     },
+    Facebook {
+        token: String,
+    },
     LoginWithToken {
         token: String,
     },
@@ -218,6 +222,10 @@ impl fmt::Debug for AuthRequest {
                 .field("email", email)
                 .field("password", &"<SENSITIVE>")
                 .field("gdpr_consent", gdpr_consent)
+                .finish(),
+            Self::Facebook { token: _ } => f
+                .debug_struct("Facebook")
+                .field("token", &"<SENSITIVE>")
                 .finish(),
             Self::LoginWithToken { token: _ } => f
                 .debug_struct("LoginWithToken")
