@@ -87,7 +87,7 @@ impl From<(&Stream, Option<&Url>, &Settings)> for ExternalPlayerLink {
                     "choose" => Some(OpenPlayerLink {
                         android: Some(format!(
                             "{}#Intent;type=video/any;scheme=https;end",
-                            http_regex.replace(url, "intent://"),
+                            http_regex.replace(url.as_str(), "intent://"),
                         )),
                         ..Default::default()
                     }),
@@ -96,27 +96,27 @@ impl From<(&Stream, Option<&Url>, &Settings)> for ExternalPlayerLink {
                         visionos: Some(format!("vlc-x-callback://x-callback-url/stream?url={url}")),
                         android: Some(format!(
                             "{}#Intent;package=org.videolan.vlc;type=video;scheme=https;end",
-                            http_regex.replace(url, "intent://"),
+                            http_regex.replace(url.as_str(), "intent://"),
                         )),
                         ..Default::default()
                     }),
                     "mxplayer" => Some(OpenPlayerLink {
                         android: Some(format!(
                             "{}#Intent;package=com.mxtech.videoplayer.ad;type=video;scheme=https;end",
-                            http_regex.replace(url, "intent://"),
+                            http_regex.replace(url.as_str(), "intent://"),
                         )),
                         ..Default::default()
                     }),
                     "justplayer" => Some(OpenPlayerLink {
                         android: Some(format!(
                             "{}#Intent;package=com.brouken.player;type=video;scheme=https;end",
-                            http_regex.replace(url, "intent://"),
+                            http_regex.replace(url.as_str(), "intent://"),
                         )),
                         ..Default::default()
                     }),
                     "outplayer" => Some(OpenPlayerLink {
-                        ios: Some(format!("{}", http_regex.replace(url, "outplayer://"))),
-                        visionos: Some(format!("{}", http_regex.replace(url, "outplayer://"))),
+                        ios: Some(http_regex.replace(url.as_str(), "outplayer://").to_string()),
+                        visionos: Some(http_regex.replace(url.as_str(), "outplayer://").to_string()),
                         ..Default::default()
                     }),
                     "infuse" => Some(OpenPlayerLink {
@@ -166,7 +166,7 @@ impl From<(&Stream, Option<&Url>, &Settings)> for ExternalPlayerLink {
         };
         ExternalPlayerLink {
             download,
-            streaming,
+            streaming: streaming.as_ref().map(ToString::to_string),
             playlist,
             file_name,
             open_player,

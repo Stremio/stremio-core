@@ -1,6 +1,8 @@
 use serde::{Deserialize, Serialize};
 use url::Url;
 
+use crate::types::torrent::InfoHash;
+
 #[derive(Clone, PartialEq, Serialize, Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct File {
@@ -23,6 +25,21 @@ pub struct PeerSearch {
     pub max: u64,
     pub min: u64,
     pub sources: Vec<String>,
+}
+
+impl PeerSearch {
+    pub fn new(min: u64, max: u64, info_hash: InfoHash, additional_sources: Vec<String>) -> Self {
+        Self {
+            max,
+            min,
+            sources: {
+                let mut sources = vec![format!("dht:{info_hash}")];
+                sources.extend(additional_sources.into_iter().map(|url| url.to_string()));
+
+                sources
+            },
+        }
+    }
 }
 
 #[derive(Clone, PartialEq, Serialize, Deserialize, Debug)]
@@ -76,6 +93,7 @@ pub struct Statistics {
     pub connection_tries: u64,
     pub peer_search_running: bool,
     pub stream_len: u64,
+    /// Filename for torrent
     pub stream_name: String,
     pub stream_progress: f64,
     pub swarm_connections: u64,
