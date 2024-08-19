@@ -716,27 +716,15 @@
 <a href="#716" id="716">716</a>
 <a href="#717" id="717">717</a>
 <a href="#718" id="718">718</a>
-<a href="#719" id="719">719</a>
-<a href="#720" id="720">720</a>
-<a href="#721" id="721">721</a>
-<a href="#722" id="722">722</a>
-<a href="#723" id="723">723</a>
-<a href="#724" id="724">724</a>
-<a href="#725" id="725">725</a>
-<a href="#726" id="726">726</a>
-<a href="#727" id="727">727</a>
-<a href="#728" id="728">728</a>
-<a href="#729" id="729">729</a>
-<a href="#730" id="730">730</a>
-<a href="#731" id="731">731</a>
-<a href="#732" id="732">732</a>
-<a href="#733" id="733">733</a>
-<a href="#734" id="734">734</a>
-<a href="#735" id="735">735</a>
-<a href="#736" id="736">736</a>
-<a href="#737" id="737">737</a>
-<a href="#738" id="738">738</a>
-</pre></div><pre class="rust"><code><span class="kw">use </span><span class="kw">crate</span>::constants::META_RESOURCE_NAME;
+</pre></div><pre class="rust"><code><span class="kw">use </span>enclose::enclose;
+<span class="kw">use </span>futures::{FutureExt, TryFutureExt};
+<span class="kw">use </span>http::request::Request;
+<span class="kw">use </span>magnet_url::{Magnet, MagnetError};
+<span class="kw">use </span>serde::{Deserialize, Serialize};
+<span class="kw">use </span>sha1::{Digest, Sha1};
+<span class="kw">use </span>url::Url;
+
+<span class="kw">use </span><span class="kw">crate</span>::constants::META_RESOURCE_NAME;
 <span class="kw">use </span><span class="kw">crate</span>::models::common::{eq_update, Loadable};
 <span class="kw">use </span><span class="kw">crate</span>::models::ctx::{Ctx, CtxError};
 <span class="kw">use </span><span class="kw">crate</span>::runtime::msg::{
@@ -748,16 +736,10 @@
 <span class="kw">use </span><span class="kw">crate</span>::types::empty_string_as_null;
 <span class="kw">use </span><span class="kw">crate</span>::types::profile::{AuthKey, Profile};
 <span class="kw">use </span><span class="kw">crate</span>::types::streaming_server::{
-    DeviceInfo, GetHTTPSResponse, NetworkInfo, Settings, SettingsResponse, Statistics,
+    CreateMagnetRequest, CreateTorrentBlobRequest, DeviceInfo, GetHTTPSResponse, NetworkInfo,
+    Settings, SettingsResponse, Statistics, StatisticsRequest, TorrentStatisticsRequest,
 };
-<span class="kw">use </span>enclose::enclose;
-<span class="kw">use </span>futures::{FutureExt, TryFutureExt};
-<span class="kw">use </span>http::request::Request;
-<span class="kw">use </span>magnet_url::{Magnet, MagnetError};
-<span class="kw">use </span>serde::{Deserialize, Serialize};
-<span class="kw">use </span>sha1::{Digest, Sha1};
-<span class="kw">use </span>std::iter;
-<span class="kw">use </span>url::Url;
+<span class="kw">use </span><span class="kw">crate</span>::types::torrent::InfoHash;
 
 <span class="attr">#[derive(Clone, PartialEq, Eq, Serialize, Deserialize, Debug)]
 #[serde(rename_all = <span class="string">"camelCase"</span>)]
@@ -765,13 +747,6 @@
     <span class="kw">pub </span>id: String,
     <span class="kw">pub </span>name: String,
     <span class="kw">pub </span>r#type: String,
-}
-
-<span class="attr">#[derive(Clone, PartialEq, Serialize, Deserialize, Debug)]
-#[serde(rename_all = <span class="string">"camelCase"</span>)]
-</span><span class="kw">pub struct </span>StatisticsRequest {
-    <span class="kw">pub </span>info_hash: String,
-    <span class="kw">pub </span>file_idx: u16,
 }
 
 <span class="attr">#[derive(Clone, Serialize, Debug)]
@@ -791,7 +766,7 @@
     <span class="kw">pub </span>playback_devices: Loadable&lt;Vec&lt;PlaybackDevice&gt;, EnvError&gt;,
     <span class="kw">pub </span>network_info: Loadable&lt;NetworkInfo, EnvError&gt;,
     <span class="kw">pub </span>device_info: Loadable&lt;DeviceInfo, EnvError&gt;,
-    <span class="kw">pub </span>torrent: <span class="prelude-ty">Option</span>&lt;(String, Loadable&lt;ResourcePath, EnvError&gt;)&gt;,
+    <span class="kw">pub </span>torrent: <span class="prelude-ty">Option</span>&lt;(InfoHash, Loadable&lt;ResourcePath, EnvError&gt;)&gt;,
     <span class="doccomment">/// [`Loadable::Loading`] is used only on the first statistics request.
     </span><span class="kw">pub </span>statistics: <span class="prelude-ty">Option</span>&lt;Loadable&lt;Statistics, EnvError&gt;&gt;,
 }
@@ -862,12 +837,10 @@
                 CreateTorrentArgs::Magnet(magnet),
             ))) =&gt; <span class="kw">match </span>parse_magnet(magnet) {
                 <span class="prelude-val">Ok</span>((info_hash, announce)) =&gt; {
-                    <span class="kw">let </span>torrent_effects = eq_update(
-                        <span class="kw-2">&amp;mut </span><span class="self">self</span>.torrent,
-                        <span class="prelude-val">Some</span>((info_hash.to_owned(), Loadable::Loading)),
-                    );
+                    <span class="kw">let </span>torrent_effects =
+                        eq_update(<span class="kw-2">&amp;mut </span><span class="self">self</span>.torrent, <span class="prelude-val">Some</span>((info_hash, Loadable::Loading)));
                     Effects::many(<span class="macro">vec!</span>[
-                        create_magnet::&lt;E&gt;(<span class="kw-2">&amp;</span><span class="self">self</span>.selected.transport_url, <span class="kw-2">&amp;</span>info_hash, <span class="kw-2">&amp;</span>announce),
+                        create_magnet::&lt;E&gt;(<span class="kw-2">&amp;</span><span class="self">self</span>.selected.transport_url, info_hash, <span class="kw-2">&amp;</span>announce),
                         Effect::Msg(Box::new(Msg::Event(Event::MagnetParsed {
                             magnet: magnet.to_owned(),
                         }))),
@@ -898,7 +871,11 @@
                         <span class="prelude-val">Some</span>((info_hash.to_owned(), Loadable::Loading)),
                     );
                     Effects::many(<span class="macro">vec!</span>[
-                        create_torrent::&lt;E&gt;(<span class="kw-2">&amp;</span><span class="self">self</span>.selected.transport_url, <span class="kw-2">&amp;</span>info_hash, torrent),
+                        create_torrent_request::&lt;E&gt;(
+                            <span class="kw-2">&amp;</span><span class="self">self</span>.selected.transport_url,
+                            info_hash,
+                            torrent,
+                        ),
                         Effect::Msg(Box::new(Msg::Event(Event::TorrentParsed {
                             torrent: torrent.to_owned(),
                         }))),
@@ -1258,54 +1235,46 @@
     .into()
 }
 
-<span class="kw">fn </span>create_magnet&lt;E: Env + <span class="lifetime">'static</span>&gt;(url: <span class="kw-2">&amp;</span>Url, info_hash: <span class="kw-2">&amp;</span>str, announce: <span class="kw-2">&amp;</span>[String]) -&gt; Effect {
-    <span class="attr">#[derive(Serialize)]
-    #[serde(rename_all = <span class="string">"camelCase"</span>)]
-    </span><span class="kw">struct </span>PeerSearch {
-        sources: Vec&lt;String&gt;,
-        min: u32,
-        max: u32,
-    }
-    <span class="attr">#[derive(Serialize)]
-    #[serde(rename_all = <span class="string">"camelCase"</span>)]
-    </span><span class="kw">struct </span>Torrent {
-        info_hash: String,
-    }
-    <span class="attr">#[derive(Serialize)]
-    #[serde(rename_all = <span class="string">"camelCase"</span>)]
-    </span><span class="kw">struct </span>Body {
-        torrent: Torrent,
-        peer_search: <span class="prelude-ty">Option</span>&lt;PeerSearch&gt;,
-    }
-    <span class="kw">let </span>info_hash = info_hash.to_owned();
-    <span class="kw">let </span>endpoint = url
-        .join(<span class="kw-2">&amp;</span><span class="macro">format!</span>(<span class="string">"{info_hash}/"</span>))
-        .expect(<span class="string">"url builder failed"</span>)
-        .join(<span class="string">"create"</span>)
-        .expect(<span class="string">"url builder failed"</span>);
-    <span class="kw">let </span>body = Body {
-        torrent: Torrent {
-            info_hash: info_hash.to_owned(),
-        },
-        peer_search: <span class="kw">if </span>!announce.is_empty() {
-            <span class="prelude-val">Some</span>(PeerSearch {
-                sources: iter::once(<span class="kw-2">&amp;</span><span class="macro">format!</span>(<span class="string">"dht:{info_hash}"</span>))
-                    .chain(announce.iter())
-                    .cloned()
-                    .collect(),
-                min: <span class="number">40</span>,
-                max: <span class="number">200</span>,
-            })
-        } <span class="kw">else </span>{
-            <span class="prelude-val">None
-        </span>},
+<span class="kw">pub async fn </span>create_magnet_request&lt;E: Env + <span class="lifetime">'static</span>&gt;(
+    url: Url,
+    info_hash: InfoHash,
+    announce: Vec&lt;String&gt;,
+) -&gt; <span class="prelude-ty">Result</span>&lt;serde_json::Value, EnvError&gt; {
+    <span class="kw">let </span>request = CreateMagnetRequest {
+        server_url: url.to_owned(),
+        info_hash,
+        announce: announce.to_vec(),
     };
-    <span class="kw">let </span>request = Request::post(endpoint.as_str())
-        .header(http::header::CONTENT_TYPE, <span class="string">"application/json"</span>)
-        .body(body)
-        .expect(<span class="string">"request builder failed"</span>);
+
+    E::fetch::&lt;<span class="kw">_</span>, serde_json::Value&gt;(request.into()).<span class="kw">await
+</span>}
+
+<span class="kw">fn </span>create_magnet&lt;E: Env + <span class="lifetime">'static</span>&gt;(url: <span class="kw-2">&amp;</span>Url, info_hash: InfoHash, announce: <span class="kw-2">&amp;</span>[String]) -&gt; Effect {
     EffectFuture::Concurrent(
-        E::fetch::&lt;<span class="kw">_</span>, serde_json::Value&gt;(request)
+        create_magnet_request::&lt;E&gt;(url.to_owned(), info_hash, announce.to_vec())
+            .map_ok(|_response| ())
+            .map(<span class="macro">enclose!</span>((info_hash) <span class="kw">move </span>|result| {
+                Msg::Internal(Internal::StreamingServerCreateTorrentResult(
+                    info_hash, result,
+                ))
+            }))
+            .boxed_env(),
+    )
+    .into()
+}
+
+<span class="kw">pub fn </span>create_torrent_request&lt;E: Env + <span class="lifetime">'static</span>&gt;(
+    url: <span class="kw-2">&amp;</span>Url,
+    info_hash: InfoHash,
+    torrent: <span class="kw-2">&amp;</span>[u8],
+) -&gt; Effect {
+    <span class="kw">let </span>request = CreateTorrentBlobRequest {
+        server_url: url.to_owned(),
+        torrent: torrent.to_vec(),
+    };
+
+    EffectFuture::Concurrent(
+        E::fetch::&lt;<span class="kw">_</span>, serde_json::Value&gt;(request.into())
             .map_ok(|<span class="kw">_</span>| ())
             .map(<span class="macro">enclose!</span>((info_hash) <span class="kw">move </span>|result| {
                 Msg::Internal(Internal::StreamingServerCreateTorrentResult(
@@ -1317,40 +1286,18 @@
     .into()
 }
 
-<span class="kw">fn </span>create_torrent&lt;E: Env + <span class="lifetime">'static</span>&gt;(url: <span class="kw-2">&amp;</span>Url, info_hash: <span class="kw-2">&amp;</span>str, torrent: <span class="kw-2">&amp;</span>[u8]) -&gt; Effect {
-    <span class="attr">#[derive(Serialize)]
-    </span><span class="kw">struct </span>Body {
-        blob: String,
-    }
-    <span class="kw">let </span>info_hash = info_hash.to_owned();
-    <span class="kw">let </span>endpoint = url.join(<span class="string">"/create"</span>).expect(<span class="string">"url builder failed"</span>);
-    <span class="kw">let </span>request = Request::post(endpoint.as_str())
-        .header(http::header::CONTENT_TYPE, <span class="string">"application/json"</span>)
-        .body(Body {
-            blob: hex::encode(torrent),
-        })
-        .expect(<span class="string">"request builder failed"</span>);
-    EffectFuture::Concurrent(
-        E::fetch::&lt;<span class="kw">_</span>, serde_json::Value&gt;(request)
-            .map_ok(|<span class="kw">_</span>| ())
-            .map(<span class="macro">enclose!</span>((info_hash) <span class="kw">move </span>|result| {
-                Msg::Internal(Internal::StreamingServerCreateTorrentResult(
-                    info_hash, result,
-                ))
-            }))
-            .boxed_env(),
-    )
-    .into()
-}
-
-<span class="kw">fn </span>parse_magnet(magnet: <span class="kw-2">&amp;</span>Url) -&gt; <span class="prelude-ty">Result</span>&lt;(String, Vec&lt;String&gt;), MagnetError&gt; {
+<span class="kw">fn </span>parse_magnet(magnet: <span class="kw-2">&amp;</span>Url) -&gt; <span class="prelude-ty">Result</span>&lt;(InfoHash, Vec&lt;String&gt;), MagnetError&gt; {
     <span class="kw">let </span>magnet = Magnet::new(magnet.as_str())<span class="question-mark">?</span>;
     <span class="kw">let </span>info_hash = magnet.xt.ok_or(MagnetError::NotAMagnetURL)<span class="question-mark">?</span>;
+    <span class="kw">let </span>info_hash = info_hash
+        .parse()
+        .map_err(|_err| MagnetError::NotAMagnetURL)<span class="question-mark">?</span>;
+
     <span class="kw">let </span>announce = magnet.tr;
     <span class="prelude-val">Ok</span>((info_hash, announce))
 }
 
-<span class="kw">fn </span>parse_torrent(torrent: <span class="kw-2">&amp;</span>[u8]) -&gt; <span class="prelude-ty">Result</span>&lt;(String, Vec&lt;String&gt;), serde_bencode::Error&gt; {
+<span class="kw">fn </span>parse_torrent(torrent: <span class="kw-2">&amp;</span>[u8]) -&gt; <span class="prelude-ty">Result</span>&lt;(InfoHash, Vec&lt;String&gt;), serde_bencode::Error&gt; {
     <span class="attr">#[derive(Deserialize)]
     </span><span class="kw">struct </span>TorrentFile {
         info: serde_bencode::value::Value,
@@ -1364,7 +1311,8 @@
     <span class="kw">let </span>info_bytes = serde_bencode::to_bytes(<span class="kw-2">&amp;</span>torrent_file.info)<span class="question-mark">?</span>;
     <span class="kw">let </span><span class="kw-2">mut </span>hasher = Sha1::new();
     hasher.update(info_bytes);
-    <span class="kw">let </span>info_hash = hex::encode(hasher.finalize());
+    <span class="kw">let </span>info_hash = InfoHash::new(hasher.finalize().into());
+
     <span class="kw">let </span><span class="kw-2">mut </span>announce = <span class="macro">vec!</span>[];
     <span class="kw">if let </span><span class="prelude-val">Some</span>(announce_entry) = torrent_file.announce {
         announce.push(announce_entry);
@@ -1379,26 +1327,25 @@
 }
 
 <span class="kw">fn </span>get_torrent_statistics&lt;E: Env + <span class="lifetime">'static</span>&gt;(url: <span class="kw-2">&amp;</span>Url, request: <span class="kw-2">&amp;</span>StatisticsRequest) -&gt; Effect {
-    <span class="kw">let </span>statistics_request = request.clone();
-    <span class="kw">let </span>endpoint = url
-        .join(<span class="kw-2">&amp;</span><span class="macro">format!</span>(
-            <span class="string">"/{}/{}/stats.json"</span>,
-            statistics_request.info_hash.clone(),
-            statistics_request.file_idx
-        ))
-        .expect(<span class="string">"url builder failed"</span>);
-    <span class="kw">let </span>request = Request::get(endpoint.as_str())
-        .header(http::header::CONTENT_TYPE, <span class="string">"application/json"</span>)
-        .body(())
-        .expect(<span class="string">"request builder failed"</span>);
+    <span class="kw">let </span>fetch_fut = <span class="macro">enclose!</span>((url, request) <span class="kw">async move </span>{
+        <span class="kw">let </span>request = TorrentStatisticsRequest {
+            server_url: url,
+            request,
+        };
 
-    <span class="comment">// It's happening when the engine is destroyed for inactivity:
+        <span class="kw">let </span>statistics: <span class="prelude-ty">Option</span>&lt;Statistics&gt; = E::fetch(request.into()).<span class="kw">await</span><span class="question-mark">?</span>;
+
+        <span class="prelude-val">Ok</span>(statistics)
+    });
+
+    <span class="comment">// let statistics_request = request.to_owned();
+    // It's happening when the engine is destroyed for inactivity:
     // If it was downloaded to 100% and that the stream is paused, then played,
     // it will create a new engine and return the correct stats
     </span>EffectFuture::Concurrent(
-        E::fetch::&lt;<span class="kw">_</span>, <span class="prelude-ty">Option</span>&lt;Statistics&gt;&gt;(request)
-            .map(<span class="macro">enclose!</span>((url) <span class="kw">move </span>|result|
-                Msg::Internal(Internal::StreamingServerStatisticsResult((url, statistics_request), result))
+        fetch_fut
+            .map(<span class="macro">enclose!</span>((url, request) <span class="kw">move </span>|result|
+                Msg::Internal(Internal::StreamingServerStatisticsResult((url, request), result))
             ))
             .boxed_env(),
     )
@@ -1472,6 +1419,19 @@
         )
         .unchanged(),
         <span class="kw">_ </span>=&gt; eq_update(remote_url, <span class="prelude-val">None</span>),
+    }
+}
+
+<span class="attr">#[cfg(test)]
+</span><span class="kw">mod </span>tests {
+    <span class="kw">use </span>magnet_url::Magnet;
+
+    <span class="attr">#[test]
+    </span><span class="kw">fn </span>test_magnet_hash() {
+        <span class="kw">let </span>magnet = Magnet::new(<span class="string">"magnet:?xt=urn:btih:0d54e2339706f173ac20f4effb4ad42d9c7a84e9&amp;dn=Halo.S02.1080p.WEBRip.x265.DDP5.1.Atmos-WAR"</span>).expect(<span class="string">"Should be valid magnet Url"</span>);
+
+        <span class="comment">// assert_eq!(magnet.xt)
+        </span><span class="macro">dbg!</span>(magnet);
     }
 }
 </code></pre></div></section></main></body></html>

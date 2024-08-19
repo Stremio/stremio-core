@@ -741,7 +741,7 @@
                     <span class="string">"choose" </span>=&gt; <span class="prelude-val">Some</span>(OpenPlayerLink {
                         android: <span class="prelude-val">Some</span>(<span class="macro">format!</span>(
                             <span class="string">"{}#Intent;type=video/any;scheme=https;end"</span>,
-                            http_regex.replace(url, <span class="string">"intent://"</span>),
+                            http_regex.replace(url.as_str(), <span class="string">"intent://"</span>),
                         )),
                         ..Default::default()
                     }),
@@ -750,27 +750,27 @@
                         visionos: <span class="prelude-val">Some</span>(<span class="macro">format!</span>(<span class="string">"vlc-x-callback://x-callback-url/stream?url={url}"</span>)),
                         android: <span class="prelude-val">Some</span>(<span class="macro">format!</span>(
                             <span class="string">"{}#Intent;package=org.videolan.vlc;type=video;scheme=https;end"</span>,
-                            http_regex.replace(url, <span class="string">"intent://"</span>),
+                            http_regex.replace(url.as_str(), <span class="string">"intent://"</span>),
                         )),
                         ..Default::default()
                     }),
                     <span class="string">"mxplayer" </span>=&gt; <span class="prelude-val">Some</span>(OpenPlayerLink {
                         android: <span class="prelude-val">Some</span>(<span class="macro">format!</span>(
                             <span class="string">"{}#Intent;package=com.mxtech.videoplayer.ad;type=video;scheme=https;end"</span>,
-                            http_regex.replace(url, <span class="string">"intent://"</span>),
+                            http_regex.replace(url.as_str(), <span class="string">"intent://"</span>),
                         )),
                         ..Default::default()
                     }),
                     <span class="string">"justplayer" </span>=&gt; <span class="prelude-val">Some</span>(OpenPlayerLink {
                         android: <span class="prelude-val">Some</span>(<span class="macro">format!</span>(
                             <span class="string">"{}#Intent;package=com.brouken.player;type=video;scheme=https;end"</span>,
-                            http_regex.replace(url, <span class="string">"intent://"</span>),
+                            http_regex.replace(url.as_str(), <span class="string">"intent://"</span>),
                         )),
                         ..Default::default()
                     }),
                     <span class="string">"outplayer" </span>=&gt; <span class="prelude-val">Some</span>(OpenPlayerLink {
-                        ios: <span class="prelude-val">Some</span>(<span class="macro">format!</span>(<span class="string">"{}"</span>, http_regex.replace(url, <span class="string">"outplayer://"</span>))),
-                        visionos: <span class="prelude-val">Some</span>(<span class="macro">format!</span>(<span class="string">"{}"</span>, http_regex.replace(url, <span class="string">"outplayer://"</span>))),
+                        ios: <span class="prelude-val">Some</span>(http_regex.replace(url.as_str(), <span class="string">"outplayer://"</span>).to_string()),
+                        visionos: <span class="prelude-val">Some</span>(http_regex.replace(url.as_str(), <span class="string">"outplayer://"</span>).to_string()),
                         ..Default::default()
                     }),
                     <span class="string">"infuse" </span>=&gt; <span class="prelude-val">Some</span>(OpenPlayerLink {
@@ -820,7 +820,7 @@
         };
         ExternalPlayerLink {
             download,
-            streaming,
+            streaming: streaming.as_ref().map(ToString::to_string),
             playlist,
             file_name,
             open_player,

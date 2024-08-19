@@ -151,13 +151,16 @@
 <a href="#151" id="151">151</a>
 <a href="#152" id="152">152</a>
 <a href="#153" id="153">153</a>
-</pre></div><pre class="rust"><code><span class="kw">use </span><span class="kw">crate</span>::models::common::ResourceLoadable;
-<span class="kw">use </span>url::Url;
+<a href="#154" id="154">154</a>
+<a href="#155" id="155">155</a>
+<a href="#156" id="156">156</a>
+</pre></div><pre class="rust"><code><span class="kw">use </span>url::Url;
 
+<span class="kw">use </span><span class="kw">crate</span>::models::common::ResourceLoadable;
 <span class="kw">use </span><span class="kw">crate</span>::models::ctx::CtxError;
 <span class="kw">use </span><span class="kw">crate</span>::models::link::LinkError;
 <span class="kw">use </span><span class="kw">crate</span>::models::local_search::Searchable;
-<span class="kw">use </span><span class="kw">crate</span>::models::streaming_server::{PlaybackDevice, StatisticsRequest};
+<span class="kw">use </span><span class="kw">crate</span>::models::streaming_server::PlaybackDevice;
 <span class="kw">use </span><span class="kw">crate</span>::runtime::EnvError;
 <span class="kw">use </span><span class="kw">crate</span>::types::addon::{Descriptor, Manifest, ResourceRequest, ResourceResponse};
 <span class="kw">use </span><span class="kw">crate</span>::types::api::{
@@ -167,11 +170,14 @@
 };
 <span class="kw">use </span><span class="kw">crate</span>::types::library::{LibraryBucket, LibraryItem, LibraryItemId};
 <span class="kw">use </span><span class="kw">crate</span>::types::profile::{Auth, AuthKey, Profile, User};
-<span class="kw">use </span><span class="kw">crate</span>::types::resource::{MetaItem, Stream};
 <span class="kw">use </span><span class="kw">crate</span>::types::streaming_server::{
-    DeviceInfo, GetHTTPSResponse, NetworkInfo, SettingsResponse, Statistics,
+    DeviceInfo, GetHTTPSResponse, NetworkInfo, SettingsResponse, Statistics, StatisticsRequest,
 };
 <span class="kw">use </span><span class="kw">crate</span>::types::streams::StreamItemState;
+<span class="kw">use </span><span class="kw">crate</span>::types::{
+    resource::{MetaItem, Stream},
+    torrent::InfoHash,
+};
 
 <span class="kw">pub type </span>CtxStorageResponse = (
     <span class="prelude-ty">Option</span>&lt;Profile&gt;,
@@ -265,7 +271,7 @@
     <span class="doccomment">/// Result for updating streaming server settings.
     </span>StreamingServerUpdateSettingsResult(Url, <span class="prelude-ty">Result</span>&lt;(), EnvError&gt;),
     <span class="doccomment">/// Result for creating a torrent.
-    </span>StreamingServerCreateTorrentResult(String, <span class="prelude-ty">Result</span>&lt;(), EnvError&gt;),
+    </span>StreamingServerCreateTorrentResult(InfoHash, <span class="prelude-ty">Result</span>&lt;(), EnvError&gt;),
     <span class="doccomment">/// Result for playing on device.
     </span>StreamingServerPlayOnDeviceResult(String, <span class="prelude-ty">Result</span>&lt;(), EnvError&gt;),
     <span class="comment">// Result for get https endpoint request

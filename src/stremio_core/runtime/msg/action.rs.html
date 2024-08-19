@@ -217,6 +217,8 @@
 <a href="#217" id="217">217</a>
 <a href="#218" id="218">218</a>
 <a href="#219" id="219">219</a>
+<a href="#220" id="220">220</a>
+<a href="#221" id="221">221</a>
 </pre></div><pre class="rust"><code><span class="kw">use </span>std::ops::Range;
 
 <span class="kw">use </span>serde::Deserialize;
@@ -233,7 +235,6 @@
         library_with_filters::Selected <span class="kw">as </span>LibraryWithFiltersSelected,
         meta_details::Selected <span class="kw">as </span>MetaDetailsSelected,
         player::{Selected <span class="kw">as </span>PlayerSelected, VideoParams},
-        streaming_server::StatisticsRequest <span class="kw">as </span>StreamingServerStatisticsRequest,
     },
     types::{
         addon::Descriptor,
@@ -241,7 +242,10 @@
         library::LibraryItemId,
         profile::Settings <span class="kw">as </span>ProfileSettings,
         resource::{MetaItemId, MetaItemPreview, Video},
-        streaming_server::Settings <span class="kw">as </span>StreamingServerSettings,
+        streaming_server::{
+            Settings <span class="kw">as </span>StreamingServerSettings,
+            StatisticsRequest <span class="kw">as </span>StreamingServerStatisticsRequest,
+        },
     },
 };
 

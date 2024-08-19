@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"struct":["NumberAsString","SortedVec","UniqueVec"],"trait":["SortedVecAdapter","UniqueVecAdapter"]};
+window.SIDEBAR_ITEMS = {"enum":["BoolOrValue"],"struct":["DefaultOnBool","NumberAsString","SortedVec","UniqueVec"],"trait":["SortedVecAdapter","UniqueVecAdapter"]};

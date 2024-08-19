@@ -82,8 +82,28 @@
 <a href="#82" id="82">82</a>
 <a href="#83" id="83">83</a>
 <a href="#84" id="84">84</a>
+<a href="#85" id="85">85</a>
+<a href="#86" id="86">86</a>
+<a href="#87" id="87">87</a>
+<a href="#88" id="88">88</a>
+<a href="#89" id="89">89</a>
+<a href="#90" id="90">90</a>
+<a href="#91" id="91">91</a>
+<a href="#92" id="92">92</a>
+<a href="#93" id="93">93</a>
+<a href="#94" id="94">94</a>
+<a href="#95" id="95">95</a>
+<a href="#96" id="96">96</a>
+<a href="#97" id="97">97</a>
+<a href="#98" id="98">98</a>
+<a href="#99" id="99">99</a>
+<a href="#100" id="100">100</a>
+<a href="#101" id="101">101</a>
+<a href="#102" id="102">102</a>
 </pre></div><pre class="rust"><code><span class="kw">use </span>serde::{Deserialize, Serialize};
 <span class="kw">use </span>url::Url;
+
+<span class="kw">use </span><span class="kw">crate</span>::types::torrent::InfoHash;
 
 <span class="attr">#[derive(Clone, PartialEq, Serialize, Deserialize, Debug)]
 #[serde(rename_all = <span class="string">"camelCase"</span>)]
@@ -107,6 +127,21 @@
     <span class="kw">pub </span>max: u64,
     <span class="kw">pub </span>min: u64,
     <span class="kw">pub </span>sources: Vec&lt;String&gt;,
+}
+
+<span class="kw">impl </span>PeerSearch {
+    <span class="kw">pub fn </span>new(min: u64, max: u64, info_hash: InfoHash, additional_sources: Vec&lt;String&gt;) -&gt; <span class="self">Self </span>{
+        <span class="self">Self </span>{
+            max,
+            min,
+            sources: {
+                <span class="kw">let </span><span class="kw-2">mut </span>sources = <span class="macro">vec!</span>[<span class="macro">format!</span>(<span class="string">"dht:{info_hash}"</span>)];
+                sources.extend(additional_sources.into_iter().map(|url| url.to_string()));
+
+                sources
+            },
+        }
+    }
 }
 
 <span class="attr">#[derive(Clone, PartialEq, Serialize, Deserialize, Debug)]
@@ -160,7 +195,8 @@
     <span class="kw">pub </span>connection_tries: u64,
     <span class="kw">pub </span>peer_search_running: bool,
     <span class="kw">pub </span>stream_len: u64,
-    <span class="kw">pub </span>stream_name: String,
+    <span class="doccomment">/// Filename for torrent
+    </span><span class="kw">pub </span>stream_name: String,
     <span class="kw">pub </span>stream_progress: f64,
     <span class="kw">pub </span>swarm_connections: u64,
     <span class="kw">pub </span>swarm_paused: bool,
