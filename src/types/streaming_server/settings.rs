@@ -17,6 +17,7 @@ pub struct Settings {
     #[serde_as(deserialize_as = "DefaultOnError")]
     pub transcode_profile: Option<String>,
     pub cache_size: Option<f64>,
+    #[serde(default)]
     pub proxy_streams_enabled: bool,
     pub bt_max_connections: u64,
     pub bt_handshake_timeout: u64,
