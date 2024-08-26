@@ -10,6 +10,7 @@ pub mod search_history;
 pub mod streaming_server;
 pub mod streams;
 pub mod torrent;
+pub mod web_services;
 
 mod query_params_encode;
 pub use query_params_encode::*;

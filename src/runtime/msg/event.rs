@@ -36,6 +36,11 @@ pub enum Event {
     TraktPaused {
         context: PlayerAnalyticsContext,
     },
+    TraktImported {
+        movies_count: usize,
+        series_count: usize,
+        uid: UID,
+    },
     ProfilePushedToStorage {
         uid: UID,
     },

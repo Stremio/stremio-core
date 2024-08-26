@@ -15,6 +15,7 @@ use crate::types::profile::{Auth, AuthKey, Profile, Settings, User};
 use crate::types::streams::StreamsBucket;
 
 pub fn update_profile<E: Env + 'static>(
+    // library: &LibraryBucket,
     profile: &mut Profile,
     streams: &mut StreamsBucket,
     status: &CtxStatus,
@@ -220,6 +221,66 @@ pub fn update_profile<E: Env + 'static>(
                 source: Box::new(Event::TraktLoggedOut { uid: profile.uid() }),
             }))
             .unchanged(),
+        },
+
+        Msg::Action(Action::Ctx(ActionCtx::ImportTrakt)) => match &profile.auth {
+            Some(auth) => {
+                // 1. Check trakt auth
+                let auth_token = match auth.user.trakt.as_ref() {
+                    Some(trakt_info) if trakt_info.is_valid() => {
+                        trakt_info.access_token.clone()
+                    },
+                    _ => return Effects::none().unchanged(),
+                };
+
+                // 2. List of Trakt items: `https://www.strem.io/trakt/watched.json?token=${access_token}`
+                // web_service::fetch()
+
+                // 3. Check LibraryBucket if Trakt Id exists as LibraryItem
+
+                // 3.1 if it exists, get videos (from LibraryItem) and check against Trakt Response
+                // watched episodes for series
+
+                // 3.1.0 update episodes watched (for series) using watchedBitfield
+                // 3.1.1 update last watched if > that LibraryItem last_watched
+
+                // 3.2 if does not exist
+
+                // ctime if LibraryItem
+                // allow notifs.
+
+                // 3.* Update as follows:
+                // change.name = change.name || element.movie.title
+                // change.type = change.type || "movie"
+                // change.posterShape = change.posterShape || "poster"
+                // change.year = change.year || element.movie.year
+                // change.behaviorHints = { defaultVideoId: change._id, hasScheduledVideos: false }
+                // change.removed = false;
+                // change.temp = false;
+
+                // change._mtime = new Date().toISOString();
+
+                // 4. Modify LibraryItems by:
+                // 4.1 For existing library items: 
+                // Internal::UpdateLibraryItem
+                // TODO: for multiple items create a new Internal message that update multiple items
+
+                // 4.2 For missing library items:
+                //
+                // Effects::msg(Msg::Internal(Internal::UpdateLibraryItem(library_item)))
+                // .join(Effects::msg(Msg::Event(Event::LibraryItemAdded {
+                //     id: meta_preview.id.to_owned(),
+                // })))
+                // .unchanged()
+
+                Effects::msg(Msg::Event(Event::TraktImported {
+                    movies_count: 0,
+                    series_count: 0,
+                    uid: profile.uid(),
+                }))
+                .unchanged()
+            },
+            _ => Effects::none().unchanged()
         },
         Msg::Action(Action::Ctx(ActionCtx::UpdateSettings(settings))) => {
             if profile.settings != *settings {

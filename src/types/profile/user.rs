@@ -23,6 +23,17 @@ pub struct TraktInfo {
     #[cfg_attr(test, derivative(Default(value = r#"String::from("token")"#)))]
     pub access_token: String,
 }
+
+impl TraktInfo {
+    pub fn is_expired(&self) -> bool {
+        todo!()
+    }
+
+    pub fn is_valid(&self) -> bool {
+        !self.is_expired()
+    }
+}
+
 impl fmt::Debug for TraktInfo {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("TraktInfo")
