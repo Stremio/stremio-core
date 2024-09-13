@@ -1,3 +1,19 @@
+use core::cmp::Ordering;
+
+use std::borrow::Cow;
+use std::collections::HashMap;
+
+use chrono::{DateTime, Utc};
+use either::Either;
+use itertools::Itertools;
+use percent_encoding::utf8_percent_encode;
+use serde::{Deserialize, Serialize};
+use serde_with::{
+    formats::PreferMany, serde_as, DefaultOnNull, DeserializeAs, NoneAsEmptyString, OneOrMany,
+    PickFirst, TimestampMilliSeconds,
+};
+use url::Url;
+
 use crate::constants::{
     CATALOG_RESOURCE_NAME, CINEMETA_TOP_CATALOG_ID, CINEMETA_URL, GENRES_LINK_CATEGORY,
     IMDB_LINK_CATEGORY, IMDB_TITLE_PATH, IMDB_URL, URI_COMPONENT_ENCODE_SET,
@@ -6,21 +22,6 @@ use crate::deep_links::DiscoverDeepLinks;
 use crate::types::addon::{ExtraValue, ResourcePath, ResourceRequest};
 use crate::types::resource::{Stream, StreamSource};
 use crate::types::{NumberAsString, SortedVec, SortedVecAdapter, UniqueVec, UniqueVecAdapter};
-use chrono::{DateTime, Utc};
-use core::cmp::Ordering;
-use derivative::Derivative;
-use either::Either;
-use itertools::Itertools;
-use percent_encoding::utf8_percent_encode;
-use serde::{Deserialize, Serialize};
-use serde_with::formats::PreferMany;
-use serde_with::{
-    serde_as, DefaultOnNull, DeserializeAs, NoneAsEmptyString, OneOrMany, PickFirst,
-    TimestampMilliSeconds,
-};
-use std::borrow::Cow;
-use std::collections::HashMap;
-use url::Url;
 
 /// The [`MetaItem`] Id type to improve the readability of the code.
 ///
@@ -58,15 +59,16 @@ struct MetaItemPreviewLegacy {
     id: MetaItemId,
     r#type: String,
     #[serde(default)]
+    #[serde_as(as = "DefaultOnNull")]
     name: String,
     #[serde(default)]
-    #[serde_as(deserialize_as = "DefaultOnNull<NoneAsEmptyString>")]
+    #[serde_as(as = "DefaultOnNull<NoneAsEmptyString>")]
     poster: Option<Url>,
     #[serde(default)]
-    #[serde_as(deserialize_as = "DefaultOnNull<NoneAsEmptyString>")]
+    #[serde_as(as = "DefaultOnNull<NoneAsEmptyString>")]
     background: Option<Url>,
     #[serde(default)]
-    #[serde_as(deserialize_as = "DefaultOnNull<NoneAsEmptyString>")]
+    #[serde_as(as = "DefaultOnNull<NoneAsEmptyString>")]
     logo: Option<Url>,
     description: Option<String>,
     #[serde(default)]
@@ -79,6 +81,7 @@ struct MetaItemPreviewLegacy {
     #[serde_as(deserialize_as = "PickFirst<(_, Option<TimestampMilliSeconds<i64>>)>")]
     released: Option<DateTime<Utc>>,
     #[serde(default)]
+    #[serde_as(deserialize_as = "DefaultOnNull")]
     poster_shape: PosterShape,
     #[serde(default)]
     #[serde_as(deserialize_as = "Option<NumberAsString>")]
@@ -86,15 +89,61 @@ struct MetaItemPreviewLegacy {
     #[serde(default)]
     #[serde_as(deserialize_as = "DefaultOnNull")]
     genres: Vec<String>,
+    #[serde(default)]
     links: Option<Vec<Link>>,
     #[serde(default)]
     #[serde_as(deserialize_as = "DefaultOnNull<Vec<PickFirst<(_, Stream)>>>")]
     trailers: Vec<Trailer>,
+    #[serde(default)]
     trailer_streams: Option<Vec<Stream>>,
     #[serde(default)]
+    #[serde_as(deserialize_as = "DefaultOnNull")]
     behavior_hints: MetaItemBehaviorHints,
 }
 
+///
+/// ```
+/// use stremio_core::types::resource::{MetaItemPreview, MetaItemBehaviorHints, PosterShape};
+///
+/// let expected = MetaItemPreview {
+///     id: "tt:1111111".into(),
+///     r#type: "movie".into(),
+///     name: "Movie name 404".into(),
+///     poster: None,
+///     background: None,
+///     logo: None,
+///     description: None,
+///     release_info: None,
+///     runtime: None,
+///     released: None,
+///     poster_shape: PosterShape::default(),
+///     links: vec![],
+///     trailer_streams: vec![],
+///     behavior_hints: MetaItemBehaviorHints::default(),
+/// };
+///
+/// let null_fields = serde_json::json!({
+///     "id": "tt:1111111",
+///     "type": "movie",
+///     "name": "Movie name 404",
+///     "posterShape": null,
+///     "links": null,
+///     "trailers": null,
+///     "trailerStreams": null,
+///     "behaviorHints": null,
+/// });
+/// let meta_preview = serde_json::from_value::<MetaItemPreview>(null_fields).unwrap();
+/// //assert_eq!(expected, meta_preview);
+///
+/// let no_fields = serde_json::json!({
+///     "id": "tt:1111111",
+///     "type": "movie",
+///     "name": "Movie name 404",
+/// });
+///
+/// let meta_preview = serde_json::from_value::<MetaItemPreview>(no_fields).unwrap();
+/// assert_eq!(expected, meta_preview);
+/// ```
 #[derive(Clone, PartialEq, Eq, Serialize, Deserialize, Debug)]
 #[cfg_attr(test, derive(Default))]
 #[serde(rename_all = "camelCase", try_from = "MetaItemPreviewLegacy")]
@@ -199,7 +248,7 @@ pub struct MetaItem {
     pub preview: MetaItemPreview,
     #[serde(default)]
     #[serde_as(
-        deserialize_as = "SortedVec<UniqueVec<Vec<_>, VideoUniqueVecAdapter>, VideoSortedVecAdapter>"
+        as = "DefaultOnNull<SortedVec<UniqueVec<Vec<_>, VideoUniqueVecAdapter>, VideoSortedVecAdapter>>"
     )]
     pub videos: Vec<Video>,
 }
@@ -218,13 +267,12 @@ impl MetaItem {
     }
 }
 
-#[derive(Derivative, Clone, PartialEq, Eq, Serialize, Deserialize, Debug)]
-#[derivative(Default)]
+#[derive(Default, Clone, PartialEq, Eq, Serialize, Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
 pub enum PosterShape {
     Square,
     Landscape,
-    #[derivative(Default)]
+    #[default]
     #[serde(other)]
     Poster,
 }
@@ -249,13 +297,16 @@ pub struct Video {
     pub id: String,
     #[serde(default, alias = "name")]
     pub title: String,
+    #[serde(default)]
     pub released: Option<DateTime<Utc>>,
+    #[serde(default)]
     pub overview: Option<String>,
+    #[serde(default)]
     pub thumbnail: Option<String>,
     #[serde(alias = "stream", default)]
     #[serde_as(deserialize_as = "OneOrMany<_, PreferMany>")]
     pub streams: Vec<Stream>,
-    #[serde(flatten)]
+    #[serde(default, flatten)]
     pub series_info: Option<SeriesInfo>,
     #[serde(default)]
     pub trailer_streams: Vec<Stream>,

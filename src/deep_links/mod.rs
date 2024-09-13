@@ -34,6 +34,9 @@ pub struct OpenPlayerLink {
     pub webos: Option<String>,
     pub chromeos: Option<String>,
     pub roku: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    /// VisionOS
+    pub visionos: Option<String>,
 }
 
 #[derive(Default, Serialize, Debug, PartialEq, Eq)]
@@ -84,34 +87,36 @@ impl From<(&Stream, Option<&Url>, &Settings)> for ExternalPlayerLink {
                     "choose" => Some(OpenPlayerLink {
                         android: Some(format!(
                             "{}#Intent;type=video/any;scheme=https;end",
-                            http_regex.replace(url, "intent://"),
+                            http_regex.replace(url.as_str(), "intent://"),
                         )),
                         ..Default::default()
                     }),
                     "vlc" => Some(OpenPlayerLink {
                         ios: Some(format!("vlc-x-callback://x-callback-url/stream?url={url}")),
+                        visionos: Some(format!("vlc-x-callback://x-callback-url/stream?url={url}")),
                         android: Some(format!(
                             "{}#Intent;package=org.videolan.vlc;type=video;scheme=https;end",
-                            http_regex.replace(url, "intent://"),
+                            http_regex.replace(url.as_str(), "intent://"),
                         )),
                         ..Default::default()
                     }),
                     "mxplayer" => Some(OpenPlayerLink {
                         android: Some(format!(
                             "{}#Intent;package=com.mxtech.videoplayer.ad;type=video;scheme=https;end",
-                            http_regex.replace(url, "intent://"),
+                            http_regex.replace(url.as_str(), "intent://"),
                         )),
                         ..Default::default()
                     }),
                     "justplayer" => Some(OpenPlayerLink {
                         android: Some(format!(
                             "{}#Intent;package=com.brouken.player;type=video;scheme=https;end",
-                            http_regex.replace(url, "intent://"),
+                            http_regex.replace(url.as_str(), "intent://"),
                         )),
                         ..Default::default()
                     }),
                     "outplayer" => Some(OpenPlayerLink {
-                        ios: Some(format!("{}", http_regex.replace(url, "outplayer://"))),
+                        ios: Some(http_regex.replace(url.as_str(), "outplayer://").to_string()),
+                        visionos: Some(http_regex.replace(url.as_str(), "outplayer://").to_string()),
                         ..Default::default()
                     }),
                     "infuse" => Some(OpenPlayerLink {
@@ -125,6 +130,10 @@ impl From<(&Stream, Option<&Url>, &Settings)> for ExternalPlayerLink {
                     "mpv" => Some(OpenPlayerLink {
                         macos: Some(format!("mpv://{url}")),
                        ..Default::default()
+                    }),
+                    "moonplayer" => Some(OpenPlayerLink {
+                        visionos: Some(format!("moonplayer://open?url={url}")),
+                        ..Default::default()
                     }),
                     "m3u" => Some(OpenPlayerLink {
                         linux: playlist.to_owned(),
@@ -157,7 +166,7 @@ impl From<(&Stream, Option<&Url>, &Settings)> for ExternalPlayerLink {
         };
         ExternalPlayerLink {
             download,
-            streaming,
+            streaming: streaming.as_ref().map(ToString::to_string),
             playlist,
             file_name,
             open_player,
@@ -325,6 +334,7 @@ impl From<(&MetaItem, &ResourceRequest)> for MetaItemDeepLinks {
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct VideoDeepLinks {
+    pub meta_details_videos: String,
     pub meta_details_streams: String,
     pub player: Option<String>,
     pub external_player: Option<ExternalPlayerLink>,
@@ -341,6 +351,11 @@ impl From<(&Video, &ResourceRequest, &Option<Url>, &Settings)> for VideoDeepLink
     ) -> Self {
         let stream = video.stream();
         VideoDeepLinks {
+            meta_details_videos: format!(
+                "stremio:///detail/{}/{}",
+                utf8_percent_encode(&request.path.r#type, URI_COMPONENT_ENCODE_SET),
+                utf8_percent_encode(&request.path.id, URI_COMPONENT_ENCODE_SET),
+            ),
             meta_details_streams: format!(
                 "stremio:///detail/{}/{}/{}",
                 utf8_percent_encode(&request.path.r#type, URI_COMPONENT_ENCODE_SET),
@@ -357,6 +372,59 @@ impl From<(&Video, &ResourceRequest, &Option<Url>, &Settings)> for VideoDeepLink
                         utf8_percent_encode(request.base.as_str(), URI_COMPONENT_ENCODE_SET),
                         utf8_percent_encode(&request.path.r#type, URI_COMPONENT_ENCODE_SET),
                         utf8_percent_encode(&request.path.id, URI_COMPONENT_ENCODE_SET),
+                        utf8_percent_encode(&video.id, URI_COMPONENT_ENCODE_SET)
+                    ))
+                })
+                .transpose()
+                .unwrap_or_else(|error| Some(ErrorLink::from(error).into())),
+            external_player: stream.as_ref().map(|stream| {
+                ExternalPlayerLink::from((stream.as_ref(), streaming_server_url, settings))
+            }),
+        }
+    }
+}
+
+impl
+    From<(
+        &Video,
+        &ResourceRequest,
+        &ResourceRequest,
+        &Option<Url>,
+        &Settings,
+    )> for VideoDeepLinks
+{
+    fn from(
+        (video, stream_request, meta_request, streaming_server_url, settings): (
+            &Video,
+            &ResourceRequest,
+            &ResourceRequest,
+            &Option<Url>,
+            &Settings,
+        ),
+    ) -> Self {
+        let stream = video.stream();
+        VideoDeepLinks {
+            meta_details_videos: format!(
+                "stremio:///detail/{}/{}",
+                utf8_percent_encode(&meta_request.path.r#type, URI_COMPONENT_ENCODE_SET),
+                utf8_percent_encode(&meta_request.path.id, URI_COMPONENT_ENCODE_SET),
+            ),
+            meta_details_streams: format!(
+                "stremio:///detail/{}/{}/{}",
+                utf8_percent_encode(&meta_request.path.r#type, URI_COMPONENT_ENCODE_SET),
+                utf8_percent_encode(&meta_request.path.id, URI_COMPONENT_ENCODE_SET),
+                utf8_percent_encode(&video.id, URI_COMPONENT_ENCODE_SET)
+            ),
+            player: stream
+                .as_ref()
+                .map(|stream| {
+                    Ok::<_, anyhow::Error>(format!(
+                        "stremio:///player/{}/{}/{}/{}/{}/{}",
+                        utf8_percent_encode(&stream.encode()?, URI_COMPONENT_ENCODE_SET),
+                        utf8_percent_encode(stream_request.base.as_str(), URI_COMPONENT_ENCODE_SET),
+                        utf8_percent_encode(meta_request.base.as_str(), URI_COMPONENT_ENCODE_SET),
+                        utf8_percent_encode(&meta_request.path.r#type, URI_COMPONENT_ENCODE_SET),
+                        utf8_percent_encode(&meta_request.path.id, URI_COMPONENT_ENCODE_SET),
                         utf8_percent_encode(&video.id, URI_COMPONENT_ENCODE_SET)
                     ))
                 })

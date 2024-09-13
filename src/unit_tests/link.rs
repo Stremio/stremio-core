@@ -116,7 +116,7 @@ fn create_link_code() {
         "Two requests have been sent"
     );
     assert_eq!(
-        REQUESTS.read().unwrap().get(0).unwrap().to_owned(),
+        REQUESTS.read().unwrap().first().unwrap().to_owned(),
         Request {
             url: "https://link.stremio.com/api/v2/create?type=Create".to_owned(),
             method: "GET".to_owned(),

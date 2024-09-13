@@ -8,6 +8,77 @@ use crate::types::{
     resource::{MetaItem, MetaItemPreview, Stream, Subtitles},
 };
 
+/// Resource response that handles the optional cache values defined in the SDK.
+/// This is a shim struct to avoid the custom Deserialize impl that skips those fields
+/// for the [`ResourceResponse`] enum.
+///
+/// See <https://github.com/Stremio/stremio-addon-sdk/tree/master/docs/api/requests>
+///
+/// - [`ResourceResponse::Metas`]`: <https://github.com/Stremio/stremio-addon-sdk/blob/master/docs/api/requests/defineCatalogHandler.md#returns>
+/// - [`ResourceResponse::MetaDetailed`]: None
+/// - [`ResourceResponse::Meta`]: <https://github.com/Stremio/stremio-addon-sdk/blob/master/docs/api/requests/defineMetaHandler.md#returns>
+/// - [`ResourceResponse::Addons`]: <https://github.com/Stremio/stremio-addon-sdk/blob/master/docs/api/requests/defineResourceHandler.md#returns>
+/// - [`ResourceResponse::Streams`]: <https://github.com/Stremio/stremio-addon-sdk/blob/master/docs/api/requests/defineStreamHandler.md#returns>
+/// - [`ResourceResponse::Subtitles`]: <https://github.com/Stremio/stremio-addon-sdk/blob/master/docs/api/requests/defineSubtitlesHandler.md#returns>
+/// -
+///
+/// # Examples
+///
+/// ```
+/// use serde_json::json;
+///
+/// use stremio_core::types::{
+///     addon::{ResourceResponseCache, ResourceResponse},
+///     resource::{Stream, StreamSource, StreamBehaviorHints},
+/// };
+///
+/// let cache_info_json = json!({
+///     "streams": [
+///         {
+///             "name": "Addon\n4k",
+///             "title": "South Park - Seasons 1 to 25 (S01-S25) Collectors Edition The Movie and Extras [NVEnc 10Bit 1080p to 2160p HEVC][DD DDP & TrueHD 5.1Ch]\nSeason 02/South Park - S02E05 - Conjoined Fetus Lady.mp4",
+///             "url": "https://example-url-stream.com/South_Park_S02_E05.mp4",
+///         },
+///     ],
+///     "cacheMaxAge": 3600,
+///     "staleRevalidate": 14400,
+///     "staleError": 604800,
+///
+/// });
+///
+/// let response_cache = serde_json::from_value(cache_info_json).expect("Should deserialize");
+/// assert_eq!(ResourceResponseCache {
+///     cache_max_age: Some(3600),
+///     stale_revalidate: Some(14400),
+///     stale_error: Some(604800),
+///     resource: ResourceResponse::Streams{
+///         streams: vec![
+///             Stream {
+///                 source: StreamSource::Url { url: "https://example-url-stream.com/South_Park_S02_E05.mp4".parse().unwrap() },
+///                 name: Some("Addon\n4k".into()),
+///                 description: Some("South Park - Seasons 1 to 25 (S01-S25) Collectors Edition The Movie and Extras [NVEnc 10Bit 1080p to 2160p HEVC][DD DDP & TrueHD 5.1Ch]\nSeason 02/South Park - S02E05 - Conjoined Fetus Lady.mp4".into()),
+///                 thumbnail: None,
+///                 subtitles: vec![],
+///                 behavior_hints: StreamBehaviorHints::default(),
+///             }
+///         ]
+///     }
+/// }, response_cache);
+/// ```
+
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(rename_all = "camelCase")]
+pub struct ResourceResponseCache {
+    /// (in seconds) which sets the `Cache-Control` header to `max-age=$cacheMaxAge` and overwrites the global cache time set in serveHTTP options
+    pub cache_max_age: Option<u64>,
+    /// (in seconds) which sets the `Cache-Control` header to `stale-while-revalidate=$staleRevalidate`
+    pub stale_revalidate: Option<u64>,
+    /// (in seconds) which sets the `Cache-Control` header to `stale-if-error=$staleError`
+    pub stale_error: Option<u64>,
+    #[serde(flatten)]
+    pub resource: ResourceResponse,
+}
+
 /// Resource Response from an addon.
 ///
 /// Deserializing the struct from json will skip any invalid Vec items
@@ -16,6 +87,21 @@ use crate::types::{
 #[serde(untagged)]
 #[serde_as]
 pub enum ResourceResponse {
+    /// [`MetaItemPreview`] response without the `videos` key of an item
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use stremio_core::types::addon::ResourceResponse;
+    ///
+    /// let null_metas = serde_json::json!({ "metas": null });
+    /// let null_metas = serde_json::from_value::<ResourceResponse>(null_metas).expect("Should be valid");
+    ///
+    /// match null_metas {
+    ///     ResourceResponse::Metas { metas } => assert!(metas.is_empty()),
+    ///     _ => panic!("Whoops, wrong variant!"),
+    /// }
+    /// ```
     Metas {
         metas: Vec<MetaItemPreview>,
     },
@@ -174,36 +260,49 @@ impl<'de> Deserialize<'de> for ResourceResponse {
         }
 
         if let Some(value) = value.get_mut("metas") {
-            let skip = serde_json::from_value::<SkipError<_>>(value.take())
-                .map_err(serde::de::Error::custom)?;
-
-            Ok(ResourceResponse::Metas { metas: skip.0 })
+            Ok(ResourceResponse::Metas {
+                metas: match value.take() {
+                    serde_json::Value::Null => Ok(vec![]),
+                    value => serde_json::from_value::<SkipError<_>>(value).map(|skip| skip.0),
+                }
+                .map_err(serde::de::Error::custom)?,
+            })
         } else if let Some(value) = value.get_mut("metasDetailed") {
-            let skip = serde_json::from_value::<SkipError<_>>(value.take())
-                .map_err(serde::de::Error::custom)?;
-
             Ok(ResourceResponse::MetasDetailed {
-                metas_detailed: skip.0,
+                metas_detailed: match value.take() {
+                    serde_json::Value::Null => Ok(vec![]),
+                    value => serde_json::from_value::<SkipError<_>>(value).map(|skip| skip.0),
+                }
+                .map_err(serde::de::Error::custom)?,
             })
         } else if let Some(value) = value.get_mut("meta") {
             Ok(ResourceResponse::Meta {
                 meta: serde_json::from_value(value.take()).map_err(serde::de::Error::custom)?,
             })
         } else if let Some(value) = value.get_mut("streams") {
-            let skip = serde_json::from_value::<SkipError<_>>(value.take())
-                .map_err(serde::de::Error::custom)?;
-
-            Ok(ResourceResponse::Streams { streams: skip.0 })
+            Ok(ResourceResponse::Streams {
+                streams: match value.take() {
+                    serde_json::Value::Null => Ok(vec![]),
+                    value => serde_json::from_value::<SkipError<_>>(value).map(|skip| skip.0),
+                }
+                .map_err(serde::de::Error::custom)?,
+            })
         } else if let Some(value) = value.get_mut("subtitles") {
-            let skip = serde_json::from_value::<SkipError<_>>(value.take())
-                .map_err(serde::de::Error::custom)?;
-
-            Ok(ResourceResponse::Subtitles { subtitles: skip.0 })
+            Ok(ResourceResponse::Subtitles {
+                subtitles: match value.take() {
+                    serde_json::Value::Null => Ok(vec![]),
+                    value => serde_json::from_value::<SkipError<_>>(value).map(|skip| skip.0),
+                }
+                .map_err(serde::de::Error::custom)?,
+            })
         } else if let Some(value) = value.get_mut("addons") {
-            let skip = serde_json::from_value::<SkipError<_>>(value.take())
-                .map_err(serde::de::Error::custom)?;
-
-            Ok(ResourceResponse::Addons { addons: skip.0 })
+            Ok(ResourceResponse::Addons {
+                addons: match value.take() {
+                    serde_json::Value::Null => Ok(vec![]),
+                    value => serde_json::from_value::<SkipError<_>>(value).map(|skip| skip.0),
+                }
+                .map_err(serde::de::Error::custom)?,
+            })
         } else {
             // we should never get to this else, as we already check for missing required key
             // but we're leaving it to remove the danger of a developer forgetting to add a new key to the list.

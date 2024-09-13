@@ -63,13 +63,10 @@ impl LibraryItem {
         }
     }
 
-    /// Returns whether the item has been watched when either of the state fields are:
-    /// - `times_watched > 0`
-    /// or
-    /// - `flagged_watched == 1` (true)
+    /// Returns whether the item has been watched
     #[inline]
     pub fn watched(&self) -> bool {
-        self.state.times_watched > 0 || self.state.flagged_watched == 1
+        self.state.times_watched > 0
     }
 
     /// Pulling notifications relies on a few key things:
@@ -99,6 +96,15 @@ impl LibraryItem {
             && self.poster == other.poster
             && self.poster_shape == other.poster_shape
             && self.behavior_hints == other.behavior_hints
+    }
+
+    pub fn mark_as_watched<E: Env>(&mut self, is_watched: bool) {
+        if is_watched {
+            self.state.times_watched = self.state.times_watched.saturating_add(1);
+            self.state.last_watched = Some(E::now());
+        } else {
+            self.state.times_watched = 0;
+        }
     }
 }
 

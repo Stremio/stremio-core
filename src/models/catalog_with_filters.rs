@@ -16,7 +16,6 @@ use boolinator::Boolinator;
 use derivative::Derivative;
 use itertools::Itertools;
 use serde::{Deserialize, Serialize};
-use std::convert::TryFrom;
 use std::ops::Add;
 
 #[derive(PartialEq, Eq)]
@@ -222,6 +221,7 @@ where
                 &self.catalog,
                 &ctx.profile,
             ),
+            Msg::Internal(Internal::LibraryChanged(_)) => Effects::none(),
             _ => Effects::none().unchanged(),
         }
     }

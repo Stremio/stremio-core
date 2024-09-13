@@ -340,8 +340,6 @@ mod imdb_rating {
 
 #[cfg(test)]
 mod test {
-    use std::convert::TryFrom;
-
     use super::*;
 
     #[test]
@@ -397,7 +395,7 @@ mod test {
 
         assert_eq!(2, searchable_results.len());
 
-        let redirected_id = searchable_results.get(0).unwrap();
+        let redirected_id = searchable_results.first().unwrap();
 
         assert!(redirected_id.name.is_empty());
         assert!(redirected_id.poster.is_none());

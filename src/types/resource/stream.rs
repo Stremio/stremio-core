@@ -1,36 +1,76 @@
-use crate::constants::{BASE64, URI_COMPONENT_ENCODE_SET, YOUTUBE_ADDON_ID_PREFIX};
-use crate::types::resource::Subtitles;
+use std::{collections::HashMap, io::Write, str::FromStr};
+
 use base64::Engine;
 use boolinator::Boolinator;
-#[cfg(test)]
-use derivative::Derivative;
-use flate2::write::{ZlibDecoder, ZlibEncoder};
-use flate2::Compression;
+use flate2::{
+    write::{ZlibDecoder, ZlibEncoder},
+    Compression,
+};
 use magnet_url::Magnet;
 use percent_encoding::utf8_percent_encode;
-use serde::de::Error;
-use serde::{Deserialize, Deserializer, Serialize};
-use serde_with::{serde_as, DefaultOnNull};
-use std::collections::HashMap;
-use std::io::Write;
-use std::str::FromStr;
-use stremio_serde_hex::{SerHex, Strict};
+use serde::{de::Error, Deserialize, Deserializer, Serialize};
+use serde_with::{serde_as, DefaultOnNull, VecSkipError};
 use url::{form_urlencoded, ParseError, Url};
 
+use stremio_serde_hex::{SerHex, Strict};
+
+use crate::{
+    constants::{BASE64, URI_COMPONENT_ENCODE_SET, YOUTUBE_ADDON_ID_PREFIX},
+    types::{resource::Subtitles, streams::StreamSourceTrait},
+};
+
+/// # Examples
+///
+/// ```
+/// use stremio_core::types::resource::{Stream, StreamSource, StreamBehaviorHints};
+///
+/// let expected_stream = Stream {
+///     source: StreamSource::Url { url: "https://example.com/some-awesome-video-file.mp4".parse().unwrap()},
+///     name: None,
+///     description: None,
+///     thumbnail: None,
+///     subtitles: vec![],
+///     behavior_hints: StreamBehaviorHints::default(),
+/// };
+///
+/// let default_fields_json = serde_json::json!({
+///     "url": "https://example.com/some-awesome-video-file.mp4",
+/// });
+/// let default_fields = serde_json::from_value::<Stream>(default_fields_json).unwrap();
+///
+/// assert_eq!(default_fields, expected_stream);
+///
+/// let null_fields_json = serde_json::json!({
+///     "url": "https://example.com/some-awesome-video-file.mp4",
+///     "name": null,
+///     "description": null,
+///     "thumbnail": null,
+///     "subtitles": null,
+///     "behaviorHints": null,
+/// });
+///
+/// let null_fields = serde_json::from_value::<Stream>(null_fields_json).unwrap();
+///
+/// assert_eq!(null_fields, expected_stream);
+/// ```
+#[serde_as]
 #[derive(Clone, PartialEq, Eq, Serialize, Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
-pub struct Stream {
+pub struct Stream<S: StreamSourceTrait = StreamSource> {
+    // pub struct Stream {
     #[serde(flatten)]
-    pub source: StreamSource,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    pub source: S,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
-    #[serde(alias = "title", skip_serializing_if = "Option::is_none")]
+    #[serde(default, alias = "title", skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub thumbnail: Option<String>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde_as(as = "DefaultOnNull<VecSkipError<_>>")]
     pub subtitles: Vec<Subtitles>,
     #[serde(default, skip_serializing_if = "is_default_value")]
+    #[serde_as(as = "DefaultOnNull")]
     pub behavior_hints: StreamBehaviorHints,
 }
 
@@ -162,15 +202,18 @@ impl Stream {
                 behavior_hints: Default::default(),
             })
     }
+
     pub fn download_url(&self) -> Option<String> {
         match &self.source {
-            StreamSource::Url { url } => match url {
+            StreamSource::Url { url }  => match url {
                 UrlExtended::Url(url) if url.scheme() == "magnet" => {
                     self.magnet_url().map(|magnet_url| magnet_url.to_string())
                 }
                 UrlExtended::Url(url) => Some(url.to_string()),
                 UrlExtended::RelativePath(_) => None,
             },
+            // we do not support RAR & Zip at this point!
+            StreamSource::Rar { .. } | StreamSource::Zip { .. } => None,
             StreamSource::Torrent { .. } => {
                 self.magnet_url().map(|magnet_url| magnet_url.to_string())
             }
@@ -181,6 +224,7 @@ impl Stream {
             StreamSource::PlayerFrame { player_frame_url } => Some(player_frame_url.to_string()),
         }
     }
+
     pub fn m3u_data_uri(&self, streaming_server_url: Option<&Url>) -> Option<String> {
         self.streaming_url(streaming_server_url).map(|url| {
             format!(
@@ -189,7 +233,8 @@ impl Stream {
             )
         })
     }
-    pub fn streaming_url(&self, streaming_server_url: Option<&Url>) -> Option<String> {
+
+    pub fn streaming_url(&self, streaming_server_url: Option<&Url>) -> Option<Url> {
         match (&self.source, streaming_server_url) {
             (
                 StreamSource::Url {
@@ -218,16 +263,17 @@ impl Stream {
                                 .iter()
                                 .map(|header| ("r", format!("{}:{}", header.0, header.1))),
                         );
-                        streaming_url
-                            .path_segments_mut()
-                            .ok()?
-                            .push("proxy")
-                            .push(proxy_query.finish().as_str())
-                            .push(&url.path()[1..]);
+
+                        streaming_url.set_path(&format!(
+                            "proxy/{query}/{url_path}",
+                            query = proxy_query.finish().as_str(),
+                            url_path = &url.path().strip_prefix('/').unwrap_or(url.path()),
+                        ));
+
                         streaming_url.set_query(url.query());
-                        Some(streaming_url.to_string())
+                        Some(streaming_url)
                     }
-                    _ => Some(url.to_string()),
+                    _ => Some(url.to_owned()),
                 }
             }
             (
@@ -235,27 +281,47 @@ impl Stream {
                     info_hash,
                     file_idx,
                     announce,
+                    file_must_include,
                 },
                 Some(streaming_server_url),
             ) => {
                 let mut url = streaming_server_url.to_owned();
                 match url.path_segments_mut() {
                     Ok(mut path) => {
-                        path.push(&hex::encode(info_hash));
-                        // When fileIndex is not provided use -1, which will tell the
-                        // streaming server to choose the file with the largest size from the torrent
-                        path.push(
+                        path.extend([
+                            &hex::encode(info_hash),
+                            // When fileIndex is not provided use -1, which will tell the
+                            // streaming server to choose the file with the largest size from the torrent
                             &file_idx.map_or_else(|| "-1".to_string(), |idx| idx.to_string()),
-                        );
+                        ]);
                     }
                     _ => return None,
-                };
-                if !announce.is_empty() {
-                    let mut query = url.query_pairs_mut();
-                    query.extend_pairs(announce.iter().map(|tracker| ("tr", tracker)));
-                };
-                Some(url.to_string())
+                }
+
+                // setup query params
+                {
+                    let mut query_params = url.query_pairs_mut();
+
+                    if !announce.is_empty() {
+                        query_params.extend_pairs(
+                            announce.iter().map(|tracker| ("tr", tracker.to_owned())),
+                        );
+                    }
+
+                    if !file_must_include.is_empty() {
+                        query_params.extend_pairs(
+                            file_must_include
+                                .iter()
+                                .map(|file_must_include| ("f", file_must_include.to_owned())),
+                        );
+                    }
+                }
+
+                Some(url)
             }
+            // we do not support Rar & Zip at this point
+            (StreamSource::Zip { .. }, Some(_streaming_server_url)) => None,
+            (StreamSource::Rar { .. }, Some(_streaming_server_url)) => None,
             (StreamSource::YouTube { yt_id }, Some(streaming_server_url)) => {
                 let mut url = streaming_server_url.to_owned();
                 match url.path_segments_mut() {
@@ -267,7 +333,7 @@ impl Stream {
                     }
                     _ => return None,
                 };
-                Some(url.to_string())
+                Some(url)
             }
             _ => None,
         }
@@ -299,9 +365,125 @@ impl Stream {
     }
 }
 
+///
+/// # Examples
+///
+/// Stream source Url
+///
+/// [`StreamSource::Rar`] with `rarUrls` field:
+///
+/// ```
+/// use stremio_core::types::resource::StreamSource;
+///
+/// let streams_json = serde_json::json!([
+/// {
+///     "rarUrls": ["https://example-source.com/file.rar", "https://example-source2.com/file2.rar"],
+///     // ...Stream
+/// },
+/// {
+///     "rarUrls": ["https://example-source3.com/file.rar", "https://example-source4.com/file2.rar"],
+///     "fileIdx": 1,
+///     "fileMustInclude": ["includeFile1"],
+///     // ...Stream
+/// },
+/// {
+///     "rarUrls": ["https://example-source5.com/file.rar", "https://example-source6.com/file2.rar"],
+///     "fileMustInclude": ["includeFile2"],
+///     // ...Stream
+/// },
+/// {
+///     "rarUrls": ["https://example-source7.com/file.rar", "https://example-source8.com/file2.rar"],
+///     "fileIdx": 2,
+///     // ...Stream
+/// }
+/// ]);
+///
+/// let expected = vec![
+///     StreamSource::Rar {
+///         rar_urls: vec!["https://example-source.com/file.rar".parse().unwrap(), "https://example-source2.com/file2.rar".parse().unwrap()],
+///         file_idx: None,
+///         file_must_include: vec![],
+///     },
+///     StreamSource::Rar {
+///         rar_urls: vec!["https://example-source3.com/file.rar".parse().unwrap(), "https://example-source4.com/file2.rar".parse().unwrap()],
+///         file_idx: Some(1),
+///         file_must_include: vec!["includeFile1".into()]
+///     },
+///     StreamSource::Rar {
+///         rar_urls: vec!["https://example-source5.com/file.rar".parse().unwrap(), "https://example-source6.com/file2.rar".parse().unwrap()],
+///         file_idx: None,
+///         file_must_include: vec!["includeFile2".into()]
+///     },
+///     StreamSource::Rar {
+///         rar_urls: vec!["https://example-source7.com/file.rar".parse().unwrap(), "https://example-source8.com/file2.rar".parse().unwrap()],
+///         file_idx: Some(2),
+///         file_must_include: vec![],
+///     },
+/// ];
+///
+/// let streams: Vec<StreamSource> = serde_json::from_value(streams_json).expect("Deserialize all StreamSources");
+///
+/// pretty_assertions::assert_eq!(streams, expected);
+/// ```
+///
+/// [`StreamSource::Zip`] with `zipUrls` field:
+///
+/// ```
+/// use stremio_core::types::resource::StreamSource;
+///
+/// let streams_json = serde_json::json!([
+/// {
+///     "zipUrls": ["https://example-source.com/file.rar", "https://example-source2.com/file2.rar"],
+///     // ...Stream
+/// },
+/// {
+///     "zipUrls": ["https://example-source3.com/file.rar", "https://example-source4.com/file2.rar"],
+///     "fileIdx": 1,
+///     "fileMustInclude": ["includeFile1"],
+///     // ...Stream
+/// },
+/// {
+///     "zipUrls": ["https://example-source5.com/file.rar", "https://example-source6.com/file2.rar"],
+///     "fileMustInclude": ["includeFile2"],
+///     // ...Stream
+/// },
+/// {
+///     "zipUrls": ["https://example-source7.com/file.rar", "https://example-source8.com/file2.rar"],
+///     "fileIdx": 2,
+///     // ...Stream
+/// }
+/// ]);
+///
+/// let expected = vec![
+///     StreamSource::Zip {
+///         zip_urls: vec!["https://example-source.com/file.rar".parse().unwrap(), "https://example-source2.com/file2.rar".parse().unwrap()],
+///         file_idx: None,
+///         file_must_include: vec![],
+///     },
+///     StreamSource::Zip {
+///         zip_urls: vec!["https://example-source3.com/file.rar".parse().unwrap(), "https://example-source4.com/file2.rar".parse().unwrap()],
+///         file_idx: Some(1),
+///         file_must_include: vec!["includeFile1".into()],
+///     },
+///     StreamSource::Zip {
+///         zip_urls: vec!["https://example-source5.com/file.rar".parse().unwrap(), "https://example-source6.com/file2.rar".parse().unwrap()],
+///         file_idx: None,
+///         file_must_include: vec!["includeFile2".into()],
+///     },
+///     StreamSource::Zip {
+///         zip_urls: vec!["https://example-source7.com/file.rar".parse().unwrap(), "https://example-source8.com/file2.rar".parse().unwrap()],
+///         file_idx: Some(2),
+///         file_must_include: vec![],
+///     },
+/// ];
+///
+/// let streams: Vec<StreamSource> = serde_json::from_value(streams_json).expect("Deserialize all StreamSources");
+///
+/// pretty_assertions::assert_eq!(streams, expected);
+/// ```
 #[serde_as]
 #[derive(Clone, PartialEq, Eq, Serialize, Deserialize, Debug)]
-#[cfg_attr(test, derive(Derivative))]
+#[cfg_attr(test, derive(derivative::Derivative))]
 #[cfg_attr(test, derivative(Default))]
 #[serde(untagged)]
 pub enum StreamSource {
@@ -314,13 +496,35 @@ pub enum StreamSource {
         yt_id: String,
     },
     #[serde(rename_all = "camelCase")]
+    Rar {
+        rar_urls: Vec<Url>,
+        #[serde(default)]
+        file_idx: Option<u16>,
+        #[serde(default, skip_serializing_if = "Vec::is_empty")]
+        #[serde_as(deserialize_as = "DefaultOnNull")]
+        file_must_include: Vec<String>,
+    },
+    #[serde(rename_all = "camelCase")]
+    Zip {
+        zip_urls: Vec<Url>,
+        #[serde(default)]
+        file_idx: Option<u16>,
+        #[serde(default, skip_serializing_if = "Vec::is_empty")]
+        #[serde_as(deserialize_as = "DefaultOnNull")]
+        file_must_include: Vec<String>,
+    },
+    #[serde(rename_all = "camelCase")]
     Torrent {
         #[serde(with = "SerHex::<Strict>")]
         info_hash: [u8; 20],
+        #[serde(default)]
         file_idx: Option<u16>,
         #[serde_as(deserialize_as = "DefaultOnNull")]
         #[serde(default, alias = "sources")]
         announce: Vec<String>,
+        #[serde_as(deserialize_as = "DefaultOnNull")]
+        #[serde(default, skip_serializing_if = "Vec::is_empty")]
+        file_must_include: Vec<String>,
     },
     #[serde(rename_all = "camelCase")]
     PlayerFrame {
@@ -383,6 +587,7 @@ pub struct StreamProxyHeaders {
     pub response: HashMap<String, String>,
 }
 
+/// See <https://github.com/Stremio/stremio-addon-sdk/blob/master/docs/api/responses/stream.md#additional-properties-to-provide-information--behaviour-flags> for documentation
 #[derive(Default, Clone, PartialEq, Eq, Serialize, Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct StreamBehaviorHints {
@@ -394,10 +599,49 @@ pub struct StreamBehaviorHints {
     pub country_whitelist: Option<Vec<String>>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub proxy_headers: Option<StreamProxyHeaders>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub filename: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub video_hash: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub video_size: Option<u64>,
     #[serde(flatten)]
     pub other: HashMap<String, serde_json::Value>,
 }
 
 fn is_default_value<T: Default + PartialEq>(value: &T) -> bool {
     *value == T::default()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_stream_url_source_with_proxy_headers_to_streaming_url() {
+        let stream_json = serde_json::json!({
+            "url": "https://webdav.premiumize.me/%5B%20Torrent911.vc%20%5D%20The.Beekeeper.2024.FRENCH.1080p.WEBRip.x264-RZP.mkv",
+            "name": "webDav Premiumize",
+            "description": "[ Torrent911.vc ] The.Beekeeper.2024.FRENCH.1080p.WEBRip.x264-RZP.mkv",
+            "behaviorHints": {
+                "notWebReady": true,
+                "proxyHeaders": {
+                    "request": {
+                        "Authorization": "Basic 'XXXXXXXXXXXXXXXXXXXXXXX='"
+                    }
+                }
+            }
+
+        });
+
+        let stream = serde_json::from_value::<Stream>(stream_json)
+            .expect("Should be able to deserialize valid Stream");
+        let expected = "http://127.0.0.1:3000/proxy/d=https%3A%2F%2Fwebdav.premiumize.me&h=Authorization%3ABasic+%27XXXXXXXXXXXXXXXXXXXXXXX%3D%27/%5B%20Torrent911.vc%20%5D%20The.Beekeeper.2024.FRENCH.1080p.WEBRip.x264-RZP.mkv".parse::<Url>().expect("Valid url");
+        assert_eq!(
+            expected,
+            stream
+                .streaming_url(Some(&"http://127.0.0.1:3000/".parse().unwrap()))
+                .expect("Should be able to generate streaming_url for Stream")
+        );
+    }
 }

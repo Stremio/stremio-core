@@ -1,10 +1,10 @@
-use crate::models::common::ResourceLoadable;
 use url::Url;
 
+use crate::models::common::ResourceLoadable;
 use crate::models::ctx::CtxError;
 use crate::models::link::LinkError;
 use crate::models::local_search::Searchable;
-use crate::models::streaming_server::{PlaybackDevice, StatisticsRequest};
+use crate::models::streaming_server::PlaybackDevice;
 use crate::runtime::EnvError;
 use crate::types::addon::{Descriptor, Manifest, ResourceRequest, ResourceResponse};
 use crate::types::api::{
@@ -14,9 +14,14 @@ use crate::types::api::{
 };
 use crate::types::library::{LibraryBucket, LibraryItem, LibraryItemId};
 use crate::types::profile::{Auth, AuthKey, Profile, User};
-use crate::types::resource::{MetaItem, Stream};
-use crate::types::streaming_server::{GetHTTPSResponse, NetworkInfo, SettingsResponse, Statistics};
+use crate::types::streaming_server::{
+    DeviceInfo, GetHTTPSResponse, NetworkInfo, SettingsResponse, Statistics, StatisticsRequest,
+};
 use crate::types::streams::StreamItemState;
+use crate::types::{
+    resource::{MetaItem, Stream},
+    torrent::InfoHash,
+};
 
 pub type CtxStorageResponse = (
     Option<Profile>,
@@ -105,10 +110,12 @@ pub enum Internal {
     StreamingServerPlaybackDevicesResult(Url, Result<Vec<PlaybackDevice>, EnvError>),
     // Result for network info.
     StreamingServerNetworkInfoResult(Url, Result<NetworkInfo, EnvError>),
+    // Result for device info.
+    StreamingServerDeviceInfoResult(Url, Result<DeviceInfo, EnvError>),
     /// Result for updating streaming server settings.
     StreamingServerUpdateSettingsResult(Url, Result<(), EnvError>),
     /// Result for creating a torrent.
-    StreamingServerCreateTorrentResult(String, Result<(), EnvError>),
+    StreamingServerCreateTorrentResult(InfoHash, Result<(), EnvError>),
     /// Result for playing on device.
     StreamingServerPlayOnDeviceResult(String, Result<(), EnvError>),
     // Result for get https endpoint request
@@ -146,9 +153,4 @@ pub enum Internal {
     ),
     /// When dismissed events changed
     DismissedEventsChanged,
-    /// Marks a library item as watched or unwatched. (Overrides the current state)
-    LibraryItemMarkAsWatched {
-        id: LibraryItemId,
-        is_watched: bool,
-    },
 }
