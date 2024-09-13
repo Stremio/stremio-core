@@ -205,7 +205,7 @@ impl Stream {
 
     pub fn download_url(&self) -> Option<String> {
         match &self.source {
-            StreamSource::Url { url }  => match url {
+            StreamSource::Url { url } => match url {
                 UrlExtended::Url(url) if url.scheme() == "magnet" => {
                     self.magnet_url().map(|magnet_url| magnet_url.to_string())
                 }
