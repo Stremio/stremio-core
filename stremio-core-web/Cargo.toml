@@ -55,3 +55,9 @@ tracing-wasm = "0.2"
 
 [dev-dependencies]
 wasm-bindgen-test = "0.3.0"
+
+[package.metadata.wasm-pack.profile.release]
+# iOS 12 Safari - unsupported, flag is insufficient for this version to work and out-of-scope for now
+# iOS 14 Safari - unsupported, we need to use `--signext-lowering`
+# iOS 15 Safari - supported without this flag, current version is tested and works
+wasm-opt = ["--signext-lowering"]

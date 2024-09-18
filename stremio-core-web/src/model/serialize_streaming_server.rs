@@ -11,6 +11,8 @@ use url::Url;
 use wasm_bindgen::JsValue;
 
 mod model {
+    use stremio_core::types::torrent::InfoHash;
+
     use super::*;
     type TorrentLoadable<'a> = Loadable<(&'a ResourcePath, MetaItemDeepLinks), &'a EnvError>;
     #[derive(Serialize)]
@@ -23,7 +25,7 @@ mod model {
         pub playback_devices: &'a Loadable<Vec<PlaybackDevice>, EnvError>,
         pub network_info: &'a Loadable<NetworkInfo, EnvError>,
         pub device_info: &'a Loadable<DeviceInfo, EnvError>,
-        pub torrent: Option<(&'a String, TorrentLoadable<'a>)>,
+        pub torrent: Option<(&'a InfoHash, TorrentLoadable<'a>)>,
         pub statistics: Option<&'a Loadable<Statistics, EnvError>>,
     }
 }

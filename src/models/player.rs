@@ -1223,7 +1223,7 @@ fn intro_outro_update<E: Env + 'static>(
                 );
 
                 closest_duration.and_then(|(closest_duration, skip_gaps)| {
-                let duration_diff_in_secs = (library_item.state.duration - closest_duration).div(1000 * 10) / 10;
+                let duration_diff_in_secs = (library_item.state.duration.abs_diff(*closest_duration)).div(1000 * 10) / 10;
                 tracing::trace!("Player: Intro match by duration with difference of {duration_diff_in_secs} seconds");
 
                 let duration_ration = Ratio::new(library_item.state.duration, *closest_duration);
@@ -1233,7 +1233,7 @@ fn intro_outro_update<E: Env + 'static>(
                     IntroData {
                         from: (duration_ration * seek_event.from).to_integer(),
                         to: (duration_ration * seek_event.to).to_integer(),
-                        duration: if duration_diff_in_secs > 0 { Some(seek_event.to - seek_event.from) } else { None }
+                        duration: if duration_diff_in_secs > 0 { Some(seek_event.to.abs_diff(seek_event.from)) } else { None }
                     }
                 })
               })

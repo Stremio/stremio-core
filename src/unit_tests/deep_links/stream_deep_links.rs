@@ -10,9 +10,9 @@ use std::str::FromStr;
 use url::Url;
 
 const MAGNET_STR_URL: &str = "magnet:?xt=urn:btih:dd8255ecdc7ca55fb0bbf81323d87062db1f6d1c";
-const HTTP_STR_URL: &str = "http://domain.root/path";
+const HTTP_STR_URL: &str = "http://domain.root/some/path";
 const HTTP_WITH_QUERY_STR_URL: &str = "http://domain.root/some/path?param=some&foo=bar";
-const BASE64_HTTP_URL: &str = "data:application/octet-stream;charset=utf-8;base64,I0VYVE0zVQojRVhUSU5GOjAKaHR0cDovL2RvbWFpbi5yb290L3BhdGg=";
+const BASE64_HTTP_URL: &str = "data:application/octet-stream;charset=utf-8;base64,I0VYVE0zVQojRVhUSU5GOjAKaHR0cDovL2RvbWFpbi5yb290L3NvbWUvcGF0aA==";
 const STREAMING_SERVER_URL: &str = "http://127.0.0.1:11470";
 const YT_ID: &str = "aqz-KE-bpKQ";
 
@@ -55,9 +55,8 @@ fn stream_deep_links_http() {
     let settings = Settings::default();
     let sdl = StreamDeepLinks::from((&stream, &streaming_server_url, &settings));
     assert_eq!(
-        sdl.player,
-        "stremio:///player/eAEBIQDe%2F3sidXJsIjoiaHR0cDovL2RvbWFpbi5yb290L3BhdGgifcEEC6w%3D"
-            .to_string()
+        &sdl.player,
+        "stremio:///player/eAEBJgDZ%2F3sidXJsIjoiaHR0cDovL2RvbWFpbi5yb290L3NvbWUvcGF0aCJ9AYANjw%3D%3D",
     );
     assert_eq!(
         sdl.external_player.playlist,
@@ -97,12 +96,13 @@ fn stream_deep_links_http_with_request_headers() {
     let streaming_server_url = Some(Url::parse(STREAMING_SERVER_URL).unwrap());
     let settings = Settings::default();
     let sdl = StreamDeepLinks::from((&stream, &streaming_server_url, &settings));
-    assert_eq!(sdl.player, "stremio:///player/eAEBawCU%2F3sidXJsIjoiaHR0cDovL2RvbWFpbi5yb290L3BhdGgiLCJiZWhhdmlvckhpbnRzIjp7InByb3h5SGVhZGVycyI6eyJyZXF1ZXN0Ijp7IkF1dGhvcml6YXRpb24iOiJteSt0b2tlbiJ9fX19DNkm%2FA%3D%3D".to_string());
+    assert_eq!(sdl.player, "stremio:///player/eAEBcACP%2F3sidXJsIjoiaHR0cDovL2RvbWFpbi5yb290L3NvbWUvcGF0aCIsImJlaGF2aW9ySGludHMiOnsicHJveHlIZWFkZXJzIjp7InJlcXVlc3QiOnsiQXV0aG9yaXphdGlvbiI6Im15K3Rva2VuIn19fX3Y5Cjf".to_string());
     assert_eq!(
         sdl.external_player.streaming,
         Some(format!(
             "{}/proxy/{}",
-            STREAMING_SERVER_URL, "d=http%3A%2F%2Fdomain.root&h=Authorization%3Amy%2Btoken/path"
+            STREAMING_SERVER_URL,
+            "d=http%3A%2F%2Fdomain.root&h=Authorization%3Amy%2Btoken/some/path",
         ))
     );
 }
@@ -143,7 +143,7 @@ fn stream_deep_links_http_with_request_response_headers_and_query_params() {
         Some(format!(
             "{}/proxy/{}",
             STREAMING_SERVER_URL,
-            "d=http%3A%2F%2Fdomain.root&h=Authorization%3Amy%2Btoken&r=Content-Type%3Aapplication%2Fxml/some/path?param=some&foo=bar"
+            "d=http%3A%2F%2Fdomain.root&h=Authorization%3Amy%2Btoken&r=Content-Type%3Aapplication%2Fxml/some/path?param=some&foo=bar",
         ))
     );
 }
@@ -291,7 +291,7 @@ fn stream_deep_links_external() {
     let streaming_server_url = Some(Url::parse(STREAMING_SERVER_URL).unwrap());
     let settings = Settings::default();
     let sdl = StreamDeepLinks::from((&stream, &streaming_server_url, &settings));
-    assert_eq!(sdl.player, "stremio:///player/eAEBKQDW%2F3siZXh0ZXJuYWxVcmwiOiJodHRwOi8vZG9tYWluLnJvb3QvcGF0aCJ9OoEO7w%3D%3D".to_string());
+    assert_eq!(&sdl.player, "stremio:///player/eAEBLgDR%2F3siZXh0ZXJuYWxVcmwiOiJodHRwOi8vZG9tYWluLnJvb3Qvc29tZS9wYXRoIn2LPRDS");
     assert_eq!(
         sdl.external_player.web,
         Some(Url::from_str(HTTP_STR_URL).unwrap()),
@@ -349,7 +349,7 @@ fn stream_deep_links_player_frame() {
     let streaming_server_url = Some(Url::parse(STREAMING_SERVER_URL).unwrap());
     let settings = Settings::default();
     let sdl = StreamDeepLinks::from((&stream, &streaming_server_url, &settings));
-    assert_eq!(sdl.player, "stremio:///player/eAEBLADT%2F3sicGxheWVyRnJhbWVVcmwiOiJodHRwOi8vZG9tYWluLnJvb3QvcGF0aCJ9abUQBA%3D%3D".to_string());
+    assert_eq!(&sdl.player, "stremio:///player/eAEBMQDO%2F3sicGxheWVyRnJhbWVVcmwiOiJodHRwOi8vZG9tYWluLnJvb3Qvc29tZS9wYXRoIn2%2F2hHn");
     assert_eq!(sdl.external_player.playlist, None);
     assert_eq!(sdl.external_player.file_name, None);
 }
