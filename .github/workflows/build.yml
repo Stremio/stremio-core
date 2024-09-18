@@ -53,7 +53,7 @@ jobs:
       - name: Rust setup
         uses: dtolnay/rust-toolchain@1.77
         with:
-          components: rustfmt, clippy
+          components: rustfmt, clippy, rust-std
           targets: wasm32-unknown-unknown
 
       - uses: Swatinem/rust-cache@v2
