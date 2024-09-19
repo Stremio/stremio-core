@@ -119,7 +119,7 @@ jobs:
         
       - name: Deploy gh-pages
         if: ${{ ! startsWith(github.ref, 'refs/pull/')  &&  github.actor != 'dependabot[bot]' }}
-        uses: peaceiris/actions-gh-pages@v3
+        uses: peaceiris/actions-gh-pages@v4
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           # the build directory already contains the `github.ref_name` as subfolder(s)
