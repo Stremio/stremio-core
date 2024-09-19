@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"enum":["CatalogPageRequest","SelectablePriority"],"fn":["catalog_update","selectable_update","selected_update"],"struct":["CatalogWithFilters","Selectable","SelectableCatalog","SelectableExtra","SelectableExtraOption","SelectablePage","SelectableType","Selected"],"trait":["CatalogResourceAdapter"],"type":["Catalog","CatalogPage"]};

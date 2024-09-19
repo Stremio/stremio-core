@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"mod":["env","event","model","stremio_core_web"]};

@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"mod":["library_bucket","library_item"],"struct":["LibraryBucket","LibraryBucketRef","LibraryItem","LibraryItemState"],"type":["LibraryItemId"]};

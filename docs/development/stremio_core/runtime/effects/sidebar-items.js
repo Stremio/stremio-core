@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"enum":["Effect","EffectFuture"],"struct":["Effects"],"type":["Future"]};

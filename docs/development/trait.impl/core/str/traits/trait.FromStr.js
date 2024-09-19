@@ -1,0 +1,9 @@
+(function() {
+    var implementors = Object.fromEntries([["stremio_core",[["impl <a class=\"trait\" href=\"https://doc.rust-lang.org/nightly/core/str/traits/trait.FromStr.html\" title=\"trait core::str::traits::FromStr\">FromStr</a> for <a class=\"struct\" href=\"stremio_core/models/local_search/imdb_rating/struct.ImdbRating.html\" title=\"struct stremio_core::models::local_search::imdb_rating::ImdbRating\">ImdbRating</a>"],["impl <a class=\"trait\" href=\"https://doc.rust-lang.org/nightly/core/str/traits/trait.FromStr.html\" title=\"trait core::str::traits::FromStr\">FromStr</a> for <a class=\"struct\" href=\"stremio_core/types/torrent/struct.InfoHash.html\" title=\"struct stremio_core::types::torrent::InfoHash\">InfoHash</a>"]]],["stremio_watched_bitfield",[["impl <a class=\"trait\" href=\"https://doc.rust-lang.org/nightly/core/str/traits/trait.FromStr.html\" title=\"trait core::str::traits::FromStr\">FromStr</a> for <a class=\"struct\" href=\"stremio_watched_bitfield/bitfield8/struct.BitField8.html\" title=\"struct stremio_watched_bitfield::bitfield8::BitField8\">BitField8</a>"],["impl <a class=\"trait\" href=\"https://doc.rust-lang.org/nightly/core/str/traits/trait.FromStr.html\" title=\"trait core::str::traits::FromStr\">FromStr</a> for <a class=\"struct\" href=\"stremio_watched_bitfield/watched_bitfield/struct.WatchedField.html\" title=\"struct stremio_watched_bitfield::watched_bitfield::WatchedField\">WatchedField</a>"]]]]);
+    if (window.register_implementors) {
+        window.register_implementors(implementors);
+    } else {
+        window.pending_implementors = implementors;
+    }
+})()
+//{"start":57,"fragment_lengths":[683,712]}

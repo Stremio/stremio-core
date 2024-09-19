@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"mod":["dimissed_events_bucket","events"],"struct":["DismissedEventsBucket","Events"]};

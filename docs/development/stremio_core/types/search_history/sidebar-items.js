@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"mod":["search_history_bucket"],"struct":["SearchHistoryBucket"]};
