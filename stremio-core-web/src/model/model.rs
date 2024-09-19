@@ -7,6 +7,7 @@ use wasm_bindgen::JsValue;
 use stremio_core::{
     models::{
         addon_details::AddonDetails,
+        calendar::Calendar,
         catalog_with_filters::CatalogWithFilters,
         catalogs_with_extra::CatalogsWithExtra,
         continue_watching_preview::ContinueWatchingPreview,
@@ -32,10 +33,10 @@ use stremio_core::{
 use crate::{
     env::WebEnv,
     model::{
-        serialize_catalogs_with_extra, serialize_continue_watching_preview, serialize_ctx,
-        serialize_data_export, serialize_discover, serialize_installed_addons, serialize_library,
-        serialize_local_search, serialize_meta_details, serialize_player, serialize_remote_addons,
-        serialize_streaming_server,
+        serialize_calendar, serialize_catalogs_with_extra, serialize_continue_watching_preview,
+        serialize_ctx, serialize_data_export, serialize_discover, serialize_installed_addons,
+        serialize_library, serialize_local_search, serialize_meta_details, serialize_player,
+        serialize_remote_addons, serialize_streaming_server,
     },
 };
 
@@ -51,6 +52,7 @@ pub struct WebModel {
     pub discover: CatalogWithFilters<MetaItemPreview>,
     pub library: LibraryWithFilters<NotRemovedFilter>,
     pub continue_watching: LibraryWithFilters<ContinueWatchingFilter>,
+    pub calendar: Calendar,
     pub search: CatalogsWithExtra,
     /// Pre-loaded results for local search
     pub local_search: LocalSearch,
@@ -101,6 +103,7 @@ impl WebModel {
             discover,
             library: library_,
             continue_watching,
+            calendar: Default::default(),
             search: Default::default(),
             meta_details: Default::default(),
             remote_addons,
@@ -150,6 +153,7 @@ impl WebModel {
                 "continuewatching".to_owned(),
             ),
             WebModelField::Search => serialize_catalogs_with_extra(&self.search, &self.ctx),
+            WebModelField::Calendar => serialize_calendar(&self.calendar),
             WebModelField::LocalSearch => serialize_local_search(&self.local_search),
             WebModelField::MetaDetails => {
                 serialize_meta_details(&self.meta_details, &self.ctx, &self.streaming_server)

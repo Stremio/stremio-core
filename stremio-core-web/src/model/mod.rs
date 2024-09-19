@@ -1,5 +1,8 @@
 pub mod deep_links_ext;
 
+mod serialize_calendar;
+use serialize_calendar::*;
+
 mod serialize_catalogs_with_extra;
 use serialize_catalogs_with_extra::*;
 
