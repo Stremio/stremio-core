@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"enum":["APIResult","LinkDataResponse"],"struct":["APIError","AuthResponse","CollectionResponse","DataExportResponse","GetModalResponse","GetNotificationResponse","LibraryItemModified","LibraryItemsResponse","LinkAuthKey","LinkCodeResponse","ModalAddon","SeekEvent","SkipGaps","SkipGapsResponse","SuccessResponse"]};

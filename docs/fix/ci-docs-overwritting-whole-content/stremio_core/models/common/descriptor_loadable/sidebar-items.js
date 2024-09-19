@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"enum":["DescriptorAction"],"fn":["descriptor_update"],"struct":["DescriptorLoadable"]};

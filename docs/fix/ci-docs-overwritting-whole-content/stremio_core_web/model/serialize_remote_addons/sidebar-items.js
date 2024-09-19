@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"fn":["serialize_remote_addons"],"mod":["model"]};

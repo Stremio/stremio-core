@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"enum":["LegacyIdProperty"],"struct":["LegacyManifest","LegacyManifestResp","LegacySort"]};

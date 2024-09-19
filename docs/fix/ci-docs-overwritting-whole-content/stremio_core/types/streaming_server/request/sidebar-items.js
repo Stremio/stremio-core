@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"struct":["CreateMagnetBody","CreateMagnetRequest","CreateMagnetTorrent","CreateTorrentBlobBody","CreateTorrentBlobRequest","StatisticsRequest","TorrentStatisticsRequest"]};

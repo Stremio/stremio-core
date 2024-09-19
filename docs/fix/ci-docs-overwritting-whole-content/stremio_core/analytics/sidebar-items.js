@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"fn":["send_events_batch_to_api"],"struct":["Analytics","Event","EventsBatch","State"]};
