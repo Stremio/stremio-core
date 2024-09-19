@@ -36,3 +36,5 @@ jobs:
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: ./docs
+          # we build and publish docs from `development` branch only
+          destination_dir: ./docs/${{ github.ref_name }}
