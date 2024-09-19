@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"mod":["bitfield8","error","watched_bitfield"],"struct":["BitField8","Error","WatchedBitField","WatchedField"]};

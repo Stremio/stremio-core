@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"fn":["addon_action_error_effects","addon_install_error_effects","addon_uninstall_error_effects","addon_upgrade_error_effects","pull_addons_from_api","pull_user_from_api","push_addons_to_api","push_profile_to_storage","push_user_to_api","update_profile"]};

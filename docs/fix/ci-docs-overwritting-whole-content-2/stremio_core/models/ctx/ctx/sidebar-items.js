@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"enum":["CtxStatus"],"fn":["authenticate","delete_session"],"struct":["Ctx"]};

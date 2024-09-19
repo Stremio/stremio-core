@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"fn":["plan_sync_with_api","pull_items_from_api","push_items_to_api","push_library_to_storage","update_and_push_items_to_storage","update_library"]};

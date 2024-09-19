@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"enum":["Effect","EffectFuture","EnvError","RuntimeEvent"],"mod":["effects","env","msg","runtime","update"],"struct":["Effects","Runtime","RuntimeAction"],"trait":["ConditionalSend","Env","EnvFutureExt","Model","Update","UpdateWithCtx"],"type":["EnvFuture","TryEnvFuture"]};

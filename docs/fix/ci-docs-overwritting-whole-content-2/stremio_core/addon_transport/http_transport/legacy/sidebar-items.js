@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"constant":["IMDB_PREFIX","MANIFEST_REQUEST_PARAM","YT_PREFIX"],"enum":["JsonRPCResp","LegacyErr"],"fn":["build_jsonrpc","build_legacy_req","map_response","query_from_id"],"mod":["legacy_manifest"],"struct":["AddonLegacyTransport","JsonRPCErr","SubtitlesResult"]};

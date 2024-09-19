@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"enum":["ContinueWatchingFilter","NotRemovedFilter","Sort"],"fn":["catalog_update","selectable_update"],"struct":["LibraryRequest","LibraryRequestPage","LibraryWithFilters","Selectable","SelectablePage","SelectableSort","SelectableType","Selected","SortIter"],"trait":["LibraryFilter"]};

@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"fn":["catalog_update","selectable_update"],"struct":["InstalledAddonsRequest","InstalledAddonsWithFilters","Selectable","SelectableType","Selected"]};

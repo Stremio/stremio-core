@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"enum":["PosterShape","StreamSource"],"mod":["meta_item","stream","subtitles"],"struct":["Link","MetaItem","MetaItemBehaviorHints","MetaItemPreview","SeriesInfo","Stream","StreamBehaviorHints","StreamProxyHeaders","Subtitles","Video"],"type":["MetaItemId","VideoId"]};
