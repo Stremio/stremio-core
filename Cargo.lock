@@ -1196,6 +1196,7 @@ dependencies = [
  "http",
  "itertools 0.10.5",
  "js-sys",
+ "once_cell",
  "regex",
  "semver",
  "serde",
