@@ -93,7 +93,7 @@ fn default_catalog() {
         .collect::<Vec<_>>();
     assert_eq!(states.len(), 3);
     assert!(states[1].discover.selectable.next_page.is_none());
-    assert_matches!(&states[1].discover.selected, Some(Selected { request }) if *request == states[0].discover.selectable.types.first().unwrap().request);
+    assert_matches!(&states[1].discover.selected, Some(Selected { request }) if request == &states[0].discover.selectable.types.first().unwrap().request);
     assert_matches!(
         states[1].discover.catalog.first(),
         Some(ResourceLoadable {

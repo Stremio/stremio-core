@@ -3,7 +3,7 @@ use std::sync::RwLock;
 use enclose::enclose;
 use futures::{future, try_join, FutureExt, StreamExt};
 use gloo_utils::format::JsValueSerdeExt;
-use lazy_static::lazy_static;
+use once_cell::sync::Lazy;
 use tracing::{info, Level};
 use tracing_wasm::WASMLayerConfigBuilder;
 use wasm_bindgen::{prelude::wasm_bindgen, JsValue};
@@ -29,10 +29,9 @@ use crate::{
     model::{WebModel, WebModelField},
 };
 
-lazy_static! {
-    static ref RUNTIME: RwLock<Option<Loadable<Runtime<WebEnv, WebModel>, EnvError>>> =
-        Default::default();
-}
+#[allow(clippy::type_complexity)]
+static RUNTIME: Lazy<RwLock<Option<Loadable<Runtime<WebEnv, WebModel>, EnvError>>>> =
+    Lazy::new(Default::default);
 
 #[wasm_bindgen(start)]
 pub fn start() {
