@@ -1,6 +1,6 @@
  [package]
 name = "stremio-core-web"
-version = "0.47.7"
+version = "0.47.8"
 authors = ["Smart Code OOD"]
 edition = "2021"
 
@@ -38,7 +38,6 @@ regex = {version = "1.8", optional = true }
 # used for Env impl
 hex = { version = "0.4", optional = true }
 either = "1.6.*"
-lazy_static = "1.4.*"
 enclose = "1.1.*"
 itertools = "0.10.*"
 boolinator = "2.4.*"
@@ -47,6 +46,8 @@ boolinator = "2.4.*"
 wasm-bindgen = { version = "=0.2.78", features = ["serde-serialize"], optional = true }
 wasm-bindgen-futures = { version = "0.4", optional = true }
 gloo-utils = { version = "0.2", features = ["serde"], optional = true }
+
+once_cell = "1"
 
 # panic hook for wasm
 console_error_panic_hook = { version = "0.1.*", optional = true }
@@ -70,4 +71,10 @@ tracing = "0.1"
 tracing-wasm = { version = "0.2", optional = true }
 
 [dev-dependencies]
-wasm-bindgen-test = { version = "0.3.0" }
+wasm-bindgen-test = "0.3.0"
+
+[package.metadata.wasm-pack.profile.release]
+# iOS 12 Safari - unsupported, flag is insufficient for this version to work and out-of-scope for now
+# iOS 14 Safari - unsupported, we need to use `--signext-lowering`
+# iOS 15 Safari - supported without this flag, current version is tested and works
+wasm-opt = ["--signext-lowering"]

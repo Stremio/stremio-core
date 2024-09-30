@@ -1,8 +1,12 @@
 name: Build
 
 on:
-  - push
-  - pull_request
+  push:
+    branches:
+      - development
+  pull_request:
+    branches:
+      - development
 
 # Stops the running workflow of previous pushes
 concurrency:
@@ -53,7 +57,7 @@ jobs:
       - name: Rust setup
         uses: dtolnay/rust-toolchain@1.77
         with:
-          components: rustfmt, clippy
+          components: rustfmt, clippy, rust-std
           targets: wasm32-unknown-unknown
 
       - uses: Swatinem/rust-cache@v2
@@ -101,7 +105,7 @@ jobs:
       - name: Copy release package archive
         if: ${{ ! startsWith(github.ref, 'refs/pull/') }}
         working-directory: stremio-core-web
-        run: cp ./*.tgz ./build/${{ github.ref_name }}
+        run: mv ./*.tgz ./build/${{ github.ref_name }}
 
       - name: Build (dev)
         working-directory: stremio-core-web
@@ -115,11 +119,11 @@ jobs:
       - name: Copy dev package archive
         if: ${{ ! startsWith(github.ref, 'refs/pull/') }} 
         working-directory: stremio-core-web
-        run: cp ./*.tgz ./build/${{ github.ref_name }}/dev
+        run: mv ./*.tgz ./build/${{ github.ref_name }}/dev
         
       - name: Deploy gh-pages
         if: ${{ ! startsWith(github.ref, 'refs/pull/')  &&  github.actor != 'dependabot[bot]' }}
-        uses: peaceiris/actions-gh-pages@v3
+        uses: peaceiris/actions-gh-pages@v4
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           # the build directory already contains the `github.ref_name` as subfolder(s)
@@ -127,4 +131,6 @@ jobs:
           # in stremio, we use `feat/features-name` or `fix/this-bug`
           # so we need a recursive creation of the destination dir!
           destination_dir: ./stremio-core-web/
+          # otherwise it clears all existing files and folders in stremio-core-web subdir in gh-pages.
+          keep_files: true
           allow_empty_commit: true

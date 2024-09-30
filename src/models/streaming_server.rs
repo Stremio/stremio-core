@@ -1,3 +1,11 @@
+use enclose::enclose;
+use futures::{FutureExt, TryFutureExt};
+use http::request::Request;
+use magnet_url::{Magnet, MagnetError};
+use serde::{Deserialize, Serialize};
+use sha1::{Digest, Sha1};
+use url::Url;
+
 use crate::constants::META_RESOURCE_NAME;
 use crate::models::common::{eq_update, Loadable};
 use crate::models::ctx::{Ctx, CtxError};
@@ -7,18 +15,13 @@ use crate::runtime::msg::{
 use crate::runtime::{Effect, EffectFuture, Effects, Env, EnvError, EnvFutureExt, UpdateWithCtx};
 use crate::types::addon::ResourcePath;
 use crate::types::api::SuccessResponse;
+use crate::types::empty_string_as_null;
 use crate::types::profile::{AuthKey, Profile};
 use crate::types::streaming_server::{
-    DeviceInfo, GetHTTPSResponse, NetworkInfo, Settings, SettingsResponse, Statistics,
+    CreateMagnetRequest, CreateTorrentBlobRequest, DeviceInfo, GetHTTPSResponse, NetworkInfo,
+    Settings, SettingsResponse, Statistics, StatisticsRequest, TorrentStatisticsRequest,
 };
-use enclose::enclose;
-use futures::{FutureExt, TryFutureExt};
-use http::request::Request;
-use magnet_url::{Magnet, MagnetError};
-use serde::{Deserialize, Serialize};
-use sha1::{Digest, Sha1};
-use std::iter;
-use url::Url;
+use crate::types::torrent::InfoHash;
 
 #[derive(Clone, PartialEq, Eq, Serialize, Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
@@ -26,13 +29,6 @@ pub struct PlaybackDevice {
     pub id: String,
     pub name: String,
     pub r#type: String,
-}
-
-#[derive(Clone, PartialEq, Serialize, Deserialize, Debug)]
-#[serde(rename_all = "camelCase")]
-pub struct StatisticsRequest {
-    pub info_hash: String,
-    pub file_idx: u16,
 }
 
 #[derive(Clone, Serialize, Debug)]
@@ -52,7 +48,7 @@ pub struct StreamingServer {
     pub playback_devices: Loadable<Vec<PlaybackDevice>, EnvError>,
     pub network_info: Loadable<NetworkInfo, EnvError>,
     pub device_info: Loadable<DeviceInfo, EnvError>,
-    pub torrent: Option<(String, Loadable<ResourcePath, EnvError>)>,
+    pub torrent: Option<(InfoHash, Loadable<ResourcePath, EnvError>)>,
     /// [`Loadable::Loading`] is used only on the first statistics request.
     pub statistics: Option<Loadable<Statistics, EnvError>>,
 }
@@ -123,12 +119,10 @@ impl<E: Env + 'static> UpdateWithCtx<E> for StreamingServer {
                 CreateTorrentArgs::Magnet(magnet),
             ))) => match parse_magnet(magnet) {
                 Ok((info_hash, announce)) => {
-                    let torrent_effects = eq_update(
-                        &mut self.torrent,
-                        Some((info_hash.to_owned(), Loadable::Loading)),
-                    );
+                    let torrent_effects =
+                        eq_update(&mut self.torrent, Some((info_hash, Loadable::Loading)));
                     Effects::many(vec![
-                        create_magnet::<E>(&self.selected.transport_url, &info_hash, &announce),
+                        create_magnet::<E>(&self.selected.transport_url, info_hash, &announce),
                         Effect::Msg(Box::new(Msg::Event(Event::MagnetParsed {
                             magnet: magnet.to_owned(),
                         }))),
@@ -159,7 +153,11 @@ impl<E: Env + 'static> UpdateWithCtx<E> for StreamingServer {
                         Some((info_hash.to_owned(), Loadable::Loading)),
                     );
                     Effects::many(vec![
-                        create_torrent::<E>(&self.selected.transport_url, &info_hash, torrent),
+                        create_torrent_request::<E>(
+                            &self.selected.transport_url,
+                            info_hash,
+                            torrent,
+                        ),
                         Effect::Msg(Box::new(Msg::Event(Event::TorrentParsed {
                             torrent: torrent.to_owned(),
                         }))),
@@ -484,6 +482,7 @@ fn set_settings<E: Env + 'static>(url: &Url, settings: &Settings) -> Effect {
         bt_download_speed_soft_limit: f64,
         bt_download_speed_hard_limit: f64,
         bt_min_peers_for_stable: u64,
+        #[serde(with = "empty_string_as_null")]
         remote_https: Option<String>,
         proxy_streams_enabled: bool,
         transcode_profile: Option<String>,
@@ -518,54 +517,46 @@ fn set_settings<E: Env + 'static>(url: &Url, settings: &Settings) -> Effect {
     .into()
 }
 
-fn create_magnet<E: Env + 'static>(url: &Url, info_hash: &str, announce: &[String]) -> Effect {
-    #[derive(Serialize)]
-    #[serde(rename_all = "camelCase")]
-    struct PeerSearch {
-        sources: Vec<String>,
-        min: u32,
-        max: u32,
-    }
-    #[derive(Serialize)]
-    #[serde(rename_all = "camelCase")]
-    struct Torrent {
-        info_hash: String,
-    }
-    #[derive(Serialize)]
-    #[serde(rename_all = "camelCase")]
-    struct Body {
-        torrent: Torrent,
-        peer_search: Option<PeerSearch>,
-    }
-    let info_hash = info_hash.to_owned();
-    let endpoint = url
-        .join(&format!("{info_hash}/"))
-        .expect("url builder failed")
-        .join("create")
-        .expect("url builder failed");
-    let body = Body {
-        torrent: Torrent {
-            info_hash: info_hash.to_owned(),
-        },
-        peer_search: if !announce.is_empty() {
-            Some(PeerSearch {
-                sources: iter::once(&format!("dht:{info_hash}"))
-                    .chain(announce.iter())
-                    .cloned()
-                    .collect(),
-                min: 40,
-                max: 200,
-            })
-        } else {
-            None
-        },
+pub async fn create_magnet_request<E: Env + 'static>(
+    url: Url,
+    info_hash: InfoHash,
+    announce: Vec<String>,
+) -> Result<serde_json::Value, EnvError> {
+    let request = CreateMagnetRequest {
+        server_url: url.to_owned(),
+        info_hash,
+        announce: announce.to_vec(),
     };
-    let request = Request::post(endpoint.as_str())
-        .header(http::header::CONTENT_TYPE, "application/json")
-        .body(body)
-        .expect("request builder failed");
+
+    E::fetch::<_, serde_json::Value>(request.into()).await
+}
+
+fn create_magnet<E: Env + 'static>(url: &Url, info_hash: InfoHash, announce: &[String]) -> Effect {
     EffectFuture::Concurrent(
-        E::fetch::<_, serde_json::Value>(request)
+        create_magnet_request::<E>(url.to_owned(), info_hash, announce.to_vec())
+            .map_ok(|_response| ())
+            .map(enclose!((info_hash) move |result| {
+                Msg::Internal(Internal::StreamingServerCreateTorrentResult(
+                    info_hash, result,
+                ))
+            }))
+            .boxed_env(),
+    )
+    .into()
+}
+
+pub fn create_torrent_request<E: Env + 'static>(
+    url: &Url,
+    info_hash: InfoHash,
+    torrent: &[u8],
+) -> Effect {
+    let request = CreateTorrentBlobRequest {
+        server_url: url.to_owned(),
+        torrent: torrent.to_vec(),
+    };
+
+    EffectFuture::Concurrent(
+        E::fetch::<_, serde_json::Value>(request.into())
             .map_ok(|_| ())
             .map(enclose!((info_hash) move |result| {
                 Msg::Internal(Internal::StreamingServerCreateTorrentResult(
@@ -577,40 +568,18 @@ fn create_magnet<E: Env + 'static>(url: &Url, info_hash: &str, announce: &[Strin
     .into()
 }
 
-fn create_torrent<E: Env + 'static>(url: &Url, info_hash: &str, torrent: &[u8]) -> Effect {
-    #[derive(Serialize)]
-    struct Body {
-        blob: String,
-    }
-    let info_hash = info_hash.to_owned();
-    let endpoint = url.join("/create").expect("url builder failed");
-    let request = Request::post(endpoint.as_str())
-        .header(http::header::CONTENT_TYPE, "application/json")
-        .body(Body {
-            blob: hex::encode(torrent),
-        })
-        .expect("request builder failed");
-    EffectFuture::Concurrent(
-        E::fetch::<_, serde_json::Value>(request)
-            .map_ok(|_| ())
-            .map(enclose!((info_hash) move |result| {
-                Msg::Internal(Internal::StreamingServerCreateTorrentResult(
-                    info_hash, result,
-                ))
-            }))
-            .boxed_env(),
-    )
-    .into()
-}
-
-fn parse_magnet(magnet: &Url) -> Result<(String, Vec<String>), MagnetError> {
+fn parse_magnet(magnet: &Url) -> Result<(InfoHash, Vec<String>), MagnetError> {
     let magnet = Magnet::new(magnet.as_str())?;
     let info_hash = magnet.xt.ok_or(MagnetError::NotAMagnetURL)?;
+    let info_hash = info_hash
+        .parse()
+        .map_err(|_err| MagnetError::NotAMagnetURL)?;
+
     let announce = magnet.tr;
     Ok((info_hash, announce))
 }
 
-fn parse_torrent(torrent: &[u8]) -> Result<(String, Vec<String>), serde_bencode::Error> {
+fn parse_torrent(torrent: &[u8]) -> Result<(InfoHash, Vec<String>), serde_bencode::Error> {
     #[derive(Deserialize)]
     struct TorrentFile {
         info: serde_bencode::value::Value,
@@ -624,7 +593,8 @@ fn parse_torrent(torrent: &[u8]) -> Result<(String, Vec<String>), serde_bencode:
     let info_bytes = serde_bencode::to_bytes(&torrent_file.info)?;
     let mut hasher = Sha1::new();
     hasher.update(info_bytes);
-    let info_hash = hex::encode(hasher.finalize());
+    let info_hash = InfoHash::new(hasher.finalize().into());
+
     let mut announce = vec![];
     if let Some(announce_entry) = torrent_file.announce {
         announce.push(announce_entry);
@@ -639,26 +609,25 @@ fn parse_torrent(torrent: &[u8]) -> Result<(String, Vec<String>), serde_bencode:
 }
 
 fn get_torrent_statistics<E: Env + 'static>(url: &Url, request: &StatisticsRequest) -> Effect {
-    let statistics_request = request.clone();
-    let endpoint = url
-        .join(&format!(
-            "/{}/{}/stats.json",
-            statistics_request.info_hash.clone(),
-            statistics_request.file_idx
-        ))
-        .expect("url builder failed");
-    let request = Request::get(endpoint.as_str())
-        .header(http::header::CONTENT_TYPE, "application/json")
-        .body(())
-        .expect("request builder failed");
+    let fetch_fut = enclose!((url, request) async move {
+        let request = TorrentStatisticsRequest {
+            server_url: url,
+            request,
+        };
 
+        let statistics: Option<Statistics> = E::fetch(request.into()).await?;
+
+        Ok(statistics)
+    });
+
+    // let statistics_request = request.to_owned();
     // It's happening when the engine is destroyed for inactivity:
     // If it was downloaded to 100% and that the stream is paused, then played,
     // it will create a new engine and return the correct stats
     EffectFuture::Concurrent(
-        E::fetch::<_, Option<Statistics>>(request)
-            .map(enclose!((url) move |result|
-                Msg::Internal(Internal::StreamingServerStatisticsResult((url, statistics_request), result))
+        fetch_fut
+            .map(enclose!((url, request) move |result|
+                Msg::Internal(Internal::StreamingServerStatisticsResult((url, request), result))
             ))
             .boxed_env(),
     )
@@ -732,5 +701,18 @@ fn update_remote_url<E: Env + 'static>(
         )
         .unchanged(),
         _ => eq_update(remote_url, None),
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use magnet_url::Magnet;
+
+    #[test]
+    fn test_magnet_hash() {
+        let magnet = Magnet::new("magnet:?xt=urn:btih:0d54e2339706f173ac20f4effb4ad42d9c7a84e9&dn=Halo.S02.1080p.WEBRip.x265.DDP5.1.Atmos-WAR").expect("Should be valid magnet Url");
+
+        // assert_eq!(magnet.xt)
+        dbg!(magnet);
     }
 }

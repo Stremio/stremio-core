@@ -10,7 +10,7 @@ env:
 
 jobs:
   publish-stremio-core-web:
-    if: ${{ ! startsWith(github.ref, 'refs/tags/stremio-core-web') }}
+    if: ${{ startsWith(github.ref, 'refs/tags/stremio-core-web') }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout

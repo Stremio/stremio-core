@@ -9,6 +9,7 @@ pub mod resource;
 pub mod search_history;
 pub mod streaming_server;
 pub mod streams;
+pub mod torrent;
 
 // Re-export of stremio_watched_bitfield crate
 pub mod watched_bitfield {
@@ -24,3 +25,6 @@ pub use serde_as_ext::*;
 
 mod r#true;
 pub use r#true::*;
+
+mod serde_ext;
+pub use serde_ext::*;

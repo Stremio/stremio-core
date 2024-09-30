@@ -1,9 +1,10 @@
-use core::cmp::Ordering;
-use core::marker::PhantomData;
+use core::{cmp::Ordering, marker::PhantomData};
+
+use std::hash::Hash;
+
 use itertools::Itertools;
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
-use serde_with::{DeserializeAs, SerializeAs};
-use std::hash::Hash;
+use serde_with::{de::DeserializeAsWrap, DeserializeAs, Same, SerializeAs};
 
 pub trait SortedVecAdapter {
     type Input;
@@ -121,5 +122,102 @@ impl<'de> DeserializeAs<'de, String> for NumberAsString {
             Helper::Number(value) => value.to_string(),
             Helper::String(value) => value,
         })
+    }
+}
+
+/// Deserialize an Option from a [`bool`] or the underlying `Option`.
+/// For both `true` and `false` values, the Option will be set to `None`
+///
+/// # Examples
+/// ```
+/// use serde::Deserialize;
+/// use serde_with::serde_as;
+/// use stremio_core::types::DefaultOnBool;
+///
+/// #[serde_as]
+/// #[derive(Deserialize, Debug, PartialEq, Eq)]
+/// struct MyType {
+///     #[serde_as(deserialize_as = "DefaultOnBool")]
+///     x: Option<u32>,
+/// }
+///
+/// let json = serde_json::json!({ "x": false });
+/// assert_eq!(MyType { x: None }, serde_json::from_value::<MyType>(json).expect("Should deserialize"));
+///
+/// let json = serde_json::json!({ "x": true });
+/// assert_eq!(MyType { x: None }, serde_json::from_value::<MyType>(json).expect("Should deserialize"));
+///
+/// let json = serde_json::json!({ "x": null });
+/// assert_eq!(MyType { x: None }, serde_json::from_value::<MyType>(json).expect("Should deserialize"));
+///
+/// let json = serde_json::json!({ "x": 32 });
+/// assert_eq!(MyType { x: Some(32) }, serde_json::from_value::<MyType>(json).expect("Should deserialize"));
+/// ```
+#[derive(Copy, Clone, Debug)]
+pub struct DefaultOnBool<T = Same>(PhantomData<T>);
+
+impl<'de, T, U> DeserializeAs<'de, T> for DefaultOnBool<U>
+where
+    U: DeserializeAs<'de, T>,
+    T: Default,
+{
+    fn deserialize_as<D>(deserializer: D) -> Result<T, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        Ok(
+            match BoolOrValue::<DeserializeAsWrap<T, U>>::deserialize(deserializer)? {
+                BoolOrValue::Bool(_bool) => T::default(),
+                BoolOrValue::Value(value) => value.into_inner(),
+            },
+        )
+    }
+}
+
+#[derive(Deserialize)]
+#[serde(untagged)]
+enum BoolOrValue<T> {
+    Bool(bool),
+    Value(T),
+}
+#[cfg(test)]
+mod tests {
+    use super::DefaultOnBool;
+
+    use serde::Deserialize;
+    use serde_with::serde_as;
+
+    #[serde_as]
+    #[derive(Deserialize, Debug, PartialEq, Eq)]
+    struct MyType {
+        #[serde_as(deserialize_as = "DefaultOnBool")]
+        pub x: Option<u32>,
+    }
+
+    #[test]
+    fn test_bool_as_option() {
+        let json = serde_json::json!({ "x": null });
+        assert_eq!(
+            MyType { x: None },
+            serde_json::from_value::<MyType>(json).expect("Should deserialize")
+        );
+
+        let json = serde_json::json!({ "x": false });
+        assert_eq!(
+            MyType { x: None },
+            serde_json::from_value::<MyType>(json).expect("Should deserialize")
+        );
+
+        let json = serde_json::json!({ "x": true });
+        assert_eq!(
+            MyType { x: None },
+            serde_json::from_value::<MyType>(json).expect("Should deserialize")
+        );
+
+        let json = serde_json::json!({ "x": 32 });
+        assert_eq!(
+            MyType { x: Some(32) },
+            serde_json::from_value::<MyType>(json).expect("Should deserialize")
+        );
     }
 }
