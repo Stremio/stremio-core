@@ -1,3 +1,5 @@
+use std::any::Any;
+
 use crate::constants::LIBRARY_RECENT_STORAGE_KEY;
 use crate::models::ctx::Ctx;
 use crate::runtime::msg::{Action, ActionCtx};
@@ -13,12 +15,12 @@ use crate::types::True;
 use crate::unit_tests::{
     default_fetch_handler, Request, TestEnv, FETCH_HANDLER, REQUESTS, STORAGE,
 };
+
 use chrono::prelude::TimeZone;
 use chrono::{Duration, Utc};
 use futures::future;
-use lazy_static::lazy_static;
+use once_cell::sync::Lazy;
 use serde::Deserialize;
-use std::any::Any;
 use stremio_derive::Model;
 
 #[test]
@@ -57,99 +59,98 @@ fn actionctx_synclibrarywithapi_with_user() {
     struct TestModel {
         ctx: Ctx,
     }
-    lazy_static! {
-        static ref REMOTE_ONLY_ITEM: LibraryItem = LibraryItem {
-            id: "id1".to_owned(),
-            r#type: "type".to_owned(),
-            name: "name".to_owned(),
-            poster: None,
-            poster_shape: Default::default(),
-            removed: false,
-            temp: false,
-            ctime: Some(Utc.with_ymd_and_hms(2020, 1, 1, 0, 0, 0).unwrap()),
-            mtime: Utc.with_ymd_and_hms(2020, 1, 1, 0, 0, 0).unwrap(),
-            state: Default::default(),
-            behavior_hints: Default::default(),
-        };
-        static ref LOCAL_NEWER_ITEM: LibraryItem = LibraryItem {
-            id: "id2".to_owned(),
-            r#type: "type".to_owned(),
-            name: "name".to_owned(),
-            poster: None,
-            poster_shape: Default::default(),
-            removed: false,
-            temp: false,
-            ctime: Some(Utc.with_ymd_and_hms(2020, 1, 1, 0, 0, 0).unwrap()),
-            mtime: Utc.with_ymd_and_hms(2020, 1, 1, 0, 0, 0).unwrap(),
-            state: Default::default(),
-            behavior_hints: Default::default(),
-        };
-        static ref REMOTE_NEWER_ITEM: LibraryItem = LibraryItem {
-            id: "id3".to_owned(),
-            r#type: "type".to_owned(),
-            name: "name".to_owned(),
-            poster: None,
-            poster_shape: Default::default(),
-            removed: false,
-            temp: false,
-            ctime: Some(Utc.with_ymd_and_hms(2020, 1, 1, 0, 0, 0).unwrap()),
-            mtime: Utc.with_ymd_and_hms(2020, 1, 1, 0, 0, 0).unwrap(),
-            state: Default::default(),
-            behavior_hints: Default::default(),
-        };
-        static ref LOCAL_ONLY_ITEM: LibraryItem = LibraryItem {
-            id: "id4".to_owned(),
-            r#type: "type".to_owned(),
-            name: "name".to_owned(),
-            poster: None,
-            poster_shape: Default::default(),
-            removed: false,
-            temp: false,
-            ctime: Some(Utc.with_ymd_and_hms(2020, 1, 1, 0, 0, 0).unwrap()),
-            mtime: Utc.with_ymd_and_hms(2020, 1, 1, 0, 0, 0).unwrap(),
-            state: Default::default(),
-            behavior_hints: Default::default(),
-        };
-        static ref LOCAL_OLD_REMOVED_ITEM: LibraryItem = LibraryItem {
-            id: "id5".to_owned(),
-            r#type: "type".to_owned(),
-            name: "name".to_owned(),
-            poster: None,
-            poster_shape: Default::default(),
-            removed: true,
-            temp: false,
-            ctime: Some(Utc.with_ymd_and_hms(2020, 1, 1, 0, 0, 0).unwrap()),
-            mtime: Utc::now() - Duration::days(367),
-            state: Default::default(),
-            behavior_hints: Default::default(),
-        };
-        static ref LOCAL_NEW_REMOVED_ITEM: LibraryItem = LibraryItem {
-            id: "id6".to_owned(),
-            r#type: "type".to_owned(),
-            name: "name".to_owned(),
-            poster: None,
-            poster_shape: Default::default(),
-            removed: true,
-            temp: false,
-            ctime: Some(Utc.with_ymd_and_hms(2020, 1, 1, 0, 0, 0).unwrap()),
-            mtime: Utc::now() - Duration::days(3),
-            state: Default::default(),
-            behavior_hints: Default::default(),
-        };
-        static ref LOCAL_OTHER_TYPE_ITEM: LibraryItem = LibraryItem {
-            id: "id7".to_owned(),
-            r#type: "other".to_owned(),
-            name: "name".to_owned(),
-            poster: None,
-            poster_shape: Default::default(),
-            removed: false,
-            temp: false,
-            ctime: Some(Utc.with_ymd_and_hms(2020, 1, 1, 0, 0, 0).unwrap()),
-            mtime: Utc::now(),
-            state: Default::default(),
-            behavior_hints: Default::default(),
-        };
-    }
+    static REMOTE_ONLY_ITEM: Lazy<LibraryItem> = Lazy::new(|| LibraryItem {
+        id: "id1".to_owned(),
+        r#type: "type".to_owned(),
+        name: "name".to_owned(),
+        poster: None,
+        poster_shape: Default::default(),
+        removed: false,
+        temp: false,
+        ctime: Some(Utc.with_ymd_and_hms(2020, 1, 1, 0, 0, 0).unwrap()),
+        mtime: Utc.with_ymd_and_hms(2020, 1, 1, 0, 0, 0).unwrap(),
+        state: Default::default(),
+        behavior_hints: Default::default(),
+    });
+    static LOCAL_NEWER_ITEM: Lazy<LibraryItem> = Lazy::new(|| LibraryItem {
+        id: "id2".to_owned(),
+        r#type: "type".to_owned(),
+        name: "name".to_owned(),
+        poster: None,
+        poster_shape: Default::default(),
+        removed: false,
+        temp: false,
+        ctime: Some(Utc.with_ymd_and_hms(2020, 1, 1, 0, 0, 0).unwrap()),
+        mtime: Utc.with_ymd_and_hms(2020, 1, 1, 0, 0, 0).unwrap(),
+        state: Default::default(),
+        behavior_hints: Default::default(),
+    });
+    static REMOTE_NEWER_ITEM: Lazy<LibraryItem> = Lazy::new(|| LibraryItem {
+        id: "id3".to_owned(),
+        r#type: "type".to_owned(),
+        name: "name".to_owned(),
+        poster: None,
+        poster_shape: Default::default(),
+        removed: false,
+        temp: false,
+        ctime: Some(Utc.with_ymd_and_hms(2020, 1, 1, 0, 0, 0).unwrap()),
+        mtime: Utc.with_ymd_and_hms(2020, 1, 1, 0, 0, 0).unwrap(),
+        state: Default::default(),
+        behavior_hints: Default::default(),
+    });
+    static LOCAL_ONLY_ITEM: Lazy<LibraryItem> = Lazy::new(|| LibraryItem {
+        id: "id4".to_owned(),
+        r#type: "type".to_owned(),
+        name: "name".to_owned(),
+        poster: None,
+        poster_shape: Default::default(),
+        removed: false,
+        temp: false,
+        ctime: Some(Utc.with_ymd_and_hms(2020, 1, 1, 0, 0, 0).unwrap()),
+        mtime: Utc.with_ymd_and_hms(2020, 1, 1, 0, 0, 0).unwrap(),
+        state: Default::default(),
+        behavior_hints: Default::default(),
+    });
+    static LOCAL_OLD_REMOVED_ITEM: Lazy<LibraryItem> = Lazy::new(|| LibraryItem {
+        id: "id5".to_owned(),
+        r#type: "type".to_owned(),
+        name: "name".to_owned(),
+        poster: None,
+        poster_shape: Default::default(),
+        removed: true,
+        temp: false,
+        ctime: Some(Utc.with_ymd_and_hms(2020, 1, 1, 0, 0, 0).unwrap()),
+        mtime: Utc::now() - Duration::days(367),
+        state: Default::default(),
+        behavior_hints: Default::default(),
+    });
+    static LOCAL_NEW_REMOVED_ITEM: Lazy<LibraryItem> = Lazy::new(|| LibraryItem {
+        id: "id6".to_owned(),
+        r#type: "type".to_owned(),
+        name: "name".to_owned(),
+        poster: None,
+        poster_shape: Default::default(),
+        removed: true,
+        temp: false,
+        ctime: Some(Utc.with_ymd_and_hms(2020, 1, 1, 0, 0, 0).unwrap()),
+        mtime: Utc::now() - Duration::days(3),
+        state: Default::default(),
+        behavior_hints: Default::default(),
+    });
+    static LOCAL_OTHER_TYPE_ITEM: Lazy<LibraryItem> = Lazy::new(|| LibraryItem {
+        id: "id7".to_owned(),
+        r#type: "other".to_owned(),
+        name: "name".to_owned(),
+        poster: None,
+        poster_shape: Default::default(),
+        removed: false,
+        temp: false,
+        ctime: Some(Utc.with_ymd_and_hms(2020, 1, 1, 0, 0, 0).unwrap()),
+        mtime: Utc::now(),
+        state: Default::default(),
+        behavior_hints: Default::default(),
+    });
+
     fn fetch_handler(request: Request) -> TryEnvFuture<Box<dyn Any + Send>> {
         match &request {
             Request {

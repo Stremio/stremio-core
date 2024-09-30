@@ -24,7 +24,6 @@ semver = { version = "1", features = ["serde"] }
 regex = "1.8"
 hex = "0.4.*"
 either = "1.6.*"
-lazy_static = "1.4.*"
 enclose = "1.1.*"
 itertools = "0.10.*"
 boolinator = "2.4.*"
