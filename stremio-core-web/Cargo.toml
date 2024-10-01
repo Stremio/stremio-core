@@ -12,7 +12,7 @@ default = ["std", "wasm"]
 
 std = []
 # enable wasm bindings exports, enabled by default (stremio-core-web crate after all)
-wasm = ["env", "dep:wasm-bindgen", "dep:wasm-bindgen-futures", "dep:gloo-utils", "dep:tracing-wasm", "dep:console_error_panic_hook", "dep:js-sys", "dep:web-sys", "getrandom/js"]
+wasm = ["env", "dep:wasm-bindgen", "dep:wasm-bindgen-futures", "dep:gloo-utils", "dep:tracing-wasm", "dep:console_error_panic_hook", "dep:js-sys", "dep:web-sys", "getrandom?/js"]
 # Enable's the wasm Env. impl
 # (this means that `wasm` feature is a superset of this one)
 env = ["dep:http", "dep:regex", "dep:hex", "dep:getrandom", "dep:serde_path_to_error"]
