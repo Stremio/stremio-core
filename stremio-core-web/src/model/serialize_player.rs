@@ -108,7 +108,11 @@ mod model {
 }
 
 #[cfg(feature = "wasm")]
-pub fn serialize_player<E: stremio_core::runtime::Env + 'static>(player: &Player, ctx: &Ctx, streaming_server: &StreamingServer) -> JsValue {
+pub fn serialize_player<E: stremio_core::runtime::Env + 'static>(
+    player: &Player,
+    ctx: &Ctx,
+    streaming_server: &StreamingServer,
+) -> JsValue {
     <JsValue as JsValueSerdeExt>::from_serde(&model::Player {
         selected: player.selected.as_ref().map(|selected| model::Selected {
             stream: model::Stream {

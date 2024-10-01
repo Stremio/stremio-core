@@ -7,10 +7,7 @@ use itertools::Itertools;
 use serde::Serialize;
 use url::Url;
 #[cfg(feature = "wasm")]
-use {
-    gloo_utils::format::JsValueSerdeExt, stremio_core::runtime::Env,
-    wasm_bindgen::JsValue,
-};
+use {gloo_utils::format::JsValueSerdeExt, stremio_core::runtime::Env, wasm_bindgen::JsValue};
 
 use stremio_core::{
     constants::META_RESOURCE_NAME,
