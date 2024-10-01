@@ -1,20 +1,20 @@
-use crate::env::WebEnv;
-use crate::model::deep_links_ext::DeepLinksExt;
-use gloo_utils::format::JsValueSerdeExt;
 use semver::Version;
 use serde::Serialize;
+use url::Url;
+#[cfg(feature = "wasm")]
+use {gloo_utils::format::JsValueSerdeExt, wasm_bindgen::JsValue};
+
 use stremio_core::deep_links::{StreamDeepLinks, VideoDeepLinks};
 use stremio_core::models::common::{Loadable, ResourceError, ResourceLoadable};
 use stremio_core::models::ctx::Ctx;
 use stremio_core::models::player::Player;
 use stremio_core::models::streaming_server::StreamingServer;
-use stremio_core::runtime::Env;
 use stremio_core::types::{
     addon::{ResourcePath, ResourceRequest},
     streams::StreamItemState,
 };
-use url::Url;
-use wasm_bindgen::JsValue;
+
+use crate::model::deep_links_ext::DeepLinksExt;
 
 mod model {
     use super::*;
@@ -107,7 +107,12 @@ mod model {
     }
 }
 
-pub fn serialize_player(player: &Player, ctx: &Ctx, streaming_server: &StreamingServer) -> JsValue {
+#[cfg(feature = "wasm")]
+pub fn serialize_player<E: stremio_core::runtime::Env + 'static>(
+    player: &Player,
+    ctx: &Ctx,
+    streaming_server: &StreamingServer,
+) -> JsValue {
     <JsValue as JsValueSerdeExt>::from_serde(&model::Player {
         selected: player.selected.as_ref().map(|selected| model::Selected {
             stream: model::Stream {
@@ -138,7 +143,7 @@ pub fn serialize_player(player: &Player, ctx: &Ctx, streaming_server: &Streaming
                             .map(|video| model::Video {
                                 video,
                                 upcoming: meta_item.preview.behavior_hints.has_scheduled_videos
-                                    && video.released > Some(WebEnv::now()),
+                                    && video.released > Some(E::now()),
                                 watched: false, // TODO use library
                                 progress: None, // TODO use library,
                                 scheduled: meta_item.preview.behavior_hints.has_scheduled_videos,
@@ -206,7 +211,7 @@ pub fn serialize_player(player: &Player, ctx: &Ctx, streaming_server: &Streaming
                     })
                     .map(|meta_item| {
                         meta_item.preview.behavior_hints.has_scheduled_videos
-                            && video.released > Some(WebEnv::now())
+                            && video.released > Some(E::now())
                     })
                     .unwrap_or_default(),
                 watched: false, // TODO use library
