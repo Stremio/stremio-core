@@ -126,7 +126,7 @@ impl WebModel {
                 &self.continue_watching_preview,
                 &self.ctx.streams,
                 self.streaming_server
-                    .base_url_bucket
+                    .server_urls_bucket
                     .selected_item_url()
                     .as_ref(),
                 &self.ctx.profile.settings,
@@ -147,7 +147,7 @@ impl WebModel {
                 &self.library,
                 &self.ctx,
                 self.streaming_server
-                    .base_url_bucket
+                    .server_urls_bucket
                     .selected_item_url()
                     .as_ref(),
                 "library".to_owned(),
@@ -156,7 +156,7 @@ impl WebModel {
                 &self.continue_watching,
                 &self.ctx,
                 self.streaming_server
-                    .base_url_bucket
+                    .server_urls_bucket
                     .selected_item_url()
                     .as_ref(),
                 "continuewatching".to_owned(),

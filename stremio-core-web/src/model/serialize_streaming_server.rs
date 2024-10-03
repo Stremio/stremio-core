@@ -21,7 +21,7 @@ mod model {
     pub struct StreamingServer<'a> {
         pub selected: &'a Selected,
         pub settings: &'a Loadable<Settings, EnvError>,
-        pub base_url_bucket: &'a ServerUrlBucket,
+        pub server_urls_bucket: &'a ServerUrlBucket,
         pub remote_url: &'a Option<Url>,
         pub playback_devices: &'a Loadable<Vec<PlaybackDevice>, EnvError>,
         pub network_info: &'a Loadable<NetworkInfo, EnvError>,
@@ -39,7 +39,7 @@ pub fn serialize_streaming_server(
     <JsValue as JsValueSerdeExt>::from_serde(&model::StreamingServer {
         selected: &streaming_server.selected,
         settings: &streaming_server.settings,
-        base_url_bucket: &streaming_server.base_url_bucket,
+        server_urls_bucket: &streaming_server.server_urls_bucket,
         remote_url: &streaming_server.remote_url,
         playback_devices: &streaming_server.playback_devices,
         network_info: &streaming_server.network_info,
