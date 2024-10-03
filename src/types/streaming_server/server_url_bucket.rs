@@ -98,6 +98,19 @@ impl ServerUrlBucket {
         }
     }
 
+    pub fn select_item(&mut self, id: &str) -> Result<(), String> {
+        if let Some(current_selected_item) = self.items.values_mut().find(|item| item.selected) {
+            current_selected_item.selected = false;
+        }
+    
+        if let Some(new_selected_item) = self.items.get_mut(id) {
+            new_selected_item.selected = true;
+            Ok(())
+        } else {
+            Err("Item not found".to_string())
+        }
+    }
+
     pub fn selected_item(&self) -> Option<&ServerUrlItem> {
         self.items.values().find(|item| item.selected)
     }
