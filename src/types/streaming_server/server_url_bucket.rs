@@ -28,7 +28,6 @@ impl ServerUrlBucket {
             selected: true,
         };
 
-        // Use the item's id as the key in the HashMap
         items.insert(server_url_item.id.clone(), server_url_item);
 
         ServerUrlBucket { uid, items }
@@ -86,7 +85,6 @@ impl ServerUrlBucket {
         }
     }
 
-    /// Delete an item by its ID
     pub fn delete_item(&mut self, id: &str) -> Result<(), String> {
         if id == SERVER_URL_BUCKET_DEFAULT_ITEM_ID {
             return Err("Cannot remove the base URL item.".to_string());
