@@ -5,7 +5,6 @@ use crate::{
 };
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
-use std::time::{SystemTime, UNIX_EPOCH};
 use url::Url;
 
 #[derive(Debug, Clone, Serialize, Deserialize, Default, PartialEq)]
@@ -34,10 +33,7 @@ impl ServerUrlBucket {
     }
 
     fn current_timestamp() -> u64 {
-        SystemTime::now()
-            .duration_since(UNIX_EPOCH)
-            .expect("Time went backwards")
-            .as_secs()
+        chrono::Utc::now().timestamp() as u64
     }
 
     pub fn merge_bucket(&mut self, bucket: ServerUrlBucket) {
