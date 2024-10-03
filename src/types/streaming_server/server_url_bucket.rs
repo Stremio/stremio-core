@@ -21,14 +21,14 @@ impl ServerUrlBucket {
     pub fn new(uid: UID, base_url: Url) -> Self {
         let mut items = HashMap::new();
 
-        let server_url_item = ServerUrlItem {
+        let server_base_url_item = ServerUrlItem {
             id: SERVER_URL_BUCKET_DEFAULT_ITEM_ID.to_string(),
             url: base_url.clone(),
             mtime: Self::current_timestamp() as i64,
             selected: true,
         };
 
-        items.insert(server_url_item.id.clone(), server_url_item);
+        items.insert(server_base_url_item.id.clone(), server_base_url_item);
 
         ServerUrlBucket { uid, items }
     }
