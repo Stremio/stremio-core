@@ -12,7 +12,7 @@ use url::Url;
 use wasm_bindgen::JsValue;
 
 mod model {
-    use stremio_core::types::torrent::InfoHash;
+    use stremio_core::types::{streaming_server::ServerUrlBucket, torrent::InfoHash};
 
     use super::*;
     type TorrentLoadable<'a> = Loadable<(&'a ResourcePath, MetaItemDeepLinks), &'a EnvError>;
@@ -21,7 +21,7 @@ mod model {
     pub struct StreamingServer<'a> {
         pub selected: &'a Selected,
         pub settings: &'a Loadable<Settings, EnvError>,
-        pub base_url: &'a Option<Url>,
+        pub base_url_bucket: &'a ServerUrlBucket,
         pub remote_url: &'a Option<Url>,
         pub playback_devices: &'a Loadable<Vec<PlaybackDevice>, EnvError>,
         pub network_info: &'a Loadable<NetworkInfo, EnvError>,
@@ -39,7 +39,7 @@ pub fn serialize_streaming_server(
     <JsValue as JsValueSerdeExt>::from_serde(&model::StreamingServer {
         selected: &streaming_server.selected,
         settings: &streaming_server.settings,
-        base_url: &streaming_server.base_url,
+        base_url_bucket: &streaming_server.base_url_bucket,
         remote_url: &streaming_server.remote_url,
         playback_devices: &streaming_server.playback_devices,
         network_info: &streaming_server.network_info,

@@ -29,6 +29,9 @@ pub const CATALOG_PREVIEW_SIZE: usize = 100;
 pub const LIBRARY_RECENT_COUNT: usize = 200;
 pub const NOTIFICATION_ITEMS_COUNT: usize = 100;
 
+pub const SERVER_URL_BUCKET_MAX_ITEMS: usize = 5;
+pub const SERVER_URL_BUCKET_DEFAULT_ITEM_ID: &str = "0";
+
 /// A `LibraryItem` is considered watched once we've watched more than the `duration * threshold`:
 ///
 /// `LibraryItem.state.time_watched` > `LibraryItem.state.duration` * [`WATCHED_THRESHOLD_COEF`]

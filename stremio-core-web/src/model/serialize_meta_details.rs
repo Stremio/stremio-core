@@ -169,7 +169,7 @@ pub fn serialize_meta_details<E: Env + 'static>(
                                 deep_links: VideoDeepLinks::from((
                                     video,
                                     request,
-                                    &streaming_server.base_url,
+                                    &streaming_server.base_url_bucket.selected_item_url(),
                                     &ctx.profile.settings,
                                 ))
                                 .into_web_deep_links(),
@@ -184,7 +184,7 @@ pub fn serialize_meta_details<E: Env + 'static>(
                                 progress: None,
                                 deep_links: StreamDeepLinks::from((
                                     stream,
-                                    &streaming_server.base_url,
+                                    &streaming_server.base_url_bucket.selected_item_url(),
                                     &ctx.profile.settings,
                                 ))
                                 .into_web_deep_links(),
@@ -257,7 +257,9 @@ pub fn serialize_meta_details<E: Env + 'static>(
                                         || {
                                             StreamDeepLinks::from((
                                                 stream,
-                                                &streaming_server.base_url,
+                                                &streaming_server
+                                                    .base_url_bucket
+                                                    .selected_item_url(),
                                                 &ctx.profile.settings,
                                             ))
                                         },
@@ -266,7 +268,9 @@ pub fn serialize_meta_details<E: Env + 'static>(
                                                 stream,
                                                 request,
                                                 &meta_item.request,
-                                                &streaming_server.base_url,
+                                                &streaming_server
+                                                    .base_url_bucket
+                                                    .selected_item_url(),
                                                 &ctx.profile.settings,
                                             ))
                                         },

@@ -19,6 +19,12 @@ pub use settings::*;
 mod statistics;
 pub use statistics::*;
 
+mod server_url_item;
+pub use server_url_item::*;
+
+mod server_url_bucket;
+pub use server_url_bucket::*;
+
 use super::resource::SeriesInfo;
 use crate::types::{torrent::InfoHash, DefaultOnBool};
 

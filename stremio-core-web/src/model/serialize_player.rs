@@ -119,7 +119,7 @@ pub fn serialize_player<E: stremio_core::runtime::Env + 'static>(
                 stream: &selected.stream,
                 deep_links: StreamDeepLinks::from((
                     &selected.stream,
-                    &streaming_server.base_url,
+                    &streaming_server.base_url_bucket.selected_item_url(),
                     &ctx.profile.settings,
                 ))
                 .into_web_deep_links(),
@@ -150,7 +150,7 @@ pub fn serialize_player<E: stremio_core::runtime::Env + 'static>(
                                 deep_links: VideoDeepLinks::from((
                                     video,
                                     request,
-                                    &streaming_server.base_url,
+                                    &streaming_server.base_url_bucket.selected_item_url(),
                                     &ctx.profile.settings,
                                 ))
                                 .into_web_deep_links(),
@@ -231,7 +231,7 @@ pub fn serialize_player<E: stremio_core::runtime::Env + 'static>(
                     video,
                     stream_request,
                     meta_request,
-                    &streaming_server.base_url,
+                    &streaming_server.base_url_bucket.selected_item_url(),
                     &ctx.profile.settings,
                 ))
                 .into_web_deep_links(),
