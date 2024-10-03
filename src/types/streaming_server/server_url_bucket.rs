@@ -102,7 +102,7 @@ impl ServerUrlBucket {
         if let Some(current_selected_item) = self.items.values_mut().find(|item| item.selected) {
             current_selected_item.selected = false;
         }
-    
+
         if let Some(new_selected_item) = self.items.get_mut(id) {
             new_selected_item.selected = true;
             Ok(())
