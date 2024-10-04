@@ -66,7 +66,7 @@ pub struct ResourcePath {
     ///
     /// # Examples
     ///
-    /// - [`CATALOG_RESOURCE_NAME`](crate::constants::CATALOG_RESOURCE_NAME)
+    /// - [`CATALOG_RESOURCE_NAME`]
     /// - [`META_RESOURCE_NAME`](crate::constants::META_RESOURCE_NAME)
     /// - [`SUBTITLES_RESOURCE_NAME`](crate::constants::SUBTITLES_RESOURCE_NAME)
     /// - [`STREAM_RESOURCE_NAME`](crate::constants::STREAM_RESOURCE_NAME)
