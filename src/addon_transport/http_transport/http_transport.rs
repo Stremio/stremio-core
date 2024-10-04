@@ -1,14 +1,16 @@
+use std::marker::PhantomData;
+
+use futures::{future, FutureExt};
+use http::Request;
+use percent_encoding::utf8_percent_encode;
+use url::Url;
+
 use crate::addon_transport::http_transport::legacy::AddonLegacyTransport;
 use crate::addon_transport::AddonTransport;
 use crate::constants::{ADDON_LEGACY_PATH, ADDON_MANIFEST_PATH, URI_COMPONENT_ENCODE_SET};
 use crate::runtime::{Env, EnvError, EnvFutureExt, TryEnvFuture};
 use crate::types::addon::{Manifest, ResourcePath, ResourceResponse};
 use crate::types::query_params_encode;
-use futures::future;
-use http::Request;
-use percent_encoding::utf8_percent_encode;
-use std::marker::PhantomData;
-use url::Url;
 
 pub struct AddonHTTPTransport<E: Env> {
     transport_url: Url,
@@ -61,7 +63,19 @@ impl<E: Env> AddonTransport for AddonHTTPTransport<E> {
             .as_str()
             .replace(ADDON_MANIFEST_PATH, &path);
         let request = Request::get(&url).body(()).expect("request builder failed");
-        E::fetch(request)
+        let addon_transport_url = self.transport_url.clone();
+        E::fetch::<_, ResourceResponse>(request)
+            .map(move |result| match result {
+                Ok(mut response_result) => {
+                    // convert all relative paths in StreamSource::Url and `Subtitle.url`
+                    // with absolute
+                    response_result.convert_relative_paths(addon_transport_url.clone());
+
+                    Ok(response_result)
+                }
+                Err(err) => Err(err),
+            })
+            .boxed_env()
     }
     fn manifest(&self) -> TryEnvFuture<Manifest> {
         if self.transport_url.path().ends_with(ADDON_LEGACY_PATH) {
