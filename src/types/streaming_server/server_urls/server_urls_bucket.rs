@@ -3,6 +3,7 @@ use crate::{
     constants::{SERVER_URL_BUCKET_DEFAULT_ITEM_ID, SERVER_URL_BUCKET_MAX_ITEMS},
     types::profile::UID,
 };
+use anyhow::{anyhow, Result};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use url::Url;
@@ -71,28 +72,28 @@ impl ServerUrlsBucket {
         }
     }
 
-    pub fn edit_item(&mut self, id: &usize, new_url: Url) -> Result<(), String> {
+    pub fn edit_item(&mut self, id: &usize, new_url: Url) -> Result<()> {
         if let Some(item) = self.items.get_mut(id) {
             item.url = new_url;
             item.mtime = Self::current_timestamp() as i64;
             Ok(())
         } else {
-            Err("Item not found".to_string())
+            Err(anyhow!("Item not found"))
         }
     }
 
-    pub fn delete_item(&mut self, id: &usize) -> Result<(), String> {
+    pub fn delete_item(&mut self, id: &usize) -> Result<()> {
         if *id == SERVER_URL_BUCKET_DEFAULT_ITEM_ID {
-            return Err("Cannot remove the base URL item.".to_string());
+            return Err(anyhow!("Cannot remove the base URL item."));
         }
         if self.items.remove(id).is_some() {
             Ok(())
         } else {
-            Err("Item not found".to_string())
+            Err(anyhow!("Item not found"))
         }
     }
 
-    pub fn select_item(&mut self, id: &usize) -> Result<(), String> {
+    pub fn select_item(&mut self, id: &usize) -> Result<()> {
         if let Some(current_selected_item) = self.items.values_mut().find(|item| item.selected) {
             current_selected_item.selected = false;
         }
@@ -101,7 +102,7 @@ impl ServerUrlsBucket {
             new_selected_item.selected = true;
             Ok(())
         } else {
-            Err("Item not found".to_string())
+            Err(anyhow!("Item not found"))
         }
     }
 
