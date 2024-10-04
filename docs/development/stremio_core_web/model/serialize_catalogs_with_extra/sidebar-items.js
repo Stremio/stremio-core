@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"fn":["serialize_catalogs_with_extra"],"mod":["model"]};
+window.SIDEBAR_ITEMS = {"enum":["Loadable","PosterShape"],"struct":["CatalogsWithExtra","Ctx","DescriptorPreview","DiscoverDeepLinks","ManifestPreview","MetaItemDeepLinks","MetaItemPreview","ResourceLoadable","Selected"]};

@@ -1,4 +1,4 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `stremio-core-web/src/model/serialize_catalogs_with_extra.rs`."><title>serialize_catalogs_with_extra.rs - source</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-46f98efaafac5295.ttf.woff2,FiraSans-Regular-018c141bf0843ffd.woff2,FiraSans-Medium-8f9a781e4970d388.woff2,SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2,SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../../static.files/rustdoc-b778ab399e080a4b.css"><meta name="rustdoc-vars" data-root-path="../../../" data-static-root-path="../../../static.files/" data-current-crate="stremio_core_web" data-themes="" data-resource-suffix="" data-rustdoc-version="1.83.0-nightly (7608018cb 2024-09-29)" data-channel="nightly" data-search-js="search-e056c65ede92db13.js" data-settings-js="settings-805db61a62df4bd2.js" ><script src="../../../static.files/storage-1d39b6787ed640ff.js"></script><script defer src="../../../static.files/src-script-e66d777a5a92e9b2.js"></script><script defer src="../../../src-files.js"></script><script defer src="../../../static.files/main-54bc299d2a5e4e43.js"></script><noscript><link rel="stylesheet" href="../../../static.files/noscript-0111fcff984fae8f.css"></noscript><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title"><h2>Files</h2></div></nav><div class="sidebar-resizer"></div><main><rustdoc-search></rustdoc-search><section id="main-content" class="content"><div class="main-heading"><h1><div class="sub-heading">stremio_core_web/model/</div>serialize_catalogs_with_extra.rs</h1><rustdoc-toolbar></rustdoc-toolbar></div><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers">
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `stremio-core-web/src/model/serialize_catalogs_with_extra.rs`."><title>serialize_catalogs_with_extra.rs - source</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-46f98efaafac5295.ttf.woff2,FiraSans-Regular-018c141bf0843ffd.woff2,FiraSans-Medium-8f9a781e4970d388.woff2,SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2,SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../../static.files/rustdoc-d5c83a227aeda803.css"><meta name="rustdoc-vars" data-root-path="../../../" data-static-root-path="../../../static.files/" data-current-crate="stremio_core_web" data-themes="" data-resource-suffix="" data-rustdoc-version="1.83.0-nightly (9ff5fc4ff 2024-10-03)" data-channel="nightly" data-search-js="search-e056c65ede92db13.js" data-settings-js="settings-805db61a62df4bd2.js" ><script src="../../../static.files/storage-1d39b6787ed640ff.js"></script><script defer src="../../../static.files/src-script-e66d777a5a92e9b2.js"></script><script defer src="../../../src-files.js"></script><script defer src="../../../static.files/main-f070b9041d14864c.js"></script><noscript><link rel="stylesheet" href="../../../static.files/noscript-0111fcff984fae8f.css"></noscript><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title"><h2>Files</h2></div></nav><div class="sidebar-resizer"></div><main><rustdoc-search></rustdoc-search><section id="main-content" class="content"><div class="main-heading"><h1><div class="sub-heading">stremio_core_web/model/</div>serialize_catalogs_with_extra.rs</h1><rustdoc-toolbar></rustdoc-toolbar></div><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers">
 <a href="#1" id="1">1</a>
 <a href="#2" id="2">2</a>
 <a href="#3" id="3">3</a>
@@ -131,87 +131,106 @@
 <a href="#130" id="130">130</a>
 <a href="#131" id="131">131</a>
 <a href="#132" id="132">132</a>
-<a href="#133" id="133">133</a></pre></div><pre class="rust"><code><span class="kw">use </span><span class="kw">crate</span>::model::deep_links_ext::DeepLinksExt;
-<span class="kw">use </span>gloo_utils::format::JsValueSerdeExt;
-<span class="kw">use </span>itertools::Itertools;
+<a href="#133" id="133">133</a>
+<a href="#134" id="134">134</a>
+<a href="#135" id="135">135</a>
+<a href="#136" id="136">136</a>
+<a href="#137" id="137">137</a>
+<a href="#138" id="138">138</a>
+<a href="#139" id="139">139</a>
+<a href="#140" id="140">140</a>
+<a href="#141" id="141">141</a>
+<a href="#142" id="142">142</a>
+<a href="#143" id="143">143</a>
+<a href="#144" id="144">144</a>
+<a href="#145" id="145">145</a>
+<a href="#146" id="146">146</a>
+<a href="#147" id="147">147</a>
+<a href="#148" id="148">148</a>
+<a href="#149" id="149">149</a>
+<a href="#150" id="150">150</a>
+<a href="#151" id="151">151</a></pre></div><pre class="rust"><code><span class="kw">use </span>itertools::Itertools;
 <span class="kw">use </span>serde::Serialize;
-<span class="kw">use </span>stremio_core::deep_links::{DiscoverDeepLinks, MetaItemDeepLinks};
-<span class="kw">use </span>stremio_core::models::catalogs_with_extra::{CatalogsWithExtra, Selected};
-<span class="kw">use </span>stremio_core::models::common::Loadable;
-<span class="kw">use </span>stremio_core::models::ctx::Ctx;
-<span class="kw">use </span>stremio_core::types::resource::PosterShape;
-<span class="kw">use </span>wasm_bindgen::JsValue;
 
-<span class="kw">mod </span>model {
+<span class="attr">#[cfg(feature = <span class="string">"wasm"</span>)]
+</span><span class="kw">use </span>{gloo_utils::format::JsValueSerdeExt, wasm_bindgen::JsValue};
 
-    <span class="kw">use super</span>::<span class="kw-2">*</span>;
-    <span class="attr">#[derive(Serialize)]
-    #[serde(rename_all = <span class="string">"camelCase"</span>)]
-    </span><span class="kw">pub struct </span>ManifestPreview&lt;<span class="lifetime">'a</span>&gt; {
-        <span class="kw">pub </span>id: <span class="kw-2">&amp;</span><span class="lifetime">'a </span>str,
-        <span class="kw">pub </span>name: <span class="kw-2">&amp;</span><span class="lifetime">'a </span>str,
-    }
-    <span class="attr">#[derive(Serialize)]
-    #[serde(rename_all = <span class="string">"camelCase"</span>)]
-    </span><span class="kw">pub struct </span>DescriptorPreview&lt;<span class="lifetime">'a</span>&gt; {
-        <span class="kw">pub </span>manifest: ManifestPreview&lt;<span class="lifetime">'a</span>&gt;,
-    }
-    <span class="attr">#[derive(Serialize)]
-    #[serde(rename_all = <span class="string">"camelCase"</span>)]
-    </span><span class="kw">pub struct </span>MetaItemPreview&lt;<span class="lifetime">'a</span>&gt; {
-        <span class="attr">#[serde(flatten)]
-        </span><span class="kw">pub </span>meta_item: <span class="kw-2">&amp;</span><span class="lifetime">'a </span>stremio_core::types::resource::MetaItemPreview,
-        <span class="kw">pub </span>poster_shape: <span class="kw-2">&amp;</span><span class="lifetime">'a </span>PosterShape,
-        <span class="kw">pub </span>watched: bool,
-        <span class="kw">pub </span>deep_links: MetaItemDeepLinks,
-    }
-    <span class="attr">#[derive(Serialize)]
-    #[serde(rename_all = <span class="string">"camelCase"</span>)]
-    </span><span class="kw">pub struct </span>ResourceLoadable&lt;<span class="lifetime">'a</span>&gt; {
-        <span class="kw">pub </span>id: String,
-        <span class="kw">pub </span>name: String,
-        <span class="kw">pub </span>r#type: String,
-        <span class="kw">pub </span>addon: DescriptorPreview&lt;<span class="lifetime">'a</span>&gt;,
-        <span class="kw">pub </span>content: <span class="prelude-ty">Option</span>&lt;Loadable&lt;Vec&lt;MetaItemPreview&lt;<span class="lifetime">'a</span>&gt;&gt;, String&gt;&gt;,
-        <span class="kw">pub </span>deep_links: DiscoverDeepLinks,
-    }
-    <span class="attr">#[derive(Serialize)]
-    #[serde(rename_all = <span class="string">"camelCase"</span>)]
-    </span><span class="kw">pub struct </span>CatalogsWithExtra&lt;<span class="lifetime">'a</span>&gt; {
-        <span class="kw">pub </span>selected: <span class="kw-2">&amp;</span><span class="lifetime">'a </span><span class="prelude-ty">Option</span>&lt;Selected&gt;,
-        <span class="kw">pub </span>catalogs: Vec&lt;ResourceLoadable&lt;<span class="lifetime">'a</span>&gt;&gt;,
-    }
+<span class="kw">use </span><span class="kw">crate</span>::model::deep_links_ext::DeepLinksExt;
+
+<span class="kw">pub use </span>stremio_core::{
+    deep_links::{DiscoverDeepLinks, MetaItemDeepLinks},
+    models::{catalogs_with_extra::Selected, common::Loadable, ctx::Ctx},
+    types::resource::PosterShape,
+};
+
+<span class="attr">#[derive(Serialize)]
+#[serde(rename_all = <span class="string">"camelCase"</span>)]
+</span><span class="kw">pub struct </span>ManifestPreview&lt;<span class="lifetime">'a</span>&gt; {
+    <span class="kw">pub </span>id: <span class="kw-2">&amp;</span><span class="lifetime">'a </span>str,
+    <span class="kw">pub </span>name: <span class="kw-2">&amp;</span><span class="lifetime">'a </span>str,
+}
+<span class="attr">#[derive(Serialize)]
+#[serde(rename_all = <span class="string">"camelCase"</span>)]
+</span><span class="kw">pub struct </span>DescriptorPreview&lt;<span class="lifetime">'a</span>&gt; {
+    <span class="kw">pub </span>manifest: ManifestPreview&lt;<span class="lifetime">'a</span>&gt;,
+}
+<span class="attr">#[derive(Serialize)]
+#[serde(rename_all = <span class="string">"camelCase"</span>)]
+</span><span class="kw">pub struct </span>MetaItemPreview&lt;<span class="lifetime">'a</span>&gt; {
+    <span class="attr">#[serde(flatten)]
+    </span><span class="kw">pub </span>meta_item: <span class="kw-2">&amp;</span><span class="lifetime">'a </span>stremio_core::types::resource::MetaItemPreview,
+    <span class="kw">pub </span>poster_shape: <span class="kw-2">&amp;</span><span class="lifetime">'a </span>PosterShape,
+    <span class="kw">pub </span>watched: bool,
+    <span class="kw">pub </span>deep_links: MetaItemDeepLinks,
 }
 
-<span class="kw">pub fn </span>serialize_catalogs_with_extra(
-    catalogs_with_extra: <span class="kw-2">&amp;</span>CatalogsWithExtra,
-    ctx: <span class="kw-2">&amp;</span>Ctx,
-) -&gt; JsValue {
-    &lt;JsValue <span class="kw">as </span>JsValueSerdeExt&gt;::from_serde(<span class="kw-2">&amp;</span>model::CatalogsWithExtra {
-        selected: <span class="kw-2">&amp;</span>catalogs_with_extra.selected,
-        catalogs: catalogs_with_extra
-            .catalogs
-            .iter()
-            .filter_map(|catalog| catalog.first())
-            .filter_map(|catalog| {
-                ctx.profile
-                    .addons
-                    .iter()
-                    .find(|addon| addon.transport_url == catalog.request.base)
-                    .and_then(|addon| {
-                        addon
-                            .manifest
-                            .catalogs
-                            .iter()
-                            .find(|manifest_catalog| {
-                                manifest_catalog.id == catalog.request.path.id
-                                    &amp;&amp; manifest_catalog.r#type == catalog.request.path.r#type
-                            })
-                            .map(|manifest_catalog| (addon, manifest_catalog, catalog))
-                    })
-            })
-            .map(
-                |(addon, manifest_catalog, catalog)| model::ResourceLoadable {
+<span class="attr">#[derive(Serialize)]
+#[serde(rename_all = <span class="string">"camelCase"</span>)]
+</span><span class="kw">pub struct </span>ResourceLoadable&lt;<span class="lifetime">'a</span>&gt; {
+    <span class="kw">pub </span>id: String,
+    <span class="kw">pub </span>name: String,
+    <span class="kw">pub </span>r#type: String,
+    <span class="kw">pub </span>addon: DescriptorPreview&lt;<span class="lifetime">'a</span>&gt;,
+    <span class="kw">pub </span>content: <span class="prelude-ty">Option</span>&lt;Loadable&lt;Vec&lt;MetaItemPreview&lt;<span class="lifetime">'a</span>&gt;&gt;, String&gt;&gt;,
+    <span class="kw">pub </span>deep_links: DiscoverDeepLinks,
+}
+
+<span class="attr">#[derive(Serialize)]
+#[serde(rename_all = <span class="string">"camelCase"</span>)]
+</span><span class="kw">pub struct </span>CatalogsWithExtra&lt;<span class="lifetime">'a</span>&gt; {
+    <span class="kw">pub </span>selected: <span class="kw-2">&amp;</span><span class="lifetime">'a </span><span class="prelude-ty">Option</span>&lt;Selected&gt;,
+    <span class="kw">pub </span>catalogs: Vec&lt;ResourceLoadable&lt;<span class="lifetime">'a</span>&gt;&gt;,
+}
+
+<span class="kw">impl</span>&lt;<span class="lifetime">'a</span>&gt; CatalogsWithExtra&lt;<span class="lifetime">'a</span>&gt; {
+    <span class="kw">pub fn </span>new(
+        catalogs_with_extra: <span class="kw-2">&amp;</span><span class="lifetime">'a </span>stremio_core::models::catalogs_with_extra::CatalogsWithExtra,
+        ctx: <span class="kw-2">&amp;</span><span class="lifetime">'a </span>Ctx,
+    ) -&gt; <span class="self">Self </span>{
+        <span class="self">Self </span>{
+            selected: <span class="kw-2">&amp;</span>catalogs_with_extra.selected,
+            catalogs: catalogs_with_extra
+                .catalogs
+                .iter()
+                .filter_map(|catalog| catalog.first())
+                .filter_map(|catalog| {
+                    ctx.profile
+                        .addons
+                        .iter()
+                        .find(|addon| addon.transport_url == catalog.request.base)
+                        .and_then(|addon| {
+                            addon
+                                .manifest
+                                .catalogs
+                                .iter()
+                                .find(|manifest_catalog| {
+                                    manifest_catalog.id == catalog.request.path.id
+                                        &amp;&amp; manifest_catalog.r#type == catalog.request.path.r#type
+                                })
+                                .map(|manifest_catalog| (addon, manifest_catalog, catalog))
+                        })
+                })
+                .map(|(addon, manifest_catalog, catalog)| ResourceLoadable {
                     id: manifest_catalog.id.to_string(),
                     name: manifest_catalog
                         .name
@@ -219,8 +238,8 @@
                         .unwrap_or(<span class="kw-2">&amp;</span>addon.manifest.name)
                         .to_string(),
                     r#type: manifest_catalog.r#type.to_string(),
-                    addon: model::DescriptorPreview {
-                        manifest: model::ManifestPreview {
+                    addon: DescriptorPreview {
+                        manifest: ManifestPreview {
                             id: <span class="kw-2">&amp;</span>addon.manifest.id,
                             name: <span class="kw-2">&amp;</span>addon.manifest.name,
                         },
@@ -234,7 +253,7 @@
                                     .iter()
                                     .unique_by(|meta_item| <span class="kw-2">&amp;</span>meta_item.id)
                                     .take(<span class="number">10</span>)
-                                    .map(|meta_item| model::MetaItemPreview {
+                                    .map(|meta_item| MetaItemPreview {
                                         meta_item,
                                         poster_shape: poster_shape
                                             .unwrap_or(<span class="kw-2">&amp;</span>meta_item.poster_shape),
@@ -258,10 +277,27 @@
                         <span class="prelude-val">None </span>=&gt; <span class="prelude-val">None</span>,
                     },
                     deep_links: DiscoverDeepLinks::from(<span class="kw-2">&amp;</span>catalog.request).into_web_deep_links(),
-                },
-            )
-            .collect::&lt;Vec&lt;<span class="kw">_</span>&gt;&gt;(),
-    })
-    .expect(<span class="string">"JsValue from model::CatalogsWithExtra"</span>)
+                })
+                .collect::&lt;Vec&lt;<span class="kw">_</span>&gt;&gt;(),
+        }
+    }
+}
+
+<span class="attr">#[cfg(feature = <span class="string">"wasm"</span>)]
+</span><span class="kw">impl</span>&lt;<span class="lifetime">'a</span>&gt; <span class="kw">super</span>::SerializeModel&lt;wasm_bindgen::JsValue&gt; <span class="kw">for </span>CatalogsWithExtra&lt;<span class="lifetime">'a</span>&gt; {
+    <span class="kw">type </span>Error = serde_json::Error;
+
+    <span class="kw">fn </span>serialize_model(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span>&lt;wasm_bindgen::JsValue, <span class="self">Self</span>::Error&gt; {
+        wasm_bindgen::JsValue::try_from(<span class="self">self</span>)
+    }
+}
+
+<span class="attr">#[cfg(feature = <span class="string">"wasm"</span>)]
+</span><span class="kw">impl</span>&lt;<span class="lifetime">'a</span>&gt; TryFrom&lt;<span class="kw-2">&amp;</span>CatalogsWithExtra&lt;<span class="lifetime">'a</span>&gt;&gt; <span class="kw">for </span>JsValue {
+    <span class="kw">type </span>Error = serde_json::Error;
+
+    <span class="kw">fn </span>try_from(catalogs: <span class="kw-2">&amp;</span>CatalogsWithExtra&lt;<span class="lifetime">'a</span>&gt;) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="self">Self</span>, <span class="self">Self</span>::Error&gt; {
+        &lt;JsValue <span class="kw">as </span>JsValueSerdeExt&gt;::from_serde(<span class="kw-2">&amp;</span>catalogs)
+    }
 }
 </code></pre></div></section></main></body></html>

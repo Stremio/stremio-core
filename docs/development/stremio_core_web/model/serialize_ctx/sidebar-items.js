@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"fn":["serialize_ctx"],"mod":["model"]};
+window.SIDEBAR_ITEMS = {"fn":["serialize_ctx"],"mod":["model"],"struct":["Ctx","Notifications","SearchHistoryItem"]};

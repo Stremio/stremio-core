@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"fn":["serialize_discover"],"mod":["model"]};
+window.SIDEBAR_ITEMS = {"fn":["serialize_discover"],"mod":["model"],"struct":["CatalogWithFilters","DescriptorPreview","ManifestPreview","MetaItemPreview","ResourceLoadable","Selectable","SelectableCatalog","SelectableExtra","SelectableExtraOption","SelectableType","Stream"]};
