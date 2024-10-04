@@ -8,35 +8,35 @@ use std::collections::HashMap;
 use url::Url;
 
 #[derive(Debug, Clone, Serialize, Deserialize, Default, PartialEq)]
-pub struct ServerUrlBucket {
+pub struct ServerUrlsBucket {
     /// User ID
     pub uid: UID,
     /// [`HashMap`] Key is the [`ServerUrlItem`]`.id`.
-    pub items: HashMap<String, ServerUrlItem>,
+    pub items: HashMap<usize, ServerUrlItem>,
 }
 
-impl ServerUrlBucket {
-    /// Create a new [`ServerUrlBucket`] with the base URL inserted.
+impl ServerUrlsBucket {
+    /// Create a new [`ServerUrlsBucket`] with the base URL inserted.
     pub fn new(uid: UID, base_url: Url) -> Self {
         let mut items = HashMap::new();
 
         let server_base_url_item = ServerUrlItem {
-            id: SERVER_URL_BUCKET_DEFAULT_ITEM_ID.to_string(),
+            id: SERVER_URL_BUCKET_DEFAULT_ITEM_ID,
             url: base_url.clone(),
             mtime: Self::current_timestamp() as i64,
             selected: true,
         };
 
-        items.insert(server_base_url_item.id.clone(), server_base_url_item);
+        items.insert(server_base_url_item.id, server_base_url_item);
 
-        ServerUrlBucket { uid, items }
+        ServerUrlsBucket { uid, items }
     }
 
     fn current_timestamp() -> u64 {
         chrono::Utc::now().timestamp() as u64
     }
 
-    pub fn merge_bucket(&mut self, bucket: ServerUrlBucket) {
+    pub fn merge_bucket(&mut self, bucket: ServerUrlsBucket) {
         if self.uid == bucket.uid {
             self.merge_items(bucket.items.into_values().collect());
         }
@@ -57,7 +57,7 @@ impl ServerUrlBucket {
                             .values()
                             .filter(|item| item.id != SERVER_URL_BUCKET_DEFAULT_ITEM_ID)
                             .min_by_key(|item| item.mtime)
-                            .map(|item| item.id.clone());
+                            .map(|item| item.id);
 
                         if let Some(oldest_item_id) = oldest_item_id_option {
                             if new_item.mtime > self.items[&oldest_item_id].mtime {
@@ -71,7 +71,7 @@ impl ServerUrlBucket {
         }
     }
 
-    pub fn edit_item(&mut self, id: &str, new_url: Url) -> Result<(), String> {
+    pub fn edit_item(&mut self, id: &usize, new_url: Url) -> Result<(), String> {
         if let Some(item) = self.items.get_mut(id) {
             item.url = new_url;
             item.mtime = Self::current_timestamp() as i64;
@@ -81,8 +81,8 @@ impl ServerUrlBucket {
         }
     }
 
-    pub fn delete_item(&mut self, id: &str) -> Result<(), String> {
-        if id == SERVER_URL_BUCKET_DEFAULT_ITEM_ID {
+    pub fn delete_item(&mut self, id: &usize) -> Result<(), String> {
+        if *id == SERVER_URL_BUCKET_DEFAULT_ITEM_ID {
             return Err("Cannot remove the base URL item.".to_string());
         }
         if self.items.remove(id).is_some() {
@@ -92,7 +92,7 @@ impl ServerUrlBucket {
         }
     }
 
-    pub fn select_item(&mut self, id: &str) -> Result<(), String> {
+    pub fn select_item(&mut self, id: &usize) -> Result<(), String> {
         if let Some(current_selected_item) = self.items.values_mut().find(|item| item.selected) {
             current_selected_item.selected = false;
         }

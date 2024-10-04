@@ -30,7 +30,7 @@ pub const LIBRARY_RECENT_COUNT: usize = 200;
 pub const NOTIFICATION_ITEMS_COUNT: usize = 100;
 
 pub const SERVER_URL_BUCKET_MAX_ITEMS: usize = 5;
-pub const SERVER_URL_BUCKET_DEFAULT_ITEM_ID: &str = "0";
+pub const SERVER_URL_BUCKET_DEFAULT_ITEM_ID: usize = 0;
 
 /// A `LibraryItem` is considered watched once we've watched more than the `duration * threshold`:
 ///

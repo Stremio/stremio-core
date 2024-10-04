@@ -5,7 +5,7 @@ use url::Url;
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
 pub struct ServerUrlItem {
     /// Unique ID
-    pub id: String,
+    pub id: usize,
     /// URL
     pub url: Url,
     /// Timestamp
@@ -15,7 +15,7 @@ pub struct ServerUrlItem {
 }
 
 impl ServerUrlItem {
-    pub fn new(id: String, url: Url, mtime: i64) -> Self {
+    pub fn new(id: usize, url: Url, mtime: i64) -> Self {
         ServerUrlItem {
             id,
             url,
