@@ -153,6 +153,23 @@ pub enum ActionPlayer {
     StreamStateChanged {
         state: StreamItemState,
     },
+    /// Seek performed by the user when using the seekbar or
+    /// the shortcuts for seeking.
+    ///
+    /// When transitioning from Seek to TimeChanged and vice-versa
+    /// we need to make sure to update the other accordingly
+    /// if we have any type of throttling of these events,
+    /// otherwise we will get wrong `LibraryItem.state.time_offset`!
+    Seek {
+        time: u64,
+        duration: u64,
+        device: String,
+    },
+    /// A normal playback by the video player
+    ///
+    /// The time from one TimeChanged action to another can only grow (move forward)
+    /// and should never go backwards, except when a [`ActionPlayer::Seek`] happen
+    /// and moves the time backwards.
     TimeChanged {
         time: u64,
         duration: u64,
