@@ -12,6 +12,7 @@ pub const LIBRARY_STORAGE_KEY: &str = "library";
 pub const LIBRARY_RECENT_STORAGE_KEY: &str = "library_recent";
 pub const STREAMS_STORAGE_KEY: &str = "streams";
 pub const SEARCH_HISTORY_STORAGE_KEY: &str = "search_history";
+pub const STREAMING_SERVER_URLS_STORAGE_KEY: &str = "streaming_server_urls";
 pub const NOTIFICATIONS_STORAGE_KEY: &str = "notifications";
 pub const DISMISSED_EVENTS_STORAGE_KEY: &str = "dismissed_events";
 pub const LIBRARY_COLLECTION_NAME: &str = "libraryItem";

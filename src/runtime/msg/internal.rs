@@ -89,6 +89,8 @@ pub enum Internal {
     StreamsChanged(bool),
     /// Search history has changed.
     SearchHistoryChanged,
+    /// Server URLs bucket has changed.
+    StreamingServerUrlsBucketChanged,
     /// User notifications have changed
     NotificationsChanged,
     /// Pulling of notifications triggered either by the user (with an action) or
@@ -106,6 +108,8 @@ pub enum Internal {
     StreamingServerSettingsResult(Url, Result<SettingsResponse, EnvError>),
     /// Result for loading streaming server base url.
     StreamingServerBaseURLResult(Url, Result<Url, EnvError>),
+    /// Result for loading streaming server urls bucket.
+    StreamingServerUrlsBucketResult(Result<Vec<Url>, EnvError>),
     // Result for loading streaming server playback devices.
     StreamingServerPlaybackDevicesResult(Url, Result<Vec<PlaybackDevice>, EnvError>),
     // Result for network info.

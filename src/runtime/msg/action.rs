@@ -129,12 +129,22 @@ pub struct PlayOnDeviceArgs {
 
 #[derive(Clone, Deserialize, Debug)]
 #[serde(tag = "action", content = "args")]
+pub enum ActionServerUrlsBucket {
+    AddServerUrl(Url),
+    // EditServerUrl { id: usize, new_url: Url },
+    // DeleteServerUrl(usize),
+    // SelectServerUrl(usize),
+}
+
+#[derive(Clone, Deserialize, Debug)]
+#[serde(tag = "action", content = "args")]
 pub enum ActionStreamingServer {
     Reload,
     UpdateSettings(StreamingServerSettings),
     CreateTorrent(CreateTorrentArgs),
     GetStatistics(StreamingServerStatisticsRequest),
     PlayOnDevice(PlayOnDeviceArgs),
+    ServerUrlsBucket(ActionServerUrlsBucket),
 }
 
 #[derive(Clone, Deserialize, Debug)]

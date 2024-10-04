@@ -37,10 +37,20 @@ impl ServerUrlsBucket {
         chrono::Utc::now().timestamp() as u64
     }
 
+    pub fn generate_new_id(&self) -> usize {
+        self.items.keys().max().cloned().unwrap_or(0) + 1
+    }
+
     pub fn merge_bucket(&mut self, bucket: ServerUrlsBucket) {
         if self.uid == bucket.uid {
             self.merge_items(bucket.items.into_values().collect());
         }
+    }
+
+    pub fn add_url(&mut self, url: Url) {
+        let new_id = self.generate_new_id();
+        let new_item = ServerUrlItem::new(new_id, url, Self::current_timestamp() as i64);
+        self.merge_items(vec![new_item]);
     }
 
     pub fn merge_items(&mut self, items: Vec<ServerUrlItem>) {
