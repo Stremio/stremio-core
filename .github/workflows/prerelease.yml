@@ -25,7 +25,7 @@ jobs:
           cache-dependency-path: stremio-core-web/package-lock.json
 
       - name: Rust setup
-        uses: dtolnay/rust-toolchain@1.77
+        uses: dtolnay/rust-toolchain@1.90
         with:
           targets: wasm32-unknown-unknown
 
