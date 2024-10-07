@@ -16,6 +16,7 @@ mod model {
     use serde::Serialize;
 
     use stremio_core::deep_links::SearchHistoryItemDeepLinks;
+    use stremio_core::types::server_urls::ServerUrlsBucket;
     use stremio_core::types::{
         events::Events, notifications::NotificationItem, profile::Profile, resource::MetaItemId,
     };
@@ -30,6 +31,7 @@ mod model {
         pub notifications: Notifications<'a>,
         pub search_history: Vec<SearchHistoryItem<'a>>,
         pub events: &'a Events,
+        pub streaming_server_urls: &'a ServerUrlsBucket,
     }
 
     #[derive(Serialize)]
@@ -75,6 +77,7 @@ mod model {
                     })
                     .collect(),
                 events: &ctx.events,
+                streaming_server_urls: &ctx.server_urls,
             }
         }
     }
