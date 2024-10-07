@@ -1,6 +1,8 @@
 use crate::addon_transport::{AddonHTTPTransport, AddonTransport, UnsupportedTransport};
 use crate::constants::{
-    DISMISSED_EVENTS_STORAGE_KEY, LIBRARY_RECENT_STORAGE_KEY, LIBRARY_STORAGE_KEY, PROFILE_STORAGE_KEY, SCHEMA_VERSION, SCHEMA_VERSION_STORAGE_KEY, SEARCH_HISTORY_STORAGE_KEY, STREAMING_SERVER_URLS_STORAGE_KEY, STREAMS_STORAGE_KEY
+    DISMISSED_EVENTS_STORAGE_KEY, LIBRARY_RECENT_STORAGE_KEY, LIBRARY_STORAGE_KEY,
+    PROFILE_STORAGE_KEY, SCHEMA_VERSION, SCHEMA_VERSION_STORAGE_KEY, SEARCH_HISTORY_STORAGE_KEY,
+    STREAMING_SERVER_URLS_STORAGE_KEY, STREAMS_STORAGE_KEY,
 };
 use crate::models::ctx::Ctx;
 use crate::models::streaming_server::StreamingServer;
@@ -616,9 +618,9 @@ mod test {
             env::{
                 migrate_storage_schema_to_v10, migrate_storage_schema_to_v11,
                 migrate_storage_schema_to_v12, migrate_storage_schema_to_v13,
-                migrate_storage_schema_to_v14, migrate_storage_schema_to_v6,
-                migrate_storage_schema_to_v7, migrate_storage_schema_to_v8,
-                migrate_storage_schema_to_v9, migrate_storage_schema_to_v15,
+                migrate_storage_schema_to_v14, migrate_storage_schema_to_v15,
+                migrate_storage_schema_to_v6, migrate_storage_schema_to_v7,
+                migrate_storage_schema_to_v8, migrate_storage_schema_to_v9,
             },
             Env,
         },
