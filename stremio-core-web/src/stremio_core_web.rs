@@ -19,7 +19,7 @@ use stremio_core::{
     types::{
         events::DismissedEventsBucket, library::LibraryBucket, notifications::NotificationsBucket,
         profile::Profile, resource::Stream, search_history::SearchHistoryBucket,
-        streams::StreamsBucket,
+        server_urls::ServerUrlsBucket, streams::StreamsBucket,
     },
 };
 
@@ -68,6 +68,7 @@ pub async fn initialize_runtime(emit_to_ui: js_sys::Function) -> Result<(), JsVa
                 WebEnv::get_storage::<LibraryBucket>(LIBRARY_RECENT_STORAGE_KEY),
                 WebEnv::get_storage::<LibraryBucket>(LIBRARY_STORAGE_KEY),
                 WebEnv::get_storage::<StreamsBucket>(STREAMS_STORAGE_KEY),
+                WebEnv::get_storage::<ServerUrlsBucket>(STREAMS_STORAGE_KEY),
                 WebEnv::get_storage::<NotificationsBucket>(NOTIFICATIONS_STORAGE_KEY),
                 WebEnv::get_storage::<SearchHistoryBucket>(SEARCH_HISTORY_STORAGE_KEY),
                 WebEnv::get_storage::<DismissedEventsBucket>(DISMISSED_EVENTS_STORAGE_KEY),
@@ -78,6 +79,7 @@ pub async fn initialize_runtime(emit_to_ui: js_sys::Function) -> Result<(), JsVa
                     recent_bucket,
                     other_bucket,
                     streams_bucket,
+                    server_urls_bucket,
                     notifications_bucket,
                     search_history_bucket,
                     dismissed_events_bucket,
@@ -92,6 +94,8 @@ pub async fn initialize_runtime(emit_to_ui: js_sys::Function) -> Result<(), JsVa
                     };
                     let streams_bucket =
                         streams_bucket.unwrap_or_else(|| StreamsBucket::new(profile.uid()));
+                    let server_urls_bucket =
+                        server_urls_bucket.unwrap_or(ServerUrlsBucket::new(profile.uid()));
                     let notifications_bucket = notifications_bucket
                         .unwrap_or(NotificationsBucket::new::<WebEnv>(profile.uid(), vec![]));
                     let search_history_bucket =
@@ -102,6 +106,7 @@ pub async fn initialize_runtime(emit_to_ui: js_sys::Function) -> Result<(), JsVa
                         profile,
                         library,
                         streams_bucket,
+                        server_urls_bucket,
                         notifications_bucket,
                         search_history_bucket,
                         dismissed_events_bucket,

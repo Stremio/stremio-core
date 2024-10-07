@@ -1,9 +1,10 @@
 use super::ServerUrlItem;
 use crate::{
-    constants::{SERVER_URL_BUCKET_DEFAULT_ITEM_ID, SERVER_URL_BUCKET_MAX_ITEMS},
+    constants::{
+        SERVER_URL_BUCKET_DEFAULT_ITEM_ID, SERVER_URL_BUCKET_MAX_ITEMS, STREAMING_SERVER_URL,
+    },
     types::profile::UID,
 };
-use anyhow::{anyhow, Result};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use url::Url;
@@ -18,8 +19,9 @@ pub struct ServerUrlsBucket {
 
 impl ServerUrlsBucket {
     /// Create a new [`ServerUrlsBucket`] with the base URL inserted.
-    pub fn new(uid: UID, base_url: Url) -> Self {
+    pub fn new(uid: UID) -> Self {
         let mut items = HashMap::new();
+        let base_url: &Url = &STREAMING_SERVER_URL;
 
         let server_base_url_item = ServerUrlItem {
             id: SERVER_URL_BUCKET_DEFAULT_ITEM_ID,
@@ -82,37 +84,24 @@ impl ServerUrlsBucket {
         }
     }
 
-    pub fn edit_item(&mut self, id: &usize, new_url: Url) -> Result<()> {
+    pub fn edit_item(&mut self, id: &usize, new_url: Url) {
         if let Some(item) = self.items.get_mut(id) {
             item.url = new_url;
             item.mtime = Self::current_timestamp() as i64;
-            Ok(())
-        } else {
-            Err(anyhow!("Item not found"))
         }
     }
 
-    pub fn delete_item(&mut self, id: &usize) -> Result<()> {
-        if *id == SERVER_URL_BUCKET_DEFAULT_ITEM_ID {
-            return Err(anyhow!("Cannot remove the base URL item."));
-        }
-        if self.items.remove(id).is_some() {
-            Ok(())
-        } else {
-            Err(anyhow!("Item not found"))
+    pub fn delete_item(&mut self, id: &usize) {
+        if *id != SERVER_URL_BUCKET_DEFAULT_ITEM_ID {
+            self.items.remove(id);
         }
     }
 
-    pub fn select_item(&mut self, id: &usize) -> Result<()> {
-        if let Some(current_selected_item) = self.items.values_mut().find(|item| item.selected) {
-            current_selected_item.selected = false;
-        }
-
-        if let Some(new_selected_item) = self.items.get_mut(id) {
-            new_selected_item.selected = true;
-            Ok(())
-        } else {
-            Err(anyhow!("Item not found"))
+    pub fn select_item(&mut self, id: &usize) {
+        if self.items.contains_key(id) {
+            for item in self.items.values_mut() {
+                item.selected = item.id == *id;
+            }
         }
     }
 

@@ -17,10 +17,10 @@ use crate::types::addon::ResourcePath;
 use crate::types::api::SuccessResponse;
 use crate::types::empty_string_as_null;
 use crate::types::profile::{AuthKey, Profile};
+use crate::types::server_urls::ServerUrlsBucket;
 use crate::types::streaming_server::{
     CreateMagnetRequest, CreateTorrentBlobRequest, DeviceInfo, GetHTTPSResponse, NetworkInfo,
-    ServerUrlsBucket, Settings, SettingsResponse, Statistics, StatisticsRequest,
-    TorrentStatisticsRequest,
+    Settings, SettingsResponse, Statistics, StatisticsRequest, TorrentStatisticsRequest,
 };
 use crate::types::torrent::InfoHash;
 
@@ -71,10 +71,7 @@ impl StreamingServer {
                 },
                 settings: Loadable::Loading,
                 base_url: None,
-                server_urls_bucket: ServerUrlsBucket::new(
-                    profile.uid().to_owned(),
-                    profile.settings.streaming_server_url.to_owned(),
-                ),
+                server_urls_bucket: ServerUrlsBucket::new(profile.uid().to_owned()),
                 remote_url: None,
                 playback_devices: Loadable::Loading,
                 network_info: Loadable::Loading,
@@ -97,10 +94,7 @@ impl<E: Env + 'static> UpdateWithCtx<E> for StreamingServer {
                 let base_url_effects = eq_update(&mut self.base_url, None);
                 let server_urls_bucket_effects = eq_update(
                     &mut self.server_urls_bucket,
-                    ServerUrlsBucket::new(
-                        ctx.profile.uid().to_owned(),
-                        ctx.profile.settings.streaming_server_url.to_owned(),
-                    ),
+                    ServerUrlsBucket::new(ctx.profile.uid().to_owned()),
                 );
                 let remote_url_effects = eq_update(&mut self.remote_url, None);
                 Effects::many(vec![
@@ -244,10 +238,7 @@ impl<E: Env + 'static> UpdateWithCtx<E> for StreamingServer {
                 self.network_info = Loadable::Loading;
                 self.device_info = Loadable::Loading;
                 self.base_url = None;
-                self.server_urls_bucket = ServerUrlsBucket::new(
-                    ctx.profile.uid().to_owned(),
-                    ctx.profile.settings.streaming_server_url.to_owned(),
-                );
+                self.server_urls_bucket = ServerUrlsBucket::new(ctx.profile.uid().to_owned());
                 self.remote_url = None;
                 self.torrent = None;
                 self.statistics = None;
@@ -270,10 +261,7 @@ impl<E: Env + 'static> UpdateWithCtx<E> for StreamingServer {
                         let base_url_effects = eq_update(&mut self.base_url, Some(url.to_owned()));
                         let server_urls_bucket_effects = eq_update(
                             &mut self.server_urls_bucket,
-                            ServerUrlsBucket::new(
-                                ctx.profile.uid().to_owned(),
-                                self.selected.transport_url.to_owned(),
-                            ),
+                            ServerUrlsBucket::new(ctx.profile.uid().to_owned()),
                         );
                         let remote_url_effects = update_remote_url::<E>(
                             &mut self.remote_url,
@@ -290,10 +278,7 @@ impl<E: Env + 'static> UpdateWithCtx<E> for StreamingServer {
                         let base_url_effects = eq_update(&mut self.base_url, None);
                         let server_urls_bucket_effects = eq_update(
                             &mut self.server_urls_bucket,
-                            ServerUrlsBucket::new(
-                                ctx.profile.uid().to_owned(),
-                                self.selected.transport_url.to_owned(),
-                            ),
+                            ServerUrlsBucket::new(ctx.profile.uid().to_owned()),
                         );
                         let remote_url_effects = eq_update(&mut self.remote_url, None);
                         let playback_devices_effects =
@@ -362,10 +347,7 @@ impl<E: Env + 'static> UpdateWithCtx<E> for StreamingServer {
                         let base_url_effects = eq_update(&mut self.base_url, None);
                         let server_urls_bucket_effects = eq_update(
                             &mut self.server_urls_bucket,
-                            ServerUrlsBucket::new(
-                                ctx.profile.uid().to_owned(),
-                                self.selected.transport_url.to_owned(),
-                            ),
+                            ServerUrlsBucket::new(ctx.profile.uid().to_owned()),
                         );
                         let remote_url_effects = eq_update(&mut self.remote_url, None);
                         let playback_devices_effects =

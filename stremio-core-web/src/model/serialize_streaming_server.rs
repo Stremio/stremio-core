@@ -12,7 +12,7 @@ use url::Url;
 use wasm_bindgen::JsValue;
 
 mod model {
-    use stremio_core::types::{streaming_server::ServerUrlsBucket, torrent::InfoHash};
+    use stremio_core::types::{server_urls::ServerUrlsBucket, torrent::InfoHash};
 
     use super::*;
     type TorrentLoadable<'a> = Loadable<(&'a ResourcePath, MetaItemDeepLinks), &'a EnvError>;

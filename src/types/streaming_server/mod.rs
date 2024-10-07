@@ -19,9 +19,6 @@ pub use settings::*;
 mod statistics;
 pub use statistics::*;
 
-pub mod server_urls;
-pub use server_urls::*;
-
 use super::resource::SeriesInfo;
 use crate::types::{torrent::InfoHash, DefaultOnBool};
 

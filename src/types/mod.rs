@@ -7,6 +7,7 @@ pub mod player;
 pub mod profile;
 pub mod resource;
 pub mod search_history;
+pub mod server_urls;
 pub mod streaming_server;
 pub mod streams;
 pub mod torrent;
