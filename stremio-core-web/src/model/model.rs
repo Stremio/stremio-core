@@ -128,10 +128,7 @@ impl WebModel {
             WebModelField::ContinueWatchingPreview => serialize_continue_watching_preview(
                 &self.continue_watching_preview,
                 &self.ctx.streams,
-                self.streaming_server
-                    .server_urls_bucket
-                    .selected_item_url()
-                    .as_ref(),
+                self.streaming_server.base_url.as_ref(),
                 &self.ctx.profile.settings,
             ),
             WebModelField::Board => {
@@ -149,19 +146,13 @@ impl WebModel {
             WebModelField::Library => serialize_library(
                 &self.library,
                 &self.ctx,
-                self.streaming_server
-                    .server_urls_bucket
-                    .selected_item_url()
-                    .as_ref(),
+                self.streaming_server.base_url.as_ref(),
                 "library".to_owned(),
             ),
             WebModelField::ContinueWatching => serialize_library(
                 &self.continue_watching,
                 &self.ctx,
-                self.streaming_server
-                    .server_urls_bucket
-                    .selected_item_url()
-                    .as_ref(),
+                self.streaming_server.base_url.as_ref(),
                 "continuewatching".to_owned(),
             ),
             WebModelField::Search => {
