@@ -14,4 +14,5 @@ mod sync_library_with_api;
 mod uninstall_addon;
 mod update_search_history;
 mod update_settings;
+mod update_streaming_server_urls;
 mod upgrade_addon;
