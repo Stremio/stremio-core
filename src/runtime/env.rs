@@ -602,7 +602,7 @@ fn migrate_storage_schema_to_v14<E: Env>() -> TryEnvFuture<()> {
 
 fn migrate_storage_schema_to_v15<E: Env>() -> TryEnvFuture<()> {
     E::set_storage::<()>(STREAMING_SERVER_URLS_STORAGE_KEY, None)
-        .and_then(|_| E::set_storage(STREAMING_SERVER_URLS_STORAGE_KEY, Some(&15)))
+        .and_then(|_| E::set_storage(SCHEMA_VERSION_STORAGE_KEY, Some(&15)))
         .boxed_env()
 }
 
