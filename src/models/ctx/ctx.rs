@@ -112,8 +112,11 @@ impl<E: Env + 'static> Update<E> for Ctx {
                 let library_effects =
                     update_library::<E>(&mut self.library, &self.profile, &self.status, msg);
                 let streams_effects = update_streams::<E>(&mut self.streams, &self.status, msg);
-                let server_urls_effects =
-                    update_streaming_server_urls::<E>(&mut self.streaming_server_urls, &self.status, msg);
+                let server_urls_effects = update_streaming_server_urls::<E>(
+                    &mut self.streaming_server_urls,
+                    &self.status,
+                    msg,
+                );
                 let search_history_effects =
                     update_search_history::<E>(&mut self.search_history, &self.status, msg);
                 let events_effects =
@@ -165,8 +168,11 @@ impl<E: Env + 'static> Update<E> for Ctx {
                     msg,
                 );
                 let streams_effects = update_streams::<E>(&mut self.streams, &self.status, msg);
-                let server_urls_effects =
-                    update_streaming_server_urls::<E>(&mut self.streaming_server_urls, &self.status, msg);
+                let server_urls_effects = update_streaming_server_urls::<E>(
+                    &mut self.streaming_server_urls,
+                    &self.status,
+                    msg,
+                );
                 let search_history_effects =
                     update_search_history::<E>(&mut self.search_history, &self.status, msg);
                 let events_effects =
@@ -248,8 +254,11 @@ impl<E: Env + 'static> Update<E> for Ctx {
                 let library_effects =
                     update_library::<E>(&mut self.library, &self.profile, &self.status, msg);
                 let streams_effects = update_streams::<E>(&mut self.streams, &self.status, msg);
-                let server_urls_effects =
-                    update_streaming_server_urls::<E>(&mut self.streaming_server_urls, &self.status, msg);
+                let server_urls_effects = update_streaming_server_urls::<E>(
+                    &mut self.streaming_server_urls,
+                    &self.status,
+                    msg,
+                );
                 let trakt_addon_effects = update_trakt_addon::<E>(
                     &mut self.trakt_addon,
                     &self.profile,
