@@ -27,7 +27,6 @@ impl ServerUrlsBucket {
             id: SERVER_URL_BUCKET_DEFAULT_ITEM_ID,
             url: base_url.clone(),
             mtime: Self::current_timestamp() as i64,
-            selected: true,
         };
 
         items.insert(server_base_url_item.id, server_base_url_item);

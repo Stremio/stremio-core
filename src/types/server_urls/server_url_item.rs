@@ -10,8 +10,6 @@ pub struct ServerUrlItem {
     pub url: Url,
     /// Timestamp
     pub mtime: i64,
-    /// Selected
-    pub selected: bool,
 }
 
 impl ServerUrlItem {
@@ -20,7 +18,6 @@ impl ServerUrlItem {
             id,
             url,
             mtime,
-            selected: false,
         }
     }
 }
