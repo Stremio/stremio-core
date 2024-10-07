@@ -77,7 +77,7 @@ mod model {
                     })
                     .collect(),
                 events: &ctx.events,
-                streaming_server_urls: &ctx.server_urls,
+                streaming_server_urls: &ctx.streaming_server_urls,
             }
         }
     }

@@ -49,7 +49,7 @@ pub struct Ctx {
     #[serde(skip)]
     pub streams: StreamsBucket,
     #[serde(skip)]
-    pub server_urls: ServerUrlsBucket,
+    pub streaming_server_urls: ServerUrlsBucket,
     #[serde(skip)]
     pub search_history: SearchHistoryBucket,
     #[serde(skip)]
@@ -70,7 +70,7 @@ impl Ctx {
         profile: Profile,
         library: LibraryBucket,
         streams: StreamsBucket,
-        server_urls: ServerUrlsBucket,
+        streaming_server_urls: ServerUrlsBucket,
         notifications: NotificationsBucket,
         search_history: SearchHistoryBucket,
         dismissed_events: DismissedEventsBucket,
@@ -79,7 +79,7 @@ impl Ctx {
             profile,
             library,
             streams,
-            server_urls,
+            streaming_server_urls,
             search_history,
             dismissed_events,
             notifications,
@@ -113,7 +113,7 @@ impl<E: Env + 'static> Update<E> for Ctx {
                     update_library::<E>(&mut self.library, &self.profile, &self.status, msg);
                 let streams_effects = update_streams::<E>(&mut self.streams, &self.status, msg);
                 let server_urls_effects =
-                    update_streaming_server_urls::<E>(&mut self.server_urls, &self.status, msg);
+                    update_streaming_server_urls::<E>(&mut self.streaming_server_urls, &self.status, msg);
                 let search_history_effects =
                     update_search_history::<E>(&mut self.search_history, &self.status, msg);
                 let events_effects =
@@ -166,7 +166,7 @@ impl<E: Env + 'static> Update<E> for Ctx {
                 );
                 let streams_effects = update_streams::<E>(&mut self.streams, &self.status, msg);
                 let server_urls_effects =
-                    update_streaming_server_urls::<E>(&mut self.server_urls, &self.status, msg);
+                    update_streaming_server_urls::<E>(&mut self.streaming_server_urls, &self.status, msg);
                 let search_history_effects =
                     update_search_history::<E>(&mut self.search_history, &self.status, msg);
                 let events_effects =
@@ -249,7 +249,7 @@ impl<E: Env + 'static> Update<E> for Ctx {
                     update_library::<E>(&mut self.library, &self.profile, &self.status, msg);
                 let streams_effects = update_streams::<E>(&mut self.streams, &self.status, msg);
                 let server_urls_effects =
-                    update_streaming_server_urls::<E>(&mut self.server_urls, &self.status, msg);
+                    update_streaming_server_urls::<E>(&mut self.streaming_server_urls, &self.status, msg);
                 let trakt_addon_effects = update_trakt_addon::<E>(
                     &mut self.trakt_addon,
                     &self.profile,
