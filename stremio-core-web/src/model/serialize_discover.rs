@@ -195,9 +195,7 @@ pub fn serialize_discover(
                                             stream,
                                             deep_links: StreamDeepLinks::from((
                                                 stream,
-                                                &streaming_server
-                                                    .server_urls_bucket
-                                                    .selected_item_url(),
+                                                &streaming_server.base_url,
                                                 &ctx.profile.settings,
                                             ))
                                             .into_web_deep_links(),

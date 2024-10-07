@@ -96,20 +96,4 @@ impl ServerUrlsBucket {
             self.items.remove(id);
         }
     }
-
-    pub fn select_item(&mut self, id: &usize) {
-        if self.items.contains_key(id) {
-            for item in self.items.values_mut() {
-                item.selected = item.id == *id;
-            }
-        }
-    }
-
-    pub fn selected_item(&self) -> Option<&ServerUrlItem> {
-        self.items.values().find(|item| item.selected)
-    }
-
-    pub fn selected_item_url(&self) -> Option<Url> {
-        self.selected_item().map(|item| item.url.clone())
-    }
 }

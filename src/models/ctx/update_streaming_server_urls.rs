@@ -30,10 +30,6 @@ pub fn update_streaming_server_urls<E: Env + 'static>(
                     server_urls.delete_item(id);
                     Effects::msg(Msg::Internal(Internal::StreamingServerUrlsBucketChanged))
                 }
-                ActionServerUrlsBucket::SelectServerUrl(id) => {
-                    server_urls.select_item(id);
-                    Effects::msg(Msg::Internal(Internal::StreamingServerUrlsBucketChanged))
-                }
             }
         }
         Msg::Internal(Internal::CtxAuthResult(auth_request, result)) => match (status, result) {
