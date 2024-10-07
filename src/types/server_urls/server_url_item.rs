@@ -14,10 +14,6 @@ pub struct ServerUrlItem {
 
 impl ServerUrlItem {
     pub fn new(id: usize, url: Url, mtime: i64) -> Self {
-        ServerUrlItem {
-            id,
-            url,
-            mtime,
-        }
+        ServerUrlItem { id, url, mtime }
     }
 }
