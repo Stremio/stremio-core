@@ -17,7 +17,6 @@ use crate::types::addon::ResourcePath;
 use crate::types::api::SuccessResponse;
 use crate::types::empty_string_as_null;
 use crate::types::profile::{AuthKey, Profile};
-use crate::types::server_urls::ServerUrlsBucket;
 use crate::types::streaming_server::{
     CreateMagnetRequest, CreateTorrentBlobRequest, DeviceInfo, GetHTTPSResponse, NetworkInfo,
     Settings, SettingsResponse, Statistics, StatisticsRequest, TorrentStatisticsRequest,
@@ -45,7 +44,6 @@ pub struct StreamingServer {
     pub selected: Selected,
     pub settings: Loadable<Settings, EnvError>,
     pub base_url: Option<Url>,
-    pub server_urls_bucket: ServerUrlsBucket,
     pub remote_url: Option<Url>,
     pub playback_devices: Loadable<Vec<PlaybackDevice>, EnvError>,
     pub network_info: Loadable<NetworkInfo, EnvError>,
@@ -71,7 +69,6 @@ impl StreamingServer {
                 },
                 settings: Loadable::Loading,
                 base_url: None,
-                server_urls_bucket: ServerUrlsBucket::new(profile.uid().to_owned()),
                 remote_url: None,
                 playback_devices: Loadable::Loading,
                 network_info: Loadable::Loading,
@@ -92,10 +89,6 @@ impl<E: Env + 'static> UpdateWithCtx<E> for StreamingServer {
                 let network_info_effects = eq_update(&mut self.network_info, Loadable::Loading);
                 let device_info_effects = eq_update(&mut self.device_info, Loadable::Loading);
                 let base_url_effects = eq_update(&mut self.base_url, None);
-                let server_urls_bucket_effects = eq_update(
-                    &mut self.server_urls_bucket,
-                    ServerUrlsBucket::new(ctx.profile.uid().to_owned()),
-                );
                 let remote_url_effects = eq_update(&mut self.remote_url, None);
                 Effects::many(vec![
                     get_settings::<E>(&self.selected.transport_url),
@@ -108,7 +101,6 @@ impl<E: Env + 'static> UpdateWithCtx<E> for StreamingServer {
                 .join(network_info_effects)
                 .join(device_info_effects)
                 .join(base_url_effects)
-                .join(server_urls_bucket_effects)
                 .join(remote_url_effects)
             }
             Msg::Action(Action::StreamingServer(ActionStreamingServer::UpdateSettings(
@@ -238,7 +230,6 @@ impl<E: Env + 'static> UpdateWithCtx<E> for StreamingServer {
                 self.network_info = Loadable::Loading;
                 self.device_info = Loadable::Loading;
                 self.base_url = None;
-                self.server_urls_bucket = ServerUrlsBucket::new(ctx.profile.uid().to_owned());
                 self.remote_url = None;
                 self.torrent = None;
                 self.statistics = None;
@@ -259,10 +250,6 @@ impl<E: Env + 'static> UpdateWithCtx<E> for StreamingServer {
                             Loadable::Ready(settings.values.to_owned()),
                         );
                         let base_url_effects = eq_update(&mut self.base_url, Some(url.to_owned()));
-                        let server_urls_bucket_effects = eq_update(
-                            &mut self.server_urls_bucket,
-                            ServerUrlsBucket::new(ctx.profile.uid().to_owned()),
-                        );
                         let remote_url_effects = update_remote_url::<E>(
                             &mut self.remote_url,
                             &self.selected,
@@ -271,15 +258,10 @@ impl<E: Env + 'static> UpdateWithCtx<E> for StreamingServer {
                         );
                         settings_effects
                             .join(base_url_effects)
-                            .join(server_urls_bucket_effects)
                             .join(remote_url_effects)
                     }
                     Err(error) => {
                         let base_url_effects = eq_update(&mut self.base_url, None);
-                        let server_urls_bucket_effects = eq_update(
-                            &mut self.server_urls_bucket,
-                            ServerUrlsBucket::new(ctx.profile.uid().to_owned()),
-                        );
                         let remote_url_effects = eq_update(&mut self.remote_url, None);
                         let playback_devices_effects =
                             eq_update(&mut self.playback_devices, Loadable::Err(error.to_owned()));
@@ -291,7 +273,6 @@ impl<E: Env + 'static> UpdateWithCtx<E> for StreamingServer {
                             eq_update(&mut self.settings, Loadable::Err(error.to_owned()));
                         let torrent_effects = eq_update(&mut self.torrent, None);
                         base_url_effects
-                            .join(server_urls_bucket_effects)
                             .join(remote_url_effects)
                             .join(playback_devices_effects)
                             .join(network_info_effects)
@@ -345,10 +326,6 @@ impl<E: Env + 'static> UpdateWithCtx<E> for StreamingServer {
                     Ok(_) => Effects::none().unchanged(),
                     Err(error) => {
                         let base_url_effects = eq_update(&mut self.base_url, None);
-                        let server_urls_bucket_effects = eq_update(
-                            &mut self.server_urls_bucket,
-                            ServerUrlsBucket::new(ctx.profile.uid().to_owned()),
-                        );
                         let remote_url_effects = eq_update(&mut self.remote_url, None);
                         let playback_devices_effects =
                             eq_update(&mut self.playback_devices, Loadable::Err(error.to_owned()));
@@ -360,7 +337,6 @@ impl<E: Env + 'static> UpdateWithCtx<E> for StreamingServer {
                             eq_update(&mut self.settings, Loadable::Err(error.to_owned()));
                         let torrent_effects = eq_update(&mut self.torrent, None);
                         base_url_effects
-                            .join(server_urls_bucket_effects)
                             .join(remote_url_effects)
                             .join(playback_devices_effects)
                             .join(network_info_effects)
