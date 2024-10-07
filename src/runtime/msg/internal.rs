@@ -108,8 +108,6 @@ pub enum Internal {
     StreamingServerSettingsResult(Url, Result<SettingsResponse, EnvError>),
     /// Result for loading streaming server base url.
     StreamingServerBaseURLResult(Url, Result<Url, EnvError>),
-    /// Result for loading streaming server urls bucket.
-    StreamingServerUrlsBucketResult(Result<Vec<Url>, EnvError>),
     // Result for loading streaming server playback devices.
     StreamingServerPlaybackDevicesResult(Url, Result<Vec<PlaybackDevice>, EnvError>),
     // Result for network info.
