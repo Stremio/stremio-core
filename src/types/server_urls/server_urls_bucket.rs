@@ -6,14 +6,17 @@ use crate::{
     types::profile::UID,
 };
 use serde::{Deserialize, Serialize};
+use serde_with::serde_as;
 use std::collections::HashMap;
 use url::Url;
 
+#[serde_as]
 #[derive(Debug, Clone, Serialize, Deserialize, Default, PartialEq)]
 pub struct ServerUrlsBucket {
     /// User ID
     pub uid: UID,
     /// [`HashMap`] Key is the [`ServerUrlItem`]`.id`.
+    #[serde_as(as = "Vec<(_, _)>")]
     pub items: HashMap<usize, ServerUrlItem>,
 }
 
