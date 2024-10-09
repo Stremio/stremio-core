@@ -16,7 +16,6 @@ mod model {
     use serde::Serialize;
 
     use stremio_core::deep_links::SearchHistoryItemDeepLinks;
-    use stremio_core::types::server_urls::ServerUrlsBucket;
     use stremio_core::types::{
         events::Events, notifications::NotificationItem, profile::Profile, resource::MetaItemId,
     };
@@ -31,7 +30,15 @@ mod model {
         pub notifications: Notifications<'a>,
         pub search_history: Vec<SearchHistoryItem<'a>>,
         pub events: &'a Events,
-        pub streaming_server_urls: &'a ServerUrlsBucket,
+        pub streaming_server_urls: Vec<StreamingServerUrlItem>,
+    }
+
+    #[derive(Serialize)]
+    #[serde(rename_all = "camelCase")]
+    pub struct StreamingServerUrlItem {
+        pub id: usize,
+        pub url: String,
+        pub mtime: i64,
     }
 
     #[derive(Serialize)]
@@ -77,7 +84,16 @@ mod model {
                     })
                     .collect(),
                 events: &ctx.events,
-                streaming_server_urls: &ctx.streaming_server_urls,
+                streaming_server_urls: ctx
+                    .streaming_server_urls
+                    .items
+                    .values()
+                    .map(|item| StreamingServerUrlItem {
+                        id: item.id,
+                        url: item.url.to_string(),
+                        mtime: item.mtime,
+                    })
+                    .collect(),
             }
         }
     }
