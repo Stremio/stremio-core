@@ -6,17 +6,14 @@ use crate::{
     types::profile::UID,
 };
 use serde::{Deserialize, Serialize};
-use serde_with::serde_as;
 use std::collections::HashMap;
 use url::Url;
 
-#[serde_as]
 #[derive(Debug, Clone, Serialize, Deserialize, Default, PartialEq)]
 pub struct ServerUrlsBucket {
     /// User ID
     pub uid: UID,
     /// [`HashMap`] Key is the [`ServerUrlItem`]`.id`.
-    #[serde_as(as = "Vec<(_, _)>")]
     pub items: HashMap<usize, ServerUrlItem>,
 }
 
@@ -43,12 +40,6 @@ impl ServerUrlsBucket {
 
     pub fn generate_new_id(&self) -> usize {
         self.items.keys().max().cloned().unwrap_or(0) + 1
-    }
-
-    pub fn merge_bucket(&mut self, bucket: ServerUrlsBucket) {
-        if self.uid == bucket.uid {
-            self.merge_items(bucket.items.into_values().collect());
-        }
     }
 
     pub fn add_url(&mut self, url: Url) {
