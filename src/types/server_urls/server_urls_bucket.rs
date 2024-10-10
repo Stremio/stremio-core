@@ -69,7 +69,7 @@ impl ServerUrlsBucket {
         if old_url != default_url && self.items.remove(old_url).is_some() {
             let new_mtime = Self::current_timestamp();
             self.items.insert(new_url, new_mtime);
-        }m
+        }
     }
 
     /// Delete a URL from the bucket.
