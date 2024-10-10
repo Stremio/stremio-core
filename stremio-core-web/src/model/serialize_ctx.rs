@@ -38,7 +38,8 @@ mod model {
     pub struct StreamingServerUrlItem {
         pub id: usize,
         pub url: String,
-        pub mtime: i64,
+        #[serde(rename = "_mtime")]
+        pub mtime: DateTime<Utc>,
     }
 
     #[derive(Serialize)]

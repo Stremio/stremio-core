@@ -5,6 +5,7 @@ use crate::{
     },
     types::profile::UID,
 };
+use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use url::Url;
@@ -26,7 +27,7 @@ impl ServerUrlsBucket {
         let server_base_url_item = ServerUrlItem {
             id: SERVER_URL_BUCKET_DEFAULT_ITEM_ID,
             url: base_url.clone(),
-            mtime: Self::current_timestamp() as i64,
+            mtime: Self::current_timestamp(),
         };
 
         items.insert(server_base_url_item.id, server_base_url_item);
@@ -34,8 +35,8 @@ impl ServerUrlsBucket {
         ServerUrlsBucket { uid, items }
     }
 
-    fn current_timestamp() -> u64 {
-        chrono::Utc::now().timestamp() as u64
+    fn current_timestamp() -> DateTime<Utc> {
+        chrono::Utc::now()
     }
 
     pub fn generate_new_id(&self) -> usize {
@@ -44,7 +45,7 @@ impl ServerUrlsBucket {
 
     pub fn add_url(&mut self, url: Url) {
         let new_id = self.generate_new_id();
-        let new_item = ServerUrlItem::new(new_id, url, Self::current_timestamp() as i64);
+        let new_item = ServerUrlItem::new(new_id, url, Self::current_timestamp());
         self.merge_items(vec![new_item]);
     }
 
@@ -80,7 +81,7 @@ impl ServerUrlsBucket {
     pub fn edit_item(&mut self, id: &usize, new_url: Url) {
         if let Some(item) = self.items.get_mut(id) {
             item.url = new_url;
-            item.mtime = Self::current_timestamp() as i64;
+            item.mtime = Self::current_timestamp();
         }
     }
 

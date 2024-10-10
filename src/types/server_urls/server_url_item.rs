@@ -1,3 +1,4 @@
+use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use url::Url;
 
@@ -8,12 +9,12 @@ pub struct ServerUrlItem {
     pub id: usize,
     /// URL
     pub url: Url,
-    /// Timestamp
-    pub mtime: i64,
+    /// Modification time
+    pub mtime: DateTime<Utc>,
 }
 
 impl ServerUrlItem {
-    pub fn new(id: usize, url: Url, mtime: i64) -> Self {
+    pub fn new(id: usize, url: Url, mtime: DateTime<Utc>) -> Self {
         ServerUrlItem { id, url, mtime }
     }
 }

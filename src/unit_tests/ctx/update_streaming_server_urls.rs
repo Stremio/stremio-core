@@ -71,8 +71,7 @@ fn test_edit_server_url() {
     let initial_url = Url::parse("http://localhost:11470").unwrap();
     let mut server_urls = ServerUrlsBucket::new(None);
     let item_id = 1;
-    let server_url_item =
-        ServerUrlItem::new(item_id, initial_url.clone(), TestEnv::now().timestamp());
+    let server_url_item = ServerUrlItem::new(item_id, initial_url.clone(), TestEnv::now());
     server_urls.items.insert(item_id, server_url_item);
 
     STORAGE.write().unwrap().insert(
@@ -139,8 +138,7 @@ fn test_delete_server_url() {
     let initial_url = Url::parse("http://localhost:11470").unwrap();
     let mut server_urls = ServerUrlsBucket::new(None);
     let item_id = 1;
-    let server_url_item =
-        ServerUrlItem::new(item_id, initial_url.clone(), TestEnv::now().timestamp());
+    let server_url_item = ServerUrlItem::new(item_id, initial_url.clone(), TestEnv::now());
     server_urls.items.insert(item_id, server_url_item);
 
     STORAGE.write().unwrap().insert(
