@@ -36,7 +36,6 @@ mod model {
     #[derive(Serialize)]
     #[serde(rename_all = "camelCase")]
     pub struct StreamingServerUrlItem {
-        pub id: usize,
         pub url: String,
         #[serde(rename = "_mtime")]
         pub mtime: DateTime<Utc>,
@@ -88,11 +87,10 @@ mod model {
                 streaming_server_urls: ctx
                     .streaming_server_urls
                     .items
-                    .values()
-                    .map(|item| StreamingServerUrlItem {
-                        id: item.id,
-                        url: item.url.to_string(),
-                        mtime: item.mtime,
+                    .iter()
+                    .map(|(url, mtime)| StreamingServerUrlItem {
+                        url: url.to_string(),
+                        mtime: *mtime,
                     })
                     .collect(),
             }

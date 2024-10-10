@@ -7,7 +7,7 @@ use crate::types::library::LibraryBucket;
 use crate::types::notifications::NotificationsBucket;
 use crate::types::profile::Profile;
 use crate::types::search_history::SearchHistoryBucket;
-use crate::types::server_urls::{ServerUrlItem, ServerUrlsBucket};
+use crate::types::server_urls::ServerUrlsBucket;
 use crate::types::streams::StreamsBucket;
 use crate::unit_tests::{TestEnv, STORAGE};
 use stremio_derive::Model;
@@ -42,7 +42,7 @@ fn test_add_server_url() {
     });
     let server_urls = &runtime.model().unwrap().ctx.streaming_server_urls;
     assert!(
-        server_urls.items.values().any(|item| item.url == new_url),
+        server_urls.items.contains_key(&new_url),
         "New server URL should be added"
     );
     assert!(
@@ -52,7 +52,7 @@ fn test_add_server_url() {
             .get(STREAMING_SERVER_URLS_STORAGE_KEY)
             .map_or(false, |data| {
                 let stored_bucket: ServerUrlsBucket = serde_json::from_str(data).unwrap();
-                stored_bucket.items.values().any(|item| item.url == new_url)
+                stored_bucket.items.contains_key(&new_url)
             }),
         "New server URL should be stored"
     );
@@ -70,9 +70,9 @@ fn test_edit_server_url() {
     // Initialize with a server URL
     let initial_url = Url::parse("http://localhost:11470").unwrap();
     let mut server_urls = ServerUrlsBucket::new(None);
-    let item_id = 1;
-    let server_url_item = ServerUrlItem::new(item_id, initial_url.clone(), TestEnv::now());
-    server_urls.items.insert(item_id, server_url_item);
+    server_urls
+        .items
+        .insert(initial_url.clone(), TestEnv::now());
 
     STORAGE.write().unwrap().insert(
         STREAMING_SERVER_URLS_STORAGE_KEY.to_owned(),
@@ -95,7 +95,7 @@ fn test_edit_server_url() {
             field: None,
             action: Action::StreamingServer(ActionStreamingServer::ServerUrlsBucket(
                 ActionServerUrlsBucket::EditServerUrl {
-                    id: item_id,
+                    old_url: initial_url.clone(),
                     new_url: new_url.clone(),
                 },
             )),
@@ -103,11 +103,12 @@ fn test_edit_server_url() {
     });
     let server_urls = &runtime.model().unwrap().ctx.streaming_server_urls;
     assert!(
-        server_urls
-            .items
-            .get(&item_id)
-            .map_or(false, |item| item.url == new_url),
-        "Server URL should be updated"
+        !server_urls.items.contains_key(&initial_url),
+        "Old server URL should be removed"
+    );
+    assert!(
+        server_urls.items.contains_key(&new_url),
+        "New server URL should be added"
     );
     assert!(
         STORAGE
@@ -116,10 +117,8 @@ fn test_edit_server_url() {
             .get(STREAMING_SERVER_URLS_STORAGE_KEY)
             .map_or(false, |data| {
                 let stored_bucket: ServerUrlsBucket = serde_json::from_str(data).unwrap();
-                stored_bucket
-                    .items
-                    .get(&item_id)
-                    .map_or(false, |item| item.url == new_url)
+                !stored_bucket.items.contains_key(&initial_url)
+                    && stored_bucket.items.contains_key(&new_url)
             }),
         "Updated server URL should be stored"
     );
@@ -137,9 +136,9 @@ fn test_delete_server_url() {
     // Initialize with a server URL
     let initial_url = Url::parse("http://localhost:11470").unwrap();
     let mut server_urls = ServerUrlsBucket::new(None);
-    let item_id = 1;
-    let server_url_item = ServerUrlItem::new(item_id, initial_url.clone(), TestEnv::now());
-    server_urls.items.insert(item_id, server_url_item);
+    server_urls
+        .items
+        .insert(initial_url.clone(), TestEnv::now());
 
     STORAGE.write().unwrap().insert(
         STREAMING_SERVER_URLS_STORAGE_KEY.to_owned(),
@@ -160,13 +159,13 @@ fn test_delete_server_url() {
         runtime.dispatch(RuntimeAction {
             field: None,
             action: Action::StreamingServer(ActionStreamingServer::ServerUrlsBucket(
-                ActionServerUrlsBucket::DeleteServerUrl(item_id),
+                ActionServerUrlsBucket::DeleteServerUrl(initial_url.clone()),
             )),
         })
     });
     let server_urls = &runtime.model().unwrap().ctx.streaming_server_urls;
     assert!(
-        !server_urls.items.contains_key(&item_id),
+        !server_urls.items.contains_key(&initial_url),
         "Server URL should be deleted"
     );
     assert!(
@@ -176,7 +175,7 @@ fn test_delete_server_url() {
             .get(STREAMING_SERVER_URLS_STORAGE_KEY)
             .map_or(true, |data| {
                 let stored_bucket: ServerUrlsBucket = serde_json::from_str(data).unwrap();
-                !stored_bucket.items.contains_key(&item_id)
+                !stored_bucket.items.contains_key(&initial_url)
             }),
         "Deleted server URL should not be stored"
     );

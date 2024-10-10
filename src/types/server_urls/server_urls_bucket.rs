@@ -1,8 +1,5 @@
-use super::ServerUrlItem;
 use crate::{
-    constants::{
-        SERVER_URL_BUCKET_DEFAULT_ITEM_ID, SERVER_URL_BUCKET_MAX_ITEMS, STREAMING_SERVER_URL,
-    },
+    constants::{SERVER_URL_BUCKET_MAX_ITEMS, STREAMING_SERVER_URL},
     types::profile::UID,
 };
 use chrono::{DateTime, Utc};
@@ -14,23 +11,17 @@ use url::Url;
 pub struct ServerUrlsBucket {
     /// User ID
     pub uid: UID,
-    /// [`HashMap`] Key is the [`ServerUrlItem`]`.id`.
-    pub items: HashMap<usize, ServerUrlItem>,
+    /// HashMap where key is `Url`, value is `DateTime<Utc>`
+    pub items: HashMap<Url, DateTime<Utc>>,
 }
 
 impl ServerUrlsBucket {
-    /// Create a new [`ServerUrlsBucket`] with the base URL inserted.
+    /// Create a new `ServerUrlsBucket` with the base URL inserted.
     pub fn new(uid: UID) -> Self {
         let mut items = HashMap::new();
         let base_url: &Url = &STREAMING_SERVER_URL;
-
-        let server_base_url_item = ServerUrlItem {
-            id: SERVER_URL_BUCKET_DEFAULT_ITEM_ID,
-            url: base_url.clone(),
-            mtime: Self::current_timestamp(),
-        };
-
-        items.insert(server_base_url_item.id, server_base_url_item);
+        let mtime = Self::current_timestamp();
+        items.insert(base_url.clone(), mtime);
 
         ServerUrlsBucket { uid, items }
     }
@@ -39,55 +30,53 @@ impl ServerUrlsBucket {
         chrono::Utc::now()
     }
 
-    pub fn generate_new_id(&self) -> usize {
-        self.items.keys().max().cloned().unwrap_or(0) + 1
-    }
-
+    /// Add a new URL to the bucket.
     pub fn add_url(&mut self, url: Url) {
-        let new_id = self.generate_new_id();
-        let new_item = ServerUrlItem::new(new_id, url, Self::current_timestamp());
-        self.merge_items(vec![new_item]);
+        let mtime = Self::current_timestamp();
+        self.merge_items(vec![(url, mtime)]);
     }
 
-    pub fn merge_items(&mut self, items: Vec<ServerUrlItem>) {
-        for new_item in items.into_iter() {
-            match self.items.get_mut(&new_item.id) {
-                Some(item) => {
-                    *item = new_item;
-                }
-                None => {
-                    if self.items.len() < SERVER_URL_BUCKET_MAX_ITEMS {
-                        self.items.insert(new_item.id.to_owned(), new_item);
-                    } else {
-                        let oldest_item_id_option = self
-                            .items
-                            .values()
-                            .filter(|item| item.id != SERVER_URL_BUCKET_DEFAULT_ITEM_ID)
-                            .min_by_key(|item| item.mtime)
-                            .map(|item| item.id);
+    /// Merge multiple URL items into the bucket.
+    pub fn merge_items(&mut self, items: Vec<(Url, DateTime<Utc>)>) {
+        for (url, mtime) in items.into_iter() {
+            if let Some(existing_mtime) = self.items.get_mut(&url) {
+                *existing_mtime = mtime;
+            } else if self.items.len() < SERVER_URL_BUCKET_MAX_ITEMS {
+                self.items.insert(url.clone(), mtime);
+            } else {
+                let default_url: &Url = &STREAMING_SERVER_URL;
 
-                        if let Some(oldest_item_id) = oldest_item_id_option {
-                            if new_item.mtime > self.items[&oldest_item_id].mtime {
-                                self.items.remove(&oldest_item_id);
-                                self.items.insert(new_item.id.to_owned(), new_item);
-                            }
-                        }
+                let oldest_item_option = self
+                    .items
+                    .iter()
+                    .filter(|(item_url, _)| *item_url != default_url)
+                    .min_by_key(|(_, &item_mtime)| item_mtime)
+                    .map(|(item_url, _)| item_url.clone());
+
+                if let Some(oldest_url) = oldest_item_option {
+                    if mtime > *self.items.get(&oldest_url).unwrap() {
+                        self.items.remove(&oldest_url);
+                        self.items.insert(url.clone(), mtime);
                     }
                 }
             }
         }
     }
 
-    pub fn edit_item(&mut self, id: &usize, new_url: Url) {
-        if let Some(item) = self.items.get_mut(id) {
-            item.url = new_url;
-            item.mtime = Self::current_timestamp();
-        }
+    /// Edit an existing URL in the bucket.
+    pub fn edit_url(&mut self, old_url: &Url, new_url: Url) {
+        let default_url: &Url = &STREAMING_SERVER_URL;
+        if old_url != default_url && self.items.remove(old_url).is_some() {
+            let new_mtime = Self::current_timestamp();
+            self.items.insert(new_url, new_mtime);
+        }m
     }
 
-    pub fn delete_item(&mut self, id: &usize) {
-        if *id != SERVER_URL_BUCKET_DEFAULT_ITEM_ID {
-            self.items.remove(id);
+    /// Delete a URL from the bucket.
+    pub fn delete_url(&mut self, url: &Url) {
+        let default_url: &Url = &STREAMING_SERVER_URL;
+        if url != default_url {
+            self.items.remove(url);
         }
     }
 }

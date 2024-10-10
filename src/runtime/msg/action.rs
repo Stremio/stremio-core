@@ -131,8 +131,8 @@ pub struct PlayOnDeviceArgs {
 #[serde(tag = "action", content = "args")]
 pub enum ActionServerUrlsBucket {
     AddServerUrl(Url),
-    EditServerUrl { id: usize, new_url: Url },
-    DeleteServerUrl(usize),
+    EditServerUrl { old_url: Url, new_url: Url },
+    DeleteServerUrl(Url),
 }
 
 #[derive(Clone, Deserialize, Debug)]
