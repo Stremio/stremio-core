@@ -2,7 +2,7 @@ use crate::addon_transport::{AddonHTTPTransport, AddonTransport, UnsupportedTran
 use crate::constants::{
     DISMISSED_EVENTS_STORAGE_KEY, LIBRARY_RECENT_STORAGE_KEY, LIBRARY_STORAGE_KEY,
     PROFILE_STORAGE_KEY, SCHEMA_VERSION, SCHEMA_VERSION_STORAGE_KEY, SEARCH_HISTORY_STORAGE_KEY,
-    STREAMS_STORAGE_KEY,
+    STREAMING_SERVER_URLS_STORAGE_KEY, STREAMS_STORAGE_KEY,
 };
 use crate::models::ctx::Ctx;
 use crate::models::streaming_server::StreamingServer;
@@ -264,6 +264,12 @@ pub trait Env {
                         .map_err(|error| EnvError::StorageSchemaVersionUpgrade(Box::new(error)))
                         .await?;
                     schema_version = 14;
+                }
+                if schema_version == 14 {
+                    migrate_storage_schema_to_v15::<Self>()
+                        .map_err(|error| EnvError::StorageSchemaVersionUpgrade(Box::new(error)))
+                        .await?;
+                    schema_version = 15;
                 }
                 if schema_version != SCHEMA_VERSION {
                     panic!(
@@ -594,6 +600,12 @@ fn migrate_storage_schema_to_v14<E: Env>() -> TryEnvFuture<()> {
         .boxed_env()
 }
 
+fn migrate_storage_schema_to_v15<E: Env>() -> TryEnvFuture<()> {
+    E::set_storage::<()>(STREAMING_SERVER_URLS_STORAGE_KEY, None)
+        .and_then(|_| E::set_storage(SCHEMA_VERSION_STORAGE_KEY, Some(&15)))
+        .boxed_env()
+}
+
 #[cfg(test)]
 mod test {
     use serde_json::{json, Value};
@@ -606,9 +618,9 @@ mod test {
             env::{
                 migrate_storage_schema_to_v10, migrate_storage_schema_to_v11,
                 migrate_storage_schema_to_v12, migrate_storage_schema_to_v13,
-                migrate_storage_schema_to_v14, migrate_storage_schema_to_v6,
-                migrate_storage_schema_to_v7, migrate_storage_schema_to_v8,
-                migrate_storage_schema_to_v9,
+                migrate_storage_schema_to_v14, migrate_storage_schema_to_v15,
+                migrate_storage_schema_to_v6, migrate_storage_schema_to_v7,
+                migrate_storage_schema_to_v8, migrate_storage_schema_to_v9,
             },
             Env,
         },
@@ -1124,5 +1136,18 @@ mod test {
                 .expect("Should have the profile set"),
             "Profile should match"
         );
+    }
+
+    #[tokio::test]
+    async fn test_migration_from_14_to_15() {
+        let _test_env_guard = TestEnv::reset().expect("Should lock TestEnv");
+
+        migrate_storage_schema_to_v15::<TestEnv>()
+            .await
+            .expect("Should migrate");
+
+        {
+            assert_storage_schema_version(15);
+        }
     }
 }

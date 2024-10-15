@@ -30,6 +30,15 @@ mod model {
         pub notifications: Notifications<'a>,
         pub search_history: Vec<SearchHistoryItem<'a>>,
         pub events: &'a Events,
+        pub streaming_server_urls: Vec<StreamingServerUrlItem>,
+    }
+
+    #[derive(Serialize)]
+    #[serde(rename_all = "camelCase")]
+    pub struct StreamingServerUrlItem {
+        pub url: String,
+        #[serde(rename = "_mtime")]
+        pub mtime: DateTime<Utc>,
     }
 
     #[derive(Serialize)]
@@ -75,6 +84,15 @@ mod model {
                     })
                     .collect(),
                 events: &ctx.events,
+                streaming_server_urls: ctx
+                    .streaming_server_urls
+                    .items
+                    .iter()
+                    .map(|(url, mtime)| StreamingServerUrlItem {
+                        url: url.to_string(),
+                        mtime: *mtime,
+                    })
+                    .collect(),
             }
         }
     }

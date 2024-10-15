@@ -249,8 +249,7 @@ impl<E: Env + 'static> UpdateWithCtx<E> for StreamingServer {
                             &mut self.settings,
                             Loadable::Ready(settings.values.to_owned()),
                         );
-                        let base_url_effects =
-                            eq_update(&mut self.base_url, Some(settings.base_url.to_owned()));
+                        let base_url_effects = eq_update(&mut self.base_url, Some(url.to_owned()));
                         let remote_url_effects = update_remote_url::<E>(
                             &mut self.remote_url,
                             &self.selected,
