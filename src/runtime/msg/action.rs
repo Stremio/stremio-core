@@ -131,7 +131,6 @@ pub struct PlayOnDeviceArgs {
 #[serde(tag = "action", content = "args")]
 pub enum ActionServerUrlsBucket {
     AddServerUrl(Url),
-    EditServerUrl { old_url: Url, new_url: Url },
     DeleteServerUrl(Url),
 }
 

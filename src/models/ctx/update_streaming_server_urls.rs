@@ -22,10 +22,6 @@ pub fn update_streaming_server_urls<E: Env + 'static>(
                     streaming_server_urls.add_url(url.clone());
                     Effects::msg(Msg::Internal(Internal::StreamingServerUrlsBucketChanged))
                 }
-                ActionServerUrlsBucket::EditServerUrl { old_url, new_url } => {
-                    streaming_server_urls.edit_url(old_url, new_url.clone());
-                    Effects::msg(Msg::Internal(Internal::StreamingServerUrlsBucketChanged))
-                }
                 ActionServerUrlsBucket::DeleteServerUrl(url) => {
                     streaming_server_urls.delete_url(url);
                     Effects::msg(Msg::Internal(Internal::StreamingServerUrlsBucketChanged))

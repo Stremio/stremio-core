@@ -63,15 +63,6 @@ impl ServerUrlsBucket {
         }
     }
 
-    /// Edit an existing URL in the bucket.
-    pub fn edit_url(&mut self, old_url: &Url, new_url: Url) {
-        let default_url: &Url = &STREAMING_SERVER_URL;
-        if old_url != default_url && self.items.remove(old_url).is_some() {
-            let new_mtime = Self::current_timestamp();
-            self.items.insert(new_url, new_mtime);
-        }
-    }
-
     /// Delete a URL from the bucket.
     pub fn delete_url(&mut self, url: &Url) {
         let default_url: &Url = &STREAMING_SERVER_URL;
