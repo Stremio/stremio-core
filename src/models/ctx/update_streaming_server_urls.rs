@@ -1,8 +1,8 @@
 use crate::constants::STREAMING_SERVER_URLS_STORAGE_KEY;
-use crate::runtime::msg::{Action, ActionStreamingServer, CtxAuthResponse};
+use crate::runtime::msg::{Action, ActionCtx, CtxAuthResponse};
 use crate::runtime::EnvFutureExt;
 use crate::runtime::{
-    msg::{ActionServerUrlsBucket, Event, Internal, Msg},
+    msg::{Event, Internal, Msg},
     Effect, EffectFuture, Effects, Env,
 };
 use crate::types::server_urls::ServerUrlsBucket;
@@ -16,17 +16,13 @@ pub fn update_streaming_server_urls<E: Env + 'static>(
     msg: &Msg,
 ) -> Effects {
     match msg {
-        Msg::Action(Action::StreamingServer(ActionStreamingServer::ServerUrlsBucket(action))) => {
-            match action {
-                ActionServerUrlsBucket::AddServerUrl(url) => {
-                    streaming_server_urls.add_url(url.clone());
-                    Effects::msg(Msg::Internal(Internal::StreamingServerUrlsBucketChanged))
-                }
-                ActionServerUrlsBucket::DeleteServerUrl(url) => {
-                    streaming_server_urls.delete_url(url);
-                    Effects::msg(Msg::Internal(Internal::StreamingServerUrlsBucketChanged))
-                }
-            }
+        Msg::Action(Action::Ctx(ActionCtx::AddServerUrl(url))) => {
+            streaming_server_urls.add_url(url.clone());
+            Effects::msg(Msg::Internal(Internal::StreamingServerUrlsBucketChanged))
+        }
+        Msg::Action(Action::Ctx(ActionCtx::DeleteServerUrl(url))) => {
+            streaming_server_urls.delete_url(url);
+            Effects::msg(Msg::Internal(Internal::StreamingServerUrlsBucketChanged))
         }
         Msg::Internal(Internal::CtxAuthResult(auth_request, result)) => match (status, result) {
             (CtxStatus::Loading(loading_auth_request), Ok(CtxAuthResponse { auth, .. }))

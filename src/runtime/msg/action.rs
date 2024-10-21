@@ -68,6 +68,10 @@ pub enum ActionCtx {
     GetEvents,
     /// Dismiss an event by id, either a Modal or Notification
     DismissEvent(String),
+    /// Add a server URL to the list of available streaming servers
+    AddServerUrl(Url),
+    /// Delete a server URL from the list of available streaming servers
+    DeleteServerUrl(Url),
 }
 
 #[derive(Clone, Deserialize, Debug)]
@@ -129,20 +133,12 @@ pub struct PlayOnDeviceArgs {
 
 #[derive(Clone, Deserialize, Debug)]
 #[serde(tag = "action", content = "args")]
-pub enum ActionServerUrlsBucket {
-    AddServerUrl(Url),
-    DeleteServerUrl(Url),
-}
-
-#[derive(Clone, Deserialize, Debug)]
-#[serde(tag = "action", content = "args")]
 pub enum ActionStreamingServer {
     Reload,
     UpdateSettings(StreamingServerSettings),
     CreateTorrent(CreateTorrentArgs),
     GetStatistics(StreamingServerStatisticsRequest),
     PlayOnDevice(PlayOnDeviceArgs),
-    ServerUrlsBucket(ActionServerUrlsBucket),
 }
 
 #[derive(Clone, Deserialize, Debug)]

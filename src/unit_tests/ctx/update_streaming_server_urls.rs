@@ -1,6 +1,6 @@
 use crate::constants::STREAMING_SERVER_URLS_STORAGE_KEY;
 use crate::models::ctx::Ctx;
-use crate::runtime::msg::{Action, ActionServerUrlsBucket, ActionStreamingServer};
+use crate::runtime::msg::{Action, ActionCtx};
 use crate::runtime::{Env, Runtime, RuntimeAction};
 use crate::types::events::DismissedEventsBucket;
 use crate::types::library::LibraryBucket;
@@ -35,9 +35,7 @@ fn test_add_server_url() {
     TestEnv::run(|| {
         runtime.dispatch(RuntimeAction {
             field: None,
-            action: Action::StreamingServer(ActionStreamingServer::ServerUrlsBucket(
-                ActionServerUrlsBucket::AddServerUrl(new_url.clone()),
-            )),
+            action: Action::Ctx(ActionCtx::AddServerUrl(new_url.clone())),
         })
     });
     let server_urls = &runtime.model().unwrap().ctx.streaming_server_urls;
@@ -91,9 +89,7 @@ fn test_delete_server_url() {
     TestEnv::run(|| {
         runtime.dispatch(RuntimeAction {
             field: None,
-            action: Action::StreamingServer(ActionStreamingServer::ServerUrlsBucket(
-                ActionServerUrlsBucket::DeleteServerUrl(initial_url.clone()),
-            )),
+            action: Action::Ctx(ActionCtx::DeleteServerUrl(initial_url.clone())),
         })
     });
     let server_urls = &runtime.model().unwrap().ctx.streaming_server_urls;
