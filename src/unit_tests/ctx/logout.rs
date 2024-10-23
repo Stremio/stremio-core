@@ -88,7 +88,7 @@ fn actionctx_logout() {
                 profile,
                 library,
                 StreamsBucket::default(),
-                ServerUrlsBucket::new(None),
+                ServerUrlsBucket::new::<TestEnv>(None),
                 NotificationsBucket::new::<TestEnv>(None, vec![]),
                 SearchHistoryBucket::default(),
                 DismissedEventsBucket::default(),

@@ -62,7 +62,7 @@ fn create_link_code() {
             Profile::default(),
             LibraryBucket::default(),
             StreamsBucket::default(),
-            ServerUrlsBucket::new(None),
+            ServerUrlsBucket::new::<TestEnv>(None),
             NotificationsBucket::new::<TestEnv>(None, vec![]),
             SearchHistoryBucket::default(),
             DismissedEventsBucket::default(),

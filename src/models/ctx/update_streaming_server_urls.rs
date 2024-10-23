@@ -17,7 +17,7 @@ pub fn update_streaming_server_urls<E: Env + 'static>(
 ) -> Effects {
     match msg {
         Msg::Action(Action::Ctx(ActionCtx::AddServerUrl(url))) => {
-            streaming_server_urls.add_url(url.clone());
+            streaming_server_urls.add_url::<E>(url.clone());
             Effects::msg(Msg::Internal(Internal::StreamingServerUrlsBucketChanged))
         }
         Msg::Action(Action::Ctx(ActionCtx::DeleteServerUrl(url))) => {
@@ -28,7 +28,7 @@ pub fn update_streaming_server_urls<E: Env + 'static>(
             (CtxStatus::Loading(loading_auth_request), Ok(CtxAuthResponse { auth, .. }))
                 if loading_auth_request == auth_request =>
             {
-                let next_server_urls = ServerUrlsBucket::new(Some(auth.user.id.to_owned()));
+                let next_server_urls = ServerUrlsBucket::new::<E>(Some(auth.user.id.to_owned()));
                 *streaming_server_urls = next_server_urls;
                 Effects::msg(Msg::Internal(Internal::StreamingServerUrlsBucketChanged))
             }

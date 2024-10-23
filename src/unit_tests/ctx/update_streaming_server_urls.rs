@@ -25,7 +25,7 @@ fn test_add_server_url() {
         Profile::default(),
         LibraryBucket::default(),
         StreamsBucket::default(),
-        ServerUrlsBucket::new(None),
+        ServerUrlsBucket::new::<TestEnv>(None),
         NotificationsBucket::new::<TestEnv>(None, vec![]),
         SearchHistoryBucket::default(),
         DismissedEventsBucket::default(),
@@ -66,7 +66,7 @@ fn test_delete_server_url() {
 
     // Initialize with a server URL
     let initial_url = Url::parse("http://localhost:11470").unwrap();
-    let mut server_urls = ServerUrlsBucket::new(None);
+    let mut server_urls = ServerUrlsBucket::new::<TestEnv>(None);
     server_urls
         .items
         .insert(initial_url.clone(), TestEnv::now());

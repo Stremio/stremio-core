@@ -1,5 +1,6 @@
 use crate::{
     constants::{SERVER_URL_BUCKET_MAX_ITEMS, STREAMING_SERVER_URL},
+    runtime::Env,
     types::profile::UID,
 };
 use chrono::{DateTime, Utc};
@@ -17,22 +18,18 @@ pub struct ServerUrlsBucket {
 
 impl ServerUrlsBucket {
     /// Create a new `ServerUrlsBucket` with the base URL inserted.
-    pub fn new(uid: UID) -> Self {
+    pub fn new<E: Env + 'static>(uid: UID) -> Self {
         let mut items = HashMap::new();
         let base_url: &Url = &STREAMING_SERVER_URL;
-        let mtime = Self::current_timestamp();
+        let mtime = E::now();
         items.insert(base_url.clone(), mtime);
 
         ServerUrlsBucket { uid, items }
     }
 
-    fn current_timestamp() -> DateTime<Utc> {
-        chrono::Utc::now()
-    }
-
     /// Add a new URL to the bucket.
-    pub fn add_url(&mut self, url: Url) {
-        let mtime = Self::current_timestamp();
+    pub fn add_url<E: Env + 'static>(&mut self, url: Url) {
+        let mtime = E::now();
         self.merge_items(vec![(url, mtime)]);
     }
 

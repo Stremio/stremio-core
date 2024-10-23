@@ -107,7 +107,7 @@ fn actionctx_addtolibrary() {
                     ..Default::default()
                 },
                 StreamsBucket::default(),
-                ServerUrlsBucket::new(None),
+                ServerUrlsBucket::new::<TestEnv>(None),
                 NotificationsBucket::new::<TestEnv>(None, vec![]),
                 SearchHistoryBucket::default(),
                 DismissedEventsBucket::default(),
@@ -245,7 +245,7 @@ fn actionctx_addtolibrary_already_added() {
                     .collect(),
                 },
                 StreamsBucket::default(),
-                ServerUrlsBucket::new(None),
+                ServerUrlsBucket::new::<TestEnv>(None),
                 NotificationsBucket::new::<TestEnv>(None, vec![]),
                 SearchHistoryBucket::default(),
                 DismissedEventsBucket::default(),

@@ -95,7 +95,8 @@ pub async fn initialize_runtime(emit_to_ui: js_sys::Function) -> Result<(), JsVa
                     let streams_bucket =
                         streams_bucket.unwrap_or_else(|| StreamsBucket::new(profile.uid()));
                     let server_urls_bucket =
-                        server_urls_bucket.unwrap_or(ServerUrlsBucket::new(profile.uid()));
+                        server_urls_bucket
+                            .unwrap_or(ServerUrlsBucket::new::<WebEnv>(profile.uid()));
                     let notifications_bucket = notifications_bucket
                         .unwrap_or(NotificationsBucket::new::<WebEnv>(profile.uid(), vec![]));
                     let search_history_bucket =

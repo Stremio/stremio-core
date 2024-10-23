@@ -240,7 +240,7 @@ fn test_pull_notifications_and_play_in_player() {
                     }],
                 ),
                 StreamsBucket::default(),
-                ServerUrlsBucket::new(None),
+                ServerUrlsBucket::new::<TestEnv>(None),
                 NotificationsBucket::new::<TestEnv>(None, vec![]),
                 SearchHistoryBucket::default(),
                 DismissedEventsBucket::default(),
@@ -390,7 +390,7 @@ fn test_pull_notifications_test_cases() {
                     },
                     LibraryBucket::new(None, test.library_items),
                     StreamsBucket::default(),
-                    ServerUrlsBucket::new(None),
+                    ServerUrlsBucket::new::<TestEnv>(None),
                     NotificationsBucket::new::<TestEnv>(None, test.notification_items),
                     SearchHistoryBucket::default(),
                     DismissedEventsBucket::default(),
@@ -488,7 +488,7 @@ fn test_dismiss_notification() {
                     ],
                 ),
                 StreamsBucket::default(),
-                ServerUrlsBucket::new(None),
+                ServerUrlsBucket::new::<TestEnv>(None),
                 NotificationsBucket::new::<TestEnv>(
                     None,
                     vec![
