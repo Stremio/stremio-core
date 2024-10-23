@@ -23,6 +23,12 @@ impl ServerUrlsBucket {
         ServerUrlsBucket { uid, items }
     }
 
+    /// Add a URL to the bucket.
+    pub fn add_url<E: Env + 'static >(&mut self, url: Url) {
+        let mtime = E::now();
+        self.items.insert(url, mtime);
+    }
+
     /// Delete a URL from the bucket.
     pub fn delete_url(&mut self, url: &Url) {
         let default_url: &Url = &STREAMING_SERVER_URL;
