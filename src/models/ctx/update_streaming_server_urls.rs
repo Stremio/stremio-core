@@ -17,7 +17,7 @@ pub fn update_streaming_server_urls<E: Env + 'static>(
 ) -> Effects {
     match msg {
         Msg::Action(Action::Ctx(ActionCtx::AddServerUrl(url))) => {
-            streaming_server_urls.add_url::<E>(url.clone());
+            streaming_server_urls.items.insert(url.clone(), E::now());
             Effects::msg(Msg::Internal(Internal::StreamingServerUrlsBucketChanged))
         }
         Msg::Action(Action::Ctx(ActionCtx::DeleteServerUrl(url))) => {
