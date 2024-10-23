@@ -24,7 +24,7 @@ impl ServerUrlsBucket {
     }
 
     /// Add a URL to the bucket.
-    pub fn add_url<E: Env + 'static >(&mut self, url: Url) {
+    pub fn add_url<E: Env + 'static>(&mut self, url: Url) {
         let mtime = E::now();
         self.items.insert(url, mtime);
     }
