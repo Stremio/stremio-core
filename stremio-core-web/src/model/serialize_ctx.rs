@@ -92,6 +92,7 @@ mod model {
                         url: url.clone(),
                         mtime: *mtime,
                     })
+                    .sorted_by(|a, b| Ord::cmp(&a.mtime, &b.mtime))
                     .collect(),
             }
         }
