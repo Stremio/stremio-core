@@ -19,6 +19,7 @@ mod model {
     use stremio_core::types::{
         events::Events, notifications::NotificationItem, profile::Profile, resource::MetaItemId,
     };
+    use url::Url;
 
     use crate::model::deep_links_ext::DeepLinksExt;
 
@@ -36,8 +37,7 @@ mod model {
     #[derive(Serialize)]
     #[serde(rename_all = "camelCase")]
     pub struct StreamingServerUrlItem {
-        pub url: String,
-        #[serde(rename = "_mtime")]
+        pub url: Url,
         pub mtime: DateTime<Utc>,
     }
 
@@ -89,7 +89,7 @@ mod model {
                     .items
                     .iter()
                     .map(|(url, mtime)| StreamingServerUrlItem {
-                        url: url.to_string(),
+                        url: url.clone(),
                         mtime: *mtime,
                     })
                     .collect(),
