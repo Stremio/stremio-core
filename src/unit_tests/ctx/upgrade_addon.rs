@@ -8,6 +8,7 @@ use crate::types::library::LibraryBucket;
 use crate::types::notifications::NotificationsBucket;
 use crate::types::profile::Profile;
 use crate::types::search_history::SearchHistoryBucket;
+use crate::types::server_urls::ServerUrlsBucket;
 use crate::types::streams::StreamsBucket;
 use crate::unit_tests::{TestEnv, REQUESTS, STORAGE};
 use semver::Version;
@@ -88,6 +89,7 @@ fn actionctx_addon_upgrade() {
                 },
                 LibraryBucket::default(),
                 StreamsBucket::default(),
+                ServerUrlsBucket::new::<TestEnv>(None),
                 NotificationsBucket::new::<TestEnv>(None, vec![]),
                 SearchHistoryBucket::default(),
                 DismissedEventsBucket::default(),
@@ -180,6 +182,7 @@ fn actionctx_addon_upgrade_fail_due_to_different_url() {
                 },
                 LibraryBucket::default(),
                 StreamsBucket::default(),
+                ServerUrlsBucket::new::<TestEnv>(None),
                 NotificationsBucket::new::<TestEnv>(None, vec![]),
                 SearchHistoryBucket::default(),
                 DismissedEventsBucket::default(),

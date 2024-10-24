@@ -1,6 +1,7 @@
 use crate::types::events::DismissedEventsBucket;
 use crate::types::notifications::NotificationsBucket;
 use crate::types::search_history::SearchHistoryBucket;
+use crate::types::server_urls::ServerUrlsBucket;
 use crate::types::streams::StreamsBucket;
 use crate::{
     constants::{LIBRARY_RECENT_STORAGE_KEY, LIBRARY_STORAGE_KEY, PROFILE_STORAGE_KEY},
@@ -107,6 +108,7 @@ fn actionctx_authenticate_login() {
         Profile::default(),
         LibraryBucket::default(),
         StreamsBucket::default(),
+        ServerUrlsBucket::new::<TestEnv>(None),
         NotificationsBucket::new::<TestEnv>(None, vec![]),
         SearchHistoryBucket::default(),
         DismissedEventsBucket::default(),
@@ -248,6 +250,7 @@ fn actionctx_authenticate_login_with_token() {
         Profile::default(),
         LibraryBucket::default(),
         StreamsBucket::default(),
+        ServerUrlsBucket::new::<TestEnv>(None),
         NotificationsBucket::new::<TestEnv>(None, vec![]),
         SearchHistoryBucket::default(),
         DismissedEventsBucket::default(),
@@ -388,6 +391,7 @@ fn actionctx_authenticate_facebook() {
         Profile::default(),
         LibraryBucket::default(),
         StreamsBucket::default(),
+        ServerUrlsBucket::new::<TestEnv>(None),
         NotificationsBucket::new::<TestEnv>(None, vec![]),
         SearchHistoryBucket::default(),
         DismissedEventsBucket::default(),
@@ -528,6 +532,7 @@ fn actionctx_authenticate_register() {
         Profile::default(),
         LibraryBucket::default(),
         StreamsBucket::default(),
+        ServerUrlsBucket::new::<TestEnv>(None),
         NotificationsBucket::new::<TestEnv>(None, vec![]),
         SearchHistoryBucket::default(),
         DismissedEventsBucket::default(),

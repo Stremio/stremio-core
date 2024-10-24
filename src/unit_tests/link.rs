@@ -9,6 +9,7 @@ use crate::types::library::LibraryBucket;
 use crate::types::notifications::NotificationsBucket;
 use crate::types::profile::Profile;
 use crate::types::search_history::SearchHistoryBucket;
+use crate::types::server_urls::ServerUrlsBucket;
 use crate::types::streams::StreamsBucket;
 use crate::unit_tests::{default_fetch_handler, Request, TestEnv, FETCH_HANDLER, REQUESTS};
 use futures::future;
@@ -61,6 +62,7 @@ fn create_link_code() {
             Profile::default(),
             LibraryBucket::default(),
             StreamsBucket::default(),
+            ServerUrlsBucket::new::<TestEnv>(None),
             NotificationsBucket::new::<TestEnv>(None, vec![]),
             SearchHistoryBucket::default(),
             DismissedEventsBucket::default(),
