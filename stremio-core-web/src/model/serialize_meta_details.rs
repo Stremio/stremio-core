@@ -1,12 +1,13 @@
-use crate::{env::WebEnv, model::deep_links_ext::DeepLinksExt};
+use std::iter;
+
+use crate::model::deep_links_ext::DeepLinksExt;
 
 use either::Either;
-use gloo_utils::format::JsValueSerdeExt;
 use itertools::Itertools;
 use serde::Serialize;
-use std::iter;
 use url::Url;
-use wasm_bindgen::JsValue;
+#[cfg(feature = "wasm")]
+use {gloo_utils::format::JsValueSerdeExt, stremio_core::runtime::Env, wasm_bindgen::JsValue};
 
 use stremio_core::{
     constants::META_RESOURCE_NAME,
@@ -17,7 +18,6 @@ use stremio_core::{
         meta_details::{MetaDetails, Selected as MetaDetailsSelected},
         streaming_server::StreamingServer,
     },
-    runtime::Env,
     types::library::LibraryItem,
 };
 
@@ -98,7 +98,8 @@ mod model {
 /// 1. If at least 1 item is ready we show the first ready item's data
 /// 2. If all loaded resources have returned an error we show the first item's error
 /// 3. We show a loading state
-pub fn serialize_meta_details(
+#[cfg(feature = "wasm")]
+pub fn serialize_meta_details<E: Env + 'static>(
     meta_details: &MetaDetails,
     ctx: &Ctx,
     streaming_server: &StreamingServer,
@@ -150,7 +151,7 @@ pub fn serialize_meta_details(
                             .map(|video| model::Video {
                                 video,
                                 upcoming: meta_item.preview.behavior_hints.has_scheduled_videos
-                                    && video.released > Some(WebEnv::now()),
+                                    && video.released > Some(E::now()),
                                 watched: meta_details
                                     .watched
                                     .as_ref()

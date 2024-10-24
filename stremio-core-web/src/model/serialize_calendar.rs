@@ -9,7 +9,7 @@ use stremio_core::{
 use url::Url;
 use wasm_bindgen::JsValue;
 
-use crate::model::deep_links_ext::DeepLinksExt;
+use crate::model::DeepLinksExt;
 
 mod model {
     use super::*;
@@ -58,6 +58,7 @@ mod model {
     }
 }
 
+#[cfg(feature = "wasm")]
 pub fn serialize_calendar(calendar: &stremio_core::models::calendar::Calendar) -> JsValue {
     <JsValue as JsValueSerdeExt>::from_serde(&model::Calendar {
         selected: &calendar.selected,

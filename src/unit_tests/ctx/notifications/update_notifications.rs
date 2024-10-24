@@ -556,7 +556,7 @@ fn test_dismiss_notification() {
         events[3],
         RuntimeEvent::CoreEvent(crate::runtime::msg::Event::NotificationsPushedToStorage {
             ids
-        }) if ids == &vec!["tt2".to_string()]
+        }) if ids == &["tt2".to_string()]
     );
     assert_matches!(
         events[4],

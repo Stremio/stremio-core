@@ -1,8 +1,10 @@
 use gloo_utils::format::JsValueSerdeExt;
+use wasm_bindgen::JsValue;
+
+use super::*;
+
 #[cfg(debug_assertions)]
 use serde::Serialize;
-
-use wasm_bindgen::JsValue;
 
 use stremio_core::{
     models::{
@@ -30,15 +32,8 @@ use stremio_core::{
     Model,
 };
 
-use crate::{
-    env::WebEnv,
-    model::{
-        serialize_calendar, serialize_catalogs_with_extra, serialize_continue_watching_preview,
-        serialize_ctx, serialize_data_export, serialize_discover, serialize_installed_addons,
-        serialize_library, serialize_local_search, serialize_meta_details, serialize_player,
-        serialize_remote_addons, serialize_streaming_server,
-    },
-};
+use super::SerializeModel;
+use crate::env::WebEnv;
 
 #[derive(Model, Clone)]
 #[cfg_attr(debug_assertions, derive(Serialize))]
@@ -136,7 +131,15 @@ impl WebModel {
                 self.streaming_server.base_url.as_ref(),
                 &self.ctx.profile.settings,
             ),
-            WebModelField::Board => serialize_catalogs_with_extra(&self.board, &self.ctx),
+            WebModelField::Board => {
+                // let old = serialize_catalogs_with_extra(&self.board, &self.ctx);
+                crate::model::serialize_catalogs_with_extra::CatalogsWithExtra::new(
+                    &self.board,
+                    &self.ctx,
+                )
+                .serialize_model()
+                .expect("JsValue from model::CatalogsWithExtra")
+            }
             WebModelField::Discover => {
                 serialize_discover(&self.discover, &self.ctx, &self.streaming_server)
             }
@@ -152,12 +155,22 @@ impl WebModel {
                 self.streaming_server.base_url.as_ref(),
                 "continuewatching".to_owned(),
             ),
-            WebModelField::Search => serialize_catalogs_with_extra(&self.search, &self.ctx),
+            WebModelField::Search => {
+                // let old = serialize_catalogs_with_extra(&self.search, &self.ctx)
+                crate::model::serialize_catalogs_with_extra::CatalogsWithExtra::new(
+                    &self.search,
+                    &self.ctx,
+                )
+                .serialize_model()
+                .expect("JsValue from model::CatalogsWithExtra")
+            }
             WebModelField::Calendar => serialize_calendar(&self.calendar),
             WebModelField::LocalSearch => serialize_local_search(&self.local_search),
-            WebModelField::MetaDetails => {
-                serialize_meta_details(&self.meta_details, &self.ctx, &self.streaming_server)
-            }
+            WebModelField::MetaDetails => serialize_meta_details::<WebEnv>(
+                &self.meta_details,
+                &self.ctx,
+                &self.streaming_server,
+            ),
             WebModelField::RemoteAddons => serialize_remote_addons(&self.remote_addons, &self.ctx),
             WebModelField::InstalledAddons => serialize_installed_addons(&self.installed_addons),
             WebModelField::AddonDetails => {
@@ -166,7 +179,7 @@ impl WebModel {
             }
             WebModelField::StreamingServer => serialize_streaming_server(&self.streaming_server),
             WebModelField::Player => {
-                serialize_player(&self.player, &self.ctx, &self.streaming_server)
+                serialize_player::<WebEnv>(&self.player, &self.ctx, &self.streaming_server)
             }
         }
     }

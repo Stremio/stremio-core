@@ -1,4 +1,5 @@
 use crate::model::deep_links_ext::DeepLinksExt;
+#[cfg(feature = "wasm")]
 use gloo_utils::format::JsValueSerdeExt;
 use serde::Serialize;
 use stremio_core::deep_links::{LibraryDeepLinks, LibraryItemDeepLinks};
@@ -7,6 +8,7 @@ use stremio_core::models::library_with_filters::{LibraryWithFilters, Selected, S
 use stremio_core::types::resource::PosterShape;
 use stremio_core::types::streams::StreamsItemKey;
 use url::Url;
+#[cfg(feature = "wasm")]
 use wasm_bindgen::JsValue;
 
 mod model {
@@ -59,6 +61,7 @@ mod model {
     }
 }
 
+#[cfg(feature = "wasm")]
 pub fn serialize_library<F>(
     library: &LibraryWithFilters<F>,
     ctx: &Ctx,

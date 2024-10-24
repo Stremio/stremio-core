@@ -1,4 +1,5 @@
 use crate::model::deep_links_ext::DeepLinksExt;
+#[cfg(feature = "wasm")]
 use gloo_utils::format::JsValueSerdeExt;
 use serde::Serialize;
 use stremio_core::deep_links::AddonsDeepLinks;
@@ -6,6 +7,7 @@ use stremio_core::models::catalog_with_filters::{CatalogWithFilters, Selected};
 use stremio_core::models::common::Loadable;
 use stremio_core::models::ctx::Ctx;
 use stremio_core::types::addon::DescriptorPreview;
+#[cfg(feature = "wasm")]
 use wasm_bindgen::JsValue;
 
 mod model {
@@ -51,7 +53,7 @@ mod model {
         pub catalog: Option<ResourceLoadable<'a>>,
     }
 }
-
+#[cfg(feature = "wasm")]
 pub fn serialize_remote_addons(
     remote_addons: &CatalogWithFilters<DescriptorPreview>,
     ctx: &Ctx,
