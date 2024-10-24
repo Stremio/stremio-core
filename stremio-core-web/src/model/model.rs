@@ -9,6 +9,7 @@ use serde::Serialize;
 use stremio_core::{
     models::{
         addon_details::AddonDetails,
+        calendar::Calendar,
         catalog_with_filters::CatalogWithFilters,
         catalogs_with_extra::CatalogsWithExtra,
         continue_watching_preview::ContinueWatchingPreview,
@@ -46,6 +47,7 @@ pub struct WebModel {
     pub discover: CatalogWithFilters<MetaItemPreview>,
     pub library: LibraryWithFilters<NotRemovedFilter>,
     pub continue_watching: LibraryWithFilters<ContinueWatchingFilter>,
+    pub calendar: Calendar,
     pub search: CatalogsWithExtra,
     /// Pre-loaded results for local search
     pub local_search: LocalSearch,
@@ -96,6 +98,7 @@ impl WebModel {
             discover,
             library: library_,
             continue_watching,
+            calendar: Default::default(),
             search: Default::default(),
             meta_details: Default::default(),
             remote_addons,
@@ -161,6 +164,7 @@ impl WebModel {
                 .serialize_model()
                 .expect("JsValue from model::CatalogsWithExtra")
             }
+            WebModelField::Calendar => serialize_calendar(&self.calendar),
             WebModelField::LocalSearch => serialize_local_search(&self.local_search),
             WebModelField::MetaDetails => serialize_meta_details::<WebEnv>(
                 &self.meta_details,
