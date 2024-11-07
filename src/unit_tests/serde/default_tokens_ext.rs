@@ -372,7 +372,7 @@ impl DefaultTokens for Settings {
         vec![
             Token::Struct {
                 name: "Settings",
-                len: 27,
+                len: 28,
             },
             Token::Str("interfaceLanguage"),
             Token::Str("eng"),
@@ -433,6 +433,8 @@ impl DefaultTokens for Settings {
             Token::Bool(false),
             Token::Str("streamingServerWarningDismissed"),
             Token::None,
+            Token::Str("exoPlayerCache"),
+            Token::U64(1073741824),
             Token::StructEnd,
         ]
     }

@@ -36,11 +36,12 @@ fn settings() {
             streaming_server_warning_dismissed: Some(
                 Utc.with_ymd_and_hms(2021, 1, 1, 0, 0, 0).unwrap(),
             ),
+            exo_player_cache: 2000,
         },
         &[
             Token::Struct {
                 name: "Settings",
-                len: 27,
+                len: 28,
             },
             Token::Str("interfaceLanguage"),
             Token::Str("interface_language"),
@@ -105,6 +106,8 @@ fn settings() {
             Token::Str("streamingServerWarningDismissed"),
             Token::Some,
             Token::Str("2021-01-01T00:00:00Z"),
+            Token::Str("exoPlayerCache"),
+            Token::U64(2000),
             Token::StructEnd,
         ],
     );
@@ -117,7 +120,7 @@ fn settings_de() {
         &[
             Token::Struct {
                 name: "Settings",
-                len: 22,
+                len: 23,
             },
             Token::Str("interfaceLanguage"),
             Token::Str("eng"),
@@ -174,6 +177,8 @@ fn settings_de() {
             Token::Bool(false),
             Token::Str("streamingServerWarningDismissed"),
             Token::None,
+            Token::Str("exoPlayerCache"),
+            Token::U64(1073741824),
             Token::StructEnd,
         ],
     );
