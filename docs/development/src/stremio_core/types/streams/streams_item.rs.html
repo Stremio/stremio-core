@@ -146,10 +146,10 @@
 </span><span class="attr">#[derive(Default, Clone, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = <span class="string">"camelCase"</span>)]
 </span><span class="kw">pub struct </span>StreamItemState {
-    <span class="attr">#[serde(skip_serializing_if = <span class="string">"Option::is_none"</span>)]
+    <span class="attr">#[serde(default, skip_serializing_if = <span class="string">"Option::is_none"</span>)]
     </span><span class="kw">pub </span>subtitle_track: <span class="prelude-ty">Option</span>&lt;SubtitleTrack&gt;,
     <span class="doccomment">/// In milliseconds
-    </span><span class="attr">#[serde(skip_serializing_if = <span class="string">"Option::is_none"</span>)]
+    </span><span class="attr">#[serde(default, skip_serializing_if = <span class="string">"Option::is_none"</span>)]
     </span><span class="kw">pub </span>subtitle_delay: <span class="prelude-ty">Option</span>&lt;i64&gt;,
     <span class="attr">#[serde(default, skip_serializing_if = <span class="string">"Option::is_none"</span>)]
     </span><span class="doccomment">/// Subtitles size, platform dependent units
@@ -157,14 +157,14 @@
     <span class="attr">#[serde(default, skip_serializing_if = <span class="string">"Option::is_none"</span>)]
     </span><span class="doccomment">/// Vertical offset of the subtitles, platform dependent units
     </span><span class="kw">pub </span>subtitle_offset: <span class="prelude-ty">Option</span>&lt;u64&gt;,
-    <span class="attr">#[serde(skip_serializing_if = <span class="string">"Option::is_none"</span>)]
+    <span class="attr">#[serde(default, skip_serializing_if = <span class="string">"Option::is_none"</span>)]
     </span><span class="kw">pub </span>audio_track: <span class="prelude-ty">Option</span>&lt;AudioTrack&gt;,
     <span class="doccomment">/// In milliseconds
-    </span><span class="attr">#[serde(skip_serializing_if = <span class="string">"Option::is_none"</span>)]
+    </span><span class="attr">#[serde(default, skip_serializing_if = <span class="string">"Option::is_none"</span>)]
     </span><span class="kw">pub </span>audio_delay: <span class="prelude-ty">Option</span>&lt;i64&gt;,
-    <span class="attr">#[serde(skip_serializing_if = <span class="string">"Option::is_none"</span>)]
+    <span class="attr">#[serde(default, skip_serializing_if = <span class="string">"Option::is_none"</span>)]
     </span><span class="kw">pub </span>playback_speed: <span class="prelude-ty">Option</span>&lt;f32&gt;,
-    <span class="attr">#[serde(skip_serializing_if = <span class="string">"Option::is_none"</span>)]
+    <span class="attr">#[serde(default, skip_serializing_if = <span class="string">"Option::is_none"</span>)]
     </span><span class="kw">pub </span>player_type: <span class="prelude-ty">Option</span>&lt;String&gt;,
 }
 
