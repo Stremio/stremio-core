@@ -1,4 +1,4 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `src/models/catalog_with_filters.rs`."><title>catalog_with_filters.rs - source</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../../../static.files/rustdoc-590a400c.css"><meta name="rustdoc-vars" data-root-path="../../../" data-static-root-path="../../../static.files/" data-current-crate="stremio_core" data-themes="" data-resource-suffix="" data-rustdoc-version="1.84.0-nightly (b91a3a056 2024-11-07)" data-channel="nightly" data-search-js="search-c5a66128.js" data-settings-js="settings-0f613d39.js" ><script src="../../../static.files/storage-59e33391.js"></script><script defer src="../../../static.files/src-script-56102188.js"></script><script defer src="../../../src-files.js"></script><script defer src="../../../static.files/main-5f194d8c.js"></script><noscript><link rel="stylesheet" href="../../../static.files/noscript-893ab5e7.css"></noscript><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-32x32-6580c154.png"><link rel="icon" type="image/svg+xml" href="../../../static.files/favicon-044be391.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title"><h2>Files</h2></div></nav><div class="sidebar-resizer"></div><main><rustdoc-search></rustdoc-search><section id="main-content" class="content"><div class="main-heading"><h1><div class="sub-heading">stremio_core/models/</div>catalog_with_filters.rs</h1><rustdoc-toolbar></rustdoc-toolbar></div><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers">
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `src/models/catalog_with_filters.rs`."><title>catalog_with_filters.rs - source</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../../../static.files/rustdoc-42caa33d.css"><meta name="rustdoc-vars" data-root-path="../../../" data-static-root-path="../../../static.files/" data-current-crate="stremio_core" data-themes="" data-resource-suffix="" data-rustdoc-version="1.84.0-nightly (8adb4b30f 2024-11-13)" data-channel="nightly" data-search-js="search-853ef39b.js" data-settings-js="settings-0f613d39.js" ><script src="../../../static.files/storage-59e33391.js"></script><script defer src="../../../static.files/src-script-56102188.js"></script><script defer src="../../../src-files.js"></script><script defer src="../../../static.files/main-5f194d8c.js"></script><noscript><link rel="stylesheet" href="../../../static.files/noscript-893ab5e7.css"></noscript><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-32x32-6580c154.png"><link rel="icon" type="image/svg+xml" href="../../../static.files/favicon-044be391.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title"><h2>Files</h2></div></nav><div class="sidebar-resizer"></div><main><rustdoc-search></rustdoc-search><section id="main-content" class="content"><div class="main-heading"><h1><div class="sub-heading">stremio_core/models/</div>catalog_with_filters.rs</h1><rustdoc-toolbar></rustdoc-toolbar></div><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers">
 <a href="#1" id="1">1</a>
 <a href="#2" id="2">2</a>
 <a href="#3" id="3">3</a>
@@ -506,7 +506,19 @@
 <a href="#505" id="505">505</a>
 <a href="#506" id="506">506</a>
 <a href="#507" id="507">507</a>
-<a href="#508" id="508">508</a></pre></div><pre class="rust"><code><span class="kw">use </span><span class="kw">crate</span>::constants::{SKIP_EXTRA_PROP, TYPE_PRIORITIES};
+<a href="#508" id="508">508</a>
+<a href="#509" id="509">509</a>
+<a href="#510" id="510">510</a>
+<a href="#511" id="511">511</a>
+<a href="#512" id="512">512</a>
+<a href="#513" id="513">513</a>
+<a href="#514" id="514">514</a>
+<a href="#515" id="515">515</a>
+<a href="#516" id="516">516</a>
+<a href="#517" id="517">517</a>
+<a href="#518" id="518">518</a>
+<a href="#519" id="519">519</a>
+<a href="#520" id="520">520</a></pre></div><pre class="rust"><code><span class="kw">use </span><span class="kw">crate</span>::constants::{SKIP_EXTRA_PROP, TYPE_PRIORITIES};
 <span class="kw">use </span><span class="kw">crate</span>::models::common::{
     compare_with_priorities, eq_update, resource_update_with_vector_content, ResourceAction,
     ResourceLoadable,
@@ -515,8 +527,8 @@
 <span class="kw">use </span><span class="kw">crate</span>::runtime::msg::{Action, ActionCatalogWithFilters, ActionLoad, Internal, Msg};
 <span class="kw">use </span><span class="kw">crate</span>::runtime::{Effects, Env, UpdateWithCtx};
 <span class="kw">use </span><span class="kw">crate</span>::types::addon::{
-    DescriptorPreview, ExtraExt, Manifest, ManifestCatalog, ResourcePath, ResourceRequest,
-    ResourceResponse,
+    Descriptor, DescriptorPreview, ExtraExt, Manifest, ManifestCatalog, ResourcePath,
+    ResourceRequest, ResourceResponse,
 };
 <span class="kw">use </span><span class="kw">crate</span>::types::profile::Profile;
 <span class="kw">use </span><span class="kw">crate</span>::types::resource::MetaItemPreview;
@@ -551,6 +563,18 @@
 }
 
 <span class="kw">impl </span>CatalogResourceAdapter <span class="kw">for </span>DescriptorPreview {
+    <span class="kw">fn </span>resource() -&gt; <span class="kw-2">&amp;</span><span class="lifetime">'static </span>str {
+        <span class="string">"addon_catalog"
+    </span>}
+    <span class="kw">fn </span>catalogs(manifest: <span class="kw-2">&amp;</span>Manifest) -&gt; <span class="kw-2">&amp;</span>[ManifestCatalog] {
+        <span class="kw-2">&amp;</span>manifest.addon_catalogs
+    }
+    <span class="kw">fn </span>selectable_priority() -&gt; SelectablePriority {
+        SelectablePriority::Catalog
+    }
+}
+
+<span class="kw">impl </span>CatalogResourceAdapter <span class="kw">for </span>Descriptor {
     <span class="kw">fn </span>resource() -&gt; <span class="kw-2">&amp;</span><span class="lifetime">'static </span>str {
         <span class="string">"addon_catalog"
     </span>}

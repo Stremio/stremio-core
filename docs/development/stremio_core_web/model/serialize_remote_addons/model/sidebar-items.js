@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"struct":["CatalogWithFilters","DescriptorPreview","ResourceLoadable","Selectable","SelectableCatalog","SelectableType"]};
+window.SIDEBAR_ITEMS = {"struct":["CatalogWithFilters","Descriptor","ResourceLoadable","Selectable","SelectableCatalog","SelectableType"]};

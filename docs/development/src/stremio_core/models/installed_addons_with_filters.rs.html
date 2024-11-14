@@ -1,4 +1,4 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `src/models/installed_addons_with_filters.rs`."><title>installed_addons_with_filters.rs - source</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../../../static.files/rustdoc-590a400c.css"><meta name="rustdoc-vars" data-root-path="../../../" data-static-root-path="../../../static.files/" data-current-crate="stremio_core" data-themes="" data-resource-suffix="" data-rustdoc-version="1.84.0-nightly (b91a3a056 2024-11-07)" data-channel="nightly" data-search-js="search-c5a66128.js" data-settings-js="settings-0f613d39.js" ><script src="../../../static.files/storage-59e33391.js"></script><script defer src="../../../static.files/src-script-56102188.js"></script><script defer src="../../../src-files.js"></script><script defer src="../../../static.files/main-5f194d8c.js"></script><noscript><link rel="stylesheet" href="../../../static.files/noscript-893ab5e7.css"></noscript><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-32x32-6580c154.png"><link rel="icon" type="image/svg+xml" href="../../../static.files/favicon-044be391.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title"><h2>Files</h2></div></nav><div class="sidebar-resizer"></div><main><rustdoc-search></rustdoc-search><section id="main-content" class="content"><div class="main-heading"><h1><div class="sub-heading">stremio_core/models/</div>installed_addons_with_filters.rs</h1><rustdoc-toolbar></rustdoc-toolbar></div><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers">
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `src/models/installed_addons_with_filters.rs`."><title>installed_addons_with_filters.rs - source</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../../../static.files/rustdoc-42caa33d.css"><meta name="rustdoc-vars" data-root-path="../../../" data-static-root-path="../../../static.files/" data-current-crate="stremio_core" data-themes="" data-resource-suffix="" data-rustdoc-version="1.84.0-nightly (8adb4b30f 2024-11-13)" data-channel="nightly" data-search-js="search-853ef39b.js" data-settings-js="settings-0f613d39.js" ><script src="../../../static.files/storage-59e33391.js"></script><script defer src="../../../static.files/src-script-56102188.js"></script><script defer src="../../../src-files.js"></script><script defer src="../../../static.files/main-5f194d8c.js"></script><noscript><link rel="stylesheet" href="../../../static.files/noscript-893ab5e7.css"></noscript><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-32x32-6580c154.png"><link rel="icon" type="image/svg+xml" href="../../../static.files/favicon-044be391.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title"><h2>Files</h2></div></nav><div class="sidebar-resizer"></div><main><rustdoc-search></rustdoc-search><section id="main-content" class="content"><div class="main-heading"><h1><div class="sub-heading">stremio_core/models/</div>installed_addons_with_filters.rs</h1><rustdoc-toolbar></rustdoc-toolbar></div><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers">
 <a href="#1" id="1">1</a>
 <a href="#2" id="2">2</a>
 <a href="#3" id="3">3</a>
@@ -148,24 +148,12 @@
 <a href="#147" id="147">147</a>
 <a href="#148" id="148">148</a>
 <a href="#149" id="149">149</a>
-<a href="#150" id="150">150</a>
-<a href="#151" id="151">151</a>
-<a href="#152" id="152">152</a>
-<a href="#153" id="153">153</a>
-<a href="#154" id="154">154</a>
-<a href="#155" id="155">155</a>
-<a href="#156" id="156">156</a>
-<a href="#157" id="157">157</a>
-<a href="#158" id="158">158</a>
-<a href="#159" id="159">159</a>
-<a href="#160" id="160">160</a>
-<a href="#161" id="161">161</a>
-<a href="#162" id="162">162</a></pre></div><pre class="rust"><code><span class="kw">use </span><span class="kw">crate</span>::constants::TYPE_PRIORITIES;
+<a href="#150" id="150">150</a></pre></div><pre class="rust"><code><span class="kw">use </span><span class="kw">crate</span>::constants::TYPE_PRIORITIES;
 <span class="kw">use </span><span class="kw">crate</span>::models::common::{compare_with_priorities, eq_update};
 <span class="kw">use </span><span class="kw">crate</span>::models::ctx::Ctx;
 <span class="kw">use </span><span class="kw">crate</span>::runtime::msg::{Action, ActionLoad, Internal, Msg};
 <span class="kw">use </span><span class="kw">crate</span>::runtime::{Effects, Env, UpdateWithCtx};
-<span class="kw">use </span><span class="kw">crate</span>::types::addon::{DescriptorPreview, ManifestPreview};
+<span class="kw">use </span><span class="kw">crate</span>::types::addon::Descriptor;
 <span class="kw">use </span><span class="kw">crate</span>::types::profile::Profile;
 <span class="kw">use </span>itertools::Itertools;
 <span class="kw">use </span>serde::{Deserialize, Serialize};
@@ -197,7 +185,7 @@
 </span><span class="kw">pub struct </span>InstalledAddonsWithFilters {
     <span class="kw">pub </span>selected: <span class="prelude-ty">Option</span>&lt;Selected&gt;,
     <span class="kw">pub </span>selectable: Selectable,
-    <span class="kw">pub </span>catalog: Vec&lt;DescriptorPreview&gt;,
+    <span class="kw">pub </span>catalog: Vec&lt;Descriptor&gt;,
 }
 
 <span class="kw">impl </span>InstalledAddonsWithFilters {
@@ -292,7 +280,7 @@
 }
 
 <span class="kw">fn </span>catalog_update(
-    catalog: <span class="kw-2">&amp;mut </span>Vec&lt;DescriptorPreview&gt;,
+    catalog: <span class="kw-2">&amp;mut </span>Vec&lt;Descriptor&gt;,
     selected: <span class="kw-2">&amp;</span><span class="prelude-ty">Option</span>&lt;Selected&gt;,
     profile: <span class="kw-2">&amp;</span>Profile,
 ) -&gt; Effects {
@@ -304,19 +292,7 @@
                 <span class="prelude-val">Some</span>(r#type) =&gt; addon.manifest.types.contains(r#type),
                 <span class="prelude-val">None </span>=&gt; <span class="bool-val">true</span>,
             })
-            .map(|addon| DescriptorPreview {
-                transport_url: addon.transport_url.to_owned(),
-                manifest: ManifestPreview {
-                    id: addon.manifest.id.to_owned(),
-                    version: addon.manifest.version.to_owned(),
-                    name: addon.manifest.name.to_owned(),
-                    description: addon.manifest.description.to_owned(),
-                    logo: addon.manifest.logo.to_owned(),
-                    background: addon.manifest.background.to_owned(),
-                    types: addon.manifest.types.to_owned(),
-                    behavior_hints: addon.manifest.behavior_hints.to_owned(),
-                },
-            })
+            .cloned()
             .collect::&lt;Vec&lt;<span class="kw">_</span>&gt;&gt;(),
         <span class="kw">_ </span>=&gt; <span class="macro">vec!</span>[],
     };

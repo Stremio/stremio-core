@@ -1,4 +1,4 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `stremio-core-web/src/model/serialize_installed_addons.rs`."><title>serialize_installed_addons.rs - source</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../../../static.files/rustdoc-590a400c.css"><meta name="rustdoc-vars" data-root-path="../../../" data-static-root-path="../../../static.files/" data-current-crate="stremio_core_web" data-themes="" data-resource-suffix="" data-rustdoc-version="1.84.0-nightly (b91a3a056 2024-11-07)" data-channel="nightly" data-search-js="search-c5a66128.js" data-settings-js="settings-0f613d39.js" ><script src="../../../static.files/storage-59e33391.js"></script><script defer src="../../../static.files/src-script-56102188.js"></script><script defer src="../../../src-files.js"></script><script defer src="../../../static.files/main-5f194d8c.js"></script><noscript><link rel="stylesheet" href="../../../static.files/noscript-893ab5e7.css"></noscript><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-32x32-6580c154.png"><link rel="icon" type="image/svg+xml" href="../../../static.files/favicon-044be391.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title"><h2>Files</h2></div></nav><div class="sidebar-resizer"></div><main><rustdoc-search></rustdoc-search><section id="main-content" class="content"><div class="main-heading"><h1><div class="sub-heading">stremio_core_web/model/</div>serialize_installed_addons.rs</h1><rustdoc-toolbar></rustdoc-toolbar></div><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers">
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `stremio-core-web/src/model/serialize_installed_addons.rs`."><title>serialize_installed_addons.rs - source</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../../../static.files/rustdoc-42caa33d.css"><meta name="rustdoc-vars" data-root-path="../../../" data-static-root-path="../../../static.files/" data-current-crate="stremio_core_web" data-themes="" data-resource-suffix="" data-rustdoc-version="1.84.0-nightly (8adb4b30f 2024-11-13)" data-channel="nightly" data-search-js="search-853ef39b.js" data-settings-js="settings-0f613d39.js" ><script src="../../../static.files/storage-59e33391.js"></script><script defer src="../../../static.files/src-script-56102188.js"></script><script defer src="../../../src-files.js"></script><script defer src="../../../static.files/main-5f194d8c.js"></script><noscript><link rel="stylesheet" href="../../../static.files/noscript-893ab5e7.css"></noscript><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-32x32-6580c154.png"><link rel="icon" type="image/svg+xml" href="../../../static.files/favicon-044be391.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title"><h2>Files</h2></div></nav><div class="sidebar-resizer"></div><main><rustdoc-search></rustdoc-search><section id="main-content" class="content"><div class="main-heading"><h1><div class="sub-heading">stremio_core_web/model/</div>serialize_installed_addons.rs</h1><rustdoc-toolbar></rustdoc-toolbar></div><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers">
 <a href="#1" id="1">1</a>
 <a href="#2" id="2">2</a>
 <a href="#3" id="3">3</a>
@@ -88,7 +88,18 @@
 <a href="#87" id="87">87</a>
 <a href="#88" id="88">88</a>
 <a href="#89" id="89">89</a>
-<a href="#90" id="90">90</a></pre></div><pre class="rust"><code><span class="attr">#[cfg(feature = <span class="string">"wasm"</span>)]
+<a href="#90" id="90">90</a>
+<a href="#91" id="91">91</a>
+<a href="#92" id="92">92</a>
+<a href="#93" id="93">93</a>
+<a href="#94" id="94">94</a>
+<a href="#95" id="95">95</a>
+<a href="#96" id="96">96</a>
+<a href="#97" id="97">97</a>
+<a href="#98" id="98">98</a>
+<a href="#99" id="99">99</a>
+<a href="#100" id="100">100</a>
+<a href="#101" id="101">101</a></pre></div><pre class="rust"><code><span class="attr">#[cfg(feature = <span class="string">"wasm"</span>)]
 </span><span class="kw">use </span>{
     <span class="kw">crate</span>::model::deep_links_ext::DeepLinksExt, gloo_utils::format::JsValueSerdeExt,
     stremio_core::deep_links::AddonsDeepLinks, wasm_bindgen::JsValue,
@@ -97,17 +108,26 @@
 <span class="kw">pub use </span>model::<span class="kw-2">*</span>;
 <span class="kw">mod </span>model {
     <span class="kw">use </span>serde::Serialize;
+    <span class="kw">use </span>url::Url;
 
     <span class="kw">use </span>stremio_core::{
-        deep_links::AddonsDeepLinks, models::installed_addons_with_filters::Selected,
+        models::installed_addons_with_filters::Selected,
+        types::addon::{DescriptorFlags, ManifestPreview},
     };
 
-    <span class="attr">#[derive(Serialize)]
+    <span class="kw">use super</span>::<span class="kw-2">*</span>;
+
+    <span class="doccomment">/// Descriptor Preview serializing the [`ManifestPreview`] and
+    /// [`DescriptorFlags`] of an addon.
+    </span><span class="attr">#[derive(Serialize)]
     #[serde(rename_all = <span class="string">"camelCase"</span>)]
-    </span><span class="kw">pub struct </span>DescriptorPreview&lt;<span class="lifetime">'a</span>&gt; {
-        <span class="attr">#[serde(flatten)]
-        </span><span class="kw">pub </span>addon: <span class="kw-2">&amp;</span><span class="lifetime">'a </span>stremio_core::types::addon::DescriptorPreview,
-        <span class="kw">pub </span>installed: bool,
+    </span><span class="kw">pub struct </span>DescriptorPreview {
+        <span class="kw">pub </span>manifest: ManifestPreview,
+        <span class="kw">pub </span>transport_url: Url,
+        <span class="attr">#[serde(default)]
+        </span><span class="kw">pub </span>flags: DescriptorFlags,
+        <span class="doccomment">/// All addons in this model are installed by default!
+        </span><span class="kw">pub </span>installed: bool,
     }
     <span class="attr">#[derive(Serialize)]
     #[serde(rename_all = <span class="string">"camelCase"</span>)]
@@ -134,7 +154,7 @@
     </span><span class="kw">pub struct </span>InstalledAddonsWithFilters&lt;<span class="lifetime">'a</span>&gt; {
         <span class="kw">pub </span>selected: <span class="kw-2">&amp;</span><span class="lifetime">'a </span><span class="prelude-ty">Option</span>&lt;Selected&gt;,
         <span class="kw">pub </span>selectable: Selectable&lt;<span class="lifetime">'a</span>&gt;,
-        <span class="kw">pub </span>catalog: Vec&lt;DescriptorPreview&lt;<span class="lifetime">'a</span>&gt;&gt;,
+        <span class="kw">pub </span>catalog: Vec&lt;DescriptorPreview&gt;,
     }
 }
 
@@ -171,7 +191,9 @@
             .catalog
             .iter()
             .map(|addon| model::DescriptorPreview {
-                addon,
+                manifest: (<span class="kw-2">&amp;</span>addon.manifest).into(),
+                transport_url: addon.transport_url.clone(),
+                flags: addon.flags.clone(),
                 installed: <span class="bool-val">true</span>,
             })
             .collect(),
