@@ -106,7 +106,7 @@ where
         ResourceAction::ResourceRequested { request }
             if resource.request != *request || resource.content.is_none() =>
         {
-            resource.request = request.to_owned();
+            request.clone_into(&mut resource.request);
             resource.content = Some(Loadable::Loading);
             Effects::future(EffectFuture::Concurrent(
                 E::addon_transport(&request.base)

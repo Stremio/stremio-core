@@ -166,6 +166,21 @@ pub struct ManifestPreview {
     pub behavior_hints: ManifestBehaviorHints,
 }
 
+impl From<&Manifest> for ManifestPreview {
+    fn from(manifest_full: &Manifest) -> Self {
+        Self {
+            id: manifest_full.id.clone(),
+            version: manifest_full.version.clone(),
+            name: manifest_full.name.clone(),
+            description: manifest_full.description.clone(),
+            logo: manifest_full.logo.clone(),
+            background: manifest_full.background.clone(),
+            types: manifest_full.types.clone(),
+            behavior_hints: manifest_full.behavior_hints.clone(),
+        }
+    }
+}
+
 /// Resources supported by the addon.
 ///
 /// # Examples

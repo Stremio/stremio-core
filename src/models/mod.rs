@@ -2,6 +2,7 @@ pub mod common;
 pub mod ctx;
 
 pub mod addon_details;
+pub mod calendar;
 pub mod catalog_with_filters;
 pub mod catalogs_with_extra;
 pub mod continue_watching_preview;

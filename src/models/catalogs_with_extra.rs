@@ -150,6 +150,7 @@ impl<E: Env + 'static> UpdateWithCtx<E> for CatalogsWithExtra {
             Msg::Internal(Internal::ProfileChanged) => {
                 catalogs_update::<E>(&mut self.catalogs, &self.selected, None, &ctx.profile)
             }
+            Msg::Internal(Internal::LibraryChanged(_)) => Effects::none(),
             _ => Effects::none().unchanged(),
         }
     }

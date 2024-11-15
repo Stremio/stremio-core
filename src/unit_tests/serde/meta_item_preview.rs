@@ -8,7 +8,7 @@ use serde_test::{assert_de_tokens, assert_ser_tokens, Configure, Token};
 use url::Url;
 
 #[test]
-fn meta_item_preview_serizlize() {
+fn meta_item_preview_serialize() {
     assert_ser_tokens(
         &vec![
             MetaItemPreview {
@@ -177,7 +177,7 @@ fn meta_item_preview_de() {
         .readable(),
         &[
             vec![
-                Token::Seq { len: Some(2) },
+                Token::Seq { len: Some(1) },
                 Token::Struct {
                     name: "MetaItemPreviewLegacy",
                     len: 14,
@@ -187,6 +187,7 @@ fn meta_item_preview_de() {
                 Token::Str("type"),
                 Token::Str("type"),
                 Token::Str("name"),
+                Token::Some,
                 Token::Str("name"),
                 Token::Str("poster"),
                 Token::Some,
@@ -210,22 +211,16 @@ fn meta_item_preview_de() {
                 Token::Some,
                 Token::Str("2020-01-01T00:00:00Z"),
                 Token::Str("posterShape"),
-            ],
-            PosterShape::default_tokens(),
-            vec![
+                Token::None,
                 Token::Str("links"),
-                Token::Some,
-                Token::Seq { len: Some(0) },
-                Token::SeqEnd,
+                Token::None,
                 Token::Str("trailerStreams"),
-                Token::Some,
-                Token::Seq { len: Some(0) },
-                Token::SeqEnd,
+                Token::None,
                 Token::Str("behaviorHints"),
+                Token::None,
             ],
-            MetaItemBehaviorHints::default_tokens(),
+            vec![Token::StructEnd],
             vec![
-                Token::StructEnd,
                 Token::Struct {
                     name: "MetaItemPreviewLegacy",
                     len: 14,
@@ -235,6 +230,7 @@ fn meta_item_preview_de() {
                 Token::Str("type"),
                 Token::Str("type"),
                 Token::Str("name"),
+                Token::Some,
                 Token::Str("name"),
                 Token::Str("poster"),
                 Token::None,
@@ -251,21 +247,16 @@ fn meta_item_preview_de() {
                 Token::Str("released"),
                 Token::None,
                 Token::Str("posterShape"),
-            ],
-            PosterShape::default_tokens(),
-            vec![
+                Token::None,
                 Token::Str("links"),
-                Token::Some,
-                Token::Seq { len: Some(0) },
-                Token::SeqEnd,
+                Token::None,
                 Token::Str("trailerStreams"),
-                Token::Some,
-                Token::Seq { len: Some(0) },
-                Token::SeqEnd,
+                Token::None,
                 Token::Str("behaviorHints"),
+                Token::None,
+                Token::StructEnd,
             ],
-            MetaItemBehaviorHints::default_tokens(),
-            vec![Token::StructEnd, Token::SeqEnd],
+            vec![Token::SeqEnd],
         ]
         .concat(),
     );
@@ -300,6 +291,60 @@ fn meta_item_preview_de_minimal() {
             Token::Str("id"),
             Token::Str("type"),
             Token::Str("type"),
+            Token::StructEnd,
+        ],
+    );
+}
+
+#[test]
+fn meta_item_preview_de_null() {
+    assert_de_tokens(
+        &MetaItemPreview {
+            id: "tt:123456".to_owned(),
+            r#type: "movie".to_owned(),
+            name: "".to_owned(),
+            poster: None,
+            background: None,
+            logo: None,
+            description: None,
+            release_info: None,
+            runtime: None,
+            released: None,
+            poster_shape: PosterShape::default(),
+            links: vec![],
+            trailer_streams: vec![],
+            behavior_hints: MetaItemBehaviorHints::default(),
+        }
+        .readable(),
+        &[
+            Token::Struct {
+                name: "MetaItemPreviewLegacy",
+                len: 2,
+            },
+            Token::Str("id"),
+            Token::Str("tt:123456"),
+            Token::Str("type"),
+            Token::Str("movie"),
+            Token::Str("name"),
+            Token::None,
+            Token::Str("poster"),
+            Token::None,
+            Token::Str("background"),
+            Token::None,
+            Token::Str("logo"),
+            Token::None,
+            Token::Str("description"),
+            Token::None,
+            Token::Str("released"),
+            Token::None,
+            Token::Str("posterShape"),
+            Token::None,
+            Token::Str("links"),
+            Token::None,
+            Token::Str("trailerStreams"),
+            Token::None,
+            Token::Str("behaviorHints"),
+            Token::None,
             Token::StructEnd,
         ],
     );

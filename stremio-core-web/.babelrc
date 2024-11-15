@@ -1,0 +1,17 @@
+{
+    "presets": [
+        "@babel/preset-env"
+    ],
+    "plugins": [
+        "@babel/plugin-transform-runtime",
+        [
+            "babel-plugin-bundled-import-meta",
+            {
+                "mappings": {
+                    "./wasm_build": ""
+                },
+                "importStyle": "baseURI"
+            }
+        ]
+    ]
+}

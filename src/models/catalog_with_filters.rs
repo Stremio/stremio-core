@@ -7,8 +7,8 @@ use crate::models::ctx::Ctx;
 use crate::runtime::msg::{Action, ActionCatalogWithFilters, ActionLoad, Internal, Msg};
 use crate::runtime::{Effects, Env, UpdateWithCtx};
 use crate::types::addon::{
-    DescriptorPreview, ExtraExt, Manifest, ManifestCatalog, ResourcePath, ResourceRequest,
-    ResourceResponse,
+    Descriptor, DescriptorPreview, ExtraExt, Manifest, ManifestCatalog, ResourcePath,
+    ResourceRequest, ResourceResponse,
 };
 use crate::types::profile::Profile;
 use crate::types::resource::MetaItemPreview;
@@ -16,7 +16,6 @@ use boolinator::Boolinator;
 use derivative::Derivative;
 use itertools::Itertools;
 use serde::{Deserialize, Serialize};
-use std::convert::TryFrom;
 use std::ops::Add;
 
 #[derive(PartialEq, Eq)]
@@ -44,6 +43,18 @@ impl CatalogResourceAdapter for MetaItemPreview {
 }
 
 impl CatalogResourceAdapter for DescriptorPreview {
+    fn resource() -> &'static str {
+        "addon_catalog"
+    }
+    fn catalogs(manifest: &Manifest) -> &[ManifestCatalog] {
+        &manifest.addon_catalogs
+    }
+    fn selectable_priority() -> SelectablePriority {
+        SelectablePriority::Catalog
+    }
+}
+
+impl CatalogResourceAdapter for Descriptor {
     fn resource() -> &'static str {
         "addon_catalog"
     }
@@ -222,6 +233,7 @@ where
                 &self.catalog,
                 &ctx.profile,
             ),
+            Msg::Internal(Internal::LibraryChanged(_)) => Effects::none(),
             _ => Effects::none().unchanged(),
         }
     }

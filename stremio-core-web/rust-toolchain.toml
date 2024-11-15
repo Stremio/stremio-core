@@ -1,0 +1,6 @@
+[toolchain]
+# 1.78 introduces a check which fails on the older
+# version of wasm-bindgen, while the newest wasm-bindgen
+# introduces an unknown panic when transpiled using
+# wasm2js
+channel = "1.77"

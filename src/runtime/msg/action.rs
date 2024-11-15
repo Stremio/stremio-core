@@ -7,6 +7,7 @@ use crate::types::streams::StreamItemState;
 use crate::{
     models::{
         addon_details::Selected as AddonDetailsSelected,
+        calendar::Selected as CalendarSelected,
         catalog_with_filters::Selected as CatalogWithFiltersSelected,
         catalogs_with_extra::Selected as CatalogsWithExtraSelected,
         installed_addons_with_filters::Selected as InstalledAddonsWithFiltersSelected,
@@ -14,7 +15,6 @@ use crate::{
         library_with_filters::Selected as LibraryWithFiltersSelected,
         meta_details::Selected as MetaDetailsSelected,
         player::{Selected as PlayerSelected, VideoParams},
-        streaming_server::StatisticsRequest as StreamingServerStatisticsRequest,
     },
     types::{
         addon::Descriptor,
@@ -22,7 +22,10 @@ use crate::{
         library::LibraryItemId,
         profile::Settings as ProfileSettings,
         resource::{MetaItemId, MetaItemPreview, Video},
-        streaming_server::Settings as StreamingServerSettings,
+        streaming_server::{
+            Settings as StreamingServerSettings,
+            StatisticsRequest as StreamingServerStatisticsRequest,
+        },
     },
 };
 
@@ -171,6 +174,7 @@ pub enum ActionPlayer {
 
 #[derive(Clone, Deserialize, Debug)]
 #[serde(tag = "model", content = "args")]
+/// Action to load a specific Model.
 pub enum ActionLoad {
     AddonDetails(AddonDetailsSelected),
     CatalogWithFilters(Option<CatalogWithFiltersSelected>),
@@ -179,6 +183,8 @@ pub enum ActionLoad {
     InstalledAddonsWithFilters(InstalledAddonsWithFiltersSelected),
     LibraryWithFilters(LibraryWithFiltersSelected),
     LibraryByType(LibraryByTypeSelected),
+    /// Loads the Calendar Model
+    Calendar(Option<CalendarSelected>),
     /// Loads the data required for Local search
     LocalSearch,
     MetaDetails(MetaDetailsSelected),

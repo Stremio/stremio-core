@@ -24,7 +24,7 @@ pub struct StreamsItem {
 /// StreamItemState is to be used when user intentionally changes some values from the defaults,
 /// so that they would be persisted and restored when returning to the same stream,
 /// or some of them reapplied when moving to the next video/stream.
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Default, Clone, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct StreamItemState {
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -32,6 +32,12 @@ pub struct StreamItemState {
     /// In milliseconds
     #[serde(skip_serializing_if = "Option::is_none")]
     pub subtitle_delay: Option<i64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    /// Subtitles size, platform dependent units
+    pub subtitle_size: Option<u64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    /// Vertical offset of the subtitles, platform dependent units
+    pub subtitle_offset: Option<u64>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub audio_track: Option<AudioTrack>,
     /// In milliseconds
@@ -104,9 +110,9 @@ impl StreamsItem {
                 };
             }
             StreamItemState {
-                subtitle_track: None,
-                audio_track: None,
-                ..state
+                playback_speed: state.playback_speed,
+                player_type: state.player_type,
+                ..Default::default()
             }
         })
     }

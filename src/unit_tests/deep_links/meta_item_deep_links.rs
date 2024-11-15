@@ -1,7 +1,6 @@
 use crate::deep_links::MetaItemDeepLinks;
 use crate::types::addon::{ResourcePath, ResourceRequest};
 use crate::types::resource::{MetaItem, MetaItemBehaviorHints, MetaItemPreview, PosterShape};
-use std::convert::TryFrom;
 use std::str::FromStr;
 use url::Url;
 
@@ -32,8 +31,8 @@ fn meta_item_deep_links() {
         path: ResourcePath::without_extra("meta", preview.r#type.as_ref(), preview.id.as_ref()),
     };
 
-    let preview_midl = MetaItemDeepLinks::try_from((&preview, &request)).unwrap();
-    let midl = MetaItemDeepLinks::try_from((&item, &request)).unwrap();
+    let preview_midl = MetaItemDeepLinks::from((&preview, &request));
+    let midl = MetaItemDeepLinks::from((&item, &request));
     assert_eq!(preview_midl, midl);
     assert_eq!(
         midl.meta_details_videos,
@@ -75,8 +74,8 @@ fn meta_item_deep_links_behavior_hints() {
         path: ResourcePath::without_extra("meta", preview.r#type.as_ref(), preview.id.as_ref()),
     };
 
-    let preview_midl = MetaItemDeepLinks::try_from((&preview, &request)).unwrap();
-    let midl = MetaItemDeepLinks::try_from((&item, &request)).unwrap();
+    let preview_midl = MetaItemDeepLinks::from((&preview, &request));
+    let midl = MetaItemDeepLinks::from((&item, &request));
     assert_eq!(preview_midl, midl);
     assert_eq!(midl.meta_details_videos, None);
     assert_eq!(
@@ -118,8 +117,8 @@ fn meta_item_deep_links_behavior_hints_yt_id() {
         path: ResourcePath::without_extra("meta", preview.r#type.as_ref(), preview.id.as_ref()),
     };
 
-    let preview_midl = MetaItemDeepLinks::try_from((&preview, &request)).unwrap();
-    let midl = MetaItemDeepLinks::try_from((&item, &request)).unwrap();
+    let preview_midl = MetaItemDeepLinks::from((&preview, &request));
+    let midl = MetaItemDeepLinks::from((&item, &request));
     assert_eq!(preview_midl, midl);
     assert_eq!(midl.meta_details_videos, None);
     assert_eq!(

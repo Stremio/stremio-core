@@ -16,7 +16,7 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  RUST_MSRV_VERSION: '1.67.1'
+  RUST_MSRV_VERSION: '1.70'
 
 jobs:
   build:
@@ -28,6 +28,8 @@ jobs:
       uses: dtolnay/rust-toolchain@master
       with:
         toolchain: ${{ env.RUST_MSRV_VERSION }}
+
+    - uses: Swatinem/rust-cache@v2
 
     - name: Checkout
       uses: actions/checkout@v4

@@ -113,8 +113,6 @@ impl FromStr for BitField8 {
 /// Module containing all the impls of the `serde` feature
 #[cfg(feature = "serde")]
 mod serde {
-    use std::convert::TryFrom;
-
     use serde::Serialize;
 
     use super::BitField8;

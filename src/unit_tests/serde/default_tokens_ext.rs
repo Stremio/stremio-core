@@ -264,6 +264,7 @@ impl DefaultTokens for MetaItem {
             MetaItemBehaviorHints::default_tokens(),
             vec![
                 Token::Str("videos"),
+                Token::Some,
                 Token::Seq { len: Some(0) },
                 Token::SeqEnd,
                 Token::MapEnd,

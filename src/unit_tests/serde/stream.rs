@@ -1,6 +1,6 @@
 use crate::types::resource::{Stream, StreamBehaviorHints, StreamSource, Subtitles};
 use crate::unit_tests::serde::default_tokens_ext::{DefaultFlattenTokens, DefaultTokens};
-use serde_test::{assert_de_tokens, assert_tokens, Token};
+use serde_test::{assert_de_tokens, assert_tokens, Configure, Token};
 
 #[test]
 fn stream() {
@@ -25,11 +25,14 @@ fn stream() {
                     ..StreamBehaviorHints::default()
                 },
             },
-        ],
+        ]
+        .readable(),
         &[
-            vec![Token::Seq { len: Some(2) }, Token::Map { len: None }],
+            vec![Token::Seq { len: Some(2) }],
+            vec![Token::Map { len: None }],
             StreamSource::default_flatten_tokens(),
-            vec![Token::MapEnd, Token::Map { len: None }],
+            vec![Token::MapEnd],
+            vec![Token::Map { len: None }],
             StreamSource::default_flatten_tokens(),
             vec![
                 Token::Str("name"),
@@ -42,12 +45,14 @@ fn stream() {
                 Token::Some,
                 Token::Str("thumbnail"),
                 Token::Str("subtitles"),
+                Token::Some,
                 Token::Seq { len: Some(1) },
             ],
             Subtitles::default_tokens(),
             vec![
                 Token::SeqEnd,
                 Token::Str("behaviorHints"),
+                Token::Some,
                 Token::Map { len: None },
                 Token::Str("notWebReady"),
                 Token::Bool(true),
@@ -66,7 +71,8 @@ fn stream() {
             thumbnail: None,
             subtitles: vec![],
             behavior_hints: StreamBehaviorHints::default(),
-        },
+        }
+        .readable(),
         &[
             vec![Token::Map { len: None }],
             StreamSource::default_flatten_tokens(),
@@ -78,11 +84,11 @@ fn stream() {
                 Token::Str("thumbnail"),
                 Token::None,
                 Token::Str("subtitles"),
-                Token::Seq { len: Some(0) },
-                Token::SeqEnd,
+                Token::None,
                 Token::Str("behaviorHints"),
+                Token::None,
             ],
-            StreamBehaviorHints::default_tokens(),
+            // StreamBehaviorHints::default_tokens(),
             vec![Token::MapEnd],
         ]
         .concat(),
