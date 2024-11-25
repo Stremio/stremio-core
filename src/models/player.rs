@@ -10,6 +10,7 @@ use crate::constants::{
     STREAM_RESOURCE_NAME, SUBTITLES_RESOURCE_NAME, VIDEO_FILENAME_EXTRA_PROP,
     VIDEO_HASH_EXTRA_PROP, VIDEO_SIZE_EXTRA_PROP, WATCHED_THRESHOLD_COEF,
 };
+use crate::deep_links::{StreamDeepLinks, VideoDeepLinks};
 use crate::models::common::{
     eq_update, resource_update, resource_update_with_vector_content,
     resources_update_with_vector_content, Loadable, ResourceAction, ResourceLoadable,
@@ -76,6 +77,12 @@ pub struct VideoParams {
 }
 
 #[derive(Clone, PartialEq, Eq, Serialize, Deserialize, Debug)]
+pub struct DeepLinks {
+    stream: StreamDeepLinks,
+    video: VideoDeepLinks,
+}
+
+#[derive(Clone, PartialEq, Eq, Serialize, Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct Selected {
     pub stream: Stream,
@@ -83,6 +90,7 @@ pub struct Selected {
     /// A request to fetch the selected [`MetaItem`].
     pub meta_request: Option<ResourceRequest>,
     pub subtitles_path: Option<ResourcePath>,
+    pub deeplinks: DeepLinks
 }
 
 #[derive(Clone, Derivative, Serialize, Debug)]

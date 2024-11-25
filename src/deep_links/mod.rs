@@ -1,6 +1,6 @@
 use percent_encoding::utf8_percent_encode;
 use regex::Regex;
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use url::Url;
 
 use crate::{
@@ -23,7 +23,17 @@ pub use error_link::ErrorLink;
 
 mod error_link;
 
-#[derive(Default, Serialize, Debug, PartialEq, Eq)]
+#[cfg(feature = "actix-web")]
+mod actix_test {
+    use actix_web::get;
+
+    #[get("/{root}/{type}")]
+    pub async fn library_deeplink() -> impl actix_web::Responder {
+        format!("Hello!")
+    }
+}
+
+#[derive(Default, Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
 #[serde(rename_all = "camelCase")]
 pub struct OpenPlayerLink {
     pub ios: Option<String>,
@@ -40,7 +50,7 @@ pub struct OpenPlayerLink {
     pub visionos: Option<String>,
 }
 
-#[derive(Default, Serialize, Debug, PartialEq, Eq)]
+#[derive(Default, Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
 #[serde(rename_all = "camelCase")]
 pub struct ExternalPlayerLink {
     pub download: Option<String>,
@@ -332,7 +342,7 @@ impl From<(&MetaItem, &ResourceRequest)> for MetaItemDeepLinks {
     }
 }
 
-#[derive(Serialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
 #[serde(rename_all = "camelCase")]
 pub struct VideoDeepLinks {
     pub meta_details_videos: String,
@@ -438,7 +448,8 @@ impl
     }
 }
 
-#[derive(Serialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
+// #[serde(rename_all = "camelCase", from = (&Stream, &Option<Url>, &Settings))]
 #[serde(rename_all = "camelCase")]
 pub struct StreamDeepLinks {
     pub player: String,
