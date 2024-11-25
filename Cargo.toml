@@ -23,7 +23,7 @@ members = [
 # TODO: env-future-send should be enabled by default
 # but our `TestEnv` for `unit_tests` uses a MutexGuard which is not Send.
 # default = ["env-future-send"]
-default = []
+default = ["typed-states", "dep:actix-web"]
 
 # Adds `Send` marker trait to the `Env` trait methods and `EnvFuture`.
 # It's required for environments that do not support `Send`.
@@ -37,10 +37,15 @@ derive = []
 # Enable core analytics
 analytics = []
 
+typed-states = ["dep:typed-builder"]
+
 [dependencies]
 stremio-derive = { path = "stremio-derive" }
 stremio-watched-bitfield = { path = "stremio-watched-bitfield" }
 stremio-official-addons = "=2.0.12"
+
+typed-builder = { version = "0.20", optional = true }
+actix-web = { version =  "4", optional = true }
 
 # (De)Serialization
 serde = { version = "1", features = ["derive"]}
