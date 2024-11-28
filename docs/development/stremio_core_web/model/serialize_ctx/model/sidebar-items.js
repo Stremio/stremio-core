@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"struct":["Ctx","Notifications","SearchHistoryItem"]};
+window.SIDEBAR_ITEMS = {"struct":["Ctx","Notifications","SearchHistoryItem","StreamingServerUrlItem"]};

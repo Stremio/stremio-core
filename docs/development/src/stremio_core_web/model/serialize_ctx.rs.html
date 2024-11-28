@@ -1,4 +1,4 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `stremio-core-web/src/model/serialize_ctx.rs`."><title>serialize_ctx.rs - source</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../../../static.files/rustdoc-42caa33d.css"><meta name="rustdoc-vars" data-root-path="../../../" data-static-root-path="../../../static.files/" data-current-crate="stremio_core_web" data-themes="" data-resource-suffix="" data-rustdoc-version="1.84.0-nightly (ee612c45f 2024-11-19)" data-channel="nightly" data-search-js="search-92e6798f.js" data-settings-js="settings-0f613d39.js" ><script src="../../../static.files/storage-59e33391.js"></script><script defer src="../../../static.files/src-script-56102188.js"></script><script defer src="../../../src-files.js"></script><script defer src="../../../static.files/main-5f194d8c.js"></script><noscript><link rel="stylesheet" href="../../../static.files/noscript-893ab5e7.css"></noscript><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-32x32-6580c154.png"><link rel="icon" type="image/svg+xml" href="../../../static.files/favicon-044be391.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title"><h2>Files</h2></div></nav><div class="sidebar-resizer"></div><main><rustdoc-search></rustdoc-search><section id="main-content" class="content"><div class="main-heading"><h1><div class="sub-heading">stremio_core_web/model/</div>serialize_ctx.rs</h1><rustdoc-toolbar></rustdoc-toolbar></div><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers">
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `stremio-core-web/src/model/serialize_ctx.rs`."><title>serialize_ctx.rs - source</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../../../static.files/rustdoc-42caa33d.css"><meta name="rustdoc-vars" data-root-path="../../../" data-static-root-path="../../../static.files/" data-current-crate="stremio_core_web" data-themes="" data-resource-suffix="" data-rustdoc-version="1.85.0-nightly (6b6a867ae 2024-11-27)" data-channel="nightly" data-search-js="search-92e6798f.js" data-settings-js="settings-0f613d39.js" ><script src="../../../static.files/storage-59e33391.js"></script><script defer src="../../../static.files/src-script-56102188.js"></script><script defer src="../../../src-files.js"></script><script defer src="../../../static.files/main-5f194d8c.js"></script><noscript><link rel="stylesheet" href="../../../static.files/noscript-893ab5e7.css"></noscript><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-32x32-6580c154.png"><link rel="icon" type="image/svg+xml" href="../../../static.files/favicon-044be391.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title"><h2>Files</h2></div></nav><div class="sidebar-resizer"></div><main><rustdoc-search></rustdoc-search><section id="main-content" class="content"><div class="main-heading"><h1><div class="sub-heading">stremio_core_web/model/</div>serialize_ctx.rs</h1><rustdoc-toolbar></rustdoc-toolbar></div><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers">
 <a href="#1" id="1">1</a>
 <a href="#2" id="2">2</a>
 <a href="#3" id="3">3</a>
@@ -79,7 +79,26 @@
 <a href="#78" id="78">78</a>
 <a href="#79" id="79">79</a>
 <a href="#80" id="80">80</a>
-<a href="#81" id="81">81</a></pre></div><pre class="rust"><code><span class="attr">#[cfg(feature = <span class="string">"wasm"</span>)]
+<a href="#81" id="81">81</a>
+<a href="#82" id="82">82</a>
+<a href="#83" id="83">83</a>
+<a href="#84" id="84">84</a>
+<a href="#85" id="85">85</a>
+<a href="#86" id="86">86</a>
+<a href="#87" id="87">87</a>
+<a href="#88" id="88">88</a>
+<a href="#89" id="89">89</a>
+<a href="#90" id="90">90</a>
+<a href="#91" id="91">91</a>
+<a href="#92" id="92">92</a>
+<a href="#93" id="93">93</a>
+<a href="#94" id="94">94</a>
+<a href="#95" id="95">95</a>
+<a href="#96" id="96">96</a>
+<a href="#97" id="97">97</a>
+<a href="#98" id="98">98</a>
+<a href="#99" id="99">99</a>
+<a href="#100" id="100">100</a></pre></div><pre class="rust"><code><span class="attr">#[cfg(feature = <span class="string">"wasm"</span>)]
 </span><span class="kw">use </span>{gloo_utils::format::JsValueSerdeExt, wasm_bindgen::JsValue};
 
 <span class="kw">pub use </span>model::<span class="kw-2">*</span>;
@@ -100,6 +119,7 @@
     <span class="kw">use </span>stremio_core::types::{
         events::Events, notifications::NotificationItem, profile::Profile, resource::MetaItemId,
     };
+    <span class="kw">use </span>url::Url;
 
     <span class="kw">use </span><span class="kw">crate</span>::model::deep_links_ext::DeepLinksExt;
 
@@ -111,6 +131,14 @@
         <span class="kw">pub </span>notifications: Notifications&lt;<span class="lifetime">'a</span>&gt;,
         <span class="kw">pub </span>search_history: Vec&lt;SearchHistoryItem&lt;<span class="lifetime">'a</span>&gt;&gt;,
         <span class="kw">pub </span>events: <span class="kw-2">&amp;</span><span class="lifetime">'a </span>Events,
+        <span class="kw">pub </span>streaming_server_urls: Vec&lt;StreamingServerUrlItem&gt;,
+    }
+
+    <span class="attr">#[derive(Serialize)]
+    #[serde(rename_all = <span class="string">"camelCase"</span>)]
+    </span><span class="kw">pub struct </span>StreamingServerUrlItem {
+        <span class="kw">pub </span>url: Url,
+        <span class="kw">pub </span>mtime: DateTime&lt;Utc&gt;,
     }
 
     <span class="attr">#[derive(Serialize)]
@@ -156,6 +184,16 @@
                     })
                     .collect(),
                 events: <span class="kw-2">&amp;</span>ctx.events,
+                streaming_server_urls: ctx
+                    .streaming_server_urls
+                    .items
+                    .iter()
+                    .map(|(url, mtime)| StreamingServerUrlItem {
+                        url: url.clone(),
+                        mtime: <span class="kw-2">*</span>mtime,
+                    })
+                    .sorted_by(|a, b| Ord::cmp(<span class="kw-2">&amp;</span>a.mtime, <span class="kw-2">&amp;</span>b.mtime))
+                    .collect(),
             }
         }
     }

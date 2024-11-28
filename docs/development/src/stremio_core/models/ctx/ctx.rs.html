@@ -1,4 +1,4 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `src/models/ctx/ctx.rs`."><title>ctx.rs - source</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../../../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../../../../static.files/rustdoc-42caa33d.css"><meta name="rustdoc-vars" data-root-path="../../../../" data-static-root-path="../../../../static.files/" data-current-crate="stremio_core" data-themes="" data-resource-suffix="" data-rustdoc-version="1.84.0-nightly (ee612c45f 2024-11-19)" data-channel="nightly" data-search-js="search-92e6798f.js" data-settings-js="settings-0f613d39.js" ><script src="../../../../static.files/storage-59e33391.js"></script><script defer src="../../../../static.files/src-script-56102188.js"></script><script defer src="../../../../src-files.js"></script><script defer src="../../../../static.files/main-5f194d8c.js"></script><noscript><link rel="stylesheet" href="../../../../static.files/noscript-893ab5e7.css"></noscript><link rel="alternate icon" type="image/png" href="../../../../static.files/favicon-32x32-6580c154.png"><link rel="icon" type="image/svg+xml" href="../../../../static.files/favicon-044be391.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title"><h2>Files</h2></div></nav><div class="sidebar-resizer"></div><main><rustdoc-search></rustdoc-search><section id="main-content" class="content"><div class="main-heading"><h1><div class="sub-heading">stremio_core/models/ctx/</div>ctx.rs</h1><rustdoc-toolbar></rustdoc-toolbar></div><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers">
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `src/models/ctx/ctx.rs`."><title>ctx.rs - source</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../../../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../../../../static.files/rustdoc-42caa33d.css"><meta name="rustdoc-vars" data-root-path="../../../../" data-static-root-path="../../../../static.files/" data-current-crate="stremio_core" data-themes="" data-resource-suffix="" data-rustdoc-version="1.85.0-nightly (6b6a867ae 2024-11-27)" data-channel="nightly" data-search-js="search-92e6798f.js" data-settings-js="settings-0f613d39.js" ><script src="../../../../static.files/storage-59e33391.js"></script><script defer src="../../../../static.files/src-script-56102188.js"></script><script defer src="../../../../src-files.js"></script><script defer src="../../../../static.files/main-5f194d8c.js"></script><noscript><link rel="stylesheet" href="../../../../static.files/noscript-893ab5e7.css"></noscript><link rel="alternate icon" type="image/png" href="../../../../static.files/favicon-32x32-6580c154.png"><link rel="icon" type="image/svg+xml" href="../../../../static.files/favicon-044be391.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title"><h2>Files</h2></div></nav><div class="sidebar-resizer"></div><main><rustdoc-search></rustdoc-search><section id="main-content" class="content"><div class="main-heading"><h1><div class="sub-heading">stremio_core/models/ctx/</div>ctx.rs</h1><rustdoc-toolbar></rustdoc-toolbar></div><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers">
 <a href="#1" id="1">1</a>
 <a href="#2" id="2">2</a>
 <a href="#3" id="3">3</a>
@@ -388,13 +388,38 @@
 <a href="#387" id="387">387</a>
 <a href="#388" id="388">388</a>
 <a href="#389" id="389">389</a>
-<a href="#390" id="390">390</a></pre></div><pre class="rust"><code><span class="kw">use crate</span>::{
+<a href="#390" id="390">390</a>
+<a href="#391" id="391">391</a>
+<a href="#392" id="392">392</a>
+<a href="#393" id="393">393</a>
+<a href="#394" id="394">394</a>
+<a href="#395" id="395">395</a>
+<a href="#396" id="396">396</a>
+<a href="#397" id="397">397</a>
+<a href="#398" id="398">398</a>
+<a href="#399" id="399">399</a>
+<a href="#400" id="400">400</a>
+<a href="#401" id="401">401</a>
+<a href="#402" id="402">402</a>
+<a href="#403" id="403">403</a>
+<a href="#404" id="404">404</a>
+<a href="#405" id="405">405</a>
+<a href="#406" id="406">406</a>
+<a href="#407" id="407">407</a>
+<a href="#408" id="408">408</a>
+<a href="#409" id="409">409</a>
+<a href="#410" id="410">410</a>
+<a href="#411" id="411">411</a>
+<a href="#412" id="412">412</a>
+<a href="#413" id="413">413</a>
+<a href="#414" id="414">414</a></pre></div><pre class="rust"><code><span class="kw">use crate</span>::{
     constants::LIBRARY_COLLECTION_NAME,
     models::{
         common::{DescriptorLoadable, Loadable, ResourceLoadable},
         ctx::{
             update_events, update_library, update_notifications, update_profile,
-            update_search_history, update_streams, update_trakt_addon, CtxError, OtherError,
+            update_search_history, update_streaming_server_urls, update_streams,
+            update_trakt_addon, CtxError, OtherError,
         },
     },
     runtime::{
@@ -412,6 +437,7 @@
         profile::{Auth, AuthKey, Profile},
         resource::MetaItem,
         search_history::SearchHistoryBucket,
+        server_urls::ServerUrlsBucket,
         streams::StreamsBucket,
     },
 };
@@ -444,6 +470,8 @@
     <span class="attr">#[serde(skip)]
     </span><span class="kw">pub </span>streams: StreamsBucket,
     <span class="attr">#[serde(skip)]
+    </span><span class="kw">pub </span>streaming_server_urls: ServerUrlsBucket,
+    <span class="attr">#[serde(skip)]
     </span><span class="kw">pub </span>search_history: SearchHistoryBucket,
     <span class="attr">#[serde(skip)]
     </span><span class="kw">pub </span>dismissed_events: DismissedEventsBucket,
@@ -468,6 +496,7 @@
         profile: Profile,
         library: LibraryBucket,
         streams: StreamsBucket,
+        streaming_server_urls: ServerUrlsBucket,
         notifications: NotificationsBucket,
 
         search_history: SearchHistoryBucket,
@@ -477,6 +506,7 @@
             profile,
             library,
             streams,
+            streaming_server_urls,
             search_history,
             dismissed_events,
             notifications,
@@ -509,6 +539,11 @@
                 <span class="kw">let </span>library_effects =
                     update_library::&lt;E&gt;(<span class="kw-2">&amp;mut </span><span class="self">self</span>.library, <span class="kw-2">&amp;</span><span class="self">self</span>.profile, <span class="kw-2">&amp;</span><span class="self">self</span>.status, msg);
                 <span class="kw">let </span>streams_effects = update_streams::&lt;E&gt;(<span class="kw-2">&amp;mut </span><span class="self">self</span>.streams, <span class="kw-2">&amp;</span><span class="self">self</span>.status, msg);
+                <span class="kw">let </span>server_urls_effects = update_streaming_server_urls::&lt;E&gt;(
+                    <span class="kw-2">&amp;mut </span><span class="self">self</span>.streaming_server_urls,
+                    <span class="kw-2">&amp;</span><span class="self">self</span>.status,
+                    msg,
+                );
                 <span class="kw">let </span>search_history_effects =
                     update_search_history::&lt;E&gt;(<span class="kw-2">&amp;mut </span><span class="self">self</span>.search_history, <span class="kw-2">&amp;</span><span class="self">self</span>.status, msg);
                 <span class="kw">let </span>events_effects =
@@ -534,6 +569,7 @@
                     .join(profile_effects)
                     .join(library_effects)
                     .join(streams_effects)
+                    .join(server_urls_effects)
                     .join(search_history_effects)
                     .join(events_effects)
                     .join(trakt_addon_effects)
@@ -559,6 +595,11 @@
                     msg,
                 );
                 <span class="kw">let </span>streams_effects = update_streams::&lt;E&gt;(<span class="kw-2">&amp;mut </span><span class="self">self</span>.streams, <span class="kw-2">&amp;</span><span class="self">self</span>.status, msg);
+                <span class="kw">let </span>server_urls_effects = update_streaming_server_urls::&lt;E&gt;(
+                    <span class="kw-2">&amp;mut </span><span class="self">self</span>.streaming_server_urls,
+                    <span class="kw-2">&amp;</span><span class="self">self</span>.status,
+                    msg,
+                );
                 <span class="kw">let </span>search_history_effects =
                     update_search_history::&lt;E&gt;(<span class="kw-2">&amp;mut </span><span class="self">self</span>.search_history, <span class="kw-2">&amp;</span><span class="self">self</span>.status, msg);
                 <span class="kw">let </span>events_effects =
@@ -627,6 +668,7 @@
                 profile_effects
                     .join(library_effects)
                     .join(streams_effects)
+                    .join(server_urls_effects)
                     .join(trakt_addon_effects)
                     .join(notifications_effects)
                     .join(search_history_effects)
@@ -639,6 +681,11 @@
                 <span class="kw">let </span>library_effects =
                     update_library::&lt;E&gt;(<span class="kw-2">&amp;mut </span><span class="self">self</span>.library, <span class="kw-2">&amp;</span><span class="self">self</span>.profile, <span class="kw-2">&amp;</span><span class="self">self</span>.status, msg);
                 <span class="kw">let </span>streams_effects = update_streams::&lt;E&gt;(<span class="kw-2">&amp;mut </span><span class="self">self</span>.streams, <span class="kw-2">&amp;</span><span class="self">self</span>.status, msg);
+                <span class="kw">let </span>server_urls_effects = update_streaming_server_urls::&lt;E&gt;(
+                    <span class="kw-2">&amp;mut </span><span class="self">self</span>.streaming_server_urls,
+                    <span class="kw-2">&amp;</span><span class="self">self</span>.status,
+                    msg,
+                );
                 <span class="kw">let </span>trakt_addon_effects = update_trakt_addon::&lt;E&gt;(
                     <span class="kw-2">&amp;mut </span><span class="self">self</span>.trakt_addon,
                     <span class="kw-2">&amp;</span><span class="self">self</span>.profile,
@@ -660,6 +707,7 @@
                 profile_effects
                     .join(library_effects)
                     .join(streams_effects)
+                    .join(server_urls_effects)
                     .join(trakt_addon_effects)
                     .join(notifications_effects)
                     .join(search_history_effects)
