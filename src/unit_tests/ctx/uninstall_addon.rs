@@ -10,6 +10,7 @@ use crate::types::notifications::NotificationsBucket;
 use crate::types::profile::{Auth, AuthKey, GDPRConsent, Profile, User};
 use crate::types::resource::{Stream, StreamBehaviorHints, StreamSource};
 use crate::types::search_history::SearchHistoryBucket;
+use crate::types::server_urls::ServerUrlsBucket;
 use crate::types::streams::{StreamsBucket, StreamsItem, StreamsItemKey};
 use crate::types::True;
 use crate::unit_tests::{
@@ -108,6 +109,7 @@ fn actionctx_uninstalladdon() {
                 profile,
                 LibraryBucket::default(),
                 StreamsBucket::default(),
+                ServerUrlsBucket::new::<TestEnv>(None),
                 NotificationsBucket::new::<TestEnv>(None, vec![]),
                 SearchHistoryBucket::default(),
                 DismissedEventsBucket::default(),
@@ -221,6 +223,7 @@ fn actionctx_uninstalladdon_with_user() {
                 profile,
                 LibraryBucket::default(),
                 StreamsBucket::default(),
+                ServerUrlsBucket::new::<TestEnv>(None),
                 NotificationsBucket::new::<TestEnv>(None, vec![]),
                 SearchHistoryBucket::default(),
                 DismissedEventsBucket::default(),
@@ -314,6 +317,7 @@ fn actionctx_uninstalladdon_protected() {
                 profile,
                 LibraryBucket::default(),
                 StreamsBucket::default(),
+                ServerUrlsBucket::new::<TestEnv>(None),
                 NotificationsBucket::new::<TestEnv>(None, vec![]),
                 SearchHistoryBucket::default(),
                 DismissedEventsBucket::default(),
@@ -390,6 +394,7 @@ fn actionctx_uninstalladdon_not_installed() {
                 profile,
                 LibraryBucket::default(),
                 StreamsBucket::default(),
+                ServerUrlsBucket::new::<TestEnv>(None),
                 NotificationsBucket::new::<TestEnv>(None, vec![]),
                 SearchHistoryBucket::default(),
                 DismissedEventsBucket::default(),
@@ -474,6 +479,7 @@ fn actionctx_uninstalladdon_streams_bucket() {
                 profile,
                 LibraryBucket::default(),
                 streams,
+                ServerUrlsBucket::new::<TestEnv>(None),
                 NotificationsBucket::new::<TestEnv>(None, vec![]),
                 SearchHistoryBucket::default(),
                 DismissedEventsBucket::default(),

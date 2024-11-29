@@ -89,6 +89,8 @@ pub enum Internal {
     StreamsChanged(bool),
     /// Search history has changed.
     SearchHistoryChanged,
+    /// Server URLs bucket has changed.
+    StreamingServerUrlsBucketChanged,
     /// User notifications have changed
     NotificationsChanged,
     /// Pulling of notifications triggered either by the user (with an action) or

@@ -12,6 +12,7 @@ pub const LIBRARY_STORAGE_KEY: &str = "library";
 pub const LIBRARY_RECENT_STORAGE_KEY: &str = "library_recent";
 pub const STREAMS_STORAGE_KEY: &str = "streams";
 pub const SEARCH_HISTORY_STORAGE_KEY: &str = "search_history";
+pub const STREAMING_SERVER_URLS_STORAGE_KEY: &str = "streaming_server_urls";
 pub const NOTIFICATIONS_STORAGE_KEY: &str = "notifications";
 pub const CALENDAR_STORAGE_KEY: &str = "calendar";
 pub const DISMISSED_EVENTS_STORAGE_KEY: &str = "dismissed_events";
@@ -38,7 +39,7 @@ pub const CALENDAR_ITEMS_COUNT: usize = 100;
 pub const WATCHED_THRESHOLD_COEF: f64 = 0.7;
 pub const CREDITS_THRESHOLD_COEF: f64 = 0.9;
 /// The latest migration scheme version
-pub const SCHEMA_VERSION: u32 = 14;
+pub const SCHEMA_VERSION: u32 = 15;
 pub const IMDB_LINK_CATEGORY: &str = "imdb";
 pub const GENRES_LINK_CATEGORY: &str = "Genres";
 pub const CINEMETA_TOP_CATALOG_ID: &str = "top";

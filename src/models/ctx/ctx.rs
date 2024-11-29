@@ -4,7 +4,8 @@ use crate::{
         common::{DescriptorLoadable, Loadable, ResourceLoadable},
         ctx::{
             update_events, update_library, update_notifications, update_profile,
-            update_search_history, update_streams, update_trakt_addon, CtxError, OtherError,
+            update_search_history, update_streaming_server_urls, update_streams,
+            update_trakt_addon, CtxError, OtherError,
         },
     },
     runtime::{
@@ -22,6 +23,7 @@ use crate::{
         profile::{Auth, AuthKey, Profile},
         resource::MetaItem,
         search_history::SearchHistoryBucket,
+        server_urls::ServerUrlsBucket,
         streams::StreamsBucket,
     },
 };
@@ -54,6 +56,8 @@ pub struct Ctx {
     #[serde(skip)]
     pub streams: StreamsBucket,
     #[serde(skip)]
+    pub streaming_server_urls: ServerUrlsBucket,
+    #[serde(skip)]
     pub search_history: SearchHistoryBucket,
     #[serde(skip)]
     pub dismissed_events: DismissedEventsBucket,
@@ -78,6 +82,7 @@ impl Ctx {
         profile: Profile,
         library: LibraryBucket,
         streams: StreamsBucket,
+        streaming_server_urls: ServerUrlsBucket,
         notifications: NotificationsBucket,
 
         search_history: SearchHistoryBucket,
@@ -87,6 +92,7 @@ impl Ctx {
             profile,
             library,
             streams,
+            streaming_server_urls,
             search_history,
             dismissed_events,
             notifications,
@@ -119,6 +125,11 @@ impl<E: Env + 'static> Update<E> for Ctx {
                 let library_effects =
                     update_library::<E>(&mut self.library, &self.profile, &self.status, msg);
                 let streams_effects = update_streams::<E>(&mut self.streams, &self.status, msg);
+                let server_urls_effects = update_streaming_server_urls::<E>(
+                    &mut self.streaming_server_urls,
+                    &self.status,
+                    msg,
+                );
                 let search_history_effects =
                     update_search_history::<E>(&mut self.search_history, &self.status, msg);
                 let events_effects =
@@ -144,6 +155,7 @@ impl<E: Env + 'static> Update<E> for Ctx {
                     .join(profile_effects)
                     .join(library_effects)
                     .join(streams_effects)
+                    .join(server_urls_effects)
                     .join(search_history_effects)
                     .join(events_effects)
                     .join(trakt_addon_effects)
@@ -169,6 +181,11 @@ impl<E: Env + 'static> Update<E> for Ctx {
                     msg,
                 );
                 let streams_effects = update_streams::<E>(&mut self.streams, &self.status, msg);
+                let server_urls_effects = update_streaming_server_urls::<E>(
+                    &mut self.streaming_server_urls,
+                    &self.status,
+                    msg,
+                );
                 let search_history_effects =
                     update_search_history::<E>(&mut self.search_history, &self.status, msg);
                 let events_effects =
@@ -237,6 +254,7 @@ impl<E: Env + 'static> Update<E> for Ctx {
                 profile_effects
                     .join(library_effects)
                     .join(streams_effects)
+                    .join(server_urls_effects)
                     .join(trakt_addon_effects)
                     .join(notifications_effects)
                     .join(search_history_effects)
@@ -249,6 +267,11 @@ impl<E: Env + 'static> Update<E> for Ctx {
                 let library_effects =
                     update_library::<E>(&mut self.library, &self.profile, &self.status, msg);
                 let streams_effects = update_streams::<E>(&mut self.streams, &self.status, msg);
+                let server_urls_effects = update_streaming_server_urls::<E>(
+                    &mut self.streaming_server_urls,
+                    &self.status,
+                    msg,
+                );
                 let trakt_addon_effects = update_trakt_addon::<E>(
                     &mut self.trakt_addon,
                     &self.profile,
@@ -270,6 +293,7 @@ impl<E: Env + 'static> Update<E> for Ctx {
                 profile_effects
                     .join(library_effects)
                     .join(streams_effects)
+                    .join(server_urls_effects)
                     .join(trakt_addon_effects)
                     .join(notifications_effects)
                     .join(search_history_effects)

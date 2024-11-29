@@ -142,6 +142,12 @@ pub enum Event {
     PlayingOnDevice {
         device: String,
     },
+    StreamingServerUrlsBucketChanged {
+        uid: UID,
+    },
+    StreamingServerUrlsPushedToStorage {
+        uid: UID,
+    },
     Error {
         error: CtxError,
         source: Box<Event>,

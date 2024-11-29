@@ -13,7 +13,7 @@ use crate::{
     types::{
         addon::ExtraValue, events::DismissedEventsBucket, library::LibraryBucket,
         notifications::NotificationsBucket, profile::Profile, search_history::SearchHistoryBucket,
-        streams::StreamsBucket,
+        server_urls::ServerUrlsBucket, streams::StreamsBucket,
     },
     unit_tests::{TestEnv, STORAGE},
 };
@@ -33,6 +33,7 @@ fn test_search_history_update() {
         Profile::default(),
         LibraryBucket::default(),
         StreamsBucket::default(),
+        ServerUrlsBucket::new::<TestEnv>(None),
         NotificationsBucket::new::<TestEnv>(None, vec![]),
         SearchHistoryBucket::default(),
         DismissedEventsBucket::default(),
@@ -106,6 +107,7 @@ fn test_search_history_clear_items() {
         Profile::default(),
         LibraryBucket::default(),
         StreamsBucket::default(),
+        ServerUrlsBucket::new::<TestEnv>(None),
         NotificationsBucket::new::<TestEnv>(None, vec![]),
         SearchHistoryBucket::default(),
         DismissedEventsBucket::default(),

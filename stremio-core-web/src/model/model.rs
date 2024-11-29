@@ -27,7 +27,7 @@ use stremio_core::{
     types::{
         addon::Descriptor, api::LinkAuthKey, events::DismissedEventsBucket, library::LibraryBucket,
         notifications::NotificationsBucket, profile::Profile, resource::MetaItemPreview,
-        search_history::SearchHistoryBucket, streams::StreamsBucket,
+        search_history::SearchHistoryBucket, server_urls::ServerUrlsBucket, streams::StreamsBucket,
     },
     Model,
 };
@@ -64,6 +64,7 @@ impl WebModel {
         profile: Profile,
         library: LibraryBucket,
         streams: StreamsBucket,
+        server_urls: ServerUrlsBucket,
         notifications: NotificationsBucket,
         search_history: SearchHistoryBucket,
         dismissed_events: DismissedEventsBucket,
@@ -86,6 +87,7 @@ impl WebModel {
                 profile,
                 library,
                 streams,
+                server_urls,
                 notifications,
                 search_history,
                 dismissed_events,
@@ -105,7 +107,10 @@ impl WebModel {
             installed_addons,
             addon_details: Default::default(),
             streaming_server,
-            player: Default::default(),
+            player: Player {
+                collect_seek_logs: true,
+                ..Default::default()
+            },
         };
         (
             model,

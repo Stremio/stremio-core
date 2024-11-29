@@ -10,6 +10,7 @@ use crate::types::notifications::NotificationsBucket;
 use crate::types::profile::Profile;
 use crate::types::resource::MetaItemPreview;
 use crate::types::search_history::SearchHistoryBucket;
+use crate::types::server_urls::ServerUrlsBucket;
 use crate::types::streams::StreamsBucket;
 use crate::unit_tests::{
     default_fetch_handler, Request, TestEnv, EVENTS, FETCH_HANDLER, REQUESTS, STATES,
@@ -50,6 +51,7 @@ fn default_catalog() {
         Profile::default(),
         LibraryBucket::default(),
         StreamsBucket::default(),
+        ServerUrlsBucket::new::<TestEnv>(None),
         NotificationsBucket::new::<TestEnv>(None, vec![]),
         SearchHistoryBucket::default(),
         DismissedEventsBucket::default(),
@@ -151,6 +153,7 @@ fn search_catalog() {
         Profile::default(),
         LibraryBucket::default(),
         StreamsBucket::default(),
+        ServerUrlsBucket::new::<TestEnv>(None),
         NotificationsBucket::new::<TestEnv>(None, vec![]),
         SearchHistoryBucket::default(),
         DismissedEventsBucket::default(),

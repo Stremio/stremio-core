@@ -8,6 +8,7 @@ use crate::types::library::LibraryBucket;
 use crate::types::notifications::NotificationsBucket;
 use crate::types::profile::{Auth, AuthKey, GDPRConsent, Profile, User};
 use crate::types::search_history::SearchHistoryBucket;
+use crate::types::server_urls::ServerUrlsBucket;
 use crate::types::streams::StreamsBucket;
 use crate::types::True;
 use crate::unit_tests::{
@@ -87,6 +88,7 @@ fn actionctx_logout() {
                 profile,
                 library,
                 StreamsBucket::default(),
+                ServerUrlsBucket::new::<TestEnv>(None),
                 NotificationsBucket::new::<TestEnv>(None, vec![]),
                 SearchHistoryBucket::default(),
                 DismissedEventsBucket::default(),
