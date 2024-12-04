@@ -14,7 +14,8 @@
 <a href="#13" id="13">13</a>
 <a href="#14" id="14">14</a>
 <a href="#15" id="15">15</a>
-<a href="#16" id="16">16</a></pre></div><pre class="rust"><code><span class="attr">#[cfg(test)]
+<a href="#16" id="16">16</a>
+<a href="#17" id="17">17</a></pre></div><pre class="rust"><code><span class="attr">#[cfg(test)]
 </span><span class="kw">use </span>derivative::Derivative;
 <span class="kw">use </span>serde::{Deserialize, Serialize};
 <span class="kw">use </span>url::Url;
@@ -23,6 +24,7 @@
 #[cfg_attr(test, derive(Derivative))]
 #[cfg_attr(test, derivative(Default))]
 </span><span class="kw">pub struct </span>Subtitles {
+    <span class="kw">pub </span>id: String,
     <span class="kw">pub </span>lang: String,
     <span class="attr">#[cfg_attr(
         test,
