@@ -722,6 +722,7 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                     Effects::none().unchanged()
                 };
 
+                // loads next streams for the first time
                 let next_streams_effects = match self.next_streams.as_mut() {
                     Some(next_streams) if request.path.resource == STREAM_RESOURCE_NAME => {
                         resource_update_with_vector_content::<E, _>(
@@ -741,6 +742,7 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                 );
 
                 let next_streams_effects = next_streams_effects.join(next_streams_update::<E>(
+                    // let next_streams_effects = next_streams_update::<E>(
                     &mut self.next_streams,
                     &self.next_video,
                     &self.selected,
@@ -847,6 +849,7 @@ fn push_to_library<E: Env + 'static>(
     library_item: &mut LibraryItem,
 ) -> Effects {
     if E::now() - *push_library_item_time >= *PUSH_TO_LIBRARY_EVERY {
+        tracing::debug!("Push library item to UpdateLibraryItem");
         *push_library_item_time = E::now();
 
         Effects::msg(Msg::Internal(Internal::UpdateLibraryItem(
@@ -911,7 +914,7 @@ fn stream_state_update(
 
 fn next_video_update(
     video: &mut Option<Video>,
-    stream: &Option<Stream>,
+    next_stream: &Option<Stream>,
     selected: &Option<Selected>,
     meta_item: &Option<ResourceLoadable<MetaItem>>,
     settings: &ProfileSettings,
@@ -955,13 +958,15 @@ fn next_video_update(
             })
             .map(|(_, next_video)| {
                 let mut next_video = next_video.clone();
-                if let Some(stream) = stream {
+                if let Some(stream) = next_stream {
                     next_video.streams = vec![stream.clone()];
                 }
                 next_video
             }),
         _ => None,
     };
+
+    tracing::debug!("VIDEO & Next VIDEO:\n{video:?}\n{next_video:?}");
     eq_update(video, next_video)
 }
 
@@ -973,6 +978,16 @@ fn next_streams_update<E>(
 where
     E: Env + 'static,
 {
+    // let next_streams_effects = match self.next_streams.as_mut() {
+    //     Some(next_streams) if request.path.resource == STREAM_RESOURCE_NAME => {
+    //         resource_update_with_vector_content::<E, _>(
+    //             next_streams,
+    //             ResourceAction::ResourceRequestResult { request, result },
+    //         )
+    //     }
+    //     _ => Effects::none().unchanged(),
+    // };
+
     let mut stream_request = match selected
         .as_ref()
         .and_then(|selected| selected.stream_request.as_ref())
@@ -986,12 +1001,17 @@ where
             stream_request.path.id.clone_from(&next_video.id);
 
             match next_streams.as_mut() {
-                Some(next_streams) => resource_update_with_vector_content::<E, _>(
-                    next_streams,
-                    ResourceAction::ResourceRequested {
-                        request: &stream_request,
-                    },
-                ),
+                Some(next_streams) => {
+                    tracing::debug!("Already has next Streams: {next_streams:?}");
+
+                    resource_update_with_vector_content::<E, _>(
+                        next_streams,
+                        ResourceAction::ResourceRequested {
+                            request: &stream_request,
+                        },
+                    )
+                }
+                // no new streams, we need to load them for the next video
                 None => {
                     let mut new_next_streams = ResourceLoadable {
                         request: stream_request.to_owned(),
@@ -1004,6 +1024,7 @@ where
                         },
                     );
 
+                    tracing::debug!("New next Streams: {new_next_streams:?}");
                     *next_streams = Some(new_next_streams);
                     next_streams_effects
                 }
@@ -1026,10 +1047,17 @@ fn next_stream_update(
                 content: Some(Loadable::Ready(streams)),
                 ..
             }),
-        ) if settings.binge_watching => streams
-            .iter()
-            .find(|next_stream| next_stream.is_binge_match(stream))
-            .cloned(),
+        ) if settings.binge_watching => {
+            let next_stream = streams
+                .iter()
+                .find(|next_stream| next_stream.is_binge_match(stream))
+                .cloned();
+            if next_stream.is_none() {
+                tracing::debug!("No next stream was found in streams: {:#?}", streams);
+            }
+
+            next_stream
+        }
         _ => None,
     };
 
@@ -1077,7 +1105,12 @@ fn library_item_update<E: Env + 'static>(
             meta_request: Some(meta_request),
             ..
         }) => {
-            let library_item = library.items.get(&meta_request.path.id);
+            let library_item = library_item
+                .as_ref()
+                .filter(|library_item| library_item.id == meta_request.path.id)
+                .or_else(|| library.items.get(&meta_request.path.id));
+
+            // let library_item = library.items.get(&meta_request.path.id);
             let meta_item = meta_item.as_ref().and_then(|meta_item| match meta_item {
                 ResourceLoadable {
                     content: Some(Loadable::Ready(meta_item)),
@@ -1099,7 +1132,39 @@ fn library_item_update<E: Env + 'static>(
         }
         _ => None,
     };
-    eq_update(library_item, next_library_item)
+
+    // if *library_item != next_library_item {
+    //     let update_library_item_effects = match &library_item {
+    //         Some(library_item) => Effects::msg(Msg::Internal(Internal::UpdateLibraryItem(
+    //             library_item.to_owned(),
+    //         )))
+    //         .unchanged(),
+    //         _ => Effects::none().unchanged(),
+    //     };
+    //     let update_next_library_item_effects = match &next_library_item {
+    //         Some(next_library_item) => Effects::msg(Msg::Internal(Internal::UpdateLibraryItem(
+    //             next_library_item.to_owned(),
+    //         )))
+    //         .unchanged(),
+    //         _ => Effects::none().unchanged(),
+    //     };
+    //     *library_item = next_library_item;
+    //     tracing::info!("LibraryItem changed with next");
+
+    //     Effects::none()
+    //         .join(update_library_item_effects)
+    //         .join(update_next_library_item_effects)
+    // } else {
+    //     Effects::none().unchanged()
+    // }
+
+    if *library_item != next_library_item {
+        tracing::debug!("LibraryItem changed with next");
+        *library_item = next_library_item;
+        Effects::none()
+    } else {
+        Effects::none().unchanged()
+    }
 }
 
 fn watched_update(
