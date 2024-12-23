@@ -141,7 +141,7 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                         .as_ref()
                         .map(|meta_request| &meta_request.path.id)
                 {
-                    item_state_update(&mut self.library_item, &self.next_video)
+                    item_state_update(&mut self.library_item, &self.next_video, &self.selected)
                 } else {
                     Effects::none().unchanged()
                 };
@@ -306,7 +306,7 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                 );
 
                 let item_state_update_effects =
-                    item_state_update(&mut self.library_item, &self.next_video);
+                    item_state_update(&mut self.library_item, &self.next_video, &self.selected);
                 let push_to_library_effects = match &self.library_item {
                     Some(library_item) => Effects::msg(Msg::Internal(Internal::UpdateLibraryItem(
                         library_item.to_owned(),
@@ -861,7 +861,15 @@ fn push_to_library<E: Env + 'static>(
 fn item_state_update(
     library_item: &mut Option<LibraryItem>,
     next_video: &Option<Video>,
+    selected: &Option<Selected>,
 ) -> Effects {
+    if let (Some(library_item), Some(selected)) = (library_item.as_mut(), selected) {
+        if let Some(stream_request) = &selected.stream_request {
+            if library_item.state.video_id != Some(stream_request.path.id.to_owned()) {
+                library_item.state.time_offset = 0;
+            }
+        }
+    }
     match library_item {
         Some(library_item)
             if library_item.state.time_offset as f64
