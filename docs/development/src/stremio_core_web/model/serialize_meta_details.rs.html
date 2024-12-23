@@ -378,7 +378,11 @@
 <a href="#377" id="377">377</a>
 <a href="#378" id="378">378</a>
 <a href="#379" id="379">379</a>
-<a href="#380" id="380">380</a></pre></div><pre class="rust"><code><span class="kw">use </span>std::iter;
+<a href="#380" id="380">380</a>
+<a href="#381" id="381">381</a>
+<a href="#382" id="382">382</a>
+<a href="#383" id="383">383</a>
+<a href="#384" id="384">384</a></pre></div><pre class="rust"><code><span class="kw">use </span>std::iter;
 
 <span class="kw">use </span><span class="kw">crate</span>::model::deep_links_ext::DeepLinksExt;
 
@@ -628,7 +632,11 @@
                                         ctx.streams
                                             .items
                                             .values()
-                                            .find(|item| item.stream == <span class="kw-2">*</span>stream)
+                                            .find(|item| {
+                                                item.stream == <span class="kw-2">*</span>stream
+                                                    &amp;&amp; <span class="prelude-val">Some</span>(<span class="kw-2">&amp;</span>item.video_id)
+                                                        == library_item.state.video_id.as_ref()
+                                            })
                                             .map(|<span class="kw">_</span>| library_item.progress())
                                     },
                                 ),
