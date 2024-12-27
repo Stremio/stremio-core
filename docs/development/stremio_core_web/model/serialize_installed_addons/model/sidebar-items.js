@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"struct":["DescriptorPreview","InstalledAddonsWithFilters","Selectable","SelectableCatalog","SelectableType"]};
+window.SIDEBAR_ITEMS = {"struct":["Descriptor","InstalledAddonsWithFilters","Selectable","SelectableCatalog","SelectableType"]};

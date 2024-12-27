@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"fn":["serialize_installed_addons"],"mod":["model"],"struct":["DescriptorPreview","InstalledAddonsWithFilters","Selectable","SelectableCatalog","SelectableType"]};
+window.SIDEBAR_ITEMS = {"fn":["serialize_installed_addons"],"mod":["model"],"struct":["Descriptor","InstalledAddonsWithFilters","Selectable","SelectableCatalog","SelectableType"]};
