@@ -7,6 +7,8 @@ on:
   # developer pushes a commit without opening a PR
   # this will still create a package for testing!
   push:
+    tags-ignore:
+      - '**'
   pull_request:
     branches:
       - development
