@@ -1,4 +1,4 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `src/models/ctx/ctx.rs`."><title>ctx.rs - source</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../../../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../../../../static.files/rustdoc-46132b98.css"><meta name="rustdoc-vars" data-root-path="../../../../" data-static-root-path="../../../../static.files/" data-current-crate="stremio_core" data-themes="" data-resource-suffix="" data-rustdoc-version="1.85.0-nightly (7f75bfa1a 2024-12-30)" data-channel="nightly" data-search-js="search-036cda7a.js" data-settings-js="settings-0f613d39.js" ><script src="../../../../static.files/storage-59e33391.js"></script><script defer src="../../../../static.files/src-script-56102188.js"></script><script defer src="../../../../src-files.js"></script><script defer src="../../../../static.files/main-5f194d8c.js"></script><noscript><link rel="stylesheet" href="../../../../static.files/noscript-893ab5e7.css"></noscript><link rel="alternate icon" type="image/png" href="../../../../static.files/favicon-32x32-6580c154.png"><link rel="icon" type="image/svg+xml" href="../../../../static.files/favicon-044be391.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title"><h2>Files</h2></div></nav><div class="sidebar-resizer"></div><main><rustdoc-search></rustdoc-search><section id="main-content" class="content"><div class="main-heading"><h1><div class="sub-heading">stremio_core/models/ctx/</div>ctx.rs</h1><rustdoc-toolbar></rustdoc-toolbar></div><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers">
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `src/models/ctx/ctx.rs`."><title>ctx.rs - source</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../../../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../../../../static.files/rustdoc-46132b98.css"><meta name="rustdoc-vars" data-root-path="../../../../" data-static-root-path="../../../../static.files/" data-current-crate="stremio_core" data-themes="" data-resource-suffix="" data-rustdoc-version="1.85.0-nightly (4363f9b6f 2025-01-02)" data-channel="nightly" data-search-js="search-75f5ac3e.js" data-settings-js="settings-0f613d39.js" ><script src="../../../../static.files/storage-59e33391.js"></script><script defer src="../../../../static.files/src-script-56102188.js"></script><script defer src="../../../../src-files.js"></script><script defer src="../../../../static.files/main-5f194d8c.js"></script><noscript><link rel="stylesheet" href="../../../../static.files/noscript-893ab5e7.css"></noscript><link rel="alternate icon" type="image/png" href="../../../../static.files/favicon-32x32-6580c154.png"><link rel="icon" type="image/svg+xml" href="../../../../static.files/favicon-044be391.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title"><h2>Files</h2></div></nav><div class="sidebar-resizer"></div><main><rustdoc-search></rustdoc-search><section id="main-content" class="content"><div class="main-heading"><h1><div class="sub-heading">stremio_core/models/ctx/</div>ctx.rs</h1><rustdoc-toolbar></rustdoc-toolbar></div><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers">
 <a href="#1" id="1">1</a>
 <a href="#2" id="2">2</a>
 <a href="#3" id="3">3</a>
@@ -412,7 +412,12 @@
 <a href="#411" id="411">411</a>
 <a href="#412" id="412">412</a>
 <a href="#413" id="413">413</a>
-<a href="#414" id="414">414</a></pre></div><pre class="rust"><code><span class="kw">use crate</span>::{
+<a href="#414" id="414">414</a>
+<a href="#415" id="415">415</a>
+<a href="#416" id="416">416</a>
+<a href="#417" id="417">417</a>
+<a href="#418" id="418">418</a>
+<a href="#419" id="419">419</a></pre></div><pre class="rust"><code><span class="kw">use crate</span>::{
     constants::LIBRARY_COLLECTION_NAME,
     models::{
         common::{DescriptorLoadable, Loadable, ResourceLoadable},
@@ -528,10 +533,15 @@
                 <span class="self">self</span>.status = CtxStatus::Loading(auth_request.to_owned());
                 Effects::one(authenticate::&lt;E&gt;(auth_request)).unchanged()
             }
-            Msg::Action(Action::Ctx(ActionCtx::Logout)) | Msg::Internal(Internal::Logout) =&gt; {
+            Msg::Action(Action::Ctx(ActionCtx::Logout)) =&gt; {
+                Effects::msg(Msg::Internal(Internal::Logout(<span class="bool-val">false</span>))).unchanged()
+            }
+            Msg::Internal(Internal::Logout(deleted)) =&gt; {
                 <span class="kw">let </span>uid = <span class="self">self</span>.profile.uid();
                 <span class="kw">let </span>session_effects = <span class="kw">match </span><span class="self">self</span>.profile.auth_key() {
-                    <span class="prelude-val">Some</span>(auth_key) =&gt; Effects::one(delete_session::&lt;E&gt;(auth_key)).unchanged(),
+                    <span class="prelude-val">Some</span>(auth_key) <span class="kw">if </span>!deleted =&gt; {
+                        Effects::one(delete_session::&lt;E&gt;(auth_key)).unchanged()
+                    }
                     <span class="kw">_ </span>=&gt; Effects::none().unchanged(),
                 };
                 <span class="kw">let </span>profile_effects =
