@@ -33,13 +33,16 @@ pub const NOTIFICATION_ITEMS_COUNT: usize = 100;
 /// Maximum calendar items to fetch from `calendarIds` resource
 pub const CALENDAR_ITEMS_COUNT: usize = 100;
 
+/// Account age in days to be considered a new user
+pub const NEW_USER_DAYS: chrono::Duration = chrono::Duration::days(30);
+
 /// A `LibraryItem` is considered watched once we've watched more than the `duration * threshold`:
 ///
 /// `LibraryItem.state.time_watched` > `LibraryItem.state.duration` * [`WATCHED_THRESHOLD_COEF`]
 pub const WATCHED_THRESHOLD_COEF: f64 = 0.7;
 pub const CREDITS_THRESHOLD_COEF: f64 = 0.9;
 /// The latest migration scheme version
-pub const SCHEMA_VERSION: u32 = 15;
+pub const SCHEMA_VERSION: u32 = 16;
 pub const IMDB_LINK_CATEGORY: &str = "imdb";
 pub const GENRES_LINK_CATEGORY: &str = "Genres";
 pub const CINEMETA_TOP_CATALOG_ID: &str = "top";

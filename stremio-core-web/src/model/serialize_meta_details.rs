@@ -248,7 +248,11 @@ pub fn serialize_meta_details<E: Env + 'static>(
                                         ctx.streams
                                             .items
                                             .values()
-                                            .find(|item| item.stream == *stream)
+                                            .find(|item| {
+                                                item.stream == *stream
+                                                    && Some(&item.video_id)
+                                                        == library_item.state.video_id.as_ref()
+                                            })
                                             .map(|_| library_item.progress())
                                     },
                                 ),

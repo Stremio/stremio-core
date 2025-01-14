@@ -18,7 +18,7 @@ pub fn update_events<E: Env + 'static>(
     msg: &Msg,
 ) -> Effects {
     match msg {
-        Msg::Action(Action::Ctx(ActionCtx::Logout)) | Msg::Internal(Internal::Logout) => {
+        Msg::Internal(Internal::Logout(_)) => {
             let next_dismissed_events = DismissedEventsBucket::default();
             *dismissed_events = next_dismissed_events;
             Effects::msg(Msg::Internal(Internal::DismissedEventsChanged))

@@ -9,6 +9,8 @@ use derivative::Derivative;
 use serde::{Deserialize, Serialize};
 use serde_with::{serde_as, DefaultOnError, DefaultOnNull, DurationSeconds, NoneAsEmptyString};
 
+use crate::{constants::NEW_USER_DAYS, runtime::Env};
+
 #[serde_as]
 #[derive(Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[cfg_attr(test, derive(Derivative))]
@@ -68,4 +70,11 @@ pub struct User {
     pub premium_expire: Option<DateTime<Utc>>,
     #[serde(rename = "gdpr_consent")]
     pub gdpr_consent: GDPRConsent,
+}
+
+impl User {
+    pub fn is_new_user<E: Env + 'static>(&self) -> bool {
+        let now = E::now();
+        now.signed_duration_since(self.date_registered) < NEW_USER_DAYS
+    }
 }

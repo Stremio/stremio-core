@@ -133,7 +133,7 @@ impl<'a> CatalogsWithExtra<'a> {
 }
 
 #[cfg(feature = "wasm")]
-impl<'a> super::SerializeModel<wasm_bindgen::JsValue> for CatalogsWithExtra<'a> {
+impl super::SerializeModel<wasm_bindgen::JsValue> for CatalogsWithExtra<'_> {
     type Error = serde_json::Error;
 
     fn serialize_model(&self) -> Result<wasm_bindgen::JsValue, Self::Error> {

@@ -1000,6 +1000,7 @@ version = "1.0.128"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "6ff5456707a1de34e7e37f2a6fd3d3f808c318259cbd01ab6377795054b483d8"
 dependencies = [
+ "indexmap 2.5.0",
  "itoa",
  "memchr",
  "ryu",
@@ -1170,7 +1171,7 @@ dependencies = [
 
 [[package]]
 name = "stremio-core-web"
-version = "0.48.0"
+version = "0.48.4"
 dependencies = [
  "boolinator",
  "chrono",
@@ -1214,9 +1215,9 @@ dependencies = [
 
 [[package]]
 name = "stremio-official-addons"
-version = "2.0.12"
+version = "2.0.13"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5b03b5836f294463f2ad0eeebac3bcde05dcbecfefa4fc6da2029c5e15d17ad9"
+checksum = "b3e82d97b318000ca095daa19f479fcf4569ecd0ba8e3d10e04bd1a56f768947"
 dependencies = [
  "once_cell",
  "serde_json",

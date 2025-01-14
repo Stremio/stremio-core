@@ -1,5 +1,6 @@
 mod add_to_library;
 mod authenticate;
+mod delete_account;
 mod install_addon;
 mod logout;
 mod update_events;

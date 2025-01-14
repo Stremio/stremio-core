@@ -88,6 +88,9 @@ pub enum Event {
     UserLoggedOut {
         uid: UID,
     },
+    UserAccountDeleted {
+        uid: UID,
+    },
     SessionDeleted {
         auth_key: AuthKey,
     },

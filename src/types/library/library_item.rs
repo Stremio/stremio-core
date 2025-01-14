@@ -106,6 +106,28 @@ impl LibraryItem {
             self.state.times_watched = 0;
         }
     }
+
+    pub fn mark_video_as_watched<E: Env>(
+        &mut self,
+        watched: &WatchedBitField,
+        video: &Video,
+        is_watched: bool,
+    ) {
+        let mut watched = watched.to_owned();
+        watched.set_video(&video.id, is_watched);
+
+        self.state.watched = Some(watched.into());
+
+        if is_watched {
+            self.state.last_watched = match (&self.state.last_watched, &video.released) {
+                (Some(last_watched), Some(released)) if last_watched < released => {
+                    Some(released.to_owned())
+                }
+                (None, released) => released.to_owned(),
+                (last_watched, _) => last_watched.to_owned(),
+            };
+        }
+    }
 }
 
 impl<E: Env + 'static> From<(&MetaItemPreview, PhantomData<E>)> for LibraryItem {

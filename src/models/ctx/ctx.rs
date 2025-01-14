@@ -114,10 +114,15 @@ impl<E: Env + 'static> Update<E> for Ctx {
                 self.status = CtxStatus::Loading(auth_request.to_owned());
                 Effects::one(authenticate::<E>(auth_request)).unchanged()
             }
-            Msg::Action(Action::Ctx(ActionCtx::Logout)) | Msg::Internal(Internal::Logout) => {
+            Msg::Action(Action::Ctx(ActionCtx::Logout)) => {
+                Effects::msg(Msg::Internal(Internal::Logout(false))).unchanged()
+            }
+            Msg::Internal(Internal::Logout(deleted)) => {
                 let uid = self.profile.uid();
                 let session_effects = match self.profile.auth_key() {
-                    Some(auth_key) => Effects::one(delete_session::<E>(auth_key)).unchanged(),
+                    Some(auth_key) if !deleted => {
+                        Effects::one(delete_session::<E>(auth_key)).unchanged()
+                    }
                     _ => Effects::none().unchanged(),
                 };
                 let profile_effects =

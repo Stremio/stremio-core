@@ -23,9 +23,7 @@ pub fn update_trakt_addon<E: Env + 'static>(
     msg: &Msg,
 ) -> Effects {
     match msg {
-        Msg::Action(Action::Ctx(ActionCtx::Logout)) | Msg::Internal(Internal::Logout) => {
-            eq_update(trakt_addon, None)
-        }
+        Msg::Internal(Internal::Logout(_)) => eq_update(trakt_addon, None),
         Msg::Action(Action::Ctx(ActionCtx::InstallTraktAddon)) => {
             Effects::msg(Msg::Internal(Internal::InstallTraktAddon))
         }

@@ -38,6 +38,8 @@ pub struct Settings {
     pub pause_on_minimize: bool,
     pub surround_sound: bool,
     pub streaming_server_warning_dismissed: Option<DateTime<Utc>>,
+    pub server_in_foreground: bool,
+    pub send_crash_reports: bool,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
@@ -77,6 +79,8 @@ impl Default for Settings {
             pause_on_minimize: false,
             surround_sound: false,
             streaming_server_warning_dismissed: None,
+            server_in_foreground: false,
+            send_crash_reports: true,
         }
     }
 }

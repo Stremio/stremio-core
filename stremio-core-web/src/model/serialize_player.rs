@@ -49,7 +49,7 @@ mod model {
         pub video: &'a stremio_core::types::resource::Video,
         pub upcoming: bool,
         pub watched: bool,
-        pub progress: Option<u32>,
+        pub progress: Option<f64>,
         pub scheduled: bool,
         pub deep_links: VideoDeepLinks,
     }
@@ -65,9 +65,12 @@ mod model {
     pub struct Subtitles<'a> {
         #[serde(flatten)]
         pub subtitles: &'a stremio_core::types::resource::Subtitles,
+        // overrides the id of the subtitles in a format that avoids
+        // conflicts with other subtitle ids
         pub id: String,
         pub origin: &'a String,
     }
+
     #[derive(Serialize)]
     #[serde(rename_all = "camelCase")]
     pub struct LibraryItemState<'a> {
@@ -134,30 +137,50 @@ pub fn serialize_player<E: stremio_core::runtime::Env + 'static>(
             .map(|ResourceLoadable { request, content }| match &content {
                 Some(Loadable::Loading) | None => Loadable::Loading,
                 Some(Loadable::Err(error)) => Loadable::Err(error),
-                Some(Loadable::Ready(meta_item)) => {
-                    Loadable::Ready(model::MetaItem {
-                        meta_item,
-                        videos: meta_item
-                            .videos
-                            .iter()
-                            .map(|video| model::Video {
+                Some(Loadable::Ready(meta_item)) => Loadable::Ready(model::MetaItem {
+                    meta_item,
+                    videos: meta_item
+                        .videos
+                        .iter()
+                        .map(|video| model::Video {
+                            video,
+                            upcoming: meta_item.preview.behavior_hints.has_scheduled_videos
+                                && video.released > Some(E::now()),
+                            watched: player
+                                .watched
+                                .as_ref()
+                                .map(|watched| watched.get_video(&video.id))
+                                .unwrap_or_default(),
+                            // only the currently playing video can have the progress
+                            // as we keep that information in the LibraryItem
+                            progress: ctx.library.items.get(&meta_item.preview.id).and_then(
+                                |library_item| {
+                                    // only set up the progress for the current video
+                                    // for series, the selected stream path ID should be the video id!
+                                    if player
+                                        .selected
+                                        .as_ref()
+                                        .and_then(|selected| selected.stream_request.as_ref())
+                                        .map(|stream_request| stream_request.path.id == video.id)
+                                        .unwrap_or_default()
+                                    {
+                                        Some(library_item.progress())
+                                    } else {
+                                        None
+                                    }
+                                },
+                            ),
+                            scheduled: meta_item.preview.behavior_hints.has_scheduled_videos,
+                            deep_links: VideoDeepLinks::from((
                                 video,
-                                upcoming: meta_item.preview.behavior_hints.has_scheduled_videos
-                                    && video.released > Some(E::now()),
-                                watched: false, // TODO use library
-                                progress: None, // TODO use library,
-                                scheduled: meta_item.preview.behavior_hints.has_scheduled_videos,
-                                deep_links: VideoDeepLinks::from((
-                                    video,
-                                    request,
-                                    &streaming_server.base_url,
-                                    &ctx.profile.settings,
-                                ))
-                                .into_web_deep_links(),
-                            })
-                            .collect(),
-                    })
-                }
+                                request,
+                                &streaming_server.base_url,
+                                &ctx.profile.settings,
+                            ))
+                            .into_web_deep_links(),
+                        })
+                        .collect(),
+                }),
             }),
         subtitles: player
             .subtitles
@@ -180,6 +203,7 @@ pub fn serialize_player<E: stremio_core::runtime::Env + 'static>(
                 subtitles
                     .iter()
                     .enumerate()
+                    // renames the subtitle id to avoid conflicts
                     .map(move |(position, subtitles)| model::Subtitles {
                         subtitles,
                         id: format!("{}_{}", addon.transport_url, position),
@@ -214,8 +238,35 @@ pub fn serialize_player<E: stremio_core::runtime::Env + 'static>(
                             && video.released > Some(E::now())
                     })
                     .unwrap_or_default(),
-                watched: false, // TODO use library
-                progress: None, // TODO use library,
+                watched: player
+                    .meta_item
+                    .as_ref()
+                    .and_then(|meta_item| match meta_item {
+                        ResourceLoadable {
+                            content: Some(Loadable::Ready(meta_item)),
+                            ..
+                        } => Some(meta_item),
+                        _ => None,
+                    })
+                    .and_then(|meta_item| {
+                        ctx.library
+                            .items
+                            .get(&meta_item.preview.id)
+                            .map(|library_item| {
+                                library_item
+                                    .state
+                                    .watched_bitfield(&meta_item.videos)
+                                    .get_video(&video.id)
+                            })
+                    })
+                    .unwrap_or_default(),
+                // We do not have information about other videos in the LibraryItem
+                // apart from the currently playing one.
+                // We could eventually use e.g. StreamsBucket to get local streams
+                // and match the next video with existing stream, however, we only use this next_video
+                // for generating the Deep links
+                // Will always be None!
+                progress: None,
                 scheduled: player
                     .meta_item
                     .as_ref()

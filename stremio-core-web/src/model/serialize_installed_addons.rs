@@ -11,7 +11,7 @@ mod model {
 
     use stremio_core::{
         models::installed_addons_with_filters::Selected,
-        types::addon::{DescriptorFlags, ManifestPreview},
+        types::addon::{DescriptorFlags, Manifest},
     };
 
     use super::*;
@@ -20,8 +20,8 @@ mod model {
     /// [`DescriptorFlags`] of an addon.
     #[derive(Serialize)]
     #[serde(rename_all = "camelCase")]
-    pub struct DescriptorPreview {
-        pub manifest: ManifestPreview,
+    pub struct Descriptor<'a> {
+        pub manifest: &'a Manifest,
         pub transport_url: Url,
         #[serde(default)]
         pub flags: DescriptorFlags,
@@ -53,7 +53,7 @@ mod model {
     pub struct InstalledAddonsWithFilters<'a> {
         pub selected: &'a Option<Selected>,
         pub selectable: Selectable<'a>,
-        pub catalog: Vec<DescriptorPreview>,
+        pub catalog: Vec<Descriptor<'a>>,
     }
 }
 
@@ -89,8 +89,8 @@ pub fn serialize_installed_addons(
         catalog: installed_addons
             .catalog
             .iter()
-            .map(|addon| model::DescriptorPreview {
-                manifest: (&addon.manifest).into(),
+            .map(|addon| model::Descriptor {
+                manifest: &addon.manifest,
                 transport_url: addon.transport_url.clone(),
                 flags: addon.flags.clone(),
                 installed: true,

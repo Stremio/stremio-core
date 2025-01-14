@@ -36,11 +36,13 @@ fn settings() {
             streaming_server_warning_dismissed: Some(
                 Utc.with_ymd_and_hms(2021, 1, 1, 0, 0, 0).unwrap(),
             ),
+            server_in_foreground: false,
+            send_crash_reports: true,
         },
         &[
             Token::Struct {
                 name: "Settings",
-                len: 27,
+                len: 29,
             },
             Token::Str("interfaceLanguage"),
             Token::Str("interface_language"),
@@ -105,6 +107,10 @@ fn settings() {
             Token::Str("streamingServerWarningDismissed"),
             Token::Some,
             Token::Str("2021-01-01T00:00:00Z"),
+            Token::Str("serverInForeground"),
+            Token::Bool(false),
+            Token::Str("sendCrashReports"),
+            Token::Bool(true),
             Token::StructEnd,
         ],
     );
@@ -117,7 +123,7 @@ fn settings_de() {
         &[
             Token::Struct {
                 name: "Settings",
-                len: 22,
+                len: 24,
             },
             Token::Str("interfaceLanguage"),
             Token::Str("eng"),
@@ -174,6 +180,10 @@ fn settings_de() {
             Token::Bool(false),
             Token::Str("streamingServerWarningDismissed"),
             Token::None,
+            Token::Str("serverInForeground"),
+            Token::Bool(false),
+            Token::Str("sendCrashReports"),
+            Token::Bool(true),
             Token::StructEnd,
         ],
     );

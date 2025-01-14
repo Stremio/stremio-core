@@ -5,7 +5,7 @@ authors = ["Smart Code OOD"]
 edition = "2021"
 
 # When upgrading MSRV make sure to update the msrv.yaml workflow
-rust-version = "1.70"
+rust-version = "1.71"
 
 [profile.release]
 lto = true
@@ -40,7 +40,7 @@ analytics = []
 [dependencies]
 stremio-derive = { path = "stremio-derive" }
 stremio-watched-bitfield = { path = "stremio-watched-bitfield" }
-stremio-official-addons = "=2.0.12"
+stremio-official-addons = "=2.0.13"
 
 # (De)Serialization
 serde = { version = "1", features = ["derive"]}

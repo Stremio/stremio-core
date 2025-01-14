@@ -271,6 +271,12 @@ pub trait Env {
                         .await?;
                     schema_version = 15;
                 }
+                if schema_version == 15 {
+                    migrate_storage_schema_to_v16::<Self>()
+                        .map_err(|error| EnvError::StorageSchemaVersionUpgrade(Box::new(error)))
+                        .await?;
+                    schema_version = 16;
+                }
                 if schema_version != SCHEMA_VERSION {
                     panic!(
                         "Storage schema version must be upgraded from {} to {}",
@@ -606,6 +612,30 @@ fn migrate_storage_schema_to_v15<E: Env>() -> TryEnvFuture<()> {
         .boxed_env()
 }
 
+fn migrate_storage_schema_to_v16<E: Env>() -> TryEnvFuture<()> {
+    E::get_storage::<serde_json::Value>(PROFILE_STORAGE_KEY)
+        .and_then(|mut profile| {
+            match profile
+                .as_mut()
+                .and_then(|profile| profile.as_object_mut())
+                .and_then(|profile| profile.get_mut("settings"))
+                .and_then(|settings| settings.as_object_mut())
+            {
+                Some(settings) => {
+                    settings.insert(
+                        "serverInForeground".to_owned(),
+                        serde_json::Value::Bool(false),
+                    );
+                    settings.insert("sendCrashReports".to_owned(), serde_json::Value::Bool(true));
+                    E::set_storage(PROFILE_STORAGE_KEY, Some(&profile))
+                }
+                _ => E::set_storage::<()>(PROFILE_STORAGE_KEY, None),
+            }
+        })
+        .and_then(|_| E::set_storage(SCHEMA_VERSION_STORAGE_KEY, Some(&16)))
+        .boxed_env()
+}
+
 #[cfg(test)]
 mod test {
     use serde_json::{json, Value};
@@ -619,8 +649,9 @@ mod test {
                 migrate_storage_schema_to_v10, migrate_storage_schema_to_v11,
                 migrate_storage_schema_to_v12, migrate_storage_schema_to_v13,
                 migrate_storage_schema_to_v14, migrate_storage_schema_to_v15,
-                migrate_storage_schema_to_v6, migrate_storage_schema_to_v7,
-                migrate_storage_schema_to_v8, migrate_storage_schema_to_v9,
+                migrate_storage_schema_to_v16, migrate_storage_schema_to_v6,
+                migrate_storage_schema_to_v7, migrate_storage_schema_to_v8,
+                migrate_storage_schema_to_v9,
             },
             Env,
         },
@@ -1149,5 +1180,44 @@ mod test {
         {
             assert_storage_schema_version(15);
         }
+    }
+
+    #[tokio::test]
+    async fn test_migration_from_15_to_16() {
+        let _test_env_guard = TestEnv::reset().expect("Should lock TestEnv");
+
+        let init_profile = json!({
+            "settings": {}
+        });
+
+        let migrated_profile = json!({
+            "settings": {
+                "serverInForeground": false,
+                "sendCrashReports": true
+            }
+        });
+
+        set_profile_and_schema_version(&init_profile, 15);
+
+        migrate_storage_schema_to_v16::<TestEnv>()
+            .await
+            .expect("Should migrate");
+
+        let storage = STORAGE.read().expect("Should lock");
+
+        assert_eq!(
+            &16.to_string(),
+            storage
+                .get(SCHEMA_VERSION_STORAGE_KEY)
+                .expect("Should have the schema set"),
+            "Scheme version should now be updated"
+        );
+        assert_eq!(
+            &migrated_profile.to_string(),
+            storage
+                .get(PROFILE_STORAGE_KEY)
+                .expect("Should have the profile set"),
+            "Profile should match"
+        );
     }
 }

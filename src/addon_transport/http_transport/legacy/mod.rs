@@ -114,7 +114,7 @@ impl<'a, T: Env> AddonLegacyTransport<'a, T> {
     }
 }
 
-impl<'a, T: Env> AddonTransport for AddonLegacyTransport<'a, T> {
+impl<T: Env> AddonTransport for AddonLegacyTransport<'_, T> {
     fn resource(&self, path: &ResourcePath) -> TryEnvFuture<ResourceResponse> {
         let fetch_req = match build_legacy_req(self.transport_url, path) {
             Ok(r) => r,

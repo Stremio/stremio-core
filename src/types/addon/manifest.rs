@@ -134,7 +134,7 @@ impl Manifest {
                     ManifestResource::Short(_) => self.id_prefixes.as_ref(),
                     ManifestResource::Full { id_prefixes, .. } => id_prefixes.as_ref(),
                 };
-                let type_supported = types.map_or(false, |types| types.contains(&path.r#type));
+                let type_supported = types.is_some_and(|types| types.contains(&path.r#type));
                 let id_supported = id_prefixes.map_or(true, |id_prefixes| {
                     id_prefixes.iter().any(|prefix| path.id.starts_with(prefix))
                 });

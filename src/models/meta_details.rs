@@ -123,20 +123,9 @@ impl<E: Env + 'static> UpdateWithCtx<E> for MetaDetails {
                 is_watched,
             ))) => match (&self.library_item, &self.watched) {
                 (Some(library_item), Some(watched)) => {
-                    let mut watched = watched.to_owned();
-                    watched.set_video(&video.id, *is_watched);
                     let mut library_item = library_item.to_owned();
-                    library_item.state.watched = Some(watched.into());
-                    if *is_watched {
-                        library_item.state.last_watched =
-                            match (&library_item.state.last_watched, &video.released) {
-                                (Some(last_watched), Some(released)) if last_watched < released => {
-                                    Some(released.to_owned())
-                                }
-                                (None, released) => released.to_owned(),
-                                (last_watched, _) => last_watched.to_owned(),
-                            };
-                    }
+                    library_item.mark_video_as_watched::<E>(watched, video, *is_watched);
+
                     Effects::msg(Msg::Internal(Internal::UpdateLibraryItem(library_item)))
                         .unchanged()
                 }

@@ -49,12 +49,14 @@ pub enum Internal {
     AddonsAPIResult(APIRequest, Result<Vec<Descriptor>, CtxError>),
     /// Result for pull user from API.
     UserAPIResult(APIRequest, Result<User, CtxError>),
+    /// Result for deleting account from API.
+    DeleteAccountAPIResult(APIRequest, Result<SuccessResponse, CtxError>),
     /// Result for library sync plan with API.
     LibrarySyncPlanResult(DatastoreRequest, Result<LibraryPlanResponse, CtxError>),
     /// Result for pull library items from API.
     LibraryPullResult(DatastoreRequest, Result<Vec<LibraryItem>, CtxError>),
-    /// Dispatched when expired session is detected
-    Logout,
+    /// Dispatched when the user session needs to be cleared with a flag if the session was already deleted server-side
+    Logout(bool),
     /// Internal event dispatched on user action or login
     /// to install the addon if it's not present
     InstallTraktAddon,

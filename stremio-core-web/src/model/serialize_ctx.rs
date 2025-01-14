@@ -17,17 +17,16 @@ mod model {
 
     use stremio_core::deep_links::SearchHistoryItemDeepLinks;
     use stremio_core::types::{
-        events::Events, notifications::NotificationItem, profile::Profile, resource::MetaItemId,
+        events::Events, notifications::NotificationItem, resource::MetaItemId,
     };
     use url::Url;
 
-    use crate::model::deep_links_ext::DeepLinksExt;
+    use crate::{env::WebEnv, model::deep_links_ext::DeepLinksExt};
 
     #[derive(Serialize)]
     #[serde(rename_all = "camelCase")]
     pub struct Ctx<'a> {
-        /// keep the original Profile model inside.
-        pub profile: &'a Profile,
+        pub profile: Profile<'a>,
         pub notifications: Notifications<'a>,
         pub search_history: Vec<SearchHistoryItem<'a>>,
         pub events: &'a Events,
@@ -57,10 +56,42 @@ mod model {
         pub deep_links: SearchHistoryItemDeepLinks,
     }
 
+    #[derive(Serialize)]
+    #[serde(rename_all = "camelCase")]
+    pub struct Profile<'a> {
+        #[serde(flatten)]
+        profile: &'a stremio_core::types::profile::Profile,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        auth: Option<Auth<'a>>,
+    }
+
+    #[derive(Serialize)]
+    pub struct Auth<'a> {
+        pub key: stremio_core::types::profile::AuthKey,
+        pub user: User<'a>,
+    }
+
+    #[derive(Serialize)]
+    #[serde(rename_all = "camelCase")]
+    pub struct User<'a> {
+        #[serde(flatten)]
+        pub user: &'a stremio_core::types::profile::User,
+        pub is_new_user: bool,
+    }
+
     impl<'a> From<&'a stremio_core::models::ctx::Ctx> for Ctx<'a> {
         fn from(ctx: &'a stremio_core::models::ctx::Ctx) -> Self {
             Self {
-                profile: &ctx.profile,
+                profile: Profile {
+                    profile: &ctx.profile,
+                    auth: ctx.profile.auth.as_ref().map(|auth| Auth {
+                        key: auth.key.clone(),
+                        user: User {
+                            user: &auth.user,
+                            is_new_user: auth.user.is_new_user::<WebEnv>(),
+                        },
+                    }),
+                },
                 notifications: Notifications {
                     items: ctx
                         .notifications
