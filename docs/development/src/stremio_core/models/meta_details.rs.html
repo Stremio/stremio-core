@@ -1,4 +1,4 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `src/models/meta_details.rs`."><title>meta_details.rs - source</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../../../static.files/rustdoc-46132b98.css"><meta name="rustdoc-vars" data-root-path="../../../" data-static-root-path="../../../static.files/" data-current-crate="stremio_core" data-themes="" data-resource-suffix="" data-rustdoc-version="1.86.0-nightly (48a426eca 2025-01-12)" data-channel="nightly" data-search-js="search-75f5ac3e.js" data-settings-js="settings-0f613d39.js" ><script src="../../../static.files/storage-59e33391.js"></script><script defer src="../../../static.files/src-script-56102188.js"></script><script defer src="../../../src-files.js"></script><script defer src="../../../static.files/main-5f194d8c.js"></script><noscript><link rel="stylesheet" href="../../../static.files/noscript-893ab5e7.css"></noscript><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-32x32-6580c154.png"><link rel="icon" type="image/svg+xml" href="../../../static.files/favicon-044be391.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title"><h2>Files</h2></div></nav><div class="sidebar-resizer"></div><main><rustdoc-search></rustdoc-search><section id="main-content" class="content"><div class="main-heading"><h1><div class="sub-heading">stremio_core/models/</div>meta_details.rs</h1><rustdoc-toolbar></rustdoc-toolbar></div><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers">
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `src/models/meta_details.rs`."><title>meta_details.rs - source</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../../../static.files/rustdoc-5d1d17d0.css"><meta name="rustdoc-vars" data-root-path="../../../" data-static-root-path="../../../static.files/" data-current-crate="stremio_core" data-themes="" data-resource-suffix="" data-rustdoc-version="1.86.0-nightly (9a1d156f3 2025-01-19)" data-channel="nightly" data-search-js="search-ccb196c1.js" data-settings-js="settings-0f613d39.js" ><script src="../../../static.files/storage-59e33391.js"></script><script defer src="../../../static.files/src-script-56102188.js"></script><script defer src="../../../src-files.js"></script><script defer src="../../../static.files/main-5f194d8c.js"></script><noscript><link rel="stylesheet" href="../../../static.files/noscript-893ab5e7.css"></noscript><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-32x32-6580c154.png"><link rel="icon" type="image/svg+xml" href="../../../static.files/favicon-044be391.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title"><h2>Files</h2></div></nav><div class="sidebar-resizer"></div><main><rustdoc-search></rustdoc-search><section id="main-content" class="content"><div class="main-heading"><h1><div class="sub-heading">stremio_core/models/</div>meta_details.rs</h1><rustdoc-toolbar></rustdoc-toolbar></div><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers">
 <a href="#1" id="1">1</a>
 <a href="#2" id="2">2</a>
 <a href="#3" id="3">3</a>
@@ -545,7 +545,11 @@
 <a href="#544" id="544">544</a>
 <a href="#545" id="545">545</a>
 <a href="#546" id="546">546</a>
-<a href="#547" id="547">547</a></pre></div><pre class="rust"><code><span class="kw">use </span>std::{borrow::Cow, marker::PhantomData};
+<a href="#547" id="547">547</a>
+<a href="#548" id="548">548</a>
+<a href="#549" id="549">549</a>
+<a href="#550" id="550">550</a>
+<a href="#551" id="551">551</a></pre></div><pre class="rust"><code><span class="kw">use </span>std::{borrow::Cow, marker::PhantomData};
 
 <span class="kw">use </span>serde::{Deserialize, Serialize};
 
@@ -592,7 +596,11 @@
     <span class="kw">pub </span>meta_items: Vec&lt;ResourceLoadable&lt;MetaItem&gt;&gt;,
     <span class="kw">pub </span>meta_streams: Vec&lt;ResourceLoadable&lt;Vec&lt;Stream&gt;&gt;&gt;,
     <span class="kw">pub </span>streams: Vec&lt;ResourceLoadable&lt;Vec&lt;Stream&gt;&gt;&gt;,
-    <span class="kw">pub </span>suggested_stream: <span class="prelude-ty">Option</span>&lt;ResourceLoadable&lt;<span class="prelude-ty">Option</span>&lt;Stream&gt;&gt;&gt;,
+    <span class="doccomment">/// A Stream from addon responses, based on your already watched streams on the device
+    /// (i.e. [`StreamsBucket`]), which could be played if binge watching or continuing to watch.
+    ///
+    /// Finds a proper stream for the binge watching group and matching stream source.
+    </span><span class="kw">pub </span>last_used_stream: <span class="prelude-ty">Option</span>&lt;ResourceLoadable&lt;<span class="prelude-ty">Option</span>&lt;Stream&gt;&gt;&gt;,
     <span class="kw">pub </span>library_item: <span class="prelude-ty">Option</span>&lt;LibraryItem&gt;,
     <span class="attr">#[serde(skip_serializing)]
     </span><span class="kw">pub </span>watched: <span class="prelude-ty">Option</span>&lt;WatchedBitField&gt;,
@@ -611,8 +619,8 @@
                     meta_streams_update(<span class="kw-2">&amp;mut </span><span class="self">self</span>.meta_streams, <span class="kw-2">&amp;</span><span class="self">self</span>.selected, <span class="kw-2">&amp;</span><span class="self">self</span>.meta_items);
                 <span class="kw">let </span>streams_effects =
                     streams_update::&lt;E&gt;(<span class="kw-2">&amp;mut </span><span class="self">self</span>.streams, <span class="kw-2">&amp;</span><span class="self">self</span>.selected, <span class="kw-2">&amp;</span>ctx.profile);
-                <span class="kw">let </span>suggested_stream_effects = suggested_stream_update(
-                    <span class="kw-2">&amp;mut </span><span class="self">self</span>.suggested_stream,
+                <span class="kw">let </span>last_used_stream_effects = last_used_stream_update(
+                    <span class="kw-2">&amp;mut </span><span class="self">self</span>.last_used_stream,
                     <span class="kw-2">&amp;</span><span class="self">self</span>.selected,
                     <span class="kw-2">&amp;</span><span class="self">self</span>.meta_items,
                     <span class="kw-2">&amp;</span><span class="self">self</span>.meta_streams,
@@ -627,14 +635,14 @@
                 );
                 <span class="kw">let </span>watched_effects =
                     watched_update(<span class="kw-2">&amp;mut </span><span class="self">self</span>.watched, <span class="kw-2">&amp;</span><span class="self">self</span>.meta_items, <span class="kw-2">&amp;</span><span class="self">self</span>.library_item);
-                <span class="kw">let </span>libraty_item_sync_effects = library_item_sync(<span class="kw-2">&amp;</span><span class="self">self</span>.library_item, <span class="kw-2">&amp;</span>ctx.profile);
-                libraty_item_sync_effects
+                <span class="kw">let </span>library_item_sync_effects = library_item_sync(<span class="kw-2">&amp;</span><span class="self">self</span>.library_item, <span class="kw-2">&amp;</span>ctx.profile);
+                library_item_sync_effects
                     .join(selected_effects)
                     .join(selected_override_effects)
                     .join(meta_items_effects)
                     .join(meta_streams_effects)
                     .join(streams_effects)
-                    .join(suggested_stream_effects)
+                    .join(last_used_stream_effects)
                     .join(library_item_effects)
                     .join(watched_effects)
             }
@@ -644,13 +652,13 @@
                 <span class="kw">let </span>meta_streams_effects = eq_update(<span class="kw-2">&amp;mut </span><span class="self">self</span>.meta_streams, <span class="macro">vec!</span>[]);
                 <span class="kw">let </span>streams_effects = eq_update(<span class="kw-2">&amp;mut </span><span class="self">self</span>.streams, <span class="macro">vec!</span>[]);
                 <span class="kw">let </span>library_item_effects = eq_update(<span class="kw-2">&amp;mut </span><span class="self">self</span>.library_item, <span class="prelude-val">None</span>);
-                <span class="kw">let </span>suggested_stream_effects = eq_update(<span class="kw-2">&amp;mut </span><span class="self">self</span>.suggested_stream, <span class="prelude-val">None</span>);
+                <span class="kw">let </span>last_used_stream_effects = eq_update(<span class="kw-2">&amp;mut </span><span class="self">self</span>.last_used_stream, <span class="prelude-val">None</span>);
                 <span class="kw">let </span>watched_effects = eq_update(<span class="kw-2">&amp;mut </span><span class="self">self</span>.watched, <span class="prelude-val">None</span>);
                 selected_effects
                     .join(meta_items_effects)
                     .join(meta_streams_effects)
                     .join(streams_effects)
-                    .join(suggested_stream_effects)
+                    .join(last_used_stream_effects)
                     .join(library_item_effects)
                     .join(watched_effects)
             }
@@ -694,8 +702,8 @@
                 };
                 <span class="kw">let </span>meta_streams_effects =
                     meta_streams_update(<span class="kw-2">&amp;mut </span><span class="self">self</span>.meta_streams, <span class="kw-2">&amp;</span><span class="self">self</span>.selected, <span class="kw-2">&amp;</span><span class="self">self</span>.meta_items);
-                <span class="kw">let </span>suggested_stream_effects = suggested_stream_update(
-                    <span class="kw-2">&amp;mut </span><span class="self">self</span>.suggested_stream,
+                <span class="kw">let </span>last_used_stream_effects = last_used_stream_update(
+                    <span class="kw-2">&amp;mut </span><span class="self">self</span>.last_used_stream,
                     <span class="kw-2">&amp;</span><span class="self">self</span>.selected,
                     <span class="kw-2">&amp;</span><span class="self">self</span>.meta_items,
                     <span class="kw-2">&amp;</span><span class="self">self</span>.meta_streams,
@@ -714,7 +722,7 @@
                     .join(meta_items_effects)
                     .join(meta_streams_effects)
                     .join(streams_effects)
-                    .join(suggested_stream_effects)
+                    .join(last_used_stream_effects)
                     .join(library_item_effects)
                     .join(watched_effects)
             }
@@ -725,15 +733,15 @@
                     <span class="kw-2">&amp;mut </span><span class="self">self</span>.streams,
                     ResourcesAction::ResourceRequestResult { request, result },
                 );
-                <span class="kw">let </span>suggested_stream_effects = suggested_stream_update(
-                    <span class="kw-2">&amp;mut </span><span class="self">self</span>.suggested_stream,
+                <span class="kw">let </span>last_used_stream_effects = last_used_stream_update(
+                    <span class="kw-2">&amp;mut </span><span class="self">self</span>.last_used_stream,
                     <span class="kw-2">&amp;</span><span class="self">self</span>.selected,
                     <span class="kw-2">&amp;</span><span class="self">self</span>.meta_items,
                     <span class="kw-2">&amp;</span><span class="self">self</span>.meta_streams,
                     <span class="kw-2">&amp;</span><span class="self">self</span>.streams,
                     <span class="kw-2">&amp;</span>ctx.streams,
                 );
-                streams_effects.join(suggested_stream_effects)
+                streams_effects.join(last_used_stream_effects)
             }
             Msg::Internal(Internal::LibraryChanged(<span class="kw">_</span>)) =&gt; {
                 <span class="kw">let </span>library_item_effects = library_item_update::&lt;E&gt;(
@@ -753,8 +761,8 @@
                     meta_streams_update(<span class="kw-2">&amp;mut </span><span class="self">self</span>.meta_streams, <span class="kw-2">&amp;</span><span class="self">self</span>.selected, <span class="kw-2">&amp;</span><span class="self">self</span>.meta_items);
                 <span class="kw">let </span>streams_effects =
                     streams_update::&lt;E&gt;(<span class="kw-2">&amp;mut </span><span class="self">self</span>.streams, <span class="kw-2">&amp;</span><span class="self">self</span>.selected, <span class="kw-2">&amp;</span>ctx.profile);
-                <span class="kw">let </span>suggested_stream_effects = suggested_stream_update(
-                    <span class="kw-2">&amp;mut </span><span class="self">self</span>.suggested_stream,
+                <span class="kw">let </span>last_used_stream_effects = last_used_stream_update(
+                    <span class="kw-2">&amp;mut </span><span class="self">self</span>.last_used_stream,
                     <span class="kw-2">&amp;</span><span class="self">self</span>.selected,
                     <span class="kw-2">&amp;</span><span class="self">self</span>.meta_items,
                     <span class="kw-2">&amp;</span><span class="self">self</span>.meta_streams,
@@ -772,7 +780,7 @@
                 meta_items_effects
                     .join(meta_streams_effects)
                     .join(streams_effects)
-                    .join(suggested_stream_effects)
+                    .join(last_used_stream_effects)
                     .join(library_item_effects)
                     .join(watched_effects)
             }
@@ -977,8 +985,8 @@
 /// One note, why we cannot return `StreamItem.stream` directly if it's for the same episode,
 /// is that user might have played a stream from an addon which he no longer has due to some constrains (ie p2p addon),
 /// that's why we have to try to find it first and verify that's it's still available.
-</span><span class="kw">fn </span>suggested_stream_update(
-    suggested_stream: <span class="kw-2">&amp;mut </span><span class="prelude-ty">Option</span>&lt;ResourceLoadable&lt;<span class="prelude-ty">Option</span>&lt;Stream&gt;&gt;&gt;,
+</span><span class="kw">fn </span>last_used_stream_update(
+    last_used_stream: <span class="kw-2">&amp;mut </span><span class="prelude-ty">Option</span>&lt;ResourceLoadable&lt;<span class="prelude-ty">Option</span>&lt;Stream&gt;&gt;&gt;,
     selected: <span class="kw-2">&amp;</span><span class="prelude-ty">Option</span>&lt;Selected&gt;,
     meta_items: <span class="kw-2">&amp;</span>[ResourceLoadable&lt;MetaItem&gt;],
     meta_streams: <span class="kw-2">&amp;</span>[ResourceLoadable&lt;Vec&lt;Stream&gt;&gt;],
@@ -986,7 +994,7 @@
     stream_bucket: <span class="kw-2">&amp;</span>StreamsBucket,
 ) -&gt; Effects {
     <span class="kw">let </span>all_streams = [meta_streams, streams].concat();
-    <span class="kw">let </span>next_suggested_stream = <span class="kw">match </span>selected {
+    <span class="kw">let </span>next_last_used_stream = <span class="kw">match </span>selected {
         <span class="prelude-val">Some</span>(Selected {
             stream_path: <span class="prelude-val">Some</span>(stream_path),
             ..
@@ -1040,7 +1048,7 @@
             }),
         <span class="kw">_ </span>=&gt; <span class="prelude-val">None</span>,
     };
-    eq_update(suggested_stream, next_suggested_stream)
+    eq_update(last_used_stream, next_last_used_stream)
 }
 
 <span class="kw">fn </span>library_item_update&lt;E: Env + <span class="lifetime">'static</span>&gt;(
