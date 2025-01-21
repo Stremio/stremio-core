@@ -16,6 +16,17 @@ impl<R, E> Default for Loadable<R, E> {
 
 impl<R, E> Loadable<R, E> {
     #[inline]
+    pub fn map<U, F>(self, f: F) -> Loadable<U, E>
+    where
+        F: FnOnce(R) -> U,
+    {
+        match self {
+            Loadable::Loading => Loadable::Loading,
+            Loadable::Ready(ready) => Loadable::Ready(f(ready)),
+            Loadable::Err(err) => Loadable::Err(err),
+        }
+    }
+    #[inline]
     pub fn is_ready(&self) -> bool {
         matches!(self, Loadable::Ready(_))
     }

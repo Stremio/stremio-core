@@ -17,9 +17,14 @@ use stremio_core::{
     models::common::Loadable,
     runtime::{msg::Action, Env, EnvError, Runtime, RuntimeAction, RuntimeEvent},
     types::{
-        events::DismissedEventsBucket, library::LibraryBucket, notifications::NotificationsBucket,
-        profile::Profile, resource::Stream, search_history::SearchHistoryBucket,
-        server_urls::ServerUrlsBucket, streams::StreamsBucket,
+        events::DismissedEventsBucket,
+        library::LibraryBucket,
+        notifications::NotificationsBucket,
+        profile::Profile,
+        resource::{Stream, StreamSource},
+        search_history::SearchHistoryBucket,
+        server_urls::ServerUrlsBucket,
+        streams::StreamsBucket,
     },
 };
 
@@ -234,7 +239,9 @@ pub fn analytics(event: JsValue, location_hash: JsValue) {
 
 #[wasm_bindgen]
 pub fn decode_stream(stream: JsValue) -> JsValue {
-    let stream = stream.as_string().map(Stream::decode);
+    let stream = stream
+        .as_string()
+        .map(|base64_string| Stream::<StreamSource>::decode(&base64_string));
     match stream {
         Some(Ok(stream)) => {
             <JsValue as JsValueSerdeExt>::from_serde(&stream).expect("JsValue from Stream")

@@ -15,7 +15,7 @@ use crate::{
         profile::Settings,
         query_params_encode,
         resource::{MetaItem, MetaItemPreview, Stream, StreamSource, Video},
-        streams::StreamsItem,
+        streams::{ConvertedStreamSource, StreamsItem},
     },
 };
 
@@ -61,12 +61,14 @@ pub struct ExternalPlayerLink {
 }
 
 /// Using `&Option<Url>` is not encouraged, use `.as_ref()` to get an `Option<&Url>` instead!
+// TODO: Remove
 impl From<(&Stream, &Option<Url>, &Settings)> for ExternalPlayerLink {
     fn from((stream, streaming_server_url, settings): (&Stream, &Option<Url>, &Settings)) -> Self {
         Self::from((stream, streaming_server_url.as_ref(), settings))
     }
 }
 
+// TODO: Remove
 impl From<(&Stream, Option<&Url>, &Settings)> for ExternalPlayerLink {
     /// Create an [`ExternalPlayerLink`] using the [`Stream`],
     /// the server url (from [`StreamingServer::base_url`] which indicates a running or not server)
@@ -152,6 +154,127 @@ impl From<(&Stream, Option<&Url>, &Settings)> for ExternalPlayerLink {
         };
         let (web, android_tv, tizen, webos) = match &stream.source {
             StreamSource::External {
+                external_url,
+                android_tv_url,
+                tizen_url,
+                webos_url,
+                ..
+            } => (
+                external_url.to_owned(),
+                android_tv_url.to_owned(),
+                tizen_url.to_owned(),
+                webos_url.to_owned(),
+            ),
+            _ => (None, None, None, None),
+        };
+        ExternalPlayerLink {
+            download,
+            streaming: streaming.as_ref().map(ToString::to_string),
+            playlist,
+            file_name,
+            open_player,
+            web,
+            android_tv,
+            tizen,
+            webos,
+        }
+    }
+}
+
+impl From<(&Stream<ConvertedStreamSource>, Option<&Url>, &Settings)> for ExternalPlayerLink {
+    /// Create an [`ExternalPlayerLink`] using the [`Stream`],
+    /// the server url (from [`StreamingServer::base_url`] which indicates a running or not server)
+    /// and the user's [`Settings`] in order to use the [`Settings::player_type`] for generating a
+    /// player-specific url.
+    ///
+    /// [`StreamingServer::base_url`]: crate::models::streaming_server::StreamingServer::base_url
+    fn from(
+        (stream, streaming_server_url, settings): (
+            &Stream<ConvertedStreamSource>,
+            Option<&Url>,
+            &Settings,
+        ),
+    ) -> Self {
+        // Use streaming_server_url from settings if streaming_server is reachable
+        let streaming_server_url = streaming_server_url.map(|_| &settings.streaming_server_url);
+        let http_regex = Regex::new(r"https?://").unwrap();
+        // let download = stream.download_url();
+        let download = None;
+        // let streaming = stream.streaming_url(streaming_server_url);
+        let streaming: Option<url::Url> = None;
+        // let playlist = stream.m3u_data_uri(streaming_server_url);
+        let playlist = None;
+        let file_name = playlist.as_ref().map(|_| "playlist.m3u".to_owned());
+        let open_player = match &streaming {
+            Some(url) => match settings.player_type.as_ref() {
+                Some(player_type) => match player_type.as_str() {
+                    "choose" => Some(OpenPlayerLink {
+                        android: Some(format!(
+                            "{}#Intent;type=video/any;scheme=https;end",
+                            http_regex.replace(url.as_str(), "intent://"),
+                        )),
+                        ..Default::default()
+                    }),
+                    "vlc" => Some(OpenPlayerLink {
+                        ios: Some(format!("vlc-x-callback://x-callback-url/stream?url={url}")),
+                        visionos: Some(format!("vlc-x-callback://x-callback-url/stream?url={url}")),
+                        android: Some(format!(
+                            "{}#Intent;package=org.videolan.vlc;type=video;scheme=https;end",
+                            http_regex.replace(url.as_str(), "intent://"),
+                        )),
+                        ..Default::default()
+                    }),
+                    "mxplayer" => Some(OpenPlayerLink {
+                        android: Some(format!(
+                            "{}#Intent;package=com.mxtech.videoplayer.ad;type=video;scheme=https;end",
+                            http_regex.replace(url.as_str(), "intent://"),
+                        )),
+                        ..Default::default()
+                    }),
+                    "justplayer" => Some(OpenPlayerLink {
+                        android: Some(format!(
+                            "{}#Intent;package=com.brouken.player;type=video;scheme=https;end",
+                            http_regex.replace(url.as_str(), "intent://"),
+                        )),
+                        ..Default::default()
+                    }),
+                    "outplayer" => Some(OpenPlayerLink {
+                        ios: Some(http_regex.replace(url.as_str(), "outplayer://").to_string()),
+                        visionos: Some(http_regex.replace(url.as_str(), "outplayer://").to_string()),
+                        ..Default::default()
+                    }),
+                    "infuse" => Some(OpenPlayerLink {
+                        ios: Some(format!("infuse://x-callback-url/play?url={url}")),
+                       ..Default::default()
+                    }),
+                    "iina" => Some(OpenPlayerLink {
+                        macos: Some(format!("iina://weblink?url={url}")),
+                       ..Default::default()
+                    }),
+                    "mpv" => Some(OpenPlayerLink {
+                        macos: Some(format!("mpv://{url}")),
+                       ..Default::default()
+                    }),
+                    "moonplayer" => Some(OpenPlayerLink {
+                        visionos: Some(format!("moonplayer://open?url={url}")),
+                        ..Default::default()
+                    }),
+                    "m3u" => Some(OpenPlayerLink {
+                        linux: playlist.to_owned(),
+                        windows: playlist.to_owned(),
+                        macos: playlist.to_owned(),
+                        android: playlist.to_owned(),
+                        ios: playlist.to_owned(),
+                       ..Default::default()
+                    }),
+                    _ => None,
+                },
+                None => None,
+            },
+            None => None,
+        };
+        let (web, android_tv, tizen, webos) = match &stream.source {
+            ConvertedStreamSource::External {
                 external_url,
                 android_tv_url,
                 tizen_url,
@@ -453,6 +576,34 @@ impl From<(&Stream, &Option<Url>, &Settings)> for StreamDeepLinks {
     ///
     /// [`StreamingServer::base_url`]: crate::models::streaming_server::StreamingServer::base_url
     fn from((stream, streaming_server_url, settings): (&Stream, &Option<Url>, &Settings)) -> Self {
+        StreamDeepLinks {
+            player: stream
+                .encode()
+                .map(|stream| {
+                    format!(
+                        "stremio:///player/{}",
+                        utf8_percent_encode(&stream, URI_COMPONENT_ENCODE_SET),
+                    )
+                })
+                .unwrap_or_else(|error| ErrorLink::from(error).into()),
+            external_player: ExternalPlayerLink::from((stream, streaming_server_url, settings)),
+        }
+    }
+}
+impl From<(&Stream<ConvertedStreamSource>, Option<&Url>, &Settings)> for StreamDeepLinks {
+    /// Create a [`StreamDeepLinks`] using the [`Stream`],
+    /// the server url (from [`StreamingServer::base_url`] which indicates a running or not server)
+    /// and the user's [`Settings`] in order to use the [`Settings::player_type`] for generating a
+    /// player-specific url.
+    ///
+    /// [`StreamingServer::base_url`]: crate::models::streaming_server::StreamingServer::base_url
+    fn from(
+        (stream, streaming_server_url, settings): (
+            &Stream<ConvertedStreamSource>,
+            Option<&Url>,
+            &Settings,
+        ),
+    ) -> Self {
         StreamDeepLinks {
             player: stream
                 .encode()

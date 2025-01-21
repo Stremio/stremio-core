@@ -17,12 +17,20 @@ use stremio_core::types::{
 use crate::model::deep_links_ext::DeepLinksExt;
 
 mod model {
+    use stremio_core::{
+        runtime::EnvError,
+        types::{
+            resource::StreamSource,
+            streams::{ConvertedStreamSource, StreamSourceTrait},
+        },
+    };
+
     use super::*;
     #[derive(Serialize)]
     #[serde(rename_all = "camelCase")]
-    pub struct Stream<'a> {
+    pub struct Stream<'a, S: StreamSourceTrait = StreamSource> {
         #[serde(flatten)]
-        pub stream: &'a stremio_core::types::resource::Stream,
+        pub stream: &'a stremio_core::types::resource::Stream<S>,
         pub deep_links: StreamDeepLinks,
     }
     #[derive(Serialize)]
@@ -97,6 +105,8 @@ mod model {
     #[serde(rename_all = "camelCase")]
     pub struct Player<'a> {
         pub selected: Option<Selected<'a>>,
+        #[serde(skip_serializing_if = "Loadable::is_loading")]
+        pub stream: Loadable<Stream<'a, ConvertedStreamSource>, &'a EnvError>,
         pub meta_item: Option<Loadable<model::MetaItem<'a>, &'a ResourceError>>,
         pub subtitles: Vec<model::Subtitles<'a>>,
         pub next_video: Option<Video<'a>>,
@@ -130,6 +140,15 @@ pub fn serialize_player<E: stremio_core::runtime::Env + 'static>(
             stream_request: &selected.stream_request,
             meta_request: &selected.meta_request,
             subtitles_path: &selected.subtitles_path,
+        }),
+        stream: player.stream.as_ref().map(|(_urls, stream)| model::Stream {
+            stream: &stream,
+            deep_links: StreamDeepLinks::from((
+                stream,
+                streaming_server.base_url.as_ref(),
+                &ctx.profile.settings,
+            ))
+            .into_web_deep_links(),
         }),
         meta_item: player
             .meta_item

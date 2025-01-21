@@ -17,7 +17,7 @@ use crate::models::common::{
 };
 use crate::models::ctx::{Ctx, CtxError};
 use crate::runtime::msg::{Action, ActionLoad, ActionPlayer, Event, Internal, Msg};
-use crate::runtime::{Effect, EffectFuture, Effects, Env, EnvFutureExt, UpdateWithCtx};
+use crate::runtime::{Effect, EffectFuture, Effects, Env, EnvError, EnvFutureExt, UpdateWithCtx};
 use crate::types::addon::{AggrRequest, Descriptor, ExtraExt, ResourcePath, ResourceRequest};
 use crate::types::api::{
     fetch_api, APIRequest, APIResult, SeekLog, SeekLogRequest, SkipGapsRequest, SkipGapsResponse,
@@ -26,8 +26,10 @@ use crate::types::api::{
 use crate::types::library::{LibraryBucket, LibraryItem};
 use crate::types::player::{IntroData, IntroOutro};
 use crate::types::profile::{Profile, Settings as ProfileSettings};
-use crate::types::resource::{MetaItem, SeriesInfo, Stream, StreamSource, Subtitles, Video};
-use crate::types::streams::{StreamItemState, StreamsBucket, StreamsItemKey};
+use crate::types::resource::{
+    MetaItem, SeriesInfo, Stream, StreamSource, StreamUrls, Subtitles, Video,
+};
+use crate::types::streams::{ConvertedStreamSource, StreamItemState, StreamsBucket, StreamsItemKey};
 
 use stremio_watched_bitfield::WatchedBitField;
 
@@ -96,6 +98,7 @@ pub struct Player {
     pub next_video: Option<Video>,
     pub next_streams: Option<ResourceLoadable<Vec<Stream>>>,
     pub next_stream: Option<Stream>,
+    pub stream: Loadable<(StreamUrls, Stream<ConvertedStreamSource>), EnvError>,
     pub series_info: Option<SeriesInfo>,
     pub library_item: Option<LibraryItem>,
     pub stream_state: Option<StreamItemState>,
@@ -173,6 +176,13 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                 };
                 let stream_state_effects = eq_update(&mut self.stream_state, None);
                 let video_params_effects = eq_update(&mut self.video_params, None);
+
+                let stream_effects = eq_update(&mut self.stream, Loadable::Loading);
+                let update_stream_source_effects =
+                    Effects::msg(Msg::Internal(Internal::UpdateStreamSource {
+                        stream: selected.stream.to_owned(),
+                    }));
+
                 let subtitles_effects = subtitles_update::<E>(
                     &mut self.subtitles,
                     &self.selected,
@@ -277,6 +287,8 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                     .join(meta_item_effects)
                     .join(stream_state_effects)
                     .join(video_params_effects)
+                    .join(stream_effects)
+                    .join(update_stream_source_effects)
                     .join(subtitles_effects)
                     .join(next_video_effects)
                     .join(next_streams_effects)
@@ -627,6 +639,22 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                         .map(|library_item| library_item.state.time_offset),
                 );
 
+                let item_state_update_effects = item_state_update(&mut self.library_item, &self.next_video);
+                // let item_state_update_effects = if self
+                //     .selected
+                //     .as_ref()
+                //     .and_then(|selected| selected.meta_request.as_ref())
+                //     .map(|meta_request| &meta_request.path.id)
+                //     != self.selected
+                //         .meta_request
+                //         .as_ref()
+                //         .map(|meta_request| &meta_request.path.id)
+                // {
+                    // item_state_update(&mut self.library_item, &self.next_video)
+                // } else {
+                //     Effects::none().unchanged()
+                // };
+
                 // Set time_offset to 0 as we switch to next video
                 let library_item_effects = self
                     .library_item
@@ -644,6 +672,7 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
 
                 // Load will actually take care of loading the next video
                 seek_history_effects
+                .join(item_state_update_effects)
                     .join(
                         Effects::msg(Msg::Event(Event::PlayerNextVideo {
                             context: self.analytics_context.as_ref().cloned().unwrap_or_default(),
@@ -849,6 +878,37 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                     analytics_context.has_trakt = ctx.profile.has_trakt::<E>();
                 };
                 Effects::none().unchanged()
+            }
+            Msg::Internal(Internal::StreamingServerStreamSourceResult {
+                original,
+                result,
+                streaming_server_url,
+            }) => {
+                let next_stream_url_effects = match &self.selected {
+                    // update it only if the result is for the same original
+                    // stream that the request was made for
+                    Some(selected) if &selected.stream == original => {
+                        let next_stream = match result {
+                            Ok(converted_stream) => {
+                                let stream_urls = StreamUrls::new(
+                                    converted_stream.to_owned(),
+                                    streaming_server_url.as_ref(),
+                                );
+                                
+                                Loadable::Ready((stream_urls, converted_stream.to_owned()))
+                            },
+                            Err(err) => {
+                                tracing::info!("failed here");
+                                Loadable::Err(err.to_owned())
+                            },
+                        };
+
+                        eq_update(&mut self.stream, next_stream)
+                    }
+                    _ => Effects::none().unchanged(),
+                };
+
+                next_stream_url_effects
             }
             _ => Effects::none().unchanged(),
         }

@@ -17,7 +17,7 @@ use crate::types::profile::{Auth, AuthKey, Profile, User};
 use crate::types::streaming_server::{
     DeviceInfo, GetHTTPSResponse, NetworkInfo, SettingsResponse, Statistics, StatisticsRequest,
 };
-use crate::types::streams::StreamItemState;
+use crate::types::streams::{ConvertedStreamSource, StreamItemState};
 use crate::types::{
     resource::{MetaItem, Stream},
     torrent::InfoHash,
@@ -124,6 +124,19 @@ pub enum Internal {
     StreamingServerPlayOnDeviceResult(String, Result<(), EnvError>),
     // Result for get https endpoint request
     StreamingServerGetHTTPSResult(Url, Result<GetHTTPSResponse, EnvError>),
+    /// Will make a request to the server and create a rar/zip url
+    /// if needed.
+    UpdateStreamSource {
+        stream: Stream,
+    },
+    /// A result when updating the StreamSource
+    /// For Rar & Zip where a request to the server is made, this will alter
+    /// the resulting StreamSource to include the streaming url.
+    StreamingServerStreamSourceResult {
+        original: Stream,
+        result: Result<Stream<ConvertedStreamSource>, EnvError>,
+        streaming_server_url: Option<Url>,
+    },
     /// Result for streaming server statistics.
     ///
     /// Server will return None (or `null`) in response for [`Statistics`]`,

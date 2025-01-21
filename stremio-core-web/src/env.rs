@@ -267,6 +267,11 @@ impl Env for WebEnv {
     {
         let (parts, body) = request.into_parts();
         let url = parts.uri.to_string();
+        let url = if url.ends_with("zip/create") {
+            "http://127.0.0.1/zip/create".into()
+        } else {
+            url
+        };
         let method = parts.method.as_str();
         let headers = {
             let mut headers = HashMap::new();
@@ -278,9 +283,29 @@ impl Env for WebEnv {
             <JsValue as JsValueSerdeExt>::from_serde(&headers)
                 .expect("WebEnv::fetch: JsValue from Headers failed to be built")
         };
+
+        // let body = if parts.method != Method::GET {
+        //     let js_value = <JsValue as JsValueSerdeExt>::from_serde(&body).expect(
+        //         "JsValue of the Body failed to be built from a serializable using JSON format",
+        //     );
+        //     tracing::info!("JsValue from Serialize-able struct: {:?}", &js_value);
+
+        //     if js_value != JsValue::null() {
+        //         tracing::info!("url: {}", url);
+        //         Some(js_value.into_serde::<String>().unwrap())
+        //     } else {
+        //         None
+        //     }
+        // } else {
+        //     None
+        // };
+
         let body = match serde_json::to_string(&body) {
             Ok(ref body) if body != "null" && parts.method != Method::GET => {
-                Some(JsValue::from_str(body))
+                let js_value = JsValue::from_str(body);
+                tracing::info!("JsValue Body: {:?}", &js_value);
+                tracing::info!("url: {:?}", &url);
+                Some(js_value)
             }
             _ => None,
         };
@@ -294,7 +319,10 @@ impl Env for WebEnv {
             .expect("request builder failed");
         let promise = global().fetch_with_request(&request);
         async {
-            let resp = JsFuture::from(promise).await.map_err(|error| {
+            tracing::info!("{:?}", &promise);
+            let js_fut = JsFuture::from(promise);
+            let resp = js_fut.await.map_err(|error| {
+                tracing::info!("{:?}", error);
                 EnvError::Fetch(
                     error
                         .dyn_into::<js_sys::Error>()
