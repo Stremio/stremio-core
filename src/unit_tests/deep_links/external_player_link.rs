@@ -166,3 +166,156 @@ fn external_player_link_player_frame() {
     assert_eq!(epl.playlist, None);
     assert_eq!(epl.file_name, None);
 }
+
+#[test]
+fn external_player_link_with_vlc_player() {
+    let stream = Stream {
+        source: StreamSource::Url {
+            url: Url::from_str("http://example.com/stream").unwrap(),
+        },
+        name: None,
+        description: None,
+        thumbnail: None,
+        subtitles: vec![],
+        behavior_hints: Default::default(),
+    };
+
+    let streaming_server_url = Some(Url::parse(STREAMING_SERVER_URL).unwrap());
+
+    let settings = Settings {
+        player_type: Some("vlc".to_string()),
+        streaming_server_url: Url::parse(STREAMING_SERVER_URL).unwrap(),
+        ..Default::default()
+    };
+
+    let epl = ExternalPlayerLink::from((&stream, streaming_server_url.as_ref(), &settings));
+
+    let open_player = epl.open_player.as_ref().unwrap();
+
+    assert_eq!(
+        open_player.android,
+        Some("intent://example.com/stream#Intent;package=org.videolan.vlc;type=video;scheme=https;end".to_string())
+    );
+    assert_eq!(
+        open_player.ios,
+        Some("vlc-x-callback://x-callback-url/stream?url=http://example.com/stream".to_string())
+    );
+}
+
+#[test]
+fn external_player_link_with_mxplayer() {
+    let stream = Stream {
+        source: StreamSource::Url {
+            url: Url::from_str("http://example.com/stream").unwrap(),
+        },
+        name: None,
+        description: None,
+        thumbnail: None,
+        subtitles: vec![],
+        behavior_hints: Default::default(),
+    };
+
+    let streaming_server_url = Some(Url::parse(STREAMING_SERVER_URL).unwrap());
+
+    let settings = Settings {
+        player_type: Some("mxplayer".to_string()),
+        streaming_server_url: Url::parse(STREAMING_SERVER_URL).unwrap(),
+        ..Default::default()
+    };
+
+    let epl = ExternalPlayerLink::from((&stream, streaming_server_url.as_ref(), &settings));
+
+    assert_eq!(
+        epl.open_player.unwrap().android,
+        Some("intent://example.com/stream#Intent;package=com.mxtech.videoplayer.ad;type=video;scheme=https;end".to_string())
+    );
+}
+
+#[test]
+fn external_player_link_with_justplayer() {
+    let stream = Stream {
+        source: StreamSource::Url {
+            url: Url::from_str("http://example.com/stream").unwrap(),
+        },
+        name: None,
+        description: None,
+        thumbnail: None,
+        subtitles: vec![],
+        behavior_hints: Default::default(),
+    };
+
+    let streaming_server_url = Some(Url::parse(STREAMING_SERVER_URL).unwrap());
+
+    let settings = Settings {
+        player_type: Some("justplayer".to_string()),
+        streaming_server_url: Url::parse(STREAMING_SERVER_URL).unwrap(),
+        ..Default::default()
+    };
+
+    let epl = ExternalPlayerLink::from((&stream, streaming_server_url.as_ref(), &settings));
+
+    assert_eq!(
+        epl.open_player.unwrap().android,
+        Some("intent://example.com/stream#Intent;package=com.brouken.player;type=video;scheme=https;end".to_string())
+    );
+}
+
+#[test]
+fn external_player_link_with_outplayer() {
+    let stream = Stream {
+        source: StreamSource::Url {
+            url: Url::from_str("http://example.com/stream").unwrap(),
+        },
+        name: None,
+        description: None,
+        thumbnail: None,
+        subtitles: vec![],
+        behavior_hints: Default::default(),
+    };
+
+    let streaming_server_url = Some(Url::parse(STREAMING_SERVER_URL).unwrap());
+
+    let settings = Settings {
+        player_type: Some("outplayer".to_string()),
+        streaming_server_url: Url::parse(STREAMING_SERVER_URL).unwrap(),
+        ..Default::default()
+    };
+
+    let epl = ExternalPlayerLink::from((&stream, streaming_server_url.as_ref(), &settings));
+
+    assert_eq!(
+        epl.open_player.unwrap().ios,
+        Some("outplayer://example.com/stream".to_string())
+    );
+}
+
+#[test]
+fn external_player_link_with_infuse() {
+    let stream = Stream {
+        source: StreamSource::Url {
+            url: Url::from_str("http://example.com/stream").unwrap(),
+        },
+        name: None,
+        description: None,
+        thumbnail: None,
+        subtitles: vec![],
+        behavior_hints: Default::default(),
+    };
+
+    let streaming_server_url = Some(Url::parse(STREAMING_SERVER_URL).unwrap());
+
+    let settings = Settings {
+        player_type: Some("infuse".to_string()),
+        streaming_server_url: Url::parse(STREAMING_SERVER_URL).unwrap(),
+        ..Default::default()
+    };
+
+    let epl = ExternalPlayerLink::from((&stream, streaming_server_url.as_ref(), &settings));
+
+    let open_player = epl.open_player.as_ref().unwrap();
+
+    assert_eq!(
+        open_player.ios,
+        Some("infuse://x-callback-url/play?url=http://example.com/stream".to_string())
+    );
+}
