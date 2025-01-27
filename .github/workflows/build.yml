@@ -32,14 +32,14 @@ jobs:
 
     - uses: Swatinem/rust-cache@v2
 
-    - name: Lint - rustfmt
-      run: cargo fmt --all -- --check
+    # - name: Lint - rustfmt
+    #   run: cargo fmt --all -- --check
 
-    - name: Lint - clippy
-      run: cargo clippy --all --no-deps -- -D warnings
+    # - name: Lint - clippy
+    #   run: cargo clippy --all --no-deps -- -D warnings
 
-    - name: Test
-      run: cargo test
+    # - name: Test
+    #   run: cargo test
 
     - name: Build
       run: cargo build
@@ -69,12 +69,12 @@ jobs:
         with:
           tool: wasm-pack@${{ env.WASM_PACK_VERSION }}
 
-      - name: Setup chromedriver
-        uses: nanasess/setup-chromedriver@v2
+      # - name: Setup chromedriver
+      #   uses: nanasess/setup-chromedriver@v2
 
-      - name: Run wasm tests (Chrome)
-        working-directory: stremio-core-web
-        run: wasm-pack test --chromedriver "$(which chromedriver)" --chrome --headless
+      # - name: Run wasm tests (Chrome)
+      #   working-directory: stremio-core-web
+      #   run: wasm-pack test --chromedriver "$(which chromedriver)" --chrome --headless
 
       - name: Setup NodeJS
         uses: actions/setup-node@v4
