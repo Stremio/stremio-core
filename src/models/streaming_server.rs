@@ -784,12 +784,7 @@ pub fn convert_stream<E: Env + 'static>(
         // })
         //     ConvertedStreamSource::Url(todo!())
         // }
-        StreamSource::Torrent {
-            info_hash,
-            file_idx,
-            announce,
-            ..
-        } => {
+        StreamSource::Torrent { .. } => {
             // Torrent
             // createTorrent(streamingServerURL, stream.infoHash, stream.fileIdx, stream.announce, seriesInfo)
             // .then(function(torrent) {
@@ -807,7 +802,7 @@ pub fn convert_stream<E: Env + 'static>(
     };
 
     match transport_url {
-        Some(server_url) => Ok(Some(Stream {
+        Some(_server_url) => Ok(Some(Stream {
             source: converted_stream,
             name: stream.name,
             description: stream.description,
@@ -1197,7 +1192,13 @@ pub async fn update_stream_source_streaming_url<E: Env + 'static>(
 
             Ok(stream.to_converted(ConvertedStreamSource::Url { url: stream_url }))
         }
-        (Some(_), StreamSource::Nzb { nzb_url, servers }) => {
+        (
+            Some(_),
+            StreamSource::Nzb {
+                nzb_url: _,
+                servers,
+            },
+        ) => {
             if servers.is_empty() {
                 return Err(EnvError::Other("No server URLs provided".into()));
             }

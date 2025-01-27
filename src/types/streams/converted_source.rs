@@ -24,14 +24,11 @@ mod sealed {
 
 #[serde_as]
 #[derive(Clone, PartialEq, Eq, Serialize, Deserialize, Debug)]
-#[cfg_attr(test, derive(derivative::Derivative))]
-#[cfg_attr(test, derivative(Default))]
 #[serde(untagged)]
 pub enum ConvertedStreamSource {
     Url {
         url: Url,
     },
-    #[cfg_attr(test, derivative(Default))]
     #[serde(rename_all = "camelCase")]
     YouTube {
         /// The Streaming url
