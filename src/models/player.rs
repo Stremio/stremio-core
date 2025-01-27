@@ -29,7 +29,9 @@ use crate::types::profile::{Profile, Settings as ProfileSettings};
 use crate::types::resource::{
     MetaItem, SeriesInfo, Stream, StreamSource, StreamUrls, Subtitles, Video,
 };
-use crate::types::streams::{ConvertedStreamSource, StreamItemState, StreamsBucket, StreamsItemKey};
+use crate::types::streams::{
+    ConvertedStreamSource, StreamItemState, StreamsBucket, StreamsItemKey,
+};
 
 use stremio_watched_bitfield::WatchedBitField;
 
@@ -639,21 +641,8 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                         .map(|library_item| library_item.state.time_offset),
                 );
 
-                let item_state_update_effects = item_state_update(&mut self.library_item, &self.next_video);
-                // let item_state_update_effects = if self
-                //     .selected
-                //     .as_ref()
-                //     .and_then(|selected| selected.meta_request.as_ref())
-                //     .map(|meta_request| &meta_request.path.id)
-                //     != self.selected
-                //         .meta_request
-                //         .as_ref()
-                //         .map(|meta_request| &meta_request.path.id)
-                // {
-                    // item_state_update(&mut self.library_item, &self.next_video)
-                // } else {
-                //     Effects::none().unchanged()
-                // };
+                let item_state_update_effects =
+                    item_state_update(&mut self.library_item, &self.next_video);
 
                 // Set time_offset to 0 as we switch to next video
                 let library_item_effects = self
@@ -672,7 +661,7 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
 
                 // Load will actually take care of loading the next video
                 seek_history_effects
-                .join(item_state_update_effects)
+                    .join(item_state_update_effects)
                     .join(
                         Effects::msg(Msg::Event(Event::PlayerNextVideo {
                             context: self.analytics_context.as_ref().cloned().unwrap_or_default(),
@@ -894,13 +883,10 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                                     converted_stream.to_owned(),
                                     streaming_server_url.as_ref(),
                                 );
-                                
+
                                 Loadable::Ready((stream_urls, converted_stream.to_owned()))
-                            },
-                            Err(err) => {
-                                tracing::info!("failed here");
-                                Loadable::Err(err.to_owned())
-                            },
+                            }
+                            Err(err) => Loadable::Err(err.to_owned()),
                         };
 
                         eq_update(&mut self.stream, next_stream)
@@ -1333,8 +1319,11 @@ fn calculate_outro(library_item: &LibraryItem, closest_duration: u64, closest_ou
     let duration_diff_in_secs =
         (library_item.state.duration.abs_diff(closest_duration)).div(1000 * 10) / 10;
     tracing::debug!(
+        closest_duration,
+        closest_outro,
         "Player: Outro match by duration with difference of {duration_diff_in_secs} seconds"
     );
+
     library_item
         .state
         .duration
@@ -1402,18 +1391,20 @@ fn intro_outro_update<E: Env + 'static>(
 
                 closest_duration.and_then(|(closest_duration, skip_gaps)| {
                 let duration_diff_in_secs = (library_item.state.duration.abs_diff(*closest_duration)).div(1000 * 10) / 10;
-                tracing::trace!("Player: Intro match by duration with difference of {duration_diff_in_secs} seconds");
-
                 let duration_ration = Ratio::new(library_item.state.duration, *closest_duration);
-
                 // even though we checked for len() > 0 make sure we don't panic if somebody decides to remove that check!
-                skip_gaps.seek_history.first().map(|seek_event| {
-                    IntroData {
+                let matched_intro = skip_gaps.seek_history.first().map(|seek_event| {
+                    let intro_data = IntroData {
                         from: (duration_ration * seek_event.from).to_integer(),
                         to: (duration_ration * seek_event.to).to_integer(),
                         duration: if duration_diff_in_secs > 0 { Some(seek_event.to.abs_diff(seek_event.from)) } else { None }
-                    }
-                })
+                    };
+                    tracing::debug!(?seek_event, ?intro_data, "Player: Intro match for event by duration with difference of {duration_diff_in_secs} seconds",);
+                    intro_data
+                })?;
+
+
+                Some(matched_intro)
               })
             };
 

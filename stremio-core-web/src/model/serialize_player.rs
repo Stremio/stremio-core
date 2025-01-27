@@ -105,7 +105,6 @@ mod model {
     #[serde(rename_all = "camelCase")]
     pub struct Player<'a> {
         pub selected: Option<Selected<'a>>,
-        #[serde(skip_serializing_if = "Loadable::is_loading")]
         pub stream: Loadable<Stream<'a, ConvertedStreamSource>, &'a EnvError>,
         pub meta_item: Option<Loadable<model::MetaItem<'a>, &'a ResourceError>>,
         pub subtitles: Vec<model::Subtitles<'a>>,

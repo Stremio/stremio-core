@@ -1,4 +1,6 @@
-#[allow(clippy::module_inception)]
+#![allow(clippy::module_inception)]
+#![allow(clippy::all)]
+
 pub mod model {
     #[cfg(feature = "wasm")]
     pub use {

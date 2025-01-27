@@ -4,31 +4,23 @@ use url::Url;
 
 use crate::types::{streaming_server::PeerSearch, torrent::InfoHash};
 
-pub struct ArchiveStreamRequest {
+pub struct ArchiveStreamRequest<Key = String> {
     /// The `rar/create` or `zip/create` key returned in the response
-    pub response_key: String,
+    pub key: Key,
     pub options: ArchiveStreamOptions,
 }
 
 impl ArchiveStreamRequest {
     pub fn to_query_pairs(self) -> Vec<(String, String)> {
         let options = serde_json::to_value(&self.options).expect("should serialize");
-        let options_object = options.as_object().expect("Should be an object");
 
-        vec![
-            (
-                "key".into(),
-                // append the length of the options
-                // keep in mind that `None` options should always be treated as not-set
-                // i.e. should not be serialized
-                format!(
-                    "{key}{length}",
-                    key = self.response_key,
-                    length = options_object.len()
-                ),
-            ),
-            ("o".into(), options.to_string()),
-        ]
+        let mut query_params = vec![("key".into(), self.key.to_owned())];
+
+        if self.options != ArchiveStreamOptions::default() {
+            query_params.push(("o".into(), options.to_string()));
+        }
+
+        query_params
     }
 }
 
@@ -37,7 +29,7 @@ impl ArchiveStreamRequest {
 /// Format: `rar/stream?key={create_key}{options length}&o={options_json_string}`
 ///
 /// Where all parameters are url encoded.
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Default, Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 #[serde(rename_all = "camelCase")]
 pub struct ArchiveStreamOptions {
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -72,8 +64,8 @@ pub struct CreateTorrentRequest {
     pub file_idx: u64,
 }
 
-impl Into<Request<()>> for CreateTorrentRequest {
-    fn into(self) -> Request<()> {
+impl From<CreateTorrentRequest> for Request<()> {
+    fn from(value: CreateTorrentRequest) -> Self {
         // var query = Array.isArray(sources) && sources.length > 0 ?
         //     '?' + new URLSearchParams(sources.map(function(source) {
         //         return ['tr', source];
@@ -87,15 +79,15 @@ impl Into<Request<()>> for CreateTorrentRequest {
         //     sources: sources
         // }
         let url = {
-            let mut uri = self
+            let mut uri = value
                 .server_url
-                .join(&format!("{}/{}", self.info_hash, self.file_idx))
+                .join(&format!("{}/{}", value.info_hash, value.file_idx))
                 .expect("Should always be valid Url");
 
             {
                 let mut x = uri.query_pairs_mut();
-                if !self.sources.is_empty() {
-                    for source in self.sources {
+                if !value.sources.is_empty() {
+                    for source in value.sources {
                         x.append_pair("tr", source.as_str());
                     }
                 }
@@ -136,17 +128,17 @@ pub struct OpensubtitlesParamsRequest {
     pub media_url: Url,
 }
 
-impl Into<Request<()>> for OpensubtitlesParamsRequest {
-    fn into(self) -> Request<()> {
+impl From<OpensubtitlesParamsRequest> for Request<()> {
+    fn from(value: OpensubtitlesParamsRequest) -> Self {
         let url = {
-            let mut uri = self
+            let mut uri = value
                 .server_url
                 .join("opensubHash")
                 .expect("Should always be valid Url");
             {
                 let mut x = uri.query_pairs_mut();
 
-                x.append_pair("videoUrl", self.media_url.as_str());
+                x.append_pair("videoUrl", value.media_url.as_str());
             }
 
             // x.finish();
@@ -159,7 +151,6 @@ impl Into<Request<()>> for OpensubtitlesParamsRequest {
             .expect("Should always be valid Request!")
     }
 }
-
 /// Filename request to the server.
 ///
 /// `{streaming_sever_url}/{info_hash_url_encoded}/{file_idx_url_encoded/stats.json`
@@ -173,16 +164,16 @@ pub struct FileNameRequest {
     // pub file_idx: u64,
 }
 
-impl Into<Request<()>> for FileNameRequest {
-    fn into(self) -> Request<()> {
+impl From<FileNameRequest> for Request<()> {
+    fn from(val: FileNameRequest) -> Self {
         let info_hash_encoded = url::form_urlencoded::Serializer::new(String::new())
-            .append_key_only(&self.request.info_hash.to_string())
+            .append_key_only(&val.request.info_hash.to_string())
             .finish();
         let file_idx_encoded = url::form_urlencoded::Serializer::new(String::new())
-            .append_key_only(&self.request.file_idx.to_string())
+            .append_key_only(&val.request.file_idx.to_string())
             .finish();
 
-        let uri = self
+        let uri = val
             .server_url
             .join(&format!(
                 "{info_hash_encoded}/{file_idx_encoded}/stats.json"

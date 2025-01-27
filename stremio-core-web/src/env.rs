@@ -139,6 +139,7 @@ impl WebEnv {
                         StreamSource::Torrent { .. } => "Torrent",
                         StreamSource::Rar { .. } => "Rar",
                         StreamSource::Zip { .. } => "Zip",
+                        StreamSource::Nzb { .. } => "Nzb",
                         StreamSource::External { .. } => "External",
                         StreamSource::PlayerFrame { .. } => "PlayerFrame"
                     }
@@ -267,11 +268,6 @@ impl Env for WebEnv {
     {
         let (parts, body) = request.into_parts();
         let url = parts.uri.to_string();
-        let url = if url.ends_with("zip/create") {
-            "http://127.0.0.1/zip/create".into()
-        } else {
-            url
-        };
         let method = parts.method.as_str();
         let headers = {
             let mut headers = HashMap::new();
@@ -303,8 +299,7 @@ impl Env for WebEnv {
         let body = match serde_json::to_string(&body) {
             Ok(ref body) if body != "null" && parts.method != Method::GET => {
                 let js_value = JsValue::from_str(body);
-                tracing::info!("JsValue Body: {:?}", &js_value);
-                tracing::info!("url: {:?}", &url);
+                // tracing::info!("url: {} JsValue Body: {:?}", &url, &js_value);
                 Some(js_value)
             }
             _ => None,
@@ -318,11 +313,17 @@ impl Env for WebEnv {
         let request = web_sys::Request::new_with_str_and_init(&url, &request_options)
             .expect("request builder failed");
         let promise = global().fetch_with_request(&request);
-        async {
-            tracing::info!("{:?}", &promise);
+        async move {
             let js_fut = JsFuture::from(promise);
             let resp = js_fut.await.map_err(|error| {
-                tracing::info!("{:?}", error);
+                tracing::error!(
+                    "{:?}\n Method: {} Url: {}\nBody{}",
+                    error,
+                    parts.method,
+                    url,
+                    body.map(|js_value| js_value.as_string().unwrap_or_default())
+                        .unwrap_or_default()
+                );
                 EnvError::Fetch(
                     error
                         .dyn_into::<js_sys::Error>()

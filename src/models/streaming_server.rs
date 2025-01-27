@@ -409,8 +409,11 @@ impl<E: Env + 'static> UpdateWithCtx<E> for StreamingServer {
                 _ => Effects::none().unchanged(),
             },
             Msg::Internal(Internal::UpdateStreamSource { stream }) => {
-                let effects =
-                    update_stream_source_effects::<E>(self.base_url.as_ref(), stream.to_owned());
+                let effects = update_stream_source_effects::<E>(
+                    self.base_url.clone(),
+                    self.selected.transport_url.clone(),
+                    stream.to_owned(),
+                );
 
                 effects
             }
@@ -817,7 +820,7 @@ pub fn convert_stream<E: Env + 'static>(
 }
 /// <https://github.com/Stremio/stremio-video/blob/5c50f9caa5bee2a66b5c6d3bbc967536a1305cbb/src/withStreamingServer/createTorrent.js#L18>
 pub async fn create_torrent<E: Env + 'static>(
-    mut server_url: Url,
+    server_url: Url,
     info_hash: InfoHash,
     file_idx: u64,
     sources: &[Url],
@@ -874,7 +877,6 @@ pub async fn get_video_params_effects<E: Env + 'static>(
     transport_url: Option<&Url>,
     stream: Stream<ConvertedStreamSource>,
 ) -> Result<Option<VideoParams>, EnvError> {
-    let streaming_server_url = transport_url.cloned();
     let stream_opensubtitles = stream.clone();
     let opensubitiles_params_fut = async move {
         match (
@@ -947,7 +949,7 @@ pub async fn get_opensubtitles_params<E: Env + 'static>(
     // return fetch(url.resolve(streamingServerURL, '/opensubHash?' + queryParams.toString()))
 
     // returns Null on invalid params
-    Ok(E::fetch(request.into()).await?)
+    E::fetch(request.into()).await
 }
 
 /// Get the filename of the played torrent.
@@ -979,15 +981,18 @@ pub async fn get_filename<E: Env + 'static>(
 
 /// Updates the stream_source and generates a correct streaming_url
 pub fn update_stream_source_effects<E: Env + 'static>(
-    transport_url: Option<&Url>,
+    base_url: Option<Url>,
+    transport_url: Url,
     stream: Stream,
 ) -> Effects {
-    let streaming_server_url = transport_url.cloned();
+    let streaming_server_url = transport_url.clone();
 
     let effect = EffectFuture::Concurrent(
-        update_stream_source_streaming_url::<E>(streaming_server_url.clone(), stream.clone())
-            .map(enclose!((stream) move |result|
-                Msg::Internal(Internal::StreamingServerStreamSourceResult{ original: stream, result, streaming_server_url })
+        update_stream_source_streaming_url::<E>(base_url.clone(), streaming_server_url.clone(), stream.clone())
+            .map(enclose!((base_url, streaming_server_url, stream) move |result|
+                {
+                    tracing::warn!("We have a Result from converting the stream");
+                    Msg::Internal(Internal::StreamingServerStreamSourceResult{ original: stream, result, streaming_server_url: base_url.map(|_| streaming_server_url) })}
             ))
             .boxed_env()
     );
@@ -998,12 +1003,13 @@ pub fn update_stream_source_effects<E: Env + 'static>(
 /// Updates a StreamSource if it's RAR or ZIP urls by calling the server (if present)
 /// and creating a streaming url for a given file (either with `file_idx` or `file_must_include`).
 pub async fn update_stream_source_streaming_url<E: Env + 'static>(
-    transport_url: Option<Url>,
-    mut stream: Stream,
+    base_url: Option<Url>,
+    streaming_server_url: Url,
+    stream: Stream,
 ) -> Result<Stream<ConvertedStreamSource>, EnvError> {
-    match (transport_url, stream.source.to_owned()) {
+    match (base_url, stream.source.to_owned()) {
         (
-            Some(streaming_server_url),
+            Some(_),
             StreamSource::Rar {
                 file_idx,
                 file_must_include,
@@ -1014,28 +1020,56 @@ pub async fn update_stream_source_streaming_url<E: Env + 'static>(
                 return Err(EnvError::Other("No RAR URLs provided".into()));
             }
 
-            // error on Url::join should never happen.
-            let create_stream_url = streaming_server_url
-                .join("rar/stream")
-                .map_err(|err| EnvError::Other(err.to_string()))?;
+            let streaming_server_url_request = streaming_server_url.clone();
+            let key = uuid::Uuid::new_v4().to_string();
+            let request_key = key.clone();
+            // run concurrently the request for making the zip/create request to the server
+            E::exec_concurrent(async move {
+                let create_stream_url = streaming_server_url_request
+                    .join(&format!("rar/create/{request_key}"))
+                    .expect("Url should always be valid");
 
-            let request = Request::post(create_stream_url.as_str())
-                .header(http::header::CONTENT_TYPE, "application/json")
-                .body(rar_urls)
-                .expect("request builder failed");
+                let request = Request::post(create_stream_url.as_str())
+                    .header(http::header::CONTENT_TYPE, "application/json")
+                    .header(http::header::ACCEPT, "*/*")
+                    // .header(http::header::ORIGIN, "localhost")
+                    .body(rar_urls.clone())
+                    .expect("request builder failed");
 
-            let response = E::fetch::<_, ArchiveCreateResponse>(request).await?;
-            let response_key = response
-                .key
-                .filter(|key| !key.is_empty())
-                .ok_or_else(|| EnvError::Other("Could not create RAR key".into()))?;
+                tracing::trace!(
+                    "Server Request for rar: {:?}\nJSON Body:{}",
+                    request,
+                    serde_json::to_string(&rar_urls).unwrap()
+                );
+
+                let response_key = E::fetch::<_, ArchiveCreateResponse>(request)
+                    .await
+                    .and_then(|response| {
+                        response
+                            .key
+                            .filter(|key| !key.is_empty())
+                            .ok_or_else(|| EnvError::Other("Could not create rar key".into()))
+                    });
+
+                match response_key {
+                    Ok(key) => {
+                        tracing::info!("Successful request to the Server for creating a Rar stream with key: {key}")
+                    }
+                    Err(err) => {
+                        tracing::error!(
+                            "Error creating Rar stream, no confirmation returned by the server: {}",
+                            err
+                        )
+                    }
+                }
+            });
 
             let mut stream_url = streaming_server_url
                 .join("rar/stream")
                 .map_err(|err| EnvError::Other(err.to_string()))?;
 
             let query_pairs = ArchiveStreamRequest {
-                response_key,
+                key,
                 options: ArchiveStreamOptions {
                     file_idx,
                     file_must_include,
@@ -1045,9 +1079,55 @@ pub async fn update_stream_source_streaming_url<E: Env + 'static>(
             stream_url.query_pairs_mut().extend_pairs(query_pairs);
 
             Ok(stream.to_converted(ConvertedStreamSource::Url { url: stream_url }))
+            // let mut stream_url = streaming_server_url
+            //     .join("rar/stream")
+            //     .map_err(|err| EnvError::Other(err.to_string()))?;
+
+            // let query_pairs = ArchiveStreamRequest {
+            //     key: response_key,
+            //     options: ArchiveStreamOptions {
+            //         file_idx,
+            //         file_must_include,
+            //     },
+            // }
+            // .to_query_pairs();
+            // stream_url.query_pairs_mut().extend_pairs(query_pairs);
+
+            // Ok(stream.to_converted(ConvertedStreamSource::Url { url: stream_url }))
+            // error on Url::join should never happen.
+            // let create_stream_url = streaming_server_url
+            //     .join("rar/stream")
+            //     .map_err(|err| EnvError::Other(err.to_string()))?;
+
+            // let request = Request::post(create_stream_url.as_str())
+            //     .header(http::header::CONTENT_TYPE, "application/json")
+            //     .body(rar_urls)
+            //     .expect("request builder failed");
+
+            // let response = E::fetch::<_, ArchiveCreateResponse>(request).await?;
+            // let response_key = response
+            //     .key
+            //     .filter(|key| !key.is_empty())
+            //     .ok_or_else(|| EnvError::Other("Could not create RAR key".into()))?;
+
+            // let mut stream_url = streaming_server_url
+            //     .join("rar/stream")
+            //     .map_err(|err| EnvError::Other(err.to_string()))?;
+
+            // let query_pairs = ArchiveStreamRequest {
+            //     key: response_key,
+            //     options: ArchiveStreamOptions {
+            //         file_idx,
+            //         file_must_include,
+            //     },
+            // }
+            // .to_query_pairs();
+            // stream_url.query_pairs_mut().extend_pairs(query_pairs);
+
+            // Ok(stream.to_converted(ConvertedStreamSource::Url { url: stream_url }))
         }
         (
-            Some(streaming_server_url),
+            Some(_),
             StreamSource::Zip {
                 file_idx,
                 file_must_include,
@@ -1058,30 +1138,55 @@ pub async fn update_stream_source_streaming_url<E: Env + 'static>(
                 return Err(EnvError::Other("No RAR URLs provided".into()));
             }
 
-            let create_stream_url = streaming_server_url
-                .join("zip/create")
-                .map_err(|err| EnvError::Other(err.to_string()))?;
+            let streaming_server_url_request = streaming_server_url.clone();
+            let key = uuid::Uuid::new_v4().to_string();
+            let request_key = key.clone();
+            // run concurrently the request for making the zip/create request to the server
+            E::exec_concurrent(async move {
+                let create_stream_url = streaming_server_url_request
+                    .join(&format!("zip/create/{request_key}"))
+                    .expect("Url should always be valid");
 
-            let request = Request::post(create_stream_url.as_str())
-                .header(http::header::CONTENT_TYPE, "application/json")
-                .header(http::header::ACCEPT, "*/*")
-                .body(zip_urls.clone())
-                .expect("request builder failed");
+                let request = Request::post(create_stream_url.as_str())
+                    .header(http::header::CONTENT_TYPE, "application/json")
+                    .header(http::header::ACCEPT, "*/*")
+                    .body(zip_urls.clone())
+                    .expect("request builder failed");
 
-            tracing::debug!("Server Request for zip: {:?}\nJSON Body:{}", request, serde_json::to_string(&zip_urls).unwrap());
+                tracing::trace!(
+                    "Server Request for zip: {:?}\nJSON Body:{}",
+                    request,
+                    serde_json::to_string(&zip_urls).unwrap()
+                );
 
-            let response = E::fetch::<_, ArchiveCreateResponse>(request).await?;
-            let response_key = response
-                .key
-                .filter(|key| !key.is_empty())
-                .ok_or_else(|| EnvError::Other("Could not create RAR key".into()))?;
+                let response_key = E::fetch::<_, ArchiveCreateResponse>(request)
+                    .await
+                    .and_then(|response| {
+                        response
+                            .key
+                            .filter(|key| !key.is_empty())
+                            .ok_or_else(|| EnvError::Other("Could not create zip key".into()))
+                    });
+
+                match response_key {
+                    Ok(key) => {
+                        tracing::info!("Successful request to the Server for creating a zip stream with key: {key}")
+                    }
+                    Err(err) => {
+                        tracing::error!(
+                            "Error creating zip stream, no confirmation returned by the server: {}",
+                            err
+                        )
+                    }
+                }
+            });
 
             let mut stream_url = streaming_server_url
                 .join("zip/stream")
                 .map_err(|err| EnvError::Other(err.to_string()))?;
 
             let query_pairs = ArchiveStreamRequest {
-                response_key,
+                key,
                 options: ArchiveStreamOptions {
                     file_idx,
                     file_must_include,
@@ -1092,9 +1197,77 @@ pub async fn update_stream_source_streaming_url<E: Env + 'static>(
 
             Ok(stream.to_converted(ConvertedStreamSource::Url { url: stream_url }))
         }
-        (None, StreamSource::Rar { .. } | StreamSource::Zip { .. }) => Err(EnvError::Other(
-            "Can't play Rar/Zip because streaming server is not running".into(),
-        )),
+        (Some(_), StreamSource::Nzb { nzb_url, servers }) => {
+            if servers.is_empty() {
+                return Err(EnvError::Other("No server URLs provided".into()));
+            }
+
+            let streaming_server_url_request = streaming_server_url.clone();
+            let key = uuid::Uuid::new_v4().to_string();
+            let request_key = key.clone();
+            let nzb_body = stream.source.clone();
+            // run concurrently the request for making the nzb/create request to the server
+            E::exec_concurrent(async move {
+                let create_stream_url = streaming_server_url_request
+                    .join(&format!("nzb/create/{request_key}"))
+                    .expect("Url should always be valid");
+
+                let request = Request::post(create_stream_url.as_str())
+                    .header(http::header::CONTENT_TYPE, "application/json")
+                    .header(http::header::ACCEPT, "*/*")
+                    .body(nzb_body.clone())
+                    .expect("request builder failed");
+
+                tracing::trace!(
+                    "Server Request for nzb: {:?}\nJSON Body:{}",
+                    request,
+                    serde_json::to_string(&nzb_body).unwrap()
+                );
+
+                let response_key = E::fetch::<_, ArchiveCreateResponse>(request)
+                    .await
+                    .and_then(|response| {
+                        response
+                            .key
+                            .filter(|key| !key.is_empty())
+                            .ok_or_else(|| EnvError::Other("Could not create nzb key".into()))
+                    });
+
+                match response_key {
+                    Ok(key) => {
+                        tracing::info!("Successful request to the Server for creating a nzb stream with key: {key}")
+                    }
+                    Err(err) => {
+                        tracing::error!(
+                            "Error creating nzb stream, no confirmation returned by the server: {}",
+                            err
+                        )
+                    }
+                }
+            });
+
+            let mut stream_url = streaming_server_url
+                .join("nzb/stream")
+                .map_err(|err| EnvError::Other(err.to_string()))?;
+
+            let query_pairs = ArchiveStreamRequest {
+                key,
+                // nzb does not have options
+                options: ArchiveStreamOptions {
+                    file_idx: None,
+                    file_must_include: vec![],
+                },
+            }
+            .to_query_pairs();
+            stream_url.query_pairs_mut().extend_pairs(query_pairs);
+
+            Ok(stream.to_converted(ConvertedStreamSource::Url { url: stream_url }))
+        }
+        (None, StreamSource::Rar { .. } | StreamSource::Zip { .. } | StreamSource::Nzb { .. }) => {
+            Err(EnvError::Other(
+                "Can't play Rar/Zip/Uzb because streaming server is not running".into(),
+            ))
+        }
         // no further changes are needed for now
         // we still need to create torrents, etc. in stremio-video
         // as it's not part of the current scope
@@ -1146,7 +1319,12 @@ pub async fn update_stream_source_streaming_url<E: Env + 'static>(
                 tizen_url,
                 webos_url,
             },
-        ) => Ok(stream.to_converted(todo!())),
+        ) => Ok(stream.to_converted(ConvertedStreamSource::External {
+            external_url,
+            android_tv_url,
+            tizen_url,
+            webos_url,
+        })),
     }
 }
 

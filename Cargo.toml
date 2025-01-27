@@ -13,11 +13,7 @@ opt-level = 's'
 
 [workspace]
 resolver = "2"
-members = [
-    "stremio-core-web",
-    "stremio-derive",
-    "stremio-watched-bitfield",
-]
+members = ["stremio-core-web", "stremio-derive", "stremio-watched-bitfield"]
 
 [features]
 # TODO: env-future-send should be enabled by default
@@ -37,13 +33,16 @@ derive = []
 # Enable core analytics
 analytics = []
 
+# enables WASM specific features for core
+wasm = ["uuid/js"]
+
 [dependencies]
 stremio-derive = { path = "stremio-derive" }
 stremio-watched-bitfield = { path = "stremio-watched-bitfield" }
 stremio-official-addons = "=2.0.13"
 
 # (De)Serialization
-serde = { version = "1", features = ["derive"]}
+serde = { version = "1", features = ["derive"] }
 serde_json = "1.0.*"
 serde_path_to_error = "0.1"
 serde_url_params = "0.2"
@@ -95,6 +94,12 @@ num = { version = "0.4.0", default-features = false }
 
 # Tracing
 tracing = "0.1"
+
+uuid = { version = "1.12.1", features = [
+    "v4",                # Lets you generate random UUIDs
+    "fast-rng",          # Use a faster (but still sufficiently random) RNG
+    "macro-diagnostics", # Enable better diagnostics for compile-time UUIDs
+]}
 
 [dev-dependencies]
 tokio = { version = "1.12", features = ["rt", "macros"] }

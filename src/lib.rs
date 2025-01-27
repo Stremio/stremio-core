@@ -1,3 +1,4 @@
+#![allow(clippy::all)]
 //! # Stremio core
 #![allow(clippy::module_inception)]
 // Do not allow broken intra doc links

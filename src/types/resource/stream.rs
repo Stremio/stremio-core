@@ -1,5 +1,3 @@
-use core::fmt;
-use std::str::FromStr;
 use std::{collections::HashMap, io::Write};
 
 use base64::Engine;
@@ -185,6 +183,7 @@ impl Stream {
                 file_idx: _,
                 file_must_include: _,
             } => None,
+            StreamSource::Nzb { .. } => None,
             StreamSource::Torrent { .. } => {
                 self.magnet_url().map(|magnet_url| magnet_url.to_string())
             }
@@ -476,7 +475,7 @@ pub enum StreamSource {
     },
     #[serde(rename_all = "camelCase")]
     Rar {
-        rar_urls: Vec<Url>,
+        rar_urls: Vec<ArchiveUrl>,
         #[serde(default)]
         file_idx: Option<u16>,
         #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -485,12 +484,18 @@ pub enum StreamSource {
     },
     #[serde(rename_all = "camelCase")]
     Zip {
-        zip_urls: Vec<Url>,
+        zip_urls: Vec<ArchiveUrl>,
         #[serde(default)]
         file_idx: Option<u16>,
         #[serde(default, skip_serializing_if = "Vec::is_empty")]
         #[serde_as(deserialize_as = "DefaultOnNull")]
         file_must_include: Vec<String>,
+    },
+    #[serde(rename_all = "camelCase")]
+    Nzb {
+        nzb_url: Url,
+        #[serde(default)]
+        servers: Vec<Url>,
     },
     #[serde(rename_all = "camelCase")]
     Torrent {
@@ -523,6 +528,13 @@ pub enum StreamSource {
         #[serde(skip_serializing_if = "Option::is_none")]
         webos_url: Option<String>,
     },
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub struct ArchiveUrl {
+    pub url: Url,
+    /// File size (if known) in Bytes
+    pub bytes: Option<u64>,
 }
 
 type ExternalStreamSource = (Option<Url>, Option<Url>, Option<String>, Option<String>);
@@ -591,6 +603,11 @@ pub struct StreamBehaviorHints {
 fn is_default_value<T: Default + PartialEq>(value: &T) -> bool {
     *value == T::default()
 }
+
+// ArchiveUrl {
+//     url: Url,
+
+// }
 
 #[derive(Clone, derivative::Derivative, Serialize, Debug, PartialEq, Eq)]
 pub struct StreamUrls {
@@ -671,7 +688,7 @@ impl StreamUrls {
     ) -> Self {
         let streaming_url = match &converted.source {
             ConvertedStreamSource::Url { url } => Some(url.to_owned()),
-            ConvertedStreamSource::Torrent { url, .. } => {
+            ConvertedStreamSource::Torrent { url: _url, .. } => {
                 streaming_server_url.cloned().map(|mut torrent_stream_url| {
                     {
                         let mut query_pairs = torrent_stream_url.query_pairs_mut();
@@ -759,9 +776,7 @@ impl StreamUrls {
                 .parse()
                 .expect("Should always be a valid URL"),
             ),
-            ConvertedStreamSource::External { external_url, .. } => {
-                external_url.as_ref().cloned()
-            }
+            ConvertedStreamSource::External { external_url, .. } => external_url.as_ref().cloned(),
             ConvertedStreamSource::PlayerFrame { player_frame_url } => {
                 Some(player_frame_url.to_owned())
             }

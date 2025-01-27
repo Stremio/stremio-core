@@ -1,10 +1,12 @@
 use url::Url;
 
-use serde_with::{serde_as, DefaultOnNull, VecSkipError};
-use serde::{Serialize, Deserialize};
-use stremio_serde_hex::{SerHex, Strict};
+use serde::{Deserialize, Serialize};
+use serde_with::{serde_as, DefaultOnNull};
 
-use crate::types::{resource::{StreamSource, deserialize_stream_source_external}, torrent::InfoHash, };
+use crate::types::{
+    resource::{deserialize_stream_source_external, StreamSource},
+    torrent::InfoHash,
+};
 
 /// Trait which defines the StreamSource state data structures in Core.
 pub trait StreamSourceTrait: sealed::Sealed {}
