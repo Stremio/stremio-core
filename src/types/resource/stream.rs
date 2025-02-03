@@ -178,6 +178,11 @@ impl Stream {
                 file_idx: _,
                 file_must_include: _,
             } => None,
+            StreamSource::Zip7 {
+                urls: _,
+                file_idx: _,
+                file_must_include: _,
+            } => None,
             StreamSource::Zip {
                 zip_urls: _,
                 file_idx: _,
@@ -351,26 +356,26 @@ impl Stream {
 /// [`StreamSource::Rar`] with `rarUrls` field:
 ///
 /// ```
-/// use stremio_core::types::resource::StreamSource;
+/// use stremio_core::types::resource::{ArchiveUrl, StreamSource};
 ///
 /// let streams_json = serde_json::json!([
 /// {
-///     "rarUrls": ["https://example-source.com/file.rar", "https://example-source2.com/file2.rar"],
+///     "rarUrls": [{"url": "https://example-source.com/file.rar", "bytes": 10000 }, {"url": "https://example-source2.com/file2.rar", "bytes": null }],
 ///     // ...Stream
 /// },
 /// {
-///     "rarUrls": ["https://example-source3.com/file.rar", "https://example-source4.com/file2.rar"],
+///     "rarUrls": [{"url": "https://example-source3.com/file.rar"}, {"url": "https://example-source4.com/file2.rar"}],
 ///     "fileIdx": 1,
 ///     "fileMustInclude": ["includeFile1"],
 ///     // ...Stream
 /// },
 /// {
-///     "rarUrls": ["https://example-source5.com/file.rar", "https://example-source6.com/file2.rar"],
+///     "rarUrls": [{"url": "https://example-source5.com/file.rar"}, {"url": "https://example-source6.com/file2.rar"}],
 ///     "fileMustInclude": ["includeFile2"],
 ///     // ...Stream
 /// },
 /// {
-///     "rarUrls": ["https://example-source7.com/file.rar", "https://example-source8.com/file2.rar"],
+///     "rarUrls": [{"url": "https://example-source7.com/file.rar"}, {"url": "https://example-source8.com/file2.rar"}],
 ///     "fileIdx": 2,
 ///     // ...Stream
 /// }
@@ -378,22 +383,24 @@ impl Stream {
 ///
 /// let expected = vec![
 ///     StreamSource::Rar {
-///         rar_urls: vec!["https://example-source.com/file.rar".parse().unwrap(), "https://example-source2.com/file2.rar".parse().unwrap()],
+///         rar_urls: vec![ArchiveUrl { url: "https://example-source.com/file.rar".parse().unwrap(), bytes: Some(10_000) }, ArchiveUrl {url: "https://example-source2.com/file2.rar".parse().unwrap(), bytes: None }],
 ///         file_idx: None,
 ///         file_must_include: vec![],
 ///     },
 ///     StreamSource::Rar {
-///         rar_urls: vec!["https://example-source3.com/file.rar".parse().unwrap(), "https://example-source4.com/file2.rar".parse().unwrap()],
+///         rar_urls: vec![ArchiveUrl { url: "https://example-source3.com/file.rar".parse().unwrap(), bytes: None }, ArchiveUrl {url: "https://example-source4.com/file2.rar".parse().unwrap(), bytes: None }],
 ///         file_idx: Some(1),
 ///         file_must_include: vec!["includeFile1".into()]
 ///     },
 ///     StreamSource::Rar {
-///         rar_urls: vec!["https://example-source5.com/file.rar".parse().unwrap(), "https://example-source6.com/file2.rar".parse().unwrap()],
+///         rar_urls: vec![ArchiveUrl { url: "https://example-source5.com/file.rar".parse().unwrap(), bytes: None }, ArchiveUrl {url: "https://example-source6.com/file2.rar".parse().unwrap(), bytes: None }],
 ///         file_idx: None,
 ///         file_must_include: vec!["includeFile2".into()]
 ///     },
 ///     StreamSource::Rar {
-///         rar_urls: vec!["https://example-source7.com/file.rar".parse().unwrap(), "https://example-source8.com/file2.rar".parse().unwrap()],
+///         rar_urls: vec![
+///             ArchiveUrl { url: "https://example-source7.com/file.rar".parse().unwrap(), bytes: None }, ArchiveUrl {url: "https://example-source8.com/file2.rar".parse().unwrap(), bytes: None }
+///         ],
 ///         file_idx: Some(2),
 ///         file_must_include: vec![],
 ///     },
@@ -407,26 +414,26 @@ impl Stream {
 /// [`StreamSource::Zip`] with `zipUrls` field:
 ///
 /// ```
-/// use stremio_core::types::resource::StreamSource;
+/// use stremio_core::types::resource::{ArchiveUrl, StreamSource};
 ///
 /// let streams_json = serde_json::json!([
 /// {
-///     "zipUrls": ["https://example-source.com/file.rar", "https://example-source2.com/file2.rar"],
+///     "zipUrls": [{"url": "https://example-source.com/file.rar", "bytes": 20000}, {"url": "https://example-source2.com/file2.rar"}],
 ///     // ...Stream
 /// },
 /// {
-///     "zipUrls": ["https://example-source3.com/file.rar", "https://example-source4.com/file2.rar"],
+///     "zipUrls": [{"url": "https://example-source3.com/file.rar"}, {"url": "https://example-source4.com/file2.rar"}],
 ///     "fileIdx": 1,
 ///     "fileMustInclude": ["includeFile1"],
 ///     // ...Stream
 /// },
 /// {
-///     "zipUrls": ["https://example-source5.com/file.rar", "https://example-source6.com/file2.rar"],
+///     "zipUrls": [{"url": "https://example-source5.com/file.rar"}, {"url": "https://example-source6.com/file2.rar"}],
 ///     "fileMustInclude": ["includeFile2"],
 ///     // ...Stream
 /// },
 /// {
-///     "zipUrls": ["https://example-source7.com/file.rar", "https://example-source8.com/file2.rar"],
+///     "zipUrls": [{"url": "https://example-source7.com/file.rar"}, {"url": "https://example-source8.com/file2.rar"}],
 ///     "fileIdx": 2,
 ///     // ...Stream
 /// }
@@ -434,22 +441,22 @@ impl Stream {
 ///
 /// let expected = vec![
 ///     StreamSource::Zip {
-///         zip_urls: vec!["https://example-source.com/file.rar".parse().unwrap(), "https://example-source2.com/file2.rar".parse().unwrap()],
+///         zip_urls: vec![ArchiveUrl {url: "https://example-source.com/file.rar".parse().unwrap(), bytes: Some(20_000) }, ArchiveUrl {url: "https://example-source2.com/file2.rar".parse().unwrap(), bytes: None}],
 ///         file_idx: None,
 ///         file_must_include: vec![],
 ///     },
 ///     StreamSource::Zip {
-///         zip_urls: vec!["https://example-source3.com/file.rar".parse().unwrap(), "https://example-source4.com/file2.rar".parse().unwrap()],
+///         zip_urls: vec![ArchiveUrl {url: "https://example-source3.com/file.rar".parse().unwrap(), bytes: None}, ArchiveUrl {url: "https://example-source4.com/file2.rar".parse().unwrap(), bytes: None}],
 ///         file_idx: Some(1),
 ///         file_must_include: vec!["includeFile1".into()],
 ///     },
 ///     StreamSource::Zip {
-///         zip_urls: vec!["https://example-source5.com/file.rar".parse().unwrap(), "https://example-source6.com/file2.rar".parse().unwrap()],
+///         zip_urls: vec![ArchiveUrl {url: "https://example-source5.com/file.rar".parse().unwrap(), bytes: None}, ArchiveUrl {url: "https://example-source6.com/file2.rar".parse().unwrap(), bytes: None}],
 ///         file_idx: None,
 ///         file_must_include: vec!["includeFile2".into()],
 ///     },
 ///     StreamSource::Zip {
-///         zip_urls: vec!["https://example-source7.com/file.rar".parse().unwrap(), "https://example-source8.com/file2.rar".parse().unwrap()],
+///         zip_urls: vec![ArchiveUrl {url: "https://example-source7.com/file.rar".parse().unwrap(), bytes: None}, ArchiveUrl {url: "https://example-source8.com/file2.rar".parse().unwrap(), bytes: None}],
 ///         file_idx: Some(2),
 ///         file_must_include: vec![],
 ///     },
@@ -473,6 +480,7 @@ pub enum StreamSource {
     YouTube {
         yt_id: String,
     },
+    /// Rar archive source
     #[serde(rename_all = "camelCase")]
     Rar {
         rar_urls: Vec<ArchiveUrl>,
@@ -482,6 +490,7 @@ pub enum StreamSource {
         #[serde_as(deserialize_as = "DefaultOnNull")]
         file_must_include: Vec<String>,
     },
+    /// Zip archive source
     #[serde(rename_all = "camelCase")]
     Zip {
         zip_urls: Vec<ArchiveUrl>,
@@ -491,6 +500,18 @@ pub enum StreamSource {
         #[serde_as(deserialize_as = "DefaultOnNull")]
         file_must_include: Vec<String>,
     },
+    /// 7zip archive source
+    #[serde(rename_all = "camelCase")]
+    Zip7 {
+        #[serde(rename = "7zUrls")]
+        urls: Vec<ArchiveUrl>,
+        #[serde(default)]
+        file_idx: Option<u16>,
+        #[serde(default, skip_serializing_if = "Vec::is_empty")]
+        #[serde_as(deserialize_as = "DefaultOnNull")]
+        file_must_include: Vec<String>,
+    },
+    /// Nzb source
     #[serde(rename_all = "camelCase")]
     Nzb {
         nzb_url: Url,

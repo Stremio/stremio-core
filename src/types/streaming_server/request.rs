@@ -5,7 +5,7 @@ use url::Url;
 use crate::types::{streaming_server::PeerSearch, torrent::InfoHash};
 
 pub struct ArchiveStreamRequest<Key = String> {
-    /// The `rar/create` or `zip/create` key returned in the response
+    /// The `rar/create`, `zip/create` or `7zip/create` key returned in the response or created by us
     pub key: Key,
     pub options: ArchiveStreamOptions,
 }
@@ -44,17 +44,17 @@ pub struct ArchiveStreamOptions {
 /// `http://127.0.0.1:11470/opensubHash?videoUrl=https%3A%2F%2Fexample.com%2Fmy-awesome-video.mp4`
 ///
 /// ```
-/// use core::types::streaming_server::CreateTorrentRequest;
+/// use stremio_core::types::streaming_server::CreateTorrentRequest;
 ///
-/// let request: http::Request = CreateTorrentRequest {
+/// let request: http::Request<()> = CreateTorrentRequest {
 ///     server_url: "http://127.0.0.1:11470/".parse().unwrap(),
-///     sources: vec!["https://example.com/my-awesome-video.mp4".parse().unwrap()]
-///     info_hash: "".parse().unwrap()
+///     sources: vec!["https://example.com/my-awesome-video.mp4".parse().unwrap()],
+///     info_hash: "017d177431e71199c96fbf2d4dee312471560af1".parse().unwrap(),
 ///     file_idx: 1,
 ///     
 /// }.into();
 ///
-/// assert_eq!("http://127.0.0.1:11470/opensubHash?videoUrl=https%3A%2F%2Fexample.com%2Fmy-awesome-video.mp4", request.uri().to_string());
+/// assert_eq!("http://127.0.0.1:11470/017d177431e71199c96fbf2d4dee312471560af1/1?tr=https%3A%2F%2Fexample.com%2Fmy-awesome-video.mp4", request.uri().to_string());
 /// assert_eq!(&(), request.body());
 /// ```
 pub struct CreateTorrentRequest {
@@ -93,7 +93,6 @@ impl From<CreateTorrentRequest> for Request<()> {
                 }
             }
 
-            // x.finish();
             uri
         };
 
@@ -112,11 +111,11 @@ impl From<CreateTorrentRequest> for Request<()> {
 /// `http://127.0.0.1:11470/opensubHash?videoUrl=https%3A%2F%2Fexample.com%2Fmy-awesome-video.mp4`
 ///
 /// ```
-/// use core::types::streaming_server::OpensubtitlesParapRequest;
+/// use stremio_core::types::streaming_server::OpensubtitlesParamsRequest;
 ///
-/// let request: http::Request = OpensubtitlesParapRequest {
-///     server_url: "http://127.0.0.1:11470/".parse().unwrap()
-///     media_url: "https://example.com/my-awesome-video.mp4".parse().unwrap()
+/// let request: http::Request<()> = OpensubtitlesParamsRequest {
+///     server_url: "http://127.0.0.1:11470/".parse().unwrap(),
+///     media_url: "https://example.com/my-awesome-video.mp4".parse().unwrap(),
 ///     
 /// }.into();
 ///
