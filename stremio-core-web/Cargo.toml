@@ -12,7 +12,7 @@ default = ["std", "wasm"]
 
 std = []
 # enable wasm bindings exports, enabled by default (stremio-core-web crate after all)
-wasm = ["env", "dep:wasm-bindgen", "dep:wasm-bindgen-futures", "dep:gloo-utils", "dep:tracing-wasm", "dep:console_error_panic_hook", "dep:js-sys", "dep:web-sys", "getrandom?/js"]
+wasm = ["env", "dep:wasm-bindgen", "dep:wasm-bindgen-futures", "dep:serde-wasm-bindgen", "dep:tracing-wasm", "dep:console_error_panic_hook", "dep:js-sys", "dep:web-sys", "getrandom?/js"]
 # Enable's the wasm Env. impl
 # (this means that `wasm` feature is a superset of this one)
 env = ["dep:http", "dep:regex", "dep:hex", "dep:getrandom", "dep:serde_path_to_error"]
@@ -23,8 +23,8 @@ log-trace = []
 [dependencies]
 stremio-core = { version = "0.1", features = ["derive", "analytics"], path = "../" }
 
-serde = { version = "1.0.*", features = ["derive"] }
-serde_json = { version = "1", features = ["preserve_order"] }
+serde = { version = "1.0.218", features = ["derive"] }
+serde_json = { version = "1.0.139", features = ["preserve_order"] }
 futures = "0.3.*"
 
 # used for Env impl
@@ -45,7 +45,7 @@ boolinator = "2.4.*"
 # WASM
 wasm-bindgen = { version = "=0.2.100", features = ["serde-serialize"], optional = true }
 wasm-bindgen-futures = { version = "0.4.50", optional = true }
-gloo-utils = { version = "0.2", features = ["serde"], optional = true }
+serde-wasm-bindgen = { version = "0.6.5", optional = true }
 
 once_cell = "1"
 

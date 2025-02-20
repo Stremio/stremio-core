@@ -7,7 +7,7 @@ use itertools::Itertools;
 use serde::Serialize;
 use url::Url;
 #[cfg(feature = "wasm")]
-use {gloo_utils::format::JsValueSerdeExt, stremio_core::runtime::Env, wasm_bindgen::JsValue};
+use {serde_wasm_bindgen, stremio_core::runtime::Env, wasm_bindgen::JsValue};
 
 use stremio_core::{
     constants::META_RESOURCE_NAME,
@@ -133,7 +133,7 @@ pub fn serialize_meta_details<E: Env + 'static>(
     } else {
         meta_details.meta_streams.iter()
     };
-    <JsValue as JsValueSerdeExt>::from_serde(&model::MetaDetails {
+    serde_wasm_bindgen::to_value(&model::MetaDetails {
         selected: &meta_details.selected,
         meta_item: meta_item
             .and_then(|meta_item| {

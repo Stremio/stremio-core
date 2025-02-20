@@ -2,7 +2,7 @@ use itertools::Itertools;
 use serde::Serialize;
 
 #[cfg(feature = "wasm")]
-use {gloo_utils::format::JsValueSerdeExt, wasm_bindgen::JsValue};
+use {serde_wasm_bindgen, wasm_bindgen::JsValue};
 
 use crate::model::deep_links_ext::DeepLinksExt;
 
@@ -134,7 +134,7 @@ impl<'a> CatalogsWithExtra<'a> {
 
 #[cfg(feature = "wasm")]
 impl super::SerializeModel<wasm_bindgen::JsValue> for CatalogsWithExtra<'_> {
-    type Error = serde_json::Error;
+    type Error = serde_wasm_bindgen::Error;
 
     fn serialize_model(&self) -> Result<wasm_bindgen::JsValue, Self::Error> {
         wasm_bindgen::JsValue::try_from(self)
@@ -143,9 +143,9 @@ impl super::SerializeModel<wasm_bindgen::JsValue> for CatalogsWithExtra<'_> {
 
 #[cfg(feature = "wasm")]
 impl<'a> TryFrom<&CatalogsWithExtra<'a>> for JsValue {
-    type Error = serde_json::Error;
+    type Error = serde_wasm_bindgen::Error;
 
     fn try_from(catalogs: &CatalogsWithExtra<'a>) -> Result<Self, Self::Error> {
-        <JsValue as JsValueSerdeExt>::from_serde(&catalogs)
+        serde_wasm_bindgen::to_value(&catalogs)
     }
 }

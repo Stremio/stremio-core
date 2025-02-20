@@ -2,8 +2,8 @@
 use {
     crate::model::deep_links_ext::DeepLinksExt,
     boolinator::Boolinator,
-    gloo_utils::format::JsValueSerdeExt,
     itertools::Itertools,
+    serde_wasm_bindgen,
     stremio_core::deep_links::{DiscoverDeepLinks, MetaItemDeepLinks, StreamDeepLinks},
     wasm_bindgen::JsValue,
 };
@@ -110,7 +110,7 @@ pub fn serialize_discover(
 ) -> JsValue {
     use stremio_core::models::common::Loadable;
 
-    <JsValue as JsValueSerdeExt>::from_serde(&model::CatalogWithFilters {
+    serde_wasm_bindgen::to_value(&model::CatalogWithFilters {
         selected: &discover.selected,
         selectable: model::Selectable {
             types: discover

@@ -1,5 +1,5 @@
 #[cfg(feature = "wasm")]
-use {gloo_utils::format::JsValueSerdeExt, wasm_bindgen::JsValue};
+use {serde_wasm_bindgen, wasm_bindgen::JsValue};
 
 pub use model::*;
 
@@ -19,7 +19,7 @@ mod model {
 pub fn serialize_data_export(
     data_export: &stremio_core::models::data_export::DataExport,
 ) -> JsValue {
-    <JsValue as JsValueSerdeExt>::from_serde(&model::DataExport {
+    serde_wasm_bindgen::to_value(&model::DataExport {
         export_url: data_export
             .export_url
             .as_ref()

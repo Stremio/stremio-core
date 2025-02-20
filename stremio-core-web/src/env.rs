@@ -2,7 +2,6 @@ use std::{collections::HashMap, sync::RwLock};
 
 use chrono::{offset::TimeZone, DateTime, Utc};
 use futures::{future, Future, FutureExt, TryFutureExt};
-use gloo_utils::format::JsValueSerdeExt;
 use http::{Method, Request};
 use once_cell::sync::Lazy;
 use regex::Regex;
@@ -275,7 +274,7 @@ impl Env for WebEnv {
                 let value = String::from_utf8_lossy(value.as_bytes()).into_owned();
                 headers.entry(key).or_insert_with(Vec::new).push(value);
             }
-            <JsValue as JsValueSerdeExt>::from_serde(&headers)
+            serde_wasm_bindgen::to_value(&headers)
                 .expect("WebEnv::fetch: JsValue from Headers failed to be built")
         };
         let body = match serde_json::to_string(&body) {

@@ -1,7 +1,7 @@
-#[cfg(feature = "wasm")]
-use gloo_utils::format::JsValueSerdeExt;
 use itertools::Itertools;
 use serde::Serialize;
+#[cfg(feature = "wasm")]
+use serde_wasm_bindgen;
 #[cfg(feature = "wasm")]
 use wasm_bindgen::JsValue;
 
@@ -29,7 +29,7 @@ mod model {
 }
 #[cfg(feature = "wasm")]
 pub fn serialize_local_search(local_search: &LocalSearch) -> JsValue {
-    <JsValue as JsValueSerdeExt>::from_serde(&model::LocalSearch {
+    serde_wasm_bindgen::to_value(&model::LocalSearch {
         items: local_search
             .search_results
             .to_owned()
