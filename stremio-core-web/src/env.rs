@@ -36,9 +36,9 @@ const INSTALLATION_ID_STORAGE_KEY: &str = "installation_id";
 
 #[wasm_bindgen]
 extern "C" {
-    #[wasm_bindgen(js_namespace = ["self"], js_name = app_version)]
+    #[wasm_bindgen(thread_local_v2)]
     static APP_VERSION: String;
-    #[wasm_bindgen(js_namespace = ["self"], js_name = shell_version)]
+    #[wasm_bindgen(thread_local_v2)]
     static SHELL_VERSION: Option<String>;
     #[wasm_bindgen(catch, js_namespace = ["self"])]
     async fn get_location_hash() -> Result<JsValue, JsValue>;
@@ -284,11 +284,14 @@ impl Env for WebEnv {
             }
             _ => None,
         };
-        let mut request_options = web_sys::RequestInit::new();
-        request_options
-            .method(method)
-            .headers(&headers)
-            .body(body.as_ref());
+
+        let request_options = web_sys::RequestInit::new();
+        request_options.set_method(method);
+        request_options.set_headers(&headers);
+
+        if let Some(body) = body {
+            request_options.set_body(&body);
+        }
 
         let request = web_sys::Request::new_with_str_and_init(&url, &request_options)
             .expect("request builder failed");
@@ -430,13 +433,14 @@ impl Env for WebEnv {
     ) -> serde_json::Value {
         serde_json::to_value(AnalyticsContext {
             app_type: "stremio-web".to_owned(),
-            app_version: APP_VERSION.to_owned(),
+            app_version: APP_VERSION.with(|version| version.to_string()),
             server_version: streaming_server
                 .settings
                 .as_ref()
                 .ready()
                 .map(|settings| settings.server_version.to_owned()),
-            shell_version: SHELL_VERSION.to_owned(),
+            shell_version: SHELL_VERSION
+                .with(|version| version.as_ref().map(|version| version.to_string())),
             system_language: global()
                 .navigator()
                 .language()
