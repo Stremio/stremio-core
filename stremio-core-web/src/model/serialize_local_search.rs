@@ -1,7 +1,7 @@
 use itertools::Itertools;
 use serde::Serialize;
 #[cfg(feature = "wasm")]
-use serde_wasm_bindgen;
+use serde_wasm_bindgen::Serializer;
 #[cfg(feature = "wasm")]
 use wasm_bindgen::JsValue;
 
@@ -29,7 +29,7 @@ mod model {
 }
 #[cfg(feature = "wasm")]
 pub fn serialize_local_search(local_search: &LocalSearch) -> JsValue {
-    serde_wasm_bindgen::to_value(&model::LocalSearch {
+    model::LocalSearch {
         items: local_search
             .search_results
             .to_owned()
@@ -40,6 +40,7 @@ pub fn serialize_local_search(local_search: &LocalSearch) -> JsValue {
             })
             .unique_by(|i| i.query)
             .collect(),
-    })
+    }
+    .serialize(&Serializer::json_compatible())
     .expect("JsValue from model::LocalSearch")
 }

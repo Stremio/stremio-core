@@ -1,5 +1,5 @@
 #[cfg(feature = "wasm")]
-use {serde_wasm_bindgen, wasm_bindgen::JsValue};
+use {serde::Serialize, serde_wasm_bindgen::Serializer, wasm_bindgen::JsValue};
 
 pub use model::*;
 
@@ -19,11 +19,12 @@ mod model {
 pub fn serialize_data_export(
     data_export: &stremio_core::models::data_export::DataExport,
 ) -> JsValue {
-    serde_wasm_bindgen::to_value(&model::DataExport {
+    model::DataExport {
         export_url: data_export
             .export_url
             .as_ref()
             .map(|(_auth_key, loadable)| loadable),
-    })
+    }
+    .serialize(&Serializer::json_compatible())
     .expect("JsValue from model::DataExport")
 }

@@ -1,6 +1,7 @@
 #[cfg(feature = "wasm")]
 use {
-    serde_wasm_bindgen,
+    serde::Serialize,
+    serde_wasm_bindgen::Serializer,
     stremio_core::types::{profile::Settings, streams::StreamsBucket},
     url::Url,
     wasm_bindgen::JsValue,
@@ -15,12 +16,13 @@ pub fn serialize_continue_watching_preview(
     streaming_server_url: Option<&Url>,
     settings: &Settings,
 ) -> JsValue {
-    serde_wasm_bindgen::to_value(&model::ContinueWatchingPreview::from((
+    model::ContinueWatchingPreview::from((
         continue_watching_preview,
         streams_bucket,
         streaming_server_url,
         settings,
-    )))
+    ))
+    .serialize(&Serializer::json_compatible())
     .expect("JsValue from model::ContinueWatchingPreview")
 }
 
