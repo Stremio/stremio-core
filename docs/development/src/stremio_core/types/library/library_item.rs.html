@@ -275,7 +275,35 @@
 <a href="#274" id="274">274</a>
 <a href="#275" id="275">275</a>
 <a href="#276" id="276">276</a>
-<a href="#277" id="277">277</a></pre></div><pre class="rust"><code><span class="kw">use </span>std::marker::PhantomData;
+<a href="#277" id="277">277</a>
+<a href="#278" id="278">278</a>
+<a href="#279" id="279">279</a>
+<a href="#280" id="280">280</a>
+<a href="#281" id="281">281</a>
+<a href="#282" id="282">282</a>
+<a href="#283" id="283">283</a>
+<a href="#284" id="284">284</a>
+<a href="#285" id="285">285</a>
+<a href="#286" id="286">286</a>
+<a href="#287" id="287">287</a>
+<a href="#288" id="288">288</a>
+<a href="#289" id="289">289</a>
+<a href="#290" id="290">290</a>
+<a href="#291" id="291">291</a>
+<a href="#292" id="292">292</a>
+<a href="#293" id="293">293</a>
+<a href="#294" id="294">294</a>
+<a href="#295" id="295">295</a>
+<a href="#296" id="296">296</a>
+<a href="#297" id="297">297</a>
+<a href="#298" id="298">298</a>
+<a href="#299" id="299">299</a>
+<a href="#300" id="300">300</a>
+<a href="#301" id="301">301</a>
+<a href="#302" id="302">302</a>
+<a href="#303" id="303">303</a>
+<a href="#304" id="304">304</a>
+<a href="#305" id="305">305</a></pre></div><pre class="rust"><code><span class="kw">use </span>std::marker::PhantomData;
 
 <span class="kw">use </span>chrono::{DateTime, Duration, Utc};
 <span class="kw">use </span>itertools::Itertools;
@@ -398,6 +426,34 @@
         <span class="kw">if </span>is_watched {
             <span class="self">self</span>.state.last_watched = <span class="kw">match </span>(<span class="kw-2">&amp;</span><span class="self">self</span>.state.last_watched, <span class="kw-2">&amp;</span>video.released) {
                 (<span class="prelude-val">Some</span>(last_watched), <span class="prelude-val">Some</span>(released)) <span class="kw">if </span>last_watched &lt; released =&gt; {
+                    <span class="prelude-val">Some</span>(released.to_owned())
+                }
+                (<span class="prelude-val">None</span>, released) =&gt; released.to_owned(),
+                (last_watched, <span class="kw">_</span>) =&gt; last_watched.to_owned(),
+            };
+        }
+    }
+
+    <span class="kw">pub fn </span>mark_videos_as_watched&lt;E: Env&gt;(
+        <span class="kw-2">&amp;mut </span><span class="self">self</span>,
+        watched: <span class="kw-2">&amp;</span>WatchedBitField,
+        videos: Vec&lt;<span class="kw-2">&amp;</span>Video&gt;,
+        is_watched: bool,
+    ) {
+        <span class="kw">let </span><span class="kw-2">mut </span>watched = watched.to_owned();
+
+        <span class="kw">for </span>video <span class="kw">in </span><span class="kw-2">&amp;</span>videos {
+            watched.set_video(<span class="kw-2">&amp;</span>video.id, is_watched);
+        }
+
+        <span class="self">self</span>.state.watched = <span class="prelude-val">Some</span>(watched.into());
+
+        <span class="kw">if </span>is_watched {
+            <span class="self">self</span>.state.last_watched = <span class="kw">match </span>(
+                <span class="kw-2">&amp;</span><span class="self">self</span>.state.last_watched,
+                videos.last().and_then(|last_video| last_video.released),
+            ) {
+                (<span class="prelude-val">Some</span>(last_watched), <span class="prelude-val">Some</span>(released)) <span class="kw">if </span>last_watched &lt; <span class="kw-2">&amp;</span>released =&gt; {
                     <span class="prelude-val">Some</span>(released.to_owned())
                 }
                 (<span class="prelude-val">None</span>, released) =&gt; released.to_owned(),

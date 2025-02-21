@@ -84,7 +84,10 @@
 <a href="#83" id="83">83</a>
 <a href="#84" id="84">84</a>
 <a href="#85" id="85">85</a>
-<a href="#86" id="86">86</a></pre></div><pre class="rust"><code><span class="kw">use </span><span class="kw">crate</span>::constants::STREAMING_SERVER_URL;
+<a href="#86" id="86">86</a>
+<a href="#87" id="87">87</a>
+<a href="#88" id="88">88</a>
+<a href="#89" id="89">89</a></pre></div><pre class="rust"><code><span class="kw">use </span><span class="kw">crate</span>::constants::STREAMING_SERVER_URL;
 <span class="kw">use </span>chrono::{DateTime, Utc};
 <span class="kw">use </span>serde::{Deserialize, Serialize};
 <span class="kw">use </span>url::Url;
@@ -122,6 +125,8 @@
     </span><span class="kw">pub </span>seek_short_time_duration: u32,
     <span class="doccomment">/// Whether we should pause the playback when the application get's minimized
     </span><span class="kw">pub </span>pause_on_minimize: bool,
+    <span class="doccomment">/// Wheter we should quit the application when closing the window
+    </span><span class="kw">pub </span>quit_on_close: bool,
     <span class="kw">pub </span>surround_sound: bool,
     <span class="kw">pub </span>streaming_server_warning_dismissed: <span class="prelude-ty">Option</span>&lt;DateTime&lt;Utc&gt;&gt;,
     <span class="kw">pub </span>server_in_foreground: bool,
@@ -163,6 +168,7 @@
             seek_time_duration: <span class="number">10000</span>,
             seek_short_time_duration: <span class="number">3000</span>,
             pause_on_minimize: <span class="bool-val">false</span>,
+            quit_on_close: <span class="bool-val">true</span>,
             surround_sound: <span class="bool-val">false</span>,
             streaming_server_warning_dismissed: <span class="prelude-val">None</span>,
             server_in_foreground: <span class="bool-val">false</span>,

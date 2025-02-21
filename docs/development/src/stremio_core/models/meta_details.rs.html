@@ -549,7 +549,34 @@
 <a href="#548" id="548">548</a>
 <a href="#549" id="549">549</a>
 <a href="#550" id="550">550</a>
-<a href="#551" id="551">551</a></pre></div><pre class="rust"><code><span class="kw">use </span>std::{borrow::Cow, marker::PhantomData};
+<a href="#551" id="551">551</a>
+<a href="#552" id="552">552</a>
+<a href="#553" id="553">553</a>
+<a href="#554" id="554">554</a>
+<a href="#555" id="555">555</a>
+<a href="#556" id="556">556</a>
+<a href="#557" id="557">557</a>
+<a href="#558" id="558">558</a>
+<a href="#559" id="559">559</a>
+<a href="#560" id="560">560</a>
+<a href="#561" id="561">561</a>
+<a href="#562" id="562">562</a>
+<a href="#563" id="563">563</a>
+<a href="#564" id="564">564</a>
+<a href="#565" id="565">565</a>
+<a href="#566" id="566">566</a>
+<a href="#567" id="567">567</a>
+<a href="#568" id="568">568</a>
+<a href="#569" id="569">569</a>
+<a href="#570" id="570">570</a>
+<a href="#571" id="571">571</a>
+<a href="#572" id="572">572</a>
+<a href="#573" id="573">573</a>
+<a href="#574" id="574">574</a>
+<a href="#575" id="575">575</a>
+<a href="#576" id="576">576</a>
+<a href="#577" id="577">577</a>
+<a href="#578" id="578">578</a></pre></div><pre class="rust"><code><span class="kw">use </span>std::{borrow::Cow, marker::PhantomData};
 
 <span class="kw">use </span>serde::{Deserialize, Serialize};
 
@@ -686,6 +713,33 @@
                 }
                 <span class="kw">_ </span>=&gt; Effects::none().unchanged(),
             },
+            Msg::Action(Action::MetaDetails(ActionMetaDetails::MarkSeasonAsWatched(
+                season,
+                is_watched,
+            ))) =&gt; <span class="kw">match </span>(<span class="kw-2">&amp;</span><span class="self">self</span>.library_item, <span class="kw-2">&amp;</span><span class="self">self</span>.watched) {
+                (<span class="prelude-val">Some</span>(library_item), <span class="prelude-val">Some</span>(watched)) =&gt; {
+                    <span class="comment">// Find videos of given season from the first ready meta item loadable
+                    </span><span class="kw">let </span>videos = <span class="self">self
+                        </span>.meta_items
+                        .iter()
+                        .find(|meta_item| <span class="macro">matches!</span>(<span class="kw-2">&amp;</span>meta_item.content, <span class="prelude-val">Some</span>(Loadable::Ready(<span class="kw">_</span>))))
+                        .and_then(|meta_item| meta_item.content.as_ref())
+                        .and_then(|meta_item| meta_item.ready())
+                        .map(|meta_item| meta_item.videos_by_season(<span class="kw-2">*</span>season));
+
+                    <span class="kw">match </span>videos {
+                        <span class="prelude-val">Some</span>(videos) =&gt; {
+                            <span class="kw">let </span><span class="kw-2">mut </span>library_item = library_item.to_owned();
+                            library_item.mark_videos_as_watched::&lt;E&gt;(watched, videos, <span class="kw-2">*</span>is_watched);
+
+                            Effects::msg(Msg::Internal(Internal::UpdateLibraryItem(library_item)))
+                                .unchanged()
+                        }
+                        <span class="prelude-val">None </span>=&gt; Effects::none().unchanged(),
+                    }
+                }
+                <span class="kw">_ </span>=&gt; Effects::none().unchanged(),
+            },
             Msg::Internal(Internal::ResourceRequestResult(request, result))
                 <span class="kw">if </span>request.path.resource == META_RESOURCE_NAME =&gt;
             {
@@ -813,10 +867,10 @@
 ///
 /// 1. We find the first `MetaItem` that's successfully loaded from the addons.
 /// 2. Selecting the video id for the stream request:
-///     2.1 If there's a `MetaItem.preview.behavior_hints.default_video_id`
-///         we use it for the request
-///     2.2 If there's no `default_video_id` and no `MetaItem.videos` returned by the addon,
-///         we use the `MetaItem.preview.id`
+///    2.1 If there's a `MetaItem.preview.behavior_hints.default_video_id`
+///    we use it for the request
+///    2.2 If there's no `default_video_id` and no `MetaItem.videos` returned by the addon,
+///    we use the `MetaItem.preview.id`
 ///
 /// If we haven't found a suitable `video_id`, then we do not override the `Selected::stream_path`.
 </span><span class="kw">fn </span>selected_guess_stream_update(
