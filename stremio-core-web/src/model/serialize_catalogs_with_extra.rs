@@ -137,7 +137,7 @@ impl super::SerializeModel<wasm_bindgen::JsValue> for CatalogsWithExtra<'_> {
     type Error = serde_wasm_bindgen::Error;
 
     fn serialize_model(&self) -> Result<wasm_bindgen::JsValue, Self::Error> {
-        wasm_bindgen::JsValue::try_from(self)
+        self.serialize(&crate::SERIALIZER)
     }
 }
 

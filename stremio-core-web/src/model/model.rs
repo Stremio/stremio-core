@@ -1,10 +1,6 @@
-#[cfg(feature = "wasm")]
-use {serde_wasm_bindgen, wasm_bindgen::JsValue};
+use {serde::Serialize, wasm_bindgen::JsValue};
 
 use super::*;
-
-#[cfg(debug_assertions)]
-use serde::Serialize;
 
 use stremio_core::{
     models::{
@@ -33,7 +29,7 @@ use stremio_core::{
 };
 
 use super::SerializeModel;
-use crate::env::WebEnv;
+use crate::{env::WebEnv, SERIALIZER};
 
 #[derive(Model, Clone)]
 #[cfg_attr(debug_assertions, derive(Serialize))]
@@ -125,11 +121,32 @@ impl WebModel {
         )
     }
     pub fn get_state(&self, field: &WebModelField) -> JsValue {
+        // return match field {
+        //     WebModelField::Ctx => serialize_ctx(&self.ctx),
+        //     WebModelField::AuthLink => JsValue::NULL,
+        //     WebModelField::DataExport => JsValue::NULL,
+        //     WebModelField::ContinueWatchingPreview => JsValue::NULL,
+        //     WebModelField::Board => JsValue::NULL,
+        //     WebModelField::Discover => JsValue::NULL,
+        //     WebModelField::Library => JsValue::NULL,
+        //     WebModelField::ContinueWatching => JsValue::NULL,
+        //     WebModelField::Calendar => JsValue::NULL,
+        //     WebModelField::Search => JsValue::NULL,
+        //     WebModelField::LocalSearch => JsValue::NULL,
+        //     WebModelField::MetaDetails => JsValue::NULL,
+        //     WebModelField::RemoteAddons => JsValue::NULL,
+        //     WebModelField::InstalledAddons => JsValue::NULL,
+        //     WebModelField::AddonDetails => JsValue::NULL,
+        //     WebModelField::StreamingServer => JsValue::NULL,
+        //     WebModelField::Player => JsValue::NULL,
+        // };
+
         match field {
             WebModelField::Ctx => serialize_ctx(&self.ctx),
-            WebModelField::AuthLink => {
-                serde_wasm_bindgen::to_value(&self.auth_link).expect("JsValue from AuthLink")
-            }
+            WebModelField::AuthLink => self
+                .auth_link
+                .serialize(&SERIALIZER)
+                .expect("JsValue from AuthLink"),
             WebModelField::DataExport => serialize_data_export(&self.data_export),
             WebModelField::ContinueWatchingPreview => serialize_continue_watching_preview(
                 &self.continue_watching_preview,
@@ -179,7 +196,9 @@ impl WebModel {
             ),
             WebModelField::RemoteAddons => serialize_remote_addons(&self.remote_addons, &self.ctx),
             WebModelField::InstalledAddons => serialize_installed_addons(&self.installed_addons),
-            WebModelField::AddonDetails => serde_wasm_bindgen::to_value(&self.addon_details)
+            WebModelField::AddonDetails => self
+                .addon_details
+                .serialize(&SERIALIZER)
                 .expect("JsValue from AddonDetails"),
             WebModelField::StreamingServer => serialize_streaming_server(&self.streaming_server),
             WebModelField::Player => {
