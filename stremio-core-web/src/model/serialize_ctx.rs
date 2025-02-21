@@ -1,13 +1,13 @@
 use serde::Serialize;
 #[cfg(feature = "wasm")]
-use {serde_wasm_bindgen::Serializer, wasm_bindgen::JsValue};
+use wasm_bindgen::JsValue;
 
 pub use model::*;
 
 #[cfg(feature = "wasm")]
 pub fn serialize_ctx(ctx: &stremio_core::models::ctx::Ctx) -> JsValue {
     model::Ctx::from(ctx)
-        .serialize(&Serializer::json_compatible())
+        .serialize(&crate::SERIALIZER)
         .expect("JsValue from Ctx")
 }
 

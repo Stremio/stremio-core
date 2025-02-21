@@ -1,6 +1,6 @@
 #[cfg(feature = "wasm")]
 use {
-    crate::model::deep_links_ext::DeepLinksExt, serde::Serialize, serde_wasm_bindgen::Serializer,
+    crate::model::deep_links_ext::DeepLinksExt, serde::Serialize,
     stremio_core::deep_links::AddonsDeepLinks, wasm_bindgen::JsValue,
 };
 
@@ -97,6 +97,6 @@ pub fn serialize_installed_addons(
             })
             .collect(),
     }
-    .serialize(&Serializer::json_compatible())
+    .serialize(&crate::SERIALIZER)
     .expect("JsValue from model::InstalledAddonsWithFilters")
 }

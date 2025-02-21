@@ -4,7 +4,6 @@ use {
     boolinator::Boolinator,
     itertools::Itertools,
     serde::Serialize,
-    serde_wasm_bindgen::Serializer,
     stremio_core::deep_links::{DiscoverDeepLinks, MetaItemDeepLinks, StreamDeepLinks},
     wasm_bindgen::JsValue,
 };
@@ -237,6 +236,6 @@ pub fn serialize_discover(
             }
         }),
     }
-    .serialize(&Serializer::json_compatible())
+    .serialize(&crate::SERIALIZER)
     .expect("JsValue from Discover model::CatalogWithFilters")
 }

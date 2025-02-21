@@ -1,7 +1,6 @@
 use semver::Version;
 use serde::Serialize;
-#[cfg(feature = "wasm")]
-use serde_wasm_bindgen::Serializer;
+
 use url::Url;
 #[cfg(feature = "wasm")]
 use wasm_bindgen::JsValue;
@@ -362,6 +361,6 @@ pub fn serialize_player<E: stremio_core::runtime::Env + 'static>(
                 },
             }),
     }
-    .serialize(&Serializer::json_compatible())
+    .serialize(&crate::SERIALIZER)
     .expect("JsValue from model::Player")
 }

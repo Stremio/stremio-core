@@ -3,6 +3,7 @@ use std::sync::RwLock;
 use enclose::enclose;
 use futures::{future, try_join, FutureExt, StreamExt};
 use once_cell::sync::Lazy;
+use serde::Serialize;
 use tracing::{info, Level};
 use tracing_wasm::WASMLayerConfigBuilder;
 use wasm_bindgen::{prelude::wasm_bindgen, JsValue};
@@ -27,6 +28,9 @@ use crate::{
     event::WebEvent,
     model::{WebModel, WebModelField},
 };
+
+pub(crate) const SERIALIZER: serde_wasm_bindgen::Serializer =
+    serde_wasm_bindgen::Serializer::json_compatible();
 
 #[allow(clippy::type_complexity)]
 static RUNTIME: Lazy<RwLock<Option<Loadable<Runtime<WebEnv, WebModel>, EnvError>>>> =
@@ -137,7 +141,7 @@ pub async fn initialize_runtime(emit_to_ui: js_sys::Function) -> Result<(), JsVa
                             ));
                         };
                         emit_to_ui
-                            .call1(&JsValue::NULL, &serde_wasm_bindgen::to_value(&event).expect("Event handler: JsValue from Event"))
+                            .call1(&JsValue::NULL, &event.serialize(&SERIALIZER).expect("Event handler: JsValue from Event"))
                             .expect("emit event failed");
                         future::ready(())
                     }));
@@ -148,13 +152,15 @@ pub async fn initialize_runtime(emit_to_ui: js_sys::Function) -> Result<(), JsVa
                 Err(error) => {
                     *RUNTIME.write().expect("runtime write failed") =
                         Some(Loadable::Err(error.to_owned()));
-                    Err(serde_wasm_bindgen::to_value(&error).expect("Storage: JsValue from Event"))
+                    Err(error
+                        .serialize(&SERIALIZER)
+                        .expect("Storage: JsValue from Event"))
                 }
             }
         }
         Err(error) => {
             *RUNTIME.write().expect("runtime write failed") = Some(Loadable::Err(error.to_owned()));
-            Err(serde_wasm_bindgen::to_value(&error).expect("JsValue from Event"))
+            Err(error.serialize(&SERIALIZER).expect("JsValue from Event"))
         }
     }
 }
@@ -167,13 +173,14 @@ pub fn get_debug_state() -> JsValue {
         .as_ref()
         .expect("runtime is not ready")
         .as_ref()
-        .expect("runtime is not ready");
+        .expect("runtime is not re  ady");
     let model = runtime.model().expect("model read failed");
-    serde_wasm_bindgen::to_value(&*model).expect("JsValue from WebModel")
+    model.serialize(&SERIALIZER).expect("JsValue from WebModel")
 }
 
 #[wasm_bindgen]
 pub fn get_state(field: JsValue) -> JsValue {
+    // JsValue::NULL
     let field = serde_wasm_bindgen::from_value(field).expect("get state failed");
     let runtime = RUNTIME.read().expect("runtime read failed");
     let runtime = runtime
@@ -234,7 +241,7 @@ pub fn analytics(event: JsValue, location_hash: JsValue) {
 pub fn decode_stream(stream: JsValue) -> JsValue {
     let stream = stream.as_string().map(Stream::decode);
     match stream {
-        Some(Ok(stream)) => serde_wasm_bindgen::to_value(&stream).expect("JsValue from Stream"),
+        Some(Ok(stream)) => stream.serialize(&SERIALIZER).expect("JsValue from Stream"),
         _ => JsValue::NULL,
     }
 }

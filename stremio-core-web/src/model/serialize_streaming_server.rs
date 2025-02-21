@@ -1,7 +1,6 @@
 #[cfg(feature = "wasm")]
 use serde::Serialize;
-#[cfg(feature = "wasm")]
-use serde_wasm_bindgen::Serializer;
+
 use stremio_core::deep_links::MetaItemDeepLinks;
 use stremio_core::models::common::Loadable;
 use stremio_core::models::streaming_server::{PlaybackDevice, Selected};
@@ -61,6 +60,6 @@ pub fn serialize_streaming_server(
             }),
         statistics: streaming_server.statistics.as_ref(),
     }
-    .serialize(&Serializer::json_compatible())
+    .serialize(&crate::SERIALIZER)
     .expect("JsValue from model::StreamingServer")
 }

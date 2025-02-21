@@ -1,6 +1,5 @@
 use itertools::Itertools;
 use serde::Serialize;
-use serde_wasm_bindgen::Serializer;
 use stremio_core::{
     deep_links::{CalendarDeepLinks, CalendarItemDeepLinks},
     models::calendar::{FullDate, MonthInfo, Selected, YearMonthDate},
@@ -97,6 +96,6 @@ pub fn serialize_calendar(calendar: &stremio_core::models::calendar::Calendar) -
             })
             .collect_vec(),
     }
-    .serialize(&Serializer::json_compatible())
+    .serialize(&crate::SERIALIZER)
     .expect("JsValue from model::Calendar")
 }

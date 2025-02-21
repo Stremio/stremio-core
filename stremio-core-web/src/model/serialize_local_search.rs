@@ -1,7 +1,6 @@
 use itertools::Itertools;
 use serde::Serialize;
-#[cfg(feature = "wasm")]
-use serde_wasm_bindgen::Serializer;
+
 #[cfg(feature = "wasm")]
 use wasm_bindgen::JsValue;
 
@@ -41,6 +40,6 @@ pub fn serialize_local_search(local_search: &LocalSearch) -> JsValue {
             .unique_by(|i| i.query)
             .collect(),
     }
-    .serialize(&Serializer::json_compatible())
+    .serialize(&crate::SERIALIZER)
     .expect("JsValue from model::LocalSearch")
 }

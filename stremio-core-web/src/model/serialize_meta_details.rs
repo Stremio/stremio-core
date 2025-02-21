@@ -7,7 +7,7 @@ use itertools::Itertools;
 use serde::Serialize;
 use url::Url;
 #[cfg(feature = "wasm")]
-use {serde_wasm_bindgen::Serializer, stremio_core::runtime::Env, wasm_bindgen::JsValue};
+use {stremio_core::runtime::Env, wasm_bindgen::JsValue};
 
 use stremio_core::{
     constants::META_RESOURCE_NAME,
@@ -395,6 +395,6 @@ pub fn serialize_meta_details<E: Env + 'static>(
                     .unwrap_or_else(|| meta_item.preview.name.to_owned())
             }),
     }
-    .serialize(&Serializer::json_compatible())
+    .serialize(&crate::SERIALIZER)
     .expect("JsValue from model::MetaDetails")
 }

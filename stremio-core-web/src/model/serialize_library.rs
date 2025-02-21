@@ -1,7 +1,6 @@
 use crate::model::deep_links_ext::DeepLinksExt;
 use serde::Serialize;
-#[cfg(feature = "wasm")]
-use serde_wasm_bindgen::Serializer;
+
 use stremio_core::deep_links::{LibraryDeepLinks, LibraryItemDeepLinks};
 use stremio_core::models::ctx::Ctx;
 use stremio_core::models::library_with_filters::{LibraryWithFilters, Selected, Sort};
@@ -136,6 +135,6 @@ pub fn serialize_library<F>(
             })
             .collect(),
     }
-    .serialize(&Serializer::json_compatible())
+    .serialize(&crate::SERIALIZER)
     .expect("JsValue from model::LibraryWithFilters")
 }

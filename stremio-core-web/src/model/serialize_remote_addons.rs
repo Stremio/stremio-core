@@ -1,8 +1,7 @@
 use crate::model::deep_links_ext::DeepLinksExt;
 #[cfg(feature = "wasm")]
 use serde::Serialize;
-#[cfg(feature = "wasm")]
-use serde_wasm_bindgen::Serializer;
+
 use stremio_core::deep_links::AddonsDeepLinks;
 use stremio_core::models::catalog_with_filters::{CatalogWithFilters, Selected};
 use stremio_core::models::common::Loadable;
@@ -110,6 +109,6 @@ pub fn serialize_remote_addons(
                 },
             }),
     }
-    .serialize(&Serializer::json_compatible())
+    .serialize(&crate::SERIALIZER)
     .expect("JsValue from model::CatalogWithFilters")
 }

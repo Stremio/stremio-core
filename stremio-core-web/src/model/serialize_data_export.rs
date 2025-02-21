@@ -1,5 +1,5 @@
 #[cfg(feature = "wasm")]
-use {serde::Serialize, serde_wasm_bindgen::Serializer, wasm_bindgen::JsValue};
+use {serde::Serialize, wasm_bindgen::JsValue};
 
 pub use model::*;
 
@@ -25,6 +25,6 @@ pub fn serialize_data_export(
             .as_ref()
             .map(|(_auth_key, loadable)| loadable),
     }
-    .serialize(&Serializer::json_compatible())
+    .serialize(&crate::SERIALIZER)
     .expect("JsValue from model::DataExport")
 }
