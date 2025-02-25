@@ -189,7 +189,9 @@
 <a href="#188" id="188">188</a>
 <a href="#189" id="189">189</a>
 <a href="#190" id="190">190</a>
-<a href="#191" id="191">191</a></pre></div><pre class="rust"><code><span class="kw">use </span>gloo_utils::format::JsValueSerdeExt;
+<a href="#191" id="191">191</a>
+<a href="#192" id="192">192</a>
+<a href="#193" id="193">193</a></pre></div><pre class="rust"><code><span class="kw">use </span>gloo_utils::format::JsValueSerdeExt;
 <span class="kw">use </span>wasm_bindgen::JsValue;
 
 <span class="kw">use super</span>::<span class="kw-2">*</span>;
@@ -332,6 +334,7 @@
                 </span><span class="kw">crate</span>::model::serialize_catalogs_with_extra::CatalogsWithExtra::new(
                     <span class="kw-2">&amp;</span><span class="self">self</span>.board,
                     <span class="kw-2">&amp;</span><span class="self">self</span>.ctx,
+                    <span class="kw-2">&amp;</span><span class="self">self</span>.streaming_server,
                 )
                 .serialize_model()
                 .expect(<span class="string">"JsValue from model::CatalogsWithExtra"</span>)
@@ -356,6 +359,7 @@
                 </span><span class="kw">crate</span>::model::serialize_catalogs_with_extra::CatalogsWithExtra::new(
                     <span class="kw-2">&amp;</span><span class="self">self</span>.search,
                     <span class="kw-2">&amp;</span><span class="self">self</span>.ctx,
+                    <span class="kw-2">&amp;</span><span class="self">self</span>.streaming_server,
                 )
                 .serialize_model()
                 .expect(<span class="string">"JsValue from model::CatalogsWithExtra"</span>)

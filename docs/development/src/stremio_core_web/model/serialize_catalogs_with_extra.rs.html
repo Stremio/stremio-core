@@ -149,7 +149,37 @@
 <a href="#148" id="148">148</a>
 <a href="#149" id="149">149</a>
 <a href="#150" id="150">150</a>
-<a href="#151" id="151">151</a></pre></div><pre class="rust"><code><span class="kw">use </span>itertools::Itertools;
+<a href="#151" id="151">151</a>
+<a href="#152" id="152">152</a>
+<a href="#153" id="153">153</a>
+<a href="#154" id="154">154</a>
+<a href="#155" id="155">155</a>
+<a href="#156" id="156">156</a>
+<a href="#157" id="157">157</a>
+<a href="#158" id="158">158</a>
+<a href="#159" id="159">159</a>
+<a href="#160" id="160">160</a>
+<a href="#161" id="161">161</a>
+<a href="#162" id="162">162</a>
+<a href="#163" id="163">163</a>
+<a href="#164" id="164">164</a>
+<a href="#165" id="165">165</a>
+<a href="#166" id="166">166</a>
+<a href="#167" id="167">167</a>
+<a href="#168" id="168">168</a>
+<a href="#169" id="169">169</a>
+<a href="#170" id="170">170</a>
+<a href="#171" id="171">171</a>
+<a href="#172" id="172">172</a>
+<a href="#173" id="173">173</a>
+<a href="#174" id="174">174</a>
+<a href="#175" id="175">175</a>
+<a href="#176" id="176">176</a>
+<a href="#177" id="177">177</a>
+<a href="#178" id="178">178</a>
+<a href="#179" id="179">179</a>
+<a href="#180" id="180">180</a>
+<a href="#181" id="181">181</a></pre></div><pre class="rust"><code><span class="kw">use </span>itertools::Itertools;
 <span class="kw">use </span>serde::Serialize;
 
 <span class="attr">#[cfg(feature = <span class="string">"wasm"</span>)]
@@ -158,7 +188,7 @@
 <span class="kw">use </span><span class="kw">crate</span>::model::deep_links_ext::DeepLinksExt;
 
 <span class="kw">pub use </span>stremio_core::{
-    deep_links::{DiscoverDeepLinks, MetaItemDeepLinks},
+    deep_links::{DiscoverDeepLinks, MetaItemDeepLinks, StreamDeepLinks},
     models::{catalogs_with_extra::Selected, common::Loadable, ctx::Ctx},
     types::resource::PosterShape,
 };
@@ -176,11 +206,20 @@
 }
 <span class="attr">#[derive(Serialize)]
 #[serde(rename_all = <span class="string">"camelCase"</span>)]
+</span><span class="kw">pub struct </span>Stream&lt;<span class="lifetime">'a</span>&gt; {
+    <span class="attr">#[serde(flatten)]
+    </span><span class="kw">pub </span>stream: <span class="kw-2">&amp;</span><span class="lifetime">'a </span>stremio_core::types::resource::Stream,
+    <span class="kw">pub </span>deep_links: StreamDeepLinks,
+}
+<span class="attr">#[derive(Serialize)]
+#[serde(rename_all = <span class="string">"camelCase"</span>)]
 </span><span class="kw">pub struct </span>MetaItemPreview&lt;<span class="lifetime">'a</span>&gt; {
     <span class="attr">#[serde(flatten)]
     </span><span class="kw">pub </span>meta_item: <span class="kw-2">&amp;</span><span class="lifetime">'a </span>stremio_core::types::resource::MetaItemPreview,
     <span class="kw">pub </span>poster_shape: <span class="kw-2">&amp;</span><span class="lifetime">'a </span>PosterShape,
+    <span class="kw">pub </span>trailer_streams: Vec&lt;Stream&lt;<span class="lifetime">'a</span>&gt;&gt;,
     <span class="kw">pub </span>watched: bool,
+    <span class="kw">pub </span>in_library: bool,
     <span class="kw">pub </span>deep_links: MetaItemDeepLinks,
 }
 
@@ -206,6 +245,7 @@
     <span class="kw">pub fn </span>new(
         catalogs_with_extra: <span class="kw-2">&amp;</span><span class="lifetime">'a </span>stremio_core::models::catalogs_with_extra::CatalogsWithExtra,
         ctx: <span class="kw-2">&amp;</span><span class="lifetime">'a </span>Ctx,
+        streaming_server: <span class="kw-2">&amp;</span>stremio_core::models::streaming_server::StreamingServer,
     ) -&gt; <span class="self">Self </span>{
         <span class="self">Self </span>{
             selected: <span class="kw-2">&amp;</span>catalogs_with_extra.selected,
@@ -257,11 +297,31 @@
                                         meta_item,
                                         poster_shape: poster_shape
                                             .unwrap_or(<span class="kw-2">&amp;</span>meta_item.poster_shape),
+                                        trailer_streams: meta_item
+                                            .trailer_streams
+                                            .iter()
+                                            .take(<span class="number">1</span>)
+                                            .map(|stream| Stream {
+                                                stream,
+                                                deep_links: StreamDeepLinks::from((
+                                                    stream,
+                                                    <span class="kw-2">&amp;</span>streaming_server.base_url,
+                                                    <span class="kw-2">&amp;</span>ctx.profile.settings,
+                                                ))
+                                                .into_web_deep_links(),
+                                            })
+                                            .collect::&lt;Vec&lt;<span class="kw">_</span>&gt;&gt;(),
                                         watched: ctx
                                             .library
                                             .items
                                             .get(<span class="kw-2">&amp;</span>meta_item.id)
                                             .map(|library_item| library_item.watched())
+                                            .unwrap_or_default(),
+                                        in_library: ctx
+                                            .library
+                                            .items
+                                            .get(<span class="kw-2">&amp;</span>meta_item.id)
+                                            .map(|library_item| !library_item.removed)
                                             .unwrap_or_default(),
                                         deep_links: MetaItemDeepLinks::from((
                                             meta_item,
