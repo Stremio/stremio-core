@@ -130,7 +130,6 @@ pub enum Event {
     /// The LibraryItem with the given id has been marked as watched or unwatched (Overrides the previous watched state)
     LibraryItemMarkedAsWatched {
         id: LibraryItemId,
-        is_watched: bool,
     },
     /// The notifications for the given LibraryItemId have been dismissed
     NotificationsDismissed {

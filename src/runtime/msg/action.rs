@@ -45,6 +45,7 @@ pub enum ActionCtx {
     AddToLibrary(MetaItemPreview),
     RemoveFromLibrary(String),
     RewindLibraryItem(String),
+    MarkAsWatched(String, bool),
     LibraryItemMarkAsWatched {
         id: LibraryItemId,
         is_watched: bool,
