@@ -279,7 +279,9 @@
 <a href="#278" id="278">278</a>
 <a href="#279" id="279">279</a>
 <a href="#280" id="280">280</a>
-<a href="#281" id="281">281</a></pre></div><pre class="rust"><code><span class="kw">use </span>std::{convert::TryFrom, fmt, fmt::Debug};
+<a href="#281" id="281">281</a>
+<a href="#282" id="282">282</a>
+<a href="#283" id="283">283</a></pre></div><pre class="rust"><code><span class="kw">use </span>std::{convert::TryFrom, fmt, fmt::Debug};
 
 <span class="kw">use </span><span class="kw">crate</span>::models::common::{eq_update, Loadable};
 <span class="kw">use </span><span class="kw">crate</span>::runtime::msg::{Internal, Msg};
@@ -362,7 +364,7 @@
     <span class="kw">pub fn </span>update&lt;E&gt;(<span class="kw-2">&amp;mut </span><span class="self">self</span>, action: ResourceAction) -&gt; Effects
     <span class="kw">where
         </span>E: Env + <span class="lifetime">'static</span>,
-        T: TryFrom&lt;ResourceResponse, Error = <span class="kw-2">&amp;</span><span class="lifetime">'static </span>str&gt;,
+        T: TryFrom&lt;ResourceResponse, Error = derive_more::TryIntoError&lt;ResourceResponse&gt;&gt;,
     {
         resource_update::&lt;E, T&gt;(<span class="self">self</span>, action)
     }
@@ -372,7 +374,7 @@
     <span class="kw">pub fn </span>update_with_vector_content&lt;E&gt;(<span class="kw-2">&amp;mut </span><span class="self">self</span>, action: ResourceAction) -&gt; Effects
     <span class="kw">where
         </span>E: Env + <span class="lifetime">'static</span>,
-        Vec&lt;T&gt;: TryFrom&lt;ResourceResponse, Error = <span class="kw-2">&amp;</span><span class="lifetime">'static </span>str&gt;,
+        Vec&lt;T&gt;: TryFrom&lt;ResourceResponse, Error = derive_more::TryIntoError&lt;ResourceResponse&gt;&gt;,
     {
         resource_update_with_vector_content::&lt;E, T&gt;(<span class="self">self</span>, action)
     }
@@ -381,7 +383,7 @@
 <span class="kw">pub fn </span>resource_update&lt;E, T&gt;(resource: <span class="kw-2">&amp;mut </span>ResourceLoadable&lt;T&gt;, action: ResourceAction) -&gt; Effects
 <span class="kw">where
     </span>E: Env + <span class="lifetime">'static</span>,
-    T: TryFrom&lt;ResourceResponse, Error = <span class="kw-2">&amp;</span><span class="lifetime">'static </span>str&gt;,
+    T: TryFrom&lt;ResourceResponse, Error = derive_more::TryIntoError&lt;ResourceResponse&gt;&gt;,
 {
     <span class="kw">match </span>action {
         ResourceAction::ResourceRequested { request }
@@ -416,7 +418,7 @@
 ) -&gt; Effects
 <span class="kw">where
     </span>E: Env + <span class="lifetime">'static</span>,
-    Vec&lt;T&gt;: TryFrom&lt;ResourceResponse, Error = <span class="kw-2">&amp;</span><span class="lifetime">'static </span>str&gt;,
+    Vec&lt;T&gt;: TryFrom&lt;ResourceResponse, Error = derive_more::TryIntoError&lt;ResourceResponse&gt;&gt;,
 {
     <span class="kw">match </span>action {
         ResourceAction::ResourceRequestResult { request, result }
@@ -436,7 +438,9 @@
 ) -&gt; Effects
 <span class="kw">where
     </span>E: Env + <span class="lifetime">'static</span>,
-    T: TryFrom&lt;ResourceResponse, Error = <span class="kw-2">&amp;</span><span class="lifetime">'static </span>str&gt; + Clone + PartialEq,
+    T: TryFrom&lt;ResourceResponse, Error = derive_more::TryIntoError&lt;ResourceResponse&gt;&gt;
+        + Clone
+        + PartialEq,
 {
     <span class="kw">match </span>action {
         ResourcesAction::ResourcesRequested {
@@ -507,7 +511,7 @@
 <span class="kw">where
     </span>E: Env + <span class="lifetime">'static</span>,
     T: Clone + PartialEq,
-    Vec&lt;T&gt;: TryFrom&lt;ResourceResponse, Error = <span class="kw-2">&amp;</span><span class="lifetime">'static </span>str&gt;,
+    Vec&lt;T&gt;: TryFrom&lt;ResourceResponse, Error = derive_more::TryIntoError&lt;ResourceResponse&gt;&gt;,
 {
     <span class="kw">match </span>action {
         ResourcesAction::ResourceRequestResult { request, result } =&gt; {
@@ -529,12 +533,12 @@
     result: <span class="kw-2">&amp;</span><span class="prelude-ty">Result</span>&lt;ResourceResponse, EnvError&gt;,
 ) -&gt; Loadable&lt;T, ResourceError&gt;
 <span class="kw">where
-    </span>T: TryFrom&lt;ResourceResponse, Error = <span class="kw-2">&amp;</span><span class="lifetime">'static </span>str&gt;,
+    </span>T: TryFrom&lt;ResourceResponse, Error = derive_more::TryIntoError&lt;ResourceResponse&gt;&gt;,
 {
     <span class="kw">match </span>result {
         <span class="prelude-val">Ok</span>(result) =&gt; <span class="kw">match </span>T::try_from(result.to_owned()) {
             <span class="prelude-val">Ok</span>(content) =&gt; Loadable::Ready(content),
-            <span class="prelude-val">Err</span>(error) =&gt; Loadable::Err(ResourceError::UnexpectedResponse(error.to_owned())),
+            <span class="prelude-val">Err</span>(error) =&gt; Loadable::Err(ResourceError::UnexpectedResponse(error.to_string())),
         },
         <span class="prelude-val">Err</span>(error) =&gt; Loadable::Err(ResourceError::Env(error.to_owned())),
     }
@@ -544,7 +548,7 @@
     result: <span class="kw-2">&amp;</span><span class="prelude-ty">Result</span>&lt;ResourceResponse, EnvError&gt;,
 ) -&gt; Loadable&lt;Vec&lt;T&gt;, ResourceError&gt;
 <span class="kw">where
-    </span>Vec&lt;T&gt;: TryFrom&lt;ResourceResponse, Error = <span class="kw-2">&amp;</span><span class="lifetime">'static </span>str&gt;,
+    </span>Vec&lt;T&gt;: TryFrom&lt;ResourceResponse, Error = derive_more::TryIntoError&lt;ResourceResponse&gt;&gt;,
 {
     <span class="kw">match </span>result {
         <span class="prelude-val">Ok</span>(result) =&gt; <span class="kw">match </span>&lt;Vec&lt;T&gt;&gt;::try_from(result.to_owned()) {
@@ -555,7 +559,7 @@
                     Loadable::Ready(content)
                 }
             }
-            <span class="prelude-val">Err</span>(error) =&gt; Loadable::Err(ResourceError::UnexpectedResponse(error.to_owned())),
+            <span class="prelude-val">Err</span>(error) =&gt; Loadable::Err(ResourceError::UnexpectedResponse(error.to_string())),
         },
         <span class="prelude-val">Err</span>(error) =&gt; Loadable::Err(ResourceError::Env(error.to_owned())),
     }

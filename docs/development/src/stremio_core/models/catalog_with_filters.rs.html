@@ -670,7 +670,7 @@
 <span class="kw">where
     </span>E: Env + <span class="lifetime">'static</span>,
     T: CatalogResourceAdapter + PartialEq,
-    Vec&lt;T&gt;: TryFrom&lt;ResourceResponse, Error = <span class="kw-2">&amp;</span><span class="lifetime">'static </span>str&gt;,
+    Vec&lt;T&gt;: TryFrom&lt;ResourceResponse, Error = derive_more::TryIntoError&lt;ResourceResponse&gt;&gt;,
 {
     <span class="kw">fn </span>update(<span class="kw-2">&amp;mut </span><span class="self">self</span>, msg: <span class="kw-2">&amp;</span>Msg, ctx: <span class="kw-2">&amp;</span>Ctx) -&gt; Effects {
         <span class="kw">match </span>msg {
@@ -799,7 +799,7 @@
 <span class="kw">where
     </span>E: Env + <span class="lifetime">'static</span>,
     T: CatalogResourceAdapter + PartialEq,
-    Vec&lt;T&gt;: TryFrom&lt;ResourceResponse, Error = <span class="kw-2">&amp;</span><span class="lifetime">'static </span>str&gt;,
+    Vec&lt;T&gt;: TryFrom&lt;ResourceResponse, Error = derive_more::TryIntoError&lt;ResourceResponse&gt;&gt;,
 {
     <span class="kw">let </span><span class="kw-2">mut </span>page = ResourceLoadable {
         request: request.to_owned(),

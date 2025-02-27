@@ -716,7 +716,8 @@
 <a href="#715" id="715">715</a>
 <a href="#716" id="716">716</a>
 <a href="#717" id="717">717</a>
-<a href="#718" id="718">718</a></pre></div><pre class="rust"><code><span class="kw">use </span>enclose::enclose;
+<a href="#718" id="718">718</a>
+<a href="#719" id="719">719</a></pre></div><pre class="rust"><code><span class="kw">use </span>enclose::enclose;
 <span class="kw">use </span>futures::{FutureExt, TryFutureExt};
 <span class="kw">use </span>http::request::Request;
 <span class="kw">use </span>magnet_url::{Magnet, MagnetError};
@@ -746,7 +747,8 @@
 </span><span class="kw">pub struct </span>PlaybackDevice {
     <span class="kw">pub </span>id: String,
     <span class="kw">pub </span>name: String,
-    <span class="kw">pub </span>r#type: String,
+    <span class="doccomment">/// E.g. `external`
+    </span><span class="kw">pub </span>r#type: String,
 }
 
 <span class="attr">#[derive(Clone, Serialize, Debug)]

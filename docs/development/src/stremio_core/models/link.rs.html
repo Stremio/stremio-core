@@ -184,7 +184,7 @@
 
 <span class="kw">impl</span>&lt;T, E&gt; UpdateWithCtx&lt;E&gt; <span class="kw">for </span>Link&lt;T&gt;
 <span class="kw">where
-    </span>T: PartialEq + TryFrom&lt;LinkDataResponse, Error = <span class="kw-2">&amp;</span><span class="lifetime">'static </span>str&gt;,
+    </span>T: PartialEq + TryFrom&lt;LinkDataResponse, Error = derive_more::TryIntoError&lt;LinkDataResponse&gt;&gt;,
     E: Env + <span class="lifetime">'static</span>,
 {
     <span class="kw">fn </span>update(<span class="kw-2">&amp;mut </span><span class="self">self</span>, msg: <span class="kw-2">&amp;</span>Msg, <span class="kw">_</span>: <span class="kw-2">&amp;</span>Ctx) -&gt; Effects {
@@ -240,7 +240,7 @@
                             <span class="prelude-val">Ok</span>(data) =&gt; <span class="kw">match </span>T::try_from(data.to_owned()) {
                                 <span class="prelude-val">Ok</span>(data) =&gt; Loadable::Ready(data),
                                 <span class="prelude-val">Err</span>(error) =&gt; {
-                                    Loadable::Err(LinkError::UnexpectedResponse(error.to_owned()))
+                                    Loadable::Err(LinkError::UnexpectedResponse(error.to_string()))
                                 }
                             },
                             <span class="prelude-val">Err</span>(error) =&gt; Loadable::Err(error.to_owned()),

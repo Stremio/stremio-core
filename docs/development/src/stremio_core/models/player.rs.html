@@ -1701,7 +1701,7 @@
                         .as_ref()
                         .map(|meta_request| <span class="kw-2">&amp;</span>meta_request.path.id)
                 {
-                    item_state_update(<span class="kw-2">&amp;mut </span><span class="self">self</span>.library_item, <span class="kw-2">&amp;</span><span class="self">self</span>.next_video)
+                    item_state_update(<span class="kw-2">&amp;mut </span><span class="self">self</span>.library_item, <span class="self">self</span>.next_video.as_ref())
                 } <span class="kw">else </span>{
                     Effects::none().unchanged()
                 };
@@ -1871,7 +1871,7 @@
                 );
 
                 <span class="kw">let </span>item_state_update_effects =
-                    item_state_update(<span class="kw-2">&amp;mut </span><span class="self">self</span>.library_item, <span class="kw-2">&amp;</span><span class="self">self</span>.next_video);
+                    item_state_update(<span class="kw-2">&amp;mut </span><span class="self">self</span>.library_item, <span class="self">self</span>.next_video.as_ref());
                 <span class="kw">let </span>push_to_library_effects = <span class="kw">match </span><span class="kw-2">&amp;</span><span class="self">self</span>.library_item {
                     <span class="prelude-val">Some</span>(library_item) =&gt; Effects::msg(Msg::Internal(Internal::UpdateLibraryItem(
                         library_item.to_owned(),
@@ -2466,7 +2466,7 @@
 
 <span class="kw">fn </span>item_state_update(
     library_item: <span class="kw-2">&amp;mut </span><span class="prelude-ty">Option</span>&lt;LibraryItem&gt;,
-    next_video: <span class="kw-2">&amp;</span><span class="prelude-ty">Option</span>&lt;Video&gt;,
+    next_video: <span class="prelude-ty">Option</span>&lt;<span class="kw-2">&amp;</span>Video&gt;,
 ) -&gt; Effects {
     <span class="kw">match </span>library_item {
         <span class="prelude-val">Some</span>(library_item)
