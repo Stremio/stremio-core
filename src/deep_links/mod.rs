@@ -84,6 +84,9 @@ impl From<(&Stream, Option<&Url>, &Settings)> for ExternalPlayerLink {
         let file_name = playlist.as_ref().map(|_| "playlist.m3u".to_owned());
         let open_player = match &streaming {
             Some(url) => {
+                // `x-callback-url` schema urls need to be encoded
+                // >(Note: callback URLs in parameters should be encoded. They were left decoded for legibility)
+                // https://x-callback-url.com/examples/
                 let url_encoded = utf8_percent_encode(url.as_str(), URI_COMPONENT_ENCODE_SET);
 
                 match settings.player_type.as_ref() {
@@ -123,20 +126,23 @@ impl From<(&Stream, Option<&Url>, &Settings)> for ExternalPlayerLink {
                             visionos: Some(http_regex.replace(url.as_str(), "outplayer://").to_string()),
                             ..Default::default()
                         }),
+                        // Either a query that's url-safe or encoded.
+                        // https://support.firecore.com/hc/en-us/articles/215090997-API-for-Third-Party-Apps-Services#h_01HDS4GZEG00ME3VJJ77SEFF5V
                         "infuse" => Some(OpenPlayerLink {
                             ios: Some(format!("infuse://x-callback-url/play?url={url_encoded}")),
                         ..Default::default()
                         }),
+
                         "iina" => Some(OpenPlayerLink {
                             macos: Some(format!("iina://weblink?url={url_encoded}")),
                         ..Default::default()
                         }),
                         "mpv" => Some(OpenPlayerLink {
-                            macos: Some(format!("mpv://{url_encoded}")),
+                            macos: Some(format!("mpv://{url}")),
                         ..Default::default()
                         }),
                         "moonplayer" => Some(OpenPlayerLink {
-                            visionos: Some(format!("moonplayer://open?url={url_encoded}")),
+                            visionos: Some(format!("moonplayer://open?url={url}")),
                             ..Default::default()
                         }),
                         "m3u" => Some(OpenPlayerLink {
