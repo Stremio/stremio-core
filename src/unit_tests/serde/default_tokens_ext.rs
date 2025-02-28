@@ -323,13 +323,15 @@ impl DefaultTokens for User {
             vec![
                 Token::Struct {
                     name: "User",
-                    len: 9,
+                    len: 10,
                 },
                 Token::Str("_id"),
                 Token::Str(""),
                 Token::Str("email"),
                 Token::Str(""),
                 Token::Str("fbId"),
+                Token::None,
+                Token::Str("appleId"),
                 Token::None,
                 Token::Str("avatar"),
                 Token::None,
@@ -451,7 +453,7 @@ impl DefaultTokens for AuthRequest {
         vec![
             Token::Struct {
                 name: "AuthRequest",
-                len: 5,
+                len: 6,
             },
             Token::Str("type"),
             Token::Str("Auth"),
@@ -462,6 +464,8 @@ impl DefaultTokens for AuthRequest {
             Token::Str("password"),
             Token::Str(""),
             Token::Str("facebook"),
+            Token::Bool(false),
+            Token::Str("apple"),
             Token::Bool(false),
             Token::StructEnd,
         ]

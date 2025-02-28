@@ -73,7 +73,7 @@ fn actionctx_authenticate_login() {
                 url, method, body, ..
             } if url == "https://api.strem.io/api/login"
                 && method == "POST"
-                && body == "{\"type\":\"Auth\",\"type\":\"Login\",\"email\":\"user_email\",\"password\":\"user_password\",\"facebook\":false}" =>
+                && body == "{\"type\":\"Auth\",\"type\":\"Login\",\"email\":\"user_email\",\"password\":\"user_password\",\"facebook\":false,\"apple\":false}" =>
             {
                 future::ok(Box::new(APIResult::Ok(auth_response_fixture())) as Box<dyn Any + Send>).boxed_env()
             }
@@ -175,7 +175,7 @@ fn actionctx_authenticate_login() {
         Request {
             url: "https://api.strem.io/api/login".to_owned(),
             method: "POST".to_owned(),
-            body: "{\"type\":\"Auth\",\"type\":\"Login\",\"email\":\"user_email\",\"password\":\"user_password\",\"facebook\":false}".to_owned(),
+            body: "{\"type\":\"Auth\",\"type\":\"Login\",\"email\":\"user_email\",\"password\":\"user_password\",\"facebook\":false,\"apple\":false}".to_owned(),
             ..Default::default()
         },
         "Login request has been sent"
