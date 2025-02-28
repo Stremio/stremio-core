@@ -118,6 +118,7 @@ fn actionctx_pulladdonsfromapi_with_user() {
                             id: "user_id".to_owned(),
                             email: "user_email".to_owned(),
                             fb_id: None,
+                            apple_id: None,
                             avatar: None,
                             last_modified: TestEnv::now(),
                             date_registered: TestEnv::now(),

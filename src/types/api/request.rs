@@ -158,6 +158,7 @@ impl FetchRequestParams<APIRequest> for APIRequest {
             APIRequest::Auth(AuthRequest::Login { .. }) => "login".to_owned(),
             APIRequest::Auth(AuthRequest::LoginWithToken { .. }) => "loginWithToken".to_owned(),
             APIRequest::Auth(AuthRequest::Facebook { .. }) => "authWithFacebook".to_owned(),
+            APIRequest::Auth(AuthRequest::Apple { .. }) => "authWithApple".to_owned(),
             APIRequest::Auth(AuthRequest::Register { .. }) => "register".to_owned(),
             APIRequest::Logout { .. } => "logout".to_owned(),
             APIRequest::DeleteAccount { .. } => "deleteUser".to_owned(),
@@ -192,6 +193,8 @@ pub enum AuthRequest {
         password: String,
         #[serde(default)]
         facebook: bool,
+        #[serde(default)]
+        apple: bool,
     },
     Register {
         email: String,
@@ -199,6 +202,9 @@ pub enum AuthRequest {
         gdpr_consent: GDPRConsent,
     },
     Facebook {
+        token: String,
+    },
+    Apple {
         token: String,
     },
     LoginWithToken {
@@ -213,11 +219,13 @@ impl fmt::Debug for AuthRequest {
                 email,
                 password: _,
                 facebook,
+                apple,
             } => f
                 .debug_struct("Login")
                 .field("email", email)
                 .field("password", &"<SENSITIVE>")
                 .field("facebook", facebook)
+                .field("apple", apple)
                 .finish(),
             Self::Register {
                 email,
@@ -231,6 +239,10 @@ impl fmt::Debug for AuthRequest {
                 .finish(),
             Self::Facebook { token: _ } => f
                 .debug_struct("Facebook")
+                .field("token", &"<SENSITIVE>")
+                .finish(),
+            Self::Apple { token: _ } => f
+                .debug_struct("Apple")
                 .field("token", &"<SENSITIVE>")
                 .finish(),
             Self::LoginWithToken { token: _ } => f
