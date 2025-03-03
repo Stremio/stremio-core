@@ -46,10 +46,6 @@ pub enum ActionCtx {
     RemoveFromLibrary(String),
     RewindLibraryItem(String),
     MarkAsWatched(String, bool),
-    LibraryItemMarkAsWatched {
-        id: LibraryItemId,
-        is_watched: bool,
-    },
     /// If boolean is set to `true` it will disable notifications for the LibraryItem.
     ToggleLibraryItemNotifications(LibraryItemId, bool),
     /// Dismiss all Notification for a given [`MetaItemId`].
