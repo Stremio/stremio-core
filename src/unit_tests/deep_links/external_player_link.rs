@@ -198,7 +198,7 @@ fn external_player_link_with_vlc_player() {
     );
     assert_eq!(
         open_player.ios,
-        Some("vlc-x-callback://x-callback-url/stream?url=http://example.com/stream".to_string())
+        Some("vlc-x-callback://x-callback-url/stream?url=http%3A%2F%2Fexample.com%2Fstream".to_string())
     );
 }
 
@@ -316,6 +316,6 @@ fn external_player_link_with_infuse() {
 
     assert_eq!(
         open_player.ios,
-        Some("infuse://x-callback-url/play?url=http://example.com/stream".to_string())
+        Some("infuse://x-callback-url/play?url=http%3A%2F%2Fexample.com%2Fstream".to_string())
     );
 }
