@@ -198,7 +198,10 @@ fn external_player_link_with_vlc_player() {
     );
     assert_eq!(
         open_player.ios,
-        Some("vlc-x-callback://x-callback-url/stream?url=http%3A%2F%2Fexample.com%2Fstream".to_string())
+        Some(
+            "vlc-x-callback://x-callback-url/stream?url=http%3A%2F%2Fexample.com%2Fstream"
+                .to_string()
+        )
     );
 }
 
