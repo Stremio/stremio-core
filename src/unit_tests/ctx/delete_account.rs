@@ -66,6 +66,7 @@ fn actionctx_delete_account() {
                     marketing: true,
                     from: Some("tests".to_owned()),
                 },
+                ..Default::default()
             },
         }),
         ..Default::default()

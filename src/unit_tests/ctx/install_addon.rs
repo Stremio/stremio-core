@@ -156,6 +156,7 @@ fn actionctx_installaddon_install_with_user() {
                                 marketing: true,
                                 from: Some("tests".to_owned()),
                             },
+                            ..Default::default()
                         },
                     }),
                     addons: vec![],

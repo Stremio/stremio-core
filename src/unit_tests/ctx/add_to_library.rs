@@ -98,6 +98,7 @@ fn actionctx_addtolibrary() {
                                 marketing: true,
                                 from: Some("tests".to_owned()),
                             },
+                            ..Default::default()
                         },
                     }),
                     ..Default::default()

@@ -17,6 +17,7 @@ fn user() {
                 trakt: None,
                 premium_expire: None,
                 gdpr_consent: GDPRConsent::default(),
+                ..Default::default()
             },
             User {
                 id: "id".to_owned(),
@@ -28,6 +29,7 @@ fn user() {
                 trakt: None,
                 premium_expire: None,
                 gdpr_consent: GDPRConsent::default(),
+                ..Default::default()
             },
         ]
         .compact(),
@@ -99,6 +101,7 @@ fn user() {
             trakt: None,
             premium_expire: None,
             gdpr_consent: GDPRConsent::default(),
+            ..Default::default()
         },
         &[
             vec![

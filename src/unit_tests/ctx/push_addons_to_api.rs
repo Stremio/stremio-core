@@ -119,6 +119,7 @@ fn actionctx_pushaddonstoapi_with_user() {
                                 marketing: true,
                                 from: Some("tests".to_owned()),
                             },
+                            ..Default::default()
                         },
                     }),
                     addons: vec![Descriptor {
