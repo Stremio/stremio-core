@@ -60,6 +60,7 @@ fn actionctx_logout() {
                     marketing: true,
                     from: Some("tests".to_owned()),
                 },
+                ..Default::default()
             },
         }),
         ..Default::default()

@@ -260,6 +260,7 @@ fn actionctx_synclibrarywithapi_with_user() {
                                 marketing: true,
                                 from: Some("tests".to_owned()),
                             },
+                            ..Default::default()
                         },
                     }),
                     ..Default::default()
@@ -425,6 +426,7 @@ fn actionctx_synclibrarywithapi_with_user_empty_library() {
                                 marketing: true,
                                 from: Some("tests".to_owned()),
                             },
+                            ..Default::default()
                         },
                     }),
                     ..Default::default()

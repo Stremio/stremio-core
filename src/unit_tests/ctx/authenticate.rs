@@ -38,6 +38,7 @@ fn user_fixture() -> User {
             marketing: true,
             from: Some("tests".to_owned()),
         },
+        ..Default::default()
     }
 }
 

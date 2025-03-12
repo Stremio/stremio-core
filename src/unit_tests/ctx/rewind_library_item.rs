@@ -99,6 +99,7 @@ fn actionctx_rewindlibraryitem() {
                                 marketing: true,
                                 from: Some("tests".to_owned()),
                             },
+                            ..Default::default()
                         },
                     }),
                     ..Default::default()
