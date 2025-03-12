@@ -157,8 +157,12 @@ pub trait Env {
         streaming_server: &StreamingServer,
         path: &str,
     ) -> serde_json::Value;
+
     #[cfg(debug_assertions)]
-    fn log(message: String);
+    fn log<T>(message: &T)
+    where
+        T: Serialize;
+
     fn addon_transport(transport_url: &Url) -> Box<dyn AddonTransport>
     where
         Self: Sized + 'static,

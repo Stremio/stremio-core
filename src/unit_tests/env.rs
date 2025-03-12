@@ -156,8 +156,14 @@ impl Env for TestEnv {
     ) -> serde_json::Value {
         serde_json::Value::Null
     }
-    fn log(message: String) {
-        println!("{message}")
+    fn log<T: Serialize>(message: &T) {
+        println!(
+            "{}",
+            serde_json::to_string(message).expect(&format!(
+                "Log message not serializable to JSON: {}",
+                type_name::<T>()
+            ))
+        );
     }
 }
 

@@ -455,11 +455,22 @@ impl Env for WebEnv {
     }
 
     #[cfg(debug_assertions)]
-    fn log(message: String) {
-        use tracing::info;
+    fn log<T>(message: &T)
+    where
+        T: Serialize,
+    {
+        // use tracing::info;
 
-        info!("{message}");
-        // web_sys::console::log_1();
+        // println!("{message}");
+        // info!("{message}");
+        // Easily debuggable objects shown in, for example, the browser console
+        match <JsValue as JsValueSerdeExt>::from_serde(message) {
+            Ok(js_value) => web_sys::console::log_1(&js_value),
+            Err(err) => {
+                let js_value = JsValue::from_str(&err.to_string());
+                web_sys::console::error_1(&js_value);
+            }
+        }
     }
 }
 

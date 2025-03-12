@@ -10,7 +10,7 @@ use futures::{
     future::{self, Either},
     Future, FutureExt,
 };
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 
 use crate::{
     models::{ctx::Ctx, streaming_server::StreamingServer},
@@ -24,7 +24,7 @@ use crate::{
 #[cfg(debug_assertions)]
 use crate::{runtime::EnvFutureExt, types::True};
 
-#[derive(Clone, PartialEq, Serialize, Debug)]
+#[derive(Clone, PartialEq, Serialize, Deserialize, Debug)]
 struct Event {
     #[serde(flatten)]
     data: serde_json::Value,
@@ -38,7 +38,7 @@ struct Event {
     context: serde_json::Value,
 }
 
-#[derive(Clone, PartialEq, Debug)]
+#[derive(Clone, PartialEq, Debug, Serialize, Deserialize)]
 struct EventsBatch {
     auth_key: AuthKey,
     events: Vec<Event>,
@@ -156,7 +156,7 @@ fn send_events_batch_to_api<E: Env>(
 ) -> TryEnvFuture<APIResult<SuccessResponse>> {
     #[cfg(debug_assertions)]
     if cfg!(debug_assertions) {
-        E::log(format!("send_events_batch_to_api: {:#?}", &batch));
+        E::log(batch);
         return future::ok(APIResult::Ok(SuccessResponse { success: True })).boxed_env();
     };
 
