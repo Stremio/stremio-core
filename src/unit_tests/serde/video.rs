@@ -11,7 +11,7 @@ fn video() {
     assert_tokens(
         &vec![
             Video {
-                id: "id".to_owned(),
+                id: "id".into(),
                 title: "title".to_owned(),
                 released: Some(Utc.with_ymd_and_hms(2020, 1, 1, 0, 0, 0).unwrap()),
                 overview: Some("overview".to_owned()),
@@ -21,7 +21,7 @@ fn video() {
                 trailer_streams: vec![],
             },
             Video {
-                id: "id".to_owned(),
+                id: "id".into(),
                 title: "title".to_owned(),
                 released: None,
                 overview: None,
@@ -85,7 +85,7 @@ fn video() {
     assert_de_tokens(
         &vec![
             Video {
-                id: "id".to_owned(),
+                id: "id".into(),
                 title: "".to_owned(),
                 released: None,
                 overview: None,
@@ -95,7 +95,7 @@ fn video() {
                 trailer_streams: vec![],
             },
             Video {
-                id: "id".to_owned(),
+                id: "id".into(),
                 title: "title".to_owned(),
                 released: None,
                 overview: None,
@@ -112,7 +112,7 @@ fn video() {
                 trailer_streams: vec![],
             },
             Video {
-                id: "id".to_owned(),
+                id: "id".into(),
                 title: "title".to_owned(),
                 released: None,
                 overview: None,
@@ -219,7 +219,7 @@ fn videos_minimal() {
     assert_de_tokens(
         &MetaItem {
             preview: MetaItemPreview {
-                id: "id".to_owned(),
+                id: "id".into(),
                 r#type: "type".to_owned(),
                 name: "".to_owned(),
                 ..Default::default()
@@ -294,7 +294,7 @@ fn videos_released_equal() {
     assert_de_tokens(
         &MetaItem {
             preview: MetaItemPreview {
-                id: "id".to_owned(),
+                id: "id".into(),
                 r#type: "type".to_owned(),
                 name: "".to_owned(),
                 ..Default::default()
@@ -378,7 +378,7 @@ fn videos_released_sequal() {
     assert_de_tokens(
         &MetaItem {
             preview: MetaItemPreview {
-                id: "id".to_owned(),
+                id: "id".into(),
                 r#type: "type".to_owned(),
                 name: "".to_owned(),
                 ..Default::default()
@@ -491,7 +491,7 @@ fn various_videos_deserialization() {
     assert_de_tokens(
         &MetaItem {
             preview: MetaItemPreview {
-                id: "id".to_owned(),
+                id: "id".into(),
                 r#type: "type".to_owned(),
                 name: "".to_owned(),
                 ..Default::default()

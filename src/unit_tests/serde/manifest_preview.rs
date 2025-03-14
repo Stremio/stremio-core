@@ -9,7 +9,7 @@ fn manifest_preview() {
     assert_ser_tokens(
         &vec![
             ManifestPreview {
-                id: "id".to_owned(),
+                id: "id".into(),
                 version: Version::new(0, 0, 1),
                 name: "name".to_owned(),
                 description: Some("description".to_owned()),
@@ -19,7 +19,7 @@ fn manifest_preview() {
                 behavior_hints: Default::default(),
             },
             ManifestPreview {
-                id: "id".to_owned(),
+                id: "id".into(),
                 version: Version::new(0, 0, 1),
                 name: "name".to_owned(),
                 description: None,
@@ -90,7 +90,7 @@ fn manifest_preview() {
     assert_de_tokens(
         &vec![
             ManifestPreview {
-                id: "id".to_owned(),
+                id: "id".into(),
                 version: Version::new(0, 0, 1),
                 name: "name".to_owned(),
                 description: Some("description".to_owned()),
@@ -100,7 +100,7 @@ fn manifest_preview() {
                 behavior_hints: Default::default(),
             },
             ManifestPreview {
-                id: "id".to_owned(),
+                id: "id".into(),
                 version: Version::new(0, 0, 1),
                 name: "name".to_owned(),
                 description: None,

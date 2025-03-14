@@ -246,7 +246,7 @@ fn actionctx_synclibrarywithapi_with_user() {
                     auth: Some(Auth {
                         key: AuthKey("auth_key".to_owned()),
                         user: User {
-                            id: "user_id".to_owned(),
+                            id: "user_id".into(),
                             email: "user_email".to_owned(),
                             fb_id: None,
                             avatar: None,
@@ -266,7 +266,7 @@ fn actionctx_synclibrarywithapi_with_user() {
                     ..Default::default()
                 },
                 LibraryBucket {
-                    uid: Some("user_id".to_owned()),
+                    uid: Some("user_id".into()),
                     items: vec![
                         (LOCAL_ONLY_ITEM.id.to_owned(), LOCAL_ONLY_ITEM.to_owned()),
                         (LOCAL_NEWER_ITEM.id.to_owned(), LOCAL_NEWER_ITEM.to_owned()),
@@ -312,7 +312,7 @@ fn actionctx_synclibrarywithapi_with_user() {
     assert_eq!(
         runtime.model().unwrap().ctx.library,
         LibraryBucket {
-            uid: Some("user_id".to_string()),
+            uid: Some("user_id".into()),
             items: vec![
                 (LOCAL_ONLY_ITEM.id.to_owned(), LOCAL_ONLY_ITEM.to_owned()),
                 (LOCAL_NEWER_ITEM.id.to_owned(), LOCAL_NEWER_ITEM.to_owned()),
@@ -346,7 +346,7 @@ fn actionctx_synclibrarywithapi_with_user() {
             .get(LIBRARY_RECENT_STORAGE_KEY)
             .map(|data| serde_json::from_str::<LibraryBucket>(data).unwrap()),
         Some(LibraryBucket::new(
-            Some("user_id".to_owned()),
+            Some("user_id".into()),
             vec![
                 REMOTE_ONLY_ITEM.to_owned(),
                 LOCAL_ONLY_ITEM.to_owned(),
@@ -412,7 +412,7 @@ fn actionctx_synclibrarywithapi_with_user_empty_library() {
                     auth: Some(Auth {
                         key: AuthKey("auth_key".to_owned()),
                         user: User {
-                            id: "user_id".to_owned(),
+                            id: "user_id".into(),
                             email: "user_email".to_owned(),
                             fb_id: None,
                             avatar: None,
