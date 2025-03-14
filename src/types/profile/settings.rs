@@ -7,7 +7,7 @@ use url::Url;
 #[serde(rename_all = "camelCase")]
 pub struct Settings {
     pub interface_language: String,
-    pub blur_unwatched_image: bool,
+    pub hide_spoilers: bool,
     pub streaming_server_url: Url,
     pub player_type: Option<String>,
     pub binge_watching: bool,
@@ -59,7 +59,7 @@ impl Default for Settings {
             binge_watching: true,
             play_in_background: true,
             hardware_decoding: true,
-            blur_unwatched_image: false,
+            hide_spoilers: false,
             frame_rate_matching_strategy: FrameRateMatchingStrategy::FrameRateOnly,
             next_video_notification_duration: 35000,
             audio_passthrough: false,

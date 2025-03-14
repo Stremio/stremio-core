@@ -679,13 +679,13 @@ fn migrate_storage_schema_to_v18<E: Env>() -> TryEnvFuture<()> {
                 .and_then(|settings| settings.as_object_mut())
             {
                 Some(settings) => {
-                    settings.insert("blurUnwatchedImage".to_owned(), serde_json::Value::Bool(false));
+                    settings.insert("hideSpoilers".to_owned(), serde_json::Value::Bool(false));
                     E::set_storage(PROFILE_STORAGE_KEY, Some(&profile))
                 }
                 _ => E::set_storage::<()>(PROFILE_STORAGE_KEY, None),
             }
         })
-        .and_then(|_| E::set_storage(SCHEMA_VERSION_STORAGE_KEY, Some(&17)))
+        .and_then(|_| E::set_storage(SCHEMA_VERSION_STORAGE_KEY, Some(&18)))
         .boxed_env()
 }
 
@@ -1327,7 +1327,7 @@ mod test {
 
             let migrated_profile = json!({
                 "settings": {
-                    "blurUnwatchedPreview": false,
+                    "hideSpoilers": false,
                 }
             });
 
