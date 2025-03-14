@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"struct":["GDPRConsent","TraktInfo","User"]};
+window.SIDEBAR_ITEMS = {"struct":["GDPRConsent","TraktInfo","User","UserId"]};

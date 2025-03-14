@@ -67,7 +67,9 @@
 <a href="#66" id="66">66</a>
 <a href="#67" id="67">67</a>
 <a href="#68" id="68">68</a>
-<a href="#69" id="69">69</a></pre></div><pre class="rust"><code><span class="kw">use </span><span class="kw">crate</span>::constants::OFFICIAL_ADDONS;
+<a href="#69" id="69">69</a>
+<a href="#70" id="70">70</a>
+<a href="#71" id="71">71</a></pre></div><pre class="rust"><code><span class="kw">use </span><span class="kw">crate</span>::constants::OFFICIAL_ADDONS;
 <span class="kw">use </span><span class="kw">crate</span>::runtime::Env;
 <span class="kw">use </span><span class="kw">crate</span>::types::addon::Descriptor;
 <span class="kw">use </span><span class="kw">crate</span>::types::profile::{Auth, AuthKey, Settings};
@@ -76,11 +78,13 @@
 <span class="kw">use </span>serde_with::serde_as;
 <span class="kw">use </span>url::Url;
 
+<span class="kw">use </span><span class="kw">super</span>::UserId;
+
 <span class="doccomment">/// User ID
 ///
 /// `Some` when authenticated
 /// `None` if not authenticated
-</span><span class="kw">pub type </span>UID = <span class="prelude-ty">Option</span>&lt;String&gt;;
+</span><span class="kw">pub type </span>UID = <span class="prelude-ty">Option</span>&lt;UserId&gt;;
 
 <span class="attr">#[serde_as]
 #[derive(Clone, PartialEq, Eq, Serialize, Deserialize, Debug)]

@@ -115,14 +115,14 @@
 <span class="kw">use </span><span class="kw">crate</span>::models::ctx::{CtxError, CtxStatus, OtherError};
 <span class="kw">use </span><span class="kw">crate</span>::runtime::msg::{Action, ActionCtx, Event, Internal, Msg};
 <span class="kw">use </span><span class="kw">crate</span>::runtime::{Effects, Env};
-<span class="kw">use </span><span class="kw">crate</span>::types::profile::Profile;
+<span class="kw">use </span><span class="kw">crate</span>::types::profile::{Profile, UserId};
 <span class="kw">use </span>percent_encoding::utf8_percent_encode;
 <span class="kw">use </span>url::Url;
 
-<span class="kw">pub fn </span>build_track_addon_url(uid: <span class="kw-2">&amp;</span>str) -&gt; <span class="prelude-ty">Result</span>&lt;Url, url::ParseError&gt; {
+<span class="kw">pub fn </span>build_track_addon_url(uid: <span class="kw-2">&amp;</span>UserId) -&gt; <span class="prelude-ty">Result</span>&lt;Url, url::ParseError&gt; {
     Url::parse(<span class="kw-2">&amp;</span><span class="macro">format!</span>(
         <span class="string">"https://www.strem.io/trakt/addon/{}/manifest.json"</span>,
-        utf8_percent_encode(uid, URI_COMPONENT_ENCODE_SET)
+        utf8_percent_encode(uid.as_ref(), URI_COMPONENT_ENCODE_SET)
     ))
 }
 

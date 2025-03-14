@@ -108,7 +108,7 @@
 <span class="kw">fn </span>push_server_urls_to_storage&lt;E: Env + <span class="lifetime">'static</span>&gt;(
     streaming_server_urls: <span class="kw-2">&amp;</span>ServerUrlsBucket,
 ) -&gt; Effect {
-    <span class="kw">let </span>uid: <span class="prelude-ty">Option</span>&lt;String&gt; = streaming_server_urls.uid.clone();
+    <span class="kw">let </span>uid = streaming_server_urls.uid.clone();
 
     EffectFuture::Sequential(
         E::set_storage(
