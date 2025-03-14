@@ -30,7 +30,7 @@ fn actionctx_installaddon_install() {
     }
     let addon = Descriptor {
         manifest: Manifest {
-            id: "id".to_owned(),
+            id: "id".into(),
             version: Version::new(0, 0, 1),
             name: "name".to_owned(),
             contact_email: None,
@@ -116,7 +116,7 @@ fn actionctx_installaddon_install_with_user() {
     }
     let addon = Descriptor {
         manifest: Manifest {
-            id: "id".to_owned(),
+            id: "id".into(),
             version: Version::new(0, 0, 1),
             name: "name".to_owned(),
             contact_email: None,
@@ -142,7 +142,7 @@ fn actionctx_installaddon_install_with_user() {
                     auth: Some(Auth {
                         key: AuthKey("auth_key".to_owned()),
                         user: User {
-                            id: "user_id".to_owned(),
+                            id: "user_id".into(),
                             email: "user_email".to_owned(),
                             fb_id: None,
                             avatar: None,
@@ -334,7 +334,7 @@ fn actionctx_installaddon_already_installed() {
     }
     let addon = Descriptor {
         manifest: Manifest {
-            id: "id".to_owned(),
+            id: "id".into(),
             version: Version::new(0, 0, 1),
             name: "name".to_owned(),
             contact_email: None,

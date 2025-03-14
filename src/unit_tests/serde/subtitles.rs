@@ -6,7 +6,7 @@ use url::Url;
 fn subtitles() {
     assert_tokens(
         &Subtitles {
-            id: "id".to_owned(),
+            id: "id".into(),
             lang: "lang".to_owned(),
             url: Url::parse("https://url").unwrap(),
         },

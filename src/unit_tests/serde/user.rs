@@ -8,7 +8,7 @@ fn user() {
     assert_tokens(
         &vec![
             User {
-                id: "id".to_owned(),
+                id: "id".into(),
                 email: "email".to_owned(),
                 fb_id: Some("fb_id".to_owned()),
                 avatar: Some("avatar".to_owned()),
@@ -20,7 +20,7 @@ fn user() {
                 ..Default::default()
             },
             User {
-                id: "id".to_owned(),
+                id: "id".into(),
                 email: "email".to_owned(),
                 fb_id: None,
                 avatar: None,
@@ -92,7 +92,7 @@ fn user() {
     );
     assert_de_tokens(
         &User {
-            id: "id".to_owned(),
+            id: "id".into(),
             email: "email".to_owned(),
             fb_id: None,
             avatar: None,

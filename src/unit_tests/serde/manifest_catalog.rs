@@ -6,13 +6,13 @@ fn manifest_catalog() {
     assert_tokens(
         &vec![
             ManifestCatalog {
-                id: "id".to_owned(),
+                id: "id".into(),
                 r#type: "type".to_owned(),
                 name: Some("name".to_owned()),
                 extra: ManifestExtra::default(),
             },
             ManifestCatalog {
-                id: "id".to_owned(),
+                id: "id".into(),
                 r#type: "type".to_owned(),
                 name: None,
                 extra: ManifestExtra::default(),
@@ -48,7 +48,7 @@ fn manifest_catalog() {
     );
     assert_de_tokens(
         &ManifestCatalog {
-            id: "id".to_owned(),
+            id: "id".into(),
             r#type: "type".to_owned(),
             name: None,
             extra: ManifestExtra::default(),
