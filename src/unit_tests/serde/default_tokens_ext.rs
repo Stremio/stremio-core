@@ -378,6 +378,8 @@ impl DefaultTokens for Settings {
             },
             Token::Str("interfaceLanguage"),
             Token::Str("eng"),
+            Token::Str("hideSpoilers"),
+            Token::Bool(false),
             Token::Str("streamingServerUrl"),
             Token::Str("http://127.0.0.1:11470/"),
             Token::Str("playerType"),
