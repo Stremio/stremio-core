@@ -668,7 +668,6 @@ fn migrate_storage_schema_to_v17<E: Env>() -> TryEnvFuture<()> {
         .boxed_env()
 }
 
-
 fn migrate_storage_schema_to_v18<E: Env>() -> TryEnvFuture<()> {
     E::get_storage::<serde_json::Value>(PROFILE_STORAGE_KEY)
         .and_then(|mut profile| {
@@ -1315,7 +1314,6 @@ mod test {
             );
         }
     }
-
 
     #[tokio::test]
     async fn test_migration_from_17_to_18() {
