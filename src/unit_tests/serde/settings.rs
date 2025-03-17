@@ -8,6 +8,7 @@ fn settings() {
     assert_tokens(
         &Settings {
             interface_language: "interface_language".to_owned(),
+            hide_spoilers: false,
             streaming_server_url: Url::parse("https://streaming_server_url").unwrap(),
             player_type: Some("player".to_owned()),
             binge_watching: true,
