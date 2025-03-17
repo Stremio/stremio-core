@@ -44,7 +44,7 @@ fn settings() {
         &[
             Token::Struct {
                 name: "Settings",
-                len: 30,
+                len: 31,
             },
             Token::Str("interfaceLanguage"),
             Token::Str("interface_language"),
