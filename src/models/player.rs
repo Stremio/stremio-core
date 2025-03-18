@@ -85,6 +85,13 @@ pub struct Selected {
     pub subtitles_path: Option<ResourcePath>,
 }
 
+#[derive(Default, Clone, Derivative, Serialize, Debug, PartialEq, Eq)]
+pub enum NextVideoAction {
+    Play,
+    #[default]
+    Wait,
+}
+
 #[derive(Clone, Derivative, Serialize, Debug)]
 #[derivative(Default)]
 #[serde(rename_all = "camelCase")]
@@ -93,7 +100,9 @@ pub struct Player {
     pub video_params: Option<VideoParams>,
     pub meta_item: Option<ResourceLoadable<MetaItem>>,
     pub subtitles: Vec<ResourceLoadable<Vec<Subtitles>>>,
-    pub next_video: Option<Video>,
+    /// Once NextVideo action is triggered, this can load the next with deeplink
+    /// once all the effects have been applied on the model.
+    pub next_video: Option<(Video, NextVideoAction)>,
     pub next_streams: Option<ResourceLoadable<Vec<Stream>>>,
     pub next_stream: Option<Stream>,
     pub series_info: Option<SeriesInfo>,
@@ -175,26 +184,26 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                 let video_params_effects = eq_update(&mut self.video_params, None);
                 let subtitles_effects = subtitles_update::<E>(
                     &mut self.subtitles,
-                    &self.selected,
-                    &self.video_params,
+                    self.selected.as_ref(),
+                    self.video_params.as_ref(),
                     &ctx.profile.addons,
                 );
                 let next_video_effects = next_video_update(
                     &mut self.next_video,
-                    &self.next_stream,
-                    &self.selected,
-                    &self.meta_item,
+                    self.next_stream.as_ref(),
+                    self.selected.as_ref(),
+                    self.meta_item.as_ref(),
                     &ctx.profile.settings,
                 );
                 let next_streams_effects = next_streams_update::<E>(
                     &mut self.next_streams,
-                    &self.next_video,
-                    &self.selected,
+                    self.next_video.as_ref(),
+                    self.selected.as_ref(),
                 );
                 let next_stream_effects = next_stream_update(
                     &mut self.next_stream,
-                    &self.next_streams,
-                    &self.selected,
+                    self.next_streams.as_ref(),
+                    self.selected.as_ref(),
                     &ctx.profile.settings,
                 );
                 // Make sure to update the steams and in term the StreamsBucket
@@ -214,13 +223,20 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                     series_info_update(&mut self.series_info, &self.selected, &self.meta_item);
                 let library_item_effects = library_item_update::<E>(
                     &mut self.library_item,
-                    &self.selected,
-                    &self.meta_item,
+                    self.selected.as_ref(),
+                    self.meta_item.as_ref(),
                     &ctx.library,
                 );
 
                 let library_item_state_effects =
                     library_item_state_update(&mut self.library_item, &self.selected);
+                tracing::info!(
+                    "Player::Load {}",
+                    self.library_item
+                        .as_ref()
+                        .map(|li| li.id.as_str())
+                        .unwrap_or_default()
+                );
 
                 let watched_effects =
                     watched_update(&mut self.watched, &self.meta_item, &self.library_item);
@@ -359,8 +375,8 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                     eq_update(&mut self.video_params, video_params.to_owned());
                 let subtitles_effects = subtitles_update::<E>(
                     &mut self.subtitles,
-                    &self.selected,
-                    &self.video_params,
+                    self.selected.as_ref(),
+                    self.video_params.as_ref(),
                     &ctx.profile.addons,
                 );
                 let skip_gaps_effects = skip_gaps_update::<E>(
@@ -626,24 +642,37 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                         .as_ref()
                         .map(|library_item| library_item.state.time_offset),
                 );
-
+                tracing::info!("Player Action - Next Video");
                 // Set time_offset to 0 as we switch to next video
-                let library_item_effects = self
-                    .library_item
-                    .as_mut()
-                    .map(|library_item| {
+                let library_item_effects = match self.library_item.as_mut() {
+                    Some(player_library_item) => {
                         // instantly update the library item's time_offset.
-                        library_item.state.time_offset = 0;
+                        // inside the player
+                        player_library_item.state.time_offset = 0;
+                        tracing::info!(
+                            "Player Action - time_offset set to 0 LibraryItem {}",
+                            player_library_item.id
+                        );
 
                         Effects::msg(Msg::Internal(Internal::UpdateLibraryItem(
-                            library_item.to_owned(),
+                            player_library_item.to_owned(),
                         )))
                         .unchanged()
-                    })
-                    .unwrap_or(Effects::none().unchanged());
+                    }
+                    None => {
+                        Effects::none().unchanged()
+                    }
+                };
+                // .map(|library_item| {})
+                // .unwrap_or(Effects::none().unchanged());
+                let next_video_play = self.next_video.clone().map(|(video, _old_action)| {
+                    (video, NextVideoAction::Play)
+                });
+                let next_video_effects = eq_update(&mut self.next_video, next_video_play);
 
                 // Load will actually take care of loading the next video
-                seek_history_effects
+                library_item_effects
+                .join(seek_history_effects)
                     .join(
                         Effects::msg(Msg::Event(Event::PlayerNextVideo {
                             context: self.analytics_context.as_ref().cloned().unwrap_or_default(),
@@ -652,7 +681,8 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                         }))
                         .unchanged(),
                     )
-                    .join(library_item_effects)
+                    .join(next_video_effects)
+                    
             }
             Msg::Action(Action::Player(ActionPlayer::Ended)) if self.selected.is_some() => {
                 self.ended = true;
@@ -709,8 +739,8 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
             Msg::Internal(Internal::LibraryChanged(_)) => {
                 let library_item_effects = library_item_update::<E>(
                     &mut self.library_item,
-                    &self.selected,
-                    &self.meta_item,
+                    self.selected.as_ref(),
+                    self.meta_item.as_ref(),
                     &ctx.library,
                 );
 
@@ -775,22 +805,22 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
 
                 let next_video_effects = next_video_update(
                     &mut self.next_video,
-                    &self.next_stream,
-                    &self.selected,
-                    &self.meta_item,
+                    self.next_stream.as_ref(),
+                    self.selected.as_ref(),
+                    self.meta_item.as_ref(),
                     &ctx.profile.settings,
                 );
 
                 let next_streams_effects = next_streams_effects.join(next_streams_update::<E>(
                     &mut self.next_streams,
-                    &self.next_video,
-                    &self.selected,
+                    self.next_video.as_ref(),
+                    self.selected.as_ref(),
                 ));
 
                 let next_stream_effects = next_stream_update(
                     &mut self.next_stream,
-                    &self.next_streams,
-                    &self.selected,
+                    self.next_streams.as_ref(),
+                    self.selected.as_ref(),
                     &ctx.profile.settings,
                 );
 
@@ -798,8 +828,8 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                     series_info_update(&mut self.series_info, &self.selected, &self.meta_item);
                 let library_item_effects = library_item_update::<E>(
                     &mut self.library_item,
-                    &self.selected,
-                    &self.meta_item,
+                    self.selected.as_ref(),
+                    self.meta_item.as_ref(),
                     &ctx.library,
                 );
 
@@ -906,7 +936,7 @@ fn push_to_library<E: Env + 'static>(
 
 fn item_state_update(
     library_item: &mut Option<LibraryItem>,
-    next_video: Option<&Video>,
+    next_video: Option<&(Video, NextVideoAction)>,
 ) -> Effects {
     match library_item {
         Some(library_item)
@@ -914,7 +944,7 @@ fn item_state_update(
                 > library_item.state.duration as f64 * CREDITS_THRESHOLD_COEF =>
         {
             library_item.state.time_offset = 0;
-            if let Some(next_video) = next_video {
+            if let Some((next_video, _action)) = next_video {
                 library_item.state.video_id = Some(next_video.id.to_owned());
                 library_item.state.overall_time_watched = library_item
                     .state
@@ -956,10 +986,10 @@ fn stream_state_update(
 }
 
 fn next_video_update(
-    video: &mut Option<Video>,
-    stream: &Option<Stream>,
-    selected: &Option<Selected>,
-    meta_item: &Option<ResourceLoadable<MetaItem>>,
+    video: &mut Option<(Video, NextVideoAction)>,
+    stream: Option<&Stream>,
+    selected: Option<&Selected>,
+    meta_item: Option<&ResourceLoadable<MetaItem>>,
     settings: &ProfileSettings,
 ) -> Effects {
     let next_video = match (selected, meta_item) {
@@ -1008,13 +1038,16 @@ fn next_video_update(
             }),
         _ => None,
     };
-    eq_update(video, next_video)
+    eq_update(
+        video,
+        next_video.map(|video| (video, NextVideoAction::default())),
+    )
 }
 
 fn next_streams_update<E>(
     next_streams: &mut Option<ResourceLoadable<Vec<Stream>>>,
-    next_video: &Option<Video>,
-    selected: &Option<Selected>,
+    next_video: Option<&(Video, NextVideoAction)>,
+    selected: Option<&Selected>,
 ) -> Effects
 where
     E: Env + 'static,
@@ -1028,7 +1061,7 @@ where
     };
 
     match next_video {
-        Some(next_video) => {
+        Some((next_video, _action)) => {
             stream_request.path.id.clone_from(&next_video.id);
 
             match next_streams.as_mut() {
@@ -1061,8 +1094,8 @@ where
 
 fn next_stream_update(
     stream: &mut Option<Stream>,
-    next_streams: &Option<ResourceLoadable<Vec<Stream>>>,
-    selected: &Option<Selected>,
+    next_streams: Option<&ResourceLoadable<Vec<Stream>>>,
+    selected: Option<&Selected>,
     settings: &ProfileSettings,
 ) -> Effects {
     let next_stream = match (selected, next_streams) {
@@ -1114,8 +1147,8 @@ fn series_info_update(
 
 fn library_item_update<E: Env + 'static>(
     library_item: &mut Option<LibraryItem>,
-    selected: &Option<Selected>,
-    meta_item: &Option<ResourceLoadable<MetaItem>>,
+    selected: Option<&Selected>,
+    meta_item: Option<&ResourceLoadable<MetaItem>>,
     library: &LibraryBucket,
 ) -> Effects {
     let next_library_item = match selected {
@@ -1178,6 +1211,7 @@ fn library_item_state_update(
                 (Some(stream_request), Some(state_video_id))
                     if stream_request.path.id != *state_video_id =>
                 {
+                    tracing::info!("Player library_item_state_update time_offset = 0");
                     library_item.state.time_offset = 0;
                     Effects::msg(Msg::Internal(Internal::UpdateLibraryItem(
                         library_item.to_owned(),
@@ -1192,8 +1226,8 @@ fn library_item_state_update(
 
 fn subtitles_update<E: Env + 'static>(
     subtitles: &mut Vec<ResourceLoadable<Vec<Subtitles>>>,
-    selected: &Option<Selected>,
-    video_params: &Option<VideoParams>,
+    selected: Option<&Selected>,
+    video_params: Option<&VideoParams>,
     addons: &[Descriptor],
 ) -> Effects {
     match (selected, video_params) {

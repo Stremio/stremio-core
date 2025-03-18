@@ -51,7 +51,7 @@ mod model {
         pub watched: bool,
         pub progress: Option<f64>,
         pub scheduled: bool,
-        pub deep_links: VideoDeepLinks,
+        pub deep_links: Option<VideoDeepLinks>,
     }
     #[derive(Serialize)]
     #[serde(rename_all = "camelCase")]
@@ -171,13 +171,15 @@ pub fn serialize_player<E: stremio_core::runtime::Env + 'static>(
                                 },
                             ),
                             scheduled: meta_item.preview.behavior_hints.has_scheduled_videos,
-                            deep_links: VideoDeepLinks::from((
-                                video,
-                                request,
-                                &streaming_server.base_url,
-                                &ctx.profile.settings,
-                            ))
-                            .into_web_deep_links(),
+                            deep_links: Some(
+                                VideoDeepLinks::from((
+                                    video,
+                                    request,
+                                    &streaming_server.base_url,
+                                    &ctx.profile.settings,
+                                ))
+                                .into_web_deep_links(),
+                            ),
                         })
                         .collect(),
                 }),
@@ -221,72 +223,83 @@ pub fn serialize_player<E: stremio_core::runtime::Env + 'static>(
                     .zip(selected.stream_request.as_ref())
             })
             .zip(player.next_video.as_ref())
-            .map(|((meta_request, stream_request), video)| model::Video {
-                video,
-                upcoming: player
-                    .meta_item
-                    .as_ref()
-                    .and_then(|meta_item| match meta_item {
-                        ResourceLoadable {
-                            content: Some(Loadable::Ready(meta_item)),
-                            ..
-                        } => Some(meta_item),
-                        _ => None,
-                    })
-                    .map(|meta_item| {
-                        meta_item.preview.behavior_hints.has_scheduled_videos
-                            && video.released > Some(E::now())
-                    })
-                    .unwrap_or_default(),
-                watched: player
-                    .meta_item
-                    .as_ref()
-                    .and_then(|meta_item| match meta_item {
-                        ResourceLoadable {
-                            content: Some(Loadable::Ready(meta_item)),
-                            ..
-                        } => Some(meta_item),
-                        _ => None,
-                    })
-                    .and_then(|meta_item| {
-                        ctx.library
-                            .items
-                            .get(&meta_item.preview.id)
-                            .map(|library_item| {
-                                library_item
-                                    .state
-                                    .watched_bitfield(&meta_item.videos)
-                                    .get_video(&video.id)
+            .map(
+                |((meta_request, stream_request), (video, next_video_action))| {
+                    let video_deeplinks = match next_video_action {
+                        stremio_core::models::player::NextVideoAction::Play => Some(
+                            VideoDeepLinks::from((
+                                video,
+                                stream_request,
+                                meta_request,
+                                &streaming_server.base_url,
+                                &ctx.profile.settings,
+                            ))
+                            .into_web_deep_links(),
+                        ),
+                        stremio_core::models::player::NextVideoAction::Wait => None,
+                    };
+
+                    model::Video {
+                        video,
+                        upcoming: player
+                            .meta_item
+                            .as_ref()
+                            .and_then(|meta_item| match meta_item {
+                                ResourceLoadable {
+                                    content: Some(Loadable::Ready(meta_item)),
+                                    ..
+                                } => Some(meta_item),
+                                _ => None,
                             })
-                    })
-                    .unwrap_or_default(),
-                // We do not have information about other videos in the LibraryItem
-                // apart from the currently playing one.
-                // We could eventually use e.g. StreamsBucket to get local streams
-                // and match the next video with existing stream, however, we only use this next_video
-                // for generating the Deep links
-                // Will always be None!
-                progress: None,
-                scheduled: player
-                    .meta_item
-                    .as_ref()
-                    .and_then(|meta_item| match meta_item {
-                        ResourceLoadable {
-                            content: Some(Loadable::Ready(meta_item)),
-                            ..
-                        } => Some(meta_item.preview.behavior_hints.has_scheduled_videos),
-                        _ => None,
-                    })
-                    .unwrap_or_default(),
-                deep_links: VideoDeepLinks::from((
-                    video,
-                    stream_request,
-                    meta_request,
-                    &streaming_server.base_url,
-                    &ctx.profile.settings,
-                ))
-                .into_web_deep_links(),
-            }),
+                            .map(|meta_item| {
+                                meta_item.preview.behavior_hints.has_scheduled_videos
+                                    && video.released > Some(E::now())
+                            })
+                            .unwrap_or_default(),
+                        watched: player
+                            .meta_item
+                            .as_ref()
+                            .and_then(|meta_item| match meta_item {
+                                ResourceLoadable {
+                                    content: Some(Loadable::Ready(meta_item)),
+                                    ..
+                                } => Some(meta_item),
+                                _ => None,
+                            })
+                            .and_then(|meta_item| {
+                                ctx.library
+                                    .items
+                                    .get(&meta_item.preview.id)
+                                    .map(|library_item| {
+                                        library_item
+                                            .state
+                                            .watched_bitfield(&meta_item.videos)
+                                            .get_video(&video.id)
+                                    })
+                            })
+                            .unwrap_or_default(),
+                        // We do not have information about other videos in the LibraryItem
+                        // apart from the currently playing one.
+                        // We could eventually use e.g. StreamsBucket to get local streams
+                        // and match the next video with existing stream, however, we only use this next_video
+                        // for generating the Deep links
+                        // Will always be None!
+                        progress: None,
+                        scheduled: player
+                            .meta_item
+                            .as_ref()
+                            .and_then(|meta_item| match meta_item {
+                                ResourceLoadable {
+                                    content: Some(Loadable::Ready(meta_item)),
+                                    ..
+                                } => Some(meta_item.preview.behavior_hints.has_scheduled_videos),
+                                _ => None,
+                            })
+                            .unwrap_or_default(),
+                        deep_links: video_deeplinks,
+                    }
+                },
+            ),
         series_info: player.series_info.as_ref(),
         library_item: player
             .library_item

@@ -164,6 +164,7 @@ pub fn update_library<E: Env + 'static>(
             let mut library_item = library_item.to_owned();
             library_item.mtime = E::now();
 
+            tracing::info!("Update LibraryItem {}", library_item.id);
             let push_to_api_effects = match auth_key {
                 Some(auth_key) => Effects::one(push_items_to_api::<E>(
                     vec![library_item.to_owned()],
@@ -301,13 +302,18 @@ fn update_and_push_items_to_storage<E: Env + 'static>(
         .collect::<Vec<_>>();
     let are_items_in_recent = library.are_ids_in_recent(&ids);
     library.merge_items(items);
+    tracing::info!("update_and_push_items_to_storage: after library.merge_items()");
+
     let push_to_storage_future = if library.items.len() <= LIBRARY_RECENT_COUNT {
         Either::Left(
             future::try_join_all(vec![
                 E::set_storage(LIBRARY_RECENT_STORAGE_KEY, Some(&library)),
                 E::set_storage::<()>(LIBRARY_STORAGE_KEY, None),
             ])
-            .map_ok(|_| ()),
+            .map_ok(|_| {
+                tracing::info!("Library & recent keys (NULL) pushed to storage (< 200)");
+                ()
+            }),
         )
     } else {
         let (recent_items, other_items) = library.split_items_by_recent();
@@ -328,19 +334,24 @@ fn update_and_push_items_to_storage<E: Env + 'static>(
                         Some(&LibraryBucketRef::new(&library.uid, &other_items)),
                     ),
                 ])
-                .map_ok(|_| ()),
+                .map_ok(|_| {
+                    tracing::info!("Library & recent keys pushed to storage (> 200)");
+                    ()
+                }),
             ))
         }
     };
     EffectFuture::Sequential(
         push_to_storage_future
-            .map(move |result| match result {
+            .map(move |result| {
+                tracing::info!("update_library: Push to storage successful, emit event - LibraryItemsPushedToStorage");
+                match result {
                 Ok(_) => Msg::Event(Event::LibraryItemsPushedToStorage { ids }),
                 Err(error) => Msg::Event(Event::Error {
                     error: CtxError::from(error),
                     source: Box::new(Event::LibraryItemsPushedToStorage { ids }),
                 }),
-            })
+            }})
             .boxed_env(),
     )
     .into()
