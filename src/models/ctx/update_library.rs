@@ -312,7 +312,6 @@ fn update_and_push_items_to_storage<E: Env + 'static>(
             ])
             .map_ok(|_| {
                 tracing::info!("Library & recent keys (NULL) pushed to storage (< 200)");
-                ()
             }),
         )
     } else {
@@ -336,7 +335,6 @@ fn update_and_push_items_to_storage<E: Env + 'static>(
                 ])
                 .map_ok(|_| {
                     tracing::info!("Library & recent keys pushed to storage (> 200)");
-                    ()
                 }),
             ))
         }

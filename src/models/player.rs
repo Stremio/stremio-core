@@ -659,20 +659,19 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                         )))
                         .unchanged()
                     }
-                    None => {
-                        Effects::none().unchanged()
-                    }
+                    None => Effects::none().unchanged(),
                 };
                 // .map(|library_item| {})
                 // .unwrap_or(Effects::none().unchanged());
-                let next_video_play = self.next_video.clone().map(|(video, _old_action)| {
-                    (video, NextVideoAction::Play)
-                });
+                let next_video_play = self
+                    .next_video
+                    .clone()
+                    .map(|(video, _old_action)| (video, NextVideoAction::Play));
                 let next_video_effects = eq_update(&mut self.next_video, next_video_play);
 
                 // Load will actually take care of loading the next video
                 library_item_effects
-                .join(seek_history_effects)
+                    .join(seek_history_effects)
                     .join(
                         Effects::msg(Msg::Event(Event::PlayerNextVideo {
                             context: self.analytics_context.as_ref().cloned().unwrap_or_default(),
@@ -682,7 +681,6 @@ impl<E: Env + 'static> UpdateWithCtx<E> for Player {
                         .unchanged(),
                     )
                     .join(next_video_effects)
-                    
             }
             Msg::Action(Action::Player(ActionPlayer::Ended)) if self.selected.is_some() => {
                 self.ended = true;
