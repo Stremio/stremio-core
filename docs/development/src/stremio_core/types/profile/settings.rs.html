@@ -87,7 +87,9 @@
 <a href="#86" id="86">86</a>
 <a href="#87" id="87">87</a>
 <a href="#88" id="88">88</a>
-<a href="#89" id="89">89</a></pre></div><pre class="rust"><code><span class="kw">use </span><span class="kw">crate</span>::constants::STREAMING_SERVER_URL;
+<a href="#89" id="89">89</a>
+<a href="#90" id="90">90</a>
+<a href="#91" id="91">91</a></pre></div><pre class="rust"><code><span class="kw">use </span><span class="kw">crate</span>::constants::STREAMING_SERVER_URL;
 <span class="kw">use </span>chrono::{DateTime, Utc};
 <span class="kw">use </span>serde::{Deserialize, Serialize};
 <span class="kw">use </span>url::Url;
@@ -96,6 +98,7 @@
 #[serde(rename_all = <span class="string">"camelCase"</span>)]
 </span><span class="kw">pub struct </span>Settings {
     <span class="kw">pub </span>interface_language: String,
+    <span class="kw">pub </span>hide_spoilers: bool,
     <span class="kw">pub </span>streaming_server_url: Url,
     <span class="kw">pub </span>player_type: <span class="prelude-ty">Option</span>&lt;String&gt;,
     <span class="kw">pub </span>binge_watching: bool,
@@ -147,6 +150,7 @@
             binge_watching: <span class="bool-val">true</span>,
             play_in_background: <span class="bool-val">true</span>,
             hardware_decoding: <span class="bool-val">true</span>,
+            hide_spoilers: <span class="bool-val">false</span>,
             frame_rate_matching_strategy: FrameRateMatchingStrategy::FrameRateOnly,
             next_video_notification_duration: <span class="number">35000</span>,
             audio_passthrough: <span class="bool-val">false</span>,
