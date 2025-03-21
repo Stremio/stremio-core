@@ -8,6 +8,7 @@ use url::Url;
 pub struct Settings {
     pub interface_language: String,
     pub hide_spoilers: bool,
+    pub gamepad_support: bool,
     pub streaming_server_url: Url,
     pub player_type: Option<String>,
     pub binge_watching: bool,
@@ -60,6 +61,7 @@ impl Default for Settings {
             play_in_background: true,
             hardware_decoding: true,
             hide_spoilers: false,
+            gamepad_support: false,
             frame_rate_matching_strategy: FrameRateMatchingStrategy::FrameRateOnly,
             next_video_notification_duration: 35000,
             audio_passthrough: false,
