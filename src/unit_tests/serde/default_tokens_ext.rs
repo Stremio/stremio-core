@@ -374,11 +374,13 @@ impl DefaultTokens for Settings {
         vec![
             Token::Struct {
                 name: "Settings",
-                len: 31,
+                len: 32,
             },
             Token::Str("interfaceLanguage"),
             Token::Str("eng"),
             Token::Str("hideSpoilers"),
+            Token::Bool(false),
+            Token::Str("gamepadSupport"),
             Token::Bool(false),
             Token::Str("streamingServerUrl"),
             Token::Str("http://127.0.0.1:11470/"),
