@@ -558,7 +558,7 @@ fn actionctx_authenticate_apple() {
     assert_eq!(
         runtime.model().unwrap().ctx.library,
         LibraryBucket {
-            uid: Some("user_id".to_string()),
+            uid: Some("user_id".into()),
             ..Default::default()
         },
         "library updated successfully in memory"
@@ -578,7 +578,7 @@ fn actionctx_authenticate_apple() {
                 .unwrap()
         )
         .unwrap(),
-        LibraryBucket::new(Some("user_id".to_owned()), vec![]),
+        LibraryBucket::new(Some("user_id".into()), vec![]),
         "recent library updated successfully in storage"
     );
     assert_eq!(
@@ -586,7 +586,7 @@ fn actionctx_authenticate_apple() {
             STORAGE.read().unwrap().get(LIBRARY_STORAGE_KEY).unwrap()
         )
         .unwrap(),
-        LibraryBucket::new(Some("user_id".to_owned()), vec![]),
+        LibraryBucket::new(Some("user_id".into()), vec![]),
         "library updated successfully in storage"
     );
     assert_eq!(
