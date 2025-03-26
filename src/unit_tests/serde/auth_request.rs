@@ -35,7 +35,7 @@ fn auth_request() {
                 Token::Seq { len: Some(5) },
                 Token::Struct {
                     name: "AuthRequest",
-                    len: 5,
+                    len: 4,
                 },
                 Token::Str("type"),
                 Token::Str("Login"),
