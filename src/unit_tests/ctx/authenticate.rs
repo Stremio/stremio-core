@@ -498,7 +498,7 @@ fn actionctx_authenticate_apple() {
                 url, method, body, ..
             } if url == "https://api.strem.io/api/authWithApple"
                 && method == "POST"
-                && body == "{\"type\":\"Auth\",\"type\":\"Apple\",\"token\":\"access_token\"}" =>
+                && body == "{\"type\":\"Auth\",\"type\":\"Apple\",\"token\":\"access_token\",\"sub\":\"sub_id\",\"email\":\"user_email\",\"name\":\"user_name\"}" =>
             {
                 future::ok(Box::new(APIResult::Ok(auth_response_fixture())) as Box<dyn Any + Send>).boxed_env()
             }
