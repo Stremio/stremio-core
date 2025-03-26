@@ -453,7 +453,7 @@ impl DefaultTokens for AuthRequest {
         vec![
             Token::Struct {
                 name: "AuthRequest",
-                len: 5,
+                len: 4,
             },
             Token::Str("type"),
             Token::Str("Auth"),
